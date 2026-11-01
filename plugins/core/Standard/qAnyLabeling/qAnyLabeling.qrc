@@ -13,6 +13,7 @@
         <file>images/arrow-right.svg</file>
         <file>images/auto-run.png</file>
         <file>images/backward.svg</file>
+        <file>images/badge-percent.svg</file>
         <file>images/brain.png</file>
         <file>images/bria-ai.png</file>
         <file>images/brush.png</file>
@@ -33,7 +34,9 @@
         <file>images/cn.png</file>
         <file>images/color.png</file>
         <file>images/color.svg</file>
+        <file>images/component.svg</file>
         <file>images/compare.png</file>
+        <file>images/contrast.svg</file>
         <file>images/convert.png</file>
         <file>images/copy-green.svg</file>
         <file>images/copy.png</file>
@@ -100,9 +103,12 @@
         <file>images/json.svg</file>
         <file>images/ko.png</file>
         <file>images/labels.png</file>
+        <file>images/layers.svg</file>
         <file>images/left.svg</file>
         <file>images/line-strip.png</file>
         <file>images/line.png</file>
+        <file>images/link.svg</file>
+        <file>images/list-checks.svg</file>
         <file>images/lock.svg</file>
         <file>images/label.png</file>
         <file>images/logo.png</file>
@@ -115,6 +121,7 @@
         <file>images/minus.svg</file>
         <file>images/mit.png</file>
         <file>images/navigator.png</file>
+        <file>images/network.svg</file>
         <file>images/new.svg</file>
         <file>images/next.png</file>
         <file>images/ollama.png</file>
@@ -147,9 +154,11 @@
         <file>images/right.svg</file>
         <file>images/roboflow.png</file>
         <file>images/rotation.png</file>
+        <file>images/ruler.svg</file>
         <file>images/run.svg</file>
         <file>images/save-as.png</file>
         <file>images/save.png</file>
+        <file>images/scan-text.svg</file>
         <file>images/scissors.svg</file>
         <file>images/search.svg</file>
         <file>images/send.svg</file>
@@ -161,6 +170,9 @@
         <file>images/star.svg</file>
         <file>images/starred.svg</file>
         <file>images/stop.svg</file>
+        <file>images/swatch-book.svg</file>
+        <file>images/tag.svg</file>
+        <file>images/tags.svg</file>
         <file>images/theme-auto.png</file>
         <file>images/theme-dark.png</file>
         <file>images/theme-light.png</file>

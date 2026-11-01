@@ -21,6 +21,55 @@
 
 static int failures = 0;
 
+// Minimal GGUF v3 writer for the malformed-metadata probes: file header plus
+// one string KV ("general.architecture") and zero tensors. Returns true when
+// the file was fully written.
+static bool write_minimal_gguf(const std::string& path, const char* arch) {
+    std::FILE* f = std::fopen(path.c_str(), "wb");
+    if (!f) return false;
+    const char magic[4] = {'G', 'G', 'U', 'F'};
+    const uint32_t version = 3;
+    const uint64_t tensor_count = 0;
+    const uint64_t kv_count = 1;
+    bool ok = std::fwrite(magic, 1, sizeof(magic), f) == sizeof(magic) &&
+              std::fwrite(&version, sizeof(version), 1, f) == 1 &&
+              std::fwrite(&tensor_count, sizeof(tensor_count), 1, f) == 1 &&
+              std::fwrite(&kv_count, sizeof(kv_count), 1, f) == 1;
+    if (ok) {
+        const char key[] = "general.architecture";
+        const uint64_t key_len = sizeof(key) - 1;
+        const uint32_t string_type = 8;  // GGUF_TYPE_STRING
+        const uint64_t val_len = std::strlen(arch);
+        ok = std::fwrite(&key_len, sizeof(key_len), 1, f) == 1 &&
+             std::fwrite(key, 1, key_len, f) == key_len &&
+             std::fwrite(&string_type, sizeof(string_type), 1, f) == 1 &&
+             std::fwrite(&val_len, sizeof(val_len), 1, f) == 1 &&
+             std::fwrite(arch, 1, val_len, f) == val_len;
+    }
+    std::fclose(f);
+    return ok;
+}
+
+// Fixed-content garbage probe (not a GGUF at all).
+static bool write_garbage_file(const std::string& path) {
+    std::FILE* f = std::fopen(path.c_str(), "wb");
+    if (!f) return false;
+    const char payload[64] = {0};
+    const bool ok = std::fwrite(payload, 1, sizeof(payload), f) ==
+                    sizeof(payload);
+    std::fclose(f);
+    return ok;
+}
+
+// Initializes the caller-side model_info envelope the way every consumer
+// must before calling aicore_openpcdet_read_model_info.
+static aicore_openpcdet_model_info make_model_info() {
+    aicore_openpcdet_model_info info{};
+    info.struct_size = sizeof(info);
+    info.abi_version = AICORE_OPENPCDET_MODEL_INFO_ABI_VERSION;
+    return info;
+}
+
 int main(int argc, char** argv) {
     AICORE_CHECK(aicore_openpcdet_abi_version() >= 1);
 
@@ -35,6 +84,86 @@ int main(int argc, char** argv) {
         AICORE_CHECK(error && std::strstr(error, "cuda:999999"));
         aicore_openpcdet_free(ctx);
         aicore_openpcdet_options_free(unavailable);
+
+        // An explicit unknown device must fail with a NON-EMPTY error naming
+        // the request (CPU-only reproducible: no CUDA/Vulkan needed). This
+        // guards the engine release path erasing the diagnostic before it
+        // reaches last_error.
+        auto* unknown_dev = aicore_openpcdet_options_new();
+        aicore_openpcdet_options_set_device(unknown_dev, "nosuchdevice");
+        auto* unknown_ctx =
+                aicore_openpcdet_load_opts(argv[1], unknown_dev);
+        AICORE_CHECK(unknown_ctx != nullptr);
+        AICORE_CHECK(aicore_openpcdet_is_ready(unknown_ctx) == 0);
+        const char* unknown_error =
+                aicore_openpcdet_last_error(unknown_ctx);
+        AICORE_CHECK(unknown_error && unknown_error[0] != '\0');
+        AICORE_CHECK(std::strstr(unknown_error, "nosuchdevice") != nullptr);
+        aicore_openpcdet_free(unknown_ctx);
+        aicore_openpcdet_options_free(unknown_dev);
+    } else if (argc == 3 && std::strcmp(argv[1], "--catalog") == 0) {
+        // Explicit full-coverage mode: read the metadata of EVERY published
+        // catalog GGUF found under argv[2] through both metadata APIs and
+        // cross-check them. Missing assets are failures here, not skips.
+        // Nothing in this mode loads tensor data or initializes a backend.
+        const std::string cache_dir = argv[2];
+        int present = 0;
+        int scene_models = 0;
+        for (int i = 0; i < aicore_openpcdet_model_count(); ++i) {
+            const aicore_openpcdet_model_entry* e =
+                    aicore_openpcdet_model_at(i);
+            AICORE_CHECK(e != nullptr && e->filename != nullptr);
+            const std::string path = cache_dir + "/" + e->filename;
+            std::FILE* probe = std::fopen(path.c_str(), "rb");
+            if (!probe) {
+                std::fprintf(stderr, "FAIL catalog asset missing: %s\n",
+                             e->filename);
+                ++failures;
+                continue;
+            }
+            std::fclose(probe);
+            ++present;
+            aicore_openpcdet_model_info info = make_model_info();
+            char* err = nullptr;
+            if (aicore_openpcdet_read_model_info(path.c_str(), &info, &err) !=
+                0) {
+                std::fprintf(stderr, "FAIL model_info(%s): %s\n",
+                             e->filename, err ? err : "no error text");
+                aicore_openpcdet_free_buffer(err);
+                ++failures;
+                continue;
+            }
+            AICORE_CHECK(info.struct_size == sizeof(info));
+            AICORE_CHECK(info.num_point_features >= 3);
+            AICORE_CHECK(info.num_class > 0);
+            AICORE_CHECK(info.max_boxes > 0);
+            AICORE_CHECK(info.arch[0] != '\0');
+            // The scene expectation follows the catalog pairing rule — the
+            // same filenames the plugin's inputKindForFilename treats as
+            // multi-modal (CaDDN / BEVFusion / focal multimodal VoxelRCNN,
+            // the last declared via focal.multimodal in the GGUF rather
+            // than a dedicated architecture string).
+            const std::string fname = e->filename;
+            const bool scene_expected =
+                    fname.rfind("kitti_caddn.", 0) == 0 ||
+                    fname.rfind("nuscenes_bevfusion.", 0) == 0 ||
+                    fname.rfind("kitti_voxelrcnn_focal_multimodal.", 0) == 0;
+            AICORE_CHECK(info.needs_scene == (scene_expected ? 1 : 0));
+            if (info.needs_scene) ++scene_models;
+            float score = -1.0f;
+            float nms = -1.0f;
+            int32_t boxes = -1;
+            AICORE_CHECK(aicore_openpcdet_model_defaults(
+                                 path.c_str(), &score, &nms, &boxes) == 0);
+            AICORE_CHECK(score == info.score_thresh);
+            AICORE_CHECK(nms == info.nms_thresh);
+            AICORE_CHECK(boxes == info.max_boxes);
+        }
+        AICORE_CHECK(present == aicore_openpcdet_model_count());
+        AICORE_CHECK(scene_models > 0);
+        std::printf("test_openpcdet_capi_contract: catalog mode verified "
+                    "%d file(s), %d scene model(s)\n",
+                    present, scene_models);
     }
 
     // Null-safe teardown / lifecycle.
@@ -137,6 +266,78 @@ int main(int argc, char** argv) {
     known = aicore_openpcdet_model_by_filename("second_7862.f32.gguf");
     AICORE_CHECK(known != nullptr &&
                  std::strstr(known->family_note, "SECOND") != nullptr);
+
+    // Declared post-processing defaults: null/missing paths must fail
+    // cleanly (the positive path runs against the real downloaded GGUF in
+    // bench_openpcdet_perf / the validation matrix, which own the assets).
+    AICORE_CHECK(aicore_openpcdet_model_defaults(nullptr, nullptr, nullptr,
+                                                 nullptr) == -1);
+    AICORE_CHECK(aicore_openpcdet_model_defaults("", nullptr, nullptr,
+                                                 nullptr) == -1);
+    AICORE_CHECK(aicore_openpcdet_model_defaults("no_such_model.gguf",
+                                                 nullptr, nullptr,
+                                                 nullptr) == -1);
+
+    // Versioned metadata reader guards (asset-free). A failed read must
+    // leave the caller's envelope untouched and produce a freeable
+    // diagnostic; declared zero thresholds flow through unchanged (the
+    // positive path is the catalog mode above, which compares both APIs).
+    {
+        aicore_openpcdet_model_info info = make_model_info();
+        char* err = nullptr;
+        AICORE_CHECK(aicore_openpcdet_read_model_info(nullptr, &info, &err) ==
+                     -1);
+        AICORE_CHECK(err != nullptr && err[0] != '\0');
+        aicore_openpcdet_free_buffer(err);
+        AICORE_CHECK(aicore_openpcdet_read_model_info("", &info, &err) == -1);
+        aicore_openpcdet_free_buffer(err);
+        AICORE_CHECK(aicore_openpcdet_read_model_info("x.gguf", nullptr,
+                                                      &err) == -1);
+        AICORE_CHECK(err != nullptr);
+        aicore_openpcdet_free_buffer(err);
+        // The diagnostic output is optional.
+        AICORE_CHECK(aicore_openpcdet_read_model_info("", &info, nullptr) ==
+                     -1);
+        // A failed read must not touch the caller's envelope.
+        aicore_openpcdet_model_info sentinel = make_model_info();
+        sentinel.score_thresh = 42.0f;
+        const aicore_openpcdet_model_info before = sentinel;
+        AICORE_CHECK(aicore_openpcdet_read_model_info(
+                             "no_such_model.gguf", &sentinel, &err) == -1);
+        aicore_openpcdet_free_buffer(err);
+        AICORE_CHECK(std::memcmp(&sentinel, &before, sizeof(sentinel)) == 0);
+        // Wrong struct_size / abi_version envelopes are rejected outright.
+        aicore_openpcdet_model_info bad = make_model_info();
+        bad.struct_size = sizeof(bad) + 1;
+        AICORE_CHECK(aicore_openpcdet_read_model_info("x.gguf", &bad, &err) ==
+                     -1);
+        aicore_openpcdet_free_buffer(err);
+        bad = make_model_info();
+        bad.abi_version = AICORE_OPENPCDET_MODEL_INFO_ABI_VERSION + 1;
+        AICORE_CHECK(aicore_openpcdet_read_model_info("x.gguf", &bad, &err) ==
+                     -1);
+        aicore_openpcdet_free_buffer(err);
+    }
+    // Malformed files must fail with an error, never a crash or gguf assert:
+    // a garbage file, and a well-formed GGUF declaring a foreign arch.
+    {
+        const std::string garbage = "test_openpcdet_model_info_garbage.bin";
+        const std::string foreign = "test_openpcdet_model_info_foreign.gguf";
+        AICORE_CHECK(write_garbage_file(garbage));
+        AICORE_CHECK(write_minimal_gguf(foreign, "llama"));
+        aicore_openpcdet_model_info info = make_model_info();
+        char* err = nullptr;
+        AICORE_CHECK(aicore_openpcdet_read_model_info(garbage.c_str(), &info,
+                                                      &err) == -1);
+        AICORE_CHECK(err != nullptr && err[0] != '\0');
+        aicore_openpcdet_free_buffer(err);
+        AICORE_CHECK(aicore_openpcdet_read_model_info(foreign.c_str(), &info,
+                                                      &err) == -1);
+        AICORE_CHECK(err != nullptr && std::strstr(err, "llama") != nullptr);
+        aicore_openpcdet_free_buffer(err);
+        std::remove(garbage.c_str());
+        std::remove(foreign.c_str());
+    }
 
     // Scene ABI contract: version, null/invalid guards and error paths
     // (asset-free; multi-modal inference is covered by bench_openpcdet_perf).

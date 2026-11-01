@@ -50,9 +50,11 @@ private:
     int m_inferenceElapsedSeconds = 0;
     OpenPCDetDialog::Settings m_currentSettings;
     ccHObject::Container m_selectedEntities;
-    /** Source cloud of the running task (cached in executeTask so the
-     *  result callback annotates the exact input, not the user's current
-     *  selection; same DB-tree stability window as the wireframe export
-     *  that runs in the same callback). */
-    ccPointCloud* m_runSourceCloud = nullptr;
+    /** Value snapshot (clone) of the source cloud taken in executeTask so
+     *  the result callback annotates the exact Run-time input even if the
+     *  user deletes or replaces the DB entity while the run is in flight. */
+    ccPointCloud* m_runSourceSnapshot = nullptr;
+    /** Set by cancelTask: late results after a cancel are logged but never
+     *  exported into the DB tree. */
+    bool m_runCancelled = false;
 };

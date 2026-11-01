@@ -8,6 +8,7 @@
 #include "OpenPCDetDialog.h"
 
 #include <cvFileDialog.h>
+#include <CVLog.h>
 #include <ecvPluginDbNaming.h>
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
@@ -41,6 +42,7 @@
 #ifdef AICore_ENABLED
 #include "aicore/backend_capi.h"
 #include "aicore/inference_log.h"
+#include "aicore/openpcdet_capi.h"
 #endif
 
 namespace {
@@ -247,6 +249,10 @@ void OpenPCDetDialog::setupUi() {
                     return;
                 }
                 appendLog(tr("[OpenPCDet] Model downloaded: %1").arg(path));
+                // The GGUF header is now local: refresh the owning
+                // panel's threshold defaults from the declared values.
+                if (OpenPCDetTaskPanel* owner = panelForFilename(QFileInfo(path).fileName()))
+                    applyModelDefaults(*owner);
                 if (m_pendingActionAfterDownload == PendingAction::Run) {
                     m_pendingActionAfterDownload = PendingAction::None;
                     onRun();
@@ -393,6 +399,33 @@ void OpenPCDetDialog::populatePanels() {
         thresholdLayout->addWidget(panel.maxBoxes);
         thresholdLayout->addStretch();
         configCol->addWidget(thresholdRow);
+        // Default/override tri-state (plan §2): checked = the GGUF-declared
+        // values shown disabled; unchecked = editable explicit values
+        // (including a legal explicit 0). Own row: sharing the threshold
+        // row forced the form's minimum width past the smallest supported
+        // window (the dialog test's horizontal-clipping contract).
+        panel.useDefaultsCheck =
+                new QCheckBox(tr("Use model defaults"), panel.tab);
+        panel.useDefaultsCheck->setChecked(true);
+        auto* defaultsRow = new QHBoxLayout;
+        defaultsRow->setContentsMargins(0, 0, 0, 0);
+        defaultsRow->setSpacing(ecvAICoreUi::tightHSpacing());
+        defaultsRow->addWidget(panel.useDefaultsCheck);
+        defaultsRow->addStretch();
+        configCol->addLayout(defaultsRow);
+        panel.score->setEnabled(false);
+        panel.nms->setEnabled(false);
+        panel.maxBoxes->setEnabled(false);
+        connect(panel.useDefaultsCheck, &QCheckBox::toggled, this,
+                [this, panelIndex = m_panels.size()](bool checked) {
+                    if (panelIndex < 0 || panelIndex >= m_panels.size())
+                        return;
+                    OpenPCDetTaskPanel& p = m_panels[panelIndex];
+                    p.score->setEnabled(!checked);
+                    p.nms->setEnabled(!checked);
+                    p.maxBoxes->setEnabled(!checked);
+                    if (checked) applyModelDefaults(p);
+                });
 
         // Custom GGUF row (optional override of the catalog selection).
         panel.customModelRow = new QWidget(panel.tab);
@@ -467,8 +500,14 @@ void OpenPCDetDialog::populatePanels() {
         panel.sceneDirEdit->setPlaceholderText(
                 tr("Directory with images.bin + calibration + scene.json"));
         connect(panel.sceneDirEdit, &QLineEdit::textChanged, this,
-                [this](const QString& text) {
-                    refreshScenePreview(currentPanel(), text.trimmed());
+                [this, panelIndex = m_panels.size()](const QString& text) {
+                    // Resolve the owning panel at call time: currentPanel()
+                    // would cross-fill another panel's preview when the
+                    // text changes programmatically or the user switches
+                    // the task list.
+                    if (panelIndex < m_panels.size())
+                        refreshScenePreview(&m_panels[panelIndex],
+                                            text.trimmed());
                 });
         sceneRow->addWidget(panel.sceneDirEdit, 1);
         auto* browseSceneBtn =
@@ -613,6 +652,10 @@ void OpenPCDetDialog::populatePanels() {
         m_panels.append(panel);
         m_taskStack->addWidget(panel.tab);
         addTaskItem(panelLabel(cp), m_taskStack->count() - 1);
+        // Show the checkpoint's GGUF-declared thresholds (upstream OpenPCDet
+        // config defaults) instead of the "model" placeholder when the
+        // cached GGUF header is available.
+        applyModelDefaults(m_panels.last());
     }
 
     connect(m_taskList, &QListWidget::currentRowChanged, this, [this](int row) {
@@ -621,6 +664,14 @@ void OpenPCDetDialog::populatePanels() {
         const QVariant page = item->data(kTaskStackIndexRole);
         if (!page.isValid()) return;
         m_taskStack->setCurrentIndex(page.toInt());
+        // Restored sessions fill the scene dir while another panel is
+        // current; re-render the incoming panel's preview from its own
+        // field (cheap: only the camera-0 frame of images.bin is read).
+        if (page.toInt() >= 0 && page.toInt() < m_panels.size()) {
+            OpenPCDetTaskPanel& panel = m_panels[page.toInt()];
+            if (panel.previewLabel)
+                refreshScenePreview(&panel, panel.sceneDirEdit->text().trimmed());
+        }
     });
     // Select the first selectable entry (row 0 is a section header).
     for (int row = 0; row < m_taskList->count(); ++row) {
@@ -695,16 +746,41 @@ void OpenPCDetDialog::loadSettings() {
             const int idx = panel.quantCombo->findData(filename);
             if (idx >= 0) panel.quantCombo->setCurrentIndex(idx);
         }
-        panel.score->setValue(
-                settings.value(QStringLiteral("score/") + key, 0.0).toDouble());
-        panel.nms->setValue(
-                settings.value(QStringLiteral("nms/") + key, 0.0).toDouble());
-        panel.maxBoxes->setValue(
-                settings.value(QStringLiteral("maxBoxes/") + key, 0).toInt());
+        // A persisted zero is the legacy "model" placeholder, not a user
+        // choice — keep the GGUF-declared defaults applied by
+        // populatePanels(); explicit non-zero overrides still win.
+        const double score =
+                settings.value(QStringLiteral("score/") + key, 0.0).toDouble();
+        if (score > 0.0) panel.score->setValue(score);
+        const double nms =
+                settings.value(QStringLiteral("nms/") + key, 0.0).toDouble();
+        if (nms > 0.0) panel.nms->setValue(nms);
+        const int maxBoxes =
+                settings.value(QStringLiteral("maxBoxes/") + key, 0).toInt();
+        if (maxBoxes > 0) panel.maxBoxes->setValue(maxBoxes);
+        // Tri-state migration: a legacy positive value was an explicit
+        // override, the legacy 0 sentinel was "follow the GGUF".
+        const bool legacyOverride = score > 0.0 || nms > 0.0 || maxBoxes > 0;
+        const bool useDefaults =
+                settings.value(QStringLiteral("useDefaults/") + key,
+                               !legacyOverride)
+                        .toBool();
+        panel.useDefaultsCheck->setChecked(useDefaults);
         panel.pointsFileEdit->setText(
                 settings.value(QStringLiteral("pointsFile/") + key).toString());
-        panel.sceneDirEdit->setText(
-                settings.value(QStringLiteral("sceneDir/") + key).toString());
+        // Restoring text fires textChanged while another panel may be
+        // current; suppress the signal and refresh THIS panel's preview
+        // directly.
+        const QString sceneDir =
+                settings.value(QStringLiteral("sceneDir/") + key).toString();
+        if (!sceneDir.isEmpty() && panel.sceneDirEdit) {
+            panel.sceneDirEdit->blockSignals(true);
+            panel.sceneDirEdit->setText(sceneDir);
+            panel.sceneDirEdit->blockSignals(false);
+            if (panel.previewLabel)
+                refreshScenePreview(&m_panels[&panel - m_panels.constData()],
+                                    sceneDir);
+        }
         panel.scenePointsFileEdit->setText(
                 settings.value(QStringLiteral("scenePointsFile/") + key)
                         .toString());
@@ -782,6 +858,8 @@ void OpenPCDetDialog::saveSettings() const {
         settings.setValue(QStringLiteral("nms/") + key, panel.nms->value());
         settings.setValue(QStringLiteral("maxBoxes/") + key,
                           panel.maxBoxes->value());
+        settings.setValue(QStringLiteral("useDefaults/") + key,
+                          panel.useDefaultsCheck->isChecked());
         settings.setValue(QStringLiteral("pointsFile/") + key,
                           panel.pointsFileEdit->text());
         settings.setValue(QStringLiteral("sceneDir/") + key,
@@ -861,6 +939,55 @@ QString OpenPCDetDialog::resolveModelPath(const QString& filename) const {
     const QString dir = OpenPCDetHelpers::modelCacheDir();
     if (dir.isEmpty()) return QString();
     return dir + QDir::separator() + filename;
+}
+
+void OpenPCDetDialog::applyModelDefaults(OpenPCDetTaskPanel& panel) {
+    // Manual overrides win: with the tri-state unchecked, quant switches /
+    // custom GGUFs / finished downloads must not clobber user values.
+    if (panel.useDefaultsCheck && !panel.useDefaultsCheck->isChecked())
+        return;
+#ifdef AICore_ENABLED
+    if (!panel.score || !panel.nms || !panel.maxBoxes) return;
+    // Candidate GGUFs that declare the checkpoint's post-processing
+    // defaults: the custom override wins, then the selected quantization,
+    // then any other published quant of the same checkpoint (the upstream
+    // config is shared, so every quant row carries the same values).
+    QStringList candidates;
+    if (panel.customModelPath)
+        candidates << panel.customModelPath->text().trimmed();
+    const QString selected = panel.modelFilename();
+    if (!selected.isEmpty()) candidates << selected;
+    for (const OpenPCDetHelpers::OpenPCDetCheckpoint& cp :
+         OpenPCDetHelpers::catalogCheckpoints()) {
+        if (cp.stem != panel.checkpoint) continue;
+        for (const OpenPCDetModelEntry& e : cp.quants)
+            if (e.filename != selected) candidates << e.filename;
+        break;
+    }
+
+    for (const QString& filename : candidates) {
+        if (filename.isEmpty()) continue;
+        const QString path = resolveModelPath(filename);
+        if (!QFileInfo::exists(path)) continue;
+        float score = 0.0f, nms = 0.0f;
+        int32_t maxBoxes = 0;
+        if (aicore_openpcdet_model_defaults(path.toUtf8().constData(), &score,
+                                            &nms, &maxBoxes) != 0) {
+            continue;
+        }
+        // Only fill placeholders the user has not customized yet: the
+        // constructor starts at 0 ("model") and loadSettings re-applies
+        // explicit non-zero user overrides afterwards.
+        if (panel.score->value() <= 0.0 && score > 0.0f)
+            panel.score->setValue(score);
+        if (panel.nms->value() <= 0.0 && nms > 0.0f) panel.nms->setValue(nms);
+        if (panel.maxBoxes->value() <= 0 && maxBoxes > 0)
+            panel.maxBoxes->setValue(maxBoxes);
+        return;
+    }
+#else
+    (void)panel;
+#endif
 }
 
 void OpenPCDetDialog::refreshScenePreview(OpenPCDetTaskPanel* panel,
@@ -964,6 +1091,7 @@ void OpenPCDetDialog::onEnsureModel() {
     if (QFileInfo::exists(resolveModelPath(filename))) {
         appendLog(tr("[OpenPCDet] Model already present: %1")
                           .arg(resolveModelPath(filename)));
+        applyModelDefaults(*panel);
         return;
     }
     OpenPCDetModelEntry entry;
@@ -988,6 +1116,8 @@ void OpenPCDetDialog::onBrowseCustomModel() {
             tr("GGUF models (*.gguf);;All files (*)"));
     if (path.isEmpty()) return;
     active->customModelPath->setText(path);
+    // A custom GGUF declares its own post-processing defaults.
+    applyModelDefaults(*active);
 }
 
 // ---------------------------------------------------------------------------
@@ -1095,21 +1225,30 @@ bool OpenPCDetDialog::fillTestDataPanel(int panelIndex) {
     }
     appendLog(tr("[Test data] Filled '%1' from the shared detection sample.")
                       .arg(panel.checkpoint));
-    // Same showcase cloud for every panel: the KITTI 000008 frame lands in
-    // the DB tree and gets selected, so the active-cloud Run path works
-    // without touching the point file again.
-    loadSampleCloudIntoDb(ecvTestDataRepository::findDatasetFile(
-            ecvTestDataRepository::Dataset::OpenPCDetSample,
-            QStringLiteral("kitti_000008.bin")));
+    // Load the frame this panel actually infers on: nuScenes checkpoints
+    // run the n015 sweep (5-feature, nuScenes LiDAR frame) while KITTI
+    // checkpoints run the 000008 frame. Rendering the detections over a
+    // cloud from the OTHER dataset made every wireframe box look misplaced
+    // (the two datasets share no coordinate frame).
+    const bool nuScenes = panel.checkpoint.startsWith(
+            QStringLiteral("nuscenes"));
+    const QString displayBin =
+            !files.pointsFile.isEmpty() ? files.pointsFile
+                                        : files.scenePointsFile;
+    loadSampleCloudIntoDb(
+            displayBin, nuScenes ? 5 : 4,
+            nuScenes ? QStringLiteral("nuScenes n015 (sample)")
+                     : QStringLiteral("KITTI 000008 (sample)"));
     return true;
 }
 
-void OpenPCDetDialog::loadSampleCloudIntoDb(const QString& binPath) {
+void OpenPCDetDialog::loadSampleCloudIntoDb(const QString& binPath,
+                                            int pointFeatures,
+                                            const QString& displayName) {
     if (!m_app) return;  // no DB tree (tests / headless)
     if (binPath.isEmpty()) {
         appendLog(
-                tr("[Error] Sample frame kitti_000008.bin not found in "
-                   "the test-data cache."));
+                tr("[Error] Sample frame not found in the test-data cache."));
         return;
     }
     QFile file(binPath);
@@ -1121,12 +1260,15 @@ void OpenPCDetDialog::loadSampleCloudIntoDb(const QString& binPath) {
     file.close();
 
     // Inverse of the worker's cloud input path (extractCloudPoints): the
-    // 4th KITTI feature becomes the "intensity" scalar field the worker
-    // picks again on Run.
+    // 4th feature becomes the "intensity" scalar field the worker picks
+    // again on Run; the 5th nuScenes feature (ring/velocity) is display-
+    // only and dropped.
+    const int features = pointFeatures > 0 ? pointFeatures : 4;
     std::vector<float> points;
     int count = 0;
     QString error;
-    if (!OpenPCDetHelpers::parsePointsBin(bytes, 4, &points, &count, &error)) {
+    if (!OpenPCDetHelpers::parsePointsBin(bytes, features, &points, &count,
+                                          &error)) {
         appendLog(tr("[Error] Sample frame parse failed: %1").arg(error));
         return;
     }
@@ -1139,7 +1281,7 @@ void OpenPCDetDialog::loadSampleCloudIntoDb(const QString& binPath) {
         return;
     }
     for (int i = 0; i < count; ++i) {
-        const float* row = points.data() + static_cast<size_t>(i) * 4;
+        const float* row = points.data() + static_cast<size_t>(i) * features;
         cloud->addPoint(CCVector3(static_cast<PointCoordinateType>(row[0]),
                                   static_cast<PointCoordinateType>(row[1]),
                                   static_cast<PointCoordinateType>(row[2])));
@@ -1148,7 +1290,7 @@ void OpenPCDetDialog::loadSampleCloudIntoDb(const QString& binPath) {
     bool sfAdded = false;
     if (intensity->reserveSafe(static_cast<unsigned>(count))) {
         for (int i = 0; i < count; ++i) {
-            intensity->addElement(points[static_cast<size_t>(i) * 4 + 3]);
+            intensity->addElement(points[static_cast<size_t>(i) * features + 3]);
         }
         intensity->computeMinAndMax();
         sfAdded = cloud->addScalarField(intensity) >= 0;
@@ -1157,12 +1299,12 @@ void OpenPCDetDialog::loadSampleCloudIntoDb(const QString& binPath) {
         intensity->release();
     }
 
-    const QString cloudName = ecvPluginDbNaming::makeUnique(
-            QStringLiteral("KITTI 000008 (sample)"), m_app);
+    const QString cloudName =
+            ecvPluginDbNaming::makeUnique(displayName, m_app);
     cloud->setName(cloudName);
     cloud->setMetaData(QStringLiteral("OpenPCDet"), true);
     cloud->setMetaData(QStringLiteral("OpenPCDet/Sample"),
-                       QStringLiteral("kitti_000008.bin"));
+                       QFileInfo(binPath).fileName());
     m_app->addToDB(cloud, true, true, false, true);
     m_app->setSelectedInDB(cloud, true);
     m_app->updateUI();
@@ -1180,9 +1322,16 @@ OpenPCDetDialog::Settings OpenPCDetDialog::getSettings() const {
     s.modelPath = panel->modelPath();
     s.device = m_deviceCombo->currentData().toString();
     s.threads = m_threads->value();
-    s.scoreThresh = static_cast<float>(panel->score->value());
-    s.nmsThresh = static_cast<float>(panel->nms->value());
-    s.maxBoxes = panel->maxBoxes->value();
+    // "Use model defaults" zeroes the values so the worker never calls the
+    // override setters; an explicit override forwards verbatim (0 legal).
+    const bool followModel = !panel->useDefaultsCheck ||
+                             panel->useDefaultsCheck->isChecked();
+    s.thresholdsFollowModel = followModel;
+    s.scoreThresh =
+            followModel ? 0.0f : static_cast<float>(panel->score->value());
+    s.nmsThresh =
+            followModel ? 0.0f : static_cast<float>(panel->nms->value());
+    s.maxBoxes = followModel ? 0 : panel->maxBoxes->value();
     s.addBoxesToDb = panel->addBoxesCheck->isChecked();
     s.annotatedCloudToDb = panel->annotatedCheck->isChecked();
     if (!panel->sceneDirEdit->text().trimmed().isEmpty()) {
@@ -1328,6 +1477,13 @@ void OpenPCDetDialog::appendLog(const QString& msg) {
 #ifdef AICore_ENABLED
     aicore_inference_log::log(msg);
 #endif
+}
+
+void OpenPCDetDialog::appendDebug(const QString& msg) {
+    // Debug-level console route: routine inference chatter (model/scene
+    // details, stage progress) stays visible only when debug logging is
+    // enabled, keeping the shared application console readable.
+    CVLog::PrintDebug(msg);
 }
 
 void OpenPCDetDialog::setProgress(int current, int total) {

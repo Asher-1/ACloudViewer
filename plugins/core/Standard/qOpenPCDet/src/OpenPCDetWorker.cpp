@@ -89,7 +89,50 @@ bool fillResult(aicore_openpcdet_ctx* ctx,
 OpenPCDetWorker::OpenPCDetWorker(const Settings& settings,
                                  ccPointCloud* cloud,
                                  QObject* parent)
-    : QThread(parent), m_settings(settings), m_cloud(cloud) {}
+    : QThread(parent), m_settings(settings) {
+    // Value snapshot on the creating (main) thread: after this constructor
+    // returns the worker never dereferences the DB cloud, so the user may
+    // edit or delete it while the run is queued or in flight.
+    if (!cloud || cloud->size() == 0) return;
+    const unsigned n = cloud->size();
+    m_snapshot.valid = true;
+    m_snapshot.name = cloud->getName();
+    m_snapshot.xyz.reserve(static_cast<size_t>(n) * 3);
+    for (unsigned i = 0; i < n; ++i) {
+        const CCVector3* p = cloud->getPoint(i);
+        m_snapshot.xyz.push_back(static_cast<float>(p->x));
+        m_snapshot.xyz.push_back(static_cast<float>(p->y));
+        m_snapshot.xyz.push_back(static_cast<float>(p->z));
+    }
+    const unsigned sfCount = cloud->getNumberOfScalarFields();
+    for (unsigned i = 0; i < sfCount; ++i) {
+        const char* name = cloud->getScalarFieldName(static_cast<int>(i));
+        cloudViewer::ScalarField* sf =
+                name ? cloud->getScalarField(static_cast<int>(i)) : nullptr;
+        if (!sf || static_cast<int>(sf->size()) < static_cast<int>(n)) {
+            continue;
+        }
+        const QString qname = QString::fromUtf8(name);
+        if (m_snapshot.intensity.empty() && isIntensityFieldName(qname)) {
+            m_snapshot.intensity.resize(n);
+            for (unsigned r = 0; r < n; ++r) {
+                m_snapshot.intensity[r] =
+                        static_cast<float>(sf->getValue(r));
+            }
+        } else if (m_snapshot.feature4.empty() &&
+                   qname == QStringLiteral("OpenPCDet feature 4")) {
+            m_snapshot.feature4.resize(n);
+            for (unsigned r = 0; r < n; ++r) {
+                m_snapshot.feature4[r] = static_cast<float>(sf->getValue(r));
+            }
+        }
+    }
+    m_snapshot.globalScale = cloud->getGlobalScale();
+    const CCVector3d& shift = cloud->getGlobalShift();
+    m_snapshot.globalShiftX = shift.x;
+    m_snapshot.globalShiftY = shift.y;
+    m_snapshot.globalShiftZ = shift.z;
+}
 
 OpenPCDetWorker::~OpenPCDetWorker() {
     // onTaskFinished deleteLater()s the worker from a queued slot while
@@ -135,7 +178,7 @@ bool OpenPCDetWorker::runInference() {
         return false;
     }
     if (qtCompatLoadRelaxed(m_cancelRequested) != 0) {
-        emit logMessage(tr("[OpenPCDet] Cancelled before inference."));
+        emit debugMessage(tr("[OpenPCDet] Cancelled before inference."));
         return false;
     }
 
@@ -147,24 +190,31 @@ bool OpenPCDetWorker::runInference() {
     aicore_openpcdet_options_set_device(opts,
                                         m_settings.device.toUtf8().constData());
     aicore_openpcdet_options_set_threads(opts, m_settings.threads);
-    if (m_settings.scoreThresh > 0.0f) {
-        aicore_openpcdet_options_set_score_thresh(opts, m_settings.scoreThresh);
-        emit logMessage(tr("[OpenPCDet] Score threshold override: %1")
-                                .arg(m_settings.scoreThresh, 0, 'f', 2));
-    }
-    if (m_settings.nmsThresh > 0.0f) {
+    // Threshold override resolution: thresholdsExplicit callers own their
+    // values verbatim (0 = a legal explicit threshold, NOT "follow model").
+    // Without the flag the legacy <=0 sentinels keep working so existing
+    // dialogs and the batch command behave unchanged; the sentinel fallback
+    // dies once the UI ships the default/override tri-state.
+    const bool explicitThresholds =
+            m_settings.thresholdsExplicit || m_settings.scoreThresh > 0.0f ||
+            m_settings.nmsThresh > 0.0f || m_settings.maxBoxes > 0;
+    if (explicitThresholds) {
+        aicore_openpcdet_options_set_score_thresh(opts,
+                                                  m_settings.scoreThresh);
+        emit debugMessage(tr("[OpenPCDet] Score threshold override: %1")
+                                  .arg(m_settings.scoreThresh, 0, 'f', 2));
         aicore_openpcdet_options_set_nms_thresh(opts, m_settings.nmsThresh);
-        emit logMessage(tr("[OpenPCDet] NMS IoU override: %1")
-                                .arg(m_settings.nmsThresh, 0, 'f', 2));
-    }
-    if (m_settings.maxBoxes > 0) {
-        aicore_openpcdet_options_set_max_boxes(opts, m_settings.maxBoxes);
+        emit debugMessage(tr("[OpenPCDet] NMS IoU override: %1")
+                                  .arg(m_settings.nmsThresh, 0, 'f', 2));
+        if (m_settings.maxBoxes > 0) {
+            aicore_openpcdet_options_set_max_boxes(opts, m_settings.maxBoxes);
+        }
     }
 
-    emit logMessage(tr("[OpenPCDet] Loading model: %1 (device=%2, threads=%3)")
-                            .arg(QFileInfo(m_settings.modelPath).fileName(),
-                                 m_settings.device)
-                            .arg(m_settings.threads));
+    emit debugMessage(tr("[OpenPCDet] Loading model: %1 (device=%2, threads=%3)")
+                              .arg(QFileInfo(m_settings.modelPath).fileName(),
+                                   m_settings.device)
+                              .arg(m_settings.threads));
     emit progressUpdate(0, 4);
 
     m_pendingCtx = aicore_openpcdet_load_opts(
@@ -180,7 +230,7 @@ bool OpenPCDetWorker::runInference() {
         return false;
     }
     if (qtCompatLoadRelaxed(m_cancelRequested) != 0) {
-        emit logMessage(tr("[OpenPCDet] Cancelled after model load."));
+        emit debugMessage(tr("[OpenPCDet] Cancelled after model load."));
         return false;
     }
 
@@ -189,17 +239,17 @@ bool OpenPCDetWorker::runInference() {
         emit logMessage(tr("[OpenPCDet] Cannot read the model geometry."));
         return false;
     }
-    emit logMessage(tr("[OpenPCDet] Model ready: arch=%1, classes=%2, "
-                       "point features=%3, grid=%4x%5x%6, voxel=(%7, %8, %9)")
-                            .arg(QString::fromUtf8(geometry.arch))
-                            .arg(geometry.num_class)
-                            .arg(geometry.num_point_features)
-                            .arg(geometry.grid_size_x)
-                            .arg(geometry.grid_size_y)
-                            .arg(geometry.grid_size_z)
-                            .arg(geometry.voxel_size_x, 0, 'f', 2)
-                            .arg(geometry.voxel_size_y, 0, 'f', 2)
-                            .arg(geometry.voxel_size_z, 0, 'f', 2));
+    emit debugMessage(tr("[OpenPCDet] Model ready: arch=%1, classes=%2, "
+                         "point features=%3, grid=%4x%5x%6, voxel=(%7, %8, %9)")
+                              .arg(QString::fromUtf8(geometry.arch))
+                              .arg(geometry.num_class)
+                              .arg(geometry.num_point_features)
+                              .arg(geometry.grid_size_x)
+                              .arg(geometry.grid_size_y)
+                              .arg(geometry.grid_size_z)
+                              .arg(geometry.voxel_size_x, 0, 'f', 2)
+                              .arg(geometry.voxel_size_y, 0, 'f', 2)
+                              .arg(geometry.voxel_size_z, 0, 'f', 2));
     emit progressUpdate(1, 4);
 
     // ---- Input routing: scene dir / point file / active cloud -------------
@@ -230,29 +280,49 @@ bool OpenPCDetWorker::runInference() {
             return false;
         }
         havePoints = true;
-        emit logMessage(
+        emit debugMessage(
                 tr("[OpenPCDet] Loaded %1 point(s) from %2")
                         .arg(nPoints)
                         .arg(QFileInfo(m_settings.pointsFile).fileName()));
-    } else if (m_cloud && m_cloud->size() > 0) {
+    } else if (m_snapshot.valid) {
         if (geometry.num_point_features >= 4 &&
-            !cloudHasIntensityField(m_cloud)) {
-            emit logMessage(
+            m_snapshot.intensity.empty()) {
+            emit debugMessage(
                     tr("[OpenPCDet] No intensity scalar field found — "
                        "the 4th point feature is filled with 0."));
         }
         if (geometry.num_point_features == 5) {
             // nuScenes checkpoints expect [x, y, z, intensity, ring/velocity];
-            // the ring/velocity channel is not carried by ccPointCloud scalar
-            // fields, so it is zero-filled.
-            emit logMessage(
-                    tr("[OpenPCDet] 5-feature (nuScenes) model: the "
-                       "5th point feature is filled with 0."));
+            // the ring/velocity channel rides the "OpenPCDet feature 4"
+            // scalar field when the input carries one (the sample-fill path
+            // writes it), else it stays zero-filled.
+            emit debugMessage(
+                    tr("[OpenPCDet] 5-feature (nuScenes) model: the 5th "
+                       "point feature uses the 'OpenPCDet feature 4' scalar "
+                       "field when present, else 0."));
         }
-        if (!extractCloudPoints(m_cloud, geometry.num_point_features, &points,
-                                &nPoints, &error)) {
+        if (!extractSnapshotPoints(geometry.num_point_features, &points,
+                                   &nPoints, &error)) {
             emit logMessage(tr("[OpenPCDet] %1").arg(error));
             return false;
+        }
+        // Lift the stored local coordinates into the original LiDAR frame
+        // (ecvShiftedObject: Pglobal = Plocal/scale - shift) so the engine
+        // sees the metric frame it was trained on; consumers back-project
+        // the boxes with Plocal = (Pglobal + shift) * scale.
+        if (m_snapshot.globalScale != 1.0 || m_snapshot.globalShiftX != 0.0 ||
+            m_snapshot.globalShiftY != 0.0 || m_snapshot.globalShiftZ != 0.0) {
+            for (int i = 0; i < nPoints; ++i) {
+                float* row = points.data() +
+                             static_cast<size_t>(i) *
+                                     geometry.num_point_features;
+                row[0] = static_cast<float>(row[0] / m_snapshot.globalScale -
+                                            m_snapshot.globalShiftX);
+                row[1] = static_cast<float>(row[1] / m_snapshot.globalScale -
+                                            m_snapshot.globalShiftY);
+                row[2] = static_cast<float>(row[2] / m_snapshot.globalScale -
+                                            m_snapshot.globalShiftZ);
+            }
         }
         havePoints = true;
     }
@@ -263,20 +333,31 @@ bool OpenPCDetWorker::runInference() {
         return false;
     }
     if (qtCompatLoadRelaxed(m_cancelRequested) != 0) {
-        emit logMessage(tr("[OpenPCDet] Cancelled after point extraction."));
+        emit debugMessage(tr("[OpenPCDet] Cancelled after point extraction."));
         return false;
     }
     emit progressUpdate(2, 4);
 
     OpenPCDetRunResult result;
+    // Frame facts for the consumers (DbExport back-projection + metadata):
+    // identity for file inputs and unshifted clouds.
+    if (m_snapshot.valid &&
+        (m_snapshot.globalScale != 1.0 || m_snapshot.globalShiftX != 0.0 ||
+         m_snapshot.globalShiftY != 0.0 || m_snapshot.globalShiftZ != 0.0)) {
+        result.inputInLiDARFrame = true;
+        result.globalScale = m_snapshot.globalScale;
+        result.globalShiftX = m_snapshot.globalShiftX;
+        result.globalShiftY = m_snapshot.globalShiftY;
+        result.globalShiftZ = m_snapshot.globalShiftZ;
+    }
     result.modelPath = m_settings.modelPath;
     result.sourceLabel =
             sceneRun ? QFileInfo(m_settings.sceneDir).fileName()
                      : (!m_settings.pointsFile.isEmpty()
                                 ? QFileInfo(m_settings.pointsFile)
                                           .completeBaseName()
-                                : (m_cloud ? m_cloud->getName()
-                                           : QStringLiteral("input")));
+                                : (m_snapshot.valid ? m_snapshot.name
+                                                    : QStringLiteral("input")));
     if (sceneRun) {
         // Owned scene buffers come from aicore_openpcdet_load_scene_dir; the
         // point buffer (when available) stays caller-owned.
@@ -297,14 +378,14 @@ bool OpenPCDetWorker::runInference() {
             scene.n_points = static_cast<int32_t>(nPoints);
             scene.point_dim = static_cast<int32_t>(geometry.num_point_features);
         }
-        emit logMessage(tr("[OpenPCDet] Scene ready: %1 camera(s), %2x%3x%4")
-                                .arg(scene.num_cameras)
-                                .arg(scene.image_height)
-                                .arg(scene.image_width)
-                                .arg(scene.image_channels));
+        emit debugMessage(tr("[OpenPCDet] Scene ready: %1 camera(s), %2x%3x%4")
+                                  .arg(scene.num_cameras)
+                                  .arg(scene.image_height)
+                                  .arg(scene.image_width)
+                                  .arg(scene.image_channels));
         if (qtCompatLoadRelaxed(m_cancelRequested) != 0) {
             aicore_openpcdet_free_scene(&scene);
-            emit logMessage(tr("[OpenPCDet] Cancelled before inference."));
+            emit debugMessage(tr("[OpenPCDet] Cancelled before inference."));
             return false;
         }
         emit progressUpdate(3, 4);
@@ -434,6 +515,43 @@ bool OpenPCDetWorker::loadPointsFile(const QString& path,
                                             error);
 }
 
+bool OpenPCDetWorker::extractSnapshotPoints(int expectedDim,
+                                            std::vector<float>* outPoints,
+                                            int* outCount,
+                                            QString* error) {
+    const CloudSnapshot& snap = m_snapshot;
+    if (!snap.valid || snap.xyz.empty()) {
+        *error = tr("The point cloud is empty");
+        return false;
+    }
+    if (expectedDim < 3) {
+        *error = tr("Model expects %1 point features (minimum is 3)")
+                         .arg(expectedDim);
+        return false;
+    }
+    const int n = static_cast<int>(snap.xyz.size() / 3);
+    // O(n * dim) assembly from the snapshot; large georeferenced clouds pay
+    // one extra pass for the frame lift (see runInference).
+    outPoints->assign(static_cast<size_t>(n) *
+                              static_cast<size_t>(expectedDim),
+                      0.0f);
+    for (int i = 0; i < n; ++i) {
+        float* row = outPoints->data() +
+                     static_cast<size_t>(i) * expectedDim;
+        row[0] = snap.xyz[static_cast<size_t>(i) * 3 + 0];
+        row[1] = snap.xyz[static_cast<size_t>(i) * 3 + 1];
+        row[2] = snap.xyz[static_cast<size_t>(i) * 3 + 2];
+        if (expectedDim >= 4 && !snap.intensity.empty()) {
+            row[3] = snap.intensity[static_cast<size_t>(i)];
+        }
+        if (expectedDim >= 5 && !snap.feature4.empty()) {
+            row[4] = snap.feature4[static_cast<size_t>(i)];
+        }
+    }
+    *outCount = n;
+    return true;
+}
+
 #endif  // AICore_ENABLED
 
 bool OpenPCDetWorker::cloudHasIntensityField(ccPointCloud* cloud) {
@@ -482,6 +600,26 @@ bool OpenPCDetWorker::extractCloudPoints(ccPointCloud* cloud,
         }
     }
 
+    // The 5th feature (nuScenes ring/velocity) rides the uniformly named
+    // "OpenPCDet feature 4" scalar field written by the sample-fill path;
+    // absent or mismatched fields keep the documented zero-fill fallback.
+    cloudViewer::ScalarField* feature4 = nullptr;
+    if (expectedDim >= 5) {
+        for (unsigned i = 0; i < sfCount; ++i) {
+            const char* name = cloud->getScalarFieldName(static_cast<int>(i));
+            if (name && QString::fromUtf8(name) ==
+                                QStringLiteral("OpenPCDet feature 4")) {
+                cloudViewer::ScalarField* sf =
+                        cloud->getScalarField(static_cast<int>(i));
+                if (sf && static_cast<int>(sf->size()) >=
+                                  static_cast<int>(cloud->size())) {
+                    feature4 = sf;
+                }
+                break;
+            }
+        }
+    }
+
     const unsigned n = cloud->size();
     outPoints->assign(static_cast<size_t>(n) * static_cast<size_t>(expectedDim),
                       0.0f);
@@ -494,8 +632,9 @@ bool OpenPCDetWorker::extractCloudPoints(ccPointCloud* cloud,
         if (expectedDim >= 4 && intensity) {
             row[3] = static_cast<float>(intensity->getValue(i));
         }
-        // Features beyond index 3 stay zero-filled (see run()'s nuScenes
-        // hint).
+        if (expectedDim >= 5 && feature4) {
+            row[4] = static_cast<float>(feature4->getValue(i));
+        }
     }
     *outCount = static_cast<int>(n);
     return true;

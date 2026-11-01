@@ -7,6 +7,8 @@
 
 #include "second.h"
 
+#include "common/debug_dump.hpp"
+
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -173,7 +175,7 @@ bool second::forward(const float *points,
     const hparams &hp = file.hp;
     detections.clear();
     // Debug-only wall-clock print (OPCPD_PROFILE): diagnostics only.
-    const bool profile = std::getenv("OPCPD_PROFILE") != nullptr;
+    const bool profile = aicore::debug::openpcdet_stage_profile_enabled();
     const auto t0 = std::chrono::high_resolution_clock::now();
     // CUDA-ext CenterHead chain: once the dense pipeline cache exists, the
     // sparse backbone HeightCompression writes the BEV straight into the

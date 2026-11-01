@@ -503,3 +503,131 @@ original performance FAIL is retained.
 Source configurations without a matching local AICore contract are intentionally
 not added to this table. Their exact families, including local VQA/VLM and
 Grounding, are tracked in [TODO.md](TODO.md).
+
+## Upstream `configs/auto_labeling` type coverage (source cd26942a)
+
+Derived mechanically from the 206 source YAML files (100 distinct `type`
+values) against the live AICore catalogs and this plugin's workers. A
+`type` is *wired* only when a public catalog publishes the matching GGUF
+weights and a worker consumes them. Composite `type`s compose
+already-published models or algorithms. Three model-reuse decisions
+(2026-11-01) close most of the former "missing" rows without any new
+conversion work:
+
+1. **YOLO reuse**: the published qYOLO catalog (yolo26/yolov8 det, seg,
+   pose, obb, semantic, classify, depth, world, YOLOE, reid, mclip bridge;
+   77 variants x f16/q8) is the supported YOLO model set. Upstream
+   configs naming other YOLO architectures are served by the catalog
+   equivalent; no new YOLO conversions are planned.
+2. **SAM reuse**: interactive segmentation is served by the SAM3/SAM2.1
+   catalog (point, box and text prompts). Upstream SAM variants
+   (`sam_hq`, `edge_sam`, `efficientvit_sam`, `sam_med2d`) share the same
+   result contract and are served by the catalog equivalent; text-prompted
+   segmentation (`grounding_sam`, `grounding_sam2`) maps to SAM3 text
+   mode. No new SAM conversions are planned.
+3. **Confirmed missing families**: local `grounding_dino`,
+   `dfine`/`dfine_seg` and `florence2` are the genuinely missing model
+   families. Each requires the full ladder — P0 first-party converter,
+   P1 task contract, P2 cpu/cuda/vulkan numeric gates, P3 picker entry —
+   because their architectures need operators outside the current ggml
+   set (deformable attention for the DETR families; the Florence-2
+   DaViT encoder plus its encoder-decoder language head).
+
+Summary: **25 wired, 28 composite, 4 remote/policy, 3 confirmed missing
+families, 40 served-by-equivalent (no conversion planned)**.
+
+### Wired through public AICore catalogs
+
+| Source type | Landing |
+|---|---|
+| `ram` | RAM/RAM++/Tag2Text catalog |
+| `rfdetr` | RF-DETR detection catalog |
+| `rfdetr_seg` | RF-DETR segmentation catalog |
+| `rmbg` | RMBG-2.0 catalog |
+| `scrfd` | FaceDetect (buffalo/SCRFD) catalog |
+| `segment_anything_2` | SAM 2.1 catalog |
+| `segment_anything_3` | SAM3 point/box/text catalog |
+| `yolo26`, `yolo26_obb`, `yolo26_pose`, `yolo26_seg` | yolo26 family rows in the yolo catalog |
+| `yoloe` | YOLOE text / prompt-free / SAVPE rows |
+| `yolov8`, `yolov8_seg`, `yolov8_cls` | yolov8 det/seg rows and the yolo26-cls image-classify contract |
+| `yolow` | YOLO-World text-prompted detection (world + CLIP towers) |
+| `ppocr_v4`, `ppocr_v5`, `ppocr_v6` | OCR recipes (published f32/f16/q8 families) |
+| `doclayout_yolo` | CDLA layout row in the OCR catalog |
+| `depth_anything`, `depth_anything_v2` | DA3 / nested AnyView depth catalog |
+| `pulc_attribute` | PULC attribute recipe (local F32) |
+| `segment_anything` | Interactive point/box segmentation served by the SAM3/SAM2.1 catalog |
+
+### Composite / algorithm types (no new model required)
+
+| Source type | Composition status |
+|---|---|
+| `botsort`, `bytetrack`, `tracktrack` | Tracking algorithms (yolo-track batch command and the video workflows) |
+| `grounding_sam`, `grounding_sam2` | Text-prompted segmentation via SAM3 text mode |
+| `yolov5_sam`, `yolov8_sam2`, `yolov5_ram`, `yolov5_resnet`, `yolow_ram` | Detection-to-SAM/RAM/classify compositions of published models |
+| `yolov5_sahi`, `yolov8_sahi`, `yolo26_sahi`, `yolo11_sahi` | SAHI-style tiled detection (SlicedDetection implemented) |
+| `yolov5_det_track`, `yolov8_det_track`, `yolo26_det_track`, `yolo11_det_track` and the obb/pose/seg `_track` variants | Detection + tracking over published models |
+| `segment_anything_2_video` | Video mask workflows (VideoSegmentExporter / video annotation); SAM2 video propagation specifics remain partial |
+
+### Remote / service / policy types
+
+| Source type | Status |
+|---|---|
+| `remote_server` | RemoteServerClient (upstream protocol) |
+| `grounding_dino_api` | Remote text-prompted detection API via the remote channel |
+| `open_vision` | Partial (remote channel exists; workflow details unfinished) |
+| `cuda` | Configuration placeholder, not a model |
+
+### Confirmed missing families (P0 converter, P1 task contract, P2 numeric gates, P3 picker)
+
+| Source type | Gap |
+|---|---|
+| `grounding_dino`, `groundingdino_swinb_cogcoor`, `groundingdino_swint_ogc` | Local text-prompted detector: BERT text tower plus a deformable-DETR head; needs the deformable-attention operator in ggml before conversion can be gated |
+| `dfine`, `dfine_seg` | D-FINE dense o2o detector; same deformable-attention prerequisite, then the P0-P3 ladder |
+| `florence2` | Local VLM: DaViT vision encoder with an encoder-decoder language head; libmtmd does not carry the architecture, so this is a first-party converter plus task contract, gated on the upstream framework checkpoints |
+
+### Served by catalog equivalent (no conversion planned)
+
+| Source type | Serving catalog row |
+|---|---|
+| `yolo11`, `yolo11_cls`, `yolo11_obb`, `yolo11_pose`, `yolo11_seg` and their `_track`/`_sahi` composites | yolo catalog equivalents (decision 1) |
+| `yolo12`, `yolov5` family (`yolov5`, `_cls`, `_obb`, `_seg`, `_pose`), `yolov6`, `yolov6_face`, `yolov7`, `yolov9`, `yolov10`, `yolox`, `yolox_dwpose`, `damo_yolo`, `gold_yolo`, `yolo_nas` | yolo catalog equivalents (decision 1) |
+| `rtdetr`, `rtdetrv2`, `u_rtdetr`, `rtmdet_pose`, `upn`, `rio_detr`, `deimv2` | detector/pose catalog equivalents (decision 1 scope; revisit only if a task needs their specific heads) |
+| `edge_sam`, `efficientvit_sam`, `sam_hq`, `sam_med2d` | SAM3/SAM2.1 catalog (decision 2) |
+| `internimage_cls`, `geco` | image-level classification contract served by the yolo26-cls catalog |
+| `cn_clip`, `bert` | text-encoder role served by the world/CLIP and mclip bridge towers |
+| `clrnet` | lane-specific head; served by the line/wireframe (DeepLSD) workflow until a lane task is gated |
+
+Each confirmed-missing row lands through the same gate ladder: P0
+first-party converter emitting GGUFs with pinned SHA-256 digests; P1 task
+contract (new task only when no existing public C ABI covers the result
+shape); P2 f16/q8 quantization plus the cpu/cuda/vulkan matrix through
+`validate_all` with task-specific numeric gates; P3 plugin picker entry.
+ONNX Runtime is not an AICore backend: ONNX exports are conversion
+inputs, not serving engines. There is deliberately no blanket "automatic
+PyTorch/ONNX to GGUF" switch — parity claims require per-task numeric
+gates against the upstream framework checkpoint.
+
+### Model hosting audit (catalog download URLs, 2026-11-01)
+
+| Host / repo | Catalog rows |
+|---|---|
+| HF `Asher-1/relateanything-ggml-full` | 24 |
+| HF `Asher-1/LoMa_GGUF` | 23 |
+| GitHub `Asher-1/cloudViewer_downloads` releases | 15 (incl. the yolo_gguf_models release: 77 yolo variants x 3 quantizations = 230 assets; OCR; depth; SAM3; GKD; DeepLSD; lingbot) |
+| HF `Asher-1/RAM_GGUF` | 9 |
+| HF `Asher-1/Trellis2-models` | 2 |
+| HF `Asher-1/SAM_3D_OBJECTS_GGUF` | 2 |
+| HF `Asher-1/InstantMesh-GUFF` | 2 |
+| HF `Asher-1/AnyCalib_GGUF` | 1 |
+| HF upstream repos (Qwen, ggml-org SmolVLM, maelic relsgg) | 4 |
+
+The cache/download interface is already uniform and repo-agnostic:
+every catalog row resolves through one shared downloader
+(`ecvModelDownloader` / `ecvAssetIntegrity`) into the task-owned folder
+under `CLOUDVIEWER_DATA_ROOT` with SHA-256 digest verification and
+`.cvintegrity` receipts; the plugin never sees the hosting backend.
+Migrating the GitHub-release assets to a new HuggingFace repo is a
+catalog-owner release action (upload + URL flip; digests are
+content-addressed, so flipping URLs cannot silently change weights),
+not a code change, and requires HF credentials this repository does
+not hold.

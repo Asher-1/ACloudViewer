@@ -1070,6 +1070,21 @@ inline bool qtCompatVariantIsMap(const QVariant& var) noexcept {
     return var.typeId() == QMetaType::QVariantMap;
 }
 
+/** True for every signed/unsigned integer variant width. JSON numbers
+ *  desynchronize across Qt versions: QJsonValue::toVariant() returns Double
+ *  on Qt5 but LongLong for integral values on Qt6, so integer-typed RPC
+ *  parameters must be accepted through this helper instead of an exact
+ *  Int/Double comparison (QtCompat owns the divergence, item 11). */
+inline bool qtCompatVariantIsIntegral(const QVariant& var) noexcept {
+    const QMetaType::Type id = static_cast<QMetaType::Type>(var.typeId());
+    return id == QMetaType::Int || id == QMetaType::UInt ||
+           id == QMetaType::LongLong || id == QMetaType::ULongLong ||
+           id == QMetaType::Short || id == QMetaType::UShort ||
+           id == QMetaType::Char || id == QMetaType::UChar ||
+           id == QMetaType::SChar || id == QMetaType::Long ||
+           id == QMetaType::ULong;
+}
+
 #else
 // Qt5: Use type() and QVariant::Type
 using QtCompatVariantType = QVariant::Type;
@@ -1109,6 +1124,17 @@ inline bool qtCompatVariantIsList(const QVariant& var) noexcept {
 
 inline bool qtCompatVariantIsMap(const QVariant& var) noexcept {
     return var.type() == QVariant::Map;
+}
+
+/** True for every signed/unsigned integer variant width (see the Qt6
+ *  overload above): Qt5 keeps JSON integers as Double, but explicit
+ *  LongLong/ULongLong call sites must stay accepted on both branches.
+ *  QVariant::Type has no Long/ULong members on Qt5, so those widths do
+ *  not exist as distinct variant types here. */
+inline bool qtCompatVariantIsIntegral(const QVariant& var) noexcept {
+    const QVariant::Type type = var.type();
+    return type == QVariant::Int || type == QVariant::UInt ||
+           type == QVariant::LongLong || type == QVariant::ULongLong;
 }
 #endif
 
@@ -1161,6 +1187,26 @@ QSet<T> qtCompatQSetFromVector(const QVector<T>& vec) {
     QSet<T> result;
     result.reserve(vec.size());
     for (const T& item : vec) {
+        result.insert(item);
+    }
+    return result;
+#endif
+}
+
+// Helper to create QSet from a QList/QStringList (Qt5/Qt6 compatible).
+// Qt5.0-5.14 keeps QList and QVector as distinct classes, so the QVector
+// overload above does not accept a QStringList; this overload covers those
+// call sites with the same version split.
+template <typename T>
+QSet<T> qtCompatQSetFromList(const QList<T>& list) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    // Qt5.15+ and Qt6: Use iterator range constructor (QList IS QVector)
+    return QSet<T>(list.begin(), list.end());
+#else
+    // Qt5.0-5.14: Manual insertion (iterator range constructor not available)
+    QSet<T> result;
+    result.reserve(list.size());
+    for (const T& item : list) {
         result.insert(item);
     }
     return result;

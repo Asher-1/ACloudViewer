@@ -41,8 +41,11 @@ bool engine_backend::init(const std::string& device_req, int n_threads) {
                 device = gpu_lease_.device();
             }
         } else if (want != "auto" && want != "gpu") {
-            error = "requested device '" + device_req + "' not found";
+            // Set the diagnostic AFTER release(): release() tears resources
+            // down, but a failed init must still surface WHY (same ordering
+            // rule as model_file::open's save-error-across-close pattern).
             release();
+            error = "requested device '" + device_req + "' not found";
             return false;
         }
     }
@@ -53,8 +56,8 @@ bool engine_backend::init(const std::string& device_req, int n_threads) {
                                                             &cpu_error);
         be = cpu_lease_.handle();
         if (!be) {
-            error = "cpu backend init failed: " + cpu_error;
             release();
+            error = "cpu backend init failed: " + cpu_error;
             return false;
         }
         if (device.empty()) device = cpu_lease_.device();
@@ -62,8 +65,8 @@ bool engine_backend::init(const std::string& device_req, int n_threads) {
 
     galloc = ggml_gallocr_new(ggml_backend_get_default_buffer_type(be));
     if (!galloc) {
-        error = "graph allocator init failed";
         release();
+        error = "graph allocator init failed";
         return false;
     }
 

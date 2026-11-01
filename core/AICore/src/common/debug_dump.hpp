@@ -36,5 +36,13 @@ const char* savpe_mask_dump_path();
  *  rect diagnostics on stderr (off by default; the run is never affected). */
 bool savpe_debug_enabled();
 
+/** True when OPCPD_PROFILE is set: enables the OpenPCDet per-stage wall-clock
+ *  profiler on stderr (off by default; never affects any result value). */
+bool openpcdet_stage_profile_enabled();
+
+/** True when OPCPD_VFEDBG is set: enables the OpenPCDet CUDA VFE scatter
+ *  diagnostics on stderr (off by default; never affects any result value). */
+bool openpcdet_vfe_debug_enabled();
+
 }  // namespace debug
 }  // namespace aicore

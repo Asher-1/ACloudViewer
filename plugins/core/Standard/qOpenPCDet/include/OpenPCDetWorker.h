@@ -39,6 +39,12 @@ public:
         float nmsThresh = 0.0f;
         /** Maximum returned boxes; <= 0 keeps the GGUF value. */
         int maxBoxes = 0;
+        /** When true, score/nms/maxBoxes are EXPLICIT user overrides and are
+         *  passed to the C API verbatim — score/NMS 0 is a legal explicit
+         *  value and is no longer conflated with "follow the GGUF". When
+         *  false (the default), the legacy <=0-sentinel semantics apply so
+         *  existing dialogs and callers behave unchanged. */
+        bool thresholdsExplicit = false;
         /** Optional raw point file (.bin KITTI float32 / ASCII .txt). When
          *  set it takes precedence over the ccPointCloud input; parsed with
          *  OpenPCDetHelpers::parsePointsBin / parsePointsTxt — the exact
@@ -112,7 +118,11 @@ public:
     static bool cloudHasIntensityField(ccPointCloud* cloud);
 
 signals:
+    /** User-facing messages: errors and the final run summary. */
     void logMessage(const QString& msg);
+    /** Routine inference chatter (stage details, overrides, cancels);
+     *  routed to CVLog::PrintDebug so the console stays readable. */
+    void debugMessage(const QString& msg);
     void progressUpdate(int current, int total);
     void resultReady(const OpenPCDetRunResult& result);
     void taskFinished(bool success);
@@ -123,10 +133,31 @@ protected:
 private:
 #ifdef AICore_ENABLED
     bool runInference();
+    /** Assembles the [n, expectedDim] inference buffer from the
+     *  construction-time cloud snapshot (not the live DB entity). */
+    bool extractSnapshotPoints(int expectedDim,
+                               std::vector<float>* outPoints,
+                               int* outCount,
+                               QString* error);
 #endif
 
+    /** Value snapshot taken on the creating (main) thread: after the
+     *  constructor returns the worker never dereferences the DB cloud, so
+     *  the user may edit or delete it while a run is queued or in flight. */
+    struct CloudSnapshot {
+        bool valid = false;
+        QString name;
+        std::vector<float> xyz;       ///< [n,3] stored (local) coordinates
+        std::vector<float> intensity; ///< first intensity/reflectance SF
+        std::vector<float> feature4;  ///< "OpenPCDet feature 4" when present
+        double globalScale = 1.0;
+        double globalShiftX = 0.0;
+        double globalShiftY = 0.0;
+        double globalShiftZ = 0.0;
+    };
+
     Settings m_settings;
-    ccPointCloud* m_cloud = nullptr;
+    CloudSnapshot m_snapshot;
     struct aicore_openpcdet_ctx* m_pendingCtx = nullptr;
     QAtomicInt m_cancelRequested;
 };

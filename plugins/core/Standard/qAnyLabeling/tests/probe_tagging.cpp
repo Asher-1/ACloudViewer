@@ -12,6 +12,7 @@
 #include <cstdio>
 
 #include "AnnotationTagging.h"
+#include "QtCompat.h"
 
 int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
@@ -37,8 +38,9 @@ int main(int argc, char** argv) {
             const QStringList retained = filter == 2 || filter == 3
                                                  ? names.mid(0, 5)
                                                  : QStringList();
-            const QSet<QString> removed(deleted.cbegin(), deleted.cend());
-            const QSet<QString> kept(retained.cbegin(), retained.cend());
+            const QSet<QString> removed =
+                    qtCompatQSetFromList(deleted);
+            const QSet<QString> kept = qtCompatQSetFromList(retained);
             QJsonArray tags;
             QStringList values;
             for (const auto& name : names)

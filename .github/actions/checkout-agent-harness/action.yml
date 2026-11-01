@@ -6,9 +6,12 @@ runs:
     - uses: actions/checkout@v4
       with:
         repository: Asher-1/CLI-Anything
-        # This revision exposes exactly the native batch commands in this branch.
-        # Upgrade together with registry, whitelist, and installed-schema gates.
-        ref: deb805086583a51e76e7a1346e17fd954ff5c493
+        # Track the harness main branch tip: this source revision is updated
+        # alongside the harness, and the pairing gates (registry "ai list",
+        # aicore.batch whitelist, installed schema, catalog dump) run against
+        # whatever is checked out here, so any drift fails CI immediately
+        # instead of hiding behind a stale pin.
+        ref: main
         path: _cli-anything
         sparse-checkout: |
           acloudviewer/agent-harness

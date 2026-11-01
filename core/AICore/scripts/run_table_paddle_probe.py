@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import sys
 import tempfile
 
 import numpy as np
@@ -63,6 +64,17 @@ def run(args):
     if args.measurement_profile == 'release' and (
             args.backend == 'cpu' or args.warmups < 2 or args.runs < 10):
         raise ValueError("release requires GPU, two warmups and ten forwards")
+    # An unconfigured {reference:ocr_paddle} expands to an empty path.
+    # Path('') resolves to '.', which would fail as a PermissionError
+    # instead of the runner's skip contract, so exit 77 like every other
+    # consumer with an absent reference environment.
+    strict = args.measurement_profile == 'release'
+    gpu = args.backend != 'cpu'
+    selected_python = args.source_gpu_python if gpu else args.source_python
+    if selected_python is None or not Path(selected_python).is_file():
+        print("run_table_paddle_probe: independent Paddle reference "
+              "environment not configured, skipping", file=sys.stderr)
+        return dict(exit_code=77, backend=args.backend, skipped=True)
     scripts = Path(__file__).resolve().parent
     benchmark = scripts.parent / 'tools/bench_paddle_ocr_graph.py'
     dependencies = [Path(__file__), benchmark, args.probe,
@@ -91,10 +103,8 @@ def run(args):
     # each attempt's source tensors and dumps under its own receipt directory.
     fixture_dir = Path(tempfile.mkdtemp(prefix=args.report.stem + '.fixtures-',
                                       dir=args.report.parent))
-    strict = args.measurement_profile == 'release'
-    gpu = args.backend != 'cpu'
     device = 'cuda' if gpu else 'cpu'
-    python = args.source_gpu_python if gpu else args.source_python
+    python = selected_python
     if python is None:
         raise ValueError("GPU comparison requires the official CUDA Python environment")
     sources, references = [], []

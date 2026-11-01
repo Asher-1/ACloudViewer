@@ -34,10 +34,12 @@ struct AnnotationShape {
     // Display cache: the source paints masks as a binary silhouette filled
     // with the shape color at mask_opacity; the tinted image is rebuilt
     // only when the mask or color changes. It is display-only and never
-    // serialized.
+    // serialized. displayInstanceId backs the instance display mode the
+    // same way: assigned lazily by the canvas, never serialized.
     mutable QImage displaySilhouette;
     mutable quint64 displaySilhouetteSource = 0;
     mutable QColor displaySilhouetteColor;
+    mutable int displayInstanceId = -1;
 
     static AnnotationShape fromJson(const QJsonObject& object);
     QJsonObject toJson() const;
@@ -236,6 +238,12 @@ public:
     bool showDegrees() const { return m_showDegrees; }
     void setShowLinking(bool visible);
     bool showLinking() const { return m_showLinking; }
+    /** Source canvas display modes: label colors by label id (default),
+     *  instance assigns a stable per-shape hue, group colors by group_id,
+     *  and bitmap renders white shapes over black without the image. */
+    enum class DisplayMode { Label, Instance, Group, Bitmap };
+    void setDisplayMode(DisplayMode mode);
+    DisplayMode displayMode() const { return m_displayMode; }
     QRectF viewportImageRect();
     void navigateTo(const QPointF& imageRatio);
     bool brushEditing() const { return m_brushEditing; }
@@ -273,6 +281,12 @@ signals:
     void promptChanged();
     void viewChanged();
     void displayAdjustmentChanged();
+    void displayModeChanged(int mode);
+    /** Live creation measurements, matching the source show_shape /
+     *  show_line_length / show_circle_radius signals. */
+    void shapeMeasured(int height, int width, QPointF pos);
+    void lineMeasured(double length, QPointF pos);
+    void circleMeasured(double radius, QPointF pos);
 
 protected:
     void paintEvent(QPaintEvent*) override;
@@ -302,6 +316,22 @@ protected:
 private:
     QPointF toImage(const QPointF& point) const;
     QPointF clamp(const QPointF& point) const;
+    /** Shift-constrained square endpoint for rectangle/rotation creation,
+     *  bounded to the image like the source _constrain_rectangle_pos. */
+    QPointF constrainRectanglePos(const QPointF& point,
+                                  Qt::KeyboardModifiers modifiers) const;
+    /** Display color for instance/group modes; assigns a stable instance id
+     *  on first use (display-only, like the silhouette caches). */
+    QColor displayOverrideColor(const AnnotationShape& shape) const;
+    /** Interactive-paint line color: effectiveLineColor with the instance/
+     *  group display override applied (exports stay label-colored). */
+    QColor paintColor(const AnnotationShape& shape, bool selected) const;
+    /** Binary-mask display pass: white shapes over black, no image. */
+    void paintBitmapShapes(QPainter& painter) const;
+    /** Live creation endpoint update shared by mouse moves and the Shift
+     *  press/release resync. */
+    void updateCreatingShape(const QPointF& rawPoint,
+                             Qt::KeyboardModifiers modifiers);
     void updateTransform();
     void finishShape();
     void cancelShape();
@@ -340,6 +370,12 @@ private:
     bool m_rotating = false;
     bool m_panning = false;
     bool m_spaceHeld = false;
+    // Right-button panning while drawing: arm on press, pan after the drag
+    // threshold, and treat a release without movement as the create-mode
+    // right click.
+    QPointF m_rightPanStart;
+    bool m_rightPanArmed = false;
+    bool m_rightPanning = false;
     bool m_creating = false;
     AnnotationPrompt m_prompt;
     bool m_promptBoxDragging = false;
@@ -423,6 +459,8 @@ private:
     bool m_showLinking = true;
     int m_shapeOpacity = 100;
     int m_maskOpacity = 80;
+    DisplayMode m_displayMode = DisplayMode::Label;
+    mutable int m_nextInstanceId = 0;
     int m_brightness = 50;
     int m_contrast = 50;
     QImage m_displayImage;

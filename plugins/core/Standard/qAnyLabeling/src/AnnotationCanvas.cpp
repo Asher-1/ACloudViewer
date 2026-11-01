@@ -8,6 +8,7 @@
 #include "AnnotationCanvas.h"
 
 #include <QBuffer>
+#include <QApplication>
 #include <QHash>
 #include <QJsonArray>
 #include <QKeyEvent>
@@ -400,6 +401,48 @@ QPointF rotated(const QPointF& point, const QPointF& center, double radians) {
     const QPointF delta = point - center;
     return center + QPointF(c * delta.x() - s * delta.y(),
                             s * delta.x() + c * delta.y());
+}
+
+// zlib.crc32 replacement for the group display-mode hue, so the same
+// group id maps to the same hue as the source without linking zlib here.
+quint32 annotationCrc32(const QByteArray& data) {
+    quint32 crc = 0xFFFFFFFFu;
+    for (int index = 0; index < data.size(); ++index) {
+        crc ^= quint32(uchar(data.at(index)));
+        for (int bit = 0; bit < 8; ++bit)
+            crc = (crc >> 1) ^ (0xEDB88320u & (0u - (crc & 1u)));
+    }
+    return ~crc;
+}
+
+// Andrew monotone chain hull for the bitmap-mode cuboid silhouette.
+QVector<QPointF> annotationConvexHull(QVector<QPointF> points) {
+    std::sort(points.begin(), points.end(), [](const QPointF& a, const QPointF& b) {
+        return a.x() < b.x() || (a.x() == b.x() && a.y() < b.y());
+    });
+    const auto cross = [](const QPointF& o, const QPointF& a,
+                          const QPointF& b) {
+        return (a.x() - o.x()) * (b.y() - o.y()) -
+               (a.y() - o.y()) * (b.x() - o.x());
+    };
+    QVector<QPointF> hull;
+    hull.reserve(2 * points.size());
+    for (const QPointF& point : points) {
+        while (hull.size() >= 2 &&
+               cross(hull[hull.size() - 2], hull.last(), point) <= 0)
+            hull.removeLast();
+        hull.append(point);
+    }
+    const int lower = hull.size() + 1;
+    for (int index = points.size() - 2; index >= 0; --index) {
+        const QPointF& point = points[index];
+        while (hull.size() >= lower &&
+               cross(hull[hull.size() - 2], hull.last(), point) <= 0)
+            hull.removeLast();
+        hull.append(point);
+    }
+    if (!hull.isEmpty()) hull.removeLast();
+    return hull;
 }
 
 double dot(const QPointF& a, const QPointF& b) {
@@ -1545,6 +1588,89 @@ void AnnotationCanvas::setShowLinking(bool visible) {
     update();
 }
 
+void AnnotationCanvas::setDisplayMode(DisplayMode mode) {
+    if (m_displayMode == mode) return;
+    m_displayMode = mode;
+    update();
+    emit displayModeChanged(int(mode));
+}
+
+QColor AnnotationCanvas::displayOverrideColor(
+        const AnnotationShape& shape) const {
+    quint32 colorId = 0;
+    const QJsonValue group = shape.extra.value(QStringLiteral("group_id"));
+    if (m_displayMode == DisplayMode::Group && group.isDouble()) {
+        // Source: zlib.crc32(str(group_id).encode("utf-8")).
+        colorId = annotationCrc32(QByteArray::number(group.toInt()));
+    } else {
+        if (shape.displayInstanceId < 0)
+            shape.displayInstanceId = m_nextInstanceId++;
+        colorId = quint32(shape.displayInstanceId);
+    }
+    const double hue =
+            std::fmod(double(colorId) * 0.61803398875, 1.0);
+    return QColor::fromHsvF(hue, 0.7, 1.0);
+}
+
+QColor AnnotationCanvas::paintColor(const AnnotationShape& shape,
+                                    bool selected) const {
+    const QColor base = effectiveLineColor(shape, selected);
+    if (m_displayMode != DisplayMode::Instance &&
+        m_displayMode != DisplayMode::Group)
+        return base;
+    QColor override = displayOverrideColor(shape);
+    override.setAlpha(base.alpha());
+    return override;
+}
+
+QPointF AnnotationCanvas::constrainRectanglePos(
+        const QPointF& point, Qt::KeyboardModifiers modifiers) const {
+    if (!(modifiers & Qt::ShiftModifier)) return point;
+    const QPointF anchor = m_start;
+    const double dx = point.x() - anchor.x();
+    const double dy = point.y() - anchor.y();
+    double side = std::max(std::abs(dx), std::abs(dy));
+    // Bound the square to the image edges; the anchor is always inside the
+    // clamped drawing area.
+    side = std::min(side, dx >= 0 ? double(m_image.width()) - anchor.x()
+                                   : anchor.x());
+    side = std::min(side, dy >= 0 ? double(m_image.height()) - anchor.y()
+                                   : anchor.y());
+    side = std::max(side, 0.0);
+    return anchor + QPointF(dx >= 0 ? side : -side, dy >= 0 ? side : -side);
+}
+
+void AnnotationCanvas::updateCreatingShape(
+        const QPointF& rawPoint, Qt::KeyboardModifiers modifiers) {
+    AnnotationShape& shape = m_shapes.last();
+    const bool boxed = shape.type == QStringLiteral("rectangle") ||
+                       shape.type == QStringLiteral("rotation") ||
+                       shape.type == QStringLiteral("cuboid");
+    if (boxed) {
+        const QPointF point = constrainRectanglePos(rawPoint, modifiers);
+        shape.points = rectanglePoints(m_start, point);
+        if (shape.type == QStringLiteral("cuboid")) {
+            QPointF offset = m_cuboidDepthVector;
+            const double depth = std::hypot(offset.x(), offset.y());
+            if (depth < m_cuboidMinDepth && depth > 1e-6)
+                offset *= m_cuboidMinDepth / depth;
+            else if (depth <= 1e-6)
+                offset = QPointF(std::max(0.0, m_cuboidMinDepth), 0.0);
+            for (int i = 0; i < 4; ++i)
+                shape.points.append(shape.points[i] + offset);
+        }
+        const QRectF bounds =
+                QRectF(shape.points.first(), shape.points[2]).normalized();
+        emit shapeMeasured(int(bounds.height()), int(bounds.width()), point);
+        return;
+    }
+    shape.points = {m_start, rawPoint};
+    if (shape.type == QStringLiteral("circle"))
+        emit circleMeasured(QLineF(m_start, rawPoint).length(), rawPoint);
+    else if (shape.type == QStringLiteral("line"))
+        emit lineMeasured(QLineF(m_start, rawPoint).length(), rawPoint);
+}
+
 QRectF AnnotationCanvas::viewportImageRect() {
     if (m_image.isNull()) return QRectF();
     updateTransform();
@@ -1599,6 +1725,58 @@ QPointF AnnotationCanvas::clamp(const QPointF& point) const {
             std::max(0.0, std::min(double(m_image.height()), point.y())));
 }
 
+void AnnotationCanvas::paintBitmapShapes(QPainter& painter) const {
+    painter.save();
+    painter.translate(m_origin);
+    painter.scale(m_scale, m_scale);
+    painter.setRenderHint(QPainter::Antialiasing, false);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
+    painter.setOpacity(1.0);
+    const QRectF imageRect(0, 0, m_image.width(), m_image.height());
+    painter.setClipRect(imageRect);
+    painter.fillRect(imageRect, Qt::black);
+    const auto drawShape = [this, &painter](const AnnotationShape& shape) {
+        if (!shape.visible ||
+            (shape.points.isEmpty() && shape.mask.isNull()))
+            return;
+        if (!shape.mask.isNull()) {
+            painter.drawImage(QPointF(0, 0),
+                              shapeSilhouette(shape, QColor(Qt::white)));
+            return;
+        }
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QBrush(Qt::white));
+        if (shape.type == QStringLiteral("point") && !shape.points.isEmpty()) {
+            const double radius = m_shapePointSize / 2.0;
+            painter.drawEllipse(shape.points.first(), radius, radius);
+        } else if (shape.type == QStringLiteral("line") ||
+                   shape.type == QStringLiteral("linestrip")) {
+            painter.setPen(QPen(Qt::white, m_shapeLineWidth));
+            painter.setBrush(Qt::NoBrush);
+            painter.drawPolyline(QPolygonF(shape.points));
+        } else if ((shape.type == QStringLiteral("rectangle") ||
+                    shape.type == QStringLiteral("rotation")) &&
+                   shape.points.size() >= 4) {
+            painter.drawPolygon(QPolygonF(shape.points.mid(0, 4)));
+        } else if (isCuboid(shape) && shape.points.size() >= 8) {
+            painter.drawPolygon(
+                    QPolygonF(annotationConvexHull(
+                            shape.points.mid(0, 8))));
+        } else {
+            QPainterPath path;
+            path.moveTo(shape.points.first());
+            for (int i = 1; i < shape.points.size(); ++i)
+                path.lineTo(shape.points[i]);
+            if (closedType(shape.type) && shape.points.size() > 2)
+                path.closeSubpath();
+            painter.drawPath(path);
+        }
+    };
+    for (const AnnotationShape& shape : m_shapes) drawShape(shape);
+    if (m_creating && !m_shapes.isEmpty()) drawShape(m_shapes.last());
+    painter.restore();
+}
+
 void AnnotationCanvas::paintEvent(QPaintEvent*) {
     QPainter painter(this);
     painter.fillRect(rect(), palette().color(QPalette::Window));
@@ -1624,6 +1802,11 @@ void AnnotationCanvas::paintEvent(QPaintEvent*) {
                 imageRect.left() + imageRect.width() * m_compareSplit;
         painter.drawLine(QPointF(divider, imageRect.top()),
                          QPointF(divider, imageRect.bottom()));
+    }
+    if (m_displayMode == DisplayMode::Bitmap) {
+        paintBitmapShapes(painter);
+        painter.end();
+        return;
     }
     painter.save();
     painter.translate(m_origin);
@@ -1729,7 +1912,7 @@ void AnnotationCanvas::paintEvent(QPaintEvent*) {
             if (!shape.visible || (m_brushEditing && index == m_brushTarget))
                 continue;
             drawGeometryMask(painter, shape,
-                             effectiveLineColor(shape, selected),
+                             paintColor(shape, selected),
                              m_shapeLineWidth / m_scale, m_maskOpacity,
                              !(m_dragging && selected));
         }
@@ -1741,19 +1924,19 @@ void AnnotationCanvas::paintEvent(QPaintEvent*) {
         const bool selected = m_selectedIndices.contains(index);
         if (m_brushEditing && index == m_brushTarget) {
             if (m_showMasks)
-                drawMask(m_brushMask, effectiveLineColor(shape, selected));
+                drawMask(m_brushMask, paintColor(shape, selected));
             continue;
         }
         if (m_showMasks && !shape.mask.isNull())
-            drawMask(shape.mask, effectiveLineColor(shape, selected), &shape);
+            drawMask(shape.mask, paintColor(shape, selected), &shape);
         if (m_showShapes && !shape.points.isEmpty()) {
-            const QColor line = effectiveLineColor(shape, selected);
+            const QColor line = paintColor(shape, selected);
             QPen pen = annotationOutlinePen(shape, line, m_shapeLineWidth);
             pen.setWidthF((selected ? std::max(2.5, m_shapeLineWidth)
                                     : m_shapeLineWidth) /
                           m_scale);
             painter.setPen(pen);
-            QColor fill = effectiveLineColor(shape, false);
+            QColor fill = paintColor(shape, false);
             fill.setAlpha(selected ? 155 : 128);
             if (selected &&
                 m_selectFillColor !=
@@ -1795,7 +1978,7 @@ void AnnotationCanvas::paintEvent(QPaintEvent*) {
                  shape.type == QStringLiteral("quadrilateral") ||
                  shape.type == QStringLiteral("line") ||
                  shape.type == QStringLiteral("linestrip"))) {
-                painter.setBrush(effectiveLineColor(shape, false));
+                painter.setBrush(paintColor(shape, false));
                 const int count = shape.type == QStringLiteral("linestrip")
                                           ? shape.points.size()
                                           : 1;
@@ -1830,8 +2013,7 @@ void AnnotationCanvas::paintEvent(QPaintEvent*) {
                                                                          "fill_"
                                                                          "colo"
                                                                          "r")
-                                                   ? effectiveLineColor(shape,
-                                                                        false)
+                                                   ? paintColor(shape, false)
                                                    : m_vertexFillColor));
                         const double radius =
                                 m_shapePointSize / (2.0 * m_scale);
@@ -2593,7 +2775,11 @@ void AnnotationCanvas::mousePressEvent(QMouseEvent* event) {
         return;
     }
     if (event->button() == Qt::RightButton && m_creating) {
-        finishShape();
+        // Source: the right button pans while drawing; the create-mode
+        // right click only fires on release without a drag.
+        m_rightPanStart = screenPoint;
+        m_rightPanArmed = true;
+        m_rightPanning = false;
         return;
     }
     if (event->button() != Qt::LeftButton) return;
@@ -2724,6 +2910,27 @@ void AnnotationCanvas::mousePressEvent(QMouseEvent* event) {
 
 void AnnotationCanvas::mouseMoveEvent(QMouseEvent* event) {
     if (m_image.isNull()) return;
+    if (m_rightPanArmed) {
+        if (event->buttons() & Qt::RightButton) {
+            const QPointF screen = qtCompatMouseEventPos(event);
+            if (!m_rightPanning) {
+                if ((screen - m_rightPanStart).manhattanLength() <
+                    QApplication::startDragDistance()) {
+                    event->accept();
+                    return;
+                }
+                m_rightPanning = true;
+                setCursor(Qt::ClosedHandCursor);
+            }
+            m_pan += screen - m_rightPanStart;
+            m_rightPanStart = screen;
+            emit viewChanged();
+            update();
+            event->accept();
+            return;
+        }
+        m_rightPanArmed = false;
+    }
     if (m_panning) {
         m_pan += qtCompatMouseEventPos(event) - m_panStart;
         m_panStart = qtCompatMouseEventPos(event);
@@ -2880,24 +3087,12 @@ void AnnotationCanvas::mouseMoveEvent(QMouseEvent* event) {
     } else if (m_creating && m_tool != QStringLiteral("polygon") &&
                m_tool != QStringLiteral("linestrip") &&
                m_tool != QStringLiteral("quadrilateral")) {
-        AnnotationShape& shape = m_shapes.last();
-        if (shape.type == QStringLiteral("rectangle") ||
-            shape.type == QStringLiteral("rotation") ||
-            shape.type == QStringLiteral("cuboid")) {
-            shape.points = rectanglePoints(m_start, point);
-            if (shape.type == QStringLiteral("cuboid")) {
-                QPointF offset = m_cuboidDepthVector;
-                const double depth = std::hypot(offset.x(), offset.y());
-                if (depth < m_cuboidMinDepth && depth > 1e-6)
-                    offset *= m_cuboidMinDepth / depth;
-                else if (depth <= 1e-6)
-                    offset = QPointF(std::max(0.0, m_cuboidMinDepth), 0.0);
-                for (int i = 0; i < 4; ++i)
-                    shape.points.append(shape.points[i] + offset);
-            }
-        } else
-            shape.points = {m_start, point};
+        updateCreatingShape(point, event->modifiers());
     }
+    if (m_creating && m_tool == QStringLiteral("linestrip") &&
+        !m_shapes.isEmpty() && !m_shapes.last().points.isEmpty())
+        emit lineMeasured(
+                QLineF(m_shapes.last().points.last(), point).length(), point);
     update();
 }
 
@@ -2926,6 +3121,20 @@ void AnnotationCanvas::mouseReleaseEvent(QMouseEvent* event) {
         m_panning = false;
         setCursor(Qt::ArrowCursor);
         return;
+    }
+    if (event->button() == Qt::RightButton && m_rightPanArmed) {
+        const bool wasClick = !m_rightPanning;
+        m_rightPanArmed = false;
+        m_rightPanning = false;
+        if (!wasClick) {
+            setCursor(m_tool == QStringLiteral("edit") ? Qt::ArrowCursor
+                                                       : Qt::CrossCursor);
+            return;  // the drag panned the view instead of clicking
+        }
+        if (m_creating) {
+            finishShape();
+            return;
+        }
     }
     if (event->button() != Qt::LeftButton) return;
     if (m_rotating) {
@@ -3090,6 +3299,16 @@ void AnnotationCanvas::keyPressEvent(QKeyEvent* event) {
         event->accept();
         return;
     }
+    if (event->key() == Qt::Key_Shift && !event->isAutoRepeat() &&
+        m_creating && !m_shapes.isEmpty() &&
+        (m_shapes.last().type == QStringLiteral("rectangle") ||
+         m_shapes.last().type == QStringLiteral("rotation"))) {
+        // Re-sync the live endpoint with the square constraint applied,
+        // matching the source modifier-press resync.
+        updateCreatingShape(m_hover, event->modifiers());
+        event->accept();
+        return;
+    }
     if (event->key() == Qt::Key_Escape) {
         if (m_creating)
             cancelShape();
@@ -3160,6 +3379,15 @@ void AnnotationCanvas::keyReleaseEvent(QKeyEvent* event) {
         if (!m_panning)
             setCursor(m_tool == QStringLiteral("edit") ? Qt::ArrowCursor
                                                        : Qt::CrossCursor);
+        event->accept();
+        return;
+    }
+    if (event->key() == Qt::Key_Shift && !event->isAutoRepeat() &&
+        m_creating && !m_shapes.isEmpty() &&
+        (m_shapes.last().type == QStringLiteral("rectangle") ||
+         m_shapes.last().type == QStringLiteral("rotation"))) {
+        // Recompute the live endpoint without the square constraint.
+        updateCreatingShape(m_hover, event->modifiers());
         event->accept();
         return;
     }

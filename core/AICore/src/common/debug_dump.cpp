@@ -25,5 +25,13 @@ bool savpe_debug_enabled() {
     return std::getenv("AICORE_SAVPE_DEBUG") != nullptr;
 }
 
+bool openpcdet_stage_profile_enabled() {
+    return std::getenv("OPCPD_PROFILE") != nullptr;
+}
+
+bool openpcdet_vfe_debug_enabled() {
+    return std::getenv("OPCPD_VFEDBG") != nullptr;
+}
+
 }  // namespace debug
 }  // namespace aicore

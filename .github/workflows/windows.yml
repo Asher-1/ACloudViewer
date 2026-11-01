@@ -516,6 +516,10 @@ jobs:
           
           Write-Host "C++ unit tests passed successfully."
       - name: Run qPythonRuntime native tests
+        # Same conditioning as the C++ unit tests above: Debug matrix entries
+        # run the env-setup steps only (build_win_app.ps1 is Release-only),
+        # so there is no build/CMakeCache.txt to inspect on Debug lanes.
+        if: ${{ matrix.CONFIG == 'Release' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'

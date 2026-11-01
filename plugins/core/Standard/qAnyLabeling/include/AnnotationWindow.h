@@ -107,6 +107,7 @@ private:
     void openChatbot();
     void openVqa();
     void openPointCloudAnnotation();
+    void runVlmDescribe();
     void saveCroppedImage();
     void saveVisualizationImage();
     void saveVisualizationVideo();
@@ -320,6 +321,8 @@ private:
     AnnotationWorker* m_worker = nullptr;
     class RemoteServerClient* m_remoteClient = nullptr;
     class RemoteServerDialog* m_remoteDialog = nullptr;
+    class ChatServiceClient* m_vlmDescribeClient = nullptr;
+    QAction* m_vlmDescribeAction = nullptr;
     QString m_remoteModelId;
     QString m_validateLabel;
     QString m_loggerLevel;

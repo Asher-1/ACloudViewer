@@ -24,7 +24,17 @@ and creation
 of polygon, rectangle, rotation, quadrilateral, circle, line, point, line
 strip, and cuboid geometry. Rotation has a drag handle; rectangle corner edits
 preserve right angles, and cuboid JSON includes the upstream `cuboid3d` depth
-metadata. The magic wand selects a seed-connected color region and converts it
+metadata. Rectangle and rotation creation hold Shift for a source-style square
+constraint bounded to the image, release or press of Shift re-syncs the live
+endpoint, and cuboid/rectangle/rotation drawing reports live width and height
+in the status bar; line/line-strip drawing reports segment length (and the
+line-strip total), circle drawing reports radius and circumference. The right
+button pans while drawing a shape and only finishes the shape when released
+without a drag. The main toolbar carries the source visualization toggles
+(masks, texts, labels, scores, degrees, attributes, linking, groups) and the
+exclusive display-mode group: color by label, color by instance, color by
+group, and the binary-mask render (white shapes over black). The magic wand
+selects a seed-connected color region and converts it
 to a polygon. Brush editing supports Paint/Erase/Invert, target class
 selection, Ctrl-held erase, `R` paint/erase switching, right-click exit,
 one-pixel wheel radius steps, stroke undo/redo, commit, and Escape
@@ -45,7 +55,15 @@ The plugin contributes one host action, **X-AnyLabeling Annotation**. Image,
 video, point-cloud and AI tools remain modes inside the opened workspace, so
 the host menu does not receive duplicate actions for each mode. The workspace
 File, Upload and Export menus follow the source action order and use the
-official qAnyLabeling icons. `Upload > Image Flags` imports a UTF-8 text
+official qAnyLabeling icons.
+One ACloudViewer-only annotation extension lives beside the source actions:
+**AI Describe** (Edit menu and the toolbar additions section) runs the local
+vision model of the public `llm` catalog (SmolVLM 500M Q8_0 by default; a
+downloaded vision row wins) on the current image through the shared
+verified-download pipeline and stores the caption as the image-level
+`description`, driving the same dirty/save flow as the RAM caption. The
+request runs on the LocalChatEngine worker thread; the toolbar action stays
+disabled while the client is busy. `Upload > Image Flags` imports a UTF-8 text
 template with one flag per line; the Flags dock is shown only after a template
 is loaded, and checked values are persisted in the image sidecar.
 The Label Change Manager (`Alt+L`) can rename, remove, hide, or recolor a
@@ -54,10 +72,11 @@ the compatible `acloudviewer_color` shape extension as RGBA values. Existing
 mask pixels change RGB only: per-pixel alpha, holes, and disconnected regions
 remain intact. Files with no actual changes are not rewritten.
 The image-tags strip below the canvas edits the ordered top-level `tags` array.
+It is visible by default (upstream v4.2.1 behavior; `Ctrl+Shift+T` hides it).
 It supports add (with the official `tag`, `tag1`, ... defaults), inline edit,
 Escape cancel, focus-out commit, multi-select/delete, batch-delete mode with
 selected-tag strike-through, copy-all, drag ordering, and `Ctrl+Shift+T`
-visibility. Opening a sidecar with tags shows the strip automatically; edits
+visibility. Edits
 enter the same atomic save flow as object annotations. Invalid, blank, and
 duplicate values are normalized before they are written.
 The File menu imports YOLO horizontal boxes, instance segments, oriented boxes,

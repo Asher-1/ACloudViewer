@@ -33,7 +33,7 @@ include(ExternalProject)
 
 set(SPIRULA_REPO_URL "https://github.com/harry7557558/spirula-studio"
         CACHE STRING "Spirula Studio repository the tag archive is fetched from")
-set(SPIRULA_TAG "v2026.10.6" CACHE STRING "Spirula Studio tag to build (sync = bump this)")
+set(SPIRULA_TAG "v2026.10.30" CACHE STRING "Spirula Studio tag to build (sync = bump this)")
 set(SPIRULA_SLANG_VERSION "2026.12.0.1" CACHE STRING
         "slang release version matching SPIRULA_TAG's pinned SS_SLANG_VERSION (bump together with the tag; only the Linux glibc-2.28 fallback below uses it)")
 set(SPIRULA_BACKEND "vulkan" CACHE STRING "Spirula compute backend: vulkan (release) | cuda (local only)")

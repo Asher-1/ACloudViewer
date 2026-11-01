@@ -87,7 +87,10 @@ JsonRPCResult JsonRPCPlugin::rpcAICoreBatch(
             *text = value.toBool() ? QStringLiteral("1") : QStringLiteral("0");
             return true;
         }
-        if (qtCompatVariantIsString(value) || qtCompatVariantIsInt(value) ||
+        // JSON integers arrive as Double on Qt5 but LongLong on Qt6;
+        // qtCompatVariantIsIntegral accepts every integer width so typed
+        // RPC options (e.g. "SEED": 42) never hit this boundary.
+        if (qtCompatVariantIsString(value) || qtCompatVariantIsIntegral(value) ||
             qtCompatVariantIsDouble(value)) {
             *text = value.toString();
             return true;

@@ -7,6 +7,7 @@
 
 #include "OpenPCDetDbExport.h"
 
+#include <CVLog.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
 
@@ -16,7 +17,9 @@
 ccHObject* BuildDetectionGroup(const OpenPCDetRunResult& result,
                                const QString& modelTag) {
     if (result.detections.isEmpty()) {
-        qDebug() << "[OpenPCDet] BuildDetectionGroup: empty detections";
+        CVLog::PrintDebug(
+                QStringLiteral("[OpenPCDet] BuildDetectionGroup: empty "
+                               "detections"));
         return nullptr;
     }
 
@@ -42,12 +45,41 @@ ccHObject* BuildDetectionGroup(const OpenPCDetRunResult& result,
         group->setMetaData(QStringLiteral("OpenPCDet/Source"),
                            result.sourceLabel);
     }
+    if (result.inputInLiDARFrame) {
+        // Traceability only: the geometry below is already back-projected
+        // into the displayed cloud's local frame, so these records must not
+        // be re-applied for display.
+        group->setMetaData(QStringLiteral("OpenPCDet/GlobalScale"),
+                           result.globalScale);
+        group->setMetaData(QStringLiteral("OpenPCDet/GlobalShift"),
+                           QStringLiteral("[%1,%2,%3]")
+                                   .arg(result.globalShiftX, 0, 'f', 3)
+                                   .arg(result.globalShiftY, 0, 'f', 3)
+                                   .arg(result.globalShiftZ, 0, 'f', 3));
+    }
 
     const std::vector<int> wire = OpenPCDetHelpers::boxWireIndices();
     for (int i = 0; i < result.detections.size(); ++i) {
         const OpenPCDetDetection& d = result.detections[i];
         float corners[24];
         OpenPCDetHelpers::boxCorners(d, corners);
+        if (result.inputInLiDARFrame) {
+            // Back-project the global-frame box into the displayed cloud's
+            // local frame: Plocal = (Pglobal + shift) * scale (ecvShifted
+            // Object convention, inverse of the worker's lift). Uniform
+            // scale, so sizes scale with the positions; heading is invariant.
+            for (int c = 0; c < 8; ++c) {
+                corners[3 * c + 0] = static_cast<float>(
+                        (corners[3 * c + 0] + result.globalShiftX) *
+                        result.globalScale);
+                corners[3 * c + 1] = static_cast<float>(
+                        (corners[3 * c + 1] + result.globalShiftY) *
+                        result.globalScale);
+                corners[3 * c + 2] = static_cast<float>(
+                        (corners[3 * c + 2] + result.globalShiftZ) *
+                        result.globalScale);
+            }
+        }
         const OpenPCDetHelpers::OpenPCDetClassColor cls =
                 OpenPCDetHelpers::classColor(d.label, result.numClass);
         const ecvColor::Rgb boxColor(cls.r, cls.g, cls.b);
@@ -90,8 +122,10 @@ ccHObject* BuildDetectionGroup(const OpenPCDetRunResult& result,
                          static_cast<double>(d.heading));
         group->addChild(box);
     }
-    qDebug() << "[OpenPCDet] BuildDetectionGroup:" << result.detections.size()
-             << "box(es) for" << modelTag;
+    CVLog::PrintDebug(QStringLiteral("[OpenPCDet] BuildDetectionGroup: %1 "
+                                     "box(es) for %2")
+                              .arg(result.detections.size())
+                              .arg(modelTag));
     return group;
 }
 
@@ -116,7 +150,18 @@ ccPointCloud* BuildAnnotatedCloud(ccPointCloud* source,
     }
 
     unsigned tinted = 0;
-    for (const OpenPCDetDetection& d : result.detections) {
+    for (const OpenPCDetDetection& d0 : result.detections) {
+        OpenPCDetDetection d = d0;
+        if (result.inputInLiDARFrame) {
+            // The source cloud stores local coordinates; compare and tint in
+            // that frame (Plocal = (Pglobal + shift) * scale).
+            d.x = static_cast<float>((d.x + result.globalShiftX) *
+                                     result.globalScale);
+            d.y = static_cast<float>((d.y + result.globalShiftY) *
+                                     result.globalScale);
+            d.z = static_cast<float>((d.z + result.globalShiftZ) *
+                                     result.globalScale);
+        }
         const float reachX = 0.5f * (d.dx + d.dy);
         const float reachY = reachX;
         const OpenPCDetHelpers::OpenPCDetClassColor cls =
@@ -135,8 +180,11 @@ ccPointCloud* BuildAnnotatedCloud(ccPointCloud* source,
         }
     }
     if (tintedOut) *tintedOut = tinted;
-    qDebug() << "[OpenPCDet] BuildAnnotatedCloud:" << tinted << "of"
-             << annotated->size() << "point(s) tinted (" << modelTag << ")";
+    CVLog::PrintDebug(QStringLiteral("[OpenPCDet] BuildAnnotatedCloud: %1 of "
+                                     "%2 point(s) tinted (%3)")
+                              .arg(tinted)
+                              .arg(annotated->size())
+                              .arg(modelTag));
 
     annotated->setName(
             QStringLiteral("OpenPCDet annotated (%1)").arg(modelTag));

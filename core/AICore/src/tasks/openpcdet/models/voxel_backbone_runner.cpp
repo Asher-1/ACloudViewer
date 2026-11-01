@@ -7,6 +7,8 @@
 
 #include "voxel_backbone_runner.h"
 
+#include "common/debug_dump.hpp"
+
 #include "../ops/voxelization.h"
 
 #ifdef AICORE_OPENPCDET_CUDA_EXT
@@ -31,7 +33,7 @@ namespace {
 // behavior. The public timing contract stays aicore_pipeline_timings.
 class stage_timer {
 public:
-    stage_timer() : active_(std::getenv("OPCPD_PROFILE") != nullptr) {}
+    stage_timer() : active_(aicore::debug::openpcdet_stage_profile_enabled()) {}
     void lap(const char *name) {
         if (!active_) return;
         const auto now = std::chrono::high_resolution_clock::now();

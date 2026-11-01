@@ -67,7 +67,7 @@ cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_chat)
 
 cloudviewer_add_plugin_test(test_qanylabeling_tagging
     SOURCES probe_tagging.cpp ${QAL_DIR}/qAnyLabeling.qrc
-    INCLUDES ${QAL_DIR}/include
+    INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/core/include
     LIBS Qt${QT_VERSION_MAJOR}::Widgets)
 add_test(NAME test_qanylabeling_tagging COMMAND test_qanylabeling_tagging)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_tagging)
@@ -83,7 +83,8 @@ cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_config)
 # Loads the real plugin .so through QPluginLoader and exercises the
 # workspace object graph (review-toast open-time-hidden contract included).
 cloudviewer_add_plugin_test(test_qanylabeling_plugin
-    SOURCES test_plugin.cpp
+    SOURCES test_plugin.cpp ../src/LocalChatEngine.cpp
+    INCLUDES ${CMAKE_CURRENT_LIST_DIR}/../include
     LIBS AICore CVPluginAPI CVPluginStub Qt${QT_VERSION_MAJOR}::Widgets)
 add_test(NAME test_qanylabeling_plugin
     COMMAND test_qanylabeling_plugin $<TARGET_FILE:QANYLABELING_PLUGIN>)

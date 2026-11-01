@@ -1,6 +1,179 @@
 # qAnyLabeling parity TODO
 
-## Fresh continuation (2026-10-29)
+## Continuation (2026-11-01, third session)
+
+### Model-reuse decisions, the local-VLM annotation feature, and text policy
+
+- [x] Model-scope decisions landed in MODEL_MATRIX.md (all English): (1)
+  the published qYOLO catalog is the supported YOLO model set — no new YOLO
+  conversions, upstream YOLO-architecture configs are served by the catalog
+  equivalents; (2) interactive segmentation is served by the SAM3/SAM2.1
+  catalog — the upstream SAM variants and grounding_sam composites map to
+  it; (3) the confirmed missing families are exactly local `grounding_dino`,
+  `dfine`/`dfine_seg` and `florence2`, each requiring the full P0 converter
+  → P1 task contract → P2 cpu/cuda/vulkan numeric gates → P3 picker ladder
+  (deformable attention / DaViT enc-dec operators are outside the current
+  ggml set). Coverage summary: 25 wired, 28 composite, 4 remote/policy,
+  3 confirmed missing, 40 served-by-equivalent.
+- [x] New ACloudViewer-only annotation feature **AI Describe**: one
+  toolbar/Edit-menu action runs the local vision model of the public llm
+  catalog on the current image and stores the caption as the image-level
+  `description` (same dirty/save flow as the RAM caption). It reuses
+  ChatServiceClient's local path end to end (missing-assets detection,
+  shared verified download, LocalChatEngine worker-thread generation,
+  streaming status), so no new task, ABI, downloader or model table exists;
+  the toolbar action stays disabled while the client is busy and every
+  failure keeps the application's real status path.
+  test_plugin.cpp asserts the action's presence, icon and tooltip.
+- [x] Engineering-text sweep over plugins/core: the only policy violation
+  was this plugin's own MODEL_MATRIX.md coverage table (Chinese landing
+  notes), now rewritten in English with the decisions above; verified
+  payload/localized resources stay untouched (the language-menu entries
+  that display each language in its own script, the YOLO Chinese-prompt
+  bridge table and its tests, OCR/VQA Chinese test ground truth,
+  `ram_tag_list_chinese.txt`, `docs/zh_cn`).
+  A repo-wide CJK scan of plugins/core engineering files now returns zero
+  hits outside those intentional payloads.
+
+## Continuation (2026-11-01, second session)
+
+### Coverage audit answering the llama-integration and upstream-parity questions
+
+- [x] Authoritative upstream type coverage landed in
+  [MODEL_MATRIX.md](MODEL_MATRIX.md): all 206 source YAML configs (100
+  distinct `type` values at cd26942a) classified against the live AICore
+  catalogs and this plugin's workers — **25 wired** through public catalog
+  weights, **28 composite/algorithm** types that compose already-published
+  models (trackers, SAHI, det→SAM/RAM chains; SAHI tiling and video
+  mask/export workflows exist in this workspace), **4 remote/policy** types
+  (remote_server matches the upstream protocol; Chat/VQA upstream are
+  OpenAI-compatible remote clients, and this plugin serves the same dialogs
+  through the shared remote client plus the local `aicore://llm` provider),
+  and **43 types with missing local weights**. Of those 43, the
+  Ultralytics-architecture rows (`yolov8_obb/pose`, `yolo26_cls`, the whole
+  `yolo11` family) reuse the existing yolo task contract and converter —
+  each needs only weight conversion + catalog rows + manifest scenarios —
+  while the remaining ~38 (`yolov5/6/7/9/10/12`, `yolox`, `rtdetr` family,
+  `dfine`, `deimv2`, `damo/gold_yolo`, `yolo_nas`, `clrnet`, local
+  `grounding_dino`, SAM variants, `florence2`, `internimage_cls`, `cn_clip`,
+  `bert`, …) each require the P0 converter → P1 task contract → P2 numeric
+  gates → P3 picker ladder before any picker entry appears.
+- [x] LLM/VLM integration surface fact-checked: upstream's ChatBot/VQA are
+  remote OpenAI-compatible clients (`from openai import OpenAI`) with no
+  local LLM; this plugin implements the same dialogs with the pinned source
+  VQA config/templates (`xanylabeling_data/vqa`, DEFAULT_TEMPLATES) through
+  the shared remote service client, and adds the local AICore LLM/VLM path
+  (`aicore://llm`, SmolVLM 500M + mmproj, streaming) as an extension — the
+  upstream-dependent feature modules are therefore served both ways, and
+  the single genuinely missing local VLM *model type* (`florence2`) is
+  recorded in the matrix above with its gated route (llama.cpp libmtmd
+  supports the architecture class; converter + gates first).
+- [x] Model hosting audit added to MODEL_MATRIX.md: first-party GGUFs live
+  on HF (`Asher-1/relateanything-ggml-full`, `LoMa_GGUF`, `RAM_GGUF`,
+  `Trellis2-models`, `SAM_3D_OBJECTS_GGUF`, `InstantMesh-GUFF`,
+  `AnyCalib_GGUF`) and GitHub releases (`cloudViewer_downloads`, incl. the
+  230-asset yolo_gguf_models release); the download/cache interface is
+  already uniform and repo-agnostic (catalog → shared downloader →
+  `CLOUDVIEWER_DATA_ROOT` with digest verification), so consolidating the
+  GitHub-release assets into a new HuggingFace repo is a catalog-owner
+  release action (upload + URL flip; digests are content-addressed), not a
+  code change.
+- [x] Gap #10 status corrected: the per-model interaction defaults already
+  live in the catalogs (yolo `confidence_threshold`/`iou_threshold`, rfdetr
+  `confidence_threshold`, full ocr preset threshold set) and the picker
+  applies them; the row was updated from "follow-up" to LANDED.
+
+## Fresh continuation (2026-11-01)
+
+### Closed loops this session (all verified on this machine)
+
+- [x] OCR AICore validation: the stale 2026-10-12 reports predate two manifest
+  fixes and showed two FAILs that no longer exist. Fresh fix-check
+  `build_app/Testing/aicore_validation_ocr_fixcheck_cpu.json` runs both rows
+  twice with rc=0 and PASS: `table-page-gt-q8_0` (teds 0.5409 >= 0.5403327
+  under the committed 0.006 composed-TEDS tolerance) and `ocr-layout-regions-f16`
+  (recall 1.0 with the committed table_caption optional-region exemption).
+  Full ocr+table matrix re-runs on this machine: CPU 14 PASS / 3 SKIP / 0 FAIL
+  and CUDA 14 PASS / 3 SKIP / 0 FAIL (`aicore_validation_ocr_table_{cpu,cuda}.json`);
+  the three `table-structure-*` rows SKIP with exit 77 because the independent
+  Paddle reference environment is not provisioned on this host (they compare
+  every autoregressive probability against the official Paddle Inference graph
+  and cannot produce evidence without it). Vulkan also re-ran clean:
+  14 PASS / 3 SKIP / 0 FAIL (`aicore_validation_ocr_table_vulkan.json`); the
+  earlier Vulkan `bench_ocr` PermissionError rows were a stale stripped-binary
+  artifact and are gone after the relink.
+- [ ] This host has no `ocr_paddle`/`ocr_cuda`/`ultralytics`/`anylabeling`/
+  `xanylabeling`/`map_anything_ggml` reference environments and no pulc
+  attribute or RAM models; provisioning them would un-SKIP the table-structure
+  rows and turn the asset-gated e2e tests green
+  (`test_qanylabeling_{tagged_run_path,ocr_run_path (needs ppocr-cls-f32.gguf
+  download),attribute_run_path,attribute_batch,llm_batch_models}`; the last
+  one also wants `AICORE_TEST_LLM_TEXT_MODEL` which now exists at
+  `extract/llm_models/qwen2.5-0.5b-instruct-q8_0.gguf`, plus vision/mmproj
+  rows that stay env-gated by design).
+- [x] Fixed `run_table_paddle_probe.py` failing as `PermissionError: '.'`
+  whenever `{reference:ocr_paddle}` is unconfigured (empty `--source-python`
+  becomes `Path('.')`). The probe now exits 77 with a skip note, matching the
+  runner's skip contract; affected table-structure rows report SKIP instead of
+  a misleading FAIL on hosts without the Paddle reference environment.
+- [x] LLM automation closed loop verified end to end: `ai list` exposes llm in
+  the installed harness, `ai schema llm` returns the native schema (against
+  the build binary via ACV_BINARY), real headless CPU generation via the
+  catalog Qwen2.5-0.5B Q8_0 produced "The capital of France is Paris." with a
+  typed timings manifest, and a live offscreen GUI answered over the WebSocket
+  `aicore.batch` surface ("The capital of Japan is Tokyo."). Level1/2/5
+  integration tests now pass 234/234 with three environment skips, and Level3
+  passes 66 with 64 environment skips after two fixes: the installed harness
+  registry gained the missing `instantmesh` row (CLI-Anything) and the Level1
+  drift test no longer treats genuinely registered llm/openpcdet rows as
+  drift.
+- [x] The LLM validation's upstream truth is now reachable on this machine:
+  `prepare_upstream_reference.py --build build_app --backend cpu` built the
+  pristine llama-mtmd-cli/llama-completion pair from the pinned archive into
+  `build_app/Testing/framework-references/llama-upstream-cpu/build/bin`, and
+  the llm matrix (`aicore_validation_llm_cpu.json`) turned from four blind
+  SKIPs into 3 PASS (llm-chat-capital, llm-chat-poem, llm-vqa-newspaper-500m)
+  plus one real FAIL.
+- [x] llm-vqa-describe-500m-q8_0 root-caused and closed: the fork was never an
+  AICore arithmetic bug. Greedy decoding is chaotic, so byte-identical text
+  over the first 502 characters only proved the argmax agreed, not the logits.
+  Three discriminator experiments settled it: (1) with `--threads 1` AICore
+  and pristine llama-mtmd-cli produce byte-identical text including the fork
+  caption ("A powerful and dramatic moment…", match=1); (2) the pristine
+  reference itself flips with thread count on the same host, model and image
+  (-t 1: "dramatic moment…", -t 4: "explosion rocked the lunar module…"), so
+  multi-thread reduction order moves near-tied greedy tokens in the reference
+  too; (3) AICore itself flips at -t 8, confirming text is a function of the
+  thread schedule, not of the patch chain. The three active patches were
+  excluded without any bisect rebuild (0001 is instantmesh-node-scoped,
+  0013/0014 keep pristine CPU fallbacks). The llm scenarios now bind the
+  CPU greedy-text parity contract to `--threads 1` (the only domain where
+  the reduction order is defined by the algorithm instead of the scheduler),
+  the gate text documents that contract, and the re-run matrix is PASS with
+  upstream_text_match=1.0 on all four light-tier rows
+  (`aicore_validation_llm_cpu.json`). Thread-count sensitivity and decode
+  performance stay separate metrics; the exact-greedy-text gate itself is
+  unchanged.
+- [x] Fixed the Qt5 tree compile error in `core/include/QtCompat.h`:
+  `qtCompatVariantIsIntegral` referenced `QVariant::Short/UShort/Long/ULong`,
+  which do not exist in Qt5's `QVariant::Type`; CVCoreLib recompilation failed
+  with 'ULong' is not a member of 'QVariant'. The Qt5 branch now accepts only
+  the real widths (Int/UInt/LongLong/ULongLong).
+- [x] Ported the remaining upstream cd26942a canvas features to qAnyLabeling:
+  Shift square constraint for rectangle/rotation creation with press/release
+  resync, live measurements (W/H for rectangle/rotation/cuboid, segment length
+  and line-strip total, circle radius/circumference) in the status bar,
+  right-button panning while drawing (the create-mode right click only fires
+  on release without a drag), the exclusive display-mode group (color by
+  label/instance/group, binary-mask render), the main-toolbar visualization
+  toggles, and the image-tags panel visible by default (v4.2.1), including the
+  matching test update. Upstream's horizontal toolbar wheel fix has no
+  counterpart here: this workspace's toolbar is a vertical 46 px strip whose
+  wheel already scrolls vertically.
+- [ ] Original-matrix follow-ups remain from earlier sections (Relate speed
+  gates, complete native-window acceptance, release-performance FAILs).
+
+## Earlier continuation (2026-10-29)
 
 ### Compilation blockers and queue-launcher revalidation
 
@@ -572,7 +745,7 @@ Every remaining upstream misalignment, in one table. Status / owner notes:
 | 6 | Visual parity | Screenshot-level layout comparison against the in-tree upstream references | Manual fixture pass per panel using `docs/images/*` baselines; controlled GL geometry comparison is separate | TODO — point-cloud GL geometry had exact 6-case framebuffer parity, but full Qt window theme, typography, controls and animation still lack a screenshot gate |
 | 7 | Point cloud | Remaining camera panels, shortcut/gesture and full-window rendering details | Cuboid geometry/sidecars/orthogonal editing, task classes, dataset transactions, multi-camera configuration and preview are implemented. GPU RGBA/depth ownership picking now covers occlusion, equal-depth ties, point footprints and continuous brush strokes. Selection projection now caches 16-pixel tiles and reuses them across brush events; 18,216 creation-ray queries match | Partial — background frame loading, bounded prefetch, selection tiles and focus animation are implemented; complete camera-panel and visual/interaction parity remain |
 | 9 | External services | Remaining `open_vision` and multi-model source pipelines | Remote Server transport already exists; ChatBot/VQA now share the asynchronous service client described below. Service inference stays remote; local inference stays in AICore | Partial; ChatBot/VQA workflow details and exact remaining model pipelines are still open |
-| 10 | Config module | Upstream `configs/auto_labeling/*.yaml` carries per-model interaction defaults (display_name, conf/iou thresholds, input size) that the picker should surface per model | AICore catalog owns model facts (ownership map): extend catalog entries with the interaction-default fields, plugin reads them from the catalog — never a private yaml table in the plugin | facedetect LANDED 2026-09-30 (`aicore_facedetect_model_entry` now carries conf/iou/input_size — buffalo 0.5/0.4/640, yunet 0.6/0.3/160 — and the picker applies the catalog conf when a detector is selected); yolo/ocr entries are the same-shape follow-up |
+| 10 | Config module | Upstream `configs/auto_labeling/*.yaml` carries per-model interaction defaults (display_name, conf/iou thresholds, input size) that the picker should surface per model | AICore catalog owns model facts (ownership map): extend catalog entries with the interaction-default fields, plugin reads them from the catalog — never a private yaml table in the plugin | LANDED: facedetect 2026-09-30; the yolo catalog carries `confidence_threshold`/`iou_threshold` per entry and the picker applies them (`model.confDefault/iouDefault = entry->…` in AnnotationWindow, applied at selection); rfdetr entries carry `confidence_threshold`; the ocr preset entries carry the full source threshold set (det_thresh/box_thresh/unclip_ratio/max_side/rec_batch/cls_batch/drop_score) consumed by the OCR workflow |
 | 11 | Packaging | Run/.exe/.app installers must carry the plugin resources (translations qm, docs) and rely on catalog remote-download for models; default model per task must match upstream | Existing docker/build scripts + qrc resources; verify installer contents per platform (Linux/Windows/macOS) | Linux generated plugin install rules, stripping and Unicode-path relocation are verified below; complete Linux installer and native Windows/macOS package verification remain open |
 
 The detailed ledger below also retains older open workflow and validation

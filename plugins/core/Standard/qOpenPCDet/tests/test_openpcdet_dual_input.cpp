@@ -31,6 +31,8 @@
 #include "OpenPCDetWorker.h"
 #include "ecvTestDataRepository.h"
 
+#include "aicore/openpcdet_capi.h"
+
 namespace {
 
 bool SameEdge(const OpenPCDetHelpers::EdgePair& a,
@@ -882,6 +884,69 @@ TEST(OpenPCDetDualInput, FileAndDbTreeBuffersAreBitIdentical) {
                "would produce different detections";
 }
 
+TEST(OpenPCDetDualInput, ExtractCloudPointsCarriesFifthFeatureField) {
+    // nuScenes 5-feature models: the ring/velocity channel must survive as
+    // the uniformly named "OpenPCDet feature 4" scalar field instead of
+    // being silently zero-filled for DB-tree input.
+    constexpr int n = 3;
+    const float ring[n] = {7.5f, -2.0f, 0.25f};
+    ccPointCloud cloud(QStringLiteral("nuscenes5"));
+    ASSERT_TRUE(cloud.reserve(n));
+    for (int i = 0; i < n; ++i) {
+        cloud.addPoint(CCVector3(1.0f * i, 2.0f, 3.0f));
+    }
+    auto* intensity = new ccScalarField("intensity");
+    ASSERT_TRUE(intensity->reserveSafe(static_cast<unsigned>(n)));
+    for (int i = 0; i < n; ++i) {
+        intensity->addElement(0.5f);
+    }
+    intensity->computeMinAndMax();
+    ASSERT_GE(cloud.addScalarField(intensity), 0);
+    auto* feature4 = new ccScalarField("OpenPCDet feature 4");
+    ASSERT_TRUE(feature4->reserveSafe(static_cast<unsigned>(n)));
+    for (int i = 0; i < n; ++i) {
+        feature4->addElement(ring[i]);
+    }
+    feature4->computeMinAndMax();
+    ASSERT_GE(cloud.addScalarField(feature4), 0);
+
+    std::vector<float> points;
+    int count = 0;
+    QString error;
+    ASSERT_TRUE(OpenPCDetWorker::extractCloudPoints(&cloud, 5, &points, &count,
+                                                    &error))
+            << error.toStdString();
+    ASSERT_EQ(count, n);
+    ASSERT_EQ(points.size(), static_cast<size_t>(n) * 5);
+    for (int i = 0; i < n; ++i) {
+        EXPECT_FLOAT_EQ(points[i * 5 + 3], 0.5f);
+        EXPECT_FLOAT_EQ(points[i * 5 + 4], ring[i]) << "point " << i;
+    }
+
+    // Without the field the documented zero-fill fallback stays in effect.
+    ccPointCloud plain(QStringLiteral("nuscenes_no_feature4"));
+    ASSERT_TRUE(plain.reserve(n));
+    for (int i = 0; i < n; ++i) {
+        plain.addPoint(CCVector3(1.0f * i, 2.0f, 3.0f));
+    }
+    auto* plainIntensity = new ccScalarField("intensity");
+    ASSERT_TRUE(plainIntensity->reserveSafe(static_cast<unsigned>(n)));
+    for (int i = 0; i < n; ++i) {
+        plainIntensity->addElement(0.5f);
+    }
+    plainIntensity->computeMinAndMax();
+    ASSERT_GE(plain.addScalarField(plainIntensity), 0);
+    std::vector<float> plainPoints;
+    int plainCount = 0;
+    ASSERT_TRUE(OpenPCDetWorker::extractCloudPoints(&plain, 5, &plainPoints,
+                                                    &plainCount, &error))
+            << error.toStdString();
+    ASSERT_EQ(plainCount, n);
+    for (int i = 0; i < n; ++i) {
+        EXPECT_FLOAT_EQ(plainPoints[i * 5 + 4], 0.0f);
+    }
+}
+
 TEST(OpenPCDetDualInput, DbExportWireframeMetadata) {
     const OpenPCDetRunResult result = makeTwoBoxResult();
     ccHObject* group = BuildDetectionGroup(result, QStringLiteral("pp"));
@@ -1144,4 +1209,434 @@ TEST(OpenPCDetDualInput, EndToEndRealInferenceAndExport) {
                "runInference modelPath fix)";
     delete annotated;
     delete group;
+}
+
+/** Explicit full-matrix mode (plan §6): enumerate every published
+ *  checkpoint × quantization through the REAL worker on the CPU backend,
+ *  verifying pairing, declared defaults (through the metadata API), typed
+ *  finite boxes, and file/DB dual-path parity per row.
+ *
+ *  Gated behind ACV_OPENPCDET_FULL_MATRIX=1: the default CTest run stays
+ *  small, while the explicit mode FAILS — never skips — on any missing
+ *  asset, so a green explicit run is per-model evidence, not a sample.
+ *  GPU/Vulkan backend rows are reported by validate_all.py / the bench
+ *  runner; this test pins the CPU path deterministically. */
+TEST(OpenPCDetDualInput, FullCatalogMatrix) {
+    const bool full = qgetenv("ACV_OPENPCDET_FULL_MATRIX") == "1";
+    if (!full) {
+        GTEST_SKIP() << "set ACV_OPENPCDET_FULL_MATRIX=1 for the "
+                        "checkpoint-by-checkpoint matrix";
+    }
+    const QString extractRoot = ecvTestDataRepository::extractDir();
+    const QString modelsRoot = extractRoot + QStringLiteral("/openpcdet_models");
+    // The pinned fixture bundle carries the point frames AND the two
+    // multi-modal scene dirs; the model-cache input dir carries point frames
+    // only, so the bundle wins when present.
+    const QString fixtureRoot = extractRoot + QStringLiteral(
+            "/openpcdet_test_data/openpcdet_test_data");
+    const QString inputsRoot =
+            QDir(fixtureRoot).exists()
+                    ? fixtureRoot
+                    : extractRoot + QStringLiteral("/openpcdet_inputs");
+
+    const QVector<OpenPCDetHelpers::OpenPCDetCheckpoint> checkpoints =
+            OpenPCDetHelpers::catalogCheckpoints();
+    ASSERT_EQ(checkpoints.size(), 18)
+            << "the published checkpoint set changed — update this matrix";
+
+    auto failMissing = [&](const QString& path) {
+        ADD_FAILURE() << "missing asset in explicit mode: "
+                      << path.toStdString();
+        return false;
+    };
+
+    int rows = 0;
+    for (const auto& cp : checkpoints) {
+        // Input identity (plan §4): the pairing must map each checkpoint
+        // family to its own frame — no cross-dataset borrowing.
+        const OpenPCDetHelpers::OpenPCDetTestDataFiles files =
+                OpenPCDetHelpers::testDataFilesForCheckpoint(cp.stem);
+        const bool nuScenes = cp.stem.startsWith(QStringLiteral("nuscenes"));
+        ASSERT_FALSE(files.pointsFile.isEmpty() &&
+                     files.scenePointsFile.isEmpty())
+                << cp.stem.toStdString()
+                << " has neither a point file nor a scene LiDAR branch";
+        if (nuScenes) {
+            EXPECT_TRUE(files.pointsFile.endsWith(
+                                QStringLiteral("nuscenes_n015_lidar.bin")) ||
+                        files.scenePointsFile.endsWith(
+                                QStringLiteral("nuscenes_n015_lidar.bin")))
+                    << cp.stem.toStdString();
+        } else if (cp.stem.contains(QStringLiteral("pointrcnn"))) {
+            EXPECT_EQ(files.pointsFile,
+                      QStringLiteral("kitti_000008_sampled16384.bin"))
+                    << cp.stem.toStdString();
+        }
+
+        const QString inputName = !files.pointsFile.isEmpty()
+                                          ? files.pointsFile
+                                          : files.scenePointsFile;
+        const QString inputPath = inputsRoot + QLatin1Char('/') + inputName;
+        if (!QFileInfo::exists(inputPath)) {
+            failMissing(inputPath);
+            continue;
+        }
+        // Multi-modal rows run through detect_scene: resolve the pinned
+        // scene dir next to the point frames.
+        const bool sceneRow = !files.sceneDirName.isEmpty();
+        QString scenePath;
+        if (sceneRow) {
+            scenePath = inputsRoot + QLatin1Char('/') + files.sceneDirName;
+            if (!QFileInfo::exists(scenePath + QStringLiteral("/scene.json"))) {
+                failMissing(scenePath);
+                continue;
+            }
+        }
+
+        for (const OpenPCDetModelEntry& e : cp.quants) {
+            const QString modelPath = modelsRoot + QLatin1Char('/') + e.filename;
+            if (!QFileInfo::exists(modelPath)) {
+                failMissing(modelPath);
+                continue;
+            }
+            // Declared metadata drives the parse dimension — the same facts
+            // the dialog consumes (read path must not initialize backends).
+            aicore_openpcdet_model_info info{};
+            info.struct_size = sizeof(info);
+            info.abi_version = AICORE_OPENPCDET_MODEL_INFO_ABI_VERSION;
+            ASSERT_EQ(aicore_openpcdet_read_model_info(
+                              modelPath.toUtf8().constData(), &info, nullptr),
+                      0)
+                    << e.filename.toStdString();
+            ASSERT_GT(info.num_point_features, 0);
+
+            QFile binFile(inputPath);
+            ASSERT_TRUE(binFile.open(QIODevice::ReadOnly));
+            const QByteArray bytes = binFile.readAll();
+            binFile.close();
+            std::vector<float> fileBuffer;
+            int fileCount = 0;
+            QString error;
+            ASSERT_TRUE(OpenPCDetHelpers::parsePointsBin(
+                    bytes, info.num_point_features, &fileBuffer, &fileCount,
+                    &error))
+                    << error.toStdString();
+            ASSERT_GT(fileCount, 0);
+
+            ccPointCloud cloud(QStringLiteral("matrix_%1").arg(cp.stem));
+            ASSERT_TRUE(cloud.reserve(static_cast<unsigned>(fileCount)));
+            for (int i = 0; i < fileCount; ++i) {
+                const float* row = fileBuffer.data() +
+                                   static_cast<size_t>(i) *
+                                           info.num_point_features;
+                cloud.addPoint(CCVector3(row[0], row[1], row[2]));
+            }
+            auto* intensity = new ccScalarField("intensity");
+            ASSERT_TRUE(intensity->reserveSafe(
+                    static_cast<unsigned>(fileCount)));
+            for (int i = 0; i < fileCount; ++i) {
+                const float* row = fileBuffer.data() +
+                                   static_cast<size_t>(i) *
+                                           info.num_point_features;
+                intensity->addElement(info.num_point_features >= 4 ? row[3]
+                                                                   : 0.0f);
+            }
+            intensity->computeMinAndMax();
+            ASSERT_GE(cloud.addScalarField(intensity), 0);
+
+            auto runWorker = [&](const OpenPCDetWorker::Settings& ws,
+                                 ccPointCloud* src, OpenPCDetRunResult* out) {
+                OpenPCDetWorker worker(ws, src);
+                ResultCatcher catcher;
+                QObject::connect(&worker, &OpenPCDetWorker::resultReady,
+                                 &catcher, &ResultCatcher::onResult,
+                                 Qt::DirectConnection);
+                QStringList workerLog;
+                QObject::connect(
+                        &worker, &OpenPCDetWorker::logMessage, &worker,
+                        [&](const QString& m) { workerLog << m; },
+                        Qt::DirectConnection);
+                QObject::connect(
+                        &worker, &OpenPCDetWorker::debugMessage, &worker,
+                        [&](const QString& m) { workerLog << m; },
+                        Qt::DirectConnection);
+                worker.start();
+                const bool finished = worker.wait(300000);
+                worker.releaseContextOnMainThread();
+                if (catcher.got) *out = catcher.result;
+                const bool ok = finished && catcher.got;
+                if (!ok) {
+                    std::fprintf(stderr, "[matrix-fail] worker log:\n");
+                    for (const QString& line : workerLog) {
+                        std::fprintf(stderr, "  %s\n",
+                                     line.toUtf8().constData());
+                    }
+                }
+                return ok;
+            };
+
+            OpenPCDetWorker::Settings cloudWs;
+            cloudWs.modelPath = modelPath;
+            cloudWs.device = QStringLiteral("cpu");
+            if (sceneRow) cloudWs.sceneDir = scenePath;
+            OpenPCDetWorker::Settings fileWs = cloudWs;
+            fileWs.pointsFile = inputPath;
+
+            OpenPCDetRunResult cloudResult;
+            OpenPCDetRunResult fileResult;
+            ASSERT_TRUE(runWorker(cloudWs, &cloud, &cloudResult))
+                    << e.filename.toStdString();
+            ASSERT_TRUE(runWorker(fileWs, nullptr, &fileResult))
+                    << e.filename.toStdString();
+
+            // Finite typed boxes: label range, score range, geometry.
+            ASSERT_EQ(cloudResult.detections.size(),
+                      fileResult.detections.size())
+                    << e.filename.toStdString();
+            for (int i = 0; i < cloudResult.detections.size(); ++i) {
+                const OpenPCDetDetection& a = cloudResult.detections[i];
+                const OpenPCDetDetection& b = fileResult.detections[i];
+                EXPECT_EQ(a.label, b.label) << "box " << i;
+                EXPECT_FLOAT_EQ(a.x, b.x) << "box " << i;
+                EXPECT_FLOAT_EQ(a.y, b.y) << "box " << i;
+                EXPECT_FLOAT_EQ(a.z, b.z) << "box " << i;
+                EXPECT_FLOAT_EQ(a.heading, b.heading) << "box " << i;
+                EXPECT_FLOAT_EQ(a.score, b.score) << "box " << i;
+                EXPECT_GE(a.label, 1);
+                EXPECT_LE(a.label, cloudResult.numClass);
+                EXPECT_TRUE(std::isfinite(a.x) && std::isfinite(a.y) &&
+                            std::isfinite(a.z))
+                        << "box " << i;
+                EXPECT_GT(a.dx, 0.0f);
+                EXPECT_GT(a.dy, 0.0f);
+                EXPECT_GT(a.dz, 0.0f);
+                EXPECT_GE(a.score, 0.0f);
+                EXPECT_LE(a.score, 1.0f);
+            }
+            EXPECT_EQ(cloudResult.numPoints, fileResult.numPoints);
+            EXPECT_EQ(cloudResult.pointDim, info.num_point_features);
+            EXPECT_EQ(cloudResult.fromScene, sceneRow)
+                    << e.filename.toStdString();
+
+            std::printf(
+                "[matrix] %s boxes=%d points=%d dim=%d %lld ms\n",
+                e.filename.toUtf8().constData(),
+                cloudResult.detections.size(), cloudResult.numPoints,
+                cloudResult.pointDim,
+                static_cast<long long>(cloudResult.runtimeMs));
+            ++rows;
+        }
+    }
+    EXPECT_EQ(rows, 54) << "explicit matrix must cover the full "
+                           "18 checkpoints x 3 quantizations";
+}
+
+TEST(OpenPCDetDualInput, ThresholdOverrideExplicitZeroSemantics) {
+    // thresholdsExplicit=true owns the values verbatim: an explicit
+    // score/NMS of 0 must reach the C API as a real override (debug-visible),
+    // while the legacy sentinel path must stay override-free for the same
+    // zeros. Asset-gated like the E2E test.
+    const QString extractRoot = ecvTestDataRepository::extractDir();
+    const QString model = extractRoot + QStringLiteral(
+                                                "/openpcdet_models/"
+                                                "kitti_pointpillar.f16.gguf");
+    const QString bin = extractRoot + QStringLiteral(
+                                                "/openpcdet_inputs/"
+                                                "kitti_000008.bin");
+    if (!QFileInfo::exists(model) || !QFileInfo::exists(bin)) {
+        GTEST_SKIP() << "OpenPCDet assets not cached under "
+                     << extractRoot.toStdString();
+    }
+
+    auto run = [&](bool explicitFlag, QStringList* debugOut) {
+        OpenPCDetWorker::Settings ws;
+        ws.modelPath = model;
+        ws.device = QStringLiteral("cpu");
+        ws.pointsFile = bin;
+        ws.thresholdsExplicit = explicitFlag;
+        OpenPCDetWorker worker(ws, nullptr);
+        QStringList lines;
+        QObject::connect(
+                &worker, &OpenPCDetWorker::debugMessage, &worker,
+                [&](const QString& m) { lines << m; },
+                Qt::DirectConnection);
+        worker.start();
+        ASSERT_TRUE(worker.wait(180000));
+        worker.releaseContextOnMainThread();
+        *debugOut = lines;
+    };
+
+    QStringList explicitLogs;
+    QStringList legacyLogs;
+    run(true, &explicitLogs);
+    run(false, &legacyLogs);
+
+    bool explicitScoreZero = false;
+    for (const QString& line : explicitLogs) {
+        if (line.contains(QStringLiteral("Score threshold override: 0.00")))
+            explicitScoreZero = true;
+    }
+    EXPECT_TRUE(explicitScoreZero)
+            << "explicit thresholds must forward a 0 score override";
+    for (const QString& line : legacyLogs) {
+        EXPECT_FALSE(line.contains(QStringLiteral("threshold override")))
+                << "legacy sentinel zeros must not become overrides: "
+                << line.toStdString();
+    }
+}
+
+namespace {
+
+// Shared run helper for the DB-frame tests below: starts one worker and
+// captures its result (direct connection on the worker thread).
+bool runOneWorker(const OpenPCDetWorker::Settings& ws,
+                  ccPointCloud* src,
+                  OpenPCDetRunResult* out) {
+    OpenPCDetWorker worker(ws, src);
+    ResultCatcher catcher;
+    QObject::connect(&worker, &OpenPCDetWorker::resultReady, &catcher,
+                     &ResultCatcher::onResult, Qt::DirectConnection);
+    worker.start();
+    const bool finished = worker.wait(180000);
+    worker.releaseContextOnMainThread();
+    if (catcher.got) *out = catcher.result;
+    return finished && catcher.got;
+}
+
+}  // namespace
+
+TEST(OpenPCDetDualInput, DbCloudInputLiftsToLiDARFrame) {
+    // A georeferenced DB cloud stores LOCAL coordinates (ecvShiftedObject:
+    // Plocal = (Pglobal + shift) * scale). The engine must see the ORIGINAL
+    // LiDAR frame (Pglobal = Plocal/scale - shift); a worker that feeds the
+    // stored local coordinates drops every point outside the declared
+    // point_cloud_range and finds nothing.
+    const QString extractRoot = ecvTestDataRepository::extractDir();
+    const QString model = extractRoot + QStringLiteral(
+                                                "/openpcdet_models/"
+                                                "kitti_pointpillar.f16.gguf");
+    const QString bin = extractRoot + QStringLiteral(
+                                                "/openpcdet_inputs/"
+                                                "kitti_000008.bin");
+    if (!QFileInfo::exists(model) || !QFileInfo::exists(bin)) {
+        GTEST_SKIP() << "OpenPCDet assets not cached under "
+                     << extractRoot.toStdString();
+    }
+
+    // Reference answer: the raw file in the native LiDAR frame.
+    OpenPCDetWorker::Settings fileWs;
+    fileWs.modelPath = model;
+    fileWs.device = QStringLiteral("cpu");
+    fileWs.pointsFile = bin;
+    OpenPCDetRunResult fileResult;
+    ASSERT_TRUE(runOneWorker(fileWs, nullptr, &fileResult));
+    ASSERT_FALSE(fileResult.detections.isEmpty());
+
+    // The same frame stored in a shifted/scaled local DB frame. Scale 2.0 is
+    // a power of two, so the round trip Pglobal -> Plocal -> Pglobal is
+    // exact and box-count parity with the reference run is meaningful.
+    QFile binFile(bin);
+    ASSERT_TRUE(binFile.open(QIODevice::ReadOnly));
+    const QByteArray bytes = binFile.readAll();
+    binFile.close();
+    std::vector<float> pts;
+    int count = 0;
+    QString error;
+    ASSERT_TRUE(OpenPCDetHelpers::parsePointsBin(bytes, 4, &pts, &count,
+                                                 &error))
+            << error.toStdString();
+    ASSERT_GT(count, 0);
+    const double scale = 2.0;
+    const CCVector3d shift(1000.0, 2000.0, 3000.0);
+    auto* cloud = new ccPointCloud(QStringLiteral("shifted_kitti"));
+    ASSERT_TRUE(cloud->reserve(static_cast<unsigned>(count)));
+    for (int i = 0; i < count; ++i) {
+        const CCVector3d pg(pts[i * 4 + 0], pts[i * 4 + 1], pts[i * 4 + 2]);
+        const CCVector3d pl = (pg + shift) * scale;
+        cloud->addPoint(CCVector3(pl.toPC()));
+    }
+    auto* intensity = new ccScalarField("intensity");
+    ASSERT_TRUE(intensity->reserveSafe(static_cast<unsigned>(count)));
+    for (int i = 0; i < count; ++i) intensity->addElement(pts[i * 4 + 3]);
+    intensity->computeMinAndMax();
+    ASSERT_GE(cloud->addScalarField(intensity), 0);
+    cloud->setGlobalScale(scale);
+    cloud->setGlobalShift(shift);
+
+    OpenPCDetWorker::Settings ws;
+    ws.modelPath = model;
+    ws.device = QStringLiteral("cpu");
+    OpenPCDetRunResult result;
+    ASSERT_TRUE(runOneWorker(ws, cloud, &result));
+    delete cloud;
+
+    ASSERT_FALSE(result.detections.isEmpty())
+            << "worker must lift stored local points back to the LiDAR "
+               "frame (Pglobal = Plocal/scale - shift)";
+    EXPECT_EQ(result.detections.size(), fileResult.detections.size())
+            << "lifted input must reproduce the raw-file detections";
+}
+
+TEST(OpenPCDetDualInput, WorkerSnapshotsInputAtConstruction) {
+    // The worker takes a VALUE snapshot of the DB cloud at construction; a
+    // later mutation of the live cloud (the user editing/deleting it while a
+    // run is queued) must not leak into the running inference. A pointer-
+    // based worker reads the mutated coordinates and finds nothing.
+    const QString extractRoot = ecvTestDataRepository::extractDir();
+    const QString model = extractRoot + QStringLiteral(
+                                                "/openpcdet_models/"
+                                                "kitti_pointpillar.f16.gguf");
+    const QString bin = extractRoot + QStringLiteral(
+                                                "/openpcdet_inputs/"
+                                                "kitti_000008.bin");
+    if (!QFileInfo::exists(model) || !QFileInfo::exists(bin)) {
+        GTEST_SKIP() << "OpenPCDet assets not cached under "
+                     << extractRoot.toStdString();
+    }
+
+    QFile binFile(bin);
+    ASSERT_TRUE(binFile.open(QIODevice::ReadOnly));
+    const QByteArray bytes = binFile.readAll();
+    binFile.close();
+    std::vector<float> pts;
+    int count = 0;
+    QString error;
+    ASSERT_TRUE(OpenPCDetHelpers::parsePointsBin(bytes, 4, &pts, &count,
+                                                 &error))
+            << error.toStdString();
+
+    auto* cloud = new ccPointCloud(QStringLiteral("snapshot_kitti"));
+    ASSERT_TRUE(cloud->reserve(static_cast<unsigned>(count)));
+    for (int i = 0; i < count; ++i) {
+        cloud->addPoint(
+                CCVector3(pts[i * 4 + 0], pts[i * 4 + 1], pts[i * 4 + 2]));
+    }
+    auto* intensity = new ccScalarField("intensity");
+    ASSERT_TRUE(intensity->reserveSafe(static_cast<unsigned>(count)));
+    for (int i = 0; i < count; ++i) intensity->addElement(pts[i * 4 + 3]);
+    intensity->computeMinAndMax();
+    ASSERT_GE(cloud->addScalarField(intensity), 0);
+
+    OpenPCDetWorker::Settings ws;
+    ws.modelPath = model;
+    ws.device = QStringLiteral("cpu");
+    OpenPCDetWorker worker(ws, cloud);  // snapshot happens HERE
+    // Mutate the live cloud after construction (well-defined: the cloud is
+    // alive) — far outside any LiDAR range.
+    cloud->Translate(CCVector3(9000.f, 9000.f, 9000.f));
+
+    // Run THE SAME worker instance that holds the construction-time
+    // snapshot.
+    ResultCatcher catcher;
+    QObject::connect(&worker, &OpenPCDetWorker::resultReady, &catcher,
+                     &ResultCatcher::onResult, Qt::DirectConnection);
+    worker.start();
+    ASSERT_TRUE(worker.wait(180000));
+    worker.releaseContextOnMainThread();
+    delete cloud;
+    ASSERT_TRUE(catcher.got) << "snapshotted worker produced no result";
+    const OpenPCDetRunResult result = catcher.result;
+    ASSERT_FALSE(result.detections.isEmpty())
+            << "the construction-time snapshot must survive later live-cloud "
+               "mutations";
 }

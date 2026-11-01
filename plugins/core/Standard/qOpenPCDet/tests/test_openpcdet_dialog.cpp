@@ -291,6 +291,58 @@ int main(int argc, char** argv) {
             file.write(reinterpret_cast<const char*>(point),
                        features * sizeof(float));
         }
+        // A minimal readable scene fixture for the preview-restore check:
+        // camera 0 is one 2x2 RGB frame (float32 NHWC, scene.json header).
+        const QString sceneDir = bundle + QStringLiteral("/scene_restore");
+        QDir().mkpath(sceneDir);
+        QFile images(sceneDir + QStringLiteral("/images.bin"));
+        if (images.open(QIODevice::WriteOnly)) {
+            const float pixel[4] = {0.9f, 0.4f, 0.1f, 1.0f};
+            for (int i = 0; i < 4; ++i)
+                images.write(
+                        reinterpret_cast<const char*>(pixel), sizeof(pixel));
+            images.close();
+        }
+        {
+            QFile json(sceneDir + QStringLiteral("/scene.json"));
+            if (json.open(QIODevice::WriteOnly))
+                json.write(QByteArrayLiteral(
+                        "{\"num_cameras\": 1, \"image_height\": 2, "
+                        "\"image_width\": 2, \"image_channels\": 4}"));
+        }
+        // Restore a session whose CaDDN panel (scene panel with a preview)
+        // carries a saved scene dir while ANOTHER panel is current: the
+        // restored preview must render from the owning panel's field, not
+        // from whichever panel happens to be current during loadSettings().
+        {
+            QSettings persist;
+            persist.setValue(QStringLiteral("qOpenPCDet/sceneDir/kitti_caddn"),
+                             sceneDir);
+            persist.setValue(QStringLiteral("qOpenPCDet/activeCheckpoint"),
+                             QStringLiteral("kitti_pointpillar"));
+        }
+        OpenPCDetDialog restored;
+        restored.show();
+        QApplication::processEvents();
+        ecvClickableImageLabel* restoredPreview = nullptr;
+        auto* tasks = restored.findChild<QListWidget*>();
+        // Switch through every task entry: each scene panel's preview must
+        // reflect its own scene dir once it becomes current.
+        {
+            for (int row = 0; row < tasks->count(); ++row) {
+                if (!(tasks->item(row)->flags() & Qt::ItemIsSelectable))
+                    continue;
+                tasks->setCurrentRow(row);
+                QApplication::processEvents();
+                for (auto* label : restored.findChildren<ecvClickableImageLabel*>()) {
+                    if (!label->isVisible()) continue;
+                    if (!label->fullImage().isNull()) restoredPreview = label;
+                }
+            }
+        }
+        check(restoredPreview && !restoredPreview->fullImage().isNull(),
+              "A restored scene dir must render its preview when the panel "
+              "becomes current");
         repo.ensureDatasetReady(kind);
         check(dialog.getSettings().pointsFile == closedInput,
               "Closed dialogs must not accept late or foreign sample results");

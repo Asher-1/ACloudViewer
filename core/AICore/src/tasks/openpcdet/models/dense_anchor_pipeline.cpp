@@ -7,6 +7,8 @@
 
 #include "dense_anchor_pipeline.h"
 
+#include "common/debug_dump.hpp"
+
 #include <ggml.h>
 
 #include <algorithm>
@@ -349,7 +351,7 @@ bool run_dense_center_pipeline(engine_backend &backend,
                                bool direct_whc_input) {
     // Debug-only stage profiler (stderr, OPCPD_PROFILE): diagnostics only,
     // default off, never changes task behavior.
-    const bool profile = std::getenv("OPCPD_PROFILE") != nullptr;
+    const bool profile = aicore::debug::openpcdet_stage_profile_enabled();
     auto lap = [&](const char *name,
                    const std::chrono::high_resolution_clock::time_point &from) {
         if (!profile) return;

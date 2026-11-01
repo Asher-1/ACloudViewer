@@ -7,6 +7,8 @@
 
 #include "swin_transformer.h"
 
+#include "common/debug_dump.hpp"
+
 #include <ggml.h>
 
 #include <algorithm>
@@ -420,12 +422,16 @@ bool run_swin_transformer(engine_backend &backend,
 
     // ---- Patch Embedding ----
     int H = image_height / 4, W = image_width / 4;
-    fprintf(stderr,
-            "[SWIN-PE] conv w ne=(%ld,%ld,%ld,%ld) input "
-            "ne=(%ld,%ld,%ld,%ld)\n",
-            w.patch_embed_w->ne[0], w.patch_embed_w->ne[1],
-            w.patch_embed_w->ne[2], w.patch_embed_w->ne[3], input->ne[0],
-            input->ne[1], input->ne[2], input->ne[3]);
+    // Stage/tensor-shape diagnostics are debug-gated: a normal run must not
+    // spam the console (the whitelist accessor is the getenv-free contract).
+    if (aicore::debug::openpcdet_stage_profile_enabled()) {
+        fprintf(stderr,
+                "[SWIN-PE] conv w ne=(%ld,%ld,%ld,%ld) input "
+                "ne=(%ld,%ld,%ld,%ld)\n",
+                w.patch_embed_w->ne[0], w.patch_embed_w->ne[1],
+                w.patch_embed_w->ne[2], w.patch_embed_w->ne[3], input->ne[0],
+                input->ne[1], input->ne[2], input->ne[3]);
+    }
     ggml_tensor *x =
             ggml_conv_2d_direct(ctx, w.patch_embed_w, input, 4, 4, 0, 0, 1, 1);
     {
@@ -485,8 +491,10 @@ bool run_swin_transformer(engine_backend &backend,
 
     for (int si = 0; si < num_stages; si++) {
         int C = embed_dims * (1 << si);
-        fprintf(stderr, "[SWIN] stage %d C=%d curH=%d curW=%d\n", si, C, cur_H,
-                cur_W);
+        if (aicore::debug::openpcdet_stage_profile_enabled()) {
+            fprintf(stderr, "[SWIN] stage %d C=%d curH=%d curW=%d\n", si, C,
+                    cur_H, cur_W);
+        }
         int nH = num_heads[si];
         int head_dim = C / nH;
         float scale_val = 1.0f / std::sqrt((float)head_dim);
@@ -649,16 +657,20 @@ bool run_swin_transformer(engine_backend &backend,
                 if (sink) win_in_batch.push_back(normed_padded);
 
                 // ---- Window Attention ----
-                fprintf(stderr,
-                        "[ATTN] bi=%d normed ne=(%ld,%ld,%ld) qkv_w "
-                        "ne=(%ld,%ld) nh=%d nw=%d\n",
-                        bi, normed_padded->ne[0], normed_padded->ne[1],
-                        normed_padded->ne[2], blk.attn.qkv_w->ne[0],
-                        blk.attn.qkv_w->ne[1], nH, nw);
+                if (aicore::debug::openpcdet_stage_profile_enabled()) {
+                    fprintf(stderr,
+                            "[ATTN] bi=%d normed ne=(%ld,%ld,%ld) qkv_w "
+                            "ne=(%ld,%ld) nh=%d nw=%d\n",
+                            bi, normed_padded->ne[0], normed_padded->ne[1],
+                            normed_padded->ne[2], blk.attn.qkv_w->ne[0],
+                            blk.attn.qkv_w->ne[1], nH, nw);
+                }
                 ggml_tensor *qkv =
                         ggml_mul_mat(ctx, blk.attn.qkv_w, normed_padded);
-                fprintf(stderr, "[QKV] bi=%d qkv ne=(%ld,%ld,%ld) OK\n", bi,
-                        qkv->ne[0], qkv->ne[1], qkv->ne[2]);
+                if (aicore::debug::openpcdet_stage_profile_enabled()) {
+                    fprintf(stderr, "[QKV] bi=%d qkv ne=(%ld,%ld,%ld) OK\n",
+                            bi, qkv->ne[0], qkv->ne[1], qkv->ne[2]);
+                }
                 if (blk.attn.qkv_b)
                     qkv = ggml_add(
                             ctx, qkv,
@@ -699,16 +711,21 @@ bool run_swin_transformer(engine_backend &backend,
                     Q_tap = Q;
                     K_tap = K;
                 }
-                fprintf(stderr,
-                        "[HEADS] Q ne=(%ld,%ld,%ld) K ne=(%ld,%ld,%ld) V "
-                        "ne=(%ld,%ld,%ld)\n",
-                        Q->ne[0], Q->ne[1], Q->ne[2], K->ne[0], K->ne[1],
-                        K->ne[2], V->ne[0], V->ne[1], V->ne[2]);
+                if (aicore::debug::openpcdet_stage_profile_enabled()) {
+                    fprintf(stderr,
+                            "[HEADS] Q ne=(%ld,%ld,%ld) K ne=(%ld,%ld,%ld) V "
+                            "ne=(%ld,%ld,%ld)\n",
+                            Q->ne[0], Q->ne[1], Q->ne[2], K->ne[0], K->ne[1],
+                            K->ne[2], V->ne[0], V->ne[1], V->ne[2]);
+                }
 
                 Q = ggml_scale(ctx, Q, scale_val);
                 ggml_tensor *attn = ggml_mul_mat(ctx, K, Q);
-                fprintf(stderr, "[ATTNM] bi=%d attn ne=(%ld,%ld,%ld) OK\n", bi,
-                        attn->ne[0], attn->ne[1], attn->ne[2]);
+                if (aicore::debug::openpcdet_stage_profile_enabled()) {
+                    fprintf(stderr,
+                            "[ATTNM] bi=%d attn ne=(%ld,%ld,%ld) OK\n", bi,
+                            attn->ne[0], attn->ne[1], attn->ne[2]);
+                }
                 // attn: [Ws2, Ws2, nH*nw]
 
                 // ---- Relative position bias ----
@@ -767,23 +784,30 @@ bool run_swin_transformer(engine_backend &backend,
                 ggml_tensor *Vt =
                         ggml_cont(ctx, ggml_permute(ctx, V, 1, 0, 2, 3));
                 ggml_tensor *out = ggml_mul_mat(ctx, Vt, attn);
-                fprintf(stderr,
-                        "[R417] out ne=(%ld,%ld,%ld) cont=%d Vcont=%d\n",
-                        out->ne[0], out->ne[1], out->ne[2],
-                        ggml_is_contiguous(out), ggml_is_contiguous(V));
+                if (aicore::debug::openpcdet_stage_profile_enabled()) {
+                    fprintf(stderr,
+                            "[R417] out ne=(%ld,%ld,%ld) cont=%d Vcont=%d\n",
+                            out->ne[0], out->ne[1], out->ne[2],
+                            ggml_is_contiguous(out), ggml_is_contiguous(V));
+                }
                 // [head_dim, Ws2, nH*nw] → [C, Ws2, nw]
                 out = ggml_reshape_4d(ctx, out, head_dim, Ws2, nH, nw);
-                fprintf(stderr,
-                        "[R4] after reshape_4d(%ld,%ld,%ld,%ld) "
-                        "ne=(%ld,%ld,%ld,%ld) cont=%d\n",
-                        (long)head_dim, (long)Ws2, (long)nH, (long)nw,
-                        out->ne[0], out->ne[1], out->ne[2], out->ne[3],
-                        ggml_is_contiguous(out));
+                if (aicore::debug::openpcdet_stage_profile_enabled()) {
+                    fprintf(stderr,
+                            "[R4] after reshape_4d(%ld,%ld,%ld,%ld) "
+                            "ne=(%ld,%ld,%ld,%ld) cont=%d\n",
+                            (long)head_dim, (long)Ws2, (long)nH, (long)nw,
+                            out->ne[0], out->ne[1], out->ne[2], out->ne[3],
+                            ggml_is_contiguous(out));
+                }
                 out = ggml_cont(ctx, ggml_permute(ctx, out, 0, 2, 1, 3));
-                fprintf(stderr,
-                        "[RR3] pre reshape_3d(%ld,%ld,%ld) cont=%d ne=%ld\n",
-                        (long)C, (long)Ws2, (long)nw, ggml_is_contiguous(out),
-                        (long)ggml_nelements(out));
+                if (aicore::debug::openpcdet_stage_profile_enabled()) {
+                    fprintf(stderr,
+                            "[RR3] pre reshape_3d(%ld,%ld,%ld) cont=%d ne=%ld\n",
+                            (long)C, (long)Ws2, (long)nw,
+                            ggml_is_contiguous(out),
+                            (long)ggml_nelements(out));
+                }
                 out = ggml_reshape_3d(ctx, out, C, Ws2, nw);
 
                 // ---- Output projection ----

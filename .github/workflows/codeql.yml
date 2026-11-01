@@ -284,7 +284,6 @@ jobs:
             -DPLUGIN_STANDARD_QMAPANYTHING=OFF \
             -DPLUGIN_STANDARD_QOPENPCDET=OFF \
             -DPLUGIN_STANDARD_QINSTANTMESH=OFF \
-            ..
             .. 2>&1 | tee ../codeql-evidence/configure.log
           cp compile_commands.json ../codeql-evidence/
           {
@@ -305,7 +304,7 @@ jobs:
           set -euo pipefail
           mapfile -t targets < <(cmake --build build --target help |
             sed -nE 's/^\.\.\. ((ext_|3rdparty_)[A-Za-z0-9_+-]+|poisson_recon_lib)$/\1/p' |
-            grep -v '_autogen$')
+            grep -vE '_autogen(_timestamp_deps)?$')
           if (( ${#targets[@]} == 0 )); then
             echo "No vendored dependency targets found" >&2
             exit 1

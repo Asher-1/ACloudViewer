@@ -55,6 +55,16 @@ struct OpenPCDetRunResult {
     bool fromScene = false;  ///< true when the run went through detect_scene
     QString sceneDir;        ///< scene directory (empty on point-only runs)
     int numCameras = 0;      ///< camera count of the loaded scene
+    // ---- DB-cloud input frame (ecvShiftedObject convention) ----
+    /** True when the stored local points were lifted into the original
+     *  LiDAR frame before inference (Pglobal = Plocal/scale - shift); the
+     *  detections below are then expressed in that global frame and
+     *  consumers back-project with Plocal = (Pglobal + shift) * scale. */
+    bool inputInLiDARFrame = false;
+    double globalScale = 1.0;   ///< source cloud's global scale
+    double globalShiftX = 0.0;  ///< source cloud's global shift (x)
+    double globalShiftY = 0.0;
+    double globalShiftZ = 0.0;
 };
 
 Q_DECLARE_METATYPE(OpenPCDetRunResult)

@@ -102,6 +102,8 @@
 #include "RelateDetectors.h"
 #include "RelateOptionsDialog.h"
 #include "RemoteServerClient.h"
+#include "ChatServiceClient.h"
+#include "LocalChatEngine.h"
 #include "RemoteServerDialog.h"
 #include "VideoAnnotationDialog.h"
 #include "VideoFrameExtraction.h"
@@ -708,6 +710,84 @@ AnnotationWindow::~AnnotationWindow() {
 
 void AnnotationWindow::openImage(const QString& file) { openFile(file); }
 
+// The Describe action runs the local vision model of the public llm catalog
+// on the current image and stores the caption as the image-level
+// description. The catalog default (SmolVLM 500M Q8_0) is the recommended
+// vision row; a downloaded vision model wins over it, and a missing model
+// goes through ChatServiceClient's shared verified-download path.
+static QString vlmDescribeModel() {
+    const auto models = LocalChatEngine::models();
+    QString fallback;
+    for (const auto& value : models) {
+        const auto entry = value.toObject();
+        if (!entry.value(QStringLiteral("vision")).toBool()) continue;
+        const auto id = entry.value(QStringLiteral("id")).toString();
+        if (entry.value(QStringLiteral("downloaded")).toBool()) return id;
+        if (fallback.isEmpty()) fallback = id;
+    }
+    return fallback;
+}
+
+void AnnotationWindow::runVlmDescribe() {
+    if (m_imagePath.isEmpty()) {
+        m_status->setText(tr("Open an image before running AI Describe"));
+        return;
+    }
+    if (!m_vlmDescribeClient) {
+        m_vlmDescribeClient = new ChatServiceClient(this);
+        connect(m_vlmDescribeClient, &ChatServiceClient::statusChanged,
+                m_status, [this](const QString& message) {
+                    if (m_vlmDescribeClient && m_vlmDescribeClient->busy())
+                        m_status->setText(message);
+                });
+        connect(
+                m_vlmDescribeClient, &ChatServiceClient::finished, this,
+                [this](const QString& text, const QString& error) {
+                    if (m_vlmDescribeAction) m_vlmDescribeAction->setEnabled(true);
+                    if (!error.isEmpty()) {
+                        m_status->setText(tr("AI Describe failed: %1").arg(error));
+                        return;
+                    }
+                    const QString caption = text.trimmed();
+                    if (caption.isEmpty()) {
+                        m_status->setText(tr("AI Describe returned no text"));
+                        return;
+                    }
+                    if (m_document.value(QStringLiteral("description"))
+                                .toString() != caption) {
+                        m_document.insert(QStringLiteral("description"), caption);
+                        updateDescriptionEditor();
+                        setDirty(true);
+                    }
+                    m_status->setText(tr("AI Describe: %1").arg(caption));
+                });
+    }
+    if (m_vlmDescribeClient->busy()) return;
+    const QString model = vlmDescribeModel();
+    if (model.isEmpty()) {
+        m_status->setText(tr("The llm catalog has no local vision model"));
+        return;
+    }
+    QString error;
+    const QJsonArray messages{
+            ChatServiceClient::userMessage(
+                    tr("Describe this image in one concise sentence suitable "
+                       "as an annotation dataset description."),
+                    m_imagePath, &error)};
+    if (!error.isEmpty()) {
+        m_status->setText(error);
+        return;
+    }
+    ChatServiceClient::Settings settings;
+    settings.baseUrl = QUrl(QStringLiteral("aicore://llm"));
+    settings.model = model;
+    settings.temperature = 0.0;  // deterministic caption
+    settings.maxTokens = 96;
+    if (m_vlmDescribeAction) m_vlmDescribeAction->setEnabled(false);
+    m_status->setText(tr("AI Describe: running %1").arg(model));
+    m_vlmDescribeClient->complete(settings, messages, true);
+}
+
 void AnnotationWindow::createUi() {
     m_workspace = new QWidget(this);
     auto* workspaceLayout = new QHBoxLayout(m_workspace);
@@ -1196,7 +1276,9 @@ void AnnotationWindow::createUi() {
     m_tagsPanel = tagsPanel;
     m_tagsPanel->setMaximumHeight(140);
     centralLayout->addWidget(m_tagsPanel);
-    m_tagsPanel->hide();
+    // The source enables the image-tags panel by default (v4.2.1); the
+    // user can still hide it through the View toggle.
+    m_tagsVisibilityExplicit = false;
     auto addTagValue = [this]() {
         if (m_imagePath.isEmpty()) return;
         if (m_tagInput->isHidden()) {
@@ -4236,6 +4318,7 @@ void AnnotationWindow::createActions() {
             &QAction::setChecked);
     m_tagsAction = viewMenu->addAction(tr("Image Tags"));
     m_tagsAction->setCheckable(true);
+    m_tagsAction->setChecked(true);
     m_tagsAction->setShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_T));
     registerShortcut(m_tagsAction, QStringLiteral("toggle_image_tags"),
                      tr("View"));
@@ -4867,6 +4950,18 @@ void AnnotationWindow::createActions() {
     toolbarActions.insert(QStringLiteral("hide_selected_polygons"),
                           hideSelected);
     toolbarActions.insert(QStringLiteral("show_hidden_polygons"), showHidden);
+    // ACloudViewer extension: one-click local VLM captioning. The request
+    // runs on the LocalChatEngine worker thread; only the result lands on
+    // the GUI thread, and the busy client keeps the action disabled.
+    m_vlmDescribeAction = editMenu->addAction(
+            QIcon(iconPath(QStringLiteral("brain.png"))), tr("AI Describe"),
+            this, [this]() { runVlmDescribe(); });
+    m_vlmDescribeAction->setToolTip(
+            tr("Describe the current image with the local vision model and "
+               "store the caption"));
+    m_vlmDescribeAction->setProperty("qAnyToolbarId",
+                                     QStringLiteral("ai_describe"));
+    toolbarActions.insert(QStringLiteral("ai_describe"), m_vlmDescribeAction);
     m_selectToggleShapesAction = editMenu->addAction(
             QIcon(iconPath(QStringLiteral("eye.svg"))),
             tr("Toggle shapes visibility"), this, [this]() {
@@ -5868,6 +5963,124 @@ void AnnotationWindow::createActions() {
     appendToolbarAction(QStringLiteral("auto_run"));
     appendToolbarAction(QStringLiteral("auto_label"));
     fileBar->addSeparator();
+    // Source visualization controls: canvas display toggles promoted to the
+    // main toolbar (label_widget "set_canvas_params" rows).
+    using CanvasToggle = void (AnnotationCanvas::*)(bool);
+    using CanvasGetter = bool (AnnotationCanvas::*)() const;
+    const struct VizToggle {
+        const char* icon;
+        const char* text;
+        CanvasToggle setter;
+        CanvasGetter getter;
+    } vizToggles[] = {
+            {"layers.svg", "Show masks", &AnnotationCanvas::setShowMasks,
+             &AnnotationCanvas::showMasks},
+            {"scan-text.svg", "Show texts", &AnnotationCanvas::setShowTexts,
+             &AnnotationCanvas::showTexts},
+            {"tag.svg", "Show labels", &AnnotationCanvas::setShowLabels,
+             &AnnotationCanvas::showLabels},
+            {"badge-percent.svg", "Show scores", &AnnotationCanvas::setShowScores,
+             &AnnotationCanvas::showScores},
+            {"ruler.svg", "Show degrees", &AnnotationCanvas::setShowDegrees,
+             &AnnotationCanvas::showDegrees},
+            {"list-checks.svg", "Show attributes",
+             &AnnotationCanvas::setShowAttributes,
+             &AnnotationCanvas::showAttributes},
+            {"link.svg", "Show linking", &AnnotationCanvas::setShowLinking,
+             &AnnotationCanvas::showLinking},
+            {"tags.svg", "Show groups", &AnnotationCanvas::setShowGroups,
+             &AnnotationCanvas::showGroups},
+    };
+    for (const VizToggle& toggle : vizToggles) {
+        QAction* action =
+                new QAction(QIcon(iconPath(QString::fromLatin1(toggle.icon))),
+                            tr(toggle.text), this);
+        action->setToolTip(tr(toggle.text));
+        action->setCheckable(true);
+        action->setChecked((m_canvas->*toggle.getter)());
+        connect(action, &QAction::toggled, this,
+                [this, setter = toggle.setter](bool visible) {
+                    (m_canvas->*setter)(visible);
+                });
+        fileBar->addAction(action);
+    }
+    fileBar->addSeparator();
+    // Source canvas display modes: color by label / instance / group and
+    // the binary-mask render, as an exclusive group.
+    QActionGroup* displayModes = new QActionGroup(this);
+    displayModes->setExclusive(true);
+    const struct DisplayModeEntry {
+        const char* icon;
+        const char* text;
+        int mode;
+    } displayModeEntries[] = {
+            {"swatch-book.svg", "Color by label",
+             int(AnnotationCanvas::DisplayMode::Label)},
+            {"component.svg", "Color by instance",
+             int(AnnotationCanvas::DisplayMode::Instance)},
+            {"network.svg", "Color by group",
+             int(AnnotationCanvas::DisplayMode::Group)},
+            {"contrast.svg", "Binary mask",
+             int(AnnotationCanvas::DisplayMode::Bitmap)},
+    };
+    for (const DisplayModeEntry& entry : displayModeEntries) {
+        QAction* action =
+                new QAction(QIcon(iconPath(QString::fromLatin1(entry.icon))),
+                            tr(entry.text), this);
+        action->setToolTip(tr(entry.text));
+        action->setCheckable(true);
+        action->setChecked(entry.mode ==
+                           int(AnnotationCanvas::DisplayMode::Label));
+        action->setData(entry.mode);
+        displayModes->addAction(action);
+        connect(action, &QAction::triggered, this, [this, action]() {
+            m_canvas->setDisplayMode(
+                    AnnotationCanvas::DisplayMode(action->data().toInt()));
+        });
+        fileBar->addAction(action);
+    }
+    connect(m_canvas, &AnnotationCanvas::shapeMeasured, this,
+            [this](int height, int width, const QPointF& position) {
+                if (height <= 0 || width <= 0) return;
+                m_status->setText(tr("X: %1, Y: %2 | H: %3, W: %4")
+                                          .arg(int(position.x()))
+                                          .arg(int(position.y()))
+                                          .arg(height)
+                                          .arg(width));
+            });
+    connect(m_canvas, &AnnotationCanvas::lineMeasured, this,
+            [this](double length, const QPointF& position) {
+                if (m_canvas->tool() == QStringLiteral("linestrip")) {
+                    double total = length;
+                    const auto shapes = m_canvas->shapes();
+                    if (!shapes.isEmpty()) {
+                        const QVector<QPointF>& points = shapes.last().points;
+                        for (int i = 1; i < points.size(); ++i)
+                            total += QLineF(points[i], points[i - 1]).length();
+                    }
+                    m_status->setText(
+                            tr("X: %1, Y: %2 | L: %3 px | Total: %4 px")
+                                    .arg(int(position.x()))
+                                    .arg(int(position.y()))
+                                    .arg(length, 0, 'f', 2)
+                                    .arg(total, 0, 'f', 2));
+                    return;
+                }
+                m_status->setText(tr("X: %1, Y: %2 | L: %3 px")
+                                          .arg(int(position.x()))
+                                          .arg(int(position.y()))
+                                          .arg(length, 0, 'f', 2));
+            });
+    connect(m_canvas, &AnnotationCanvas::circleMeasured, this,
+            [this](double radius, const QPointF& position) {
+                const double circumference = 2.0 * std::acos(-1.0) * radius;
+                m_status->setText(tr("X: %1, Y: %2 | R: %3 px | C: %4 px")
+                                          .arg(int(position.x()))
+                                          .arg(int(position.y()))
+                                          .arg(radius, 0, 'f', 2)
+                                          .arg(circumference, 0, 'f', 2));
+            });
+    fileBar->addSeparator();
     appendToolbarAction(QStringLiteral("open_chatbot"));
     appendToolbarAction(QStringLiteral("open_vqa"));
     appendToolbarAction(QStringLiteral("open_pointcloud"));
@@ -5882,6 +6095,7 @@ void AnnotationWindow::createActions() {
     // ACloudViewer additions follow the complete upstream toolbar sequence.
     appendToolbarAction(QStringLiteral("hide_selected_polygons"));
     appendToolbarAction(QStringLiteral("show_hidden_polygons"));
+    appendToolbarAction(QStringLiteral("ai_describe"));
     fileBar->addWidget(brushSettingsButton);
     appendToolbarAction(QStringLiteral("open_video"));
     appendToolbarAction(QStringLiteral("open"));
@@ -8873,10 +9087,11 @@ void AnnotationWindow::updateTags() {
         item->setData(Qt::UserRole, tag);
     }
     if (!m_tagsVisibilityExplicit) {
+        // The panel stays visible by default (upstream v4.2.1 behavior);
+        // only an explicit user toggle decides otherwise.
         const QSignalBlocker actionBlocked(m_tagsAction);
-        const bool visible = m_document.contains(QStringLiteral("tags"));
-        m_tagsAction->setChecked(visible);
-        m_tagsPanel->setVisible(visible);
+        m_tagsAction->setChecked(true);
+        m_tagsPanel->setVisible(true);
     }
     m_tagsPanel->setEnabled(!m_imagePath.isEmpty());
     for (int i = 0; i < m_tags->count(); ++i) {

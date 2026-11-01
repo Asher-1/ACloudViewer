@@ -23,6 +23,8 @@
 
 #include "vfe_scatter_cuda.h"
 
+#include "common/debug_dump.hpp"
+
 namespace openpcdet::ext {
 
 namespace {
@@ -282,7 +284,7 @@ bool gpu_pillar_vfe_scatter(const float *points,
                             float *spatial_dst_dev,
                             bool need_pillar_features) {
     (void)nz;
-    bool vfe_dbg = getenv("OPCPD_VFEDBG") != nullptr;
+    bool vfe_dbg = aicore::debug::openpcdet_vfe_debug_enabled();
     auto vfe_t0 = std::chrono::high_resolution_clock::now();
     // With D2D the BEV is written straight into the ggml device tensor, so the
     // (potentially ~tens of MB) host zero-fill is unnecessary.

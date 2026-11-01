@@ -313,22 +313,26 @@ AICORE_CAPI int aicore_openpcdet_geometry_of(const aicore_openpcdet_ctx* ctx,
                                              aicore_openpcdet_geometry* out) {
     if (ctx == nullptr || out == nullptr || !ctx->engine) return -1;
     const openpcdet::hparams& hp = ctx->engine->file.hp;
-    if (hp.point_cloud_range.size() < 6 || hp.voxel_size.size() < 3 ||
-        hp.grid_size.size() < 3) {
-        return -1;
-    }
+    // Point-based detectors (PointRCNN) declare no BEV grid/voxel metadata;
+    // those fields read as zeros there. The point-cloud range, feature count
+    // and class count stay mandatory input-validation facts.
+    if (hp.point_cloud_range.size() < 6) return -1;
     *out = {};
     out->abi_version = AICORE_OPENPCDET_ABI_VERSION;
     out->num_point_features = hp.num_point_features;
-    out->grid_size_x = hp.grid_size[0];
-    out->grid_size_y = hp.grid_size[1];
-    out->grid_size_z = hp.grid_size[2];
+    if (hp.grid_size.size() >= 3) {
+        out->grid_size_x = hp.grid_size[0];
+        out->grid_size_y = hp.grid_size[1];
+        out->grid_size_z = hp.grid_size[2];
+    }
     out->max_points_per_voxel = hp.max_points_per_voxel;
     out->max_voxels = hp.max_voxels;
     out->num_class = hp.num_class;
-    out->voxel_size_x = hp.voxel_size[0];
-    out->voxel_size_y = hp.voxel_size[1];
-    out->voxel_size_z = hp.voxel_size[2];
+    if (hp.voxel_size.size() >= 3) {
+        out->voxel_size_x = hp.voxel_size[0];
+        out->voxel_size_y = hp.voxel_size[1];
+        out->voxel_size_z = hp.voxel_size[2];
+    }
     for (int i = 0; i < 6; ++i)
         out->point_cloud_range[i] = hp.point_cloud_range[i];
     std::snprintf(out->arch, sizeof(out->arch), "%s", arch_string(hp));
@@ -659,4 +663,102 @@ AICORE_CAPI void aicore_openpcdet_shutdown(void) { aicore_runtime_shutdown(); }
 
 AICORE_CAPI char* aicore_openpcdet_model_cache_dir(void) {
     return dup_cstr(aicore::openpcdet_model_cache_dir());
+}
+
+AICORE_CAPI int aicore_openpcdet_read_model_info(
+        const char* gguf_path,
+        aicore_openpcdet_model_info* out,
+        char** error) {
+    std::string err;
+    auto fail = [&err](std::string message) {
+        if (err.empty()) err = std::move(message);
+    };
+    if (gguf_path == nullptr || gguf_path[0] == '\0') {
+        fail("openpcdet model info: null or empty path");
+    } else if (out == nullptr) {
+        fail("openpcdet model info: null output struct");
+    } else if (out->struct_size != sizeof(aicore_openpcdet_model_info)) {
+        fail("openpcdet model info: struct_size mismatch");
+    } else if (out->abi_version !=
+               AICORE_OPENPCDET_MODEL_INFO_ABI_VERSION) {
+        fail("openpcdet model info: unsupported abi_version");
+    } else {
+        try {
+            // KV-only probe: metadata and hyperparameters only — no tensor
+            // data, backend, or context state is created here.
+            openpcdet::model_file probe;
+            if (!probe.open(gguf_path, /*with_data=*/false)) {
+                fail(probe.error.empty()
+                             ? "openpcdet model info: unreadable GGUF"
+                             : probe.error);
+            } else {
+                const int arch_key =
+                        gguf_find_key(probe.guf, "general.architecture");
+                const char* arch =
+                        arch_key >= 0 ? gguf_get_val_str(probe.guf, arch_key)
+                                      : nullptr;
+                if (arch == nullptr || arch[0] == '\0') {
+                    fail("openpcdet model info: missing "
+                         "general.architecture");
+                } else if (std::strlen(arch) >=
+                           sizeof(aicore_openpcdet_model_info::arch)) {
+                    fail("openpcdet model info: architecture string too "
+                         "long");
+                } else if (probe.hp.num_point_features <= 0 ||
+                           probe.hp.num_class <= 0) {
+                    fail("openpcdet model info: malformed input metadata");
+                } else {
+                    aicore_openpcdet_model_info info{};
+                    info.struct_size = sizeof(info);
+                    info.abi_version =
+                            AICORE_OPENPCDET_MODEL_INFO_ABI_VERSION;
+                    info.score_thresh = probe.hp.score_thresh;
+                    info.nms_thresh = probe.hp.nms_thresh;
+                    info.max_boxes = probe.hp.max_boxes;
+                    info.num_point_features = probe.hp.num_point_features;
+                    info.num_class = probe.hp.num_class;
+                    info.needs_scene =
+                            (probe.hp.arch == openpcdet::arch_kind::caddn ||
+                             probe.hp.arch == openpcdet::arch_kind::bevfusion ||
+                             probe.hp.focal_multimodal)
+                                    ? 1
+                                    : 0;
+                    std::strncpy(info.arch, arch,
+                                 sizeof(aicore_openpcdet_model_info::arch) -
+                                         1);
+                    info.arch[sizeof(aicore_openpcdet_model_info::arch) - 1] =
+                            '\0';
+                    *out = info;
+                }
+            }
+        } catch (const std::exception& e) {
+            fail(std::string("openpcdet model info failed: ") + e.what());
+        } catch (...) {
+            fail("openpcdet model info failed: unknown exception");
+        }
+    }
+    if (err.empty()) return 0;
+    if (error) *error = dup_cstr(err);
+    return -1;
+}
+
+AICORE_CAPI int aicore_openpcdet_model_defaults(const char* gguf_path,
+                                                float* score_thresh,
+                                                float* nms_thresh,
+                                                int32_t* max_boxes) {
+    // Thin view over the same metadata reader: one owner for the GGUF
+    // header facts, one place that validates them.
+    aicore_openpcdet_model_info info{};
+    info.struct_size = sizeof(info);
+    info.abi_version = AICORE_OPENPCDET_MODEL_INFO_ABI_VERSION;
+    if (aicore_openpcdet_read_model_info(gguf_path, &info, nullptr) != 0)
+        return -1;
+    // The plugin UI can only represent values inside these ranges.
+    if (!(info.score_thresh >= 0.0f && info.score_thresh <= 1.0f)) return -1;
+    if (!(info.nms_thresh >= 0.0f && info.nms_thresh <= 1.0f)) return -1;
+    if (info.max_boxes <= 0) return -1;
+    if (score_thresh) *score_thresh = info.score_thresh;
+    if (nms_thresh) *nms_thresh = info.nms_thresh;
+    if (max_boxes) *max_boxes = info.max_boxes;
+    return 0;
 }

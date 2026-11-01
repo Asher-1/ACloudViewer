@@ -91,9 +91,9 @@ AICORE_CAPI void aicore_openpcdet_free_buffer(void* p);
 typedef struct aicore_openpcdet_geometry {
     int32_t abi_version;
     int32_t num_point_features;  // expected point dim (4 = x,y,z,intensity)
-    int32_t grid_size_x;         // BEV/voxel grid x
+    int32_t grid_size_x;         // BEV/voxel grid x (0 = point-based detector)
     int32_t grid_size_y;
-    int32_t grid_size_z;  // 1 for pillar models
+    int32_t grid_size_z;  // 1 for pillar models; 0 for point-based detectors
     int32_t max_points_per_voxel;
     int32_t max_voxels;
     int32_t num_class;
@@ -232,6 +232,50 @@ AICORE_CAPI const aicore_openpcdet_model_entry*
 aicore_openpcdet_model_by_filename(const char* filename);
 /** Returns the base URL of the published model release. */
 AICORE_CAPI const char* aicore_openpcdet_model_download_base(void);
+
+/** Declared post-processing defaults of one checkpoint GGUF (the
+ *  "<arch>.post.*" metadata keys written at conversion time from the
+ *  upstream OpenPCDet config). Reads only the GGUF key-value header —
+ *  no model weights are loaded. Returns 0 on success and fills the
+ *  non-NULL outputs; returns -1 when the file is missing, unreadable or
+ *  does not declare the keys (callers keep their "follow the GGUF"
+ *  fallback). */
+AICORE_CAPI int aicore_openpcdet_model_defaults(const char* gguf_path,
+                                                float* score_thresh,
+                                                float* nms_thresh,
+                                                int32_t* max_boxes);
+
+/** ABI version of aicore_openpcdet_model_info (bump on breaking changes). */
+#define AICORE_OPENPCDET_MODEL_INFO_ABI_VERSION 1
+
+/** Versioned, read-only metadata of one checkpoint GGUF: the declared
+ *  post-processing defaults plus the input facts a caller needs before it
+ *  allocates anything (point dim, class count, scene requirement, arch).
+ *  Filled only by aicore_openpcdet_read_model_info; never loads tensor
+ *  data, backends or contexts. */
+typedef struct aicore_openpcdet_model_info {
+    size_t struct_size;   /**< sizeof(aicore_openpcdet_model_info) of the caller */
+    int32_t abi_version;  /**< AICORE_OPENPCDET_MODEL_INFO_ABI_VERSION of the caller */
+    float score_thresh;   /**< declared detection score threshold */
+    float nms_thresh;     /**< declared rotated NMS IoU threshold */
+    int32_t max_boxes;    /**< declared maximum returned boxes */
+    int32_t num_point_features; /**< expected point dim (4 = x,y,z,intensity) */
+    int32_t num_class;          /**< declared class count */
+    int32_t needs_scene;        /**< 1 when the checkpoint requires a scene input */
+    char arch[32];              /**< general.architecture, NUL-terminated */
+} aicore_openpcdet_model_info;
+
+/** Reads the checkpoint metadata of \p gguf_path into \p out without
+ *  loading weights, creating a backend or any GPU/context state. The caller
+ *  initializes out->struct_size and out->abi_version; mismatches are
+ *  rejected. On failure \p out is left untouched and — when \p error is
+ *  non-NULL — receives a NUL-terminated diagnostic owned by the caller and
+ *  released with aicore_openpcdet_free_buffer. Returns 0 on success and -1
+ *  on invalid arguments, unreadable files or malformed metadata. */
+AICORE_CAPI int aicore_openpcdet_read_model_info(
+        const char* gguf_path,
+        aicore_openpcdet_model_info* out,
+        char** error);
 
 #ifdef __cplusplus
 }

@@ -712,8 +712,10 @@ class TestLevel1_CppPlugin:
                 for task, command, _ in AICORE_BATCH_COMMANDS]
         _assert_aicore_registry(rows)
         if drift == "extra":
-            rows += [{"name": "llm", "command": "LLM_GENERATE"},
-                     {"name": "openpcdet", "command": "OPENPCDET_DETECT"}]
+            # Synthetic rows that can never collide with the real table:
+            # registered tasks (e.g. llm) are legitimate members now.
+            rows += [{"name": "not-a-task", "command": "NOT_A_COMMAND"},
+                     {"name": "another-task", "command": "ANOTHER_COMMAND"}]
         else:
             rows.pop()
         with pytest.raises(AssertionError, match="CLI/native batch contract mismatch"):

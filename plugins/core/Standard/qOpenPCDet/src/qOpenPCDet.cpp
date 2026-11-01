@@ -41,9 +41,9 @@ qOpenPCDet::qOpenPCDet(QObject* parent)
     connect(m_inferenceHeartbeat, &QTimer::timeout, this, [this]() {
         if (!m_worker || !m_worker->isRunning() || !m_dialog) return;
         m_inferenceElapsedSeconds += 10;
-        m_dialog->appendLog(tr("[OpenPCDet] Task is running (%1 s "
-                               "elapsed)...")
-                                    .arg(m_inferenceElapsedSeconds));
+        m_dialog->appendDebug(tr("[OpenPCDet] Task is running (%1 s "
+                                 "elapsed)...")
+                                      .arg(m_inferenceElapsedSeconds));
     });
 }
 
@@ -117,6 +117,11 @@ void qOpenPCDet::executeTask(const OpenPCDetDialog::Settings& settings) {
         m_worker->deleteLater();
         m_worker = nullptr;
     }
+    if (m_runSourceSnapshot) {
+        delete m_runSourceSnapshot;
+        m_runSourceSnapshot = nullptr;
+    }
+    m_runCancelled = false;
 
     // Input resolution: an explicit point file wins; else the active DB
     // cloud (scene runs without a LiDAR branch, e.g. CaDDN, may have
@@ -154,14 +159,25 @@ void qOpenPCDet::executeTask(const OpenPCDetDialog::Settings& settings) {
     ws.scoreThresh = settings.scoreThresh;
     ws.nmsThresh = settings.nmsThresh;
     ws.maxBoxes = settings.maxBoxes;
+    // The dialog's default/override tri-state maps onto the worker's
+    // explicit-threshold channel: "follow model" zeroes the values so no
+    // override setter is called; an explicit override keeps its verbatim
+    // values (including a legal explicit 0).
+    ws.thresholdsExplicit = !settings.thresholdsFollowModel;
     ws.pointsFile = settings.pointsFile;
     ws.sceneDir = settings.sceneDir;
 
     m_currentSettings = settings;
-    m_runSourceCloud = cloud;  // annotated-cloud export source
+    // Fixed Run-time source snapshot (plan §4): a value clone taken now
+    // survives user edits/deletions of the DB entity mid-run; the worker
+    // additionally snapshots its own inference inputs at construction.
+    m_runSourceSnapshot = cloud ? static_cast<ccPointCloud*>(cloud->cloneThis())
+                                : nullptr;
     m_worker = new OpenPCDetWorker(ws, cloud, this);
     connect(m_worker, &OpenPCDetWorker::logMessage, m_dialog,
             &OpenPCDetDialog::appendLog, Qt::QueuedConnection);
+    connect(m_worker, &OpenPCDetWorker::debugMessage, m_dialog,
+            &OpenPCDetDialog::appendDebug, Qt::QueuedConnection);
     connect(m_worker, &OpenPCDetWorker::progressUpdate, this,
             &qOpenPCDet::onWorkerProgress, Qt::QueuedConnection);
     connect(m_worker, &OpenPCDetWorker::resultReady, this,
@@ -176,9 +192,16 @@ void qOpenPCDet::executeTask(const OpenPCDetDialog::Settings& settings) {
 
 void qOpenPCDet::cancelTask() {
     if (m_worker && m_worker->isRunning()) m_worker->requestTaskCancel();
+    // Late results after a cancel stay out of the DB tree.
+    m_runCancelled = true;
 }
 
 void qOpenPCDet::onResultReady(const OpenPCDetRunResult& result) {
+    if (m_runCancelled) {
+        m_dialog->appendLog(tr(
+                "[OpenPCDet] Late result after cancel — discarded."));
+        return;
+    }
     m_dialog->appendLog(
             tr("[OpenPCDet] Result ready: source=%1, model=%2, %3 box(es), "
                "runtime %4 ms")
@@ -193,7 +216,7 @@ void qOpenPCDet::onResultReady(const OpenPCDetRunResult& result) {
     if (m_currentSettings.annotatedCloudToDb) {
         exportAnnotatedCloud(result);
     }
-    m_dialog->appendLog(tr("[OpenPCDet] Result export flow done."));
+    m_dialog->appendDebug(tr("[OpenPCDet] Result export flow done."));
 }
 
 void qOpenPCDet::addBoxesToDb(const OpenPCDetRunResult& result) {
@@ -203,10 +226,10 @@ void qOpenPCDet::addBoxesToDb(const OpenPCDetRunResult& result) {
             m_currentSettings.modelPath);
     const QString groupName = ecvPluginDbNaming::makeUnique(
             QStringLiteral("OpenPCDet detections (%1)").arg(modelTag), m_app);
-    m_dialog->appendLog(tr("[OpenPCDet] Building wireframe group for %1 "
-                           "box(es) (model %2).")
-                                .arg(result.detections.size())
-                                .arg(modelTag));
+    m_dialog->appendDebug(tr("[OpenPCDet] Building wireframe group for %1 "
+                             "box(es) (model %2).")
+                                  .arg(result.detections.size())
+                                  .arg(modelTag));
     ccHObject* group = BuildDetectionGroup(result, modelTag);
     if (!group) {
         m_dialog->appendLog(tr("[Error] Wireframe group build failed."));
@@ -226,7 +249,9 @@ void qOpenPCDet::addBoxesToDb(const OpenPCDetRunResult& result) {
 
 void qOpenPCDet::exportAnnotatedCloud(const OpenPCDetRunResult& result) {
     if (!m_app || result.detections.isEmpty()) return;
-    ccPointCloud* source = m_runSourceCloud;
+    // Annotate the Run-time snapshot (fixed source identity), never the
+    // user's current DB selection or a since-deleted entity.
+    ccPointCloud* source = m_runSourceSnapshot;
     if (!source) {
         m_dialog->appendLog(
                 tr("[OpenPCDet] Annotated-cloud export skipped: the run had "
@@ -235,11 +260,11 @@ void qOpenPCDet::exportAnnotatedCloud(const OpenPCDetRunResult& result) {
     }
     const QString modelTag = ecvPluginDbNaming::modelTagFromFilename(
             m_currentSettings.modelPath);
-    m_dialog->appendLog(tr("[OpenPCDet] Building annotated cloud from '%1' "
-                           "(%2 point(s), model %3).")
-                                .arg(source->getName())
-                                .arg(source->size())
-                                .arg(modelTag));
+    m_dialog->appendDebug(tr("[OpenPCDet] Building annotated cloud from '%1' "
+                             "(%2 point(s), model %3).")
+                                  .arg(source->getName())
+                                  .arg(source->size())
+                                  .arg(modelTag));
     unsigned tinted = 0;
     QString error;
     ccPointCloud* annotated =

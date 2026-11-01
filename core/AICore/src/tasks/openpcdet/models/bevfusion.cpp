@@ -7,6 +7,8 @@
 
 #include "bevfusion.h"
 
+#include "common/debug_dump.hpp"
+
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -132,7 +134,7 @@ bool bevfusion::forward_scene(const scene_input& scene,
         return false;
     }
 
-    const bool profile = std::getenv("OPCPD_PROFILE") != nullptr;
+    const bool profile = aicore::debug::openpcdet_stage_profile_enabled();
     auto lap_start = std::chrono::steady_clock::now();
     auto lap = [&](const char* name) {
         if (!profile) return;

@@ -8,6 +8,8 @@
 #include <aicore/ocr_capi.h>
 #include <ecvStdPluginInterface.h>
 
+#include "LocalChatEngine.h"
+
 #include <QAction>
 #include <QApplication>
 #include <QBuffer>
@@ -40,6 +42,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
+#include <QEventLoop>
 #include <QMainWindow>
 #include <QMenu>
 #include <QMenuBar>
@@ -828,6 +831,7 @@ int main(int argc, char** argv) {
     QAction* createBrush = nullptr;
     QAction* imageTags = nullptr;
     QAction* imageFlagsAction = nullptr;
+    QAction* aiDescribe = nullptr;
     QAction* settingsAction = nullptr;
     for (QAction* action : window->findChildren<QAction*>()) {
         if (action->text() == QStringLiteral("Save")) save = action;
@@ -899,6 +903,8 @@ int main(int argc, char** argv) {
         if (action->text() == QStringLiteral("Image Tags")) imageTags = action;
         if (action->text() == QStringLiteral("Image Flags"))
             imageFlagsAction = action;
+        if (action->text() == QStringLiteral("AI Describe"))
+            aiDescribe = action;
         if (action->objectName() == QStringLiteral("AnnotationSettings"))
             settingsAction = action;
     }
@@ -1002,6 +1008,8 @@ int main(int argc, char** argv) {
         !keepPreviousContrast || !autoUseLastLabel || !createBrush ||
         !autoUseLastLabel->isCheckable() || !imageFlagsAction ||
         imageFlagsAction->icon().isNull() ||
+        !aiDescribe || aiDescribe->icon().isNull() ||
+        aiDescribe->toolTip().isEmpty() ||
         imageFlagsAction->toolTip() !=
                 QStringLiteral("Upload Custom Image Flags File") ||
         !settingsAction ||
@@ -1842,8 +1850,13 @@ int main(int argc, char** argv) {
     });
     if (!QMetaObject::invokeMethod(window, "openImage", Qt::DirectConnection,
                                    Q_ARG(QString, checkedImagePath)) ||
-        !tagInput->isHidden() || tags->count() != 0 || imageTags->isChecked()) {
-        std::fprintf(stderr, "Image tag switch failed\n");
+        !tagInput->isHidden() || tags->count() != 0 || !imageTags->isChecked()) {
+        // Upstream v4.2.1 keeps the image-tags panel visible by default;
+        // switching to a tag-less image clears the tags but not the panel.
+        std::fprintf(stderr, "Image tag switch failed: inputHidden=%d "
+                             "count=%d checked=%d visible=%d\n",
+                     tagInput->isHidden(), tags->count(),
+                     imageTags->isChecked(), tags->isVisible());
         return 1;
     }
     if (!sidecar.open(QIODevice::ReadOnly)) return 1;
@@ -2895,6 +2908,67 @@ int main(int argc, char** argv) {
                          "Shape Manager add/deduplicate did not persist "
                          "selected cuboid\n");
             return 1;
+        }
+    }
+    // ACloudViewer extension, asset-gated: AI Describe runs the local VLM
+    // over the open image and stores the caption as the image description.
+    // Without a downloaded catalog vision model this block skips — the real
+    // model/accuracy gates live in the AICore llm validation matrix.
+    {
+        QString visionModel;
+        for (const auto& value : LocalChatEngine::models()) {
+            const auto entry = value.toObject();
+            if (entry.value(QStringLiteral("vision")).toBool() &&
+                entry.value(QStringLiteral("downloaded")).toBool()) {
+                visionModel = entry.value(QStringLiteral("id")).toString();
+                break;
+            }
+        }
+        if (visionModel.isEmpty()) {
+            std::fprintf(stderr,
+                         "AI Describe e2e skipped: no downloaded vision "
+                         "model\n");
+        } else {
+            auto* status =
+                    window->findChild<QLabel*>(QStringLiteral("AnnotationStatus"));
+            if (!aiDescribe || !status) return 1;
+            aiDescribe->trigger();
+            QString last;
+            for (int waited = 0; waited < 2400; ++waited) {
+                QEventLoop loop;
+                QTimer::singleShot(100, &loop, &QEventLoop::quit);
+                loop.exec();
+                last = status->text();
+                if (last.startsWith(QStringLiteral("AI Describe")) &&
+                    !last.contains(QStringLiteral("running")) &&
+                    !last.contains(QStringLiteral("Downloading")))
+                    break;
+            }
+            if (!last.startsWith(QStringLiteral("AI Describe:"))) {
+                std::fprintf(stderr,
+                             "AI Describe e2e failed: status=\"%s\" "
+                             "model=%s\n",
+                             last.toUtf8().constData(),
+                             visionModel.toUtf8().constData());
+                return 1;
+            }
+            save->trigger();
+            QFile described(sidecarPath);
+            if (!described.open(QIODevice::ReadOnly)) return 1;
+            const QString caption =
+                    QJsonDocument::fromJson(described.readAll())
+                            .object()
+                            .value(QStringLiteral("description"))
+                            .toString();
+            described.close();
+            if (caption.isEmpty()) {
+                std::fprintf(stderr,
+                             "AI Describe e2e failed: empty stored "
+                             "description\n");
+                return 1;
+            }
+            std::fprintf(stdout, "AI Describe caption: %s\n",
+                         caption.toUtf8().constData());
         }
     }
     window->close();

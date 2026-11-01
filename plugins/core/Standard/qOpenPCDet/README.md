@@ -92,8 +92,12 @@ checkpoints) driving one panel per checkpoint, a shared detection result
 table (class / score / center / size / heading), application console and CSV export.
 
 1. Pick a checkpoint in the left list and a quantization (`f32` / `f16` /
-   `q8_0`, default = the recommended F16 row) inside the panel; thresholds
-   Score / NMS / Max boxes default to the GGUF-declared values (`model`)
+   `q8_0`, default = the recommended F16 row) inside the panel. Score / NMS /
+   Max boxes seed themselves with the checkpoint's GGUF-declared defaults
+   (`aicore_openpcdet_model_defaults`, the upstream OpenPCDet config values
+   written at conversion time) as soon as a model file is cached; setting a
+   spinbox back to its minimum (`model`) restores the follow-the-GGUF
+   behavior, and explicit non-zero values persist as overrides
 2. Point-cloud panels: select a point cloud in the DB tree **or** point at
    a KITTI `.bin` / ASCII `.txt` file (the file wins). Scene panels
    (`kitti_caddn`, `nuscenes_bevfusion`): select a scene directory
@@ -116,11 +120,16 @@ table (class / score / center / size / heading), application console and CSV exp
    frame)
 
 Inference/download logs use the application's existing console, without a
-plugin-local log panel. Inputs and run/cancel/sample/progress stay visible while
+plugin-local log panel. Routine inference chatter (model/scene details,
+stage progress, heartbeats, export stages) is routed to `CVLog::PrintDebug`,
+so the console only carries errors and the final run summary unless debug
+logging is enabled. Inputs and run/cancel/sample/progress stay visible while
 configuration scrolls without horizontal field clipping. Long catalog labels
 remain readable in the combo popup rather than widening the configuration.
 Navigation shows each dataset/scene group once; active checkpoint identity and
-quantization remain stable across regrouping and refresh.
+quantization remain stable across regrouping and refresh. Restored sessions
+re-render each scene panel's preview from its own saved scene dir when the
+panel becomes current.
 
 ### Use test data
 
@@ -138,10 +147,13 @@ downloader). One click fills the requesting panel:
 | `kitti_caddn`, `kitti_voxelrcnn_focal_multimodal` | `Scene dir` → `scene_caddn`; `LiDAR file` → `kitti_000008.bin` |
 | `nuscenes_bevfusion` | `Scene dir` → `scene_bevfusion` (6 cameras); `LiDAR file` → `nuscenes_n015_lidar.bin` |
 
-The raw `kitti_000008.bin` frame is additionally loaded into the DB tree as
-the `KITTI 000008 (sample)` point cloud (x, y, z + the `intensity` scalar
-field — the inverse of the worker's cloud input path) and selected, so the
-active-cloud Run path works without touching the point file again. Missing
+The panel's own sample frame is additionally loaded into the DB tree and
+selected (x, y, z + the `intensity` scalar field — the inverse of the
+worker's cloud input path), so the active-cloud Run path works without
+touching the point file again and the rendered wireframe boxes share the
+displayed cloud's coordinate frame: nuScenes checkpoints load the
+`nuScenes n015 (sample)` sweep (5-feature), KITTI checkpoints the
+`KITTI 000008 (sample)` frame (4-feature). Missing
 bundle members log an error line instead of filling partial paths. A cold cache
 miss starts shared preparation without emitting an Error; real download,
 integrity and extraction failures retain their error behavior. Closed/rejected

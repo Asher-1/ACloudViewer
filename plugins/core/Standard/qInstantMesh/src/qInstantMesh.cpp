@@ -26,6 +26,10 @@
 #include "InstantMeshDialog.h"
 #include "InstantMeshWorker.h"
 
+#ifdef AICore_ENABLED
+#include <aicore/backend_capi.h>
+#endif
+
 namespace {
 bool validResultEnvelope(const InstantMeshRunResult& result) {
     if (result.verts.isEmpty() || result.verts.size() % 3 ||
@@ -151,7 +155,23 @@ void qInstantMesh::startWorker(const InstantMeshDialog::Settings& settings) {
     ws.textureRes = settings.textureRes;
     ws.bakeTexture = settings.bakeTexture;
     ws.threads = settings.threads;
-    ws.device = settings.device;
+    QString workerDevice = settings.device;
+#ifdef AICore_ENABLED
+    // Warm the shared backend before the worker thread takes the device
+    // lease, so backend initialization is not attributed to the first
+    // inference; an unavailable GPU falls back to CPU like qOpenPCDet.
+    if (aicore_instantmesh_warmup_backend(
+                workerDevice.toUtf8().constData()) != 0) {
+        if (aicore_is_gpu_device(workerDevice.toUtf8().constData())) {
+            workerDevice = QStringLiteral("cpu");
+            if (m_dialog)
+                m_dialog->appendLog(tr("[InstantMesh] GPU backend "
+                                       "unavailable — using CPU for this "
+                                       "run."));
+        }
+    }
+#endif
+    ws.device = workerDevice;
     ws.useRmbg = settings.useRmbg;
     ws.rmbgModelPath = settings.rmbgModelPath;
     ws.quantization = settings.quantization;

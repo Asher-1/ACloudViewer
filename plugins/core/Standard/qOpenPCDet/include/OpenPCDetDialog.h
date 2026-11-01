@@ -48,7 +48,10 @@ struct OpenPCDetTaskPanel {
     // because the quant combo carries only the three catalog suffixes).
     QWidget* customModelRow = nullptr;
     QLineEdit* customModelPath = nullptr;
-    // Threshold row (0 = follow the GGUF-declared value).
+    // Threshold row: "Use model defaults" (GGUF-declared values, inputs
+    // disabled) versus an explicit override whose values — including a
+    // legal explicit 0 — are forwarded verbatim to the worker.
+    QCheckBox* useDefaultsCheck = nullptr;
     QDoubleSpinBox* score = nullptr;
     QDoubleSpinBox* nms = nullptr;
     QSpinBox* maxBoxes = nullptr;
@@ -98,6 +101,10 @@ public:
         float nmsThresh = 0.0f;
         /** 0 = follow the GGUF-declared box cap. */
         int maxBoxes = 0;
+        /** True (the "Use model defaults" checkbox) zeroes the values above
+         *  so the worker never calls the override setters; false forwards
+         *  them verbatim as explicit overrides (0 included). */
+        bool thresholdsFollowModel = true;
         /** Optional raw point file; takes precedence over the active
          *  cloud when set. */
         QString pointsFile;
@@ -123,6 +130,10 @@ public:
     Settings getSettings() const;
 
     void appendLog(const QString& msg);
+    /** Debug-level route (CVLog::PrintDebug): routine inference progress
+     *  stays out of the console unless debug output is enabled, while
+     *  appendLog keeps errors and final results visible. */
+    void appendDebug(const QString& msg);
     void setProgress(int current, int total);
     void setRunning(bool running);
     void refreshModelList();
@@ -171,6 +182,11 @@ private:
     QString resolveModelPath(const QString& filename) const;
     bool ensureModelAvailable(PendingAction action);
     void startDownload(const OpenPCDetModelEntry& model);
+    /** Seed the Score / NMS / Max boxes spinboxes with the GGUF-declared
+     *  defaults of the panel's checkpoint (upstream OpenPCDet config
+     *  values, read from the cached model header without loading weights).
+     *  Keeps the current values when no catalog GGUF is available yet. */
+    void applyModelDefaults(OpenPCDetTaskPanel& panel);
     /** Update the scene preview of \p panel (empty path or unreadable
      *  payload clears the preview). */
     void refreshScenePreview(OpenPCDetTaskPanel* panel,
@@ -180,15 +196,22 @@ private:
 
     /** Fill panel \p panelIndex from the extracted openpcdet_test_data
      *  bundle (points file / scene dir / LiDAR branch per the checkpoint
-     *  mapping) and load the KITTI sample frame into the DB tree. Returns
-     *  false (with a logged error) when the bundle members are missing. */
+     *  mapping) and load the panel's own sample frame (nuScenes n015 sweep
+     *  for nuScenes checkpoints, KITTI 000008 otherwise) into the DB tree
+     *  so the rendered wireframe boxes share the displayed cloud's frame.
+     *  Returns false (with a logged error) when the bundle members are
+     *  missing. */
     bool fillTestDataPanel(int panelIndex);
-    /** Parse the KITTI .bin sample frame (OpenPCDetHelpers::parsePointsBin)
-     *  into a ccPointCloud named "KITTI 000008 (sample)" with an intensity
-     *  scalar field (the exact inverse of the worker's cloud input path),
-     *  add it to the DB tree and select it so the active-cloud path can
-     *  Run directly. No-op without an app interface. */
-    void loadSampleCloudIntoDb(const QString& binPath);
+    /** Parse a raw sample .bin frame (OpenPCDetHelpers::parsePointsBin)
+     *  into a ccPointCloud named \p displayName with an intensity scalar
+     *  field (feature 3; the exact inverse of the worker's cloud input
+     *  path), add it to the DB tree and select it so the active-cloud path
+     *  can Run directly. \p pointFeatures is 4 (KITTI) or 5 (nuScenes,
+     *  the 5th ring/velocity feature is dropped for display). No-op
+     *  without an app interface. */
+    void loadSampleCloudIntoDb(const QString& binPath,
+                               int pointFeatures,
+                               const QString& displayName);
 
     /** The task panel of the currently active task-list entry. */
     OpenPCDetTaskPanel* currentPanel() const;

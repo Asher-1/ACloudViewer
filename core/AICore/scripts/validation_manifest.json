@@ -35587,7 +35587,7 @@
     "--warmups",
     "{warmup_runs}",
     "--threads",
-    "{threads}",
+    "1",
     "--upstream-dir",
     "{reference:llama_upstream}",
     "--json-out",
@@ -35596,7 +35596,7 @@
     "new york"
    ],
    "env": {},
-   "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code.",
+   "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code. CPU greedy-text parity is a single-thread contract (--threads 1): ggml CPU multi-thread reduction order is an implementation detail that flips near-tied greedy tokens in the pristine reference itself (observed on the describe scenario: llama-mtmd-cli -t 1 and -t 4 produce different greedy continuations on the same host, model and image), so a multi-thread text compare measures reduction scheduling, not arithmetic correctness; thread-count sensitivity and performance stay separate metrics.",
    "accuracy": {
     "reference": "upstream_llama_cpp_tools",
     "reference_id": "llama.cpp@707616fe tools/mtmd/tests.sh newspaper VQA",
@@ -35657,7 +35657,7 @@
     "--warmups",
     "{warmup_runs}",
     "--threads",
-    "{threads}",
+    "1",
     "--upstream-dir",
     "{reference:llama_upstream}",
     "--json-out",
@@ -35666,7 +35666,7 @@
     "new york"
    ],
    "env": {},
-   "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code.",
+   "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code. CPU greedy-text parity is a single-thread contract (--threads 1): ggml CPU multi-thread reduction order is an implementation detail that flips near-tied greedy tokens in the pristine reference itself (observed on the describe scenario: llama-mtmd-cli -t 1 and -t 4 produce different greedy continuations on the same host, model and image), so a multi-thread text compare measures reduction scheduling, not arithmetic correctness; thread-count sensitivity and performance stay separate metrics.",
    "accuracy": {
     "reference": "upstream_llama_cpp_tools",
     "reference_id": "llama.cpp@707616fe tools/mtmd/tests.sh newspaper VQA",
@@ -35721,7 +35721,7 @@
     "--warmups",
     "{warmup_runs}",
     "--threads",
-    "{threads}",
+    "1",
     "--upstream-dir",
     "{reference:llama_upstream}",
     "--json-out",
@@ -35730,7 +35730,7 @@
     "new york"
    ],
    "env": {},
-   "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code.",
+   "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code. CPU greedy-text parity is a single-thread contract (--threads 1): ggml CPU multi-thread reduction order is an implementation detail that flips near-tied greedy tokens in the pristine reference itself (observed on the describe scenario: llama-mtmd-cli -t 1 and -t 4 produce different greedy continuations on the same host, model and image), so a multi-thread text compare measures reduction scheduling, not arithmetic correctness; thread-count sensitivity and performance stay separate metrics.",
    "accuracy": {
     "reference": "upstream_llama_cpp_tools",
     "reference_id": "llama.cpp@707616fe tools/mtmd/tests.sh newspaper VQA",
@@ -35785,7 +35785,7 @@
     "--warmups",
     "{warmup_runs}",
     "--threads",
-    "{threads}",
+    "1",
     "--upstream-dir",
     "{reference:llama_upstream}",
     "--json-out",
@@ -35794,7 +35794,7 @@
     "new york"
    ],
    "env": {},
-   "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code.",
+   "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code. CPU greedy-text parity is a single-thread contract (--threads 1): ggml CPU multi-thread reduction order is an implementation detail that flips near-tied greedy tokens in the pristine reference itself (observed on the describe scenario: llama-mtmd-cli -t 1 and -t 4 produce different greedy continuations on the same host, model and image), so a multi-thread text compare measures reduction scheduling, not arithmetic correctness; thread-count sensitivity and performance stay separate metrics.",
    "accuracy": {
     "reference": "upstream_llama_cpp_tools",
     "reference_id": "llama.cpp@707616fe tools/mtmd/tests.sh newspaper VQA",
@@ -35849,14 +35849,14 @@
     "--warmups",
     "{warmup_runs}",
     "--threads",
-    "{threads}",
+    "1",
     "--upstream-dir",
     "{reference:llama_upstream}",
     "--json-out",
     "{scenario_report}"
    ],
    "env": {},
-   "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code.",
+   "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code. CPU greedy-text parity is a single-thread contract (--threads 1): ggml CPU multi-thread reduction order is an implementation detail that flips near-tied greedy tokens in the pristine reference itself (observed on the describe scenario: llama-mtmd-cli -t 1 and -t 4 produce different greedy continuations on the same host, model and image), so a multi-thread text compare measures reduction scheduling, not arithmetic correctness; thread-count sensitivity and performance stay separate metrics.",
    "accuracy": {
     "reference": "upstream_llama_cpp_tools",
     "reference_id": "llama.cpp@707616fe llama-mtmd-cli greedy describe",
@@ -35907,14 +35907,14 @@
     "--warmups",
     "{warmup_runs}",
     "--threads",
-    "{threads}",
+    "1",
     "--upstream-dir",
     "{reference:llama_upstream}",
     "--json-out",
     "{scenario_report}"
    ],
    "env": {},
-   "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code.",
+   "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code. CPU greedy-text parity is a single-thread contract (--threads 1): ggml CPU multi-thread reduction order is an implementation detail that flips near-tied greedy tokens in the pristine reference itself (observed on the describe scenario: llama-mtmd-cli -t 1 and -t 4 produce different greedy continuations on the same host, model and image), so a multi-thread text compare measures reduction scheduling, not arithmetic correctness; thread-count sensitivity and performance stay separate metrics.",
    "accuracy": {
     "reference": "upstream_llama_cpp_tools",
     "reference_id": "llama.cpp@707616fe llama-mtmd-cli greedy describe",
@@ -35962,14 +35962,14 @@
     "--warmups",
     "{warmup_runs}",
     "--threads",
-    "{threads}",
+    "1",
     "--upstream-dir",
     "{reference:llama_upstream}",
     "--json-out",
     "{scenario_report}"
    ],
    "env": {},
-   "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code.",
+   "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code. CPU greedy-text parity is a single-thread contract (--threads 1): ggml CPU multi-thread reduction order is an implementation detail that flips near-tied greedy tokens in the pristine reference itself (observed on the describe scenario: llama-mtmd-cli -t 1 and -t 4 produce different greedy continuations on the same host, model and image), so a multi-thread text compare measures reduction scheduling, not arithmetic correctness; thread-count sensitivity and performance stay separate metrics.",
    "accuracy": {
     "reference": "upstream_llama_cpp_tools",
     "reference_id": "llama.cpp@707616fe llama-mtmd-cli greedy describe",
@@ -36017,14 +36017,14 @@
     "--warmups",
     "{warmup_runs}",
     "--threads",
-    "{threads}",
+    "1",
     "--upstream-dir",
     "{reference:llama_upstream}",
     "--json-out",
     "{scenario_report}"
    ],
    "env": {},
-   "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code.",
+   "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code. CPU greedy-text parity is a single-thread contract (--threads 1): ggml CPU multi-thread reduction order is an implementation detail that flips near-tied greedy tokens in the pristine reference itself (observed on the describe scenario: llama-mtmd-cli -t 1 and -t 4 produce different greedy continuations on the same host, model and image), so a multi-thread text compare measures reduction scheduling, not arithmetic correctness; thread-count sensitivity and performance stay separate metrics.",
    "accuracy": {
     "reference": "upstream_llama_cpp_tools",
     "reference_id": "llama.cpp@707616fe llama-mtmd-cli greedy describe",
@@ -36068,7 +36068,7 @@
     "--warmups",
     "{warmup_runs}",
     "--threads",
-    "{threads}",
+    "1",
     "--upstream-dir",
     "{reference:llama_upstream}",
     "--json-out",
@@ -36077,7 +36077,7 @@
     "paris"
    ],
    "env": {},
-   "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code.",
+   "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code. CPU greedy-text parity is a single-thread contract (--threads 1): ggml CPU multi-thread reduction order is an implementation detail that flips near-tied greedy tokens in the pristine reference itself (observed on the describe scenario: llama-mtmd-cli -t 1 and -t 4 produce different greedy continuations on the same host, model and image), so a multi-thread text compare measures reduction scheduling, not arithmetic correctness; thread-count sensitivity and performance stay separate metrics.",
    "accuracy": {
     "reference": "upstream_llama_cpp_tools",
     "reference_id": "llama.cpp@707616fe llama-completion -cnv -st greedy",
@@ -36125,14 +36125,14 @@
     "--warmups",
     "{warmup_runs}",
     "--threads",
-    "{threads}",
+    "1",
     "--upstream-dir",
     "{reference:llama_upstream}",
     "--json-out",
     "{scenario_report}"
    ],
    "env": {},
-   "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code.",
+   "accuracy_gate": "Greedy text equals the upstream llama.cpp tool (llama-mtmd-cli / llama-completion) built pristine from the same pinned archive (tests/llm/prepare_upstream_reference.py), same model, projector, image, prompt and device; plus exact repeat/recreate determinism, streamed==final text, stream-callback cancel and stop-sequence trim enforced by the probe exit code. CPU greedy-text parity is a single-thread contract (--threads 1): ggml CPU multi-thread reduction order is an implementation detail that flips near-tied greedy tokens in the pristine reference itself (observed on the describe scenario: llama-mtmd-cli -t 1 and -t 4 produce different greedy continuations on the same host, model and image), so a multi-thread text compare measures reduction scheduling, not arithmetic correctness; thread-count sensitivity and performance stay separate metrics.",
    "accuracy": {
     "reference": "upstream_llama_cpp_tools",
     "reference_id": "llama.cpp@707616fe llama-completion -cnv -st greedy",
