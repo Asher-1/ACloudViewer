@@ -8,3 +8,8 @@ patches:
     note: "Keeps the graph annotation API; Metal keeps separate ADD/GELU, and device acceptance still requires an Apple host."
   - file: 0014-acv-depthwise-bias-api-cpu.patch
     note: "Keeps the public ggml API; the DW bias path is a CPU fallback only and declares no Metal kernel support."
+  - file: 0023-acv-openpcdet-sparse-ext.patch
+    note: "CPU-side sparse-ext ops compile unconditionally in the openpcdet
+      task (sparse_ops.cpp / voxelnext.cpp); every manifest that builds those
+      TUs must register this patch — the macOS (Metal chain) job compiles
+      them even though device acceptance is pending."
