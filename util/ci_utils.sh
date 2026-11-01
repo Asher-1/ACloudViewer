@@ -507,6 +507,11 @@ build_mac_wheel() {
         "-DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE"
         "-DBUILD_COMMON_CUDA_ARCHS=ON"
         "-DAICore_ENABLED=ON"
+        # The Metal patch chain has never passed macOS device/model
+        # acceptance (its manifest notes it is pending) and currently
+        # aborts the C API contract tests at runtime (cross-dylib
+        # exception RTTI). Keep CI on the CPU chain until that lands.
+        "-DAICore_USE_METAL=OFF"
         "-DAICore_BUILD_TESTS=ON"
         "-DAICore_USE_VULKAN=${AICore_USE_VULKAN}"
         "-DAICore_USE_CUDA=${AICore_USE_CUDA:-OFF}"
@@ -696,6 +701,8 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_G3POINT=ON"
                 "-DPLUGIN_STANDARD_QSIBR=$PLUGIN_STANDARD_QSIBR"
                 "-DAICore_ENABLED=ON"
+                # Same Metal-chain rationale as build_mac_wheel above.
+                "-DAICore_USE_METAL=OFF"
                 "-DAICore_BUILD_TESTS=ON"
                 "-DAICore_USE_VULKAN=${AICore_USE_VULKAN}"
                 "-DAICore_USE_CUDA=${AICore_USE_CUDA:-OFF}"
@@ -868,6 +875,11 @@ build_pip_package() {
         "-DUSE_VTK_BACKEND=OFF" # no need vtk for wheel
         "-DBUILD_RECONSTRUCTION=ON"
         "-DAICore_ENABLED=ON"
+        # The Metal patch chain has never passed macOS device/model
+        # acceptance (its manifest notes it is pending) and currently
+        # aborts the C API contract tests at runtime (cross-dylib
+        # exception RTTI). Keep CI on the CPU chain until that lands.
+        "-DAICore_USE_METAL=OFF"
         "-DAICore_BUILD_TESTS=ON"
         "-DAICore_USE_VULKAN=${AICore_USE_VULKAN}"
         "-DAICore_USE_CUDA=${AICore_USE_CUDA:-OFF}"
