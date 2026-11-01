@@ -1,5 +1,31 @@
 # qAnyLabeling parity TODO
 
+## Continuation (2026-11-01, fourth session)
+
+### macOS CI Metal enablement (root-cause fix)
+
+- [x] macOS CI had been forced CPU-only by three `-DAICore_USE_METAL=OFF`
+  injections in `util/ci_utils.sh`, working around a configure-time FATAL in
+  `3rdparty/llama/llama_cpp.cmake` that required an explicit
+  `LLAMA_METAL_MIGRATION_VALIDATION=ON` opt-in for Metal. The guard's
+  premise is obsolete: `llama-patches/metal-manifest.yaml`
+  (0001 → 0007-acv-metal-operators → 0013 → 0014) is registered, and the
+  ordered chain now replays cleanly on a pristine extraction of the pinned
+  archive (`apply_ggml_patches.py`, verified this session). Fixed at the
+  root: the guard keeps only its two real constraints (Apple-only; never
+  alongside CUDA/Vulkan) and the macOS default (`AICore_USE_METAL=ON` on
+  APPLE) now reaches the ExternalProject unchanged with
+  `-DGGML_METAL=ON -DGGML_METAL_EMBED_LIBRARY=ON`.
+- [x] `ci_utils.sh` lost all three workaround injections (shell syntax
+  verified); the platform default gives macOS CI `AICore_USE_VULKAN=OFF`, so
+  the exclusivity guard cannot trip. The CMake contract suite
+  (`experimental/test_cmake_contract.py`) passes 23 tests including the
+  rewritten no-opt-in Metal cases (`test_metal_selects_its_manifest_and_
+external_option`, `test_metal_requires_apple_and_an_exclusive_backend`);
+  `3rdparty/llama/README.md` documents the new behavior. The remaining
+  promotion gate is unchanged and honest: macOS compile plus model
+  inference validation still precede any performance claim.
+
 ## Continuation (2026-11-01, third session)
 
 ### Model-reuse decisions, the local-VLM annotation feature, and text policy

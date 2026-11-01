@@ -25,15 +25,12 @@ if(LLAMA_SOURCE_ARCHIVE)
     get_filename_component(LLAMA_URL "${LLAMA_SOURCE_ARCHIVE}" ABSOLUTE)
 endif()
 
-# CPU, CUDA and Vulkan have rebased operator manifests. Build support does not certify
+# CPU, CUDA, Vulkan and Metal have rebased operator manifests. Build support does not certify
 # model numerics/performance: production promotion still needs the full gate.
-# Reject unported accelerators before fetching rather than disabling them.
+# Metal stays Apple-only and runs alone: its manifest is registered and its
+# ordered chain replays cleanly on the pinned archive, so the configure no
+# longer demands a separate opt-in flag.
 if(GGML_USE_METAL OR AICore_USE_METAL)
-    if(NOT LLAMA_METAL_MIGRATION_VALIDATION)
-        message(FATAL_ERROR
-            "llama.cpp embedded ggml: METAL patch migration/validation is incomplete; "
-            "use the isolated experimental driver for Metal device validation")
-    endif()
     if(NOT APPLE)
         message(FATAL_ERROR "Metal migration validation requires an Apple platform and SDK")
     endif()

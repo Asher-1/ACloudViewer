@@ -24,3 +24,10 @@ patches:
     note: "The result checker's DW CPU clone preserves optional bias; test the real checker with positive, negative and absent bias."
   - file: 0024-acv-vulkan-depthwise7.patch
     note: "RelateAnything 14c9744 CWHN DW7 specialization preserves actual offsets for all four descriptors and original fallbacks; original numeric/performance gates remain unchanged."
+  - file: 0023-acv-openpcdet-sparse-ext.patch
+    note: "CPU-side sparse-ext ops compile unconditionally in the openpcdet
+      task (sparse_ops.cpp / voxelnext.cpp); every manifest that builds those
+      TUs must register this patch (cuda and cuda-vulkan chains already do)."
+  - file: 0024-acv-openpcdet-bn-fold-relu.patch
+    note: "ggml_bn_fold_relu is dispatched from bev_backbone.cpp in the
+      openpcdet task; the patch carries the CPU dispatch and declaration."

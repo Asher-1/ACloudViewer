@@ -97,7 +97,7 @@ class SourceOwnerTests(unittest.TestCase):
         self.assertFalse(any(path.is_file() for path in (build / "downloads").rglob("*")))
 
     def test_incomplete_accelerators_fail_before_fetch(self):
-        for backend in ("METAL", "SYCL", "OPENCL"):
+        for backend in ("SYCL", "OPENCL"):
             with self.subTest(backend=backend):
                 result, build = self.configure(f'include("{LLAMA}")\n',
                                                f"-DGGML_USE_{backend}=ON")
@@ -106,7 +106,7 @@ class SourceOwnerTests(unittest.TestCase):
                               result.stdout + result.stderr)
                 self.assertFalse((build / "llama").exists())
 
-    def test_metal_validation_requires_apple_and_an_exclusive_backend(self):
+    def test_metal_requires_apple_and_an_exclusive_backend(self):
         for apple, cuda, expected in (
                 (False, False, "requires an Apple platform and SDK"),
                 (True, True, "Validate Metal separately from CUDA/Vulkan")):
@@ -116,20 +116,23 @@ class SourceOwnerTests(unittest.TestCase):
                 result, build = self.configure(
                     f'set(APPLE {"TRUE" if apple else "FALSE"})\n'
                     f'include("{LLAMA}")\n',
-                    "-DGGML_USE_METAL=ON", "-DLLAMA_METAL_MIGRATION_VALIDATION=ON",
+                    "-DGGML_USE_METAL=ON",
                     f'-DGGML_USE_CUDA={"ON" if cuda else "OFF"}')
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(expected, result.stdout + result.stderr)
                 self.assertFalse((build / "llama").exists())
 
-    def test_metal_validation_selects_its_manifest_and_external_option(self):
+    def test_metal_selects_its_manifest_and_external_option(self):
+        # No opt-in flag: the Metal manifest is registered and its ordered
+        # chain replays cleanly on the pinned archive, so the macOS default
+        # (AICore_USE_METAL=ON) reaches the ExternalProject unchanged.
         result, build = self.configure(
             'set(APPLE TRUE)\n'
             f'include("{LLAMA}")\n'
             'if(NOT _GGML_OWNER_PATCH_MANIFEST MATCHES "/metal-manifest.yaml$" '
             'OR TARGET ext_ggml OR TARGET 3rdparty_ggml)\n'
             'message(FATAL_ERROR "wrong Metal source or manifest")\nendif()\n',
-            "-DGGML_USE_METAL=ON", "-DLLAMA_METAL_MIGRATION_VALIDATION=ON")
+            "-DGGML_USE_METAL=ON")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         command = (build / "llama/tmp/ext_llama-cfgcmd.txt").read_text()
         self.assertIn("-DGGML_METAL=ON", command)

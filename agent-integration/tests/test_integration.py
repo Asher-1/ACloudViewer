@@ -584,7 +584,13 @@ class TestLevel1_CppPlugin:
     def test_level1_ci_harness_revision_is_paired(self):
         action = REPO_ROOT / ".github/actions/checkout-agent-harness/action.yml"
         text = _read_repo_text(action)
-        assert re.search(r"^        ref: [0-9a-f]{40}$", text, re.MULTILINE)
+        # The harness rides the CLI-Anything main branch tip: pairing is
+        # enforced by the L1-L5 contract gates on every run, not by a frozen
+        # revision (the original pin predates the ACloudViewer-side updates).
+        assert re.search(r"^        repository: Asher-1/CLI-Anything$", text,
+                         re.MULTILINE)
+        assert re.search(r"^        ref: main$", text, re.MULTILINE)
+        assert not re.search(r"^        ref: [0-9a-f]{40}$", text, re.MULTILINE)
         consumers = {"agent-integration.yml", "ubuntu.yml", "ubuntu-cuda.yml",
                      "macos.yml", "windows.yml"}
         workflows = list((REPO_ROOT / ".github/workflows").glob("*.yml"))

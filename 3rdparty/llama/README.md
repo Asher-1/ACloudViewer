@@ -202,7 +202,7 @@ truth and controlled performance require separate qualification.
 | CUDA | `llama-patches/cuda-manifest.yaml` | Ordered: CPU/common → CUDA operators → dispatch API adaptation → attention-helper linkage; full SAM3D closure (`GGML_USE_SAM3D_OPS=ON`) |
 | Vulkan | `llama-patches/vulkan-manifest.yaml` | 33-file port (0005) plus later fixes (0008–0010, 0011) |
 | CUDA + Vulkan | `llama-patches/cuda-vulkan-manifest.yaml` | Same source tree; both file sets verified equal to their separate replays |
-| Metal | `llama-patches/metal-manifest.yaml` | Explicit opt-in (`LLAMA_METAL_MIGRATION_VALIDATION=ON`, Apple hosts); production promotion blocked until macOS compile + inference validation |
+| Metal | `llama-patches/metal-manifest.yaml` | Apple hosts only, never with CUDA/Vulkan; macOS compile + model inference validation still required before promotion |
 | Other backends (SYCL, OpenCL, …) | — | Fail explicitly; never silently disabled |
 
 AICore's CUDA/Vulkan/Metal inference backends are controlled by
@@ -1178,8 +1178,9 @@ ctest --test-dir build_llama_experiment --output-on-failure
 - `-DGGML_USE_CUDA=ON -DGGML_USE_SAM3D_OPS=ON` selects the CUDA migration
   manifest with the complete SAM3D closure; `-DGGML_USE_VULKAN=ON` selects the
   Vulkan manifest; both together select the combined manifest.
-- Metal validation is opt-in on Apple hosts
-  (`-DLLAMA_METAL_MIGRATION_VALIDATION=ON`).
+- `-DGGML_USE_METAL=ON` selects the Metal manifest on Apple hosts (and fails
+  the configure on non-Apple platforms or alongside CUDA/Vulkan); the macOS
+  CI default reaches it through `AICore_USE_METAL=ON` without an opt-in flag.
 - The driver enforces `GGML_CPU_ALL_VARIANTS=ON` and production hidden-visibility
   flags so measurements stay comparable to the frozen baseline.
 - Fourteen configure contracts cover ownership, disabled inference, manifest
