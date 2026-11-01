@@ -160,14 +160,15 @@ void qInstantMesh::startWorker(const InstantMeshDialog::Settings& settings) {
     // Warm the shared backend before the worker thread takes the device
     // lease, so backend initialization is not attributed to the first
     // inference; an unavailable GPU falls back to CPU like qOpenPCDet.
-    if (aicore_instantmesh_warmup_backend(
-                workerDevice.toUtf8().constData()) != 0) {
+    if (aicore_instantmesh_warmup_backend(workerDevice.toUtf8().constData()) !=
+        0) {
         if (aicore_is_gpu_device(workerDevice.toUtf8().constData())) {
             workerDevice = QStringLiteral("cpu");
             if (m_dialog)
-                m_dialog->appendLog(tr("[InstantMesh] GPU backend "
-                                       "unavailable — using CPU for this "
-                                       "run."));
+                m_dialog->appendLog(
+                        tr("[InstantMesh] GPU backend "
+                           "unavailable — using CPU for this "
+                           "run."));
         }
     }
 #endif

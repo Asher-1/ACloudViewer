@@ -666,9 +666,7 @@ AICORE_CAPI char* aicore_openpcdet_model_cache_dir(void) {
 }
 
 AICORE_CAPI int aicore_openpcdet_read_model_info(
-        const char* gguf_path,
-        aicore_openpcdet_model_info* out,
-        char** error) {
+        const char* gguf_path, aicore_openpcdet_model_info* out, char** error) {
     std::string err;
     auto fail = [&err](std::string message) {
         if (err.empty()) err = std::move(message);
@@ -679,8 +677,7 @@ AICORE_CAPI int aicore_openpcdet_read_model_info(
         fail("openpcdet model info: null output struct");
     } else if (out->struct_size != sizeof(aicore_openpcdet_model_info)) {
         fail("openpcdet model info: struct_size mismatch");
-    } else if (out->abi_version !=
-               AICORE_OPENPCDET_MODEL_INFO_ABI_VERSION) {
+    } else if (out->abi_version != AICORE_OPENPCDET_MODEL_INFO_ABI_VERSION) {
         fail("openpcdet model info: unsupported abi_version");
     } else {
         try {
@@ -710,8 +707,7 @@ AICORE_CAPI int aicore_openpcdet_read_model_info(
                 } else {
                     aicore_openpcdet_model_info info{};
                     info.struct_size = sizeof(info);
-                    info.abi_version =
-                            AICORE_OPENPCDET_MODEL_INFO_ABI_VERSION;
+                    info.abi_version = AICORE_OPENPCDET_MODEL_INFO_ABI_VERSION;
                     info.score_thresh = probe.hp.score_thresh;
                     info.nms_thresh = probe.hp.nms_thresh;
                     info.max_boxes = probe.hp.max_boxes;
@@ -724,8 +720,7 @@ AICORE_CAPI int aicore_openpcdet_read_model_info(
                                     ? 1
                                     : 0;
                     std::strncpy(info.arch, arch,
-                                 sizeof(aicore_openpcdet_model_info::arch) -
-                                         1);
+                                 sizeof(aicore_openpcdet_model_info::arch) - 1);
                     info.arch[sizeof(aicore_openpcdet_model_info::arch) - 1] =
                             '\0';
                     *out = info;

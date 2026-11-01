@@ -7,9 +7,8 @@
 
 #include "voxel_backbone_runner.h"
 
-#include "common/debug_dump.hpp"
-
 #include "../ops/voxelization.h"
+#include "common/debug_dump.hpp"
 
 #ifdef AICORE_OPENPCDET_CUDA_EXT
 #include "../extensions/height_compression_cuda.h"

@@ -147,9 +147,9 @@ private:
     struct CloudSnapshot {
         bool valid = false;
         QString name;
-        std::vector<float> xyz;       ///< [n,3] stored (local) coordinates
-        std::vector<float> intensity; ///< first intensity/reflectance SF
-        std::vector<float> feature4;  ///< "OpenPCDet feature 4" when present
+        std::vector<float> xyz;        ///< [n,3] stored (local) coordinates
+        std::vector<float> intensity;  ///< first intensity/reflectance SF
+        std::vector<float> feature4;   ///< "OpenPCDet feature 4" when present
         double globalScale = 1.0;
         double globalShiftX = 0.0;
         double globalShiftY = 0.0;

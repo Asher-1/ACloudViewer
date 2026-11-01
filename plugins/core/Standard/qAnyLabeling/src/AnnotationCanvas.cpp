@@ -7,8 +7,8 @@
 
 #include "AnnotationCanvas.h"
 
-#include <QBuffer>
 #include <QApplication>
+#include <QBuffer>
 #include <QHash>
 #include <QJsonArray>
 #include <QKeyEvent>
@@ -417,9 +417,10 @@ quint32 annotationCrc32(const QByteArray& data) {
 
 // Andrew monotone chain hull for the bitmap-mode cuboid silhouette.
 QVector<QPointF> annotationConvexHull(QVector<QPointF> points) {
-    std::sort(points.begin(), points.end(), [](const QPointF& a, const QPointF& b) {
-        return a.x() < b.x() || (a.x() == b.x() && a.y() < b.y());
-    });
+    std::sort(points.begin(), points.end(),
+              [](const QPointF& a, const QPointF& b) {
+                  return a.x() < b.x() || (a.x() == b.x() && a.y() < b.y());
+              });
     const auto cross = [](const QPointF& o, const QPointF& a,
                           const QPointF& b) {
         return (a.x() - o.x()) * (b.y() - o.y()) -
@@ -1607,8 +1608,7 @@ QColor AnnotationCanvas::displayOverrideColor(
             shape.displayInstanceId = m_nextInstanceId++;
         colorId = quint32(shape.displayInstanceId);
     }
-    const double hue =
-            std::fmod(double(colorId) * 0.61803398875, 1.0);
+    const double hue = std::fmod(double(colorId) * 0.61803398875, 1.0);
     return QColor::fromHsvF(hue, 0.7, 1.0);
 }
 
@@ -1632,16 +1632,16 @@ QPointF AnnotationCanvas::constrainRectanglePos(
     double side = std::max(std::abs(dx), std::abs(dy));
     // Bound the square to the image edges; the anchor is always inside the
     // clamped drawing area.
-    side = std::min(side, dx >= 0 ? double(m_image.width()) - anchor.x()
-                                   : anchor.x());
-    side = std::min(side, dy >= 0 ? double(m_image.height()) - anchor.y()
-                                   : anchor.y());
+    side = std::min(
+            side, dx >= 0 ? double(m_image.width()) - anchor.x() : anchor.x());
+    side = std::min(
+            side, dy >= 0 ? double(m_image.height()) - anchor.y() : anchor.y());
     side = std::max(side, 0.0);
     return anchor + QPointF(dx >= 0 ? side : -side, dy >= 0 ? side : -side);
 }
 
-void AnnotationCanvas::updateCreatingShape(
-        const QPointF& rawPoint, Qt::KeyboardModifiers modifiers) {
+void AnnotationCanvas::updateCreatingShape(const QPointF& rawPoint,
+                                           Qt::KeyboardModifiers modifiers) {
     AnnotationShape& shape = m_shapes.last();
     const bool boxed = shape.type == QStringLiteral("rectangle") ||
                        shape.type == QStringLiteral("rotation") ||
@@ -1736,8 +1736,7 @@ void AnnotationCanvas::paintBitmapShapes(QPainter& painter) const {
     painter.setClipRect(imageRect);
     painter.fillRect(imageRect, Qt::black);
     const auto drawShape = [this, &painter](const AnnotationShape& shape) {
-        if (!shape.visible ||
-            (shape.points.isEmpty() && shape.mask.isNull()))
+        if (!shape.visible || (shape.points.isEmpty() && shape.mask.isNull()))
             return;
         if (!shape.mask.isNull()) {
             painter.drawImage(QPointF(0, 0),
@@ -1760,8 +1759,7 @@ void AnnotationCanvas::paintBitmapShapes(QPainter& painter) const {
             painter.drawPolygon(QPolygonF(shape.points.mid(0, 4)));
         } else if (isCuboid(shape) && shape.points.size() >= 8) {
             painter.drawPolygon(
-                    QPolygonF(annotationConvexHull(
-                            shape.points.mid(0, 8))));
+                    QPolygonF(annotationConvexHull(shape.points.mid(0, 8))));
         } else {
             QPainterPath path;
             path.moveTo(shape.points.first());
@@ -1911,8 +1909,7 @@ void AnnotationCanvas::paintEvent(QPaintEvent*) {
             const bool selected = m_selectedIndices.contains(index);
             if (!shape.visible || (m_brushEditing && index == m_brushTarget))
                 continue;
-            drawGeometryMask(painter, shape,
-                             paintColor(shape, selected),
+            drawGeometryMask(painter, shape, paintColor(shape, selected),
                              m_shapeLineWidth / m_scale, m_maskOpacity,
                              !(m_dragging && selected));
         }
@@ -1923,8 +1920,7 @@ void AnnotationCanvas::paintEvent(QPaintEvent*) {
             continue;
         const bool selected = m_selectedIndices.contains(index);
         if (m_brushEditing && index == m_brushTarget) {
-            if (m_showMasks)
-                drawMask(m_brushMask, paintColor(shape, selected));
+            if (m_showMasks) drawMask(m_brushMask, paintColor(shape, selected));
             continue;
         }
         if (m_showMasks && !shape.mask.isNull())
@@ -3091,8 +3087,8 @@ void AnnotationCanvas::mouseMoveEvent(QMouseEvent* event) {
     }
     if (m_creating && m_tool == QStringLiteral("linestrip") &&
         !m_shapes.isEmpty() && !m_shapes.last().points.isEmpty())
-        emit lineMeasured(
-                QLineF(m_shapes.last().points.last(), point).length(), point);
+        emit lineMeasured(QLineF(m_shapes.last().points.last(), point).length(),
+                          point);
     update();
 }
 
@@ -3299,8 +3295,8 @@ void AnnotationCanvas::keyPressEvent(QKeyEvent* event) {
         event->accept();
         return;
     }
-    if (event->key() == Qt::Key_Shift && !event->isAutoRepeat() &&
-        m_creating && !m_shapes.isEmpty() &&
+    if (event->key() == Qt::Key_Shift && !event->isAutoRepeat() && m_creating &&
+        !m_shapes.isEmpty() &&
         (m_shapes.last().type == QStringLiteral("rectangle") ||
          m_shapes.last().type == QStringLiteral("rotation"))) {
         // Re-sync the live endpoint with the square constraint applied,
@@ -3382,8 +3378,8 @@ void AnnotationCanvas::keyReleaseEvent(QKeyEvent* event) {
         event->accept();
         return;
     }
-    if (event->key() == Qt::Key_Shift && !event->isAutoRepeat() &&
-        m_creating && !m_shapes.isEmpty() &&
+    if (event->key() == Qt::Key_Shift && !event->isAutoRepeat() && m_creating &&
+        !m_shapes.isEmpty() &&
         (m_shapes.last().type == QStringLiteral("rectangle") ||
          m_shapes.last().type == QStringLiteral("rotation"))) {
         // Recompute the live endpoint without the square constraint.

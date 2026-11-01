@@ -171,8 +171,8 @@ void qOpenPCDet::executeTask(const OpenPCDetDialog::Settings& settings) {
     // Fixed Run-time source snapshot (plan §4): a value clone taken now
     // survives user edits/deletions of the DB entity mid-run; the worker
     // additionally snapshots its own inference inputs at construction.
-    m_runSourceSnapshot = cloud ? static_cast<ccPointCloud*>(cloud->cloneThis())
-                                : nullptr;
+    m_runSourceSnapshot =
+            cloud ? static_cast<ccPointCloud*>(cloud->cloneThis()) : nullptr;
     m_worker = new OpenPCDetWorker(ws, cloud, this);
     connect(m_worker, &OpenPCDetWorker::logMessage, m_dialog,
             &OpenPCDetDialog::appendLog, Qt::QueuedConnection);
@@ -198,8 +198,8 @@ void qOpenPCDet::cancelTask() {
 
 void qOpenPCDet::onResultReady(const OpenPCDetRunResult& result) {
     if (m_runCancelled) {
-        m_dialog->appendLog(tr(
-                "[OpenPCDet] Late result after cancel — discarded."));
+        m_dialog->appendLog(
+                tr("[OpenPCDet] Late result after cancel — discarded."));
         return;
     }
     m_dialog->appendLog(

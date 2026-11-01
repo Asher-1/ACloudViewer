@@ -96,14 +96,14 @@
 #include "AnnotationPopup.h"
 #include "AnnotationTagging.h"
 #include "AnnotationYaml.h"
+#include "ChatServiceClient.h"
+#include "LocalChatEngine.h"
 #include "LomaBridgeDialog.h"
 #include "PointCloudWindow.h"
 #include "PpocrDialog.h"
 #include "RelateDetectors.h"
 #include "RelateOptionsDialog.h"
 #include "RemoteServerClient.h"
-#include "ChatServiceClient.h"
-#include "LocalChatEngine.h"
 #include "RemoteServerDialog.h"
 #include "VideoAnnotationDialog.h"
 #include "VideoFrameExtraction.h"
@@ -740,12 +740,13 @@ void AnnotationWindow::runVlmDescribe() {
                     if (m_vlmDescribeClient && m_vlmDescribeClient->busy())
                         m_status->setText(message);
                 });
-        connect(
-                m_vlmDescribeClient, &ChatServiceClient::finished, this,
+        connect(m_vlmDescribeClient, &ChatServiceClient::finished, this,
                 [this](const QString& text, const QString& error) {
-                    if (m_vlmDescribeAction) m_vlmDescribeAction->setEnabled(true);
+                    if (m_vlmDescribeAction)
+                        m_vlmDescribeAction->setEnabled(true);
                     if (!error.isEmpty()) {
-                        m_status->setText(tr("AI Describe failed: %1").arg(error));
+                        m_status->setText(
+                                tr("AI Describe failed: %1").arg(error));
                         return;
                     }
                     const QString caption = text.trimmed();
@@ -755,7 +756,8 @@ void AnnotationWindow::runVlmDescribe() {
                     }
                     if (m_document.value(QStringLiteral("description"))
                                 .toString() != caption) {
-                        m_document.insert(QStringLiteral("description"), caption);
+                        m_document.insert(QStringLiteral("description"),
+                                          caption);
                         updateDescriptionEditor();
                         setDirty(true);
                     }
@@ -769,11 +771,10 @@ void AnnotationWindow::runVlmDescribe() {
         return;
     }
     QString error;
-    const QJsonArray messages{
-            ChatServiceClient::userMessage(
-                    tr("Describe this image in one concise sentence suitable "
-                       "as an annotation dataset description."),
-                    m_imagePath, &error)};
+    const QJsonArray messages{ChatServiceClient::userMessage(
+            tr("Describe this image in one concise sentence suitable "
+               "as an annotation dataset description."),
+            m_imagePath, &error)};
     if (!error.isEmpty()) {
         m_status->setText(error);
         return;
@@ -5979,8 +5980,8 @@ void AnnotationWindow::createActions() {
              &AnnotationCanvas::showTexts},
             {"tag.svg", "Show labels", &AnnotationCanvas::setShowLabels,
              &AnnotationCanvas::showLabels},
-            {"badge-percent.svg", "Show scores", &AnnotationCanvas::setShowScores,
-             &AnnotationCanvas::showScores},
+            {"badge-percent.svg", "Show scores",
+             &AnnotationCanvas::setShowScores, &AnnotationCanvas::showScores},
             {"ruler.svg", "Show degrees", &AnnotationCanvas::setShowDegrees,
              &AnnotationCanvas::showDegrees},
             {"list-checks.svg", "Show attributes",

@@ -299,8 +299,8 @@ int main(int argc, char** argv) {
         if (images.open(QIODevice::WriteOnly)) {
             const float pixel[4] = {0.9f, 0.4f, 0.1f, 1.0f};
             for (int i = 0; i < 4; ++i)
-                images.write(
-                        reinterpret_cast<const char*>(pixel), sizeof(pixel));
+                images.write(reinterpret_cast<const char*>(pixel),
+                             sizeof(pixel));
             images.close();
         }
         {
@@ -334,7 +334,8 @@ int main(int argc, char** argv) {
                     continue;
                 tasks->setCurrentRow(row);
                 QApplication::processEvents();
-                for (auto* label : restored.findChildren<ecvClickableImageLabel*>()) {
+                for (auto* label :
+                     restored.findChildren<ecvClickableImageLabel*>()) {
                     if (!label->isVisible()) continue;
                     if (!label->fullImage().isNull()) restoredPreview = label;
                 }

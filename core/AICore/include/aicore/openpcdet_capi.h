@@ -254,15 +254,17 @@ AICORE_CAPI int aicore_openpcdet_model_defaults(const char* gguf_path,
  *  Filled only by aicore_openpcdet_read_model_info; never loads tensor
  *  data, backends or contexts. */
 typedef struct aicore_openpcdet_model_info {
-    size_t struct_size;   /**< sizeof(aicore_openpcdet_model_info) of the caller */
-    int32_t abi_version;  /**< AICORE_OPENPCDET_MODEL_INFO_ABI_VERSION of the caller */
-    float score_thresh;   /**< declared detection score threshold */
-    float nms_thresh;     /**< declared rotated NMS IoU threshold */
-    int32_t max_boxes;    /**< declared maximum returned boxes */
+    size_t struct_size;  /**< sizeof(aicore_openpcdet_model_info) of the caller
+                          */
+    int32_t abi_version; /**< AICORE_OPENPCDET_MODEL_INFO_ABI_VERSION of the
+                            caller */
+    float score_thresh;  /**< declared detection score threshold */
+    float nms_thresh;    /**< declared rotated NMS IoU threshold */
+    int32_t max_boxes;   /**< declared maximum returned boxes */
     int32_t num_point_features; /**< expected point dim (4 = x,y,z,intensity) */
     int32_t num_class;          /**< declared class count */
-    int32_t needs_scene;        /**< 1 when the checkpoint requires a scene input */
-    char arch[32];              /**< general.architecture, NUL-terminated */
+    int32_t needs_scene; /**< 1 when the checkpoint requires a scene input */
+    char arch[32];       /**< general.architecture, NUL-terminated */
 } aicore_openpcdet_model_info;
 
 /** Reads the checkpoint metadata of \p gguf_path into \p out without
@@ -273,9 +275,7 @@ typedef struct aicore_openpcdet_model_info {
  *  released with aicore_openpcdet_free_buffer. Returns 0 on success and -1
  *  on invalid arguments, unreadable files or malformed metadata. */
 AICORE_CAPI int aicore_openpcdet_read_model_info(
-        const char* gguf_path,
-        aicore_openpcdet_model_info* out,
-        char** error);
+        const char* gguf_path, aicore_openpcdet_model_info* out, char** error);
 
 #ifdef __cplusplus
 }

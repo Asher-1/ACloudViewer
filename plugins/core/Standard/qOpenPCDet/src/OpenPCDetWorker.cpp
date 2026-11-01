@@ -116,8 +116,7 @@ OpenPCDetWorker::OpenPCDetWorker(const Settings& settings,
         if (m_snapshot.intensity.empty() && isIntensityFieldName(qname)) {
             m_snapshot.intensity.resize(n);
             for (unsigned r = 0; r < n; ++r) {
-                m_snapshot.intensity[r] =
-                        static_cast<float>(sf->getValue(r));
+                m_snapshot.intensity[r] = static_cast<float>(sf->getValue(r));
             }
         } else if (m_snapshot.feature4.empty() &&
                    qname == QStringLiteral("OpenPCDet feature 4")) {
@@ -199,8 +198,7 @@ bool OpenPCDetWorker::runInference() {
             m_settings.thresholdsExplicit || m_settings.scoreThresh > 0.0f ||
             m_settings.nmsThresh > 0.0f || m_settings.maxBoxes > 0;
     if (explicitThresholds) {
-        aicore_openpcdet_options_set_score_thresh(opts,
-                                                  m_settings.scoreThresh);
+        aicore_openpcdet_options_set_score_thresh(opts, m_settings.scoreThresh);
         emit debugMessage(tr("[OpenPCDet] Score threshold override: %1")
                                   .arg(m_settings.scoreThresh, 0, 'f', 2));
         aicore_openpcdet_options_set_nms_thresh(opts, m_settings.nmsThresh);
@@ -211,10 +209,11 @@ bool OpenPCDetWorker::runInference() {
         }
     }
 
-    emit debugMessage(tr("[OpenPCDet] Loading model: %1 (device=%2, threads=%3)")
-                              .arg(QFileInfo(m_settings.modelPath).fileName(),
-                                   m_settings.device)
-                              .arg(m_settings.threads));
+    emit debugMessage(
+            tr("[OpenPCDet] Loading model: %1 (device=%2, threads=%3)")
+                    .arg(QFileInfo(m_settings.modelPath).fileName(),
+                         m_settings.device)
+                    .arg(m_settings.threads));
     emit progressUpdate(0, 4);
 
     m_pendingCtx = aicore_openpcdet_load_opts(
@@ -285,8 +284,7 @@ bool OpenPCDetWorker::runInference() {
                         .arg(nPoints)
                         .arg(QFileInfo(m_settings.pointsFile).fileName()));
     } else if (m_snapshot.valid) {
-        if (geometry.num_point_features >= 4 &&
-            m_snapshot.intensity.empty()) {
+        if (geometry.num_point_features >= 4 && m_snapshot.intensity.empty()) {
             emit debugMessage(
                     tr("[OpenPCDet] No intensity scalar field found — "
                        "the 4th point feature is filled with 0."));
@@ -313,9 +311,9 @@ bool OpenPCDetWorker::runInference() {
         if (m_snapshot.globalScale != 1.0 || m_snapshot.globalShiftX != 0.0 ||
             m_snapshot.globalShiftY != 0.0 || m_snapshot.globalShiftZ != 0.0) {
             for (int i = 0; i < nPoints; ++i) {
-                float* row = points.data() +
-                             static_cast<size_t>(i) *
-                                     geometry.num_point_features;
+                float* row =
+                        points.data() +
+                        static_cast<size_t>(i) * geometry.num_point_features;
                 row[0] = static_cast<float>(row[0] / m_snapshot.globalScale -
                                             m_snapshot.globalShiftX);
                 row[1] = static_cast<float>(row[1] / m_snapshot.globalScale -
@@ -532,12 +530,10 @@ bool OpenPCDetWorker::extractSnapshotPoints(int expectedDim,
     const int n = static_cast<int>(snap.xyz.size() / 3);
     // O(n * dim) assembly from the snapshot; large georeferenced clouds pay
     // one extra pass for the frame lift (see runInference).
-    outPoints->assign(static_cast<size_t>(n) *
-                              static_cast<size_t>(expectedDim),
+    outPoints->assign(static_cast<size_t>(n) * static_cast<size_t>(expectedDim),
                       0.0f);
     for (int i = 0; i < n; ++i) {
-        float* row = outPoints->data() +
-                     static_cast<size_t>(i) * expectedDim;
+        float* row = outPoints->data() + static_cast<size_t>(i) * expectedDim;
         row[0] = snap.xyz[static_cast<size_t>(i) * 3 + 0];
         row[1] = snap.xyz[static_cast<size_t>(i) * 3 + 1];
         row[2] = snap.xyz[static_cast<size_t>(i) * 3 + 2];

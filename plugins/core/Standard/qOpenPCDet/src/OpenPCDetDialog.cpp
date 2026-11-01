@@ -7,8 +7,8 @@
 
 #include "OpenPCDetDialog.h"
 
-#include <cvFileDialog.h>
 #include <CVLog.h>
+#include <cvFileDialog.h>
 #include <ecvPluginDbNaming.h>
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
@@ -251,7 +251,8 @@ void OpenPCDetDialog::setupUi() {
                 appendLog(tr("[OpenPCDet] Model downloaded: %1").arg(path));
                 // The GGUF header is now local: refresh the owning
                 // panel's threshold defaults from the declared values.
-                if (OpenPCDetTaskPanel* owner = panelForFilename(QFileInfo(path).fileName()))
+                if (OpenPCDetTaskPanel* owner =
+                            panelForFilename(QFileInfo(path).fileName()))
                     applyModelDefaults(*owner);
                 if (m_pendingActionAfterDownload == PendingAction::Run) {
                     m_pendingActionAfterDownload = PendingAction::None;
@@ -418,8 +419,7 @@ void OpenPCDetDialog::populatePanels() {
         panel.maxBoxes->setEnabled(false);
         connect(panel.useDefaultsCheck, &QCheckBox::toggled, this,
                 [this, panelIndex = m_panels.size()](bool checked) {
-                    if (panelIndex < 0 || panelIndex >= m_panels.size())
-                        return;
+                    if (panelIndex < 0 || panelIndex >= m_panels.size()) return;
                     OpenPCDetTaskPanel& p = m_panels[panelIndex];
                     p.score->setEnabled(!checked);
                     p.nms->setEnabled(!checked);
@@ -670,7 +670,8 @@ void OpenPCDetDialog::populatePanels() {
         if (page.toInt() >= 0 && page.toInt() < m_panels.size()) {
             OpenPCDetTaskPanel& panel = m_panels[page.toInt()];
             if (panel.previewLabel)
-                refreshScenePreview(&panel, panel.sceneDirEdit->text().trimmed());
+                refreshScenePreview(&panel,
+                                    panel.sceneDirEdit->text().trimmed());
         }
     });
     // Select the first selectable entry (row 0 is a section header).
@@ -944,8 +945,7 @@ QString OpenPCDetDialog::resolveModelPath(const QString& filename) const {
 void OpenPCDetDialog::applyModelDefaults(OpenPCDetTaskPanel& panel) {
     // Manual overrides win: with the tri-state unchecked, quant switches /
     // custom GGUFs / finished downloads must not clobber user values.
-    if (panel.useDefaultsCheck && !panel.useDefaultsCheck->isChecked())
-        return;
+    if (panel.useDefaultsCheck && !panel.useDefaultsCheck->isChecked()) return;
 #ifdef AICore_ENABLED
     if (!panel.score || !panel.nms || !panel.maxBoxes) return;
     // Candidate GGUFs that declare the checkpoint's post-processing
@@ -1230,15 +1230,14 @@ bool OpenPCDetDialog::fillTestDataPanel(int panelIndex) {
     // checkpoints run the 000008 frame. Rendering the detections over a
     // cloud from the OTHER dataset made every wireframe box look misplaced
     // (the two datasets share no coordinate frame).
-    const bool nuScenes = panel.checkpoint.startsWith(
-            QStringLiteral("nuscenes"));
-    const QString displayBin =
-            !files.pointsFile.isEmpty() ? files.pointsFile
-                                        : files.scenePointsFile;
-    loadSampleCloudIntoDb(
-            displayBin, nuScenes ? 5 : 4,
-            nuScenes ? QStringLiteral("nuScenes n015 (sample)")
-                     : QStringLiteral("KITTI 000008 (sample)"));
+    const bool nuScenes =
+            panel.checkpoint.startsWith(QStringLiteral("nuscenes"));
+    const QString displayBin = !files.pointsFile.isEmpty()
+                                       ? files.pointsFile
+                                       : files.scenePointsFile;
+    loadSampleCloudIntoDb(displayBin, nuScenes ? 5 : 4,
+                          nuScenes ? QStringLiteral("nuScenes n015 (sample)")
+                                   : QStringLiteral("KITTI 000008 (sample)"));
     return true;
 }
 
@@ -1247,8 +1246,7 @@ void OpenPCDetDialog::loadSampleCloudIntoDb(const QString& binPath,
                                             const QString& displayName) {
     if (!m_app) return;  // no DB tree (tests / headless)
     if (binPath.isEmpty()) {
-        appendLog(
-                tr("[Error] Sample frame not found in the test-data cache."));
+        appendLog(tr("[Error] Sample frame not found in the test-data cache."));
         return;
     }
     QFile file(binPath);
@@ -1290,7 +1288,8 @@ void OpenPCDetDialog::loadSampleCloudIntoDb(const QString& binPath,
     bool sfAdded = false;
     if (intensity->reserveSafe(static_cast<unsigned>(count))) {
         for (int i = 0; i < count; ++i) {
-            intensity->addElement(points[static_cast<size_t>(i) * features + 3]);
+            intensity->addElement(
+                    points[static_cast<size_t>(i) * features + 3]);
         }
         intensity->computeMinAndMax();
         sfAdded = cloud->addScalarField(intensity) >= 0;
@@ -1299,8 +1298,7 @@ void OpenPCDetDialog::loadSampleCloudIntoDb(const QString& binPath,
         intensity->release();
     }
 
-    const QString cloudName =
-            ecvPluginDbNaming::makeUnique(displayName, m_app);
+    const QString cloudName = ecvPluginDbNaming::makeUnique(displayName, m_app);
     cloud->setName(cloudName);
     cloud->setMetaData(QStringLiteral("OpenPCDet"), true);
     cloud->setMetaData(QStringLiteral("OpenPCDet/Sample"),
@@ -1324,13 +1322,12 @@ OpenPCDetDialog::Settings OpenPCDetDialog::getSettings() const {
     s.threads = m_threads->value();
     // "Use model defaults" zeroes the values so the worker never calls the
     // override setters; an explicit override forwards verbatim (0 legal).
-    const bool followModel = !panel->useDefaultsCheck ||
-                             panel->useDefaultsCheck->isChecked();
+    const bool followModel =
+            !panel->useDefaultsCheck || panel->useDefaultsCheck->isChecked();
     s.thresholdsFollowModel = followModel;
     s.scoreThresh =
             followModel ? 0.0f : static_cast<float>(panel->score->value());
-    s.nmsThresh =
-            followModel ? 0.0f : static_cast<float>(panel->nms->value());
+    s.nmsThresh = followModel ? 0.0f : static_cast<float>(panel->nms->value());
     s.maxBoxes = followModel ? 0 : panel->maxBoxes->value();
     s.addBoxesToDb = panel->addBoxesCheck->isChecked();
     s.annotatedCloudToDb = panel->annotatedCheck->isChecked();

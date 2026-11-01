@@ -7,8 +7,6 @@
 
 #include "dense_anchor_pipeline.h"
 
-#include "common/debug_dump.hpp"
-
 #include <ggml.h>
 
 #include <algorithm>
@@ -20,6 +18,7 @@
 
 #include "../extensions/center_head_ops.h"
 #include "../ops/nms_3d.h"
+#include "common/debug_dump.hpp"
 
 #ifdef _OPENMP
 #include <omp.h>

@@ -29,9 +29,8 @@
 #include "OpenPCDetDbExport.h"
 #include "OpenPCDetModelCatalog.h"
 #include "OpenPCDetWorker.h"
-#include "ecvTestDataRepository.h"
-
 #include "aicore/openpcdet_capi.h"
+#include "ecvTestDataRepository.h"
 
 namespace {
 
@@ -1228,12 +1227,14 @@ TEST(OpenPCDetDualInput, FullCatalogMatrix) {
                         "checkpoint-by-checkpoint matrix";
     }
     const QString extractRoot = ecvTestDataRepository::extractDir();
-    const QString modelsRoot = extractRoot + QStringLiteral("/openpcdet_models");
+    const QString modelsRoot =
+            extractRoot + QStringLiteral("/openpcdet_models");
     // The pinned fixture bundle carries the point frames AND the two
     // multi-modal scene dirs; the model-cache input dir carries point frames
     // only, so the bundle wins when present.
-    const QString fixtureRoot = extractRoot + QStringLiteral(
-            "/openpcdet_test_data/openpcdet_test_data");
+    const QString fixtureRoot =
+            extractRoot +
+            QStringLiteral("/openpcdet_test_data/openpcdet_test_data");
     const QString inputsRoot =
             QDir(fixtureRoot).exists()
                     ? fixtureRoot
@@ -1294,7 +1295,8 @@ TEST(OpenPCDetDualInput, FullCatalogMatrix) {
         }
 
         for (const OpenPCDetModelEntry& e : cp.quants) {
-            const QString modelPath = modelsRoot + QLatin1Char('/') + e.filename;
+            const QString modelPath =
+                    modelsRoot + QLatin1Char('/') + e.filename;
             if (!QFileInfo::exists(modelPath)) {
                 failMissing(modelPath);
                 continue;
@@ -1326,18 +1328,18 @@ TEST(OpenPCDetDualInput, FullCatalogMatrix) {
             ccPointCloud cloud(QStringLiteral("matrix_%1").arg(cp.stem));
             ASSERT_TRUE(cloud.reserve(static_cast<unsigned>(fileCount)));
             for (int i = 0; i < fileCount; ++i) {
-                const float* row = fileBuffer.data() +
-                                   static_cast<size_t>(i) *
-                                           info.num_point_features;
+                const float* row =
+                        fileBuffer.data() +
+                        static_cast<size_t>(i) * info.num_point_features;
                 cloud.addPoint(CCVector3(row[0], row[1], row[2]));
             }
             auto* intensity = new ccScalarField("intensity");
-            ASSERT_TRUE(intensity->reserveSafe(
-                    static_cast<unsigned>(fileCount)));
+            ASSERT_TRUE(
+                    intensity->reserveSafe(static_cast<unsigned>(fileCount)));
             for (int i = 0; i < fileCount; ++i) {
-                const float* row = fileBuffer.data() +
-                                   static_cast<size_t>(i) *
-                                           info.num_point_features;
+                const float* row =
+                        fileBuffer.data() +
+                        static_cast<size_t>(i) * info.num_point_features;
                 intensity->addElement(info.num_point_features >= 4 ? row[3]
                                                                    : 0.0f);
             }
@@ -1418,12 +1420,11 @@ TEST(OpenPCDetDualInput, FullCatalogMatrix) {
             EXPECT_EQ(cloudResult.fromScene, sceneRow)
                     << e.filename.toStdString();
 
-            std::printf(
-                "[matrix] %s boxes=%d points=%d dim=%d %lld ms\n",
-                e.filename.toUtf8().constData(),
-                cloudResult.detections.size(), cloudResult.numPoints,
-                cloudResult.pointDim,
-                static_cast<long long>(cloudResult.runtimeMs));
+            std::printf("[matrix] %s boxes=%d points=%d dim=%d %lld ms\n",
+                        e.filename.toUtf8().constData(),
+                        cloudResult.detections.size(), cloudResult.numPoints,
+                        cloudResult.pointDim,
+                        static_cast<long long>(cloudResult.runtimeMs));
             ++rows;
         }
     }
@@ -1441,8 +1442,8 @@ TEST(OpenPCDetDualInput, ThresholdOverrideExplicitZeroSemantics) {
                                                 "/openpcdet_models/"
                                                 "kitti_pointpillar.f16.gguf");
     const QString bin = extractRoot + QStringLiteral(
-                                                "/openpcdet_inputs/"
-                                                "kitti_000008.bin");
+                                              "/openpcdet_inputs/"
+                                              "kitti_000008.bin");
     if (!QFileInfo::exists(model) || !QFileInfo::exists(bin)) {
         GTEST_SKIP() << "OpenPCDet assets not cached under "
                      << extractRoot.toStdString();
@@ -1458,8 +1459,7 @@ TEST(OpenPCDetDualInput, ThresholdOverrideExplicitZeroSemantics) {
         QStringList lines;
         QObject::connect(
                 &worker, &OpenPCDetWorker::debugMessage, &worker,
-                [&](const QString& m) { lines << m; },
-                Qt::DirectConnection);
+                [&](const QString& m) { lines << m; }, Qt::DirectConnection);
         worker.start();
         ASSERT_TRUE(worker.wait(180000));
         worker.releaseContextOnMainThread();
@@ -1516,8 +1516,8 @@ TEST(OpenPCDetDualInput, DbCloudInputLiftsToLiDARFrame) {
                                                 "/openpcdet_models/"
                                                 "kitti_pointpillar.f16.gguf");
     const QString bin = extractRoot + QStringLiteral(
-                                                "/openpcdet_inputs/"
-                                                "kitti_000008.bin");
+                                              "/openpcdet_inputs/"
+                                              "kitti_000008.bin");
     if (!QFileInfo::exists(model) || !QFileInfo::exists(bin)) {
         GTEST_SKIP() << "OpenPCDet assets not cached under "
                      << extractRoot.toStdString();
@@ -1542,8 +1542,8 @@ TEST(OpenPCDetDualInput, DbCloudInputLiftsToLiDARFrame) {
     std::vector<float> pts;
     int count = 0;
     QString error;
-    ASSERT_TRUE(OpenPCDetHelpers::parsePointsBin(bytes, 4, &pts, &count,
-                                                 &error))
+    ASSERT_TRUE(
+            OpenPCDetHelpers::parsePointsBin(bytes, 4, &pts, &count, &error))
             << error.toStdString();
     ASSERT_GT(count, 0);
     const double scale = 2.0;
@@ -1587,8 +1587,8 @@ TEST(OpenPCDetDualInput, WorkerSnapshotsInputAtConstruction) {
                                                 "/openpcdet_models/"
                                                 "kitti_pointpillar.f16.gguf");
     const QString bin = extractRoot + QStringLiteral(
-                                                "/openpcdet_inputs/"
-                                                "kitti_000008.bin");
+                                              "/openpcdet_inputs/"
+                                              "kitti_000008.bin");
     if (!QFileInfo::exists(model) || !QFileInfo::exists(bin)) {
         GTEST_SKIP() << "OpenPCDet assets not cached under "
                      << extractRoot.toStdString();
@@ -1601,8 +1601,8 @@ TEST(OpenPCDetDualInput, WorkerSnapshotsInputAtConstruction) {
     std::vector<float> pts;
     int count = 0;
     QString error;
-    ASSERT_TRUE(OpenPCDetHelpers::parsePointsBin(bytes, 4, &pts, &count,
-                                                 &error))
+    ASSERT_TRUE(
+            OpenPCDetHelpers::parsePointsBin(bytes, 4, &pts, &count, &error))
             << error.toStdString();
 
     auto* cloud = new ccPointCloud(QStringLiteral("snapshot_kitti"));

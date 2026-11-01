@@ -7,8 +7,6 @@
 
 #include "swin_transformer.h"
 
-#include "common/debug_dump.hpp"
-
 #include <ggml.h>
 
 #include <algorithm>
@@ -18,6 +16,8 @@
 #include <cstring>
 #include <numeric>
 #include <vector>
+
+#include "common/debug_dump.hpp"
 
 namespace openpcdet {
 
@@ -668,8 +668,8 @@ bool run_swin_transformer(engine_backend &backend,
                 ggml_tensor *qkv =
                         ggml_mul_mat(ctx, blk.attn.qkv_w, normed_padded);
                 if (aicore::debug::openpcdet_stage_profile_enabled()) {
-                    fprintf(stderr, "[QKV] bi=%d qkv ne=(%ld,%ld,%ld) OK\n",
-                            bi, qkv->ne[0], qkv->ne[1], qkv->ne[2]);
+                    fprintf(stderr, "[QKV] bi=%d qkv ne=(%ld,%ld,%ld) OK\n", bi,
+                            qkv->ne[0], qkv->ne[1], qkv->ne[2]);
                 }
                 if (blk.attn.qkv_b)
                     qkv = ggml_add(
@@ -722,9 +722,8 @@ bool run_swin_transformer(engine_backend &backend,
                 Q = ggml_scale(ctx, Q, scale_val);
                 ggml_tensor *attn = ggml_mul_mat(ctx, K, Q);
                 if (aicore::debug::openpcdet_stage_profile_enabled()) {
-                    fprintf(stderr,
-                            "[ATTNM] bi=%d attn ne=(%ld,%ld,%ld) OK\n", bi,
-                            attn->ne[0], attn->ne[1], attn->ne[2]);
+                    fprintf(stderr, "[ATTNM] bi=%d attn ne=(%ld,%ld,%ld) OK\n",
+                            bi, attn->ne[0], attn->ne[1], attn->ne[2]);
                 }
                 // attn: [Ws2, Ws2, nH*nw]
 
@@ -803,10 +802,10 @@ bool run_swin_transformer(engine_backend &backend,
                 out = ggml_cont(ctx, ggml_permute(ctx, out, 0, 2, 1, 3));
                 if (aicore::debug::openpcdet_stage_profile_enabled()) {
                     fprintf(stderr,
-                            "[RR3] pre reshape_3d(%ld,%ld,%ld) cont=%d ne=%ld\n",
+                            "[RR3] pre reshape_3d(%ld,%ld,%ld) cont=%d "
+                            "ne=%ld\n",
                             (long)C, (long)Ws2, (long)nw,
-                            ggml_is_contiguous(out),
-                            (long)ggml_nelements(out));
+                            ggml_is_contiguous(out), (long)ggml_nelements(out));
                 }
                 out = ggml_reshape_3d(ctx, out, C, Ws2, nw);
 

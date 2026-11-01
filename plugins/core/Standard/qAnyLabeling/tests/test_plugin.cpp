@@ -8,8 +8,6 @@
 #include <aicore/ocr_capi.h>
 #include <ecvStdPluginInterface.h>
 
-#include "LocalChatEngine.h"
-
 #include <QAction>
 #include <QApplication>
 #include <QBuffer>
@@ -27,6 +25,7 @@
 #include <QDragEnterEvent>
 #include <QDragMoveEvent>
 #include <QDropEvent>
+#include <QEventLoop>
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -42,7 +41,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
-#include <QEventLoop>
 #include <QMainWindow>
 #include <QMenu>
 #include <QMenuBar>
@@ -68,6 +66,8 @@
 #include <QtEndian>
 #include <cstdio>
 #include <cstdlib>
+
+#include "LocalChatEngine.h"
 
 namespace {
 bool reviewStatusRoundTrip(QMainWindow* window) {
@@ -1007,9 +1007,8 @@ int main(int argc, char** argv) {
         !showShapes || !showLabels || !imageTags || !keepPreviousBrightness ||
         !keepPreviousContrast || !autoUseLastLabel || !createBrush ||
         !autoUseLastLabel->isCheckable() || !imageFlagsAction ||
-        imageFlagsAction->icon().isNull() ||
-        !aiDescribe || aiDescribe->icon().isNull() ||
-        aiDescribe->toolTip().isEmpty() ||
+        imageFlagsAction->icon().isNull() || !aiDescribe ||
+        aiDescribe->icon().isNull() || aiDescribe->toolTip().isEmpty() ||
         imageFlagsAction->toolTip() !=
                 QStringLiteral("Upload Custom Image Flags File") ||
         !settingsAction ||
@@ -1850,11 +1849,13 @@ int main(int argc, char** argv) {
     });
     if (!QMetaObject::invokeMethod(window, "openImage", Qt::DirectConnection,
                                    Q_ARG(QString, checkedImagePath)) ||
-        !tagInput->isHidden() || tags->count() != 0 || !imageTags->isChecked()) {
+        !tagInput->isHidden() || tags->count() != 0 ||
+        !imageTags->isChecked()) {
         // Upstream v4.2.1 keeps the image-tags panel visible by default;
         // switching to a tag-less image clears the tags but not the panel.
-        std::fprintf(stderr, "Image tag switch failed: inputHidden=%d "
-                             "count=%d checked=%d visible=%d\n",
+        std::fprintf(stderr,
+                     "Image tag switch failed: inputHidden=%d "
+                     "count=%d checked=%d visible=%d\n",
                      tagInput->isHidden(), tags->count(),
                      imageTags->isChecked(), tags->isVisible());
         return 1;
@@ -2929,8 +2930,8 @@ int main(int argc, char** argv) {
                          "AI Describe e2e skipped: no downloaded vision "
                          "model\n");
         } else {
-            auto* status =
-                    window->findChild<QLabel*>(QStringLiteral("AnnotationStatus"));
+            auto* status = window->findChild<QLabel*>(
+                    QStringLiteral("AnnotationStatus"));
             if (!aiDescribe || !status) return 1;
             aiDescribe->trigger();
             QString last;

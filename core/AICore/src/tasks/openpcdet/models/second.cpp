@@ -7,8 +7,6 @@
 
 #include "second.h"
 
-#include "common/debug_dump.hpp"
-
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -17,6 +15,7 @@
 #include <limits>
 
 #include "../extensions/roi_ops.h"
+#include "common/debug_dump.hpp"
 #include "dense_anchor_pipeline.h"
 #include "voxel_backbone_runner.h"
 

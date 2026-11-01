@@ -21,9 +21,8 @@
 #include <cstdio>
 #include <numeric>
 
-#include "vfe_scatter_cuda.h"
-
 #include "common/debug_dump.hpp"
+#include "vfe_scatter_cuda.h"
 
 namespace openpcdet::ext {
 

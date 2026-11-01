@@ -7,8 +7,6 @@
 
 #include "bevfusion.h"
 
-#include "common/debug_dump.hpp"
-
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -17,6 +15,7 @@
 #include <cstring>
 #include <vector>
 
+#include "common/debug_dump.hpp"
 #include "voxel_backbone_runner.h"
 
 namespace openpcdet {

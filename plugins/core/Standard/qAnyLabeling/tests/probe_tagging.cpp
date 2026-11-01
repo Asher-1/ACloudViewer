@@ -38,8 +38,7 @@ int main(int argc, char** argv) {
             const QStringList retained = filter == 2 || filter == 3
                                                  ? names.mid(0, 5)
                                                  : QStringList();
-            const QSet<QString> removed =
-                    qtCompatQSetFromList(deleted);
+            const QSet<QString> removed = qtCompatQSetFromList(deleted);
             const QSet<QString> kept = qtCompatQSetFromList(retained);
             QJsonArray tags;
             QStringList values;

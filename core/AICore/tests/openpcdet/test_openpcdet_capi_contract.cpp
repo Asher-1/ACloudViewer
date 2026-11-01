@@ -55,8 +55,8 @@ static bool write_garbage_file(const std::string& path) {
     std::FILE* f = std::fopen(path.c_str(), "wb");
     if (!f) return false;
     const char payload[64] = {0};
-    const bool ok = std::fwrite(payload, 1, sizeof(payload), f) ==
-                    sizeof(payload);
+    const bool ok =
+            std::fwrite(payload, 1, sizeof(payload), f) == sizeof(payload);
     std::fclose(f);
     return ok;
 }
@@ -91,12 +91,10 @@ int main(int argc, char** argv) {
         // reaches last_error.
         auto* unknown_dev = aicore_openpcdet_options_new();
         aicore_openpcdet_options_set_device(unknown_dev, "nosuchdevice");
-        auto* unknown_ctx =
-                aicore_openpcdet_load_opts(argv[1], unknown_dev);
+        auto* unknown_ctx = aicore_openpcdet_load_opts(argv[1], unknown_dev);
         AICORE_CHECK(unknown_ctx != nullptr);
         AICORE_CHECK(aicore_openpcdet_is_ready(unknown_ctx) == 0);
-        const char* unknown_error =
-                aicore_openpcdet_last_error(unknown_ctx);
+        const char* unknown_error = aicore_openpcdet_last_error(unknown_ctx);
         AICORE_CHECK(unknown_error && unknown_error[0] != '\0');
         AICORE_CHECK(std::strstr(unknown_error, "nosuchdevice") != nullptr);
         aicore_openpcdet_free(unknown_ctx);
@@ -127,8 +125,8 @@ int main(int argc, char** argv) {
             char* err = nullptr;
             if (aicore_openpcdet_read_model_info(path.c_str(), &info, &err) !=
                 0) {
-                std::fprintf(stderr, "FAIL model_info(%s): %s\n",
-                             e->filename, err ? err : "no error text");
+                std::fprintf(stderr, "FAIL model_info(%s): %s\n", e->filename,
+                             err ? err : "no error text");
                 aicore_openpcdet_free_buffer(err);
                 ++failures;
                 continue;
@@ -153,17 +151,18 @@ int main(int argc, char** argv) {
             float score = -1.0f;
             float nms = -1.0f;
             int32_t boxes = -1;
-            AICORE_CHECK(aicore_openpcdet_model_defaults(
-                                 path.c_str(), &score, &nms, &boxes) == 0);
+            AICORE_CHECK(aicore_openpcdet_model_defaults(path.c_str(), &score,
+                                                         &nms, &boxes) == 0);
             AICORE_CHECK(score == info.score_thresh);
             AICORE_CHECK(nms == info.nms_thresh);
             AICORE_CHECK(boxes == info.max_boxes);
         }
         AICORE_CHECK(present == aicore_openpcdet_model_count());
         AICORE_CHECK(scene_models > 0);
-        std::printf("test_openpcdet_capi_contract: catalog mode verified "
-                    "%d file(s), %d scene model(s)\n",
-                    present, scene_models);
+        std::printf(
+                "test_openpcdet_capi_contract: catalog mode verified "
+                "%d file(s), %d scene model(s)\n",
+                present, scene_models);
     }
 
     // Null-safe teardown / lifecycle.
@@ -274,9 +273,8 @@ int main(int argc, char** argv) {
                                                  nullptr) == -1);
     AICORE_CHECK(aicore_openpcdet_model_defaults("", nullptr, nullptr,
                                                  nullptr) == -1);
-    AICORE_CHECK(aicore_openpcdet_model_defaults("no_such_model.gguf",
-                                                 nullptr, nullptr,
-                                                 nullptr) == -1);
+    AICORE_CHECK(aicore_openpcdet_model_defaults("no_such_model.gguf", nullptr,
+                                                 nullptr, nullptr) == -1);
 
     // Versioned metadata reader guards (asset-free). A failed read must
     // leave the caller's envelope untouched and produce a freeable
@@ -302,8 +300,8 @@ int main(int argc, char** argv) {
         aicore_openpcdet_model_info sentinel = make_model_info();
         sentinel.score_thresh = 42.0f;
         const aicore_openpcdet_model_info before = sentinel;
-        AICORE_CHECK(aicore_openpcdet_read_model_info(
-                             "no_such_model.gguf", &sentinel, &err) == -1);
+        AICORE_CHECK(aicore_openpcdet_read_model_info("no_such_model.gguf",
+                                                      &sentinel, &err) == -1);
         aicore_openpcdet_free_buffer(err);
         AICORE_CHECK(std::memcmp(&sentinel, &before, sizeof(sentinel)) == 0);
         // Wrong struct_size / abi_version envelopes are rejected outright.
