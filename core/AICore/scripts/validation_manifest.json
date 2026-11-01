@@ -3,10 +3,10 @@
  "instantmesh_synthesizer_component_accuracy": {
   "kind": "frozen-synthesizer-fields-not-full-pipeline-or-performance",
   "locked_before_candidate_model_sampling": true,
-  "reference_receipt_sha256": "ffef8357ef687ee88ae911ab063fc6a498c3cc8a0c89ffd3f1b0d7a2fab5fb94",
-  "geometry_reference_receipt_sha256": "4f0f79d765b2ff6acf8ef1e2463af5e19dac02c37c4eab9351545cc9ee7fbd1e",
-  "baseline_capture_sha256": "8d2cb69ddd2ec83758a65c5e044aedb67277049839a6e187f844257e531066af",
-  "weight_quantization_reference_sha256": "c06560cdd68cf1a7967c634acd2c263be74fe4a17c7669ed47eaa0c38b5bd07c",
+  "reference_receipt_sha256": "37b128da73331bd6a1636095ca567205e3be0e0f8bbfdcd4ea6d28ed8ef6514c",
+  "geometry_reference_receipt_sha256": "ff59edd5358abb3389c9200c1b9ab63e91fac7ad21e2550431461d081d18d757",
+  "baseline_capture_sha256": "f359ee1b34f4235d0f7b48b798e660e58718bd621a1119322c496ba57948ffcb",
+  "weight_quantization_reference_sha256": "93f535a71b16205ddae3f3d93059f64fcc77866eae584760b6e1a4ef796ef8d5",
   "upstream_revision": "32b14574edc9caba95f03672bfa1eeddd13c3af7",
   "grid_res": 8,
   "plane_shape": [
@@ -2903,7 +2903,8 @@
   "tagging",
   "relation",
   "llm",
-  "instantmesh"
+  "instantmesh",
+  "querysplat"
  ],
  "input_assets": [
   {
@@ -8641,6 +8642,157 @@
      "relative_path": "openpcdet_test_data/scene_bevfusion/scene.json",
      "sha256": "298dec6f0fb7910f4d485b26fea8cc461d6e8a9f45736a01784b60d882446c86",
      "size_bytes": 91
+    }
+   ]
+  },
+  {
+   "id": "vlx-seek-test-images",
+   "tasks": [
+    "vlx_seek"
+   ],
+   "relative_path": "vlx_seek_test_images.zip",
+   "url": "https://huggingface.co/Asher-1/VLX-Seek-1.5-10B-GGUF/resolve/main/vlx_seek_test_images.zip",
+   "sha256": "660c0e7709db5c0d007be1f14f0c4adf9365ac663ed96fbd45736ed811198d00",
+   "size_bytes": 2393585,
+   "archive": true,
+   "extracted_files": [
+    {
+     "relative_path": "vlx_seek_test_images/demo_image.jpg",
+     "sha256": "73f63c29212c32b83404124a2d6d24d43e25abf003b608c007073d857bbb3034",
+     "size_bytes": 125520
+    },
+    {
+     "relative_path": "vlx_seek_test_images/demo_image2.jpg",
+     "sha256": "92aa556654f4d8693ba873c65c3c9474170de73dcc199773c13005d55927e29c",
+     "size_bytes": 187837
+    },
+    {
+     "relative_path": "vlx_seek_test_images/000000039769.jpg",
+     "sha256": "dea9e7ef97386345f7cff32f9055da4982da5471c48d575146c796ab4563b04e",
+     "size_bytes": 173131
+    },
+    {
+     "relative_path": "vlx_seek_test_images/000000397133.jpg",
+     "sha256": "09e1d25c75f7879bdaa69c327fece5cabacd53939c8c2ef9e87f1c97a2e478c4",
+     "size_bytes": 200576
+    },
+    {
+     "relative_path": "vlx_seek_test_images/crosswalk_pedestrians.jpg",
+     "sha256": "be292b4b6c92bbdca4634de4a93b0245f68d5addb2a297e46210d0e0e0f8b2aa",
+     "size_bytes": 429611
+    },
+    {
+     "relative_path": "vlx_seek_test_images/ebike_riders.jpg",
+     "sha256": "b2eb19fa8bf8a3d7e5ea6ead8d3621f4b0326ba724abc668c2e792b6d5fff8d2",
+     "size_bytes": 481461
+    },
+    {
+     "relative_path": "vlx_seek_test_images/kitchen_modern.jpg",
+     "sha256": "85708a4961ba319e5f3a2134af5cbf62554b734069e9ca8ba35aca4ef6e71d1d",
+     "size_bytes": 235448
+    },
+    {
+     "relative_path": "vlx_seek_test_images/street_traffic.jpg",
+     "sha256": "a086a28f07d7a8445aaae3ab1740a6255f3acffa2cfd075c94bf54f3917e3a4e",
+     "size_bytes": 221736
+    },
+    {
+     "relative_path": "vlx_seek_test_images/water_bottles_table.jpg",
+     "sha256": "28ea45f755aff8c66c84950a6465f134f5959dea7f1be6fbec518b18ac40561b",
+     "size_bytes": 336859
+    }
+   ]
+  },
+  {
+   "id": "querysplat-paper-q8_0",
+   "tasks": [
+    "querysplat"
+   ],
+   "relative_path": "querysplat_models/querysplat-paper-q8_0.gguf",
+   "url": "https://huggingface.co/Asher-1/querysplat_vggto/resolve/main/querysplat-paper-q8_0.gguf",
+   "sha256": "aaeaa570ce59edfa5cd725ea4ac33cc6a20e95966b1daa1d31922eef627f5f38",
+   "size_bytes": 1307495456
+  },
+  {
+   "id": "querysplat-encoder-vggt-omega-1b-512-q8_0",
+   "tasks": [
+    "querysplat"
+   ],
+   "relative_path": "map_anything_models/vggt-omega-1b-512-q8_0.gguf",
+   "url": "https://huggingface.co/Asher-1/map_anything_vggt/resolve/main/vggt-omega-1b-512-q8_0.gguf",
+   "sha256": "ba2080acca9ddc28f96fe2ba58c08116c34696672d23f4cdab74dc4623f5fc80",
+   "size_bytes": 1316485984
+  },
+  {
+   "id": "querysplat-test-images",
+   "tasks": [
+    "querysplat"
+   ],
+   "relative_path": "querysplat_test_data/querysplat_test_images.zip",
+   "url": "https://huggingface.co/Asher-1/querysplat_vggto/resolve/main/querysplat_test_images.zip",
+   "sha256": "afb3ec3693c5118133cd907149e6b7ee78df68df35d757e4f99037c0cad45e98",
+   "size_bytes": 50095675,
+   "archive": "querysplat_test_data",
+   "extracted_files": [
+    {
+     "relative_path": "querysplat_test_data/case0/frame_00027.png",
+     "sha256": "0168df2515ccddd9172c9b97fa5db74a4e822ef926dbede7b945522c98fb3bec",
+     "size_bytes": 289581
+    },
+    {
+     "relative_path": "querysplat_test_data/case0/frame_00038.png",
+     "sha256": "18e8cb816f069c6eccdebce5cc63f6865ad77cdc72cccdc7ed5467a87c9c4491",
+     "size_bytes": 299101
+    },
+    {
+     "relative_path": "querysplat_test_data/case0/frame_00043.png",
+     "sha256": "a91a0d916858d161fc554783554b9f0bd946b69041b61dc308ae4893b92f8911",
+     "size_bytes": 292650
+    },
+    {
+     "relative_path": "querysplat_test_data/case0/frame_00052.png",
+     "sha256": "c2ae3b0cffbbd093fe611dd1adf9c10cfed9362ea2b3ab48b9c64de53dac1477",
+     "size_bytes": 301085
+    },
+    {
+     "relative_path": "querysplat_test_data/case1/frame_00153.png",
+     "sha256": "cc72ff7bfd4c20bab664b950eb1ed0e757fc5be808879502de2edfaaa5077a21",
+     "size_bytes": 206129
+    },
+    {
+     "relative_path": "querysplat_test_data/case1/frame_00155.png",
+     "sha256": "53995711f8e680dce27e14f1c16814000d139eb05dbaafb9029ebab24c9c763f",
+     "size_bytes": 203148
+    },
+    {
+     "relative_path": "querysplat_test_data/case1/frame_00187.png",
+     "sha256": "bdf49a58208da0ffd5bb2b9cf3cb2133151c24f99777bdef44254b0da5026115",
+     "size_bytes": 210503
+    },
+    {
+     "relative_path": "querysplat_test_data/case1/frame_00190.png",
+     "sha256": "d3701cfacc53a0f6c4a1530b585d36f8a01753fe03550a7081e604de203a485c",
+     "size_bytes": 208900
+    },
+    {
+     "relative_path": "querysplat_test_data/courtyard/DSC_0286.png",
+     "sha256": "e06f96bb23ec05f92d28ee72022656e2f9df82aff470792c757b25596e7972f9",
+     "size_bytes": 11782784
+    },
+    {
+     "relative_path": "querysplat_test_data/courtyard/DSC_0287.png",
+     "sha256": "cf956f640104131e83f5bd3ff78adb734bbd1aab7519c55b77d59eceeb628729",
+     "size_bytes": 12014623
+    },
+    {
+     "relative_path": "querysplat_test_data/courtyard/DSC_0288.png",
+     "sha256": "e7f3d4f8e22995748ff68ad1891650ab2625c023c3d974e7b8245ecb98b11803",
+     "size_bytes": 12162170
+    },
+    {
+     "relative_path": "querysplat_test_data/courtyard/DSC_0289.png",
+     "sha256": "d9e8740ad9ed5736d27845a37761988ef988e2b7088c36ed4f4bd5dc9aa6e5fb",
+     "size_bytes": 12123555
     }
    ]
   }
@@ -37428,7 +37580,7 @@
     "{repo}/core/AICore/scripts/validation_manifest.json",
     "{reference:instantmesh_geometry_baseline}"
    ],
-   "accuracy_gate": "四图逐视图/平面固定绝对门及同权重原上游新增误差门；仅组件，不是完整链/性能验收",
+   "accuracy_gate": "\u56db\u56fe\u9010\u89c6\u56fe/\u5e73\u9762\u56fa\u5b9a\u7edd\u5bf9\u95e8\u53ca\u540c\u6743\u91cd\u539f\u4e0a\u6e38\u65b0\u589e\u8bef\u5dee\u95e8\uff1b\u4ec5\u7ec4\u4ef6\uff0c\u4e0d\u662f\u5b8c\u6574\u94fe/\u6027\u80fd\u9a8c\u6536",
    "accuracy": {
     "reference": "upstream",
     "reference_id": "InstantMesh-GGML:32b14574edc9caba95f03672bfa1eeddd13c3af7:geometry-component-limits:ff59edd5358abb3389c9200c1b9ab63e91fac7ad21e2550431461d081d18d757",
@@ -38429,7 +38581,7 @@
     "{repo}/core/AICore/scripts/validation_manifest.json",
     "{reference:instantmesh_geometry_baseline}"
    ],
-   "accuracy_gate": "四图逐视图/平面固定绝对门及同权重原上游新增误差门；仅组件，不是完整链/性能验收",
+   "accuracy_gate": "\u56db\u56fe\u9010\u89c6\u56fe/\u5e73\u9762\u56fa\u5b9a\u7edd\u5bf9\u95e8\u53ca\u540c\u6743\u91cd\u539f\u4e0a\u6e38\u65b0\u589e\u8bef\u5dee\u95e8\uff1b\u4ec5\u7ec4\u4ef6\uff0c\u4e0d\u662f\u5b8c\u6574\u94fe/\u6027\u80fd\u9a8c\u6536",
    "accuracy": {
     "reference": "upstream",
     "reference_id": "InstantMesh-GGML:32b14574edc9caba95f03672bfa1eeddd13c3af7:geometry-component-limits:ff59edd5358abb3389c9200c1b9ab63e91fac7ad21e2550431461d081d18d757",
@@ -38983,6 +39135,238 @@
    },
    "fingerprint_policy": "none",
    "require_fingerprint": false,
+   "metric_parser": "generic"
+  },
+  {
+   "id": "vlxseek-detection-q8_0",
+   "task": "vlx_seek",
+   "light": false,
+   "owned_globs": [
+    "vlx_seek_models/vlx-vision-10b-q8_0.gguf",
+    "vlx_seek_models/vlx-10b-llm-q8_0.gguf",
+    "vlx_seek_models/wedetect-base-uni-f32.gguf"
+   ],
+   "model_glob": "vlx_seek_models/vlx-vision-10b-q8_0.gguf",
+   "executable": "binary:test_vlx_probe",
+   "args": [
+    "--models-dir",
+    "{assets}/vlx_seek_models",
+    "--wedetect",
+    "{assets}/vlx_seek_models/wedetect-base-uni-f32.gguf",
+    "--vision",
+    "{assets}/vlx_seek_models/vlx-vision-10b-q8_0.gguf",
+    "--llm",
+    "{assets}/vlx_seek_models/vlx-10b-llm-q8_0.gguf",
+    "--image",
+    "{assets}/vlx_seek_test_images/vlx_seek_test_images/ebike_riders.jpg",
+    "--task",
+    "detection",
+    "--text",
+    "person riding electric bike",
+    "--lang",
+    "en",
+    "--device",
+    "{backend}",
+    "--threads",
+    "0",
+    "--max-tokens",
+    "256",
+    "--repeats",
+    "{inference_runs}",
+    "--warmups",
+    "{warmup_runs}",
+    "--expect-boxes-min",
+    "1",
+    "--json-out",
+    "{scenario_report}"
+   ],
+   "env": {},
+   "accuracy_gate": "Deterministic greedy output across repeats and context recreation, at least one resolved box on the ebike benchmark original, prompt token count equal to the upstream documented 414-token budget for the closed-mode detection prompt, and finite nonzero timings through the common timing struct.",
+   "accuracy": {
+    "reference": "probe_invariant",
+    "reference_id": "probe:vlxseek-detection-q8_0",
+    "checks": [
+     {
+      "metric": "upstream_prompt_tokens",
+      "op": "==",
+      "value": 414,
+      "label": "closed-mode prompt tokens match the upstream fixed budget"
+     }
+    ],
+    "require_metrics": [
+     "box_count",
+     "proposal_count"
+    ]
+   },
+   "fingerprint_policy": "exact",
+   "metric_parser": "generic"
+  },
+  {
+   "id": "vlxseek-detection-f16-upstream",
+   "task": "vlx_seek",
+   "light": false,
+   "owned_globs": [
+    "vlx_seek_models/vlx-vision-10b-f16.gguf",
+    "vlx_seek_models/vlx-10b-llm-f16.gguf"
+   ],
+   "required_globs": [
+    "vlx_seek_models/wedetect-base-uni-f32.gguf"
+   ],
+   "model_glob": "vlx_seek_models/vlx-vision-10b-f16.gguf",
+   "executable": "binary:test_vlx_probe",
+   "args": [
+    "--models-dir",
+    "{assets}/vlx_seek_models",
+    "--wedetect",
+    "{assets}/vlx_seek_models/wedetect-base-uni-f32.gguf",
+    "--vision",
+    "{assets}/vlx_seek_models/vlx-vision-10b-f16.gguf",
+    "--llm",
+    "{assets}/vlx_seek_models/vlx-10b-llm-f16.gguf",
+    "--image",
+    "{assets}/vlx_seek_test_images/vlx_seek_test_images/demo_image2.jpg",
+    "--task",
+    "detection",
+    "--text",
+    "water bottle",
+    "--lang",
+    "en",
+    "--device",
+    "{backend}",
+    "--threads",
+    "0",
+    "--max-tokens",
+    "256",
+    "--repeats",
+    "{inference_runs}",
+    "--warmups",
+    "{warmup_runs}",
+    "--upstream-dir",
+    "{reference:vlx_upstream}",
+    "--upstream-precision",
+    "f16",
+    "--box-tolerance",
+    "0.05",
+    "--json-out",
+    "{scenario_report}"
+   ],
+   "env": {},
+   "accuracy_gate": "Greedy token identity against the pristine upstream vlx-cli (Asher-1/VLX-Seek-GGML pinned revision, built by tests/vlx/prepare_vlx_upstream_reference.py from the same model files) plus per-box coordinate delta <= 0.05 px, repeat/recreate determinism enforced by the probe exit code.",
+   "accuracy": {
+    "reference": "upstream_vlx_cli",
+    "reference_id": "Asher-1/VLX-Seek-GGML@e63d16d vlx-cli",
+    "checks": [
+     {
+      "metric": "upstream_text_match",
+      "op": "==",
+      "value": 1,
+      "label": "greedy text == upstream vlx-cli"
+     },
+     {
+      "metric": "upstream_box_max_delta_px",
+      "op": "<=",
+      "value": 0.05,
+      "label": "box coordinates within the f32 reduction noise band"
+     }
+    ],
+    "require_metrics": [
+     "upstream_text_match"
+    ]
+   },
+   "fingerprint_policy": "exact",
+   "metric_parser": "generic"
+  },
+  {
+   "id": "vlxseek-grounding-single-zh-q8_0",
+   "task": "vlx_seek",
+   "light": false,
+   "owned_globs": [
+    "vlx_seek_models/vlx-vision-10b-q8_0.gguf",
+    "vlx_seek_models/vlx-10b-llm-q8_0.gguf"
+   ],
+   "required_globs": [
+    "vlx_seek_models/wedetect-base-uni-f32.gguf"
+   ],
+   "model_glob": "vlx_seek_models/vlx-vision-10b-q8_0.gguf",
+   "executable": "binary:test_vlx_probe",
+   "args": [
+    "--models-dir",
+    "{assets}/vlx_seek_models",
+    "--wedetect",
+    "{assets}/vlx_seek_models/wedetect-base-uni-f32.gguf",
+    "--vision",
+    "{assets}/vlx_seek_models/vlx-vision-10b-q8_0.gguf",
+    "--llm",
+    "{assets}/vlx_seek_models/vlx-10b-llm-q8_0.gguf",
+    "--image",
+    "{assets}/vlx_seek_test_images/vlx_seek_test_images/street_traffic.jpg",
+    "--task",
+    "grounding_single",
+    "--text",
+    "\u9a91\u7535\u52a8\u8f66\u7684\u4eba",
+    "--lang",
+    "zh",
+    "--device",
+    "{backend}",
+    "--threads",
+    "0",
+    "--max-tokens",
+    "256",
+    "--repeats",
+    "{inference_runs}",
+    "--warmups",
+    "{warmup_runs}",
+    "--json-out",
+    "{scenario_report}"
+   ],
+   "env": {},
+   "accuracy_gate": "Deterministic greedy output across repeats and context recreation on the zh template path (byte-identical prompt templates from vlx_task_templates.inc); single-target output shape from the grounding_single template.",
+   "accuracy": {
+    "reference": "probe_invariant",
+    "reference_id": "probe:vlxseek-grounding-single-zh-q8_0",
+    "checks": [],
+    "require_metrics": [
+     "prompt_tokens",
+     "completion_tokens"
+    ]
+   },
+   "fingerprint_policy": "exact",
+   "metric_parser": "generic"
+  },
+  {
+   "id": "querysplat",
+   "task": "querysplat",
+   "owned_globs": [
+    "querysplat_models/*.gguf",
+    "querysplat_test_data/querysplat_test_images.zip"
+   ],
+   "model_glob": "querysplat_models/querysplat-paper-q8_0.gguf",
+   "light_globs": [
+    "querysplat_models/querysplat-paper-q8_0.gguf",
+    "map_anything_models/vggt-omega-1b-512-q8_0.gguf"
+   ],
+   "for_each_model": true,
+   "executable": "binary:test_querysplat_capi",
+   "args": [
+    "{model}",
+    "{asset:map_anything_models/vggt-omega-1b-512-q8_0.gguf}",
+    "{asset:querysplat_test_data/case0/frame_00027.png}",
+    "{asset:querysplat_test_data/case0/frame_00038.png}",
+    "{asset:querysplat_test_data/case0/frame_00043.png}",
+    "{asset:querysplat_test_data/case0/frame_00052.png}",
+    "{backend}",
+    "{inference_runs}",
+    "{warmup_runs}"
+   ],
+   "env": {},
+   "accuracy_gate": "structural invariants against the published paper checkpoints: exactly 524288 gaussians with opacities in [0,1] and positive scales, finite depth >= 0 with depth_conf >= 1 on the input-resolution grid, pose_enc FoV floor 0.01, exact repeated-output fingerprint, render/PLY/cameras-JSON/stats export round-trips; the independent upstream truth anchors (cpp-vs-GT render PSNR 26.85/26.84/26.89 dB for f32/f16/q8_0 on the 3 official reference scenes) are owned by the upstream cpp_ggml alignment matrix and re-verified per release through the parity workflow",
+   "accuracy": {
+    "reference": "probe_invariant",
+    "reference_id": "probe:querysplat",
+    "checks": [],
+    "require_metrics": []
+   },
+   "fingerprint_policy": "exact",
    "metric_parser": "generic"
   }
  ]
