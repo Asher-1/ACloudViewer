@@ -274,7 +274,7 @@ void writeThrowSiteStack() {
 
 }  // namespace
 
-#if defined(ECV_HAS_BACKTRACE)
+#if defined(ECV_HAS_BACKTRACE) && !defined(__APPLE__)
 // Itanium C++ ABI interposition: EVERY throw passes through __cxa_throw
 // BEFORE any unwinding starts. Capturing the backtrace here is the only
 // way to keep the throw-site stack available to the top-level CAUGHT-
@@ -283,6 +283,18 @@ void writeThrowSiteStack() {
 // visibility (core/CMakeLists.txt builds CVCoreLib with hidden
 // visibility), otherwise the dynamic linker keeps resolving __cxa_throw
 // to libstdc++ and the hook never fires.
+//
+// macOS only: NOT built there. With libAICore.dylib in the link, every
+// C++ exception raised from that dylib (e.g. the C API option-ABI guards
+// inside aicore_*_create) fails to unwind — libc++abi reports
+// "terminating due to uncaught exception" from failed_throw even though
+// the throw site sits inside a try/catch that rewrites the failure into
+// ctx->error. The RTLD_NEXT forward reaches libc++abi, but the handler
+// lookup against the interposed throw no longer finds the landing pads.
+// The same interposer works on glibc/Linux. Until that dyld behavior is
+// root-caused on an Apple host, macOS keeps working exceptions and loses
+// only the throw-site snapshot (writeThrowSiteStack then reports
+// "no throw-site stack captured").
 extern "C" __attribute__((visibility("default"))) void __cxa_throw(
         void *thrownException, void *typeInfo, void (*destructor)(void *)) {
     using CxaThrowFn = void (*)(void *, void *, void (*)(void *));
@@ -298,7 +310,7 @@ extern "C" __attribute__((visibility("default"))) void __cxa_throw(
     // could not be resolved — fail loudly instead of corrupting unwinding.
     std::abort();
 }
-#endif  // ECV_HAS_BACKTRACE
+#endif  // ECV_HAS_BACKTRACE && !__APPLE__
 
 void logUnhandledException(const QString &what) {
 #ifdef _WIN32
