@@ -530,7 +530,12 @@ jobs:
         # required on PEP 668 externally-managed images (ubuntu-latest
         # python3.14); --user keeps the install off the system tree.
         run: |
-          python3 -m pip install --user --break-system-packages pytest numpy
+          python3 -m pip install --user --break-system-packages pytest numpy opencv-python-headless
+          # The ocr/table paddle reference pipeline probes import the real
+          # framework at module level; the PyPI default torch wheel drags the
+          # full CUDA stack onto this CPU-only lane, so pin the CPU index.
+          python3 -m pip install --user --break-system-packages \
+            --index-url https://download.pytorch.org/whl/cpu torch
       - name: Configure (AICore + tiered tests, CPU-only)
         if: steps.gate.outputs.run == 'true'
         run: |

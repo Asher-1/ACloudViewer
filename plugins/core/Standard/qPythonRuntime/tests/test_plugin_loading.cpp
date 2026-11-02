@@ -41,9 +41,17 @@ int main(int argc, char **argv)
         dlclose(probe);
 #endif
     QObject *object = loader.instance();
+    // Cross-module casts must follow the application's discovery contract:
+    // Q_DECLARE_INTERFACE turns qobject_cast into a string-comparison against
+    // the plugin's qt_metacast, which is stable across the dylib boundary.
+    // A C++ RTTI dynamic_cast into the interface compares typeinfo pointers
+    // that static builds duplicate per module under -fvisibility=hidden (the
+    // interface library is linked statically into both this test and the
+    // plugin), so dyld never coalesces them and the cast returns null on
+    // macOS/Windows static lanes even though the plugin is fully loadable.
     auto *plugin = qobject_cast<ccPluginInterface *>(object);
-    auto *standard = dynamic_cast<ccStdPluginInterface *>(plugin);
-    if (!standard)
+    auto *standard = qobject_cast<ccStdPluginInterface *>(object);
+    if (!plugin || !standard)
     {
         std::fprintf(
             stderr, "FAIL: Qt plugin interface discovery: %s\n", qPrintable(loader.errorString()));
