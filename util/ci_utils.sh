@@ -511,7 +511,6 @@ build_mac_wheel() {
         # acceptance (its manifest notes it is pending) and currently
         # aborts the C API contract tests at runtime (cross-dylib
         # exception RTTI). Keep CI on the CPU chain until that lands.
-        "-DAICore_USE_METAL=OFF"
         "-DAICore_BUILD_TESTS=ON"
         "-DAICore_USE_VULKAN=${AICore_USE_VULKAN}"
         "-DAICore_USE_CUDA=${AICore_USE_CUDA:-OFF}"
@@ -702,7 +701,6 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_QSIBR=$PLUGIN_STANDARD_QSIBR"
                 "-DAICore_ENABLED=ON"
                 # Same Metal-chain rationale as build_mac_wheel above.
-                "-DAICore_USE_METAL=OFF"
                 "-DAICore_BUILD_TESTS=ON"
                 "-DAICore_USE_VULKAN=${AICore_USE_VULKAN}"
                 "-DAICore_USE_CUDA=${AICore_USE_CUDA:-OFF}"
@@ -879,7 +877,6 @@ build_pip_package() {
         # acceptance (its manifest notes it is pending) and currently
         # aborts the C API contract tests at runtime (cross-dylib
         # exception RTTI). Keep CI on the CPU chain until that lands.
-        "-DAICore_USE_METAL=OFF"
         "-DAICore_BUILD_TESTS=ON"
         "-DAICore_USE_VULKAN=${AICore_USE_VULKAN}"
         "-DAICore_USE_CUDA=${AICore_USE_CUDA:-OFF}"
