@@ -116,6 +116,23 @@ if(SPIRULA_BACKEND STREQUAL "cuda")
     list(APPEND SPIRULA_EXTRA_CMAKE_ARGS "-DSS_BUILD_SAM=ON")
 endif()
 
+# Binary-directory component of the external build tree. Multi-config
+# generators (MSVC writes <BINARY_DIR>/Release/spirula.exe, not
+# <BINARY_DIR>/spirula.exe) need the per-config subdirectory; single-config
+# generators (Makefiles, Ninja) write <BINARY_DIR>/spirula even with
+# CMAKE_BUILD_TYPE=Release. $<CONFIG> alone cannot express this: on a
+# single-config generator it evaluates to CMAKE_BUILD_TYPE (e.g. "Release"),
+# not the empty string, so the copy would target a directory that never
+# exists (the 2026-11-02 install failure). CMAKE_CONFIGURATION_TYPES is the
+# configure-time fact that separates the two generator families. Computed
+# here rather than inside ExternalProject_Add — conditional blocks inside a
+# command's argument list are parsed as literal tokens, not executed.
+if(CMAKE_CONFIGURATION_TYPES)
+    set(SPIRULA_BINARY_SUBDIR "$<CONFIG>/")
+else()
+    set(SPIRULA_BINARY_SUBDIR "")
+endif()
+
 ExternalProject_Add(ext_spirula
     # Build tree and install tree under build_app/spirula/ — CMake's default
     # INSTALL_DIR is the PREFIX itself, so the executable lands flat in
@@ -145,12 +162,11 @@ ExternalProject_Add(ext_spirula
         -DSS_SOURCE_DIR=<SOURCE_DIR>
         -P ${CMAKE_CURRENT_LIST_DIR}/spirula_git_init.cmake
     # Upstream ships no install rules; the executable is the whole artifact.
-    # The $<CONFIG> generator expression keeps the source path correct for
-    # multi-config generators (MSVC writes <BINARY_DIR>/Release/spirula.exe,
-    # not <BINARY_DIR>/spirula.exe) and expands empty for single-config ones.
+    # SPIRULA_BINARY_SUBDIR (above) keeps the source path correct for both
+    # generator families.
     INSTALL_COMMAND
         ${CMAKE_COMMAND} -E copy_if_different
-        <BINARY_DIR>/$<CONFIG>/spirula${CMAKE_EXECUTABLE_SUFFIX}
+        <BINARY_DIR>/${SPIRULA_BINARY_SUBDIR}spirula${CMAKE_EXECUTABLE_SUFFIX}
         <INSTALL_DIR>/bin/${SPIRULA_EXE_NAME}
     VERBATIM)
 

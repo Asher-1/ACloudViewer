@@ -190,8 +190,15 @@ endfunction()
 function(cloudviewer_set_plugin_test_env_offscreen test_name)
     cloudviewer_resolve_qt_lib_dir(_qt_lib_dir)
     if (MSVC)
+        # Windows PATH is semicolon-separated, so a raw $ENV{PATH} inside the
+        # ENVIRONMENT value splits the ctest property list: every directory
+        # after the first fragment becomes a dangling item without '=' and is
+        # silently dropped, leaving the test without the conda Qt runtime
+        # (STATUS_DLL_NOT_FOUND at load). Escape the inherited separators so
+        # the whole PATH stays one ENVIRONMENT list item.
+        string(REPLACE ";" "\\;" _cv_inherited_path "$ENV{PATH}")
         set_tests_properties(${test_name} PROPERTIES
-                ENVIRONMENT "QT_QPA_PLATFORM=offscreen;PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;$ENV{PATH}")
+                ENVIRONMENT "QT_QPA_PLATFORM=offscreen;PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;${_cv_inherited_path}")
     else ()
         set_tests_properties(${test_name} PROPERTIES
                 ENVIRONMENT "QT_QPA_PLATFORM=offscreen;LD_LIBRARY_PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}:${_qt_lib_dir}:${CMAKE_BINARY_DIR}/external/lib:$ENV{LD_LIBRARY_PATH}")
@@ -201,8 +208,13 @@ endfunction()
 function(cloudviewer_set_plugin_test_env test_name)
     cloudviewer_resolve_qt_lib_dir(_qt_lib_dir)
     if (MSVC)
+        # Same Windows PATH escaping as the offscreen variant above: without
+        # it the inherited PATH is truncated to its first fragment and any
+        # test whose binary really imports the conda Qt DLLs dies in the
+        # Windows loader with 0xc0000135 before main() runs.
+        string(REPLACE ";" "\\;" _cv_inherited_path "$ENV{PATH}")
         set_tests_properties(${test_name} PROPERTIES
-                ENVIRONMENT "PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;$ENV{PATH}")
+                ENVIRONMENT "PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;${_cv_inherited_path}")
     else ()
         set_tests_properties(${test_name} PROPERTIES
                 ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}:${_qt_lib_dir}:${CMAKE_BINARY_DIR}/external/lib:$ENV{LD_LIBRARY_PATH}")
@@ -253,11 +265,16 @@ function(cloudviewer_set_aicore_test_runtime_layout target)
         # fatal configure error, so guard the ctest-only ENVIRONMENT_<CONFIG>
         # properties with if(TEST).
         if(TEST ${target})
+            # Escape the inherited Windows PATH exactly like
+            # cloudviewer_set_plugin_test_env above; a raw $ENV{PATH} would
+            # split the property list and drop every directory after the
+            # first fragment.
+            string(REPLACE ";" "\\;" _cv_inherited_path "$ENV{PATH}")
             foreach(_cfg IN ITEMS Debug Release RelWithDebInfo)
                 string(TOUPPER "${_cfg}" _cfg_upper)
                 set_tests_properties(${target} PROPERTIES
                     "ENVIRONMENT_${_cfg_upper}"
-                        "PATH=${_bin_root}/${_cfg};$ENV{PATH}"
+                        "PATH=${_bin_root}/${_cfg}\;${_cv_inherited_path}"
                 )
             endforeach()
         endif()
