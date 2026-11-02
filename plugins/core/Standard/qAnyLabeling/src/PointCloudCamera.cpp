@@ -288,16 +288,18 @@ bool projectCuboid(const PointCloudCuboid& cuboid,
         Vec3 b = cameraPoint(
                 {corners[edge[1]][0], corners[edge[1]][1], corners[edge[1]][2]},
                 calibration);
-        constexpr double near = 1e-6;
-        if (a.z < near && b.z < near) continue;
-        if (a.z < near || b.z < near) {
-            const double fraction = (near - a.z) / (b.z - a.z);
-            if (a.z < near) {
-                a = {a.x + fraction * (b.x - a.x), a.y + fraction * (b.y - a.y),
-                     near};
+        // `near`/`far` are legacy macros in the Windows SDK (windef.h) that
+        // MSVC expands to nothing; use suffix-free names that compile everywhere.
+        constexpr double nearZ = 1e-6;
+        if (a.z < nearZ && b.z < nearZ) continue;
+        if (a.z < nearZ || b.z < nearZ) {
+            const double fraction = (nearZ - a.z) / (b.z - a.z);
+            if (a.z < nearZ) {
+                a = {a.x + fraction * (b.x - a.x),
+                     a.y + fraction * (b.y - a.y), nearZ};
             } else {
-                b = {b.x + fraction * (a.x - b.x), b.y + fraction * (a.y - b.y),
-                     near};
+                b = {b.x + fraction * (a.x - b.x),
+                     b.y + fraction * (a.y - b.y), nearZ};
             }
         }
         const int samples =
@@ -418,9 +420,10 @@ bool pointCloudCameraDepthColors(const QVector<QVector4D>& points,
                              ranked.end());
             return lower + (rank - low) * (ranked[high] - lower);
         };
-        const double near = percentile(0.02), far = percentile(0.98);
-        if (nearDepth) *nearDepth = near;
-        if (farDepth) *farDepth = far;
+        const double nearDepthValue = percentile(0.02),
+                     farDepthValue = percentile(0.98);
+        if (nearDepth) *nearDepth = nearDepthValue;
+        if (farDepth) *farDepth = farDepthValue;
         const int stops[5][3] = {{255, 100, 65},
                                  {255, 215, 64},
                                  {103, 220, 120},
@@ -428,8 +431,10 @@ bool pointCloudCameraDepthColors(const QVector<QVector4D>& points,
                                  {90, 100, 235}};
         for (double depth : depths) {
             const double position =
-                    std::clamp((depth - near) / std::max(far - near, 1e-6), 0.0,
-                               1.0) *
+                    std::clamp((depth - nearDepthValue) /
+                                       std::max(farDepthValue - nearDepthValue,
+                                                1e-6),
+                                   0.0, 1.0) *
                     4;
             const int low = std::min(3, int(position));
             const double fraction = position - low;

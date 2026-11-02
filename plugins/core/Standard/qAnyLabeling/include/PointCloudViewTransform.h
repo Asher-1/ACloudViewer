@@ -84,9 +84,11 @@ struct PointCloudViewTransform {
                 double(std::max(1, size.width())) / std::max(1, size.height());
         QMatrix4x4 result;
         const double distance = scale / tangent();
-        const double near = 0.1;
-        const double far = std::max(500.0, distance + extent);
-        const double depth = (far + near) / (far - near);
+        // `near`/`far` are legacy macros in the Windows SDK (windef.h) that
+        // MSVC expands to nothing, so pick names that survive every toolchain.
+        const double nearPlane = 0.1;
+        const double farPlane = std::max(500.0, distance + extent);
+        const double depth = (farPlane + nearPlane) / (farPlane - nearPlane);
         for (int axis = 0; axis < 3; ++axis) {
             result(0, axis) =
                     float(axes[0][axis] /
@@ -108,8 +110,9 @@ struct PointCloudViewTransform {
         }
         if (perspective) {
             result(2, 3) = float(double(result(2, 3)) +
-                                 (distance * (far + near) - 2 * far * near) /
-                                         (far - near));
+                                 (distance * (farPlane + nearPlane) -
+                                  2 * farPlane * nearPlane) /
+                                         (farPlane - nearPlane));
             double offset = distance;
             for (int axis = 0; axis < 3; ++axis)
                 offset -= axes[2][axis] * center[axis];
