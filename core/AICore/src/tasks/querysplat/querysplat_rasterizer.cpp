@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "querysplat_rasterizer.hpp"
 
 #include <algorithm>
@@ -14,7 +21,7 @@ namespace qs {
 
 namespace {
 
-constexpr int kTile = 16;         // gsplat tile size
+constexpr int kTile = 16;  // gsplat tile size
 // gsplat-semantics constants (gsplat/cuda/csrc, ALPHA_THRESHOLD = 1/255):
 // - per-gaussian alpha floor: contributions below it are skipped. The 1e-4
 //   floor we used before accumulates thousands of sub-1/255 near-field tails
@@ -47,10 +54,10 @@ void quat_to_rotmat(const float* q, float* R) {
 // Per-view projected gaussian: screen mean, depth, and the 2x2 screen-space
 // covariance (conic form). Returns false when culled.
 struct ProjGaussian {
-    float mx, my;      // screen mean
-    float depth;       // camera z
-    float conic[3];    // a, b, c of the inverse 2x2 covariance
-    float radius;      // opacity-aware screen radius
+    float mx, my;    // screen mean
+    float depth;     // camera z
+    float conic[3];  // a, b, c of the inverse 2x2 covariance
+    float radius;    // opacity-aware screen radius
     bool culled;
 };
 
@@ -63,11 +70,21 @@ struct Splat {
     float color[3];
 };
 
-ProjGaussian project_one(const float* mean, const float* quat,
-                         const float* scale, const float* cov_cam_pre,
-                         const float* w2c, float fx, float fy, float cx,
-                         float cy, float z_near, float z_far, float src_op,
-                         float lim_x_pos, float lim_x_neg, float lim_y_pos,
+ProjGaussian project_one(const float* mean,
+                         const float* quat,
+                         const float* scale,
+                         const float* cov_cam_pre,
+                         const float* w2c,
+                         float fx,
+                         float fy,
+                         float cx,
+                         float cy,
+                         float z_near,
+                         float z_far,
+                         float src_op,
+                         float lim_x_pos,
+                         float lim_x_neg,
+                         float lim_y_pos,
                          float lim_y_neg) {
     ProjGaussian pg;
     pg.culled = true;
@@ -76,12 +93,9 @@ ProjGaussian project_one(const float* mean, const float* quat,
     if (src_op < kAlphaFloor) return pg;
     // p_cam = W * p_world + t
     const float px = mean[0], py = mean[1], pz = mean[2];
-    const float cx_ =
-        w2c[0] * px + w2c[1] * py + w2c[2] * pz + w2c[3];
-    const float cy_ =
-        w2c[4] * px + w2c[5] * py + w2c[6] * pz + w2c[7];
-    const float cz =
-        w2c[8] * px + w2c[9] * py + w2c[10] * pz + w2c[11];
+    const float cx_ = w2c[0] * px + w2c[1] * py + w2c[2] * pz + w2c[3];
+    const float cy_ = w2c[4] * px + w2c[5] * py + w2c[6] * pz + w2c[7];
+    const float cz = w2c[8] * px + w2c[9] * py + w2c[10] * pz + w2c[11];
     if (cz < z_near || cz > z_far) return pg;
     if (cz <= kEps) return pg;
 
@@ -125,8 +139,8 @@ ProjGaussian project_one(const float* mean, const float* quat,
     //   b_ = j00·j11·cxy + j00·j12·cxz + j02·j11·cyz + j02·j12·czz
     //   c_ = j11²·cyy + 2·j11·j12·cyz + j12²·czz
     const float a_ = j00 * j00 * cxx + 2.f * j00 * j02 * cxz + j02 * j02 * czz;
-    const float b_ = j00 * j11 * cxy + j00 * j12 * cxz +
-                     j02 * j11 * cyz + j02 * j12 * czz;
+    const float b_ = j00 * j11 * cxy + j00 * j12 * cxz + j02 * j11 * cyz +
+                     j02 * j12 * czz;
     const float c_ = j11 * j11 * cyy + 2.f * j11 * j12 * cyz + j12 * j12 * czz;
     // low-pass filter (gsplat antialiasing=false path)
     const float a = a_ + 0.3f;
@@ -147,8 +161,7 @@ ProjGaussian project_one(const float* mean, const float* quat,
     const float disc = std::sqrt(std::max(0.01f, mid * mid - det));
     const float eig = mid + disc;
     float extend = kBBoxExtendMax;
-    extend = std::min(extend,
-                      std::sqrt(2.0f * std::log(src_op / kAlphaFloor)));
+    extend = std::min(extend, std::sqrt(2.0f * std::log(src_op / kAlphaFloor)));
     pg.radius = extend * std::sqrt(std::max(eig, 0.0f));
     if (pg.radius <= 0.0f) return pg;
     // screen point (pixel centers at +0.5)
@@ -163,10 +176,10 @@ ProjGaussian project_one(const float* mean, const float* quat,
 // of the forward blend, reused verbatim by the backward walk (t1: one
 // function so fwd/bwd can never drift) ----
 struct PixelAlpha {
-    float dx, dy;    // pixel - mean (our blend convention)
-    float sigma;     // conic-weighted distance, 2x gsplat's sigma
-    float vis;       // exp(-sigma/2)
-    float a_raw;     // opacity * vis (pre-clamp)
+    float dx, dy;  // pixel - mean (our blend convention)
+    float sigma;   // conic-weighted distance, 2x gsplat's sigma
+    float vis;     // exp(-sigma/2)
+    float a_raw;   // opacity * vis (pre-clamp)
 };
 
 // Per-view pipeline consumed by both the forward blend and the backward
@@ -175,7 +188,8 @@ struct PixelAlpha {
 struct ViewPipeline {
     std::vector<ProjGaussian> proj;
     std::vector<int> tile_count, tile_start;
-    std::vector<std::pair<float, int>> keys;  // (depth, gaussian) per tile entry
+    std::vector<std::pair<float, int>>
+            keys;  // (depth, gaussian) per tile entry
     std::vector<Splat> splats;
 };
 
@@ -183,9 +197,8 @@ inline bool eval_splat(const Splat& sp, float px, float py, PixelAlpha* pa) {
     const float dx = px - sp.mx, dy = py - sp.my;
     if (dx > sp.radius || dx < -sp.radius) return false;
     if (dy > sp.radius || dy < -sp.radius) return false;
-    const float sigma =
-        sp.conic[0] * dx * dx + 2.f * sp.conic[1] * dx * dy +
-        sp.conic[2] * dy * dy;
+    const float sigma = sp.conic[0] * dx * dx + 2.f * sp.conic[1] * dx * dy +
+                        sp.conic[2] * dy * dy;
     if (sigma < 0.0f) return false;             // gsplat: power > 0 skip
     if (sigma > sp.sigma_max) return false;     // alpha below the floor
     const float vis = std::exp(-0.5f * sigma);  // gsplat __expf(-sigma)
@@ -201,8 +214,10 @@ inline bool eval_splat(const Splat& sp, float px, float py, PixelAlpha* pa) {
 
 }  // namespace
 
-RenderedViews render_gaussians(const GaussianOutput& g, const float* w2c,
-                               const float* intrinsics, int S,
+RenderedViews render_gaussians(const GaussianOutput& g,
+                               const float* w2c,
+                               const float* intrinsics,
+                               int S,
                                const RenderConfig& cfg) {
     const int W = cfg.width, H = cfg.height;
     const int N = (int)g.N;
@@ -271,21 +286,23 @@ RenderedViews render_gaussians(const GaussianOutput& g, const float* w2c,
 #endif
         for (int i = 0; i < N; i++) {
             const float* src = &g.data[(size_t)i * stride];
-            vp.proj[i] = project_one(src, src + 7, src + 4,
-                                     &cov_world[(size_t)i * 6],
-                                     w2c_v, fx, fy, cx, cy, cfg.near_plane,
-                                     cfg.far_plane, src[3], lim_x_pos,
-                                     lim_x_neg, lim_y_pos, lim_y_neg);
+            vp.proj[i] = project_one(
+                    src, src + 7, src + 4, &cov_world[(size_t)i * 6], w2c_v, fx,
+                    fy, cx, cy, cfg.near_plane, cfg.far_plane, src[3],
+                    lim_x_pos, lim_x_neg, lim_y_pos, lim_y_neg);
         }
 
         // ---- tile bins (gaussians whose screen disk touches the tile) ----
-        // Counting sort into one flat array (count, prefix-sum, fill) instead of
-        // a vector per tile: O(N + entries), no per-tile reallocations.
-        auto tile_range = [&](const ProjGaussian& pg, int* x0, int* x1, int* y0, int* y1) {
+        // Counting sort into one flat array (count, prefix-sum, fill) instead
+        // of a vector per tile: O(N + entries), no per-tile reallocations.
+        auto tile_range = [&](const ProjGaussian& pg, int* x0, int* x1, int* y0,
+                              int* y1) {
             *x0 = std::max(0, (int)std::floor((pg.mx - pg.radius) / kTile));
-            *x1 = std::min(tiles_x - 1, (int)std::floor((pg.mx + pg.radius) / kTile));
+            *x1 = std::min(tiles_x - 1,
+                           (int)std::floor((pg.mx + pg.radius) / kTile));
             *y0 = std::max(0, (int)std::floor((pg.my - pg.radius) / kTile));
-            *y1 = std::min(tiles_y - 1, (int)std::floor((pg.my + pg.radius) / kTile));
+            *y1 = std::min(tiles_y - 1,
+                           (int)std::floor((pg.my + pg.radius) / kTile));
         };
         std::fill(vp.tile_count.begin(), vp.tile_count.end(), 0);
         for (int i = 0; i < N; i++) {
@@ -299,24 +316,26 @@ RenderedViews render_gaussians(const GaussianOutput& g, const float* w2c,
         vp.tile_start[0] = 0;
         for (int t = 0; t < n_tiles; t++)
             vp.tile_start[(size_t)t + 1] =
-                vp.tile_start[(size_t)t] + vp.tile_count[(size_t)t];
+                    vp.tile_start[(size_t)t] + vp.tile_count[(size_t)t];
         vp.keys.resize((size_t)vp.tile_start[(size_t)n_tiles]);
         std::copy(vp.tile_start.begin(), vp.tile_start.end() - 1,
                   vp.tile_count.begin());  // fill cursors
-        for (int i = 0; i < N; i++) {  // ascending i: each bin starts in index order
+        for (int i = 0; i < N;
+             i++) {  // ascending i: each bin starts in index order
             if (vp.proj[i].culled) continue;
             int x0, x1, y0, y1;
             tile_range(vp.proj[i], &x0, &x1, &y0, &y1);
             for (int ty = y0; ty <= y1; ty++)
                 for (int tx = x0; tx <= x1; tx++)
-                    vp.keys[(size_t)vp.tile_count[(size_t)ty * tiles_x + tx]++] =
-                        {vp.proj[i].depth, i};
+                    vp.keys[(size_t)vp.tile_count[(size_t)ty * tiles_x +
+                                                  tx]++] = {vp.proj[i].depth,
+                                                            i};
         }
-        // Front-to-back per tile, ties by gaussian index (gsplat's radix sort on
-        // (tile|depth) keys is stable over index order). The per-tile entries are
-        // then flattened into self-contained Splats so the blend streams one
-        // contiguous array instead of gathering from proj[] and g.data.
-        // O(E log E_tile) for E bin entries.
+        // Front-to-back per tile, ties by gaussian index (gsplat's radix sort
+        // on (tile|depth) keys is stable over index order). The per-tile
+        // entries are then flattened into self-contained Splats so the blend
+        // streams one contiguous array instead of gathering from proj[] and
+        // g.data. O(E log E_tile) for E bin entries.
         vp.splats.resize(vp.keys.size());
 #ifdef QS_USE_OPENMP
 #pragma omp parallel for schedule(dynamic, 4)
@@ -338,9 +357,10 @@ RenderedViews render_gaussians(const GaussianOutput& g, const float* w2c,
                 sp.conic[1] = pg.conic[1];
                 sp.conic[2] = pg.conic[2];
                 sp.opacity = src[3];
-                // alpha = op*exp(-sigma/2) < floor  <=>  sigma > 2 ln(op/floor);
-                // the 1e-3 margin dwarfs the f32 rounding of expf/logf, so every
-                // sigma above it would also have failed the alpha-floor test
+                // alpha = op*exp(-sigma/2) < floor  <=>  sigma > 2
+                // ln(op/floor); the 1e-3 margin dwarfs the f32 rounding of
+                // expf/logf, so every sigma above it would also have failed the
+                // alpha-floor test
                 sp.sigma_max = 2.0f * std::log(src[3] / kAlphaFloor) + 1e-3f;
                 sp.depth = pg.depth;
                 // color: direct (sh0) or per-view SH eval (sh1); per gaussian
@@ -353,9 +373,9 @@ RenderedViews render_gaussians(const GaussianOutput& g, const float* w2c,
                     // view direction world <- camera position
                     float dir[3] = {src[0] - cam_x, src[1] - cam_y,
                                     src[2] - cam_z};
-                    const float n = 1.0f / std::sqrt(dir[0] * dir[0] +
-                                                     dir[1] * dir[1] +
-                                                     dir[2] * dir[2] + kEps);
+                    const float n =
+                            1.0f / std::sqrt(dir[0] * dir[0] + dir[1] * dir[1] +
+                                             dir[2] * dir[2] + kEps);
                     dir[0] *= n;
                     dir[1] *= n;
                     dir[2] *= n;
@@ -394,32 +414,41 @@ RenderedViews render_gaussians(const GaussianOutput& g, const float* w2c,
 #endif
         for (int t = 0; t < n_tiles; t++) {
             const int px0 = (t % tiles_x) * kTile, py0 = (t / tiles_x) * kTile;
-            const int tw = std::min(W - px0, kTile), th = std::min(H - py0, kTile);
+            const int tw = std::min(W - px0, kTile),
+                      th = std::min(H - py0, kTile);
             float Tp[kTile * kTile], acc[kTile * kTile][4];
             unsigned char done[kTile * kTile];
             int32_t lastp[kTile * kTile];
             for (int p = 0; p < kTile * kTile; p++) {
                 Tp[p] = 1.0f;
-                acc[p][0] = acc[p][1] = acc[p][2] = acc[p][3] = 0.f;  // rgb + depth
+                acc[p][0] = acc[p][1] = acc[p][2] = acc[p][3] =
+                        0.f;  // rgb + depth
                 done[p] = 0;
                 lastp[p] = -1;
             }
             int live = tw * th;  // pixels not yet done
             const size_t e = (size_t)vp.tile_start[(size_t)t + 1];
-            for (size_t k = (size_t)vp.tile_start[(size_t)t]; k < e && live > 0; k++) {
+            for (size_t k = (size_t)vp.tile_start[(size_t)t]; k < e && live > 0;
+                 k++) {
                 const Splat& sp = vp.splats[k];
-                // superset of the |dx|,|dy| <= radius pixels; the exact test below decides
-                const int xa = std::max(0, (int)std::floor(sp.mx - sp.radius - 0.5f) - px0);
-                const int xb = std::min(tw - 1, (int)std::ceil(sp.mx + sp.radius - 0.5f) - px0);
-                const int ya = std::max(0, (int)std::floor(sp.my - sp.radius - 0.5f) - py0);
-                const int yb = std::min(th - 1, (int)std::ceil(sp.my + sp.radius - 0.5f) - py0);
+                // superset of the |dx|,|dy| <= radius pixels; the exact test
+                // below decides
+                const int xa = std::max(
+                        0, (int)std::floor(sp.mx - sp.radius - 0.5f) - px0);
+                const int xb = std::min(
+                        tw - 1, (int)std::ceil(sp.mx + sp.radius - 0.5f) - px0);
+                const int ya = std::max(
+                        0, (int)std::floor(sp.my - sp.radius - 0.5f) - py0);
+                const int yb = std::min(
+                        th - 1, (int)std::ceil(sp.my + sp.radius - 0.5f) - py0);
                 for (int ly = ya; ly <= yb; ly++) {
                     for (int lx = xa; lx <= xb; lx++) {
                         const int p = ly * kTile + lx;
                         if (done[p]) continue;
                         float& T = Tp[p];
                         PixelAlpha pa;
-                        if (!eval_splat(sp, (px0 + lx) + 0.5f, (py0 + ly) + 0.5f, &pa))
+                        if (!eval_splat(sp, (px0 + lx) + 0.5f,
+                                        (py0 + ly) + 0.5f, &pa))
                             continue;
                         const float a = std::min(pa.a_raw, kMaxAlpha);
                         const float next_T = T * (1.0f - a);
@@ -447,7 +476,8 @@ RenderedViews render_gaussians(const GaussianOutput& g, const float* w2c,
                     const size_t o = (size_t)(py0 + ly) * W + (px0 + lx);
                     img[o] = acc[p][0] + T * cfg.bg_color[0];
                     img[(size_t)H * W + o] = acc[p][1] + T * cfg.bg_color[1];
-                    img[(size_t)2 * H * W + o] = acc[p][2] + T * cfg.bg_color[2];
+                    img[(size_t)2 * H * W + o] =
+                            acc[p][2] + T * cfg.bg_color[2];
                     alp[o] = alpha_acc;
                     dep[o] = acc[p][3] / std::max(alpha_acc, kDepthDenorm);
                     lst[o] = lastp[p];
@@ -466,7 +496,8 @@ namespace {
 
 // vjp of the 2x2 inverse: v_M = -Minv * v_Minv * Minv, with the off-diagonal
 // gradient halved on entry (gsplat inverse_vjp + the symmetric unpack).
-void inverse_vjp2(const float conic[3], const float v_conic[3],
+void inverse_vjp2(const float conic[3],
+                  const float v_conic[3],
                   float v_cov[3]) {
     const float A = conic[0], B = conic[1], C = conic[2];
     // vConicMat = [[vA, vB/2], [vB/2, vC]]
@@ -483,10 +514,18 @@ void inverse_vjp2(const float conic[3], const float v_conic[3],
 // gsplat persp_proj_vjp (Utils.cuh), row-major math. Inputs: camera-space
 // mean/covar, intrinsics, and the vjp seeds dL/dcov2d (3) + dL/dmean2d (2).
 // Outputs accumulate into v_mean_c (3) and v_covar_c (6, xx/xy/xz/yy/yz/zz).
-void persp_proj_vjp(const float mean_c[3], const float cov_c[6], float fx,
-                    float fy, float cx, float cy, int width, int height,
-                    const float v_cov2d[3], const float v_mean2d[2],
-                    float v_mean_c[3], float v_covar_c[6]) {
+void persp_proj_vjp(const float mean_c[3],
+                    const float cov_c[6],
+                    float fx,
+                    float fy,
+                    float cx,
+                    float cy,
+                    int width,
+                    int height,
+                    const float v_cov2d[3],
+                    const float v_mean2d[2],
+                    float v_mean_c[3],
+                    float v_covar_c[6]) {
     const float x = mean_c[0], y = mean_c[1], z = mean_c[2];
     const float tan_fovx = 0.5f * width / fx;
     const float tan_fovy = 0.5f * height / fy;
@@ -504,12 +543,13 @@ void persp_proj_vjp(const float mean_c[3], const float cov_c[6], float fx,
     const float g00 = v_cov2d[0], g01 = v_cov2d[1], g11 = v_cov2d[2];
     // temp = v_cov2d * J (2x3)
     const float t[2][3] = {
-        {g00 * J[0][0] + g01 * J[1][0], g00 * J[0][1] + g01 * J[1][1],
-         g00 * J[0][2] + g01 * J[1][2]},
-        {g01 * J[0][0] + g11 * J[1][0], g01 * J[0][1] + g11 * J[1][1],
-         g01 * J[0][2] + g11 * J[1][2]}};
-    // v_cov3d[p][q] += sum_{r,s} J[r][p] * G[r][s] * J[s][q] = sum_r J[r][p] * t[r][q]
-    // (cov_c is [xx, xy, xz, yy, yz, zz]; accumulate both symmetric halves once)
+            {g00 * J[0][0] + g01 * J[1][0], g00 * J[0][1] + g01 * J[1][1],
+             g00 * J[0][2] + g01 * J[1][2]},
+            {g01 * J[0][0] + g11 * J[1][0], g01 * J[0][1] + g11 * J[1][1],
+             g01 * J[0][2] + g11 * J[1][2]}};
+    // v_cov3d[p][q] += sum_{r,s} J[r][p] * G[r][s] * J[s][q] = sum_r J[r][p] *
+    // t[r][q] (cov_c is [xx, xy, xz, yy, yz, zz]; accumulate both symmetric
+    // halves once)
     static const int CIDX[3][3] = {{0, 1, 2}, {1, 3, 4}, {2, 4, 5}};
     for (int p = 0; p < 3; p++)
         for (int q = p; q < 3; q++) {
@@ -554,8 +594,10 @@ void persp_proj_vjp(const float mean_c[3], const float cov_c[6], float fx,
 // gsplat quat_scale_to_covar_vjp + quat_to_rotmat_vjp, row-major math.
 // quat = (w,x,y,z) scalar-first; v_covar is the symmetric 6-float world
 // covariance gradient.
-void quat_scale_to_covar_vjp(const float quat[4], const float scale[3],
-                             const float v_covar[6], float v_quat[4],
+void quat_scale_to_covar_vjp(const float quat[4],
+                             const float scale[3],
+                             const float v_covar[6],
+                             float v_quat[4],
                              float v_scale[3]) {
     float R[9];
     quat_to_rotmat(quat, R);
@@ -574,8 +616,7 @@ void quat_scale_to_covar_vjp(const float quat[4], const float scale[3],
     for (int r = 0; r < 3; r++)
         for (int c = 0; c < 3; c++) {
             float acc = 0.f;
-            for (int k = 0; k < 3; k++)
-                acc += (C[r][k] + C[k][r]) * M[k][c];
+            for (int k = 0; k < 3; k++) acc += (C[r][k] + C[k][r]) * M[k][c];
             vM[r][c] = acc;
         }
     // v_scale[j] = sum_r R[r][j] * v_M[r][j]
@@ -592,24 +633,23 @@ void quat_scale_to_covar_vjp(const float quat[4], const float scale[3],
     // vR[row][col] translated; the quaternion is normalized first and the
     // gradient is projected onto the unit sphere.
     const float w = quat[0], x = quat[1], y = quat[2], z = quat[3];
-    const float inv_norm =
-        1.0f / std::sqrt(x * x + y * y + z * z + w * w);
+    const float inv_norm = 1.0f / std::sqrt(x * x + y * y + z * z + w * w);
     const float qn[4] = {w * inv_norm, x * inv_norm, y * inv_norm,
                          z * inv_norm};
     const float r00 = vR[0][0], r01 = vR[0][1], r02 = vR[0][2];
     const float r10 = vR[1][0], r11 = vR[1][1], r12 = vR[1][2];
     const float r20 = vR[2][0], r21 = vR[2][1], r22 = vR[2][2];
     const float vqn[4] = {
-        2.f * (x * (r21 - r12) + y * (r02 - r20) + z * (r10 - r01)),
-        2.f * (-2.f * x * (r11 + r22) + y * (r10 + r01) + z * (r20 + r02) +
-               w * (r21 - r12)),
-        2.f * (x * (r10 + r01) - 2.f * y * (r00 + r22) + z * (r21 + r12) +
-               w * (r02 - r20)),
-        2.f * (x * (r20 + r02) + y * (r21 + r12) - 2.f * z * (r00 + r11) +
-               w * (r10 - r01)),
+            2.f * (x * (r21 - r12) + y * (r02 - r20) + z * (r10 - r01)),
+            2.f * (-2.f * x * (r11 + r22) + y * (r10 + r01) + z * (r20 + r02) +
+                   w * (r21 - r12)),
+            2.f * (x * (r10 + r01) - 2.f * y * (r00 + r22) + z * (r21 + r12) +
+                   w * (r02 - r20)),
+            2.f * (x * (r20 + r02) + y * (r21 + r12) - 2.f * z * (r00 + r11) +
+                   w * (r10 - r01)),
     };
-    const float dot = vqn[0] * qn[0] + vqn[1] * qn[1] + vqn[2] * qn[2] +
-                      vqn[3] * qn[3];
+    const float dot =
+            vqn[0] * qn[0] + vqn[1] * qn[1] + vqn[2] * qn[2] + vqn[3] * qn[3];
     v_quat[0] += (vqn[0] - dot * qn[0]) * inv_norm;
     v_quat[1] += (vqn[1] - dot * qn[1]) * inv_norm;
     v_quat[2] += (vqn[2] - dot * qn[2]) * inv_norm;
@@ -618,9 +658,13 @@ void quat_scale_to_covar_vjp(const float quat[4], const float scale[3],
 
 }  // namespace
 
-bool render_backward(const GaussianOutput& g, const float* w2c,
-                     const float* intrinsics, int S, const RenderConfig& cfg,
-                     const RenderedViews& fwd, const float* d_images,
+bool render_backward(const GaussianOutput& g,
+                     const float* w2c,
+                     const float* intrinsics,
+                     int S,
+                     const RenderConfig& cfg,
+                     const RenderedViews& fwd,
+                     const float* d_images,
                      GaussianGrads* out_grads) {
     if (cfg.sh_degree != 0) {
         // the TTO contract (t4/t5): sh0 only; the sh1 splat color is a
@@ -722,17 +766,19 @@ bool render_backward(const GaussianOutput& g, const float* w2c,
 #endif
         for (int i = 0; i < N; i++) {
             const float* src = &g.data[(size_t)i * stride];
-            vp.proj[i] = project_one(src, src + 7, src + 4,
-                                     &cov_world[(size_t)i * 6],
-                                     w2c_v, fx, fy, cx, cy, cfg.near_plane,
-                                     cfg.far_plane, src[3], lim_x_pos,
-                                     lim_x_neg, lim_y_pos, lim_y_neg);
+            vp.proj[i] = project_one(
+                    src, src + 7, src + 4, &cov_world[(size_t)i * 6], w2c_v, fx,
+                    fy, cx, cy, cfg.near_plane, cfg.far_plane, src[3],
+                    lim_x_pos, lim_x_neg, lim_y_pos, lim_y_neg);
         }
-        auto tile_range = [&](const ProjGaussian& pg, int* x0, int* x1, int* y0, int* y1) {
+        auto tile_range = [&](const ProjGaussian& pg, int* x0, int* x1, int* y0,
+                              int* y1) {
             *x0 = std::max(0, (int)std::floor((pg.mx - pg.radius) / kTile));
-            *x1 = std::min(tiles_x - 1, (int)std::floor((pg.mx + pg.radius) / kTile));
+            *x1 = std::min(tiles_x - 1,
+                           (int)std::floor((pg.mx + pg.radius) / kTile));
             *y0 = std::max(0, (int)std::floor((pg.my - pg.radius) / kTile));
-            *y1 = std::min(tiles_y - 1, (int)std::floor((pg.my + pg.radius) / kTile));
+            *y1 = std::min(tiles_y - 1,
+                           (int)std::floor((pg.my + pg.radius) / kTile));
         };
         std::fill(vp.tile_count.begin(), vp.tile_count.end(), 0);
         for (int i = 0; i < N; i++) {
@@ -746,7 +792,7 @@ bool render_backward(const GaussianOutput& g, const float* w2c,
         vp.tile_start[0] = 0;
         for (int t = 0; t < n_tiles; t++)
             vp.tile_start[(size_t)t + 1] =
-                vp.tile_start[(size_t)t] + vp.tile_count[(size_t)t];
+                    vp.tile_start[(size_t)t] + vp.tile_count[(size_t)t];
         vp.keys.resize((size_t)vp.tile_start[(size_t)n_tiles]);
         std::copy(vp.tile_start.begin(), vp.tile_start.end() - 1,
                   vp.tile_count.begin());
@@ -756,8 +802,9 @@ bool render_backward(const GaussianOutput& g, const float* w2c,
             tile_range(vp.proj[i], &x0, &x1, &y0, &y1);
             for (int ty = y0; ty <= y1; ty++)
                 for (int tx = x0; tx <= x1; tx++)
-                    vp.keys[(size_t)vp.tile_count[(size_t)ty * tiles_x + tx]++] =
-                        {vp.proj[i].depth, i};
+                    vp.keys[(size_t)vp.tile_count[(size_t)ty * tiles_x +
+                                                  tx]++] = {vp.proj[i].depth,
+                                                            i};
         }
         vp.splats.resize(vp.keys.size());
 #ifdef QS_USE_OPENMP
@@ -815,8 +862,7 @@ bool render_backward(const GaussianOutput& g, const float* w2c,
                     const float T_final = 1.0f - alpha_out[o];
                     float T = T_final;
                     float buffer[3] = {0.f, 0.f, 0.f};
-                    const float px = (px0 + lx) + 0.5f,
-                                py = (py0 + ly) + 0.5f;
+                    const float px = (px0 + lx) + 0.5f, py = (py0 + ly) + 0.5f;
                     for (int k = last; k >= ks; k--) {
                         const Splat& sp = vp.splats[(size_t)k];
                         PixelAlpha pa;
@@ -834,10 +880,9 @@ bool render_backward(const GaussianOutput& g, const float* w2c,
                             vk[c] += fac * G[c];
                             // (c_k*T - buffer_k*ra) * G_k, minus the
                             // background path T_final*ra*(bg*G)
-                            v_alpha += (sp.color[c] * T - buffer[c] * ra) *
-                                       G[c];
-                            v_alpha -=
-                                T_final * ra * cfg.bg_color[c] * G[c];
+                            v_alpha +=
+                                    (sp.color[c] * T - buffer[c] * ra) * G[c];
+                            v_alpha -= T_final * ra * cfg.bg_color[c] * G[c];
                         }
                         if (pa.a_raw <= kMaxAlpha) {  // not clamped: grad flows
                             const float v_sigma = -pa.a_raw * v_alpha;
@@ -846,10 +891,10 @@ bool render_backward(const GaussianOutput& g, const float* w2c,
                             vc[0] += 0.5f * v_sigma * ddx * ddx;
                             vc[1] += v_sigma * ddx * ddy;
                             vc[2] += 0.5f * v_sigma * ddy * ddy;
-                            vx[0] += v_sigma * (sp.conic[0] * ddx +
-                                                sp.conic[1] * ddy);
-                            vx[1] += v_sigma * (sp.conic[1] * ddx +
-                                                sp.conic[2] * ddy);
+                            vx[0] += v_sigma *
+                                     (sp.conic[0] * ddx + sp.conic[1] * ddy);
+                            vx[1] += v_sigma *
+                                     (sp.conic[1] * ddx + sp.conic[2] * ddy);
                             sd.op[(size_t)gi] += pa.vis * v_alpha;
                         }
                         for (int c = 0; c < 3; c++)
@@ -888,21 +933,24 @@ bool render_backward(const GaussianOutput& g, const float* w2c,
             inverse_vjp2(vp.proj[i].conic, vconic, v_cov2d);
             // camera-space mean/covar of this gaussian
             const float px = src[0], py = src[1], pz = src[2];
-            const float mc[3] = {w2c_v[0] * px + w2c_v[1] * py +
-                                     w2c_v[2] * pz + w2c_v[3],
-                                 w2c_v[4] * px + w2c_v[5] * py +
-                                     w2c_v[6] * pz + w2c_v[7],
-                                 w2c_v[8] * px + w2c_v[9] * py +
-                                     w2c_v[10] * pz + w2c_v[11]};
+            const float mc[3] = {
+                    w2c_v[0] * px + w2c_v[1] * py + w2c_v[2] * pz + w2c_v[3],
+                    w2c_v[4] * px + w2c_v[5] * py + w2c_v[6] * pz + w2c_v[7],
+                    w2c_v[8] * px + w2c_v[9] * py + w2c_v[10] * pz + w2c_v[11]};
             const float* Cc = &cov_world[(size_t)i * 6];
-            float vmc[3] = {0.f, 0.f, 0.f}, vcc[6] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
-            persp_proj_vjp(mc, Cc, fx, fy, cx, cy, W, H, v_cov2d, vxy, vmc, vcc);
+            float vmc[3] = {0.f, 0.f, 0.f},
+                  vcc[6] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+            persp_proj_vjp(mc, Cc, fx, fy, cx, cy, W, H, v_cov2d, vxy, vmc,
+                           vcc);
             // camera -> world
             // v_pW = R^T v_pC (R = w2c rotation rows)
             float* dpos = &out_grads->pos[(size_t)i * 3];
-            dpos[0] += w2c_v[0] * vmc[0] + w2c_v[4] * vmc[1] + w2c_v[8] * vmc[2];
-            dpos[1] += w2c_v[1] * vmc[0] + w2c_v[5] * vmc[1] + w2c_v[9] * vmc[2];
-            dpos[2] += w2c_v[2] * vmc[0] + w2c_v[6] * vmc[1] + w2c_v[10] * vmc[2];
+            dpos[0] +=
+                    w2c_v[0] * vmc[0] + w2c_v[4] * vmc[1] + w2c_v[8] * vmc[2];
+            dpos[1] +=
+                    w2c_v[1] * vmc[0] + w2c_v[5] * vmc[1] + w2c_v[9] * vmc[2];
+            dpos[2] +=
+                    w2c_v[2] * vmc[0] + w2c_v[6] * vmc[1] + w2c_v[10] * vmc[2];
             // v_covarW = R^T v_covarC R (symmetric accumulate)
             static const int CIDX[3][3] = {{0, 1, 2}, {1, 3, 4}, {2, 4, 5}};
             float Cc3[3][3];
@@ -914,7 +962,8 @@ bool render_backward(const GaussianOutput& g, const float* w2c,
                     float acc = 0.f;
                     for (int r = 0; r < 3; r++)
                         for (int s = 0; s < 3; s++)
-                            acc += w2c_v[r * 4 + p] * Cc3[r][s] * w2c_v[s * 4 + q];
+                            acc += w2c_v[r * 4 + p] * Cc3[r][s] *
+                                   w2c_v[s * 4 + q];
                     vW[CIDX[p][q]] += acc;
                 }
             float vq[4] = {0.f, 0.f, 0.f, 0.f}, vs[3] = {0.f, 0.f, 0.f};
@@ -928,7 +977,9 @@ bool render_backward(const GaussianOutput& g, const float* w2c,
     return true;
 }
 
-void render_to_rgb8(const float* rgb, int width, int height,
+void render_to_rgb8(const float* rgb,
+                    int width,
+                    int height,
                     unsigned char* out_rgb8) {
     // rgb is the render-output plane layout (3, H, W): read per channel and
     // interleave. Reading it as interleaved (rgb[i]) produced the

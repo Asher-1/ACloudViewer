@@ -111,7 +111,10 @@ signals:
 
 private:
     bool loadContext();
-    QImage colorizeDepth(const float* depth, const float* conf, int w, int h,
+    QImage colorizeDepth(const float* depth,
+                         const float* conf,
+                         int w,
+                         int h,
                          int view) const;
     static QImage rgb8ToImage(const unsigned char* rgb8, int w, int h);
 

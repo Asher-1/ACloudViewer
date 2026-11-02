@@ -19,10 +19,10 @@
 // (patchembed 1.4e-7, postpos/postcls 7e-11, blk0 interior 1.6e-6).
 #pragma once
 
-#include "vlx_types.h"
-
 #include <string>
 #include <vector>
+
+#include "vlx_types.h"
 
 struct ggml_backend;
 struct ggml_context;
@@ -37,15 +37,20 @@ class GgufFile;
 
 class RadioGraph {
 public:
-    RadioGraph(ggml_backend* backend, const RadioConfig& cfg, const GgufFile* gguf);
+    RadioGraph(ggml_backend* backend,
+               const RadioConfig& cfg,
+               const GgufFile* gguf);
     ~RadioGraph();
 
     // img_hwc: row-major H*W*3 float, channels last, values in [0,1].
     // Conditioning (checkpoint mean/std, bf16 output) happens on the host in
     // run(), matching the official InputConditioner bit for bit.
     // out_levels receives the 4 intermediate levels as NCHW float.
-    bool run(const float* img_hwc, int H, int W,
-             std::vector<FeatureLevel>* out_levels, std::string* err = nullptr,
+    bool run(const float* img_hwc,
+             int H,
+             int W,
+             std::vector<FeatureLevel>* out_levels,
+             std::string* err = nullptr,
              bool keep_on_device = false);
 
     // GPU-resident output level (persistent leaf; device pointer on CUDA
@@ -57,8 +62,12 @@ public:
     // token-major bytes) and read back ONE block-0 component. Single-output
     // graph per call — immune to gallocr reuse ambiguity. `point` is one of
     // "n1", "qkv", "attnbr", "mlpbr", "x".
-    bool run_diag(const float* postcls_tokens, const char* point, int H, int W,
-                  std::vector<float>* out, std::string* err = nullptr);
+    bool run_diag(const float* postcls_tokens,
+                  const char* point,
+                  int H,
+                  int W,
+                  std::vector<float>* out,
+                  std::string* err = nullptr);
 
 private:
     struct Impl;
@@ -68,7 +77,10 @@ private:
     void build_weights();
     bool ensure_weights(std::string* err);
     void build_graphs(int H, int W);
-    ggml_tensor* build_block(ggml_context* ctx, int i, ggml_tensor* x, float attn_scale);
+    ggml_tensor* build_block(ggml_context* ctx,
+                             int i,
+                             ggml_tensor* x,
+                             float attn_scale);
 
     Impl* impl_ = nullptr;
 

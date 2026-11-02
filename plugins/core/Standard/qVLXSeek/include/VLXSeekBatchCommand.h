@@ -36,16 +36,17 @@ struct CommandVlxSeekRun : public ccCommandLineInterface::Command {
 #ifdef AICore_ENABLED
     static const ecvAICoreBatch::OptionTable& options() {
         static const ecvAICoreBatch::OptionTable table = {
-                {"TASK", "enum",
-                 "detection",
+                {"TASK", "enum", "detection",
                  "detection|grounding_single|counting|reasoning_detection|"
                  "brief_region_caption|region_ocr|vqa"},
-                {"TEXT", "string", "", "Target text (categories / phrase / "
-                                       "question)"},
+                {"TEXT", "string", "",
+                 "Target text (categories / phrase / "
+                 "question)"},
                 {"LANG", "enum", "en", "en|zh (task template language)"},
-                {"PRECISION", "enum", "q8_0", "f16|q8_0 (vision+LLM rows of "
-                                              "the catalog; detector stays "
-                                              "f32)"},
+                {"PRECISION", "enum", "q8_0",
+                 "f16|q8_0 (vision+LLM rows of "
+                 "the catalog; detector stays "
+                 "f32)"},
                 {"MAX_NEW_TOKENS", "int", "1024", "Greedy generation cap"},
                 {"DEVICE", "device", "", "Device request (empty = auto)"},
                 {"THREADS", "int", "0", "CPU threads (0 = default)"},
@@ -72,13 +73,12 @@ struct CommandVlxSeekRun : public ccCommandLineInterface::Command {
         if (s.listModels) {
             std::vector<B::CatalogRow> rows;
             for (const VLXSeekModelEntry& e : catalog) {
-                rows.push_back({e.filename, e.displayName, e.downloadUrl,
-                                QDir(cacheDir).filePath(e.filename),
-                                e.role == 0
-                                        ? QStringLiteral("detector")
-                                        : (e.role == 1
-                                               ? QStringLiteral("vision")
-                                               : QStringLiteral("llm"))});
+                rows.push_back(
+                        {e.filename, e.displayName, e.downloadUrl,
+                         QDir(cacheDir).filePath(e.filename),
+                         e.role == 0 ? QStringLiteral("detector")
+                                     : (e.role == 1 ? QStringLiteral("vision")
+                                                    : QStringLiteral("llm"))});
             }
             return B::listModels(cmd, s, rows);
         }
@@ -109,19 +109,20 @@ struct CommandVlxSeekRun : public ccCommandLineInterface::Command {
             VLXSeekModelEntry entry;
             const char* what;
         };
-        const std::vector<Need> needs = {
-                {wedetect, "detector"}, {vision, "vision"}, {llm, "LLM"}};
+        const std::vector<Need> needs = {{wedetect, "detector"},
+                                         {vision, "vision"},
+                                         { llm,
+                                           "LLM" }};
         QString error;
         for (const Need& need : needs) {
             if (need.entry.filename.isEmpty()) {
-                return cmd.error(QStringLiteral(
-                                         "catalog has no %1 row for precision "
-                                         "%2")
-                                         .arg(need.what, precision));
+                return cmd.error(
+                        QStringLiteral("catalog has no %1 row for precision "
+                                       "%2")
+                                .arg(need.what, precision));
             }
             const QString path = QDir(cacheDir).filePath(need.entry.filename);
-            if (!B::ensureModel(cmd, path,
-                                {need.entry.downloadUrl, QString()},
+            if (!B::ensureModel(cmd, path, {need.entry.downloadUrl, QString()},
                                 s.download, &error)) {
                 return cmd.error(error);
             }
@@ -134,12 +135,11 @@ struct CommandVlxSeekRun : public ccCommandLineInterface::Command {
         aicore_vlx_seek_options_set_device(
                 opts, settings.device.toUtf8().constData());
         aicore_vlx_seek_options_set_threads(opts, settings.threads);
-        aicore_vlx_seek_options_set_max_new_tokens(
-                opts, settings.maxNewTokens);
+        aicore_vlx_seek_options_set_max_new_tokens(opts, settings.maxNewTokens);
         // Paths are the loading truth; the precision string keeps the
         // reported model_info metadata consistent with the loaded rows.
-        aicore_vlx_seek_options_set_precision(
-                opts, precision.toUtf8().constData());
+        aicore_vlx_seek_options_set_precision(opts,
+                                              precision.toUtf8().constData());
         aicore_vlx_seek_options_set_wedetect_gguf(
                 opts, settings.wedetectPath.toUtf8().constData());
         aicore_vlx_seek_options_set_vision_gguf(
@@ -160,8 +160,7 @@ struct CommandVlxSeekRun : public ccCommandLineInterface::Command {
 
         QString error2;
         std::vector<B::Item> items;
-        if (!B::collectItems(s.args, &items, &error2))
-            return cmd.error(error2);
+        if (!B::collectItems(s.args, &items, &error2)) return cmd.error(error2);
 
         B::Manifest manifest(s);
         manifest.set("task", settings.task);
@@ -171,10 +170,9 @@ struct CommandVlxSeekRun : public ccCommandLineInterface::Command {
         {
             char* info = aicore_vlx_seek_info_json(ctx);
             if (info) {
-                manifest.set("model_info",
-                             QJsonDocument::fromJson(
-                                     QByteArray(info))
-                                     .object());
+                manifest.set(
+                        "model_info",
+                        QJsonDocument::fromJson(QByteArray(info)).object());
                 aicore_vlx_seek_free_buffer(info);
             }
         }
@@ -193,29 +191,28 @@ struct CommandVlxSeekRun : public ccCommandLineInterface::Command {
                     }
                     QJsonArray boxes;
                     for (const VLXSeekRunResult::Box& b : result.boxes) {
-                        boxes.append(QJsonObject{
-                                {"xmin", b.rect.left()},
-                                {"ymin", b.rect.top()},
-                                {"xmax", b.rect.right()},
-                                {"ymax", b.rect.bottom()},
-                                {"label", b.label}});
+                        boxes.append(QJsonObject{{"xmin", b.rect.left()},
+                                                 {"ymin", b.rect.top()},
+                                                 {"xmax", b.rect.right()},
+                                                 {"ymax", b.rect.bottom()},
+                                                 { "label",
+                                                   b.label }});
                     }
                     const QString jsonPath =
                             B::outPath(s, item.stem, "_vlxseek.json");
-                    if (!B::saveJson(
-                                QJsonObject{{"image", item.path},
-                                            {"task", settings.task},
-                                            {"answer", result.answer},
-                                            {"bbox_format", "x1,y1,x2,y2"},
-                                            {"boxes", boxes},
-                                            {"prompt_tokens",
-                                             result.promptTokens},
-                                            {"completion_tokens",
-                                             result.completionTokens}},
-                                jsonPath, &err)) {
+                    if (!B::saveJson(QJsonObject{{"image", item.path},
+                                                 {"task", settings.task},
+                                                 {"answer", result.answer},
+                                                 {"bbox_format", "x1,y1,x2,y2"},
+                                                 {"boxes", boxes},
+                                                 {"prompt_tokens",
+                                                  result.promptTokens},
+                                                 { "completion_tokens",
+                                                   result.completionTokens }},
+                                     jsonPath, &err)) {
                         return false;
                     }
-                    QJsonObject outputs{{"vlxseek", jsonPath}};
+                    QJsonObject outputs{{ "vlxseek", jsonPath }};
                     const QString visPath =
                             B::outPath(s, item.stem, "_vlxseek_vis.png");
                     if (!annotated.isNull() &&

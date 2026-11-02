@@ -1,25 +1,15 @@
 // ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-// Published VLX-Seek GGUF catalog. The GGUF files are the upstream
-// Asher-1/VLX-Seek-GGML conversions published on the
-// Asher-1/VLX-Seek-1.5-10B-GGUF Hugging Face repository; the URL resolves an
-// immutable repository revision and the SHA-256 is the content digest of
-// that revision (also pinned in asset_digests.h).
-//
-// Role pairing: one family = {wedetect-base-uni-f32 (always f32 — the
-// official .pth dtype; quantization changes the proposal set),
-// vlx-vision-10b-<precision>, vlx-10b-llm-<precision>}. The q8_0 rows are
-// the recommended set (RTX 4090 measurements: steady-state TTFT 1.04x the
-// official backend, decode 93 tok/s, ~11 GiB resident vs ~20.5 GiB f16).
 
 #include <cstring>
 
 #include "aicore/vlx_seek_capi.h"
 
-#define VLX_SEEK_REPO_BASE                                             \
+#define VLX_SEEK_REPO_BASE                                          \
     "https://huggingface.co/Asher-1/VLX-Seek-1.5-10B-GGUF/resolve/" \
     "3203c2011434cc8931b403f027e8365eb49071b2/"
 
@@ -51,18 +41,16 @@ const aicore_vlx_seek_model_entry kCatalog[] = {
          2173266400},
         {"vlx-vision-10b-q8_0.gguf",
          VLX_SEEK_REPO_BASE "vlx-vision-10b-q8_0.gguf",
-         "VLX-Seek 1.5-10B vision stack (Q8_0, recommended)", "vlx-seek-1.5-10b",
-         AICORE_VLX_SEEK_ROLE_VISION, "q8_0",
+         "VLX-Seek 1.5-10B vision stack (Q8_0, recommended)",
+         "vlx-seek-1.5-10b", AICORE_VLX_SEEK_ROLE_VISION, "q8_0",
          "0c9a19352ac91efcb6cd3e4860fd25960dfef52490f51e9d43c70ea0e9aa818a",
          1447540960},
-        {"vlx-10b-llm-f16.gguf",
-         VLX_SEEK_REPO_BASE "vlx-10b-llm-f16.gguf",
+        {"vlx-10b-llm-f16.gguf", VLX_SEEK_REPO_BASE "vlx-10b-llm-f16.gguf",
          "VLX-Seek 1.5-10B LLM (F16)", "vlx-seek-1.5-10b",
          AICORE_VLX_SEEK_ROLE_LLM, "f16",
          "00ed394f57515e42a337bc26ee7ab71ac48506f734891de58ccba6924d28c316",
          17918424416},
-        {"vlx-10b-llm-q8_0.gguf",
-         VLX_SEEK_REPO_BASE "vlx-10b-llm-q8_0.gguf",
+        {"vlx-10b-llm-q8_0.gguf", VLX_SEEK_REPO_BASE "vlx-10b-llm-q8_0.gguf",
          "VLX-Seek 1.5-10B LLM (Q8_0, recommended)", "vlx-seek-1.5-10b",
          AICORE_VLX_SEEK_ROLE_LLM, "q8_0",
          "e0cdb04bcc034971ac97dce715cbbafb945b16bf6f0e366ea79560a74dd13dcb",

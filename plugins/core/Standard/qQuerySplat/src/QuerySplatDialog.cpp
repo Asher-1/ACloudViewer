@@ -6,6 +6,12 @@
 // ----------------------------------------------------------------------------
 #include "QuerySplatDialog.h"
 
+#include <aicore/inference_log.h>
+#include <aicore/map_anything_capi.h>
+#include <ecvAssetIntegrity.h>
+#include <ecvMainAppInterface.h>
+#include <ecvModelDownloader.h>
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialogButtonBox>
@@ -23,17 +29,11 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-#include <ecvMainAppInterface.h>
-#include <ecvAssetIntegrity.h>
-#include <ecvModelDownloader.h>
-
-#include <aicore/inference_log.h>
-#include <aicore/map_anything_capi.h>
-
 namespace {
 
 QString deviceLabel(const QString& id) {
-    if (id == QStringLiteral("auto")) return QObject::tr("Auto (CUDA > Vulkan > Metal > CPU)");
+    if (id == QStringLiteral("auto"))
+        return QObject::tr("Auto (CUDA > Vulkan > Metal > CPU)");
     return id.toUpper();
 }
 
@@ -115,8 +115,7 @@ void QuerySplatDialog::buildUi() {
     m_taskStatusLabel = new QLabel(this);
     rootLayout->addWidget(m_taskStatusLabel);
 
-    connect(m_runBtn, &QPushButton::clicked, this,
-            &QuerySplatDialog::onRun);
+    connect(m_runBtn, &QPushButton::clicked, this, &QuerySplatDialog::onRun);
     connect(m_cancelBtn, &QPushButton::clicked, this,
             &QuerySplatDialog::onCancel);
     connect(m_addBtn, &QPushButton::clicked, this,
@@ -170,7 +169,8 @@ QWidget* QuerySplatDialog::buildConfigPage() {
     m_modelCombo = new QComboBox(box);
     // Long catalog labels live in the popup only: the combo elides so the
     // form's minimum width stays fixed (no horizontal overflow).
-    m_modelCombo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+    m_modelCombo->setSizeAdjustPolicy(
+            QComboBox::AdjustToMinimumContentsLengthWithIcon);
     m_modelCombo->setMinimumContentsLength(12);
     connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, [this](int) { m_downloadLabel->clear(); });
@@ -231,8 +231,7 @@ QWidget* QuerySplatDialog::buildConfigPage() {
     m_renderViewsCheck =
             new QCheckBox(tr("Rendered views (gsplat rasterizer)"), box);
     m_renderViewsCheck->setChecked(true);
-    m_pointCloudCheck =
-            new QCheckBox(tr("Depth point cloud into DB"), box);
+    m_pointCloudCheck = new QCheckBox(tr("Depth point cloud into DB"), box);
     m_pointCloudCheck->setChecked(true);
     m_plyCheck = new QCheckBox(tr("Export 3DGS PLY"), box);
     m_plyCheck->setChecked(true);
@@ -245,15 +244,13 @@ QWidget* QuerySplatDialog::buildConfigPage() {
 
 void QuerySplatDialog::refreshModelList() {
     if (!m_modelCombo) return;
-    const QString previous =
-            m_modelCombo->currentData().toString();
+    const QString previous = m_modelCombo->currentData().toString();
     m_modelCombo->blockSignals(true);
     m_modelCombo->clear();
     const auto decoders = QuerySplatHelpers::decoderModels();
     for (const auto& m : decoders) {
-        m_modelCombo->addItem(
-                tr("%1 (%2)").arg(m.displayName, m.quantNote),
-                m.filename);
+        m_modelCombo->addItem(tr("%1 (%2)").arg(m.displayName, m.quantNote),
+                              m.filename);
     }
     if (!previous.isEmpty()) {
         const int idx = m_modelCombo->findData(previous);
@@ -277,16 +274,16 @@ void QuerySplatDialog::onAddFiles() {
 }
 
 void QuerySplatDialog::onRemoveSelected() {
-    for (QListWidgetItem* item : m_imageList->selectedItems())
-        delete item;
+    for (QListWidgetItem* item : m_imageList->selectedItems()) delete item;
 }
 
 void QuerySplatDialog::onClearImages() { m_imageList->clear(); }
 
 void QuerySplatDialog::onUseTestData() {
     if (m_testDataBusy) {
-        appendLog(tr("[Warning] A test-data download is already in "
-                     "progress."));
+        appendLog(
+                tr("[Warning] A test-data download is already in "
+                   "progress."));
         return;
     }
     // absence of the cache is a recoverable state: shared preparation, not
@@ -302,12 +299,11 @@ void QuerySplatDialog::onUseTestData() {
     m_testDataBtn->setEnabled(false);
     appendLog(tr("[QS] Preparing the shared multi-view test scene (%1)...")
                       .arg(info.displayName));
-    ecvTestDataRepository::instance().ensureDatasetReady(
-            m_pendingTestDataset);
+    ecvTestDataRepository::instance().ensureDatasetReady(m_pendingTestDataset);
 }
 
-void QuerySplatDialog::onTestDataReady(
-        bool ok, ecvTestDataRepository::Dataset kind) {
+void QuerySplatDialog::onTestDataReady(bool ok,
+                                       ecvTestDataRepository::Dataset kind) {
     if (kind != m_pendingTestDataset) return;
     m_testDataBusy = false;
     m_testDataBtn->setEnabled(true);
@@ -344,8 +340,9 @@ bool QuerySplatDialog::ensureEncoderAvailable() {
     // download through this dialog's shared ecvModelDownloader when absent.
     const QString encPath = QuerySplatHelpers::encoderDefaultPath();
     if (encPath.isEmpty()) {
-        appendLog(tr("[Error] The VGGT-Omega encoder catalog is "
-                     "unavailable (AICore map_anything catalog missing)."));
+        appendLog(
+                tr("[Error] The VGGT-Omega encoder catalog is "
+                   "unavailable (AICore map_anything catalog missing)."));
         return false;
     }
     if (QFileInfo::exists(encPath)) {
@@ -394,24 +391,22 @@ bool QuerySplatDialog::ensureModelsAvailable() {
             ecvAssetIntegrity::PinnedDigest(filename)};
     if (!ecvAssetIntegrity::isVerified(
                 path, anchor, 64 * 1024, /*requireGgufMagic=*/true,
-                ecvAssetIntegrity::OnMiss::CheapChecksOnly,
-                entry.sizeBytes)) {
+                ecvAssetIntegrity::OnMiss::CheapChecksOnly, entry.sizeBytes)) {
         appendLog(tr("[QS] Decoder model not cached: %1 — starting the "
                      "download (%2).")
-                          .arg(filename,
-                               ecvModelDownloader::formatFileSize(
-                                       entry.sizeBytes)));
+                          .arg(filename, ecvModelDownloader::formatFileSize(
+                                                 entry.sizeBytes)));
         m_pendingDownloads.prepend(entry);
     }
     // LPIPS weights (TTO only, small): check but never block the
     // feed-forward path on them.
     if (m_ttoCheck->isChecked()) {
-        const QString lp = decoderCacheDir() +
-                           QStringLiteral("/lpips-vgg-f32.gguf");
+        const QString lp =
+                decoderCacheDir() + QStringLiteral("/lpips-vgg-f32.gguf");
         if (!QFileInfo::exists(lp)) {
             QuerySplatModelEntry lpEntry;
             if (!QuerySplatHelpers::findModelByFilename(
-                        QStringLiteral("lpips-vgg-f32.gguf"), &lpEntry)
+                         QStringLiteral("lpips-vgg-f32.gguf"), &lpEntry)
                          .isEmpty()) {
                 m_pendingDownloads.append(lpEntry);
             }
@@ -438,14 +433,12 @@ void QuerySplatDialog::queueNextDownload() {
     startModelDownload(m_pendingDownloads.takeFirst());
 }
 
-void QuerySplatDialog::startModelDownload(
-        const QuerySplatModelEntry& model) {
+void QuerySplatDialog::startModelDownload(const QuerySplatModelEntry& model) {
     m_downloadInProgress = true;
     m_runBtn->setEnabled(false);
     ecvModelDownloader::Request request;
     request.url = model.downloadUrl;
-    request.destPath =
-            decoderCacheDir() + QStringLiteral("/") + model.filename;
+    request.destPath = decoderCacheDir() + QStringLiteral("/") + model.filename;
     request.requireGgufMagic = model.role != QStringLiteral("lpips");
     request.contentAnchor = ecvAssetIntegrity::Anchor{
             QCryptographicHash::Sha256,
@@ -461,8 +454,7 @@ void QuerySplatDialog::startModelDownload(
     m_downloader->download(request);
 }
 
-void QuerySplatDialog::onModelDownloadProgress(qint64 received,
-                                               qint64 total) {
+void QuerySplatDialog::onModelDownloadProgress(qint64 received, qint64 total) {
     m_downloadLabel->setText(
             ecvModelDownloader::formatDownloadProgress(received, total));
     const int percent = total > 0 ? int(received * 100 / total) : 0;
@@ -493,27 +485,22 @@ QuerySplatDialog::Settings QuerySplatDialog::getSettings() const {
     Settings s;
     s.decoderPath =
             decoderCacheDir() + QStringLiteral("/") +
-            (m_modelCombo ? m_modelCombo->currentData().toString()
-                          : QString());
+            (m_modelCombo ? m_modelCombo->currentData().toString() : QString());
     s.encoderPath = QuerySplatHelpers::encoderDefaultPath();
     for (int i = 0; i < m_imageList->count(); ++i)
         s.imagePaths << m_imageList->item(i)->text();
     s.threads = m_threadsSpin ? m_threadsSpin->value() : 0;
-    s.device = m_deviceCombo
-                       ? m_deviceCombo->currentData().toString()
-                       : QStringLiteral("auto");
+    s.device = m_deviceCombo ? m_deviceCombo->currentData().toString()
+                             : QStringLiteral("auto");
     s.imageSize = m_imageSizeSpin ? m_imageSizeSpin->value() : 0;
     s.ttoEnabled = m_ttoCheck && m_ttoCheck->isChecked();
     s.ttoSteps = m_ttoStepsSpin ? m_ttoStepsSpin->value() : 20;
     s.ttoLr = m_ttoLrSpin ? m_ttoLrSpin->value() : 5e-3;
     s.ttoLpipsWeight = m_ttoLpipsSpin ? m_ttoLpipsSpin->value() : 0.05;
-    s.opacityThreshold = m_opacitySpin ? float(m_opacitySpin->value())
-                                       : 0.05f;
+    s.opacityThreshold = m_opacitySpin ? float(m_opacitySpin->value()) : 0.05f;
     s.addDepthViews = m_depthViewsCheck && m_depthViewsCheck->isChecked();
-    s.addRenderViews =
-            m_renderViewsCheck && m_renderViewsCheck->isChecked();
-    s.addDepthPointCloud =
-            m_pointCloudCheck && m_pointCloudCheck->isChecked();
+    s.addRenderViews = m_renderViewsCheck && m_renderViewsCheck->isChecked();
+    s.addDepthPointCloud = m_pointCloudCheck && m_pointCloudCheck->isChecked();
     s.exportPly = m_plyCheck && m_plyCheck->isChecked();
     return s;
 }

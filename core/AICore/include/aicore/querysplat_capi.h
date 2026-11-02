@@ -109,15 +109,15 @@ AICORE_CAPI void aicore_querysplat_options_set_dump_dir(
  *  aicore_querysplat_last_error(). NULL only on invalid input or
  *  out-of-memory. */
 AICORE_CAPI aicore_querysplat_ctx* aicore_querysplat_load_opts(
-        const char* encoder_gguf, const char* decoder_gguf,
+        const char* encoder_gguf,
+        const char* decoder_gguf,
         const aicore_querysplat_options* opts);
 /** Releases a context; safe on NULL. Contexts must not be destroyed while a
  *  worker thread is inside a run call (serialize externally). */
 AICORE_CAPI void aicore_querysplat_free(aicore_querysplat_ctx* ctx);
 /** Returns 1 only when the context owns successfully loaded encoder +
  *  decoder models and a usable backend. */
-AICORE_CAPI int aicore_querysplat_is_ready(
-        const aicore_querysplat_ctx* ctx);
+AICORE_CAPI int aicore_querysplat_is_ready(const aicore_querysplat_ctx* ctx);
 /** Returns the last error message of the context (NULL when none). */
 AICORE_CAPI const char* aicore_querysplat_last_error(
         const aicore_querysplat_ctx* ctx);
@@ -127,8 +127,8 @@ AICORE_CAPI void aicore_querysplat_free_buffer(void* p);
 
 /** Checkpoint-nominal preprocessing resolution from the decoder GGUF
  *  metadata (512 for the paper checkpoints; 0 when not ready). */
-AICORE_CAPI int32_t aicore_querysplat_default_image_size(
-        const aicore_querysplat_ctx* ctx);
+AICORE_CAPI int32_t
+aicore_querysplat_default_image_size(const aicore_querysplat_ctx* ctx);
 
 /** ---- typed inference ----
  *
@@ -155,17 +155,18 @@ AICORE_CAPI int aicore_querysplat_run_images(aicore_querysplat_ctx* ctx,
  *  upstream CLI. Same result store contract as run_images. */
 AICORE_CAPI int aicore_querysplat_run_frames(aicore_querysplat_ctx* ctx,
                                              const float* frames_f32,
-                                             int32_t n_views, int32_t height,
+                                             int32_t n_views,
+                                             int32_t height,
                                              int32_t width);
 
 /** Number of views of the most recent successful run (0 before the first
  *  run or after a failed call left no result). */
-AICORE_CAPI int32_t aicore_querysplat_result_view_count(
-        const aicore_querysplat_ctx* ctx);
-AICORE_CAPI int32_t aicore_querysplat_result_height(
-        const aicore_querysplat_ctx* ctx);
-AICORE_CAPI int32_t aicore_querysplat_result_width(
-        const aicore_querysplat_ctx* ctx);
+AICORE_CAPI int32_t
+aicore_querysplat_result_view_count(const aicore_querysplat_ctx* ctx);
+AICORE_CAPI int32_t
+aicore_querysplat_result_height(const aicore_querysplat_ctx* ctx);
+AICORE_CAPI int32_t
+aicore_querysplat_result_width(const aicore_querysplat_ctx* ctx);
 
 /** Per-view camera head output [n*9]: pose_enc = absT 3 + quaternion 4
  *  (scalar-last xyzw) + FoV 2 (vertical/horizontal radians,
@@ -196,15 +197,15 @@ AICORE_CAPI const float* aicore_querysplat_result_depth_conf(
  *  [pos(3) | opacity | scale(3) | rot(4) | color(sh0: 3)]. Borrowed;
  *  n_gaussians = num_gs_tokens * gaussians_per_token (524288 for the paper
  *  checkpoints), stride = 11 + color_dim (14 for sh0). */
-AICORE_CAPI int64_t aicore_querysplat_result_gaussian_count(
-        const aicore_querysplat_ctx* ctx);
-AICORE_CAPI int32_t aicore_querysplat_result_gaussian_stride(
-        const aicore_querysplat_ctx* ctx);
+AICORE_CAPI int64_t
+aicore_querysplat_result_gaussian_count(const aicore_querysplat_ctx* ctx);
+AICORE_CAPI int32_t
+aicore_querysplat_result_gaussian_stride(const aicore_querysplat_ctx* ctx);
 AICORE_CAPI const float* aicore_querysplat_result_gaussians(
         const aicore_querysplat_ctx* ctx);
 /** SH degree of the loaded decoder checkpoint (0 for the paper family). */
-AICORE_CAPI int32_t aicore_querysplat_result_sh_degree(
-        const aicore_querysplat_ctx* ctx);
+AICORE_CAPI int32_t
+aicore_querysplat_result_sh_degree(const aicore_querysplat_ctx* ctx);
 
 /** Per-stage wall-clock timings of the most recent run as the common
  *  pipeline contract (preprocess = decode/resize/normalize + graph-input
@@ -213,8 +214,7 @@ AICORE_CAPI int32_t aicore_querysplat_result_sh_degree(
  *  entry to ready result). Returns 0 on success, -1 when no inference has
  *  run yet. */
 AICORE_CAPI int aicore_querysplat_last_pipeline_timings(
-        const aicore_querysplat_ctx* ctx,
-        aicore_pipeline_timings* out);
+        const aicore_querysplat_ctx* ctx, aicore_pipeline_timings* out);
 
 /** ---- rendering (CPU rasterizer, gsplat semantics) ----
  *
@@ -249,12 +249,13 @@ typedef struct aicore_querysplat_tto_step {
     double ssim;
     double lpips;
 } aicore_querysplat_tto_step;
-AICORE_CAPI int aicore_querysplat_run_tto(aicore_querysplat_ctx* ctx,
-                                          int32_t n_steps,
-                                          aicore_querysplat_tto_step** out_losses,
-                                          int32_t* out_n_losses,
-                                          const float** out_gaussians,
-                                          int64_t* out_count);
+AICORE_CAPI int aicore_querysplat_run_tto(
+        aicore_querysplat_ctx* ctx,
+        int32_t n_steps,
+        aicore_querysplat_tto_step** out_losses,
+        int32_t* out_n_losses,
+        const float** out_gaussians,
+        int64_t* out_count);
 
 /** ---- exports (compatibility/delivery boundaries) ---- */
 
@@ -263,7 +264,8 @@ AICORE_CAPI int aicore_querysplat_run_tto(aicore_querysplat_ctx* ctx,
  *  layout the official gaussian_save_opacity_threshold path produces).
  *  Returns 0 on success, -1 on invalid arguments, -2 on I/O failure. */
 AICORE_CAPI int aicore_querysplat_export_gaussians_ply(
-        const aicore_querysplat_ctx* ctx, const char* path,
+        const aicore_querysplat_ctx* ctx,
+        const char* path,
         float opacity_threshold);
 
 /** Serializes the most recent run's predicted input cameras as JSON
@@ -280,8 +282,11 @@ AICORE_CAPI char* aicore_querysplat_export_cameras_json(
  *  the next run/free; *out_n receives the sample count. Returns 0 on
  *  success, -1 on invalid arguments, -2 when no result is present. */
 AICORE_CAPI int aicore_querysplat_depth_pointcloud(
-        const aicore_querysplat_ctx* ctx, int32_t target_points,
-        const float** out_xyz, unsigned char** out_rgb, int32_t* out_n);
+        const aicore_querysplat_ctx* ctx,
+        int32_t target_points,
+        const float** out_xyz,
+        unsigned char** out_rgb,
+        int32_t* out_n);
 
 /** Gaussian distribution statistics of the most recent run as JSON
  *  (save_gaussian_alpha_distribution / scale_distribution: histogram bins
@@ -293,8 +298,7 @@ AICORE_CAPI char* aicore_querysplat_export_distribution_stats(
 /** Compact machine-readable capability JSON (model paths, geometry,
  *  f32-accuracy mode, TTO config, resolved device). Caller frees with
  *  aicore_querysplat_free_buffer. */
-AICORE_CAPI char* aicore_querysplat_info_json(
-        const aicore_querysplat_ctx* ctx);
+AICORE_CAPI char* aicore_querysplat_info_json(const aicore_querysplat_ctx* ctx);
 
 /** ---- model catalog ----
  *
@@ -304,14 +308,14 @@ AICORE_CAPI char* aicore_querysplat_info_json(
  *  catalog (single source of truth for the shared GGUFs). */
 
 typedef struct aicore_querysplat_model_entry {
-    const char* filename;      /* e.g. "querysplat-paper-q8_0.gguf" */
-    const char* display_name;  /* e.g. "QuerySplat paper decoder" */
-    const char* role;          /* "decoder" | "lpips" */
+    const char* filename;     /* e.g. "querysplat-paper-q8_0.gguf" */
+    const char* display_name; /* e.g. "QuerySplat paper decoder" */
+    const char* role;         /* "decoder" | "lpips" */
     const char* quant_note;
     const char* license_note;
-    const char* variant;       /* "paper" | "lpips" */
+    const char* variant; /* "paper" | "lpips" */
     int64_t size_bytes;
-    const char* download_url;  /* stable HF resolve URL */
+    const char* download_url; /* stable HF resolve URL */
 } aicore_querysplat_model_entry;
 
 AICORE_CAPI int32_t aicore_querysplat_model_count(void);

@@ -6,9 +6,9 @@
 // ----------------------------------------------------------------------------
 #include "QuerySplatModelCatalog.h"
 
-#include <QFileInfo>
-
 #include <aicore/querysplat_capi.h>
+
+#include <QFileInfo>
 
 namespace {
 

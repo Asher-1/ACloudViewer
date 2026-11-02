@@ -29,7 +29,6 @@
 #include "aicore/instantmesh_capi.h"
 #include "aicore/lingbot_capi.h"
 #include "aicore/llm_capi.h"
-#include "aicore/vlx_seek_capi.h"
 #include "aicore/loma_capi.h"
 #include "aicore/map_anything_capi.h"
 #include "aicore/model_catalog_capi.h"
@@ -42,6 +41,7 @@
 #include "aicore/sam3d_capi.h"
 #include "aicore/table_capi.h"
 #include "aicore/trellis_capi.h"
+#include "aicore/vlx_seek_capi.h"
 #include "aicore/yolo_capi.h"
 
 namespace {
@@ -253,8 +253,7 @@ void emitRuntimeCatalogs() {
                       e->download_url, static_cast<long long>(e->size_bytes));
     }
     for (int i = 0; i < aicore_querysplat_model_count(); ++i) {
-        const aicore_querysplat_model_entry* e =
-                aicore_querysplat_model_at(i);
+        const aicore_querysplat_model_entry* e = aicore_querysplat_model_at(i);
         if (e)
             emitAsset("querysplat", "querysplat_models", e->filename,
                       e->download_url, static_cast<long long>(e->size_bytes));

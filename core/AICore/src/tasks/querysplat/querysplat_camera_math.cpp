@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "querysplat_camera_math.hpp"
 
 #include <algorithm>
@@ -59,14 +66,16 @@ void jacobi_eigen3(double A[3][3], double w[3], double V[3][3]) {
     for (int r = 0; r < 3; r++)
         for (int c = 0; c < 3; c++) V[r][c] = r == c ? 1.0 : 0.0;
     for (int sweep = 0; sweep < 64; sweep++) {
-        const double off = A[0][1] * A[0][1] + A[0][2] * A[0][2] + A[1][2] * A[1][2];
+        const double off =
+                A[0][1] * A[0][1] + A[0][2] * A[0][2] + A[1][2] * A[1][2];
         if (off < 1e-300) break;
         for (int p = 0; p < 2; p++) {
             for (int q = p + 1; q < 3; q++) {
                 if (A[p][q] == 0.0) continue;
                 const double theta = (A[q][q] - A[p][p]) / (2.0 * A[p][q]);
-                const double t = (theta >= 0 ? 1.0 : -1.0) /
-                                 (std::fabs(theta) + std::sqrt(theta * theta + 1.0));
+                const double t =
+                        (theta >= 0 ? 1.0 : -1.0) /
+                        (std::fabs(theta) + std::sqrt(theta * theta + 1.0));
                 const double c = 1.0 / std::sqrt(t * t + 1.0), s = t * c;
                 for (int k = 0; k < 3; k++) {  // A <- A J
                     const double akp = A[k][p], akq = A[k][q];
@@ -89,7 +98,8 @@ void jacobi_eigen3(double A[3][3], double w[3], double V[3][3]) {
     int order[3] = {0, 1, 2};
     for (int a = 0; a < 3; a++)
         for (int b = a + 1; b < 3; b++)
-            if (A[order[b]][order[b]] > A[order[a]][order[a]]) std::swap(order[a], order[b]);
+            if (A[order[b]][order[b]] > A[order[a]][order[a]])
+                std::swap(order[a], order[b]);
     double Vs[3][3];
     for (int k = 0; k < 3; k++) {
         w[k] = A[order[k]][order[k]];
@@ -118,7 +128,8 @@ void procrustes_rotation(const double C[3][3], double R[3][3]) {
         double u[3];
         for (int r = 0; r < 3; r++)
             u[r] = C[r][0] * V[0][k] + C[r][1] * V[1][k] + C[r][2] * V[2][k];
-        if (k == 1) {  // Gram-Schmidt against u0 (exact in theory, cheap insurance)
+        if (k ==
+            1) {  // Gram-Schmidt against u0 (exact in theory, cheap insurance)
             const double d = u[0] * U[0][0] + u[1] * U[1][0] + u[2] * U[2][0];
             for (int r = 0; r < 3; r++) u[r] -= d * U[r][0];
         }
@@ -137,11 +148,15 @@ void procrustes_rotation(const double C[3][3], double R[3][3]) {
             R[r][c] = U[r][0] * V[c][0] + U[r][1] * V[c][1] + U[r][2] * V[c][2];
 }
 
-std::vector<float> align_cameras_to_reference(const float* w2c, int n_views,
-                                              const float* ref_w2c, int n_ref) {
+std::vector<float> align_cameras_to_reference(const float* w2c,
+                                              int n_views,
+                                              const float* ref_w2c,
+                                              int n_ref) {
     std::vector<float> c2w((size_t)n_views * 16), ref((size_t)n_ref * 16);
-    for (int v = 0; v < n_views; v++) invert4(w2c + (size_t)v * 16, &c2w[(size_t)v * 16]);
-    for (int v = 0; v < n_ref; v++) invert4(ref_w2c + (size_t)v * 16, &ref[(size_t)v * 16]);
+    for (int v = 0; v < n_views; v++)
+        invert4(w2c + (size_t)v * 16, &c2w[(size_t)v * 16]);
+    for (int v = 0; v < n_ref; v++)
+        invert4(ref_w2c + (size_t)v * 16, &ref[(size_t)v * 16]);
     // covariance = sum_v R_target,v R_source,v^T over the overlapping inputs
     double C[3][3] = {};
     double smean[3] = {}, tmean[3] = {};
@@ -150,7 +165,8 @@ std::vector<float> align_cameras_to_reference(const float* w2c, int n_views,
         const float* t = &ref[(size_t)v * 16];
         for (int i = 0; i < 3; i++)
             for (int k = 0; k < 3; k++)
-                for (int j = 0; j < 3; j++) C[i][k] += (double)t[i * 4 + j] * s[k * 4 + j];
+                for (int j = 0; j < 3; j++)
+                    C[i][k] += (double)t[i * 4 + j] * s[k * 4 + j];
         for (int i = 0; i < 3; i++) {
             smean[i] += s[i * 4 + 3] / (double)n_ref;
             tmean[i] += t[i * 4 + 3] / (double)n_ref;
@@ -170,17 +186,21 @@ std::vector<float> align_cameras_to_reference(const float* w2c, int n_views,
     if (!std::isfinite(scale) || !(tvar > 1e-8)) scale = 1.0;
     double trans[3];
     for (int i = 0; i < 3; i++)
-        trans[i] = tmean[i] - scale * (R[i][0] * smean[0] + R[i][1] * smean[1] + R[i][2] * smean[2]);
+        trans[i] = tmean[i] - scale * (R[i][0] * smean[0] + R[i][1] * smean[1] +
+                                       R[i][2] * smean[2]);
     std::vector<float> out((size_t)n_views * 16);
     for (int v = 0; v < n_views; v++) {
         const float* m = &c2w[(size_t)v * 16];
         float a[16];
-        std::memcpy(a, m, sizeof(a));  // bottom row kept (aligned = c2w.clone())
+        std::memcpy(a, m,
+                    sizeof(a));  // bottom row kept (aligned = c2w.clone())
         for (int i = 0; i < 3; i++) {
             for (int k = 0; k < 3; k++)
-                a[i * 4 + k] = (float)(R[i][0] * m[0 * 4 + k] + R[i][1] * m[1 * 4 + k] +
+                a[i * 4 + k] = (float)(R[i][0] * m[0 * 4 + k] +
+                                       R[i][1] * m[1 * 4 + k] +
                                        R[i][2] * m[2 * 4 + k]);
-            a[i * 4 + 3] = (float)(scale * (R[i][0] * m[3] + R[i][1] * m[7] + R[i][2] * m[11]) +
+            a[i * 4 + 3] = (float)(scale * (R[i][0] * m[3] + R[i][1] * m[7] +
+                                            R[i][2] * m[11]) +
                                    trans[i]);
         }
         invert4(a, &out[(size_t)v * 16]);
@@ -205,7 +225,7 @@ CameraData decode_cameras(const float* pose_enc, int S, int H, int W) {
             for (int c = 0; c < 3; c++) {
                 w2c[r * 4 + c] = R[r * 3 + c];
             }
-            w2c[r * 4 + 3] = p[r];       // translation
+            w2c[r * 4 + 3] = p[r];  // translation
             w2c[12 + r] = 0.0f;
         }
         w2c[15] = 1.0f;
@@ -217,10 +237,12 @@ CameraData decode_cameras(const float* pose_enc, int S, int H, int W) {
         invert4(w2c, c2w);
         // intrinsics from FoV (fov_h uses H, fov_w uses W)
         const float fov_h = p[7], fov_w = p[8];
-        out.intrinsics[(size_t)s * 4 + 0] = (W / 2.0f) / std::tan(fov_w / 2.0f);  // fx
-        out.intrinsics[(size_t)s * 4 + 1] = (H / 2.0f) / std::tan(fov_h / 2.0f);  // fy
-        out.intrinsics[(size_t)s * 4 + 2] = W / 2.0f;                             // cx
-        out.intrinsics[(size_t)s * 4 + 3] = H / 2.0f;                             // cy
+        out.intrinsics[(size_t)s * 4 + 0] =
+                (W / 2.0f) / std::tan(fov_w / 2.0f);  // fx
+        out.intrinsics[(size_t)s * 4 + 1] =
+                (H / 2.0f) / std::tan(fov_h / 2.0f);   // fy
+        out.intrinsics[(size_t)s * 4 + 2] = W / 2.0f;  // cx
+        out.intrinsics[(size_t)s * 4 + 3] = H / 2.0f;  // cy
     }
     return out;
 }
@@ -270,7 +292,9 @@ std::vector<float> plucker_from_cameras(const CameraData& cam, int H, int W) {
     return out;
 }
 
-std::vector<float> imagenet_normalize(const float* rgb, int S, size_t n_elements) {
+std::vector<float> imagenet_normalize(const float* rgb,
+                                      int S,
+                                      size_t n_elements) {
     // (S,3,H,W) layout: per-frame channel planes of H*W; the per-channel
     // segment offset is s*(3*H*W) + c*(H*W) — NOT c*S*H*W (an earlier
     // 3-contiguous-planes read silently mis-normalized every frame past s=0).
@@ -281,7 +305,8 @@ std::vector<float> imagenet_normalize(const float* rgb, int S, size_t n_elements
     for (int s = 0; s < S; s++) {
         for (int c = 0; c < 3; c++) {
             float* p = out.data() + ((size_t)s * 3 + c) * plane;
-            for (size_t i = 0; i < plane; i++) p[i] = (p[i] - kMean[c]) / kStd[c];
+            for (size_t i = 0; i < plane; i++)
+                p[i] = (p[i] - kMean[c]) / kStd[c];
         }
     }
     return out;

@@ -91,7 +91,8 @@ AICORE_CAPI void aicore_vlx_seek_options_set_dump_dir(
 
 /** Loads the detector, the vision stack and the LLM. Returns a context whose
  *  is_ready() may still be 0 (device admission failure); inspect
- *  aicore_vlx_seek_last_error(). NULL only on invalid input or out-of-memory. */
+ *  aicore_vlx_seek_last_error(). NULL only on invalid input or out-of-memory.
+ */
 AICORE_CAPI aicore_vlx_seek_ctx* aicore_vlx_seek_load_opts(
         const aicore_vlx_seek_options* opts);
 /** Releases a context; safe on NULL. Contexts must not be destroyed while a
@@ -136,10 +137,15 @@ AICORE_CAPI int aicore_vlx_seek_load_path_rgb(const char* image_path,
  *  runtime/inference errors and -3 when the device cannot hold the models
  *  plus the graph workspace (see aicore_vlx_seek_last_error). On success the
  *  typed result getters below expose the answer until the next run call. */
-AICORE_CAPI int aicore_vlx_seek_run_image(
-        aicore_vlx_seek_ctx* ctx, const aicore_image_view* img, const char* task,
-        const char* text, const char* lang, const float* boxes,
-        int32_t n_boxes, const int32_t* target_indexes, int32_t n_targets);
+AICORE_CAPI int aicore_vlx_seek_run_image(aicore_vlx_seek_ctx* ctx,
+                                          const aicore_image_view* img,
+                                          const char* task,
+                                          const char* text,
+                                          const char* lang,
+                                          const float* boxes,
+                                          int32_t n_boxes,
+                                          const int32_t* target_indexes,
+                                          int32_t n_targets);
 
 /** ---- typed result of the most recent run (valid until the next run) ---- */
 
@@ -149,28 +155,28 @@ AICORE_CAPI const char* aicore_vlx_seek_result_answer(
 /** Full result as the official inference.py JSON (answer, result_bbox_list,
  *  prompt_tokens, completion_tokens). Caller frees with
  *  aicore_vlx_seek_free_buffer. */
-AICORE_CAPI char* aicore_vlx_seek_result_json(
-        const aicore_vlx_seek_ctx* ctx);
+AICORE_CAPI char* aicore_vlx_seek_result_json(const aicore_vlx_seek_ctx* ctx);
 /** Number of resolved result boxes (0 when the answer references none). */
-AICORE_CAPI int32_t aicore_vlx_seek_result_box_count(
-        const aicore_vlx_seek_ctx* ctx);
+AICORE_CAPI int32_t
+aicore_vlx_seek_result_box_count(const aicore_vlx_seek_ctx* ctx);
 /** Box \p index in original-image pixels (out[4] = x1, y1, x2, y2).
  *  Returns 0 on success, -1 when out of range. */
 AICORE_CAPI int aicore_vlx_seek_result_box(const aicore_vlx_seek_ctx* ctx,
-                                           int32_t index, float* out);
+                                           int32_t index,
+                                           float* out);
 /** Model-generated label of box \p index (ASCII when encodable, else the
  *  <objN> index — the official fallback). NULL when out of range. */
 AICORE_CAPI const char* aicore_vlx_seek_result_box_label(
         const aicore_vlx_seek_ctx* ctx, int32_t index);
 /** Token counts of the most recent run. */
-AICORE_CAPI int32_t aicore_vlx_seek_result_prompt_tokens(
-        const aicore_vlx_seek_ctx* ctx);
-AICORE_CAPI int32_t aicore_vlx_seek_result_completion_tokens(
-        const aicore_vlx_seek_ctx* ctx);
+AICORE_CAPI int32_t
+aicore_vlx_seek_result_prompt_tokens(const aicore_vlx_seek_ctx* ctx);
+AICORE_CAPI int32_t
+aicore_vlx_seek_result_completion_tokens(const aicore_vlx_seek_ctx* ctx);
 /** WeDetect proposal count of the most recent run (0 when the caller passed
  *  boxes). */
-AICORE_CAPI int32_t aicore_vlx_seek_result_proposal_count(
-        const aicore_vlx_seek_ctx* ctx);
+AICORE_CAPI int32_t
+aicore_vlx_seek_result_proposal_count(const aicore_vlx_seek_ctx* ctx);
 
 /** Renders the most recent result on \p img (borrowed view; the image is
  *  copied) in the official style: red width-3 rectangles plus the
@@ -179,7 +185,8 @@ AICORE_CAPI int32_t aicore_vlx_seek_result_proposal_count(
  *  Debug/compat path; the plugin renders through Qt instead.
  *  Returns 0 on success, -1 on invalid arguments, -2 on write failure. */
 AICORE_CAPI int aicore_vlx_seek_result_render_png(
-        const aicore_vlx_seek_ctx* ctx, const aicore_image_view* img,
+        const aicore_vlx_seek_ctx* ctx,
+        const aicore_image_view* img,
         const char* out_png_path);
 
 /** Per-stage wall-clock timings of the most recent run (preprocess includes
@@ -195,8 +202,7 @@ AICORE_CAPI int aicore_vlx_seek_last_pipeline_timings(
 AICORE_CAPI const char* aicore_vlx_seek_context_device(
         const aicore_vlx_seek_ctx* ctx);
 /** Effective CPU thread count after the auto (<=0) resolution. */
-AICORE_CAPI int aicore_vlx_seek_context_threads(
-        const aicore_vlx_seek_ctx* ctx);
+AICORE_CAPI int aicore_vlx_seek_context_threads(const aicore_vlx_seek_ctx* ctx);
 /** Vision weight precision of the loaded context ("f16"/"q8_0"). */
 AICORE_CAPI const char* aicore_vlx_seek_context_precision(
         const aicore_vlx_seek_ctx* ctx);
@@ -246,5 +252,5 @@ aicore_vlx_seek_model_by_filename(const char* filename);
 AICORE_CAPI const char* aicore_vlx_seek_model_download_base(void);
 
 #ifdef __cplusplus
-}  /* extern "C" */
+} /* extern "C" */
 #endif

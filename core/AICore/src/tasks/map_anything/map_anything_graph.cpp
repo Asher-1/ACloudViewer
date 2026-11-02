@@ -191,21 +191,23 @@ constexpr const char* kFlashAttnName = "mapany_fa";
 // RuntimeOptions::f32_accuracy routes here instead (CUDA parity mode).
 // Returns head-major {dim, T, B} — a drop-in replacement for
 // flash_attn_ext + reshape_3d(dim, T, B).
-ggml_tensor* exact_attention_core(ggml_context* ctx, ggml_tensor* q,
-                                  ggml_tensor* k, ggml_tensor* v,
+ggml_tensor* exact_attention_core(ggml_context* ctx,
+                                  ggml_tensor* q,
+                                  ggml_tensor* k,
+                                  ggml_tensor* v,
                                   float scale) {
     const int64_t dh = q->ne[0], T = q->ne[1], nh = q->ne[2], B = q->ne[3];
     ggml_tensor* qf = ggml_reshape_3d(ctx, q, dh, T, nh * B);
     // k/v may carry a different token count (cross-attention): their own ne
-    ggml_tensor* kf = ggml_reshape_3d(ctx, k, k->ne[0], k->ne[1],
-                                      k->ne[2] * k->ne[3]);
-    ggml_tensor* vf = ggml_reshape_3d(ctx, v, v->ne[0], v->ne[1],
-                                      v->ne[2] * v->ne[3]);
+    ggml_tensor* kf =
+            ggml_reshape_3d(ctx, k, k->ne[0], k->ne[1], k->ne[2] * k->ne[3]);
+    ggml_tensor* vf =
+            ggml_reshape_3d(ctx, v, v->ne[0], v->ne[1], v->ne[2] * v->ne[3]);
     ggml_tensor* scores = ggml_mul_mat(ctx, kf, qf);  // {Tq, Tk, nh*B}
     scores = ggml_scale(ctx, scores, scale);
     scores = ggml_soft_max(ctx, scores);  // normalize along keys
     ggml_tensor* vt = ggml_cont(ctx, ggml_transpose(ctx, vf));  // {Tk, dh, m}
-    ggml_tensor* o = ggml_mul_mat(ctx, vt, scores);   // {dh, Tq, nh*B}
+    ggml_tensor* o = ggml_mul_mat(ctx, vt, scores);  // {dh, Tq, nh*B}
     o = ggml_reshape_4d(ctx, o, dh, T, nh, B);
     o = ggml_cont(ctx, ggml_permute(ctx, o, 0, 2, 1, 3));  // {dh, nh, T, B}
     return ggml_reshape_3d(ctx, o, dh * nh, T, B);
@@ -225,10 +227,9 @@ ggml_tensor* flash_attn(ggml_context* ctx,
                         ggml_tensor* v,
                         float scale,
                         bool f32_accuracy = false) {
-    ggml_tensor* r = f32_accuracy
-                             ? exact_attention_core(ctx, q, k, v, scale)
-                             : ggml_flash_attn_ext(ctx, q, k, v, nullptr,
-                                                   scale, 0.0f, 0.0f);
+    ggml_tensor* r = f32_accuracy ? exact_attention_core(ctx, q, k, v, scale)
+                                  : ggml_flash_attn_ext(ctx, q, k, v, nullptr,
+                                                        scale, 0.0f, 0.0f);
     ggml_set_name(r, kFlashAttnName);
     return r;
 }
@@ -567,9 +568,8 @@ struct VGGTRuntime::Impl : IGraphBuilder {
         ggml_tensor* q_p = q;
         ggml_tensor* k_p = k;
 #endif
-        ggml_tensor* o =
-                flash_attn(ctx, q, k, v, 1.0f / std::sqrt((float)dh_l),
-                           f32_attn());
+        ggml_tensor* o = flash_attn(ctx, q, k, v, 1.0f / std::sqrt((float)dh_l),
+                                    f32_attn());
         // FA result ne is {dh, nh, T, B} (ggml returns it "permuted":
         // ne1=n_head, ne2=n_tokens, see ggml.c). Reshaping straight to {dim, T,
         // B} yields the head-major token vector (c = h*dh + d) — no extra
@@ -1465,12 +1465,12 @@ struct VGGTRuntime::Impl : IGraphBuilder {
             out.cached_tokens.resize(per_layer * inter_nodes.size());
             for (size_t i = 0; i < inter_nodes.size(); i++) {
                 ggml_backend_tensor_get(
-                        inter_nodes[i], out.cached_tokens.data() + i * per_layer,
-                        0, per_layer * sizeof(float));
+                        inter_nodes[i],
+                        out.cached_tokens.data() + i * per_layer, 0,
+                        per_layer * sizeof(float));
             }
-            out.cached_layer_idx.assign(
-                    m->meta.cached_layer_idx,
-                    m->meta.cached_layer_idx + 4);
+            out.cached_layer_idx.assign(m->meta.cached_layer_idx,
+                                        m->meta.cached_layer_idx + 4);
             out.patch_token_start = Ncr;
         }
 
@@ -1887,9 +1887,8 @@ struct VGGTRuntime::VGGTImpl : VGGTRuntime::Impl {
             dump_node(k, "vg_" + dump_tag(p) + "_k_rope");
         }
 #endif
-        ggml_tensor* o =
-                flash_attn(ctx, q, k, v, 1.0f / std::sqrt((float)dh_l),
-                           f32_attn());
+        ggml_tensor* o = flash_attn(ctx, q, k, v, 1.0f / std::sqrt((float)dh_l),
+                                    f32_attn());
         o = ggml_reshape_3d(ctx, o, dim, T, B);
 #ifdef MAP_ANYTHING_ENABLE_DUMP
         if (MAP_DUMP_ACTIVE() && is_dump_block(p)) {
@@ -3810,9 +3809,8 @@ struct VGGTRuntime::Dust3rImpl final : VGGTRuntime::VGGTImpl {
         q = ggml_cont(ctx, ggml_permute(ctx, q, 0, 2, 1, 3));
         k = ggml_cont(ctx, ggml_permute(ctx, k, 0, 2, 1, 3));
         v = ggml_cont(ctx, ggml_permute(ctx, v, 0, 2, 1, 3));
-        ggml_tensor* o =
-                flash_attn(ctx, q, k, v, 1.0f / std::sqrt((float)dh_l),
-                           f32_attn());
+        ggml_tensor* o = flash_attn(ctx, q, k, v, 1.0f / std::sqrt((float)dh_l),
+                                    f32_attn());
         o = ggml_reshape_3d(ctx, o, dim, T, B);
         return lin(ctx, o, w((p + ".attn.proj.weight").c_str()),
                    w((p + ".attn.proj.bias").c_str()));
@@ -3854,9 +3852,8 @@ struct VGGTRuntime::Dust3rImpl final : VGGTRuntime::VGGTImpl {
         q = ggml_cont(ctx, ggml_permute(ctx, q, 0, 2, 1, 3));
         k = ggml_cont(ctx, ggml_permute(ctx, k, 0, 2, 1, 3));
         v = ggml_cont(ctx, ggml_permute(ctx, v, 0, 2, 1, 3));
-        ggml_tensor* o =
-                flash_attn(ctx, q, k, v, 1.0f / std::sqrt((float)dh_l),
-                           f32_attn());
+        ggml_tensor* o = flash_attn(ctx, q, k, v, 1.0f / std::sqrt((float)dh_l),
+                                    f32_attn());
         o = ggml_reshape_3d(ctx, o, Cd, Tq, B);
         return lin(ctx, o, w((p + ".cross_attn.proj.weight").c_str()),
                    w((p + ".cross_attn.proj.bias").c_str()));
@@ -4501,9 +4498,8 @@ struct VGGTRuntime::Pi3XImpl final : VGGTRuntime::Pi3Impl {
             dump_node(kc, p + "_kr");  // {dh,T,nh,1}
         }
 #endif
-        ggml_tensor* o =
-                flash_attn(ctx, qc, kc, vc, 1.0f / std::sqrt((float)dh_l),
-                           f32_attn());
+        ggml_tensor* o = flash_attn(ctx, qc, kc, vc,
+                                    1.0f / std::sqrt((float)dh_l), f32_attn());
         o = ggml_reshape_3d(ctx, o, 512, 1, 1);
 #ifdef MAP_ANYTHING_ENABLE_DUMP
         if (MAP_DUMP_ACTIVE()) dump_node(o, p + "_sdpa");

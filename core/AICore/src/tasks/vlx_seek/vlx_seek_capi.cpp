@@ -1,11 +1,10 @@
 // ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-// C API implementation for the VLX-Seek task. Thin shell over
-// vlx::VlxSeekRuntime: opaque handles, last_error, borrowed image views in,
-// retained typed results out. No ggml, STL or exception types cross here.
+
 #include "aicore/vlx_seek_capi.h"
 
 #include <cstring>
@@ -15,9 +14,8 @@
 
 #include "aicore/runtime_capi.h"
 #include "common/model_cache.hpp"
-#include "vlx_seek_runtime.h"
-
 #include "third_party/stb/stb_image.h"
+#include "vlx_seek_runtime.h"
 
 using vlx::VlxRunRequest;
 using vlx::VlxRunResult;
@@ -35,7 +33,7 @@ struct aicore_vlx_seek_options {
 
 struct aicore_vlx_seek_ctx {
     std::unique_ptr<VlxSeekRuntime> runtime;
-    VlxRunResult last;        // retained typed result of the most recent run
+    VlxRunResult last;  // retained typed result of the most recent run
     bool has_last = false;
 };
 
@@ -45,7 +43,9 @@ aicore_vlx_seek_options* aicore_vlx_seek_options_new(void) {
     return new (std::nothrow) aicore_vlx_seek_options();
 }
 
-void aicore_vlx_seek_options_free(aicore_vlx_seek_options* opts) { delete opts; }
+void aicore_vlx_seek_options_free(aicore_vlx_seek_options* opts) {
+    delete opts;
+}
 
 void aicore_vlx_seek_options_set_device(aicore_vlx_seek_options* opts,
                                         const char* device) {
@@ -127,14 +127,16 @@ const char* aicore_vlx_seek_last_error(const aicore_vlx_seek_ctx* ctx) {
     if (!ctx) return nullptr;
     if (!ctx->last.error.empty()) return ctx->last.error.c_str();
     return ctx->runtime && !ctx->runtime->last_error().empty()
-               ? ctx->runtime->last_error().c_str()
-               : nullptr;
+                   ? ctx->runtime->last_error().c_str()
+                   : nullptr;
 }
 
 void aicore_vlx_seek_free_buffer(void* p) { free(p); }
 
-int aicore_vlx_seek_load_path_rgb(const char* image_path, uint8_t** out_rgb,
-                                  int32_t* out_width, int32_t* out_height) {
+int aicore_vlx_seek_load_path_rgb(const char* image_path,
+                                  uint8_t** out_rgb,
+                                  int32_t* out_width,
+                                  int32_t* out_height) {
     if (!image_path || !out_rgb || !out_width || !out_height) return -1;
     *out_rgb = nullptr;
     // stb_image decodes to tightly-packed RGB8 when requested (n=3); the
@@ -158,25 +160,30 @@ static bool to_rgb8(const aicore_image_view* v, std::vector<uint8_t>* out) {
         const uint8_t* row = v->data + size_t(y) * v->row_stride_bytes;
         switch (v->format) {
             case AICORE_IMAGE_RGB8:
-                *r = row[size_t(x) * 3]; *g = row[size_t(x) * 3 + 1];
+                *r = row[size_t(x) * 3];
+                *g = row[size_t(x) * 3 + 1];
                 *b = row[size_t(x) * 3 + 2];
                 break;
             case AICORE_IMAGE_RGBA8:
-                *r = row[size_t(x) * 4]; *g = row[size_t(x) * 4 + 1];
+                *r = row[size_t(x) * 4];
+                *g = row[size_t(x) * 4 + 1];
                 *b = row[size_t(x) * 4 + 2];
                 break;
             case AICORE_IMAGE_BGR8:
-                *b = row[size_t(x) * 3]; *g = row[size_t(x) * 3 + 1];
+                *b = row[size_t(x) * 3];
+                *g = row[size_t(x) * 3 + 1];
                 *r = row[size_t(x) * 3 + 2];
                 break;
             case AICORE_IMAGE_BGRA8:
-                *b = row[size_t(x) * 4]; *g = row[size_t(x) * 4 + 1];
+                *b = row[size_t(x) * 4];
+                *g = row[size_t(x) * 4 + 1];
                 *r = row[size_t(x) * 4 + 2];
                 break;
             case AICORE_IMAGE_GRAY8:
                 *r = *g = *b = row[x];
                 break;
-            default: return false;
+            default:
+                return false;
         }
         return true;
     };
@@ -185,15 +192,20 @@ static bool to_rgb8(const aicore_image_view* v, std::vector<uint8_t>* out) {
             uint8_t r, g, b;
             if (!px(x, y, &r, &g, &b)) return false;
             uint8_t* dst = out->data() + (size_t(y) * w + x) * 3;
-            dst[0] = r; dst[1] = g; dst[2] = b;
+            dst[0] = r;
+            dst[1] = g;
+            dst[2] = b;
         }
     return true;
 }
 
 int aicore_vlx_seek_run_image(aicore_vlx_seek_ctx* ctx,
-                              const aicore_image_view* img, const char* task,
-                              const char* text, const char* lang,
-                              const float* boxes, int32_t n_boxes,
+                              const aicore_image_view* img,
+                              const char* task,
+                              const char* text,
+                              const char* lang,
+                              const float* boxes,
+                              int32_t n_boxes,
                               const int32_t* target_indexes,
                               int32_t n_targets) {
     if (!ctx || !ctx->runtime || !img || !task || !text || !lang) return -1;
@@ -233,14 +245,17 @@ int32_t aicore_vlx_seek_result_box_count(const aicore_vlx_seek_ctx* ctx) {
     return ctx && ctx->has_last ? int32_t(ctx->last.boxes.size()) : 0;
 }
 
-int aicore_vlx_seek_result_box(const aicore_vlx_seek_ctx* ctx, int32_t index,
+int aicore_vlx_seek_result_box(const aicore_vlx_seek_ctx* ctx,
+                               int32_t index,
                                float* out) {
     if (!ctx || !ctx->has_last || index < 0 ||
         size_t(index) >= ctx->last.boxes.size() || !out)
         return -1;
     const auto& b = ctx->last.boxes[size_t(index)].box;
-    out[0] = float(b[0]); out[1] = float(b[1]);
-    out[2] = float(b[2]); out[3] = float(b[3]);
+    out[0] = float(b[0]);
+    out[1] = float(b[1]);
+    out[2] = float(b[2]);
+    out[3] = float(b[3]);
     return 0;
 }
 
@@ -261,8 +276,7 @@ int32_t aicore_vlx_seek_result_completion_tokens(
     return ctx && ctx->has_last ? ctx->last.completion_tokens : 0;
 }
 
-int32_t aicore_vlx_seek_result_proposal_count(
-        const aicore_vlx_seek_ctx* ctx) {
+int32_t aicore_vlx_seek_result_proposal_count(const aicore_vlx_seek_ctx* ctx) {
     return ctx && ctx->has_last ? ctx->last.proposal_count : 0;
 }
 
@@ -274,8 +288,8 @@ int aicore_vlx_seek_result_render_png(const aicore_vlx_seek_ctx* ctx,
     if (!to_rgb8(img, &rgb)) return -1;
     return ctx->runtime->render_png(ctx->last, rgb.data(), img->width,
                                     img->height, out_png_path)
-               ? 0
-               : -2;
+                   ? 0
+                   : -2;
 }
 
 int aicore_vlx_seek_last_pipeline_timings(const aicore_vlx_seek_ctx* ctx,
@@ -302,8 +316,7 @@ int aicore_vlx_seek_context_threads(const aicore_vlx_seek_ctx* ctx) {
     return ctx && ctx->runtime ? ctx->runtime->threads() : 0;
 }
 
-const char* aicore_vlx_seek_context_precision(
-        const aicore_vlx_seek_ctx* ctx) {
+const char* aicore_vlx_seek_context_precision(const aicore_vlx_seek_ctx* ctx) {
     return ctx && ctx->runtime ? ctx->runtime->precision().c_str() : nullptr;
 }
 

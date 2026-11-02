@@ -3167,8 +3167,7 @@ void AnnotationCanvas::mouseDoubleClickEvent(QMouseEvent* event) {
         if (index >= 0 && vertex >= 0 && !m_brushEditing &&
             event->modifiers() == Qt::NoModifier &&
             m_shapes[index].type == QStringLiteral("polygon") &&
-            !m_shapes[index].locked &&
-            m_shapes[index].points.size() > 3) {
+            !m_shapes[index].locked && m_shapes[index].points.size() > 3) {
             selectShape(index);
             emit editStarted();
             m_shapes[index].points.removeAt(vertex);

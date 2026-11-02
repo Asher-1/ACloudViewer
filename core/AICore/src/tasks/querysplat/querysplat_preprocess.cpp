@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // Preprocessing — implementation. See querysplat_preprocess.hpp.
 // resize_rgb_hwc / resize_planes are verbatim ports of upstream cpp_ggml
 // image_io.cpp (the antialias semantics comments carry over).
@@ -21,11 +28,13 @@ namespace qs {
 // ~2.4e-7 on the 4135 -> 512 geometry; impulse-response-derived). Plain
 // bilinear there produces materially different model inputs (courtyard
 // cpp-vs-py was 30 dB for exactly this reason).
-void resize_rgb_hwc(const float* src, int sh, int sw, int H, int W, float* dst) {
+void resize_rgb_hwc(
+        const float* src, int sh, int sw, int H, int W, float* dst) {
     const float scale_x = (float)sw / (float)W;
     const float scale_y = (float)sh / (float)H;
     if (scale_x > 1.0f || scale_y > 1.0f) {
-        const float sup_x = std::max(scale_x, 1.0f), sup_y = std::max(scale_y, 1.0f);
+        const float sup_x = std::max(scale_x, 1.0f),
+                    sup_y = std::max(scale_y, 1.0f);
         // pass 1: horizontal sw -> W (rows unchanged)
         std::vector<float> tmp((size_t)sh * W * 3);
         for (int y = 0; y < sh; y++) {
@@ -35,12 +44,16 @@ void resize_rgb_hwc(const float* src, int sh, int sw, int H, int W, float* dst) 
                 const int hi = std::min(sw - 1, (int)std::ceil(c + sup_x));
                 float wsum = 0.f;
                 for (int j = lo; j <= hi; j++)
-                    wsum += std::max(0.f, 1.f - std::fabs((float)j - c) / sup_x);
+                    wsum += std::max(0.f,
+                                     1.f - std::fabs((float)j - c) / sup_x);
                 if (wsum <= 0.f) wsum = 1.f;
                 float* d = &tmp[((size_t)y * W + x) * 3];
                 d[0] = d[1] = d[2] = 0.f;
                 for (int j = lo; j <= hi; j++) {
-                    const float w = std::max(0.f, 1.f - std::fabs((float)j - c) / sup_x) / wsum;
+                    const float w =
+                            std::max(0.f,
+                                     1.f - std::fabs((float)j - c) / sup_x) /
+                            wsum;
                     const float* p = &src[((size_t)y * sw + j) * 3];
                     d[0] += w * p[0];
                     d[1] += w * p[1];
@@ -61,7 +74,10 @@ void resize_rgb_hwc(const float* src, int sh, int sw, int H, int W, float* dst) 
                 float* d = &dst[((size_t)y * W + x) * 3];
                 d[0] = d[1] = d[2] = 0.f;
                 for (int j = lo; j <= hi; j++) {
-                    const float w = std::max(0.f, 1.f - std::fabs((float)j - c) / sup_y) / wsum;
+                    const float w =
+                            std::max(0.f,
+                                     1.f - std::fabs((float)j - c) / sup_y) /
+                            wsum;
                     const float* p = &tmp[((size_t)j * W + x) * 3];
                     d[0] += w * p[0];
                     d[1] += w * p[1];
@@ -91,28 +107,32 @@ void resize_rgb_hwc(const float* src, int sh, int sw, int H, int W, float* dst) 
             const float* p11 = &src[((size_t)y1 * sw + x1) * 3];
             float* d = &dst[((size_t)y * W + x) * 3];
             for (int c = 0; c < 3; c++)
-                d[c] = h0 * (w0 * p00[c] + w1 * p01[c]) + h1 * (w0 * p10[c] + w1 * p11[c]);
+                d[c] = h0 * (w0 * p00[c] + w1 * p01[c]) +
+                       h1 * (w0 * p10[c] + w1 * p11[c]);
         }
     }
 }
 
-std::vector<float> resize_planes(const float* src, int n, int h, int w, int H, int W) {
+std::vector<float> resize_planes(
+        const float* src, int n, int h, int w, int H, int W) {
     std::vector<float> out((size_t)n * 3 * H * W);
     std::vector<float> a((size_t)h * w * 3), b((size_t)H * W * 3);
     for (int v = 0; v < n; v++) {
         const float* s = src + (size_t)v * 3 * h * w;
         for (int c = 0; c < 3; c++)
-            for (size_t k = 0; k < (size_t)h * w; k++) a[k * 3 + c] = s[(size_t)c * h * w + k];
+            for (size_t k = 0; k < (size_t)h * w; k++)
+                a[k * 3 + c] = s[(size_t)c * h * w + k];
         resize_rgb_hwc(a.data(), h, w, H, W, b.data());
         float* d = out.data() + (size_t)v * 3 * H * W;
         for (int c = 0; c < 3; c++)
-            for (size_t k = 0; k < (size_t)H * W; k++) d[(size_t)c * H * W + k] = b[k * 3 + c];
+            for (size_t k = 0; k < (size_t)H * W; k++)
+                d[(size_t)c * H * W + k] = b[k * 3 + c];
     }
     return out;
 }
 
-std::vector<float> preprocess_rgb8_view(const uint8_t* rgb8, int w, int h,
-                                        int H, int W) {
+std::vector<float> preprocess_rgb8_view(
+        const uint8_t* rgb8, int w, int h, int H, int W) {
     // Center square crop of side min(w, h) (torchvision ImageTransform
     // max_crop=True), normalized to [0,1] — the exact composition
     // load_images_as_frames applies after decoding.
@@ -141,16 +161,21 @@ std::vector<float> preprocess_rgb8_view(const uint8_t* rgb8, int w, int h,
     return planes;
 }
 
-bool preprocess_view_bytes(const uint8_t* data, int w, int h,
-                           int channels_per_pixel, bool bgr_order, int H,
-                           int W, std::vector<float>* out_frames) {
+bool preprocess_view_bytes(const uint8_t* data,
+                           int w,
+                           int h,
+                           int channels_per_pixel,
+                           bool bgr_order,
+                           int H,
+                           int W,
+                           std::vector<float>* out_frames) {
     if (!data || w <= 0 || h <= 0 || H <= 0 || W <= 0 || !out_frames) {
         return false;
     }
     switch (channels_per_pixel) {
-        case 1:   // GRAY: replicate channels
-        case 3:   // RGB / BGR
-        case 4: { // RGBA / BGRA: drop alpha
+        case 1:    // GRAY: replicate channels
+        case 3:    // RGB / BGR
+        case 4: {  // RGBA / BGRA: drop alpha
             break;
         }
         default:

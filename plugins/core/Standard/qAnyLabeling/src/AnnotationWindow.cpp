@@ -9038,11 +9038,9 @@ void AnnotationWindow::toggleAllShapesVisibility() {
     if (shapes.isEmpty()) return;
     // Upstream toggle semantics: the target state is "not any(...)", so a
     // fully visible list hides everything and any hidden shape restores all.
-    const bool visible =
-            !std::any_of(shapes.cbegin(), shapes.cend(),
-                         [](const AnnotationShape& shape) {
-                             return shape.visible;
-                         });
+    const bool visible = !std::any_of(
+            shapes.cbegin(), shapes.cend(),
+            [](const AnnotationShape& shape) { return shape.visible; });
     snapshot();
     QVector<AnnotationShape> next = shapes;
     for (AnnotationShape& shape : next) shape.visible = visible;
@@ -9054,11 +9052,9 @@ void AnnotationWindow::toggleAllShapesVisibility() {
 void AnnotationWindow::toggleAllShapesLock() {
     const auto& shapes = m_canvas->shapes();
     if (shapes.isEmpty()) return;
-    const bool locked =
-            !std::any_of(shapes.cbegin(), shapes.cend(),
-                         [](const AnnotationShape& shape) {
-                             return shape.locked;
-                         });
+    const bool locked = !std::any_of(
+            shapes.cbegin(), shapes.cend(),
+            [](const AnnotationShape& shape) { return shape.locked; });
     snapshot();
     QVector<AnnotationShape> next = shapes;
     for (AnnotationShape& shape : next) shape.locked = locked;

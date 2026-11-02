@@ -16,9 +16,12 @@ namespace vlx {
 
 namespace {
 
-uint16_t read_le_u16(const uint8_t* p) { return uint16_t(p[0]) | (uint16_t(p[1]) << 8); }
+uint16_t read_le_u16(const uint8_t* p) {
+    return uint16_t(p[0]) | (uint16_t(p[1]) << 8);
+}
 uint32_t read_le_u32(const uint8_t* p) {
-    return uint32_t(p[0]) | (uint32_t(p[1]) << 8) | (uint32_t(p[2]) << 16) | (uint32_t(p[3]) << 24);
+    return uint32_t(p[0]) | (uint32_t(p[1]) << 8) | (uint32_t(p[2]) << 16) |
+           (uint32_t(p[3]) << 24);
 }
 uint64_t read_le_u64(const uint8_t* p) {
     return uint64_t(read_le_u32(p)) | (uint64_t(read_le_u32(p + 4)) << 32);
@@ -35,7 +38,10 @@ float f16_to_f32(uint16_t h) {
         } else {  // subnormal
             uint32_t e = 0;
             uint32_t m = man;
-            while (!(m & 0x0400u)) { m <<= 1; ++e; }
+            while (!(m & 0x0400u)) {
+                m <<= 1;
+                ++e;
+            }
             m &= 0x03ffu;
             bits = sign | ((127 - 15 - e + 1) << 23) | (m << 13);
         }
@@ -66,12 +72,20 @@ void dequant_q8_0(const uint8_t* src, size_t n_blocks, float* dst) {
 
 size_t GgufFile::type_size(GgmlDType t) {
     switch (t) {
-        case GgmlDType::F32: case GgmlDType::I32: return 4;
-        case GgmlDType::F16: case GgmlDType::I16: return 2;
-        case GgmlDType::I8: return 1;
-        case GgmlDType::I64: return 8;
-        case GgmlDType::Q8_0: return q8_0_type_size();
-        default: return 0;  // unsupported for the vision sub-chain
+        case GgmlDType::F32:
+        case GgmlDType::I32:
+            return 4;
+        case GgmlDType::F16:
+        case GgmlDType::I16:
+            return 2;
+        case GgmlDType::I8:
+            return 1;
+        case GgmlDType::I64:
+            return 8;
+        case GgmlDType::Q8_0:
+            return q8_0_type_size();
+        default:
+            return 0;  // unsupported for the vision sub-chain
     }
 }
 
@@ -110,17 +124,70 @@ bool GgufFile::load(const std::string& path, std::string* err) {
 
     auto read_value = [&](GgufType t, const std::string& key) {
         switch (t) {
-            case GgufType::Str: read_str(&kv_str_[key]); break;
-            case GgufType::U8: case GgufType::Bool: { uint8_t v; in.read(reinterpret_cast<char*>(&v), 1); kv_i_[key] = v; break; }
-            case GgufType::I8: { int8_t v; in.read(reinterpret_cast<char*>(&v), 1); kv_i_[key] = v; break; }
-            case GgufType::U16: { uint16_t v; in.read(reinterpret_cast<char*>(&v), 2); kv_i_[key] = v; break; }
-            case GgufType::I16: { int16_t v; in.read(reinterpret_cast<char*>(&v), 2); kv_i_[key] = v; break; }
-            case GgufType::U32: { uint32_t v; in.read(reinterpret_cast<char*>(&v), 4); kv_i_[key] = v; break; }
-            case GgufType::I32: { int32_t v; in.read(reinterpret_cast<char*>(&v), 4); kv_i_[key] = v; break; }
-            case GgufType::U64: { uint64_t v; in.read(reinterpret_cast<char*>(&v), 8); kv_i_[key] = int64_t(v); break; }
-            case GgufType::I64: { int64_t v; in.read(reinterpret_cast<char*>(&v), 8); kv_i_[key] = v; break; }
-            case GgufType::F32: { float v; in.read(reinterpret_cast<char*>(&v), 4); kv_f_[key] = v; break; }
-            case GgufType::F64: { double v; in.read(reinterpret_cast<char*>(&v), 8); kv_f_[key] = v; break; }
+            case GgufType::Str:
+                read_str(&kv_str_[key]);
+                break;
+            case GgufType::U8:
+            case GgufType::Bool: {
+                uint8_t v;
+                in.read(reinterpret_cast<char*>(&v), 1);
+                kv_i_[key] = v;
+                break;
+            }
+            case GgufType::I8: {
+                int8_t v;
+                in.read(reinterpret_cast<char*>(&v), 1);
+                kv_i_[key] = v;
+                break;
+            }
+            case GgufType::U16: {
+                uint16_t v;
+                in.read(reinterpret_cast<char*>(&v), 2);
+                kv_i_[key] = v;
+                break;
+            }
+            case GgufType::I16: {
+                int16_t v;
+                in.read(reinterpret_cast<char*>(&v), 2);
+                kv_i_[key] = v;
+                break;
+            }
+            case GgufType::U32: {
+                uint32_t v;
+                in.read(reinterpret_cast<char*>(&v), 4);
+                kv_i_[key] = v;
+                break;
+            }
+            case GgufType::I32: {
+                int32_t v;
+                in.read(reinterpret_cast<char*>(&v), 4);
+                kv_i_[key] = v;
+                break;
+            }
+            case GgufType::U64: {
+                uint64_t v;
+                in.read(reinterpret_cast<char*>(&v), 8);
+                kv_i_[key] = int64_t(v);
+                break;
+            }
+            case GgufType::I64: {
+                int64_t v;
+                in.read(reinterpret_cast<char*>(&v), 8);
+                kv_i_[key] = v;
+                break;
+            }
+            case GgufType::F32: {
+                float v;
+                in.read(reinterpret_cast<char*>(&v), 4);
+                kv_f_[key] = v;
+                break;
+            }
+            case GgufType::F64: {
+                double v;
+                in.read(reinterpret_cast<char*>(&v), 8);
+                kv_f_[key] = v;
+                break;
+            }
             case GgufType::Arr: {
                 // header = u32 element type + u64 count (12 bytes)
                 uint8_t t8[12];
@@ -131,24 +198,41 @@ bool GgufFile::load(const std::string& path, std::string* err) {
                 // everything else is skipped by its byte size.
                 if (et == GgufType::Str) {
                     std::vector<std::string> vals;
-                    for (uint64_t i = 0; i < n; ++i) { std::string v; read_str(&v); vals.push_back(v); }
-                    kv_str_[key] = vals.empty() ? "" : vals[0];  // first element wins
+                    for (uint64_t i = 0; i < n; ++i) {
+                        std::string v;
+                        read_str(&v);
+                        vals.push_back(v);
+                    }
+                    kv_str_[key] =
+                            vals.empty() ? "" : vals[0];  // first element wins
                 } else {
                     const size_t ts = [&] {
                         switch (et) {
-                            case GgufType::U8: case GgufType::Bool: case GgufType::I8: return 1;
-                            case GgufType::U16: case GgufType::I16: return 2;
-                            case GgufType::U32: case GgufType::I32: case GgufType::F32: return 4;
-                            default: return 8;
+                            case GgufType::U8:
+                            case GgufType::Bool:
+                            case GgufType::I8:
+                                return 1;
+                            case GgufType::U16:
+                            case GgufType::I16:
+                                return 2;
+                            case GgufType::U32:
+                            case GgufType::I32:
+                            case GgufType::F32:
+                                return 4;
+                            default:
+                                return 8;
                         }
                     }();
                     std::vector<uint8_t> buf(size_t(n) * ts);
-                    in.read(reinterpret_cast<char*>(buf.data()), std::streamsize(buf.size()));
-                    if (et == GgufType::F32 && n >= 1) kv_f_[key] = *reinterpret_cast<float*>(buf.data());
+                    in.read(reinterpret_cast<char*>(buf.data()),
+                            std::streamsize(buf.size()));
+                    if (et == GgufType::F32 && n >= 1)
+                        kv_f_[key] = *reinterpret_cast<float*>(buf.data());
                     else if (n >= 1) {
                         const uint8_t* p = buf.data();
                         kv_i_[key] = et == GgufType::I64 || et == GgufType::U64
-                                         ? int64_t(read_le_u64(p)) : int64_t(read_le_u32(p));
+                                             ? int64_t(read_le_u64(p))
+                                             : int64_t(read_le_u32(p));
                     }
                 }
                 break;
@@ -166,8 +250,8 @@ bool GgufFile::load(const std::string& path, std::string* err) {
         read_value(t, key);
     }
     arch_ = str("general.architecture", "vlxvision");
-    // Tensor entry: name(str) | n_dims(u32) | ne[u64 x n_dims] | type(u32) | offset(u64)
-    // NOTE: dimensions are 8 bytes each in GGUF v3.
+    // Tensor entry: name(str) | n_dims(u32) | ne[u64 x n_dims] | type(u32) |
+    // offset(u64) NOTE: dimensions are 8 bytes each in GGUF v3.
     for (uint64_t i = 0; i < n_tensors; ++i) {
         TensorInfo ti;
         read_str(&ti.name);
@@ -199,8 +283,10 @@ bool GgufFile::load(const std::string& path, std::string* err) {
         const uint64_t n = [&] {
             uint64_t n = 1;
             for (uint32_t d = 0; d < t.n_dims; ++d) n *= t.ne[d];
-            if (t.dtype == GgmlDType::Q8_0) n = (n / 32) * q8_0_type_size();
-            else n *= ts;
+            if (t.dtype == GgmlDType::Q8_0)
+                n = (n / 32) * q8_0_type_size();
+            else
+                n *= ts;
             return n;
         }();
         t.bytes.resize(size_t(n));
@@ -210,7 +296,8 @@ bool GgufFile::load(const std::string& path, std::string* err) {
     return true;
 }
 
-std::string GgufFile::str(const std::string& key, const std::string& def) const {
+std::string GgufFile::str(const std::string& key,
+                          const std::string& def) const {
     auto it = kv_str_.find(key);
     return it == kv_str_.end() ? def : it->second;
 }
@@ -244,7 +331,8 @@ const float* GgufFile::tensor_f32(const std::string& name) const {
             break;
         case GgmlDType::F16:
             for (uint64_t i = 0; i < n_elem; ++i)
-                t->f32[size_t(i)] = f16_to_f32(read_le_u16(t->bytes.data() + 2 * size_t(i)));
+                t->f32[size_t(i)] = f16_to_f32(
+                        read_le_u16(t->bytes.data() + 2 * size_t(i)));
             break;
         case GgmlDType::Q8_0:
             dequant_q8_0(t->bytes.data(), size_t(n_elem) / 32, t->f32.data());

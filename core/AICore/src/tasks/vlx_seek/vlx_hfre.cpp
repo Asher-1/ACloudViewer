@@ -17,9 +17,16 @@ namespace vlx {
 // pre_calc_for_bilinear_interpolate. Edge handling is the part that matters:
 // a sample with y_low >= H-1 snaps to row H-1 with full weight (it is NOT
 // zero-padded), so boxes touching the bottom/right border keep their mass.
-void pre_calc_bilinear(int height, int width, int pooled, float roi_start_h,
-                       float roi_start_w, float bin_h, float bin_w, int grid_h,
-                       int grid_w, std::vector<PreCalc>* out) {
+void pre_calc_bilinear(int height,
+                       int width,
+                       int pooled,
+                       float roi_start_h,
+                       float roi_start_w,
+                       float bin_h,
+                       float bin_w,
+                       int grid_h,
+                       int grid_w,
+                       std::vector<PreCalc>* out) {
     out->clear();
     out->reserve(size_t(pooled) * pooled * grid_h * grid_w);
     for (int ph = 0; ph < pooled; ph++)
@@ -38,15 +45,22 @@ void pre_calc_bilinear(int height, int width, int pooled, float roi_start_h,
                     if (y <= 0) y = 0;
                     if (x <= 0) x = 0;
                     int y_low = int(y), x_low = int(x), y_high, x_high;
-                    if (y_low >= height - 1) { y_high = y_low = height - 1; y = float(y_low); }
-                    else y_high = y_low + 1;
-                    if (x_low >= width - 1) { x_high = x_low = width - 1; x = float(x_low); }
-                    else x_high = x_low + 1;
+                    if (y_low >= height - 1) {
+                        y_high = y_low = height - 1;
+                        y = float(y_low);
+                    } else
+                        y_high = y_low + 1;
+                    if (x_low >= width - 1) {
+                        x_high = x_low = width - 1;
+                        x = float(x_low);
+                    } else
+                        x_high = x_low + 1;
                     const float ly = y - y_low, lx = x - x_low;
                     const float hy = 1. - ly, hx = 1. - lx;
-                    out->push_back({y_low * width + x_low, y_low * width + x_high,
-                                    y_high * width + x_low, y_high * width + x_high,
-                                    hy * hx, hy * lx, ly * hx, ly * lx});
+                    out->push_back(
+                            {y_low * width + x_low, y_low * width + x_high,
+                             y_high * width + x_low, y_high * width + x_high,
+                             hy * hx, hy * lx, ly * hx, ly * lx});
                 }
             }
 }
@@ -55,7 +69,8 @@ HfreEncoder::HfreEncoder(const HfreConfig& cfg) : cfg_(cfg) {}
 
 void HfreEncoder::roi_align_mean_pool(const FeatureLevel& level,
                                       const std::vector<Box>& boxes_px,
-                                      float spatial_scale, int out_size,
+                                      float spatial_scale,
+                                      int out_size,
                                       bool aligned,
                                       std::vector<float>* out_nxc,
                                       int n_threads) {
@@ -73,7 +88,10 @@ void HfreEncoder::roi_align_mean_pool(const FeatureLevel& level,
         const float rsh = b.y1 * spatial_scale - offset;
         float rw = (b.x2 * spatial_scale - offset) - rsw;
         float rh = (b.y2 * spatial_scale - offset) - rsh;
-        if (!aligned) { rw = std::max(rw, 1.f); rh = std::max(rh, 1.f); }
+        if (!aligned) {
+            rw = std::max(rw, 1.f);
+            rh = std::max(rh, 1.f);
+        }
         const float bin_h = rh / float(out_size), bin_w = rw / float(out_size);
         // Degenerate (negative-extent) boxes reach here when aligned=true
         // skips the max(rw,1) guard: clamp the grid to zero so the bin
@@ -83,7 +101,8 @@ void HfreEncoder::roi_align_mean_pool(const FeatureLevel& level,
         const int grid_h = std::max(0, int(std::ceil(rh / out_size)));
         const int grid_w = std::max(0, int(std::ceil(rw / out_size)));
         const float count = float(std::max(grid_h * grid_w, 1));
-        pre_calc_bilinear(H, W, out_size, rsh, rsw, bin_h, bin_w, grid_h, grid_w, pc);
+        pre_calc_bilinear(H, W, out_size, rsh, rsw, bin_h, bin_w, grid_h,
+                          grid_w, pc);
         const int per_bin = grid_h * grid_w;
         const float denom = float(out_size * out_size);
         for (int c = 0; c < C; ++c) {
@@ -117,8 +136,8 @@ void HfreEncoder::roi_align_mean_pool(const FeatureLevel& level,
 }
 
 void HfreEncoder::sine_embed(
-    const std::vector<std::array<float, 4>>& cxcywh_norm,
-    std::vector<float>* out_nxd) const {
+        const std::vector<std::array<float, 4>>& cxcywh_norm,
+        std::vector<float>* out_nxd) const {
     // gen_sineembed_for_position: per component (y, x, w, h), dim_t over
     // pos_embedding_dim/4 frequencies, sin on even / cos on odd indices.
     // The python output concatenates (pos_y, pos_x, pos_w, pos_h) — the input
@@ -133,10 +152,12 @@ void HfreEncoder::sine_embed(
         // comp order in the OUTPUT: y, x, w, h; input rows are (cx, cy, w, h).
         static const int kCompSrc[4] = {1, 0, 2, 3};
         for (int comp = 0; comp < 4; ++comp) {
-            const float v = cxcywh_norm[n][kCompSrc[comp]] * 2.f * 3.14159265358979323846f;
+            const float v = cxcywh_norm[n][kCompSrc[comp]] * 2.f *
+                            3.14159265358979323846f;
             float* dst = &(*out_nxd)[n * D + comp * quarter];
             for (int i = 0; i < quarter; ++i)
-                dst[i] = (i % 2 == 0) ? std::sin(v / dim_t[i]) : std::cos(v / dim_t[i]);
+                dst[i] = (i % 2 == 0) ? std::sin(v / dim_t[i])
+                                      : std::cos(v / dim_t[i]);
         }
     }
 }
@@ -145,7 +166,10 @@ bool HfreEncoder::encode_aux(const std::vector<Box>& boxes,
                              const std::vector<FeatureLevel>& aux_levels,
                              std::vector<float>* out_aux_nxc,
                              std::string* err) {
-    if (boxes.empty()) { out_aux_nxc->clear(); return true; }
+    if (boxes.empty()) {
+        out_aux_nxc->clear();
+        return true;
+    }
     if (aux_levels.empty()) {
         if (err) *err = "no aux feature levels";
         return false;
@@ -184,8 +208,12 @@ bool HfreEncoder::encode_vt(const std::vector<Box>& boxes,
                             const std::vector<float>& feature_strides,
                             std::vector<float>* out_vt_nxc,
                             std::string* err) {
-    if (boxes.empty()) { out_vt_nxc->clear(); return true; }
-    if (vt_fpn_levels.empty() || vt_fpn_levels.size() != feature_strides.size()) {
+    if (boxes.empty()) {
+        out_vt_nxc->clear();
+        return true;
+    }
+    if (vt_fpn_levels.empty() ||
+        vt_fpn_levels.size() != feature_strides.size()) {
         if (err) *err = "vt FPN levels/strides mismatch";
         return false;
     }
@@ -196,8 +224,7 @@ bool HfreEncoder::encode_vt(const std::vector<Box>& boxes,
     for (size_t li = 0; li < vt_fpn_levels.size(); ++li) {
         std::vector<float> level_roi;
         // Python: current_spatial_scale = 1 / feature_strides[level_idx].
-        roi_align_mean_pool(vt_fpn_levels[li], boxes,
-                            1.f / feature_strides[li],
+        roi_align_mean_pool(vt_fpn_levels[li], boxes, 1.f / feature_strides[li],
                             cfg_.roi_output_size, cfg_.roi_aligned, &level_roi,
                             cfg_.n_threads);
         // torch.cat(feats, dim=1): level block INTERLEAVED inside each row —
@@ -212,7 +239,8 @@ bool HfreEncoder::encode_vt(const std::vector<Box>& boxes,
 bool HfreEncoder::fuse(const std::vector<float>& aux_nxc,
                        const std::vector<float>& vt_nxc,
                        const std::vector<Box>& boxes,
-                       int aux_channels, int vt_channels,
+                       int aux_channels,
+                       int vt_channels,
                        const std::vector<FeatureLevel>& vt_grid_ref,
                        std::vector<float>* out_object_features,
                        std::string* err) {
@@ -232,8 +260,9 @@ bool HfreEncoder::fuse(const std::vector<float>& aux_nxc,
                     sizeof(float) * vt_channels);
     }
 
-    // Position embedding: vt branch defines the frame (use_vision_tower_object_feature
-    // with plain "concat"); original image extent = finest vt grid / scale.
+    // Position embedding: vt branch defines the frame
+    // (use_vision_tower_object_feature with plain "concat"); original image
+    // extent = finest vt grid / scale.
     if (cfg_.add_pos_embedding && !vt_grid_ref.empty()) {
         // Finest level (index 0) carries the smallest stride.
         const FeatureLevel& finest = vt_grid_ref[0];
@@ -242,7 +271,8 @@ bool HfreEncoder::fuse(const std::vector<float>& aux_nxc,
             // The caller passes vt_grid_ref levels whose pixels are already in
             // original-image scale terms via their strides; the finest level's
             // extent in original pixels is height*stride_of_level0.
-            const float img_w = float(finest.width);   // grid_ref pre-scaled by caller
+            const float img_w =
+                    float(finest.width);  // grid_ref pre-scaled by caller
             const float img_h = float(finest.height);
             float x1 = boxes[n].x1 / img_w, x2 = boxes[n].x2 / img_w;
             float y1 = boxes[n].y1 / img_h, y2 = boxes[n].y2 / img_h;

@@ -6,6 +6,8 @@
 // ----------------------------------------------------------------------------
 #pragma once
 
+#include <ecvTestDataRepository.h>
+
 #include <QDialog>
 #include <QElapsedTimer>
 #include <QString>
@@ -13,8 +15,6 @@
 
 #include "QuerySplatModelCatalog.h"
 #include "QuerySplatWorker.h"
-
-#include <ecvTestDataRepository.h>
 
 class QCheckBox;
 class QComboBox;

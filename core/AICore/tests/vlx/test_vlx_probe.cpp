@@ -26,7 +26,6 @@
 #include <QProcess>
 #include <QProcessEnvironment>
 #include <QTemporaryDir>
-
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -43,10 +42,9 @@
 namespace {
 
 struct Args {
-    std::string models_dir, wedetect, vision, llm, device = "auto",
-                               image, task = "detection", text = "person",
-                               lang = "en", upstream_dir, upstream_precision,
-                               json_out;
+    std::string models_dir, wedetect, vision, llm,
+            device = "auto", image, task = "detection", text = "person",
+            lang = "en", upstream_dir, upstream_precision, json_out;
     int max_tokens = 256, repeats = 2, warmups = 0, threads = 0;
     double box_tolerance = 0.05;  // px; f32 reduction noise class
     int expect_boxes_min = -1;    // optional accuracy gate
@@ -68,8 +66,10 @@ struct RunOutcome {
     double preprocess_ms = 0, inference_ms = 0, postprocess_ms = 0, e2e_ms = 0;
 };
 
-bool run_once(aicore_vlx_seek_ctx* ctx, const Args& a,
-              const std::vector<float>& fixed_boxes, RunOutcome* out,
+bool run_once(aicore_vlx_seek_ctx* ctx,
+              const Args& a,
+              const std::vector<float>& fixed_boxes,
+              RunOutcome* out,
               std::string* error) {
     const aicore_image_view* view = nullptr;
     aicore_image_view v{};
@@ -77,7 +77,8 @@ bool run_once(aicore_vlx_seek_ctx* ctx, const Args& a,
     {
         uint8_t* p = nullptr;
         int32_t w = 0, h = 0;
-        const int rc = aicore_vlx_seek_load_path_rgb(a.image.c_str(), &p, &w, &h);
+        const int rc =
+                aicore_vlx_seek_load_path_rgb(a.image.c_str(), &p, &w, &h);
         if (rc != 0 || !p) {
             *error = "cannot load image " + a.image;
             return false;
@@ -92,9 +93,8 @@ bool run_once(aicore_vlx_seek_ctx* ctx, const Args& a,
         view = &v;
     }
     const float* boxes = fixed_boxes.empty() ? nullptr : fixed_boxes.data();
-    const int32_t n_boxes = fixed_boxes.empty()
-                                ? 0
-                                : int32_t(fixed_boxes.size() / 4);
+    const int32_t n_boxes =
+            fixed_boxes.empty() ? 0 : int32_t(fixed_boxes.size() / 4);
     QElapsedTimer timer;
     timer.start();
     const int rc = aicore_vlx_seek_run_image(ctx, view, a.task.c_str(),
@@ -106,8 +106,9 @@ bool run_once(aicore_vlx_seek_ctx* ctx, const Args& a,
         *error = err ? err : "run failed";
         return false;
     }
-    out->answer = aicore_vlx_seek_result_answer(ctx) ?
-                      aicore_vlx_seek_result_answer(ctx) : "";
+    out->answer = aicore_vlx_seek_result_answer(ctx)
+                          ? aicore_vlx_seek_result_answer(ctx)
+                          : "";
     const int32_t n = aicore_vlx_seek_result_box_count(ctx);
     for (int32_t i = 0; i < n; ++i) {
         std::array<float, 4> b{};
@@ -130,7 +131,9 @@ bool run_once(aicore_vlx_seek_ctx* ctx, const Args& a,
     return true;
 }
 
-bool same_result(const RunOutcome& a, const RunOutcome& b, double box_tol,
+bool same_result(const RunOutcome& a,
+                 const RunOutcome& b,
+                 double box_tol,
                  std::string* why) {
     if (a.answer != b.answer) {
         *why = "answer mismatch";
@@ -156,7 +159,8 @@ bool same_result(const RunOutcome& a, const RunOutcome& b, double box_tol,
 
 // Runs the pristine upstream vlx-cli with the same request and returns the
 // official JSON (answer/result_bbox_list/token counts).
-std::string run_upstream(const Args& a, const std::string& device,
+std::string run_upstream(const Args& a,
+                         const std::string& device,
                          const std::vector<float>& fixed_boxes,
                          std::string* error) {
     const QString exe = QString::fromStdString(a.upstream_dir) +
@@ -167,27 +171,35 @@ std::string run_upstream(const Args& a, const std::string& device,
     }
     const QString models = QString::fromStdString(a.models_dir);
     QStringList args{"run",
-                     "--image-path", QString::fromStdString(a.image),
-                     "--task", QString::fromStdString(a.task),
-                     "--text", QString::fromStdString(a.text),
-                     "--lang", QString::fromStdString(a.lang),
-                     "--gguf-dir", models,
-                     "--max-new-tokens", QString::number(a.max_tokens)};
+                     "--image-path",
+                     QString::fromStdString(a.image),
+                     "--task",
+                     QString::fromStdString(a.task),
+                     "--text",
+                     QString::fromStdString(a.text),
+                     "--lang",
+                     QString::fromStdString(a.lang),
+                     "--gguf-dir",
+                     models,
+                     "--max-new-tokens",
+                     QString::number(a.max_tokens)};
     const QString prec = a.upstream_precision.empty()
-                             ? QString::fromStdString("f16")
-                             : QString::fromStdString(a.upstream_precision);
+                                 ? QString::fromStdString("f16")
+                                 : QString::fromStdString(a.upstream_precision);
     args << "--precision" << prec;
     if (a.threads > 0) args << "-t" << QString::number(a.threads);
-    if (device == "CPU") args << "--device" << "cpu";
-    else if (!device.empty()) args << "--device" << QString::fromStdString(device);
+    if (device == "CPU")
+        args << "--device" << "cpu";
+    else if (!device.empty())
+        args << "--device" << QString::fromStdString(device);
     if (!fixed_boxes.empty()) {
         QStringList parts;
         for (size_t i = 0; i + 3 < fixed_boxes.size(); i += 4) {
             parts << QString("%1,%2,%3,%4")
-                         .arg(fixed_boxes[i], 0, 'f', 2)
-                         .arg(fixed_boxes[i + 1], 0, 'f', 2)
-                         .arg(fixed_boxes[i + 2], 0, 'f', 2)
-                         .arg(fixed_boxes[i + 3], 0, 'f', 2);
+                             .arg(fixed_boxes[i], 0, 'f', 2)
+                             .arg(fixed_boxes[i + 1], 0, 'f', 2)
+                             .arg(fixed_boxes[i + 2], 0, 'f', 2)
+                             .arg(fixed_boxes[i + 3], 0, 'f', 2);
         }
         args << "--bbox-list" << QString("[%1]").arg(parts.join(","));
     }
@@ -200,8 +212,7 @@ std::string run_upstream(const Args& a, const std::string& device,
     const QString dir = QString::fromStdString(a.upstream_dir);
     for (const char* var : {"LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH", "PATH"}) {
         env.insert(var, var == QStringLiteral("PATH")
-                                ? dir + QDir::listSeparator() +
-                                      env.value(var)
+                                ? dir + QDir::listSeparator() + env.value(var)
                                 : dir);
     }
     process.setProcessEnvironment(env);
@@ -217,12 +228,12 @@ std::string run_upstream(const Args& a, const std::string& device,
     // vlx-cli prints the official JSON as its last stdout block.
     const QString text = QString::fromUtf8(out);
     const int brace = text.lastIndexOf('{');
-    if (process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0 ||
-        brace < 0) {
+    if (process.exitStatus() != QProcess::NormalExit ||
+        process.exitCode() != 0 || brace < 0) {
         *error = QString("upstream vlx-cli failed (rc=%1): %2")
-                     .arg(process.exitCode())
-                     .arg(QString::fromUtf8(err.left(400)))
-                     .toStdString();
+                         .arg(process.exitCode())
+                         .arg(QString::fromUtf8(err.left(400)))
+                         .toStdString();
         return {};
     }
     return text.mid(brace).toStdString();
@@ -230,8 +241,8 @@ std::string run_upstream(const Args& a, const std::string& device,
 
 // Minimal parse of the official JSON fields the parity gate compares.
 bool parse_official_json(const std::string& js, RunOutcome* out) {
-    QJsonDocument doc = QJsonDocument::fromJson(
-        QByteArray(js.data(), int(js.size())));
+    QJsonDocument doc =
+            QJsonDocument::fromJson(QByteArray(js.data(), int(js.size())));
     if (!doc.isObject()) return false;
     const QJsonObject o = doc.object();
     out->answer = o.value("answer").toString().toStdString();
@@ -245,8 +256,7 @@ bool parse_official_json(const std::string& js, RunOutcome* out) {
                                   float(b.value("ymin").toDouble()),
                                   float(b.value("xmax").toDouble()),
                                   float(b.value("ymax").toDouble())});
-            out->labels.push_back(
-                b.value("label").toString().toStdString());
+            out->labels.push_back(b.value("label").toString().toStdString());
         }
     }
     return true;
@@ -274,23 +284,38 @@ int main(int argc, char** argv) {
             std::fprintf(stderr, "missing/invalid value for %s\n", name);
             std::exit(2);
         };
-        if (arg == "--models-dir") a.models_dir = need("--models-dir");
-        else if (arg == "--wedetect") a.wedetect = need("--wedetect");
-        else if (arg == "--vision") a.vision = need("--vision");
-        else if (arg == "--llm") a.llm = need("--llm");
-        else if (arg == "--device") a.device = need("--device");
-        else if (arg == "--image") a.image = need("--image");
-        else if (arg == "--task") a.task = need("--task");
-        else if (arg == "--text") a.text = need("--text");
-        else if (arg == "--lang") a.lang = need("--lang");
-        else if (arg == "--max-tokens") a.max_tokens = std::stoi(need("--max-tokens"));
-        else if (arg == "--repeats") a.repeats = std::stoi(need("--repeats"));
-        else if (arg == "--warmups") a.warmups = std::stoi(need("--warmups"));
-        else if (arg == "--threads") a.threads = std::stoi(need("--threads"));
-        else if (arg == "--upstream-dir") a.upstream_dir = need("--upstream-dir");
+        if (arg == "--models-dir")
+            a.models_dir = need("--models-dir");
+        else if (arg == "--wedetect")
+            a.wedetect = need("--wedetect");
+        else if (arg == "--vision")
+            a.vision = need("--vision");
+        else if (arg == "--llm")
+            a.llm = need("--llm");
+        else if (arg == "--device")
+            a.device = need("--device");
+        else if (arg == "--image")
+            a.image = need("--image");
+        else if (arg == "--task")
+            a.task = need("--task");
+        else if (arg == "--text")
+            a.text = need("--text");
+        else if (arg == "--lang")
+            a.lang = need("--lang");
+        else if (arg == "--max-tokens")
+            a.max_tokens = std::stoi(need("--max-tokens"));
+        else if (arg == "--repeats")
+            a.repeats = std::stoi(need("--repeats"));
+        else if (arg == "--warmups")
+            a.warmups = std::stoi(need("--warmups"));
+        else if (arg == "--threads")
+            a.threads = std::stoi(need("--threads"));
+        else if (arg == "--upstream-dir")
+            a.upstream_dir = need("--upstream-dir");
         else if (arg == "--upstream-precision")
             a.upstream_precision = need("--upstream-precision");
-        else if (arg == "--json-out") a.json_out = need("--json-out");
+        else if (arg == "--json-out")
+            a.json_out = need("--json-out");
         else if (arg == "--box-tolerance")
             a.box_tolerance = std::stod(need("--box-tolerance"));
         else if (arg == "--expect-boxes-min")
@@ -300,9 +325,9 @@ int main(int argc, char** argv) {
             return 2;
         }
     }
-    if (a.image.empty() || (a.models_dir.empty() &&
-                            (a.wedetect.empty() || a.vision.empty() ||
-                             a.llm.empty()))) {
+    if (a.image.empty() ||
+        (a.models_dir.empty() &&
+         (a.wedetect.empty() || a.vision.empty() || a.llm.empty()))) {
         std::fprintf(stderr,
                      "usage: test_vlx_probe --models-dir DIR --image PATH "
                      "[options]\n");
@@ -319,18 +344,19 @@ int main(int argc, char** argv) {
         return a.models_dir + "/" + stem + "-" + prec + ".gguf";
     };
     const std::string wedetect_path =
-        a.wedetect.empty() ? derive("wedetect-base-uni", "f32") : a.wedetect;
+            a.wedetect.empty() ? derive("wedetect-base-uni", "f32")
+                               : a.wedetect;
     const std::string vision_path =
-        a.vision.empty() ? derive("vlx-vision-10b", "f16") : a.vision;
+            a.vision.empty() ? derive("vlx-vision-10b", "f16") : a.vision;
     const std::string llm_path =
-        a.llm.empty() ? derive("vlx-10b-llm", "f16") : a.llm;
+            a.llm.empty() ? derive("vlx-10b-llm", "f16") : a.llm;
     for (const std::string& p : {wedetect_path, vision_path, llm_path}) {
         if (!QFileInfo::exists(QString::fromStdString(p))) {
             std::fprintf(stderr, "[skip] missing asset %s\n", p.c_str());
             report.insert("unavailable", QString::fromStdString(p));
             if (!a.json_out.empty())
                 QFile(QString::fromStdString(a.json_out))
-                    .write(QJsonDocument(report).toJson());
+                        .write(QJsonDocument(report).toJson());
             return 77;
         }
     }
@@ -342,9 +368,13 @@ int main(int argc, char** argv) {
     // ---- load ----
     aicore_vlx_seek_options* opts = aicore_vlx_seek_options_new();
     aicore_vlx_seek_options_set_models_dir(
-        opts, a.models_dir.empty() ? QFileInfo(QString::fromStdString(llm_path))
-                                       .dir().path().toUtf8().constData()
-                                   : a.models_dir.c_str());
+            opts, a.models_dir.empty()
+                          ? QFileInfo(QString::fromStdString(llm_path))
+                                    .dir()
+                                    .path()
+                                    .toUtf8()
+                                    .constData()
+                          : a.models_dir.c_str());
     aicore_vlx_seek_options_set_device(opts, a.device.c_str());
     aicore_vlx_seek_options_set_threads(opts, a.threads);
     aicore_vlx_seek_options_set_max_new_tokens(opts, a.max_tokens);
@@ -367,13 +397,13 @@ int main(int argc, char** argv) {
             report.insert("unavailable", QString::fromStdString(msg));
             if (!a.json_out.empty())
                 QFile(QString::fromStdString(a.json_out))
-                    .write(QJsonDocument(report).toJson());
+                        .write(QJsonDocument(report).toJson());
             return 77;
         }
         report.insert("error", QString::fromStdString(msg));
         if (!a.json_out.empty())
             QFile(QString::fromStdString(a.json_out))
-                .write(QJsonDocument(report).toJson());
+                    .write(QJsonDocument(report).toJson());
         return 1;
     }
     report.insert("device", aicore_vlx_seek_context_device(ctx));
@@ -411,10 +441,13 @@ int main(int argc, char** argv) {
         aicore_vlx_seek_free(ctx);
         opts = aicore_vlx_seek_options_new();
         aicore_vlx_seek_options_set_models_dir(
-            opts, a.models_dir.empty()
-                      ? QFileInfo(QString::fromStdString(llm_path))
-                            .dir().path().toUtf8().constData()
-                      : a.models_dir.c_str());
+                opts, a.models_dir.empty()
+                              ? QFileInfo(QString::fromStdString(llm_path))
+                                        .dir()
+                                        .path()
+                                        .toUtf8()
+                                        .constData()
+                              : a.models_dir.c_str());
         aicore_vlx_seek_options_set_device(opts, a.device.c_str());
         aicore_vlx_seek_options_set_threads(opts, a.threads);
         aicore_vlx_seek_options_set_max_new_tokens(opts, a.max_tokens);
@@ -456,8 +489,8 @@ int main(int argc, char** argv) {
             // mode is closed (each side runs its own detector), matching the
             // upstream closed-mode criterion.
         }
-        const std::string ref = run_upstream(a, aicore_vlx_seek_context_device(ctx),
-                                             {}, &error);
+        const std::string ref = run_upstream(
+                a, aicore_vlx_seek_context_device(ctx), {}, &error);
         if (ref.empty()) {
             std::fprintf(stderr, "[fail] upstream reference: %s\n",
                          error.c_str());
@@ -470,19 +503,20 @@ int main(int argc, char** argv) {
         }
         upstream_text_match = first.answer == theirs.answer ? 1 : 0;
         if (upstream_text_match != 1) {
-            std::fprintf(stderr,
-                         "[fail] greedy text differs from upstream:\n ours: %s\n"
-                         " theirs: %s\n",
-                         first.answer.c_str(), theirs.answer.c_str());
+            std::fprintf(
+                    stderr,
+                    "[fail] greedy text differs from upstream:\n ours: %s\n"
+                    " theirs: %s\n",
+                    first.answer.c_str(), theirs.answer.c_str());
             ok = false;
         }
         if (first.boxes.size() == theirs.boxes.size()) {
             for (size_t i = 0; i < first.boxes.size(); ++i)
                 for (int k = 0; k < 4; ++k)
                     upstream_box_max_delta =
-                        std::max(upstream_box_max_delta,
-                                 double(std::fabs(first.boxes[i][k] -
-                                                  theirs.boxes[i][k])));
+                            std::max(upstream_box_max_delta,
+                                     double(std::fabs(first.boxes[i][k] -
+                                                      theirs.boxes[i][k])));
             if (upstream_box_max_delta > a.box_tolerance) {
                 std::fprintf(stderr,
                              "[fail] box delta %.4f px exceeds tolerance\n",

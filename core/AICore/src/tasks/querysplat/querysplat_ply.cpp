@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "querysplat_ply.hpp"
 
 #include <algorithm>
@@ -18,10 +25,21 @@ constexpr float kShDcScale = 0.28209479177387814f;
 // from glibc logf by 1 ulp on ~3% of inputs. Same fma sequence on the host
 // -> bit-identical opacity / scale columns (verified on 4M inputs).
 float cuda_logf(float a) {
-    auto f2i = [](float f) { int32_t i; std::memcpy(&i, &f, 4); return i; };
-    auto i2f = [](int32_t i) { float f; std::memcpy(&f, &i, 4); return f; };
+    auto f2i = [](float f) {
+        int32_t i;
+        std::memcpy(&i, &f, 4);
+        return i;
+    };
+    auto i2f = [](int32_t i) {
+        float f;
+        std::memcpy(&f, &i, 4);
+        return f;
+    };
     float i = 0.0f;
-    if (a < 0x1p-126f) { a *= 0x1p23f; i = -23.0f; }
+    if (a < 0x1p-126f) {
+        a *= 0x1p23f;
+        i = -23.0f;
+    }
     const int32_t e = (int32_t)(((uint32_t)f2i(a) - 0x3f2aaaabu) & 0xff800000u);
     const float m = i2f(f2i(a) - e);
     i = std::fma((float)e, 0x1p-23f, i);
@@ -43,13 +61,12 @@ float cuda_logf(float a) {
 }
 
 // torch logit (no eps): log(x / (1 - x)), IEEE f32 division.
-inline float logit(float x) {
-    return cuda_logf(x / (1.0f - x));
-}
+inline float logit(float x) { return cuda_logf(x / (1.0f - x)); }
 
 }  // namespace
 
-bool save_gaussian_ply(const GaussianOutput& g, const std::string& path,
+bool save_gaussian_ply(const GaussianOutput& g,
+                       const std::string& path,
                        float opacity_threshold) {
     const int color_dim = g.color_dim;
     const int sh_degree = color_dim == 3 ? 0 : 1;  // released configs are 0/1
@@ -69,9 +86,11 @@ bool save_gaussian_ply(const GaussianOutput& g, const std::string& path,
     // (9 f_rest props at degree 1) and a fixed stack buffer once overflowed.
     // plyfile writes no comment lines.
     std::string header =
-        "ply\nformat binary_little_endian 1.0\n"
-        "element vertex " + std::to_string(keep.size()) + "\n"
-        "property float x\nproperty float y\nproperty float z\n";
+            "ply\nformat binary_little_endian 1.0\n"
+            "element vertex " +
+            std::to_string(keep.size()) +
+            "\n"
+            "property float x\nproperty float y\nproperty float z\n";
     for (int i = 0; i < 3; i++)
         header += "property float f_dc_" + std::to_string(i) + "\n";
     for (int i = 0; i < n_rest; i++)
@@ -126,7 +145,8 @@ bool save_gaussians_bin(const GaussianOutput& g, const std::string& path) {
 // Official save_colored_pointcloud parity: vertex-only colored point cloud
 // (no GS attributes), opacity-filtered, RGB decoded via color_to_rgb.
 bool save_colored_pointcloud_ply(const GaussianOutput& g,
-                                 const std::string& path, float threshold) {
+                                 const std::string& path,
+                                 float threshold) {
     const int stride = 11 + g.color_dim;
     const float C0 = 0.28209479177387814f;
     std::vector<std::array<float, 3>> pts;
@@ -136,7 +156,9 @@ bool save_colored_pointcloud_ply(const GaussianOutput& g,
         if (src[3] < threshold) continue;
         float rgb[3];
         if (g.color_dim <= 3) {
-            rgb[0] = src[11]; rgb[1] = src[12]; rgb[2] = src[13];
+            rgb[0] = src[11];
+            rgb[1] = src[12];
+            rgb[2] = src[13];
         } else {
             for (int c = 0; c < 3; c++)
                 rgb[c] = std::clamp(src[11 + c] * C0 + 0.5f, 0.0f, 1.0f);
@@ -151,11 +173,13 @@ bool save_colored_pointcloud_ply(const GaussianOutput& g,
     FILE* f = fopen(path.c_str(), "wb");
     if (!f) return false;
     std::string header =
-        "ply\nformat binary_little_endian 1.0\n"
-        "element vertex " + std::to_string(pts.size()) + "\n"
-        "property float x\nproperty float y\nproperty float z\n"
-        "property uchar red\nproperty uchar green\nproperty uchar blue\n"
-        "end_header\n";
+            "ply\nformat binary_little_endian 1.0\n"
+            "element vertex " +
+            std::to_string(pts.size()) +
+            "\n"
+            "property float x\nproperty float y\nproperty float z\n"
+            "property uchar red\nproperty uchar green\nproperty uchar blue\n"
+            "end_header\n";
     fwrite(header.data(), 1, header.size(), f);
     for (size_t i = 0; i < pts.size(); i++) {
         fwrite(pts[i].data(), 4, 3, f);

@@ -47,11 +47,9 @@ TEST(VLXSeekCatalog, WedetectAccuracyRowIsF32) {
     for (const VLXSeekModelEntry& row : VLXSeekHelpers::catalogModels()) {
         if (row.role != kRoleWedetect) continue;
         if (row.quantization == QStringLiteral("f32")) {
-            EXPECT_TRUE(row.displayName.contains(
-                    QStringLiteral("required")));
+            EXPECT_TRUE(row.displayName.contains(QStringLiteral("required")));
         } else {
-            EXPECT_TRUE(row.displayName.contains(
-                    QStringLiteral("smoke only")));
+            EXPECT_TRUE(row.displayName.contains(QStringLiteral("smoke only")));
         }
     }
 }
@@ -79,7 +77,8 @@ TEST(VLXSeekCatalog, CatalogJsonIsComplete) {
     const QJsonArray rows = VLXSeekHelpers::catalogJson();
     ASSERT_EQ(rows.size(), 7);
     const QJsonDocument doc(rows);
-    EXPECT_TRUE(doc.toJson(QJsonDocument::Compact).contains("vlx-seek-1.5-10b"));
+    EXPECT_TRUE(
+            doc.toJson(QJsonDocument::Compact).contains("vlx-seek-1.5-10b"));
 }
 
 TEST(VLXSeekCatalog, CacheDirUnderDataRoot) {

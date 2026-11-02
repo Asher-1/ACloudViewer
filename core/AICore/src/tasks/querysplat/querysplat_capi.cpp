@@ -14,7 +14,6 @@
 // EncoderRuntime facade (trellis -> rmbg delegation pattern); no second
 // encoder implementation exists in this tree.
 #include "aicore/querysplat_capi.h"
-#include "aicore/map_anything_capi.h"
 
 #include <algorithm>
 #include <chrono>
@@ -26,15 +25,13 @@
 #include <string>
 #include <vector>
 
+#include "aicore/map_anything_capi.h"
 #include "aicore/runtime_capi.h"
-
 #include "common/capi_utils.hpp"
 #include "common/ggml_backend_utils.hpp"
 #include "common/model_cache.hpp"
-
 #include "map_anything_encoder_runtime.hpp"
 #include "map_anything_gguf_loader.hpp"
-
 #include "querysplat_camera_math.hpp"
 #include "querysplat_graph.hpp"
 #include "querysplat_lpips_graph.hpp"
@@ -92,7 +89,7 @@ struct aicore_querysplat_ctx {
     // out as borrowed views.
     bool has_result = false;
     int32_t r_views = 0, r_height = 0, r_width = 0;
-    std::vector<float> r_frames;        // (S,3,H,W) normalized rgb
+    std::vector<float> r_frames;  // (S,3,H,W) normalized rgb
     // (S,3,H,W) [0,1] sRGB planes — the pre-normalization frames. The TTO
     // loss targets and the depth-pointcloud colors consume THESE (upstream
     // cli.cpp passes `frames` [0,1] to the loss and `rgb_norm` only to
@@ -184,10 +181,9 @@ int run_common(aicore_querysplat_ctx* ctx,
 
     std::string err;
     if (!ctx->enc.ensure_geometry(n, h, w, &err)) {
-        ctx->last_error = err.empty()
-                                  ? "encoder runtime build failed (see the "
-                                    "[MapAnything] log lines)"
-                                  : err;
+        ctx->last_error = err.empty() ? "encoder runtime build failed (see the "
+                                        "[MapAnything] log lines)"
+                                      : err;
         return ctx->enc.backend().valid() ? -2 : kRunOutOfMemory;
     }
     const double t_inf0 = steady_ms();
@@ -205,9 +201,8 @@ int run_common(aicore_querysplat_ctx* ctx,
         ctx->last_error = "decoder graph build failed for the geometry";
         return -2;
     }
-    if (!ctx->dec->run(ctx->enc_out.cached_tokens.data(),
-                       ctx->r_frames.data(), ctx->r_plucker.data(),
-                       ctx->dec_out)) {
+    if (!ctx->dec->run(ctx->enc_out.cached_tokens.data(), ctx->r_frames.data(),
+                       ctx->r_plucker.data(), ctx->dec_out)) {
         ctx->last_error = "decoder run failed (see the [QuerySplat] lines)";
         return -2;
     }
@@ -252,8 +247,9 @@ int run_tto_loop(aicore_querysplat_ctx* ctx,
                              ctx->enc_out.cached_tokens.data(),
                              ctx->r_frames.data(), ctx->r_plucker.data(),
                              ctx->tto_lr)) {
-        ctx->last_error = "TTO session init failed (sh>0 checkpoints are "
-                          "unsupported by the official TTO path)";
+        ctx->last_error =
+                "TTO session init failed (sh>0 checkpoints are "
+                "unsupported by the official TTO path)";
         return -2;
     }
     qs::RenderConfig rcfg;
@@ -276,8 +272,8 @@ int run_tto_loop(aicore_querysplat_ctx* ctx,
             ctx->last_error = "TTO forward failed";
             return -2;
         }
-        qs::DecoderOutputs to = ctx->dec->tto_gaussians_from(deconv_raw,
-                                                             color_raw);
+        qs::DecoderOutputs to =
+                ctx->dec->tto_gaussians_from(deconv_raw, color_raw);
         qs::GaussianOutput g;
         g.N = to.N;
         g.color_dim = to.color_dim;
@@ -285,9 +281,9 @@ int run_tto_loop(aicore_querysplat_ctx* ctx,
         g.opacity.resize((size_t)g.N);
         for (int64_t i = 0; i < g.N; i++)
             g.opacity[(size_t)i] = g.data[(size_t)i * stride + 3];
-        qs::RenderedViews views = qs::render_gaussians(
-                g, ctx->r_cams.w2c.data(), ctx->r_cams.intrinsics.data(), S,
-                rcfg);
+        qs::RenderedViews views =
+                qs::render_gaussians(g, ctx->r_cams.w2c.data(),
+                                     ctx->r_cams.intrinsics.data(), S, rcfg);
         // LPIPS first (its grad feeds the combined loss backward)
         std::vector<float> d_lpips;
         double lp_val = 0.0;
@@ -302,18 +298,16 @@ int run_tto_loop(aicore_querysplat_ctx* ctx,
             lp_val = lv.empty() ? 0.0 : (double)lv[0];
         }
         qs::TtoLossOut lo;
-        if (!qs::tto_loss_value_and_grad(views.images.data(),
-                                         ctx->r_frames_01.data(), S, H, W,
-                                         (float)lw,
-                                         lw > 0 ? d_lpips.data() : nullptr,
-                                         &lo)) {
+        if (!qs::tto_loss_value_and_grad(
+                    views.images.data(), ctx->r_frames_01.data(), S, H, W,
+                    (float)lw, lw > 0 ? d_lpips.data() : nullptr, &lo)) {
             ctx->last_error = "TTO loss failed";
             return -2;
         }
         qs::GaussianGrads gg;
         if (!qs::render_backward(g, ctx->r_cams.w2c.data(),
-                                 ctx->r_cams.intrinsics.data(), S, rcfg,
-                                 views, lo.d_pred.data(), &gg)) {
+                                 ctx->r_cams.intrinsics.data(), S, rcfg, views,
+                                 lo.d_pred.data(), &gg)) {
             ctx->last_error = "render backward failed";
             return -2;
         }
@@ -323,8 +317,7 @@ int run_tto_loop(aicore_querysplat_ctx* ctx,
             float* r = &dg[(size_t)i * stride];
             for (int c = 0; c < 3; c++) r[c] = gg.pos[(size_t)i * 3 + c];
             r[3] = gg.opacity[(size_t)i];
-            for (int c = 0; c < 3; c++)
-                r[4 + c] = gg.scale[(size_t)i * 3 + c];
+            for (int c = 0; c < 3; c++) r[4 + c] = gg.scale[(size_t)i * 3 + c];
             for (int c = 0; c < 4; c++) r[7 + c] = gg.rot[(size_t)i * 4 + c];
             for (int c = 0; c < gg.color_dim; c++)
                 r[11 + c] = gg.color[(size_t)i * gg.color_dim + c];
@@ -348,9 +341,8 @@ int run_tto_loop(aicore_querysplat_ctx* ctx,
         row.ssim = lo.ssim;
         row.lpips = lp_val;
         ctx->tto_losses.push_back(row);
-        map_anything::log_info(
-                "TTO [%d/%d] L1=%.6f SSIM=%.6f LPIPS=%.6f", step, n_steps,
-                lo.l1, lo.ssim, lp_val);
+        map_anything::log_info("TTO [%d/%d] L1=%.6f SSIM=%.6f LPIPS=%.6f", step,
+                               n_steps, lo.l1, lo.ssim, lp_val);
     }
     // optimized gaussians (POST-step decode, the official capture())
     if (!ctx->dec->tto_gaussians(ctx->dec_out)) {
@@ -373,17 +365,22 @@ AICORE_CAPI void aicore_querysplat_options_free(
 
 AICORE_CAPI void aicore_querysplat_options_set_device(
         aicore_querysplat_options* opts, const char* device) {
-    if (opts) aicore::capi::set_device(((aicore_querysplat_options*)opts)->common, device);
+    if (opts)
+        aicore::capi::set_device(((aicore_querysplat_options*)opts)->common,
+                                 device);
 }
 
 AICORE_CAPI void aicore_querysplat_options_set_threads(
         aicore_querysplat_options* opts, int n_threads) {
-    if (opts) aicore::capi::set_threads(((aicore_querysplat_options*)opts)->common, n_threads);
+    if (opts)
+        aicore::capi::set_threads(((aicore_querysplat_options*)opts)->common,
+                                  n_threads);
 }
 
 AICORE_CAPI void aicore_querysplat_options_set_f32_accuracy(
         aicore_querysplat_options* opts, int enable) {
-    if (opts && enable >= 0) ((aicore_querysplat_options*)opts)->f32_accuracy = enable ? 1 : 0;
+    if (opts && enable >= 0)
+        ((aicore_querysplat_options*)opts)->f32_accuracy = enable ? 1 : 0;
 }
 
 AICORE_CAPI void aicore_querysplat_options_set_image_size(
@@ -403,7 +400,8 @@ AICORE_CAPI void aicore_querysplat_options_set_bg_color(
 
 AICORE_CAPI void aicore_querysplat_options_set_tto_steps(
         aicore_querysplat_options* opts, int steps) {
-    if (opts && steps >= 0) ((aicore_querysplat_options*)opts)->tto_steps = steps;
+    if (opts && steps >= 0)
+        ((aicore_querysplat_options*)opts)->tto_steps = steps;
 }
 
 AICORE_CAPI void aicore_querysplat_options_set_tto_lr(
@@ -435,7 +433,8 @@ AICORE_CAPI void aicore_querysplat_options_set_dump_dir(
 }
 
 AICORE_CAPI aicore_querysplat_ctx* aicore_querysplat_load_opts(
-        const char* encoder_gguf, const char* decoder_gguf,
+        const char* encoder_gguf,
+        const char* decoder_gguf,
         const aicore_querysplat_options* opts) {
     aicore_querysplat_options defaults;
     const aicore_querysplat_options& o =
@@ -501,10 +500,9 @@ AICORE_CAPI aicore_querysplat_ctx* aicore_querysplat_load_opts(
     {
         std::string err;
         if (!ctx->enc.load(ecfg, &err)) {
-            ctx->last_error = err.empty()
-                                      ? "encoder load failed (see the "
-                                        "[MapAnything] log lines)"
-                                      : err;
+            ctx->last_error = err.empty() ? "encoder load failed (see the "
+                                            "[MapAnything] log lines)"
+                                          : err;
             return ctx;  // not ready
         }
     }
@@ -513,8 +511,8 @@ AICORE_CAPI aicore_querysplat_ctx* aicore_querysplat_load_opts(
     qs::DecoderRuntimeOptions dopts;
     dopts.f32_accuracy = o.f32_accuracy != 0;
     dopts.dump_dir = o.dump_dir;
-    ctx->dec.reset(new qs::QuerySplatDecoder(dec_path,
-                                             ctx->enc.backend(), dopts));
+    ctx->dec.reset(
+            new qs::QuerySplatDecoder(dec_path, ctx->enc.backend(), dopts));
     if (!ctx->dec->valid()) {
         ctx->last_error = "failed to load the decoder GGUF (see the log)";
         return ctx;  // not ready
@@ -538,8 +536,8 @@ AICORE_CAPI const char* aicore_querysplat_last_error(
 
 AICORE_CAPI void aicore_querysplat_free_buffer(void* p) { free(p); }
 
-AICORE_CAPI int32_t aicore_querysplat_default_image_size(
-        const aicore_querysplat_ctx* ctx) {
+AICORE_CAPI int32_t
+aicore_querysplat_default_image_size(const aicore_querysplat_ctx* ctx) {
     return ctx && ctx->dec && ctx->dec->valid()
                    ? (int32_t)ctx->meta_cfg.img_size[0]
                    : 0;
@@ -557,12 +555,10 @@ AICORE_CAPI int aicore_querysplat_run_images(aicore_querysplat_ctx* ctx,
         return -1;
     }
     // resolved resolution: explicit options override, else decoder metadata
-    const int h = ctx->image_height > 0
-                          ? ctx->image_height
-                          : (int)ctx->meta_cfg.img_size[0];
-    const int w = ctx->image_width > 0
-                          ? ctx->image_width
-                          : (int)ctx->meta_cfg.img_size[1];
+    const int h = ctx->image_height > 0 ? ctx->image_height
+                                        : (int)ctx->meta_cfg.img_size[0];
+    const int w = ctx->image_width > 0 ? ctx->image_width
+                                       : (int)ctx->meta_cfg.img_size[1];
     const double t0 = steady_ms();
     std::vector<float> frames;
     frames.reserve((size_t)n_views * 3 * h * w);
@@ -595,7 +591,8 @@ AICORE_CAPI int aicore_querysplat_run_images(aicore_querysplat_ctx* ctx,
 
 AICORE_CAPI int aicore_querysplat_run_frames(aicore_querysplat_ctx* ctx,
                                              const float* frames_f32,
-                                             int32_t n_views, int32_t height,
+                                             int32_t n_views,
+                                             int32_t height,
                                              int32_t width) {
     if (!ctx || !frames_f32 || n_views < 1 || height <= 0 || width <= 0) {
         if (ctx) ctx->last_error = "invalid arguments (ctx/frames/n/h/w)";
@@ -615,18 +612,18 @@ AICORE_CAPI int aicore_querysplat_run_frames(aicore_querysplat_ctx* ctx,
 
 // ---- result accessors ----
 
-AICORE_CAPI int32_t aicore_querysplat_result_view_count(
-        const aicore_querysplat_ctx* ctx) {
+AICORE_CAPI int32_t
+aicore_querysplat_result_view_count(const aicore_querysplat_ctx* ctx) {
     return ctx && ctx->has_result ? ctx->r_views : 0;
 }
 
-AICORE_CAPI int32_t aicore_querysplat_result_height(
-        const aicore_querysplat_ctx* ctx) {
+AICORE_CAPI int32_t
+aicore_querysplat_result_height(const aicore_querysplat_ctx* ctx) {
     return ctx && ctx->has_result ? ctx->r_height : 0;
 }
 
-AICORE_CAPI int32_t aicore_querysplat_result_width(
-        const aicore_querysplat_ctx* ctx) {
+AICORE_CAPI int32_t
+aicore_querysplat_result_width(const aicore_querysplat_ctx* ctx) {
     return ctx && ctx->has_result ? ctx->r_width : 0;
 }
 
@@ -664,13 +661,13 @@ AICORE_CAPI const float* aicore_querysplat_result_depth_conf(
                    : nullptr;
 }
 
-AICORE_CAPI int64_t aicore_querysplat_result_gaussian_count(
-        const aicore_querysplat_ctx* ctx) {
+AICORE_CAPI int64_t
+aicore_querysplat_result_gaussian_count(const aicore_querysplat_ctx* ctx) {
     return ctx && ctx->has_result ? ctx->dec_out.N : 0;
 }
 
-AICORE_CAPI int32_t aicore_querysplat_result_gaussian_stride(
-        const aicore_querysplat_ctx* ctx) {
+AICORE_CAPI int32_t
+aicore_querysplat_result_gaussian_stride(const aicore_querysplat_ctx* ctx) {
     return ctx && ctx->has_result ? (11 + ctx->dec_out.color_dim) : 0;
 }
 
@@ -679,8 +676,8 @@ AICORE_CAPI const float* aicore_querysplat_result_gaussians(
     return ctx && ctx->has_result ? ctx->dec_out.gaussians.data() : nullptr;
 }
 
-AICORE_CAPI int32_t aicore_querysplat_result_sh_degree(
-        const aicore_querysplat_ctx* ctx) {
+AICORE_CAPI int32_t
+aicore_querysplat_result_sh_degree(const aicore_querysplat_ctx* ctx) {
     return ctx && ctx->dec && ctx->dec->valid()
                    ? (int32_t)ctx->meta_cfg.gaussian_sh_degree
                    : 0;
@@ -731,15 +728,15 @@ AICORE_CAPI int aicore_querysplat_render_views(aicore_querysplat_ctx* ctx,
         ctx->last_error = "cancelled";
         return -2;
     }
-    ctx->render_out = qs::render_gaussians(g, w2c, intrinsics, (int)n_views,
-                                           rcfg);
-    const size_t plane = (size_t)ctx->render_out.width *
-                         ctx->render_out.height;
+    ctx->render_out =
+            qs::render_gaussians(g, w2c, intrinsics, (int)n_views, rcfg);
+    const size_t plane = (size_t)ctx->render_out.width * ctx->render_out.height;
     ctx->render_rgb8.assign(ctx->render_out.images.size(), 0);
     for (int32_t v = 0; v < n_views; v++) {
-        qs::render_to_rgb8(ctx->render_out.images.data() + (size_t)v * 3 * plane,
-                           ctx->render_out.width, ctx->render_out.height,
-                           ctx->render_rgb8.data() + (size_t)v * plane * 3);
+        qs::render_to_rgb8(
+                ctx->render_out.images.data() + (size_t)v * 3 * plane,
+                ctx->render_out.width, ctx->render_out.height,
+                ctx->render_rgb8.data() + (size_t)v * plane * 3);
     }
     *out_rgb = ctx->render_out.images.data();
     *out_rgb8 = ctx->render_rgb8.data();
@@ -749,12 +746,13 @@ AICORE_CAPI int aicore_querysplat_render_views(aicore_querysplat_ctx* ctx,
 
 // ---- TTO ----
 
-AICORE_CAPI int aicore_querysplat_run_tto(aicore_querysplat_ctx* ctx,
-                                          int32_t n_steps,
-                                          aicore_querysplat_tto_step** out_losses,
-                                          int32_t* out_n_losses,
-                                          const float** out_gaussians,
-                                          int64_t* out_count) {
+AICORE_CAPI int aicore_querysplat_run_tto(
+        aicore_querysplat_ctx* ctx,
+        int32_t n_steps,
+        aicore_querysplat_tto_step** out_losses,
+        int32_t* out_n_losses,
+        const float** out_gaussians,
+        int64_t* out_count) {
     if (!ctx || n_steps < 1 || !out_losses || !out_n_losses || !out_gaussians ||
         !out_count) {
         if (ctx) ctx->last_error = "invalid arguments (run_tto)";
@@ -774,8 +772,8 @@ AICORE_CAPI int aicore_querysplat_run_tto(aicore_querysplat_ctx* ctx,
     // shared cache root exactly like the decoder/encoder weights.
     std::unique_ptr<qs::LpipsVgg> lpips;
     if (ctx->tto_lpips_weight > 0) {
-        std::string lp = aicore::querysplat_model_cache_dir() +
-                         "/lpips-vgg-f32.gguf";
+        std::string lp =
+                aicore::querysplat_model_cache_dir() + "/lpips-vgg-f32.gguf";
         lpips.reset(new qs::LpipsVgg(lp, ctx->enc.backend()));
         if (!lpips->valid()) {
             ctx->last_error = "missing LPIPS metric weights " + lp +
@@ -797,7 +795,8 @@ AICORE_CAPI int aicore_querysplat_run_tto(aicore_querysplat_ctx* ctx,
 // ---- exports ----
 
 AICORE_CAPI int aicore_querysplat_export_gaussians_ply(
-        const aicore_querysplat_ctx* ctx, const char* path,
+        const aicore_querysplat_ctx* ctx,
+        const char* path,
         float opacity_threshold) {
     if (!ctx || !path || !*path) return -1;
     if (!ctx->has_result) return -2;
@@ -816,22 +815,19 @@ AICORE_CAPI char* aicore_querysplat_export_cameras_json(
         const aicore_querysplat_ctx* ctx) {
     if (!ctx || !ctx->has_result) return nullptr;
     std::ostringstream json;
-    json << "{\"n_views\":" << ctx->r_views
-         << ",\"height\":" << ctx->r_height << ",\"width\":" << ctx->r_width
-         << ",\"pose_stride\":9,\"views\":[";
+    json << "{\"n_views\":" << ctx->r_views << ",\"height\":" << ctx->r_height
+         << ",\"width\":" << ctx->r_width << ",\"pose_stride\":9,\"views\":[";
     for (int s = 0; s < ctx->r_views; s++) {
         if (s) json << ",";
         json << "{\"view\":" << s << ",\"pose_enc\":[";
         for (int k = 0; k < 9; k++)
-            json << (k ? "," : "")
-                 << ctx->r_pose_store[(size_t)s * 9 + k];
+            json << (k ? "," : "") << ctx->r_pose_store[(size_t)s * 9 + k];
         json << "],\"c2w\":[";
         for (int k = 0; k < 16; k++)
             json << (k ? "," : "") << ctx->r_cams.c2w[(size_t)s * 16 + k];
         json << "],\"intrinsics\":[";
         for (int k = 0; k < 4; k++)
-            json << (k ? "," : "")
-                 << ctx->r_cams.intrinsics[(size_t)s * 4 + k];
+            json << (k ? "," : "") << ctx->r_cams.intrinsics[(size_t)s * 4 + k];
         json << "]}";
     }
     json << "]}";
@@ -839,8 +835,11 @@ AICORE_CAPI char* aicore_querysplat_export_cameras_json(
 }
 
 AICORE_CAPI int aicore_querysplat_depth_pointcloud(
-        const aicore_querysplat_ctx* ctx, int32_t target_points,
-        const float** out_xyz, unsigned char** out_rgb, int32_t* out_n) {
+        const aicore_querysplat_ctx* ctx,
+        int32_t target_points,
+        const float** out_xyz,
+        unsigned char** out_rgb,
+        int32_t* out_n) {
     if (!ctx || target_points <= 0 || !out_xyz || !out_rgb || !out_n) return -1;
     if (!ctx->has_result || ctx->enc_out.depth.empty()) return -2;
     // save_vggt_depth_pointcloud semantics: confidence-proportional sampling
@@ -851,8 +850,7 @@ AICORE_CAPI int aicore_querysplat_depth_pointcloud(
     std::vector<double> weight(plane * S);
     double wsum = 0.0;
     for (size_t i = 0; i < weight.size(); i++) {
-        weight[i] = std::max(0.0,
-                             (double)ctx->enc_out.depth_conf[i] - 1.0);
+        weight[i] = std::max(0.0, (double)ctx->enc_out.depth_conf[i] - 1.0);
         wsum += weight[i];
     }
     if (wsum <= 0.0) {
@@ -869,7 +867,7 @@ AICORE_CAPI int aicore_querysplat_depth_pointcloud(
     double acc = 0.0;
     const double step_w = wsum / (double)target_points;
     size_t next = 0;
-    for (double t = step_w * 0.5; t < wsum && next < weight.size(); ) {
+    for (double t = step_w * 0.5; t < wsum && next < weight.size();) {
         while (next < weight.size() && acc + weight[next] < t) {
             acc += weight[next];
             next++;
@@ -889,8 +887,7 @@ AICORE_CAPI int aicore_querysplat_depth_pointcloud(
         // c2w (row-major 4x4) * cam
         const float* m = &ctx->r_cams.c2w[(size_t)s * 16];
         for (int r = 0; r < 3; r++)
-            nc->pc_xyz.push_back(m[r * 4 + 0] * cam[0] +
-                                 m[r * 4 + 1] * cam[1] +
+            nc->pc_xyz.push_back(m[r * 4 + 0] * cam[0] + m[r * 4 + 1] * cam[1] +
                                  m[r * 4 + 2] * cam[2] + m[r * 4 + 3]);
         // [0,1] input rgb -> u8 (the observed sRGB pixels, NOT the
         // ImageNet-normalized planes)
@@ -978,9 +975,8 @@ AICORE_CAPI char* aicore_querysplat_info_json(
     json << ",\"threads\":" << ctx->threads;
     json << ",\"f32_accuracy\":" << (ctx->f32_accuracy ? "true" : "false");
     json << ",\"image_size\":["
-         << (ctx->image_height > 0
-                     ? ctx->image_height
-                     : (int)ctx->meta_cfg.img_size[0])
+         << (ctx->image_height > 0 ? ctx->image_height
+                                   : (int)ctx->meta_cfg.img_size[0])
          << ","
          << (ctx->image_width > 0 ? ctx->image_width
                                   : (int)ctx->meta_cfg.img_size[1])
@@ -993,8 +989,8 @@ AICORE_CAPI char* aicore_querysplat_info_json(
     json << ",\"tto\":{\"lr\":" << ctx->tto_lr
          << ",\"lpips_weight\":" << ctx->tto_lpips_weight << "}";
     json << ",\"opacity_threshold\":" << ctx->opacity_threshold;
-    json << ",\"ready\":" << (aicore_querysplat_is_ready(ctx) ? "true"
-                                                              : "false");
+    json << ",\"ready\":"
+         << (aicore_querysplat_is_ready(ctx) ? "true" : "false");
     json << ",\"result\":";
     if (ctx->has_result) {
         json << "{\"views\":" << ctx->r_views;
@@ -1015,7 +1011,6 @@ AICORE_CAPI char* aicore_querysplat_info_json(
 
 #include "aicore/asset_digests.h"
 
-
 namespace {
 
 // Download base mirrors the map_anything catalog convention (HF resolve
@@ -1034,24 +1029,23 @@ struct QuerySplatModelRow {
 };
 
 constexpr QuerySplatModelRow kQuerySplatModels[] = {
-        {"querysplat-paper-q8_0.gguf", "QuerySplat paper decoder",
-         "decoder", "Q8_0 - smallest, same quality vs GT",
+        {"querysplat-paper-q8_0.gguf", "QuerySplat paper decoder", "decoder",
+         "Q8_0 - smallest, same quality vs GT",
          "QuerySplat Apache-2.0; VGGT-Omega lineage: verify the upstream "
          "VGGT license before commercial use",
          "paper", 1307495456},
-        {"querysplat-paper-f16.gguf", "QuerySplat paper decoder",
-         "decoder", "F16 - half size, weights staged as F32 at load",
+        {"querysplat-paper-f16.gguf", "QuerySplat paper decoder", "decoder",
+         "F16 - half size, weights staged as F32 at load",
          "QuerySplat Apache-2.0; VGGT-Omega lineage: verify the upstream "
          "VGGT license before commercial use",
          "paper", 2302209056},
-        {"querysplat-paper-f32.gguf", "QuerySplat paper decoder",
-         "decoder", "F32 - parity reference",
+        {"querysplat-paper-f32.gguf", "QuerySplat paper decoder", "decoder",
+         "F32 - parity reference",
          "QuerySplat Apache-2.0; VGGT-Omega lineage: verify the upstream "
          "VGGT license before commercial use",
          "paper", 4467002400},
-        {"lpips-vgg-f32.gguf", "LPIPS-VGG metric (TTO)",
-         "lpips", "F32 - metric graph",
-         "LPIPS VGG: see the upstream license notes",
+        {"lpips-vgg-f32.gguf", "LPIPS-VGG metric (TTO)", "lpips",
+         "F32 - metric graph", "LPIPS VGG: see the upstream license notes",
          "lpips", 58866656},
 };
 

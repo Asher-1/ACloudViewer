@@ -32,11 +32,10 @@ QImage annotate(const QImage& input, const VLXSeekRunResult& result) {
     for (const VLXSeekRunResult::Box& box : result.boxes) {
         const QRectF r = box.rect;
         painter.drawRect(r);
-        const QString text = box.label.isEmpty()
-                                 ? QStringLiteral("?")
-                                 : box.label;
-        painter.drawText(QPointF(r.left() + 2, r.top() + 2 +
-                                               QFontMetricsF(font).height()),
+        const QString text =
+                box.label.isEmpty() ? QStringLiteral("?") : box.label;
+        painter.drawText(QPointF(r.left() + 2,
+                                 r.top() + 2 + QFontMetricsF(font).height()),
                          text);
     }
     painter.end();
@@ -80,8 +79,8 @@ bool VLXSeekWorker::runImage(aicore_vlx_seek_ctx* ctx,
                              QString* error) {
     const QImage input(settings.inputPath);
     if (input.isNull()) {
-        *error = QObject::tr("Failed to load image: %1")
-                     .arg(settings.inputPath);
+        *error =
+                QObject::tr("Failed to load image: %1").arg(settings.inputPath);
         return false;
     }
     // The task natively consumes RGB8/RGBA8/BGRA8/BGR8/GRAY8; normalize the
@@ -101,7 +100,7 @@ bool VLXSeekWorker::runImage(aicore_vlx_seek_ctx* ctx,
     aicore_image_view view{};
     if (!toImage(normalized, &view)) {
         *error = QObject::tr("Unsupported image format: %1")
-                     .arg(normalized.format());
+                         .arg(normalized.format());
         return false;
     }
 
@@ -115,8 +114,8 @@ bool VLXSeekWorker::runImage(aicore_vlx_seek_ctx* ctx,
     if (rc != 0) {
         const char* err = aicore_vlx_seek_last_error(ctx);
         *error = QObject::tr("Inference failed: %1")
-                     .arg(err ? QString::fromUtf8(err)
-                              : QObject::tr("unknown error"));
+                         .arg(err ? QString::fromUtf8(err)
+                                  : QObject::tr("unknown error"));
         return false;
     }
 
@@ -177,8 +176,8 @@ void VLXSeekWorker::releaseContextOnMainThread() {
 bool VLXSeekWorker::runInference() {
     // Context created and destroyed on the worker thread (AICore contract).
     aicore_vlx_seek_options* opts = aicore_vlx_seek_options_new();
-    aicore_vlx_seek_options_set_device(
-            opts, m_settings.device.toUtf8().constData());
+    aicore_vlx_seek_options_set_device(opts,
+                                       m_settings.device.toUtf8().constData());
     aicore_vlx_seek_options_set_threads(opts, m_settings.threads);
     aicore_vlx_seek_options_set_max_new_tokens(opts, m_settings.maxNewTokens);
     // The precision string only feeds introspection/metadata (the explicit
@@ -206,8 +205,7 @@ bool VLXSeekWorker::runInference() {
             ctx && !ok ? aicore_vlx_seek_last_error(ctx) : nullptr;
     if (ctx) m_pendingCtx = ctx;  // freed on the main thread after the signal
     if (!ok) {
-        if (loadErr && error.isEmpty())
-            error = QString::fromUtf8(loadErr);
+        if (loadErr && error.isEmpty()) error = QString::fromUtf8(loadErr);
         emit taskFinished(false);
         emit logMessage(error);
         return false;

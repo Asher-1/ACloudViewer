@@ -67,8 +67,8 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "LocalChatEngine.h"
 #include "AnnotationCanvas.h"
+#include "LocalChatEngine.h"
 
 namespace {
 bool reviewStatusRoundTrip(QMainWindow* window) {
@@ -2993,16 +2993,16 @@ int main(int argc, char** argv) {
                  QStringLiteral("fixture description to replace")}};
         QFile regionFile(regionSidecar);
         if (!regionFile.open(QIODevice::WriteOnly) ||
-            regionFile.write(QJsonDocument(
-                                     QJsonObject{{QStringLiteral("version"),
-                                                  QStringLiteral("4.0.6")},
-                                                 {QStringLiteral("imagePath"),
-                                                  QStringLiteral("region.png")},
-                                                 {QStringLiteral("imageData"),
-                                                  QJsonValue::Null},
-                                                 {QStringLiteral("shapes"),
-                                                  QJsonArray{regionShape}}})
-                                     .toJson()) < 0)
+            regionFile.write(
+                    QJsonDocument(QJsonObject{{QStringLiteral("version"),
+                                               QStringLiteral("4.0.6")},
+                                              {QStringLiteral("imagePath"),
+                                               QStringLiteral("region.png")},
+                                              {QStringLiteral("imageData"),
+                                               QJsonValue::Null},
+                                              {QStringLiteral("shapes"),
+                                               QJsonArray{regionShape}}})
+                            .toJson()) < 0)
             return 1;
         regionFile.close();
         auto* objects = window->findChild<QListWidget*>(
@@ -3011,8 +3011,7 @@ int main(int argc, char** argv) {
                 window->findChild<QLabel*>(QStringLiteral("AnnotationStatus"));
         auto* descriptionEditor = window->findChild<QPlainTextEdit*>(
                 QStringLiteral("AnnotationDescription"));
-        if (!objects || !status || !aiDescribe || !descriptionEditor)
-            return 1;
+        if (!objects || !status || !aiDescribe || !descriptionEditor) return 1;
         if (!QMetaObject::invokeMethod(window, "openImage",
                                        Qt::DirectConnection,
                                        Q_ARG(QString, regionImage)))

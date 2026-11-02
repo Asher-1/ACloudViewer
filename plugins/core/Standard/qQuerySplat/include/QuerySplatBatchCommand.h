@@ -87,11 +87,11 @@ struct CommandQuerySplatPredict : public ccCommandLineInterface::Command {
     bool process(ccCommandLineInterface& cmd) override {
         using namespace ecvAICoreBatch;
         Session s;
-        const Prep prep = prepare(cmd, COMMAND_QUERY_SPLAT,
-                                  QStringLiteral("querysplat"),
-                                  QStringLiteral("QuerySplat "
-                                                 "image-to-3DGS prediction"),
-                                  {&options()}, &s);
+        const Prep prep =
+                prepare(cmd, COMMAND_QUERY_SPLAT, QStringLiteral("querysplat"),
+                        QStringLiteral("QuerySplat "
+                                       "image-to-3DGS prediction"),
+                        {&options()}, &s);
         if (prep != Prep::Run) return prep == Prep::Done;
 
         QStringList images = s.args.list("IMAGE");
@@ -108,12 +108,11 @@ struct CommandQuerySplatPredict : public ccCommandLineInterface::Command {
         }
 
         const QString decoderCache = QuerySplatHelpers::decoderCacheDir();
-        const QString decoderPath = resolveModelPath(
-                s.args.str("MODEL"), decoderCache,
-                QStringLiteral("querysplat-paper-q8_0.gguf"));
-        QString encoderPath =
-                resolveModelPath(s.args.str("ENCODER"),
-                                 QuerySplatHelpers::decoderCacheDir());
+        const QString decoderPath =
+                resolveModelPath(s.args.str("MODEL"), decoderCache,
+                                 QStringLiteral("querysplat-paper-q8_0.gguf"));
+        QString encoderPath = resolveModelPath(
+                s.args.str("ENCODER"), QuerySplatHelpers::decoderCacheDir());
         if (encoderPath.isEmpty()) {
             encoderPath = QuerySplatHelpers::encoderDefaultPath();
         }
@@ -125,13 +124,12 @@ struct CommandQuerySplatPredict : public ccCommandLineInterface::Command {
         {
             QString url;
             QuerySplatModelEntry entry;
-            if (!QuerySplatHelpers::findModelByFilename(decoderName,
-                                                        &entry)
+            if (!QuerySplatHelpers::findModelByFilename(decoderName, &entry)
                          .isEmpty()) {
                 url = entry.downloadUrl;
             }
-            if (!ensureModel(cmd, decoderPath, {url, QString()},
-                             s.download, &error)) {
+            if (!ensureModel(cmd, decoderPath, {url, QString()}, s.download,
+                             &error)) {
                 return cmd.error(error);
             }
         }
@@ -145,8 +143,8 @@ struct CommandQuerySplatPredict : public ccCommandLineInterface::Command {
                     break;
                 }
             }
-            if (!ensureModel(cmd, encoderPath, {url, QString()},
-                             s.download, &error)) {
+            if (!ensureModel(cmd, encoderPath, {url, QString()}, s.download,
+                             &error)) {
                 return cmd.error(error);
             }
         }
@@ -157,7 +155,7 @@ struct CommandQuerySplatPredict : public ccCommandLineInterface::Command {
             QuerySplatModelEntry lpEntry;
             QString url;
             if (!QuerySplatHelpers::findModelByFilename(
-                        QStringLiteral("lpips-vgg-f32.gguf"), &lpEntry)
+                         QStringLiteral("lpips-vgg-f32.gguf"), &lpEntry)
                          .isEmpty()) {
                 url = lpEntry.downloadUrl;
             }
@@ -170,16 +168,16 @@ struct CommandQuerySplatPredict : public ccCommandLineInterface::Command {
         // options
         aicore_querysplat_options* opts = aicore_querysplat_options_new();
         if (!opts) return cmd.error(QStringLiteral("Out of memory"));
-        aicore_querysplat_options_set_device(
-                opts, s.device.toUtf8().constData());
+        aicore_querysplat_options_set_device(opts,
+                                             s.device.toUtf8().constData());
         aicore_querysplat_options_set_threads(opts, s.threads);
         aicore_querysplat_options_set_f32_accuracy(opts, 1);
         const int imageSize = s.args.toInt("IMAGE_SIZE", 0);
         if (imageSize > 0)
             aicore_querysplat_options_set_image_size(opts, imageSize,
                                                      imageSize);
-        aicore_querysplat_options_set_tto_lr(
-                opts, s.args.toFloat("TTO_LR", 5e-3f));
+        aicore_querysplat_options_set_tto_lr(opts,
+                                             s.args.toFloat("TTO_LR", 5e-3f));
         aicore_querysplat_options_set_tto_lpips_weight(
                 opts, s.args.toFloat("TTO_LPIPS", 0.05f));
         aicore_querysplat_options_set_opacity_threshold(
@@ -194,13 +192,12 @@ struct CommandQuerySplatPredict : public ccCommandLineInterface::Command {
                 decoderPath.toUtf8().constData(), opts);
         aicore_querysplat_options_free(opts);
         if (!ctx || !aicore_querysplat_is_ready(ctx)) {
-            const char* err = ctx ? aicore_querysplat_last_error(ctx)
-                                  : nullptr;
-            const QString message = err ? QString::fromUtf8(err)
-                                        : QStringLiteral("unknown");
+            const char* err = ctx ? aicore_querysplat_last_error(ctx) : nullptr;
+            const QString message =
+                    err ? QString::fromUtf8(err) : QStringLiteral("unknown");
             if (ctx) aicore_querysplat_free(ctx);
-            return cmd.error(QStringLiteral("Model load failed: %1")
-                                     .arg(message));
+            return cmd.error(
+                    QStringLiteral("Model load failed: %1").arg(message));
         }
 
         QJsonObject root;
@@ -241,8 +238,7 @@ struct CommandQuerySplatPredict : public ccCommandLineInterface::Command {
                 QJsonObject row;
                 row["input"] = image;
                 row["status"] = QStringLiteral("inference_failed");
-                row["error"] = err ? QString::fromUtf8(err)
-                                   : QString();
+                row["error"] = err ? QString::fromUtf8(err) : QString();
                 rows.append(row);
                 if (!s.continueOnError) break;
                 continue;
@@ -250,8 +246,8 @@ struct CommandQuerySplatPredict : public ccCommandLineInterface::Command {
 
             static QSet<QString> usedStems;  // per-invocation, the items
                                              // list is unique anyway
-            const QString stem = uniqueStem(
-                    QFileInfo(image).completeBaseName(), &usedStems);
+            const QString stem =
+                    uniqueStem(QFileInfo(image).completeBaseName(), &usedStems);
             const int S = aicore_querysplat_result_view_count(ctx);
             const int W = aicore_querysplat_result_width(ctx);
             const int H = aicore_querysplat_result_height(ctx);
@@ -273,8 +269,7 @@ struct CommandQuerySplatPredict : public ccCommandLineInterface::Command {
                 row["gaussians_ply"] =
                         aicore_querysplat_export_gaussians_ply(
                                 ctx, ply.toUtf8().constData(),
-                                s.args.toFloat("OPACITY_THRESHOLD",
-                                               0.05f)) == 0
+                                s.args.toFloat("OPACITY_THRESHOLD", 0.05f)) == 0
                                 ? ply
                                 : QString();
             }
@@ -283,13 +278,14 @@ struct CommandQuerySplatPredict : public ccCommandLineInterface::Command {
                 const float* K = aicore_querysplat_result_intrinsics(ctx);
                 const float* rgbF = nullptr;
                 unsigned char* rgb8 = nullptr;
-                if (w2c && K && aicore_querysplat_render_views(
-                                        ctx, w2c, K, S, &rgbF, &rgb8) == 0) {
+                if (w2c && K &&
+                    aicore_querysplat_render_views(ctx, w2c, K, S, &rgbF,
+                                                   &rgb8) == 0) {
                     const size_t plane = size_t(W) * H;
                     QJsonArray renderFiles;
                     for (int v = 0; v < S; ++v) {
-                        QImage out(rgb8 + size_t(v) * plane * 3, W, H,
-                                   W * 3, QImage::Format_RGB888);
+                        QImage out(rgb8 + size_t(v) * plane * 3, W, H, W * 3,
+                                   QImage::Format_RGB888);
                         const QString path = QDir(s.outDir).filePath(
                                 QStringLiteral("%1_render%2.png")
                                         .arg(stem)
@@ -305,8 +301,7 @@ struct CommandQuerySplatPredict : public ccCommandLineInterface::Command {
                     const QString path = QDir(s.outDir).filePath(
                             stem + QStringLiteral("_cameras.json"));
                     QFile f(path);
-                    if (f.open(QIODevice::WriteOnly |
-                               QIODevice::Truncate)) {
+                    if (f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
                         f.write(j);
                         row["cameras_json"] = path;
                     }
@@ -317,17 +312,16 @@ struct CommandQuerySplatPredict : public ccCommandLineInterface::Command {
                 const float* xyz = nullptr;
                 unsigned char* col = nullptr;
                 int32_t n = 0;
-                if (aicore_querysplat_depth_pointcloud(ctx, 200000, &xyz,
-                                                       &col, &n) == 0 &&
+                if (aicore_querysplat_depth_pointcloud(ctx, 200000, &xyz, &col,
+                                                       &n) == 0 &&
                     n > 0) {
                     const QString path = QDir(s.outDir).filePath(
                             stem + QStringLiteral("_depth_cloud.ply"));
                     QFile f(path);
-                    if (f.open(QIODevice::WriteOnly |
-                               QIODevice::Truncate)) {
+                    if (f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
                         QTextStream ts(&f);
-                        ts << "ply\nformat ascii 1.0\nelement vertex "
-                           << n << "\nproperty float x\nproperty float y\n"
+                        ts << "ply\nformat ascii 1.0\nelement vertex " << n
+                           << "\nproperty float x\nproperty float y\n"
                               "property float z\nproperty uchar red\n"
                               "property uchar green\nproperty uchar blue\n"
                               "end_header\n";
@@ -354,8 +348,8 @@ struct CommandQuerySplatPredict : public ccCommandLineInterface::Command {
         root["items"] = rows;
         root["failed"] = failed;
         saveJson(root, s.resultJson, nullptr);
-        cmd.print(QStringLiteral("[QUERY_SPLAT] manifest: %1")
-                          .arg(s.resultJson));
+        cmd.print(
+                QStringLiteral("[QUERY_SPLAT] manifest: %1").arg(s.resultJson));
 
         aicore_querysplat_free(ctx);
         return failed == 0;

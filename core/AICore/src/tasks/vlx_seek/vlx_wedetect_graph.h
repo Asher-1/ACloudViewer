@@ -15,11 +15,11 @@
 // simplefpn_graph: every activation is token-major ggml ne=(C, W, H).
 #pragma once
 
-#include "vlx_image_prep.h"
-#include "vlx_types.h"
-
 #include <string>
 #include <vector>
+
+#include "vlx_image_prep.h"
+#include "vlx_types.h"
 
 struct ggml_backend;
 
@@ -28,12 +28,12 @@ namespace vlx {
 class GgufFile;
 
 struct WeDetectResult {
-    std::vector<Box> boxes;       // original-image xyxy, score-descending
+    std::vector<Box> boxes;  // original-image xyxy, score-descending
     std::vector<float> scores;
     // optional taps (dump mode): token-major (H*W, C) f32
-    std::vector<std::vector<float>> taps;   // c1..c4, neck0..2
-    std::vector<float> cls_logits;          // (8400, 256) pre-sigmoid
-    std::vector<float> bbox_preds;          // (8400, 4) distance * stride
+    std::vector<std::vector<float>> taps;  // c1..c4, neck0..2
+    std::vector<float> cls_logits;         // (8400, 256) pre-sigmoid
+    std::vector<float> bbox_preds;         // (8400, 4) distance * stride
 };
 
 class WeDetectGraph {
@@ -42,7 +42,9 @@ public:
     ~WeDetectGraph();
 
     // img: decoded RGB (PIL Image.open(...).convert("RGB") equivalent).
-    bool run(const ImageU8& img, WeDetectResult* out, bool want_taps = false,
+    bool run(const ImageU8& img,
+             WeDetectResult* out,
+             bool want_taps = false,
              std::string* err = nullptr);
 
     double last_graph_ms() const;

@@ -40,8 +40,7 @@ TEST(VLXSeekTestData, MetadataAndPinnedDigest) {
     const ecvTestDataRepository::DatasetInfo info =
             ecvTestDataRepository::getDatasetInfo(kDataset);
     EXPECT_EQ(info.zipFileName, QStringLiteral("vlx_seek_test_images.zip"));
-    EXPECT_EQ(info.extractDirName,
-              QStringLiteral("vlx_seek_test_images"));
+    EXPECT_EQ(info.extractDirName, QStringLiteral("vlx_seek_test_images"));
     EXPECT_TRUE(info.downloadUrl.startsWith(QStringLiteral("https://")));
     // The anchor must resolve to the pinned digest (asset_digests.h), i.e.
     // 64 hex characters — an empty digest would mean an unpinned asset.
@@ -50,9 +49,8 @@ TEST(VLXSeekTestData, MetadataAndPinnedDigest) {
 
 TEST(VLXSeekTestData, ColdDownloadExtractAndDemoFill) {
     if (qEnvironmentVariableIsEmpty("https_proxy") &&
-            qEnvironmentVariableIsEmpty("HTTPS_PROXY")) {
-        GTEST_SKIP()
-                << "cold download needs the site proxy; set https_proxy";
+        qEnvironmentVariableIsEmpty("HTTPS_PROXY")) {
+        GTEST_SKIP() << "cold download needs the site proxy; set https_proxy";
     }
     ecvTestDataRepository& repo = ecvTestDataRepository::instance();
     makeCold();

@@ -26,8 +26,8 @@ struct VLXSeekRunResult {
     QString imagePath;
     QString answer;
     struct Box {
-        QRectF rect;      // original-image pixels
-        QString label;    // model-generated (or <objN> fallback)
+        QRectF rect;    // original-image pixels
+        QString label;  // model-generated (or <objN> fallback)
     };
     QVector<Box> boxes;
     int32_t promptTokens = 0;

@@ -1,14 +1,10 @@
 // ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-// Minimal GGUF v3 reader for the VLX-Seek vision sub-chain.
-//
-// Ported from the upstream Asher-1/VLX-Seek-GGML cpp_ggml/src/gguf_loader.hpp.
-// Scope: read header KV pairs and tensor metadata; expose tensors either as
-// owned F32 (dequantized from F16/Q8_0 on load, small params only) or as
-// direct byte spans for large quantized weights consumed by ggml MUL_MAT.
+
 #pragma once
 
 #include <cstddef>
@@ -21,13 +17,34 @@
 namespace vlx {
 
 enum class GgufType : uint32_t {
-    U8 = 0, I8, U16, I16, U32, I32, F32, Bool, Str, Arr,
-    U64 = 10, I64 = 11, F64 = 12,   // gguf.h: UINT64=10, INT64=11, FLOAT64=12
+    U8 = 0,
+    I8,
+    U16,
+    I16,
+    U32,
+    I32,
+    F32,
+    Bool,
+    Str,
+    Arr,
+    U64 = 10,
+    I64 = 11,
+    F64 = 12,  // gguf.h: UINT64=10, INT64=11, FLOAT64=12
 };
 
 enum class GgmlDType : uint32_t {
-    F32 = 0, F16 = 1, Q4_0 = 2, Q4_1 = 3, Q5_0 = 6, Q5_1 = 7,
-    Q8_0 = 8, Q8_1 = 9, I8 = 16, I16 = 18, I32 = 20, I64 = 28,
+    F32 = 0,
+    F16 = 1,
+    Q4_0 = 2,
+    Q4_1 = 3,
+    Q5_0 = 6,
+    Q5_1 = 7,
+    Q8_0 = 8,
+    Q8_1 = 9,
+    I8 = 16,
+    I16 = 18,
+    I32 = 20,
+    I64 = 28,
 };
 
 struct TensorInfo {
@@ -35,9 +52,9 @@ struct TensorInfo {
     uint32_t n_dims = 0;
     uint64_t ne[4] = {1, 1, 1, 1};  // ggml order: ne[0] fastest
     GgmlDType dtype = GgmlDType::F32;
-    uint64_t offset = 0;            // absolute file offset (resolved on load)
-    std::vector<uint8_t> bytes;       // raw payload
-    mutable std::vector<float> f32;   // dequantized F32 (lazy, on demand)
+    uint64_t offset = 0;             // absolute file offset (resolved on load)
+    std::vector<uint8_t> bytes;      // raw payload
+    mutable std::vector<float> f32;  // dequantized F32 (lazy, on demand)
 };
 
 class GgufFile {

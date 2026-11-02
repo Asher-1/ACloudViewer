@@ -1,18 +1,10 @@
 // ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-// VLX-Seek task runtime: owns the detector, the vision stack and the LLM and
-// runs the full chain per request. Ported from the upstream
-// Asher-1/VLX-Seek-GGML cpp_ggml/src/vlx_seek_runtime.* and adapted to the
-// AICore conventions: device resolution and admission through the shared
-// runtime layer, logging through aicore_log, no process exits, and the
-// fused-CUDA RoIAlign hooks removed (the host RoIAlign path is the
-// functionally identical path for every backend).
-//
-// The upstream CLI (vlx-cli) is intentionally not ported: its argument
-// parsing/printing role is covered by the qVLXSeek batch command and plugin.
+
 #pragma once
 
 #include <memory>
@@ -28,13 +20,13 @@ struct VlxSeekOptions {
     std::string device = "auto";  // AICore runtime order (CUDA->Vulkan->CPU)
     int threads = 0;              // 0 = backend default
     std::string precision = "f16";
-    std::string models_dir;       // required: directory holding the GGUFs
-    std::string wedetect_gguf;    // empty = derive from models_dir (f32 always)
-    std::string vision_gguf;      // empty = vlx-vision-10b-<precision>.gguf
-    std::string llm_gguf;         // empty = vlx-10b-llm-<precision|f16>.gguf
+    std::string models_dir;     // required: directory holding the GGUFs
+    std::string wedetect_gguf;  // empty = derive from models_dir (f32 always)
+    std::string vision_gguf;    // empty = vlx-vision-10b-<precision>.gguf
+    std::string llm_gguf;       // empty = vlx-10b-llm-<precision|f16>.gguf
     int max_new_tokens = 2048;
-    std::string dump_dir;         // empty = no parity dumps
-    int log_level = 1;            // 0=DEBUG 1=INFO 2=WARN 3=ERROR (aicore gate)
+    std::string dump_dir;  // empty = no parity dumps
+    int log_level = 1;     // 0=DEBUG 1=INFO 2=WARN 3=ERROR (aicore gate)
 };
 
 // One inference request. rgb is tightly-packed RGB8 (the runtime's native
@@ -50,7 +42,7 @@ struct VlxRunRequest {
     int32_t n_boxes = 0;
     const int32_t* target_indexes = nullptr;  // region tasks only
     int32_t n_targets = 0;
-    int warm_runs = 0;     // extra vision passes (steady-state benchmarking)
+    int warm_runs = 0;  // extra vision passes (steady-state benchmarking)
 };
 
 struct VlxRunResult {
@@ -92,8 +84,11 @@ public:
     // Official-style render of the retained result over the given RGB image
     // into a PNG (debug/dump path; the plugin renders through Qt instead).
     // Returns false on write failure.
-    bool render_png(const VlxRunResult& result, const uint8_t* rgb, int width,
-                    int height, const std::string& out_png_path);
+    bool render_png(const VlxRunResult& result,
+                    const uint8_t* rgb,
+                    int width,
+                    int height,
+                    const std::string& out_png_path);
 
     std::string info_json() const;
 

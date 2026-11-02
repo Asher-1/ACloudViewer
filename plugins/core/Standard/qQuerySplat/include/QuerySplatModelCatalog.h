@@ -43,7 +43,6 @@ QString decoderCacheDir();
  *  catalog is unavailable. */
 QString encoderDefaultPath();
 
-QString findModelByFilename(const QString& filename,
-                            QuerySplatModelEntry* out);
+QString findModelByFilename(const QString& filename, QuerySplatModelEntry* out);
 
 }  // namespace QuerySplatHelpers

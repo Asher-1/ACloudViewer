@@ -45,11 +45,13 @@ VLXSeekDialog::VLXSeekDialog(QWidget* parent) : QDialog(parent) {
 
     m_catalog = VLXSeekHelpers::catalogModels();
 
-    // ---- fixed top block: image input + actions + progress (never scroll) ----
+    // ---- fixed top block: image input + actions + progress (never scroll)
+    // ----
     m_inputLabel = new QLabel(tr("Input image:"), this);
     m_inputEdit = new QLineEdit(this);
-    m_inputEdit->setPlaceholderText(tr("Image path (DB selection, test data "
-                                       "or file)"));
+    m_inputEdit->setPlaceholderText(
+            tr("Image path (DB selection, test data "
+               "or file)"));
     m_browseButton = new QPushButton(tr("Browse..."), this);
     m_testDataButton = new QPushButton(tr("Use test data"), this);
     m_testDataButton->setToolTip(
@@ -86,8 +88,7 @@ VLXSeekDialog::VLXSeekDialog(QWidget* parent) : QDialog(parent) {
     m_taskCombo = new QComboBox(this);
     m_taskCombo->addItems(
             {QStringLiteral("detection"), QStringLiteral("grounding_single"),
-             QStringLiteral("counting"),
-             QStringLiteral("reasoning_detection"),
+             QStringLiteral("counting"), QStringLiteral("reasoning_detection"),
              QStringLiteral("brief_region_caption"),
              QStringLiteral("region_ocr"), QStringLiteral("vqa")});
     m_langCombo = new QComboBox(this);
@@ -204,14 +205,14 @@ void VLXSeekDialog::onUseTestData() {
                 QStringLiteral("demo_image.jpg"));
         if (!demo.isEmpty()) {
             setInputPath(demo);
-            m_statusLabel->setText(
-                    tr("Test data ready: %1").arg(demo));
+            m_statusLabel->setText(tr("Test data ready: %1").arg(demo));
             return;
         }
     }
     m_testDataButton->setEnabled(false);
     m_statusLabel->setText(tr("Preparing official test images..."));
-    connect(&repo, &ecvTestDataRepository::datasetReady, this,
+    connect(
+            &repo, &ecvTestDataRepository::datasetReady, this,
             [this](bool ok, ecvTestDataRepository::Dataset kind) {
                 if (kind != ecvTestDataRepository::Dataset::VlxSeek) return;
                 m_testDataButton->setEnabled(true);
@@ -234,8 +235,8 @@ void VLXSeekDialog::onUseTestData() {
 void VLXSeekDialog::onDownloadProgress(qint64 received, qint64 total) {
     if (total > 0) {
         m_progress->setValue(int(received * 100 / total));
-        m_statusLabel->setText(tr("Downloading %1...")
-                                       .arg(m_downloadTargetFilename));
+        m_statusLabel->setText(
+                tr("Downloading %1...").arg(m_downloadTargetFilename));
     }
 }
 
@@ -261,8 +262,7 @@ void VLXSeekDialog::startDownload(const VLXSeekModelEntry& entry) {
     request.url = entry.downloadUrl;
     request.destPath =
             QDir(VLXSeekHelpers::modelCacheDir()).filePath(entry.filename);
-    request.contentAnchor = {QCryptographicHash::Sha256,
-                             entry.sha256.toUtf8()};
+    request.contentAnchor = {QCryptographicHash::Sha256, entry.sha256.toUtf8()};
     m_downloader->download(request);
 }
 
@@ -275,8 +275,7 @@ bool VLXSeekDialog::ensureModelsAvailable() {
     for (const VLXSeekModelEntry& entry : m_catalog) {
         if (entry.role == kRoleWedetect && entry.quantization == "f32")
             wedetect = entry;
-        if (entry.role == kRoleLlm &&
-            entry.quantization == vision.quantization)
+        if (entry.role == kRoleLlm && entry.quantization == vision.quantization)
             llm = entry;
     }
     const QString cache = VLXSeekHelpers::modelCacheDir();
@@ -325,7 +324,7 @@ void VLXSeekDialog::onRun() {
         // Quantization of the selected catalog row (reported in model_info).
         VLXSeekModelEntry vision;
         if (VLXSeekHelpers::findModelByFilename(
-                m_precisionCombo->currentData().toString(), &vision))
+                    m_precisionCombo->currentData().toString(), &vision))
             settings.precision = vision.quantization;
     }
     settings.device = m_deviceCombo->currentText().toLower();
@@ -359,8 +358,9 @@ void VLXSeekDialog::onCancel() {
     }
     // The vlx task decode is a single greedy call per request; a cancel
     // takes effect after the current request settles (worker completion).
-    m_statusLabel->setText(tr("Cancel requested; waiting for the current "
-                              "request to settle..."));
+    m_statusLabel->setText(
+            tr("Cancel requested; waiting for the current "
+               "request to settle..."));
 }
 
 void VLXSeekDialog::onWorkerFinished(bool success) {

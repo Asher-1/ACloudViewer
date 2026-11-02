@@ -66,7 +66,8 @@ uint64_t runHash(const aicore_querysplat_ctx* ctx) {
     append(aicore_querysplat_result_gaussians(ctx),
            (size_t)std::max<int64_t>(0, n) * stride * sizeof(float));
     append(aicore_querysplat_result_depth(ctx), plane * sizeof(float));
-    append(aicore_querysplat_result_pose(ctx), (size_t)views * 9 * sizeof(float));
+    append(aicore_querysplat_result_pose(ctx),
+           (size_t)views * 9 * sizeof(float));
     return hash;
 }
 
@@ -85,8 +86,7 @@ bool write_f32_bin(const char* path, const float* data, size_t count) {
 
 int main(int argc, char** argv) {
     const char* decoder =
-            argc > 1 ? argv[1]
-                     : std::getenv("AICORE_TEST_QUERYSPLAT_DECODER");
+            argc > 1 ? argv[1] : std::getenv("AICORE_TEST_QUERYSPLAT_DECODER");
     const char* encoder =
             argc > 2 ? argv[2] : std::getenv("AICORE_TEST_QUERYSPLAT_ENCODER");
     const char* images_arg[4] = {
@@ -132,20 +132,17 @@ int main(int argc, char** argv) {
         std::printf("FAIL: options allocation failed\n");
         return 1;
     }
-    aicore_querysplat_options_set_device(opts,
-                                         backend ? backend : "cpu");
+    aicore_querysplat_options_set_device(opts, backend ? backend : "cpu");
     aicore_querysplat_options_set_f32_accuracy(opts, 1);
     if (tto_lpips_weight >= 0.0)
-        aicore_querysplat_options_set_tto_lpips_weight(opts,
-                                                       tto_lpips_weight);
+        aicore_querysplat_options_set_tto_lpips_weight(opts, tto_lpips_weight);
 
-    aicore_querysplat_ctx* ctx = aicore_querysplat_load_opts(
-            encoder, decoder, opts);
+    aicore_querysplat_ctx* ctx =
+            aicore_querysplat_load_opts(encoder, decoder, opts);
     aicore_querysplat_options_free(opts);
     if (!ctx || !aicore_querysplat_is_ready(ctx)) {
         const char* err = ctx ? aicore_querysplat_last_error(ctx) : nullptr;
-        std::printf("FAIL: load failed: %s\n",
-                    err ? err : "(no error string)");
+        std::printf("FAIL: load failed: %s\n", err ? err : "(no error string)");
         if (ctx) aicore_querysplat_free(ctx);
         return 1;
     }
@@ -200,8 +197,7 @@ int main(int argc, char** argv) {
         }
         if (aicore_querysplat_run_images(ctx, views, n_views_used) != 0) {
             const char* err = aicore_querysplat_last_error(ctx);
-            std::printf("FAIL: run failed: %s\n",
-                        err ? err : "(none)");
+            std::printf("FAIL: run failed: %s\n", err ? err : "(none)");
             aicore_querysplat_free(ctx);
             return 1;
         }
@@ -263,14 +259,16 @@ int main(int argc, char** argv) {
         const float* K = aicore_querysplat_result_intrinsics(ctx);
         const float* rrgb = nullptr;
         unsigned char* rgb8 = nullptr;
-        AICORE_CHECK(aicore_querysplat_render_views(ctx, w2c, K, S, &rrgb, &rgb8) == 0);
+        AICORE_CHECK(aicore_querysplat_render_views(ctx, w2c, K, S, &rrgb,
+                                                    &rgb8) == 0);
 
         // export round-trips
-        const std::string ply = std::string(std::getenv("TMPDIR")
-                                                    ? std::getenv("TMPDIR")
-                                                    : "/tmp") +
-                                "/qs_probe_gaussians.ply";
-        AICORE_CHECK(aicore_querysplat_export_gaussians_ply(ctx, ply.c_str(), 0.05f) == 0);
+        const std::string ply =
+                std::string(std::getenv("TMPDIR") ? std::getenv("TMPDIR")
+                                                  : "/tmp") +
+                "/qs_probe_gaussians.ply";
+        AICORE_CHECK(aicore_querysplat_export_gaussians_ply(ctx, ply.c_str(),
+                                                            0.05f) == 0);
         char* cams = aicore_querysplat_export_cameras_json(ctx);
         AICORE_CHECK(cams != nullptr);
         if (cams) aicore_querysplat_free_buffer(cams);
@@ -311,8 +309,7 @@ int main(int argc, char** argv) {
                         ctx, aicore_querysplat_result_w2c(ctx),
                         aicore_querysplat_result_intrinsics(ctx), S, &rrgb,
                         &rgb8) != 0 ||
-                !write_f32_bin(dump_renders, rrgb,
-                               (size_t)S * 3 * H * W)) {
+                !write_f32_bin(dump_renders, rrgb, (size_t)S * 3 * H * W)) {
                 std::printf("FAIL: renders dump\n");
                 aicore_querysplat_free(ctx);
                 return 1;
@@ -329,8 +326,8 @@ int main(int argc, char** argv) {
         const float* pc_xyz = nullptr;
         unsigned char* pc_rgb = nullptr;
         int32_t pc_n = 0;
-        AICORE_CHECK(aicore_querysplat_depth_pointcloud(
-                ctx, 65536, &pc_xyz, &pc_rgb, &pc_n) == 0);
+        AICORE_CHECK(aicore_querysplat_depth_pointcloud(ctx, 65536, &pc_xyz,
+                                                        &pc_rgb, &pc_n) == 0);
         AICORE_CHECK(pc_n > 0 && pc_xyz != nullptr && pc_rgb != nullptr);
         bool pc_finite = true;
         for (int32_t i = 0; i < pc_n && pc_finite; ++i) {
@@ -352,8 +349,7 @@ int main(int argc, char** argv) {
         const float* tto_g = nullptr;
         int64_t tto_n = 0;
         AICORE_CHECK(aicore_querysplat_run_tto(ctx, tto_steps, &losses,
-                                               &n_losses, &tto_g,
-                                               &tto_n) == 0);
+                                               &n_losses, &tto_g, &tto_n) == 0);
         AICORE_CHECK(losses != nullptr && n_losses == tto_steps);
         AICORE_CHECK(tto_g != nullptr && tto_n == 524288);
         // composite with the default lpips weight 0.05:

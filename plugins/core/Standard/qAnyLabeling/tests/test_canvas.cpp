@@ -980,8 +980,7 @@ int main(int argc, char** argv) {
         editor.setShapes(lockedShapes);
         editor.setTool(QStringLiteral("edit"));
         mouse(editor, QEvent::MouseButtonDblClick, square[0]);
-        if (!check(editor.shapes().last().points.size() == 4 &&
-                           labelEdits == 1,
+        if (!check(editor.shapes().last().points.size() == 4 && labelEdits == 1,
                    "A locked polygon must open the label editor instead of "
                    "losing vertices"))
             return 1;

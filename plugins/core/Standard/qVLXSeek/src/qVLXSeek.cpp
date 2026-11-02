@@ -7,17 +7,16 @@
 
 #include "qVLXSeek.h"
 
-#include "VLXSeekBatchCommand.h"
-#include "ecvAICoreRuntimeHelpers.h"
-#include "ecvPluginDbNaming.h"
-
 #include <aicore/inference_log.h>
-
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
 
 #include <QDir>
 #include <QFileInfo>
+
+#include "VLXSeekBatchCommand.h"
+#include "ecvAICoreRuntimeHelpers.h"
+#include "ecvPluginDbNaming.h"
 
 qVLXSeek::qVLXSeek(QObject* parent)
     : QObject(parent), ccStdPluginInterface(":/CC/plugin/qVLXSeek/info.json") {}
@@ -40,8 +39,9 @@ void qVLXSeek::onNewSelection(const ccHObject::Container& selectedEntities) {
 
 QList<QAction*> qVLXSeek::getActions() {
     if (!m_action) {
-        m_action = new QAction(QIcon(":/CC/plugin/qVLXSeek/images/qVLXSeek.svg"),
-                               tr("VLX-Seek grounding"), this);
+        m_action =
+                new QAction(QIcon(":/CC/plugin/qVLXSeek/images/qVLXSeek.svg"),
+                            tr("VLX-Seek grounding"), this);
         m_action->setToolTip(
                 tr("VLX-Seek fine-grained open-vocabulary grounding: "
                    "detection, counting, region caption and region OCR via "
@@ -79,11 +79,12 @@ void qVLXSeek::onResultReady(const VLXSeekRunResult& result) {
 
     // Console summary through the shared AICore logging route (no plugin
     // private log widget).
-    aicore_inference_log::log(QStringLiteral("[qVLXSeek] %1: %2 box(es), "
-                                             "answer: %3")
-                                  .arg(QFileInfo(result.imagePath).fileName())
-                                  .arg(result.boxes.size())
-                                  .arg(result.answer.left(160)));
+    aicore_inference_log::log(
+            QStringLiteral("[qVLXSeek] %1: %2 box(es), "
+                           "answer: %3")
+                    .arg(QFileInfo(result.imagePath).fileName())
+                    .arg(result.boxes.size())
+                    .arg(result.answer.left(160)));
 }
 
 void qVLXSeek::addResultToDb(const VLXSeekRunResult& result,
@@ -93,12 +94,11 @@ void qVLXSeek::addResultToDb(const VLXSeekRunResult& result,
     const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
             result.resolvedDevice.isEmpty() ? settings.device
                                             : result.resolvedDevice);
-    const QString modelTag = ecvPluginDbNaming::modelTagFromFilename(
-            settings.visionPath);
+    const QString modelTag =
+            ecvPluginDbNaming::modelTagFromFilename(settings.visionPath);
     const QString name = ecvPluginDbNaming::makeUnique(
             QStringLiteral("VLXSeek_%1_%2")
-                    .arg(modelTag,
-                         QFileInfo(result.imagePath).baseName()),
+                    .arg(modelTag, QFileInfo(result.imagePath).baseName()),
             m_app);
     auto* img = new ccImage(result.annotatedImage, name);
     img->setMetaData(QStringLiteral("VLXSeek"), true);

@@ -12,8 +12,9 @@
 #include <cstring>
 
 #if defined(ACV_VLX_HAVE_LIBJPEG)
-#include <csetjmp>
 #include <jpeglib.h>
+
+#include <csetjmp>
 #endif
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -43,7 +44,9 @@ void jpeg_err_exit(j_common_ptr c) {
 // libjpeg with PIL's decoder settings: library defaults (JDCT_ISLOW, fancy
 // upsampling on), out_color_space RGB for YCbCr/RGB, gray decoded as L and
 // replicated (PIL's convert("RGB") of an "L" image copies the channel).
-bool decode_jpeg(const std::vector<uint8_t>& buf, ImageU8* out, std::string* err) {
+bool decode_jpeg(const std::vector<uint8_t>& buf,
+                 ImageU8* out,
+                 std::string* err) {
     jpeg_decompress_struct cinfo;
     JpegErr jerr;
     cinfo.err = jpeg_std_error(&jerr.pub);
@@ -58,7 +61,8 @@ bool decode_jpeg(const std::vector<uint8_t>& buf, ImageU8* out, std::string* err
     jpeg_mem_src(&cinfo, buf.data(), static_cast<unsigned long>(buf.size()));
     jpeg_read_header(&cinfo, TRUE);
     const bool gray = cinfo.jpeg_color_space == JCS_GRAYSCALE;
-    if (cinfo.jpeg_color_space == JCS_CMYK || cinfo.jpeg_color_space == JCS_YCCK) {
+    if (cinfo.jpeg_color_space == JCS_CMYK ||
+        cinfo.jpeg_color_space == JCS_YCCK) {
         if (err) *err = "CMYK/YCCK JPEG is not supported";
         jpeg_destroy_decompress(&cinfo);
         return false;
@@ -79,7 +83,8 @@ bool decode_jpeg(const std::vector<uint8_t>& buf, ImageU8* out, std::string* err
         if (nc == 3) {
             std::memcpy(dst, row.data(), size_t(W) * 3);
         } else {
-            for (int x = 0; x < W; ++x) dst[3 * x] = dst[3 * x + 1] = dst[3 * x + 2] = row[x];
+            for (int x = 0; x < W; ++x)
+                dst[3 * x] = dst[3 * x + 1] = dst[3 * x + 2] = row[x];
         }
     }
     jpeg_finish_decompress(&cinfo);
@@ -109,10 +114,12 @@ bool decode_image(const std::string& path, ImageU8* out, std::string* err) {
         }
     }
 #if defined(ACV_VLX_HAVE_LIBJPEG)
-    if (buf.size() > 2 && buf[0] == 0xFF && buf[1] == 0xD8) return decode_jpeg(buf, out, err);
+    if (buf.size() > 2 && buf[0] == 0xFF && buf[1] == 0xD8)
+        return decode_jpeg(buf, out, err);
 #endif
     int w = 0, h = 0, ch = 0;
-    uint8_t* px = stbi_load_from_memory(buf.data(), int(buf.size()), &w, &h, &ch, 3);
+    uint8_t* px =
+            stbi_load_from_memory(buf.data(), int(buf.size()), &w, &h, &ch, 3);
     if (!px) {
         if (err) *err = std::string("stb_image: ") + stbi_failure_reason();
         return false;
@@ -133,7 +140,7 @@ double filter_bilinear(double x) {
     x = std::fabs(x);
     return x < 1.0 ? 1.0 - x : 0.0;
 }
-double filter_bicubic(double x) {   // a = -0.5 (PIL and torch AA both)
+double filter_bicubic(double x) {  // a = -0.5 (PIL and torch AA both)
     const double a = -0.5;
     x = std::fabs(x);
     if (x < 1.0) return ((a + 2.0) * x - (a + 3.0)) * x * x + 1.0;
@@ -142,9 +149,9 @@ double filter_bicubic(double x) {   // a = -0.5 (PIL and torch AA both)
 }
 
 struct Coeffs {
-    int ksize = 0;              // max taps per output
-    std::vector<int> xmin, xsz; // per output
-    std::vector<int32_t> k;     // out * ksize quantized taps
+    int ksize = 0;               // max taps per output
+    std::vector<int> xmin, xsz;  // per output
+    std::vector<int32_t> k;      // out * ksize quantized taps
     int prec = 22;
 };
 
@@ -174,7 +181,8 @@ Coeffs make_coeffs(int in, int out, ResampleFilter f, ResampleImpl impl) {
         double ww = 0.0;
         for (int x = 0; x < xmax; ++x) {
             const double t = (x + xmin - center + 0.5) * ss;
-            const double v = f == ResampleFilter::Bilinear ? filter_bilinear(t) : filter_bicubic(t);
+            const double v = f == ResampleFilter::Bilinear ? filter_bilinear(t)
+                                                           : filter_bicubic(t);
             k[x] = v;
             ww += v;
         }
@@ -256,11 +264,16 @@ ImageU8 pass_v(const ImageU8& s, int oh, const Coeffs& c) {
 
 }  // namespace
 
-ImageU8 resize_u8(const ImageU8& src, int out_w, int out_h, ResampleFilter f,
+ImageU8 resize_u8(const ImageU8& src,
+                  int out_w,
+                  int out_h,
+                  ResampleFilter f,
                   ResampleImpl impl) {
     ImageU8 cur = src;
-    if (out_w != src.width) cur = pass_h(cur, out_w, make_coeffs(src.width, out_w, f, impl));
-    if (out_h != src.height) cur = pass_v(cur, out_h, make_coeffs(src.height, out_h, f, impl));
+    if (out_w != src.width)
+        cur = pass_h(cur, out_w, make_coeffs(src.width, out_w, f, impl));
+    if (out_h != src.height)
+        cur = pass_v(cur, out_h, make_coeffs(src.height, out_h, f, impl));
     return cur;
 }
 
@@ -279,7 +292,8 @@ struct CoeffsF {
 // all-float version moves weights by an ulp and flips bf16 rounding ties.
 CoeffsF make_coeffs_f(int in, int out) {
     const float scale = float(in) / float(out);
-    const float support = scale >= 1.0f ? float(1.0 * double(scale)) : 1.0f;   // interp_size*0.5
+    const float support = scale >= 1.0f ? float(1.0 * double(scale))
+                                        : 1.0f;  // interp_size*0.5
     const float invscale = scale >= 1.0f ? float(1.0 / double(scale)) : 1.0f;
     CoeffsF c;
     c.ksize = int(std::ceil(support)) * 2 + 1;
@@ -288,13 +302,19 @@ CoeffsF make_coeffs_f(int in, int out) {
     c.w.assign(size_t(out) * c.ksize, 0.f);
     for (int i = 0; i < out; ++i) {
         const float center = float(double(scale) * (double(i) + 0.5));
-        const int64_t xmin = std::max<int64_t>(int64_t(double(center - support) + 0.5), 0);
-        const int64_t xsize = std::min<int64_t>(int64_t(double(center + support) + 0.5), in) - xmin;
+        const int64_t xmin =
+                std::max<int64_t>(int64_t(double(center - support) + 0.5), 0);
+        const int64_t xsize =
+                std::min<int64_t>(int64_t(double(center + support) + 0.5), in) -
+                xmin;
         float* w = &c.w[size_t(i) * c.ksize];
         float total = 0.f;
         for (int64_t j = 0; j < xsize; ++j) {
-            // (j + xmin - center) is int64 - float = float; + 0.5 and * invscale in double
-            const float t = std::fabs(float((double(float(j + xmin) - center) + 0.5) * double(invscale)));
+            // (j + xmin - center) is int64 - float = float; + 0.5 and *
+            // invscale in double
+            const float t =
+                    std::fabs(float((double(float(j + xmin) - center) + 0.5) *
+                                    double(invscale)));
             const float v = t < 1.f ? float(1.0 - double(t)) : 0.f;
             w[j] = v;
             total += v;
@@ -308,12 +328,13 @@ CoeffsF make_coeffs_f(int in, int out) {
 }
 }  // namespace
 
-std::vector<float> resize_f32_bilinear_aa(const std::vector<float>& chw, int C,
-                                          int H, int W, int oh, int ow) {
+std::vector<float> resize_f32_bilinear_aa(
+        const std::vector<float>& chw, int C, int H, int W, int oh, int ow) {
     // Accumulation = interpolate_aa_single_dim: out = t0*w0, then out += tj*wj.
     // torch's native/cpu kernels are built with -mavx2 -mfma and GCC contracts
     // that `+=` into an FMA; plain mul+add differs in ~12% of outputs by one
-    // f32 ulp, which flips bf16 ties downstream. std::fma reproduces it bit-exactly.
+    // f32 ulp, which flips bf16 ties downstream. std::fma reproduces it
+    // bit-exactly.
     std::vector<float> cur = chw;
     int cw = W;
     if (ow != W) {
@@ -326,7 +347,8 @@ std::vector<float> resize_f32_bilinear_aa(const std::vector<float>& chw, int C,
                 for (int x = 0; x < ow; ++x) {
                     const float* w = &c.w[size_t(x) * c.ksize];
                     float t = s[c.xmin[x]] * w[0];
-                    for (int j = 1; j < c.xsz[x]; ++j) t = std::fma(s[c.xmin[x] + j], w[j], t);
+                    for (int j = 1; j < c.xsz[x]; ++j)
+                        t = std::fma(s[c.xmin[x] + j], w[j], t);
                     o[x] = t;
                 }
             }
@@ -341,9 +363,11 @@ std::vector<float> resize_f32_bilinear_aa(const std::vector<float>& chw, int C,
                 const float* w = &c.w[size_t(y) * c.ksize];
                 float* o = &d[(size_t(ch) * oh + y) * cw];
                 for (int x = 0; x < cw; ++x) {
-                    const float* s = &cur[(size_t(ch) * H + c.xmin[y]) * cw + x];
+                    const float* s =
+                            &cur[(size_t(ch) * H + c.xmin[y]) * cw + x];
                     float t = s[0] * w[0];
-                    for (int j = 1; j < c.xsz[y]; ++j) t = std::fma(s[size_t(j) * cw], w[j], t);
+                    for (int j = 1; j < c.xsz[y]; ++j)
+                        t = std::fma(s[size_t(j) * cw], w[j], t);
                     o[x] = t;
                 }
             }
@@ -355,7 +379,7 @@ std::vector<float> resize_f32_bilinear_aa(const std::vector<float>& chw, int C,
 float bf16_round(float v) {
     uint32_t u;
     std::memcpy(&u, &v, 4);
-    if ((u & 0x7f800000u) == 0x7f800000u) {   // inf / nan: keep (quiet nan)
+    if ((u & 0x7f800000u) == 0x7f800000u) {  // inf / nan: keep (quiet nan)
         if (u & 0x007fffffu) u |= 0x00400000u;
         u &= 0xffff0000u;
     } else {
@@ -369,11 +393,13 @@ float bf16_round(float v) {
 
 Letterbox letterbox(const ImageU8& img, int new_size) {
     Letterbox lb;
-    const double r = std::min(double(new_size) / img.width, double(new_size) / img.height);
+    const double r = std::min(double(new_size) / img.width,
+                              double(new_size) / img.height);
     // python round() = half-to-even = nearbyint under the default rounding mode
     const int nw = int(std::nearbyint(img.width * r));
     const int nh = int(std::nearbyint(img.height * r));
-    const ImageU8 rs = resize_u8(img, nw, nh, ResampleFilter::Bilinear, ResampleImpl::kPil);
+    const ImageU8 rs = resize_u8(img, nw, nh, ResampleFilter::Bilinear,
+                                 ResampleImpl::kPil);
     const int dw = new_size - nw, dh = new_size - nh;
     const int left = dw / 2, top = dh / 2;
     lb.canvas.width = lb.canvas.height = new_size;
@@ -387,8 +413,13 @@ Letterbox letterbox(const ImageU8& img, int new_size) {
     return lb;
 }
 
-void smart_resize(int height, int width, int factor, double min_pixels,
-                  double max_pixels, int* h_bar, int* w_bar) {
+void smart_resize(int height,
+                  int width,
+                  int factor,
+                  double min_pixels,
+                  double max_pixels,
+                  int* h_bar,
+                  int* w_bar) {
     int hb = int(std::nearbyint(double(height) / factor)) * factor;
     int wb = int(std::nearbyint(double(width) / factor)) * factor;
     if (double(hb) * wb > max_pixels) {

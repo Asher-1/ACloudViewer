@@ -72,7 +72,9 @@ bool EncoderRuntime::ready_for(int n_views, int height, int width) const {
            cur_h_ == height && cur_w_ == width;
 }
 
-bool EncoderRuntime::ensure_geometry(int n_views, int height, int width,
+bool EncoderRuntime::ensure_geometry(int n_views,
+                                     int height,
+                                     int width,
                                      std::string* error) {
     error_.clear();
     if (!valid()) {
@@ -104,7 +106,8 @@ bool EncoderRuntime::ensure_geometry(int n_views, int height, int width,
     return true;
 }
 
-bool EncoderRuntime::run(const float* images_f32, VGGTOutputs& out,
+bool EncoderRuntime::run(const float* images_f32,
+                         VGGTOutputs& out,
                          std::string* error) {
     error_.clear();
     if (!rt_ || !rt_->valid()) {
@@ -113,8 +116,7 @@ bool EncoderRuntime::run(const float* images_f32, VGGTOutputs& out,
         return false;
     }
     if (!rt_->run(images_f32, out)) {
-        error_ = rt_->error().empty() ? "encoder run failed"
-                                      : rt_->error();
+        error_ = rt_->error().empty() ? "encoder run failed" : rt_->error();
         if (error) *error = error_;
         return false;
     }

@@ -1,15 +1,10 @@
 // ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-// VLX-Seek task runtime implementation. The pipeline flow is ported verbatim
-// from the upstream vlx-cli `run` command (behavior frozen by the upstream
-// benchmark regression suite): same templates, same prompt assembly, same
-// greedy decode, same official-JSON fields. AICore-specific wiring:
-// device leases through the shared runtime registry, GPU memory admission,
-// the log bridge for llama/ggml messages, and error returns instead of
-// process exits.
+
 #include "vlx_seek_runtime.h"
 
 #include <algorithm>
@@ -23,26 +18,23 @@
 #include <thread>
 #include <utility>
 
+#include "common/aicore_log.hpp"
+#include "common/ggml_backend_registry.hpp"
+#include "common/ggml_backend_utils.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
 #include "llama.h"
-
-#include "common/aicore_log.hpp"
-#include "common/ggml_backend_registry.hpp"
-#include "common/ggml_backend_utils.hpp"
-
-#include "vlx_gguf_loader.h"
+#include "third_party/stb/stb_image.h"
+#include "third_party/stb/stb_image_write.h"
 #include "vlx_ggml_util.h"
+#include "vlx_gguf_loader.h"
 #include "vlx_hfre.h"
 #include "vlx_image_prep.h"
 #include "vlx_mmproj_graph.h"
 #include "vlx_radio_graph.h"
 #include "vlx_simplefpn_graph.h"
 #include "vlx_wedetect_graph.h"
-
-#include "third_party/stb/stb_image.h"
-#include "third_party/stb/stb_image_write.h"
 
 #define VLX_LOG_DEBUG(...) ::vlx::logf(AICORE_LOG_LEVEL_DEBUG, __VA_ARGS__)
 #define VLX_LOG_INFO(...) ::vlx::logf(AICORE_LOG_LEVEL_INFO, __VA_ARGS__)
@@ -64,17 +56,15 @@ void set_log_level(int level) { aicore_set_log_level(level); }
 
 namespace {
 
-constexpr const char* kTasks[] = {"vqa",
-                                  "detection",
-                                  "grounding_single",
-                                  "counting",
-                                  "reasoning_detection",
-                                  "brief_region_caption",
-                                  "region_ocr"};
+constexpr const char* kTasks[] = {
+        "vqa",       "detection",           "grounding_single",
+        "counting",  "reasoning_detection", "brief_region_caption",
+        "region_ocr"};
 
 bool known_task(const std::string& task) {
     return std::find_if(std::begin(kTasks), std::end(kTasks),
-                        [&](const char* t) { return task == t; }) != std::end(kTasks);
+                        [&](const char* t) { return task == t; }) !=
+           std::end(kTasks);
 }
 
 }  // namespace
@@ -144,14 +134,15 @@ bool VlxSeekRuntime::load() {
     ggml_common::load_backends_once();
 
     // ---- device resolution (shared runtime registry, yolo-task pattern) ----
-    const std::string want =
-        ggml_common::to_lower(s.opts.device.empty() ? "auto" : s.opts.device);
+    const std::string want = ggml_common::to_lower(
+            s.opts.device.empty() ? "auto" : s.opts.device);
     const bool force_cpu = want == "cpu";
     if (!force_cpu) {
-        ggml_common::GpuBackendGroup group = ggml_common::resolve_gpu_group(want);
+        ggml_common::GpuBackendGroup group =
+                ggml_common::resolve_gpu_group(want);
         if (group.primary()) {
             s.gpu_lease = aicore::runtime::adopt_backend_lease(
-                group.gpus[0], group.names[0], s.threads);
+                    group.gpus[0], group.names[0], s.threads);
             group.gpus[0] = nullptr;
             group.release();
             if (s.gpu_lease) {
@@ -168,8 +159,8 @@ bool VlxSeekRuntime::load() {
         s.cpu_lease = aicore::runtime::acquire_backend_lease("cpu", s.threads,
                                                              &cpu_error);
         if (!s.cpu_lease) {
-            s.last_error = cpu_error.empty() ? "CPU backend unavailable"
-                                             : cpu_error;
+            s.last_error =
+                    cpu_error.empty() ? "CPU backend unavailable" : cpu_error;
             return false;
         }
         s.backend = s.cpu_lease.handle();
@@ -181,23 +172,27 @@ bool VlxSeekRuntime::load() {
 
     // ---- weight paths ----
     std::string wedetect_path =
-        s.opts.wedetect_gguf.empty()
-            ? s.derive("wedetect-base-uni", "f32")  // official .pth dtype
-            : s.opts.wedetect_gguf;
+            s.opts.wedetect_gguf.empty()
+                    ? s.derive("wedetect-base-uni",
+                               "f32")  // official .pth dtype
+                    : s.opts.wedetect_gguf;
     std::string vision_path =
-        s.opts.vision_gguf.empty()
-            ? s.derive("vlx-vision-10b", s.opts.precision.c_str())
-            : s.opts.vision_gguf;
+            s.opts.vision_gguf.empty()
+                    ? s.derive("vlx-vision-10b", s.opts.precision.c_str())
+                    : s.opts.vision_gguf;
     std::string llm_path =
-        s.opts.llm_gguf.empty()
-            ? s.derive("vlx-10b-llm",
-                       s.opts.precision == "f32" ? "f16" : s.opts.precision.c_str())
-            : s.opts.llm_gguf;
+            s.opts.llm_gguf.empty()
+                    ? s.derive("vlx-10b-llm",
+                               s.opts.precision == "f32"
+                                       ? "f16"
+                                       : s.opts.precision.c_str())
+                    : s.opts.llm_gguf;
 
     // ---- GPU admission (-3 resource contract) ----
     auto file_bytes = [](const std::string& p) -> size_t {
         std::error_code ec;
-        const auto sz = std::filesystem::file_size(std::filesystem::path(p), ec);
+        const auto sz =
+                std::filesystem::file_size(std::filesystem::path(p), ec);
         return ec ? 0 : size_t(sz);
     };
     const size_t need = file_bytes(wedetect_path) + file_bytes(vision_path) +
@@ -230,9 +225,8 @@ bool VlxSeekRuntime::load() {
     // devices = {nullptr} means "no accelerator" (CPU-only model AND context
     // buffers); devices = nullptr would mean "no restriction" and let llama
     // place op buffers on an unrelated GPU even for CPU requests.
-    ggml_backend_dev_t devices[2] = {force_cpu ? nullptr
-                                               : ggml_backend_get_device(s.backend),
-                                     nullptr};
+    ggml_backend_dev_t devices[2] = {
+            force_cpu ? nullptr : ggml_backend_get_device(s.backend), nullptr};
     mp.devices = devices;
     mp.n_gpu_layers = force_cpu ? 0 : -1;
     mp.split_mode = LLAMA_SPLIT_MODE_NONE;
@@ -259,10 +253,16 @@ bool VlxSeekRuntime::load() {
 }
 
 bool VlxSeekRuntime::ready() const { return impl_->ready; }
-const std::string& VlxSeekRuntime::last_error() const { return impl_->last_error; }
-const std::string& VlxSeekRuntime::device() const { return impl_->device_resolved; }
+const std::string& VlxSeekRuntime::last_error() const {
+    return impl_->last_error;
+}
+const std::string& VlxSeekRuntime::device() const {
+    return impl_->device_resolved;
+}
 int VlxSeekRuntime::threads() const { return impl_->threads; }
-const std::string& VlxSeekRuntime::precision() const { return impl_->opts.precision; }
+const std::string& VlxSeekRuntime::precision() const {
+    return impl_->opts.precision;
+}
 
 VlxRunResult VlxSeekRuntime::run(const VlxRunRequest& req) {
     Impl& s = *impl_;
@@ -288,8 +288,8 @@ VlxRunResult VlxSeekRuntime::run(const VlxRunRequest& req) {
         out.error = "invalid lang (en|zh)";
         return out;
     }
-    const bool region_task = req.task == "brief_region_caption" ||
-                             req.task == "region_ocr";
+    const bool region_task =
+            req.task == "brief_region_caption" || req.task == "region_ocr";
     if (region_task && (!req.target_indexes || req.n_targets == 0)) {
         out.code = -1;
         out.error = "a region task requires target-region-indexes";
@@ -315,16 +315,19 @@ VlxRunResult VlxSeekRuntime::run(const VlxRunRequest& req) {
         } else {
             // WeDetect-Uni conv graph (lazy weight upload, then resident).
             if (!s.wedetect)
-                s.wedetect.reset(new WeDetectGraph(s.backend, &s.wedetect_gguf));
+                s.wedetect.reset(
+                        new WeDetectGraph(s.backend, &s.wedetect_gguf));
             WeDetectResult res;
             if (!s.wedetect->run(img, &res, false, &out.error)) {
                 out.code = -2;
                 return out;
             }
-            for (const auto& b : res.boxes) raw.push_back({b.x1, b.y1, b.x2, b.y2});
+            for (const auto& b : res.boxes)
+                raw.push_back({b.x1, b.y1, b.x2, b.y2});
             out.proposal_count = int32_t(res.boxes.size());
         }
-        if (!validate_boxes(raw, img.width, img.height, &caller_boxes, &out.error)) {
+        if (!validate_boxes(raw, img.width, img.height, &caller_boxes,
+                            &out.error)) {
             out.code = -1;
             return out;
         }
@@ -355,7 +358,8 @@ VlxRunResult VlxSeekRuntime::run(const VlxRunRequest& req) {
         }
         if (!build_task_prompt(req.task, req.lang, slot, &question)) {
             out.code = -1;
-            out.error = "no template for task " + req.task + " / lang " + req.lang;
+            out.error =
+                    "no template for task " + req.task + " / lang " + req.lang;
             return out;
         }
     }
@@ -390,19 +394,26 @@ VlxRunResult VlxSeekRuntime::run(const VlxRunRequest& req) {
             GgufFile& vg = s.vision_gguf;
             if (!s.mm) {
                 MmprojConfig mc;
-                mc.patch_size = int(vg.i32("vlx.mmproj.patch_size", mc.patch_size));
+                mc.patch_size =
+                        int(vg.i32("vlx.mmproj.patch_size", mc.patch_size));
                 mc.temporal = int(vg.i32("vlx.mmproj.temporal", mc.temporal));
-                mc.embed_dim = int(vg.i32("vlx.mmproj.embed_dim", mc.embed_dim));
+                mc.embed_dim =
+                        int(vg.i32("vlx.mmproj.embed_dim", mc.embed_dim));
                 mc.depth = int(vg.i32("vlx.mmproj.depth", mc.depth));
-                mc.num_heads = int(vg.i32("vlx.mmproj.num_heads", mc.num_heads));
-                mc.mlp_hidden = int(vg.i32("vlx.mmproj.mlp_hidden", mc.mlp_hidden));
-                mc.hidden_out = int(vg.i32("vlx.mmproj.hidden_out", mc.hidden_out));
+                mc.num_heads =
+                        int(vg.i32("vlx.mmproj.num_heads", mc.num_heads));
+                mc.mlp_hidden =
+                        int(vg.i32("vlx.mmproj.mlp_hidden", mc.mlp_hidden));
+                mc.hidden_out =
+                        int(vg.i32("vlx.mmproj.hidden_out", mc.hidden_out));
                 mc.merge = int(vg.i32("vlx.mmproj.merge", mc.merge));
                 mc.pos_side = int(vg.i32("vlx.mmproj.pos_side", mc.pos_side));
-                mc.rope_theta = float(vg.f32v("vlx.mmproj.rope_theta", mc.rope_theta));
+                mc.rope_theta =
+                        float(vg.f32v("vlx.mmproj.rope_theta", mc.rope_theta));
                 s.mm.reset(new MmprojGraph(s.backend, mc, &vg));
             }
-            if (!s.mm->run(pix_bf16.data(), gh, gw, &ll_tokens, nullptr, &out.error)) {
+            if (!s.mm->run(pix_bf16.data(), gh, gw, &ll_tokens, nullptr,
+                           &out.error)) {
                 out.code = -2;
                 out.error = "mmproj: " + out.error;
                 return out;
@@ -413,16 +424,20 @@ VlxRunResult VlxSeekRuntime::run(const VlxRunRequest& req) {
             if (Nb) {
                 SimpleFpnConfig fc;
                 fc.vt_dim = int(s.vision_gguf.i32("vlx.fpn.vt_dim", 4096));
-                fc.out_channels = int(s.vision_gguf.i32("vlx.fpn.out_channels", 512));
+                fc.out_channels =
+                        int(s.vision_gguf.i32("vlx.fpn.out_channels", 512));
                 HfreConfig hc;
                 fc.roi_output_size = hc.roi_output_size =
-                    int(s.vision_gguf.i32("vlx.hfre.roi_output_size", 14));
+                        int(s.vision_gguf.i32("vlx.hfre.roi_output_size", 14));
                 fc.roi_aligned = hc.roi_aligned =
-                    s.vision_gguf.i32("vlx.hfre.roi_aligned", 1) != 0;
+                        s.vision_gguf.i32("vlx.hfre.roi_aligned", 1) != 0;
                 hc.n_threads = s.threads;
-                if (!s.fpn) s.fpn.reset(new SimpleFpnGraph(s.backend, fc, &s.vision_gguf));
+                if (!s.fpn)
+                    s.fpn.reset(
+                            new SimpleFpnGraph(s.backend, fc, &s.vision_gguf));
                 std::vector<FeatureLevel> vt_levels;
-                if (!s.fpn->run(ll_tokens.data(), gh, gw, &vt_levels, nullptr)) {
+                if (!s.fpn->run(ll_tokens.data(), gh, gw, &vt_levels,
+                                nullptr)) {
                     out.code = -2;
                     out.error = "fpn run failed";
                     return out;
@@ -433,45 +448,62 @@ VlxRunResult VlxSeekRuntime::run(const VlxRunRequest& req) {
                 std::vector<FeatureLevel> aux_levels;
                 {
                     RadioConfig rc;
-                    rc.patch_size = int(s.vision_gguf.i32("vlx.radio.patch_size", rc.patch_size));
-                    rc.embed_dim = int(s.vision_gguf.i32("vlx.radio.embed_dim", rc.embed_dim));
-                    rc.depth = int(s.vision_gguf.i32("vlx.radio.depth", rc.depth));
-                    rc.num_heads = int(s.vision_gguf.i32("vlx.radio.num_heads", rc.num_heads));
-                    rc.num_cls_tokens = int(s.vision_gguf.i32("vlx.radio.num_cls_tokens", rc.num_cls_tokens));
-                    rc.num_registers = int(s.vision_gguf.i32("vlx.radio.num_registers", rc.num_registers));
+                    rc.patch_size = int(s.vision_gguf.i32(
+                            "vlx.radio.patch_size", rc.patch_size));
+                    rc.embed_dim = int(s.vision_gguf.i32("vlx.radio.embed_dim",
+                                                         rc.embed_dim));
+                    rc.depth =
+                            int(s.vision_gguf.i32("vlx.radio.depth", rc.depth));
+                    rc.num_heads = int(s.vision_gguf.i32("vlx.radio.num_heads",
+                                                         rc.num_heads));
+                    rc.num_cls_tokens = int(s.vision_gguf.i32(
+                            "vlx.radio.num_cls_tokens", rc.num_cls_tokens));
+                    rc.num_registers = int(s.vision_gguf.i32(
+                            "vlx.radio.num_registers", rc.num_registers));
                     for (int i = 0; i < 4; ++i)
-                        rc.out_indices[i] = i == 3 ? rc.depth - 1
-                                                   : int(std::lround(float(i + 1) * rc.depth / 4.f)) - 1;
-                    hc.aux_spatial_scale =
-                        float(s.vision_gguf.f32v("vlx.hfre.aux_spatial_scale", 1.0 / rc.patch_size));
-                    if (!s.radio) s.radio.reset(new RadioGraph(s.backend, rc, &s.vision_gguf));
-                    if (!s.radio->run(aux_hwc.data(), aH, aW, &aux_levels, &out.error)) {
+                        rc.out_indices[i] =
+                                i == 3 ? rc.depth - 1
+                                       : int(std::lround(float(i + 1) *
+                                                         rc.depth / 4.f)) -
+                                                 1;
+                    hc.aux_spatial_scale = float(s.vision_gguf.f32v(
+                            "vlx.hfre.aux_spatial_scale", 1.0 / rc.patch_size));
+                    if (!s.radio)
+                        s.radio.reset(
+                                new RadioGraph(s.backend, rc, &s.vision_gguf));
+                    if (!s.radio->run(aux_hwc.data(), aH, aW, &aux_levels,
+                                      &out.error)) {
                         out.code = -2;
                         out.error = "radio: " + out.error;
                         return out;
                     }
                 }
                 const int hb = gh * 16, wb = gw * 16;
-                const float sw = float(double(wb) / img.width), sh = float(double(hb) / img.height);
+                const float sw = float(double(wb) / img.width),
+                            sh = float(double(hb) / img.height);
                 std::vector<Box> vt_boxes(Nb);
                 for (size_t n = 0; n < Nb; ++n)
-                    vt_boxes[n] = {boxes[n].x1 * sw, boxes[n].y1 * sh, boxes[n].x2 * sw,
-                                   boxes[n].y2 * sh};
+                    vt_boxes[n] = {boxes[n].x1 * sw, boxes[n].y1 * sh,
+                                   boxes[n].x2 * sw, boxes[n].y2 * sh};
                 if (!s.hfre) s.hfre.reset(new HfreEncoder(hc));
                 HfreEncoder& hfre = *s.hfre;
                 std::vector<float> aux_nxc, vt_nxc, fused;
                 if (!hfre.encode_aux(boxes, aux_levels, &aux_nxc, &out.error) ||
-                    !hfre.encode_vt(vt_boxes, vt_levels, {4.f, 8.f, 16.f, 32.f}, &vt_nxc,
-                                    &out.error)) {
+                    !hfre.encode_vt(vt_boxes, vt_levels, {4.f, 8.f, 16.f, 32.f},
+                                    &vt_nxc, &out.error)) {
                     out.code = -2;
                     out.error = "hfre: " + out.error;
                     return out;
                 }
                 std::vector<FeatureLevel> vt_grid_ref(1);
-                vt_grid_ref[0].width = (gw / 2) * int(1.f / hc.vt_spatial_scale);
-                vt_grid_ref[0].height = (gh / 2) * int(1.f / hc.vt_spatial_scale);
-                if (!hfre.fuse(aux_nxc, vt_nxc, vt_boxes, int(aux_nxc.size() / Nb),
-                               int(vt_nxc.size() / Nb), vt_grid_ref, &fused, &out.error)) {
+                vt_grid_ref[0].width =
+                        (gw / 2) * int(1.f / hc.vt_spatial_scale);
+                vt_grid_ref[0].height =
+                        (gh / 2) * int(1.f / hc.vt_spatial_scale);
+                if (!hfre.fuse(aux_nxc, vt_nxc, vt_boxes,
+                               int(aux_nxc.size() / Nb),
+                               int(vt_nxc.size() / Nb), vt_grid_ref, &fused,
+                               &out.error)) {
                     out.code = -2;
                     out.error = "hfre fuse: " + out.error;
                     return out;
@@ -490,7 +522,9 @@ VlxRunResult VlxSeekRuntime::run(const VlxRunRequest& req) {
         if (last_pass) out.vision_ms = ms_since(t_pass);
     }  // warm loop
     s.dump("image_embeds.f32", image_embeds.data(), image_embeds.size() * 4);
-    if (Nb) s.dump("object_feats.f32", object_feats.data(), object_feats.size() * 4);
+    if (Nb)
+        s.dump("object_feats.f32", object_feats.data(),
+               object_feats.size() * 4);
 
     // ---- prompt + LLM ----
     const int64_t n_embd = llama_model_n_embd(s.llm);
@@ -500,8 +534,8 @@ VlxRunResult VlxSeekRuntime::run(const VlxRunRequest& req) {
         for (size_t i = 0; i < Nb; ++i)
             prompt_img += "<obj" + std::to_string(i) + "><objfeat>";
     }
-    const std::string prompt = "<|im_start|>user\n" + prompt_img + "\n" + question +
-                               "<|im_end|>\n<|im_start|>assistant\n";
+    const std::string prompt = "<|im_start|>user\n" + prompt_img + "\n" +
+                               question + "<|im_end|>\n<|im_start|>assistant\n";
     const size_t n_img = image_embeds.size() / size_t(n_embd);
     std::vector<Entry> entries;
     size_t img_seen = 0, obj_seen = 0;
@@ -517,8 +551,8 @@ VlxRunResult VlxSeekRuntime::run(const VlxRunRequest& req) {
     };
     const auto img_chunks = split(prompt, "<image>");
     for (size_t ci = 0; ci < img_chunks.size(); ++ci) {
-        const auto obj_chunks =
-            Nb ? split(img_chunks[ci], "<objfeat>") : std::vector<std::string>{img_chunks[ci]};
+        const auto obj_chunks = Nb ? split(img_chunks[ci], "<objfeat>")
+                                   : std::vector<std::string>{img_chunks[ci]};
         for (size_t oi = 0; oi < obj_chunks.size(); ++oi) {
             if (oi > 0) {
                 if (obj_seen >= Nb) {
@@ -526,7 +560,8 @@ VlxRunResult VlxSeekRuntime::run(const VlxRunRequest& req) {
                     out.error = "more <objfeat> than boxes";
                     return out;
                 }
-                entries.push_back({LLAMA_TOKEN_NULL, object_feats.data() + obj_seen++ * n_embd});
+                entries.push_back({LLAMA_TOKEN_NULL,
+                                   object_feats.data() + obj_seen++ * n_embd});
             }
             for (llama_token t : tokenize(s.vocab, obj_chunks[oi]))
                 entries.push_back({t, nullptr});
@@ -538,7 +573,8 @@ VlxRunResult VlxSeekRuntime::run(const VlxRunRequest& req) {
                 return out;
             }
             for (size_t r = 0; r < n_img; ++r)
-                entries.push_back({LLAMA_TOKEN_NULL, image_embeds.data() + r * n_embd});
+                entries.push_back(
+                        {LLAMA_TOKEN_NULL, image_embeds.data() + r * n_embd});
         }
     }
     out.prompt_tokens = int32_t(entries.size());
@@ -568,7 +604,8 @@ VlxRunResult VlxSeekRuntime::run(const VlxRunRequest& req) {
     stop.push_back(llama_vocab_eos(s.vocab));
     double decode_ms = 0;
     const std::vector<llama_token> gen =
-        generate(s.lctx, s.vocab, s.opts.max_new_tokens, stop, 0.f, 1.f, &pos, &decode_ms);
+            generate(s.lctx, s.vocab, s.opts.max_new_tokens, stop, 0.f, 1.f,
+                     &pos, &decode_ms);
     out.completion_tokens = int32_t(gen.size());
     out.llm_ms = ms_since(t_llm);
     if (!s.opts.dump_dir.empty()) {
@@ -590,29 +627,35 @@ VlxRunResult VlxSeekRuntime::run(const VlxRunRequest& req) {
     for (size_t p; (p = answer.find("<|im_end|>")) != std::string::npos;)
         answer.erase(p, 10);
     const auto not_space = [](unsigned char c) { return !std::isspace(c); };
-    answer.erase(answer.begin(), std::find_if(answer.begin(), answer.end(), not_space));
-    answer.erase(std::find_if(answer.rbegin(), answer.rend(), not_space).base(), answer.end());
+    answer.erase(answer.begin(),
+                 std::find_if(answer.begin(), answer.end(), not_space));
+    answer.erase(std::find_if(answer.rbegin(), answer.rend(), not_space).base(),
+                 answer.end());
     out.answer = remap_obj_tokens(answer, to_caller);
 
     if (!caller_boxes.empty()) {
         static const std::regex grp(
-            R"(<ground>([\s\S]*?)</ground>\s*<objects>([\s\S]*?)</objects>)");
+                R"(<ground>([\s\S]*?)</ground>\s*<objects>([\s\S]*?)</objects>)");
         static const std::regex obj(R"(<obj(\d+)>)");
-        for (std::sregex_iterator it(out.answer.begin(), out.answer.end(), grp), end;
+        for (std::sregex_iterator it(out.answer.begin(), out.answer.end(), grp),
+             end;
              it != end; ++it) {
             std::string label = (*it)[1].str();
             label.erase(label.begin(),
                         std::find_if(label.begin(), label.end(), not_space));
-            label.erase(std::find_if(label.rbegin(), label.rend(), not_space).base(),
+            label.erase(std::find_if(label.rbegin(), label.rend(), not_space)
+                                .base(),
                         label.end());
             const std::string objs = (*it)[2].str();
-            for (std::sregex_iterator jt(objs.begin(), objs.end(), obj); jt != end; ++jt) {
+            for (std::sregex_iterator jt(objs.begin(), objs.end(), obj);
+                 jt != end; ++jt) {
                 const std::string digits = (*jt)[1].str();
                 if (digits.size() > 18) continue;
                 const long long k = std::stoll(digits);
                 if (k >= (long long)caller_boxes.size()) continue;
                 const BoxD& b = caller_boxes[size_t(k)];
-                out.boxes.push_back({(*jt)[0].str(), label, {b[0], b[1], b[2], b[3]}});
+                out.boxes.push_back(
+                        {(*jt)[0].str(), label, {b[0], b[1], b[2], b[3]}});
             }
         }
     }
@@ -641,8 +684,8 @@ VlxRunResult VlxSeekRuntime::run(const VlxRunRequest& req) {
         js += "  ]";
     }
     js += ",\n  \"prompt_tokens\": " + std::to_string(out.prompt_tokens) +
-          ",\n  \"completion_tokens\": " + std::to_string(out.completion_tokens) +
-          "\n}";
+          ",\n  \"completion_tokens\": " +
+          std::to_string(out.completion_tokens) + "\n}";
     out.json = js;
 
     // retain for the result getters
@@ -662,13 +705,16 @@ VlxRunResult VlxSeekRuntime::run(const VlxRunRequest& req) {
     return out;
 }
 
-bool VlxSeekRuntime::render_png(const VlxRunResult& result, const uint8_t* rgb,
-                                int width, int height,
+bool VlxSeekRuntime::render_png(const VlxRunResult& result,
+                                const uint8_t* rgb,
+                                int width,
+                                int height,
                                 const std::string& out_png_path) {
     if (!rgb || width <= 0 || height <= 0 || out_png_path.empty()) return false;
     std::vector<uint8_t> canvas(rgb, rgb + size_t(width) * height * 3);
     for (const auto& r : result.boxes) {
-        draw_rect_pil(&canvas, width, height, r.box[0], r.box[1], r.box[2], r.box[3], 3);
+        draw_rect_pil(&canvas, width, height, r.box[0], r.box[1], r.box[2],
+                      r.box[3], 3);
         const std::string& label = all_ascii(r.label) ? r.label : r.index;
         draw_label_pil(&canvas, width, height, r.box[0], r.box[1], label);
     }
@@ -687,7 +733,8 @@ std::string VlxSeekRuntime::info_json() const {
     js += "    \"has_result\": " + std::string(s.has_result ? "true" : "false");
     if (s.has_result) {
         js += ",\n    \"prompt_tokens\": " + std::to_string(s.prompt_tokens);
-        js += ",\n    \"completion_tokens\": " + std::to_string(s.completion_tokens);
+        js += ",\n    \"completion_tokens\": " +
+              std::to_string(s.completion_tokens);
         js += ",\n    \"boxes\": " + std::to_string(s.boxes.size());
         js += ",\n    \"proposals\": " + std::to_string(s.proposal_count);
         js += ",\n    \"vision_ms\": " + py_float(s.vision_ms);

@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "querysplat_tto_loss.hpp"
 
 #include <cmath>
@@ -12,10 +19,10 @@ namespace qs {
 
 namespace {
 
-constexpr int kK = 11;      // fused-ssim kernel size
-constexpr int kPad = 5;     // "same" padding
-constexpr float kC1 = 1e-4f;   // (0.01)^2
-constexpr float kC2 = 9e-4f;   // (0.03)^2
+constexpr int kK = 11;        // fused-ssim kernel size
+constexpr int kPad = 5;       // "same" padding
+constexpr float kC1 = 1e-4f;  // (0.01)^2
+constexpr float kC2 = 9e-4f;  // (0.03)^2
 
 // fused-ssim's create_gauss_kernel: 1D gaussian (sigma 1.5) normalized, then
 // the outer product. Computed in f32 exactly like the reference stub.
@@ -33,8 +40,8 @@ void gauss_kernel1d(float w[kK]) {
 // (H,W) plane. Pass 1 caches the horizontal pass; the kernel is symmetric
 // so the backward uses the same routine (conv with a symmetric kernel is
 // its own transpose).
-void conv11_separable(const float* src, float* dst, int H, int W,
-                      const float* w1d) {
+void conv11_separable(
+        const float* src, float* dst, int H, int W, const float* w1d) {
     std::vector<float> tmp((size_t)H * W);
 #ifdef QS_USE_OPENMP
 #pragma omp parallel for schedule(static)
@@ -69,16 +76,21 @@ void conv11_separable(const float* src, float* dst, int H, int W,
 // Per-channel fused-ssim forward: fills S map and (train) the three
 // derivative maps dm_dmu1, dm_dsigma1_sq, dm_dsigma12.
 struct SsimFwd {
-    std::vector<float> s_map;     // (V,3,H,W)
-    std::vector<float> mu1_map;   // (V,3,H,W)
-    std::vector<float> mu2_map;   // (V,3,H,W)
-    std::vector<float> dm_dmu1;   // (V,3,H,W)
-    std::vector<float> dm_dsig1;  // (V,3,H,W)
-    std::vector<float> dm_dsig12; // (V,3,H,W)
+    std::vector<float> s_map;      // (V,3,H,W)
+    std::vector<float> mu1_map;    // (V,3,H,W)
+    std::vector<float> mu2_map;    // (V,3,H,W)
+    std::vector<float> dm_dmu1;    // (V,3,H,W)
+    std::vector<float> dm_dsig1;   // (V,3,H,W)
+    std::vector<float> dm_dsig12;  // (V,3,H,W)
 };
 
-void ssim_forward(const float* img1, const float* img2, int V, int H, int W,
-                  const float* w1d, SsimFwd* out) {
+void ssim_forward(const float* img1,
+                  const float* img2,
+                  int V,
+                  int H,
+                  int W,
+                  const float* w1d,
+                  SsimFwd* out) {
     const size_t plane = (size_t)H * W;
     out->s_map.assign((size_t)V * 3 * plane, 0.f);
     out->mu1_map.assign((size_t)V * 3 * plane, 0.f);
@@ -99,7 +111,7 @@ void ssim_forward(const float* img1, const float* img2, int V, int H, int W,
             xy[i] = x[i] * y[i];
         }
         std::vector<float> mux(plane), muy(plane), mxx(plane), myy(plane),
-            mxy(plane);
+                mxy(plane);
         conv11_separable(x, mux.data(), H, W, w1d);
         conv11_separable(y, muy.data(), H, W, w1d);
         conv11_separable(x2.data(), mxx.data(), H, W, w1d);
@@ -139,8 +151,8 @@ void ssim_forward(const float* img1, const float* img2, int V, int H, int W,
 
 }  // namespace
 
-float fused_ssim_value(const float* img1, const float* img2, int V, int H,
-                       int W) {
+float fused_ssim_value(
+        const float* img1, const float* img2, int V, int H, int W) {
     float w1d[kK];
     gauss_kernel1d(w1d);
     SsimFwd f;
@@ -151,8 +163,13 @@ float fused_ssim_value(const float* img1, const float* img2, int V, int H,
     return (float)(acc / (double)n);
 }
 
-void fused_ssim_backward(const float* img1, const float* img2, int V, int H,
-                         int W, const float* d_ssim_map, float* d_img1) {
+void fused_ssim_backward(const float* img1,
+                         const float* img2,
+                         int V,
+                         int H,
+                         int W,
+                         const float* d_ssim_map,
+                         float* d_img1) {
     float w1d[kK];
     gauss_kernel1d(w1d);
     SsimFwd f;
@@ -169,14 +186,15 @@ void fused_ssim_backward(const float* img1, const float* img2, int V, int H,
         const float* g_mu1 = &f.dm_dmu1[(size_t)b * plane];
         const float* g_s1 = &f.dm_dsig1[(size_t)b * plane];
         const float* g_s12 = &f.dm_dsig12[(size_t)b * plane];
-        std::vector<float> term1b(plane), term2b(plane), term3b(plane), t1c(plane), t2c(plane), t3c(plane);
+        std::vector<float> term1b(plane), term2b(plane), term3b(plane),
+                t1c(plane), t2c(plane), t3c(plane);
         const float* m1 = &f.mu1_map[(size_t)b * plane];
         const float* m2 = &f.mu2_map[(size_t)b * plane];
         for (size_t i = 0; i < plane; i++) {
             // total dL/dmu1: the direct A1/B1 path PLUS the -mu1^2 term of
             // sigma1_sq and the -mu1*mu2 term of sigma12 (fusedssim_backward)
-            term1b[i] = dS[i] * (g_mu1[i] - 2.f * m1[i] * g_s1[i] -
-                                 m2[i] * g_s12[i]);
+            term1b[i] = dS[i] *
+                        (g_mu1[i] - 2.f * m1[i] * g_s1[i] - m2[i] * g_s12[i]);
             // sigma maps: dsigma1_sq = dS*dm_dsigma1_sq (conv(x^2) path),
             // dsigma12 = dS*dm_dsigma12 (conv(x*y) path)
             term2b[i] = dS[i] * g_s1[i];
@@ -195,9 +213,14 @@ void fused_ssim_backward(const float* img1, const float* img2, int V, int H,
     }
 }
 
-bool tto_loss_value_and_grad(const float* pred, const float* gt, int V,
-                             int H, int W, float lpips_weight,
-                             const float* d_lpips, TtoLossOut* out) {
+bool tto_loss_value_and_grad(const float* pred,
+                             const float* gt,
+                             int V,
+                             int H,
+                             int W,
+                             float lpips_weight,
+                             const float* d_lpips,
+                             TtoLossOut* out) {
     const size_t n = (size_t)V * 3 * H * W;
     if (n == 0) return false;
     float w1d[kK];
@@ -215,8 +238,7 @@ bool tto_loss_value_and_grad(const float* pred, const float* gt, int V,
     // (d loss_total/d ssim_map = 0.2 * (-1/2) / n per element)
     const float inv_n = 1.0f / (float)n;
     std::vector<float> d_ssim_map(n);
-    for (size_t i = 0; i < n; i++)
-        d_ssim_map[i] = -0.1f * inv_n;
+    for (size_t i = 0; i < n; i++) d_ssim_map[i] = -0.1f * inv_n;
     out->d_pred.assign(n, 0.f);
     fused_ssim_backward(pred, gt, V, H, W, d_ssim_map.data(),
                         out->d_pred.data());

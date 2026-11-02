@@ -1,15 +1,21 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "querysplat_lpips_graph.hpp"
-
-#include "map_anything_common.hpp"
-#include "map_anything_gguf_loader.hpp"
-
-#include "ggml-alloc.h"
-#include "ggml-backend.h"
-#include "ggml.h"
 
 #include <cmath>
 #include <cstring>
 #include <map>
+
+#include "ggml-alloc.h"
+#include "ggml-backend.h"
+#include "ggml.h"
+#include "map_anything_common.hpp"
+#include "map_anything_gguf_loader.hpp"
 
 namespace qs {
 
@@ -59,13 +65,16 @@ struct LpipsVgg::Impl {
 
     bool stage_weights() {
         const size_t n = model->tensors.size();
-        ggml_init_params wp{ggml_tensor_overhead() * n + (1u << 16), nullptr, true};
+        ggml_init_params wp{ggml_tensor_overhead() * n + (1u << 16), nullptr,
+                            true};
         wctx = ggml_init(wp);
         if (!wctx) return false;
         for (const auto& [name, ht] : model->tensors) {
             if (ht.type != GGML_TYPE_F32) {
-                log_error("lpips: %s is not F32 (convert with convert_lpips_to_gguf.py)",
-                          name.c_str());
+                log_error(
+                        "lpips: %s is not F32 (convert with "
+                        "convert_lpips_to_gguf.py)",
+                        name.c_str());
                 return false;
             }
             ggml_tensor* t = ggml_new_tensor(wctx, GGML_TYPE_F32, 4, ht.ne);
@@ -86,7 +95,8 @@ struct LpipsVgg::Impl {
         wbuf = ggml_backend_alloc_ctx_tensors(wctx, be.handle);
         if (!wbuf) return false;
         for (const auto& [name, ht] : model->tensors)
-            ggml_backend_tensor_set(wt[name], ht.data.data(), 0, ht.data.size());
+            ggml_backend_tensor_set(wt[name], ht.data.data(), 0,
+                                    ht.data.size());
         return true;
     }
 
@@ -95,11 +105,16 @@ struct LpipsVgg::Impl {
     ggml_tensor* conv_relu(ggml_context* ctx, ggml_tensor* x, int i) {
         ggml_tensor* k = wt["conv" + std::to_string(i) + ".weight"];
         ggml_tensor* b = wt["conv" + std::to_string(i) + ".bias"];
-        ggml_tensor* col = ggml_im2col(ctx, k, x, 1, 1, 1, 1, 1, 1, true, GGML_TYPE_F32);
+        ggml_tensor* col =
+                ggml_im2col(ctx, k, x, 1, 1, 1, 1, 1, 1, true, GGML_TYPE_F32);
         ggml_tensor* r = ggml_mul_mat(
-            ctx, ggml_reshape_2d(ctx, col, col->ne[0], col->ne[1] * col->ne[2] * col->ne[3]),
-            ggml_reshape_2d(ctx, k, k->ne[0] * k->ne[1] * k->ne[2], k->ne[3]));
-        r = ggml_reshape_4d(ctx, r, col->ne[1], col->ne[2], col->ne[3], k->ne[3]);
+                ctx,
+                ggml_reshape_2d(ctx, col, col->ne[0],
+                                col->ne[1] * col->ne[2] * col->ne[3]),
+                ggml_reshape_2d(ctx, k, k->ne[0] * k->ne[1] * k->ne[2],
+                                k->ne[3]));
+        r = ggml_reshape_4d(ctx, r, col->ne[1], col->ne[2], col->ne[3],
+                            k->ne[3]);
         r = ggml_cont(ctx, ggml_permute(ctx, r, 0, 1, 3, 2));
         r = ggml_add(ctx, r, ggml_reshape_4d(ctx, b, 1, 1, b->ne[0], 1));
         return ggml_relu(ctx, r);
@@ -113,13 +128,18 @@ struct LpipsVgg::Impl {
         ggml_tensor* nrm = ggml_sqrt(ctx, ggml_sum_rows(ctx, ggml_sqr(ctx, x)));
         x = ggml_div(ctx, x, ggml_scale_bias(ctx, nrm, 1.0f, 1e-10f));
         const size_t half = (size_t)x->nb[3];
-        ggml_tensor* a = ggml_view_4d(ctx, x, C, w, h, 1, x->nb[1], x->nb[2], x->nb[3], 0);
-        ggml_tensor* b = ggml_view_4d(ctx, x, C, w, h, 1, x->nb[1], x->nb[2], x->nb[3], half);
+        ggml_tensor* a = ggml_view_4d(ctx, x, C, w, h, 1, x->nb[1], x->nb[2],
+                                      x->nb[3], 0);
+        ggml_tensor* b = ggml_view_4d(ctx, x, C, w, h, 1, x->nb[1], x->nb[2],
+                                      x->nb[3], half);
         ggml_tensor* d2 = ggml_sqr(ctx, ggml_sub(ctx, a, b));
-        ggml_tensor* lw = wt["lin" + std::to_string(l) + ".weight"];  // {1,1,C,1}
-        ggml_tensor* r = ggml_mul_mat(ctx, ggml_reshape_2d(ctx, lw, C, 1),
-                                      ggml_reshape_2d(ctx, d2, C, w * h));  // {1, w*h}
-        return ggml_mean(ctx, ggml_reshape_2d(ctx, r, w * h, 1));  // spatial_average
+        ggml_tensor* lw =
+                wt["lin" + std::to_string(l) + ".weight"];  // {1,1,C,1}
+        ggml_tensor* r =
+                ggml_mul_mat(ctx, ggml_reshape_2d(ctx, lw, C, 1),
+                             ggml_reshape_2d(ctx, d2, C, w * h));  // {1, w*h}
+        return ggml_mean(ctx,
+                         ggml_reshape_2d(ctx, r, w * h, 1));  // spatial_average
     }
 
     bool build(int h, int w) {
@@ -128,7 +148,7 @@ struct LpipsVgg::Impl {
         W = w;
         constexpr size_t kNodes = 512;
         ggml_init_params gp{ggml_tensor_overhead() * kNodes +
-                                ggml_graph_overhead_custom(kNodes, false),
+                                    ggml_graph_overhead_custom(kNodes, false),
                             nullptr, true};
         gctx = ggml_init(gp);
         if (!gctx) return false;
@@ -143,7 +163,8 @@ struct LpipsVgg::Impl {
             x = conv_relu(gctx, x, i);
             if (i == kTapAfter[tap]) {
                 ggml_tensor* t = layer_term(gctx, x, tap);
-                val = val ? ggml_add(gctx, val, t) : t;  // val = 0; val += res[l]
+                val = val ? ggml_add(gctx, val, t)
+                          : t;  // val = 0; val += res[l]
                 tap++;
             }
         }
@@ -151,7 +172,8 @@ struct LpipsVgg::Impl {
         ggml_set_output(out);
         graph = ggml_new_graph_custom(gctx, kNodes, false);
         ggml_build_forward_expand(graph, out);
-        galloc = ggml_gallocr_new(ggml_backend_get_default_buffer_type(be.handle));
+        galloc = ggml_gallocr_new(
+                ggml_backend_get_default_buffer_type(be.handle));
         if (!ggml_gallocr_alloc_graph(galloc, graph)) {
             log_error("lpips: graph allocation failed");
             return false;
@@ -198,8 +220,14 @@ struct LpipsHost {
 };
 
 // 3x3 stride-1 pad-1 conv + bias + ReLU, CHW in/out
-void host_conv_relu(const float* in, int C, int H, int W, const float* w,
-                    int OC, const float* bias, float* out) {
+void host_conv_relu(const float* in,
+                    int C,
+                    int H,
+                    int W,
+                    const float* w,
+                    int OC,
+                    const float* bias,
+                    float* out) {
 #ifdef QS_USE_OPENMP
 #pragma omp parallel for collapse(2) schedule(static)
 #endif
@@ -217,7 +245,8 @@ void host_conv_relu(const float* in, int C, int H, int W, const float* w,
                         for (int kx = 0; kx < 3; kx++) {
                             const int xx = x + kx - 1;
                             if (xx < 0 || xx >= W) continue;
-                            accic += ip[(ky - 1) * W + (kx - 1)] * wp[ky * 3 + kx];
+                            accic += ip[(ky - 1) * W + (kx - 1)] *
+                                     wp[ky * 3 + kx];
                         }
                     }
                     acc += accic;
@@ -229,8 +258,13 @@ void host_conv_relu(const float* in, int C, int H, int W, const float* w,
 }
 
 // conv backward w.r.t. the conv INPUT (flipped kernel); writes (not adds)
-void host_conv_input_grad(const float* dout, int OC, int H, int W,
-                          const float* w, int C, float* din) {
+void host_conv_input_grad(const float* dout,
+                          int OC,
+                          int H,
+                          int W,
+                          const float* w,
+                          int C,
+                          float* din) {
 #ifdef QS_USE_OPENMP
 #pragma omp parallel for collapse(2) schedule(static)
 #endif
@@ -261,8 +295,12 @@ constexpr float kNromEps = 1e-10f;  // normalize_tensor's +eps
 
 }  // namespace
 
-bool LpipsVgg::value_and_grad(const float* prediction, const float* target,
-                              int V, int H, int W, std::vector<float>* out,
+bool LpipsVgg::value_and_grad(const float* prediction,
+                              const float* target,
+                              int V,
+                              int H,
+                              int W,
+                              std::vector<float>* out,
                               std::vector<float>* grad_prediction) {
     if (!impl_) return false;
     Impl& m = *impl_;
@@ -276,21 +314,22 @@ bool LpipsVgg::value_and_grad(const float* prediction, const float* target,
         };
         for (int i = 0; i < kConvs; i++) {
             const auto& hw_t =
-                m.model->tensors.at("conv" + std::to_string(i) + ".weight");
+                    m.model->tensors.at("conv" + std::to_string(i) + ".weight");
             const auto& hb_t =
-                m.model->tensors.at("conv" + std::to_string(i) + ".bias");
+                    m.model->tensors.at("conv" + std::to_string(i) + ".bias");
             hw.cout[i] = (int)hw_t.ne[3];
             hw.w[i] = bytes_to_f32(hw_t.data);
             hw.b[i] = bytes_to_f32(hb_t.data);
         }
         for (int l = 0; l < 5; l++)
             hw.lin[l] = bytes_to_f32(
-                m.model->tensors.at("lin" + std::to_string(l) + ".weight").data);
+                    m.model->tensors.at("lin" + std::to_string(l) + ".weight")
+                            .data);
         hw_ready = true;
     }
     // torchvision vgg16 features channels for convs 0..12
     // (VGG_CONV_INDICES = features {0,2,5,7,10,12,14,17,19,21,24,26,28})
-    static const int kCh[13] = {64, 64, 128, 128, 256, 256, 256,
+    static const int kCh[13] = {64,  64,  128, 128, 256, 256, 256,
                                 512, 512, 512, 512, 512, 512};
     for (int i = 0; i < kConvs; i++)
         if (hw.cout[i] != kCh[i]) {
@@ -323,15 +362,15 @@ bool LpipsVgg::value_and_grad(const float* prediction, const float* target,
         for (int c = 0; c < 3; c++)
             for (int i = 0; i < H * W; i++) {
                 f0[(size_t)c * H * W + i] =
-                    (tgt[(size_t)c * H * W + i] - kShift[c]) / kScale[c];
+                        (tgt[(size_t)c * H * W + i] - kShift[c]) / kScale[c];
                 f1[(size_t)c * H * W + i] =
-                    (prd[(size_t)c * H * W + i] - kShift[c]) / kScale[c];
+                        (prd[(size_t)c * H * W + i] - kShift[c]) / kScale[c];
             }
         // ---- forward: 13 convs, saving the in1 side for the backward ----
         std::vector<std::vector<float>> a0(kConvs), a1(kConvs);  // relu outputs
         std::vector<std::vector<float>> pre1(4);                 // pre-pool in1
         std::vector<std::vector<int32_t>> parg(4);               // pool argmax
-        int pre_ci[4], pre_ch[4], pre_cw[4];                     // pre-pool shape
+        int pre_ci[4], pre_ch[4], pre_cw[4];  // pre-pool shape
         int ci = 3, ch = H, cw = W;
         int pool_i = 0;
         for (int i = 0; i < kConvs; i++) {
@@ -354,7 +393,7 @@ bool LpipsVgg::value_and_grad(const float* prediction, const float* target,
                                               sx = 2 * px + dx;
                                     if (sy >= ch || sx >= cw) continue;
                                     const float val =
-                                        f1[((size_t)c * ch + sy) * cw + sx];
+                                            f1[((size_t)c * ch + sy) * cw + sx];
                                     if (val > best) {  // FIRST max wins
                                         best = val;
                                         ba = dy * 2 + dx;
@@ -378,10 +417,12 @@ bool LpipsVgg::value_and_grad(const float* prediction, const float* target,
                                                   sx = 2 * px + dx;
                                         if (sy >= ch || sx >= cw) continue;
                                         const float val =
-                                            f0[((size_t)c * ch + sy) * cw + sx];
+                                                f0[((size_t)c * ch + sy) * cw +
+                                                   sx];
                                         if (val > best) best = val;
                                     }
-                                pooled0[((size_t)c * och + py) * ocw + px] = best;
+                                pooled0[((size_t)c * och + py) * ocw + px] =
+                                        best;
                             }
                     f0.swap(pooled0);
                 }
@@ -495,21 +536,25 @@ bool LpipsVgg::value_and_grad(const float* prediction, const float* target,
             // transposed conv to this conv's input
             const int cin = L == 0 ? 3 : kCh[L - 1];
             std::vector<float> din((size_t)cin * lh[L] * lw[L], 0.0f);
-            host_conv_input_grad(d.data(), C, lh[L], lw[L], hw.w[L].data(),
-                                 cin, din.data());
+            host_conv_input_grad(d.data(), C, lh[L], lw[L], hw.w[L].data(), cin,
+                                 din.data());
             if (L == 0) {
                 // through the scaling layer to [0,1] prediction space
                 for (int c = 0; c < 3; c++)
                     for (int i = 0; i < H * W; i++)
                         (*grad_prediction)[(size_t)v * in_plane +
                                            (size_t)c * H * W + i] =
-                            din[(size_t)c * H * W + i] / kScale[c];
+                                din[(size_t)c * H * W + i] / kScale[c];
                 break;
             }
             // conv L's input is pool p's output when L in {10,7,4,2}: route
             // the gradient through the saved argmax; otherwise it is the
             // previous conv's output at the same resolution
-            const int p = (L == 10 ? 3 : L == 7 ? 2 : L == 4 ? 1 : L == 2 ? 0 : -1);
+            const int p = (L == 10  ? 3
+                           : L == 7 ? 2
+                           : L == 4 ? 1
+                           : L == 2 ? 0
+                                    : -1);
             if (p < 0) {
                 d = std::move(din);
             } else {
@@ -520,12 +565,12 @@ bool LpipsVgg::value_and_grad(const float* prediction, const float* target,
                     for (int py = 0; py < oh; py++)
                         for (int px = 0; px < ow; px++) {
                             const int ba =
-                                parg[p][((size_t)c * oh + py) * ow + px];
+                                    parg[p][((size_t)c * oh + py) * ow + px];
                             const int sy = 2 * py + (ba >> 1),
                                       sx = 2 * px + (ba & 1);
                             if (sy < sh_ && sx < sw_)
                                 dpre[((size_t)c * sh_ + sy) * sw_ + sx] =
-                                    din[((size_t)c * oh + py) * ow + px];
+                                        din[((size_t)c * oh + py) * ow + px];
                         }
                 d = std::move(dpre);
             }
@@ -534,7 +579,11 @@ bool LpipsVgg::value_and_grad(const float* prediction, const float* target,
     return true;
 }
 
-bool LpipsVgg::score(const float* prediction, const float* target, int V, int H, int W,
+bool LpipsVgg::score(const float* prediction,
+                     const float* target,
+                     int V,
+                     int H,
+                     int W,
                      std::vector<float>* out) {
     if (!impl_) return false;
     Impl& m = *impl_;
@@ -545,7 +594,8 @@ bool LpipsVgg::score(const float* prediction, const float* target, int V, int H,
     for (int v = 0; v < V; v++) {
         // in0 = target, in1 = prediction; 2*x - 1 then (x - shift) / scale,
         // each an f32 op as in torch
-        const float* src[2] = {target + (size_t)v * n, prediction + (size_t)v * n};
+        const float* src[2] = {target + (size_t)v * n,
+                               prediction + (size_t)v * n};
         for (int s = 0; s < 2; s++)
             for (int c = 0; c < 3; c++)
                 for (size_t i = 0; i < plane; i++) {
@@ -556,8 +606,10 @@ bool LpipsVgg::score(const float* prediction, const float* target, int V, int H,
             log_error("lpips: gallocr alloc failed");
             return false;
         }
-        ggml_backend_tensor_set(m.in, buf.data(), 0, buf.size() * sizeof(float));
-        if (ggml_backend_graph_compute(m.be.handle, m.graph) != GGML_STATUS_SUCCESS) {
+        ggml_backend_tensor_set(m.in, buf.data(), 0,
+                                buf.size() * sizeof(float));
+        if (ggml_backend_graph_compute(m.be.handle, m.graph) !=
+            GGML_STATUS_SUCCESS) {
             log_error("lpips: graph compute failed");
             return false;
         }

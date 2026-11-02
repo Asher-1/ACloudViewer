@@ -15,7 +15,8 @@
 // Layout contract (all internal tensors token-major, ggml ne=(C, W, H):
 // address = c + C*(w + W*h), i.e. the memory IS (C, H*W) channel-fastest and
 // doubles as NCHW contiguous once the last dim is read as h*W+w order):
-//   * Linear/1x1 conv : mul_mat directly on (C_in, H*W)          -> (C_out, H*W)
+//   * Linear/1x1 conv : mul_mat directly on (C_in, H*W)          -> (C_out,
+//   H*W)
 //   * LayerNorm over C: reshape (C, H*W) -> ggml_norm -> *w + b
 //   * conv3x3 pad1    : permute+cont to NCHW ne=(W,H,C) -> ggml_im2col
 //                       (k order c*9+ky*3+kx == torch contiguous reshape,
@@ -33,10 +34,10 @@
 
 struct ggml_tensor;  // CUDA RoIAlign device-resident output
 
-#include "vlx_types.h"
-
 #include <string>
 #include <vector>
+
+#include "vlx_types.h"
 
 struct ggml_backend;
 
@@ -45,24 +46,28 @@ namespace vlx {
 class GgufFile;
 
 struct SimpleFpnConfig {
-    int vt_dim = 4096;        // SimpleFPN input channels (merged tower feat)
-    int out_channels = 512;   // per-level channels
-    int strides[4] = {4, 8, 16, 32};   // finest first
+    int vt_dim = 4096;       // SimpleFPN input channels (merged tower feat)
+    int out_channels = 512;  // per-level channels
+    int strides[4] = {4, 8, 16, 32};  // finest first
     int roi_output_size = 14;
     bool roi_aligned = true;
 };
 
 class SimpleFpnGraph {
 public:
-    SimpleFpnGraph(ggml_backend* backend, const SimpleFpnConfig& cfg,
+    SimpleFpnGraph(ggml_backend* backend,
+                   const SimpleFpnConfig& cfg,
                    const GgufFile* gguf);
     ~SimpleFpnGraph();
 
     // pooler: (N/4, vt_dim) f32 token-major bytes (the mmproj --dump-llm
     // stream); merged grid = (gh/2, gw/2) with row-major (h, w) token order.
     // Writes 4 FeatureLevels (NCHW float, finest first) in out_levels.
-    bool run(const float* pooler, int grid_h, int grid_w,
-             std::vector<FeatureLevel>* out_levels, std::string* err = nullptr,
+    bool run(const float* pooler,
+             int grid_h,
+             int grid_w,
+             std::vector<FeatureLevel>* out_levels,
+             std::string* err = nullptr,
              bool keep_on_device = false);
 
     // GPU-resident output level (persistent ictx leaf; on CUDA builds its

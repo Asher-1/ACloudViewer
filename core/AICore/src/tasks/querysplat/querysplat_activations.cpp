@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "querysplat_activations.hpp"
 
 #include <algorithm>
@@ -20,10 +27,14 @@ inline float expm1_abs(float x) {
 }  // namespace
 
 GaussianOutput activate_gaussians(const float* geom_raw,
-                                  const float* color_raw, int64_t n_tokens,
-                                  int gpt, int post_output_dim,
-                                  float scale_cap, float z_offset,
-                                  int sh_degree, float sh_rest_scale) {
+                                  const float* color_raw,
+                                  int64_t n_tokens,
+                                  int gpt,
+                                  int post_output_dim,
+                                  float scale_cap,
+                                  float z_offset,
+                                  int sh_degree,
+                                  float sh_rest_scale) {
     const int color_dim = 3 * (sh_degree + 1) * (sh_degree + 1);
     const int stride = 11 + color_dim;
     const int64_t N = n_tokens * gpt;
@@ -40,7 +51,7 @@ GaussianOutput activate_gaussians(const float* geom_raw,
     // out-channel (j = p*10+c) is the FASTEST axis: flat = n*640 + j — the
     // torch (n_tokens, 640) C-order layout. (An earlier j*n_tokens+n read
     // was transposed and scrambled the gaussians.)
-    const int geom_stride = 10 * gpt;    // 640
+    const int geom_stride = 10 * gpt;  // 640
     for (int64_t n = 0; n < n_tokens; n++) {
         const float* grow = geom_raw + (size_t)n * geom_stride;
         for (int p = 0; p < gpt; p++) {
@@ -113,11 +124,17 @@ GaussianOutput activate_gaussians(const float* geom_raw,
 // sign'==0 and |x|'==0 at x==0 make the position gradient 0 there; the
 // scale min() saturates to 0 once x-shift >= log_cap (inclusive); the
 // rotation F.normalize gradient is the projection (dq - q(q.dq))/|r|.
-void activate_gaussians_backward(const float* geom_raw, const float* color_raw,
-                                 const float* d_gaussians, int64_t n_tokens,
-                                 int gpt, int post_output_dim, float scale_cap,
-                                 float z_offset, int sh_degree,
-                                 float sh_rest_scale, float* d_geom_raw,
+void activate_gaussians_backward(const float* geom_raw,
+                                 const float* color_raw,
+                                 const float* d_gaussians,
+                                 int64_t n_tokens,
+                                 int gpt,
+                                 int post_output_dim,
+                                 float scale_cap,
+                                 float z_offset,
+                                 int sh_degree,
+                                 float sh_rest_scale,
+                                 float* d_geom_raw,
                                  float* d_color_raw) {
     const int color_dim = 3 * (sh_degree + 1) * (sh_degree + 1);
     const int stride = 11 + color_dim;
@@ -138,13 +155,13 @@ void activate_gaussians_backward(const float* geom_raw, const float* color_raw,
             for (int c = 0; c < 3; c++) {
                 const float x = grow[p * 10 + c];
                 dgrad[p * 10 + c] =
-                    x == 0.0f ? 0.0f : dg[c] * std::exp(std::fabs(x));
+                        x == 0.0f ? 0.0f : dg[c] * std::exp(std::fabs(x));
             }
             for (int c = 0; c < 3; c++) {
                 const float x = grow[p * 10 + 3 + c];
                 const float t = x - scale_shift;
                 dgrad[p * 10 + 3 + c] =
-                    t <= scale_log_cap ? dg[4 + c] * std::exp(t) : 0.0f;
+                        t <= scale_log_cap ? dg[4 + c] * std::exp(t) : 0.0f;
             }
             float q[4], r2 = 0.f;
             for (int c = 0; c < 4; c++) {
@@ -178,14 +195,14 @@ void activate_gaussians_backward(const float* geom_raw, const float* color_raw,
                     const float x = crow[p * post_output_dim + c];
                     const float t = std::tanh(x);
                     dcrow[p * post_output_dim + c] =
-                        dg[11 + c] * 0.5f * (1.0f - t * t);
+                            dg[11 + c] * 0.5f * (1.0f - t * t);
                 }
             } else {
                 for (int c = 0; c < 3; c++) {
                     const float x = crow[p * post_output_dim + c];
                     const float t = std::tanh(x);
                     dcrow[p * post_output_dim + c] =
-                        dg[11 + c] * 0.5f * (1.0f - t * t) / kShDcScale;
+                            dg[11 + c] * 0.5f * (1.0f - t * t) / kShDcScale;
                 }
                 const int sh_basis = (sh_degree + 1) * (sh_degree + 1);
                 for (int b = 1; b < sh_basis; b++)
@@ -193,7 +210,8 @@ void activate_gaussians_backward(const float* geom_raw, const float* color_raw,
                         const float x = crow[p * post_output_dim + b * 3 + c];
                         const float t = std::tanh(x);
                         dcrow[p * post_output_dim + b * 3 + c] =
-                            dg[11 + b * 3 + c] * sh_rest_scale * (1.0f - t * t);
+                                dg[11 + b * 3 + c] * sh_rest_scale *
+                                (1.0f - t * t);
                     }
             }
             const float xo = crow[p * post_output_dim + color_dim];

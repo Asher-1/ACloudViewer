@@ -285,8 +285,8 @@ JsonRPCResult JsonRPCPlugin::rpcYoloTrack(
             });
 }
 
-
-JsonRPCResult JsonRPCPlugin::rpcQuerySplat(const QMap<QString, QVariant>& params) {
+JsonRPCResult JsonRPCPlugin::rpcQuerySplat(
+        const QMap<QString, QVariant>& params) {
     const QVariantList imageList = params.value("images").toList();
     const QString outputDir = params.value("output_dir").toString();
     if (imageList.isEmpty() || outputDir.isEmpty()) {

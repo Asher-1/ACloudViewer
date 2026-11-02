@@ -23,10 +23,10 @@
 // itself runs inside the P1 mmproj graph; HFRE consumes its 4 levels.
 #pragma once
 
-#include "vlx_types.h"
-
 #include <string>
 #include <vector>
+
+#include "vlx_types.h"
 
 namespace vlx {
 
@@ -42,9 +42,16 @@ struct PreCalc {
 // Line-for-line port of torchvision 0.25 cpu/roi_align_common.h
 // pre_calc_for_bilinear_interpolate (fills bin-major: ph, pw, grid_y,
 // grid_x; zero-weight taps when a sample falls fully outside).
-void pre_calc_bilinear(int height, int width, int pooled, float roi_start_h,
-                       float roi_start_w, float bin_h, float bin_w, int grid_h,
-                       int grid_w, std::vector<PreCalc>* out);
+void pre_calc_bilinear(int height,
+                       int width,
+                       int pooled,
+                       float roi_start_h,
+                       float roi_start_w,
+                       float bin_h,
+                       float bin_w,
+                       int grid_h,
+                       int grid_w,
+                       std::vector<PreCalc>* out);
 
 class GgufFile;
 
@@ -73,7 +80,8 @@ public:
     bool fuse(const std::vector<float>& aux_nxc,
               const std::vector<float>& vt_nxc,
               const std::vector<Box>& boxes,
-              int aux_channels, int vt_channels,
+              int aux_channels,
+              int vt_channels,
               const std::vector<FeatureLevel>& vt_grid_ref,
               std::vector<float>* out_object_features,
               std::string* err = nullptr);
@@ -82,7 +90,8 @@ public:
     // boxes are in ORIGINAL image pixels; scaled by spatial_scale inside.
     static void roi_align_mean_pool(const FeatureLevel& level,
                                     const std::vector<Box>& boxes_px,
-                                    float spatial_scale, int out_size,
+                                    float spatial_scale,
+                                    int out_size,
                                     bool aligned,
                                     std::vector<float>* out_nxc,
                                     int n_threads = 1);
@@ -95,6 +104,5 @@ private:
 
     HfreConfig cfg_;
 };
-
 
 }  // namespace vlx

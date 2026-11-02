@@ -8,11 +8,10 @@
 
 #include <CVLog.h>
 #include <ecvCameraSensor.h>
+#include <ecvDisplayTools.h>
 #include <ecvImage.h>
-#include <ecvPointCloud.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPointCloud.h>
-#include <ecvDisplayTools.h>
 
 #include <QCoreApplication>
 #include <QElapsedTimer>
@@ -21,7 +20,8 @@
 #include "QuerySplatBatchCommand.h"
 
 qQuerySplat::qQuerySplat(QObject* parent)
-    : QObject(parent), ccStdPluginInterface(":/CC/plugin/qQuerySplat/info.json") {}
+    : QObject(parent),
+      ccStdPluginInterface(":/CC/plugin/qQuerySplat/info.json") {}
 
 qQuerySplat::~qQuerySplat() {
     if (m_worker) {
@@ -41,16 +41,15 @@ QList<QAction*> qQuerySplat::getActions() {
         m_action->setToolTip(QObject::tr(
                 "Multi-view image-to-3DGS prediction (VGGT-Omega encoder + "
                 "QuerySplat decoder) with rendering, TTO and PLY export"));
-        connect(m_action, &QAction::triggered, this,
-                &qQuerySplat::showDialog);
+        connect(m_action, &QAction::triggered, this, &qQuerySplat::showDialog);
     }
     return {m_action};
 }
 
 void qQuerySplat::showDialog() {
     if (!m_dialog) {
-        m_dialog = new QuerySplatDialog(
-                m_app ? m_app->getMainWindow() : nullptr);
+        m_dialog =
+                new QuerySplatDialog(m_app ? m_app->getMainWindow() : nullptr);
         m_dialog->setAppInterface(m_app);
         connect(m_dialog, &QuerySplatDialog::runRequested, this,
                 &qQuerySplat::executeTask);
@@ -125,12 +124,11 @@ void qQuerySplat::onResultReady(const QuerySplatResult& result) {
     m_lastResult = result;
     addResultToDb(result);
     if (m_dialog) {
-        m_dialog->setTaskStage(
-                tr("Done: %1 gaussians, %2 views, device %3")
-                        .arg(result.gaussianCount)
-                        .arg(result.viewCount)
-                        .arg(result.resolvedDevice),
-                100);
+        m_dialog->setTaskStage(tr("Done: %1 gaussians, %2 views, device %3")
+                                       .arg(result.gaussianCount)
+                                       .arg(result.viewCount)
+                                       .arg(result.resolvedDevice),
+                               100);
     }
 }
 
@@ -213,10 +211,22 @@ void qQuerySplat::addResultToDb(const QuerySplatResult& result) {
             // (translation in the last 3 components of the last row of the
             // 4x4 matrix); map the row-major c2w accordingly.
             const float* R = c2w;
-            m[0] = R[0]; m[1] = R[4]; m[2] = R[8];  m[3] = R[12];
-            m[4] = R[1]; m[5] = R[5]; m[6] = R[9];  m[7] = R[13];
-            m[8] = R[2]; m[9] = R[6]; m[10] = R[10]; m[11] = R[14];
-            m[12] = R[3]; m[13] = R[7]; m[14] = R[11]; m[15] = R[15];
+            m[0] = R[0];
+            m[1] = R[4];
+            m[2] = R[8];
+            m[3] = R[12];
+            m[4] = R[1];
+            m[5] = R[5];
+            m[6] = R[9];
+            m[7] = R[13];
+            m[8] = R[2];
+            m[9] = R[6];
+            m[10] = R[10];
+            m[11] = R[14];
+            m[12] = R[3];
+            m[13] = R[7];
+            m[14] = R[11];
+            m[15] = R[15];
             sensor->setRigidTransformation(mat);
             sensor->setEnabled(true);
             sensor->setVisible(true);
@@ -236,8 +246,7 @@ void qQuerySplat::addResultToDb(const QuerySplatResult& result) {
         ++rasterIdx;
     };
     for (int v = 0; v < result.depthViews.size(); ++v) {
-        addRaster(result.depthViews[v],
-                  QStringLiteral("depth view %1").arg(v));
+        addRaster(result.depthViews[v], QStringLiteral("depth view %1").arg(v));
     }
     for (int v = 0; v < result.renderViews.size(); ++v) {
         addRaster(result.renderViews[v],
@@ -245,10 +254,10 @@ void qQuerySplat::addResultToDb(const QuerySplatResult& result) {
     }
 
     // depth point cloud
-    if (result.pointCount > 0 && result.points.size() ==
-                                           size_t(result.pointCount) * 3) {
-        ccPointCloud* cloud = new ccPointCloud(
-                QStringLiteral("depth point cloud"));
+    if (result.pointCount > 0 &&
+        result.points.size() == size_t(result.pointCount) * 3) {
+        ccPointCloud* cloud =
+                new ccPointCloud(QStringLiteral("depth point cloud"));
         const bool hasColors = cloud->reserveTheRGBTable();
         if (cloud->reserve(unsigned(result.pointCount))) {
             for (int i = 0; i < result.pointCount; ++i) {

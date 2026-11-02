@@ -6,25 +6,30 @@
 // ----------------------------------------------------------------------------
 #include "QuerySplatWorker.h"
 
-#include <QDir>
-#include <QElapsedTimer>
-#include <QFileInfo>
-
-#include <algorithm>
-#include <cstring>
-
 #include <aicore/image_view.h>
 #include <aicore/inference_log.h>
 #include <aicore/querysplat_capi.h>
+
+#include <QDir>
+#include <QElapsedTimer>
+#include <QFileInfo>
+#include <algorithm>
+#include <cstring>
 
 namespace {
 
 inline QRgb turboColor(float t) {
     // Compact turbo-like ramp (matches the MapAnything depth view palette).
     t = std::min(std::max(t, 0.0f), 1.0f);
-    const int r = int(255 * std::min(std::max(1.5f - std::abs(4.0f * t - 3.0f), 0.0f), 1.0f));
-    const int g = int(255 * std::min(std::max(1.5f - std::abs(4.0f * t - 2.0f), 0.0f), 1.0f));
-    const int b = int(255 * std::min(std::max(1.5f - std::abs(4.0f * t - 1.0f), 0.0f), 1.0f));
+    const int r =
+            int(255 * std::min(std::max(1.5f - std::abs(4.0f * t - 3.0f), 0.0f),
+                               1.0f));
+    const int g =
+            int(255 * std::min(std::max(1.5f - std::abs(4.0f * t - 2.0f), 0.0f),
+                               1.0f));
+    const int b =
+            int(255 * std::min(std::max(1.5f - std::abs(4.0f * t - 1.0f), 0.0f),
+                               1.0f));
     return qRgb(r, g, b);
 }
 
@@ -49,8 +54,9 @@ void QuerySplatWorker::setSettings(const Settings& settings) {
 bool QuerySplatWorker::loadContext() {
     aicore_querysplat_options* opts = aicore_querysplat_options_new();
     if (!opts) {
-        emit logMessage(QStringLiteral("[Error] Out of memory creating the "
-                                       "QuerySplat options."));
+        emit logMessage(
+                QStringLiteral("[Error] Out of memory creating the "
+                               "QuerySplat options."));
         return false;
     }
     aicore_querysplat_options_set_device(
@@ -62,22 +68,20 @@ bool QuerySplatWorker::loadContext() {
                                                  m_settings.imageSize);
     }
     aicore_querysplat_options_set_tto_lr(opts, m_settings.ttoLr);
-    aicore_querysplat_options_set_tto_lpips_weight(
-            opts, m_settings.ttoLpipsWeight);
+    aicore_querysplat_options_set_tto_lpips_weight(opts,
+                                                   m_settings.ttoLpipsWeight);
     aicore_querysplat_options_set_opacity_threshold(
             opts, m_settings.opacityThreshold);
 
     const QByteArray dec = m_settings.decoderPath.toUtf8();
-    const QByteArray enc =
-            m_settings.encoderPath.isEmpty()
-                    ? QByteArray()
-                    : m_settings.encoderPath.toUtf8();
+    const QByteArray enc = m_settings.encoderPath.isEmpty()
+                                   ? QByteArray()
+                                   : m_settings.encoderPath.toUtf8();
     m_ctx = aicore_querysplat_load_opts(
             enc.isEmpty() ? nullptr : enc.constData(), dec.constData(), opts);
     aicore_querysplat_options_free(opts);
     if (!m_ctx || !aicore_querysplat_is_ready(m_ctx)) {
-        const char* err = m_ctx ? aicore_querysplat_last_error(m_ctx)
-                                : nullptr;
+        const char* err = m_ctx ? aicore_querysplat_last_error(m_ctx) : nullptr;
         emit logMessage(QStringLiteral("[Error] Model load failed: %1")
                                 .arg(err ? QString::fromUtf8(err)
                                          : QStringLiteral("unknown")));
@@ -90,8 +94,8 @@ bool QuerySplatWorker::loadContext() {
     return true;
 }
 
-QImage QuerySplatWorker::colorizeDepth(const float* depth, const float* conf,
-                                       int w, int h, int view) const {
+QImage QuerySplatWorker::colorizeDepth(
+        const float* depth, const float* conf, int w, int h, int view) const {
     if (!depth) return QImage();
     const size_t plane = size_t(w) * h;
     const float* d = depth + size_t(view) * plane;
@@ -169,8 +173,8 @@ void QuerySplatWorker::run() {
     emit stageUpdate(tr("Running inference"));
     QElapsedTimer inferTimer;
     inferTimer.start();
-    const int rc = aicore_querysplat_run_images(
-            m_ctx, views.data(), int32_t(views.size()));
+    const int rc = aicore_querysplat_run_images(m_ctx, views.data(),
+                                                int32_t(views.size()));
     if (rc != 0) {
         const char* err = aicore_querysplat_last_error(m_ctx);
         emit logMessage(QStringLiteral("[Error] Inference failed (%1): %2")
@@ -183,8 +187,7 @@ void QuerySplatWorker::run() {
     }
 
     QuerySplatResult result;
-    result.sourceLabel =
-            QFileInfo(m_settings.imagePaths[0]).dir().dirName();
+    result.sourceLabel = QFileInfo(m_settings.imagePaths[0]).dir().dirName();
     if (result.sourceLabel.isEmpty())
         result.sourceLabel = QStringLiteral("scene");
     result.decoderPath = m_settings.decoderPath;
@@ -215,28 +218,25 @@ void QuerySplatWorker::run() {
         const float* tto_g = nullptr;
         int64_t tto_n = 0;
         const int trc = aicore_querysplat_run_tto(
-                m_ctx, m_settings.ttoSteps, &losses, &n_losses, &tto_g,
-                &tto_n);
+                m_ctx, m_settings.ttoSteps, &losses, &n_losses, &tto_g, &tto_n);
         if (trc != 0) {
             const char* err = aicore_querysplat_last_error(m_ctx);
-            emit logMessage(
-                    QStringLiteral("[Error] TTO failed (%1): %2")
-                            .arg(trc)
-                            .arg(err ? QString::fromUtf8(err)
-                                     : QStringLiteral("unknown")));
+            emit logMessage(QStringLiteral("[Error] TTO failed (%1): %2")
+                                    .arg(trc)
+                                    .arg(err ? QString::fromUtf8(err)
+                                             : QStringLiteral("unknown")));
             aicore_querysplat_free(m_ctx);
             m_ctx = nullptr;
             return;
         }
         for (int32_t i = 0; i < n_losses; ++i) {
-            result.ttoSteps.push_back({losses[i].l1, losses[i].ssim,
-                                       losses[i].lpips});
+            result.ttoSteps.push_back(
+                    {losses[i].l1, losses[i].ssim, losses[i].lpips});
         }
-        emit logMessage(
-                QStringLiteral("[QS] TTO %1 steps, final L1=%2 SSIM=%3")
-                        .arg(n_losses)
-                        .arg(losses[n_losses - 1].l1, 0, 'f', 4)
-                        .arg(losses[n_losses - 1].ssim, 0, 'f', 4));
+        emit logMessage(QStringLiteral("[QS] TTO %1 steps, final L1=%2 SSIM=%3")
+                                .arg(n_losses)
+                                .arg(losses[n_losses - 1].l1, 0, 'f', 4)
+                                .arg(losses[n_losses - 1].ssim, 0, 'f', 4));
     }
 
     // gaussian buffer ownership transfer (borrowed view -> shared_ptr with
@@ -276,8 +276,7 @@ void QuerySplatWorker::run() {
         const float* depth = aicore_querysplat_result_depth(m_ctx);
         const float* conf = aicore_querysplat_result_depth_conf(m_ctx);
         for (int v = 0; v < S; ++v) {
-            result.depthViews.push_back(
-                    colorizeDepth(depth, conf, W, H, v));
+            result.depthViews.push_back(colorizeDepth(depth, conf, W, H, v));
         }
     }
     if (m_settings.addRenderViews) {
@@ -286,12 +285,12 @@ void QuerySplatWorker::run() {
         if (w2c && K) {
             const float* rgb = nullptr;
             unsigned char* rgb8 = nullptr;
-            if (aicore_querysplat_render_views(m_ctx, w2c, K, S, &rgb,
-                                               &rgb8) == 0) {
+            if (aicore_querysplat_render_views(m_ctx, w2c, K, S, &rgb, &rgb8) ==
+                0) {
                 const size_t plane = size_t(W) * H;
                 for (int v = 0; v < S; ++v) {
-                    result.renderViews.push_back(rgb8ToImage(
-                            rgb8 + size_t(v) * plane * 3, W, H));
+                    result.renderViews.push_back(
+                            rgb8ToImage(rgb8 + size_t(v) * plane * 3, W, H));
                 }
             } else {
                 emit logMessage(
@@ -307,8 +306,8 @@ void QuerySplatWorker::run() {
         const float* xyz = nullptr;
         unsigned char* col = nullptr;
         int32_t n = 0;
-        if (aicore_querysplat_depth_pointcloud(m_ctx, 200000, &xyz, &col,
-                                               &n) == 0 &&
+        if (aicore_querysplat_depth_pointcloud(m_ctx, 200000, &xyz, &col, &n) ==
+                    0 &&
             n > 0) {
             result.points.resize(size_t(n) * 3);
             std::memcpy(result.points.data(), xyz,
@@ -322,18 +321,17 @@ void QuerySplatWorker::run() {
     // PLY export (compatibility boundary; the DB cloud below is the typed
     // path). Written to the output dir or beside the first input.
     if (m_settings.exportPly) {
-        const QString dir = m_settings.outputDir.isEmpty()
-                                    ? QFileInfo(m_settings.imagePaths[0])
-                                              .absolutePath()
-                                    : m_settings.outputDir;
+        const QString dir =
+                m_settings.outputDir.isEmpty()
+                        ? QFileInfo(m_settings.imagePaths[0]).absolutePath()
+                        : m_settings.outputDir;
         QDir().mkpath(dir);
         result.plyPath = dir + QStringLiteral("/") + result.sourceLabel +
                          QStringLiteral("_gaussians.ply");
         if (aicore_querysplat_export_gaussians_ply(
                     m_ctx, result.plyPath.toUtf8().constData(),
                     m_settings.opacityThreshold) != 0) {
-            emit logMessage(
-                    QStringLiteral("[Warning] PLY export failed."));
+            emit logMessage(QStringLiteral("[Warning] PLY export failed."));
             result.plyPath.clear();
         }
     }

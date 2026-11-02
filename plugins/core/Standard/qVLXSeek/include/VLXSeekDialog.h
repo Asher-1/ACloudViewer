@@ -81,7 +81,10 @@ private:
     ecvModelDownloader* m_downloader = nullptr;
     bool m_downloadInProgress = false;
     QString m_downloadTargetFilename;
-    enum class PendingAction { None, Run } m_pendingAction = PendingAction::None;
+    enum class PendingAction {
+        None,
+        Run
+    } m_pendingAction = PendingAction::None;
     QVector<VLXSeekModelEntry> m_catalog;
     VLXSeekWorker::Settings m_settings;  // staged paths between prepare/run
     VLXSeekWorker* m_worker = nullptr;

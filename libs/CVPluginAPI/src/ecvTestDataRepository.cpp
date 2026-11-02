@@ -777,8 +777,7 @@ bool ecvTestDataRepository::isExtractedComplete(Dataset kind) const {
             extractedComplete =
                     !findDatasetFile(kind, QStringLiteral("demo_image.jpg"))
                              .isEmpty() &&
-                    !findDatasetFile(kind,
-                                     QStringLiteral("demo_image2.jpg"))
+                    !findDatasetFile(kind, QStringLiteral("demo_image2.jpg"))
                              .isEmpty();
             break;
     }

@@ -8,15 +8,14 @@
 // qQuerySplat helper unit tests: the catalog surface (rows/defaults/shared
 // encoder delegation) and the C-API catalog/path contract. Asset-gated
 // e2e inference lives in the AICore validation matrix, not here.
+#include <aicore/asset_digests.h>
+#include <aicore/querysplat_capi.h>
 #include <gtest/gtest.h>
 
 #include <QDir>
 #include <QFileInfo>
 
 #include "QuerySplatModelCatalog.h"
-
-#include <aicore/asset_digests.h>
-#include <aicore/querysplat_capi.h>
 
 TEST(QuerySplatCatalog, RowsArePublished) {
     const auto models = QuerySplatHelpers::catalogModels();
@@ -26,7 +25,7 @@ TEST(QuerySplatCatalog, RowsArePublished) {
     for (const auto& m : models) {
         EXPECT_FALSE(m.filename.isEmpty());
         EXPECT_TRUE(m.downloadUrl.startsWith(QStringLiteral(
-                            "https://huggingface.co/Asher-1/querysplat_vggto")))
+                "https://huggingface.co/Asher-1/querysplat_vggto")))
                 << m.downloadUrl.toStdString();
         if (m.role == QStringLiteral("decoder")) ++decoders;
         if (m.role == QStringLiteral("lpips")) ++lpips;
