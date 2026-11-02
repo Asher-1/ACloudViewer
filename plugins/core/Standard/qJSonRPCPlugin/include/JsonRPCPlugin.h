@@ -188,6 +188,9 @@ private:
      *  load, merged world-frame PLY + RESULT_JSON). */
     JsonRPCResult rpcMapAnythingReconstruct(
             const QMap<QString, QVariant>& params);
+    /** querysplat.predict: batch image-to-3DGS prediction (one model load,
+     *  per-image PLY/renders/cameras + RESULT_JSON). */
+    JsonRPCResult rpcQuerySplat(const QMap<QString, QVariant>& params);
 
     QAction* m_action{nullptr};
     JsonRPCServer rpc_server;

@@ -726,6 +726,8 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_QMAPANYTHING=ON"
                 "-DPLUGIN_STANDARD_QOPENPCDET=ON"
                 "-DPLUGIN_STANDARD_QINSTANTMESH=ON"
+                "-DPLUGIN_STANDARD_QVLXSEEK=ON"
+                "-DPLUGIN_STANDARD_QQUERYSPLAT=ON"
                 "-DPLUGIN_PYTHON=ON"
                 "-DBUILD_PYTHON_MODULE=ON"
                 "-DCONDA_PREFIX=$CONDA_PREFIX"

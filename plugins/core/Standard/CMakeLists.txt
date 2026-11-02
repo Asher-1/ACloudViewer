@@ -43,6 +43,8 @@ add_subdirectory( qSpirula )
 add_subdirectory( qMapAnything )
 add_subdirectory( qOpenPCDet )
 add_subdirectory( qInstantMesh )
+add_subdirectory( qQuerySplat )
+add_subdirectory( qVLXSeek )
 
 #plugins integrated as submodules
 set( submod_plugins

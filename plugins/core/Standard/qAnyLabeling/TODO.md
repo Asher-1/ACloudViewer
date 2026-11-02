@@ -1,5 +1,171 @@
 # qAnyLabeling parity TODO
 
+## Continuation (2026-11-02, seventh session): attribute family joins the validation matrix
+
+- [x] **The attribute family now owns manifest rows in the one-click gate.**
+  Two `local_only` scenarios (`pulc-attribute-{person,vehicle}-f32`) were
+  added to `validation_manifest.json` following the OCR local-ONNX pattern:
+  the pinned source ONNX files are declared input assets
+  (`attr-onnx-pulc-*`, downloaded and digest-verified into
+  `extract/attribute_onnx` by the preflight), the pinned bus.jpg input is
+  shared through `objects-detection-samples` (now also attributed to the
+  `attribute` task), and a new runner
+  `core/AICore/scripts/run_attribute_pulc_probe.py` regenerates the
+  independent onnxruntime reference next to the scenario report and drives
+  the public `test_attribute_probe.py`. The structured gates read
+  `maximum_output_error < 0.001` and `attributes_match == 1` from the
+  wrapped report; a missing cv2/onnxruntime environment exits 77 (skip
+  contract), never a false failure. No truth files are committed.
+- [x] **Three-backend matrix PASS with clean GPU evidence**: cpu
+  (person 2.98e-07 / vehicle 7.75e-07), cuda (5.36e-07 / 1.01e-06) and
+  vulkan (4.47e-07 / 5.36e-07) all far below the 1e-3 gate, attribute
+  agreement exact, stability 1, and the probe report records the real
+  backend device. Reports under
+  `build_app/Testing/aicore_validation_attribute_{cpu,cuda,vulkan}.json`.
+- [x] Runner audit tests landed (`AttributeManifestRowTests` in
+  `test_validate_all.py`): pinned source/input digests, local-only
+  isolation (no invented GGUF download URLs), and positive/negative gate
+  evaluation. The full suite passes 157/157.
+- [x] Converter and evidence-path documentation added to
+  `core/AICore/README.md` (regeneration command, matrix invocation, and the
+  exit-77 environment contract).
+- [x] Fixed the `test_attribute_probe_contract` ctest environment: the
+  validation runtime env now propagates the configured Qt library directory
+  as `LD_LIBRARY_PATH` (the python probe dlopens libAICore whose indirect
+  Qt dependencies, e.g. libQt5Concurrent, must resolve from the configured
+  Qt tree). The test now passes on a bare shell without external exports.
+- [x] Final state: attribute ctest 5/5, qAnyLabeling 41/41, capi 98/98,
+  validate_all manifest suite 157/157, three-backend matrix verdict PASS.
+
+## Continuation (2026-11-02, sixth session): PULC asset generation closes the last real-code boundary
+
+- [x] **The two PULC F32 GGUFs are no longer a conversion-recipe boundary.**
+  First-principles scan showed the full regeneration chain was already in
+  tree: `core/AICore/tools/convert_onnx_ocr_gguf.py` natively supports
+  `--role cls` and writes the `ocr.source.sha256` metadata that
+  `attribute_capi.cpp` matches against its pinned recipes; the loader
+  (`OcrWeights::load`) dispatches on `ocr.role`; and the missing piece was
+  only the source ONNX files plus their registry rows. The pinned sources
+  are the upstream X-AnyLabeling v2.0.0 releases
+  (`pulc_person_attribute.onnx` / `pulc_vehicle_attribute.onnx`); their
+  SHA-256 values match the pinned recipe identities byte for byte
+  (`3694c7f2...` person, `78362592...` vehicle).
+- [x] Registered both sources in `core/AICore/tools/ocr_onnx_sources.json`
+  (role `cls`, exact byte sizes, stable URLs), regenerated both F32 GGUFs
+  with the in-tree converter, and staged them under
+  `~/cloudViewer_data/extract/attribute_models/`.
+- [x] Independent-source acceptance regenerated on this machine: the
+  onnxruntime reference (bus.jpg, uint8 INTER_LINEAR RGB preprocess,
+  ImageNet normalization, NCHW) matches the historical receipt contract
+  (26 person probabilities / 21 attributes, 19 vehicle / 2, Gender=Male on
+  the pinned input). Generated as identity JSON (`source_sha256`,
+  `source_revision=r20231111`, `family`) plus a `.npy` probability file for
+  the public probe.
+- [x] **Numeric gates pass on all three backends** with the regenerated
+  F32 weights: `test_attribute_capi_e2e` reports 0 failures on cpu, cuda
+  and vulkan (per-output |diff| <= 0.001 against the independent output,
+  attribute selection match, lifecycle/cancel/stride/shutdown contracts).
+- [x] **ctest status: 41/41 qAnyLabeling pass (40 ran + the bare
+  run_path skip contract) and 98/98 capi-label tests pass.** The two
+  attribute e2e tests (`test_qanylabeling_attribute_run_path`,
+  `test_qanylabeling_attribute_batch`) are unlocked with the regenerated
+  assets; `test_attribute_probe_contract` passes (wrong-source identity is
+  rejected while every probability matches, maximum_output_error < 0.001);
+  `test_qanylabeling_pointcloud_ui` returned to green once the external
+  api_server.py stopped growing its GPU allocation (stable 18.3 GiB).
+- [x] Fixed a `test_no_env_getenv` Rule-2 violation introduced by the
+  parallel querysplat session: the task file included
+  `common/ggml_env_bridge.hpp` and applied raw `GgmlEnvOverrides`. The
+  five-knob Vulkan f32-accuracy profile moved behind a named task-facing
+  interface `aicore::apply_vulkan_f32_accuracy_profile()` declared in
+  `common/ggml_backend_utils.hpp` and implemented inside the sanctioned
+  bridge; querysplat calls the named interface and the contract test
+  passes with no querysplat regression (helpers tests 2/2).
+- [x] Environment facts for reproduction: the ctest attribute/llm asset
+  gates read `AICORE_TEST_ATTRIBUTE_*` and `AICORE_TEST_LLM_*` from the
+  calling shell (ctest inherits them); capi tests resolve Qt through the
+  binary RPATH (/opt/Qt5.14.2) so `LD_LIBRARY_PATH` must stay untouched or
+  point at the same Qt tree, and the probe contract test needs the
+  pyenv-shim python3.12 to see cv2 (inject the conda python3.12
+  site-packages via PYTHONPATH).
+- [x] Remaining boundary closed in the seventh session: the validation
+  manifest now owns the attribute rows (see the 2026-11-02 seventh-session
+  entry above), and the converter/evidence path is documented in
+  `core/AICore/README.md`.
+
+## Continuation (2026-11-01, fifth session)
+
+### The five directives driven to their verifiable endpoints
+
+- [x] Directives 1 and 2 (YOLO/SAM catalog reuse) were re-verified against
+  the live catalogs and remain landed in MODEL_MATRIX.md unchanged.
+- [x] Directive 4 extended: **AI Describe now covers the per-object pass**,
+  verified end to end on this machine. With shapes selected, each selection
+  is cropped from the source-resolution view into a managed temporary
+  directory, captioned by the local vision model sequentially through the
+  same single client (status shows "AI Describe: running <model> (i/n)"),
+  and the caption is written into that shape's `description` — the same
+  sink the OCR recognition flow uses — followed by one
+  `updateObjects()`/`setDirty()` on completion. Mask shapes fall back to
+  their mask rectangle; shapes without a croppable region are reported
+  instead of silently skipped; any error drains the queue, restores the
+  action and keeps the real error path. No selection preserves the
+  image-level caption behavior. The plugin e2e now drives both passes for
+  real: the image-level caption lands in the sidecar, and a pre-registered
+  region sidecar gets its fixture description replaced by the actual local
+  SmolVLM crop caption ("The image is a solid blue background...") in both
+  the description editor and the persisted shape, proving crop → VLM →
+  shape description → persistence on every link.
+- [x] Directive 3 progressed with the only artifact that can be produced on
+  this machine: the P1 task-contract designs for all three confirmed-missing
+  families landed in
+  [docs/designs/missing-families-task-contracts.md](docs/designs/missing-families-task-contracts.md)
+  (input ownership, P0 source/GGUF layout, the public C ABI shape, typed
+  results, options/errors/timing, backend matrix, assets and numeric gates,
+  P3 picker mapping, and the sequencing: florence2 → dfine →
+  grounding_dino). The P0 converters and P2 gates remain external-resource
+  work: deformable-attention ggml operator patches plus upstream checkpoint
+  downloads and reference fixtures; no picker entry or accuracy claim exists
+  for these families, exactly as the designs state.
+- [x] Directive 5 re-swept over every file type in plugins/core: engineering
+  text is at zero CJK; every remaining hit is a verified genuine Unicode
+  payload or localized resource (test ground truth in string literals, the
+  YOLO Chinese-prompt bridge table, the language menu, RAM tag list,
+  `docs/zh_cn`), including a per-line audit of the test sources that found
+  no Chinese comments.
+
+### Asset-gated e2e unblocking (fourth session, continued)
+
+- [x] Three of the five asset-gated e2e failures are now green on this
+  machine: `test_qanylabeling_llm_batch_models` (all three AICORE_TEST_LLM_*
+  env vars point at the cached qwen2.5-0.5b Q8_0 / SmolVLM-500M Q8_0 /
+  mmproj rows; real CPU text + two-image VLM batch PASS),
+  `test_qanylabeling_ocr_run_path` (the missing 617 KB `ppocr-cls-f32.gguf`
+  direction-classifier row downloaded from the PP-OCR release and verified
+  byte-exact against `asset_digests.h`; 107 text shapes, skip/save/undo and
+  explicit-layout all pass with the cls classifier live), and
+  `test_qanylabeling_tagged_run_path` (`relate_datasets.zip` 119 MB
+  downloaded from the pinned relateanything HF URL, SHA-256
+  e0cf31c5... verified against the owning manifest before extraction;
+  RAM q8_0 + world + CLIP rows PASS). Full suite with the env vars set:
+  **38/41**.
+- [x] The two remaining failures are `test_qanylabeling_attribute_run_path`
+  and `test_qanylabeling_attribute_batch`, both gated on the PULC
+  person/vehicle F32 GGUFs. Those are local conversion recipes with a
+  pinned `ocr.source.sha256` identity and no published URL (Q8/release
+  rejected on all three backends per the g8 receipts); producing them is
+  the attribute family's own P0 converter task, not a download.
+- [ ] `test_qanylabeling_pointcloud_ui` flipped from Passed (22:24, with
+  the current binaries) to a deterministic brush-label failure at
+  `labels() == {5,0,5,...}` with the IDENTICAL plugin .so and test binary —
+  the parallel session's `api_server.py` (running since Oct 28) has grown
+  its GPU allocation to 16.35 GB (17.7/24.5 used), the documented dynamic
+  16→18 GB pattern, squeezing the VTK offscreen GPU-picking path. This is
+  the same environmental class as the earlier InstantMesh `bad_alloc`
+  diagnosis; it must re-verified when the GPU holder releases memory, and
+  it is not a code regression (no pointcloud file is dirty and the
+  binaries did not change between the passing and failing runs).
+
 ## Continuation (2026-11-01, fourth session)
 
 ### macOS CI Metal enablement (root-cause fix)

@@ -93,6 +93,7 @@ borrowed pixels + width/height + row stride + channel format
 | `lingbot_capi.h` | LingBot-Map (GCT) streaming 3D reconstruction: depth, pose, native sky masking |
 | `llm_capi.h` | Local chat LLM / VLM generation over the pinned libllama + libmtmd (optional mmproj, streaming, cancel, stop sequences); contract in [`docs/llm_vlm_task_design.md`](docs/llm_vlm_task_design.md) |
 | `loma_capi.h` | LoMa feature detection, description, and matching (COLMAP-aligned) |
+| `querysplat_capi.h` | QuerySplat multi-view image-to-3DGS prediction: VGGT-Omega encoder (in-tree map_anything builder), decoder graph, gsplat-semantics CPU rendering, KV-memory TTO, 3DGS PLY / cameras JSON / depth point-cloud exports; accuracy gates in the validation manifest |
 | `rfdetr_capi.h` | RF-DETR detection and segmentation |
 | `rmbg_capi.h` | RMBG alpha matte and RGBA composition |
 | `sam3_capi.h` | SAM3 segmentation and tracking |
@@ -101,6 +102,7 @@ borrowed pixels + width/height + row stride + channel format
 | `attribute_capi.h` | Local PULC person/vehicle multi-attribute: read-only stride-aware image, complete Sigmoid probabilities, independently owned typed attributes and full-image geometry, common timing/cancel/shutdown; a local F32 recipe/cache is not a published catalog nor a release qualification |
 | `relation_capi.h` | RelateAnything typed edges, raw predicate/pair logits and native CLIP text embeddings | `aicore_image_view` plus borrowed object regions |
 | `trellis_capi.h` | TRELLIS image-to-3D generation |
+| `vlx_seek_capi.h` | VLX-Seek fine-grained region-retrieval grounding (WeDetect-Uni proposals, Qwen3.5-VL + C-RADIOv4/SimpleFPN/HFRE vision stack, qwen3_5 LLM via the pinned libllama; seven en/zh task templates, typed boxes + answer, common timing/shutdown) |
 | `yolo_capi.h` | YOLO detection, segment, pose, OBB, semantic, classify, depth, and prompts |
 
 The individual task header is authoritative. The umbrella `aicore.h` is a
@@ -141,6 +143,31 @@ download catalog. The real C ABI test accepts
 `AICORE_TEST_ATTRIBUTE_IMAGE` and `AICORE_TEST_DEVICE`; the reference is a
 build-local pinned source output, and model logits/truth files are not committed
 into the source tree. A missing model or reference fails explicitly.
+
+The F32 weights are regenerated locally from the pinned PULC source ONNX
+models registered in `core/AICore/tools/ocr_onnx_sources.json` (role `cls`;
+the SHA-256 values match the pinned recipe identities byte for byte):
+
+```bash
+python3 core/AICore/tools/convert_onnx_ocr_gguf.py SOURCE.onnx OUT_STEM \
+  --role cls --source-sha256 SOURCE_SHA256 --quants f32
+```
+
+The validation matrix owns the local-recipe evidence path: the two
+`local_only` scenarios (`pulc-attribute-{person,vehicle}-f32`) download the
+pinned source ONNX files into `extract/attribute_onnx`, regenerate the
+independent onnxruntime reference next to the scenario report, and gate the
+public probe on per-output error `<0.001` plus exact attribute agreement:
+
+```bash
+python3 core/AICore/scripts/validate_all.py --build build_app \
+  --backend cpu --tasks attribute \
+  --output build_app/Testing/aicore_validation_attribute_cpu.json
+```
+
+No truth files are committed; a missing source environment (cv2/onnxruntime)
+skips the row with exit 77 instead of failing the gate.
+
 The frozen three-backend 11-image common margin remains 48/66 and FAIL on each
 backend, and the numeric/attribute gates together with the Q8 failures are kept
 in full; only an isolated candidate has been accepted so far, and the official

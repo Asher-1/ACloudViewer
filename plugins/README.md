@@ -50,6 +50,8 @@ inference tasks with one shared ggml runtime (including RelateAnything).
 | **qRelateAnything** | `PLUGIN_STANDARD_QRELATEANYTHING` | [docs/guides/plugins/qRelateAnything.md](../docs/guides/plugins/qRelateAnything.md) | [qRelateAnything/README.md](core/Standard/qRelateAnything/README.md) |
 | **qMapAnything** | `PLUGIN_STANDARD_QMAPANYTHING` | — | [qMapAnything/README.md](core/Standard/qMapAnything/README.md) |
 | **qOpenPCDet** | `PLUGIN_STANDARD_QOPENPCDET` | — | [qOpenPCDet/README.md](core/Standard/qOpenPCDet/README.md) |
+| **qQuerySplat** | `PLUGIN_STANDARD_QQUERYSPLAT` | — | [qQuerySplat/README.md](core/Standard/qQuerySplat/README.md) |
+| **qVLXSeek** | `PLUGIN_STANDARD_QVLXSEEK` | — | [qVLXSeek/README.md](core/Standard/qVLXSeek/README.md) |
 
 **Core library:** enable with `-DAICore_ENABLED=ON` (auto-enables `GGML_ENABLED`).
 
@@ -78,6 +80,8 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QMAPANYTHING=ON \
       -DPLUGIN_STANDARD_QOPENPCDET=ON \
       -DPLUGIN_STANDARD_QINSTANTMESH=ON \
+      -DPLUGIN_STANDARD_QVLXSEEK=ON \
+      -DPLUGIN_STANDARD_QQUERYSPLAT=ON \
       -DPLUGIN_STANDARD_QSIBR=ON \
       ..
 ```

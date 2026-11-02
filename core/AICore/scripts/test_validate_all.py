@@ -2870,6 +2870,67 @@ class ValidateAllTests(unittest.TestCase):
             self.assertIn("cannot execute probe", attempt.output_tail)
 
 
+class AttributeManifestRowTests(unittest.TestCase):
+    """The local PULC attribute rows own pinned onnx sources, the shared
+    pinned input, and a structured gate that actually reads probe metrics."""
+
+    def setUp(self):
+        self.manifest = VALIDATE_ALL.load_manifest(
+            VALIDATE_ALL.DEFAULT_MANIFEST)
+        self.rows = {s["id"]: s for s in self.manifest["scenarios"]
+                     if s["task"] == "attribute"}
+        self.sources = {a["id"]: a for a in self.manifest["input_assets"]}
+
+    def test_rows_are_local_only_with_pinned_sources_and_shared_input(self):
+        self.assertEqual(
+            sorted(self.rows),
+            ["pulc-attribute-person-f32", "pulc-attribute-vehicle-f32"])
+        bus_sha = next(member["sha256"] for member in
+                       self.sources["objects-detection-samples"]
+                       ["extracted_files"]
+                       if member["relative_path"].endswith("bus.jpg"))
+        for family in ("person", "vehicle"):
+            row = self.rows[f"pulc-attribute-{family}-f32"]
+            self.assertTrue(row["local_only"])  # no invented published GGUF URLs
+            self.assertEqual(row["executable"], "python")
+            self.assertIn("run_attribute_pulc_probe.py",
+                          str(row["args"]))
+            source_id = f"attr-onnx-pulc-{family}"
+            self.assertIn(source_id, row["input_ids"])
+            self.assertIn("objects-detection-samples", row["input_ids"])
+            source = self.sources[source_id]
+            self.assertTrue(source["url"].endswith(".onnx"))
+            self.assertGreater(source["size_bytes"], 0)
+            self.assertEqual(
+                row["args"][row["args"].index("--source-sha256") + 1],
+                source["sha256"])
+            self.assertEqual(
+                row["args"][row["args"].index("--image-sha256") + 1],
+                bus_sha)
+            self.assertEqual(
+                row["args"][row["args"].index("--family") + 1], family)
+            self.assertIn("{scenario_report}", row["args"])
+            self.assertIn("{warmup_runs}", row["args"])
+
+    def test_every_attribute_scenario_is_local_only(self):
+        # No published attribute rows exist, so the model-cache preflight
+        # needs no catalog for this task; the matrix must not invent GGUF
+        # download URLs for the local conversion recipes.
+        self.assertTrue(self.rows)
+        for row in self.rows.values():
+            self.assertTrue(row.get("local_only"))
+
+    def test_structured_gate_reads_probe_metrics(self):
+        gate = VALIDATE_ALL.normalize_accuracy_gate(
+            self.rows["pulc-attribute-person-f32"])
+        good = {"maximum_output_error": 0.0, "attributes_match": 1,
+                "e2e_p50_ms": 10.0, "e2e_p95_ms": 12.0}
+        self.assertEqual(VALIDATE_ALL.evaluate_accuracy_gate(gate, good), [])
+        bad = dict(good, maximum_output_error=0.01)
+        self.assertTrue(VALIDATE_ALL.evaluate_accuracy_gate(gate, bad))
+        self.assertTrue(VALIDATE_ALL.evaluate_accuracy_gate(gate, {}))
+
+
 class InstantMeshProbeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

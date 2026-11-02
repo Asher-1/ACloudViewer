@@ -934,5 +934,57 @@ int main(int argc, char** argv) {
                    "The relation overlay must not modify shape data"))
             return 1;
     }
+    // Upstream f908db51: in edit mode a plain double click on a vertex of an
+    // unlocked polygon removes it before any label editing (independent of
+    // the Double Click Edit Label switch) and always keeps three vertices;
+    // the removal emits editStarted so the window snapshots the undo stack.
+    {
+        AnnotationCanvas editor;
+        editor.setImage(QImage(400, 400, QImage::Format_RGB32));
+        editor.setTool(QStringLiteral("polygon"));
+        const QPointF square[4] = {QPointF(100, 100), QPointF(200, 100),
+                                   QPointF(200, 200), QPointF(100, 200)};
+        for (const QPointF& point : square) {
+            mouse(editor, QEvent::MouseButtonPress, point);
+            mouse(editor, QEvent::MouseButtonRelease, point);
+        }
+        finish(editor);
+        editor.setTool(QStringLiteral("edit"));
+        int edits = 0;
+        int labelEdits = 0;
+        QObject::connect(&editor, &AnnotationCanvas::editStarted,
+                         [&]() { ++edits; });
+        QObject::connect(&editor, &AnnotationCanvas::shapeDoubleClicked,
+                         [&](int) { ++labelEdits; });
+        mouse(editor, QEvent::MouseButtonDblClick, square[0]);
+        if (!check(editor.shapes().size() == 1 &&
+                           editor.shapes().first().points.size() == 3 &&
+                           edits == 1 && labelEdits == 0,
+                   "Double-clicking a polygon vertex must remove it with an "
+                   "undo snapshot and no label editor"))
+            return 1;
+        // Three vertices remain: another double click must keep the shape.
+        mouse(editor, QEvent::MouseButtonDblClick, square[0]);
+        if (!check(editor.shapes().first().points.size() == 3 && edits == 1,
+                   "A polygon must keep at least three vertices"))
+            return 1;
+        // A locked polygon falls through to the label editor instead.
+        editor.setTool(QStringLiteral("polygon"));
+        for (const QPointF& point : square) {
+            mouse(editor, QEvent::MouseButtonPress, point);
+            mouse(editor, QEvent::MouseButtonRelease, point);
+        }
+        finish(editor);
+        QVector<AnnotationShape> lockedShapes = editor.shapes();
+        lockedShapes.last().locked = true;
+        editor.setShapes(lockedShapes);
+        editor.setTool(QStringLiteral("edit"));
+        mouse(editor, QEvent::MouseButtonDblClick, square[0]);
+        if (!check(editor.shapes().last().points.size() == 4 &&
+                           labelEdits == 1,
+                   "A locked polygon must open the label editor instead of "
+                   "losing vertices"))
+            return 1;
+    }
     return 0;
 }

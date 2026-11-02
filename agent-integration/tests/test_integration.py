@@ -85,6 +85,9 @@ AICORE_BATCH_COMMANDS = (
     ("llm", "LLM_GENERATE", "qAnyLabeling/include/LLMBatchCommand.h"),
     ("map-anything", "MAP_ANYTHING_RECONSTRUCT",
      "qMapAnything/include/MapAnythingReconstructCommand.h"),
+    ("querysplat", "QUERY_SPLAT",
+     "qQuerySplat/include/QuerySplatBatchCommand.h"),
+    ("vlx-seek", "VLXSEEK_RUN", "qVLXSeek/include/VLXSeekBatchCommand.h"),
     ("sam3d", "SAM3D_GENERATE", "qSAM3D/include/Sam3dGenerateCommand.h"),
     ("openpcdet", "OPENPCDET_DETECT", "qOpenPCDet/include/OpenPCDetBatchCommand.h"),
 )

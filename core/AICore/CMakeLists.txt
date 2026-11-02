@@ -19,6 +19,10 @@
 #   src/tasks/map_anything/ — universal feed-forward metric 3D reconstruction
 #                           (map-anything-ggml cpp_ggml port: VGGT-Omega / VGGT /
 #                            Pi3 / Pi3X / MapAnything / DUSt3R)
+#   src/tasks/querysplat/ — multi-view image-to-3DGS prediction (QuerySplat
+#                           cpp_ggml port: VGGT-Omega encoder via the
+#                           map_anything builder + querysplat decoder graph +
+#                           gsplat-semantics CPU rasterizer + TTO + LPIPS)
 #   src/tasks/lingbot/    — LingBot-Map streaming RGB-D reconstruction
 #   src/tasks/loma/       — LoMa feature extraction and matching
 #   src/tasks/reid/       — appearance embeddings for multi-object tracking
@@ -66,6 +70,7 @@ set(AICORE_TRELLIS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/trellis)
 set(AICORE_INSTANTMESH_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/instantmesh)
 set(AICORE_GKD_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/gkd)
 set(AICORE_MAP_ANYTHING_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/map_anything)
+set(AICORE_QUERYSPLAT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/querysplat)
 set(AICORE_LINGBOT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/lingbot)
 set(AICORE_SAM3D_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/sam3d)
 set(AICORE_OPENPCDET_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/openpcdet)
@@ -113,10 +118,17 @@ file(GLOB AICORE_SAM3_SOURCES CONFIGURE_DEPENDS ${AICORE_SAM3_SRC_DIR}/*.cpp)
 file(GLOB AICORE_RELATION_SOURCES CONFIGURE_DEPENDS ${AICORE_TASKS_SRC_DIR}/relation/*.cpp)
 file(GLOB AICORE_TAGGING_SOURCES CONFIGURE_DEPENDS ${AICORE_TASKS_SRC_DIR}/tagging/*.cpp)
 file(GLOB AICORE_LLM_SOURCES CONFIGURE_DEPENDS ${AICORE_TASKS_SRC_DIR}/llm/*.cpp)
+set(AICORE_VLX_SEEK_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/vlx_seek)
+file(GLOB AICORE_VLX_SEEK_SOURCES CONFIGURE_DEPENDS
+    ${AICORE_VLX_SEEK_SRC_DIR}/*.cpp)
 file(GLOB AICORE_ATTRIBUTE_SOURCES CONFIGURE_DEPENDS ${AICORE_TASKS_SRC_DIR}/attribute/*.cpp)
 file(GLOB AICORE_GKD_SOURCES CONFIGURE_DEPENDS ${AICORE_GKD_SRC_DIR}/*.cpp)
 file(GLOB AICORE_MAP_ANYTHING_SOURCES CONFIGURE_DEPENDS
     ${AICORE_MAP_ANYTHING_SRC_DIR}/*.cpp)
+file(GLOB AICORE_QUERYSPLAT_SOURCES CONFIGURE_DEPENDS
+    ${AICORE_QUERYSPLAT_SRC_DIR}/*.cpp)
+file(GLOB AICORE_QUERYSPLAT_HEADERS CONFIGURE_DEPENDS
+    ${AICORE_QUERYSPLAT_SRC_DIR}/*.hpp)
 file(GLOB AICORE_LINGBOT_SOURCES CONFIGURE_DEPENDS ${AICORE_LINGBOT_SRC_DIR}/*.cpp)
 file(GLOB AICORE_SAM3D_SOURCES CONFIGURE_DEPENDS ${AICORE_SAM3D_SRC_DIR}/*.cpp)
 file(GLOB AICORE_SAM3D_HEADERS CONFIGURE_DEPENDS
@@ -156,6 +168,9 @@ if(NOT EXISTS ${AICORE_GKD_SRC_DIR}/gkd_graph.cpp)
 endif()
 if(NOT EXISTS ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_graph.cpp)
     message(FATAL_ERROR "AICore: missing MapAnything module at ${AICORE_MAP_ANYTHING_SRC_DIR}")
+endif()
+if(NOT EXISTS ${AICORE_QUERYSPLAT_SRC_DIR}/querysplat_graph.cpp)
+    message(FATAL_ERROR "AICore: missing QuerySplat module at ${AICORE_QUERYSPLAT_SRC_DIR}")
 endif()
 if(NOT EXISTS ${AICORE_SAM3_SRC_DIR}/sam3.cpp)
     message(FATAL_ERROR "AICore: missing SAM3 module at ${AICORE_SAM3_SRC_DIR}")
@@ -205,9 +220,11 @@ add_library(${PROJECT_NAME} SHARED
     ${AICORE_RELATION_SOURCES}
     ${AICORE_TAGGING_SOURCES}
     ${AICORE_LLM_SOURCES}
+    ${AICORE_VLX_SEEK_SOURCES}
     ${AICORE_ATTRIBUTE_SOURCES}
     ${AICORE_GKD_SOURCES}
     ${AICORE_MAP_ANYTHING_SOURCES}
+    ${AICORE_QUERYSPLAT_SOURCES} ${AICORE_QUERYSPLAT_HEADERS}
     ${AICORE_LINGBOT_SOURCES}
     ${AICORE_OPENPCDET_SOURCES}
     ${AICORE_SAM3D_SOURCES} ${AICORE_SAM3D_HEADERS}
@@ -245,7 +262,20 @@ set_source_files_properties(
     ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_capi.cpp
     ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_gguf_loader.cpp
     ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_image_io.cpp
+    ${AICORE_MAP_ANYTHING_SRC_DIR}/map_anything_encoder_runtime.cpp
     PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+
+# QuerySplat host-side floating-point parity: same reasoning as the
+# map_anything TUs above — the reference implementation (upstream cpp_ggml)
+# compiles WITHOUT -march/FMA contraction, and the decoder assembly + host
+# activation heads + TTO loss chain amplify a 1-ULP vfmadd drift through 18
+# transformer blocks. Every querysplat TU keeps the reference contract;
+# ggml kernels are unaffected. MSVC does not contract without /fp:contract.
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(
+        ${AICORE_QUERYSPLAT_SOURCES}
+        PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+endif()
 
 # OCR det/rec geometry parity: ocr_rec_crop.cpp and ocr_db_postprocess.cpp
 # port cv2.minAreaRect / contourArea / arcLength / warpPerspective(
@@ -261,6 +291,54 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         ${AICORE_OCR_SRC_DIR}/ocr_rec_crop.cpp
         ${AICORE_OCR_SRC_DIR}/ocr_db_postprocess.cpp
         PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+endif()
+
+# VLX-Seek host-side floating-point parity: the reference implementation
+# (upstream Asher-1/VLX-Seek-GGML cpp_ggml) compiles WITHOUT -march
+# (x86-64 baseline, no FMA), while CMakeFindSSE adds -march=x86-64-v3 to
+# this tree. The host preprocessing kernels (torch-exact resamplers, RADIO
+# CPE tables, mmproj pos/cos-sin tables, HFRE RoIAlign and the detector
+# post-process) reproduce upstream torch/CPU reference arithmetic; a fused
+# a*b+c moves weights by 1 ULP and can flip bf16 rounding ties or near-tied
+# greedy tokens. Disabling contraction on the vlx_seek TUs restores the
+# reference bit-exact contract; ggml kernels are unaffected (they are
+# compiled in the dependency project without -march). MSVC does not
+# contract without /fp:contract.
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(
+        ${AICORE_VLX_SEEK_SRC_DIR}/vlx_image_prep.cpp
+        ${AICORE_VLX_SEEK_SRC_DIR}/vlx_pipeline_common.cpp
+        ${AICORE_VLX_SEEK_SRC_DIR}/vlx_radio_graph.cpp
+        ${AICORE_VLX_SEEK_SRC_DIR}/vlx_mmproj_graph.cpp
+        ${AICORE_VLX_SEEK_SRC_DIR}/vlx_simplefpn_graph.cpp
+        ${AICORE_VLX_SEEK_SRC_DIR}/vlx_wedetect_graph.cpp
+        ${AICORE_VLX_SEEK_SRC_DIR}/vlx_hfre.cpp
+        ${AICORE_VLX_SEEK_SRC_DIR}/vlx_seek_runtime.cpp
+        PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+endif()
+
+# VLX-Seek JPEG decode parity: libjpeg-turbo ISLOW + fancy upsampling equals
+# the PIL default decode the upstream parity feeds use; stb differs by
+# +-1..2 LSB on real photos, enough to flip near-tied greedy tokens. Link
+# the shared 3rdparty_jpeg target and enable the libjpeg decode path when
+# it exists; stb stays the non-JPEG fallback.
+if(TARGET 3rdparty_jpeg)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE ACV_VLX_HAVE_LIBJPEG=1)
+endif()
+
+# QuerySplat host kernels gate their OpenMP loops behind QS_USE_OPENMP
+# (upstream cpp_ggml's CMake contract): the rasterizer's per-tile work and
+# the TTO loss reductions use omp parallel-for, plain serial otherwise.
+if(OpenMP_CXX_FOUND AND NOT MSVC)
+    set_source_files_properties(
+        ${AICORE_QUERYSPLAT_SOURCES}
+        PROPERTIES COMPILE_DEFINITIONS QS_USE_OPENMP)
+elseif(MSVC)
+    # The AICore target above already carries /openmp:experimental on MSVC;
+    # the querysplat sources consume the same flag.
+    set_source_files_properties(
+        ${AICORE_QUERYSPLAT_SOURCES}
+        PROPERTIES COMPILE_DEFINITIONS QS_USE_OPENMP)
 endif()
 
 if(MAP_ANYTHING_ENABLE_DUMP)
@@ -327,6 +405,7 @@ target_include_directories(${PROJECT_NAME}
         ${AICORE_INSTANTMESH_SRC_DIR}
         ${AICORE_GKD_SRC_DIR}
         ${AICORE_MAP_ANYTHING_SRC_DIR}
+        ${AICORE_QUERYSPLAT_SRC_DIR}
         ${AICORE_LINGBOT_SRC_DIR}
         ${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas
         ${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg
@@ -340,6 +419,10 @@ add_dependencies(${PROJECT_NAME} ${GGML_DEPENDENCY_TARGET})
 add_dependencies(${PROJECT_NAME} 3rdparty_meshoptimizer)
 # Build: ggml headers/targets stay PRIVATE (see AICore/README.md).
 target_link_libraries(${PROJECT_NAME} PRIVATE ${GGML_DEPENDENCY_TARGET} 3rdparty_meshoptimizer 3rdparty_jsoncpp)
+if(TARGET 3rdparty_jpeg)
+    # VLX-Seek PIL-exact JPEG decode (see the ACV_VLX_HAVE_LIBJPEG note above).
+    target_link_libraries(${PROJECT_NAME} PRIVATE 3rdparty_jpeg)
+endif()
 if(MSVC)
     # UTF-8 source & execution character sets: AICore sources carry Unicode
     # literals (em-dashes in UI strings, the multilingual-bridge docs) — match
@@ -677,8 +760,8 @@ endif()
 
 set(_aicore_enabled_task_names
     aliked deeplsd depth facedetect gaussian gkd lightglue lingbot loma ocr
-    openpcdet reid rfdetr rmbg sam3 sam3d tagging relation table trellis instantmesh yolo
-    llm)
+    openpcdet querysplat reid rfdetr rmbg sam3 sam3d tagging relation table
+    trellis instantmesh yolo llm vlx_seek)
 list(JOIN _aicore_enabled_task_names "," _aicore_enabled_tasks_csv)
 
 if(AICore_BUILD_TESTS)
@@ -743,6 +826,7 @@ if(AICore_BUILD_TESTS)
         )
         add_dependencies(AICore_test ${GGML_DEPENDENCY_TARGET} 3rdparty_meshoptimizer)
         target_include_directories(AICore_test PRIVATE ${AICORE_TASKS_SRC_DIR}/relation)
+        target_include_directories(AICore_test PRIVATE ${AICORE_VLX_SEEK_SRC_DIR})
         target_link_libraries(AICore_test PUBLIC ${GGML_DEPENDENCY_TARGET} 3rdparty_meshoptimizer CVCoreLib 3rdparty_jsoncpp)
         if(DEFINED GGML_INCLUDE_DIRS)
             target_include_directories(AICore_test PUBLIC ${GGML_INCLUDE_DIRS})

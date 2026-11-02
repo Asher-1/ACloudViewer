@@ -68,6 +68,7 @@
 #include <cstdlib>
 
 #include "LocalChatEngine.h"
+#include "AnnotationCanvas.h"
 
 namespace {
 bool reviewStatusRoundTrip(QMainWindow* window) {
@@ -2970,6 +2971,102 @@ int main(int argc, char** argv) {
             }
             std::fprintf(stdout, "AI Describe caption: %s\n",
                          caption.toUtf8().constData());
+        }
+    }
+    // Region pass: open an image whose sidecar pre-registers one shape,
+    // select its object row, and the per-shape pass must store a fresh crop
+    // caption in that shape's sidecar description (the OCR sink), replacing
+    // the fixture value.
+    {
+        const QString regionImage =
+                directory.path() + QStringLiteral("/region.png");
+        const QString regionSidecar =
+                directory.path() + QStringLiteral("/region.json");
+        if (!image.save(regionImage)) return 1;
+        QJsonObject regionShape{
+                {QStringLiteral("label"), QStringLiteral("fixture")},
+                {QStringLiteral("shape_type"), QStringLiteral("rectangle")},
+                {QStringLiteral("points"),
+                 QJsonArray{QJsonArray{4, 4}, QJsonArray{40, 4},
+                            QJsonArray{40, 40}, QJsonArray{4, 40}}},
+                {QStringLiteral("description"),
+                 QStringLiteral("fixture description to replace")}};
+        QFile regionFile(regionSidecar);
+        if (!regionFile.open(QIODevice::WriteOnly) ||
+            regionFile.write(QJsonDocument(
+                                     QJsonObject{{QStringLiteral("version"),
+                                                  QStringLiteral("4.0.6")},
+                                                 {QStringLiteral("imagePath"),
+                                                  QStringLiteral("region.png")},
+                                                 {QStringLiteral("imageData"),
+                                                  QJsonValue::Null},
+                                                 {QStringLiteral("shapes"),
+                                                  QJsonArray{regionShape}}})
+                                     .toJson()) < 0)
+            return 1;
+        regionFile.close();
+        auto* objects = window->findChild<QListWidget*>(
+                QStringLiteral("AnnotationObjects"));
+        auto* status =
+                window->findChild<QLabel*>(QStringLiteral("AnnotationStatus"));
+        auto* descriptionEditor = window->findChild<QPlainTextEdit*>(
+                QStringLiteral("AnnotationDescription"));
+        if (!objects || !status || !aiDescribe || !descriptionEditor)
+            return 1;
+        if (!QMetaObject::invokeMethod(window, "openImage",
+                                       Qt::DirectConnection,
+                                       Q_ARG(QString, regionImage)))
+            return 1;
+        objects->setCurrentRow(0);
+        if (objects->count() != 1 || objects->selectedItems().isEmpty()) {
+            std::fprintf(stderr,
+                         "AI Describe region pass skipped: object row not "
+                         "selectable\n");
+        } else {
+            descriptionEditor->setPlainText(QString());
+            aiDescribe->trigger();
+            QString last;
+            for (int waited = 0; waited < 2400; ++waited) {
+                QEventLoop loop;
+                QTimer::singleShot(100, &loop, &QEventLoop::quit);
+                loop.exec();
+                last = status->text();
+                if (last.startsWith(QStringLiteral("AI Describe")) &&
+                    !last.contains(QStringLiteral("running")) &&
+                    !last.contains(QStringLiteral("Downloading")))
+                    break;
+            }
+            save->trigger();
+            QFile described(regionSidecar);
+            if (!described.open(QIODevice::ReadOnly)) return 1;
+            const QString regionCaption =
+                    QJsonDocument::fromJson(described.readAll())
+                            .object()
+                            .value(QStringLiteral("shapes"))
+                            .toArray()
+                            .first()
+                            .toObject()
+                            .value(QStringLiteral("description"))
+                            .toString();
+            described.close();
+            const QString inMemory = descriptionEditor->toPlainText();
+            // Substantive acceptance: the fresh crop caption (never the
+            // fixture value) landed both in the description editor and in
+            // the sidecar shape, proving the selected-shape pass ran.
+            if (inMemory.isEmpty() || regionCaption.isEmpty() ||
+                inMemory != regionCaption ||
+                inMemory == QStringLiteral("fixture description to replace") ||
+                !last.startsWith(QStringLiteral("AI Describe"))) {
+                std::fprintf(stderr,
+                             "AI Describe region pass failed: status=\"%s\" "
+                             "memory=\"%s\" sidecar=\"%s\"\n",
+                             last.toUtf8().constData(),
+                             inMemory.toUtf8().constData(),
+                             regionCaption.toUtf8().constData());
+                return 1;
+            }
+            std::fprintf(stdout, "AI Describe region caption: %s\n",
+                         regionCaption.toUtf8().constData());
         }
     }
     window->close();

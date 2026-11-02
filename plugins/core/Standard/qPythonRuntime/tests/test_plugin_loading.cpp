@@ -13,6 +13,10 @@
 #include <cstdio>
 #include <ecvStdPluginInterface.h>
 
+#if !defined(_WIN32)
+#include <dlfcn.h>
+#endif
+
 #pragma push_macro("slots")
 #undef slots
 #include <Python.h>
@@ -26,6 +30,16 @@ int main(int argc, char **argv)
     qputenv("XDG_CONFIG_HOME", settings.path().toUtf8());
     QApplication app(argc, argv);
     QPluginLoader loader(QString::fromLocal8Bit(argv[1]));
+#if !defined(_WIN32)
+    // QPluginLoader collapses a failed dependency load into "Unknown error".
+    // Resolve the Mach-O/ELF directly first so the real dyld message (missing
+    // library, undefined symbol, rpath gap) reaches the CI log verbatim.
+    void *probe = dlopen(argv[1], RTLD_NOW);
+    if (!probe)
+        std::fprintf(stderr, "dyld: %s\n", dlerror());
+    else
+        dlclose(probe);
+#endif
     QObject *object = loader.instance();
     auto *plugin = qobject_cast<ccPluginInterface *>(object);
     auto *standard = dynamic_cast<ccStdPluginInterface *>(plugin);

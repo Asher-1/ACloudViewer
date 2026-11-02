@@ -29,11 +29,13 @@
 #include "aicore/instantmesh_capi.h"
 #include "aicore/lingbot_capi.h"
 #include "aicore/llm_capi.h"
+#include "aicore/vlx_seek_capi.h"
 #include "aicore/loma_capi.h"
 #include "aicore/map_anything_capi.h"
 #include "aicore/model_catalog_capi.h"
 #include "aicore/ocr_capi.h"
 #include "aicore/openpcdet_capi.h"
+#include "aicore/querysplat_capi.h"
 #include "aicore/rfdetr_capi.h"
 #include "aicore/rmbg_capi.h"
 #include "aicore/sam3_capi.h"
@@ -139,6 +141,12 @@ void emitRuntimeCatalogs() {
         emitAsset("llm", "llm_models", e->filename, e->download_url,
                   e->size_bytes);
     }
+    for (int i = 0; i < aicore_vlx_seek_model_count(); ++i) {
+        const auto* e = aicore_vlx_seek_model_at(i);
+        if (e)
+            emitAsset("vlx_seek", "vlx_seek_models", e->filename,
+                      e->download_url, e->size_bytes);
+    }
 
     for (int i = 0; i < aicore_loma_model_count(); ++i) {
         const aicore_loma_model_entry* e = aicore_loma_model_at(i);
@@ -242,6 +250,13 @@ void emitRuntimeCatalogs() {
                 aicore_map_anything_model_at(i);
         if (e)
             emitAsset("map_anything", "map_anything_models", e->filename,
+                      e->download_url, static_cast<long long>(e->size_bytes));
+    }
+    for (int i = 0; i < aicore_querysplat_model_count(); ++i) {
+        const aicore_querysplat_model_entry* e =
+                aicore_querysplat_model_at(i);
+        if (e)
+            emitAsset("querysplat", "querysplat_models", e->filename,
                       e->download_url, static_cast<long long>(e->size_bytes));
     }
 }

@@ -145,9 +145,12 @@ ExternalProject_Add(ext_spirula
         -DSS_SOURCE_DIR=<SOURCE_DIR>
         -P ${CMAKE_CURRENT_LIST_DIR}/spirula_git_init.cmake
     # Upstream ships no install rules; the executable is the whole artifact.
+    # The $<CONFIG> generator expression keeps the source path correct for
+    # multi-config generators (MSVC writes <BINARY_DIR>/Release/spirula.exe,
+    # not <BINARY_DIR>/spirula.exe) and expands empty for single-config ones.
     INSTALL_COMMAND
         ${CMAKE_COMMAND} -E copy_if_different
-        <BINARY_DIR>/spirula${CMAKE_EXECUTABLE_SUFFIX}
+        <BINARY_DIR>/$<CONFIG>/spirula${CMAKE_EXECUTABLE_SUFFIX}
         <INSTALL_DIR>/bin/${SPIRULA_EXE_NAME}
     VERBATIM)
 
@@ -166,12 +169,18 @@ set(SPIRULA_EXECUTABLE "${SPIRULA_EXE}" CACHE INTERNAL
 # app already carries), so nothing else needs to be bundled.
 if(APPLE)
     # ACloudViewer_MAC_BASE_DIR is defined in app/Mac/CMakeLists.txt at the
-    # build-tree scope; resolve it in the install script instead of duplicating
-    # the bundle-path formula here.
+    # build-tree scope. Resolve it at INSTALL time (escaped ${...}) instead of
+    # at configure time: spirula.cmake is processed before app/Mac, so a
+    # configure-time expansion baked an empty prefix into the install script
+    # and the copy targeted /Contents/MacOS (permission denied).
     install(CODE
-        "execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            \"${SPIRULA_EXE}\"
-            \"${ACLOUDVIEWER_MAC_BASE_DIR}/Contents/MacOS/${SPIRULA_EXE_NAME}\")")
+        "if(DEFINED ACLOUDVIEWER_MAC_BASE_DIR)
+             execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                 \"${SPIRULA_EXE}\"
+                 \"\${ACLOUDVIEWER_MAC_BASE_DIR}/Contents/MacOS/${SPIRULA_EXE_NAME}\")
+         else()
+             message(STATUS \"Spirula Studio: app bundle directory unavailable; skipping deploy of ${SPIRULA_EXE_NAME}\")
+         endif()")
 else()
     install(PROGRAMS "${SPIRULA_EXE}" DESTINATION ${ACloudViewer_DEST_FOLDER})
 endif()

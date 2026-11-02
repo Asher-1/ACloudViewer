@@ -104,6 +104,20 @@
       }
     },
     {
+      "name": "pulc_person_attribute.onnx",
+      "sha256": "3694c7f269585096eb378d1183bbdc4e8fa0e3dc0c89cb4591738cf538fd2827",
+      "bytes": 6905296,
+      "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v2.0.0/pulc_person_attribute.onnx",
+      "role": "cls"
+    },
+    {
+      "name": "pulc_vehicle_attribute.onnx",
+      "sha256": "78362592b60c19b07cd3e41ad680dcc1fdff246e3fe450da8e46d45737a6e07c",
+      "bytes": 6869427,
+      "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v2.0.0/pulc_vehicle_attribute.onnx",
+      "role": "cls"
+    },
+    {
       "name": "japan_PP-OCRv3_rec_infer.onnx",
       "sha256": "f38bc0cef411ffb75483b37b8005f9400e4b60a0afd44ff777861737695f52e2",
       "bytes": 10090359,

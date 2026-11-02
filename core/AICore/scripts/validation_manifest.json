@@ -2904,7 +2904,9 @@
   "relation",
   "llm",
   "instantmesh",
-  "querysplat"
+  "querysplat",
+  "vlx_seek",
+  "attribute"
  ],
  "input_assets": [
   {
@@ -2994,9 +2996,32 @@
    ]
   },
   {
+   "id": "attr-onnx-pulc-person",
+   "tasks": [
+    "attribute"
+   ],
+   "relative_path": "attribute_onnx/pulc_person_attribute.onnx",
+   "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v2.0.0/pulc_person_attribute.onnx",
+   "sha256": "3694c7f269585096eb378d1183bbdc4e8fa0e3dc0c89cb4591738cf538fd2827",
+   "size_bytes": 6905296,
+   "description": "Independent PULC person attribute source model, X-AnyLabeling-GGML 745f6c355f94cddb06f6965b3a4118f82033e935"
+  },
+  {
+   "id": "attr-onnx-pulc-vehicle",
+   "tasks": [
+    "attribute"
+   ],
+   "relative_path": "attribute_onnx/pulc_vehicle_attribute.onnx",
+   "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v2.0.0/pulc_vehicle_attribute.onnx",
+   "sha256": "78362592b60c19b07cd3e41ad680dcc1fdff246e3fe450da8e46d45737a6e07c",
+   "size_bytes": 6869427,
+   "description": "Independent PULC vehicle attribute source model, X-AnyLabeling-GGML 745f6c355f94cddb06f6965b3a4118f82033e935"
+  },
+  {
    "id": "objects-detection-samples",
    "tasks": [
-    "yolo"
+    "yolo",
+    "attribute"
    ],
    "relative_path": "objects_detection_data.zip",
    "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/objects_detection_data/objects_detection_data.zip",
@@ -8724,73 +8749,33 @@
    "size_bytes": 1316485984
   },
   {
-   "id": "querysplat-test-images",
+   "id": "querysplat-fixture-courtyard",
    "tasks": [
     "querysplat"
    ],
-   "relative_path": "querysplat_test_data/querysplat_test_images.zip",
-   "url": "https://huggingface.co/Asher-1/querysplat_vggto/resolve/main/querysplat_test_images.zip",
-   "sha256": "afb3ec3693c5118133cd907149e6b7ee78df68df35d757e4f99037c0cad45e98",
-   "size_bytes": 50095675,
-   "archive": "querysplat_test_data",
+   "relative_path": "map_anything_test_data/courtyard.zip",
+   "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/map_anything_vggt_test_data/courtyard.zip",
+   "sha256": "66c01bfacf64f94ecde41183d8dd6cd6c7793c61791360d2c77f50a8d20a1d27",
+   "size_bytes": 757629318,
+   "archive": true,
    "extracted_files": [
     {
-     "relative_path": "querysplat_test_data/case0/frame_00027.png",
-     "sha256": "0168df2515ccddd9172c9b97fa5db74a4e822ef926dbede7b945522c98fb3bec",
-     "size_bytes": 289581
-    },
-    {
-     "relative_path": "querysplat_test_data/case0/frame_00038.png",
-     "sha256": "18e8cb816f069c6eccdebce5cc63f6865ad77cdc72cccdc7ed5467a87c9c4491",
-     "size_bytes": 299101
-    },
-    {
-     "relative_path": "querysplat_test_data/case0/frame_00043.png",
-     "sha256": "a91a0d916858d161fc554783554b9f0bd946b69041b61dc308ae4893b92f8911",
-     "size_bytes": 292650
-    },
-    {
-     "relative_path": "querysplat_test_data/case0/frame_00052.png",
-     "sha256": "c2ae3b0cffbbd093fe611dd1adf9c10cfed9362ea2b3ab48b9c64de53dac1477",
-     "size_bytes": 301085
-    },
-    {
-     "relative_path": "querysplat_test_data/case1/frame_00153.png",
-     "sha256": "cc72ff7bfd4c20bab664b950eb1ed0e757fc5be808879502de2edfaaa5077a21",
-     "size_bytes": 206129
-    },
-    {
-     "relative_path": "querysplat_test_data/case1/frame_00155.png",
-     "sha256": "53995711f8e680dce27e14f1c16814000d139eb05dbaafb9029ebab24c9c763f",
-     "size_bytes": 203148
-    },
-    {
-     "relative_path": "querysplat_test_data/case1/frame_00187.png",
-     "sha256": "bdf49a58208da0ffd5bb2b9cf3cb2133151c24f99777bdef44254b0da5026115",
-     "size_bytes": 210503
-    },
-    {
-     "relative_path": "querysplat_test_data/case1/frame_00190.png",
-     "sha256": "d3701cfacc53a0f6c4a1530b585d36f8a01753fe03550a7081e604de203a485c",
-     "size_bytes": 208900
-    },
-    {
-     "relative_path": "querysplat_test_data/courtyard/DSC_0286.png",
+     "relative_path": "courtyard/images/DSC_0286.png",
      "sha256": "e06f96bb23ec05f92d28ee72022656e2f9df82aff470792c757b25596e7972f9",
      "size_bytes": 11782784
     },
     {
-     "relative_path": "querysplat_test_data/courtyard/DSC_0287.png",
+     "relative_path": "courtyard/images/DSC_0287.png",
      "sha256": "cf956f640104131e83f5bd3ff78adb734bbd1aab7519c55b77d59eceeb628729",
      "size_bytes": 12014623
     },
     {
-     "relative_path": "querysplat_test_data/courtyard/DSC_0288.png",
+     "relative_path": "courtyard/images/DSC_0288.png",
      "sha256": "e7f3d4f8e22995748ff68ad1891650ab2625c023c3d974e7b8245ecb98b11803",
      "size_bytes": 12162170
     },
     {
-     "relative_path": "querysplat_test_data/courtyard/DSC_0289.png",
+     "relative_path": "courtyard/images/DSC_0289.png",
      "sha256": "d9e8740ad9ed5736d27845a37761988ef988e2b7088c36ed4f4bd5dc9aa6e5fb",
      "size_bytes": 12123555
     }
@@ -11240,6 +11225,134 @@
     ]
    },
    "accuracy_gate": "PicoDet layout heads match the Paddle reference element-wise within the quantization tolerance on the official inference input. This graph-level check is distinct from unlabelled end-to-end OCR string agreement; the decoded-region contract is the ocr-layout-regions rows (official PP-Structure regions), never text CER/WER.",
+   "metric_parser": "generic"
+  },
+  {
+   "id": "pulc-attribute-person-f32",
+   "task": "attribute",
+   "local_only": true,
+   "covered_globs": [
+    "attribute_models/pulc-person-f32.gguf"
+   ],
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/scripts/run_attribute_pulc_probe.py",
+    "--source",
+    "{assets}/attribute_onnx/pulc_person_attribute.onnx",
+    "--source-sha256",
+    "3694c7f269585096eb378d1183bbdc4e8fa0e3dc0c89cb4591738cf538fd2827",
+    "--model",
+    "{assets}/attribute_models/pulc-person-f32.gguf",
+    "--image",
+    "{assets}/objects_detection_data/images/bus.jpg",
+    "--image-sha256",
+    "c02019c4979c191eb739ddd944445ef408dad5679acab6fd520ef9d434bfbc63",
+    "--family",
+    "person",
+    "--library",
+    "{build}/bin/libAICore.so",
+    "--backend",
+    "{backend}",
+    "--report",
+    "{scenario_report}",
+    "--warmups",
+    "{warmup_runs}",
+    "--repeats",
+    "{inference_runs}",
+    "--threads",
+    "{threads}"
+   ],
+   "input_ids": [
+    "attr-onnx-pulc-person",
+    "objects-detection-samples"
+   ],
+   "accuracy_gate": "Independent original-source PULC probabilities on the pinned bus.jpg input: per-output error < 0.001 against a freshly regenerated onnxruntime reference, and every decoded attribute group must match the C ABI selection. Local converted artifacts; not release or dataset-accuracy evidence.",
+   "accuracy": {
+    "reference": "upstream",
+    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:3694c7f269585096eb378d1183bbdc4e8fa0e3dc0c89cb4591738cf538fd2827",
+    "checks": [
+     {
+      "metric": "maximum_output_error",
+      "op": "<",
+      "value": 0.001
+     },
+     {
+      "metric": "attributes_match",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "maximum_output_error",
+     "attributes_match",
+     "e2e_p50_ms",
+     "e2e_p95_ms"
+    ]
+   },
+   "metric_parser": "generic"
+  },
+  {
+   "id": "pulc-attribute-vehicle-f32",
+   "task": "attribute",
+   "local_only": true,
+   "covered_globs": [
+    "attribute_models/pulc-vehicle-f32.gguf"
+   ],
+   "executable": "python",
+   "args": [
+    "{repo}/core/AICore/scripts/run_attribute_pulc_probe.py",
+    "--source",
+    "{assets}/attribute_onnx/pulc_vehicle_attribute.onnx",
+    "--source-sha256",
+    "78362592b60c19b07cd3e41ad680dcc1fdff246e3fe450da8e46d45737a6e07c",
+    "--model",
+    "{assets}/attribute_models/pulc-vehicle-f32.gguf",
+    "--image",
+    "{assets}/objects_detection_data/images/bus.jpg",
+    "--image-sha256",
+    "c02019c4979c191eb739ddd944445ef408dad5679acab6fd520ef9d434bfbc63",
+    "--family",
+    "vehicle",
+    "--library",
+    "{build}/bin/libAICore.so",
+    "--backend",
+    "{backend}",
+    "--report",
+    "{scenario_report}",
+    "--warmups",
+    "{warmup_runs}",
+    "--repeats",
+    "{inference_runs}",
+    "--threads",
+    "{threads}"
+   ],
+   "input_ids": [
+    "attr-onnx-pulc-vehicle",
+    "objects-detection-samples"
+   ],
+   "accuracy_gate": "Independent original-source PULC probabilities on the pinned bus.jpg input: per-output error < 0.001 against a freshly regenerated onnxruntime reference, and every decoded attribute group must match the C ABI selection. Local converted artifacts; not release or dataset-accuracy evidence.",
+   "accuracy": {
+    "reference": "upstream",
+    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:78362592b60c19b07cd3e41ad680dcc1fdff246e3fe450da8e46d45737a6e07c",
+    "checks": [
+     {
+      "metric": "maximum_output_error",
+      "op": "<",
+      "value": 0.001
+     },
+     {
+      "metric": "attributes_match",
+      "op": "==",
+      "value": 1
+     }
+    ],
+    "require_metrics": [
+     "maximum_output_error",
+     "attributes_match",
+     "e2e_p50_ms",
+     "e2e_p95_ms"
+    ]
+   },
    "metric_parser": "generic"
   },
   {
@@ -37580,7 +37693,7 @@
     "{repo}/core/AICore/scripts/validation_manifest.json",
     "{reference:instantmesh_geometry_baseline}"
    ],
-   "accuracy_gate": "\u56db\u56fe\u9010\u89c6\u56fe/\u5e73\u9762\u56fa\u5b9a\u7edd\u5bf9\u95e8\u53ca\u540c\u6743\u91cd\u539f\u4e0a\u6e38\u65b0\u589e\u8bef\u5dee\u95e8\uff1b\u4ec5\u7ec4\u4ef6\uff0c\u4e0d\u662f\u5b8c\u6574\u94fe/\u6027\u80fd\u9a8c\u6536",
+   "accuracy_gate": "四图逐视图/平面固定绝对门及同权重原上游新增误差门；仅组件，不是完整链/性能验收",
    "accuracy": {
     "reference": "upstream",
     "reference_id": "InstantMesh-GGML:32b14574edc9caba95f03672bfa1eeddd13c3af7:geometry-component-limits:ff59edd5358abb3389c9200c1b9ab63e91fac7ad21e2550431461d081d18d757",
@@ -38581,7 +38694,7 @@
     "{repo}/core/AICore/scripts/validation_manifest.json",
     "{reference:instantmesh_geometry_baseline}"
    ],
-   "accuracy_gate": "\u56db\u56fe\u9010\u89c6\u56fe/\u5e73\u9762\u56fa\u5b9a\u7edd\u5bf9\u95e8\u53ca\u540c\u6743\u91cd\u539f\u4e0a\u6e38\u65b0\u589e\u8bef\u5dee\u95e8\uff1b\u4ec5\u7ec4\u4ef6\uff0c\u4e0d\u662f\u5b8c\u6574\u94fe/\u6027\u80fd\u9a8c\u6536",
+   "accuracy_gate": "四图逐视图/平面固定绝对门及同权重原上游新增误差门；仅组件，不是完整链/性能验收",
    "accuracy": {
     "reference": "upstream",
     "reference_id": "InstantMesh-GGML:32b14574edc9caba95f03672bfa1eeddd13c3af7:geometry-component-limits:ff59edd5358abb3389c9200c1b9ab63e91fac7ad21e2550431461d081d18d757",
@@ -39158,7 +39271,7 @@
     "--llm",
     "{assets}/vlx_seek_models/vlx-10b-llm-q8_0.gguf",
     "--image",
-    "{assets}/vlx_seek_test_images/vlx_seek_test_images/ebike_riders.jpg",
+    "{assets}/vlx_seek_test_images/ebike_riders.jpg",
     "--task",
     "detection",
     "--text",
@@ -39168,7 +39281,7 @@
     "--device",
     "{backend}",
     "--threads",
-    "0",
+    "1",
     "--max-tokens",
     "256",
     "--repeats",
@@ -39224,7 +39337,7 @@
     "--llm",
     "{assets}/vlx_seek_models/vlx-10b-llm-f16.gguf",
     "--image",
-    "{assets}/vlx_seek_test_images/vlx_seek_test_images/demo_image2.jpg",
+    "{assets}/vlx_seek_test_images/demo_image2.jpg",
     "--task",
     "detection",
     "--text",
@@ -39234,7 +39347,7 @@
     "--device",
     "{backend}",
     "--threads",
-    "0",
+    "1",
     "--max-tokens",
     "256",
     "--repeats",
@@ -39251,7 +39364,7 @@
     "{scenario_report}"
    ],
    "env": {},
-   "accuracy_gate": "Greedy token identity against the pristine upstream vlx-cli (Asher-1/VLX-Seek-GGML pinned revision, built by tests/vlx/prepare_vlx_upstream_reference.py from the same model files) plus per-box coordinate delta <= 0.05 px, repeat/recreate determinism enforced by the probe exit code.",
+   "accuracy_gate": "Greedy token identity against the pristine upstream vlx-cli (Asher-1/VLX-Seek-GGML pinned revision, built by tests/vlx/prepare_vlx_upstream_reference.py from the same model files) plus per-box coordinate delta <= 0.05 px, repeat/recreate determinism enforced by the probe exit code. CPU greedy-text parity is a single-thread contract (--threads 1): ggml CPU multi-thread reduction order flips near-tied greedy tokens in the pristine reference itself, so a multi-thread text compare measures reduction scheduling, not arithmetic correctness.",
    "accuracy": {
     "reference": "upstream_vlx_cli",
     "reference_id": "Asher-1/VLX-Seek-GGML@e63d16d vlx-cli",
@@ -39299,17 +39412,17 @@
     "--llm",
     "{assets}/vlx_seek_models/vlx-10b-llm-q8_0.gguf",
     "--image",
-    "{assets}/vlx_seek_test_images/vlx_seek_test_images/street_traffic.jpg",
+    "{assets}/vlx_seek_test_images/street_traffic.jpg",
     "--task",
     "grounding_single",
     "--text",
-    "\u9a91\u7535\u52a8\u8f66\u7684\u4eba",
+    "骑电动车的人",
     "--lang",
     "zh",
     "--device",
     "{backend}",
     "--threads",
-    "0",
+    "1",
     "--max-tokens",
     "256",
     "--repeats",
@@ -39336,30 +39449,87 @@
   {
    "id": "querysplat",
    "task": "querysplat",
-   "owned_globs": [
-    "querysplat_models/*.gguf",
-    "querysplat_test_data/querysplat_test_images.zip"
-   ],
-   "model_glob": "querysplat_models/querysplat-paper-q8_0.gguf",
-   "light_globs": [
+   "light": true,
+   "covered_globs": [
     "querysplat_models/querysplat-paper-q8_0.gguf",
     "map_anything_models/vggt-omega-1b-512-q8_0.gguf"
    ],
-   "for_each_model": true,
    "executable": "binary:test_querysplat_capi",
    "args": [
-    "{model}",
-    "{asset:map_anything_models/vggt-omega-1b-512-q8_0.gguf}",
-    "{asset:querysplat_test_data/case0/frame_00027.png}",
-    "{asset:querysplat_test_data/case0/frame_00038.png}",
-    "{asset:querysplat_test_data/case0/frame_00043.png}",
-    "{asset:querysplat_test_data/case0/frame_00052.png}",
+    "{assets}/querysplat_models/querysplat-paper-q8_0.gguf",
+    "{assets}/map_anything_models/vggt-omega-1b-512-q8_0.gguf",
+    "{assets}/courtyard/images/DSC_0286.png",
+    "{assets}/courtyard/images/DSC_0287.png",
+    "{assets}/courtyard/images/DSC_0288.png",
+    "{assets}/courtyard/images/DSC_0289.png",
     "{backend}",
     "{inference_runs}",
     "{warmup_runs}"
    ],
    "env": {},
-   "accuracy_gate": "structural invariants against the published paper checkpoints: exactly 524288 gaussians with opacities in [0,1] and positive scales, finite depth >= 0 with depth_conf >= 1 on the input-resolution grid, pose_enc FoV floor 0.01, exact repeated-output fingerprint, render/PLY/cameras-JSON/stats export round-trips; the independent upstream truth anchors (cpp-vs-GT render PSNR 26.85/26.84/26.89 dB for f32/f16/q8_0 on the 3 official reference scenes) are owned by the upstream cpp_ggml alignment matrix and re-verified per release through the parity workflow",
+   "accuracy_gate": "structural invariants against the published paper checkpoints: exactly 524288 gaussians with opacities in [0,1] and positive scales, finite depth >= 0 with depth_conf >= 1 on the input-resolution grid, pose_enc FoV floor 0.01, exact repeated-output fingerprint, render/PLY/cameras-JSON/stats export round-trips; the independent upstream truth anchors (cpp-vs-GT render PSNR 26.85/26.84/26.89 dB for f32/f16/q8_0 on the official reference scenes) are owned by the upstream cpp_ggml alignment matrix and re-verified per release through the parity workflow (session evidence: in-tree f32 vs upstream cpp bins, courtyard shared fixture, gaussians Pearson 0.9999, renders 51-56 dB)",
+   "accuracy": {
+    "reference": "probe_invariant",
+    "reference_id": "probe:querysplat",
+    "checks": [],
+    "require_metrics": []
+   },
+   "fingerprint_policy": "exact",
+   "metric_parser": "generic"
+  },
+  {
+   "id": "querysplat-f16",
+   "task": "querysplat",
+   "light": false,
+   "covered_globs": [
+    "querysplat_models/querysplat-paper-f16.gguf",
+    "map_anything_models/vggt-omega-1b-512-f16.gguf"
+   ],
+   "executable": "binary:test_querysplat_capi",
+   "args": [
+    "{assets}/querysplat_models/querysplat-paper-f16.gguf",
+    "{assets}/map_anything_models/vggt-omega-1b-512-f16.gguf",
+    "{assets}/courtyard/images/DSC_0286.png",
+    "{assets}/courtyard/images/DSC_0287.png",
+    "{assets}/courtyard/images/DSC_0288.png",
+    "{assets}/courtyard/images/DSC_0289.png",
+    "{backend}",
+    "{inference_runs}",
+    "{warmup_runs}"
+   ],
+   "env": {},
+   "accuracy_gate": "structural invariants against the published paper checkpoints: exactly 524288 gaussians with opacities in [0,1] and positive scales, finite depth >= 0 with depth_conf >= 1 on the input-resolution grid, pose_enc FoV floor 0.01, exact repeated-output fingerprint, render/PLY/cameras-JSON/stats export round-trips; the independent upstream truth anchors (cpp-vs-GT render PSNR 26.85/26.84/26.89 dB for f32/f16/q8_0 on the official reference scenes) are owned by the upstream cpp_ggml alignment matrix and re-verified per release through the parity workflow (session evidence: in-tree f32 vs upstream cpp bins, courtyard shared fixture, gaussians Pearson 0.9999, renders 51-56 dB)",
+   "accuracy": {
+    "reference": "probe_invariant",
+    "reference_id": "probe:querysplat",
+    "checks": [],
+    "require_metrics": []
+   },
+   "fingerprint_policy": "exact",
+   "metric_parser": "generic"
+  },
+  {
+   "id": "querysplat-f32",
+   "task": "querysplat",
+   "light": false,
+   "covered_globs": [
+    "querysplat_models/querysplat-paper-f32.gguf",
+    "map_anything_models/vggt-omega-1b-512-f32.gguf"
+   ],
+   "executable": "binary:test_querysplat_capi",
+   "args": [
+    "{assets}/querysplat_models/querysplat-paper-f32.gguf",
+    "{assets}/map_anything_models/vggt-omega-1b-512-f32.gguf",
+    "{assets}/courtyard/images/DSC_0286.png",
+    "{assets}/courtyard/images/DSC_0287.png",
+    "{assets}/courtyard/images/DSC_0288.png",
+    "{assets}/courtyard/images/DSC_0289.png",
+    "{backend}",
+    "{inference_runs}",
+    "{warmup_runs}"
+   ],
+   "env": {},
+   "accuracy_gate": "structural invariants against the published paper checkpoints: exactly 524288 gaussians with opacities in [0,1] and positive scales, finite depth >= 0 with depth_conf >= 1 on the input-resolution grid, pose_enc FoV floor 0.01, exact repeated-output fingerprint, render/PLY/cameras-JSON/stats export round-trips; the independent upstream truth anchors (cpp-vs-GT render PSNR 26.85/26.84/26.89 dB for f32/f16/q8_0 on the official reference scenes) are owned by the upstream cpp_ggml alignment matrix and re-verified per release through the parity workflow (session evidence: in-tree f32 vs upstream cpp bins, courtyard shared fixture, gaussians Pearson 0.9999, renders 51-56 dB)",
    "accuracy": {
     "reference": "probe_invariant",
     "reference_id": "probe:querysplat",

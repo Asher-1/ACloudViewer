@@ -1,0 +1,561 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+#include "QuerySplatDialog.h"
+
+#include <QCheckBox>
+#include <QComboBox>
+#include <QDialogButtonBox>
+#include <QDoubleSpinBox>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QFormLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QListWidget>
+#include <QProgressBar>
+#include <QPushButton>
+#include <QScrollArea>
+#include <QSpinBox>
+#include <QVBoxLayout>
+#include <QWidget>
+
+#include <ecvMainAppInterface.h>
+#include <ecvAssetIntegrity.h>
+#include <ecvModelDownloader.h>
+
+#include <aicore/inference_log.h>
+#include <aicore/map_anything_capi.h>
+
+namespace {
+
+QString deviceLabel(const QString& id) {
+    if (id == QStringLiteral("auto")) return QObject::tr("Auto (CUDA > Vulkan > Metal > CPU)");
+    return id.toUpper();
+}
+
+// Scene combo index <-> shared multi-view scene dataset. These are the SAME
+// map_anything_vggt_test_data fixtures the MapAnything plugin consumes —
+// QuerySplat runs on any multi-view set, so both plugins share the whole
+// scene catalog (courtyard's first four frames are byte-identical to the
+// upstream QuerySplat eval inputs).
+const ecvTestDataRepository::Dataset kSceneKinds[] = {
+        ecvTestDataRepository::Dataset::MapAnythingCourtyard,
+        ecvTestDataRepository::Dataset::MapAnythingDeliveryArea,
+        ecvTestDataRepository::Dataset::MapAnythingElectro,
+        ecvTestDataRepository::Dataset::MapAnythingFacade,
+        ecvTestDataRepository::Dataset::MapAnythingKicker,
+        ecvTestDataRepository::Dataset::MapAnythingMeadow,
+        ecvTestDataRepository::Dataset::MapAnythingOffice,
+        ecvTestDataRepository::Dataset::MapAnythingPipes,
+        ecvTestDataRepository::Dataset::MapAnythingPlayground,
+        ecvTestDataRepository::Dataset::MapAnythingRelief,
+        ecvTestDataRepository::Dataset::MapAnythingRelief2,
+        ecvTestDataRepository::Dataset::MapAnythingTerrace,
+        ecvTestDataRepository::Dataset::MapAnythingTerrains};
+
+// Demo fill keeps the upstream benchmark geometry (the first frames of the
+// selected scene); the rest stay available through Add Images.
+constexpr int kDemoFillMaxViews = 4;
+
+}  // namespace
+
+QuerySplatDialog::QuerySplatDialog(QWidget* parent) : QDialog(parent) {
+    buildUi();
+    refreshModelList();
+}
+
+QuerySplatDialog::~QuerySplatDialog() = default;
+
+void QuerySplatDialog::setAppInterface(ecvMainAppInterface* app) {
+    m_app = app;
+}
+
+QString QuerySplatDialog::decoderCacheDir() const {
+    return QuerySplatHelpers::decoderCacheDir();
+}
+
+void QuerySplatDialog::buildUi() {
+    setWindowTitle(tr("QuerySplat Gaussian Prediction"));
+    resize(640, 620);
+
+    auto* rootLayout = new QVBoxLayout(this);
+
+    // ---- fixed input area ----
+    rootLayout->addWidget(buildInputPage());
+
+    // ---- configuration scroll area ----
+    auto* scroll = new QScrollArea(this);
+    scroll->setWidgetResizable(true);
+    scroll->setFrameShape(QFrame::NoFrame);
+    scroll->setWidget(buildConfigPage());
+    rootLayout->addWidget(scroll, /*stretch=*/1);
+
+    // ---- fixed action/progress area ----
+    auto* actionRow = new QHBoxLayout();
+    m_runBtn = new QPushButton(tr("Run"), this);
+    m_runBtn->setDefault(true);
+    m_cancelBtn = new QPushButton(tr("Cancel"), this);
+    m_cancelBtn->setEnabled(false);
+    actionRow->addWidget(m_runBtn);
+    actionRow->addWidget(m_cancelBtn);
+    actionRow->addStretch(1);
+    m_downloadLabel = new QLabel(this);
+    actionRow->addWidget(m_downloadLabel);
+    rootLayout->addLayout(actionRow);
+
+    m_progress = new QProgressBar(this);
+    m_progress->setRange(0, 100);
+    m_progress->setValue(0);
+    rootLayout->addWidget(m_progress);
+
+    m_taskStatusLabel = new QLabel(this);
+    rootLayout->addWidget(m_taskStatusLabel);
+
+    connect(m_runBtn, &QPushButton::clicked, this,
+            &QuerySplatDialog::onRun);
+    connect(m_cancelBtn, &QPushButton::clicked, this,
+            &QuerySplatDialog::onCancel);
+    connect(m_addBtn, &QPushButton::clicked, this,
+            &QuerySplatDialog::onAddFiles);
+    connect(m_removeBtn, &QPushButton::clicked, this,
+            &QuerySplatDialog::onRemoveSelected);
+    connect(m_clearBtn, &QPushButton::clicked, this,
+            &QuerySplatDialog::onClearImages);
+    connect(m_testDataBtn, &QPushButton::clicked, this,
+            &QuerySplatDialog::onUseTestData);
+    connect(&ecvTestDataRepository::instance(),
+            &ecvTestDataRepository::datasetReady, this,
+            &QuerySplatDialog::onTestDataReady);
+}
+
+QWidget* QuerySplatDialog::buildInputPage() {
+    auto* box = new QWidget(this);
+    auto* layout = new QVBoxLayout(box);
+    layout->setContentsMargins(0, 0, 0, 0);
+
+    m_imageList = new QListWidget(box);
+    m_imageList->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    m_imageList->setMinimumHeight(96);
+    layout->addWidget(m_imageList, 1);
+
+    auto* btnRow = new QHBoxLayout();
+    m_addBtn = new QPushButton(tr("Add Images..."), box);
+    m_removeBtn = new QPushButton(tr("Remove Selected"), box);
+    m_clearBtn = new QPushButton(tr("Clear"), box);
+    m_testSceneCombo = new QComboBox(box);
+    for (ecvTestDataRepository::Dataset kind : kSceneKinds) {
+        m_testSceneCombo->addItem(
+                ecvTestDataRepository::getDatasetInfo(kind).displayName);
+    }
+    m_testDataBtn = new QPushButton(tr("Use Test Data"), box);
+    btnRow->addWidget(m_addBtn);
+    btnRow->addWidget(m_removeBtn);
+    btnRow->addWidget(m_clearBtn);
+    btnRow->addStretch(1);
+    btnRow->addWidget(m_testSceneCombo);
+    btnRow->addWidget(m_testDataBtn);
+    layout->addLayout(btnRow);
+    return box;
+}
+
+QWidget* QuerySplatDialog::buildConfigPage() {
+    auto* box = new QWidget(this);
+    auto* form = new QFormLayout(box);
+    form->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+
+    m_modelCombo = new QComboBox(box);
+    // Long catalog labels live in the popup only: the combo elides so the
+    // form's minimum width stays fixed (no horizontal overflow).
+    m_modelCombo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+    m_modelCombo->setMinimumContentsLength(12);
+    connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this](int) { m_downloadLabel->clear(); });
+    form->addRow(tr("Decoder model"), m_modelCombo);
+
+    m_deviceCombo = new QComboBox(box);
+    for (const char* d : {"auto", "cuda", "vulkan", "metal", "cpu"})
+        m_deviceCombo->addItem(deviceLabel(QString::fromLatin1(d)),
+                               QString::fromLatin1(d));
+    form->addRow(tr("Device"), m_deviceCombo);
+
+    m_threadsSpin = new QSpinBox(box);
+    m_threadsSpin->setRange(0, 256);
+    m_threadsSpin->setSpecialValueText(tr("Backend default"));
+    form->addRow(tr("CPU threads"), m_threadsSpin);
+
+    m_imageSizeSpin = new QSpinBox(box);
+    m_imageSizeSpin->setRange(0, 2048);
+    m_imageSizeSpin->setSingleStep(32);
+    m_imageSizeSpin->setSpecialValueText(tr("Checkpoint resolution"));
+    form->addRow(tr("Image size"), m_imageSizeSpin);
+
+    m_opacitySpin = new QDoubleSpinBox(box);
+    m_opacitySpin->setRange(0.0, 1.0);
+    m_opacitySpin->setSingleStep(0.01);
+    m_opacitySpin->setDecimals(3);
+    m_opacitySpin->setValue(0.05);
+    form->addRow(tr("Opacity threshold"), m_opacitySpin);
+
+    m_ttoCheck = new QCheckBox(tr("Test-time optimization (TTO)"), box);
+    form->addRow(QString(), m_ttoCheck);
+    m_ttoStepsSpin = new QSpinBox(box);
+    m_ttoStepsSpin->setRange(1, 500);
+    m_ttoStepsSpin->setValue(20);
+    form->addRow(tr("TTO steps"), m_ttoStepsSpin);
+    m_ttoLrSpin = new QDoubleSpinBox(box);
+    m_ttoLrSpin->setRange(1e-5, 1e-1);
+    m_ttoLrSpin->setDecimals(5);
+    m_ttoLrSpin->setSingleStep(1e-3);
+    m_ttoLrSpin->setValue(5e-3);
+    form->addRow(tr("TTO learning rate"), m_ttoLrSpin);
+    m_ttoLpipsSpin = new QDoubleSpinBox(box);
+    m_ttoLpipsSpin->setRange(0.0, 1.0);
+    m_ttoLpipsSpin->setSingleStep(0.01);
+    m_ttoLpipsSpin->setValue(0.05);
+    form->addRow(tr("TTO LPIPS weight"), m_ttoLpipsSpin);
+    m_ttoStepsSpin->setEnabled(false);
+    m_ttoLrSpin->setEnabled(false);
+    m_ttoLpipsSpin->setEnabled(false);
+    connect(m_ttoCheck, &QCheckBox::toggled, this, [this](bool on) {
+        m_ttoStepsSpin->setEnabled(on);
+        m_ttoLrSpin->setEnabled(on);
+        m_ttoLpipsSpin->setEnabled(on);
+    });
+
+    m_depthViewsCheck = new QCheckBox(tr("Depth rasters (per view)"), box);
+    m_depthViewsCheck->setChecked(true);
+    m_renderViewsCheck =
+            new QCheckBox(tr("Rendered views (gsplat rasterizer)"), box);
+    m_renderViewsCheck->setChecked(true);
+    m_pointCloudCheck =
+            new QCheckBox(tr("Depth point cloud into DB"), box);
+    m_pointCloudCheck->setChecked(true);
+    m_plyCheck = new QCheckBox(tr("Export 3DGS PLY"), box);
+    m_plyCheck->setChecked(true);
+    form->addRow(tr("Outputs"), m_depthViewsCheck);
+    form->addRow(QString(), m_renderViewsCheck);
+    form->addRow(QString(), m_pointCloudCheck);
+    form->addRow(QString(), m_plyCheck);
+    return box;
+}
+
+void QuerySplatDialog::refreshModelList() {
+    if (!m_modelCombo) return;
+    const QString previous =
+            m_modelCombo->currentData().toString();
+    m_modelCombo->blockSignals(true);
+    m_modelCombo->clear();
+    const auto decoders = QuerySplatHelpers::decoderModels();
+    for (const auto& m : decoders) {
+        m_modelCombo->addItem(
+                tr("%1 (%2)").arg(m.displayName, m.quantNote),
+                m.filename);
+    }
+    if (!previous.isEmpty()) {
+        const int idx = m_modelCombo->findData(previous);
+        if (idx >= 0) m_modelCombo->setCurrentIndex(idx);
+    }
+    m_modelCombo->blockSignals(false);
+}
+
+void QuerySplatDialog::fillImages(const QStringList& paths) {
+    for (const QString& p : paths) {
+        if (!m_imageList->findItems(p, Qt::MatchExactly).isEmpty()) continue;
+        m_imageList->addItem(p);
+    }
+}
+
+void QuerySplatDialog::onAddFiles() {
+    const QStringList files = QFileDialog::getOpenFileNames(
+            this, tr("Select input images"), QString(),
+            tr("Images (*.png *.jpg *.jpeg *.webp *.bmp)"));
+    fillImages(files);
+}
+
+void QuerySplatDialog::onRemoveSelected() {
+    for (QListWidgetItem* item : m_imageList->selectedItems())
+        delete item;
+}
+
+void QuerySplatDialog::onClearImages() { m_imageList->clear(); }
+
+void QuerySplatDialog::onUseTestData() {
+    if (m_testDataBusy) {
+        appendLog(tr("[Warning] A test-data download is already in "
+                     "progress."));
+        return;
+    }
+    // absence of the cache is a recoverable state: shared preparation, not
+    // an Error (an Error dialog here would be a modal the user must
+    // dismiss before anything happens)
+    const int scene =
+            std::min(std::max(m_testSceneCombo->currentIndex(), 0),
+                     int(sizeof(kSceneKinds) / sizeof(kSceneKinds[0])) - 1);
+    m_pendingTestDataset = kSceneKinds[scene];
+    const auto info =
+            ecvTestDataRepository::getDatasetInfo(m_pendingTestDataset);
+    m_testDataBusy = true;
+    m_testDataBtn->setEnabled(false);
+    appendLog(tr("[QS] Preparing the shared multi-view test scene (%1)...")
+                      .arg(info.displayName));
+    ecvTestDataRepository::instance().ensureDatasetReady(
+            m_pendingTestDataset);
+}
+
+void QuerySplatDialog::onTestDataReady(
+        bool ok, ecvTestDataRepository::Dataset kind) {
+    if (kind != m_pendingTestDataset) return;
+    m_testDataBusy = false;
+    m_testDataBtn->setEnabled(true);
+    if (!ok) {
+        appendLog(tr("[Error] Test-data preparation failed."));
+        return;
+    }
+    // The shared map_anything_vggt_test_data bundles keep their frames under
+    // the scene directory; the repository's recursive scan returns them in
+    // deterministic name order (the same helper qMapAnything consumes).
+    const QString root = ecvTestDataRepository::extractPath(kind);
+    const QStringList images =
+            ecvTestDataRepository::getMapAnythingSceneImages(root);
+    if (images.isEmpty()) {
+        appendLog(tr("[Error] No images found under %1").arg(root));
+        return;
+    }
+    // Demo fill keeps the upstream benchmark geometry: the first frames of
+    // the scene (courtyard's first four are byte-identical to the upstream
+    // QuerySplat eval inputs); the remaining frames stay available through
+    // Add Images.
+    const int fill = std::min(int(images.size()), kDemoFillMaxViews);
+    fillImages(images.mid(0, fill));
+    appendLog(tr("[QS] Filled %1 test image(s) from %2 (%3 available).")
+                      .arg(fill)
+                      .arg(ecvTestDataRepository::getDatasetInfo(kind)
+                                   .displayName)
+                      .arg(images.size()));
+}
+
+bool QuerySplatDialog::ensureEncoderAvailable() {
+    // The encoder is the map_anything-shared VGGT-Omega GGUF. Verify it the
+    // same way (integrity anchor from the pinned digest table) but route the
+    // download through this dialog's shared ecvModelDownloader when absent.
+    const QString encPath = QuerySplatHelpers::encoderDefaultPath();
+    if (encPath.isEmpty()) {
+        appendLog(tr("[Error] The VGGT-Omega encoder catalog is "
+                     "unavailable (AICore map_anything catalog missing)."));
+        return false;
+    }
+    if (QFileInfo::exists(encPath)) {
+        const QString filename = QFileInfo(encPath).fileName();
+        const auto anchor = ecvAssetIntegrity::Anchor{
+                QCryptographicHash::Sha256,
+                ecvAssetIntegrity::PinnedDigest(filename)};
+        if (ecvAssetIntegrity::isVerified(
+                    encPath, anchor, 64 * 1024, /*requireGgufMagic=*/true,
+                    ecvAssetIntegrity::OnMiss::CheapChecksOnly, 0)) {
+            return true;
+        }
+        appendLog(tr("[Warning] Encoder digest mismatch, re-downloading."));
+    }
+    // resolve the download URL from the map_anything catalog through the
+    // shared AICore entries
+    const QString filename = QFileInfo(encPath).fileName();
+    // the map_anything catalog lives behind the AICore C API
+    const int32_t n = aicore_map_anything_model_count();
+    for (int32_t i = 0; i < n; ++i) {
+        const auto* e = aicore_map_anything_model_at(i);
+        if (e && filename == QString::fromUtf8(e->filename)) {
+            QuerySplatModelEntry row;
+            row.filename = filename;
+            row.downloadUrl = QString::fromUtf8(e->download_url);
+            row.sizeBytes = e->size_bytes;
+            m_pendingAfterDownload = QStringLiteral("__run__");
+            startModelDownload(row);
+            return false;
+        }
+    }
+    appendLog(tr("[Error] Encoder model '%1' is not in the map_anything "
+                 "catalog.")
+                      .arg(filename));
+    return false;
+}
+
+bool QuerySplatDialog::ensureModelsAvailable() {
+    const QString filename = m_modelCombo->currentData().toString();
+    if (filename.isEmpty()) return false;
+    QuerySplatModelEntry entry;
+    QuerySplatHelpers::findModelByFilename(filename, &entry);
+    const QString path = decoderCacheDir() + QStringLiteral("/") + filename;
+    const auto anchor = ecvAssetIntegrity::Anchor{
+            QCryptographicHash::Sha256,
+            ecvAssetIntegrity::PinnedDigest(filename)};
+    if (!ecvAssetIntegrity::isVerified(
+                path, anchor, 64 * 1024, /*requireGgufMagic=*/true,
+                ecvAssetIntegrity::OnMiss::CheapChecksOnly,
+                entry.sizeBytes)) {
+        appendLog(tr("[QS] Decoder model not cached: %1 — starting the "
+                     "download (%2).")
+                          .arg(filename,
+                               ecvModelDownloader::formatFileSize(
+                                       entry.sizeBytes)));
+        m_pendingDownloads.prepend(entry);
+    }
+    // LPIPS weights (TTO only, small): check but never block the
+    // feed-forward path on them.
+    if (m_ttoCheck->isChecked()) {
+        const QString lp = decoderCacheDir() +
+                           QStringLiteral("/lpips-vgg-f32.gguf");
+        if (!QFileInfo::exists(lp)) {
+            QuerySplatModelEntry lpEntry;
+            if (!QuerySplatHelpers::findModelByFilename(
+                        QStringLiteral("lpips-vgg-f32.gguf"), &lpEntry)
+                         .isEmpty()) {
+                m_pendingDownloads.append(lpEntry);
+            }
+        }
+    }
+    if (!m_pendingDownloads.isEmpty()) {
+        m_pendingAfterDownload = QStringLiteral("__run__");
+        queueNextDownload();
+        return false;
+    }
+    return ensureEncoderAvailable();
+}
+
+void QuerySplatDialog::queueNextDownload() {
+    if (m_pendingDownloads.isEmpty()) {
+        // all decoder-side models present: continue the chain
+        if (m_pendingAfterDownload == QStringLiteral("__run__") &&
+            ensureEncoderAvailable()) {
+            m_pendingAfterDownload.clear();
+            onRun();
+        }
+        return;
+    }
+    startModelDownload(m_pendingDownloads.takeFirst());
+}
+
+void QuerySplatDialog::startModelDownload(
+        const QuerySplatModelEntry& model) {
+    m_downloadInProgress = true;
+    m_runBtn->setEnabled(false);
+    ecvModelDownloader::Request request;
+    request.url = model.downloadUrl;
+    request.destPath =
+            decoderCacheDir() + QStringLiteral("/") + model.filename;
+    request.requireGgufMagic = model.role != QStringLiteral("lpips");
+    request.contentAnchor = ecvAssetIntegrity::Anchor{
+            QCryptographicHash::Sha256,
+            ecvAssetIntegrity::PinnedDigest(model.filename)};
+    request.ingestExactSize =
+            request.contentAnchor.digestHex.isEmpty() ? model.sizeBytes : 0;
+    connect(m_downloader, &ecvModelDownloader::progress, this,
+            &QuerySplatDialog::onModelDownloadProgress);
+    connect(m_downloader, &ecvModelDownloader::logMessage, this,
+            &QuerySplatDialog::onModelDownloadLog);
+    connect(m_downloader, &ecvModelDownloader::finished, this,
+            &QuerySplatDialog::onModelDownloadFinished);
+    m_downloader->download(request);
+}
+
+void QuerySplatDialog::onModelDownloadProgress(qint64 received,
+                                               qint64 total) {
+    m_downloadLabel->setText(
+            ecvModelDownloader::formatDownloadProgress(received, total));
+    const int percent = total > 0 ? int(received * 100 / total) : 0;
+    setProgress(percent, 100);
+}
+
+void QuerySplatDialog::onModelDownloadLog(const QString& msg) {
+    appendLog(msg);
+}
+
+void QuerySplatDialog::onModelDownloadFinished(bool ok,
+                                               const QString& destPath) {
+    m_downloadInProgress = false;
+    m_runBtn->setEnabled(true);
+    m_downloadLabel->clear();
+    disconnect(m_downloader, nullptr, this, nullptr);
+    if (!ok) {
+        appendLog(tr("[Error] Model download failed: %1").arg(destPath));
+        m_pendingAfterDownload.clear();
+        m_pendingDownloads.clear();
+        return;
+    }
+    appendLog(tr("[QS] Model cached: %1").arg(destPath));
+    queueNextDownload();
+}
+
+QuerySplatDialog::Settings QuerySplatDialog::getSettings() const {
+    Settings s;
+    s.decoderPath =
+            decoderCacheDir() + QStringLiteral("/") +
+            (m_modelCombo ? m_modelCombo->currentData().toString()
+                          : QString());
+    s.encoderPath = QuerySplatHelpers::encoderDefaultPath();
+    for (int i = 0; i < m_imageList->count(); ++i)
+        s.imagePaths << m_imageList->item(i)->text();
+    s.threads = m_threadsSpin ? m_threadsSpin->value() : 0;
+    s.device = m_deviceCombo
+                       ? m_deviceCombo->currentData().toString()
+                       : QStringLiteral("auto");
+    s.imageSize = m_imageSizeSpin ? m_imageSizeSpin->value() : 0;
+    s.ttoEnabled = m_ttoCheck && m_ttoCheck->isChecked();
+    s.ttoSteps = m_ttoStepsSpin ? m_ttoStepsSpin->value() : 20;
+    s.ttoLr = m_ttoLrSpin ? m_ttoLrSpin->value() : 5e-3;
+    s.ttoLpipsWeight = m_ttoLpipsSpin ? m_ttoLpipsSpin->value() : 0.05;
+    s.opacityThreshold = m_opacitySpin ? float(m_opacitySpin->value())
+                                       : 0.05f;
+    s.addDepthViews = m_depthViewsCheck && m_depthViewsCheck->isChecked();
+    s.addRenderViews =
+            m_renderViewsCheck && m_renderViewsCheck->isChecked();
+    s.addDepthPointCloud =
+            m_pointCloudCheck && m_pointCloudCheck->isChecked();
+    s.exportPly = m_plyCheck && m_plyCheck->isChecked();
+    return s;
+}
+
+void QuerySplatDialog::appendLog(const QString& msg) {
+    // Shared AICore log route (CVLog -> the MAIN-WINDOW console + session
+    // log): plugins must not host their own log widgets.
+    aicore_inference_log::log(msg);
+    if (msg.startsWith(QStringLiteral("[Error]"))) {
+        m_lastTaskError = msg;
+        m_taskStatusLabel->setText(msg);
+    }
+}
+
+void QuerySplatDialog::setProgress(int current, int total) {
+    m_progress->setMaximum(total);
+    m_progress->setValue(current);
+}
+
+void QuerySplatDialog::setTaskStage(const QString& stage, int percent) {
+    m_taskStatusLabel->setText(stage);
+    if (percent >= 0) setProgress(percent, 100);
+}
+
+void QuerySplatDialog::setRunning(bool running) {
+    m_runBtn->setEnabled(!running);
+    m_cancelBtn->setEnabled(running);
+    m_addBtn->setEnabled(!running);
+    m_testDataBtn->setEnabled(!running && !m_testDataBusy);
+    if (!running && !m_lastTaskError.isEmpty()) {
+        m_taskStatusLabel->setText(m_lastTaskError);
+    }
+}
+
+void QuerySplatDialog::onRun() {
+    m_lastTaskError.clear();
+    if (m_imageList->count() < 1) {
+        appendLog(tr("[Warning] Add at least one input image first."));
+        return;
+    }
+    if (!ensureModelsAvailable()) return;
+    emit runRequested(getSettings());
+}
+
+void QuerySplatDialog::onCancel() { emit cancelRequested(); }

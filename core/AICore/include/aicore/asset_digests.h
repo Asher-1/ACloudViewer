@@ -720,6 +720,38 @@ inline constexpr AssetDigestEntry kAssetDigests[] = {
         {"mmproj-SmolVLM-500M-Instruct-f16.gguf", "4b2fca922e549e9b9608f4ba56f93565dd5220e935ba5570a2a864a0fcc988a6" },
         {"qwen2.5-0.5b-instruct-q8_0.gguf", "ca59ca7f13d0e15a8cfa77bd17e65d24f6844b554a7b6c12e07a5f89ff76844e" },
         {"qwen2.5-0.5b-instruct-fp16.gguf", "8e0ae26000627ed62de0e78e41860af70094558b9d2913385c842a6aa06cf3fc" },
+        // VLX-Seek 1.5-10B region-retrieval VLM (Hugging Face
+        // Asher-1/VLX-Seek-1.5-10B-GGUF, revision
+        // 3203c2011434cc8931b403f027e8365eb49071b2). wedetect is always f32
+        // for accuracy rows (the official .pth dtype); f16/q8_0 detector rows
+        // exist for smoke graphs only. The synthetic RADIO model is the
+        // CI-scale vision-graph fixture.
+        {"wedetect-base-uni-f32.gguf", "21f0e85939cf83260d23d6e00f7095d1c130b1ef174bd16fc61faab91387a345" },
+        {"wedetect-base-uni-f16.gguf", "4cb6c759216cf965064fb34815eeb6bde57af2393067ed0787454ca2a1c728aa" },
+        {"wedetect-base-uni-q8_0.gguf", "297d6174bea32bf66229b4062cda619d05ccebfde1118084a5e8c7349bdd7627" },
+        {"vlx-vision-10b-f16.gguf", "1a4ce557fcd45bd88bf83488ab6b3765328cb06c4738506fd8cc8edb23af4ebb" },
+        {"vlx-vision-10b-q8_0.gguf", "0c9a19352ac91efcb6cd3e4860fd25960dfef52490f51e9d43c70ea0e9aa818a" },
+        {"vlx-10b-llm-f16.gguf", "00ed394f57515e42a337bc26ee7ab71ac48506f734891de58ccba6924d28c316" },
+        {"vlx-10b-llm-q8_0.gguf", "e0cdb04bcc034971ac97dce715cbbafb945b16bf6f0e366ea79560a74dd13dcb" },
+        {"synth-radio-f32.gguf", "e8823f8383bed3afd2dc7e9497af70ed1d2846090e4dc6f7ddce419d4f303663" },
+        // VLX-Seek official test images (uploaded to the same Hugging Face
+        // model repository; consumed by ecvTestDataRepository::Dataset::
+        // VlxSeek and the validation manifest input asset).
+        {"vlx_seek_test_images.zip", "660c0e7709db5c0d007be1f14f0c4adf9365ac663ed96fbd45736ed811198d00" },
+        // QuerySplat decoder family + LPIPS metric weights (Hugging Face
+        // Asher-1/querysplat_vggto, converted from the official inspatio/
+        // querysplat paper checkpoint by convert_querysplat_to_gguf.py;
+        // digests verified against the upstream cpp_ggml models/gguf tree).
+        // The VGGT-Omega encoder files are NOT duplicated here: they are
+        // the same published GGUFs the map_anything catalog pins above.
+        // Test images are NOT duplicated either: qQuerySplat consumes the
+        // shared map_anything_vggt_test_data scene bundles (pinned above),
+        // whose courtyard frames are byte-identical to the official
+        // upstream QuerySplat eval inputs.
+        {"querysplat-paper-f32.gguf", "e59558d4cda480b743788a56eb5bb27d07fadb42be87e852ff9868002c07e188" },
+        {"querysplat-paper-f16.gguf", "e26b237544f0b803df7311131a8ecfa999fed79f4f6c56f06d0748dba6872905" },
+        {"querysplat-paper-q8_0.gguf", "aaeaa570ce59edfa5cd725ea4ac33cc6a20e95966b1daa1d31922eef627f5f38" },
+        {"lpips-vgg-f32.gguf", "0a2c7475ad0eed64cd40ec7b221b3dc639cc7ed142176554a30cd07aac1c7b7d" },
 };
 // clang-format on
 

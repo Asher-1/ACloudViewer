@@ -86,7 +86,13 @@ public:
          *  frame (plus its PointRCNN pre-sampled 16384-point variant), one
          *  nuScenes 5-feature sweep and the two multi-modal scene bundles
          *  (CaDDN single-camera / BEVFusion 6-camera) the panels map onto. */
-        OpenPCDetSample  ///< KITTI + nuScenes LiDAR frames and scene bundles
+        OpenPCDetSample,  ///< KITTI + nuScenes LiDAR frames and scene bundles
+        /** VLX-Seek official demo/evaluation originals (qVLXSeek): the two
+         *  upstream demo photos plus seven MS-COCO/embodied originals the
+         *  upstream benchmark pipeline runs, shipped as
+         *  vlx_seek_test_images.zip on the Asher-1/VLX-Seek-1.5-10B-GGUF
+         *  model repository next to the GGUF weights. */
+        VlxSeek  ///< VLX-Seek official test images (qVLXSeek)
     };
 
     /** Dataset metadata. */

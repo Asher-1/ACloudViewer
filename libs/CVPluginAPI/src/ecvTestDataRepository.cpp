@@ -599,6 +599,17 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                     QString::fromLatin1(kOpenPCDetDownloadUrl),
                     {QCryptographicHash::Sha256, QByteArray(kOpenPCDetSha256)},
                     QString::fromLatin1(kOpenPCDetGroupDir)};
+        case Dataset::VlxSeek:
+            return {kind,
+                    QStringLiteral("VLX-Seek official test images"),
+                    QStringLiteral("vlx_seek_test_images.zip"),
+                    QStringLiteral("vlx_seek_test_images"),
+                    QStringLiteral(
+                            "https://huggingface.co/Asher-1/VLX-Seek-1.5-10B-"
+                            "GGUF/resolve/main/vlx_seek_test_images.zip"),
+                    {QCryptographicHash::Sha256,
+                     ecvAssetIntegrity::PinnedDigest(
+                             QStringLiteral("vlx_seek_test_images.zip"))}};
     }
     Q_UNREACHABLE();
     return {};
@@ -757,6 +768,17 @@ bool ecvTestDataRepository::isExtractedComplete(Dataset kind) const {
                              .isEmpty() &&
                     !findDatasetFile(kind,
                                      QStringLiteral("nuscenes_n015_lidar.bin"))
+                             .isEmpty();
+            break;
+        case Dataset::VlxSeek:
+            // Complete when the deterministic first-fill demo image (the
+            // upstream recommended demo photo) and one benchmark original
+            // are both present.
+            extractedComplete =
+                    !findDatasetFile(kind, QStringLiteral("demo_image.jpg"))
+                             .isEmpty() &&
+                    !findDatasetFile(kind,
+                                     QStringLiteral("demo_image2.jpg"))
                              .isEmpty();
             break;
     }

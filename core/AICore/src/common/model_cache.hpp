@@ -58,6 +58,10 @@ inline std::string instantmesh_model_cache_dir() {
     return extract_model_dir("instantmesh_models");
 }
 
+inline std::string vlx_seek_model_cache_dir() {
+    return extract_model_dir("vlx_seek_models");
+}
+
 inline std::string sam3_model_cache_dir() {
     return extract_model_dir("sam3_models");
 }
@@ -74,6 +78,10 @@ inline std::string gkd_model_cache_dir() {
 
 inline std::string map_anything_model_cache_dir() {
     return extract_model_dir("map_anything_models");
+}
+
+inline std::string querysplat_model_cache_dir() {
+    return extract_model_dir("querysplat_models");
 }
 
 inline std::string anycalib_model_cache_dir() {

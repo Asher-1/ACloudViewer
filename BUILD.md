@@ -263,6 +263,8 @@ Expand the `INSTALL` group in CMake GUI to enable plugins:
 | qRMBG                   | PLUGIN_STANDARD_QRMBG                    | OFF           | RMBG-2.0 background removal — transparent RGBA / alpha matte ([README](plugins/core/Standard/qRMBG/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/rmbg`). |
 | qOpenPCDet              | PLUGIN_STANDARD_QOPENPCDET               | OFF           | OpenPCDet LiDAR point cloud 3D object detection (PointPillars / SECOND, KITTI & nuScenes GGUFs, CUDA/Vulkan/CPU) ([README](plugins/core/Standard/qOpenPCDet/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/openpcdet`). |
 | qInstantMesh            | PLUGIN_STANDARD_QINSTANTMESH             | OFF           | InstantMesh image-to-3D mesh/gaussian reconstruction (DINO + LRM + FlexiCubes, optional Zero123++ multi-view diffusion; f32/f16/q8_0 GGUFs, geometry-only or textured GLB) ([README](plugins/core/Standard/qInstantMesh/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/instantmesh`). |
+| qQuerySplat             | PLUGIN_STANDARD_QQUERYSPLAT              | OFF           | QuerySplat multi-view image-to-3DGS prediction (VGGT-Omega encoder shared with qMapAnything + QuerySplat decoder, gsplat-semantics rendering, TTO, 3DGS PLY export) ([README](plugins/core/Standard/qQuerySplat/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/querysplat`). |
+| qVLXSeek                | PLUGIN_STANDARD_QVLXSEEK                 | OFF           | VLX-Seek 1.5-10B fine-grained open-vocabulary grounding (region-reference retrieval: detection / grounding / counting / region caption / region OCR; en+zh templates; f16/q8_0 GGUFs) ([README](plugins/core/Standard/qVLXSeek/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/vlx_seek`). |
 | qRAM                    | PLUGIN_STANDARD_QRAM                     | OFF           | Recognize Anything — RAM, RAM++, and Tag2Text image tagging/captions through all published F32/F16/Q8_0 GGUF models ([README](plugins/core/Standard/qRAM/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/tagging`). |
 | qRelateAnything | PLUGIN_STANDARD_QRELATEANYTHING | OFF | Scene relations for images/video, all 12 published relation/text GGUFs; public YOLO regions and shared cache ([README](plugins/core/Standard/qRelateAnything/README.md)). Requires `AICore_ENABLED=ON`. |
 | qManualCalib            | PLUGIN_STANDARD_QMANUAL_CALIB            | OFF           | Manual sensor extrinsic calibration and AVM view adjustment — **lives on the `qcalib` branch only** (one-click test data, ROS bag v2.0, BEV, LiDAR projection). Requires `BUILD_OPENCV=ON`. |
@@ -360,6 +362,8 @@ cmake -DBUILD_CUDA_MODULE=ON \
       -DPLUGIN_STANDARD_QMAPANYTHING=ON \
       -DPLUGIN_STANDARD_QOPENPCDET=ON \
       -DPLUGIN_STANDARD_QINSTANTMESH=ON \
+      -DPLUGIN_STANDARD_QVLXSEEK=ON \
+      -DPLUGIN_STANDARD_QQUERYSPLAT=ON \
       ..
 cmake --build . --config Release
 ```
@@ -392,6 +396,8 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QMAPANYTHING=ON \
       -DPLUGIN_STANDARD_QOPENPCDET=ON \
       -DPLUGIN_STANDARD_QINSTANTMESH=ON \
+      -DPLUGIN_STANDARD_QVLXSEEK=ON \
+      -DPLUGIN_STANDARD_QQUERYSPLAT=ON \
       ..
 cmake --build . --config Release --target ACloudViewer
 ```

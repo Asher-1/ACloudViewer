@@ -38,6 +38,18 @@
 #include <windows.h>
 #endif
 
+/** Task-facing Vulkan f32-accuracy instance profile (querysplat): disables
+ *  the fp16/coopmat/coopmat2/integer-dot/dot2 fast paths for the process
+ *  before the backends exist. ggml-vulkan snapshots these instance knobs at
+ *  creation, and the CUDA/CPU parity path is exact at graph level, so this
+ *  is the only way to keep the Vulkan run f32-exact. Tasks call this named
+ *  interface instead of the raw env-bridge surface (task-module isolation
+ *  rule: the env mechanism stays inside the common layer); the definition
+ *  lives in common/ggml_env_bridge.cpp. */
+namespace aicore {
+void apply_vulkan_f32_accuracy_profile();
+}  // namespace aicore
+
 namespace ggml_common {
 
 // Convert string to lowercase (for device name comparison).

@@ -11,6 +11,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QMainWindow>
+#include <QPair>
 #include <QPointer>
 #include <QStringList>
 #include <QThread>
@@ -108,6 +109,7 @@ private:
     void openVqa();
     void openPointCloudAnnotation();
     void runVlmDescribe();
+    void runVlmDescribeNext();
     void saveCroppedImage();
     void saveVisualizationImage();
     void saveVisualizationVideo();
@@ -172,6 +174,12 @@ private:
     void updateDescriptionEditor();
     void updateFileStatus();
     void snapshot();
+    // Upstream 289befba/8f092a58: bulk visibility and lock toggles on the
+    // shapes panel header; both target "not any(...)", and the lock button
+    // reads checked when any shape is locked.
+    void toggleAllShapesVisibility();
+    void toggleAllShapesLock();
+    void refreshShapeBulkButtons();
     void undo();
     void redo();
     void groupSelectedShapes();
@@ -272,6 +280,8 @@ private:
     QListWidget* m_files = nullptr;
     QListWidget* m_objects = nullptr;
     QListWidget* m_labels = nullptr;
+    QToolButton* m_objectsVisibilityButton = nullptr;
+    QToolButton* m_objectsLockButton = nullptr;
     QListWidget* m_flags = nullptr;
     QDockWidget* m_flagsDock = nullptr;
     RelateOptions m_relateOptions;
@@ -323,6 +333,11 @@ private:
     class RemoteServerDialog* m_remoteDialog = nullptr;
     class ChatServiceClient* m_vlmDescribeClient = nullptr;
     QAction* m_vlmDescribeAction = nullptr;
+    class QTemporaryDir* m_vlmDescribeCrops = nullptr;
+    QVector<QPair<int, QString>> m_vlmDescribeQueue;
+    QVector<int> m_vlmDescribeTargets;
+    int m_vlmDescribeDone = 0;
+    int m_vlmDescribeTotal = 0;
     QString m_remoteModelId;
     QString m_validateLabel;
     QString m_loggerLevel;

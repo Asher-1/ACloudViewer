@@ -64,6 +64,7 @@ void apply_ggml_env_overrides(const GgmlEnvOverrides& overrides) {
     apply_bool("GGML_VK_DISABLE_COOPMAT2", overrides.vk_disable_coopmat2);
     apply_bool("GGML_VK_DISABLE_INTEGER_DOT_PRODUCT",
                overrides.vk_disable_integer_dot_product);
+    apply_bool("GGML_VK_DISABLE_DOT2", overrides.vk_disable_dot2);
     apply_bool("GGML_METAL_GRAPH_OPTIMIZE_DISABLE",
                overrides.metal_graph_optimize_disable);
     apply_bool("GGML_METAL_FUSION_DISABLE", overrides.metal_fusion_disable);
@@ -114,6 +115,16 @@ void apply_vulkan_runtime_defaults() {
                     "(GGML_VK_ALLOW_SYSMEM_FALLBACK=1): a device allocation "
                     "that no longer fits VRAM degrades to host memory "
                     "instead of failing the run\n");
+}
+
+void apply_vulkan_f32_accuracy_profile() {
+    GgmlEnvOverrides vo;
+    vo.vk_disable_f16 = true;
+    vo.vk_disable_coopmat = true;
+    vo.vk_disable_coopmat2 = true;
+    vo.vk_disable_integer_dot_product = true;
+    vo.vk_disable_dot2 = true;
+    apply_ggml_env_overrides(vo);
 }
 
 void mark_ggml_backends_loaded() {

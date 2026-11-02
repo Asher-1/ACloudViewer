@@ -58,6 +58,8 @@ JsonRPCResult JsonRPCPlugin::rpcAICoreBatch(
                                             "LINGBOT_MAP_RECONSTRUCT",
                                             "ANYLABEL_INFER",
                                             "MAP_ANYTHING_RECONSTRUCT",
+                                            "QUERY_SPLAT",
+                                            "VLXSEEK_RUN",
                                             "SAM3D_GENERATE",
                                             "OPENPCDET_DETECT",
                                             "LLM_GENERATE"};
@@ -275,6 +277,124 @@ JsonRPCResult JsonRPCPlugin::rpcYoloTrack(
                 if (outcome == ChildOutcome::Failed) {
                     return JsonRPCResult::error(
                             3, "YOLO tracking failed",
+                            D("exit_code", child.exitCode(), "stderr",
+                              result["stderr"].toString()));
+                }
+                return JsonRPCResult::success(
+                        QJsonDocument(result).toVariant());
+            });
+}
+
+
+JsonRPCResult JsonRPCPlugin::rpcQuerySplat(const QMap<QString, QVariant>& params) {
+    const QVariantList imageList = params.value("images").toList();
+    const QString outputDir = params.value("output_dir").toString();
+    if (imageList.isEmpty() || outputDir.isEmpty()) {
+        return JsonRPCResult::error(
+                -32602, "Missing required parameters: images[] and output_dir");
+    }
+    QStringList images;
+    for (const QVariant& v : imageList) {
+        const QString path = v.toString().trimmed();
+        if (path.isEmpty()) {
+            return JsonRPCResult::error(-32602,
+                                        "images[] contains an empty path");
+        }
+        images << path;
+    }
+
+    QString resultJson = params.value("result_json").toString().trimmed();
+    if (resultJson.isEmpty()) {
+        resultJson = QDir(outputDir).filePath(
+                QStringLiteral("_querysplat_result.json"));
+    }
+    int timeoutMs = 0;
+    JsonRPCResult invalid;
+    if (!childTimeout(params, 3600000, &timeoutMs, &invalid)) return invalid;
+
+    QStringList argList;
+    argList << "-SILENT" << "-NO_TIMESTAMP" << "-QUERY_SPLAT";
+    for (const QString& image : images) {
+        argList << "IMAGE" << image;
+    }
+    argList << "OUT_DIR" << outputDir;
+
+    const QHash<QString, QString> optionKeys = {
+            {"model", "MODEL"},
+            {"encoder", "ENCODER"},
+            {"device", "DEVICE"},
+            {"image_size", "IMAGE_SIZE"},
+            {"tto", "TTO"},
+            {"tto_steps", "TTO_STEPS"},
+            {"tto_lr", "TTO_LR"},
+            {"tto_lpips", "TTO_LPIPS"},
+            {"opacity_threshold", "OPACITY_THRESHOLD"},
+            {"export_ply", "EXPORT_PLY"},
+            {"export_render", "EXPORT_RENDER"},
+            {"export_cameras", "EXPORT_CAMERAS"},
+            {"export_depth_ply", "EXPORT_DEPTH_PLY"},
+            {"threads", "THREADS"},
+            {"stage_dump_dir", "STAGE_DUMP_DIR"},
+    };
+    for (auto it = optionKeys.constBegin(); it != optionKeys.constEnd(); ++it) {
+        const QString value = params.value(it.key()).toString().trimmed();
+        if (!value.isEmpty()) {
+            argList << it.value() << value;
+        }
+    }
+    argList << "RESULT_JSON" << resultJson;
+
+    QElapsedTimer timer;
+    timer.start();
+    auto* process = new QProcess(this);
+    process->setProgram(QCoreApplication::applicationFilePath());
+    process->setArguments(argList);
+    process->setProcessEnvironment(headlessChildEnvironment());
+    const int imagesCount = images.size();
+    return runChildProcess(
+            process, timeoutMs,
+            [resultJson, timer, timeoutMs, imagesCount](ChildOutcome outcome,
+                                                        QProcess& child) {
+                if (outcome == ChildOutcome::StartFailed) {
+                    return JsonRPCResult::error(
+                            3, "Unable to start QuerySplat child",
+                            D("error", child.errorString()));
+                }
+                if (outcome == ChildOutcome::TimedOut) {
+                    return JsonRPCResult::error(
+                            3, "QuerySplat prediction timed out",
+                            D("timeout_ms", timeoutMs, "images_count",
+                              imagesCount));
+                }
+
+                QJsonObject result;
+                result["exit_code"] = child.exitCode();
+                result["stdout"] =
+                        QString::fromUtf8(child.readAllStandardOutput())
+                                .left(5000);
+                result["stderr"] =
+                        QString::fromUtf8(child.readAllStandardError())
+                                .left(2000);
+                result["result_json"] = resultJson;
+                result["elapsed_ms"] = static_cast<qint64>(timer.elapsed());
+
+                QFile jsonFile(resultJson);
+                if (jsonFile.open(QIODevice::ReadOnly)) {
+                    const QJsonDocument doc =
+                            QJsonDocument::fromJson(jsonFile.readAll());
+                    jsonFile.close();
+                    if (doc.isObject()) {
+                        const QJsonObject manifest = doc.object();
+                        result["failed"] = manifest.value("failed").toInt();
+                        result["decoder"] =
+                                manifest.value("decoder").toString();
+                        result["items"] = manifest.value("items").toArray();
+                    }
+                }
+
+                if (outcome == ChildOutcome::Failed) {
+                    return JsonRPCResult::error(
+                            3, "QuerySplat prediction failed",
                             D("exit_code", child.exitCode(), "stderr",
                               result["stderr"].toString()));
                 }

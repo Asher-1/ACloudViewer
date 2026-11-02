@@ -52,6 +52,10 @@ struct GgmlEnvOverrides {
     std::optional<bool> vk_disable_coopmat;
     std::optional<bool> vk_disable_coopmat2;
     std::optional<bool> vk_disable_integer_dot_product;
+    // Disables ggml-vulkan's fp16 dot2 attention path (querysplat's
+    // f32-accuracy instance profile; ggml reads the knob at instance
+    // creation, there is no runtime API).
+    std::optional<bool> vk_disable_dot2;
 
     // ggml-metal instance switches (upstream interface, macOS only).
     std::optional<bool> metal_graph_optimize_disable;

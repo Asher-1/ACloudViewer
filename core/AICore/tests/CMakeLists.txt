@@ -496,6 +496,7 @@ aicore_add_capi_test(test_gkd_capi_load gkd LABELS capi;model)
 aicore_add_capi_test(test_anycalib_capi_contract anycalib)
 aicore_add_capi_test(test_map_anything_capi_contract map_anything)
 aicore_add_capi_test(test_map_anything_capi_load map_anything LABELS capi;model)
+aicore_add_capi_test(test_querysplat_capi querysplat LABELS capi;model)
 # Candidate half of the upstream cpp_ggml frames parity gate (NOT a ctest: it
 # needs the external vggt-cli reference; driven by the manifest row
 # map_anything-upstream-frames via run_map_anything_upstream_parity.py).
@@ -635,6 +636,20 @@ if(UNIX AND NOT APPLE)
     target_link_options(test_llm_probe PRIVATE -no-pie)
 endif()
 _aicore_test_common(test_llm_probe NO_CTEST)
+
+add_executable(test_vlx_probe vlx/test_vlx_probe.cpp)
+target_link_libraries(test_vlx_probe PRIVATE AICore)
+_aicore_capi_link(test_vlx_probe)
+if(TARGET Qt::Core AND TARGET Qt::Gui)
+    target_link_libraries(test_vlx_probe PRIVATE Qt::Core Qt::Gui)
+elseif(Qt5_FOUND)
+    target_link_libraries(test_vlx_probe PRIVATE Qt5::Core Qt5::Gui)
+endif()
+if(UNIX AND NOT APPLE)
+    target_compile_options(test_vlx_probe PRIVATE -fPIC)
+    target_link_options(test_vlx_probe PRIVATE -no-pie)
+endif()
+_aicore_test_common(test_vlx_probe NO_CTEST)
 
 
 # Manual parity dump tool (NOT a ctest): writes upstream-compatible LBF3
@@ -1560,6 +1575,12 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
         if(TARGET ${_aicore_qt_core_target})
             list(APPEND _aicore_validation_runtime_env
                  "AICORE_QT_LIBRARY_DIR=$<TARGET_FILE_DIR:${_aicore_qt_core_target}>")
+            # The python probes dlopen libAICore directly through ctypes, so
+            # the loader must resolve the indirect Qt dependencies (for
+            # example libQt5Concurrent) from the configured Qt tree instead
+            # of falling back to a mismatched host system library.
+            list(APPEND _aicore_validation_runtime_env
+                 "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:${_aicore_qt_core_target}>:$ENV{LD_LIBRARY_PATH}")
             break()
         endif()
     endforeach()

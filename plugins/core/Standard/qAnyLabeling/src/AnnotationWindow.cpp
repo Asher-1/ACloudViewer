@@ -77,6 +77,7 @@
 #include <QStackedWidget>
 #include <QStatusBar>
 #include <QTableWidget>
+#include <QTemporaryDir>
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
@@ -742,9 +743,12 @@ void AnnotationWindow::runVlmDescribe() {
                 });
         connect(m_vlmDescribeClient, &ChatServiceClient::finished, this,
                 [this](const QString& text, const QString& error) {
-                    if (m_vlmDescribeAction)
-                        m_vlmDescribeAction->setEnabled(true);
                     if (!error.isEmpty()) {
+                        m_vlmDescribeQueue.clear();
+                        m_vlmDescribeTargets.clear();
+                        m_vlmDescribeDone = m_vlmDescribeTotal = 0;
+                        if (m_vlmDescribeAction)
+                            m_vlmDescribeAction->setEnabled(true);
                         m_status->setText(
                                 tr("AI Describe failed: %1").arg(error));
                         return;
@@ -754,6 +758,19 @@ void AnnotationWindow::runVlmDescribe() {
                         m_status->setText(tr("AI Describe returned no text"));
                         return;
                     }
+                    if (!m_vlmDescribeTargets.isEmpty()) {
+                        // Region pass: this reply belongs to the queue head,
+                        // which runVlmDescribeNext drains before submitting
+                        // the following crop.
+                        const int index = m_vlmDescribeTargets.takeFirst();
+                        if (index >= 0 && index < m_canvas->shapes().size())
+                            m_canvas->setShapeDescription(index, caption);
+                        ++m_vlmDescribeDone;
+                        if (m_vlmDescribeAction)
+                            m_vlmDescribeAction->setEnabled(true);
+                        runVlmDescribeNext();
+                        return;
+                    }
                     if (m_document.value(QStringLiteral("description"))
                                 .toString() != caption) {
                         m_document.insert(QStringLiteral("description"),
@@ -761,6 +778,8 @@ void AnnotationWindow::runVlmDescribe() {
                         updateDescriptionEditor();
                         setDirty(true);
                     }
+                    if (m_vlmDescribeAction)
+                        m_vlmDescribeAction->setEnabled(true);
                     m_status->setText(tr("AI Describe: %1").arg(caption));
                 });
     }
@@ -770,11 +789,63 @@ void AnnotationWindow::runVlmDescribe() {
         m_status->setText(tr("The llm catalog has no local vision model"));
         return;
     }
+    // Selected shapes describe each object through cropped views; no
+    // selection keeps the image-level caption. One client serializes the
+    // queue, so the region pass submits the first crop and the finished
+    // handler chains the rest.
+    m_vlmDescribeTargets.clear();
+    m_vlmDescribeQueue.clear();
+    const QSet<int> selected = m_canvas->selectedIndices();
+    if (!selected.isEmpty()) {
+        QVector<int> targets(selected.constBegin(), selected.constEnd());
+        std::sort(targets.begin(), targets.end());
+        if (!m_vlmDescribeCrops) m_vlmDescribeCrops = new QTemporaryDir;
+        if (!m_vlmDescribeCrops->isValid()) {
+            m_status->setText(
+                    tr("AI Describe: cannot create the crop directory"));
+            return;
+        }
+        const QImage source = m_canvas->displayImage();
+        for (const int index : targets) {
+            if (index < 0 || index >= m_canvas->shapes().size()) continue;
+            const AnnotationShape& shape = m_canvas->shapes()[index];
+            QRectF bounds;
+            if (!shape.points.isEmpty())
+                bounds = QPolygonF(shape.points).boundingRect();
+            else if (!shape.mask.isNull())
+                bounds = QRectF(shape.mask.rect());
+            if (!bounds.isValid() || bounds.isEmpty()) continue;
+            const QRect crop = bounds.toAlignedRect().intersected(
+                    QRect(0, 0, source.width(), source.height()));
+            if (crop.isEmpty()) continue;
+            const QString path = m_vlmDescribeCrops->filePath(
+                    QStringLiteral("shape-%1.png").arg(index));
+            if (!source.copy(crop).save(path, "PNG")) continue;
+            m_vlmDescribeQueue.append({index, path});
+            m_vlmDescribeTargets.append(index);
+        }
+        if (m_vlmDescribeQueue.isEmpty()) {
+            m_status->setText(
+                    tr("AI Describe: no selected shape has a "
+                       "croppable region"));
+            return;
+        }
+    }
+    m_vlmDescribeDone = 0;
+    m_vlmDescribeTotal = m_vlmDescribeQueue.size();
     QString error;
-    const QJsonArray messages{ChatServiceClient::userMessage(
-            tr("Describe this image in one concise sentence suitable "
-               "as an annotation dataset description."),
-            m_imagePath, &error)};
+    QJsonArray messages;
+    if (!m_vlmDescribeQueue.isEmpty()) {
+        messages.append(ChatServiceClient::userMessage(
+                tr("Describe the main object in this image crop in one "
+                   "concise sentence suitable as an annotation description."),
+                m_vlmDescribeQueue.first().second, &error));
+    } else {
+        messages.append(ChatServiceClient::userMessage(
+                tr("Describe this image in one concise sentence suitable "
+                   "as an annotation dataset description."),
+                m_imagePath, &error));
+    }
     if (!error.isEmpty()) {
         m_status->setText(error);
         return;
@@ -785,8 +856,51 @@ void AnnotationWindow::runVlmDescribe() {
     settings.temperature = 0.0;  // deterministic caption
     settings.maxTokens = 96;
     if (m_vlmDescribeAction) m_vlmDescribeAction->setEnabled(false);
-    m_status->setText(tr("AI Describe: running %1").arg(model));
+    if (m_vlmDescribeTotal > 0)
+        m_status->setText(tr("AI Describe: running %1 (0/%2)")
+                                  .arg(model)
+                                  .arg(m_vlmDescribeTotal));
+    else
+        m_status->setText(tr("AI Describe: running %1").arg(model));
     m_vlmDescribeClient->complete(settings, messages, true);
+}
+
+void AnnotationWindow::runVlmDescribeNext() {
+    if (!m_vlmDescribeClient) return;
+    if (!m_vlmDescribeQueue.isEmpty()) {
+        const QString model = vlmDescribeModel();
+        if (model.isEmpty()) return;
+        QString error;
+        const QJsonArray messages{ChatServiceClient::userMessage(
+                tr("Describe the main object in this image crop in one "
+                   "concise sentence suitable as an annotation description."),
+                m_vlmDescribeQueue.first().second, &error)};
+        if (!error.isEmpty()) {
+            m_status->setText(error);
+            return;
+        }
+        ChatServiceClient::Settings settings;
+        settings.baseUrl = QUrl(QStringLiteral("aicore://llm"));
+        settings.model = model;
+        settings.temperature = 0.0;  // deterministic caption
+        settings.maxTokens = 96;
+        m_status->setText(tr("AI Describe: running %1 (%2/%3)")
+                                  .arg(model)
+                                  .arg(m_vlmDescribeDone)
+                                  .arg(m_vlmDescribeTotal));
+        m_vlmDescribeClient->complete(settings, messages, true);
+        return;
+    }
+    if (m_vlmDescribeTotal > 0) {
+        // Region pass finished: refresh the object list and save flow.
+        updateObjects();
+        setDirty(true);
+        m_status->setText(tr("AI Describe: described %1 object(s)")
+                                  .arg(m_vlmDescribeDone));
+        m_vlmDescribeDone = 0;
+        m_vlmDescribeTotal = 0;
+    }
+    if (m_vlmDescribeAction) m_vlmDescribeAction->setEnabled(true);
 }
 
 void AnnotationWindow::createUi() {
@@ -1080,9 +1194,39 @@ void AnnotationWindow::createUi() {
     m_objects = new QListWidget(this);
     m_objects->setObjectName(QStringLiteral("AnnotationObjects"));
     m_objects->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    // Upstream 289befba/8f092a58: the shapes panel header carries bulk
+    // visibility and lock toggles next to the panel title.
+    auto* objectsHeader = new QWidget(this);
+    auto* objectsHeaderLayout = new QHBoxLayout(objectsHeader);
+    objectsHeaderLayout->setContentsMargins(6, 2, 2, 2);
+    objectsHeaderLayout->setSpacing(2);
+    objectsHeaderLayout->addWidget(new QLabel(tr("Objects"), objectsHeader));
+    objectsHeaderLayout->addStretch();
+    m_objectsVisibilityButton = new QToolButton(objectsHeader);
+    m_objectsVisibilityButton->setObjectName(
+            QStringLiteral("AnnotationShapesVisibilityToggle"));
+    m_objectsVisibilityButton->setIcon(
+            QIcon(QStringLiteral(":/images/eye.svg")));
+    m_objectsVisibilityButton->setAutoRaise(true);
+    m_objectsVisibilityButton->setCheckable(true);
+    m_objectsVisibilityButton->setToolTip(tr("Show/hide all shapes"));
+    connect(m_objectsVisibilityButton, &QToolButton::clicked, this,
+            &AnnotationWindow::toggleAllShapesVisibility);
+    objectsHeaderLayout->addWidget(m_objectsVisibilityButton);
+    m_objectsLockButton = new QToolButton(objectsHeader);
+    m_objectsLockButton->setObjectName(
+            QStringLiteral("AnnotationShapesLockToggle"));
+    m_objectsLockButton->setIcon(QIcon(QStringLiteral(":/images/lock.svg")));
+    m_objectsLockButton->setAutoRaise(true);
+    m_objectsLockButton->setCheckable(true);
+    m_objectsLockButton->setToolTip(tr("Lock/unlock all shapes"));
+    connect(m_objectsLockButton, &QToolButton::clicked, this,
+            &AnnotationWindow::toggleAllShapesLock);
+    objectsHeaderLayout->addWidget(m_objectsLockButton);
     auto* objectsDock = new QDockWidget(tr("Objects"), this);
     objectsDock->setObjectName(QStringLiteral("Objects"));
     objectsDock->setFeatures(QDockWidget::NoDockWidgetFeatures);
+    objectsDock->setTitleBarWidget(objectsHeader);
     objectsDock->setWidget(m_objects);
 
     m_labels = new QListWidget(this);
@@ -8889,6 +9033,53 @@ void AnnotationWindow::exportPpocr(PpocrMode mode) {
                               .arg(outputPath));
 }
 
+void AnnotationWindow::toggleAllShapesVisibility() {
+    const auto& shapes = m_canvas->shapes();
+    if (shapes.isEmpty()) return;
+    // Upstream toggle semantics: the target state is "not any(...)", so a
+    // fully visible list hides everything and any hidden shape restores all.
+    const bool visible =
+            !std::any_of(shapes.cbegin(), shapes.cend(),
+                         [](const AnnotationShape& shape) {
+                             return shape.visible;
+                         });
+    snapshot();
+    QVector<AnnotationShape> next = shapes;
+    for (AnnotationShape& shape : next) shape.visible = visible;
+    m_canvas->setShapes(next);
+    updateObjects();
+    setDirty(true);
+}
+
+void AnnotationWindow::toggleAllShapesLock() {
+    const auto& shapes = m_canvas->shapes();
+    if (shapes.isEmpty()) return;
+    const bool locked =
+            !std::any_of(shapes.cbegin(), shapes.cend(),
+                         [](const AnnotationShape& shape) {
+                             return shape.locked;
+                         });
+    snapshot();
+    QVector<AnnotationShape> next = shapes;
+    for (AnnotationShape& shape : next) shape.locked = locked;
+    m_canvas->setShapes(next);
+    updateObjects();
+    setDirty(true);
+}
+
+void AnnotationWindow::refreshShapeBulkButtons() {
+    if (!m_objectsVisibilityButton || !m_objectsLockButton) return;
+    const auto& shapes = m_canvas->shapes();
+    // Upstream 8f092a58: the lock button reads checked when any shape is
+    // locked; the visibility button mirrors any hidden shape.
+    m_objectsVisibilityButton->setChecked(std::any_of(
+            shapes.cbegin(), shapes.cend(),
+            [](const AnnotationShape& shape) { return !shape.visible; }));
+    m_objectsLockButton->setChecked(std::any_of(
+            shapes.cbegin(), shapes.cend(),
+            [](const AnnotationShape& shape) { return shape.locked; }));
+}
+
 void AnnotationWindow::updateObjects() {
     const int selected = m_canvas->selectedIndex();
     m_objects->blockSignals(true);
@@ -8985,6 +9176,7 @@ void AnnotationWindow::updateObjects() {
     updateNavigator();
     updateDescriptionEditor();
     applyObjectFilter();
+    refreshShapeBulkButtons();
 }
 
 void AnnotationWindow::updateDescriptionEditor() {

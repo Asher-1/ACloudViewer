@@ -3155,13 +3155,30 @@ void AnnotationCanvas::mouseDoubleClickEvent(QMouseEvent* event) {
         (m_tool == QStringLiteral("polygon") ||
          m_tool == QStringLiteral("linestrip")))
         finishShape();
-    else if (event->button() == Qt::LeftButton && m_doubleClickEditLabel &&
+    else if (event->button() == Qt::LeftButton &&
              m_tool == QStringLiteral("edit")) {
         updateTransform();
         int vertex = -1;
         const int index =
                 hitShape(clamp(toImage(qtCompatMouseEventPos(event))), &vertex);
-        if (index >= 0) {
+        // Upstream f908db51: a plain double click on a vertex of an unlocked
+        // polygon removes it before any label editing (independent of the
+        // Double Click Edit Label switch) and always keeps three vertices.
+        if (index >= 0 && vertex >= 0 && !m_brushEditing &&
+            event->modifiers() == Qt::NoModifier &&
+            m_shapes[index].type == QStringLiteral("polygon") &&
+            !m_shapes[index].locked &&
+            m_shapes[index].points.size() > 3) {
+            selectShape(index);
+            emit editStarted();
+            m_shapes[index].points.removeAt(vertex);
+            m_hover = QPointF();
+            emit vertexHovered(false);
+            emit shapesChanged();
+            update();
+            return;
+        }
+        if (m_doubleClickEditLabel && index >= 0) {
             selectShape(index);
             emit shapeDoubleClicked(index);
         }

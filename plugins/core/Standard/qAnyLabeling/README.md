@@ -61,8 +61,13 @@ One ACloudViewer-only annotation extension lives beside the source actions:
 vision model of the public `llm` catalog (SmolVLM 500M Q8_0 by default; a
 downloaded vision row wins) on the current image through the shared
 verified-download pipeline and stores the caption as the image-level
-`description`, driving the same dirty/save flow as the RAM caption. The
-request runs on the LocalChatEngine worker thread; the toolbar action stays
+`description`, driving the same dirty/save flow as the RAM caption. With one
+or more shapes selected the same action switches to the per-object pass:
+each selected shape is cropped from the source-resolution view, captioned
+by the local vision model ("AI Describe: running <model> (i/n)" progress),
+and its caption lands in that shape's `description` (the same sink the OCR
+recognition flow writes), so per-instance documentation is one click.
+The request runs on the LocalChatEngine worker thread; the toolbar action stays
 disabled while the client is busy. `Upload > Image Flags` imports a UTF-8 text
 template with one flag per line; the Flags dock is shown only after a template
 is loaded, and checked values are persisted in the image sidecar.

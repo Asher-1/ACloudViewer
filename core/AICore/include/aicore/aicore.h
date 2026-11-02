@@ -49,6 +49,7 @@
 #include "aicore/lingbot_capi.h"
 #include "aicore/llm_capi.h"
 #include "aicore/loma_capi.h"
+#include "aicore/querysplat_capi.h"
 #include "aicore/model_catalog_capi.h"
 #include "aicore/pipeline_timing.h"
 #include "aicore/reid_capi.h"
@@ -61,4 +62,5 @@
 #include "aicore/sam3d_capi.h"
 #include "aicore/tagging_capi.h"
 #include "aicore/trellis_capi.h"
+#include "aicore/vlx_seek_capi.h"
 #include "aicore/yolo_capi.h"

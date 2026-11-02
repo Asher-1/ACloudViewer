@@ -102,7 +102,7 @@ cli-anything-acloudviewer-mcp --mode auto
 | Component | Scope |
 |-----------|-------|
 | **187 MCP tools** | File I/O, cloud/mesh processing, scalar fields, normals, PCV, Compass, SRA, Colmap reconstruction, view control, scene management |
-| **88 JSON-RPC methods** | Full GUI automation — load, transform, filter, PCV ambient occlusion, screenshot, export |
+| **89 JSON-RPC methods** | Full GUI automation — load, transform, filter, PCV ambient occlusion, screenshot, export |
 | **40+ CLI commands** | `convert`, `process` (subsample, normals, PCV, Compass export/refit/P21, SRA, density, curvature, SOR, ICP, …), `view`, `scene`, `colmap` |
 | **40+ file formats** | PLY, PCD, LAS/LAZ, E57, FBX, OBJ, STL, DRC, SBF, VTK, ASC, XYZ, CSV, PTS, … |
 
@@ -243,6 +243,8 @@ cmake -B build_app \
   -DPLUGIN_STANDARD_QMAPANYTHING=ON \
   -DPLUGIN_STANDARD_QOPENPCDET=ON \
   -DPLUGIN_STANDARD_QINSTANTMESH=ON \
+  -DPLUGIN_STANDARD_QVLXSEEK=ON \
+  -DPLUGIN_STANDARD_QQUERYSPLAT=ON \
   -DBUILD_RECONSTRUCTION=ON \
   -DPLUGIN_STANDARD_QSIBR=ON \
   .

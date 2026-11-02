@@ -284,6 +284,8 @@ jobs:
             -DPLUGIN_STANDARD_QMAPANYTHING=OFF \
             -DPLUGIN_STANDARD_QOPENPCDET=OFF \
             -DPLUGIN_STANDARD_QINSTANTMESH=OFF \
+            -DPLUGIN_STANDARD_QVLXSEEK=OFF \
+            -DPLUGIN_STANDARD_QQUERYSPLAT=OFF \
             .. 2>&1 | tee ../codeql-evidence/configure.log
           cp compile_commands.json ../codeql-evidence/
           {

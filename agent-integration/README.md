@@ -252,7 +252,7 @@ agent-integration/
 
 ## JSON-RPC API Overview
 
-The `qJSonRPCPlugin` exposes **88 methods** over WebSocket JSON-RPC 2.0.
+The `qJSonRPCPlugin` exposes **89 methods** over WebSocket JSON-RPC 2.0.
 Methods are dynamically registered via a method registry — call `methods.list`
 for the live catalog.
 

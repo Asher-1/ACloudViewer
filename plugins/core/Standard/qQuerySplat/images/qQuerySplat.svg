@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="#101c33"/>
+  <!-- query viewfinder: the input image the scene is queried from -->
+  <rect x="6" y="7" width="22" height="16" rx="2" fill="none" stroke="#64b5f6" stroke-width="2.5"/>
+  <circle cx="12" cy="13" r="1.8" fill="#ffd54f"/>
+  <path d="M8 20 l5-5 4 3 6-5 5 7 z" fill="#1e88e5" opacity="0.85"/>
+  <!-- crosshair marks: the "query" gesture -->
+  <line x1="17" y1="4.5" x2="17" y2="9" stroke="#90caf9" stroke-width="1.6"/>
+  <line x1="17" y1="21" x2="17" y2="25.5" stroke="#90caf9" stroke-width="1.6"/>
+  <line x1="3.5" y1="15" x2="8" y2="15" stroke="#90caf9" stroke-width="1.6"/>
+  <line x1="26" y1="15" x2="30.5" y2="15" stroke="#90caf9" stroke-width="1.6"/>
+  <!-- predicted 3D gaussian splats: rotated ellipses with soft falloff,
+       the QuerySplat decoder's output representation -->
+  <defs>
+    <radialGradient id="gs1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffd54f" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#ffd54f" stop-opacity="0.15"/>
+    </radialGradient>
+    <radialGradient id="gs2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#4fc3f7" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#4fc3f7" stop-opacity="0.12"/>
+    </radialGradient>
+    <radialGradient id="gs3" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#aed581" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#aed581" stop-opacity="0.12"/>
+    </radialGradient>
+    <radialGradient id="gs4" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff8a65" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#ff8a65" stop-opacity="0.12"/>
+    </radialGradient>
+    <radialGradient id="gs5" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ce93d8" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#ce93d8" stop-opacity="0.12"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="45" cy="12" rx="4.6" ry="2.4" transform="rotate(-24 45 12)" fill="url(#gs1)"/>
+  <ellipse cx="53" cy="17" rx="3.6" ry="2.0" transform="rotate(18 53 17)" fill="url(#gs2)"/>
+  <ellipse cx="42" cy="20" rx="3.2" ry="1.9" transform="rotate(40 42 20)" fill="url(#gs3)"/>
+  <ellipse cx="52" cy="25" rx="4.2" ry="2.2" transform="rotate(-12 52 25)" fill="url(#gs4)"/>
+  <ellipse cx="44" cy="29" rx="3.0" ry="1.8" transform="rotate(28 44 29)" fill="url(#gs5)"/>
+  <ellipse cx="55" cy="31" rx="2.8" ry="1.6" transform="rotate(-38 55 31)" fill="url(#gs1)"/>
+  <!-- family badges: the VGGT encoder + the Gaussian task -->
+  <rect x="6" y="36" width="27" height="12" rx="3" fill="#1d4ed8"/>
+  <text x="19.5" y="45.5" font-family="sans-serif" font-size="9.5" font-weight="bold" fill="#ffffff" text-anchor="middle">VGGT</text>
+  <rect x="35" y="36" width="23" height="12" rx="3" fill="#6d28d9"/>
+  <text x="46.5" y="45.5" font-family="sans-serif" font-size="8.5" font-weight="bold" fill="#ffffff" text-anchor="middle">3DGS</text>
+  <!-- QuerySplat wordmark -->
+  <text x="32" y="58" font-family="sans-serif" font-size="7.5" font-weight="bold" fill="#93c5fd" text-anchor="middle">QUERYSPLAT</text>
+</svg>
