@@ -7,6 +7,7 @@
 #include "vlx_hfre.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstring>
 #include <thread>

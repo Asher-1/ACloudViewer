@@ -23,6 +23,7 @@
 // itself runs inside the P1 mmproj graph; HFRE consumes its 4 levels.
 #pragma once
 
+#include <array>
 #include <string>
 #include <vector>
 
