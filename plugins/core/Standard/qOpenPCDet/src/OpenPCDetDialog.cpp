@@ -600,12 +600,16 @@ void OpenPCDetDialog::populatePanels() {
         configScroll->setWidgetResizable(true);
         configScroll->setFrameShape(QFrame::NoFrame);
         configScroll->setWidget(configPage);
-        configScroll->setMinimumHeight(ecvAICoreUi::dpiScaled(80));
+        // The scroll area must be able to shrink so that the dialog keeps
+        // fitting a 800x480 window on every platform: the minimum height of
+        // the fixed rows above and below varies with platform font metrics
+        // (macOS renders Qt 5.15 line edits ~4px taller than Linux). Keep a
+        // slightly smaller floor and let long configurations scroll.
+        configScroll->setMinimumHeight(ecvAICoreUi::dpiScaled(76));
         layout->addWidget(configScroll, 1);
 
-        // Action row: add-to-DB + Run / Cancel (per panel, like qYOLO).
-        auto* panelActionRow = new QHBoxLayout;
-        panelActionRow->setSpacing(ecvAICoreUi::hSpacing());
+        // Per-panel output toggles live inside the scrollable page so they
+        // never contribute to the dialog's fixed minimum height.
         panel.addBoxesCheck =
                 new QCheckBox(tr("Add wireframe boxes to DB"), panel.tab);
         panel.addBoxesCheck->setChecked(true);
@@ -623,7 +627,10 @@ void OpenPCDetDialog::populatePanels() {
                    "color (matches the OpenPCDet Python demo styling)"));
         outputRow->addWidget(panel.annotatedCheck);
         outputRow->addStretch();
-        layout->addLayout(outputRow);
+        configLayout->addLayout(outputRow);
+        // Action row: Run / Cancel (per panel, like qYOLO).
+        auto* panelActionRow = new QHBoxLayout;
+        panelActionRow->setSpacing(ecvAICoreUi::hSpacing());
         panelActionRow->addStretch();
         panel.testDataBtn = ecvAICoreUi::makeSampleDataBtn(panel.tab);
         panel.testDataBtn->setToolTip(
