@@ -27,11 +27,11 @@
 #include "aicore/rmbg_capi.h"
 #include "aicore/runtime_capi.h"
 #include "clip_vision.hpp"
+#include "common/debug_dump.hpp"
 #include "common/ggml_backend_registry.hpp"
 #include "common/ggml_backend_utils.hpp"
 #include "common/gguf_file_io.hpp"
 #include "common/image_utils.hpp"
-#include "common/debug_dump.hpp"
 #include "dino.hpp"
 #include "flexicubes.hpp"
 #include "ggml-backend.h"
@@ -832,8 +832,7 @@ bool PipelineContext::Impl::zero123pp_multiview(const PipelineConfig &cfg,
         // pair always belongs to the last forward. Never affects any result.
         const std::string dir(cap_dir);
         std::FILE *in = std::fopen((dir + "/decode-input.bin").c_str(), "wb");
-        std::FILE *out =
-                std::fopen((dir + "/decode-output.bin").c_str(), "wb");
+        std::FILE *out = std::fopen((dir + "/decode-output.bin").c_str(), "wb");
         const size_t dec_n = (size_t)3 * dh * dw;
         const bool ok = in &&
                         std::fwrite(latents.data(), sizeof(float), lat_n, in) ==

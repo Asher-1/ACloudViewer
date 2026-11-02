@@ -1628,9 +1628,11 @@ bool QuerySplatDecoder::tto_backward(const float* d_deconv,
         }
         float ap[7];
         ggml_backend_tensor_get(m.adamw_params, ap, 0, sizeof(ap));
-        log_info("tto-entry: mem0_sum=%.6f mem0_nan=%d adamw_params=[%g,%g,%g,%g,%g,%g,%g]",
-                 mnan ? 0.0 : m0, mnan ? 1 : 0, ap[0], ap[1], ap[2], ap[3],
-                 ap[4], ap[5], ap[6]);
+        log_info(
+                "tto-entry: mem0_sum=%.6f mem0_nan=%d "
+                "adamw_params=[%g,%g,%g,%g,%g,%g,%g]",
+                mnan ? 0.0 : m0, mnan ? 1 : 0, ap[0], ap[1], ap[2], ap[3],
+                ap[4], ap[5], ap[6]);
     }
     // TEMP-DIAG(NaN-bisect): report the FIRST graph-B node whose output is
     // non-finite (topological order => the origin). Remove after the fix.
@@ -1641,28 +1643,31 @@ bool QuerySplatDecoder::tto_backward(const float* d_deconv,
         ggml_backend_tensor_get(node, v.data(), 0, v.size() * sizeof(float));
         bool bad = false;
         for (float x : v) {
-            if (!std::isfinite(x)) { bad = true; break; }
+            if (!std::isfinite(x)) {
+                bad = true;
+                break;
+            }
         }
         if (!bad) continue;
         auto src_state = [](ggml_tensor* t) {
             if (!t) return std::string("none");
             if (t->type != GGML_TYPE_F32) return std::string("non-f32");
             std::vector<float> sv(ggml_nelements(t));
-            ggml_backend_tensor_get(t, sv.data(), 0,
-                                    sv.size() * sizeof(float));
+            ggml_backend_tensor_get(t, sv.data(), 0, sv.size() * sizeof(float));
             for (float x : sv)
                 if (!std::isfinite(x)) return std::string("NONFINITE");
             return std::string("finite");
         };
-        log_error("tto-diag: first non-finite node #%d op=%s name=%s "
-                  "ne=%lldx%lldx%lldx%lld src0=%s src1=%s src2=%s",
-                  ni, ggml_op_name(node->op),
-                  node->name[0] ? node->name : "(unnamed)",
-                  (long long)node->ne[0], (long long)node->ne[1],
-                  (long long)node->ne[2], (long long)node->ne[3],
-                  src_state(node->src[0]).c_str(),
-                  src_state(node->src[1]).c_str(),
-                  src_state(node->src[2]).c_str());
+        log_error(
+                "tto-diag: first non-finite node #%d op=%s name=%s "
+                "ne=%lldx%lldx%lldx%lld src0=%s src1=%s src2=%s",
+                ni, ggml_op_name(node->op),
+                node->name[0] ? node->name : "(unnamed)",
+                (long long)node->ne[0], (long long)node->ne[1],
+                (long long)node->ne[2], (long long)node->ne[3],
+                src_state(node->src[0]).c_str(),
+                src_state(node->src[1]).c_str(),
+                src_state(node->src[2]).c_str());
         break;
     }
     // Safety invariant: the TTO memory must stay finite. A non-finite
