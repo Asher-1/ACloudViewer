@@ -289,17 +289,18 @@ bool projectCuboid(const PointCloudCuboid& cuboid,
                 {corners[edge[1]][0], corners[edge[1]][1], corners[edge[1]][2]},
                 calibration);
         // `near`/`far` are legacy macros in the Windows SDK (windef.h) that
-        // MSVC expands to nothing; use suffix-free names that compile everywhere.
+        // MSVC expands to nothing; use suffix-free names that compile
+        // everywhere.
         constexpr double nearZ = 1e-6;
         if (a.z < nearZ && b.z < nearZ) continue;
         if (a.z < nearZ || b.z < nearZ) {
             const double fraction = (nearZ - a.z) / (b.z - a.z);
             if (a.z < nearZ) {
-                a = {a.x + fraction * (b.x - a.x),
-                     a.y + fraction * (b.y - a.y), nearZ};
+                a = {a.x + fraction * (b.x - a.x), a.y + fraction * (b.y - a.y),
+                     nearZ};
             } else {
-                b = {b.x + fraction * (a.x - b.x),
-                     b.y + fraction * (a.y - b.y), nearZ};
+                b = {b.x + fraction * (a.x - b.x), b.y + fraction * (a.y - b.y),
+                     nearZ};
             }
         }
         const int samples =
@@ -434,7 +435,7 @@ bool pointCloudCameraDepthColors(const QVector<QVector4D>& points,
                     std::clamp((depth - nearDepthValue) /
                                        std::max(farDepthValue - nearDepthValue,
                                                 1e-6),
-                                   0.0, 1.0) *
+                               0.0, 1.0) *
                     4;
             const int low = std::min(3, int(position));
             const double fraction = position - low;
