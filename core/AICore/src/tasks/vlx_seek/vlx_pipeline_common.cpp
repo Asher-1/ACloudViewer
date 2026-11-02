@@ -15,8 +15,8 @@
 #include <cstdio>
 #include <cstring>
 #include <filesystem>
-#include <numeric>
 #include <fstream>
+#include <numeric>
 #include <random>
 #include <sstream>
 #include <thread>
