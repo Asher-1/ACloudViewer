@@ -14,6 +14,16 @@ PARITY = importlib.util.module_from_spec(SPEC)
 sys.modules["upstream_parity"] = PARITY
 SPEC.loader.exec_module(PARITY)
 
+# The vendored flash-attention twin is a generated artifact of the
+# map-anything vendoring pipeline, not a committed source file. On a fresh
+# checkout the parity row cannot run at all, so follow the tier's absent
+# reference sentinel (exit 77 = ctest skip) instead of failing the fast
+# lane on every machine that has not vendored the reference yet.
+if not PARITY.MAPANY_PATCH.is_file():
+    print("run_map_anything_upstream_parity: map_anything_merged twin not "
+          "vendored in this checkout, skipping", file=sys.stderr)
+    sys.exit(77)
+
 
 class NewerSourceTest(unittest.TestCase):
     def make_tree(self, root: Path) -> tuple[Path, Path]:

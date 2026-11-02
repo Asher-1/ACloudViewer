@@ -1715,7 +1715,7 @@ set_property(GLOBAL PROPERTY AICORE_TEST_TGT_test_instantmesh_synth_reference_co
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_run_map_anything_upstream_parity.py)
     set_tests_properties(test_map_anything_upstream_parity_runner PROPERTIES
-        LABELS "fast;validation")
+        LABELS "fast;validation" SKIP_RETURN_CODE 77)
 
     add_test(NAME test_ocr_gt_eval
         COMMAND ${Python3_EXECUTABLE}

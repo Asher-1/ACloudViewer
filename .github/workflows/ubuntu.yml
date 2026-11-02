@@ -519,6 +519,18 @@ jobs:
             libqt5websockets5-dev \
             libgl1-mesa-dev \
             xorg-dev
+      - name: Install Python test dependencies
+        if: steps.gate.outputs.run == 'true'
+        # The fast tier runs pytest/numpy-based validation runners (instantmesh
+        # reference contracts, tagging/relation audits, ocr paddle probes).
+        # The bare runner interpreter has neither module, and every one of
+        # those tests died with ModuleNotFoundError before asserting anything
+        # (the tiered-tests job has no conda/venv setup — BUILD_PYTHON_MODULE
+        # is OFF, so nothing else provides them). --break-system-packages is
+        # required on PEP 668 externally-managed images (ubuntu-latest
+        # python3.14); --user keeps the install off the system tree.
+        run: |
+          python3 -m pip install --user --break-system-packages pytest numpy
       - name: Configure (AICore + tiered tests, CPU-only)
         if: steps.gate.outputs.run == 'true'
         run: |

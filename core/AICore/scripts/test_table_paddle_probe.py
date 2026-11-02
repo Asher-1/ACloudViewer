@@ -124,8 +124,15 @@ class TableOriginalGraphTests(unittest.TestCase):
                     max_diff=.01, loc_max_diff=.01, model=root / 'model',
                     probe=root / 'probe', input_index=root / 'index.json',
                     input_index_sha256=digest(root / 'index.json'),
-                    source_python=Path('cpu-source'), source_gpu_python=Path('cuda-source'),
                     report=root / 'report.json')
+                # run() gates the reference environment on an existing
+                # interpreter file (absent reference = exit-77 skip), so the
+                # fakes must exist on disk; execute_fake matches the absolute
+                # path it will receive.
+                for name in ('cpu-source', 'cuda-source'):
+                    (root / name).write_bytes(b'')
+                args.source_python = root / 'cpu-source'
+                args.source_gpu_python = root / 'cuda-source'
                 for name in ('program', 'parameters', 'config'):
                     setattr(args, name, root / name)
                     setattr(args, name + '_sha256', digest(root / name))
@@ -142,7 +149,7 @@ class TableOriginalGraphTests(unittest.TestCase):
                     launched.append(command)
                     audit = dict(passed=True, archive_path='audit.json',
                                  sampled_process_peak_mib=20)
-                    if command[0] == 'cuda-source':
+                    if command[0] == str(root / 'cuda-source'):
                         output = target.with_suffix('.npz')
                         np.savez(output, head0=source[0], head1=source[1])
                         target.write_text(json.dumps(dict(device='cuda',
