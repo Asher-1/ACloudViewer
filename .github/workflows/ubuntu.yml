@@ -545,7 +545,7 @@ jobs:
           TORCH_VER=$(sed -n 's/^TORCH_VER="\([^"]*\)".*/\1/p' util/ci_utils.sh | head -1)
           TORCH_REPO_URL=$(sed -n 's/^TORCH_REPO_URL="\([^"]*\)".*/\1/p' util/ci_utils.sh | head -1)
           test -n "$TORCH_VER" && test -n "$TORCH_REPO_URL"
-          python -m pip install pytest numpy opencv-python-headless
+          python -m pip install pytest numpy opencv-python-headless pyyaml onnxruntime
           # CPU-only lane: mirror install_python_dependencies' +cpu variant
           # (TORCH_GLNX cpu branch) instead of the PyPI default CUDA wheel.
           python -m pip install "torch==${TORCH_VER}+cpu" -f "$TORCH_REPO_URL"
