@@ -609,15 +609,18 @@ void OpenPCDetDialog::populatePanels() {
         layout->addWidget(configScroll, 1);
 
         // Per-panel output toggles live inside the scrollable page so they
-        // never contribute to the dialog's fixed minimum height.
+        // never contribute to the dialog's fixed minimum height, and they
+        // stack vertically: two side-by-side checkboxes can become the
+        // widest element of the page under macOS font metrics and re-introduce
+        // horizontal clipping, while a column stays narrower than the input
+        // row on every platform. Their extra height is scroll content, so it
+        // does not affect the dialog's fixed minimum either.
         panel.addBoxesCheck =
                 new QCheckBox(tr("Add wireframe boxes to DB"), panel.tab);
         panel.addBoxesCheck->setChecked(true);
         panel.addBoxesCheck->setToolTip(
                 tr("Write the detections as per-class colored wireframe "
                    "polylines into the DB tree"));
-        auto* outputRow = new QHBoxLayout;
-        outputRow->addWidget(panel.addBoxesCheck);
         panel.annotatedCheck =
                 new QCheckBox(tr("Export annotated cloud"), panel.tab);
         panel.annotatedCheck->setChecked(true);
@@ -625,9 +628,11 @@ void OpenPCDetDialog::populatePanels() {
                 tr("Export a copy of the source point cloud into the DB "
                    "tree with in-box points tinted by detection class "
                    "color (matches the OpenPCDet Python demo styling)"));
-        outputRow->addWidget(panel.annotatedCheck);
-        outputRow->addStretch();
-        configLayout->addLayout(outputRow);
+        auto* outputColumn = new QVBoxLayout;
+        outputColumn->setContentsMargins(0, 0, 0, 0);
+        outputColumn->addWidget(panel.addBoxesCheck);
+        outputColumn->addWidget(panel.annotatedCheck);
+        configLayout->addLayout(outputColumn);
         // Action row: Run / Cancel (per panel, like qYOLO).
         auto* panelActionRow = new QHBoxLayout;
         panelActionRow->setSpacing(ecvAICoreUi::hSpacing());
