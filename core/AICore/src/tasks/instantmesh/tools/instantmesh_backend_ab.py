@@ -21,8 +21,10 @@ import hashlib
 import json
 import math
 import os
+import shutil
 import struct
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -415,6 +417,56 @@ def load_library(path):
     return lib
 
 
+def assemble_and_compare_capture(reference, capture_dir, image_bytes, lib_path):
+    """Assemble the capture metadata next to the C++ decode-boundary dump and
+    authenticate it against the independent reference. The C++ tap writes the
+    two payload files; this adds gui.log (IM_CAPTURE records) and launch.json
+    (identity), then delegates to the fail-closed comparison. On any mismatch
+    the returned dict records the failure instead of losing the run's timing
+    evidence."""
+    import hashlib
+    import json
+    import os
+    import shutil
+    import subprocess
+    import tempfile
+
+    capture = Path(capture_dir)
+    records, payloads = [], []
+    for name, shape in (("decode-input.bin", [1, 120, 80]),
+                        ("decode-output.bin", [3, 960, 640])):
+        data = (capture / name).read_bytes()
+        records.append("IM_CAPTURE " + json.dumps(
+            {"member": name, "sha256": hashlib.sha256(data).hexdigest(),
+             "shape": shape, "bytes": len(data)}, sort_keys=True))
+        payloads.append((name, data))
+    (capture / "gui.log").write_text("\n".join(records) + "\n")
+    lib_file = Path(lib_path)
+    if lib_file.is_dir():
+        candidate = lib_file / "libAICore.so"
+        lib_file = candidate if candidate.exists() else lib_file
+    plugin = lib_file.parent / "plugins" / "libQINSTANTMESH_PLUGIN.so"
+    try:
+        head = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parent,
+            capture_output=True, text=True, timeout=10).stdout.strip()
+    except Exception:
+        head = "unknown"
+    launch = {
+        "input_sha256": hashlib.sha256(image_bytes).hexdigest(),
+        "package_sha256": hashlib.sha256(lib_file.read_bytes()).hexdigest()
+                          if lib_file.is_file() else "unknown",
+        "plugin_sha256": hashlib.sha256(plugin.read_bytes()).hexdigest()
+                         if plugin.is_file() else "not-loaded-headless",
+        "git_head": head}
+    (capture / "launch.json").write_text(json.dumps(launch, sort_keys=True) + "\n")
+    try:
+        return compare_diffusion_capture(reference, capture)
+    except (OSError, ValueError, KeyError) as error:
+        return {"accuracy_status": "INCOMPLETE", "independent_reference_complete": 0,
+                "reference_authenticated": 0, "reference_error": str(error)}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--models")
@@ -465,12 +517,22 @@ def main():
         image_bytes = Path(args.image).read_bytes()
         results = []
         for device in devices:
+            capture_dir = None
+            if args.reference:
+                # The C++ decode-boundary tap only writes when this env var
+                # points at a directory; give every device a fresh capture.
+                capture_dir = tempfile.mkdtemp(prefix="im-capture-")
+                os.environ["AICORE_INSTANTMESH_CAPTURE_DIR"] = capture_dir
             t0 = time.perf_counter()
             row = run_once(lib, args.models, image_bytes, device, args.preset,
                            args.quant, args.steps, args.seed, args.grid_res,
                            not args.no_texture, args.warmups, args.iterations,
                            args.texture_res, args.threads)
             row["wall_ms"] = (time.perf_counter() - t0) * 1000.0
+            if capture_dir:
+                row.update(assemble_and_compare_capture(
+                    args.reference, capture_dir, image_bytes, args.lib))
+                shutil.rmtree(capture_dir, ignore_errors=True)
             results.append(row)
             print(json.dumps(row, sort_keys=True, allow_nan=False), flush=True)
     except (OSError, ValueError, MemoryError) as error:

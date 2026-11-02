@@ -16,6 +16,7 @@
 // Exit codes: 0 pass, 1 invariant/accuracy failure, 2 usage, 77 missing
 // model asset (the common runner records it as unavailable).
 
+#include <QCryptographicHash>
 #include <QDir>
 #include <QElapsedTimer>
 #include <QFile>
@@ -556,6 +557,22 @@ int main(int argc, char** argv) {
     if (upstream_text_match >= 0) {
         report.insert("upstream_text_match", upstream_text_match);
         report.insert("upstream_box_max_delta_px", upstream_box_max_delta);
+    }
+    // Stable-output fingerprint (the runner's stability gate hashes this
+    // field across repeats): answer + resolved boxes + token counts.
+    {
+        QCryptographicHash digest(QCryptographicHash::Sha256);
+        digest.addData(QByteArray::fromStdString(first.answer));
+        for (const auto& b : first.boxes) {
+            digest.addData(reinterpret_cast<const char*>(b.data()),
+                           sizeof(float) * 4);
+        }
+        digest.addData(reinterpret_cast<const char*>(&first.prompt_tokens),
+                       sizeof(first.prompt_tokens));
+        digest.addData(reinterpret_cast<const char*>(&first.completion_tokens),
+                       sizeof(first.completion_tokens));
+        report.insert("token_hash",
+                      QString::fromLatin1(digest.result().toHex()));
     }
     report.insert("verdict", ok ? "PASS" : "FAIL");
     const QByteArray payload = QJsonDocument(report).toJson();

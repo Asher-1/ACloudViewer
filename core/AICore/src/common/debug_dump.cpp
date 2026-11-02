@@ -33,5 +33,9 @@ bool openpcdet_vfe_debug_enabled() {
     return std::getenv("OPCPD_VFEDBG") != nullptr;
 }
 
+const char* instantmesh_capture_dir() {
+    return std::getenv("AICORE_INSTANTMESH_CAPTURE_DIR");
+}
+
 }  // namespace debug
 }  // namespace aicore

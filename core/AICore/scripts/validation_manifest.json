@@ -8780,6 +8780,46 @@
      "size_bytes": 12123555
     }
    ]
+  },
+  {
+   "id": "querysplat-paper-f16",
+   "tasks": [
+    "querysplat"
+   ],
+   "relative_path": "querysplat_models/querysplat-paper-f16.gguf",
+   "url": "https://huggingface.co/Asher-1/querysplat_vggto/resolve/main/querysplat-paper-f16.gguf",
+   "sha256": "e26b237544f0b803df7311131a8ecfa999fed79f4f6c56f06d0748dba6872905",
+   "size_bytes": 2302209056
+  },
+  {
+   "id": "querysplat-paper-f32",
+   "tasks": [
+    "querysplat"
+   ],
+   "relative_path": "querysplat_models/querysplat-paper-f32.gguf",
+   "url": "https://huggingface.co/Asher-1/querysplat_vggto/resolve/main/querysplat-paper-f32.gguf",
+   "sha256": "e59558d4cda480b743788a56eb5bb27d07fadb42be87e852ff9868002c07e188",
+   "size_bytes": 4467002400
+  },
+  {
+   "id": "querysplat-encoder-vggt-omega-1b-512-f16",
+   "tasks": [
+    "querysplat"
+   ],
+   "relative_path": "map_anything_models/vggt-omega-1b-512-f16.gguf",
+   "url": "https://huggingface.co/Asher-1/map_anything_vggt/resolve/main/vggt-omega-1b-512-f16.gguf",
+   "sha256": "e6b074a823e59bf2902982ec9ad643580e66320be247f85dcfb7cd13e1fe9ea8",
+   "size_bytes": 2290343200
+  },
+  {
+   "id": "querysplat-encoder-vggt-omega-1b-512-f32",
+   "tasks": [
+    "querysplat"
+   ],
+   "relative_path": "map_anything_models/vggt-omega-1b-512-f32.gguf",
+   "url": "https://huggingface.co/Asher-1/map_anything_vggt/resolve/main/vggt-omega-1b-512-f32.gguf",
+   "sha256": "e4ea47089fc2765f32b0a728e71b171158dff3c81d7893b95db7c828ac4a8854",
+   "size_bytes": 4575356288
   }
  ],
  "scenarios": [
@@ -39300,7 +39340,7 @@
     "reference_id": "probe:vlxseek-detection-q8_0",
     "checks": [
      {
-      "metric": "upstream_prompt_tokens",
+      "metric": "prompt_tokens",
       "op": "==",
       "value": 414,
       "label": "closed-mode prompt tokens match the upstream fixed budget"
@@ -39308,11 +39348,17 @@
     ],
     "require_metrics": [
      "box_count",
-     "proposal_count"
+     "proposal_count",
+     "prompt_tokens"
     ]
    },
    "fingerprint_policy": "exact",
-   "metric_parser": "generic"
+   "metric_parser": "generic",
+   "covered_globs": [
+    "vlx_seek_models/vlx-vision-10b-q8_0.gguf",
+    "vlx_seek_models/vlx-10b-llm-q8_0.gguf",
+    "vlx_seek_models/wedetect-base-uni-f32.gguf"
+   ]
   },
   {
    "id": "vlxseek-detection-f16-upstream",
@@ -39383,11 +39429,18 @@
      }
     ],
     "require_metrics": [
-     "upstream_text_match"
+     "box_count",
+     "proposal_count",
+     "prompt_tokens"
     ]
    },
    "fingerprint_policy": "exact",
-   "metric_parser": "generic"
+   "metric_parser": "generic",
+   "covered_globs": [
+    "vlx_seek_models/vlx-vision-10b-f16.gguf",
+    "vlx_seek_models/vlx-10b-llm-f16.gguf",
+    "vlx_seek_models/wedetect-base-uni-f32.gguf"
+   ]
   },
   {
    "id": "vlxseek-grounding-single-zh-q8_0",
@@ -39439,12 +39492,18 @@
     "reference_id": "probe:vlxseek-grounding-single-zh-q8_0",
     "checks": [],
     "require_metrics": [
-     "prompt_tokens",
-     "completion_tokens"
+     "box_count",
+     "proposal_count",
+     "prompt_tokens"
     ]
    },
    "fingerprint_policy": "exact",
-   "metric_parser": "generic"
+   "metric_parser": "generic",
+   "covered_globs": [
+    "vlx_seek_models/vlx-vision-10b-q8_0.gguf",
+    "vlx_seek_models/vlx-10b-llm-q8_0.gguf",
+    "vlx_seek_models/wedetect-base-uni-f32.gguf"
+   ]
   },
   {
    "id": "querysplat",
@@ -39475,7 +39534,12 @@
     "require_metrics": []
    },
    "fingerprint_policy": "exact",
-   "metric_parser": "generic"
+   "metric_parser": "generic",
+   "input_ids": [
+    "querysplat-paper-q8_0",
+    "querysplat-encoder-vggt-omega-1b-512-q8_0",
+    "querysplat-fixture-courtyard"
+   ]
   },
   {
    "id": "querysplat-f16",
@@ -39506,7 +39570,12 @@
     "require_metrics": []
    },
    "fingerprint_policy": "exact",
-   "metric_parser": "generic"
+   "metric_parser": "generic",
+   "input_ids": [
+    "querysplat-paper-f16",
+    "querysplat-encoder-vggt-omega-1b-512-f16",
+    "querysplat-fixture-courtyard"
+   ]
   },
   {
    "id": "querysplat-f32",
@@ -39537,7 +39606,12 @@
     "require_metrics": []
    },
    "fingerprint_policy": "exact",
-   "metric_parser": "generic"
+   "metric_parser": "generic",
+   "input_ids": [
+    "querysplat-paper-f32",
+    "querysplat-encoder-vggt-omega-1b-512-f32",
+    "querysplat-fixture-courtyard"
+   ]
   }
  ]
 }

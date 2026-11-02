@@ -8,10 +8,12 @@
 #pragma once
 
 #include <QDialog>
+#include <QHash>
 #include <QJsonObject>
 
 class QLineEdit;
 class QListWidget;
+class QRadioButton;
 class QVBoxLayout;
 
 /** Source-compatible label editing dialog: the text field doubles as the
@@ -38,6 +40,10 @@ public:
                        const QJsonObject& currentFlags);
     QString selectedLabel() const;
     QJsonObject selectedFlags() const;
+    // Upstream 02c8bd91: the three-state object review selector
+    // (pending/missed/false_positive); pending stays the default.
+    void setReviewStatus(const QString& status);
+    QString selectedReviewStatus() const;
 
 protected:
     void keyPressEvent(QKeyEvent* event) override;
@@ -48,6 +54,7 @@ private:
     QLineEdit* m_edit = nullptr;
     QListWidget* m_list = nullptr;
     QVBoxLayout* m_flagLayout = nullptr;
+    QHash<QString, QRadioButton*> m_reviewButtons;
     QStringList m_labels;
     QStringList m_flagNames;
     QJsonObject m_currentFlags;

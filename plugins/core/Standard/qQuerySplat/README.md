@@ -19,7 +19,11 @@ Everything runs locally through `libAICore` — no Python at runtime.
    frames are byte-identical to the upstream QuerySplat eval inputs).
 3. Pick a decoder quantization tier (q8_0 is the recommended default; the
    VGGT-Omega encoder resolves from the shared MapAnything model cache).
-4. Optionally enable TTO (20 steps is the official default).
+4. Optionally enable TTO (20 steps is the official default). Known issue:
+   TTO is currently reported as a clean error at runtime — the decoder
+   backward graph produces non-finite gradients on the pinned ggml 0.27.0
+   (upstream gates it on ggml 0.24); inference, rendering and exports are
+   unaffected.
 5. **Run**: the plugin imports the gaussian centers + colors as a point
    cloud, the predicted cameras as camera sensors, the depth rasters and
    the gsplat renders as images, exports the standard 3DGS PLY, and writes

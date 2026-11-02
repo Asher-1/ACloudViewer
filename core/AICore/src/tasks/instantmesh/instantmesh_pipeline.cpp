@@ -31,6 +31,7 @@
 #include "common/ggml_backend_utils.hpp"
 #include "common/gguf_file_io.hpp"
 #include "common/image_utils.hpp"
+#include "common/debug_dump.hpp"
 #include "dino.hpp"
 #include "flexicubes.hpp"
 #include "ggml-backend.h"
@@ -823,6 +824,28 @@ bool PipelineContext::Impl::zero123pp_multiview(const PipelineConfig &cfg,
     if (!dec) {
         set_error(error, "instantmesh: vae_decode failed");
         return false;
+    }
+    if (const char *cap_dir = aicore::debug::instantmesh_capture_dir()) {
+        // Diagnostic capture of the multiview decode boundary for the
+        // independent-diffusion-reference flow. Truncate-mode: a warmup/
+        // iteration rerun overwrites the previous capture, so the retained
+        // pair always belongs to the last forward. Never affects any result.
+        const std::string dir(cap_dir);
+        std::FILE *in = std::fopen((dir + "/decode-input.bin").c_str(), "wb");
+        std::FILE *out =
+                std::fopen((dir + "/decode-output.bin").c_str(), "wb");
+        const size_t dec_n = (size_t)3 * dh * dw;
+        const bool ok = in &&
+                        std::fwrite(latents.data(), sizeof(float), lat_n, in) ==
+                                lat_n &&
+                        out &&
+                        std::fwrite(dec, sizeof(float), dec_n, out) == dec_n;
+        if (in) std::fclose(in);
+        if (out) std::fclose(out);
+        if (!ok)
+            std::fprintf(stderr,
+                         "[instantmesh] capture dump write failed in %s\n",
+                         dir.c_str());
     }
     const int OH = dh, OW = dw;  // 960 x 640
     std::vector<uint8_t> out_rgb((size_t)OH * OW * 3);

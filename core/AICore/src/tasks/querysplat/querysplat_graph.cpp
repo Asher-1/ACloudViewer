@@ -1615,19 +1615,75 @@ bool QuerySplatDecoder::tto_backward(const float* d_deconv,
     if (ggml_backend_graph_compute(m.be.handle, m.tb_graph) !=
         GGML_STATUS_SUCCESS)
         return false;
-    // TEMP-DIAG(tto-freeze): gradient + memory checksums per step (remove)
+    // TEMP-DIAG(NaN-bisect): mem/params state ON ENTRY to graph B
     {
-        float dg0 = 0.f, dm0 = 0.f;
-        std::vector<float> tmp(ggml_nelements(m.probe_dmem[0]));
-        ggml_backend_tensor_get(m.probe_dmem[0], tmp.data(), 0,
-                                tmp.size() * sizeof(float));
-        for (size_t i = 0; i < tmp.size(); i++) dg0 += tmp[i];
         std::vector<float> tm0(ggml_nelements(m.mem[0]));
         ggml_backend_tensor_get(m.mem[0], tm0.data(), 0,
                                 tm0.size() * sizeof(float));
-        for (size_t i = 0; i < tm0.size(); i++) dm0 += tm0[i];
-        log_info("tto-diag step=%d |d_mem0|=%.6f mem0_sum=%.6f (n=%zu)", step,
-                 dg0, dm0, tm0.size());
+        double m0 = 0;
+        bool mnan = false;
+        for (float x : tm0) {
+            if (!std::isfinite(x)) mnan = true;
+            m0 += x;
+        }
+        float ap[7];
+        ggml_backend_tensor_get(m.adamw_params, ap, 0, sizeof(ap));
+        log_info("tto-entry: mem0_sum=%.6f mem0_nan=%d adamw_params=[%g,%g,%g,%g,%g,%g,%g]",
+                 mnan ? 0.0 : m0, mnan ? 1 : 0, ap[0], ap[1], ap[2], ap[3],
+                 ap[4], ap[5], ap[6]);
+    }
+    // TEMP-DIAG(NaN-bisect): report the FIRST graph-B node whose output is
+    // non-finite (topological order => the origin). Remove after the fix.
+    for (int ni = 0; ni < ggml_graph_n_nodes(m.tb_graph); ni++) {
+        ggml_tensor* node = ggml_graph_node(m.tb_graph, ni);
+        if (node->type != GGML_TYPE_F32 || ggml_nelements(node) == 0) continue;
+        std::vector<float> v(ggml_nelements(node));
+        ggml_backend_tensor_get(node, v.data(), 0, v.size() * sizeof(float));
+        bool bad = false;
+        for (float x : v) {
+            if (!std::isfinite(x)) { bad = true; break; }
+        }
+        if (!bad) continue;
+        auto src_state = [](ggml_tensor* t) {
+            if (!t) return std::string("none");
+            if (t->type != GGML_TYPE_F32) return std::string("non-f32");
+            std::vector<float> sv(ggml_nelements(t));
+            ggml_backend_tensor_get(t, sv.data(), 0,
+                                    sv.size() * sizeof(float));
+            for (float x : sv)
+                if (!std::isfinite(x)) return std::string("NONFINITE");
+            return std::string("finite");
+        };
+        log_error("tto-diag: first non-finite node #%d op=%s name=%s "
+                  "ne=%lldx%lldx%lldx%lld src0=%s src1=%s src2=%s",
+                  ni, ggml_op_name(node->op),
+                  node->name[0] ? node->name : "(unnamed)",
+                  (long long)node->ne[0], (long long)node->ne[1],
+                  (long long)node->ne[2], (long long)node->ne[3],
+                  src_state(node->src[0]).c_str(),
+                  src_state(node->src[1]).c_str(),
+                  src_state(node->src[2]).c_str());
+        break;
+    }
+    // Safety invariant: the TTO memory must stay finite. A non-finite
+    // gradient here means the decoder-backward graph misbehaves on this
+    // ggml build (upstream t4 passes on ggml 0.24; a 0.24 -> 0.27 primitive
+    // behavior change produces NaN in the hand-written backward). Failing
+    // loudly beats silently optimizing NaN memory (which renders the
+    // background forever — the observed "frozen loss" symptom).
+    for (int i = 0; i < 4; i++) {
+        std::vector<float> probe(ggml_nelements(m.mem[i]));
+        ggml_backend_tensor_get(m.mem[i], probe.data(), 0,
+                                probe.size() * sizeof(float));
+        for (float x : probe) {
+            if (!std::isfinite(x)) {
+                log_error(
+                        "tto: non-finite memory after the AdamW step "
+                        "(decoder-backward graph produced NaN gradients "
+                        "on this ggml build); failing the TTO session");
+                return false;
+            }
+        }
     }
     if (dmem_out) {
         for (int i = 0; i < 4; i++) {

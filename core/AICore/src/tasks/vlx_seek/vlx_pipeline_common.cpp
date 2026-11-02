@@ -33,15 +33,21 @@ std::string py_float(double v) {
     char buf[64];
     const double a = std::fabs(v);
     if (a == 0.0 || (a >= 1e-4 && a < 1e16)) {
-        const auto r = std::to_chars(buf, buf + sizeof(buf), v,
-                                     std::chars_format::fixed);
-        std::string s(buf, r.ptr);
+        // snprintf with %.17g-equivalent fixed formatting. std::to_chars for
+        // float requires macOS 13.3+ / glibc 2.29+, but the deployment target
+        // is macOS 11.0, so we use the universally available snprintf.
+        int n = std::snprintf(buf, sizeof(buf), "%.15f", v);
+        std::string s(buf, n);
+        // Trim trailing zeros after the decimal point, keeping at least one.
+        if (s.find('.') != std::string::npos) {
+            while (s.size() > 1 && s.back() == '0' && s[s.size() - 2] != '.')
+                s.pop_back();
+        }
         if (s.find('.') == std::string::npos) s += ".0";
         return s;
     }
-    const auto r = std::to_chars(buf, buf + sizeof(buf), v,
-                                 std::chars_format::scientific);
-    return std::string(buf, r.ptr);
+    int n = std::snprintf(buf, sizeof(buf), "%.15e", v);
+    return std::string(buf, n);
 }
 
 std::string py_json_str(const std::string& s) {

@@ -14,6 +14,7 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QPushButton>
+#include <QRadioButton>
 #include <QVBoxLayout>
 
 AnnotationLabelDialog::AnnotationLabelDialog(const QStringList& labels,
@@ -45,6 +46,22 @@ AnnotationLabelDialog::AnnotationLabelDialog(const QStringList& labels,
     m_flagLayout = new QVBoxLayout;
     m_flagLayout->setContentsMargins(0, 0, 0, 0);
     layout->addLayout(m_flagLayout);
+    // Upstream 02c8bd91: the object review selector mirrors the source
+    // label dialog's three radio states and always defaults to pending.
+    auto* reviewRow = new QHBoxLayout;
+    reviewRow->setContentsMargins(0, 0, 0, 0);
+    const QStringList reviewStates{QStringLiteral("pending"),
+                                   QStringLiteral("missed"),
+                                   QStringLiteral("false_positive")};
+    const QStringList reviewTitles{tr("Pending"), tr("Missed"),
+                                   tr("False Positive")};
+    for (int i = 0; i < reviewStates.size(); ++i) {
+        auto* radio = new QRadioButton(reviewTitles.at(i), this);
+        m_reviewButtons.insert(reviewStates.at(i), radio);
+        reviewRow->addWidget(radio);
+    }
+    m_reviewButtons[QStringLiteral("pending")]->setChecked(true);
+    layout->addLayout(reviewRow);
     auto* buttons = new QDialogButtonBox(
             QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
     layout->addWidget(buttons);
@@ -106,6 +123,21 @@ QJsonObject AnnotationLabelDialog::selectedFlags() const {
         if (box) flags.insert(box->text(), box->isChecked());
     }
     return flags;
+}
+
+void AnnotationLabelDialog::setReviewStatus(const QString& status) {
+    auto* button = m_reviewButtons.value(status);
+    if (button)
+        button->setChecked(true);
+    else if (!m_reviewButtons.isEmpty())
+        m_reviewButtons.constBegin().value()->setChecked(true);
+}
+
+QString AnnotationLabelDialog::selectedReviewStatus() const {
+    for (auto it = m_reviewButtons.constBegin();
+         it != m_reviewButtons.constEnd(); ++it)
+        if (it.value()->isChecked()) return it.key();
+    return QStringLiteral("pending");
 }
 
 void AnnotationLabelDialog::rebuildList() {

@@ -241,7 +241,9 @@ private:
     QString openLabelDialog(const QString& initial,
                             bool* accepted,
                             QJsonObject* flagsOut = nullptr,
-                            const QJsonObject& currentFlags = {});
+                            const QJsonObject& currentFlags = {},
+                            const QString& reviewStatus = {},
+                            QString* reviewOut = nullptr);
     /** Upload template editors (source Upload menu). */
     void uploadLabelFlags();
     void uploadShapeAttributes();
@@ -280,6 +282,7 @@ private:
     QListWidget* m_files = nullptr;
     QListWidget* m_objects = nullptr;
     QListWidget* m_labels = nullptr;
+    QString m_createdReviewStatus;
     QToolButton* m_objectsVisibilityButton = nullptr;
     QToolButton* m_objectsLockButton = nullptr;
     QListWidget* m_flags = nullptr;

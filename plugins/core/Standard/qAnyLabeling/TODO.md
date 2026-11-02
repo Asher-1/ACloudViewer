@@ -1,5 +1,55 @@
 # qAnyLabeling parity TODO
 
+## Continuation (2026-11-02, eighth session): upstream alignment audit closed the remaining feature gaps
+
+- [x] **Upstream baseline confirmed drift-free**: the reference checkout
+  (X-AnyLabeling-GGML cd26942a) is still the model-matrix baseline, so the
+  100-type classification (25 wired / 28 composite / 4 remote / 3 confirmed
+  missing / 40 served-by-equivalent) remains authoritative.
+- [x] **Feature audit against the recent upstream feat commits found three
+  gaps; all landed with tests:**
+  1. `f908db51` double-click vertex deletion: in edit mode a plain double
+     click on a vertex of an unlocked polygon removes it (>= 3 vertices
+     remain) ahead of any label editing, independent of the Double Click
+     Edit Label switch, with an undo snapshot via the editStarted signal.
+     Locked polygons and sub-3 polygons fall through to the label editor.
+     Covered in `test_qanylabeling_canvas`.
+  2. `289befba` + `8f092a58` bulk panel controls: the Objects dock header
+     now carries eye/lock toggles (`AnnotationShapesVisibilityToggle` /
+     `AnnotationShapesLockToggle`); both target "not any(...)" so a fully
+     visible list hides everything and any hidden shape restores all, and
+     the lock button reads checked when any shape is locked. Both flow
+     through snapshot()/setDirty() like the per-shape menu actions.
+  3. `02c8bd91` object review states: the label dialog gains the three-state
+     review selector (Pending/Missed/False Positive, default pending),
+     `editSelectedLabel` reads/updates `extra["review_status"]` (persisted
+     with the sidecar through the existing extra passthrough), and the
+     creation popup writes a non-default review choice onto the fresh shape.
+- [x] **Local LLM/VLM integration confirmed end to end** (no new work
+  needed; evidence recorded):
+  - Chat/VQA dialogs: provider `local` delegates to LocalChatEngine via the
+    aicore://llm address; `test_qanylabeling_chat` performs REAL inference
+    (12.99s wall; qwen2.5-0.5b answers "Paris", SmolVLM answers "red" for a
+    solid-red image, plus streaming/cancel/client-destruction contracts) and
+    no skip branch fired.
+  - AI Describe: image-level and selected-shape-level real VLM e2e pass in
+    `test_plugin` (fresh crop caption lands in the description editor and
+    the sidecar).
+  - Headless batch: `test_qanylabeling_llm_batch_models` runs real text and
+    vision inference against the staged catalog assets.
+  - AICore llm matrix: 4/4 developer scenarios PASS with the single-thread
+    CPU greedy parity contract (upstream_text_match = 1.0).
+- [x] Final state: qAnyLabeling 41/41 (with the asset environment exported),
+  capi 98/98, validate_all suite 157/157, three-backend attribute matrix
+  PASS.
+- [ ] Recorded intentional divergences (not silent gaps): the upstream file
+  search attribute DSL (difficult::/score::/checked::/review:: patterns;
+  the plugin implements plain text file filtering), the per-label lock and
+  visibility state model on the labels panel (the plugin keeps label-level
+  state in the shape list only), and the pure visual overhaul/density
+  styling commits (the plugin uses the native Qt style framework; behavior
+  parity is the alignment target).
+
 ## Continuation (2026-11-02, seventh session): attribute family joins the validation matrix
 
 - [x] **The attribute family now owns manifest rows in the one-click gate.**

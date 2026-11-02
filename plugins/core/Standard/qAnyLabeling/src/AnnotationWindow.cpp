@@ -1911,7 +1911,13 @@ void AnnotationWindow::createUi() {
                     // the label popup is disabled.
                     label = m_canvas->currentLabel().trimmed();
                 } else {
-                    label = openLabelDialog(QString(), &accepted, &chosenFlags);
+                    QString createdReview;
+                    label = openLabelDialog(QString(), &accepted, &chosenFlags,
+                                            {}, QStringLiteral("pending"),
+                                            &createdReview);
+                    if (accepted && !createdReview.isEmpty() &&
+                        createdReview != QStringLiteral("pending"))
+                        m_createdReviewStatus = createdReview;
                 }
                 if (accepted && !label.isEmpty() && index >= 0 &&
                     index < m_canvas->shapes().size()) {
@@ -1920,6 +1926,15 @@ void AnnotationWindow::createUi() {
                     if (!chosenFlags.isEmpty())
                         shapes[index].extra.insert(QStringLiteral("flags"),
                                                    chosenFlags);
+                    // Upstream 02c8bd91: a fresh shape carries the review
+                    // state chosen in the creation popup (default pending,
+                    // which stays implicit in the sidecar).
+                    if (!m_createdReviewStatus.isEmpty()) {
+                        shapes[index].extra.insert(
+                                QStringLiteral("review_status"),
+                                m_createdReviewStatus);
+                        m_createdReviewStatus.clear();
+                    }
                     m_canvas->setShapes(shapes);
                     m_canvas->setCurrentLabel(label);
                     updateObjects();
@@ -9791,7 +9806,9 @@ void AnnotationWindow::applyFileListCheckboxPolicy() {
 QString AnnotationWindow::openLabelDialog(const QString& initial,
                                           bool* accepted,
                                           QJsonObject* flagsOut,
-                                          const QJsonObject& currentFlags) {
+                                          const QJsonObject& currentFlags,
+                                          const QString& reviewStatus,
+                                          QString* reviewOut) {
     QStringList labels;
     for (int i = 0; i < m_labels->count(); ++i)
         labels.append(m_labels->item(i)->text());
@@ -9799,6 +9816,10 @@ QString AnnotationWindow::openLabelDialog(const QString& initial,
     AnnotationLabelDialog dialog(labels, m_sortLabels, m_showLabelTextField,
                                  m_labelCompletion, m_fitToContentColumn,
                                  m_fitToContentRow, initial, this);
+    // Upstream 02c8bd91: the object review selector only participates when
+    // the caller tracks it; the dialog itself always defaults to pending.
+    dialog.setReviewStatus(reviewStatus.isEmpty() ? QStringLiteral("pending")
+                                                  : reviewStatus);
     // The Label Flags template renders checkbox fields that follow the
     // label being chosen; the edited shape's current values apply only
     // while its label is still selected.
@@ -9837,6 +9858,9 @@ QString AnnotationWindow::openLabelDialog(const QString& initial,
     const int code = dialog.exec();
     if (accepted) *accepted = code == QDialog::Accepted;
     if (flagsOut) *flagsOut = dialog.selectedFlags();
+    if (reviewOut)
+        *reviewOut = code == QDialog::Accepted ? dialog.selectedReviewStatus()
+                                               : QString();
     return code == QDialog::Accepted ? dialog.selectedLabel() : QString();
 }
 
@@ -10308,12 +10332,21 @@ void AnnotationWindow::editSelectedLabel() {
     const AnnotationShape current = m_canvas->shapes().at(index);
     bool accepted = false;
     QJsonObject chosenFlags;
+    QString reviewStatus;
+    const QJsonValue previousReviewValue =
+            current.extra.value(QStringLiteral("review_status"));
+    const QString previousReview = previousReviewValue.isString()
+                                           ? previousReviewValue.toString()
+                                           : QStringLiteral("pending");
     const QString label = openLabelDialog(
             current.label, &accepted, &chosenFlags,
-            current.extra.value(QStringLiteral("flags")).toObject());
+            current.extra.value(QStringLiteral("flags")).toObject(),
+            previousReview, &reviewStatus);
     if (!accepted || label.isEmpty()) return;
     if (label == current.label &&
-        chosenFlags == current.extra.value(QStringLiteral("flags")).toObject())
+        chosenFlags ==
+                current.extra.value(QStringLiteral("flags")).toObject() &&
+        reviewStatus == previousReview)
         return;
 
     snapshot();
@@ -10322,6 +10355,11 @@ void AnnotationWindow::editSelectedLabel() {
     if (!chosenFlags.isEmpty() ||
         shapes[index].extra.contains(QStringLiteral("flags")))
         shapes[index].extra.insert(QStringLiteral("flags"), chosenFlags);
+    // Upstream 02c8bd91: the review state lives in the shape's other_data
+    // and therefore persists with the sidecar JSON unchanged.
+    if (!reviewStatus.isEmpty() && reviewStatus != previousReview)
+        shapes[index].extra.insert(QStringLiteral("review_status"),
+                                   reviewStatus);
     m_canvas->setShapes(shapes);
     m_canvas->selectShape(index);
     updateObjects();
