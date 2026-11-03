@@ -11,8 +11,11 @@
 
 #ifdef AICore_ENABLED
 #include <aicore/image_view.h>
+#include <aicore/inference_log.h>
 #include <aicore/pipeline_timing.h>
 #include <aicore/vlx_seek_capi.h>
+
+#include <QtCompat.h>
 
 #include <QDir>
 #include <QElapsedTimer>
@@ -56,7 +59,7 @@ bool toImage(const QImage& image, aicore_image_view* view) {
         case QImage::Format_RGBA8888:
             view->format = AICORE_IMAGE_RGBA8;
             break;
-        case QImage::Format_BGR888:
+        case qtCompatQImageFormatBgr888():
             view->format = AICORE_IMAGE_BGR8;
             break;
         case QImage::Format_Grayscale8:
@@ -91,7 +94,7 @@ bool VLXSeekWorker::runImage(aicore_vlx_seek_ctx* ctx,
     switch (input.format()) {
         case QImage::Format_RGB888:
         case QImage::Format_RGBA8888:
-        case QImage::Format_BGR888:
+        case qtCompatQImageFormatBgr888():
         case QImage::Format_Grayscale8:
             break;
         default:
@@ -116,10 +119,21 @@ bool VLXSeekWorker::runImage(aicore_vlx_seek_ctx* ctx,
                                                      error);
         if (targets.isEmpty()) return false;
     }
+    // External proposal injection (upstream --bbox-list parity): when a
+    // boxes JSON is configured the built-in WeDetect-Uni proposer is
+    // skipped and the given regions are verified directly.
+    QVector<float> externalBoxes;
+    if (!settings.externalBoxesPath.trimmed().isEmpty()) {
+        externalBoxes = VLXSeekHelpers::parseExternalBoxes(
+                settings.externalBoxesPath, error);
+        if (externalBoxes.isEmpty()) return false;
+    }
     const int rc = aicore_vlx_seek_run_image(
             ctx, &view, settings.task.toUtf8().constData(),
             settings.text.toUtf8().constData(),
-            settings.lang.toUtf8().constData(), nullptr, 0,
+            settings.lang.toUtf8().constData(),
+            externalBoxes.isEmpty() ? nullptr : externalBoxes.constData(),
+            static_cast<int32_t>(externalBoxes.size() / 4),
             targets.isEmpty() ? nullptr : targets.constData(),
             static_cast<int32_t>(targets.size()));
     const double ms = static_cast<double>(timer.elapsed());
@@ -205,8 +219,25 @@ bool VLXSeekWorker::runInference() {
             opts, m_settings.visionPath.toUtf8().constData());
     aicore_vlx_seek_options_set_llm_gguf(
             opts, m_settings.llmPath.toUtf8().constData());
-    aicore_vlx_seek_ctx* ctx = aicore_vlx_seek_load_opts(opts);
+    aicore_vlx_seek_ctx* ctx = nullptr;
+    {
+        // Model-load wall time is a user-visible key fact (three GGUFs on
+        // the first run dominate the perceived latency).
+        QElapsedTimer loadTimer;
+        loadTimer.start();
+        ctx = aicore_vlx_seek_load_opts(opts);
+        m_loadMs = double(loadTimer.elapsed());
+    }
     aicore_vlx_seek_options_free(opts);
+
+    // Log the task mode before inference so the console/log file identifies
+    // which of the seven supported tasks is about to run (the "ready" line
+    // above only identifies the device and precision, not the task).
+    if (ctx && aicore_vlx_seek_is_ready(ctx)) {
+        aicore_inference_log::log(
+                QStringLiteral("[AICore vlx_seek] starting task=%1 | input=%2")
+                        .arg(m_settings.task, m_settings.inputPath));
+    }
 
     VLXSeekRunResult result;
     QImage annotated;
@@ -223,6 +254,7 @@ bool VLXSeekWorker::runInference() {
         return false;
     }
     result.annotatedImage = annotated;
+    result.modelLoadMs = m_loadMs;
     emit resultReady(result);
     emit taskFinished(true);
     return true;

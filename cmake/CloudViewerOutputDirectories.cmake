@@ -200,12 +200,15 @@ function(cloudviewer_resolve_python_lib_dir out_var)
     # FindPython publishes the per-config library under internal names
     # (_Python3_LIBRARY_RELEASE / _DEBUG) and only fills Python3_LIBRARY
     # itself for single-config lookups; accept either spelling.
+    # Cache variables must be read with get_property to be visible inside
+    # functions.
     set(_cv_python_lib "")
-    foreach (_cv_candidate
-             "${Python3_LIBRARY}"
-             "${_Python3_LIBRARY_RELEASE}"
-             "${_Python3_LIBRARY_DEBUG}"
-             "${_Python3_LIBRARY}")
+    foreach (_cv_var_name
+             Python3_LIBRARY
+             _Python3_LIBRARY_RELEASE
+             _Python3_LIBRARY_DEBUG
+             _Python3_LIBRARY)
+        get_property(_cv_candidate CACHE ${_cv_var_name} PROPERTY VALUE)
         if (_cv_candidate)
             set(_cv_python_lib "${_cv_candidate}")
             break()
