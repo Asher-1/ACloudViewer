@@ -10,11 +10,10 @@
 #include "VLXSeekModelCatalog.h"
 
 #ifdef AICore_ENABLED
+#include <QtCompat.h>
 #include <aicore/image_view.h>
 #include <aicore/pipeline_timing.h>
 #include <aicore/vlx_seek_capi.h>
-
-#include <QtCompat.h>
 
 #include <QDir>
 #include <QElapsedTimer>
