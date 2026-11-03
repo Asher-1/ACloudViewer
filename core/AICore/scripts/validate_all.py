@@ -419,7 +419,7 @@ def load_model_catalog(args: argparse.Namespace, manifest: dict[str, Any],
             selection.update(expanded)
         task_selection = {task: set(selection) for task in selected}
         return parse_catalog_output(
-            completed.stdout, selected, selection,
+            catalog_stdout, selected, selection,
             task_selection=task_selection)
     light_patterns = {
         task: manifest_model_patterns(
