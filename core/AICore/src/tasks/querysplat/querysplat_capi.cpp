@@ -264,9 +264,13 @@ int run_tto_loop(aicore_querysplat_ctx* ctx,
                              ctx->enc_out.cached_tokens.data(),
                              ctx->r_frames.data(), ctx->r_plucker.data(),
                              ctx->tto_lr)) {
+        // sh>0 checkpoints are rejected earlier in this function, so a
+        // tto_begin failure here is an allocation/session problem (the
+        // backward graph can exceed 24 GB devices at 512x512); the
+        // underlying ggml OOM line is already in the task log.
         ctx->last_error =
-                "TTO session init failed (sh>0 checkpoints are "
-                "unsupported by the official TTO path)";
+                "TTO session init failed (backward-graph allocation; see "
+                "the task log — commonly device OOM at full resolution)";
         return -2;
     }
     qs::RenderConfig rcfg;

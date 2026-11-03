@@ -3076,13 +3076,26 @@ class InstantMeshProbeTests(unittest.TestCase):
         _, specs, _, _ = self.expand_instantmesh(True)
         for spec in specs:
             with self.subTest(scenario=spec.scenario_id):
+                # Every pipeline gate must anchor on a reference attestation
+                # metric: probe_invariant rows require
+                # independent_reference_complete, upstream rows require
+                # reference_authenticated. An unattested run - the probe
+                # reports the attestation as 0, or omits it - can never
+                # pass the gate, whichever framework the row uses.
+                required = spec.accuracy["require_metrics"]
+                self.assertTrue(
+                    required,
+                    "gate must require a reference attestation metric")
+                name = required[0]
                 metrics, _ = VALIDATE_ALL.parse_output(
-                    '{"independent_reference_complete":0,"total_ms":10}', "generic",
+                    '{"independent_reference_complete":0,'
+                    '"reference_authenticated":0,"total_ms":10}', "generic",
                     Path("/nonexistent/instantmesh-probe.json"),
                     VALIDATE_ALL.gate_metric_names(spec.accuracy))
-                failures = VALIDATE_ALL.evaluate_accuracy_gate(spec.accuracy, metrics, "cpu")
+                failures = VALIDATE_ALL.evaluate_accuracy_gate(
+                    spec.accuracy, metrics, "cpu")
                 self.assertTrue(failures)
-                self.assertTrue(any("independent_reference_complete" in failure for failure in failures))
+                self.assertTrue(any(name in failure for failure in failures))
 
     def test_public_timing_bits_not_progress_callback_define_measurements(self):
         # Unexecuted serialization must not be marked valid even with nonzero storage; E2E is not a stage sum.

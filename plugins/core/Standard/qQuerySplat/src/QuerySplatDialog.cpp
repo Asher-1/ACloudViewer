@@ -250,12 +250,20 @@ QWidget* QuerySplatDialog::buildConfigPage() {
     m_threadsSpin = new QSpinBox(box);
     m_threadsSpin->setRange(0, 256);
     m_threadsSpin->setSpecialValueText(tr("Backend default"));
+    m_threadsSpin->setToolTip(
+            tr("CPU worker threads for CPU inference. 0 = backend default\n"
+               "(ggml picks the thread count); 1-256 pins an explicit\n"
+               "limit. Ignored by GPU backends."));
     form->addRow(tr("CPU threads"), m_threadsSpin);
 
     m_imageSizeSpin = new QSpinBox(box);
     m_imageSizeSpin->setRange(0, 2048);
     m_imageSizeSpin->setSingleStep(32);
     m_imageSizeSpin->setSpecialValueText(tr("Checkpoint resolution"));
+    m_imageSizeSpin->setToolTip(
+            tr("Square processing resolution fed to the network. 0 = the\n"
+               "resolution stored in the decoder checkpoint (512 for the\n"
+               "paper checkpoint); other values override it explicitly."));
     form->addRow(tr("Image size"), m_imageSizeSpin);
 
     m_opacitySpin = new QDoubleSpinBox(box);
@@ -276,6 +284,18 @@ QWidget* QuerySplatDialog::buildConfigPage() {
     form->addRow(tr("Render background"), m_bgSpin);
 
     m_ttoCheck = new QCheckBox(tr("Test-time optimization (TTO)"), box);
+    m_ttoCheck->setToolTip(
+            tr("Optional refinement after the feed-forward prediction: the\n"
+               "gaussians are rendered with the gsplat rasterizer and\n"
+               "compared against the input views with an L1 + SSIM + LPIPS\n"
+               "loss, then updated by gradient descent for the given\n"
+               "number of steps (needs the lpips-vgg-f32 model). Sharper\n"
+               "results at roughly one render + backward pass per step.\n"
+               "The backward graph is sized by the checkpoint's 8192\n"
+               "gaussian tokens (resolution-independent) and can exceed a\n"
+               "24 GB GPU at 512x512 — CPU or a larger device then. Upstream\n"
+               "default is off; the refined gaussians replace the\n"
+               "feed-forward ones in every output."));
     form->addRow(QString(), m_ttoCheck);
     m_ttoStepsSpin = new QSpinBox(box);
     m_ttoStepsSpin->setRange(1, 500);

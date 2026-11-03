@@ -180,6 +180,12 @@ struct CommandQuerySplatPredict : public ccCommandLineInterface::Command {
                                              s.args.toFloat("TTO_LR", 5e-3f));
         aicore_querysplat_options_set_tto_lpips_weight(
                 opts, s.args.toFloat("TTO_LPIPS", 0.05f));
+        // record the configured step count on the context (info JSON) even
+        // though run_tto takes the authoritative count per call
+        if (s.args.toBool("TTO", false)) {
+            aicore_querysplat_options_set_tto_steps(
+                    opts, s.args.toInt("TTO_STEPS", 20));
+        }
         aicore_querysplat_options_set_opacity_threshold(
                 opts, s.args.toFloat("OPACITY_THRESHOLD", 0.05f));
         if (!s.args.str("STAGE_DUMP_DIR").isEmpty()) {
@@ -262,6 +268,40 @@ struct CommandQuerySplatPredict : public ccCommandLineInterface::Command {
                     double(aicore_querysplat_result_gaussian_count(ctx));
             row["gaussian_stride"] =
                     aicore_querysplat_result_gaussian_stride(ctx);
+
+            // optional TTO refinement against the predicted input view; the
+            // refined gaussians replace the feed-forward ones inside the ctx,
+            // so every export below reflects the optimization (the gaussian
+            // count itself is unchanged)
+            if (s.args.toBool("TTO", false)) {
+                const int ttoSteps = s.args.toInt("TTO_STEPS", 20);
+                aicore_querysplat_tto_step* losses = nullptr;
+                int32_t n_losses = 0;
+                const float* tto_g = nullptr;
+                int64_t tto_n = 0;
+                const int trc = aicore_querysplat_run_tto(
+                        ctx, ttoSteps, &losses, &n_losses, &tto_g, &tto_n);
+                if (trc != 0) {
+                    ++failed;
+                    const char* err = aicore_querysplat_last_error(ctx);
+                    row["status"] = QStringLiteral("tto_failed");
+                    row["error"] = err ? QString::fromUtf8(err) : QString();
+                    rows.append(row);
+                    if (!s.continueOnError) break;
+                    continue;
+                }
+                QJsonArray lossRows;
+                for (int32_t i = 0; i < n_losses; ++i) {
+                    QJsonObject l;
+                    l["step"] = i + 1;
+                    l["l1"] = double(losses[i].l1);
+                    l["ssim"] = double(losses[i].ssim);
+                    l["lpips"] = double(losses[i].lpips);
+                    lossRows.append(l);
+                }
+                row["tto_steps"] = ttoSteps;
+                row["tto_losses"] = lossRows;
+            }
 
             if (s.args.toBool("EXPORT_PLY", true)) {
                 const QString ply = QDir(s.outDir).filePath(
