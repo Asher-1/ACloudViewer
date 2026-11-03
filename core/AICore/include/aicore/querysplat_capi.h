@@ -93,6 +93,17 @@ AICORE_CAPI void aicore_querysplat_options_set_tto_lpips_weight(
  *  --gaussian_save_opacity_threshold). */
 AICORE_CAPI void aicore_querysplat_options_set_opacity_threshold(
         aicore_querysplat_options* opts, float threshold);
+/** TTO step checkpoints whose gaussians are also saved as PLYs (the
+ *  official --tto_save_step): 0 = the feed-forward seed, 1..n = after each
+ *  AdamW step. Steps outside a later run_tto(n_steps) range are ignored.
+ *  NULL steps / n <= 0 clears the list. Requires snapshot_dir. */
+AICORE_CAPI void aicore_querysplat_options_set_tto_snapshot_steps(
+        aicore_querysplat_options* opts, const int32_t* steps, int32_t n);
+/** Directory for the TTO step-checkpoint PLYs (the official
+ *  --tto_save_step output; files are named gaussians_tto_step%04d.ply).
+ *  NULL/empty (default) disables the snapshots. */
+AICORE_CAPI void aicore_querysplat_options_set_tto_snapshot_dir(
+        aicore_querysplat_options* opts, const char* dir);
 /** Log level: 0=DEBUG, 1=INFO, 2=WARN, 3=ERROR (default 1). */
 AICORE_CAPI void aicore_querysplat_options_set_log_level(
         aicore_querysplat_options* opts, int log_level);
@@ -274,6 +285,23 @@ AICORE_CAPI int aicore_querysplat_export_gaussians_ply(
  *  aicore_querysplat_free_buffer. NULL on failure (inspect last_error). */
 AICORE_CAPI char* aicore_querysplat_export_cameras_json(
         const aicore_querysplat_ctx* ctx);
+
+/** Tensor-format companion of export_cameras_json (the official
+ *  save_predicted_input_cameras .npz): members cam_view/w2c/c2w {V,4,4},
+ *  intrinsics {V,4}, pose_enc {V,9}, all little-endian f32. Uncompressed
+ *  store-method ZIP of .npy members (numpy.load compatible). Returns 0 on
+ *  success, -1 on invalid arguments, -2 when no result is present, -3 on
+ *  I/O failure. */
+AICORE_CAPI int aicore_querysplat_export_cameras_npz(
+        const aicore_querysplat_ctx* ctx, const char* path);
+
+/** Raw VGGT input depths + confidence as an .npz (the official
+ *  save_vggt_input_depths tensor payload): members depth/depth_conf
+ *  {V,H,W} plus cam_view/intrinsics/pose_enc as in the cameras export.
+ *  Returns 0 on success, -1 on invalid arguments, -2 when no result is
+ *  present, -3 on I/O failure. */
+AICORE_CAPI int aicore_querysplat_export_input_depths_npz(
+        const aicore_querysplat_ctx* ctx, const char* path);
 
 /** Reconstructs a colored point cloud from the most recent depth maps
  *  (save_vggt_depth_pointcloud semantics): up to target_points samples

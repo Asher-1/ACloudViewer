@@ -1010,7 +1010,15 @@ ggml_tensor* tto_gelu_deriv(ggml_context* ctx,
 // linear backward: d_x = W^T . d_y. The contraction axis is Cout on both
 // sides: A = cont(transpose(w)) {Cout,Cin} (cont clears the transposed flag
 // — mul_mat asserts on it), B = dy {Cout,T} -> {Cin,T}.
+// Non-f32 weights are cast to F32 first: mul_mat(quantized, x) computes
+// dequant(W).x, so dequant(W)^T . d_y IS the exact VJP — and the ggml
+// 0.27 CPU dup kernel on a TRANSPOSED quantized tensor segfaults / emits
+// garbage (micro-repro, 2026-11-03), which poisoned every TTO memory
+// gradient. The f32 dup path is the well-trodden one, and under
+// f32_accuracy the forward's lin() already computes with f32-cast weights,
+// so the backward now consumes the same effective weights.
 ggml_tensor* tto_lin_bwd(ggml_context* ctx, ggml_tensor* w, ggml_tensor* dy) {
+    if (w->type != GGML_TYPE_F32) w = ggml_cast(ctx, w, GGML_TYPE_F32);
     return ggml_mul_mat(ctx, ggml_cont(ctx, ggml_transpose(ctx, w)), dy);
 }
 
@@ -1614,64 +1622,71 @@ bool QuerySplatDecoder::tto_backward(const float* d_deconv,
     const float b2h = 1.0f / (1.0f - std::pow(b2, (float)(step + 1)));
     const float params[7] = {m.lr_cur, b1, b2, eps, 0.0f, b1h, b2h};
     ggml_backend_tensor_set(m.adamw_params, params, 0, sizeof(params));
+    // TEMP-DIAG(NaN-bisect): entry state BEFORE the graph compute. mem,
+    // adamw_params, d_deconv_in and d_color_in are persistent tbuf tensors,
+    // so reading them here is aliasing-safe (unlike post-compute reads of
+    // gallocr scratch, whose buffers get reused by later nodes).
+    {
+        auto finite_probe = [](ggml_tensor* t) {
+            std::vector<float> v(ggml_nelements(t));
+            ggml_backend_tensor_get(t, v.data(), 0,
+                                    v.size() * sizeof(float));
+            for (float x : v) {
+                if (!std::isfinite(x)) return false;
+            }
+            return true;
+        };
+        const bool mem_ok = finite_probe(m.mem[0]) && finite_probe(m.mem[1]) &&
+                            finite_probe(m.mem[2]) && finite_probe(m.mem[3]);
+        const bool seed_ok =
+                finite_probe(m.d_deconv_in) && finite_probe(m.d_color_in);
+        // Silent on the healthy path (the probes exist for the failure
+        // mode below); anomalies log at error level with the full state.
+        float ap[7];
+        ggml_backend_tensor_get(m.adamw_params, ap, 0, sizeof(ap));
+        if (!mem_ok || !seed_ok) {
+            log_error(
+                    "tto-entry: mem_finite=%d seeds_finite=%d "
+                    "adamw_params=[%g,%g,%g,%g,%g,%g,%g]",
+                    mem_ok ? 1 : 0, seed_ok ? 1 : 0, ap[0], ap[1], ap[2],
+                    ap[3], ap[4], ap[5], ap[6]);
+        }
+        if (!seed_ok) {
+            log_error(
+                    "tto-diag: gradient seeds (d_deconv_in/d_color_in) are "
+                    "non-finite ON ENTRY — the CPU-side loss/render/activate "
+                    "backward produced them, not the graph");
+        }
+    }
     if (!ggml_gallocr_alloc_graph(m.tb_galloc, m.tb_graph)) return false;
     if (ggml_backend_graph_compute(m.be.handle, m.tb_graph) !=
         GGML_STATUS_SUCCESS)
         return false;
-    // TEMP-DIAG(NaN-bisect): mem/params state ON ENTRY to graph B
+    // TEMP-DIAG(NaN-bisect): graph-B OUTPUT finiteness. probe_dmem[i] are
+    // ggml_set_output tensors, so gallocr keeps their buffers live for the
+    // whole compute — reading them after the graph is aliasing-safe. A scan
+    // over arbitrary interior nodes is NOT: gallocr reuses those buffers for
+    // later nodes, which reported phantom NaNs in unrelated ops (the earlier
+    // "CPY dec11.cross_qp.weight" red herring). Silent on the healthy path.
     {
-        std::vector<float> tm0(ggml_nelements(m.mem[0]));
-        ggml_backend_tensor_get(m.mem[0], tm0.data(), 0,
-                                tm0.size() * sizeof(float));
-        double m0 = 0;
-        bool mnan = false;
-        for (float x : tm0) {
-            if (!std::isfinite(x)) mnan = true;
-            m0 += x;
-        }
-        float ap[7];
-        ggml_backend_tensor_get(m.adamw_params, ap, 0, sizeof(ap));
-        log_info(
-                "tto-entry: mem0_sum=%.6f mem0_nan=%d "
-                "adamw_params=[%g,%g,%g,%g,%g,%g,%g]",
-                mnan ? 0.0 : m0, mnan ? 1 : 0, ap[0], ap[1], ap[2], ap[3],
-                ap[4], ap[5], ap[6]);
-    }
-    // TEMP-DIAG(NaN-bisect): report the FIRST graph-B node whose output is
-    // non-finite (topological order => the origin). Remove after the fix.
-    for (int ni = 0; ni < ggml_graph_n_nodes(m.tb_graph); ni++) {
-        ggml_tensor* node = ggml_graph_node(m.tb_graph, ni);
-        if (node->type != GGML_TYPE_F32 || ggml_nelements(node) == 0) continue;
-        std::vector<float> v(ggml_nelements(node));
-        ggml_backend_tensor_get(node, v.data(), 0, v.size() * sizeof(float));
-        bool bad = false;
-        for (float x : v) {
-            if (!std::isfinite(x)) {
-                bad = true;
-                break;
+        auto finite_probe = [](ggml_tensor* t) {
+            std::vector<float> v(ggml_nelements(t));
+            ggml_backend_tensor_get(t, v.data(), 0,
+                                    v.size() * sizeof(float));
+            for (float x : v) {
+                if (!std::isfinite(x)) return false;
+            }
+            return true;
+        };
+        for (int i = 0; i < 4; i++) {
+            if (!finite_probe(m.probe_dmem[i])) {
+                log_error(
+                        "tto-diag: mem gradient dmem[%d] non-finite after "
+                        "graph B (seeds were finite) — bug inside the "
+                        "recompute/backward graph",
+                        i);
             }
         }
-        if (!bad) continue;
-        auto src_state = [](ggml_tensor* t) {
-            if (!t) return std::string("none");
-            if (t->type != GGML_TYPE_F32) return std::string("non-f32");
-            std::vector<float> sv(ggml_nelements(t));
-            ggml_backend_tensor_get(t, sv.data(), 0, sv.size() * sizeof(float));
-            for (float x : sv)
-                if (!std::isfinite(x)) return std::string("NONFINITE");
-            return std::string("finite");
-        };
-        log_error(
-                "tto-diag: first non-finite node #%d op=%s name=%s "
-                "ne=%lldx%lldx%lldx%lld src0=%s src1=%s src2=%s",
-                ni, ggml_op_name(node->op),
-                node->name[0] ? node->name : "(unnamed)",
-                (long long)node->ne[0], (long long)node->ne[1],
-                (long long)node->ne[2], (long long)node->ne[3],
-                src_state(node->src[0]).c_str(),
-                src_state(node->src[1]).c_str(),
-                src_state(node->src[2]).c_str());
-        break;
     }
     // Safety invariant: the TTO memory must stay finite. A non-finite
     // gradient here means the decoder-backward graph misbehaves on this

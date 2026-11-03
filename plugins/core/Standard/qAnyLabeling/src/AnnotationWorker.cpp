@@ -16,6 +16,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <limits>
+#include <memory>
 #include <vector>
 
 #include "AnnotationSemantic.h"
@@ -1234,10 +1235,10 @@ void AnnotationWorker::infer(const QString& modelPath,
             if (result.error.isEmpty())
                 result.error = tr("RAM inference failed");
         } else {
-            const QSet<QString> deleted(prompt.ramDeleteTags.cbegin(),
-                                        prompt.ramDeleteTags.cend());
-            const QSet<QString> retained(prompt.ramFilterTags.cbegin(),
-                                         prompt.ramFilterTags.cend());
+            const QSet<QString> deleted(
+                    qtCompatQSetFromList(prompt.ramDeleteTags));
+            const QSet<QString> retained(
+                    qtCompatQSetFromList(prompt.ramFilterTags));
             for (size_t i = 0; i < raw->tag_count; ++i) {
                 const auto& t = raw->tags[i];
                 if (!t.selected || !t.name) continue;
@@ -2026,10 +2027,10 @@ void AnnotationWorker::infer(const QString& modelPath,
         } else {
             // O(boxes) calls, one transient crop: upstream truncates endpoints
             // to integers and uses half-open NumPy image[y1:y2, x1:x2].
-            const QSet<QString> deleted(prompt.ramDeleteTags.cbegin(),
-                                        prompt.ramDeleteTags.cend());
-            const QSet<QString> retained(prompt.ramFilterTags.cbegin(),
-                                         prompt.ramFilterTags.cend());
+            const QSet<QString> deleted(
+                    qtCompatQSetFromList(prompt.ramDeleteTags));
+            const QSet<QString> retained(
+                    qtCompatQSetFromList(prompt.ramFilterTags));
             for (auto& shape : result.shapes) {
                 const QRectF bounds = QPolygonF(shape.points).boundingRect();
                 const int x1 = std::clamp(int(bounds.left()), 0, image.width()),

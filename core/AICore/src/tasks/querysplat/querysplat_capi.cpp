@@ -36,6 +36,7 @@
 #include "querysplat_graph.hpp"
 #include "querysplat_log.hpp"
 #include "querysplat_lpips_graph.hpp"
+#include "querysplat_npz.hpp"
 #include "querysplat_ply.hpp"
 #include "querysplat_preprocess.hpp"
 #include "querysplat_rasterizer.hpp"
@@ -75,6 +76,9 @@ struct aicore_querysplat_options {
     float opacity_threshold = 0.05f;
     int log_level = 1;
     std::string dump_dir;
+    // --tto_save_step parity: PLY checkpoints at these TTO steps
+    std::vector<int32_t> tto_snapshot_steps;
+    std::string tto_snapshot_dir;
 };
 
 // One context: encoder facade + decoder graph + the context-owned result
@@ -125,6 +129,9 @@ struct aicore_querysplat_ctx {
     // TTO store
     std::vector<aicore_querysplat_tto_step> tto_losses;
     std::vector<float> tto_gaussians_store;
+    // --tto_save_step snapshot config (resolved at load)
+    std::vector<int32_t> tto_snapshot_steps;
+    std::string tto_snapshot_dir;
     // depth-point-cloud store
     std::vector<float> pc_xyz;
     std::vector<unsigned char> pc_rgb;
@@ -283,6 +290,40 @@ int run_tto_loop(aicore_querysplat_ctx* ctx,
 
     ctx->tto_losses.clear();
     ctx->tto_losses.reserve(n_steps);
+    // --tto_save_step parity: PLY checkpoints (0 = feed-forward seed,
+    // 1..n = the state evaluated at each step). Best-effort exports: a
+    // write failure is logged, the optimization itself is unaffected.
+    const bool snap_enabled =
+            !ctx->tto_snapshot_steps.empty() && !ctx->tto_snapshot_dir.empty();
+    auto want_snapshot = [&](int step) {
+        return snap_enabled && std::find(ctx->tto_snapshot_steps.begin(),
+                                         ctx->tto_snapshot_steps.end(),
+                                         step) !=
+               ctx->tto_snapshot_steps.end();
+    };
+    auto save_step_ply = [&](const qs::GaussianOutput& g, int step) {
+        char name[64];
+        std::snprintf(name, sizeof(name), "gaussians_tto_step%04d.ply", step);
+        const std::string path = ctx->tto_snapshot_dir + "/" + name;
+        if (qs::save_gaussian_ply(g, path.c_str(), ctx->opacity_threshold)) {
+            qs::log_info("tto snapshot: step %d -> %s", step, path.c_str());
+        } else {
+            qs::log_error("tto snapshot write failed: %s", path.c_str());
+        }
+    };
+    if (want_snapshot(0)) {
+        qs::GaussianOutput seed;
+        seed.N = ctx->dec_out.N;
+        seed.color_dim = ctx->dec_out.color_dim;
+        seed.data = ctx->dec_out.gaussians;
+        // save_gaussian_ply indexes g.opacity per element — the seed view
+        // must fill it exactly like the per-step path below (an empty
+        // vector is an out-of-bounds read).
+        seed.opacity.resize((size_t)seed.N);
+        for (int64_t i = 0; i < seed.N; i++)
+            seed.opacity[(size_t)i] = seed.data[(size_t)i * stride + 3];
+        save_step_ply(seed, 0);
+    }
     for (int step = 1; step <= n_steps; step++) {
         if (aicore_cancel_requested()) {
             ctx->last_error = "cancelled";
@@ -302,6 +343,7 @@ int run_tto_loop(aicore_querysplat_ctx* ctx,
         g.opacity.resize((size_t)g.N);
         for (int64_t i = 0; i < g.N; i++)
             g.opacity[(size_t)i] = g.data[(size_t)i * stride + 3];
+        if (want_snapshot(step)) save_step_ply(g, step);
         qs::RenderedViews views =
                 qs::render_gaussians(g, ctx->r_cams.w2c.data(),
                                      ctx->r_cams.intrinsics.data(), S, rcfg);
@@ -442,6 +484,22 @@ AICORE_CAPI void aicore_querysplat_options_set_opacity_threshold(
         ((aicore_querysplat_options*)opts)->opacity_threshold = threshold;
 }
 
+AICORE_CAPI void aicore_querysplat_options_set_tto_snapshot_steps(
+        aicore_querysplat_options* opts, const int32_t* steps, int32_t n) {
+    if (!opts) return;
+    auto* o = (aicore_querysplat_options*)opts;
+    o->tto_snapshot_steps.clear();
+    if (steps && n > 0)
+        o->tto_snapshot_steps.assign(steps, steps + n);
+}
+
+AICORE_CAPI void aicore_querysplat_options_set_tto_snapshot_dir(
+        aicore_querysplat_options* opts, const char* dir) {
+    if (opts)
+        ((aicore_querysplat_options*)opts)->tto_snapshot_dir =
+                dir ? dir : "";
+}
+
 AICORE_CAPI void aicore_querysplat_options_set_log_level(
         aicore_querysplat_options* opts, int log_level) {
     if (opts && log_level >= 0 && log_level <= 3)
@@ -489,6 +547,8 @@ AICORE_CAPI aicore_querysplat_ctx* aicore_querysplat_load_opts(
     ctx->opacity_threshold = o.opacity_threshold;
     ctx->log_level = o.log_level;
     ctx->dump_dir = o.dump_dir;
+    ctx->tto_snapshot_steps = o.tto_snapshot_steps;
+    ctx->tto_snapshot_dir = o.tto_snapshot_dir;
 
     map_anything::set_log_level(
             (map_anything::LogLevel)std::min(3, std::max(0, o.log_level)));
@@ -809,7 +869,13 @@ AICORE_CAPI int aicore_querysplat_run_tto(
         }
     }
     const int rc = run_tto_loop(ctx, (int)n_steps, lpips);
-    if (rc != 0) return rc;
+    if (rc != 0) {
+        // release the TTO graph/optimizer state (up to ~24 GB of device
+        // memory) so the context stays usable for plain runs and the next
+        // TTO attempt starts from a clean session
+        ctx->dec->tto_end();
+        return rc;
+    }
     ctx->tto_gaussians_store = ctx->dec_out.gaussians;
     *out_losses = ctx->tto_losses.data();
     *out_n_losses = (int32_t)ctx->tto_losses.size();
@@ -859,6 +925,56 @@ AICORE_CAPI char* aicore_querysplat_export_cameras_json(
     }
     json << "]}";
     return dup_cstr(json.str());
+}
+
+AICORE_CAPI int aicore_querysplat_export_cameras_npz(
+        const aicore_querysplat_ctx* ctx, const char* path) {
+    if (!ctx || !path || !*path) return -1;
+    if (!ctx->has_result) return -2;
+    const int64_t V = ctx->r_views;
+    // cam_view is the TRANSPOSED OpenCV w2c per view (the official payload
+    // key); the other members carry the stored layout directly.
+    std::vector<float> cam_view(size_t(V) * 16);
+    for (int64_t v = 0; v < V; v++) {
+        const float* w = &ctx->r_cams.w2c[size_t(v) * 16];
+        float* c = &cam_view[size_t(v) * 16];
+        for (int r = 0; r < 4; r++)
+            for (int k = 0; k < 4; k++) c[r * 4 + k] = w[k * 4 + r];
+    }
+    std::vector<qs::NpzArray> arrays = {
+            {"cam_view", {V, 4, 4}, cam_view.data(), V * 16},
+            {"w2c", {V, 4, 4}, ctx->r_cams.w2c.data(), V * 16},
+            {"c2w", {V, 4, 4}, ctx->r_cams.c2w.data(), V * 16},
+            {"intrinsics", {V, 4}, ctx->r_cams.intrinsics.data(), V * 4},
+            {"pose_enc", {V, 9}, ctx->r_pose_store.data(), V * 9},
+    };
+    return qs::write_npz(path, arrays) ? 0 : -3;
+}
+
+AICORE_CAPI int aicore_querysplat_export_input_depths_npz(
+        const aicore_querysplat_ctx* ctx, const char* path) {
+    if (!ctx || !path || !*path) return -1;
+    if (!ctx->has_result) return -2;
+    const int64_t V = ctx->r_views, H = ctx->r_height, W = ctx->r_width;
+    const int64_t plane = V * H * W;
+    if (int64_t(ctx->enc_out.depth.size()) < plane ||
+        int64_t(ctx->enc_out.depth_conf.size()) < plane)
+        return -2;
+    std::vector<float> cam_view(size_t(V) * 16);
+    for (int64_t v = 0; v < V; v++) {
+        const float* w = &ctx->r_cams.w2c[size_t(v) * 16];
+        float* c = &cam_view[size_t(v) * 16];
+        for (int r = 0; r < 4; r++)
+            for (int k = 0; k < 4; k++) c[r * 4 + k] = w[k * 4 + r];
+    }
+    std::vector<qs::NpzArray> arrays = {
+            {"depth", {V, H, W}, ctx->enc_out.depth.data(), plane},
+            {"depth_conf", {V, H, W}, ctx->enc_out.depth_conf.data(), plane},
+            {"cam_view", {V, 4, 4}, cam_view.data(), V * 16},
+            {"intrinsics", {V, 4}, ctx->r_cams.intrinsics.data(), V * 4},
+            {"pose_enc", {V, 9}, ctx->r_pose_store.data(), V * 9},
+    };
+    return qs::write_npz(path, arrays) ? 0 : -3;
 }
 
 AICORE_CAPI int aicore_querysplat_depth_pointcloud(
