@@ -725,7 +725,7 @@ add_library(AICore_sam3_diagnostics STATIC
     # sam3.cpp discovers backends via ggml_common::load_backends_once() (same
     # mechanism as every other task), whose implementation calls into the
     # env-bridge TU — it must be part of this archive's closure.
-    ${AICORE_COMMON_SRC_DIR}/ggml_env_bridge.cpp
+    ${AICORE_BRIDGE_CLOSURE_SOURCES}
     # sam3.cpp holds its backend through aicore::runtime::BackendLease
     # (acquire_backend_lease). libAICore hides all C++ symbols, so the
     # registry TU defining those symbols must be part of this archive's
@@ -802,7 +802,7 @@ add_executable(test_instantmesh_components instantmesh/test_instantmesh_componen
     ../src/tasks/instantmesh/dino.cpp ../src/tasks/instantmesh/lrm_transformer.cpp
     ../src/tasks/instantmesh/synthesizer.cpp
     ${AICORE_COMMON_SRC_DIR}/ggml_backend_registry.cpp
-    ${AICORE_COMMON_SRC_DIR}/ggml_env_bridge.cpp
+    ${AICORE_BRIDGE_CLOSURE_SOURCES}
     ${AICORE_COMMON_SRC_DIR}/runtime_capi.cpp
     ${AICORE_COMMON_SRC_DIR}/backend_capi.cpp)
 target_include_directories(test_instantmesh_components PRIVATE
@@ -854,7 +854,7 @@ endforeach()
 add_executable(test_instantmesh_dino_convolution instantmesh/test_instantmesh_dino_convolution.cpp
     ../src/tasks/instantmesh/gguf_io.cpp
     ${AICORE_COMMON_SRC_DIR}/ggml_backend_registry.cpp
-    ${AICORE_COMMON_SRC_DIR}/ggml_env_bridge.cpp)
+    ${AICORE_BRIDGE_CLOSURE_SOURCES})
 target_include_directories(test_instantmesh_dino_convolution PRIVATE
     ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../src ${GGML_INCLUDE_DIRS})
 target_link_libraries(test_instantmesh_dino_convolution PRIVATE
@@ -873,7 +873,7 @@ endif()
 add_executable(test_instantmesh_vae_convolution instantmesh/test_instantmesh_vae_convolution.cpp
     ../src/tasks/instantmesh/gguf_io.cpp
     ${AICORE_COMMON_SRC_DIR}/ggml_backend_registry.cpp
-    ${AICORE_COMMON_SRC_DIR}/ggml_env_bridge.cpp)
+    ${AICORE_BRIDGE_CLOSURE_SOURCES})
 target_include_directories(test_instantmesh_vae_convolution PRIVATE
     ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../src ${GGML_INCLUDE_DIRS})
 target_link_libraries(test_instantmesh_vae_convolution PRIVATE
@@ -891,7 +891,7 @@ endif()
 add_executable(test_instantmesh_unet_convolution instantmesh/test_instantmesh_vae_convolution.cpp
     ../src/tasks/instantmesh/gguf_io.cpp
     ${AICORE_COMMON_SRC_DIR}/ggml_backend_registry.cpp
-    ${AICORE_COMMON_SRC_DIR}/ggml_env_bridge.cpp)
+    ${AICORE_BRIDGE_CLOSURE_SOURCES})
 target_compile_definitions(test_instantmesh_unet_convolution PRIVATE AICORE_TEST_UNET_CONV=1)
 target_include_directories(test_instantmesh_unet_convolution PRIVATE
     ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../src ${GGML_INCLUDE_DIRS})
@@ -910,7 +910,7 @@ endif()
 add_executable(test_instantmesh_vae_stages instantmesh/test_instantmesh_vae_stages.cpp
     ../src/tasks/instantmesh/gguf_io.cpp
     ${AICORE_COMMON_SRC_DIR}/ggml_backend_registry.cpp
-    ${AICORE_COMMON_SRC_DIR}/ggml_env_bridge.cpp)
+    ${AICORE_BRIDGE_CLOSURE_SOURCES})
 target_include_directories(test_instantmesh_vae_stages PRIVATE
     ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../src ${GGML_INCLUDE_DIRS})
 target_link_libraries(test_instantmesh_vae_stages PRIVATE

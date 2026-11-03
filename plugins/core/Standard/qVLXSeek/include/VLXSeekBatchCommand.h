@@ -95,19 +95,23 @@ struct CommandVlxSeekRun : public ccCommandLineInterface::Command {
         settings.device = s.args.str("DEVICE", s.device);
         settings.threads = s.threads;
         settings.maxNewTokens = s.args.toInt("MAX_NEW_TOKENS", 1024);
-        if (settings.text.isEmpty() && settings.task != "vqa") {
+        // Mirror the runtime contract up front: text is consumed by the
+        // detection/grounding/counting/reasoning/vqa templates; the region
+        // tasks fill their template slot with region markers instead, so
+        // only target indexes are required there.
+        const bool regionTask =
+                settings.task == QStringLiteral("brief_region_caption") ||
+                settings.task == QStringLiteral("region_ocr");
+        if (settings.text.isEmpty() && settings.task != "vqa" && !regionTask) {
             return cmd.error(QStringLiteral("TEXT is required for task %1")
                                      .arg(settings.task));
         }
         {
-            // Mirror the runtime contract up front: the region tasks
-            // hard-reject empty target lists, so fail before model load.
+            // The runtime hard-rejects region tasks with empty target
+            // lists — fail before the model load, not inside inference.
             QString targetsError;
             const QVector<int32_t> targets = VLXSeekHelpers::parseTargetIndexes(
                     settings.targetIndexes, &targetsError);
-            const bool regionTask =
-                    settings.task == QStringLiteral("brief_region_caption") ||
-                    settings.task == QStringLiteral("region_ocr");
             if (!targetsError.isEmpty()) return cmd.error(targetsError);
             if (regionTask && targets.isEmpty()) {
                 return cmd.error(

@@ -95,6 +95,13 @@ endif()
 
 file(GLOB AICORE_COMMON_SOURCES CONFIGURE_DEPENDS ${AICORE_COMMON_SRC_DIR}/*.cpp)
 file(GLOB AICORE_COMMON_HEADERS CONFIGURE_DEPENDS ${AICORE_COMMON_SRC_DIR}/*.hpp)
+# The env-bridge TU calls into the shared log-level accessor, so any target
+# that compiles the bridge by hand (instead of consuming AICORE_COMMON_SOURCES)
+# must enumerate the same closure; a plain bridge-only list stops linking at
+# the undefined aicore_get_log_level symbol.
+set(AICORE_BRIDGE_CLOSURE_SOURCES
+    ${AICORE_COMMON_SRC_DIR}/ggml_env_bridge.cpp
+    ${AICORE_COMMON_SRC_DIR}/aicore_log.cpp)
 file(GLOB DEPTH_SOURCES CONFIGURE_DEPENDS ${AICORE_DEPTH_SRC_DIR}/*.cpp)
 file(GLOB DEPTH_HEADERS CONFIGURE_DEPENDS ${AICORE_DEPTH_SRC_DIR}/*.hpp)
 file(GLOB GAUSSIAN_SOURCES CONFIGURE_DEPENDS ${AICORE_GAUSSIAN_SRC_DIR}/*.cpp)
@@ -904,8 +911,9 @@ add_executable(test_ocr_runtime tests/test_ocr_runtime.cpp
     # Blocked-layout island ops (routed by the CPU-session graph build).
     src/common/blocked_conv.cpp
     # Backend discovery helpers referenced by the probe (dynamic-loader
-    # backend registration lives in the env bridge).
-    src/common/ggml_env_bridge.cpp)
+    # backend registration lives in the env bridge; its log-forward callback
+    # needs the shared log-level accessor TU).
+    ${AICORE_BRIDGE_CLOSURE_SOURCES})
 target_include_directories(test_ocr_runtime PRIVATE
     ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/ocr
@@ -969,7 +977,7 @@ add_executable(test_table_runtime tests/test_table_runtime.cpp
     src/common/paddle_graph.cpp
     src/common/winograd.cpp
     src/common/blocked_conv.cpp
-    src/common/ggml_env_bridge.cpp)
+    ${AICORE_BRIDGE_CLOSURE_SOURCES})
 target_include_directories(test_table_runtime PRIVATE
     ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/ocr
