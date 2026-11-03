@@ -114,10 +114,11 @@ inline int prepare(const Path& root, bool dino, std::vector<Case>& cases) {
             if (const int status = load("dino_features.bin", 6 * 197 * 768, item.expected)) return status;
         } else {
             // dino_features.bin holds the six per-camera B=1 forwards
-            // concatenated; the reference triplanes were generated from
-            // view0's slice only (parity_lrm --reuse-dino dino_view0
-            // --batch 1), so the LRM cond below reads just that first
-            // 197-token view via cond_len=197.
+            // concatenated; the reference triplanes and the production
+            // pipeline both feed the FULL 1182-token condition sequence
+            // (6 views x 197) to the LRM (instantmesh_pipeline.cpp:
+            // n_cond = 6 * seq), so the component parity must use the
+            // same sequence.
             if (const int status = load("dino_features.bin", 6 * 197 * 768, item.image)) return status;
             if (const int status = load("triplanes.bin", 3 * 80 * 64 * 64, item.expected)) return status;
         }
@@ -261,7 +262,7 @@ inline int run(int argc, char** argv) {
         int seq = 0, hidden = 0, planes = 0, dimension = 0, h = 0, w = 0;
         using Buffer = std::unique_ptr<float, decltype(&std::free)>;
         Buffer output(dino ? instantmesh::dino_encode(dinoModel, item.image.data(), item.camera.data(), 6, 224, 224, &seq, &hidden)
-                           : instantmesh::lrm_transformer_forward(lrmModel, item.image.data(), 1, 197, &planes, &dimension, &h, &w), std::free);
+                           : instantmesh::lrm_transformer_forward(lrmModel, item.image.data(), 1, 1182, &planes, &dimension, &h, &w), std::free);
         if (!output || (dino ? seq != 197 || hidden != 768 : planes != 3 || dimension != 80 || h != 64 || w != 64)) return 1;
         const size_t parts = dino ? 6 : 3, count = item.expected.size() / parts;
         const QString component = dino ? "dino" : "lrm";

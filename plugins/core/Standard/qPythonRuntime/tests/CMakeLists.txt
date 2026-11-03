@@ -24,6 +24,14 @@ if(BUILD_UNIT_TESTS)
   endif()
   target_link_libraries(test_qpythonruntime_plugin_loading PRIVATE
     pybind11::embed CVPluginAPI CVPluginStub Qt::Widgets)
+  if(UNIX AND NOT APPLE)
+    # The test's dlopen/dlclose plugin probe needs libdl explicitly on the
+    # older GNU ld used by the focal lane (DT_NEEDED is not followed for
+    # symbols the object references directly); glibc >= 2.34 folds it into
+    # libc, but this lane must stay buildable on 2.31.
+    target_link_libraries(test_qpythonruntime_plugin_loading PRIVATE
+      ${CMAKE_DL_LIBS})
+  endif()
   cloudviewer_set_bin_runtime_output_directory(test_qpythonruntime_plugin_loading)
   add_test(NAME test_qpythonruntime_plugin_loading
     COMMAND test_qpythonruntime_plugin_loading $<TARGET_FILE:QPYTHONRUNTIME_PLUGIN>)

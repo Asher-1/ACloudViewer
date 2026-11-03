@@ -369,8 +369,7 @@ def manifest_catalog_drift(manifest: dict[str, Any], catalog_output: str,
     return drift
 
 
-def load_model_catalog(args: argparse.Namespace, manifest: dict[str, Any],
-                       selected: set[str]) -> list[ModelAsset]:
+def read_catalog_stdout(args: argparse.Namespace) -> str:
     binary = (args.catalog_binary.resolve() if args.catalog_binary else
               find_binary(args.build, "test_catalog_dump_urls"))
     if not binary.is_file():
@@ -390,7 +389,15 @@ def load_model_catalog(args: argparse.Namespace, manifest: dict[str, Any],
         detail = completed.stderr.strip() or completed.stdout.strip()
         raise RuntimeError(
             f"model catalog failed with code {completed.returncode}: {detail}")
-    drift = manifest_catalog_drift(manifest, completed.stdout, selected)
+    return completed.stdout
+
+
+def load_model_catalog(args: argparse.Namespace, manifest: dict[str, Any],
+                       selected: set[str],
+                       catalog_stdout: str | None = None) -> list[ModelAsset]:
+    if catalog_stdout is None:
+        catalog_stdout = read_catalog_stdout(args)
+    drift = manifest_catalog_drift(manifest, catalog_stdout, selected)
     if drift:
         raise ValueError("manifest model patterns match no catalog asset: " +
                          "; ".join(drift))
@@ -430,9 +437,65 @@ def load_model_catalog(args: argparse.Namespace, manifest: dict[str, Any],
                 published_tasks.add(task)
     catalog_selected = published_tasks | (selected - tasks_with_scenarios)
     return parse_catalog_output(
-        completed.stdout, catalog_selected,
+        catalog_stdout, catalog_selected,
         manifest_model_patterns(manifest, selected, full=full, tiered=tiered),
         task_light_patterns=None if full else light_patterns)
+
+
+def minimal_tier_narrow(manifest: dict[str, Any], catalog_stdout: str,
+                        selected: set[str], budget_bytes: int
+                        ) -> tuple[dict[str, Any], list[str]]:
+    """Default-tier selection: one cheapest runnable scenario per task.
+
+    A scenario's model cost is the summed catalog size of every row its
+    model_glob/covered_globs/required_globs match. for_each_model scenarios
+    iterate their whole model family, so they are not default-tier
+    candidates; a task without a bundle scenario, or whose cheapest scenario
+    still exceeds the model budget, is skipped entirely (reported) instead
+    of pulling unbounded downloads. --full and explicit --models/--scenarios
+    selections bypass this narrowing.
+    """
+    sizes: dict[str, int] = {}
+    for line in catalog_stdout.splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        sizes[str(row.get("relative_path", ""))] = int(row.get("size_bytes", 0))
+    scenarios_by_task: dict[str, list[dict[str, Any]]] = {}
+    for scenario in manifest["scenarios"]:
+        if (scenario["task"] in selected and not scenario.get("for_each_model")
+                and not scenario.get("local_only")):
+            scenarios_by_task.setdefault(scenario["task"], []).append(scenario)
+    chosen_ids: list[str] = []
+    skipped: list[str] = []
+    for task in sorted(selected):
+        candidates = scenarios_by_task.get(task, [])
+        if not candidates:
+            skipped.append(f"{task}: no bundle scenario runnable in the "
+                           "default tier")
+            continue
+        best, best_cost = None, None
+        for scenario in candidates:
+            patterns: list[str] = []
+            for key in ("model_glob", "covered_globs", "required_globs"):
+                values = scenario.get(key, [])
+                patterns += [values] if isinstance(values, str) else list(values)
+            cost = sum(size for relative, size in sizes.items()
+                       if any(fnmatch.fnmatchcase(relative, pattern)
+                              for pattern in patterns))
+            if best_cost is None or cost < best_cost:
+                best, best_cost = scenario, cost
+        if best_cost > budget_bytes:
+            skipped.append(
+                f"{task}: cheapest scenario {best['id']} needs "
+                f"{best_cost / (1 << 20):.0f} MiB of models (budget "
+                f"{budget_bytes / (1 << 20):.0f} MiB)")
+            continue
+        chosen_ids.append(best["id"])
+    narrowed = dict(manifest)
+    narrowed["scenarios"] = [s for s in manifest["scenarios"]
+                             if s["id"] in set(chosen_ids)]
+    return narrowed, skipped
 
 
 def parse_input_assets(manifest: dict[str, Any], selected: set[str],
@@ -2538,10 +2601,16 @@ def parse_args() -> argparse.Namespace:
                         help="override test_catalog_dump_urls executable")
     parser.add_argument("--backend", default="cuda")
     parser.add_argument("--full", action="store_true",
-                        help="run the complete matrix; the default light tier "
-                             "runs only the lightweight subset declared by "
-                             "tiered tasks (sam3/trellis) and skips their "
-                             "heavy scenarios")
+                        help="run the complete matrix (every catalog model "
+                             "variant; hundreds of GB of downloads); the "
+                             "default tier runs one minimal-cost scenario "
+                             "per task under the model budget below")
+    parser.add_argument("--model-budget-mib", type=int, default=500,
+                        help="default-tier model budget per task: a task "
+                             "whose cheapest runnable scenario still needs "
+                             "more model bytes than this is skipped with a "
+                             "reported reason instead of being downloaded "
+                             "(default 500)")
     parser.add_argument("--tasks", default="",
                         help="comma-separated subset; empty means every task")
     parser.add_argument("--scenarios", default="",
@@ -2718,8 +2787,19 @@ def main() -> int:
     manifest = select_scenarios(load_manifest(args.manifest, identity=manifest_identity), args.scenarios)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     selected = selected_tasks(manifest, args.tasks)
+    minimal_skipped: list[str] = []
+    catalog_stdout: str | None = None
+    if not args.full and not args.models and not args.scenarios:
+        # Default tier: one cheapest runnable scenario per task under the
+        # per-task model budget. --full and explicit --models/--scenarios
+        # selections bypass the narrowing entirely.
+        catalog_stdout = read_catalog_stdout(args)
+        manifest, minimal_skipped = minimal_tier_narrow(
+            manifest, catalog_stdout, selected,
+            max(0, args.model_budget_mib) << 20)
+        selected = {s["task"] for s in manifest["scenarios"]}
     try:
-        catalog = load_model_catalog(args, manifest, selected)
+        catalog = load_model_catalog(args, manifest, selected, catalog_stdout)
         if args.candidate_assets:
             candidate_bytes = args.candidate_assets.read_bytes()
             candidate_rows = json.loads(candidate_bytes)
@@ -2936,7 +3016,8 @@ def main() -> int:
         "cpu_backend_profiles": cpu_backend_profiles,
         "backend": args.backend,
         "profile": args.profile,
-        "tier": "full" if args.full else "light",
+        "tier": "full" if args.full else "minimal",
+        "minimal_skipped_tasks": minimal_skipped,
         "repeats": args.repeats,
         "warmup_runs": args.warmup_runs, "inference_runs": args.inference_runs,
         "threads": args.threads, "trellis_steps": args.trellis_steps,

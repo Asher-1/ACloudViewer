@@ -187,8 +187,41 @@ endfunction()
 # Qt and the vendored opencv resolved from their configure-time locations).
 # Offscreen variant: merges QT_QPA_PLATFORM into the same ENVIRONMENT value
 # (a second set_tests_properties would overwrite the first).
+function(cloudviewer_resolve_python_lib_dir out_var)
+    # pybind11::embed consumers resolve libpython at runtime from
+    # LD_LIBRARY_PATH, not from the link line: DT_NEEDED carries no path, so
+    # a build configured against a non-system interpreter (pyenv shim,
+    # conda) can be silently served the DISTRO libpython of the same ABI
+    # version by ldconfig at test time. The two builds share the ABI tag
+    # (e.g. two 3.12's) but not their site-packages, so the embedded
+    # interpreter reports "No module named 'numpy'" for packages that are
+    # installed in the build interpreter. Pin the interpreter the build
+    # actually linked by putting its library directory first.
+    # FindPython publishes the per-config library under internal names
+    # (_Python3_LIBRARY_RELEASE / _DEBUG) and only fills Python3_LIBRARY
+    # itself for single-config lookups; accept either spelling.
+    set(_cv_python_lib "")
+    foreach (_cv_candidate
+             "${Python3_LIBRARY}"
+             "${_Python3_LIBRARY_RELEASE}"
+             "${_Python3_LIBRARY_DEBUG}"
+             "${_Python3_LIBRARY}")
+        if (_cv_candidate)
+            set(_cv_python_lib "${_cv_candidate}")
+            break()
+        endif ()
+    endforeach ()
+    if (_cv_python_lib)
+        get_filename_component(_cv_python_lib_dir "${_cv_python_lib}" DIRECTORY)
+        set(${out_var} "${_cv_python_lib_dir}" PARENT_SCOPE)
+    else ()
+        set(${out_var} "" PARENT_SCOPE)
+    endif ()
+endfunction()
+
 function(cloudviewer_set_plugin_test_env_offscreen test_name)
     cloudviewer_resolve_qt_lib_dir(_qt_lib_dir)
+    cloudviewer_resolve_python_lib_dir(_cv_python_lib_dir)
     if (MSVC)
         # Windows PATH is semicolon-separated, so a raw $ENV{PATH} inside the
         # ENVIRONMENT value splits the ctest property list: every directory
@@ -201,12 +234,13 @@ function(cloudviewer_set_plugin_test_env_offscreen test_name)
                 ENVIRONMENT "QT_QPA_PLATFORM=offscreen;PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;${_cv_inherited_path}")
     else ()
         set_tests_properties(${test_name} PROPERTIES
-                ENVIRONMENT "QT_QPA_PLATFORM=offscreen;LD_LIBRARY_PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}:${_qt_lib_dir}:${CMAKE_BINARY_DIR}/external/lib:$ENV{LD_LIBRARY_PATH}")
+                ENVIRONMENT "QT_QPA_PLATFORM=offscreen;LD_LIBRARY_PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}:${_qt_lib_dir}:${CMAKE_BINARY_DIR}/external/lib:${_cv_python_lib_dir}:$ENV{LD_LIBRARY_PATH}")
     endif ()
 endfunction()
 
 function(cloudviewer_set_plugin_test_env test_name)
     cloudviewer_resolve_qt_lib_dir(_qt_lib_dir)
+    cloudviewer_resolve_python_lib_dir(_cv_python_lib_dir)
     if (MSVC)
         # Same Windows PATH escaping as the offscreen variant above: without
         # it the inherited PATH is truncated to its first fragment and any
@@ -217,7 +251,7 @@ function(cloudviewer_set_plugin_test_env test_name)
                 ENVIRONMENT "PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;${_cv_inherited_path}")
     else ()
         set_tests_properties(${test_name} PROPERTIES
-                ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}:${_qt_lib_dir}:${CMAKE_BINARY_DIR}/external/lib:$ENV{LD_LIBRARY_PATH}")
+                ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}:${_qt_lib_dir}:${CMAKE_BINARY_DIR}/external/lib:${_cv_python_lib_dir}:$ENV{LD_LIBRARY_PATH}")
     endif ()
 endfunction()
 

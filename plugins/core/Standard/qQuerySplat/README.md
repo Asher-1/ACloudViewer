@@ -19,11 +19,11 @@ Everything runs locally through `libAICore` — no Python at runtime.
    frames are byte-identical to the upstream QuerySplat eval inputs).
 3. Pick a decoder quantization tier (q8_0 is the recommended default; the
    VGGT-Omega encoder resolves from the shared MapAnything model cache).
-4. Optionally enable TTO (20 steps is the official default). Known issue:
-   TTO is currently reported as a clean error at runtime — the decoder
-   backward graph produces non-finite gradients on the pinned ggml 0.27.0
-   (upstream gates it on ggml 0.24); inference, rendering and exports are
-   unaffected.
+4. Optionally enable TTO (20 steps is the official default). The decoder
+   KV-memory backward runs on CPU today: the backward graph is sized by the
+   checkpoint's 8192 gaussian tokens (resolution-independent) and exceeds a
+   24 GB GPU at 512x512 — CUDA needs a larger device, CPU is slower but
+   fully functional (per-step L1/SSIM/LPIPS are logged and reported).
 5. **Run**: the plugin imports the gaussian centers + colors as a point
    cloud, the predicted cameras as camera sensors, the depth rasters and
    the gsplat renders as images, exports the standard 3DGS PLY, and writes
@@ -53,12 +53,21 @@ plugins.
 ```bash
 ACloudViewer -SILENT -QUERY_SPLAT \
     IMAGE img1.png IMAGE img2.png IMAGE img3.png IMAGE img4.png \
-    OUT_DIR ./out QUERY_SPLAT_HELP
+    OUT_DIR ./out HELP
 ```
 
-`HELP` prints the full option schema
-(`acloudviewer.aicore.batch/1`); the same schema is exposed through the
-JSON-RPC `aicore.batch` surface and the MCP tools.
+The batch default is one scene per IMAGE (batch processing); `MULTIVIEW 1`
+switches to the upstream `--images` semantics — all images form ONE
+multi-view scene with a single run and one export set. `EXPORT_CAMERAS 1`
+(default) writes the predicted cameras as JSON **and** NPZ per item;
+`EXPORT_INPUT_DEPTHS 1` adds the raw depth + confidence NPZ. With `TTO 1`,
+`TTO_SAVE_STEPS 0,5,10` + `TTO_SNAPSHOT_DIR <dir>` save the gaussian PLYs
+at those steps (`gaussians_tto_step%04d.ply`, step 0 = the feed-forward
+seed — the official `--tto_save_step`). The `HELP` schema (schema id
+`acloudviewer.aicore.batch/1`) is also exposed through the JSON-RPC
+`aicore.batch` surface and the MCP tools; note the console text routes
+through the application console, so the RESULT_JSON manifest is the
+machine-readable surface for headless consumers.
 
 ## Accuracy
 

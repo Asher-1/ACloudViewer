@@ -176,6 +176,14 @@ QWidget* QuerySplatDialog::buildInputPage() {
     auto* listColumn = new QVBoxLayout();
     m_imageList = new QListWidget(box);
     m_imageList->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    // All listed images form ONE multi-view scene (the upstream --images
+    // semantics): the worker issues a single run_images(S views) call, so
+    // 1 image = single-view prediction and N images = an S=N scene.
+    m_imageList->setToolTip(
+            tr("Every listed image is a view of the SAME scene: the run "
+               "feeds all of them to the network together (multi-view by "
+               "default, S = list size). Add 2+ overlapping views of one "
+               "scene for the best reconstruction."));
     // Same cap as the MapAnything input list: the fixed input area must not
     // squeeze the configuration scroll below its usable height.
     m_imageList->setMinimumHeight(96);
@@ -249,7 +257,10 @@ QWidget* QuerySplatDialog::buildConfigPage() {
 
     m_threadsSpin = new QSpinBox(box);
     m_threadsSpin->setRange(0, 256);
-    m_threadsSpin->setSpecialValueText(tr("Backend default"));
+    // The sentinel keeps the number in view: 0 IS the value (backend-
+    // picked threads); a bare "Backend default" read as a broken text
+    // field (user report 2026-11-03).
+    m_threadsSpin->setSpecialValueText(tr("Auto (0)"));
     m_threadsSpin->setToolTip(
             tr("CPU worker threads for CPU inference. 0 = backend default\n"
                "(ggml picks the thread count); 1-256 pins an explicit\n"
@@ -259,11 +270,13 @@ QWidget* QuerySplatDialog::buildConfigPage() {
     m_imageSizeSpin = new QSpinBox(box);
     m_imageSizeSpin->setRange(0, 2048);
     m_imageSizeSpin->setSingleStep(32);
-    m_imageSizeSpin->setSpecialValueText(tr("Checkpoint resolution"));
+    m_imageSizeSpin->setSpecialValueText(tr("Auto (512)"));
     m_imageSizeSpin->setToolTip(
             tr("Square processing resolution fed to the network. 0 = the\n"
-               "resolution stored in the decoder checkpoint (512 for the\n"
-               "paper checkpoint); other values override it explicitly."));
+               "resolution stored in the decoder checkpoint — 512 for the\n"
+               "released paper checkpoints (the number shown here); a\n"
+               "future checkpoint with a different stored size wins over\n"
+               "this label. Other values override it explicitly."));
     form->addRow(tr("Image size"), m_imageSizeSpin);
 
     m_opacitySpin = new QDoubleSpinBox(box);
