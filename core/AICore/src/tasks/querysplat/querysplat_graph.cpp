@@ -1629,8 +1629,7 @@ bool QuerySplatDecoder::tto_backward(const float* d_deconv,
     {
         auto finite_probe = [](ggml_tensor* t) {
             std::vector<float> v(ggml_nelements(t));
-            ggml_backend_tensor_get(t, v.data(), 0,
-                                    v.size() * sizeof(float));
+            ggml_backend_tensor_get(t, v.data(), 0, v.size() * sizeof(float));
             for (float x : v) {
                 if (!std::isfinite(x)) return false;
             }
@@ -1648,8 +1647,8 @@ bool QuerySplatDecoder::tto_backward(const float* d_deconv,
             log_error(
                     "tto-entry: mem_finite=%d seeds_finite=%d "
                     "adamw_params=[%g,%g,%g,%g,%g,%g,%g]",
-                    mem_ok ? 1 : 0, seed_ok ? 1 : 0, ap[0], ap[1], ap[2],
-                    ap[3], ap[4], ap[5], ap[6]);
+                    mem_ok ? 1 : 0, seed_ok ? 1 : 0, ap[0], ap[1], ap[2], ap[3],
+                    ap[4], ap[5], ap[6]);
         }
         if (!seed_ok) {
             log_error(
@@ -1671,8 +1670,7 @@ bool QuerySplatDecoder::tto_backward(const float* d_deconv,
     {
         auto finite_probe = [](ggml_tensor* t) {
             std::vector<float> v(ggml_nelements(t));
-            ggml_backend_tensor_get(t, v.data(), 0,
-                                    v.size() * sizeof(float));
+            ggml_backend_tensor_get(t, v.data(), 0, v.size() * sizeof(float));
             for (float x : v) {
                 if (!std::isfinite(x)) return false;
             }

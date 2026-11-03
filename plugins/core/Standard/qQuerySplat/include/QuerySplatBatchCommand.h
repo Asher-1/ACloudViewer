@@ -23,8 +23,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
-#include "ecvCommandLineInterface.h"
 #include "QtCompat.h"
+#include "ecvCommandLineInterface.h"
 
 #ifdef AICore_ENABLED
 #include <aicore/map_anything_capi.h>
@@ -287,10 +287,10 @@ struct CommandQuerySplatPredict : public ccCommandLineInterface::Command {
                         rows.append(row);
                         if (!s.continueOnError) aborted = true;
                     } else {
-                        cmd.print(QStringLiteral(
-                                          "[QUERY_SPLAT] unreadable image "
-                                          "skipped: %1")
-                                          .arg(image));
+                        cmd.print(
+                                QStringLiteral("[QUERY_SPLAT] unreadable image "
+                                               "skipped: %1")
+                                        .arg(image));
                     }
                     continue;
                 }
@@ -311,11 +311,10 @@ struct CommandQuerySplatPredict : public ccCommandLineInterface::Command {
             }
 
             const QString inputLabel =
-                    readable.size() == 1
-                            ? readable.first()
-                            : QStringLiteral("%1 (+%2 views)")
-                                      .arg(readable.first())
-                                      .arg(readable.size() - 1);
+                    readable.size() == 1 ? readable.first()
+                                         : QStringLiteral("%1 (+%2 views)")
+                                                   .arg(readable.first())
+                                                   .arg(readable.size() - 1);
 
             // the QImage buffers back the borrowed views for the call
             std::vector<aicore_image_view> views(owned.size());
@@ -327,8 +326,8 @@ struct CommandQuerySplatPredict : public ccCommandLineInterface::Command {
                 views[i].format = AICORE_IMAGE_RGB8;
             }
 
-            const int rc = aicore_querysplat_run_images(
-                    ctx, views.data(), int(views.size()));
+            const int rc = aicore_querysplat_run_images(ctx, views.data(),
+                                                        int(views.size()));
             if (rc != 0) {
                 ++failed;
                 const char* err = aicore_querysplat_last_error(ctx);
@@ -342,8 +341,7 @@ struct CommandQuerySplatPredict : public ccCommandLineInterface::Command {
             }
 
             const QString stem = uniqueStem(
-                    QFileInfo(readable.first()).completeBaseName(),
-                    &usedStems);
+                    QFileInfo(readable.first()).completeBaseName(), &usedStems);
             const int S = aicore_querysplat_result_view_count(ctx);
             const int W = aicore_querysplat_result_width(ctx);
             const int H = aicore_querysplat_result_height(ctx);

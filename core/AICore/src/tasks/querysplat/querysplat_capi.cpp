@@ -298,8 +298,7 @@ int run_tto_loop(aicore_querysplat_ctx* ctx,
     auto want_snapshot = [&](int step) {
         return snap_enabled && std::find(ctx->tto_snapshot_steps.begin(),
                                          ctx->tto_snapshot_steps.end(),
-                                         step) !=
-               ctx->tto_snapshot_steps.end();
+                                         step) != ctx->tto_snapshot_steps.end();
     };
     auto save_step_ply = [&](const qs::GaussianOutput& g, int step) {
         char name[64];
@@ -489,15 +488,13 @@ AICORE_CAPI void aicore_querysplat_options_set_tto_snapshot_steps(
     if (!opts) return;
     auto* o = (aicore_querysplat_options*)opts;
     o->tto_snapshot_steps.clear();
-    if (steps && n > 0)
-        o->tto_snapshot_steps.assign(steps, steps + n);
+    if (steps && n > 0) o->tto_snapshot_steps.assign(steps, steps + n);
 }
 
 AICORE_CAPI void aicore_querysplat_options_set_tto_snapshot_dir(
         aicore_querysplat_options* opts, const char* dir) {
     if (opts)
-        ((aicore_querysplat_options*)opts)->tto_snapshot_dir =
-                dir ? dir : "";
+        ((aicore_querysplat_options*)opts)->tto_snapshot_dir = dir ? dir : "";
 }
 
 AICORE_CAPI void aicore_querysplat_options_set_log_level(
