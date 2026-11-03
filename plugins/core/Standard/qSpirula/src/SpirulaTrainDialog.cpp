@@ -7,6 +7,8 @@
 
 #include "SpirulaTrainDialog.h"
 
+#include <QtCompat.h>
+
 #include <QDir>
 #include <QFileInfo>
 #include <QHBoxLayout>
@@ -20,8 +22,6 @@
 #include <QVBoxLayout>
 
 #include "SpirulaLocator.h"
-
-#include <QtCompat.h>
 
 SpirulaTrainDialog::SpirulaTrainDialog(QWidget* parent) : QDialog(parent) {
     setWindowTitle(tr("Spirula Studio — Headless Training"));

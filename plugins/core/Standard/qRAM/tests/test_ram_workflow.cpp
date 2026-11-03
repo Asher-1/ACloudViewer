@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <QtCompat.h>
+
 #include <QAction>
 #include <QApplication>
 #include <QCheckBox>
@@ -37,8 +39,6 @@
 #include <iostream>
 #include <memory>
 #include <vector>
-
-#include <QtCompat.h>
 
 #include "RAMDialog.h"
 #include "RAMVideoWidget.h"

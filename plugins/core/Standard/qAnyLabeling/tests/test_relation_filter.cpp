@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <QtCompat.h>
+
 #include <QApplication>
 #include <QComboBox>
 #include <QDoubleSpinBox>
@@ -17,8 +19,6 @@
 #include <cstdio>
 
 #include "RelationFilterWidget.h"
-
-#include <QtCompat.h>
 
 namespace {
 bool check(bool condition, const char* message) {

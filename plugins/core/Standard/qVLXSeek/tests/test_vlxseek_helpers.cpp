@@ -91,15 +91,15 @@ TEST(VLXSeekCatalog, CacheDirUnderDataRoot) {
 
 TEST(VLXSeekTargetIndexes, ParseValidLists) {
     QString error;
-    const QVector<int32_t> targets = VLXSeekHelpers::parseTargetIndexes(
-            QStringLiteral("2, 3"), &error);
+    const QVector<int32_t> targets =
+            VLXSeekHelpers::parseTargetIndexes(QStringLiteral("2, 3"), &error);
     EXPECT_TRUE(error.isEmpty());
     ASSERT_EQ(targets.size(), 2);
     EXPECT_EQ(targets[0], 2);
     EXPECT_EQ(targets[1], 3);
 
-    const QVector<int32_t> single = VLXSeekHelpers::parseTargetIndexes(
-            QStringLiteral("7"), &error);
+    const QVector<int32_t> single =
+            VLXSeekHelpers::parseTargetIndexes(QStringLiteral("7"), &error);
     EXPECT_TRUE(error.isEmpty());
     ASSERT_EQ(single.size(), 1);
     EXPECT_EQ(single[0], 7);
@@ -109,23 +109,22 @@ TEST(VLXSeekTargetIndexes, EmptyTextYieldsEmptyVector) {
     QString error;
     EXPECT_TRUE(
             VLXSeekHelpers::parseTargetIndexes(QString(), &error).isEmpty());
-    EXPECT_TRUE(VLXSeekHelpers::parseTargetIndexes(QStringLiteral(" , "),
-                                                   &error)
-                        .isEmpty());
+    EXPECT_TRUE(
+            VLXSeekHelpers::parseTargetIndexes(QStringLiteral(" , "), &error)
+                    .isEmpty());
     EXPECT_TRUE(error.isEmpty());
 }
 
 TEST(VLXSeekTargetIndexes, RejectsMalformedAndNegative) {
     QString error;
-    EXPECT_TRUE(VLXSeekHelpers::parseTargetIndexes(QStringLiteral("2, x"),
-                                                   &error)
-                        .isEmpty());
+    EXPECT_TRUE(
+            VLXSeekHelpers::parseTargetIndexes(QStringLiteral("2, x"), &error)
+                    .isEmpty());
     EXPECT_FALSE(error.isEmpty());
 
     error.clear();
-    EXPECT_TRUE(
-            VLXSeekHelpers::parseTargetIndexes(QStringLiteral("-1"), &error)
-                    .isEmpty());
+    EXPECT_TRUE(VLXSeekHelpers::parseTargetIndexes(QStringLiteral("-1"), &error)
+                        .isEmpty());
     EXPECT_FALSE(error.isEmpty());
 }
 

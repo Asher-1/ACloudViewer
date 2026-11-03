@@ -7,6 +7,8 @@
 
 #include "RelateAnythingWorker.h"
 
+#include <QtCompat.h>
+
 #include <QCryptographicHash>
 #include <QDateTime>
 #include <QDir>
@@ -35,7 +37,6 @@
 #include "RelateAnythingDecode.h"
 #include "ecvAICoreRuntimeHelpers.h"
 #include "ecvAssetIntegrity.h"
-#include <QtCompat.h>
 namespace {
 void check(bool condition, const QString& error) {
     if (!condition) throw std::runtime_error(error.toStdString());

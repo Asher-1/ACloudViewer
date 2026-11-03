@@ -103,13 +103,11 @@ struct CommandVlxSeekRun : public ccCommandLineInterface::Command {
             // Mirror the runtime contract up front: the region tasks
             // hard-reject empty target lists, so fail before model load.
             QString targetsError;
-            const QVector<int32_t> targets =
-                    VLXSeekHelpers::parseTargetIndexes(settings.targetIndexes,
-                                                       &targetsError);
-            const bool regionTask = settings.task ==
-                                    QStringLiteral("brief_region_caption") ||
-                                    settings.task ==
-                                    QStringLiteral("region_ocr");
+            const QVector<int32_t> targets = VLXSeekHelpers::parseTargetIndexes(
+                    settings.targetIndexes, &targetsError);
+            const bool regionTask =
+                    settings.task == QStringLiteral("brief_region_caption") ||
+                    settings.task == QStringLiteral("region_ocr");
             if (!targetsError.isEmpty()) return cmd.error(targetsError);
             if (regionTask && targets.isEmpty()) {
                 return cmd.error(
