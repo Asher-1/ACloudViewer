@@ -18,6 +18,8 @@
 
 #include "RelationFilterWidget.h"
 
+#include <QtCompat.h>
+
 namespace {
 bool check(bool condition, const char* message) {
     if (!condition) std::fprintf(stderr, "%s\n", message);
@@ -131,7 +133,7 @@ int main(int argc, char** argv) {
         return 1;
     const QStringList lines =
             QString::fromUtf8(file.readAll())
-                    .split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+                    .split(QLatin1Char('\n'), QtCompat::SkipEmptyParts);
     if (!check(lines.size() == 4 &&
                        lines[0] ==
                                QStringLiteral(

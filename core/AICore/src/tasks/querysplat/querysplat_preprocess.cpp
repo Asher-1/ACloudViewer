@@ -164,6 +164,7 @@ std::vector<float> preprocess_rgb8_view(
 bool preprocess_view_bytes(const uint8_t* data,
                            int w,
                            int h,
+                           int row_stride_bytes,
                            int channels_per_pixel,
                            bool bgr_order,
                            int H,
@@ -181,27 +182,40 @@ bool preprocess_view_bytes(const uint8_t* data,
         default:
             return false;
     }
-    std::vector<uint8_t> rgb8;
-    const uint8_t* src = data;
-    if (channels_per_pixel != 3 || bgr_order) {
-        rgb8.resize((size_t)w * h * 3);
-        for (size_t k = 0; k < (size_t)w * h; k++) {
-            const uint8_t* p = data + k * channels_per_pixel;
+    // Callers hand over producer-owned buffers whose row stride is the
+    // real one (e.g. QImage::bytesPerLine pads odd widths to 4 bytes),
+    // NOT width*channels. Reading them tightly would shear every row by
+    // the accumulated padding and rotate the per-pixel channel phase —
+    // the model input (and with it every predicted color) degrades to
+    // gray. De-interleave row by row through the real stride.
+    const size_t tight = size_t(w) * channels_per_pixel;
+    const size_t stride =
+            row_stride_bytes > 0 ? size_t(row_stride_bytes) : tight;
+    if (stride == tight && channels_per_pixel == 3 && !bgr_order) {
+        // already tightly packed RGB: zero-copy path
+        *out_frames = preprocess_rgb8_view(data, w, h, H, W);
+        return true;
+    }
+    std::vector<uint8_t> rgb8((size_t)w * h * 3);
+    for (int y = 0; y < h; y++) {
+        const uint8_t* line = data + size_t(y) * stride;
+        uint8_t* dst = rgb8.data() + size_t(y) * tight;
+        for (int x = 0; x < w; x++) {
+            const uint8_t* p = line + size_t(x) * channels_per_pixel;
             if (channels_per_pixel == 1) {
-                rgb8[k * 3 + 0] = rgb8[k * 3 + 1] = rgb8[k * 3 + 2] = p[0];
+                dst[x * 3 + 0] = dst[x * 3 + 1] = dst[x * 3 + 2] = p[0];
             } else if (bgr_order) {
-                rgb8[k * 3 + 0] = p[2];
-                rgb8[k * 3 + 1] = p[1];
-                rgb8[k * 3 + 2] = p[0];
+                dst[x * 3 + 0] = p[2];
+                dst[x * 3 + 1] = p[1];
+                dst[x * 3 + 2] = p[0];
             } else {
-                rgb8[k * 3 + 0] = p[0];
-                rgb8[k * 3 + 1] = p[1];
-                rgb8[k * 3 + 2] = p[2];
+                dst[x * 3 + 0] = p[0];
+                dst[x * 3 + 1] = p[1];
+                dst[x * 3 + 2] = p[2];
             }
         }
-        src = rgb8.data();
     }
-    *out_frames = preprocess_rgb8_view(src, w, h, H, W);
+    *out_frames = preprocess_rgb8_view(rgb8.data(), w, h, H, W);
     return true;
 }
 

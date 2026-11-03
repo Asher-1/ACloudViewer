@@ -38,6 +38,8 @@
 #include <memory>
 #include <vector>
 
+#include <QtCompat.h>
+
 #include "RAMDialog.h"
 #include "RAMVideoWidget.h"
 #include "RAMWorker.h"
@@ -807,7 +809,7 @@ int main(int argc, char** argv) {
             QFile file(path);
             file.open(QIODevice::ReadOnly);
             return QString::fromUtf8(file.readAll())
-                    .split('\n', Qt::SkipEmptyParts);
+                    .split('\n', QtCompat::SkipEmptyParts);
         };
         const auto names = lines(space + ".tags.txt"),
                    values = lines(space + ".thresholds.txt");

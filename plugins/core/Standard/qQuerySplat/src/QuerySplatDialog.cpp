@@ -8,7 +8,9 @@
 
 #include <aicore/inference_log.h>
 #include <aicore/map_anything_capi.h>
+#include <ecvAICoreUiHelper.h>
 #include <ecvAssetIntegrity.h>
+#include <ecvClickableImageLabel.h>
 #include <ecvMainAppInterface.h>
 #include <ecvModelDownloader.h>
 
@@ -19,6 +21,7 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFormLayout>
+#include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QListWidget>
@@ -61,6 +64,18 @@ const ecvTestDataRepository::Dataset kSceneKinds[] = {
 // selected scene); the rest stay available through Add Images.
 constexpr int kDemoFillMaxViews = 4;
 
+// Short combo labels, matching the MapAnything dialog's scene rows (the
+// repository's display name keeps the "MapAnything" prefix for logs).
+const char* const kSceneLabels[] = {
+        "courtyard (ETH3D)", "delivery_area (ETH3D)", "electro (ETH3D)",
+        "facade (ETH3D)",    "kicker (ETH3D)",        "meadow (ETH3D)",
+        "office (ETH3D)",    "pipes (ETH3D)",         "playground (ETH3D)",
+        "relief (ETH3D)",    "relief_2 (ETH3D)",      "terrace (ETH3D)",
+        "terrains (ETH3D)"};
+static_assert(sizeof(kSceneLabels) / sizeof(kSceneLabels[0]) ==
+                      sizeof(kSceneKinds) / sizeof(kSceneKinds[0]),
+              "scene label row must match the dataset row");
+
 }  // namespace
 
 QuerySplatDialog::QuerySplatDialog(QWidget* parent) : QDialog(parent) {
@@ -80,7 +95,18 @@ QString QuerySplatDialog::decoderCacheDir() const {
 
 void QuerySplatDialog::buildUi() {
     setWindowTitle(tr("QuerySplat Gaussian Prediction"));
-    resize(640, 620);
+    // Fixed-area height budget (the geometry contract: input/actions/
+    // progress stay visible outside the config scroll):
+    //   input page ~ 150 (list/preview capped at 140 + two button rows)
+    //   action row ~ 32, progress ~ 22, status label ~ 20, margins ~ 40
+    //   => ~ 264 px; the minimum window height reserves ~ 280 px of config
+    //   scroll viewport on top of that so the lowest checkbox row is
+    //   reachable without resizing. The config section itself scrolls.
+    // The two-row button split keeps every label fully visible at the
+    // minimum width on all DPI scales (six controls on one row force text
+    // elision at 640-700 px widths).
+    setMinimumSize(700, 660);
+    resize(760, 800);
 
     auto* rootLayout = new QVBoxLayout(this);
 
@@ -126,38 +152,77 @@ void QuerySplatDialog::buildUi() {
             &QuerySplatDialog::onClearImages);
     connect(m_testDataBtn, &QPushButton::clicked, this,
             &QuerySplatDialog::onUseTestData);
+    connect(m_imageList, &QListWidget::itemSelectionChanged, this,
+            &QuerySplatDialog::updatePreview);
     connect(&ecvTestDataRepository::instance(),
             &ecvTestDataRepository::datasetReady, this,
             &QuerySplatDialog::onTestDataReady);
+    // Download/extract feedback for the shared test-data preparation (the
+    // same repository signals the MapAnything dialog consumes).
+    connect(&ecvTestDataRepository::instance(),
+            &ecvTestDataRepository::downloadProgress, this,
+            &QuerySplatDialog::onTestDataProgress);
+    connect(&ecvTestDataRepository::instance(),
+            &ecvTestDataRepository::downloadLogMessage, this,
+            &QuerySplatDialog::onTestDataLog);
 }
 
 QWidget* QuerySplatDialog::buildInputPage() {
     auto* box = new QWidget(this);
-    auto* layout = new QVBoxLayout(box);
+    auto* layout = new QHBoxLayout(box);
     layout->setContentsMargins(0, 0, 0, 0);
 
+    // list column — same 2:1 split as the MapAnything input area
+    auto* listColumn = new QVBoxLayout();
     m_imageList = new QListWidget(box);
     m_imageList->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    // Same cap as the MapAnything input list: the fixed input area must not
+    // squeeze the configuration scroll below its usable height.
     m_imageList->setMinimumHeight(96);
-    layout->addWidget(m_imageList, 1);
+    m_imageList->setMaximumHeight(140);
+    listColumn->addWidget(m_imageList, 1);
 
     auto* btnRow = new QHBoxLayout();
     m_addBtn = new QPushButton(tr("Add Images..."), box);
     m_removeBtn = new QPushButton(tr("Remove Selected"), box);
     m_clearBtn = new QPushButton(tr("Clear"), box);
-    m_testSceneCombo = new QComboBox(box);
-    for (ecvTestDataRepository::Dataset kind : kSceneKinds) {
-        m_testSceneCombo->addItem(
-                ecvTestDataRepository::getDatasetInfo(kind).displayName);
-    }
-    m_testDataBtn = new QPushButton(tr("Use Test Data"), box);
     btnRow->addWidget(m_addBtn);
     btnRow->addWidget(m_removeBtn);
     btnRow->addWidget(m_clearBtn);
     btnRow->addStretch(1);
-    btnRow->addWidget(m_testSceneCombo);
-    btnRow->addWidget(m_testDataBtn);
-    layout->addLayout(btnRow);
+    listColumn->addLayout(btnRow);
+
+    // sample-data row: scene combo + shared teal button get their own row —
+    // sharing the action row squeezed both below their size hints and
+    // elided their labels ("Remove Selecte…", "ry sample da…").
+    m_testSceneCombo = new QComboBox(box);
+    for (size_t i = 0; i < sizeof(kSceneLabels) / sizeof(kSceneLabels[0]);
+         ++i) {
+        m_testSceneCombo->addItem(QString::fromLatin1(kSceneLabels[i]));
+    }
+    // Shared teal "Try sample data" button (ecvAICoreUi) — the same control
+    // every AICore plugin uses for its sample-data row.
+    m_testDataBtn = ecvAICoreUi::makeSampleDataBtn(box);
+    m_testDataBtn->setToolTip(
+            tr("Download and load an official MapAnything ETH3D test scene "
+               "into the shared multi-view input list"));
+    m_testDataBtn->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+    auto* sampleRow = new QHBoxLayout();
+    sampleRow->addWidget(m_testSceneCombo, /*stretch=*/1);
+    sampleRow->addWidget(m_testDataBtn);
+    listColumn->addLayout(sampleRow);
+    layout->addLayout(listColumn, 2);
+
+    // preview column — the shared ecvClickableImageLabel the MapAnything
+    // dialog uses (no per-plugin preview implementation); capped to the list
+    // height so the preview column cannot stretch the fixed input area and
+    // squeeze the config scroll below its usable height.
+    auto* previewColumn = new QVBoxLayout();
+    m_previewLabel = new ecvClickableImageLabel(box);
+    m_previewLabel->setMinimumSize(150, 96);
+    m_previewLabel->setMaximumHeight(140);
+    previewColumn->addWidget(m_previewLabel, 1);
+    layout->addLayout(previewColumn, 1);
     return box;
 }
 
@@ -200,6 +265,16 @@ QWidget* QuerySplatDialog::buildConfigPage() {
     m_opacitySpin->setValue(0.05);
     form->addRow(tr("Opacity threshold"), m_opacitySpin);
 
+    m_bgSpin = new QDoubleSpinBox(box);
+    m_bgSpin->setRange(0.0, 1.0);
+    m_bgSpin->setSingleStep(0.1);
+    m_bgSpin->setDecimals(2);
+    m_bgSpin->setValue(0.0);
+    m_bgSpin->setToolTip(
+            tr("Grayscale background of the rendered views (gsplat "
+               "rasterizer); 0 = black, 1 = white. Official default: 0."));
+    form->addRow(tr("Render background"), m_bgSpin);
+
     m_ttoCheck = new QCheckBox(tr("Test-time optimization (TTO)"), box);
     form->addRow(QString(), m_ttoCheck);
     m_ttoStepsSpin = new QSpinBox(box);
@@ -226,6 +301,8 @@ QWidget* QuerySplatDialog::buildConfigPage() {
         m_ttoLpipsSpin->setEnabled(on);
     });
 
+    m_camerasCheck = new QCheckBox(tr("Predicted cameras (per view)"), box);
+    m_camerasCheck->setChecked(true);
     m_depthViewsCheck = new QCheckBox(tr("Depth rasters (per view)"), box);
     m_depthViewsCheck->setChecked(true);
     m_renderViewsCheck =
@@ -235,10 +312,19 @@ QWidget* QuerySplatDialog::buildConfigPage() {
     m_pointCloudCheck->setChecked(true);
     m_plyCheck = new QCheckBox(tr("Export 3DGS PLY"), box);
     m_plyCheck->setChecked(true);
-    form->addRow(tr("Outputs"), m_depthViewsCheck);
-    form->addRow(QString(), m_renderViewsCheck);
-    form->addRow(QString(), m_pointCloudCheck);
-    form->addRow(QString(), m_plyCheck);
+    // The five export switches share a two-column grid: five QFormLayout
+    // rows would dominate the config scroll viewport and hide the lowest
+    // rows behind the fold even at the minimum window height.
+    auto* outputsGrid = new QGridLayout();
+    outputsGrid->setContentsMargins(0, 0, 0, 0);
+    outputsGrid->addWidget(m_camerasCheck, 0, 0);
+    outputsGrid->addWidget(m_depthViewsCheck, 0, 1);
+    outputsGrid->addWidget(m_renderViewsCheck, 1, 0);
+    outputsGrid->addWidget(m_pointCloudCheck, 1, 1);
+    outputsGrid->addWidget(m_plyCheck, 2, 0);
+    auto* outputsHolder = new QWidget(box);
+    outputsHolder->setLayout(outputsGrid);
+    form->addRow(tr("Outputs"), outputsHolder);
     return box;
 }
 
@@ -264,6 +350,25 @@ void QuerySplatDialog::fillImages(const QStringList& paths) {
         if (!m_imageList->findItems(p, Qt::MatchExactly).isEmpty()) continue;
         m_imageList->addItem(p);
     }
+    updatePreview();
+}
+
+void QuerySplatDialog::updatePreview() {
+    // Same funnel semantics as the MapAnything preview: the selected item
+    // drives the frame, falling back to the first row when nothing is
+    // selected; empty list clears.
+    QListWidgetItem* item = m_imageList->currentItem();
+    if (!item && m_imageList->count() > 0) item = m_imageList->item(0);
+    if (!item) {
+        m_previewLabel->clearPreview();
+        return;
+    }
+    const QImage img(item->text());
+    if (img.isNull()) {
+        m_previewLabel->clearPreview();
+        return;
+    }
+    m_previewLabel->setPreviewImage(img, m_previewLabel->size());
 }
 
 void QuerySplatDialog::onAddFiles() {
@@ -275,9 +380,13 @@ void QuerySplatDialog::onAddFiles() {
 
 void QuerySplatDialog::onRemoveSelected() {
     for (QListWidgetItem* item : m_imageList->selectedItems()) delete item;
+    updatePreview();
 }
 
-void QuerySplatDialog::onClearImages() { m_imageList->clear(); }
+void QuerySplatDialog::onClearImages() {
+    m_imageList->clear();
+    updatePreview();
+}
 
 void QuerySplatDialog::onUseTestData() {
     if (m_testDataBusy) {
@@ -307,6 +416,8 @@ void QuerySplatDialog::onTestDataReady(bool ok,
     if (kind != m_pendingTestDataset) return;
     m_testDataBusy = false;
     m_testDataBtn->setEnabled(true);
+    setProgress(0, 100);
+    m_taskStatusLabel->clear();
     if (!ok) {
         appendLog(tr("[Error] Test-data preparation failed."));
         return;
@@ -332,6 +443,16 @@ void QuerySplatDialog::onTestDataReady(bool ok,
                       .arg(ecvTestDataRepository::getDatasetInfo(kind)
                                    .displayName)
                       .arg(images.size()));
+}
+
+void QuerySplatDialog::onTestDataProgress(int percent,
+                                          const QString& statusText) {
+    setProgress(percent, 100);
+    m_taskStatusLabel->setText(statusText);
+}
+
+void QuerySplatDialog::onTestDataLog(const QString& message) {
+    appendLog(message);
 }
 
 bool QuerySplatDialog::ensureEncoderAvailable() {
@@ -498,8 +619,10 @@ QuerySplatDialog::Settings QuerySplatDialog::getSettings() const {
     s.ttoLr = m_ttoLrSpin ? m_ttoLrSpin->value() : 5e-3;
     s.ttoLpipsWeight = m_ttoLpipsSpin ? m_ttoLpipsSpin->value() : 0.05;
     s.opacityThreshold = m_opacitySpin ? float(m_opacitySpin->value()) : 0.05f;
+    s.renderBackground = m_bgSpin ? float(m_bgSpin->value()) : 0.0f;
     s.addDepthViews = m_depthViewsCheck && m_depthViewsCheck->isChecked();
     s.addRenderViews = m_renderViewsCheck && m_renderViewsCheck->isChecked();
+    s.addCameras = m_camerasCheck && m_camerasCheck->isChecked();
     s.addDepthPointCloud = m_pointCloudCheck && m_pointCloudCheck->isChecked();
     s.exportPly = m_plyCheck && m_plyCheck->isChecked();
     return s;

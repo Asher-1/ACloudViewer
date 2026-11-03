@@ -10,47 +10,69 @@
 #include <atomic>
 #include <cstdarg>
 #include <cstdio>
+#include <string>
 
 namespace map_anything {
 
 namespace {
 std::atomic<int> g_log_level{(int)LogLevel::Info};
+// Thread-local task identity for the shared-runtime log helpers (see
+// set_log_tag in the header). Owned strings keep the pointer valid.
+thread_local std::string g_log_tag_override;
+const char* effective_log_tag() {
+    return g_log_tag_override.empty() ? "[map_anything] "
+                                      : g_log_tag_override.c_str();
+}
 }  // namespace
 
 void set_log_level(LogLevel level) {
     g_log_level.store((int)level, std::memory_order_relaxed);
 }
 
-void log_info(const char* fmt, ...) {
+void set_log_tag(const char* tag) { g_log_tag_override = tag ? tag : ""; }
+
+void vlog_info_tag(const char* tag, const char* fmt, va_list args) {
     if (g_log_level.load(std::memory_order_relaxed) > (int)LogLevel::Info)
         return;
-    va_list args;
-    va_start(args, fmt);
-    fprintf(stderr, "[map_anything] ");
+    fprintf(stderr, "%s", tag);
     vfprintf(stderr, fmt, args);
     fprintf(stderr, "\n");
+}
+
+void vlog_warn_tag(const char* tag, const char* fmt, va_list args) {
+    if (g_log_level.load(std::memory_order_relaxed) > (int)LogLevel::Warn)
+        return;
+    fprintf(stderr, "%s", tag);
+    vfprintf(stderr, fmt, args);
+    fprintf(stderr, "\n");
+}
+
+void vlog_error_tag(const char* tag, const char* fmt, va_list args) {
+    if (g_log_level.load(std::memory_order_relaxed) > (int)LogLevel::Error)
+        return;
+    fprintf(stderr, "%s", tag);
+    vfprintf(stderr, fmt, args);
+    fprintf(stderr, "\n");
+}
+
+void log_info(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    vlog_info_tag(effective_log_tag(), fmt, args);
     va_end(args);
 }
 
 void log_warn(const char* fmt, ...) {
-    if (g_log_level.load(std::memory_order_relaxed) > (int)LogLevel::Warn)
-        return;
     va_list args;
     va_start(args, fmt);
-    std::fprintf(stderr, "[map_anything:WARN] ");
-    std::vfprintf(stderr, fmt, args);
-    std::fprintf(stderr, "\n");
+    vlog_warn_tag(effective_log_tag(), fmt, args);
     va_end(args);
 }
 
 void log_error(const char* fmt, ...) {
-    if (g_log_level.load(std::memory_order_relaxed) > (int)LogLevel::Error)
-        return;
     va_list args;
     va_start(args, fmt);
-    fprintf(stderr, "[map_anything:ERROR] ");
-    vfprintf(stderr, fmt, args);
-    fprintf(stderr, "\n");
+    vlog_error_tag(effective_log_tag(), fmt, args);
     va_end(args);
 }
 

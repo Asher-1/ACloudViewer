@@ -18,6 +18,9 @@ if( PLUGIN_STANDARD_QRAM )
     target_include_directories( ${PROJECT_NAME}
         PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/include
+            # QtCompat.h owns the Qt5.12/Qt6 split-behavior constants used
+            # by this plugin's sources.
+            ${CMAKE_SOURCE_DIR}/core/include
     )
 
     # qRAM directly consumes the shared plugin API for model downloads,

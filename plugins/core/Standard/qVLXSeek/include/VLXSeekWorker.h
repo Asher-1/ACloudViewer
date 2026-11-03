@@ -57,6 +57,10 @@ public:
         QString task = QStringLiteral("detection");
         QString text;
         QString lang = QStringLiteral("en");
+        /** Comma-separated zero-based proposal indexes consumed by the
+         *  brief_region_caption / region_ocr tasks (the runtime rejects
+         *  those tasks without targets); parsed by parseTargetIndexes. */
+        QString targetIndexes;
     };
 
     explicit VLXSeekWorker(const Settings& settings, QObject* parent = nullptr);

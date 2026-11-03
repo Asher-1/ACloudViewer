@@ -825,12 +825,14 @@ bool PipelineContext::Impl::zero123pp_multiview(const PipelineConfig &cfg,
         set_error(error, "instantmesh: vae_decode failed");
         return false;
     }
-    if (const char *cap_dir = aicore::debug::instantmesh_capture_dir()) {
+    if (!cfg.capture_dir.empty()) {
         // Diagnostic capture of the multiview decode boundary for the
-        // independent-diffusion-reference flow. Truncate-mode: a warmup/
-        // iteration rerun overwrites the previous capture, so the retained
-        // pair always belongs to the last forward. Never affects any result.
-        const std::string dir(cap_dir);
+        // independent-diffusion-reference flow, driven by the explicit
+        // aicore_instantmesh_options_set_capture_dir option. Truncate-mode:
+        // a warmup/iteration rerun overwrites the previous capture, so the
+        // retained pair always belongs to the last forward. Never affects
+        // any result.
+        const std::string &dir = cfg.capture_dir;
         std::FILE *in = std::fopen((dir + "/decode-input.bin").c_str(), "wb");
         std::FILE *out = std::fopen((dir + "/decode-output.bin").c_str(), "wb");
         const size_t dec_n = (size_t)3 * dh * dw;

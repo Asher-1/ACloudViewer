@@ -7,6 +7,8 @@
 
 #include "VLXSeekWorker.h"
 
+#include "VLXSeekModelCatalog.h"
+
 #ifdef AICore_ENABLED
 #include <aicore/image_view.h>
 #include <aicore/pipeline_timing.h>
@@ -106,10 +108,20 @@ bool VLXSeekWorker::runImage(aicore_vlx_seek_ctx* ctx,
 
     QElapsedTimer timer;
     timer.start();
+    // Region tasks (brief_region_caption / region_ocr) consume zero-based
+    // proposal indexes; the runtime hard-rejects them without targets.
+    QVector<int32_t> targets;
+    if (!settings.targetIndexes.trimmed().isEmpty()) {
+        targets = VLXSeekHelpers::parseTargetIndexes(settings.targetIndexes,
+                                                     error);
+        if (targets.isEmpty()) return false;
+    }
     const int rc = aicore_vlx_seek_run_image(
             ctx, &view, settings.task.toUtf8().constData(),
             settings.text.toUtf8().constData(),
-            settings.lang.toUtf8().constData(), nullptr, 0, nullptr, 0);
+            settings.lang.toUtf8().constData(), nullptr, 0,
+            targets.isEmpty() ? nullptr : targets.constData(),
+            static_cast<int32_t>(targets.size()));
     const double ms = static_cast<double>(timer.elapsed());
     if (rc != 0) {
         const char* err = aicore_vlx_seek_last_error(ctx);

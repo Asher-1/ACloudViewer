@@ -43,6 +43,9 @@ struct CommandVlxSeekRun : public ccCommandLineInterface::Command {
                  "Target text (categories / phrase / "
                  "question)"},
                 {"LANG", "enum", "en", "en|zh (task template language)"},
+                {"TARGET_INDEXES", "string", "",
+                 "Comma-separated zero-based proposal indexes "
+                 "(required for brief_region_caption|region_ocr, e.g. 2,3)"},
                 {"PRECISION", "enum", "q8_0",
                  "f16|q8_0 (vision+LLM rows of "
                  "the catalog; detector stays "
@@ -87,6 +90,7 @@ struct CommandVlxSeekRun : public ccCommandLineInterface::Command {
         settings.task = s.args.str("TASK", "detection");
         settings.text = s.args.str("TEXT", QString());
         settings.lang = s.args.str("LANG", "en");
+        settings.targetIndexes = s.args.str("TARGET_INDEXES", "");
         const QString precision = s.args.str("PRECISION", "q8_0");
         settings.device = s.args.str("DEVICE", s.device);
         settings.threads = s.threads;
@@ -94,6 +98,25 @@ struct CommandVlxSeekRun : public ccCommandLineInterface::Command {
         if (settings.text.isEmpty() && settings.task != "vqa") {
             return cmd.error(QStringLiteral("TEXT is required for task %1")
                                      .arg(settings.task));
+        }
+        {
+            // Mirror the runtime contract up front: the region tasks
+            // hard-reject empty target lists, so fail before model load.
+            QString targetsError;
+            const QVector<int32_t> targets =
+                    VLXSeekHelpers::parseTargetIndexes(settings.targetIndexes,
+                                                       &targetsError);
+            const bool regionTask = settings.task ==
+                                    QStringLiteral("brief_region_caption") ||
+                                    settings.task ==
+                                    QStringLiteral("region_ocr");
+            if (!targetsError.isEmpty()) return cmd.error(targetsError);
+            if (regionTask && targets.isEmpty()) {
+                return cmd.error(
+                        QStringLiteral("TARGET_INDEXES is required for task "
+                                       "%1 (e.g. -TARGET_INDEXES 2,3)")
+                                .arg(settings.task));
+            }
         }
         if (!s.args.ok()) return cmd.error(s.args.error());
 

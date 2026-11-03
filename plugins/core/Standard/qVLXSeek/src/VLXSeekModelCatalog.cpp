@@ -9,6 +9,7 @@
 
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QObject>
 
 #ifdef AICore_ENABLED
 #include <aicore/vlx_seek_capi.h>
@@ -93,6 +94,28 @@ QJsonArray catalogJson() {
         });
     }
     return rows;
+}
+
+QVector<int32_t> parseTargetIndexes(const QString& text, QString* error) {
+    QVector<int32_t> out;
+    // Plain QChar split with the default KeepEmptyParts: identical on
+    // Qt5/Qt6 (the SplitBehavior enum diverges across versions).
+    const QStringList parts = text.split(QLatin1Char(','));
+    for (const QString& part : parts) {
+        const QString trimmed = part.trimmed();
+        if (trimmed.isEmpty()) continue;
+        bool ok = false;
+        const int value = trimmed.toInt(&ok);
+        if (!ok || value < 0) {
+            if (error) {
+                *error = QObject::tr("Invalid target region index: %1")
+                                 .arg(trimmed);
+            }
+            return {};
+        }
+        out.push_back(static_cast<int32_t>(value));
+    }
+    return out;
 }
 
 }  // namespace VLXSeekHelpers

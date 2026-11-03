@@ -45,6 +45,7 @@ struct Options {
     float grid_scale = 2.1f;
     int texture_res = 2048;
     int bake_texture = 1;
+    std::string capture_dir;  // empty -> decode-boundary capture disabled
 };
 
 struct Ctx {
@@ -374,6 +375,13 @@ void aicore_instantmesh_options_set_bake_texture(
     if (opts) reinterpret_cast<Options *>(opts)->bake_texture = bake_texture;
 }
 
+void aicore_instantmesh_options_set_capture_dir(
+        aicore_instantmesh_options *opts, const char *capture_dir) {
+    if (opts)
+        reinterpret_cast<Options *>(opts)->capture_dir =
+                capture_dir ? capture_dir : "";
+}
+
 aicore_instantmesh_ctx *aicore_instantmesh_load_opts(
         const aicore_instantmesh_model_paths *paths,
         const aicore_instantmesh_options *opts) {
@@ -438,6 +446,7 @@ aicore_instantmesh_ctx *aicore_instantmesh_load_opts_ex(
         cfg.grid_scale = ctx->opts.grid_scale;
         cfg.texture_res = ctx->opts.texture_res;
         cfg.bake_texture = ctx->opts.bake_texture != 0;
+        cfg.capture_dir = ctx->opts.capture_dir;
 
         std::string error;
         if (!ctx->pipe.load(cfg, &error)) {

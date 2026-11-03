@@ -22,13 +22,27 @@ box.
 - **VLX-Seek grounding** — dialog with the seven upstream tasks
   (`detection`, `grounding_single`, `counting`, `reasoning_detection`,
   `brief_region_caption`, `region_ocr`, `vqa`), `en`/`zh` prompt templates,
-  precision choice from the published catalog, and a Use-test-data action
-  that fills the upstream demo image from the shared data repository.
+  precision choice from the published catalog, and a Try-sample-data action
+  (shared teal button) that fills the upstream demo image from the shared
+  data repository. Input and result thumbnails preview in the dialog with
+  click-to-enlarge; an "Export result to DB tree" checkbox (default
+  checked) gates the annotated-image export, and the DB entry is selected
+  after every export.
+- **Region tasks** — `brief_region_caption` and `region_ocr` consume
+  zero-based detector proposal indexes: the dialog shows a "Target
+  indexes" field when one of those tasks is selected (e.g. `2, 3`), and
+  the batch command takes `-TARGET_INDEXES 2,3`. The runtime rejects both
+  tasks without targets.
 - **-VLXSEEK_RUN** — headless batch command (`-VLXSEEK_RUN
   IMAGE1 IMAGE2 -TASK detection -TEXT "person" -LANG en -PRECISION q8_0
   -MAX_NEW_TOKENS 1024 -DEVICE auto -THREADS 0`). Writes
   `<stem>_vlxseek.json` plus an annotated `<stem>_vlxseek_vis.png` per image
-  and the shared `RESULT_JSON` manifest. `HELP:1` prints the option schema.
+  and the shared `RESULT_JSON` manifest. `HELP:1` prints the option schema
+  (including `-TARGET_INDEXES`).
+- Sampling matches the upstream CLI defaults (temperature 0 / top-p 1,
+  greedy) — the runtime exposes greedy decoding only, which is the
+  documented upstream configuration; manual `--bbox-list` boxes remain a
+  C-API/batch-level feature and are not exposed in the dialog.
 
 ## Models
 

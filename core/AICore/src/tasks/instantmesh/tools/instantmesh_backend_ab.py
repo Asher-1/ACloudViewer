@@ -194,7 +194,8 @@ def inspect_mesh(lib, mesh, texture):
 
 
 def run_once(lib, models, image_bytes, device, preset, quant, steps, seed,
-             grid_res, texture, warmups=1, iterations=2, texture_res=2048, threads=0):
+             grid_res, texture, warmups=1, iterations=2, texture_res=2048, threads=0,
+             capture_dir=None):
     """Load once per device; warmup/timed forwards share a context, released on every exception path."""
     paths = build_paths(models, preset, quant)
     mp = ModelPaths(ctypes.sizeof(ModelPaths), lib.aicore_instantmesh_abi_version(),
@@ -206,6 +207,9 @@ def run_once(lib, models, image_bytes, device, preset, quant, steps, seed,
     try:
         lib.aicore_instantmesh_options_set_device(opts, device.encode())
         lib.aicore_instantmesh_options_set_threads(opts, threads)
+        if capture_dir:
+            lib.aicore_instantmesh_options_set_capture_dir(
+                opts, str(capture_dir).encode())
         t0 = time.perf_counter()
         ctx = lib.aicore_instantmesh_load_opts_ex(ctypes.byref(mp), opts, err, len(err))
         load_ms = (time.perf_counter() - t0) * 1000.0
@@ -382,6 +386,7 @@ def load_library(path):
     lib.aicore_instantmesh_options_set_seed.argtypes = [_P, ctypes.c_uint64]
     lib.aicore_instantmesh_options_set_grid_res.argtypes = [_P, ctypes.c_int]
     lib.aicore_instantmesh_options_set_bake_texture.argtypes = [_P, ctypes.c_int]
+    lib.aicore_instantmesh_options_set_capture_dir.argtypes = [_P, ctypes.c_char_p]
     lib.aicore_instantmesh_load_opts_ex.argtypes = [_P, _P, ctypes.c_char_p, ctypes.c_int]
     lib.aicore_instantmesh_load_opts_ex.restype = _P
     lib.aicore_instantmesh_backend.argtypes = [_P]
@@ -502,6 +507,12 @@ def main():
         return
     if not args.models or not args.image or not args.lib:
         ap.error("inference requires --models, --image and --lib")
+    if args.reference == "":
+        # An unconfigured {reference:NAME} manifest token expands to the empty
+        # string; the validation runner contract (validate_all resolve_token)
+        # expects exit 77 so the row is reported as skipped, never as a
+        # silent unauthenticated pass.
+        raise SystemExit(77)
     for valid, label in ((args.warmups >= 0, "warmups"), (args.iterations >= 1, "iterations"),
                          (0 <= args.seed < 2**64, "seed"), (2 <= args.steps <= 1000, "steps"),
                          (2 <= args.grid_res <= 256, "grid-res"),
@@ -519,15 +530,14 @@ def main():
         for device in devices:
             capture_dir = None
             if args.reference:
-                # The C++ decode-boundary tap only writes when this env var
-                # points at a directory; give every device a fresh capture.
+                # The C++ decode-boundary tap writes only when the options
+                # capture directory is set; give every device a fresh capture.
                 capture_dir = tempfile.mkdtemp(prefix="im-capture-")
-                os.environ["AICORE_INSTANTMESH_CAPTURE_DIR"] = capture_dir
             t0 = time.perf_counter()
             row = run_once(lib, args.models, image_bytes, device, args.preset,
                            args.quant, args.steps, args.seed, args.grid_res,
                            not args.no_texture, args.warmups, args.iterations,
-                           args.texture_res, args.threads)
+                           args.texture_res, args.threads, capture_dir)
             row["wall_ms"] = (time.perf_counter() - t0) * 1000.0
             if capture_dir:
                 row.update(assemble_and_compare_capture(

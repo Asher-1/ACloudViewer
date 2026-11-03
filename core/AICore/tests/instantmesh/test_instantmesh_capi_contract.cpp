@@ -83,6 +83,12 @@ static void test_versioned_load_errors() {
     aicore_instantmesh_load_opts_ex(&paths, opts, err, sizeof(err));
     AICORE_CHECK(std::strstr(err, "backend unavailable") != nullptr);
     aicore_instantmesh_options_set_device(opts, "cpu");
+    // Capture-dir option contract: NULL clears to disabled, a path is
+    // accepted; both only prove setter lifecycle safety here because the
+    // missing-model load fails before the option could matter.
+    aicore_instantmesh_options_set_capture_dir(opts, nullptr);
+    aicore_instantmesh_options_set_capture_dir(opts,
+                                               "/tmp/im-capture-contract");
     aicore_instantmesh_options_set_steps(opts, 1);
     aicore_instantmesh_load_opts_ex(&paths, opts, err, sizeof(err));
     AICORE_CHECK(std::strstr(err, "steps") != nullptr);

@@ -58,6 +58,24 @@ double percentile(std::vector<double> v, double p) {
     return v[std::min(i, v.size() - 1)];
 }
 
+// Exactly one sink: the runner merges stdout JSON lines and the report
+// file, and a metric present in both would resolve as ambiguous (see
+// test_llm_probe). QFile must be opened before write(); a
+// default-constructed QFile::write() is a silent no-op.
+void emit_report(const std::string& path, const QByteArray& payload) {
+    if (!path.empty()) {
+        QFile file(QString::fromStdString(path));
+        if (file.open(QIODevice::WriteOnly)) {
+            file.write(payload);
+            return;
+        }
+        std::fprintf(stderr, "[warn] cannot write --json-out %s: %s\n",
+                     path.c_str(), file.errorString().toUtf8().constData());
+    }
+    std::fwrite(payload.constData(), 1, size_t(payload.size()), stdout);
+    std::fputc('\n', stdout);
+}
+
 struct RunOutcome {
     int rc = 0;
     std::string answer;
@@ -355,9 +373,7 @@ int main(int argc, char** argv) {
         if (!QFileInfo::exists(QString::fromStdString(p))) {
             std::fprintf(stderr, "[skip] missing asset %s\n", p.c_str());
             report.insert("unavailable", QString::fromStdString(p));
-            if (!a.json_out.empty())
-                QFile(QString::fromStdString(a.json_out))
-                        .write(QJsonDocument(report).toJson());
+            emit_report(a.json_out, QJsonDocument(report).toJson());
             return 77;
         }
     }
@@ -396,15 +412,11 @@ int main(int argc, char** argv) {
             msg.find("device") != std::string::npos) {
             // Resource-class failure: the runner records it, not a regression.
             report.insert("unavailable", QString::fromStdString(msg));
-            if (!a.json_out.empty())
-                QFile(QString::fromStdString(a.json_out))
-                        .write(QJsonDocument(report).toJson());
+            emit_report(a.json_out, QJsonDocument(report).toJson());
             return 77;
         }
         report.insert("error", QString::fromStdString(msg));
-        if (!a.json_out.empty())
-            QFile(QString::fromStdString(a.json_out))
-                    .write(QJsonDocument(report).toJson());
+        emit_report(a.json_out, QJsonDocument(report).toJson());
         return 1;
     }
     report.insert("device", aicore_vlx_seek_context_device(ctx));
@@ -575,12 +587,9 @@ int main(int argc, char** argv) {
                       QString::fromLatin1(digest.result().toHex()));
     }
     report.insert("verdict", ok ? "PASS" : "FAIL");
-    const QByteArray payload = QJsonDocument(report).toJson();
-    if (!a.json_out.empty()) {
-        QFile(QString::fromStdString(a.json_out)).write(payload);
-    }
-    std::fwrite(payload.constData(), 1, size_t(payload.size()), stdout);
-    std::fputc('\n', stdout);
+    const QByteArray payload =
+            QJsonDocument(report).toJson(QJsonDocument::Compact);
+    emit_report(a.json_out, payload);
     aicore_vlx_seek_free(ctx);
     aicore_vlx_seek_shutdown();
     return ok ? 0 : 1;

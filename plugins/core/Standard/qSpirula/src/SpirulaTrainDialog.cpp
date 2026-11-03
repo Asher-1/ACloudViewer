@@ -21,6 +21,8 @@
 
 #include "SpirulaLocator.h"
 
+#include <QtCompat.h>
+
 SpirulaTrainDialog::SpirulaTrainDialog(QWidget* parent) : QDialog(parent) {
     setWindowTitle(tr("Spirula Studio — Headless Training"));
     setModal(false);
@@ -138,7 +140,7 @@ void SpirulaTrainDialog::startTraining() {
         args << QStringLiteral("--device") << device;
     }
     const QStringList extra =
-            m_extraArgsEdit->text().split(' ', Qt::SkipEmptyParts);
+            m_extraArgsEdit->text().split(' ', QtCompat::SkipEmptyParts);
     for (const QString& arg : extra) {
         args << arg;
     }

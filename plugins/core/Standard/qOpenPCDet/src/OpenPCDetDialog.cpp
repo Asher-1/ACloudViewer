@@ -374,7 +374,21 @@ void OpenPCDetDialog::populatePanels() {
         panel.score->setToolTip(
                 tr("Detection score threshold override; 0 follows the "
                    "GGUF-declared value"));
-        ecvAICoreUi::setCompactDoubleSpin(panel.score);
+        // Shared helper pins compact spinboxes to a fixed 72px, but the
+        // threshold row stacks three label+spin pairs; under wide platform
+        // font metrics (Linux offscreen/CI renders labels ~15% wider than
+        // Windows) the row's minimum width (439px) exceeds the config
+        // viewport at the supported minimum window (800x480 -> 401px) and
+        // reintroduces the horizontal clipping the dialog test guards
+        // against. Keep the helper's width band but let the spinboxes
+        // shrink inside it; they stay editable and their values remain
+        // fully visible via the spin arrows.
+        const auto shrinkableSpin = [](QWidget* spin) {
+            spin->setMinimumWidth(ecvAICoreUi::dpiScaled(52));
+            spin->setMaximumWidth(ecvAICoreUi::dpiScaled(72));
+            spin->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        };
+        shrinkableSpin(panel.score);
         thresholdLayout->addWidget(panel.score);
         thresholdLayout->addWidget(ecvAICoreUi::makeLabel(tr("NMS:")));
         panel.nms = new QDoubleSpinBox(thresholdRow);
@@ -386,7 +400,7 @@ void OpenPCDetDialog::populatePanels() {
         panel.nms->setToolTip(
                 tr("Rotated NMS IoU override; 0 follows the "
                    "GGUF-declared value"));
-        ecvAICoreUi::setCompactDoubleSpin(panel.nms);
+        shrinkableSpin(panel.nms);
         thresholdLayout->addWidget(panel.nms);
         thresholdLayout->addWidget(ecvAICoreUi::makeLabel(tr("Max boxes:")));
         panel.maxBoxes = new QSpinBox(thresholdRow);
@@ -396,7 +410,7 @@ void OpenPCDetDialog::populatePanels() {
         panel.maxBoxes->setToolTip(
                 tr("Maximum returned boxes; 0 follows "
                    "the GGUF-declared value"));
-        ecvAICoreUi::setCompactSpin(panel.maxBoxes);
+        shrinkableSpin(panel.maxBoxes);
         thresholdLayout->addWidget(panel.maxBoxes);
         thresholdLayout->addStretch();
         configCol->addWidget(thresholdRow);

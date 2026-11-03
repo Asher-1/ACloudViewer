@@ -72,6 +72,9 @@ bool QuerySplatWorker::loadContext() {
                                                    m_settings.ttoLpipsWeight);
     aicore_querysplat_options_set_opacity_threshold(
             opts, m_settings.opacityThreshold);
+    aicore_querysplat_options_set_bg_color(opts, m_settings.renderBackground,
+                                           m_settings.renderBackground,
+                                           m_settings.renderBackground);
 
     const QByteArray dec = m_settings.decoderPath.toUtf8();
     const QByteArray enc = m_settings.encoderPath.isEmpty()
@@ -140,6 +143,9 @@ void QuerySplatWorker::run() {
     emit stageUpdate(tr("Loading models"));
 
     if (!loadContext()) return;
+    // first visible progress tick: model load alone takes seconds, so the
+    // bar must leave 0% before inference starts
+    emit progressUpdate(5, total);
 
     // staged decoded images -> aicore_image_view borrowed views
     struct Staged {
@@ -162,7 +168,16 @@ void QuerySplatWorker::run() {
         s.w = rgb.width();
         s.h = rgb.height();
         s.rgb.resize(size_t(s.w) * s.h * 3);
-        std::memcpy(s.rgb.data(), rgb.constBits(), s.rgb.size());
+        // Row-by-row copy: Format_RGB888 pads bytesPerLine to 4 bytes (the
+        // courtyard inputs are 6205 px wide -> 18616 vs 18615), and a flat
+        // memcpy over a padded buffer shears every following row, rotating
+        // the per-pixel channel phase — the model input (and with it every
+        // predicted color and render) degrades to gray.
+        const int bpl = rgb.bytesPerLine();
+        for (int y = 0; y < s.h; ++y) {
+            std::memcpy(s.rgb.data() + size_t(y) * s.w * 3,
+                        rgb.constBits() + size_t(y) * bpl, size_t(s.w) * 3);
+        }
         views[i].data = s.rgb.data();
         views[i].width = s.w;
         views[i].height = s.h;

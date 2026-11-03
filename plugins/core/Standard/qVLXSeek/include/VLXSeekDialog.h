@@ -17,6 +17,7 @@
 #include "VLXSeekModelCatalog.h"
 #include "VLXSeekWorker.h"
 
+class QCheckBox;
 class QComboBox;
 class QLabel;
 class QLineEdit;
@@ -25,6 +26,7 @@ class QPushButton;
 class QScrollArea;
 class QSpinBox;
 
+class ecvClickableImageLabel;
 class ecvModelDownloader;
 
 class VLXSeekDialog : public QDialog {
@@ -36,6 +38,10 @@ public:
 
     /** Pre-select an input image path (DB selection or test data). */
     void setInputPath(const QString& path);
+
+    /** Whether the last Run asked for the annotated result to be exported
+     *  to the DB tree (the dialog's checkbox state at run time). */
+    bool exportToDbRequested() const;
 
 signals:
     /** Emitted when Run is accepted with a fully resolved settings set. */
@@ -50,6 +56,7 @@ private slots:
     void onCancel();
     void onDownloadProgress(qint64 received, qint64 total);
     void onDownloadFinished(bool ok, const QString& path);
+    void onResultPreview(const VLXSeekRunResult& result);
     void onWorkerFinished(bool success);
 
 private:
@@ -60,11 +67,22 @@ private:
     bool ensureModelsAvailable();
     void startDownload(const VLXSeekModelEntry& entry);
     void updateRunState();
+    /** Refreshes the input thumbnail from the current path (qDA3 pattern:
+     *  plain QImage load, click-to-enlarge via ecvClickableImageLabel). */
+    void updateInputPreview();
+    /** Shows or hides the target-region-indexes row: only the
+     *  brief_region_caption / region_ocr tasks consume proposal indexes. */
+    void updateTargetsRowVisibility();
 
     QLabel* m_inputLabel = nullptr;
     QLineEdit* m_inputEdit = nullptr;
     QPushButton* m_browseButton = nullptr;
     QPushButton* m_testDataButton = nullptr;
+    ecvClickableImageLabel* m_inputPreview = nullptr;
+    ecvClickableImageLabel* m_resultPreview = nullptr;
+    QCheckBox* m_exportDb = nullptr;
+    QWidget* m_targetsRow = nullptr;
+    QLineEdit* m_targetsEdit = nullptr;
     QComboBox* m_taskCombo = nullptr;
     QComboBox* m_langCombo = nullptr;
     QLineEdit* m_textEdit = nullptr;
@@ -88,4 +106,5 @@ private:
     QVector<VLXSeekModelEntry> m_catalog;
     VLXSeekWorker::Settings m_settings;  // staged paths between prepare/run
     VLXSeekWorker* m_worker = nullptr;
+    QString m_lastSummary;  // result headline shown when the worker settles
 };

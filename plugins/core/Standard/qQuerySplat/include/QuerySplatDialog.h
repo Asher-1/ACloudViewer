@@ -28,6 +28,7 @@ class QStackedWidget;
 
 class ecvModelDownloader;
 class ecvMainAppInterface;
+class ecvClickableImageLabel;
 
 /** QuerySplat panel. UI contract: the input list, actions and progress stay
  *  visible OUTSIDE the configuration scroll at the minimum window size; all
@@ -54,6 +55,8 @@ public:
         double ttoLr = 5e-3;
         double ttoLpipsWeight = 0.05;
         float opacityThreshold = 0.05f;
+        float renderBackground = 0.0f;  // gsplat raster background (grayscale)
+        bool addCameras = true;
         bool addDepthViews = true;
         bool addRenderViews = true;
         bool addDepthPointCloud = true;
@@ -88,6 +91,10 @@ private slots:
 
     // shared test-data preparation (ecvTestDataRepository)
     void onTestDataReady(bool ok, ecvTestDataRepository::Dataset kind);
+    void onTestDataProgress(int percent, const QString& statusText);
+    void onTestDataLog(const QString& message);
+    // input preview (shared ecvClickableImageLabel, MapAnything semantics)
+    void updatePreview();
 
 private:
     void buildUi();
@@ -103,6 +110,7 @@ private:
 
     // input (fixed area)
     QListWidget* m_imageList = nullptr;
+    ecvClickableImageLabel* m_previewLabel = nullptr;
     QPushButton* m_addBtn = nullptr;
     QPushButton* m_removeBtn = nullptr;
     QPushButton* m_clearBtn = nullptr;
@@ -119,7 +127,9 @@ private:
     QDoubleSpinBox* m_ttoLrSpin = nullptr;
     QDoubleSpinBox* m_ttoLpipsSpin = nullptr;
     QDoubleSpinBox* m_opacitySpin = nullptr;
+    QDoubleSpinBox* m_bgSpin = nullptr;
     QCheckBox* m_depthViewsCheck = nullptr;
+    QCheckBox* m_camerasCheck = nullptr;
     QCheckBox* m_renderViewsCheck = nullptr;
     QCheckBox* m_pointCloudCheck = nullptr;
     QCheckBox* m_plyCheck = nullptr;
@@ -142,3 +152,7 @@ private:
             ecvTestDataRepository::Dataset::MapAnythingCourtyard;
     QString m_lastTaskError;
 };
+
+// Queued-connection payload: register at plugin construction time
+// (qQuerySplat::qQuerySplat) so worker -> GUI result delivery works.
+Q_DECLARE_METATYPE(QuerySplatDialog::Settings)

@@ -19,12 +19,15 @@
 #include "map_anything_common.hpp"
 #include "map_anything_gguf_loader.hpp"
 #include "querysplat_activations.hpp"
+#include "querysplat_log.hpp"
 
 namespace qs {
 
-using map_anything::log_error;
-using map_anything::log_info;
-using map_anything::log_warn;
+// Task-identity logging: the shared runtime's log helpers stay tagged
+// [map_anything]; querysplat messages stamp their own tag (querysplat_log.hpp).
+using qs::log_error;
+using qs::log_info;
+using qs::log_warn;
 
 namespace {
 
@@ -448,7 +451,7 @@ struct QuerySplatDecoder::Impl {
                                         ht.data.size());
             }
         }
-        log_info("querysplat: staged %zu tensors (%.2f GB)", n,
+        log_info("staged %zu tensors (%.2f GB)", n,
                  double(wbuf ? ggml_backend_buffer_get_size(wbuf) : 0) / 1e9);
         return true;
     }
@@ -647,7 +650,7 @@ struct QuerySplatDecoder::Impl {
         galloc = ggml_gallocr_new(
                 ggml_backend_get_default_buffer_type(be.handle));
         if (!ggml_gallocr_alloc_graph(galloc, graph)) {
-            log_error("querysplat: graph allocation failed");
+            log_error("graph allocation failed");
             return false;
         }
         built = true;
@@ -655,7 +658,7 @@ struct QuerySplatDecoder::Impl {
                                   std::chrono::steady_clock::now() - t0)
                                   .count();
         log_info(
-                "querysplat: graph built in %.0f ms (S=%d P=%d Nagg=%d T=%d "
+                "graph built in %.0f ms (S=%d P=%d Nagg=%d T=%d "
                 "post_out=%d)",
                 ms, S, P, Nagg, T, post_out);
         return true;
@@ -679,12 +682,12 @@ struct QuerySplatDecoder::Impl {
         ggml_backend_tensor_set(in_plucker, plucker, 0,
                                 (size_t)S * 6 * H * W * sizeof(float));
         if (!ggml_gallocr_alloc_graph(galloc, graph)) {
-            log_error("querysplat: gallocr alloc failed in run()");
+            log_error("gallocr alloc failed in run()");
             return false;
         }
         enum ggml_status st = ggml_backend_graph_compute(be.handle, graph);
         if (st != GGML_STATUS_SUCCESS) {
-            log_error("querysplat: backend graph compute failed: %s",
+            log_error("backend graph compute failed: %s",
                       ggml_status_to_string(st));
             return false;
         }
@@ -800,7 +803,7 @@ bool read_decoder_config(const std::string& gguf_path, DecoderConfig* out) {
     gguf_init_params p{true, nullptr};
     gguf_context* meta = gguf_init_from_file(gguf_path.c_str(), p);
     if (!meta) {
-        log_error("querysplat: cannot open %s", gguf_path.c_str());
+        log_error("cannot open %s", gguf_path.c_str());
         return false;
     }
     DecoderConfig cfg;
@@ -855,14 +858,14 @@ bool read_decoder_config(const std::string& gguf_path, DecoderConfig* out) {
                         : c == "grey"  ? 0.5f
                                        : -1.0f;
         if (v < 0) {
-            log_error("querysplat: invalid background color: %s", c.c_str());
+            log_error("invalid background color: %s", c.c_str());
             ok = false;
         }
         for (float& b : cfg.bg_color) b = v;
     }
     gguf_free(meta);
     if (ok && cfg.enc_embed_dim % cfg.enc_num_heads) {
-        log_error("querysplat: embed_dim %% num_heads != 0");
+        log_error("embed_dim %% num_heads != 0");
         ok = false;
     }
     *out = cfg;
@@ -889,7 +892,7 @@ QuerySplatDecoder::QuerySplatDecoder(const std::string& gguf_path,
     impl_->cfg = &cfg_;
 
     if (!impl_->stage_weights()) {
-        log_error("querysplat: weight staging failed");
+        log_error("weight staging failed");
         impl_.reset();
         return;
     }
@@ -902,9 +905,9 @@ QuerySplatDecoder::QuerySplatDecoder(const std::string& gguf_path,
     fold_layer_weights(ht("eye"), ht("elm.0.weight"), ht("elm.0.bias"),
                        ht("elm.1.weight"), ht("elm.1.bias"), ht("elm.3.weight"),
                        ht("elm.3.bias"), cfg_.layer_weights);
-    log_info("querysplat: layer_weights = %.4f %.4f %.4f %.4f",
-             cfg_.layer_weights[0], cfg_.layer_weights[1],
-             cfg_.layer_weights[2], cfg_.layer_weights[3]);
+    log_info("layer_weights = %.4f %.4f %.4f %.4f", cfg_.layer_weights[0],
+             cfg_.layer_weights[1], cfg_.layer_weights[2],
+             cfg_.layer_weights[3]);
     // explicit runtime switches (no environment variables — see
     // DecoderRuntimeOptions in querysplat_graph.hpp)
     impl_->dump_dir = opts.dump_dir;

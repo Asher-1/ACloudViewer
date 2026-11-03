@@ -51,6 +51,9 @@ struct PipelineConfig {
     float grid_scale = 2.1f; // voxel-grid world scale
     int texture_res = 2048;  // UV atlas bake resolution
     bool bake_texture = true;
+    // Diagnostic multiview VAE-decode capture directory; empty disables the
+    // capture (options-driven, never environment-driven).
+    std::string capture_dir;
 };
 
 struct GenParams {

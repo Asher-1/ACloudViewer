@@ -15112,21 +15112,23 @@ void MainWindow::doActionFitCircle() {
                              .arg(normal.y)
                              .arg(normal.z));
 
+        // Operator new throws on allocation failure rather than returning
+        // null, so there is no meaningful check to make here (CodeQL
+        // cpp/useless-null-check); the entity is owned by the DB tree as
+        // soon as addChild succeeds below.
         ccCircle* circle = new ccCircle(radius, 128);
-        if (circle) {
-            circle->setName(QObject::tr("Circle r=%1").arg(radius));
-            cloud->addChild(circle);
-            circle->copyGlobalShiftAndScale(*cloud);
-            circle->setMetaData("RMS", rms);
+        circle->setName(QObject::tr("Circle r=%1").arg(radius));
+        cloud->addChild(circle);
+        circle->copyGlobalShiftAndScale(*cloud);
+        circle->setMetaData("RMS", rms);
 
-            ccGLMatrix trans =
-                    ccGLMatrix::FromToRotation(CCVector3(0, 0, 1), normal);
-            trans.setTranslation(center);
-            circle->applyGLTransformation_recursive(&trans);
-            scope.markDirty(circle);
+        ccGLMatrix trans =
+                ccGLMatrix::FromToRotation(CCVector3(0, 0, 1), normal);
+        trans.setTranslation(center);
+        circle->applyGLTransformation_recursive(&trans);
+        scope.markDirty(circle);
 
-            addToDB(circle, false, false, false);
-        }
+        addToDB(circle, false, false, false);
     }
 }
 

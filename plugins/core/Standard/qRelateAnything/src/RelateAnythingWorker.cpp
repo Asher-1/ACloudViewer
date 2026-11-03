@@ -35,6 +35,7 @@
 #include "RelateAnythingDecode.h"
 #include "ecvAICoreRuntimeHelpers.h"
 #include "ecvAssetIntegrity.h"
+#include <QtCompat.h>
 namespace {
 void check(bool condition, const QString& error) {
     if (!condition) throw std::runtime_error(error.toStdString());
@@ -951,7 +952,7 @@ void RelateAnythingWorker::process(const RelateAnythingSettings& settings,
                  predicateTypes = settings.predicateTypes.toUtf8();
             QList<QByteArray> names;
             for (const auto& name :
-                 settings.predicates.split('|', Qt::SkipEmptyParts))
+                 settings.predicates.split('|', QtCompat::SkipEmptyParts))
                 if (!name.trimmed().isEmpty()) names << name.trimmed().toUtf8();
             std::vector<const char*> pointers;
             for (const auto& name : names) pointers.push_back(name.constData());

@@ -49,4 +49,10 @@ QStringList roleDisplayLabels(int role);
 /** JSON array of the catalog rows (batch command RESULT_JSON schema). */
 QJsonArray catalogJson();
 
+/** Parse a comma-separated zero-based proposal-index list ("2, 3") for the
+ *  brief_region_caption / region_ocr tasks. Empty text yields an empty
+ *  vector; malformed or negative entries set \p error and return an empty
+ *  vector. Shared by the dialog worker and the headless batch command. */
+QVector<int32_t> parseTargetIndexes(const QString& text, QString* error);
+
 }  // namespace VLXSeekHelpers

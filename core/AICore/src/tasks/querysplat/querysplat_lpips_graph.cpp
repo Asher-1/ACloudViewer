@@ -16,11 +16,14 @@
 #include "ggml.h"
 #include "map_anything_common.hpp"
 #include "map_anything_gguf_loader.hpp"
+#include "querysplat_log.hpp"
 
 namespace qs {
 
-using map_anything::log_error;
-using map_anything::log_info;
+// Task-identity logging (see querysplat_log.hpp): querysplat messages must
+// not carry the shared runtime's [map_anything] tag.
+using qs::log_error;
+using qs::log_info;
 
 namespace {
 

@@ -34,7 +34,8 @@ std::vector<float> preprocess_rgb8_view(const uint8_t* rgb8, int w, int h,
 // first; GRAY replicates channels. Returns false on unsupported formats or
 // non-positive dimensions.
 bool preprocess_view_bytes(const uint8_t* data, int w, int h,
-                           int channels_per_pixel, bool bgr_order,
-                           int H, int W, std::vector<float>* out_frames);
+                           int row_stride_bytes, int channels_per_pixel,
+                           bool bgr_order, int H, int W,
+                           std::vector<float>* out_frames);
 
 }  // namespace qs

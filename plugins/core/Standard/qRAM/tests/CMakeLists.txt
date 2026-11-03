@@ -1,6 +1,8 @@
 add_executable(test_ram_workflow test_ram_workflow.cpp ../src/RAMDialog.cpp ../src/RAMWorker.cpp
     ../include/RAMDialog.h ../include/RAMWorker.h ../include/RAMVideoWidget.h)
-target_include_directories(test_ram_workflow PRIVATE ../include)
+target_include_directories(test_ram_workflow PRIVATE ../include
+    # QtCompat.h (Qt5.12/Qt6 split-behavior constants) in plugin sources.
+    PRIVATE ${CMAKE_SOURCE_DIR}/core/include)
 target_link_libraries(test_ram_workflow PRIVATE CVPluginAPI AICore video_base)
 set_target_properties(test_ram_workflow PROPERTIES AUTOMOC ON)
 if(UNIX AND NOT APPLE)

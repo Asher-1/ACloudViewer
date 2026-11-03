@@ -12,6 +12,7 @@
 #include <aicore/vlx_seek_capi.h>
 #endif
 
+#include <QCheckBox>
 #include <QComboBox>
 #include <QDir>
 #include <QFileDialog>
@@ -28,6 +29,8 @@
 #include <QSpinBox>
 #include <QVBoxLayout>
 
+#include "ecvAICoreUiHelper.h"
+#include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 #include "ecvTestDataRepository.h"
 
@@ -52,8 +55,8 @@ VLXSeekDialog::VLXSeekDialog(QWidget* parent) : QDialog(parent) {
     m_inputEdit->setPlaceholderText(
             tr("Image path (DB selection, test data "
                "or file)"));
-    m_browseButton = new QPushButton(tr("Browse..."), this);
-    m_testDataButton = new QPushButton(tr("Use test data"), this);
+    m_browseButton = ecvAICoreUi::makeBrowseBtn(tr("Browse..."), this);
+    m_testDataButton = ecvAICoreUi::makeSampleDataBtn(this);
     m_testDataButton->setToolTip(
             tr("Downloads the official VLX-Seek test images once into the "
                "shared data root and fills the demo image"));
@@ -73,13 +76,51 @@ VLXSeekDialog::VLXSeekDialog(QWidget* parent) : QDialog(parent) {
     inputRow->addWidget(m_browseButton);
 
     auto* actionRow = new QHBoxLayout();
+    actionRow->setSpacing(ecvAICoreUi::hSpacing());
+    m_exportDb = new QCheckBox(tr("Export result to DB tree"), this);
+    m_exportDb->setChecked(true);
+    m_exportDb->setToolTip(
+            tr("Add the annotated result image to the DB tree after every "
+               "run"));
+    actionRow->addWidget(m_exportDb);
+    actionRow->addStretch();
     actionRow->addWidget(m_runButton);
     actionRow->addWidget(m_cancelButton);
     actionRow->addWidget(m_progress, 1);
 
+    // ---- preview row (fixed top block): input + result thumbnails with
+    // click-to-enlarge, following the shared qDA3/qRFDetr pattern.
+    auto* previewRow = new QHBoxLayout();
+    previewRow->setSpacing(ecvAICoreUi::hSpacing());
+    m_inputPreview = new ecvClickableImageLabel(this);
+    m_resultPreview = new ecvClickableImageLabel(this);
+    const int ps = ecvAICoreUi::previewSize();
+    for (ecvClickableImageLabel* label : {m_inputPreview, m_resultPreview}) {
+        label->setFixedSize(ps, ps);
+        label->setAlignment(Qt::AlignCenter);
+        label->setStyleSheet(QStringLiteral(
+                "border: 1px solid palette(mid); background: palette(base);"));
+    }
+    m_inputPreview->setText(tr("Input"));
+    m_resultPreview->setText(tr("Result"));
+    auto* inputPreviewBox = new QVBoxLayout();
+    inputPreviewBox->setContentsMargins(0, 0, 0, 0);
+    inputPreviewBox->addWidget(m_inputPreview, 0, Qt::AlignHCenter);
+    inputPreviewBox->addWidget(new QLabel(tr("Input"), this), 0,
+                               Qt::AlignHCenter);
+    auto* resultPreviewBox = new QVBoxLayout();
+    resultPreviewBox->setContentsMargins(0, 0, 0, 0);
+    resultPreviewBox->addWidget(m_resultPreview, 0, Qt::AlignHCenter);
+    resultPreviewBox->addWidget(new QLabel(tr("Result"), this), 0,
+                                Qt::AlignHCenter);
+    previewRow->addLayout(inputPreviewBox);
+    previewRow->addStretch();
+    previewRow->addLayout(resultPreviewBox);
+
     auto* topLayout = new QVBoxLayout();
     topLayout->addWidget(m_inputLabel);
     topLayout->addLayout(inputRow);
+    topLayout->addLayout(previewRow);
     topLayout->addLayout(actionRow);
     topLayout->addWidget(m_statusLabel);
 
@@ -96,6 +137,17 @@ VLXSeekDialog::VLXSeekDialog(QWidget* parent) : QDialog(parent) {
     m_textEdit = new QLineEdit(this);
     m_textEdit->setPlaceholderText(
             tr("Target description, e.g. person wearing red"));
+    m_targetsEdit = new QLineEdit(this);
+    m_targetsEdit->setPlaceholderText(tr("e.g. 2, 3"));
+    m_targetsEdit->setToolTip(
+            tr("Zero-based detector proposal indexes to describe or read "
+               "text from (required for region caption / OCR)"));
+    m_targetsRow = new QWidget(this);
+    auto* targetsLayout = new QHBoxLayout(m_targetsRow);
+    targetsLayout->setContentsMargins(0, 0, 0, 0);
+    targetsLayout->addWidget(new QLabel(tr("Target indexes:"), this));
+    targetsLayout->addWidget(m_targetsEdit, 1);
+    m_targetsRow->setVisible(false);
     m_precisionCombo = new QComboBox(this);
     m_deviceCombo = new QComboBox(this);
     m_threadsSpin = new QSpinBox(this);
@@ -108,6 +160,7 @@ VLXSeekDialog::VLXSeekDialog(QWidget* parent) : QDialog(parent) {
     form->addRow(tr("Task:"), m_taskCombo);
     form->addRow(tr("Language:"), m_langCombo);
     form->addRow(tr("Text:"), m_textEdit);
+    form->addRow(m_targetsRow);
     form->addRow(tr("Precision:"), m_precisionCombo);
     form->addRow(tr("Device:"), m_deviceCombo);
     form->addRow(tr("CPU threads:"), m_threadsSpin);
@@ -133,6 +186,10 @@ VLXSeekDialog::VLXSeekDialog(QWidget* parent) : QDialog(parent) {
     connect(m_runButton, &QPushButton::clicked, this, &VLXSeekDialog::onRun);
     connect(m_cancelButton, &QPushButton::clicked, this,
             &VLXSeekDialog::onCancel);
+    connect(m_inputEdit, &QLineEdit::textChanged, this,
+            [this](const QString&) { updateInputPreview(); });
+    connect(m_taskCombo, &QComboBox::currentTextChanged, this,
+            [this](const QString&) { updateTargetsRowVisibility(); });
 
     m_downloader = new ecvModelDownloader(this);
     connect(m_downloader, &ecvModelDownloader::progress, this,
@@ -184,6 +241,32 @@ void VLXSeekDialog::populateCatalogCombos() {
 void VLXSeekDialog::setInputPath(const QString& path) {
     if (path.isEmpty()) return;
     m_inputEdit->setText(path);
+}
+
+bool VLXSeekDialog::exportToDbRequested() const {
+    return m_exportDb && m_exportDb->isChecked();
+}
+
+void VLXSeekDialog::updateInputPreview() {
+    if (!m_inputPreview) return;
+    const QString path = m_inputEdit->text().trimmed();
+    QImage img;
+    if (!path.isEmpty() && QFileInfo(path).isFile()) img = QImage(path);
+    if (img.isNull()) {
+        m_inputPreview->clearPreview();
+        m_inputPreview->setText(tr("Input"));
+        return;
+    }
+    m_inputPreview->setPreviewImage(img, ecvAICoreUi::previewSize());
+}
+
+void VLXSeekDialog::updateTargetsRowVisibility() {
+    if (!m_targetsRow) return;
+    const QString task = m_taskCombo->currentText();
+    // The runtime hard-rejects region tasks without target indexes; only
+    // those two tasks consume the proposal-index list.
+    m_targetsRow->setVisible(task == QStringLiteral("brief_region_caption") ||
+                             task == QStringLiteral("region_ocr"));
 }
 
 void VLXSeekDialog::onBrowse() {
@@ -334,6 +417,7 @@ void VLXSeekDialog::onRun() {
     settings.task = m_taskCombo->currentText();
     settings.lang = m_langCombo->currentText();
     settings.text = m_textEdit->text();
+    settings.targetIndexes = m_targetsEdit->text();
 
     m_worker = new VLXSeekWorker(settings, this);
     connect(m_worker, &VLXSeekWorker::logMessage, this,
@@ -341,10 +425,10 @@ void VLXSeekDialog::onRun() {
                 m_statusLabel->setText(message);
             });
     connect(m_worker, &VLXSeekWorker::resultReady, this,
-            &VLXSeekDialog::resultReady);
+            &VLXSeekDialog::onResultPreview);
     connect(m_worker, &VLXSeekWorker::taskFinished, this,
             &VLXSeekDialog::onWorkerFinished);
-    m_progress->setValue(0);
+    m_progress->setRange(0, 0);  // indeterminate while inference runs
     m_statusLabel->setText(tr("Running %1...").arg(settings.task));
     updateRunState();
     m_worker->start();
@@ -363,6 +447,22 @@ void VLXSeekDialog::onCancel() {
                "request to settle..."));
 }
 
+void VLXSeekDialog::onResultPreview(const VLXSeekRunResult& result) {
+    if (m_resultPreview) {
+        if (result.annotatedImage.isNull()) {
+            m_resultPreview->clearPreview();
+            m_resultPreview->setText(tr("Result"));
+        } else {
+            m_resultPreview->setPreviewImage(result.annotatedImage,
+                                             ecvAICoreUi::previewSize());
+        }
+    }
+    m_lastSummary = tr("%1 box(es) — %2")
+                            .arg(result.boxes.size())
+                            .arg(result.answer.left(120));
+    emit resultReady(result);
+}
+
 void VLXSeekDialog::onWorkerFinished(bool success) {
     if (m_worker) {
         m_worker->releaseContextOnMainThread();
@@ -370,9 +470,15 @@ void VLXSeekDialog::onWorkerFinished(bool success) {
         m_worker->deleteLater();
         m_worker = nullptr;
     }
+    m_progress->setRange(0, 100);
     m_progress->setValue(success ? 100 : 0);
     m_pendingAction = PendingAction::None;
-    m_statusLabel->setText(success ? tr("Done.") : tr("Failed (see console)."));
+    if (success && !m_lastSummary.isEmpty()) {
+        m_statusLabel->setText(tr("Done: %1").arg(m_lastSummary));
+    } else {
+        m_statusLabel->setText(success ? tr("Done.")
+                                       : tr("Failed (see console)."));
+    }
     updateRunState();
 }
 

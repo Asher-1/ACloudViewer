@@ -44,13 +44,5 @@ bool openpcdet_stage_profile_enabled();
  *  diagnostics on stderr (off by default; never affects any result value). */
 bool openpcdet_vfe_debug_enabled();
 
-/** Directory from AICORE_INSTANTMESH_CAPTURE_DIR (nullptr when unset): when
- *  set, the InstantMesh multiview VAE-decode boundary writes decode-input.bin
- *  (the pipeline-scale latents passed to vae_decode) and decode-output.bin
- *  (the raw decoder output planes) there for the independent-diffusion-
- *  reference capture flow. Each forward overwrites the previous capture, so
- *  the retained one is always the last one; purely diagnostic. */
-const char* instantmesh_capture_dir();
-
 }  // namespace debug
 }  // namespace aicore

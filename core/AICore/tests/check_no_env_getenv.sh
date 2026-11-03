@@ -4,7 +4,12 @@
 #   src/common/data_root_util.cpp  - deployment data-root convention
 #   src/common/ggml_env_bridge.cpp - the ONLY writer of ggml-side variables
 #                                    (explicit options -> env, single point)
-#   src/common/debug_dump.cpp      - debug-only dump-path reads (YOLO SAVPE)
+#   src/common/debug_dump.cpp      - debug-only dump-path reads (YOLO SAVPE,
+#                                    OpenPCDet stage/VFE diagnostics; the
+#                                    InstantMesh decode capture moved to the
+#                                    explicit aicore_instantmesh_options_set_
+#                                    capture_dir option and no longer reads
+#                                    the environment)
 # All logic control must flow through explicit options/APIs (see the AICore
 # unification plan): a getenv/setenv call in a task or common module is a
 # regression.

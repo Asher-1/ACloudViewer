@@ -88,6 +88,8 @@ public:
         double ttoLr = 5e-3;
         double ttoLpipsWeight = 0.05;
         float opacityThreshold = 0.05f;
+        float renderBackground = 0.0f;  // gsplat raster background (grayscale)
+        bool addCameras = true;
         bool addDepthViews = true;
         bool addRenderViews = true;
         bool addDepthPointCloud = true;

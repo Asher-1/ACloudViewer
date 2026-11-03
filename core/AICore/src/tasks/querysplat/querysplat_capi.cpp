@@ -34,11 +34,28 @@
 #include "map_anything_gguf_loader.hpp"
 #include "querysplat_camera_math.hpp"
 #include "querysplat_graph.hpp"
+#include "querysplat_log.hpp"
 #include "querysplat_lpips_graph.hpp"
 #include "querysplat_ply.hpp"
 #include "querysplat_preprocess.hpp"
 #include "querysplat_rasterizer.hpp"
 #include "querysplat_tto_loss.hpp"
+
+namespace {
+
+// Thread-local log tag guard for the public C entries: the shared
+// map-anything encoder runtime and gguf loader log through
+// map_anything::log_*, and every line emitted while a querysplat context
+// is loading/running must carry the [querysplat] identity, not the
+// runtime's default tag. RAII restores the default on every exit path.
+struct ScopedTaskLogTag {
+    ScopedTaskLogTag() { map_anything::set_log_tag("[querysplat] "); }
+    ~ScopedTaskLogTag() { map_anything::set_log_tag(nullptr); }
+    ScopedTaskLogTag(const ScopedTaskLogTag&) = delete;
+    ScopedTaskLogTag& operator=(const ScopedTaskLogTag&) = delete;
+};
+
+}  // namespace
 
 using aicore::capi::dup_cstr;
 using aicore::capi::image_view_to_packed_rgb;
@@ -341,8 +358,8 @@ int run_tto_loop(aicore_querysplat_ctx* ctx,
         row.ssim = lo.ssim;
         row.lpips = lp_val;
         ctx->tto_losses.push_back(row);
-        map_anything::log_info("TTO [%d/%d] L1=%.6f SSIM=%.6f LPIPS=%.6f", step,
-                               n_steps, lo.l1, lo.ssim, lp_val);
+        qs::log_info("TTO [%d/%d] L1=%.6f SSIM=%.6f LPIPS=%.6f", step, n_steps,
+                     lo.l1, lo.ssim, lp_val);
     }
     // optimized gaussians (POST-step decode, the official capture())
     if (!ctx->dec->tto_gaussians(ctx->dec_out)) {
@@ -436,6 +453,7 @@ AICORE_CAPI aicore_querysplat_ctx* aicore_querysplat_load_opts(
         const char* encoder_gguf,
         const char* decoder_gguf,
         const aicore_querysplat_options* opts) {
+    ScopedTaskLogTag taskLogTag;
     aicore_querysplat_options defaults;
     const aicore_querysplat_options& o =
             opts ? *(const aicore_querysplat_options*)opts : defaults;
@@ -546,6 +564,7 @@ aicore_querysplat_default_image_size(const aicore_querysplat_ctx* ctx) {
 AICORE_CAPI int aicore_querysplat_run_images(aicore_querysplat_ctx* ctx,
                                              const aicore_image_view* views,
                                              int32_t n_views) {
+    ScopedTaskLogTag taskLogTag;
     if (!ctx || !views || n_views < 1) {
         if (ctx) ctx->last_error = "invalid arguments (ctx/views/n_views)";
         return -1;
@@ -576,7 +595,8 @@ AICORE_CAPI int aicore_querysplat_run_images(aicore_querysplat_ctx* ctx,
             return -1;
         }
         std::vector<float> planes;
-        if (!qs::preprocess_view_bytes(v.data, v.width, v.height, channels,
+        if (!qs::preprocess_view_bytes(v.data, v.width, v.height,
+                                       int(v.row_stride_bytes), channels,
                                        v.format == AICORE_IMAGE_BGR8 ||
                                                v.format == AICORE_IMAGE_BGRA8,
                                        h, w, &planes)) {
@@ -594,6 +614,7 @@ AICORE_CAPI int aicore_querysplat_run_frames(aicore_querysplat_ctx* ctx,
                                              int32_t n_views,
                                              int32_t height,
                                              int32_t width) {
+    ScopedTaskLogTag taskLogTag;
     if (!ctx || !frames_f32 || n_views < 1 || height <= 0 || width <= 0) {
         if (ctx) ctx->last_error = "invalid arguments (ctx/frames/n/h/w)";
         return -1;
@@ -699,6 +720,7 @@ AICORE_CAPI int aicore_querysplat_render_views(aicore_querysplat_ctx* ctx,
                                                int32_t n_views,
                                                const float** out_rgb,
                                                unsigned char** out_rgb8) {
+    ScopedTaskLogTag taskLogTag;
     if (!ctx || !w2c || !intrinsics || n_views < 1 || !out_rgb || !out_rgb8) {
         if (ctx) ctx->last_error = "invalid arguments (render)";
         return -1;
@@ -753,6 +775,7 @@ AICORE_CAPI int aicore_querysplat_run_tto(
         int32_t* out_n_losses,
         const float** out_gaussians,
         int64_t* out_count) {
+    ScopedTaskLogTag taskLogTag;
     if (!ctx || n_steps < 1 || !out_losses || !out_n_losses || !out_gaussians ||
         !out_count) {
         if (ctx) ctx->last_error = "invalid arguments (run_tto)";

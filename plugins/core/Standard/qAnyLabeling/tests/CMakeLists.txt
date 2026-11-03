@@ -420,6 +420,8 @@ cloudviewer_add_plugin_test(test_qanylabeling_relation_filter
         ${QAL_DIR}/include/RelationFilterWidget.h
     INCLUDES ${QAL_DIR}/include ${QAL_DIR}/../qRelateAnything/include
         ${CMAKE_SOURCE_DIR}/core/AICore/include
+        # QtCompat.h owns the Qt5.12/Qt6 split-behavior constants.
+        ${CMAKE_SOURCE_DIR}/core/include
     LIBS Qt${QT_VERSION_MAJOR}::Widgets)
 add_test(NAME test_qanylabeling_relation_filter COMMAND test_qanylabeling_relation_filter)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_relation_filter)

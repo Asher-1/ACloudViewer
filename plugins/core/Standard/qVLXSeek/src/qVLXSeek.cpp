@@ -75,10 +75,13 @@ void qVLXSeek::showDialog() {
 }
 
 void qVLXSeek::onResultReady(const VLXSeekRunResult& result) {
-    addResultToDb(result, m_lastSettings);
+    // The dialog's "Export result to DB tree" checkbox (default checked)
+    // gates the DB write; the console summary always lands in the shared
+    // AICore log route (no plugin-private log widget).
+    if (m_dialog && m_dialog->exportToDbRequested()) {
+        addResultToDb(result, m_lastSettings);
+    }
 
-    // Console summary through the shared AICore logging route (no plugin
-    // private log widget).
     aicore_inference_log::log(
             QStringLiteral("[qVLXSeek] %1: %2 box(es), "
                            "answer: %3")
@@ -117,4 +120,8 @@ void qVLXSeek::addResultToDb(const VLXSeekRunResult& result,
         img->setMetaData(QStringLiteral("Precision"), result.precision);
 
     m_app->addToDB(img, true, true, false, true);
+    // Select the result so it is immediately visible in the DB tree
+    // (the shared AICore plugin finishing touch, qRMBG/qMapAnything
+    // pattern).
+    m_app->setSelectedInDB(img, true);
 }

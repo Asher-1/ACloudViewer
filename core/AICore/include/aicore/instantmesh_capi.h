@@ -140,6 +140,13 @@ AICORE_CAPI void aicore_instantmesh_options_set_texture_res(
  *  texture atlas (default). */
 AICORE_CAPI void aicore_instantmesh_options_set_bake_texture(
         aicore_instantmesh_options* opts, int bake_texture);
+/** Diagnostic multiview VAE-decode capture directory; NULL or empty disables
+ *  the capture. When set, the multiview decode boundary writes
+ *  decode-input.bin / decode-output.bin there for the independent
+ *  diffusion-reference flow; each forward overwrites the previous capture.
+ *  Purely diagnostic and never affects any result value. */
+AICORE_CAPI void aicore_instantmesh_options_set_capture_dir(
+        aicore_instantmesh_options* opts, const char* capture_dir);
 
 /** Returns NULL on load failure; the compatibility wrapper delegates to
  * load_opts_ex and logs diagnostics. */
