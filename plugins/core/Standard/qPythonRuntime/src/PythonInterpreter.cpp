@@ -28,6 +28,8 @@
 #include <dlfcn.h>
 #endif
 
+#include <vector>
+
 // seems like gcc defines macro with these names
 #undef major
 #undef minor
@@ -295,11 +297,57 @@ void PythonInterpreter::initialize(const PythonConfig &config)
             throw std::runtime_error(status.err_msg);
         }
 
-        status = PyConfig_SetString(&pyConfig, &pyConfig.pythonpath_env, m_config.pythonPath());
-        if (PyStatus_Exception(status))
+        // Isolated boots IGNORE pythonpath_env: getpath derives the module
+        // search path from home alone, and the site module then appends the
+        // scheme of whichever libpython actually loaded — on hosts with a
+        // same-ABI distro python (noble's /usr/lib/python3.12 vs the pyenv
+        // build python) that scheme is dist-packages, so the build
+        // interpreter's site-packages (numpy, ...) never enter sys.path
+        // (CI cpu-noble 'ModuleNotFoundError: No module named numpy' in
+        // test_qpythonruntime_plugin_loading; reproduced and diagnosed in a
+        // noble container: home-anchored boots still miss site-packages).
+        // Set the search path explicitly from the config's path string
+        // (split on both ';' — this file's historical join separator — and
+        // ':' — the POSIX env separator) so the boot is host-independent.
         {
-            PyConfig_Clear(&pyConfig);
-            throw std::runtime_error(status.err_msg);
+            const std::wstring joined(m_config.pythonPath() ? m_config.pythonPath() : L"");
+            std::vector<std::wstring> pathItems;
+            size_t start = 0;
+            while (start <= joined.size())
+            {
+                size_t sep = joined.find_first_of(L";:", start);
+                if (sep == std::wstring::npos)
+                    sep = joined.size();
+                std::wstring item = joined.substr(start, sep - start);
+                const size_t first = item.find_first_not_of(L" \t");
+                if (first != std::wstring::npos)
+                {
+                    const size_t last = item.find_last_not_of(L" \t");
+                    pathItems.push_back(item.substr(first, last - first + 1));
+                }
+                if (sep == joined.size())
+                    break;
+                start = sep + 1;
+            }
+            if (!pathItems.empty())
+            {
+                std::vector<wchar_t *> items;
+                items.reserve(pathItems.size());
+                for (std::wstring &value : pathItems)
+                    items.push_back(value.data());
+                status = PyConfig_SetWideStringList(&pyConfig,
+                                                    &pyConfig.module_search_paths,
+                                                    static_cast<Py_ssize_t>(items.size()),
+                                                    items.data());
+                if (PyStatus_Exception(status))
+                {
+                    PyConfig_Clear(&pyConfig);
+                    throw std::runtime_error(status.err_msg);
+                }
+                // Without the _set flag getpath recomputes (and discards)
+                // the list during initialization.
+                pyConfig.module_search_paths_set = 1;
+            }
         }
 
         status = PyConfig_Read(&pyConfig);

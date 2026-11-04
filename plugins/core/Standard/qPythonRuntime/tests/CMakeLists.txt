@@ -39,37 +39,6 @@ if(BUILD_UNIT_TESTS)
   set_property(TEST test_qpythonruntime_plugin_loading APPEND PROPERTY
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
   set_tests_properties(test_qpythonruntime_plugin_loading PROPERTIES TIMEOUT 60)
-  if(UNIX)
-    # The plugin's System-mode embedded interpreter discovers its home from
-    # PATH (program_name defaults to "python3"); in the CI containers that
-    # search hits the pyenv shim script, whose landmark search fails and
-    # falls back to a same-ABI DISTRO stdlib (e.g. noble's
-    # /usr/lib/python3.12) whose site-packages lack numpy — 'import pycc'
-    # then dies with ModuleNotFoundError: numpy (reproduced in a noble
-    # container: shims-first PATH -> sys.prefix=/usr, while
-    # PYTHONHOME=<build prefix> anchors sys.prefix back to pyenv). This
-    # PYTHONHOME anchors the stdlib/site-packages layer; the LD_LIBRARY_PATH
-    # entry from cloudviewer_set_plugin_test_env anchors the loaded
-    # libpython .so — the two layers are complementary and verified BOTH
-    # required (PYTHONHOME alone still resolves the distro .so via ldconfig
-    # on noble).
-    execute_process(
-      COMMAND "${PYTHON_EXECUTABLE}" -c "import sys; print(sys.prefix, end='')"
-      OUTPUT_VARIABLE _qpr_embed_python_home
-      RESULT_VARIABLE _qpr_embed_prefix_result
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      ERROR_QUIET)
-    if(_qpr_embed_prefix_result EQUAL 0 AND _qpr_embed_python_home)
-      foreach(_qpr_embed_test IN ITEMS
-          test_qpythonruntime_binding_types
-          test_qpythonruntime_plugin_loading)
-        set_property(TEST ${_qpr_embed_test} APPEND PROPERTY
-          ENVIRONMENT "PYTHONHOME=${_qpr_embed_python_home}")
-      endforeach()
-    else()
-      message(STATUS "qPythonRuntime tests: could not resolve the build python prefix; PYTHONHOME anchor skipped")
-    endif()
-  endif()
   add_test(NAME test_qpythonruntime_binding_contracts
     COMMAND ${PYTHON_EXECUTABLE} -m pytest -p no:cacheprovider -q
       --acloudviewer_exe=$<TARGET_FILE:ACloudViewer>

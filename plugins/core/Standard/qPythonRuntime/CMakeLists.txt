@@ -17,6 +17,26 @@ if(PLUGIN_PYTHON AND BUILD_PYTHON_MODULE)
 
   addplugin(NAME ${PROJECT_NAME})
 
+  # Compile-time anchor for the degenerate Bundled default (build-tree runs,
+  # where applicationDirPath()/plugins/Python does not exist): the plugin
+  # then boots its interpreter at the prefix it was compiled against
+  # instead of deriving the module search path from whichever libpython
+  # happened to load (see PythonConfig::initBundled).
+  execute_process(
+    COMMAND "${PYTHON_EXECUTABLE}" -c "import sys; print(sys.prefix, end='')"
+    OUTPUT_VARIABLE QPYTHONRUNTIME_BUILD_PYTHON_PREFIX
+    RESULT_VARIABLE QPYTHONRUNTIME_PREFIX_RC
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET)
+  if(QPYTHONRUNTIME_PREFIX_RC EQUAL 0 AND QPYTHONRUNTIME_BUILD_PYTHON_PREFIX)
+    string(REPLACE "\\" "/" QPYTHONRUNTIME_BUILD_PYTHON_PREFIX
+        "${QPYTHONRUNTIME_BUILD_PYTHON_PREFIX}")
+    string(REPLACE "\"" "\\\"" QPYTHONRUNTIME_BUILD_PYTHON_PREFIX
+        "${QPYTHONRUNTIME_BUILD_PYTHON_PREFIX}")
+    target_compile_definitions(${PROJECT_NAME} PRIVATE
+        ACV_QPYTHONRUNTIME_BUILD_PREFIX="${QPYTHONRUNTIME_BUILD_PYTHON_PREFIX}")
+  endif()
+
   # ensure_pybind11_cmake_module_is_in_path()
 
   option(PLUGIN_PYTHON_USE_EMBEDDED_MODULES

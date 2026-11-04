@@ -24,6 +24,18 @@
 #include "CVLog.h"
 #include "OpenPCDetDialog.h"
 
+// Phase markers on the unbuffered stderr channel: the CI cpu-noble lane
+// segfaulted this test once without any check() output (cuda-noble and the
+// local noble container pass it 20/20, so the crash depends on the full CI
+// build/timing context). Buffered stdout dies with the process; these
+// markers survive and name the phase the next occurrence crashes in.
+#define PHASE(name) \
+    do \
+    { \
+        std::fprintf(stderr, "[openpcdet-dialog] phase: %s\n", name); \
+        std::fflush(stderr); \
+    } while (0)
+
 class ConsoleCapture final : public CVLog {
 public:
     int errors = 0;
@@ -59,9 +71,11 @@ int main(int argc, char** argv) {
     };
     auto& repo = ecvTestDataRepository::instance();
     const auto kind = ecvTestDataRepository::Dataset::OpenPCDetSample;
+    PHASE("construct");
     // Legacy row 3 was the first nuScenes checkpoint in the interleaved list.
     QSettings().setValue("qOpenPCDet/activeRow", 3);
     OpenPCDetDialog dialog;
+    PHASE("construct-done");
     check(QFileInfo(dialog.getSettings().modelPath)
                   .fileName()
                   .startsWith("nuscenes_pointpillar_multihead."),
@@ -95,6 +109,7 @@ int main(int argc, char** argv) {
               "quantization");
     }
     if (navigation) navigation->setCurrentRow(1);
+    PHASE("show");
     dialog.show();
     QElapsedTimer exposure;
     exposure.start();
@@ -102,6 +117,7 @@ int main(int argc, char** argv) {
            exposure.elapsed() < 3000)
         QApplication::processEvents(QEventLoop::AllEvents, 20);
     dialog.setProgress(5, 100);
+    PHASE("resize-loop");
     for (const QSize size :
          {QSize(800, 480), QSize(800, 600), QSize(1024, 768)}) {
         dialog.resize(size);
@@ -111,7 +127,10 @@ int main(int argc, char** argv) {
             QApplication::processEvents();
             for (auto* scroll : dialog.findChildren<QScrollArea*>()) {
                 if (!scroll->isVisible()) continue;
-                if (scroll->horizontalScrollBar()->maximum() != 0)
+                // A QScrollArea without a widget has a zero scroll range and
+                // a null widget(): guard before dereferencing.
+                if (scroll->widget() &&
+                    scroll->horizontalScrollBar()->maximum() != 0)
                     std::fprintf(stderr,
                                  "Checkpoint=%s window=%dx%d viewport=%d "
                                  "content_min=%d\n",
@@ -185,6 +204,7 @@ int main(int argc, char** argv) {
               "Keep active progress visible");
     }
     console.errors = 0;
+    PHASE("data-repository");
     QEventLoop loop;
     int ready = 0, downloaded = 0;
     bool success = false;
@@ -322,6 +342,7 @@ int main(int argc, char** argv) {
                              QStringLiteral("kitti_pointpillar"));
         }
         OpenPCDetDialog restored;
+        PHASE("restored-dialog");
         restored.show();
         QApplication::processEvents();
         ecvClickableImageLabel* restoredPreview = nullptr;
@@ -361,6 +382,7 @@ int main(int argc, char** argv) {
     }
     const QString screenshots =
             QString::fromLocal8Bit(qgetenv("ACV_UI_TEST_SCREENSHOTS"));
+    PHASE("final");
     if (!screenshots.isEmpty()) {
         QDir().mkpath(screenshots);
         dialog.setProgress(5, 100);

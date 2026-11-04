@@ -127,6 +127,7 @@
 #include "aicore/yolo_capi.h"
 #include "ecvAssetIntegrity.h"
 #include "ecvModelDownloader.h"
+#include "ecvTestDataRepository.h"
 
 namespace {
 // QSet's iterator-range constructor needs Qt 5.14; removeDuplicates() is
@@ -261,6 +262,14 @@ AnnotationWindow::AnnotationWindow(QWidget* parent) : QMainWindow(parent) {
     resize(1320, 820);
     setAcceptDrops(true);
     qApp->installEventFilter(this);
+    // Surface the shared repository's transport detail for the Use Test
+    // Data preparation in the application console (guarded to the
+    // preparation window so unrelated dataset work stays silent here).
+    connect(&ecvTestDataRepository::instance(),
+            &ecvTestDataRepository::downloadLogMessage, this,
+            [this](const QString& message) {
+                if (m_testDataPreparation) qany_log::log(message);
+            });
     QSettings settings;
     settings.beginGroup(QStringLiteral("qAnyLabeling"));
     m_recentFiles =
@@ -797,7 +806,11 @@ void AnnotationWindow::runVlmDescribe() {
     m_vlmDescribeQueue.clear();
     const QSet<int> selected = m_canvas->selectedIndices();
     if (!selected.isEmpty()) {
-        QVector<int> targets(selected.constBegin(), selected.constEnd());
+        // qtCompatQVectorFromSet: the QVector iterator-range constructor was
+        // added in Qt 5.14 and the focal lane (Qt 5.12) has no such overload
+        // (CI cpu-focal: "no matching function for call to
+        // QVector<int>::QVector(QSet<int>::const_iterator, ...)").
+        QVector<int> targets = qtCompatQVectorFromSet(selected);
         std::sort(targets.begin(), targets.end());
         if (!m_vlmDescribeCrops) m_vlmDescribeCrops = new QTemporaryDir;
         if (!m_vlmDescribeCrops->isValid()) {
@@ -2062,7 +2075,10 @@ void AnnotationWindow::toggleCompareView() {
             this, tr("Open compare folder"), m_directory,
             QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
     if (directory.isEmpty()) return;
+    openCompareDirectory(directory);
+}
 
+bool AnnotationWindow::openCompareDirectory(const QString& directory) {
     QHash<QString, QString> files;
     QDirIterator iterator(directory, kImageFilters, QDir::Files,
                           QDirIterator::Subdirectories);
@@ -2073,13 +2089,14 @@ void AnnotationWindow::toggleCompareView() {
     }
     if (files.isEmpty()) {
         m_status->setText(tr("No matching images in compare folder"));
-        return;
+        return false;
     }
     m_compareDirectory = directory;
     m_compareFiles = files;
     m_compareAction->setChecked(true);
     m_compareBar->setVisible(true);
     loadCompareImage();
+    return true;
 }
 
 void AnnotationWindow::closeCompareView() { closeCompareView(true); }
@@ -4523,6 +4540,31 @@ void AnnotationWindow::createActions() {
     fileMenu->addAction(nextUncheckedAction);
     fileMenu->addAction(previousUncheckedAction);
     fileMenu->addAction(openDir);
+    auto* testDataMenu = new QMenu(tr("Use Test Data"), this);
+    testDataMenu->setObjectName(QStringLiteral("AnnotationTestDataMenu"));
+    const auto addTestData = [&](const QString& text,
+                                 const char* objectName,
+                                 TestDataTarget target) {
+        QAction* action = testDataMenu->addAction(
+                QIcon(iconPath(QStringLiteral("wand.svg"))), text, this,
+                [this, target]() { useTestData(target); });
+        action->setObjectName(QLatin1String(objectName));
+        return action;
+    };
+    addTestData(tr("Image annotation modes"), "AnnotationTestImageModes",
+                TestDataTarget::ImageModes);
+    addTestData(tr("Point cloud (KITTI cuboids)"),
+                "AnnotationTestPointCloud", TestDataTarget::PointCloud);
+    addTestData(tr("Video tracking demo"), "AnnotationTestVideoTracking",
+                TestDataTarget::VideoTracking);
+    addTestData(tr("Compare view (infrared pair)"),
+                "AnnotationTestCompareView", TestDataTarget::CompareView);
+    m_testDataAction = testDataMenu->menuAction();
+    m_testDataAction->setObjectName(QStringLiteral("AnnotationUseTestData"));
+    m_testDataAction->setIcon(QIcon(iconPath(QStringLiteral("wand.svg"))));
+    m_testDataAction->setToolTip(
+            tr("Fill each annotation mode with the official demo data"));
+    fileMenu->addMenu(testDataMenu);
     fileMenu->addAction(openVideo);
     fileMenu->addAction(m_compareAction);
     fileMenu->addMenu(m_recentMenu);
@@ -6738,6 +6780,186 @@ void AnnotationWindow::openDirectoryPath(const QString& path) {
     settings.setValue(QStringLiteral("lastDirectory"), m_directory);
     settings.endGroup();
     updateRecentMenu();
+}
+
+bool AnnotationWindow::copyDirectoryTree(const QString& from,
+                                         const QString& to) {
+    const QDir source(from);
+    if (!source.exists() || !QDir().mkpath(to)) return false;
+    bool ok = true;
+    QDirIterator it(from, QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
+    while (it.hasNext()) {
+        const QString path = it.next();
+        const QString dest = QDir(to).filePath(QFileInfo(path).fileName());
+        if (QFileInfo(path).isDir()) {
+            ok = copyDirectoryTree(path, dest) && ok;
+        } else {
+            QFile::remove(dest);
+            ok = QFile::copy(path, dest) && ok;
+        }
+    }
+    return ok;
+}
+
+void AnnotationWindow::applyTestDataDirectory() {
+    const QString extract =
+            QDir(ecvTestDataRepository::extractDir())
+                    .filePath(QStringLiteral("anylabeling_test_data"));
+    const QString demo = QDir(ecvTestDataRepository::dataRoot())
+                                 .filePath(QStringLiteral("anylabeling_demo"));
+    // Session copy: the extracted archive cache stays pristine (pinned
+    // digests), so user edits land in cloudViewer_data/anylabeling_demo;
+    // deleting that directory restores the pristine demo on the next run.
+    if (!QFileInfo(QDir(demo).filePath(QStringLiteral("image_modes")))
+                 .isDir() &&
+        !copyDirectoryTree(extract, demo)) {
+        qany_log::log(
+                QStringLiteral("[Error] Cannot prepare the test data session "
+                               "copy: %1")
+                        .arg(demo));
+        m_status->setText(tr("Test data preparation failed (see console)"));
+        return;
+    }
+    qany_log::log(
+            QStringLiteral("[Info] Official test data guide: %1")
+                    .arg(QDir(demo).filePath(QStringLiteral("README.md"))));
+    qany_log::log(
+            QStringLiteral("[Info] Demo folders: image_modes (canvas fill), "
+                           "formats (import/export samples), ppocr, "
+                           "compare_view, video, pointcloud — session copy: "
+                           "%1")
+                    .arg(demo));
+    openDirectoryPath(QDir(demo).filePath(QStringLiteral("image_modes")));
+    m_status->setText(
+            tr("Official test data loaded — step through image_modes"));
+}
+
+void AnnotationWindow::useTestData(TestDataTarget target) {
+    ecvTestDataRepository& repo = ecvTestDataRepository::instance();
+    if (repo.isDatasetAvailable(ecvTestDataRepository::Dataset::AnyLabeling)) {
+        applyTestData(target);
+        return;
+    }
+    // Absent cache is a recoverable preparation, not an error: the shared
+    // repository downloads, verifies and extracts once, then this slot
+    // refills the requested mode from the official demo bundle.
+    m_testDataTarget = target;
+    m_testDataAction->setEnabled(false);
+    m_testDataPreparation = true;
+    m_status->setText(tr("Preparing official test data..."));
+    // Connect before preparing: a cached verified zip extracts
+    // synchronously and the ready signal fires inside the call.
+    connect(
+            &repo, &ecvTestDataRepository::datasetReady, this,
+            [this](bool ok, ecvTestDataRepository::Dataset kind) {
+                if (kind != ecvTestDataRepository::Dataset::AnyLabeling) return;
+                m_testDataPreparation = false;
+                m_testDataAction->setEnabled(true);
+                if (!ok) {
+                    m_status->setText(
+                            tr("Test data preparation failed (see console "
+                               "for details)"));
+                    return;
+                }
+                applyTestData(m_testDataTarget);
+            },
+            Qt::UniqueConnection);
+    repo.ensureDatasetReady(ecvTestDataRepository::Dataset::AnyLabeling);
+}
+
+void AnnotationWindow::applyTestData(TestDataTarget target) {
+    switch (target) {
+        case TestDataTarget::PointCloud:
+            applyTestPointCloud();
+            break;
+        case TestDataTarget::VideoTracking:
+            applyTestVideoTracking();
+            break;
+        case TestDataTarget::CompareView:
+            applyTestCompareView();
+            break;
+        case TestDataTarget::ImageModes:
+            applyTestDataDirectory();
+            break;
+    }
+}
+
+void AnnotationWindow::applyTestPointCloud() {
+    const QString frame = QDir(ecvTestDataRepository::extractPath(
+                                       ecvTestDataRepository::Dataset::
+                                               AnyLabeling))
+                                  .filePath(QStringLiteral(
+                                          "pointcloud/KITTI_3D_det/velodyne/"
+                                          "000008.bin"));
+    if (!QFileInfo(frame).isFile()) {
+        m_status->setText(tr("KITTI sample missing from the test data"));
+        return;
+    }
+    openPointCloudAnnotation();
+    if (m_pointCloudWindow) {
+        m_pointCloudWindow->openFile(frame);
+        m_status->setText(
+                tr("KITTI cuboid sample loaded in the point-cloud window"));
+    }
+}
+
+void AnnotationWindow::applyTestVideoTracking() {
+    const QString video = QDir(ecvTestDataRepository::extractPath(
+                                       ecvTestDataRepository::Dataset::
+                                               AnyLabeling))
+                                  .filePath(QStringLiteral(
+                                          "video/demo_video.mp4"));
+    if (!QFileInfo(video).isFile()) {
+        m_status->setText(tr("Tracking demo missing from the test data"));
+        return;
+    }
+    openVideoTracking();
+    auto* tab = m_videoDialog ? m_videoDialog->findChild<VideoTab*>() : nullptr;
+    if (tab) {
+        tab->openVideoFile(video);
+        m_status->setText(tr("Tracking demo loaded in the video tab"));
+    }
+}
+
+void AnnotationWindow::applyTestCompareView() {
+    // The compare view pairs the open image with a same-base-name file in
+    // the compare folder: copy the official visible half into the session
+    // demo area, open it, and point the view at the infrared folder.
+    const QString extract =
+            ecvTestDataRepository::extractPath(
+                    ecvTestDataRepository::Dataset::AnyLabeling);
+    const QString infrared = QDir(extract).filePath(QStringLiteral(
+            "compare_view/infrared"));
+    if (!QFileInfo(QDir(infrared)
+                           .filePath(QStringLiteral("LLVIP-test-190001.jpg")))
+             .isFile()) {
+        m_status->setText(tr("Compare pair missing from the test data"));
+        return;
+    }
+    const QString sessionCompare =
+            QDir(ecvTestDataRepository::dataRoot())
+                    .filePath(QStringLiteral("anylabeling_demo/compare_view"));
+    if (!QFileInfo(QDir(sessionCompare)
+                           .filePath(QStringLiteral(
+                                   "infrared/LLVIP-test-190001.jpg")))
+             .isFile() &&
+        !copyDirectoryTree(QDir(extract).filePath(QStringLiteral(
+                                   "compare_view")),
+                           sessionCompare)) {
+        m_status->setText(tr("Test data preparation failed (see console)"));
+        return;
+    }
+    const QString visible = QDir(sessionCompare)
+                                    .filePath(QStringLiteral(
+                                            "visible/LLVIP-test-190001.jpg"));
+    if (!QMetaObject::invokeMethod(this, "openImage",
+                                   Q_ARG(QString, visible)))
+        return;
+    if (!m_compareDirectory.isEmpty()) closeCompareView(false);
+    if (openCompareDirectory(infrared)) {
+        m_status->setText(
+                tr("Compare view: slide against the infrared frame"));
+    }
 }
 
 void AnnotationWindow::updateRecentMenu() {
