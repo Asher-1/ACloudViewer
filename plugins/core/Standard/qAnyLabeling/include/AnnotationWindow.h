@@ -116,6 +116,34 @@ private:
     void openShapeConverter();
     void openDirectory();
     void openDirectoryPath(const QString& path);
+    /** Which test-data bundle the File > Use Test Data menu fills. */
+    enum class TestDataTarget {
+        ImageModes,
+        PointCloud,
+        VideoTracking,
+        CompareView
+    };
+    /** File > Use Test Data: fill the requested annotation mode with the
+     *  official X-AnyLabeling demo data. Available cache fills directly;
+     *  an absent cache starts the shared repository preparation. */
+    void useTestData(TestDataTarget target);
+    /** Route a ready test-data cache to the target mode entry. */
+    void applyTestData(TestDataTarget target);
+    /** Copy the extracted archive into the session demo directory and
+     *  open its image_modes/ folder (the one-click mode guide). */
+    void applyTestDataDirectory();
+    /** Open the KITTI 3D cuboid sample in the point-cloud window. */
+    void applyTestPointCloud();
+    /** Load the official tracking demo into the SAM3 video tab. */
+    void applyTestVideoTracking();
+    /** Point the compare view at the bundled LLVIP infrared folder. */
+    void applyTestCompareView();
+    /** Build the compare file map for a folder and enable the view
+     *  (shared by the File > Compare View dialog and the test-data fill).
+     *  False when the folder holds no matching images. */
+    bool openCompareDirectory(const QString& directory);
+    /** Recursively copy a directory tree (demo session preparation). */
+    static bool copyDirectoryTree(const QString& from, const QString& to);
     void editLabels();
     void editShapes();
     void updateRecentMenu();
@@ -342,6 +370,12 @@ private:
     int m_vlmDescribeDone = 0;
     int m_vlmDescribeTotal = 0;
     QString m_remoteModelId;
+    QAction* m_testDataAction = nullptr;
+    // True only between a Use Test Data cache miss and its datasetReady
+    // settlement; gates the shared repository's console routing here.
+    bool m_testDataPreparation = false;
+    // The menu entry the pending preparation serves.
+    TestDataTarget m_testDataTarget = TestDataTarget::ImageModes;
     QString m_validateLabel;
     QString m_loggerLevel;
     bool m_remoteInferenceRunning = false;
