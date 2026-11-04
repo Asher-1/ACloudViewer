@@ -4542,8 +4542,7 @@ void AnnotationWindow::createActions() {
     fileMenu->addAction(openDir);
     auto* testDataMenu = new QMenu(tr("Use Test Data"), this);
     testDataMenu->setObjectName(QStringLiteral("AnnotationTestDataMenu"));
-    const auto addTestData = [&](const QString& text,
-                                 const char* objectName,
+    const auto addTestData = [&](const QString& text, const char* objectName,
                                  TestDataTarget target) {
         QAction* action = testDataMenu->addAction(
                 QIcon(iconPath(QStringLiteral("wand.svg"))), text, this,
@@ -4553,12 +4552,12 @@ void AnnotationWindow::createActions() {
     };
     addTestData(tr("Image annotation modes"), "AnnotationTestImageModes",
                 TestDataTarget::ImageModes);
-    addTestData(tr("Point cloud (KITTI cuboids)"),
-                "AnnotationTestPointCloud", TestDataTarget::PointCloud);
+    addTestData(tr("Point cloud (KITTI cuboids)"), "AnnotationTestPointCloud",
+                TestDataTarget::PointCloud);
     addTestData(tr("Video tracking demo"), "AnnotationTestVideoTracking",
                 TestDataTarget::VideoTracking);
-    addTestData(tr("Compare view (infrared pair)"),
-                "AnnotationTestCompareView", TestDataTarget::CompareView);
+    addTestData(tr("Compare view (infrared pair)"), "AnnotationTestCompareView",
+                TestDataTarget::CompareView);
     m_testDataAction = testDataMenu->menuAction();
     m_testDataAction->setObjectName(QStringLiteral("AnnotationUseTestData"));
     m_testDataAction->setIcon(QIcon(iconPath(QStringLiteral("wand.svg"))));
@@ -6885,12 +6884,11 @@ void AnnotationWindow::applyTestData(TestDataTarget target) {
 }
 
 void AnnotationWindow::applyTestPointCloud() {
-    const QString frame = QDir(ecvTestDataRepository::extractPath(
-                                       ecvTestDataRepository::Dataset::
-                                               AnyLabeling))
-                                  .filePath(QStringLiteral(
-                                          "pointcloud/KITTI_3D_det/velodyne/"
-                                          "000008.bin"));
+    const QString frame =
+            QDir(ecvTestDataRepository::extractPath(
+                         ecvTestDataRepository::Dataset::AnyLabeling))
+                    .filePath(QStringLiteral("pointcloud/KITTI_3D_det/velodyne/"
+                                             "000008.bin"));
     if (!QFileInfo(frame).isFile()) {
         m_status->setText(tr("KITTI sample missing from the test data"));
         return;
@@ -6904,11 +6902,10 @@ void AnnotationWindow::applyTestPointCloud() {
 }
 
 void AnnotationWindow::applyTestVideoTracking() {
-    const QString video = QDir(ecvTestDataRepository::extractPath(
-                                       ecvTestDataRepository::Dataset::
-                                               AnyLabeling))
-                                  .filePath(QStringLiteral(
-                                          "video/demo_video.mp4"));
+    const QString video =
+            QDir(ecvTestDataRepository::extractPath(
+                         ecvTestDataRepository::Dataset::AnyLabeling))
+                    .filePath(QStringLiteral("video/demo_video.mp4"));
     if (!QFileInfo(video).isFile()) {
         m_status->setText(tr("Tracking demo missing from the test data"));
         return;
@@ -6925,14 +6922,13 @@ void AnnotationWindow::applyTestCompareView() {
     // The compare view pairs the open image with a same-base-name file in
     // the compare folder: copy the official visible half into the session
     // demo area, open it, and point the view at the infrared folder.
-    const QString extract =
-            ecvTestDataRepository::extractPath(
-                    ecvTestDataRepository::Dataset::AnyLabeling);
-    const QString infrared = QDir(extract).filePath(QStringLiteral(
-            "compare_view/infrared"));
-    if (!QFileInfo(QDir(infrared)
-                           .filePath(QStringLiteral("LLVIP-test-190001.jpg")))
-             .isFile()) {
+    const QString extract = ecvTestDataRepository::extractPath(
+            ecvTestDataRepository::Dataset::AnyLabeling);
+    const QString infrared =
+            QDir(extract).filePath(QStringLiteral("compare_view/infrared"));
+    if (!QFileInfo(QDir(infrared).filePath(
+                           QStringLiteral("LLVIP-test-190001.jpg")))
+                 .isFile()) {
         m_status->setText(tr("Compare pair missing from the test data"));
         return;
     }
@@ -6942,23 +6938,21 @@ void AnnotationWindow::applyTestCompareView() {
     if (!QFileInfo(QDir(sessionCompare)
                            .filePath(QStringLiteral(
                                    "infrared/LLVIP-test-190001.jpg")))
-             .isFile() &&
-        !copyDirectoryTree(QDir(extract).filePath(QStringLiteral(
-                                   "compare_view")),
-                           sessionCompare)) {
+                 .isFile() &&
+        !copyDirectoryTree(
+                QDir(extract).filePath(QStringLiteral("compare_view")),
+                sessionCompare)) {
         m_status->setText(tr("Test data preparation failed (see console)"));
         return;
     }
-    const QString visible = QDir(sessionCompare)
-                                    .filePath(QStringLiteral(
-                                            "visible/LLVIP-test-190001.jpg"));
-    if (!QMetaObject::invokeMethod(this, "openImage",
-                                   Q_ARG(QString, visible)))
+    const QString visible =
+            QDir(sessionCompare)
+                    .filePath(QStringLiteral("visible/LLVIP-test-190001.jpg"));
+    if (!QMetaObject::invokeMethod(this, "openImage", Q_ARG(QString, visible)))
         return;
     if (!m_compareDirectory.isEmpty()) closeCompareView(false);
     if (openCompareDirectory(infrared)) {
-        m_status->setText(
-                tr("Compare view: slide against the infrared frame"));
+        m_status->setText(tr("Compare view: slide against the infrared frame"));
     }
 }
 

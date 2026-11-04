@@ -29,11 +29,10 @@
 // local noble container pass it 20/20, so the crash depends on the full CI
 // build/timing context). Buffered stdout dies with the process; these
 // markers survive and name the phase the next occurrence crashes in.
-#define PHASE(name) \
-    do \
-    { \
+#define PHASE(name)                                                   \
+    do {                                                              \
         std::fprintf(stderr, "[openpcdet-dialog] phase: %s\n", name); \
-        std::fflush(stderr); \
+        std::fflush(stderr);                                          \
     } while (0)
 
 class ConsoleCapture final : public CVLog {
