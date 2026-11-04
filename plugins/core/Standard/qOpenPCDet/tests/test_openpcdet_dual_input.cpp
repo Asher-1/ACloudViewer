@@ -131,11 +131,35 @@ TEST(OpenPCDetHelpers, ClassNameKittiMapping) {
     EXPECT_EQ(OpenPCDetHelpers::className(4, 3), QStringLiteral("class 4"));
 }
 
+TEST(OpenPCDetHelpers, ClassNameNuScenesMapping) {
+    // nuScenes 10-class convention, 1-indexed, in the OpenPCDet
+    // CLASS_NAMES order (verified against gen_bev_nuscenes.py):
+    // 1=car, 2=truck, 3=bus, 4=trailer, 5=construction,
+    // 6=pedestrian, 7=motorcycle, 8=bicycle, 9=traffic_cone, 10=barrier.
+    EXPECT_EQ(OpenPCDetHelpers::className(1, 10), QStringLiteral("car"));
+    EXPECT_EQ(OpenPCDetHelpers::className(2, 10), QStringLiteral("truck"));
+    EXPECT_EQ(OpenPCDetHelpers::className(6, 10), QStringLiteral("pedestrian"));
+    EXPECT_EQ(OpenPCDetHelpers::className(9, 10),
+              QStringLiteral("traffic_cone"));
+    EXPECT_EQ(OpenPCDetHelpers::className(10, 10), QStringLiteral("barrier"));
+    // Out-of-range labels fall back to the generic form.
+    EXPECT_EQ(OpenPCDetHelpers::className(0, 10), QStringLiteral("class 0"));
+    EXPECT_EQ(OpenPCDetHelpers::className(11, 10), QStringLiteral("class 11"));
+}
+
+TEST(OpenPCDetHelpers, ClassNameSingleClassCar) {
+    // The only published single-class checkpoint is the car-only
+    // KITTI Voxel-RCNN; label 1 with numClass=1 maps to "Car".
+    EXPECT_EQ(OpenPCDetHelpers::className(1, 1), QStringLiteral("Car"));
+    EXPECT_EQ(OpenPCDetHelpers::className(0, 1), QStringLiteral("class 0"));
+    EXPECT_EQ(OpenPCDetHelpers::className(2, 1), QStringLiteral("class 2"));
+}
+
 TEST(OpenPCDetHelpers, ClassNameGenericFallback) {
-    // Non-KITTI layouts (e.g. nuScenes, 10 classes) have no name table in
-    // the C API, so labels stay generic.
-    EXPECT_EQ(OpenPCDetHelpers::className(1, 10), QStringLiteral("class 1"));
-    EXPECT_EQ(OpenPCDetHelpers::className(10, 10), QStringLiteral("class 10"));
+    // Unknown class counts (e.g. numClass=5) have no name table in the
+    // C API, so labels stay generic.
+    EXPECT_EQ(OpenPCDetHelpers::className(1, 5), QStringLiteral("class 1"));
+    EXPECT_EQ(OpenPCDetHelpers::className(5, 5), QStringLiteral("class 5"));
 }
 
 TEST(OpenPCDetHelpers, PerClassCounts) {
@@ -488,21 +512,24 @@ TEST(OpenPCDetHelpers, CatalogMirror) {
 }
 
 TEST(OpenPCDetHelpers, ClassColorMapping) {
-    // nuScenes devkit palette at 10 classes.
+    // Upstream OpenPCDet-GGML demo palette (ColorBrewer Set1, indexed by
+    // the 1-based label). The same table is used regardless of numClass;
+    // numClass only documents the model layout.
     auto car = OpenPCDetHelpers::classColor(1, 10);
-    EXPECT_EQ(car.r, 255);
-    EXPECT_EQ(car.g, 158);
-    EXPECT_EQ(car.b, 0);
-    auto ped = OpenPCDetHelpers::classColor(9, 10);
-    EXPECT_EQ(ped.r, 0);
-    EXPECT_EQ(ped.g, 0);
-    EXPECT_EQ(ped.b, 230);
-    // KITTI demo colors at 3 classes.
+    EXPECT_EQ(car.r, 228);
+    EXPECT_EQ(car.g, 26);
+    EXPECT_EQ(car.b, 28);
+    // label 9 = traffic_cone in the nuScenes order.
+    auto cone = OpenPCDetHelpers::classColor(9, 10);
+    EXPECT_EQ(cone.r, 102);
+    EXPECT_EQ(cone.g, 194);
+    EXPECT_EQ(cone.b, 165);
+    // Same label-driven palette at 3 classes (KITTI).
     auto kittiCar = OpenPCDetHelpers::classColor(1, 3);
-    EXPECT_EQ(kittiCar.r, 230);
-    EXPECT_EQ(kittiCar.g, 60);
-    EXPECT_EQ(kittiCar.b, 60);
-    // Deterministic fallback outside the known layouts.
+    EXPECT_EQ(kittiCar.r, 228);
+    EXPECT_EQ(kittiCar.g, 26);
+    EXPECT_EQ(kittiCar.b, 28);
+    // Deterministic fallback outside the published 1..10 range.
     auto fallback = OpenPCDetHelpers::classColor(2, 5);
     auto fallbackAgain = OpenPCDetHelpers::classColor(2, 5);
     EXPECT_EQ(fallback.r, fallbackAgain.r);
@@ -975,6 +1002,10 @@ TEST(OpenPCDetDualInput, DbExportWireframeMetadata) {
         EXPECT_EQ(got.r, cls.r);
         EXPECT_EQ(got.g, cls.g);
         EXPECT_EQ(got.b, cls.b);
+        // Regression: setColor without showColors(true) collapses to the
+        // context default in the display pipeline — every detection box
+        // must carry its own per-class color.
+        EXPECT_TRUE(box->colorsShown());
         EXPECT_EQ(box->getMetaData(QStringLiteral("OpenPCDet/Label")),
                   static_cast<qlonglong>(d.label));
         EXPECT_EQ(box->getMetaData(QStringLiteral("OpenPCDet/Score")),
@@ -1023,6 +1054,10 @@ TEST(OpenPCDetDualInput, DbExportAnnotatedCloudMetadataAndTint) {
     EXPECT_EQ(annotated->getMetaData(QStringLiteral("OpenPCDet/Model")),
               QStringLiteral("kitti_pointpillar.f32.gguf"));
     EXPECT_TRUE(annotated->colorsShown());
+    // Regression: a source with a displayed scalar field (e.g. the sample
+    // cloud's intensity) would keep SF rendering ahead of the RGB tint
+    // and hide the per-class color entirely.
+    EXPECT_FALSE(annotated->sfShown());
 
     const OpenPCDetHelpers::OpenPCDetClassColor carColor =
             OpenPCDetHelpers::classColor(1, 3);

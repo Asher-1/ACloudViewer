@@ -277,6 +277,9 @@ void qOpenPCDet::exportAnnotatedCloud(const OpenPCDetRunResult& result) {
     const QString cloudName = ecvPluginDbNaming::makeUnique(
             QStringLiteral("OpenPCDet annotated (%1)").arg(modelTag), m_app);
     annotated->setName(cloudName);
+    // Larger point size so the per-class tint is visible at typical zoom
+    // levels without having to tweak the property panel manually.
+    annotated->setPointSize(3);
 
     m_app->addToDB(annotated, true, true, false, true);
     m_dialog->appendLog(

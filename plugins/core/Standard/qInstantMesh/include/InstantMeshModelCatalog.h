@@ -60,7 +60,9 @@ QString hfDownloadUrl(const QString& filename);
 /** Base URL of the published HF mirror (ends with '/'). */
 QString hfMirrorUrl();
 /** True when path holds a valid GGUF whose size matches the published
- *  mirror size for filename (magic + size only, no full read). */
+ *  mirror size for filename (magic + size only, no full read). RMBG
+ *  filenames validate through the global pinned digest table instead:
+ *  they belong to the RMBG task catalog, which publishes no size. */
 bool isValidModelFile(const QString& path, const QString& filename);
 /** Content-level verification against the published SHA-256. */
 bool verifyModelFileSha256(const QString& path, const QString& filename);

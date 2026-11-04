@@ -32,6 +32,7 @@
 #include <QTabWidget>
 #include <QTableWidget>
 #include <QVBoxLayout>
+#include <initializer_list>
 
 #include "OCRWorker.h"
 #include "aicore/backend_capi.h"
@@ -44,16 +45,32 @@
 #include "ecvPersistentSettings.h"
 
 namespace {
-// Image suffixes listed from the shared Ppocr dataset bundle (the dataset
-// registration owns the URL, the zip cache, the integrity ledger, and
+// Image suffixes listed from the shared dataset bundles (the dataset
+// registrations own the URL, the zip cache, the integrity ledger, and
 // extraction).
 const QStringList kImageFilters = {
         QStringLiteral("*.png"), QStringLiteral("*.jpg"),
         QStringLiteral("*.jpeg"), QStringLiteral("*.bmp")};
 
-QString ppocrRoot() {
-    return ecvTestDataRepository::extractPath(
-            ecvTestDataRepository::Dataset::Ppocr);
+QString datasetRoot(ecvTestDataRepository::Dataset kind) {
+    return QFileInfo(ecvTestDataRepository::extractPath(kind))
+            .absoluteFilePath();
+}
+
+// The bundle roots a path may belong to (tables bundle first, then the
+// PaddleOCR demo bundle).
+const ecvTestDataRepository::Dataset kBundleKinds[] = {
+        ecvTestDataRepository::Dataset::PpocrTables,
+        ecvTestDataRepository::Dataset::Ppocr};
+
+// The bundle root that contains \p path, or empty for foreign (user) paths.
+QString containingBundleRoot(const QString& path) {
+    for (const auto kind : kBundleKinds) {
+        const QString root = datasetRoot(kind);
+        if (!root.isEmpty() && path.startsWith(root + QLatin1Char('/')))
+            return root;
+    }
+    return QString();
 }
 
 bool writeTableFile(const QString& path,
@@ -149,9 +166,10 @@ OCRDialog::OCRDialog(QWidget* parent) : QDialog(parent) {
     m_testDataButton = ecvAICoreUi::makeSampleDataBtn(this);
     m_testDataButton->setObjectName(QStringLiteral("qOCRUseTestData"));
     m_testDataButton->setToolTip(
-            tr("List every official PaddleOCR test image and check the ones "
-               "recommended for the current mode (tables / layout / "
-               "language). Your own images keep their state."));
+            tr("List every official test image of the current mode's bundle "
+               "(the real-document table pages for tables mode, the "
+               "PaddleOCR demo images otherwise) and check the ones "
+               "recommended for it. Your own images keep their state."));
     // Not makeBrowseBtn: its fixed width is sized for "Browse…".
     m_browseButton = new QPushButton(tr("Add images…"), this);
     m_browseButton->setObjectName(QStringLiteral("qOCRAddImages"));
@@ -326,9 +344,10 @@ OCRDialog::OCRDialog(QWidget* parent) : QDialog(parent) {
     connect(m_downloadButton, &QPushButton::clicked, this,
             &OCRDialog::onDownloadMissing);
     // Test data flows through the shared ecvTestDataRepository (the
-    // Dataset::Ppocr registration owns the URL, the zip cache, the
-    // integrity ledger, and extraction) — this dialog only filters its
-    // broadcasts by dataset kind.
+    // Dataset::Ppocr / Dataset::PpocrTables registrations own the URL, the
+    // zip cache, the integrity ledger, and extraction). One
+    // ensureDatasetReady call per request; this dialog only filters the
+    // resulting datasetReady broadcast by the requested kind.
     auto& testDataRepo = ecvTestDataRepository::instance();
     connect(&testDataRepo, &ecvTestDataRepository::downloadProgress, this,
             [this](int percent, const QString& statusText) {
@@ -343,8 +362,6 @@ OCRDialog::OCRDialog(QWidget* parent) : QDialog(parent) {
             [this](const QString& message) {
                 if (m_testDataInProgress) appendLog(message);
             });
-    connect(&testDataRepo, &ecvTestDataRepository::downloadFinished, this,
-            &OCRDialog::onTestDataDownloadFinished);
     connect(&testDataRepo, &ecvTestDataRepository::extractionProgress, this,
             [this](int current, int total) {
                 if (!m_testDataInProgress || total <= 0) return;
@@ -352,8 +369,8 @@ OCRDialog::OCRDialog(QWidget* parent) : QDialog(parent) {
                 m_progress->setValue(current);
                 m_progress->setVisible(true);
             });
-    connect(&testDataRepo, &ecvTestDataRepository::extractionFinished, this,
-            &OCRDialog::onTestDataExtractionFinished);
+    connect(&testDataRepo, &ecvTestDataRepository::datasetReady, this,
+            &OCRDialog::onTestDataReady);
     connect(m_testDataButton, &QPushButton::clicked, this,
             &OCRDialog::onUseTestData);
     connect(m_runButton, &QPushButton::clicked, this, &OCRDialog::onRun);
@@ -550,23 +567,28 @@ void OCRDialog::onDownloadFinished(bool ok, const QString& destPath) {
     updateRunState();
 }
 
+ecvTestDataRepository::Dataset OCRDialog::datasetForMode(bool table) {
+    // Tables mode consumes the dedicated real-document table pages; every
+    // other mode keeps the shared PaddleOCR demo bundle (layout pages,
+    // language demos).
+    return table ? ecvTestDataRepository::Dataset::PpocrTables
+                 : ecvTestDataRepository::Dataset::Ppocr;
+}
+
 QStringList OCRDialog::recommendedTestImages(bool table,
                                              bool layout,
                                              bool chinese) {
-    if (table && layout) {
-        // PP-Structure pages: layout finds the tables, SLANet rebuilds them.
-        return {QStringLiteral("layout/table_page_1.png"),
-                QStringLiteral("layout/table_page_layout.jpg")};
-    }
     if (table) {
-        // Whole image = one real-document table: the PaddleOCR medal table,
-        // the PP-Structure docs table and the PaddleX v2 demo form (merged
-        // cells). The synthetic table_rec/ GT crops stay listed unchecked.
-        return {QStringLiteral("test_files/medal_table.png"),
-                QStringLiteral("tables/ppstructure_table.jpg"),
-                QStringLiteral("tables/table_recognition_v2.jpg")};
+        // The deterministic first-fill members of the official
+        // table-recognition validation bundle (relative to its extraction
+        // root): one Chinese and one Japanese real-document page. The page
+        // works in both table stages — whole image = one table, and with
+        // layout enabled the layout regions segment the tables first. All
+        // 100 zh/ja pages stay listed unchecked.
+        return {QStringLiteral("zh_val_0.jpg"), QStringLiteral("ja_val_0.jpg")};
     }
     if (layout) {
+        // PP-Structure pages: layout finds the tables, SLANet rebuilds them.
         return {QStringLiteral("layout/table_page_layout.jpg"),
                 QStringLiteral("layout/table_page_1.png")};
     }
@@ -606,7 +628,7 @@ QStringList OCRDialog::testDataImages(const QString& root,
 }
 
 QString OCRDialog::imageLabel(const QString& path) const {
-    const QString root = ppocrRoot();
+    const QString root = containingBundleRoot(path);
     const QString rel = QDir(root).relativeFilePath(path);
     if (!root.isEmpty() && !rel.startsWith(QStringLiteral("..")) &&
         !QDir::isAbsolutePath(rel)) {
@@ -657,10 +679,13 @@ void OCRDialog::fillTestData() {
     const bool layout = m_layoutCheck->isChecked();
     const bool chinese =
             m_language->currentData().toString() == QStringLiteral("ch");
-    const QString root = QFileInfo(ppocrRoot()).absoluteFilePath();
+    const auto kind = datasetForMode(table);
+    const QString root = datasetRoot(kind);
     const QStringList images = testDataImages(root, table, layout, chinese);
     if (images.isEmpty()) {
-        appendLog(tr("[Test data] PaddleOCR test images unavailable."));
+        appendLog(tr("[Test data] %1 unavailable.")
+                          .arg(ecvTestDataRepository::getDatasetInfo(kind)
+                                       .displayName));
         updateRunState();
         return;
     }
@@ -694,12 +719,13 @@ void OCRDialog::fillTestData() {
     }
     if (QListWidgetItem* first = m_imageList->item(own.size()))
         m_imageList->scrollToItem(first);
-    appendLog(tr("[Test data] %1 PaddleOCR test image(s) listed, %2 "
-                 "recommended checked (%3).")
+    appendLog(tr("[Test data] %1 image(s) listed from %2, %3 recommended "
+                 "checked (%4).")
                       .arg(images.size())
+                      .arg(ecvTestDataRepository::getDatasetInfo(kind)
+                                   .displayName)
                       .arg(checked)
-                      .arg(table     ? (layout ? tr("table pages")
-                                               : tr("table crops"))
+                      .arg(table     ? tr("table pages")
                            : layout  ? tr("layout pages")
                            : chinese ? tr("Chinese")
                                      : tr("English")));
@@ -712,19 +738,24 @@ void OCRDialog::onUseTestData() {
         return;
     }
     auto& repo = ecvTestDataRepository::instance();
-    const auto kind = ecvTestDataRepository::Dataset::Ppocr;
+    const bool table = m_tableCheck->isChecked();
+    const auto kind = datasetForMode(table);
+    const QString root = datasetRoot(kind);
     // An extraction from an older bundle lacks the newer images: every
-    // recommended file of every mode must be on disk, else (re)extract or
-    // download the pinned bundle.
-    bool complete = QDir(ppocrRoot()).exists();
-    for (const bool table : {false, true}) {
+    // recommended file of the active mode's bundle must be on disk, else
+    // prepare the pinned bundle through the shared repository chain
+    // (download -> digest verification -> extraction).
+    bool complete = QDir(root).exists();
+    if (table) {
+        for (const QString& rel : recommendedTestImages(true, false, false))
+            complete = complete && QFileInfo(QDir(root).filePath(rel)).isFile();
+    } else {
         for (const bool layout : {false, true}) {
             for (const bool chinese : {false, true}) {
                 for (const QString& rel :
-                     recommendedTestImages(table, layout, chinese)) {
-                    complete =
-                            complete &&
-                            QFileInfo(QDir(ppocrRoot()).filePath(rel)).isFile();
+                     recommendedTestImages(false, layout, chinese)) {
+                    complete = complete &&
+                               QFileInfo(QDir(root).filePath(rel)).isFile();
                 }
             }
         }
@@ -734,58 +765,35 @@ void OCRDialog::onUseTestData() {
         return;
     }
     m_testDataInProgress = true;
+    m_testDataKind = kind;
     m_testDataButton->setEnabled(false);
     m_progress->setVisible(true);
     m_downloadLabel->setVisible(true);
-    m_downloadLabel->setText(tr("Preparing PaddleOCR test data..."));
-    if (repo.isDatasetAvailable(kind)) {
-        m_progress->setRange(0, 0);
-        appendLog(
-                tr("[Test data] Extracting the cached PaddleOCR "
-                   "images..."));
-        repo.extractDataset(kind);
-        return;
-    }
-    if (repo.isDownloadInProgress()) {
-        appendLog(
-                tr("A shared dataset download is running; please retry "
-                   "in a moment."));
-        m_testDataInProgress = false;
-        m_testDataButton->setEnabled(true);
-        m_progress->setVisible(false);
-        m_downloadLabel->setVisible(false);
-        return;
-    }
+    m_downloadLabel->setText(
+            tr("Preparing %1...")
+                    .arg(ecvTestDataRepository::getDatasetInfo(kind)
+                                 .displayName));
     m_progress->setRange(0, 100);
     m_progress->setValue(0);
-    appendLog(
-            tr("[Test data] Downloading the official PaddleOCR demo "
-               "images..."));
-    repo.startDownload(kind);
+    appendLog(tr("[Test data] Preparing %1 (shared download, digest-"
+                 "verified)...")
+                      .arg(ecvTestDataRepository::getDatasetInfo(kind)
+                                   .displayName));
+    // The repository owns the full download->extract ordering and converges
+    // through exactly one datasetReady(ok, kind) — synchronous when the
+    // verified zip or the extraction is already cached.
+    repo.ensureDatasetReady(kind);
 }
 
-void OCRDialog::onTestDataDownloadFinished(
-        bool success, ecvTestDataRepository::Dataset kind) {
-    if (kind != ecvTestDataRepository::Dataset::Ppocr) return;
+void OCRDialog::onTestDataReady(bool success,
+                                ecvTestDataRepository::Dataset kind) {
+    if (kind != m_testDataKind) return;
     if (!m_testDataInProgress) return;
     if (!success) {
-        appendLog(tr("[Test data] Download failed."));
-        fillTestData();
-        return;
-    }
-    m_progress->setRange(0, 0);
-    ecvTestDataRepository::instance().extractDataset(
-            ecvTestDataRepository::Dataset::Ppocr);
-}
-
-void OCRDialog::onTestDataExtractionFinished(
-        bool success, ecvTestDataRepository::Dataset kind) {
-    if (kind != ecvTestDataRepository::Dataset::Ppocr) return;
-    if (!m_testDataInProgress) return;
-    if (!success) {
-        appendLog(tr("[Test data] Extraction failed."));
-        fillTestData();
-        return;
+        // The genuine transport/integrity/extraction error was already
+        // reported through the Error channel (downloadLogMessage); land in
+        // the view state and list whatever is on disk.
+        appendLog(tr("[Test data] Preparation failed."));
     }
     fillTestData();
 }
@@ -795,8 +803,15 @@ void OCRDialog::onAddImages() {
     const QString lastDir = ecvPS::browseDir(settings, QStringLiteral("qOCR"),
                                              QStringLiteral("lastImageFileDir"),
                                              QDir::homePath());
+    // A filled input list (sample fill or a previous pick) takes
+    // precedence over the remembered directory.
+    QString startDir = lastDir;
+    if (m_imageList && m_imageList->count()) {
+        const QFileInfo currentInput(m_imageList->item(0)->text());
+        if (currentInput.isFile()) startDir = currentInput.absolutePath();
+    }
     const QStringList paths = QFileDialog::getOpenFileNames(
-            this, tr("Add images"), lastDir,
+            this, tr("Add images"), startDir,
             tr("Images (*.png *.jpg *.jpeg *.bmp *.tif *.tiff *.webp);;All "
                "files (*)"));
     if (paths.isEmpty()) return;

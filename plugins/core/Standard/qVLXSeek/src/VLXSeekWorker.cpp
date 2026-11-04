@@ -12,6 +12,7 @@
 #ifdef AICore_ENABLED
 #include <QtCompat.h>
 #include <aicore/image_view.h>
+#include <aicore/ocr_capi.h>
 #include <aicore/pipeline_timing.h>
 #include <aicore/vlx_seek_capi.h>
 
@@ -73,6 +74,70 @@ bool toImage(const QImage& image, aicore_image_view* view) {
     return true;
 }
 
+// Runs the PP-OCR text detector through the public AICore OCR API and
+// converts the det quads to the axis-aligned proposal boxes the VLX-Seek
+// runtime consumes. The OCR contract requires a rec model alongside det;
+// its recognition pass runs on the crops but only the boxes are consumed —
+// that cost is proportional to the text-line count and stays off the VLX-Seek
+// timing contract (reported separately as result->proposalMs).
+bool runOcrDetProposals(const VLXSeekWorker::Settings& settings,
+                        const aicore_image_view* view,
+                        QVector<float>* boxes,
+                        QString* error) {
+    if (settings.ocrDetPath.isEmpty() || settings.ocrRecPath.isEmpty()) {
+        *error = QObject::tr(
+                "OCR text-detector proposals require the PP-OCR "
+                "det/rec models; re-select the proposal source so "
+                "the models are prepared.");
+        return false;
+    }
+    const QByteArray detPath = settings.ocrDetPath.toUtf8();
+    const QByteArray recPath = settings.ocrRecPath.toUtf8();
+    const QByteArray device = settings.device.toUtf8();
+    aicore_ocr_options options{};
+    options.struct_size = sizeof(options);
+    options.abi_version = AICORE_OCR_ABI_VERSION;
+    options.det_model_path = detPath.constData();
+    options.rec_model_path = recPath.constData();
+    options.device = device.constData();
+    options.n_threads = settings.threads;
+    aicore_ocr_ctx* ctx = aicore_ocr_context_create(&options);
+    if (!ctx) {
+        const char* err = aicore_ocr_last_error();
+        *error = QObject::tr("Failed to load the OCR text-detector models: %1")
+                         .arg(err ? QString::fromUtf8(err)
+                                  : QObject::tr("unknown error"));
+        return false;
+    }
+    aicore_ocr_result* ocr = aicore_ocr_run(ctx, view);
+    if (!ocr) {
+        const char* err = aicore_ocr_last_error();
+        *error = QObject::tr("OCR text detection failed: %1")
+                         .arg(err ? QString::fromUtf8(err)
+                                  : QObject::tr("unknown error"));
+        aicore_ocr_context_destroy(ctx);
+        return false;
+    }
+    bool ok = true;
+    const int count = aicore_ocr_box_count(ocr);
+    QVector<float> quads;
+    quads.reserve(count * 8);
+    for (int i = 0; i < count; ++i) {
+        const aicore_ocr_box* box = aicore_ocr_box_at(ocr, i);
+        if (!box) continue;
+        for (const float* point : box->quad) quads << point[0] << point[1];
+    }
+    aicore_ocr_result_release(ocr);
+    aicore_ocr_context_destroy(ctx);
+    if (!VLXSeekHelpers::ocrQuadsToBoxes(quads.constData(), count, boxes)) {
+        *error = QObject::tr(
+                "OCR text detection found no text region in the image; "
+                "region_ocr needs text-detector proposals.");
+        ok = false;
+    }
+    return ok;
+}
+
 }  // namespace
 
 bool VLXSeekWorker::runImage(aicore_vlx_seek_ctx* ctx,
@@ -117,10 +182,32 @@ bool VLXSeekWorker::runImage(aicore_vlx_seek_ctx* ctx,
                                                      error);
         if (targets.isEmpty()) return false;
     }
+    // Region proposals: with a NULL boxes pointer the task runtime runs its
+    // built-in WeDetect-Uni proposer (object regions). The two caller-side
+    // sources replace that step: the external boxes JSON (upstream
+    // --bbox-list parity) and the OCR text detector, whose text boxes make
+    // region_ocr address actual text lines so the exported boxes are text
+    // bboxes.
+    QVector<float> callerBoxes;
+    if (settings.proposalSource == QStringLiteral("ocr_det")) {
+        QElapsedTimer proposalTimer;
+        proposalTimer.start();
+        if (!runOcrDetProposals(settings, &view, &callerBoxes, error))
+            return false;
+        result->proposalMs = static_cast<double>(proposalTimer.elapsed());
+        result->proposalSource = QStringLiteral("ocr-det");
+    } else if (!settings.externalBoxesPath.trimmed().isEmpty()) {
+        callerBoxes = VLXSeekHelpers::parseExternalBoxes(
+                settings.externalBoxesPath, error);
+        if (callerBoxes.isEmpty()) return false;
+        result->proposalSource = QStringLiteral("external");
+    }
     const int rc = aicore_vlx_seek_run_image(
             ctx, &view, settings.task.toUtf8().constData(),
             settings.text.toUtf8().constData(),
-            settings.lang.toUtf8().constData(), nullptr, 0,
+            settings.lang.toUtf8().constData(),
+            callerBoxes.isEmpty() ? nullptr : callerBoxes.constData(),
+            static_cast<int32_t>(callerBoxes.size() / 4),
             targets.isEmpty() ? nullptr : targets.constData(),
             static_cast<int32_t>(targets.size()));
     const double ms = static_cast<double>(timer.elapsed());

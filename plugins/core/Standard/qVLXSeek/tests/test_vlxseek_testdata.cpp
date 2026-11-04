@@ -77,9 +77,10 @@ TEST(VLXSeekTestData, ColdDownloadExtractAndDemoFill) {
     // Exactly one datasetReady(ok) emission for the accepted call.
     ASSERT_EQ(readyCalls, 1);
 
-    // The pinned demo member the dialog fills.
+    // The pinned demo member the dialog fills (the rich multi-object
+    // street scene, not the single-fruit upstream card).
     const QString demo = ecvTestDataRepository::findDatasetFile(
-            kDataset, QStringLiteral("demo_image.jpg"));
+            kDataset, QStringLiteral("ebike_riders.jpg"));
     EXPECT_FALSE(demo.isEmpty());
     EXPECT_TRUE(QFileInfo::exists(demo));
     // The retained zip stays cached for offline re-extraction.

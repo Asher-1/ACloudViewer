@@ -67,10 +67,12 @@ inline std::string npy_header(const std::vector<int64_t>& shape) {
     std::string dict =
             "{'descr': '<f4', 'fortran_order': False, 'shape': (" + sh +
             "), }";
-    // magic(6) + version(2) + hlen(2) + dict + "\n" padded to 64 bytes
-    const size_t used = 6 + 2 + 2 + dict.size() + 1;
-    const size_t pad = 64 - (used % 64);
-    dict.append(pad - 1, ' ');
+    // magic(6) + version(2) + hlen(2) + dict + nspaces + "\n" aligned to a
+    // 64-byte boundary (numpy's ARRAY_ALIGN writer convention; matches the
+    // byte layout of np.lib.format for the same dict). The padding here used
+    // to run one space short and shift every following member.
+    const size_t nspaces = 64 - ((11 + dict.size()) % 64);
+    dict.append(nspaces, ' ');
     dict.push_back('\n');
     std::string out;
     out += "\x93NUMPY";

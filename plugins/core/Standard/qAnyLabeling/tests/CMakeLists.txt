@@ -85,7 +85,12 @@ cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_config)
 cloudviewer_add_plugin_test(test_qanylabeling_plugin
     SOURCES test_plugin.cpp ../src/LocalChatEngine.cpp
     INCLUDES ${CMAKE_CURRENT_LIST_DIR}/../include
-    LIBS AICore CVPluginAPI CVPluginStub Qt${QT_VERSION_MAJOR}::Widgets)
+    LIBS AICore CVPluginAPI CVPluginStub Qt${QT_VERSION_MAJOR}::Widgets
+         # LocalChatEngine.cpp spawns std::thread workers; glibc >= 2.34 folds
+         # libpthread into libc so jammy/noble link without it, but the focal
+         # lane (glibc 2.31) needs the explicit dependency on the link line
+         # (undefined reference to pthread_create, DSO missing).
+         Threads::Threads)
 add_test(NAME test_qanylabeling_plugin
     COMMAND test_qanylabeling_plugin $<TARGET_FILE:QANYLABELING_PLUGIN>)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_plugin)

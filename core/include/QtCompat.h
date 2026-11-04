@@ -127,6 +127,11 @@
 //    - Function: qtCompatOpenNewFile() (QIODevice::NewOnly, Qt5.11+)
 //    - Older Qt uses atomic native O_EXCL creation, never exists()+truncate.
 //
+// 22. Font Database Families:
+//    - QFontDatabase::families() is an instance method on Qt5 and a static
+//      member on Qt6 (the constructor was removed)
+//    - Function: qtCompatFontFamilies()
+//
 // USAGE EXAMPLES:
 //
 //   Regular Expression:
@@ -1363,6 +1368,23 @@ inline void qtCompatSetFontFamilies(QFont& font, const QStringList& families) {
     if (!families.isEmpty()) {
         font.setFamily(families.first());
     }
+}
+
+// ----------------------------------------------------------------------------
+// QFontDatabase Families Compatibility
+// ----------------------------------------------------------------------------
+// Qt5: families() is a member of the (instantiable) QFontDatabase class
+// Qt6: the constructor was removed; families() is a static member
+// ----------------------------------------------------------------------------
+
+#include <QFontDatabase>
+
+inline QStringList qtCompatFontFamilies() {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    return QFontDatabase::families();
+#else
+    return QFontDatabase().families();
+#endif
 }
 
 // ----------------------------------------------------------------------------

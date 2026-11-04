@@ -46,6 +46,13 @@ struct CommandVlxSeekRun : public ccCommandLineInterface::Command {
                 {"TARGET_INDEXES", "string", "",
                  "Comma-separated zero-based proposal indexes "
                  "(required for brief_region_caption|region_ocr, e.g. 2,3)"},
+                {"PROPOSAL_SOURCE", "enum", "builtin",
+                 "builtin|external|ocr_det (ocr_det: PP-OCR text-detector "
+                 "proposals so region_ocr targets address text lines; "
+                 "region_ocr only; external = BBOX_LIST)"},
+                {"BBOX_LIST", "path", "",
+                 "External proposal boxes JSON ([[x1,y1,x2,y2],...] in "
+                 "image pixels); skips the built-in WeDetect-Uni proposer"},
                 {"PRECISION", "enum", "q8_0",
                  "f16|q8_0 (vision+LLM rows of "
                  "the catalog; detector stays "
@@ -91,6 +98,7 @@ struct CommandVlxSeekRun : public ccCommandLineInterface::Command {
         settings.text = s.args.str("TEXT", QString());
         settings.lang = s.args.str("LANG", "en");
         settings.targetIndexes = s.args.str("TARGET_INDEXES", "");
+        settings.externalBoxesPath = s.args.str("BBOX_LIST", "");
         const QString precision = s.args.str("PRECISION", "q8_0");
         settings.device = s.args.str("DEVICE", s.device);
         settings.threads = s.threads;
@@ -118,6 +126,19 @@ struct CommandVlxSeekRun : public ccCommandLineInterface::Command {
                         QStringLiteral("TARGET_INDEXES is required for task "
                                        "%1 (e.g. -TARGET_INDEXES 2,3)")
                                 .arg(settings.task));
+            }
+        }
+        if (!settings.externalBoxesPath.isEmpty()) {
+            // Parse the external proposals up front: a malformed JSON must
+            // fail before the multi-GGUF load, not inside inference.
+            QString boxesError;
+            const QVector<float> boxes = VLXSeekHelpers::parseExternalBoxes(
+                    settings.externalBoxesPath, &boxesError);
+            if (!boxesError.isEmpty()) return cmd.error(boxesError);
+            if (boxes.isEmpty()) {
+                return cmd.error(QStringLiteral("External boxes JSON is "
+                                                "empty: %1")
+                                         .arg(settings.externalBoxesPath));
             }
         }
         if (!s.args.ok()) return cmd.error(s.args.error());
@@ -156,6 +177,39 @@ struct CommandVlxSeekRun : public ccCommandLineInterface::Command {
         settings.visionPath = QDir(cacheDir).filePath(vision.filename);
         settings.llmPath = QDir(cacheDir).filePath(llm.filename);
 
+        // region_ocr + PROPOSAL_SOURCE ocr_det: compose the text-detector
+        // proposals from the public OCR catalog. The models reuse the shared
+        // ocr_models cache root and pinned digests (same location as qOCR);
+        // missing files download through the shared batch ensureModel path.
+        if (s.args.str("PROPOSAL_SOURCE", "builtin") == "ocr_det") {
+            if (settings.task != QStringLiteral("region_ocr")) {
+                return cmd.error(QStringLiteral(
+                        "PROPOSAL_SOURCE ocr_det applies to task "
+                        "region_ocr only"));
+            }
+            settings.proposalSource = QStringLiteral("ocr_det");
+            const VLXSeekHelpers::OcrProposerModels ocr =
+                    VLXSeekHelpers::ocrProposerModels();
+            if (ocr.cacheDir.isEmpty() || ocr.detFileName.isEmpty() ||
+                ocr.recFileName.isEmpty()) {
+                return cmd.error(QStringLiteral(
+                        "OCR text-detector proposer unavailable (public OCR "
+                        "catalog missing)"));
+            }
+            for (const QString& fileName : {ocr.detFileName, ocr.recFileName}) {
+                const QString path = QDir(ocr.cacheDir).filePath(fileName);
+                if (!B::ensureModel(
+                            cmd, path,
+                            {VLXSeekHelpers::ocrModelDownloadUrl(fileName),
+                             QString()},
+                            s.download, &error)) {
+                    return cmd.error(error);
+                }
+            }
+            settings.ocrDetPath = QDir(ocr.cacheDir).filePath(ocr.detFileName);
+            settings.ocrRecPath = QDir(ocr.cacheDir).filePath(ocr.recFileName);
+        }
+
         aicore_vlx_seek_options* opts = aicore_vlx_seek_options_new();
         aicore_vlx_seek_options_set_device(
                 opts, settings.device.toUtf8().constData());
@@ -192,6 +246,7 @@ struct CommandVlxSeekRun : public ccCommandLineInterface::Command {
         manifest.set("text", settings.text);
         manifest.set("lang", settings.lang);
         manifest.set("precision", precision);
+        manifest.set("proposal_source", settings.proposalSource);
         {
             char* info = aicore_vlx_seek_info_json(ctx);
             if (info) {
@@ -252,6 +307,7 @@ struct CommandVlxSeekRun : public ccCommandLineInterface::Command {
                     rec["answer"] = result.answer;
                     rec["boxes"] = result.boxes.size();
                     rec["proposals"] = result.proposalCount;
+                    rec["proposal_source"] = result.proposalSource;
                     rec["device"] = result.resolvedDevice;
                     rec["outputs"] = outputs;
                     return true;

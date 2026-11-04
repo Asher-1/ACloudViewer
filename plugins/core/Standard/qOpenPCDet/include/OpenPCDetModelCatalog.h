@@ -159,11 +159,13 @@ QString modelDisplayLabel(const OpenPCDetModelEntry& entry);
 QString className(int32_t label, int numClass);
 
 /** RGB tuple of the per-class visualization palette (0-255 per channel),
- *  mirroring the colors used by the OpenPCDet Python demos: the nuScenes
- *  devkit palette when the model declares 10 classes and the common
- *  KITTI demo colors (Car=red, Pedestrian=green, Cyclist=blue) at 3
- *  classes; other layouts fall back to a deterministic 6-color cycle.
- *  Pure mapping — unit tested without AICore. */
+ *  Label-driven palette mirroring the upstream OpenPCDet-GGML demo
+ *  scripts (gen_bev_kitti.py / gen_bev_nuscenes.py): the ColorBrewer
+ *  Set1 table indexed by the 1-based label — Car/Car=red, Ped/truck=blue,
+ *  Cyc/bus=green at the head of the table, extended to the 10 nuScenes
+ *  classes; labels outside 1..10 fall back to a deterministic 6-color
+ *  cycle. numClass is documentation only. Pure mapping — unit tested
+ *  without AICore. */
 struct OpenPCDetClassColor {
     unsigned char r = 255;
     unsigned char g = 204;

@@ -589,9 +589,10 @@ void DeepLSDDialog::onBrowseImage() {
     const QString lastDir =
             settings.value("qDeepLSD/lastImageFileDir", QDir::homePath())
                     .toString();
-    const QString path = cvFileDialog::getOpenFileName(
-            this, tr("Select image"), lastDir,
-            tr("Images (*.png *.jpg *.jpeg *.bmp *.tif *.tiff *.webp)"));
+    // A filled input (sample fill or a previous pick) takes precedence
+    // over the remembered directory.
+    const QString path = ecvAICoreUi::browseInputImage(
+            this, m_imagePath->text(), tr("Select image"), lastDir);
     if (path.isEmpty()) return;
     settings.setValue("qDeepLSD/lastImageFileDir",
                       QFileInfo(path).absolutePath());

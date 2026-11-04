@@ -70,6 +70,11 @@
 #include "ecvCommandLineInterface.h"
 #include "ecvModelDownloader.h"
 
+// HELP output routing: the CLI verbosity default (LOG_WARNING, main.cpp)
+// would swallow the explicitly requested schema dump; the HELP branch
+// RAII-raises verbosity for its own scope.
+#include <CVLog.h>
+
 namespace ecvAICoreBatch {
 
 /** One accepted `KEY VALUE` option. `type` is informative (int, float,
@@ -479,16 +484,32 @@ inline Prep prepare(ccCommandLineInterface& cmd,
         return Prep::Failed;
     }
     if (s->args.helpRequested()) {
-        cmd.print(QStringLiteral("[%1] %2").arg(keyword, summary));
+        // HELP is an explicitly requested schema dump: the CLI verbosity
+        // default in command-line mode (LOG_WARNING, see main.cpp) would
+        // swallow even PrintHigh (LOG_IMPORTANT), so this branch RAII-
+        // raises the verbosity for its own scope. The process exits right
+        // after HELP, and regular run progress keeps honouring verbosity.
+        struct VerbosityGuard {
+            VerbosityGuard(int level) : previous_(CVLog::VerbosityLevel()) {
+                CVLog::SetVerbosityLevel(level);
+            }
+            ~VerbosityGuard() { CVLog::SetVerbosityLevel(previous_); }
+            int previous_;
+        };
+        VerbosityGuard verbosityGuard(CVLog::LOG_IMPORTANT);
+        auto helpPrint = [](const QString& message) {
+            CVLog::PrintHigh(message);
+        };
+        helpPrint(QStringLiteral("[%1] %2").arg(keyword, summary));
         for (const OptionTable* table : tables) {
             for (const OptionSpec& spec : *table) {
-                cmd.print(QStringLiteral("  %1 <%2> (default '%3'): %4")
+                helpPrint(QStringLiteral("  %1 <%2> (default '%3'): %4")
                                   .arg(spec.key, spec.type, spec.defaultValue,
                                        spec.help));
             }
         }
         const QJsonObject schema = schemaJson(keyword, task, summary, tables);
-        cmd.print(QStringLiteral("[%1] schema: %2")
+        helpPrint(QStringLiteral("[%1] schema: %2")
                           .arg(keyword,
                                QString::fromUtf8(QJsonDocument(schema).toJson(
                                        QJsonDocument::Compact))));

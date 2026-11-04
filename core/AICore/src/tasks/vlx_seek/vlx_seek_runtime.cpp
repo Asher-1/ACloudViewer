@@ -49,7 +49,10 @@ void logf(int level, const char* fmt, ...) {
     char buf[1024];
     std::vsnprintf(buf, sizeof(buf), fmt, args);
     va_end(args);
-    aicore_log_at(level, "[AICore vlx_seek] %s\n", buf);
+    // aicore_log_at(level, tag, fmt, ...) concatenates the literal tag and
+    // formats fmt separately; passing the tagged string as fmt lost the
+    // message and printed a literal "%s" into the session log.
+    aicore_log_at(level, "[AICore vlx_seek] ", "%s\n", buf);
 }
 
 void set_log_level(int level) { aicore_set_log_level(level); }

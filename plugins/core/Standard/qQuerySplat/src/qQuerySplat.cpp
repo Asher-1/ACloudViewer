@@ -322,6 +322,20 @@ void qQuerySplat::addResultToDb(const QuerySplatResult& result) {
     // Result summary through the shared AICore log route: CVLog::Print does
     // not reach the session log at the default verbosity, and the console
     // entry is the discoverability anchor for "where did the result go".
+    // Key facts: input identity, resolution, gaussian count and the staged
+    // end-to-end wall time.
+    aicore_inference_log::log(
+            QStringLiteral("[QS] %1 — %2x%3, %4 gaussian(s), %5 view(s), "
+                           "e2e %6 ms, device %7")
+                    .arg(result.sourceLabel)
+                    .arg(result.width)
+                    .arg(result.height)
+                    .arg(result.gaussianCount)
+                    .arg(result.viewCount)
+                    .arg(result.e2eMs, 0, 'f', 0)
+                    .arg(result.resolvedDevice.isEmpty()
+                                 ? QStringLiteral("auto")
+                                 : result.resolvedDevice));
     aicore_inference_log::log(
             QStringLiteral("[QS] Results grouped under '%1' in the DB tree "
                            "(%2 entities; %3 rasters, %4 point clouds).")

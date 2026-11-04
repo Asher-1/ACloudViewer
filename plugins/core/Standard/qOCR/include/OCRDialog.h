@@ -11,8 +11,9 @@
 // Bilingual (Chinese/English) PP-OCR model selection, device/threads runtime
 // row, shared-cache downloads through the unified ecvModelDownloader pipeline
 // (digest-verified), a checkable multi-image input list (one-click official
-// test data with the mode's recommended images checked, plus any added
-// files), per-image results, and the DB-export switch.
+// test data — the real-document table pages for tables mode, the PaddleOCR
+// demo images otherwise — with the mode's recommended images checked, plus
+// any added files), per-image results, and the DB-export switch.
 // All log output routes through the application console via
 // aicore_inference_log (no private log widget); progress uses the shared
 // download/inference progress section; the heavy run itself is executed by
@@ -74,10 +75,14 @@ public:
     /// at its top-left slot, row/column spans applied (GUI thread only).
     static void fillTableGrid(QTableWidget* grid, const OCRTableResult& table);
 
+    /// The test-data bundle a mode consumes: tables mode fills from the
+    /// dedicated real-document table pages (Dataset::PpocrTables), every
+    /// other mode from the shared PaddleOCR demo bundle (Dataset::Ppocr).
+    static ecvTestDataRepository::Dataset datasetForMode(bool table);
     /// Recommended PaddleOCR test images for a mode, as paths relative to
-    /// the Ppocr dataset root: table pages (table + layout), real-document
-    /// table crops (table), document pages (layout), else the language
-    /// demos. Never a synthetic image (see isSyntheticTestImage).
+    /// datasetForMode(table)'s extraction root: the real-document zh/ja
+    /// table pages (table + layout), document pages (layout), else the
+    /// language demos. Never a synthetic image (see isSyntheticTestImage).
     static QStringList recommendedTestImages(bool table,
                                              bool layout,
                                              bool chinese);
@@ -110,10 +115,9 @@ private slots:
     void onRun();
     void onCancel();
     void onDownloadFinished(bool ok, const QString& destPath);
-    void onTestDataDownloadFinished(bool success,
-                                    ecvTestDataRepository::Dataset kind);
-    void onTestDataExtractionFinished(bool success,
-                                      ecvTestDataRepository::Dataset kind);
+    /// ensureDatasetReady chain settlement (success or failure): exactly
+    /// one call per accepted preparation request.
+    void onTestDataReady(bool success, ecvTestDataRepository::Dataset kind);
 
 private:
     QString cacheDir() const;
@@ -161,6 +165,11 @@ protected:
     QPushButton* m_checkNoneButton = nullptr;
     QPushButton* m_testDataButton = nullptr;
     bool m_testDataInProgress = false;
+    /** Dataset kind of the in-flight test-data preparation (captured at
+     *  request time, so a mode toggle during a download cannot detach the
+     *  datasetReady settlement from its flow). */
+    ecvTestDataRepository::Dataset m_testDataKind =
+            ecvTestDataRepository::Dataset::Ppocr;
 
     // ---- output ------------------------------------------------------------
     QCheckBox* m_layoutCheck = nullptr;

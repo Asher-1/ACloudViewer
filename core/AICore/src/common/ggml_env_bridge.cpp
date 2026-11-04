@@ -139,24 +139,26 @@ void ggml_log_forward_cb(enum ggml_log_level level,
                          void* user) {
     (void)user;
     if (!text || !*text) return;
-    // INFO stays byte-identical to ggml_log_callback_default (fputs to
-    // stderr): backend diagnostics remain visible by default. DEBUG and
-    // CONT are gated behind the thread-local AICore level instead — the
-    // llama.cpp graph-builder emits hundreds of DEBUG lines per token
-    // (llama_graph_n_input_tensors ...) that drown the console otherwise;
-    // they come back when a task lowers its log level to DEBUG. CONT
-    // fragments follow their parent message so a dropped DEBUG header
-    // cannot leave orphaned continuations.
-    static thread_local bool dropping_debug = false;
-    if (level == GGML_LOG_LEVEL_DEBUG || level == GGML_LOG_LEVEL_CONT) {
-        if (level == GGML_LOG_LEVEL_DEBUG) {
-            dropping_debug = aicore_get_log_level() > AICORE_LOG_LEVEL_DEBUG;
-        }
-        if (dropping_debug) return;
+    // The bridge routes ggml/llama internals below WARN through the
+    // thread-local AICore level: the llama.cpp model loader alone prints
+    // ~160 INFO lines per GGUF (full metadata dump, tensor plan, context
+    // buffers) and the graph builder hundreds of DEBUG lines per token.
+    // The facts the console needs (device, precision, readiness) are
+    // logged by the task itself through the AICore logger, so both DEBUG
+    // and INFO from this bridge are dropped unless the runtime level is
+    // lowered to DEBUG. CONT fragments follow their parent message so a
+    // dropped header cannot leave orphaned continuations.
+    static thread_local bool dropping_message = false;
+    if (level == GGML_LOG_LEVEL_CONT) {
+        if (dropping_message) return;
         fputs(text, stderr);
         return;
     }
-    dropping_debug = false;
+    dropping_message = false;
+    if (level == GGML_LOG_LEVEL_DEBUG || level == GGML_LOG_LEVEL_INFO) {
+        dropping_message = aicore_get_log_level() > AICORE_LOG_LEVEL_DEBUG;
+        if (dropping_message) return;
+    }
     if (level == GGML_LOG_LEVEL_WARN) {
         // Trim ggml's trailing newline: the AICORE_LOG macros append one.
         std::string msg(text);

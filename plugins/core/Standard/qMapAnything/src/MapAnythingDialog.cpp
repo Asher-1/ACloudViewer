@@ -610,9 +610,12 @@ void MapAnythingDialog::onCancel() {
 }
 
 void MapAnythingDialog::onAddImages() {
-    const QStringList files = QFileDialog::getOpenFileNames(
-            this, tr("Select the multi-view image set"), QString(),
-            tr("Images (*.jpg *.jpeg *.png *.bmp)"));
+    // Continue in the directory of the already-listed images (sample fill
+    // or a previous pick) instead of resetting to an arbitrary location.
+    const QString current =
+            m_imageList->count() ? m_imageList->item(0)->text() : QString();
+    const QStringList files = ecvAICoreUi::browseInputImages(
+            this, current, tr("Select the multi-view image set"));
     for (const QString& file : files) {
         if (m_imageList->count() >= kMaxViews) {
             appendLog(tr("[Warning] View cap (%1) reached; extra files "

@@ -1318,7 +1318,15 @@ void OpenPCDetDialog::loadSampleCloudIntoDb(const QString& binPath,
                     points[static_cast<size_t>(i) * features + 3]);
         }
         intensity->computeMinAndMax();
-        sfAdded = cloud->addScalarField(intensity) >= 0;
+        const int sfIdx = cloud->addScalarField(intensity);
+        sfAdded = sfIdx >= 0;
+        if (sfAdded) {
+            // LiDAR intensity IS the informative rendering of this frame:
+            // make it the active scalar field so the cloud lands in the DB
+            // showing the gradient instead of a flat white point set.
+            cloud->setCurrentDisplayedScalarField(sfIdx);
+            cloud->showSF(true);
+        }
     }
     if (!sfAdded) {
         intensity->release();

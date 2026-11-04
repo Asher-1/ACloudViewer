@@ -13,6 +13,7 @@
 #pragma once
 
 #include <QImage>
+#include <QMetaType>
 #include <QObject>
 #include <QRectF>
 #include <QString>
@@ -33,11 +34,26 @@ struct VLXSeekRunResult {
     int32_t promptTokens = 0;
     int32_t completionTokens = 0;
     int32_t proposalCount = 0;
+    /** Human-readable proposal source of the run ("wedetect" built-in
+     *  proposer, "external" boxes JSON, or "ocr-det" text detector). */
+    QString proposalSource = QStringLiteral("wedetect");
+    /** Wall time of the plugin-side OCR-det proposal pass (ocr-det runs
+     *  only; 0 when the proposals came from the task runtime). */
+    double proposalMs = 0;
+    /** Wall time of the three-GGUF context creation (0 when the context
+     *  was reused). Reported in the run summary — first-run latency is
+     *  dominated by the load, not the inference. */
+    double modelLoadMs = 0;
     double preprocessMs = 0, inferenceMs = 0, postprocessMs = 0, e2eMs = 0;
     QString resolvedDevice;
     QString precision;
     QImage annotatedImage;  // input with the result boxes rendered (Qt)
 };
+
+// The worker thread hands results to the main thread through a queued
+// connection; without this declaration Qt silently drops the signal and
+// the dialog never sees a result (the qQuerySplat lesson).
+Q_DECLARE_METATYPE(VLXSeekRunResult)
 
 class VLXSeekWorker : public QThread {
     Q_OBJECT
@@ -52,7 +68,7 @@ public:
         QString precision;
         QString device = QStringLiteral("auto");
         int threads = 0;
-        int maxNewTokens = 2048;
+        int maxNewTokens = 1024;
         QString inputPath;
         QString task = QStringLiteral("detection");
         QString text;
@@ -61,6 +77,18 @@ public:
          *  brief_region_caption / region_ocr tasks (the runtime rejects
          *  those tasks without targets); parsed by parseTargetIndexes. */
         QString targetIndexes;
+        /** Optional external proposal-boxes JSON file (upstream --bbox-list
+         *  format). Empty = the built-in WeDetect-Uni proposer runs first. */
+        QString externalBoxesPath;
+        /** Region-proposal source: "builtin" (WeDetect-Uni inside the task
+         *  runtime), "external" (externalBoxesPath JSON) or "ocr_det" (the
+         *  PP-OCR text detector composed from the public AICore OCR API;
+         *  region_ocr only). */
+        QString proposalSource = QStringLiteral("builtin");
+        /** Resolved PP-OCR det/rec GGUF paths for the ocr_det proposer
+         *  (ocrProposerModels + the shared downloader). */
+        QString ocrDetPath;
+        QString ocrRecPath;
     };
 
     explicit VLXSeekWorker(const Settings& settings, QObject* parent = nullptr);
@@ -98,4 +126,7 @@ private:
 
     Settings m_settings;
     struct aicore_vlx_seek_ctx* m_pendingCtx = nullptr;
+    double m_loadMs = 0;
 };
+
+Q_DECLARE_METATYPE(VLXSeekWorker::Settings)

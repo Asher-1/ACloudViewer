@@ -28,26 +28,32 @@ shared AICore plugin shape, same split as qRMBG):
   Cancel stops between images. **Add images…** appends any files (duplicates
   are skipped), **Remove** drops the selected rows, **Check all / Uncheck
   all** toggle the whole list. The list and its check state persist.
-- **Try sample data** — lists every image of the official PaddleOCR test
-  bundle (shared `ecvTestDataRepository`, Dataset::Ppocr; extracted or
-  downloaded when any recommended file is missing) and checks only the ones
-  recommended for the current mode; clicking again after a mode change
-  re-applies the checks. Your own images stay at the top with their state.
+- **Try sample data** — lists every image of the current mode's official
+  test bundle (shared `ecvTestDataRepository`: tables mode fills from the
+  dedicated real-document table pages bundle Dataset::PpocrTables, every
+  other mode from the PaddleOCR demo bundle Dataset::Ppocr; downloaded and
+  digest-verified through `ensureDatasetReady` when a recommended file is
+  missing) and checks only the ones recommended for the current mode;
+  clicking again after a mode change re-applies the checks. Your own images
+  stay at the top with their state.
 
-  | Mode | Checked by default |
-  |---|---|
-  | Tables + layout | `layout/table_page_1.png`, `layout/table_page_layout.jpg` |
-  | Tables | `test_files/medal_table.png`, `tables/ppstructure_table.jpg`, `tables/table_recognition_v2.jpg` (real-document tables) |
-  | Layout | `layout/table_page_layout.jpg`, `layout/table_page_1.png` |
-  | Chinese | `scenes/ppocrv4.png`, `imgs/00006737.jpg`, `imgs_words_ch/word_1.jpg` |
-  | English | `test_files/textline.png`, `words_en/word_1.png` |
+  | Mode | Bundle | Checked by default |
+  |---|---|---|
+  | Tables (with or without layout) | `ocr_tables_data` | `zh_val_0.jpg`, `ja_val_0.jpg` (official real-document zh/ja table pages) |
+  | Layout | `ppocr_testdata` | `layout/table_page_layout.jpg`, `layout/table_page_1.png` |
+  | Chinese | `ppocr_testdata` | `scenes/ppocrv4.png`, `imgs/00006737.jpg`, `imgs_words_ch/word_1.jpg` |
+  | English | `ppocr_testdata` | `test_files/textline.png`, `words_en/word_1.png` |
 
-  Synthetic bundle images are listed as `[test, synthetic]` and never
+  The tables bundle is the official PP-OCR table-recognition validation set:
+  100 whole-page real-document tables (50 Chinese + 50 Japanese) that
+  exercise the full detection → structure → recognition chain; all 100 stay
+  listed unchecked behind the two deterministic demo pages. Synthetic demo
+  images of the PaddleOCR bundle are listed as `[test, synthetic]` and never
   checked: `test_files/table.jpg` (PaddleOCR's own demo table, generated
   cell text), the `table_rec/` PaddleX GT crops (labelled synthetic tables;
   they drive the TEDS gate, not the demo) and `layout_doc_test.png` (an
-  AICore probe page). `MANIFEST.txt` in the bundle records every file's
-  upstream URL and SHA-256.
+  AICore probe page). `MANIFEST.txt` in the demo bundle records every
+  file's upstream URL and SHA-256.
 - **Download missing models** — the unified `ecvModelDownloader` pipeline with
   pinned SHA-256 verification and the shared progress bar.
 - **Run OCR / Cancel** — the run executes on an `OCRWorker` thread: the
@@ -112,7 +118,12 @@ validation run), test data in
 `9618131e12a52f9f25a793cc22d1a6773f233fea489bf946bc52353ab716b484`; adds
 `layout/table_page_1.png`, `layout/table_page_layout.jpg`, the real-document
 table crops `tables/ppstructure_table.jpg` and `tables/table_recognition_v2.jpg`,
-and the `table_rec/` labelled GT).
+and the `table_rec/` labelled GT), and the tables-mode validation pages in
+`~/cloudViewer_data/extract/ocr_tables_data/` (archive:
+`~/cloudViewer_data/download/ocr_tables_data.zip`, SHA-256
+`1a8f9208ea84c8d3bc68a950ac963fa4dabee7b7c55c9f55537943c8885c5d49`; the
+official table-recognition validation set — 100 real-document zh/ja whole-page
+tables, pinned as `ppocr-tables-data` in the common validation manifest).
 
 ## Models
 

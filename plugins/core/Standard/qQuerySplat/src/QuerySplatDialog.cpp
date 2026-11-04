@@ -405,9 +405,11 @@ void QuerySplatDialog::updatePreview() {
 }
 
 void QuerySplatDialog::onAddFiles() {
-    const QStringList files = QFileDialog::getOpenFileNames(
-            this, tr("Select input images"), QString(),
-            tr("Images (*.png *.jpg *.jpeg *.webp *.bmp)"));
+    // Continue in the directory of the already-listed images.
+    const QString current =
+            m_imageList->count() ? m_imageList->item(0)->text() : QString();
+    const QStringList files = ecvAICoreUi::browseInputImages(
+            this, current, tr("Select input images"));
     fillImages(files);
 }
 

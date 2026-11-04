@@ -242,6 +242,33 @@ void qInstantMesh::onResultReady(const InstantMeshRunResult& result) {
     m_dialog->setLastResult(result);
     m_dialog->applyResultToStrip(result);
 
+    // Key facts line: input identity plus the truthful pipeline timing
+    // stages (the common timing contract prints only valid_fields stages).
+    {
+        const aicore_pipeline_timings& t = result.timings;
+        QStringList stages;
+        if (t.valid_fields & AICORE_TIMING_PREPROCESS)
+            stages << QStringLiteral("prep %1 ms")
+                              .arg(t.preprocess_ms, 0, 'f', 0);
+        if (t.valid_fields & AICORE_TIMING_INFERENCE)
+            stages << QStringLiteral("infer %1 ms")
+                              .arg(t.inference_ms, 0, 'f', 0);
+        if (t.valid_fields & AICORE_TIMING_POSTPROCESS)
+            stages << QStringLiteral("post %1 ms")
+                              .arg(t.postprocess_ms, 0, 'f', 0);
+        if (t.valid_fields & AICORE_TIMING_SERIALIZATION)
+            stages << QStringLiteral("export %1 ms")
+                              .arg(t.serialization_ms, 0, 'f', 0);
+        if (t.valid_fields & AICORE_TIMING_E2E)
+            stages << QStringLiteral("e2e %1 ms").arg(t.e2e_ms, 0, 'f', 0);
+        m_dialog->appendLog(
+                tr("[InstantMesh] Source %1 — %2")
+                        .arg(result.sourceImage,
+                             t.valid_fields ? stages.join(", ")
+                                            : QStringLiteral("timings "
+                                                             "unavailable")));
+    }
+
     // The worker consumed the original settings; the DB-destination flag
     // travels on the result envelope (the worker has no DB access).
     InstantMeshDialog::Settings settings;

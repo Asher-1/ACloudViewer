@@ -497,6 +497,12 @@ aicore_add_capi_test(test_anycalib_capi_contract anycalib)
 aicore_add_capi_test(test_map_anything_capi_contract map_anything)
 aicore_add_capi_test(test_map_anything_capi_load map_anything LABELS capi;model)
 aicore_add_capi_test(test_querysplat_capi querysplat LABELS capi;model)
+# npz export writer contract (store-ZIP + .npy layout; no model needed).
+# The writer is a task-internal header: the include dir points at the real
+# src/tasks/querysplat directory (same whitebox convention as rfdetr).
+aicore_add_capi_test(test_querysplat_npz querysplat)
+target_include_directories(test_querysplat_npz PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/querysplat)
 # Candidate half of the upstream cpp_ggml frames parity gate (NOT a ctest: it
 # needs the external vggt-cli reference; driven by the manifest row
 # map_anything-upstream-frames via run_map_anything_upstream_parity.py).

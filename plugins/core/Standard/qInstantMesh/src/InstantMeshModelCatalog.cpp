@@ -106,6 +106,20 @@ QString hfMirrorUrl() {
 }
 
 bool isValidModelFile(const QString& path, const QString& filename) {
+    if (filename.startsWith(QStringLiteral("rmbg"))) {
+        // RMBG rows are owned by the RMBG task catalog, which is deliberately
+        // absent from the InstantMesh catalog (single owner per process).
+        // The content anchor is the global pinned digest table — the same
+        // source the worker's resolveRmbgModel() and the download path use.
+        // The RMBG catalog publishes no size field, so no-ledger acceptance
+        // is presence + GGUF magic; the worker still DeepVerifies the pinned
+        // digest before inference.
+        const QByteArray digest = ecvAssetIntegrity::PinnedDigest(filename);
+        if (digest.isEmpty()) return false;
+        return ecvAssetIntegrity::isVerified(
+                path, {QCryptographicHash::Sha256, digest}, 64 * 1024, true,
+                ecvAssetIntegrity::OnMiss::CheapChecksOnly, 0);
+    }
     HfInstantMeshInfo info;
     if (!hfModelInfo(filename, &info)) return false;
     // Lightweight presence check: integrity-ledger stat-trust (the HF LFS
@@ -117,10 +131,18 @@ bool isValidModelFile(const QString& path, const QString& filename) {
 }
 
 bool verifyModelFileSha256(const QString& path, const QString& filename) {
-    HfInstantMeshInfo info;
-    if (!hfModelInfo(filename, &info)) return false;
-    return ecvAssetIntegrity::verifyNow(
-            path, {QCryptographicHash::Sha256, info.sha256.toLatin1()});
+    QByteArray digest;
+    if (filename.startsWith(QStringLiteral("rmbg"))) {
+        // Same ownership split as isValidModelFile: RMBG content pins live
+        // in the global digest table, not the InstantMesh catalog.
+        digest = ecvAssetIntegrity::PinnedDigest(filename);
+    } else {
+        HfInstantMeshInfo info;
+        if (!hfModelInfo(filename, &info)) return false;
+        digest = info.sha256.toLatin1();
+    }
+    return ecvAssetIntegrity::verifyNow(path,
+                                        {QCryptographicHash::Sha256, digest});
 }
 
 QVector<InstantMeshPreset> presets() {

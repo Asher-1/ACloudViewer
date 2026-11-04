@@ -92,7 +92,14 @@ public:
          *  upstream benchmark pipeline runs, shipped as
          *  vlx_seek_test_images.zip on the Asher-1/VLX-Seek-1.5-10B-GGUF
          *  model repository next to the GGUF weights. */
-        VlxSeek  ///< VLX-Seek official test images (qVLXSeek)
+        VlxSeek,  ///< VLX-Seek official test images (qVLXSeek)
+        /** PP-OCR table-recognition validation pages (qOCR tables mode):
+         *  the official real-document table pages (50 zh + 50 ja) shipped
+         *  as ocr_tables_data.zip on the PP-OCR release — whole-page
+         *  documents the SLANet_plus table stage detects and rebuilds.
+         *  Appended last: existing enumerator values stay stable for
+         *  plugins compiled against the previous layout. */
+        PpocrTables  ///< PP-OCR real-document table pages (qOCR tables mode)
     };
 
     /** Dataset metadata. */

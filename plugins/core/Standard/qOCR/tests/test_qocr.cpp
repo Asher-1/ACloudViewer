@@ -8,12 +8,13 @@
 // Focused qOCR workspace contract test: bilingual model selection, the
 // device/threads runtime row, the shared progress section, the DB-export
 // switch, the unified download entry, the checkable multi-image input list
-// (one-click official test data with the mode's recommended images checked,
-// user images preserved), the shared-console logging contract (no private
-// log widget), the table view (span-aware grid, HTML/CSV export), and - when
-// the f32 models and the PaddleOCR test data are cached - real headless
-// table reconstruction through recognizeImage and a two-image OCRWorker run
-// (one model load, one result per image).
+// (one-click official test data — the real-document table pages for tables
+// mode, the PaddleOCR demo images otherwise — with the mode's recommended
+// images checked, user images preserved), the shared-console logging
+// contract (no private log widget), the table view (span-aware grid,
+// HTML/CSV export), and - when the f32 models and the PaddleOCR test data
+// are cached - real headless table reconstruction through recognizeImage
+// and a two-image OCRWorker run (one model load, one result per image).
 
 #include <QApplication>
 #include <QAtomicInt>
@@ -385,9 +386,13 @@ int main(int argc, char** argv) {
         return 1;
     }
     // Every mode recommends official images, and the recommendations of
-    // every mode exist in the published bundle once it is extracted.
+    // every mode exist in its mode's published bundle once extracted
+    // (tables mode -> the dedicated real-document table pages bundle, the
+    // other modes -> the PaddleOCR demo bundle).
     const QString root = ecvTestDataRepository::extractPath(
             ecvTestDataRepository::Dataset::Ppocr);
+    const QString tablesRoot = ecvTestDataRepository::extractPath(
+            ecvTestDataRepository::Dataset::PpocrTables);
     for (const bool t : {false, true}) {
         for (const bool l : {false, true}) {
             for (const bool c : {false, true}) {
@@ -395,6 +400,14 @@ int main(int argc, char** argv) {
                         OCRDialog::recommendedTestImages(t, l, c);
                 if (rec.isEmpty()) {
                     std::fprintf(stderr, "qOCR mode without test images\n");
+                    return 1;
+                }
+                if (OCRDialog::datasetForMode(t) !=
+                    (t ? ecvTestDataRepository::Dataset::PpocrTables
+                       : ecvTestDataRepository::Dataset::Ppocr)) {
+                    std::fprintf(stderr,
+                                 "qOCR tables mode must fill from the "
+                                 "real-document table pages bundle\n");
                     return 1;
                 }
                 for (const QString& rel : rec) {
@@ -405,11 +418,13 @@ int main(int argc, char** argv) {
                         return 1;
                     }
                 }
-                if (!QDir(root).exists()) continue;
+                const QString& modeRoot = t ? tablesRoot : root;
+                if (!QDir(modeRoot).exists()) continue;
                 const QStringList all =
-                        OCRDialog::testDataImages(root, t, l, c);
+                        OCRDialog::testDataImages(modeRoot, t, l, c);
                 for (int i = 0; i < rec.size(); ++i) {
-                    if (all.value(i) != QDir(root).absoluteFilePath(rec[i])) {
+                    if (all.value(i) !=
+                        QDir(modeRoot).absoluteFilePath(rec[i])) {
                         std::fprintf(stderr,
                                      "qOCR recommended test image missing or "
                                      "not listed first: %s\n",
@@ -456,42 +471,72 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    // Use test data (bundle extracted): every test image listed after the
-    // user's rows, the mode's recommendation checked; pressing again after a
-    // mode switch re-targets the checks and keeps the user's rows/state.
+    // Use test data (bundles extracted): every test image of the current
+    // mode's bundle listed after the user's rows, the mode's recommendation
+    // checked; tables mode fills from the real-document table pages bundle,
+    // the other modes from the PaddleOCR demo bundle; pressing again after
+    // a mode switch re-targets the checks and keeps the user's rows/state
+    // (foreign bundle rows degrade to user rows with their state kept).
     auto* layoutCheck =
             dialog.findChild<QCheckBox*>(QStringLiteral("qOCRLayout"));
-    if (QDir(root).exists() && layoutCheck) {
-        const int bundle =
-                OCRDialog::testDataImages(root, true, false, true).size();
+    if (layoutCheck && QDir(tablesRoot).exists() && QDir(root).exists()) {
+        const int tablesCount =
+                OCRDialog::testDataImages(tablesRoot, true, false, true).size();
+        const int demoCount =
+                OCRDialog::testDataImages(root, false, false, true).size();
         table->setChecked(true);
         layoutCheck->setChecked(false);
         testData->click();
         QStringList checked = dialog.checkedImages();
-        if (imageList->count() != bundle + 2 ||
+        // own(2) + the tables bundle; the zh/ja demo pages checked after
+        // the user's checked row.
+        if (imageList->count() != tablesCount + 2 ||
             checked.size() !=
                     1 + OCRDialog::recommendedTestImages(true, false, true)
                                     .size() ||
-            checked.first() != QFileInfo(own).absoluteFilePath()) {
+            checked.first() != QFileInfo(own).absoluteFilePath() ||
+            !checked.contains(
+                    QDir(tablesRoot)
+                            .filePath(QStringLiteral("zh_val_0.jpg"))) ||
+            !checked.contains(
+                    QDir(tablesRoot)
+                            .filePath(QStringLiteral("ja_val_0.jpg")))) {
             std::fprintf(stderr,
-                         "qOCR test data (table crops): %d rows, %d checked\n",
+                         "qOCR test data (table pages): %d rows, %d checked\n",
                          imageList->count(), static_cast<int>(checked.size()));
             return 1;
         }
+        // Layout-only mode re-fills from the PaddleOCR demo bundle; the
+        // tables-bundle rows stay listed as user rows WITH their state —
+        // the two demo pages the tables fill checked remain checked, and
+        // the new mode's recommendations are checked too (positions vary
+        // with the carried rows, so assert on membership).
+        table->setChecked(false);
         layoutCheck->setChecked(true);
         testData->click();
         checked = dialog.checkedImages();
-        if (imageList->count() != bundle + 2 ||
-            checked.size() !=
-                    1 + OCRDialog::recommendedTestImages(true, true, true)
-                                    .size() ||
-            !checked.last().endsWith(
-                    QStringLiteral("layout/table_page_layout.jpg"))) {
+        const int carriedChecks =
+                OCRDialog::recommendedTestImages(true, false, true).size();
+        const QStringList layoutRecs =
+                OCRDialog::recommendedTestImages(false, true, true);
+        if (imageList->count() != tablesCount + demoCount + 2 ||
+            checked.size() != 1 + carriedChecks + layoutRecs.size()) {
             std::fprintf(stderr, "qOCR test data must follow the mode\n");
             return 1;
         }
-        std::printf("qOCR test data: %d images listed, mode checks OK\n",
-                    bundle);
+        for (const QString& rel : layoutRecs) {
+            if (!checked.contains(QDir(root).absoluteFilePath(rel))) {
+                std::fprintf(stderr,
+                             "qOCR test data must check the mode's "
+                             "recommendation: %s\n",
+                             rel.toUtf8().constData());
+                return 1;
+            }
+        }
+        std::printf(
+                "qOCR test data: %d tables + %d demo images, mode checks "
+                "OK\n",
+                tablesCount, demoCount);
         table->setChecked(false);
         layoutCheck->setChecked(false);
     }

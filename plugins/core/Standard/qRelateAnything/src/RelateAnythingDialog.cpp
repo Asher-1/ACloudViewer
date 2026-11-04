@@ -1157,9 +1157,12 @@ void RelateAnythingDialog::addInput(const QString& path,
     item->setToolTip(path);
 }
 void RelateAnythingDialog::addFiles() {
-    const auto files = QFileDialog::getOpenFileNames(
-            this, tr("Input images"), {},
-            tr("Images (*.jpg *.jpeg *.png *.bmp *.webp);;All files (*)"));
+    // Continue in the directory of the already-listed file inputs (db://
+    // entries are ignored by the helper's existence check).
+    const QString current =
+            m_inputs->count() ? m_inputs->item(0)->text() : QString();
+    const auto files =
+            ecvAICoreUi::browseInputImages(this, current, tr("Input images"));
     for (const auto& path : files) addInput(path);
 }
 void RelateAnythingDialog::useTestData() {

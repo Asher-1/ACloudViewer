@@ -8,6 +8,7 @@
 #include "FaceRegistryWidget.h"
 
 #include <cvFileDialog.h>
+#include <ecvAICoreUiHelper.h>
 
 #include <QCoreApplication>
 #include <QDir>
@@ -739,9 +740,11 @@ void FaceRegistryWidget::onBrowseRegisterImage() {
     const QString lastDir = ecvPS::browseDir(
             settings, QStringLiteral("qFaceDetect"),
             QStringLiteral("lastImageFileDir"), QDir::homePath());
-    const QString path = cvFileDialog::getOpenFileName(
-            this, tr("Select registration image"), lastDir,
-            tr("Images (*.png *.jpg *.jpeg *.bmp *.webp)"));
+    // A filled input (sample fill or a previous pick) takes precedence
+    // over the remembered directory.
+    const QString path = ecvAICoreUi::browseInputImage(
+            this, m_registerImagePath ? m_registerImagePath->text() : QString(),
+            tr("Select registration image"), lastDir);
     if (path.isEmpty()) return;
     ecvPS::saveBrowseDir(settings, QStringLiteral("qFaceDetect"),
                          QStringLiteral("lastImageFileDir"), path);

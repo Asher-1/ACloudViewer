@@ -121,6 +121,58 @@ class CandidateCliTests(unittest.TestCase):
         self.assertIn("isolated", result.stderr)
 
 
+class MinimalTierTests(unittest.TestCase):
+    """Default-tier narrowing: one cheapest runnable scenario per task.
+
+    A scenario's default-tier cost is the summed catalog size of every
+    model file matched by its model_glob/covered_globs/required_globs
+    patterns; for_each_model and local_only rows are never candidates and
+    a task whose cheapest scenario exceeds the per-task model budget is
+    skipped with a reason instead of pulling unbounded downloads.
+    """
+
+    @staticmethod
+    def catalog(*pairs):
+        return "\n".join(json.dumps({"relative_path": path, "size_bytes": size})
+                         for path, size in pairs) + "\n"
+
+    @staticmethod
+    def manifest():
+        def scenario(sid, task, **extra):
+            row = {"id": sid, "task": task}
+            row.update(extra)
+            return row
+        return {"scenarios": [
+            scenario("alpha-big", "alpha", required_globs=["alpha_models/*.gguf"]),
+            scenario("alpha-small", "alpha", model_glob="alpha_models/tiny-*.gguf"),
+            scenario("beta-loop", "beta", for_each_model=True,
+                     model_glob="beta_models/*.gguf"),
+            scenario("gamma-huge", "gamma", required_globs="gamma_models/*.gguf"),
+            scenario("delta-local", "delta", local_only=True),
+        ]}
+
+    def test_default_tier_keeps_only_the_cheapest_runnable_scenario_per_task(self):
+        catalog = self.catalog(("alpha_models/a.gguf", 600 << 20),
+                               ("alpha_models/tiny-q8.gguf", 100 << 20),
+                               ("beta_models/b.gguf", 10 << 20))
+        narrowed, skipped = VALIDATE_ALL.minimal_tier_narrow(
+            self.manifest(), catalog, {"alpha", "beta"}, 500 << 20)
+        self.assertEqual([s["id"] for s in narrowed["scenarios"]], ["alpha-small"])
+        self.assertEqual(
+            skipped, ["beta: no bundle scenario runnable in the default tier"])
+
+    def test_default_tier_skips_tasks_over_budget_or_without_bundle_scenarios(self):
+        catalog = self.catalog(("gamma_models/g.gguf", 900 << 20))
+        narrowed, skipped = VALIDATE_ALL.minimal_tier_narrow(
+            self.manifest(), catalog, {"gamma", "delta"}, 500 << 20)
+        self.assertEqual(narrowed["scenarios"], [])
+        self.assertEqual(
+            skipped,
+            ["delta: no bundle scenario runnable in the default tier",
+             "gamma: cheapest scenario gamma-huge needs 900 MiB of models "
+             "(budget 500 MiB)"])
+
+
 class ValidateAllTests(unittest.TestCase):
     def test_ocr_multi_fixture_commands_pin_every_consumed_image(self):
         manifest = VALIDATE_ALL.load_manifest(MODULE_PATH.with_name("validation_manifest.json"))
@@ -3076,12 +3128,21 @@ class InstantMeshProbeTests(unittest.TestCase):
         _, specs, _, _ = self.expand_instantmesh(True)
         for spec in specs:
             with self.subTest(scenario=spec.scenario_id):
-                # Every pipeline gate must anchor on a reference attestation
-                # metric: probe_invariant rows require
-                # independent_reference_complete, upstream rows require
-                # reference_authenticated. An unattested run - the probe
-                # reports the attestation as 0, or omits it - can never
-                # pass the gate, whichever framework the row uses.
+                # Upstream-anchored gates must require a reference attestation
+                # metric: an unattested run - the probe reports the attestation
+                # as 0, or omits it - can never pass the gate, whichever
+                # framework the row uses. probe_invariant rows deliberately
+                # delegate their non-numeric invariants to the probe's failing
+                # exit code (same stable-type contract as sam3/trellis), so
+                # their runner-side gate is intentionally empty and only the
+                # probe-anchored identity is asserted here.
+                if spec.accuracy.get("reference") == "probe_invariant":
+                    self.assertTrue(
+                        str(spec.accuracy.get("reference_id", "")).startswith("probe:"),
+                        "probe_invariant gate must declare a probe: reference_id")
+                    self.assertFalse(spec.accuracy.get("require_metrics"))
+                    self.assertFalse(spec.accuracy.get("checks"))
+                    continue
                 required = spec.accuracy["require_metrics"]
                 self.assertTrue(
                     required,

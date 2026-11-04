@@ -577,9 +577,8 @@ void Sam3dDialog::restoreDefaults() {
 }
 
 void Sam3dDialog::browseImage() {
-    const QString path = QFileDialog::getOpenFileName(
-            this, tr("Select the source image"), m_imageEdit->text(),
-            tr("Images (*.png *.jpg *.jpeg *.bmp *.webp)"));
+    const QString path = ecvAICoreUi::browseInputImage(
+            this, m_imageEdit->text(), tr("Select the source image"));
     if (!path.isEmpty()) m_imageEdit->setText(path);
 }
 

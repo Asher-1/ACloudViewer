@@ -9,13 +9,62 @@
 
 #include <gtest/gtest.h>
 
+#include <QCryptographicHash>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QTemporaryDir>
 
 #include "InstantMeshModelCatalog.h"
+#include "ecvAssetIntegrity.h"
 
 namespace {
+
+// Minimal GGUF-shaped stand-in for the cheap-check path (magic + 64 KiB
+// minimum body); no real model bytes are needed for presence validation.
+void writeGgufShapedFile(const QString& path) {
+    QFile f(path);
+    ASSERT_TRUE(f.open(QIODevice::WriteOnly));
+    f.write("GGUF", 4);
+    f.write(QByteArray(64 * 1024, '\0'));
+    f.close();
+}
+
+TEST(InstantMeshCatalog, RmbgValidityUsesPinnedDigestNotCatalogLookup) {
+    // RMBG rows are deliberately absent from the InstantMesh catalog (the
+    // RMBG task owns them). The validity check must fall back to the global
+    // pinned digest table; treating the catalog lookup miss as "invalid"
+    // made every cached RMBG model look missing and re-download on each
+    // dialog open (regression: ACloudViewer.20261104-113626 log).
+    QTemporaryDir tmp;
+    const QString name = QStringLiteral("rmbg_f16.gguf");
+    const QString path = tmp.filePath(name);
+    writeGgufShapedFile(path);
+    ASSERT_FALSE(ecvAssetIntegrity::PinnedDigest(name).isEmpty());
+    // No ledger yet: presence + GGUF magic acceptance (RMBG publishes no
+    // size, so there is no exact-size fallback).
+    EXPECT_TRUE(InstantMeshHelpers::isValidModelFile(path, name));
+
+    // A recorded verification (size + mtime trust) stays accepted.
+    ASSERT_TRUE(ecvAssetIntegrity::markVerified(
+            path, {QCryptographicHash::Sha256,
+                   ecvAssetIntegrity::PinnedDigest(name)}));
+    EXPECT_TRUE(InstantMeshHelpers::isValidModelFile(path, name));
+
+    // Non-GGUF payloads are rejected before any trust decision.
+    const QString junk = tmp.filePath(QStringLiteral("rmbg_q8.gguf"));
+    QFile j(junk);
+    ASSERT_TRUE(j.open(QIODevice::WriteOnly));
+    j.write("JUNKJUNK", 8);
+    j.write(QByteArray(64 * 1024, '\0'));
+    j.close();
+    EXPECT_FALSE(InstantMeshHelpers::isValidModelFile(
+            junk, QStringLiteral("rmbg_q8.gguf")));
+
+    // Unknown instantmesh-catalog names still fail.
+    EXPECT_FALSE(InstantMeshHelpers::isValidModelFile(
+            path, QStringLiteral("not_in_catalog_f16.gguf")));
+}
 
 TEST(InstantMeshCatalog, PresetShapes) {
     const QVector<InstantMeshPreset> presets = InstantMeshHelpers::presets();

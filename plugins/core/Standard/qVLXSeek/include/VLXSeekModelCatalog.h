@@ -55,4 +55,32 @@ QJsonArray catalogJson();
  *  vector. Shared by the dialog worker and the headless batch command. */
 QVector<int32_t> parseTargetIndexes(const QString& text, QString* error);
 
+/** Parses an external proposal-boxes JSON file (upstream --bbox-list
+ *  format: [[x1,y1,x2,y2],...] in original-image pixels, <= 100 boxes)
+ *  into a flat x1,y1,x2,y2 float array for aicore_vlx_seek_run_image.
+ *  Returns an empty vector with \p error set on any failure. */
+QVector<float> parseExternalBoxes(const QString& path, QString* error);
+
+/** Stable download URL of an OCR catalog asset, resolved through the public
+ *  AICore OCR catalog API (empty when the asset is unknown). */
+QString ocrModelDownloadUrl(const QString& filename);
+
+/** Resolved PP-OCR det/rec assets for the region_ocr OCR text-detector
+ *  proposer. The preset pairing comes from the public OCR preset API and the
+ *  cache directory from the OCR catalog; filenames are pinned-quantization
+ *  release assets (empty fields = the public API was unavailable). */
+struct OcrProposerModels {
+    QString detFileName;
+    QString recFileName;
+    QString cacheDir;
+};
+OcrProposerModels ocrProposerModels();
+
+/** Converts OCR text-detector quads (\p quadCount * [4][2] floats, row
+ *  major) into the axis-aligned [x1,y1,x2,y2] proposal boxes the VLX-Seek
+ *  runtime consumes: degenerate quads are skipped and the list is capped at
+ *  the 100-proposal C API contract (the built-in WeDetect-Uni proposer
+ *  supplies exactly 100). Returns false when no usable box remains. */
+bool ocrQuadsToBoxes(const float* quads, int quadCount, QVector<float>* boxes);
+
 }  // namespace VLXSeekHelpers

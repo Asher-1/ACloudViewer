@@ -461,9 +461,11 @@ void RAMDialog::setDbImages(const QList<QPair<QString, QImage>>& images) {
     m_db = images;
 }
 void RAMDialog::addFiles() {
-    m_inputs->addItems(QFileDialog::getOpenFileNames(
-            this, tr("Input images"), {},
-            tr("Images (*.jpg *.jpeg *.png *.bmp *.webp);;All files (*)")));
+    // Continue in the directory of the already-listed inputs.
+    const QString current =
+            m_inputs->count() ? m_inputs->item(0)->text() : QString();
+    m_inputs->addItems(
+            ecvAICoreUi::browseInputImages(this, current, tr("Input images")));
 }
 void RAMDialog::useTestData() {
     m_closed = false;

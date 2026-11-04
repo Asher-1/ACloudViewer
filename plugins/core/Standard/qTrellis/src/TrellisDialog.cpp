@@ -959,10 +959,10 @@ void TrellisDialog::showEvent(QShowEvent* event) {
 }
 
 void TrellisDialog::onBrowseImage() {
-    const QString path = QFileDialog::getOpenFileName(
-            this, tr("Select image"), QDir::homePath(),
-            tr("Images (*.png *.jpg *.jpeg *.bmp *.tif *.tiff *.webp);;All "
-               "files (*)"));
+    // Continue in the directory of the filled input (sample fill or a
+    // previous pick) instead of resetting to the home directory.
+    const QString path = ecvAICoreUi::browseInputImage(
+            this, m_imagePath->text(), tr("Select image"));
     if (path.isEmpty()) return;
     m_imagePath->setText(path);
     updateImagePreview();

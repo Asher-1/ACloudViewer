@@ -875,9 +875,15 @@ void LightGlueDialog::onBrowseSlotImage() {
     if (slot < 0) return;
 
     QSettings settings;
-    const QString lastDir =
+    QString lastDir =
             settings.value("qLightGlue/lastImageFileDir", QDir::homePath())
                     .toString();
+    // A filled slot (sample fill or a previous pick) takes precedence over
+    // the remembered directory.
+    if (slot < kSlotCount) {
+        const QFileInfo currentSlot(m_slotPaths[slot]);
+        if (currentSlot.isFile()) lastDir = currentSlot.absolutePath();
+    }
     const QString path = cvFileDialog::getOpenFileName(
             this, tr("Select Image %1").arg(slot + 1), lastDir,
             imageFileDialogFilter());
@@ -984,9 +990,15 @@ void LightGlueDialog::onClearImages() { clearAllSlots(); }
 
 void LightGlueDialog::onBrowseFile() {
     QSettings settings;
-    const QString lastDir =
+    QString lastDir =
             settings.value("qLightGlue/lastImageFileDir", QDir::homePath())
                     .toString();
+    // A filled slot (sample fill or a previous pick) takes precedence over
+    // the remembered directory.
+    {
+        const QFileInfo currentSlot(m_slotPaths[0]);
+        if (currentSlot.isFile()) lastDir = currentSlot.absolutePath();
+    }
     const QStringList paths = cvFileDialog::getOpenFileNames(
             this, tr("Select Image(s)"), lastDir, imageFileDialogFilter());
     if (paths.isEmpty()) return;

@@ -127,6 +127,20 @@ constexpr const char* kPpocrDownloadUrl =
 constexpr const char* kPpocrSha256 =
         "9618131e12a52f9f25a793cc22d1a6773f233fea489bf946bc52353ab716b484";
 
+// PP-OCR table-recognition validation pages (qOCR tables mode): the official
+// real-document table pages (50 zh + 50 ja) that the SLANet_plus table stage
+// detects and rebuilds as whole-page tables (or through the layout stage's
+// table regions). The two deterministic first-fill demo members (one Chinese
+// page, one Japanese page) are pinned again as extracted files in the common
+// validation manifest (ppocr-tables-data).
+constexpr const char* kPpocrTablesZipName = "ocr_tables_data.zip";
+constexpr const char* kPpocrTablesExtractDir = "ocr_tables_data";
+constexpr const char* kPpocrTablesDownloadUrl =
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/"
+        "download/PP-OCR/ocr_tables_data.zip";
+constexpr const char* kPpocrTablesSha256 =
+        "1a8f9208ea84c8d3bc68a950ac963fa4dabee7b7c55c9f55537943c8885c5d49";
+
 // LingBot-Map streaming reconstruction scenes (qLingbotMap). Four official
 // demo sequences (courthouse/loop/oxford/university, pre-cropped to the
 // 518-wide processing grid) plus the cached native sky masks for the two
@@ -610,6 +624,14 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                     {QCryptographicHash::Sha256,
                      ecvAssetIntegrity::PinnedDigest(
                              QStringLiteral("vlx_seek_test_images.zip"))}};
+        case Dataset::PpocrTables:
+            return {kind,
+                    QStringLiteral("PP-OCR real-document table pages"),
+                    QString::fromLatin1(kPpocrTablesZipName),
+                    QString::fromLatin1(kPpocrTablesExtractDir),
+                    QString::fromLatin1(kPpocrTablesDownloadUrl),
+                    {QCryptographicHash::Sha256,
+                     QByteArray(kPpocrTablesSha256)}};
     }
     Q_UNREACHABLE();
     return {};
@@ -778,6 +800,16 @@ bool ecvTestDataRepository::isExtractedComplete(Dataset kind) const {
                     !findDatasetFile(kind, QStringLiteral("demo_image.jpg"))
                              .isEmpty() &&
                     !findDatasetFile(kind, QStringLiteral("demo_image2.jpg"))
+                             .isEmpty();
+            break;
+        case Dataset::PpocrTables:
+            // Complete when the two deterministic first-fill demo pages
+            // (one Chinese, one Japanese real-document table) are both
+            // present.
+            extractedComplete =
+                    !findDatasetFile(kind, QStringLiteral("zh_val_0.jpg"))
+                             .isEmpty() &&
+                    !findDatasetFile(kind, QStringLiteral("ja_val_0.jpg"))
                              .isEmpty();
             break;
     }

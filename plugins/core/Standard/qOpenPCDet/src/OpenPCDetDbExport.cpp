@@ -104,7 +104,11 @@ ccHObject* BuildDetectionGroup(const OpenPCDetRunResult& result,
         }
         box->addPointIndex(0, static_cast<unsigned>(wire.size()));
         box->setClosed(false);
+        // setColor alone keeps the default colorsShown()==false, which the
+        // display pipeline resolves to the context fallback color; the
+        // per-class color requires the paired showColors(true).
         box->setColor(boxColor);
+        box->showColors(true);
         box->setWidth(2);
         box->setName(QStringLiteral("%1 %2")
                              .arg(d.className)
@@ -143,6 +147,10 @@ ccPointCloud* BuildAnnotatedCloud(ccPointCloud* source,
         if (error) *error = QStringLiteral("clone failed");
         return nullptr;
     }
+    // The tint below rides the RGB table; a source with a displayed scalar
+    // field (e.g. the sample cloud's intensity) would keep SF rendering
+    // ahead of colors and hide the tint entirely.
+    annotated->showSF(false);
     if (!annotated->hasColors() && !annotated->resizeTheRGBTable(true)) {
         if (error) *error = QStringLiteral("RGB allocation failed");
         delete annotated;

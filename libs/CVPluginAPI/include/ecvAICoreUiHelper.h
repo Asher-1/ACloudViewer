@@ -20,6 +20,8 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
+#include <QFileDialog>
+#include <QFileInfo>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -149,6 +151,42 @@ inline QPushButton* makeBrowseBtn(const QString& text,
     btn->setFixedWidth(browseBtnWidth());
     btn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     return btn;
+}
+
+/// Image-input file dialog shared by every AICore plugin. The dialog opens
+/// in the directory of the current input (after a test-data auto-fill or a
+/// previous pick the user stays in that directory). When the field is
+/// empty or stale the caller's own directory memory (\p fallbackDir, e.g.
+/// the plugin's lastImageFileDir setting) applies, then Qt's own memory.
+inline QString browseInputImage(QWidget* parent,
+                                const QString& currentPath,
+                                const QString& title = {},
+                                const QString& fallbackDir = {}) {
+    QString dir = fallbackDir;
+    const QFileInfo info(currentPath.trimmed());
+    if (info.isFile()) dir = info.absolutePath();
+    return QFileDialog::getOpenFileName(
+            parent, title.isEmpty() ? QObject::tr("Select input image") : title,
+            dir,
+            QObject::tr(
+                    "Images (*.jpg *.jpeg *.png *.bmp *.tif *.tiff *.webp);;"
+                    "All files (*)"));
+}
+
+/// Multi-select variant of browseInputImage (image-list dialogs).
+inline QStringList browseInputImages(QWidget* parent,
+                                     const QString& currentPath,
+                                     const QString& title = {},
+                                     const QString& fallbackDir = {}) {
+    QString dir = fallbackDir;
+    const QFileInfo info(currentPath.trimmed());
+    if (info.isFile()) dir = info.absolutePath();
+    return QFileDialog::getOpenFileNames(
+            parent,
+            title.isEmpty() ? QObject::tr("Select input images") : title, dir,
+            QObject::tr(
+                    "Images (*.jpg *.jpeg *.png *.bmp *.tif *.tiff *.webp);;"
+                    "All files (*)"));
 }
 
 // ---------------------------------------------------------------------------

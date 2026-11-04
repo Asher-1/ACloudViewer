@@ -947,9 +947,13 @@ void DA3Dialog::setProgress(int current, int total) {
 
 void DA3Dialog::onBrowseFile() {
     QSettings settings;
-    const QString lastDir =
-            settings.value("qDA3/lastImageFileDir", QDir::homePath())
-                    .toString();
+    QString lastDir = settings.value("qDA3/lastImageFileDir", QDir::homePath())
+                              .toString();
+    // A filled input (sample fill or a previous pick) takes precedence
+    // over the remembered directory.
+    const QFileInfo currentInput(
+            m_inputPath->text().section(';', 0, 0).trimmed());
+    if (currentInput.isFile()) lastDir = currentInput.absolutePath();
 
     auto mode = static_cast<Mode>(m_modeCombo->currentData().toInt());
     if (mode == Mode::DepthMultiView || mode == Mode::Reconstruct) {

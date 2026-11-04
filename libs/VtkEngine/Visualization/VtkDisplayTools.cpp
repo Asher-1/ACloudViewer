@@ -791,8 +791,18 @@ void VtkDisplayTools::drawPolygon(const CC_DRAW_CONTEXT& context,
     }
 
     if (vis->contains(viewID)) {
-        ecvColor::Rgbf polygonColor =
-                ecvTools::TransFormRGB(context.defaultPolylineColor);
+        // Same color contract as drawLines and the legacy GL path
+        // (ccPolyline::drawMeOnly): the temp color wins, else the entity
+        // color when displayed, else the context default. DB polylines
+        // that set a real color (detection boxes, raster contours) must
+        // not collapse to the context default.
+        ecvColor::Rgb lineColor = context.defaultPolylineColor;
+        if (polyline->isColorOverridden()) {
+            lineColor = polyline->getTempColor();
+        } else if (polyline->colorsShown()) {
+            lineColor = polyline->getColor();
+        }
+        ecvColor::Rgbf polygonColor = ecvTools::TransFormRGB(lineColor);
         vis->setShapeUniqueColor(polygonColor.r, polygonColor.g, polygonColor.b,
                                  viewID, viewport);
         vis->setLineWidth(context.currentLineWidth, viewID, viewport);

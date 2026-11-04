@@ -57,5 +57,38 @@ if( PLUGIN_STANDARD_QOCR )
         cloudviewer_set_plugin_test_env_offscreen(test_qocr_e2e)
         set_tests_properties(test_qocr_e2e PROPERTIES
                 LABELS "e2e;ocr;table" SKIP_RETURN_CODE 77)
+
+        # Cold-start evidence for the tables-mode shared test-data chain
+        # (download -> digest verification -> extraction -> demo fill).
+        # Needs the site proxy for the first download; skips honestly
+        # without one.
+        if(TARGET 3rdparty_googletest)
+            set(CMAKE_AUTOMOC ON)
+            add_executable(test_qocr_testdata tests/test_qocr_testdata.cpp
+                src/OCRDialog.cpp src/OCRWorker.cpp
+                include/OCRDialog.h include/OCRWorker.h)
+            target_include_directories(test_qocr_testdata PRIVATE
+                ${CMAKE_CURRENT_SOURCE_DIR}/include)
+            find_package(Threads REQUIRED)
+            target_link_libraries(test_qocr_testdata PRIVATE
+                AICore
+                CVPluginAPI
+                3rdparty_googletest
+                Qt${QT_VERSION_MAJOR}::Core
+                Qt${QT_VERSION_MAJOR}::Gui
+                Qt${QT_VERSION_MAJOR}::Widgets
+                Qt${QT_VERSION_MAJOR}::Network
+                Threads::Threads)
+            if(NOT MSVC)
+                target_compile_options(test_qocr_testdata PRIVATE
+                    -Wall -Wextra -fPIC)
+                set_target_properties(test_qocr_testdata PROPERTIES
+                    POSITION_INDEPENDENT_CODE ON AUTOMOC ON)
+                target_link_options(test_qocr_testdata PRIVATE "-no-pie")
+            endif()
+            cloudviewer_set_bin_runtime_output_directory(test_qocr_testdata)
+            add_test(NAME test_qocr_testdata COMMAND test_qocr_testdata)
+            cloudviewer_set_plugin_test_env(test_qocr_testdata)
+        endif()
     endif()
 endif()

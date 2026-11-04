@@ -658,10 +658,10 @@ void RFDetrDialog::onBrowseImage() {
     const QString lastDir = ecvPS::browseDir(
             settings, QStringLiteral("qRFDetr"),
             QStringLiteral("lastImageFileDir"), QDir::homePath());
-    const QString path = cvFileDialog::getOpenFileName(
-            this, tr("Select image"), lastDir,
-            tr("Images (*.png *.jpg *.jpeg *.bmp *.tif *.tiff *.webp);;All "
-               "files (*)"));
+    // A filled input (sample fill or a previous pick) takes precedence
+    // over the remembered directory.
+    const QString path = ecvAICoreUi::browseInputImage(
+            this, m_imagePath->text(), tr("Select image"), lastDir);
     if (path.isEmpty()) return;
     m_imagePath->setText(path);
     ecvPS::saveBrowseDir(settings, QStringLiteral("qRFDetr"),
