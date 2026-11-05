@@ -49,6 +49,43 @@ int main(int argc, char** argv) {
         if (rc == 0) aicore_device_task_unlock();
     });
     int failures = acquired.get_future().get() != 0;
+    // Pure-geometry normals: a single CCW triangle normalizes every vertex
+    // to its face normal (+Z here); degenerate inputs are rejected.
+    {
+        QVector<float> verts = {0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f};
+        QVector<int> tris = {0, 1, 2};
+        const QVector<float> normals =
+                InstantMeshWorker::vertexNormals(verts, tris);
+        if (normals.size() != 9) {
+            std::fprintf(stderr, "FAIL: vertexNormals size %d\n",
+                         normals.size());
+            ++failures;
+        } else {
+            for (int i = 0; i < 3; ++i) {
+                if (normals[3 * i + 0] != 0.0f || normals[3 * i + 1] != 0.0f ||
+                    normals[3 * i + 2] <= 0.99f) {
+                    std::fprintf(stderr,
+                                 "FAIL: vertexNormals unit face normal\n");
+                    ++failures;
+                    break;
+                }
+            }
+        }
+        if (!InstantMeshWorker::vertexNormals(verts, QVector<int>{0, 1, 9})
+                     .isEmpty()) {
+            std::fprintf(stderr,
+                         "FAIL: out-of-range indices must be rejected\n");
+            ++failures;
+        }
+        // A zero-area mesh shades flat (zero normals), it is not an error.
+        const QVector<float> flat =
+                InstantMeshWorker::vertexNormals(QVector<float>(9, 0.0f), tris);
+        if (flat.size() != 9 || flat[0] != 0.0f || flat[8] != 0.0f) {
+            std::fprintf(stderr,
+                         "FAIL: zero-area mesh must keep zero normals\n");
+            ++failures;
+        }
+    }
     {
         InstantMeshWorker worker(settings);
         QObject::connect(

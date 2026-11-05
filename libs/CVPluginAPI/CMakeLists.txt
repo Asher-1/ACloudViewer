@@ -26,11 +26,22 @@ target_include_directories( ${PROJECT_NAME} PUBLIC "${STUB_INCLUDES}" )
 target_include_directories( ${PROJECT_NAME} PRIVATE
 	${CMAKE_SOURCE_DIR}/core/AICore/include )
 
+# Plain signature: this target and the shared PluginZlibMinizip module
+# link old-style throughout (CMake rejects mixing the two forms).
 target_link_libraries( ${PROJECT_NAME}
 	CV_DB_LIB
 	CV_IO_LIB
 	Qt::Network
 )
+
+# ecvAICoreMeshViewerDialog: the QOpenGLWidget orbit preview shared by the
+# AICore mesh plugins (qTrellis, qInstantMesh). Qt5 hosts QOpenGLWidget in
+# Qt::OpenGL; Qt6 moved it to the OpenGLWidgets module. Plain signature:
+# the rest of this target links old-style and CMake requires one style.
+target_link_libraries( ${PROJECT_NAME} Qt::OpenGL)
+if(TARGET Qt::OpenGLWidgets)
+	target_link_libraries( ${PROJECT_NAME} Qt::OpenGLWidgets)
+endif()
 
 # zlib + minizip for cross-platform zip extraction (ecvTestDataRepository)
 include( ${CMAKE_SOURCE_DIR}/plugins/cmake/PluginZlibMinizip.cmake )

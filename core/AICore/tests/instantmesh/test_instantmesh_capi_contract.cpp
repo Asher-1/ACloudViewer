@@ -414,6 +414,15 @@ int main(int argc, char** argv) {
         AICORE_CHECK(aicore_instantmesh_generate(nullptr, nullptr, 0, nullptr,
                                                  nullptr, nullptr, err,
                                                  (int)sizeof(err)) == nullptr);
+        // Observation accessors reject a null handle like the mesh
+        // accessors above.
+        AICORE_CHECK(aicore_instantmesh_mesh_has_rmbg(nullptr) == 0);
+        AICORE_CHECK(aicore_instantmesh_mesh_rmbg_rgba(nullptr) == nullptr);
+        AICORE_CHECK(aicore_instantmesh_mesh_rmbg_w(nullptr) == 0);
+        AICORE_CHECK(aicore_instantmesh_mesh_rmbg_h(nullptr) == 0);
+        AICORE_CHECK(aicore_instantmesh_mesh_views_rgb(nullptr) == nullptr);
+        AICORE_CHECK(aicore_instantmesh_mesh_views_w(nullptr) == 0);
+        AICORE_CHECK(aicore_instantmesh_mesh_views_h(nullptr) == 0);
         aicore_instantmesh_ctx* ctx = nullptr;
         AICORE_CHECK(aicore_instantmesh_generate(ctx, kPng1x1,
                                                  (int)sizeof(kPng1x1), nullptr,

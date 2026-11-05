@@ -74,6 +74,17 @@ struct PipelineMesh {
     std::vector<uint8_t> tex_rgba; // [tex_w*tex_h*4] row 0 = top
     int tex_w = 0;
     int tex_h = 0;
+    // Observation-only exports (typed result surface, never feed
+    // inference): the RMBG matting RGBA the pipeline consumed (row 0 =
+    // top; absent when matting did not run) and the Zero123++ 3x2 view
+    // mosaic (RGB8, row 0 = top; multiview runs only). Borrowed by
+    // consumers until the mesh is freed.
+    std::vector<uint8_t> rmbg_rgba;
+    int rmbg_w = 0;
+    int rmbg_h = 0;
+    std::vector<uint8_t> views_rgb;
+    int views_w = 0;
+    int views_h = 0;
 };
 
 using ProgressFn = void (*)(void* user, int stage, int step, int total);

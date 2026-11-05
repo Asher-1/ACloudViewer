@@ -143,6 +143,44 @@ const char* stageName(int stage) {
 
 }  // namespace
 
+QVector<float> InstantMeshWorker::vertexNormals(const QVector<float>& verts,
+                                                const QVector<int>& tris) {
+    const int nv = verts.size() / 3;
+    if (nv <= 0 || verts.size() % 3 || tris.size() % 3) return QVector<float>();
+    for (int index : tris) {
+        if (index < 0 || index >= nv) return QVector<float>();
+    }
+    QVector<float> normals(nv * 3, 0.0f);
+    // Area-weighted face-normal accumulation; O(nv + nt). Degenerate faces
+    // contribute a zero cross product and are naturally ignored.
+    for (int t = 0; t < tris.size() / 3; ++t) {
+        const int idx[3] = {tris[3 * t + 0], tris[3 * t + 1], tris[3 * t + 2]};
+        const float* a = verts.constData() + 3 * idx[0];
+        const float* b = verts.constData() + 3 * idx[1];
+        const float* c = verts.constData() + 3 * idx[2];
+        const float e1[3] = {b[0] - a[0], b[1] - a[1], b[2] - a[2]};
+        const float e2[3] = {c[0] - a[0], c[1] - a[1], c[2] - a[2]};
+        const float fn[3] = {e1[1] * e2[2] - e1[2] * e2[1],
+                             e1[2] * e2[0] - e1[0] * e2[2],
+                             e1[0] * e2[1] - e1[1] * e2[0]};
+        for (const int i : idx) {
+            normals[3 * i + 0] += fn[0];
+            normals[3 * i + 1] += fn[1];
+            normals[3 * i + 2] += fn[2];
+        }
+    }
+    for (int i = 0; i < nv; ++i) {
+        float* n = normals.data() + 3 * i;
+        const float len = std::sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+        if (len > 1e-12f) {
+            n[0] /= len;
+            n[1] /= len;
+            n[2] /= len;
+        }
+    }
+    return normals;
+}
+
 InstantMeshWorker::InstantMeshWorker(const Settings& settings, QObject* parent)
     : QThread(parent), m_settings(settings) {
     qRegisterMetaType<InstantMeshRunResult>("InstantMeshRunResult");
@@ -545,6 +583,29 @@ bool InstantMeshWorker::runInference() {
             std::memcpy(result.texRgba.data(), tex, result.texRgba.size());
             result.texW = tw;
             result.texH = th;
+        }
+    }
+    // Observation exports for the strip chips (typed result surface): the
+    // matted condition the pipeline actually consumed and the real 6-view
+    // Zero123++ mosaic. Borrowed AICore buffers are deep-copied before the
+    // handle is freed.
+    result.rmbgApplied = aicore_instantmesh_mesh_has_rmbg(mesh);
+    if (const uint8_t* cond = aicore_instantmesh_mesh_rmbg_rgba(mesh)) {
+        const int cw = aicore_instantmesh_mesh_rmbg_w(mesh);
+        const int ch = aicore_instantmesh_mesh_rmbg_h(mesh);
+        if (cw > 0 && ch > 0) {
+            result.preprocessImage =
+                    QImage(cond, cw, ch, cw * 4, QImage::Format_RGBA8888)
+                            .copy();
+        }
+    }
+    if (const uint8_t* mosaic = aicore_instantmesh_mesh_views_rgb(mesh)) {
+        const int vw = aicore_instantmesh_mesh_views_w(mesh);
+        const int vh = aicore_instantmesh_mesh_views_h(mesh);
+        if (vw > 0 && vh > 0) {
+            result.viewsImage =
+                    QImage(mosaic, vw, vh, vw * 3, QImage::Format_RGB888)
+                            .copy();
         }
     }
     meshOwner.reset();

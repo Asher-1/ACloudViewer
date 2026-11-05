@@ -71,6 +71,26 @@ The request runs on the LocalChatEngine worker thread; the toolbar action stays
 disabled while the client is busy. `Upload > Image Flags` imports a UTF-8 text
 template with one flag per line; the Flags dock is shown only after a template
 is loaded, and checked values are persisted in the image sidecar.
+**Use Test Data** (File menu, four entries) fills the requested annotation
+mode with the official
+X-AnyLabeling demo collection: the shared test-data repository
+downloads and verifies `anylabeling_test_data.zip` (assembled from the
+upstream demo assets by [scripts/build_test_data.py](scripts/build_test_data.py),
+provenance pinned per file in the archive's `MANIFEST.txt` and in the common
+validation manifest). **Image annotation modes** copies the bundle to
+`cloudViewer_data/anylabeling_demo` so edits never touch the cache, and opens
+`image_modes/` — one image plus a
+ready-made sidecar per annotation mode (rectangle, polygon, rotation,
+line/line-strip, point/pose, shape/image-level flags, tags, OCR, group IDs,
+cuboid with shape descriptions, KIE linking, circle, quadrilateral) alongside
+`formats/` import-export samples, PaddleOCR KIE/rec pages,
+the LLVIP compare pair, the tracking video and the KITTI 3D cuboid sample.
+**Point cloud (KITTI cuboids)** opens the point-cloud window on the bundled
+KITTI frame, **Video tracking demo** loads the official clip into the SAM3
+video tab, and **Compare view (infrared pair)** opens the visible half and
+pairs it with the same-name infrared frame. The first fill downloads about
+8.7 MB; afterwards every entry is offline. Delete
+`cloudViewer_data/anylabeling_demo` to restore the pristine demo.
 The Label Change Manager (`Alt+L`) can rename, remove, hide, or recolor a
 category across an inclusive image range. Category color changes are stored in
 the compatible `acloudviewer_color` shape extension as RGBA values. Existing

@@ -293,7 +293,10 @@ int main(int argc, char** argv) {
                exposure.elapsed() < 3000)
             QApplication::processEvents(QEventLoop::AllEvents, 20);
         dialog.setProgressStage(1, "Diffusion", 5, 75);
-        for (const QSize size : {QSize(640, 480), QSize(800, 600)}) {
+        // The window minimum is pinned to the real layout minimum (geometry
+        // conservation); the smallest supported size is that floor, and a
+        // larger probe confirms normal resizing.
+        for (const QSize size : {dialog.minimumSize(), QSize(800, 600)}) {
             dialog.resize(size);
             QApplication::processEvents();
             check(dialog.size() == size,
@@ -446,6 +449,124 @@ int main(int argc, char** argv) {
               "Escape/reject must detach the closed consumer from shared "
               "sample results");
         if (!sample.save(directory + "/cartoon_panda.png")) return 1;
+    }
+    // Pipeline strip contract: a completed run must leave NO chip blank and
+    // every chip must carry a click-to-enlarge full image (qTrellis parity).
+    {
+        InstantMeshDialog dialog;
+        QImage input(24, 24, QImage::Format_RGB888);
+        input.fill(Qt::blue);
+        dialog.resetStageStrip(input);
+        auto thumbs = dialog.findChildren<ecvClickableImageLabel*>();
+        check(thumbs.size() == 6,
+              "The input preview plus the five stage chips must exist");
+        check(thumbs.size() == 6 &&
+                      thumbs[1]->fullImage().size() == QSize(24, 24),
+              "Reset must seed the Source chip with the run input");
+        for (int i = 2; i < thumbs.size(); ++i) {
+            check(thumbs[i]->fullImage().isNull() && thumbs[i]->text() == "-",
+                  "Pending chips must show the '-' placeholder without a "
+                  "stale image from a previous run");
+        }
+        InstantMeshRunResult result;
+        result.multiview = true;
+        result.rmbgApplied = true;
+        result.preprocessImage = QImage(20, 20, QImage::Format_RGBA8888);
+        result.preprocessImage.fill(Qt::yellow);
+        result.viewsImage = QImage(12, 8, QImage::Format_RGB888);
+        result.viewsImage.fill(Qt::magenta);
+        result.previewImage = QImage(32, 32, QImage::Format_ARGB32);
+        result.previewImage.fill(Qt::red);
+        result.texW = 8;
+        result.texH = 4;
+        result.texRgba = QVector<uint8_t>(8 * 4 * 4, 0x7f);
+        result.glb = QByteArray(3 * 1024 * 1024, 'g');
+        dialog.applyResultToStrip(result);
+        dialog.setImagePreview(QImage(10, 10, QImage::Format_RGB888));
+        thumbs = dialog.findChildren<ecvClickableImageLabel*>();
+        for (const auto* thumb : thumbs) {
+            check(!thumb->fullImage().isNull(),
+                  "A completed run must leave no blank chip and every chip "
+                  "click-to-enlarge");
+        }
+        // Creation order: input preview, Source, RMBG, Views, Mesh, GLB.
+        check(thumbs.size() == 6 &&
+                      thumbs[2]->fullImage().size() == QSize(20, 20),
+              "The RMBG chip must show the matting the pipeline consumed");
+        check(thumbs.size() == 6 &&
+                      thumbs[3]->fullImage().size() == QSize(12, 8),
+              "The Views chip must show the real 6-view Zero123++ mosaic");
+        check(thumbs.size() == 6 &&
+                      thumbs[5]->fullImage().size() == QSize(8, 4),
+              "The GLB chip must carry the baked atlas as its zoom target");
+        QString glbCaption, viewsCaption, rmbgCaption;
+        for (const auto* label : dialog.findChildren<QLabel*>()) {
+            if (label->text().startsWith(QStringLiteral("GLB")))
+                glbCaption = label->text();
+            if (label->text().startsWith(QStringLiteral("Views")))
+                viewsCaption = label->text();
+            if (label->text().startsWith(QStringLiteral("RMBG")))
+                rmbgCaption = label->text();
+        }
+        check(glbCaption.contains("MB"),
+              "The GLB chip caption must report its real size");
+        check(viewsCaption.contains("Zero123++"),
+              "The Views chip caption must credit the diffusion that "
+              "produced the mosaic");
+        check(rmbgCaption == QStringLiteral("RMBG"),
+              "The RMBG chip caption must state that matting ran");
+        dialog.setStageActive(2);
+        check(thumbs[3]->styleSheet().contains("#f57f17"),
+              "The multiview stage must light the Views chip while running");
+        InstantMeshRunResult replicate;
+        replicate.multiview = false;
+        replicate.previewImage = QImage(16, 16, QImage::Format_ARGB32);
+        replicate.previewImage.fill(Qt::darkCyan);
+        dialog.applyResultToStrip(replicate);
+        thumbs = dialog.findChildren<ecvClickableImageLabel*>();
+        check(thumbs.size() == 6 && !thumbs[5]->fullImage().isNull(),
+              "A run without a GLB must still not leave the chip blank");
+        QString replicateViews, replicateGlb, replicateRmbg;
+        for (const auto* label : dialog.findChildren<QLabel*>()) {
+            if (label->text().startsWith(QStringLiteral("GLB")))
+                replicateGlb = label->text();
+            if (label->text().startsWith(QStringLiteral("Views")))
+                replicateViews = label->text();
+            if (label->text().startsWith(QStringLiteral("Preprocess")))
+                replicateRmbg = label->text();
+        }
+        check(replicateViews.contains("replicated input"),
+              "Replicate mode must state that the input is the view "
+              "condition");
+        check(replicateGlb.contains("none"),
+              "A run without a GLB must state it instead of staying blank");
+        check(replicateRmbg.contains("no RMBG"),
+              "A run without matting must state it on the RMBG chip");
+        // Geometry conservation: the progress row stays laid out when idle
+        // (content cleared, never hidden) so mid-run growth cannot clip the
+        // fixed bottom block, and the pipeline strip lives in the fixed
+        // area instead of the configuration scroll.
+        dialog.show();
+        QApplication::processEvents();
+        auto* idleProgress = dialog.findChild<QProgressBar*>();
+        check(idleProgress && idleProgress->isVisibleTo(&dialog),
+              "The progress row stays laid out when idle (geometry "
+              "conservation)");
+        QGroupBox* stripGroup = nullptr;
+        for (auto* group : dialog.findChildren<QGroupBox*>())
+            if (group->title() == QStringLiteral("Pipeline steps"))
+                stripGroup = group;
+        check(stripGroup != nullptr, "The pipeline strip group must exist");
+        bool stripScrollable = false;
+        if (stripGroup) {
+            for (auto* scroll : dialog.findChildren<QScrollArea*>())
+                if (scroll->widget() &&
+                    scroll->widget()->isAncestorOf(stripGroup))
+                    stripScrollable = true;
+        }
+        check(!stripScrollable,
+              "The pipeline strip is run feedback: it must not live inside "
+              "the configuration scroll");
     }
     std::puts(
             QJsonDocument(

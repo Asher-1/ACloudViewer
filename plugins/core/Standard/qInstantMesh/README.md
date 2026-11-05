@@ -54,6 +54,24 @@ The 640x480 and 800x600 layout checks require zero horizontal overflow, fully
 accessible fields and readable complete catalog labels in combo popups.
 Default step/guidance values remain visible in their numeric fields; the compact
 checkbox labels select whether those defaults are used.
+Pipeline strip chips show stage state and previews; clicking a chip (or the input
+preview) opens the zoomable full-size preview, and a completed run never leaves
+a chip blank (a stage whose image the AICore result does not carry falls back to
+the closest truthful render with an explicit caption, e.g. `GLB · none`). The
+strip has five chips: Source, RMBG, Views, Mesh and GLB. The RMBG chip shows
+the condition image the pipeline actually consumed — the RMBG-2.0 matting when
+it ran (click-zoom shows whether the background is cleanly gone through the
+alpha), the packed input otherwise (`Preprocess · no RMBG`). The Views chip
+shows the real 6-view Zero123++ mosaic exported by the AICore observation
+accessors (`aicore_instantmesh_mesh_views_rgb`, `aicore_instantmesh_mesh_rmbg_rgba`
+et al.; observation-only, never feeds inference); replicate mode keeps the
+input with `Views · replicated input`. The Mesh and GLB chips additionally
+open the shared `ecvAICoreMeshViewerDialog` orbit viewer (left-drag rotate,
+wheel zoom, double-click reset) once a result mesh exists; without one they
+fall back to the image zoom. The window minimum is pinned to the real layout
+minimum (fixed blocks plus configuration content width), the progress row stays
+laid out when idle and the pipeline strip is fixed below the scroll, so the
+fixed bottom block can never be clipped on scaled or small displays.
 GLB textures use the common AICore PNG encoder; no task-private stb is included.
 
 ## Sample data

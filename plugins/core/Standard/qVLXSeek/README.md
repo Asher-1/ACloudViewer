@@ -55,10 +55,25 @@ box.
   pipeline) and feeds its text-line boxes as the proposal set: target
   indexes address actual text lines and the exported boxes are text
   bboxes. The proposal pass is reported in the console line as
-  `from <n> ocr-det proposals (proposer <ms> ms)`.
-- **-VLXSEEK_RUN** — headless batch command (`-VLXSEEK_RUN
-  IMAGE1 IMAGE2 -TASK detection -TEXT "person" -LANG en -PRECISION q8_0
-  -MAX_NEW_TOKENS 1024 -DEVICE auto -THREADS 0`). Writes
+  `from <n> ocr-det proposals (proposer <ms> ms)`. Target index N and the
+  answer's `objN` references use the same proposal order, so the console
+  text, the target indexes and the annotated boxes stay aligned (the
+  runtime re-maps the model output back to proposal numbering).
+- **Known model behavior (region OCR)** — the text comes from the
+  VLX-Seek decode under the upstream prompt (`Please provide the ocr
+  results of <objN> in the image.`, greedy decoding). On ornate/stylized
+  text a single-region query may under-read: with demo_image2.jpg the
+  obj0 box covers the whole "FANTASY SPRINGS" line (verified identical
+  box coordinates across runs), yet a 1-target query decodes "FANTASY"
+  while a 2-target query decodes "FANTASYSPRINGS" for the same box. The
+  proposal boxes and obj numbering are unaffected; query several regions
+  in one request when the full text matters.
+- **-VLXSEEK_RUN** — headless batch command
+  (`-VLXSEEK_RUN OUT_DIR <dir> IMAGE <img> [IMAGE <img2> ...] TASK detection
+  TEXT "person" LANG en PRECISION q8_0 MAX_NEW_TOKENS 1024 DEVICE auto
+  THREADS 0`; options are bare keywords inside the command — a `-WORD`
+  token starts the next command, so do not prefix these options with `-`).
+  Writes
   `<stem>_vlxseek.json` plus an annotated `<stem>_vlxseek_vis.png` per image
   and the shared `RESULT_JSON` manifest. `HELP:1` prints the option schema
   (including `-TARGET_INDEXES`). `-PROPOSAL_SOURCE ocr_det` composes the

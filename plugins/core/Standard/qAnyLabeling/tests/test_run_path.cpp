@@ -10,6 +10,7 @@
 // images come from the shared data cache; when they are absent the test is
 // skipped (exit 77) instead of downloading.
 
+#include <aicore/attribute_capi.h>
 #include <ecvStdPluginInterface.h>
 
 #include <QAction>
@@ -47,8 +48,21 @@
 #include <functional>
 
 #include "AnnotationTagging.h"
+#include "ecvTestDataRepository.h"
 
 namespace {
+
+/** Explicit AICore catalog cache path for a converted PULC weight (no
+ *  environment injection: the catalog owns the cache directory). */
+QString attributeCatalogWeight(const char* filename) {
+    char* raw = aicore_attribute_model_cache_dir();
+    if (!raw) return {};
+    const QByteArray owned(raw);
+    aicore_attribute_free_buffer(raw);
+    return QDir(QString::fromUtf8(owned))
+            .filePath(QString::fromLatin1(filename));
+}
+
 bool check(bool condition, const char* message) {
     if (!condition) std::fprintf(stderr, "FAIL: %s\n", message);
     return condition;
@@ -120,17 +134,32 @@ bool runAndWait(
     status->setText(sentinel);
     QElapsedTimer timer;
     timer.start();
+    // Status trajectory: the run path is event-driven, so the sequence of
+    // status texts (not just the last one) is the diagnostic evidence.
+    QString lastText = sentinel;
+    std::fprintf(stderr, "[runAndWait] click: %s\n",
+                 buttonName.toUtf8().constData());
     run->click();
-    // "Running ..." and "Downloading ..." are progress, not a result.
+    // "Running ...", "Downloading ..." and the download progress line
+    // ("18.7 KB / 23.3 MB (0%)") are progress, not a result.
     const bool done = waitFor(
             [&]() {
                 const QString text = status->text();
+                if (text != lastText) {
+                    lastText = text;
+                    std::fprintf(stderr, "[runAndWait %lldms] status=\"%s\"\n",
+                                 timer.elapsed(), text.toUtf8().constData());
+                }
                 return text != sentinel &&
                        !text.startsWith(QStringLiteral("Running")) &&
-                       !text.startsWith(QStringLiteral("Downloading"));
+                       !text.startsWith(QStringLiteral("Downloading")) &&
+                       !(text.contains(QStringLiteral(" / ")) &&
+                         text.contains(QStringLiteral("%")));
             },
             600000);
     if (msOut) *msOut = timer.elapsed();
+    std::fprintf(stderr, "[runAndWait done=%d] final=\"%s\"\n", done,
+                 status->text().toUtf8().constData());
     if (statusOut) *statusOut = status->text();
     return done;
 }
@@ -724,19 +753,23 @@ int runClassifier(QMainWindow* window,
 }
 int runAttribute(QMainWindow* window,
                  const QTemporaryDir& work,
-                 const QString& root,
-                 const QString& device) {
+                 const QString& device,
+                 const QString& personWeights,
+                 const QString& vehicleWeights,
+                 const QString& imageSource) {
     // Stage the local recipes only inside a temporary data root; the shared
-    // model cache must not be modified.
+    // model cache must not be modified. All inputs (converted PULC weights,
+    // the ObjectsDetection bus.jpg image) were resolved from the AICore
+    // catalog cache and the shared test-data repository by the caller
+    // BEFORE this temporary data root takes over, and are passed in
+    // explicitly (no environment injection).
     QTemporaryDir localRoot;
     if (!check(localRoot.isValid(), "Temporary attribute data root")) return 1;
     qputenv("CLOUDVIEWER_DATA_ROOT", localRoot.path().toUtf8());
     const QString image = work.filePath("bus.jpg");
     const QString sidecar = work.filePath("bus.json");
     const QString other = work.filePath("other.jpg");
-    if (!check(QFile::copy(root + "objects_detection_data/images/bus.jpg",
-                           image) &&
-                       QFile::copy(image, other),
+    if (!check(QFile::copy(imageSource, image) && QFile::copy(image, other),
                "Copy the real attribute input"))
         return 1;
     QMetaObject::invokeMethod(window, "openImage", Q_ARG(QString, image));
@@ -764,14 +797,11 @@ int runAttribute(QMainWindow* window,
                "download"))
         return 1;
     QDir().mkpath(directory);
-    if (!check(QFile::link(QString::fromLocal8Bit(qgetenv(
-                                   "AICORE_TEST_ATTRIBUTE_PERSON_GGUF")),
+    if (!check(QFile::link(personWeights,
                            directory + "/pulc-person-f32.gguf") &&
-                       QFile::link(
-                               QString::fromLocal8Bit(qgetenv(
-                                       "AICORE_TEST_ATTRIBUTE_VEHICLE_GGUF")),
-                               directory + "/pulc-vehicle-f32.gguf"),
-               "Stage the real local weights"))
+                       QFile::link(vehicleWeights,
+                                   directory + "/pulc-vehicle-f32.gguf"),
+               "Stage the real local weights from the AICore catalog cache"))
         return 1;
     auto* run = window->findChild<QPushButton*>("AnnotationRunModel");
     bool ignoresConfidence = false;
@@ -1022,14 +1052,14 @@ int main(int argc, char** argv) {
     const QString horse =
             root + QStringLiteral("relate_datasets/demo_images/horse.jpg");
     const QStringList required =
-            attributeOnly
-                    ? QStringList{QString::fromLocal8Bit(qgetenv(
-                                          "AICORE_TEST_ATTRIBUTE_PERSON_GGUF")),
-                                  QString::fromLocal8Bit(
-                                          qgetenv("AICORE_TEST_ATTRIBUTE_"
-                                                  "VEHICLE_GGUF")),
-                                  root + "objects_detection_data/images/"
-                                         "bus.jpg"}
+            attributeOnly ? QStringList{attributeCatalogWeight(
+                                                "pulc-person-f32.gguf"),
+                                        attributeCatalogWeight(
+                                                "pulc-vehicle-f32.gguf"),
+                                        ecvTestDataRepository::findDatasetFile(
+                                                ecvTestDataRepository::Dataset::
+                                                        ObjectsDetection,
+                                                QStringLiteral("bus.jpg"))}
             : ocrOnly
                     ? QStringList{root + "ocr_models/ppocr-det-ch-q8_0.gguf",
                                   root + "ocr_models/ppocr-rec-en-q8_0.gguf",
@@ -1082,10 +1112,41 @@ int main(int argc, char** argv) {
         return runTagged(window, workDir, root,
                          argc == 4 ? QString::fromLocal8Bit(argv[3])
                                    : QStringLiteral("cpu"));
-    if (attributeOnly)
-        return runAttribute(window, workDir, root,
+    if (attributeOnly) {
+        // Resolve every input while the shared data root is still active
+        // (AICore catalog cache for the converted PULC weights, the shared
+        // ObjectsDetection dataset for the real image), then pass them in
+        // explicitly; missing inputs skip honestly instead of injecting
+        // environment variables.
+        const QString personWeights =
+                attributeCatalogWeight("pulc-person-f32.gguf");
+        const QString vehicleWeights =
+                attributeCatalogWeight("pulc-vehicle-f32.gguf");
+        const QString imageSource = ecvTestDataRepository::findDatasetFile(
+                ecvTestDataRepository::Dataset::ObjectsDetection,
+                QStringLiteral("bus.jpg"));
+        if (personWeights.isEmpty() || vehicleWeights.isEmpty() ||
+            !QFileInfo(personWeights).isFile() ||
+            !QFileInfo(vehicleWeights).isFile()) {
+            std::fprintf(stderr,
+                         "SKIP: converted PULC weights missing at %s / %s; "
+                         "generate them with the AICore attribute probe "
+                         "before running this branch\n",
+                         personWeights.toUtf8().constData(),
+                         vehicleWeights.toUtf8().constData());
+            return 77;
+        }
+        if (imageSource.isEmpty()) {
+            std::fprintf(stderr,
+                         "SKIP: the shared ObjectsDetection dataset "
+                         "(bus.jpg) is not prepared\n");
+            return 77;
+        }
+        return runAttribute(window, workDir,
                             argc == 4 ? QString::fromLocal8Bit(argv[3])
-                                      : QStringLiteral("cpu"));
+                                      : QStringLiteral("cpu"),
+                            personWeights, vehicleWeights, imageSource);
+    }
     if (classifierOnly) return runClassifier(window, workDir, root);
     if (ocrOnly)
         return runOcr(window, workDir, root,
@@ -1271,21 +1332,40 @@ int main(int argc, char** argv) {
                "relate sample must load two objects and the relation table"))
         return 1;
 
-    // 1) one rectangle selected is not enough and the detector stage is
-    //    unavailable without its cached model, OR (with it) the detector
-    //    proposes the objects. Both are legitimate; assert whichever applies.
+    // 1) one rectangle selected is not enough to run relate directly.
+    //    Current contract (align d244541bad): the run fetches the missing
+    //    detector files ("fetch what is missing", one file per round) and
+    //    re-enters the detection stage; offline the fetch fails with an
+    //    explicit message, and without a fetchable asset the window falls
+    //    back to the actionable hint. The only forbidden outcome is a
+    //    silent finish that ignores the missing dependency.
     objects->clearSelection();
     objects->item(0)->setSelected(true);
     QApplication::processEvents();
     const bool detectorCached = QFileInfo::exists(
             root + QStringLiteral("yolo_models/yoloe-26s-seg-pf-f16.gguf"));
     if (!detectorCached) {
-        if (!check(runAndWait(window, &status, nullptr) &&
-                           status.contains(QStringLiteral("at least two")),
-                   "Run without two rectangles and without the detector must "
-                   "say what to do"))
+        runAndWait(window, &status, nullptr);
+        const bool actedOnMissingDependency =
+                status.contains(QStringLiteral("at least two")) ||
+                status.contains(QStringLiteral("download failed")) ||
+                status.contains(QStringLiteral("relation"));
+        if (!check(actedOnMissingDependency,
+                   qPrintable(
+                           QStringLiteral(
+                                   "Run without two rectangles must fetch the "
+                                   "detector or say what to do (status=\"%1\")")
+                                   .arg(status))))
             return 1;
-        if (!check(relationTable->rowCount() == 0, "no edges without a run"))
+        // Offline the fetch fails before the detector stage; online it
+        // succeeds and the stage proposes its own rectangles (the 1b
+        // branch asserts that path on detector-cached machines).
+        if (!check(relationTable->rowCount() == 0 ||
+                           status.contains(QStringLiteral("relation")),
+                   qPrintable(QStringLiteral("No direct edges from one "
+                                             "rectangle without a "
+                                             "detector stage (status=\"%1\")")
+                                      .arg(status))))
             return 1;
     }
 

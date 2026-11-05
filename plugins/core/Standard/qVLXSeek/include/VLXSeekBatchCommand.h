@@ -181,11 +181,27 @@ struct CommandVlxSeekRun : public ccCommandLineInterface::Command {
         // proposals from the public OCR catalog. The models reuse the shared
         // ocr_models cache root and pinned digests (same location as qOCR);
         // missing files download through the shared batch ensureModel path.
-        if (s.args.str("PROPOSAL_SOURCE", "builtin") == "ocr_det") {
+        const QString proposalSourceArg =
+                s.args.str("PROPOSAL_SOURCE", "builtin");
+        // External boxes arrive through BBOX_LIST: an explicit external
+        // source without the file, or the contradictory ocr_det + BBOX_LIST
+        // pair, must fail before the multi-GGUF load instead of silently
+        // running with a different proposal source.
+        if (proposalSourceArg == QLatin1String("external") &&
+            settings.externalBoxesPath.isEmpty()) {
+            return cmd.error(QStringLiteral(
+                    "PROPOSAL_SOURCE external requires BBOX_LIST"));
+        }
+        if (proposalSourceArg == QLatin1String("ocr_det")) {
             if (settings.task != QStringLiteral("region_ocr")) {
                 return cmd.error(QStringLiteral(
                         "PROPOSAL_SOURCE ocr_det applies to task "
                         "region_ocr only"));
+            }
+            if (!settings.externalBoxesPath.isEmpty()) {
+                return cmd.error(QStringLiteral(
+                        "BBOX_LIST and PROPOSAL_SOURCE ocr_det are mutually "
+                        "exclusive"));
             }
             settings.proposalSource = QStringLiteral("ocr_det");
             const VLXSeekHelpers::OcrProposerModels ocr =
@@ -243,6 +259,7 @@ struct CommandVlxSeekRun : public ccCommandLineInterface::Command {
 
         B::Manifest manifest(s);
         manifest.set("task", settings.task);
+        manifest.set("target_indexes", settings.targetIndexes);
         manifest.set("text", settings.text);
         manifest.set("lang", settings.lang);
         manifest.set("precision", precision);

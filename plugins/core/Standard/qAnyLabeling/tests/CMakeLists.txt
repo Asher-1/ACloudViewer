@@ -458,7 +458,7 @@ cloudviewer_add_plugin_test(test_qanylabeling_run_path
     SOURCES test_run_path.cpp
     INCLUDES ${QAL_DIR}/include ${QAL_DIR}/../qRelateAnything/include
         ${CMAKE_SOURCE_DIR}/core/AICore/include
-    LIBS Qt${QT_VERSION_MAJOR}::Widgets CVPluginAPI CVPluginStub)
+    LIBS Qt${QT_VERSION_MAJOR}::Widgets CVPluginAPI CVPluginStub AICore)
 add_test(NAME test_qanylabeling_run_path COMMAND test_qanylabeling_run_path $<TARGET_FILE:QANYLABELING_PLUGIN>)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_run_path)
 set_tests_properties(test_qanylabeling_run_path PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 1200)
@@ -471,7 +471,8 @@ set_tests_properties(test_qanylabeling_classifier_run_path PROPERTIES TIMEOUT 60
 add_test(NAME test_qanylabeling_ocr_run_path COMMAND test_qanylabeling_run_path $<TARGET_FILE:QANYLABELING_PLUGIN> --ocr)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_ocr_run_path)
 set_tests_properties(test_qanylabeling_ocr_run_path PROPERTIES TIMEOUT 600)
-# The test environment supplies local attribute models; missing assets fail.
+# Inputs resolve explicitly through the AICore catalog cache and the
+# shared ObjectsDetection dataset; missing weights skip honestly (77).
 add_test(NAME test_qanylabeling_attribute_run_path
     COMMAND test_qanylabeling_run_path $<TARGET_FILE:QANYLABELING_PLUGIN> --attribute)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_attribute_run_path)
@@ -480,7 +481,8 @@ set_tests_properties(test_qanylabeling_attribute_run_path PROPERTIES TIMEOUT 600
 # Exercise the plugin's native command; missing local models or inputs fail.
 cloudviewer_add_plugin_test(test_qanylabeling_attribute_batch
     SOURCES test_attribute_batch.cpp
-    LIBS Qt${QT_VERSION_MAJOR}::Widgets CVPluginAPI CVPluginStub)
+    INCLUDES ${CMAKE_SOURCE_DIR}/core/AICore/include
+    LIBS Qt${QT_VERSION_MAJOR}::Widgets CVPluginAPI CVPluginStub AICore)
 add_test(NAME test_qanylabeling_attribute_batch
     COMMAND test_qanylabeling_attribute_batch $<TARGET_FILE:QANYLABELING_PLUGIN>)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_attribute_batch)
@@ -506,6 +508,40 @@ cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_lightglue_bridge)
 set_property(TEST test_qanylabeling_lightglue_bridge APPEND PROPERTY
     ENVIRONMENT "QANY_LIGHTGLUE_TEST=1")
 set_tests_properties(test_qanylabeling_lightglue_bridge PROPERTIES TIMEOUT 600)
+
+# Cold-start evidence for the "Use Test Data" shared test-data chain
+# (download -> digest verification -> extraction -> pinned demo members).
+# Needs the site proxy for the first download; skips honestly without one.
+# The warm branch runs whenever the archive is already cached.
+if(TARGET 3rdparty_googletest)
+    set(CMAKE_AUTOMOC ON)
+    add_executable(test_qanylabeling_testdata
+        test_anylabeling_testdata.cpp)
+    target_include_directories(test_qanylabeling_testdata PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../include
+        ${CMAKE_SOURCE_DIR}/core/AICore/include)
+    target_compile_definitions(test_qanylabeling_testdata PRIVATE
+        QANY_VALIDATION_MANIFEST="${CMAKE_SOURCE_DIR}/core/AICore/scripts/validation_manifest.json")
+    find_package(Threads REQUIRED)
+    target_link_libraries(test_qanylabeling_testdata PRIVATE
+        CVPluginAPI
+        3rdparty_googletest
+        Qt${QT_VERSION_MAJOR}::Core
+        Qt${QT_VERSION_MAJOR}::Gui
+        Qt${QT_VERSION_MAJOR}::Widgets
+        Qt${QT_VERSION_MAJOR}::Network
+        Threads::Threads)
+    if(NOT MSVC)
+        target_compile_options(test_qanylabeling_testdata PRIVATE
+            -Wall -Wextra -fPIC)
+        set_target_properties(test_qanylabeling_testdata PROPERTIES
+            POSITION_INDEPENDENT_CODE ON AUTOMOC ON)
+        target_link_options(test_qanylabeling_testdata PRIVATE "-no-pie")
+    endif()
+    cloudviewer_set_bin_runtime_output_directory(test_qanylabeling_testdata)
+    add_test(NAME test_qanylabeling_testdata COMMAND test_qanylabeling_testdata)
+    cloudviewer_set_plugin_test_env(test_qanylabeling_testdata)
+endif()
 
 # Sources that consume QtCompat must own its include path, not rely on the
 # GUI plugin's transitive include directories.

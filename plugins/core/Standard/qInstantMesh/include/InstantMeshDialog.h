@@ -63,11 +63,17 @@ public:
                           int total);
     void setRunning(bool running);
     void setImagePreview(const QImage& image);
+    /** Light the strip chip that owns an aicore_instantmesh_stage id. */
+    void setStageActive(int stage);
     void refreshModelState();
     void setLastResult(const InstantMeshRunResult& result) {
         m_lastResult = result;
     }
     const InstantMeshRunResult& lastResult() const { return m_lastResult; }
+    /** Orbit 3D viewer for a mesh-bearing strip slot (Mesh / GLB); falls
+     *  back to the image zoom when no result mesh is available (the
+     *  qTrellis openMesh3D rule). */
+    void openMesh3D(int slot);
 
     /** Strip slot states (public: the plugin marks completion). */
     enum StageSlotState { kStagePending = 0, kStageActive = 1, kStageDone = 2 };
@@ -101,6 +107,12 @@ private:
 
     void setupUi();
     void buildGeneratePage(QWidget* page);
+    /** Window minimum covering the fixed blocks plus the configuration
+     *  content width (a scroll area's minimum ignores its content). */
+    QSize pinnedMinimumSize() const;
+    /** Pin the window minimum to the real layout minimum (measured after
+     *  the form is filled) and keep the initial size inside the screen. */
+    void constrainGeometry();
     void loadSettings();
     void saveSettings() const;
     void updateModelStatus();
@@ -133,6 +145,8 @@ private:
     // End-to-end step strip: four chips (source / views / mesh / GLB).
     QVector<ecvClickableImageLabel*> m_stageThumbs;
     QVector<QLabel*> m_stageCaptions;
+    /** Chip currently lit kStageActive (dedupes per-step callbacks). */
+    int m_activeSlot = -1;
 
     // Parameters.
     QCheckBox* m_stepsAuto = nullptr;

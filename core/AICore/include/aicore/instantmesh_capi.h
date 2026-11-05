@@ -265,6 +265,31 @@ AICORE_CAPI int aicore_instantmesh_mesh_texture_w(
         const aicore_instantmesh_mesh* r);
 AICORE_CAPI int aicore_instantmesh_mesh_texture_h(
         const aicore_instantmesh_mesh* r);
+/** 1 when the run performed RMBG matting; 0 = the input passed through
+ *  unpacked (RMBG disabled). */
+AICORE_CAPI int aicore_instantmesh_mesh_has_rmbg(
+        const aicore_instantmesh_mesh* r);
+/** Observation-only condition image the pipeline consumed: the RMBG
+ *  matting RGBA (the alpha carries the background-removal evidence). Row 0
+ *  = top, owned by the mesh handle (freed with
+ *  aicore_instantmesh_mesh_free); NULL when matting did not run (the
+ *  Source chip falls back to the input). Never feeds inference. */
+AICORE_CAPI const uint8_t* aicore_instantmesh_mesh_rmbg_rgba(
+        const aicore_instantmesh_mesh* r);
+AICORE_CAPI int aicore_instantmesh_mesh_rmbg_w(
+        const aicore_instantmesh_mesh* r);
+AICORE_CAPI int aicore_instantmesh_mesh_rmbg_h(
+        const aicore_instantmesh_mesh* r);
+/** Observation-only Zero123++ 3x2 view mosaic (RGB8, row 0 = top; 960x640
+ *  at the default 320 px view size). Owned by the mesh handle; NULL when
+ *  the multi-view diffusion did not run (replicate mode). Never feeds
+ *  inference. */
+AICORE_CAPI const uint8_t* aicore_instantmesh_mesh_views_rgb(
+        const aicore_instantmesh_mesh* r);
+AICORE_CAPI int aicore_instantmesh_mesh_views_w(
+        const aicore_instantmesh_mesh* r);
+AICORE_CAPI int aicore_instantmesh_mesh_views_h(
+        const aicore_instantmesh_mesh* r);
 AICORE_CAPI void aicore_instantmesh_mesh_free(aicore_instantmesh_mesh* r);
 
 /** Bake a mesh into a portable UV-atlas-textured GLB (glTF 2.0 binary).

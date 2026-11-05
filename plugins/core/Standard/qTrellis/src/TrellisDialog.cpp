@@ -24,7 +24,7 @@
 #include <QVBoxLayout>
 #include <functional>
 
-#include "TrellisMeshViewer.h"
+#include "ecvAICoreMeshViewer.h"
 
 #ifdef AICore_ENABLED
 #include "aicore/backend_capi.h"
@@ -1565,7 +1565,7 @@ void TrellisDialog::openMesh3D(int slot) {
                         this, chip, m_stageCaptions[slot]->text());
             return;
         }
-        TrellisMeshViewerDialog viewer(
+        ecvAICoreMeshViewerDialog viewer(
                 verts, normals, tris, colors, true,
                 QStringLiteral("TRELLIS.2 — %1")
                         .arg(m_stageCaptions[slot]->text()),
@@ -1582,7 +1582,7 @@ void TrellisDialog::openMesh3D(int slot) {
                     this, chip, m_stageCaptions[slot]->text());
         return;
     }
-    TrellisMeshViewerDialog viewer(
+    ecvAICoreMeshViewerDialog viewer(
             m_lastResult.verts, m_lastResult.normals, m_lastResult.tris,
             textured ? m_lastResult.pbr : QVector<float>(),
             textured && m_lastResult.hasPbr,

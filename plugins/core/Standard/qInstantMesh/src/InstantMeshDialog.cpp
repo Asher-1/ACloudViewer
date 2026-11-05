@@ -13,14 +13,20 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QGroupBox>
+#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QMouseEvent>
+#include <QScreen>
 #include <QScrollArea>
+#include <QScrollBar>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QVBoxLayout>
+#include <functional>
 
 #include "aicore/inference_log.h"
+#include "ecvAICoreMeshViewer.h"
 #include "ecvAICoreUiHelper.h"
 #include "ecvAssetIntegrity.h"
 
@@ -43,6 +49,30 @@ constexpr int kDefaultTextureRes = 2048;
 
 }  // namespace
 
+namespace {
+
+// Pipeline-strip chip for the mesh-bearing stages (Mesh / GLB): the click
+// opens the shared 3D orbit viewer when a result mesh is available and
+// falls back to the shared image zoom otherwise (the qTrellis
+// MeshStageChip rule).
+class MeshStageChip : public ecvClickableImageLabel {
+public:
+    using ecvClickableImageLabel::ecvClickableImageLabel;
+
+    std::function<void()> openViewer;
+
+protected:
+    void mousePressEvent(QMouseEvent* event) override {
+        if (openViewer && event->button() == Qt::LeftButton) {
+            openViewer();
+            return;
+        }
+        ecvClickableImageLabel::mousePressEvent(event);
+    }
+};
+
+}  // namespace
+
 InstantMeshDialog::InstantMeshDialog(QWidget* parent) : QDialog(parent) {
     setAttribute(Qt::WA_DeleteOnClose, false);
     setupUi();
@@ -57,8 +87,9 @@ InstantMeshDialog::InstantMeshDialog(QWidget* parent) : QDialog(parent) {
                 if (success)
                     onTestDataExtracted();
                 else {
-                    m_progress->setVisible(false);
-                    m_stageLabel->setVisible(false);
+                    // Geometry conservation: clear, never hide the row.
+                    m_progress->reset();
+                    m_stageLabel->clear();
                     appendLog(tr(
                             "[InstantMesh] Sample data preparation failed."));
                 }
@@ -76,6 +107,7 @@ InstantMeshDialog::InstantMeshDialog(QWidget* parent) : QDialog(parent) {
             });
     refreshModelState();
     ensureImage2MeshDataset();
+    constrainGeometry();
 }
 
 InstantMeshDialog::~InstantMeshDialog() { saveSettings(); }
@@ -86,8 +118,41 @@ void InstantMeshDialog::setAppInterface(ecvMainAppInterface* app) {
 
 void InstantMeshDialog::setupUi() {
     setWindowTitle(tr("InstantMesh Image to 3D"));
-    resize(ecvAICoreUi::dpiScaled(720), ecvAICoreUi::dpiScaled(600));
     buildGeneratePage(this);
+}
+
+QSize InstantMeshDialog::pinnedMinimumSize() const {
+    // The fixed blocks' minimum alone lets the window shrink below the
+    // width the configuration content needs without horizontal scrolling
+    // (a scroll area's minimum ignores its content); widen the floor to
+    // the content minimum plus a vertical scrollbar.
+    QSize minSize = minimumSizeHint();
+    if (auto* scroll = findChild<QScrollArea*>()) {
+        const int contentWidth =
+                scroll->widget()->minimumSizeHint().width() +
+                scroll->verticalScrollBar()->sizeHint().width() +
+                ecvAICoreUi::dpiScaled(8);
+        minSize.setWidth(qMax(minSize.width(), contentWidth));
+    }
+    return minSize;
+}
+
+void InstantMeshDialog::constrainGeometry() {
+    // Geometry conservation (the qQuerySplat rule): measure the layout
+    // minimum after the settings and catalogs filled the form, pin the
+    // window minimum to it (the user can never shrink into clipping the
+    // fixed run/progress block), and keep the initial size inside the
+    // screen so window managers on scaled or small displays cannot clip
+    // the bottom.
+    adjustSize();
+    const QSize minSize = pinnedMinimumSize();
+    setMinimumSize(minSize);
+    QSize target(ecvAICoreUi::dpiScaled(720), ecvAICoreUi::dpiScaled(660));
+    target = target.expandedTo(minSize);
+    if (const QScreen* screen = QGuiApplication::primaryScreen()) {
+        target = target.boundedTo(screen->availableSize() - QSize(16, 16));
+    }
+    resize(target);
 }
 
 void InstantMeshDialog::buildGeneratePage(QWidget* page) {
@@ -379,18 +444,27 @@ void InstantMeshDialog::buildGeneratePage(QWidget* page) {
     ecvAICoreUi::tightenGroupBox(stripGroup);
     auto* stripLayout = new QHBoxLayout(stripGroup);
     stripLayout->setSpacing(ecvAICoreUi::dpiScaled(6));
-    const QStringList kStepNames = {tr("Source"), tr("Views"), tr("Mesh"),
-                                    tr("GLB")};
+    const QStringList kStepNames = {tr("Source"), tr("RMBG"), tr("Views"),
+                                    tr("Mesh"), tr("GLB")};
     const int thumb = ecvAICoreUi::dpiScaled(48);
-    for (const QString& name : kStepNames) {
+    for (int slot = 0; slot < kStepNames.size(); ++slot) {
         auto* cell = new QVBoxLayout();
         cell->setSpacing(1);
-        auto* thumbLabel = new ecvClickableImageLabel(stripGroup);
+        ecvClickableImageLabel* thumbLabel = nullptr;
+        if (slot >= 3) {
+            // Mesh / GLB chips carry the result mesh: the click opens the
+            // shared 3D orbit viewer (the qTrellis MeshStageChip rule).
+            auto* meshChip = new MeshStageChip(stripGroup);
+            meshChip->openViewer = [this, slot]() { openMesh3D(slot); };
+            thumbLabel = meshChip;
+        } else {
+            thumbLabel = new ecvClickableImageLabel(stripGroup);
+        }
         thumbLabel->setFixedSize(thumb, thumb);
         thumbLabel->setAlignment(Qt::AlignCenter);
         thumbLabel->setStyleSheet(
                 "border: 1px solid #bbb; background: #fafafa;");
-        auto* caption = new QLabel(name, stripGroup);
+        auto* caption = new QLabel(kStepNames[slot], stripGroup);
         caption->setAlignment(Qt::AlignCenter);
         caption->setStyleSheet("color: #666; font-size: 8pt;");
         cell->addWidget(thumbLabel, 0, Qt::AlignHCenter);
@@ -400,7 +474,9 @@ void InstantMeshDialog::buildGeneratePage(QWidget* page) {
         m_stageCaptions.append(caption);
     }
     stripLayout->addStretch(1);
-    root->addWidget(stripGroup);
+    // Fixed below the configuration scroll: the strip is run feedback (its
+    // chips light up while stages advance), never scroll it out of view.
+    outerRoot->addWidget(stripGroup);
 
     root->addStretch();
 
@@ -426,10 +502,12 @@ void InstantMeshDialog::buildGeneratePage(QWidget* page) {
     runLayout->addWidget(m_addToDbCheck, 0, 2, Qt::AlignRight);
     runLayout->setColumnStretch(2, 1);
 
+    // The stage label and progress bar stay laid out permanently (empty
+    // when idle): geometry conservation keeps the window minimum constant
+    // so showing them mid-run can never push the fixed bottom block out of
+    // the window.
     m_stageLabel = new QLabel(runGroup);
-    m_stageLabel->setVisible(false);
     m_progress = new QProgressBar(runGroup);
-    m_progress->setVisible(false);
     runLayout->addWidget(m_stageLabel, 1, 0, 1, 3);
     runLayout->addWidget(m_progress, 2, 0, 1, 3);
     outerRoot->addWidget(runGroup);
@@ -549,18 +627,19 @@ void InstantMeshDialog::onBrowseImage() {
 void InstantMeshDialog::updateImagePreview() {
     const QString path = m_imagePath->text().trimmed();
     if (path.isEmpty() || !QFileInfo::exists(path)) {
-        m_imagePreview->clear();
+        m_imagePreview->clearPreview();
         return;
     }
     QImage img(path);
     if (img.isNull()) {
-        m_imagePreview->clear();
+        m_imagePreview->clearPreview();
         return;
     }
     m_lastPreviewImage = img;
-    m_imagePreview->setPixmap(QPixmap::fromImage(
-            img.scaled(m_imagePreview->size(), Qt::KeepAspectRatio,
-                       Qt::SmoothTransformation)));
+    // setPreviewImage keeps the full-resolution image as the
+    // click-to-enlarge target (qTrellis behavior); a raw setPixmap leaves
+    // the label inert.
+    m_imagePreview->setPreviewImage(img, m_imagePreview->size());
 }
 
 void InstantMeshDialog::refreshModelState() { updateModelStatus(); }
@@ -819,8 +898,8 @@ void InstantMeshDialog::onTestImageSelected(int index) {
 void InstantMeshDialog::onTestDataExtracted() {
     using TestDataset = ecvTestDataRepository::Dataset;
     const TestDataset kind = TestDataset::Image2Mesh;
-    m_progress->setVisible(false);
-    m_stageLabel->setVisible(false);
+    m_progress->reset();
+    m_stageLabel->clear();
     if (!ecvTestDataRepository::getImage2MeshImages(
                  ecvTestDataRepository::extractPath(kind))
                  .isEmpty()) {
@@ -881,25 +960,32 @@ void InstantMeshDialog::setRunning(bool running) {
     m_cancelBtn->setEnabled(running);
     m_useTestDataBtn->setEnabled(!running && !m_samplePreparing);
     if (!running) {
-        m_progress->setVisible(false);
-        m_stageLabel->setVisible(false);
+        // Geometry conservation: clear the content instead of hiding the
+        // row, so the window minimum never shrinks between runs.
+        m_progress->reset();
+        m_stageLabel->clear();
     }
 }
 
 void InstantMeshDialog::setImagePreview(const QImage& image) {
     if (image.isNull() || !m_imagePreview) return;
-    m_imagePreview->setPixmap(QPixmap::fromImage(
-            image.scaled(m_imagePreview->size(), Qt::KeepAspectRatio,
-                         Qt::SmoothTransformation)));
+    m_imagePreview->setPreviewImage(image, m_imagePreview->size());
 }
 
 void InstantMeshDialog::resetStageStrip(const QImage& input) {
-    const QStringList kNames = {tr("Source"), tr("Views"), tr("Mesh"),
-                                tr("GLB")};
+    const QStringList kNames = {tr("Source"), tr("RMBG"), tr("Views"),
+                                tr("Mesh"), tr("GLB")};
     for (int i = 0; i < m_stageThumbs.size(); ++i) {
         if (m_stageCaptions[i]) m_stageCaptions[i]->setText(kNames[i]);
+        // Drop the previous run's full image (stale-result leak) and show
+        // the qTrellis "-" placeholder while the stage has not run yet.
+        if (m_stageThumbs[i]) {
+            m_stageThumbs[i]->clearPreview();
+            m_stageThumbs[i]->setText(QStringLiteral("-"));
+        }
         setStageState(i, kStagePending);
     }
+    m_activeSlot = -1;
     if (!input.isNull() && m_stageThumbs[0]) {
         setImagePreviewToSlot(0, input);
     }
@@ -907,9 +993,9 @@ void InstantMeshDialog::resetStageStrip(const QImage& input) {
 
 void InstantMeshDialog::setImagePreviewToSlot(int slot, const QImage& image) {
     if (slot < 0 || slot >= m_stageThumbs.size() || image.isNull()) return;
-    m_stageThumbs[slot]->setPixmap(QPixmap::fromImage(
-            image.scaled(m_stageThumbs[slot]->size(), Qt::KeepAspectRatio,
-                         Qt::SmoothTransformation)));
+    // setPreviewImage stores the full-resolution image as the
+    // click-to-enlarge target; a raw setPixmap leaves the chip inert.
+    m_stageThumbs[slot]->setPreviewImage(image, m_stageThumbs[slot]->size());
 }
 
 void InstantMeshDialog::setStageState(int slot, int state) {
@@ -919,23 +1005,154 @@ void InstantMeshDialog::setStageState(int slot, int state) {
                     ? QColor(0x2e, 0x7d, 0x32)
                     : (state == kStageActive ? QColor(0xf5, 0x7f, 0x17)
                                              : QColor(0xbb, 0xbb, 0xbb));
-    m_stageThumbs[slot]->setStyleSheet(
-            QStringLiteral("border: 2px solid %1; background: #fafafa;")
-                    .arg(border.name()));
+    QString style = QStringLiteral("border: 2px solid %1; background: #fafafa;")
+                            .arg(border.name());
+    // The pending "-" placeholder reads dimmed; image chips carry no text.
+    if (state == kStagePending) style += QStringLiteral(" color: #999;");
+    m_stageThumbs[slot]->setStyleSheet(style);
+}
+
+void InstantMeshDialog::setStageActive(int stage) {
+    // aicore_instantmesh_stage ids (the progress-callback contract, indexed
+    // numerically like the qInstantMesh stage-name table): preprocess(0) /
+    // rmbg(1) own the RMBG chip, multiview(2) / vae_decode(3) the Views
+    // chip, encode(4)..mesh(7) the Mesh chip and texture(8) the GLB chip.
+    int slot = -1;
+    switch (stage) {
+        case 0:
+        case 1:
+            slot = 1;
+            break;
+        case 2:
+        case 3:
+            slot = 2;
+            break;
+        case 4:
+        case 5:
+        case 6:
+        case 7:
+            slot = 3;
+            break;
+        case 8:
+            slot = 4;
+            break;
+        default:
+            return;
+    }
+    if (slot == m_activeSlot) return;  // per-step callbacks repeat a stage
+    m_activeSlot = slot;
+    setStageState(slot, kStageActive);
 }
 
 void InstantMeshDialog::applyResultToStrip(const InstantMeshRunResult& result) {
-    if (result.multiview && !result.sourceImage.isEmpty()) {
-        // The 6-view grid itself is not kept by the worker; the Views chip
-        // shows the diffusion completion via the mesh render for now.
+    if (m_stageThumbs.size() < 5) return;
+    setLastResult(result);
+    // A successful run must leave NO chip blank (the qTrellis rule): a
+    // stage whose image the AICore result does not carry shows the closest
+    // truthful image with an explicit state caption instead, so a blank
+    // slot can never read as a broken stage.
+    const QImage source = m_stageThumbs[0]->fullImage();
+    // RMBG chip: the condition image the pipeline actually consumed — the
+    // matting (click-zoom shows whether the background is cleanly gone)
+    // when RMBG ran, the input itself otherwise.
+    if (!result.preprocessImage.isNull()) {
+        setImagePreviewToSlot(1, result.preprocessImage);
+        m_stageCaptions[1]->setText(
+                result.rmbgApplied ? tr("RMBG") : tr("Preprocess · no RMBG"));
+    } else if (!source.isNull()) {
+        setImagePreviewToSlot(1, source);
+        m_stageCaptions[1]->setText(tr("Preprocess · no RMBG"));
     }
+    setStageState(1, kStageDone);
+    // Views chip: the real 6-view Zero123++ mosaic when the diffusion ran.
+    if (!result.viewsImage.isNull()) {
+        setImagePreviewToSlot(2, result.viewsImage);
+        m_stageCaptions[2]->setText(tr("Views · Zero123++"));
+    } else if (!result.multiview) {
+        // Replicate mode: the input image IS the actual 6-view condition.
+        if (!source.isNull()) setImagePreviewToSlot(2, source);
+        m_stageCaptions[2]->setText(tr("Views · replicated input"));
+    } else {
+        // Diffusion ran but the mosaic export is absent: explicit caption
+        // instead of a blank chip.
+        if (!source.isNull()) setImagePreviewToSlot(2, source);
+        m_stageCaptions[2]->setText(tr("Views · grid not exported"));
+    }
+    setStageState(2, kStageDone);
     if (!result.previewImage.isNull()) {
-        setImagePreviewToSlot(2, result.previewImage);
-        setStageState(2, kStageDone);
-        if (!result.glb.isEmpty()) {
-            setStageState(3, kStageDone);
+        setImagePreviewToSlot(3, result.previewImage);
+        setStageState(3, kStageDone);
+    } else {
+        m_stageCaptions[3]->setText(tr("Mesh · render failed"));
+    }
+    if (!result.glb.isEmpty()) {
+        if (!result.texRgba.isEmpty() && result.texW > 0 && result.texH > 0) {
+            // The baked atlas is the GLB's actual texture content; zoom it
+            // to inspect bake quality (row 0 = top matches QImage).
+            const QImage atlas(
+                    reinterpret_cast<const uchar*>(result.texRgba.constData()),
+                    result.texW, result.texH, result.texW * 4,
+                    QImage::Format_RGBA8888);
+            setImagePreviewToSlot(4, atlas.copy());  // own the pixels
+        } else if (!result.previewImage.isNull()) {
+            setImagePreviewToSlot(4, result.previewImage);
+        }
+        m_stageCaptions[4]->setText(
+                result.texRgba.isEmpty()
+                        ? tr("GLB · vertex colours")
+                        : tr("GLB · %1 MB")
+                                  .arg(result.glb.size() / (1024.0 * 1024.0), 0,
+                                       'f', 1));
+        setStageState(4, kStageDone);
+    } else if (!result.previewImage.isNull()) {
+        // GLB bake failed: the mesh render with an explicit caption states
+        // what happened instead of a blank chip.
+        setImagePreviewToSlot(4, result.previewImage);
+        m_stageCaptions[4]->setText(tr("GLB · none"));
+    }
+}
+
+void InstantMeshDialog::openMesh3D(int slot) {
+    if (slot < 0 || slot >= m_stageThumbs.size()) return;
+    const QImage chip = m_stageThumbs[slot]->fullImage();
+    if (m_lastResult.verts.isEmpty() || m_lastResult.tris.isEmpty()) {
+        // No result mesh yet (mid-run / failed generation): keep the shared
+        // image zoom as the fallback so the chip never feels dead.
+        if (!chip.isNull()) {
+            ecvClickableImageLabel::showEnlargedImage(
+                    this, chip, m_stageCaptions[slot]->text());
+        }
+        return;
+    }
+    // InstantMesh meshes are Z-up (the Zero123++ cameras orbit Z); the
+    // shared viewer orbits a Y-up scene, so rotate once about X:
+    // (x, y, z) -> (x, z, -y).
+    const int nv = m_lastResult.verts.size() / 3;
+    QVector<float> verts(m_lastResult.verts);
+    for (int i = 0; i < nv; ++i) {
+        const float y = verts[3 * i + 1];
+        const float z = verts[3 * i + 2];
+        verts[3 * i + 1] = z;
+        verts[3 * i + 2] = -y;
+    }
+    const QVector<float> normals =
+            InstantMeshWorker::vertexNormals(verts, m_lastResult.tris);
+    // Per-vertex base colour in the viewer's 6-float layout (rgb + unused
+    // metallic/roughness/alpha); empty renders the amber geometry shading.
+    QVector<float> colors;
+    if (m_lastResult.vcolors.size() == m_lastResult.verts.size()) {
+        colors.resize(nv * 6);
+        for (int i = 0; i < nv; ++i) {
+            for (int c = 0; c < 3; ++c)
+                colors[6 * i + c] = m_lastResult.vcolors[3 * i + c];
         }
     }
+    ecvAICoreMeshViewerDialog viewer(
+            verts, normals, m_lastResult.tris, colors, !colors.isEmpty(),
+            QStringLiteral("InstantMesh — %1")
+                    .arg(m_stageCaptions[slot]->text()),
+            this);
+    viewer.exec();
 }
 
 void InstantMeshDialog::closeEvent(QCloseEvent* event) {
@@ -969,12 +1186,17 @@ void InstantMeshDialog::showEvent(QShowEvent* event) {
     QDialog::showEvent(event);
     m_useTestDataBtn->setEnabled(!m_samplePreparing && !m_taskRunning);
     if (!m_samplePreparing && !m_taskRunning && !m_downloadInProgress) {
-        m_progress->hide();
-        m_stageLabel->hide();
+        // Geometry conservation: clear, never hide the row.
+        m_progress->reset();
+        m_stageLabel->clear();
     }
     if (m_firstShow) {
         m_firstShow = false;
         refreshModelState();
         ensureImage2MeshDataset();
+        // Polish-time font metrics can grow the layout minimum by a pixel
+        // and widen the content; re-pin so the floor matches the shown
+        // layout exactly.
+        setMinimumSize(pinnedMinimumSize().expandedTo(minimumSize()));
     }
 }

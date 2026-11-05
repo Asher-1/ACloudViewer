@@ -240,6 +240,56 @@ TEST(VLXSeekOcrProposer, QuadsCapAtProposalContract) {
     EXPECT_FALSE(VLXSeekHelpers::ocrQuadsToBoxes(nullptr, 0, &none));
 }
 
+TEST(VLXSeekAnswerStripping, MultiGroundRegionAnswerKeepsEveryText) {
+    // Regression (console vs annotated-image mismatch): the previous greedy
+    // <objects>(.*)</objects> handling spanned from the first group to the
+    // last one and swallowed the interleaved <ground>RESORTCASINO</ground>
+    // of a two-target region_ocr answer, so the console showed only the
+    // first text with both obj references merged into one bracket.
+    const QString raw = QStringLiteral(
+            "<ground>FANTASYSPRINGS</ground><objects><obj0></objects>"
+            "<ground>RESORTCASINO</ground><objects><obj1></objects>");
+    EXPECT_EQ(VLXSeekHelpers::stripAnswerTags(raw, false),
+              QStringLiteral("FANTASYSPRINGS [obj0] RESORTCASINO [obj1]"));
+    // Without think/answer blocks both modes agree.
+    EXPECT_EQ(VLXSeekHelpers::stripAnswerTags(raw, true),
+              VLXSeekHelpers::stripAnswerTags(raw, false));
+}
+
+TEST(VLXSeekAnswerStripping, ReasoningAnswerKeepsOrDropsThink) {
+    const QString raw = QStringLiteral(
+            "<think>step one</think><answer> the woman </answer>");
+    // keepReasoning preserves the reasoning CONTENT before the answer (the
+    // trailing tag cleanup strips the <think>/</think> markers themselves).
+    EXPECT_EQ(VLXSeekHelpers::stripAnswerTags(raw, true),
+              QStringLiteral("step one\n\nthe woman"));
+    EXPECT_EQ(VLXSeekHelpers::stripAnswerTags(raw, false),
+              QStringLiteral("the woman"));
+    // Multiple <think> blocks: the lazy removal must not swallow the
+    // content between them.
+    EXPECT_EQ(VLXSeekHelpers::stripAnswerTags(
+                      QStringLiteral("<think>a</think>keep<think>b</think>"),
+                      false),
+              QStringLiteral("keep"));
+}
+
+TEST(VLXSeekAnswerStripping, DetectionAnswerAndPlainText) {
+    EXPECT_EQ(VLXSeekHelpers::stripAnswerTags(
+                      QStringLiteral("<ground>person</ground>"
+                                     "<objects><obj1><obj2></objects>"),
+                      false),
+              QStringLiteral("person [obj1, obj2]"));
+    // Empty objects group disappears; plain text passes through untouched.
+    EXPECT_EQ(VLXSeekHelpers::stripAnswerTags(
+                      QStringLiteral("<ground>x</ground><objects></objects>"),
+                      false),
+              QStringLiteral("x"));
+    EXPECT_EQ(VLXSeekHelpers::stripAnswerTags(QStringLiteral("plain answer"),
+                                              false),
+              QStringLiteral("plain answer"));
+    EXPECT_TRUE(VLXSeekHelpers::stripAnswerTags(QString(), false).isEmpty());
+}
+
 int main(int argc, char** argv) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
     QCoreApplication app(argc, argv);

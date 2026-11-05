@@ -126,7 +126,6 @@ private:
 
     Settings m_settings;
     struct aicore_vlx_seek_ctx* m_pendingCtx = nullptr;
-    double m_loadMs = 0;
 };
 
 Q_DECLARE_METATYPE(VLXSeekWorker::Settings)

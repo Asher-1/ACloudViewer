@@ -99,7 +99,15 @@ public:
          *  documents the SLANet_plus table stage detects and rebuilds.
          *  Appended last: existing enumerator values stay stable for
          *  plugins compiled against the previous layout. */
-        PpocrTables  ///< PP-OCR real-document table pages (qOCR tables mode)
+        PpocrTables,  ///< PP-OCR real-document table pages (qOCR tables mode)
+        /** qAnyLabeling official annotation test data: the upstream
+         *  X-AnyLabeling-GGML demo assets bundled as
+         *  anylabeling_test_data.zip on the cloudViewer_downloads release —
+         *  per-mode image+sidecar demo pairs under image_modes/ (the File
+         *  > Use Test Data one-click fill), import/export format samples,
+         *  PaddleOCR KIE/rec samples, the LLVIP compare pair, the video
+         *  tracking demo and the KITTI 3D cuboid sample. */
+        AnyLabeling  ///< X-AnyLabeling official annotation demos (qAnyLabeling)
     };
 
     /** Dataset metadata. */

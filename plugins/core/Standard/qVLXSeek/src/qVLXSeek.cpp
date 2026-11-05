@@ -13,74 +13,10 @@
 
 #include <QDir>
 #include <QFileInfo>
-#include <QRegExp>
 
 #include "VLXSeekBatchCommand.h"
 #include "ecvAICoreRuntimeHelpers.h"
 #include "ecvPluginDbNaming.h"
-
-namespace {
-// Strip VLX-Seek internal XML tags from the answer for human-readable
-// display. The raw model output uses:
-//   <ground>text</ground><objects><obj1><obj2></objects>  (detection)
-//   <think>...</think><answer>text</answer>               (reasoning)
-//   plain text                                             (vqa)
-//
-// This function:
-// - Preserves <think>...</think> blocks (reasoning process visibility)
-// - Extracts text from <answer>...</answer> if present
-// - Strips <ground>, <objects>, <objN> tags but preserves text content
-// - Converts <objects><obj1><obj2></objects> to [obj1, obj2] for context
-QString stripAnswerTags(const QString& answer) {
-    if (answer.isEmpty()) return answer;
-    QString result = answer;
-    // Extract text from <answer>...</answer> if present (reasoning tasks)
-    QRegExp answerRe(QStringLiteral("<answer>\\s*(.*)\\s*</answer>"),
-                     Qt::CaseSensitive, QRegExp::RegExp2);
-    if (answerRe.indexIn(result) >= 0) {
-        // Keep <think>...</think> + extracted answer
-        QString thinkBlock;
-        QRegExp thinkRe(QStringLiteral("<think>(.*)</think>"),
-                        Qt::CaseSensitive, QRegExp::RegExp2);
-        if (thinkRe.indexIn(result) >= 0) {
-            thinkBlock = QStringLiteral("<think>") + thinkRe.cap(1) +
-                         QStringLiteral("</think>\n\n");
-        }
-        result = thinkBlock + answerRe.cap(1);
-    } else {
-        // No <answer> tag; remove <think>...</think> if present (shouldn't
-        // happen, but handle gracefully)
-        result.remove(QRegExp(QStringLiteral("<think>.*</think>"),
-                              Qt::CaseSensitive, QRegExp::RegExp2));
-    }
-    // Replace <ground>text</ground> with just the text
-    result.remove(QRegExp(QStringLiteral("</?ground>")));
-    // Replace <objects>...</objects> with [obj1, obj2, ...]
-    QRegExp objectsRe(QStringLiteral("<objects>(.*)</objects>"),
-                      Qt::CaseSensitive, QRegExp::RegExp2);
-    if (objectsRe.indexIn(result) >= 0) {
-        QString objs = objectsRe.cap(1);
-        QStringList objList;
-        QRegExp objRe(QStringLiteral("<obj(\\d+)>"), Qt::CaseSensitive,
-                      QRegExp::RegExp2);
-        int pos = 0;
-        while ((pos = objRe.indexIn(objs, pos)) != -1) {
-            objList << QStringLiteral("obj%1").arg(objRe.cap(1));
-            pos += objRe.matchedLength();
-        }
-        if (objList.count() > 0) {
-            result = result.replace(objectsRe.cap(0),
-                                    QStringLiteral(" [%1]").arg(objList.join(
-                                            QStringLiteral(", "))));
-        } else {
-            result.remove(objectsRe.cap(0));
-        }
-    }
-    // Clean up any remaining tags
-    result.remove(QRegExp(QStringLiteral("</?[a-z]+>")));
-    return result.trimmed();
-}
-}  // namespace
 
 qVLXSeek::qVLXSeek(QObject* parent)
     : QObject(parent), ccStdPluginInterface(":/CC/plugin/qVLXSeek/info.json") {}
@@ -153,16 +89,22 @@ void qVLXSeek::onResultReady(const VLXSeekRunResult& result) {
         addResultToDb(result, m_lastSettings);
     }
 
-    // One line with every user-visible key fact: task mode, input, proposal
-    // supply (source + count — wedetect, external JSON or ocr-det text
-    // boxes), detection count, the staged timings (load / inference / e2e)
-    // and the human-readable answer. The task mode is the first field so that
-    // scanning the log immediately identifies which of the seven supported
-    // tasks (detection / grounding_single / counting / reasoning_detection /
-    // brief_region_caption / region_ocr / vqa) produced each row.
-    // stripAnswerTags preserves <think>...</think> reasoning steps while
-    // stripping <ground>, <objects>, <objN> tags for readability.
-    const QString readableAnswer = stripAnswerTags(result.answer);
+    // One line with every user-visible key fact: task mode, target indexes
+    // (region tasks; the answer's objN numbers use the same proposal order),
+    // input, proposal supply (source + count — wedetect, external JSON or
+    // ocr-det text boxes), detection count, the staged timings (load /
+    // inference / e2e) and the human-readable answer. The task mode is the
+    // first field so that scanning the log immediately identifies which of
+    // the seven supported tasks (detection / grounding_single / counting /
+    // reasoning_detection / brief_region_caption / region_ocr / vqa)
+    // produced each row. stripAnswerTags preserves <think>...</think>
+    // reasoning steps while stripping <ground>, <objects>, <objN> tags for
+    // readability.
+    const QString targets = m_lastSettings.targetIndexes.trimmed().isEmpty()
+                                    ? QStringLiteral("-")
+                                    : m_lastSettings.targetIndexes.trimmed();
+    const QString readableAnswer = VLXSeekHelpers::stripAnswerTags(
+            result.answer, /*keepReasoning=*/true);
     // The ocr-det proposer runs plugin-side (context load + det + rec); its
     // wall time is not part of the VLX-Seek timing contract, so it is
     // reported next to the source instead of the staged timings.
@@ -171,12 +113,12 @@ void qVLXSeek::onResultReady(const VLXSeekRunResult& result) {
                                               .arg(result.proposalMs, 0, 'f', 0)
                                     : QString();
     aicore_inference_log::log(
-            QStringLiteral("[qVLXSeek] task=%1 | %2\n"
-                           "           %3 box(es) from %4 %5 proposals%6 | "
-                           "load %7 ms, infer %8 ms, e2e %9 ms | "
-                           "device %10 (%11)\n"
-                           "           answer: %12")
-                    .arg(m_lastSettings.task, result.imagePath)
+            QStringLiteral("[qVLXSeek] task=%1 targets=%2 | %3\n"
+                           "           %4 box(es) from %5 %6 proposals%7 | "
+                           "load %8 ms, infer %9 ms, e2e %10 ms | "
+                           "device %11 (%12)\n"
+                           "           answer: %13")
+                    .arg(m_lastSettings.task, targets, result.imagePath)
                     .arg(result.boxes.size())
                     .arg(result.proposalCount)
                     .arg(result.proposalSource)
@@ -208,6 +150,8 @@ void qVLXSeek::addResultToDb(const VLXSeekRunResult& result,
     auto* img = new ccImage(result.annotatedImage, name);
     img->setMetaData(QStringLiteral("VLXSeek"), true);
     img->setMetaData(QStringLiteral("VLXSeek/Task"), settings.task);
+    img->setMetaData(QStringLiteral("VLXSeek/TargetIndexes"),
+                     settings.targetIndexes);
     img->setMetaData(QStringLiteral("VLXSeek/Text"), settings.text);
     img->setMetaData(QStringLiteral("VLXSeek/Answer"), result.answer);
     img->setMetaData(QStringLiteral("VLXSeek/Boxes"),

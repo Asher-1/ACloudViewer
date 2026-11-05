@@ -83,4 +83,15 @@ OcrProposerModels ocrProposerModels();
  *  supplies exactly 100). Returns false when no usable box remains. */
 bool ocrQuadsToBoxes(const float* quads, int quadCount, QVector<float>* boxes);
 
+/** Strips the VLX-Seek internal XML tags for human-readable display. The
+ *  raw output uses <ground>text</ground><objects><objN>...</objects> groups
+ *  (one group per grounded text — multi-region answers carry several),
+ *  optional <think>...</think> reasoning and an <answer>...</answer> block.
+ *  Every <objects> group is replaced by its own [objN, ...] list so the
+ *  interleaved ground texts survive; the answer's objN numbers match the
+ *  proposal boxes (target-index numbering). With \p keepReasoning the
+ *  <think> block is preserved before the answer content (console lines);
+ *  otherwise it is dropped (compact status lines). */
+QString stripAnswerTags(const QString& answer, bool keepReasoning = false);
+
 }  // namespace VLXSeekHelpers

@@ -198,6 +198,8 @@ void qInstantMesh::startWorker(const InstantMeshDialog::Settings& settings) {
                                                            ? stage
                                                            : 0])),
                             step, total);
+                    // Light the strip chip that owns this AICore stage.
+                    m_dialog->setStageActive(stage);
                 }
             });
     connect(m_worker, &InstantMeshWorker::resultReady, this,

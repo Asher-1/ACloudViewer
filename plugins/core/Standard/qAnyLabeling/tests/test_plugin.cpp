@@ -69,6 +69,7 @@
 
 #include "AnnotationCanvas.h"
 #include "LocalChatEngine.h"
+#include "ecvTestDataRepository.h"
 
 namespace {
 bool reviewStatusRoundTrip(QMainWindow* window) {
@@ -335,6 +336,7 @@ int main(int argc, char** argv) {
             QStringLiteral("Next Unchecked Image"),
             QStringLiteral("Prev Unchecked Image"),
             QStringLiteral("Open Dir"),
+            QStringLiteral("Use Test Data"),
             QStringLiteral("Open Video"),
             QStringLiteral("Compare View"),
             QStringLiteral("Open Recent"),
@@ -3067,6 +3069,141 @@ int main(int argc, char** argv) {
             std::fprintf(stdout, "AI Describe region caption: %s\n",
                          regionCaption.toUtf8().constData());
         }
+    }
+    // Use Test Data: the File > Use Test Data menu must exist and, with a
+    // warm shared-repository cache, fill the requested mode from the
+    // official demo bundle: image_modes (18 units), the KITTI point-cloud
+    // window, the tracking video tab and the LLVIP compare pair. Cold
+    // transport belongs to the dedicated repository test.
+    QAction* testDataAction = window->findChild<QAction*>(
+            QStringLiteral("AnnotationUseTestData"));
+    if (!testDataAction || !testDataAction->isEnabled()) {
+        std::fprintf(stderr, "Use Test Data action contract failed\n");
+        return 1;
+    }
+    if (ecvTestDataRepository::instance().isDatasetAvailable(
+                ecvTestDataRepository::Dataset::AnyLabeling)) {
+        auto* status =
+                window->findChild<QLabel*>(QStringLiteral("AnnotationStatus"));
+        const QString demoDir =
+                QDir(ecvTestDataRepository::dataRoot())
+                        .filePath(QStringLiteral("anylabeling_demo"));
+        QAction* imageModes = window->findChild<QAction*>(
+                QStringLiteral("AnnotationTestImageModes"));
+        if (!imageModes || !status) {
+            std::fprintf(stderr, "Use Test Data menu entries missing\n");
+            return 1;
+        }
+        imageModes->trigger();
+        QCoreApplication::processEvents();
+        auto* files = window->findChild<QListWidget*>(
+                QStringLiteral("AnnotationFiles"));
+        auto* objects = window->findChild<QListWidget*>(
+                QStringLiteral("AnnotationObjects"));
+        if (!files || files->count() != 17 || files->currentRow() != 0 ||
+            !objects || objects->count() == 0 ||
+            !status->text().contains(QStringLiteral("Official test data")) ||
+            !QFileInfo(QDir(demoDir).filePath(QStringLiteral(
+                               "image_modes/01_rectangle_demo.jpg")))
+                     .isFile()) {
+            std::fprintf(stderr,
+                         "Use Test Data warm fill failed: files=%d row=%d "
+                         "objects=%d status=\"%s\"\n",
+                         files ? files->count() : -1,
+                         files ? files->currentRow() : -1,
+                         objects ? objects->count() : -1,
+                         status ? status->text().toUtf8().constData() : "");
+            return 1;
+        }
+        const int firstUnitShapes = objects->count();
+        // Point cloud: the KITTI sample must land in the point-cloud
+        // window through its public openFile entry.
+        QAction* pointCloud = window->findChild<QAction*>(
+                QStringLiteral("AnnotationTestPointCloud"));
+        if (!pointCloud) {
+            std::fprintf(stderr, "Point cloud test data entry missing\n");
+            return 1;
+        }
+        pointCloud->trigger();
+        QCoreApplication::processEvents();
+        if (!status->text().contains(QStringLiteral("KITTI cuboid sample "
+                                                    "loaded"))) {
+            std::fprintf(stderr,
+                         "Point cloud test-data fill failed: status=\"%s\"\n",
+                         status->text().toUtf8().constData());
+            return 1;
+        }
+        // Video tracking: the demo mp4 must reach the SAM3 video tab.
+        QAction* videoTracking = window->findChild<QAction*>(
+                QStringLiteral("AnnotationTestVideoTracking"));
+        if (!videoTracking) {
+            std::fprintf(stderr, "Video tracking test data entry missing\n");
+            return 1;
+        }
+        videoTracking->trigger();
+        QCoreApplication::processEvents();
+        // Success evidence: either our confirmation status, or the video
+        // tab having already taken over the status with its video summary.
+        if (!status->text().contains(QStringLiteral("Tracking demo loaded")) &&
+            !status->text().contains(QStringLiteral("Video: demo_video.mp4"))) {
+            std::fprintf(stderr,
+                         "Video tracking test-data fill failed: "
+                         "status=\"%s\"\n",
+                         status->text().toUtf8().constData());
+            return 1;
+        }
+        // Compare view: the fill copies the visible half into the session
+        // area, opens it and pairs it against the infrared folder.
+        QAction* compareView = window->findChild<QAction*>(
+                QStringLiteral("AnnotationTestCompareView"));
+        if (!compareView) {
+            std::fprintf(stderr, "Compare view test data entry missing\n");
+            return 1;
+        }
+        compareView->trigger();
+        QCoreApplication::processEvents();
+        if (!status->text().contains(QStringLiteral("Compare view: slide"))) {
+            std::fprintf(stderr,
+                         "Compare view test-data fill failed: "
+                         "status=\"%s\"\n",
+                         status->text().toUtf8().constData());
+            return 1;
+        }
+        std::fprintf(stdout,
+                     "Use Test Data warm fill: 17 image modes + pointcloud "
+                     "+ video + compare OK (first unit shapes=%d)\n",
+                     firstUnitShapes);
+    } else {
+        std::fprintf(stdout,
+                     "Use Test Data warm fill skipped (dataset not cached; "
+                     "the repository test owns cold transport)\n");
+    }
+    // Close the heavyweight test-data windows (the point-cloud renderer
+    // and the SAM3 video tab) before the app teardown, mirroring the user
+    // flow: their worker threads must not outlive the QApplication.
+    for (QWidget* widget : window->findChildren<QWidget*>()) {
+        const QByteArray className = widget->metaObject()->className();
+        if (className == QByteArrayLiteral("PointCloudWindow") ||
+            className == QByteArrayLiteral("VideoTab")) {
+            QWidget* topLevel = widget->window();
+            if (topLevel && topLevel != window) topLevel->close();
+        }
+    }
+    QCoreApplication::processEvents();
+    for (int waited = 0; waited < 100; ++waited) {
+        bool busy = false;
+        for (QWidget* widget : window->findChildren<QWidget*>()) {
+            const QByteArray className = widget->metaObject()->className();
+            if (className == QByteArrayLiteral("PointCloudWindow") ||
+                className == QByteArrayLiteral("VideoTab")) {
+                busy = true;
+                break;
+            }
+        }
+        if (!busy) break;
+        QEventLoop loop;
+        QTimer::singleShot(50, &loop, &QEventLoop::quit);
+        loop.exec();
     }
     window->close();
     QCoreApplication::processEvents();

@@ -293,10 +293,14 @@ bool VLXSeekWorker::runInference() {
             opts, m_settings.visionPath.toUtf8().constData());
     aicore_vlx_seek_options_set_llm_gguf(
             opts, m_settings.llmPath.toUtf8().constData());
+    QElapsedTimer loadTimer;
+    loadTimer.start();
     aicore_vlx_seek_ctx* ctx = aicore_vlx_seek_load_opts(opts);
     aicore_vlx_seek_options_free(opts);
+    const double modelLoadMs = static_cast<double>(loadTimer.elapsed());
 
     VLXSeekRunResult result;
+    result.modelLoadMs = modelLoadMs;
     QImage annotated;
     QString error;
     const bool ok = ctx && aicore_vlx_seek_is_ready(ctx) &&

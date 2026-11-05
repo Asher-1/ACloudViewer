@@ -11,6 +11,7 @@ target_include_directories(test_qvlxseek_helpers PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/core/AICore/include
+    ${CMAKE_SOURCE_DIR}/core/include
 )
 
 find_package(Threads REQUIRED)

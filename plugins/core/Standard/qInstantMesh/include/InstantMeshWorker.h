@@ -43,6 +43,15 @@ struct InstantMeshRunResult {
     /** Final shaded render of the generated mesh (256 px) for the pipeline
      *  strip; rendered on the worker thread. */
     QImage previewImage;
+    /** Observation images exported by the AICore handle: the RMBG matting
+     *  the pipeline consumed (empty when matting did not run — the strip
+     *  falls back to the source) and the real 6-view Zero123++ mosaic
+     *  (empty in replicate mode). Rendered by the pipeline; the worker
+     *  only copies. */
+    QImage preprocessImage;
+    QImage viewsImage;
+    /** 1 when the run performed RMBG matting (drives the strip caption). */
+    bool rmbgApplied = false;
     double totalRuntimeMs = 0.0;
     double loadRuntimeMs = 0.0;
     double exportRuntimeMs = 0.0;
@@ -90,6 +99,11 @@ public:
     explicit InstantMeshWorker(const Settings& settings,
                                QObject* parent = nullptr);
     ~InstantMeshWorker() override;
+    /** Per-vertex normals by area-weighted face-normal accumulation
+     *  (O(nv + nt)); empty when the mesh is degenerate. Pure geometry with
+     *  no AICore dependency (the AICore mesh handle carries no normals). */
+    static QVector<float> vertexNormals(const QVector<float>& verts,
+                                        const QVector<int>& tris);
 #ifdef AICore_ENABLED
     /** Plugin CPU preview; no model inference or GUI/OpenGL access. */
     static QImage renderResultPreview(const InstantMeshRunResult& result,

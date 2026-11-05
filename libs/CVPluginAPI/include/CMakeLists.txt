@@ -19,6 +19,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvAICoreUiHelper.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvAICoreRuntimeHelpers.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvAICoreBatchCommand.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvAICoreMeshViewer.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvQtHelpers.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvRenderToFileDlg.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvTestDataRepository.h

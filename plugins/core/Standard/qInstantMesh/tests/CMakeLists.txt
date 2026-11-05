@@ -23,7 +23,8 @@ cloudviewer_set_plugin_test_env(test_qinstantmesh_worker)
 
 add_executable(test_qinstantmesh_dialog test_instantmesh_dialog.cpp
     ../src/InstantMeshDialog.cpp ../src/InstantMeshModelCatalog.cpp
-    ../include/InstantMeshDialog.h)
+    ../src/InstantMeshWorker.cpp
+    ../include/InstantMeshDialog.h ../include/InstantMeshWorker.h)
 add_executable(test_qinstantmesh_plugin test_instantmesh_plugin.cpp
     ../src/qInstantMesh.cpp ../src/InstantMeshDialog.cpp
     ../src/InstantMeshWorker.cpp ../src/InstantMeshModelCatalog.cpp

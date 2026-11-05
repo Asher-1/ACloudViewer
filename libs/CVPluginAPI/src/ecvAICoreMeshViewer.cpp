@@ -5,7 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "TrellisMeshViewer.h"
+#include "ecvAICoreMeshViewer.h"
+
+#include <QtCompat.h>
 
 #include <QHBoxLayout>
 #include <QLabel>
@@ -23,18 +25,9 @@
 
 namespace {
 
-// Qt 5 uses QPointF localPos(); Qt 6 renamed it to position().
-QPointF eventPos(const QMouseEvent* e) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    return e->position();
-#else
-    return e->localPos();
-#endif
-}
-
 // Orbit GL viewport: one interleaved VBO (pos + normal + colour), one IBO, a
 // phong-lite shader. A single static draw call handles the multi-million-
-// triangle TRELLIS meshes comfortably.
+// triangle AICore meshes comfortably.
 class MeshGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core {
 public:
     MeshGLWidget(const QVector<float>& verts,
@@ -192,17 +185,17 @@ protected:
     }
 
     void mousePressEvent(QMouseEvent* e) override {
-        m_lastPos = eventPos(e);
+        m_lastPos = qtCompatMouseEventPos(e);
         if (e->button() == Qt::LeftButton) m_orbiting = true;
     }
     void mouseReleaseEvent(QMouseEvent* e) override {
         if (e->button() == Qt::LeftButton) m_orbiting = false;
-        m_lastPos = eventPos(e);
+        m_lastPos = qtCompatMouseEventPos(e);
     }
     void mouseMoveEvent(QMouseEvent* e) override {
         if (!m_orbiting) return;
-        const QPointF d = eventPos(e) - m_lastPos;
-        m_lastPos = eventPos(e);
+        const QPointF d = qtCompatMouseEventPos(e) - m_lastPos;
+        m_lastPos = qtCompatMouseEventPos(e);
         m_yaw += float(d.x()) * 0.4f;
         m_pitch = std::clamp(m_pitch + float(d.y()) * 0.4f, -85.0f, 85.0f);
         update();
@@ -239,13 +232,14 @@ private:
 
 }  // namespace
 
-TrellisMeshViewerDialog::TrellisMeshViewerDialog(const QVector<float>& verts,
-                                                 const QVector<float>& normals,
-                                                 const QVector<int>& tris,
-                                                 const QVector<float>& pbr,
-                                                 bool textured,
-                                                 const QString& title,
-                                                 QWidget* parent)
+ecvAICoreMeshViewerDialog::ecvAICoreMeshViewerDialog(
+        const QVector<float>& verts,
+        const QVector<float>& normals,
+        const QVector<int>& tris,
+        const QVector<float>& pbr,
+        bool textured,
+        const QString& title,
+        QWidget* parent)
     : QDialog(parent) {
     setWindowTitle(title);
     resize(680, 580);

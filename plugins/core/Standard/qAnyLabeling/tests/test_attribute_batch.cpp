@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <aicore/attribute_capi.h>
 #include <ecvCommandLineInterface.h>
 #include <ecvStdPluginInterface.h>
 
@@ -22,6 +23,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <utility>
+
+#include "ecvTestDataRepository.h"
 
 namespace {
 // Unused point-cloud interfaces must not silently take part in image batching;
@@ -326,10 +329,56 @@ int main(int argc, char** argv) {
     QTemporaryDir work;
     if (!check(work.isValid(), "Temporary batch directory")) return 1;
     const QString root = work.path();
-    const QString dataRoot =
-            QString::fromLocal8Bit(qgetenv("CLOUDVIEWER_DATA_ROOT"));
-    const QString imageSource =
-            QString::fromLocal8Bit(qgetenv("AICORE_TEST_ATTRIBUTE_IMAGE"));
+    // Explicit input resolution (no environment injection): the real image
+    // comes from the shared ObjectsDetection test dataset; when absent,
+    // the shared repository prepares it (URL + pinned digest).
+    QString imageSource = ecvTestDataRepository::findDatasetFile(
+            ecvTestDataRepository::Dataset::ObjectsDetection,
+            QStringLiteral("bus.jpg"));
+    if (imageSource.isEmpty()) {
+        auto& repo = ecvTestDataRepository::instance();
+        QEventLoop loop;
+        QObject::connect(
+                &repo, &ecvTestDataRepository::datasetReady, &loop,
+                [&](bool ok, ecvTestDataRepository::Dataset kind) {
+                    if (kind !=
+                        ecvTestDataRepository::Dataset::ObjectsDetection)
+                        return;
+                    loop.quit();
+                    if (!ok)
+                        std::fprintf(stderr,
+                                     "ObjectsDetection dataset "
+                                     "preparation failed\n");
+                });
+        repo.ensureDatasetReady(
+                ecvTestDataRepository::Dataset::ObjectsDetection);
+        loop.exec();
+        imageSource = ecvTestDataRepository::findDatasetFile(
+                ecvTestDataRepository::Dataset::ObjectsDetection,
+                QStringLiteral("bus.jpg"));
+    }
+    const QString dataRoot = ecvTestDataRepository::dataRoot();
+    // Converted PULC weights resolve explicitly from the AICore catalog
+    // cache while the shared data root is still active.
+    const auto catalogWeight = [](const char* filename) {
+        char* raw = aicore_attribute_model_cache_dir();
+        if (!raw) return QString();
+        const QByteArray owned(raw);
+        aicore_attribute_free_buffer(raw);
+        return QDir(QString::fromUtf8(owned))
+                .filePath(QString::fromLatin1(filename));
+    };
+    const QHash<QString, QString> weights = {
+            {QStringLiteral("person"), catalogWeight("pulc-person-f32.gguf")},
+            {QStringLiteral("vehicle"),
+             catalogWeight("pulc-vehicle-f32.gguf")}};
+    for (auto it = weights.begin(); it != weights.end(); ++it) {
+        if (!check(!it.value().isEmpty() && QFileInfo(it.value()).isFile(),
+                   qPrintable(QStringLiteral("Converted PULC %1 weights "
+                                             "missing at %2")
+                                      .arg(it.key(), it.value()))))
+            return 1;
+    }
     QJsonObject inputDigests;
     inputDigests[imageSource] = sha256(imageSource);
     if (!check(!inputDigests[imageSource].toString().isEmpty(),
@@ -400,9 +449,7 @@ int main(int argc, char** argv) {
     QDir().mkpath(root + "/extract/attribute_models");
     for (const QString& family :
          {QStringLiteral("person"), QStringLiteral("vehicle")}) {
-        const QByteArray key =
-                "AICORE_TEST_ATTRIBUTE_" + family.toUpper().toUtf8() + "_GGUF";
-        const QString source = QString::fromLocal8Bit(qgetenv(key.constData()));
+        const QString source = weights.value(family);
         inputDigests[source] = sha256(source);
         const QString filename = "pulc-" + family + "-f32.gguf";
         if (!check(!inputDigests[source].toString().isEmpty() &&

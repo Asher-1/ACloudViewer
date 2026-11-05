@@ -8852,6 +8852,88 @@
    "url": "https://huggingface.co/Asher-1/map_anything_vggt/resolve/main/vggt-omega-1b-512-f32.gguf",
    "sha256": "e4ea47089fc2765f32b0a728e71b171158dff3c81d7893b95db7c828ac4a8854",
    "size_bytes": 4575356288
+  },
+  {
+   "id": "anylabeling-test-data",
+   "tasks": [],
+   "relative_path": "anylabeling_test_data.zip",
+   "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/anylabeling-test-data/anylabeling_test_data.zip",
+   "sha256": "462bc317feed53a735e948a83659675a6cc6be45856f0738825cf5e64991a43b",
+   "size_bytes": 8673063,
+   "archive": true,
+   "description": "qAnyLabeling Use Test Data archive: official X-AnyLabeling-GGML demo assets bundled by plugins/core/Standard/qAnyLabeling/scripts/build_test_data.py from upstream cd26942a (MANIFEST.txt inside the archive pins every member provenance); image_modes/ holds one image + sidecar pair per annotation mode (17 entries). Plugin UI demo data only - no AICore probe consumes it, so tasks stays empty and the members are covered by the plugin test row.",
+   "extracted_files": [
+    {
+     "relative_path": "anylabeling_test_data/README.md",
+     "sha256": "9adadee9ba04afb1f3034ff9aee4ba36f0b9ab7b5c1b0ede339d487569ac965a",
+     "size_bytes": 3971
+    },
+    {
+     "relative_path": "anylabeling_test_data/image_modes/01_rectangle_demo.jpg",
+     "sha256": "22845b1cdeb18f67d6e362c0fe707a3dc8c55915275218edc5ddc3417d9be8f2",
+     "size_bytes": 518632
+    },
+    {
+     "relative_path": "anylabeling_test_data/image_modes/01_rectangle_demo.json",
+     "sha256": "d4678fc1dc7ceae7f2acba04170391c43d95040d39b30305da3f5f085ee242d3",
+     "size_bytes": 30219
+    },
+    {
+     "relative_path": "anylabeling_test_data/image_modes/02_polygon_cat_dog.json",
+     "sha256": "63809b6c024322e09fb18ffe92a9095710031372e602149b30b991334140fb61",
+     "size_bytes": 5552
+    },
+    {
+     "relative_path": "anylabeling_test_data/image_modes/03_rotation_harbor.json",
+     "sha256": "61196be04721247b1231ca8d5f433a3c609bf1287220535b135213b635ec77c8",
+     "size_bytes": 5962
+    },
+    {
+     "relative_path": "anylabeling_test_data/image_modes/04_line_lane.json",
+     "sha256": "2399cf5bb21702f811ceddf45db43cfc9781ede2da0f7c0d22214406aa20ff0c",
+     "size_bytes": 1801
+    },
+    {
+     "relative_path": "anylabeling_test_data/image_modes/05_point_pose.json",
+     "sha256": "fcb7c5181e24c01e996f054a78c5a2126b1990f4a4dec3aebbe7bd652a60f63a",
+     "size_bytes": 6382
+    },
+    {
+     "relative_path": "anylabeling_test_data/image_modes/13_mot_group_bangkok.json",
+     "sha256": "a0a2a13d7acce15042b5cde248ec6436b6d904d1bad34cc29f92ca4f6ac54fb1",
+     "size_bytes": 13644
+    },
+    {
+     "relative_path": "anylabeling_test_data/image_modes/14_cuboid_street.json",
+     "sha256": "740562589f8880a8e22a05ba732cbbde7a5f56f6a60a96449c0081f24b49c3dc",
+     "size_bytes": 1579
+    },
+    {
+     "relative_path": "anylabeling_test_data/image_modes/15_kie_linking.json",
+     "sha256": "7473278f579217f0bc01ac2819dcbadbc8405d9648529ecc4f0fef1bf5077998",
+     "size_bytes": 77239
+    },
+    {
+     "relative_path": "anylabeling_test_data/image_modes/16_circle_pandas.json",
+     "sha256": "117b73e2b7eff1f7978c640580b4e8d40ade03cafd13d35d2d8d3573cab2c06c",
+     "size_bytes": 1249
+    },
+    {
+     "relative_path": "anylabeling_test_data/image_modes/17_quadrilateral_car.json",
+     "sha256": "8e189e5a6487eae280531291d51748d237a8fe684a54f6d7baf6db7ad83874cb",
+     "size_bytes": 1111
+    },
+    {
+     "relative_path": "anylabeling_test_data/formats/odvg/od.json",
+     "sha256": "e3b8cf7e3679f229e5377563ee997458f96769fa6ef9fc4aaa947fcfbc02310a",
+     "size_bytes": 6071
+    },
+    {
+     "relative_path": "anylabeling_test_data/ppocr/kie/ppocr_kie.json",
+     "sha256": "e3232906bb7c6cc1bb3919bc92242739fd57388ddf00d7edf6f4ba7e9b9f43b8",
+     "size_bytes": 13504
+    }
+   ]
   }
  ],
  "scenarios": [

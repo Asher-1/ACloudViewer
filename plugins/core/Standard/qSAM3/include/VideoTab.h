@@ -65,6 +65,9 @@ public:
     void releaseModel();
     /** Pass the app interface for DB-tree export. */
     void setAppInterface(ecvMainAppInterface* app) { m_app = app; }
+    /** Open and decode a video file into the tracking timeline (the
+     *  programmatic peer of onOpenVideo / drag-and-drop). */
+    void openVideoFile(const QString& path);
 
 signals:
     /** Keep the dialog's shared backend indicator in sync with video mode. */
@@ -122,7 +125,6 @@ private:
     void startDownload(bool thenRun);
     /** Refresh the Download button state (cached / missing). */
     void updateDownloadButton();
-    void openVideoFile(const QString& path);
     /** Ensure a model matching the current combo selection is loaded.
      *  Starts a lazy load when needed (the pending action is re-run once
      *  the load finishes, mirroring upstream main_video.cpp where the

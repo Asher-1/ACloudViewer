@@ -47,6 +47,13 @@ namespace instantmesh {
 
 namespace {
 
+// Zero123++ view geometry: the VAE decodes a rows x cols mosaic of V x V
+// views (run.py rearrange 'c (n h) (m w)'); the split at the decode
+// boundary and the observation export in generate() share these constants.
+constexpr int kZero123ViewPx = 320;
+constexpr int kZero123GridRows = 3;
+constexpr int kZero123GridCols = 2;
+
 double now_ms() {
     return std::chrono::duration<double, std::milli>(
                    std::chrono::steady_clock::now().time_since_epoch())
@@ -599,8 +606,9 @@ struct PipelineContext::Impl {
     bool has_cond = false, has_unet = false, has_vae = false;
 
     // Zero123++ multi-view diffusion: rgb_in (tightly packed RGB8) -> 6 views
-    // of [320,320,3] u8. Full diffusion correctness requires independent
-    // numeric evidence.
+    // of [320,320,3] u8 plus the source 3x2 mosaic they were split from
+    // (observation-only export). Full diffusion correctness requires
+    // independent numeric evidence.
     bool zero123pp_multiview(const PipelineConfig &cfg,
                              int steps,
                              uint64_t seed,
@@ -609,6 +617,7 @@ struct PipelineContext::Impl {
                              int h,
                              int w,
                              std::vector<uint8_t> &views,
+                             std::vector<uint8_t> &mosaic,
                              ProgressFn progress,
                              void *user,
                              std::string *error);
@@ -619,7 +628,8 @@ struct PipelineContext::Impl {
 // inputs).
 // ---------------------------------------------------------------------------
 
-// rgb_in: tightly packed RGB8 [h,w,3]; output views: 6 x [320,320,3] u8.
+// rgb_in: tightly packed RGB8 [h,w,3]; output views: 6 x [320,320,3] u8 and
+// the source 3x2 mosaic ([3*V,2*V,3], row 0 = top) they were split from.
 bool PipelineContext::Impl::zero123pp_multiview(const PipelineConfig &cfg,
                                                 int steps,
                                                 uint64_t seed,
@@ -628,6 +638,7 @@ bool PipelineContext::Impl::zero123pp_multiview(const PipelineConfig &cfg,
                                                 int h,
                                                 int w,
                                                 std::vector<uint8_t> &views,
+                                                std::vector<uint8_t> &mosaic,
                                                 ProgressFn progress,
                                                 void *user,
                                                 std::string *error) {
@@ -871,7 +882,8 @@ bool PipelineContext::Impl::zero123pp_multiview(const PipelineConfig &cfg,
         return false;
 
     // Split the 3x2 grid into 6 views (run.py rearrange 'c (n h) (m w)').
-    const int V = 320, rows = 3, cols = 2;
+    const int V = kZero123ViewPx, rows = kZero123GridRows,
+              cols = kZero123GridCols;
     views.assign((size_t)rows * cols * V * V * 3, 0);
     for (int r = 0; r < rows; ++r)
         for (int c = 0; c < cols; ++c)
@@ -884,6 +896,9 @@ bool PipelineContext::Impl::zero123pp_multiview(const PipelineConfig &cfg,
                                              (size_t)(c * V + x)) *
                                                     3 +
                                             ch];
+    // Observation export: the decoded mosaic itself (the single source of
+    // truth the views were split from; consumers render it as-is).
+    mosaic = std::move(out_rgb);
     return true;
 }
 
@@ -1043,6 +1058,17 @@ bool PipelineContext::generate(const uint8_t *rgba,
             rmbg_hold.assign(m_rgba, m_rgba + (size_t)mlen);
             aicore_rmbg_free_buffer(m_rgba);
             src = rmbg_hold.data();
+            if (out) {
+                // Observation export: the matting RGBA the pipeline
+                // consumed (the alpha carries the background-removal
+                // evidence users inspect on the strip chip). Without
+                // matting nothing is exported here: the strip falls back
+                // to the source image with its "Preprocess · no RMBG"
+                // caption, and has_rmbg stays a truthful 0.
+                out->rmbg_rgba = rmbg_hold;
+                out->rmbg_w = mw;
+                out->rmbg_h = mh;
+            }
         }
         composite_rgba_white(src, h, w, stride, rgb);
     }
@@ -1054,10 +1080,11 @@ bool PipelineContext::generate(const uint8_t *rgba,
     std::vector<float> image_mv;  // [6,3,224,224] ImageNet-normalized
     {
         std::vector<uint8_t> views;
+        std::vector<uint8_t> mosaic;
         if (has_multiview_) {
             if (!impl_->zero123pp_multiview(cfg_, p.steps, p.seed, p.guidance,
-                                            rgb.data(), h, w, views, progress,
-                                            user, error)) {
+                                            rgb.data(), h, w, views, mosaic,
+                                            progress, user, error)) {
                 last_error_ = (error && !error->empty()) ? *error
                                                          : "multiview failed";
                 return false;
@@ -1082,6 +1109,15 @@ bool PipelineContext::generate(const uint8_t *rgba,
             for (int v = 0; v < 6; ++v)
                 std::memcpy(&views[(size_t)v * MV * MV * 3], src32.data(),
                             (size_t)MV * MV * 3);
+        }
+        if (out && !mosaic.empty()) {
+            // Observation export: the real 6-view Zero123++ mosaic.
+            // Replicate mode keeps the Views chip on the source with its
+            // caption (a mosaic of replicated inputs carries no extra
+            // information).
+            out->views_rgb = std::move(mosaic);
+            out->views_w = kZero123GridCols * kZero123ViewPx;
+            out->views_h = kZero123GridRows * kZero123ViewPx;
         }
 
         // views (320 RGB) -> 224 ImageNet-normalized DINO input.

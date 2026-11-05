@@ -128,4 +128,7 @@ private:
     VLXSeekWorker::Settings m_settings;  // staged paths between prepare/run
     VLXSeekWorker* m_worker = nullptr;
     QString m_lastSummary;  // result headline shown when the worker settles
+    // Task of the run in flight (the summary must not follow combo edits
+    // made while inference runs).
+    QString m_runningTask;
 };

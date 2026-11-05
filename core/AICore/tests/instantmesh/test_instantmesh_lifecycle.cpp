@@ -264,6 +264,25 @@ int main(int argc, char** argv) {
         const int nv = aicore_instantmesh_mesh_n_verts(mesh);
         const int nt = aicore_instantmesh_mesh_n_tris(mesh);
         AICORE_CHECK(nv > 0 && nt > 0);
+        // Observation exports: the matting RGBA only when the run matted; the
+        // 6-view mosaic only on multiview runs.
+        AICORE_CHECK(aicore_instantmesh_mesh_has_rmbg(mesh) == (rmbg ? 1 : 0));
+        if (rmbg) {
+            AICORE_CHECK(aicore_instantmesh_mesh_rmbg_rgba(mesh) != nullptr);
+            AICORE_CHECK(aicore_instantmesh_mesh_rmbg_w(mesh) > 0 &&
+                         aicore_instantmesh_mesh_rmbg_h(mesh) > 0);
+        } else {
+            AICORE_CHECK(aicore_instantmesh_mesh_rmbg_rgba(mesh) == nullptr);
+            AICORE_CHECK(aicore_instantmesh_mesh_rmbg_w(mesh) == 0);
+        }
+        const bool multiview = aicore_instantmesh_has_multiview(ctx.get());
+        AICORE_CHECK((aicore_instantmesh_mesh_views_rgb(mesh) != nullptr) ==
+                     (multiview ? 1 : 0));
+        if (multiview) {
+            // 3 rows x 2 cols of 320 px views: 640 wide, 960 tall.
+            AICORE_CHECK(aicore_instantmesh_mesh_views_w(mesh) == 640 &&
+                         aicore_instantmesh_mesh_views_h(mesh) == 960);
+        }
         const auto* verts = aicore_instantmesh_mesh_verts(mesh);
         for (int i = 0; i < nv * 3; ++i) AICORE_CHECK(std::isfinite(verts[i]));
         if (iteration == 0) {

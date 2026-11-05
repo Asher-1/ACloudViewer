@@ -597,6 +597,43 @@ int aicore_instantmesh_mesh_texture_h(const aicore_instantmesh_mesh *r) {
     return r ? reinterpret_cast<const PipelineMesh *>(r)->tex_h : 0;
 }
 
+int aicore_instantmesh_mesh_has_rmbg(const aicore_instantmesh_mesh *r) {
+    const auto *m = r ? reinterpret_cast<const PipelineMesh *>(r) : nullptr;
+    return m && m->rmbg_w > 0 && m->rmbg_h > 0 &&
+                           m->rmbg_rgba.size() ==
+                                   (size_t)m->rmbg_w * m->rmbg_h * 4
+                   ? 1
+                   : 0;
+}
+
+const uint8_t *aicore_instantmesh_mesh_rmbg_rgba(
+        const aicore_instantmesh_mesh *r) {
+    return r ? reinterpret_cast<const PipelineMesh *>(r)->rmbg_rgba.data()
+             : nullptr;
+}
+
+int aicore_instantmesh_mesh_rmbg_w(const aicore_instantmesh_mesh *r) {
+    return r ? reinterpret_cast<const PipelineMesh *>(r)->rmbg_w : 0;
+}
+
+int aicore_instantmesh_mesh_rmbg_h(const aicore_instantmesh_mesh *r) {
+    return r ? reinterpret_cast<const PipelineMesh *>(r)->rmbg_h : 0;
+}
+
+const uint8_t *aicore_instantmesh_mesh_views_rgb(
+        const aicore_instantmesh_mesh *r) {
+    return r ? reinterpret_cast<const PipelineMesh *>(r)->views_rgb.data()
+             : nullptr;
+}
+
+int aicore_instantmesh_mesh_views_w(const aicore_instantmesh_mesh *r) {
+    return r ? reinterpret_cast<const PipelineMesh *>(r)->views_w : 0;
+}
+
+int aicore_instantmesh_mesh_views_h(const aicore_instantmesh_mesh *r) {
+    return r ? reinterpret_cast<const PipelineMesh *>(r)->views_h : 0;
+}
+
 void aicore_instantmesh_mesh_free(aicore_instantmesh_mesh *r) {
     delete reinterpret_cast<PipelineMesh *>(r);
 }

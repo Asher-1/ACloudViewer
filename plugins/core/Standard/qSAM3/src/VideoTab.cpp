@@ -760,12 +760,15 @@ void VideoTab::openVideoFile(const QString& path) {
     m_playing = false;
     m_playBtn->setText(tr("Play"));
 
-    appendLog(tr("Video: %1 | %2x%3 | %4 frames | %.1f fps")
+    // %.1f is a printf placeholder, not a QString::arg marker: chain it
+    // as %5 so fps actually renders instead of leaving a stray "%.1f" and
+    // emitting the "Argument missing" warning.
+    appendLog(tr("Video: %1 | %2x%3 | %4 frames | %5 fps")
                       .arg(QFileInfo(path).fileName())
                       .arg(m_reader->getFrameWidth())
                       .arg(m_reader->getFrameHeight())
                       .arg(m_totalFrames)
-                      .arg(m_fps));
+                      .arg(m_fps, 0, 'f', 1));
     setStatus(tr("Pause and annotate to add instances."));
 
     // Show the first frame right away so the canvas is never left black.

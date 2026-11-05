@@ -141,6 +141,22 @@ constexpr const char* kPpocrTablesDownloadUrl =
 constexpr const char* kPpocrTablesSha256 =
         "1a8f9208ea84c8d3bc68a950ac963fa4dabee7b7c55c9f55537943c8885c5d49";
 
+// qAnyLabeling official annotation test data (File > Use Test Data): the
+// upstream X-AnyLabeling-GGML demo assets bundled by
+// plugins/core/Standard/qAnyLabeling/scripts/build_test_data.py from the
+// pinned upstream revision (see MANIFEST.txt inside the archive for the
+// per-file provenance — 12 verbatim members, the DOTA-converted rotation
+// sidecar and the four curated sidecars). image_modes/ holds one image +
+// sidecar pair per annotation mode; the action copies the tree to
+// cloudViewer_data/anylabeling_demo so edits never touch this cache.
+constexpr const char* kAnyLabelingZipName = "anylabeling_test_data.zip";
+constexpr const char* kAnyLabelingExtractDir = "anylabeling_test_data";
+constexpr const char* kAnyLabelingDownloadUrl =
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/"
+        "download/anylabeling-test-data/anylabeling_test_data.zip";
+constexpr const char* kAnyLabelingSha256 =
+        "462bc317feed53a735e948a83659675a6cc6be45856f0738825cf5e64991a43b";
+
 // LingBot-Map streaming reconstruction scenes (qLingbotMap). Four official
 // demo sequences (courthouse/loop/oxford/university, pre-cropped to the
 // 518-wide processing grid) plus the cached native sky masks for the two
@@ -632,6 +648,14 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                     QString::fromLatin1(kPpocrTablesDownloadUrl),
                     {QCryptographicHash::Sha256,
                      QByteArray(kPpocrTablesSha256)}};
+        case Dataset::AnyLabeling:
+            return {kind,
+                    QStringLiteral("X-AnyLabeling official test data"),
+                    QString::fromLatin1(kAnyLabelingZipName),
+                    QString::fromLatin1(kAnyLabelingExtractDir),
+                    QString::fromLatin1(kAnyLabelingDownloadUrl),
+                    {QCryptographicHash::Sha256,
+                     QByteArray(kAnyLabelingSha256)}};
     }
     Q_UNREACHABLE();
     return {};
@@ -810,6 +834,23 @@ bool ecvTestDataRepository::isExtractedComplete(Dataset kind) const {
                     !findDatasetFile(kind, QStringLiteral("zh_val_0.jpg"))
                              .isEmpty() &&
                     !findDatasetFile(kind, QStringLiteral("ja_val_0.jpg"))
+                             .isEmpty();
+            break;
+        case Dataset::AnyLabeling:
+            // Complete when the guide, the deterministic first-fill demo
+            // pair (the upstream canonical rectangle demo) and the curated
+            // cuboid unit are all present.
+            extractedComplete =
+                    !findDatasetFile(kind, QStringLiteral("README.md"))
+                             .isEmpty() &&
+                    !findDatasetFile(kind,
+                                     QStringLiteral("01_rectangle_demo.jpg"))
+                             .isEmpty() &&
+                    !findDatasetFile(kind,
+                                     QStringLiteral("01_rectangle_demo.json"))
+                             .isEmpty() &&
+                    !findDatasetFile(kind,
+                                     QStringLiteral("14_cuboid_street.json"))
                              .isEmpty();
             break;
     }
