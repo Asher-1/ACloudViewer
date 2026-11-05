@@ -5,8 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// M_PI: MSVC exposure is provided by the target's _USE_MATH_DEFINES compile
-// definition in CVPluginAPI/CMakeLists.txt (same contract as qInstantMesh).
+// M_PI: MSVC exposure is provided by the target's MSVC-guarded
+// _USE_MATH_DEFINES compile definition in CVPluginAPI/CMakeLists.txt
+// (same contract as qInstantMesh/qDeepLSD/AICore).
 
 #include "ecvAICoreMeshViewer.h"
 

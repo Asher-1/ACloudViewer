@@ -50,11 +50,17 @@ cloudviewer_plugin_link_zlib_minizip(${PROJECT_NAME}
 
 # _USE_MATH_DEFINES: the ecvAICoreMeshViewer orbit math uses M_PI. MSVC's
 # <cmath> only exposes M_PI with this macro defined; glibc exposes it
-# unconditionally (same contract the qInstantMesh target carried before the
-# viewer migrated here from qTrellis/qInstantMesh).
-target_compile_definitions( ${PROJECT_NAME} PRIVATE
-	CVPLUGIN_API_LIBRARY_BUILD
-	_USE_MATH_DEFINES )
+# unconditionally. Same guarded contract as the other AICore-consuming
+# targets (qInstantMesh, qDeepLSD, AICore) and
+# CloudViewerSetGlobalProperties.cmake.
+if(MSVC)
+	target_compile_definitions( ${PROJECT_NAME} PRIVATE
+		CVPLUGIN_API_LIBRARY_BUILD
+		_USE_MATH_DEFINES )
+else()
+	target_compile_definitions( ${PROJECT_NAME} PRIVATE
+		CVPLUGIN_API_LIBRARY_BUILD )
+endif()
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES
 	AUTOMOC ON
