@@ -107,6 +107,9 @@ private:
 
     void setupUi();
     void buildGeneratePage(QWidget* page);
+    /** Restore the permanent progress row to its idle state: an empty
+     *  determinate bar, never a busy (0,0) indicator. */
+    void setProgressIdle();
     /** Window minimum covering the fixed blocks plus the configuration
      *  content width (a scroll area's minimum ignores its content). */
     QSize pinnedMinimumSize() const;

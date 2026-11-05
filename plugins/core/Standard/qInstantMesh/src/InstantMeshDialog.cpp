@@ -87,9 +87,7 @@ InstantMeshDialog::InstantMeshDialog(QWidget* parent) : QDialog(parent) {
                 if (success)
                     onTestDataExtracted();
                 else {
-                    // Geometry conservation: clear, never hide the row.
-                    m_progress->reset();
-                    m_stageLabel->clear();
+                    setProgressIdle();
                     appendLog(tr(
                             "[InstantMesh] Sample data preparation failed."));
                 }
@@ -135,6 +133,15 @@ QSize InstantMeshDialog::pinnedMinimumSize() const {
         minSize.setWidth(qMax(minSize.width(), contentWidth));
     }
     return minSize;
+}
+
+void InstantMeshDialog::setProgressIdle() {
+    // The row stays laid out (geometry conservation); an idle row is an
+    // empty determinate bar. reset() alone would keep a busy (0,0) range
+    // animating forever.
+    m_progress->setRange(0, 100);
+    m_progress->setValue(0);
+    m_stageLabel->clear();
 }
 
 void InstantMeshDialog::constrainGeometry() {
@@ -898,8 +905,7 @@ void InstantMeshDialog::onTestImageSelected(int index) {
 void InstantMeshDialog::onTestDataExtracted() {
     using TestDataset = ecvTestDataRepository::Dataset;
     const TestDataset kind = TestDataset::Image2Mesh;
-    m_progress->reset();
-    m_stageLabel->clear();
+    setProgressIdle();
     if (!ecvTestDataRepository::getImage2MeshImages(
                  ecvTestDataRepository::extractPath(kind))
                  .isEmpty()) {
@@ -960,10 +966,7 @@ void InstantMeshDialog::setRunning(bool running) {
     m_cancelBtn->setEnabled(running);
     m_useTestDataBtn->setEnabled(!running && !m_samplePreparing);
     if (!running) {
-        // Geometry conservation: clear the content instead of hiding the
-        // row, so the window minimum never shrinks between runs.
-        m_progress->reset();
-        m_stageLabel->clear();
+        setProgressIdle();
     }
 }
 
@@ -1186,9 +1189,7 @@ void InstantMeshDialog::showEvent(QShowEvent* event) {
     QDialog::showEvent(event);
     m_useTestDataBtn->setEnabled(!m_samplePreparing && !m_taskRunning);
     if (!m_samplePreparing && !m_taskRunning && !m_downloadInProgress) {
-        // Geometry conservation: clear, never hide the row.
-        m_progress->reset();
-        m_stageLabel->clear();
+        setProgressIdle();
     }
     if (m_firstShow) {
         m_firstShow = false;

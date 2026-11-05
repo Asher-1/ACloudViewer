@@ -417,6 +417,11 @@ int main(int argc, char** argv) {
         ecvTestDataRepository::instance().ensureDatasetReady(kind);
         check(dialog.getSettings().inputPath.endsWith("/cartoon_panda.png"),
               "Shared datasetReady must autofill the prepared sample");
+        QProgressBar* idleBar = dialog.findChild<QProgressBar*>();
+        check(idleBar && idleBar->maximum() > idleBar->minimum() &&
+                      idleBar->value() == 0,
+              "A completed sample preparation must restore the progress row "
+              "to an idle determinate bar, never a busy (0,0) indicator");
         int canceled = 0;
         QObject::connect(&dialog, &InstantMeshDialog::cancelRequested,
                          [&] { ++canceled; });
