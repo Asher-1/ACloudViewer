@@ -16,7 +16,8 @@
   ],
   "references": [
     {
-      "text": "Spirula Studio: https://github.com/harry7557558/spirula-studio"
+      "text": "Spirula Studio",
+      "url": "https://github.com/harry7557558/spirula-studio"
     },
     {
       "text": "License: GPLv3 (aggregated standalone component)"

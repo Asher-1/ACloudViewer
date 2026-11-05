@@ -20,10 +20,8 @@ from ocr_paddle_environment import source_environment
 from run_ocr_onnx_probe import (native_exit_is_diagnostic, probability_command,
                                 source_performance_pass)
 from run_ocr_paddle_pipeline import verified_source
+from digest_utils import sha256_file
 
-
-def digest(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def comparison(actual, expected, *, argmax=False):
@@ -72,8 +70,8 @@ def source_command(args, files, python, report, device):
     tool = Path(__file__).resolve().parents[1] / "tools/bench_paddle_ocr_graph.py"
     command = [str(python), str(tool), "--program", str(files["program"]),
         "--parameters", str(files["parameters"]), "--input", str(args.input),
-        "--program-sha256", digest(files["program"]),
-        "--parameters-sha256", digest(files["parameters"]),
+        "--program-sha256", sha256_file(files["program"]),
+        "--parameters-sha256", sha256_file(files["parameters"]),
         "--input-sha256", args.input_sha256, "--device", device,
         "--warmups", str(args.warmups if device == "cuda" else 0),
         "--runs", str(args.runs if device == "cuda" else 1),
@@ -86,21 +84,21 @@ def source_command(args, files, python, report, device):
 def run(args):
     import numpy as np
     for name in ("input", "reference"):
-        if digest(getattr(args, name)) != getattr(args, name + "_sha256"):
+        if sha256_file(getattr(args, name)) != getattr(args, name + "_sha256"):
             raise ValueError(f"{name} SHA-256 mismatch")
     quantized = args.model.name.endswith(("-f16.gguf", "-q8_0.gguf"))
     pins = json.loads(args.source_pins.read_text())
     files = verified_source(args.source_root, pins, args.source_role, args.model)
-    report = dict(model_sha256=digest(args.model), input_sha256=args.input_sha256,
-        reference_sha256=args.reference_sha256, source_pins_sha256=digest(args.source_pins),
-        source_files={key: digest(files[key]) for key in ("program", "parameters")},
+    report = dict(model_sha256=sha256_file(args.model), input_sha256=args.input_sha256,
+        reference_sha256=args.reference_sha256, source_pins_sha256=sha256_file(args.source_pins),
+        source_files={key: sha256_file(files[key]) for key in ("program", "parameters")},
         backend=args.backend, role=args.role, exit_code=0,
         scope="one original Paddle graph tensor; page accuracy is a separate gate",
         sampling=dict(warmups=args.warmups, runs=args.runs, threads=args.threads))
     benchmark = Path(__file__).resolve().parents[1] / "tools/bench_paddle_ocr_graph.py"
-    report["source_benchmark_sha256"] = digest(benchmark)
+    report["source_benchmark_sha256"] = sha256_file(benchmark)
     identity_module = Path(__file__).resolve().with_name("ocr_paddle_metadata.py")
-    report["distribution_identity_sha256"] = digest(identity_module)
+    report["distribution_identity_sha256"] = sha256_file(identity_module)
     gpu = args.backend != "cpu"
     controlled = gpu and args.measurement_profile == "release"
     python = args.source_gpu_python if gpu else args.source_python
@@ -124,7 +122,7 @@ def run(args):
     source_identity = json.loads(source_report.read_text())
     if source_identity["distribution_identity_sha256"] != report["distribution_identity_sha256"]:
         raise ValueError("source package identity helper mismatch")
-    report["source_cuda_report_sha256" if gpu else "source_cpu_report_sha256"] = digest(source_report)
+    report["source_cuda_report_sha256" if gpu else "source_cpu_report_sha256"] = sha256_file(source_report)
     report["source_gpu_environment" if gpu else "source_cpu_environment"] = source_identity["environment"]
     report["source_gpu_distribution_candidates" if gpu else "source_cpu_distribution_candidates"] = source_identity["distribution_candidates"]
     with tempfile.TemporaryDirectory(prefix="paddle-graph-", dir=args.report.parent) as directory:
@@ -160,7 +158,7 @@ def run(args):
             report["exit_code"] = 1
         output = args.report.with_suffix(".probabilities.npy")
         np.save(output, native)
-        report.update(output_sha256=digest(output), probability_path=str(output))
+        report.update(output_sha256=sha256_file(output), probability_path=str(output))
         report["native_cpu_comparison"] = "separate diagnostic; not a GPU release gate"
         if audit:
             report.update(gpu_audit_pass=int(audit["passed"]),
@@ -178,9 +176,9 @@ def run(args):
             graph_throughput_hz=1000 / report["p50_ms"])
         if controlled and not report["source_performance_pass"]:
             report["exit_code"] = 1
-    if digest(benchmark) != report["source_benchmark_sha256"]:
+    if sha256_file(benchmark) != report["source_benchmark_sha256"]:
         raise ValueError("original Paddle benchmark changed during execution")
-    if digest(identity_module) != report["distribution_identity_sha256"]:
+    if sha256_file(identity_module) != report["distribution_identity_sha256"]:
         raise ValueError("source package identity helper changed during execution")
     return report
 

@@ -84,6 +84,14 @@ static std::vector<ModelRow> buildModels() {
     for (int vi = 0; vi < kVariantCount; ++vi) {
         const VariantInfo& variant = kVariants[vi];
         for (int qi = 0; qi < kQuantCount; ++qi) {
+            // Measured retirement (2026-11-05): the tiny detector needs F32
+            // weights for bit-exact DB decisions and the tiny containers
+            // leave at most one quantizable weight tensor after the tuned
+            // policy, so the tiny F16-detector and tiny Q8_0 candidates have
+            // no honest operating point. The tiny recognizer keeps F16.
+            const std::string stem = variant.stem;
+            if (stem == "ppocrv6-tiny-det" && qi != 0) continue;
+            if (stem == "ppocrv6-tiny-rec" && qi == 2) continue;
             std::string filename = std::string(variant.stem) + "-" +
                                    kQuantSuffixes[qi] + ".gguf";
             std::string url = std::string(kDownloadBase) + filename;

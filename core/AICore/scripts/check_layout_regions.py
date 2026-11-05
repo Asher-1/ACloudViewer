@@ -41,17 +41,11 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from digest_utils import sha256_file
 
 REGION = re.compile(r"^REGION \d+ cls=(\d+) order=-?\d+ score=([0-9.]+) "
                     r"(-?[0-9.]+),(-?[0-9.]+) (-?[0-9.]+),(-?[0-9.]+)$")
 
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def iou(a: list[float], b: list[float]) -> float:

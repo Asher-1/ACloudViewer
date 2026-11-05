@@ -91,9 +91,19 @@ int main(int argc, char** argv) {
                         int(orientation->angle == 180 && score > threshold));
                 AICORE_CHECK(std::memcmp(box->quad, quads.data() + i * 8,
                                          sizeof(box->quad)) == 0);
-                if (threshold == .9f && row.isMember("text"))
-                    AICORE_CHECK(std::string(box->text) ==
-                                 row["text"].asString());
+                if (threshold == .9f && row.isMember("text")) {
+                    const std::string got(box->text);
+                    const std::string expected = row["text"].asString();
+                    if (got != expected) {
+                        // Print the exact decode divergence: the per-tensor
+                        // keep_f16 policy is selected from these rows.
+                        std::fprintf(
+                                stderr,
+                                "TEXT row %zu expected \"%s\" got \"%s\"\n", i,
+                                expected.c_str(), got.c_str());
+                    }
+                    AICORE_CHECK(got == expected);
+                }
             }
             AICORE_CHECK(!aicore_ocr_orientation_at(result, -1));
             AICORE_CHECK(!aicore_ocr_orientation_at(result, count));

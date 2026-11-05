@@ -318,14 +318,16 @@ void drawAnnotationLabels(QPainter& painter,
 void drawAnnotationAttributes(QPainter& painter,
                               const AnnotationShape& shape,
                               double scale,
-                              int pointSize) {
+                              int pointSize,
+                              int fontSize) {
     const QJsonObject attributes =
             shape.extra.value(QStringLiteral("attributes")).toObject();
     if (attributes.isEmpty() || shape.points.isEmpty()) return;
     painter.save();
     painter.setOpacity(1.0);
+    const double baseFont = fontSize > 0 ? double(fontSize) : 10.0;
     painter.setFont(QFont(QStringLiteral("Arial"),
-                          std::max(8, int(std::nearbyint(10.0 / scale))),
+                          std::max(8, int(std::nearbyint(baseFont / scale))),
                           QFont::Bold));
     QStringList lines;
     for (auto it = attributes.constBegin(); it != attributes.constEnd(); ++it) {
@@ -908,6 +910,31 @@ void AnnotationCanvas::setMagicWandOpacity(double opacity) {
     update();
 }
 
+void AnnotationCanvas::setGridOptions(bool enabled,
+                                      int size,
+                                      const QString& color,
+                                      int opacity,
+                                      bool labels) {
+    m_gridEnabled = enabled;
+    m_gridSize = std::max(10, size);
+    m_gridColor = QColor(color);
+    if (!m_gridColor.isValid()) m_gridColor = Qt::white;
+    m_gridOpacity = std::clamp(opacity, 0, 100);
+    m_gridLabels = labels;
+    update();
+}
+
+void AnnotationCanvas::setAttributeFontSize(int size) {
+    m_attributeFontSize = std::clamp(size, 5, 36);
+    update();
+}
+
+void AnnotationCanvas::setWheelNavigationMode(const QString& mode) {
+    m_wheelNavigationMode = mode == QStringLiteral("traditional")
+                                    ? QStringLiteral("traditional")
+                                    : QStringLiteral("direct");
+}
+
 void AnnotationCanvas::setMagicWandSimplifyEpsilon(double epsilon) {
     m_magicSimplifyEpsilon = std::clamp(epsilon, 0.0, 100.0);
 }
@@ -1296,7 +1323,8 @@ QImage AnnotationCanvas::renderVisualizationImage(
     if (options.showAttributes)
         for (const auto& shape : shapes)
             if (shape.visible)
-                drawAnnotationAttributes(painter, shape, 1.0, m_shapePointSize);
+                drawAnnotationAttributes(painter, shape, 1.0, m_shapePointSize,
+                                         0);
     painter.end();
     return result;
 }
@@ -1809,7 +1837,43 @@ void AnnotationCanvas::paintEvent(QPaintEvent*) {
     painter.save();
     painter.translate(m_origin);
     painter.scale(m_scale, m_scale);
-    painter.setOpacity(m_shapeOpacity / 100.0);
+    if (m_gridEnabled) {
+        // Fixed-size image-space grid (upstream canvas grid): draw only the
+        // visible cells and label cell coordinates once cells are large
+        // enough to carry text.
+        painter.save();
+        QColor grid = m_gridColor;
+        grid.setAlphaF(m_gridOpacity / 100.0);
+        painter.setPen(QPen(grid, 0));
+        painter.setBrush(Qt::NoBrush);
+        const QRectF view =
+                painter.transform().inverted().mapRect(QRectF(rect()));
+        const int size = m_gridSize;
+        const int width = m_image.width();
+        const int height = m_image.height();
+        for (int x = std::max(0, int(view.left()) / size * size);
+             x <= std::min(width, int(view.right()) + 1); x += size)
+            painter.drawLine(QPointF(x, 0), QPointF(x, height));
+        for (int y = std::max(0, int(view.top()) / size * size);
+             y <= std::min(height, int(view.bottom()) + 1); y += size)
+            painter.drawLine(QPointF(0, y), QPointF(width, y));
+        if (m_gridLabels && size * m_scale >= 24) {
+            QFont labelFont = painter.font();
+            labelFont.setPointSizeF(std::max(7.0, 10.0));
+            painter.setFont(labelFont);
+            painter.setPen(QPen(grid, 0));
+            for (int x = std::max(0, int(view.left()) / size * size);
+                 x <= std::min(width, int(view.right()) + 1); x += size)
+                for (int y = std::max(0, int(view.top()) / size * size);
+                     y <= std::min(height, int(view.bottom()) + 1); y += size)
+                    painter.drawText(QPointF(x + 2, y + 12),
+                                     QStringLiteral("%1,%2").arg(x).arg(y));
+        }
+        painter.restore();
+    }
+    // The opacity slider adjusts annotation fills only (upstream fill
+    // opacity); strokes and UI overlays stay fully opaque. Fill passes set
+    // the opacity explicitly below.
     const auto drawMask = [this, &painter](
                                   const QImage& mask, const QColor& color,
                                   const AnnotationShape* shape = nullptr) {
@@ -1904,6 +1968,9 @@ void AnnotationCanvas::paintEvent(QPaintEvent*) {
         }
     }
     if (m_showMasks) {
+        painter.save();
+        // Masks are fill-class imagery: they keep the opacity adjustment.
+        painter.setOpacity(m_shapeOpacity / 100.0);
         for (int index = 0; index < m_shapes.size(); ++index) {
             const AnnotationShape& shape = m_shapes[index];
             const bool selected = m_selectedIndices.contains(index);
@@ -1913,6 +1980,7 @@ void AnnotationCanvas::paintEvent(QPaintEvent*) {
                              m_shapeLineWidth / m_scale, m_maskOpacity,
                              !(m_dragging && selected));
         }
+        painter.restore();
     }
     for (int index = 0; index < m_shapes.size(); ++index) {
         const AnnotationShape& shape = m_shapes[index];
@@ -1931,7 +1999,6 @@ void AnnotationCanvas::paintEvent(QPaintEvent*) {
             pen.setWidthF((selected ? std::max(2.5, m_shapeLineWidth)
                                     : m_shapeLineWidth) /
                           m_scale);
-            painter.setPen(pen);
             QColor fill = paintColor(shape, false);
             fill.setAlpha(selected ? 155 : 128);
             if (selected &&
@@ -1948,23 +2015,44 @@ void AnnotationCanvas::paintEvent(QPaintEvent*) {
                     m_fillDrawing &&
                     (isInProgress ||
                      ((selected || index == m_hoverShape) && !m_dragging));
-            painter.setBrush(fillShape ? QBrush(fill) : QBrush(Qt::NoBrush));
-            QPainterPath path;
-            path.moveTo(shape.points.first());
-            if (shape.type == QStringLiteral("circle") &&
-                shape.points.size() >= 2) {
-                const QRectF bounds = circleBounds(shape);
-                painter.drawEllipse(bounds.normalized());
-            } else if (shape.type == QStringLiteral("point")) {
-                // The vertex marker is painted below with its fill color.
-            } else if (isCuboid(shape)) {
+            const bool circleShape = shape.type == QStringLiteral("circle") &&
+                                     shape.points.size() >= 2;
+            const bool cuboidShape = isCuboid(shape);
+            auto drawGeometry = [&]() {
+                if (circleShape) {
+                    painter.drawEllipse(circleBounds(shape).normalized());
+                } else if (shape.type == QStringLiteral("point")) {
+                    // The vertex marker is painted below with its fill color.
+                } else {
+                    QPainterPath path;
+                    path.moveTo(shape.points.first());
+                    for (int i = 1; i < shape.points.size(); ++i)
+                        path.lineTo(shape.points[i]);
+                    if (closedType(shape.type) && shape.points.size() > 2)
+                        path.closeSubpath();
+                    painter.drawPath(path);
+                }
+            };
+            if (fillShape) {
+                // Fill pass carries the opacity adjustment; the stroke pass
+                // below stays fully opaque (upstream fill-opacity split).
+                painter.save();
+                painter.setOpacity(m_shapeOpacity / 100.0);
+                painter.setPen(Qt::NoPen);
+                painter.setBrush(fill);
+                if (cuboidShape)
+                    painter.drawPath(annotationCuboid::facePath(
+                            shape.points, annotationCuboid::Face::Front));
+                else
+                    drawGeometry();
+                painter.restore();
+            }
+            painter.setPen(pen);
+            painter.setBrush(Qt::NoBrush);
+            if (cuboidShape) {
                 drawCuboid(painter, shape.points);
             } else {
-                for (int i = 1; i < shape.points.size(); ++i)
-                    path.lineTo(shape.points[i]);
-                if (closedType(shape.type) && shape.points.size() > 2)
-                    path.closeSubpath();
-                painter.drawPath(path);
+                drawGeometry();
             }
             if (!selected && shape.mask.isNull() &&
                 (shape.type == QStringLiteral("point") ||
@@ -2040,7 +2128,7 @@ void AnnotationCanvas::paintEvent(QPaintEvent*) {
             if (m_shapes[index].visible &&
                 !(m_brushEditing && index == m_brushTarget))
                 drawAnnotationAttributes(painter, m_shapes[index], m_scale,
-                                         m_shapePointSize);
+                                         m_shapePointSize, m_attributeFontSize);
     // RelateAnything edges: curved arrow from the subject box centre to the
     // object box centre, coloured by the subject, with a predicate chip.
     if (m_showShapes && !m_relations.isEmpty()) {
@@ -3214,6 +3302,14 @@ void AnnotationCanvas::wheelEvent(QWheelEvent* event) {
     updateTransform();
     const QPointF cursor = qtCompatWheelEventPos(event);
     const QPointF anchor = toImage(cursor);
+    if (m_wheelNavigationMode == QStringLiteral("traditional")) {
+        // Upstream traditional navigation: the wheel pans the viewport
+        // instead of zooming; the brush-radius branch above still wins.
+        m_pan += QPointF(event->angleDelta().x(), event->angleDelta().y());
+        update();
+        event->accept();
+        return;
+    }
     if (m_wheelRectangleEditing && m_tool == QStringLiteral("edit") &&
         m_selected >= 0 && m_selected < m_shapes.size() &&
         m_shapes[m_selected].type == QStringLiteral("rectangle") &&

@@ -14,17 +14,11 @@ import io
 import json
 import math
 from pathlib import Path
+from digest_utils import sha256_file
 
 CDLA_LABELS = ("Text", "Title", "Figure", "Figure caption", "Table",
                "Table caption", "Header", "Footer", "Reference", "Equation")
 
-
-def digest(path):
-    value = hashlib.sha256()
-    with Path(path).open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            value.update(chunk)
-    return value.hexdigest()
 
 
 def verified_path(root, entry):
@@ -32,7 +26,7 @@ def verified_path(root, entry):
     if not name or Path(name).name != name or "\\" in name:
         raise ValueError("CDLA asset must be an immediate file")
     path = root / name
-    if path.is_symlink() or digest(path) != entry["sha256"]:
+    if path.is_symlink() or sha256_file(path) != entry["sha256"]:
         raise ValueError(f"CDLA SHA-256 mismatch: {name}")
     return path
 
@@ -183,8 +177,8 @@ def main():
     if args.ground_truth_output:
         args.ground_truth_output.write_text(json.dumps(gt) + "\n")
     metrics = evaluate(gt, json.loads(args.predictions.read_text()))
-    metrics.update(pins_sha256=digest(args.pins),
-        predictions_sha256=digest(args.predictions), evaluator_sha256=digest(__file__),
+    metrics.update(pins_sha256=sha256_file(args.pins),
+        predictions_sha256=sha256_file(args.predictions), evaluator_sha256=sha256_file(__file__),
         scope="Page metrics only; raw probability, GPU speed and release gates are separate")
     args.output.write_text(json.dumps(metrics, indent=2) + "\n")
     print(json.dumps(metrics))

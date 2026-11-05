@@ -36,17 +36,11 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+from digest_utils import sha256_file
 
 CDLA_LABELS = ("text", "title", "figure", "figure_caption", "table",
                "table_caption", "header", "footer", "reference", "equation")
 
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def preprocess(image: np.ndarray) -> np.ndarray:

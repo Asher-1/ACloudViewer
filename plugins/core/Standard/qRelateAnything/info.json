@@ -16,10 +16,12 @@
   ],
   "references": [
     {
-      "text": "https://github.com/Asher-1/RelateAnything-GGML"
+      "text": "RelateAnything-GGML",
+      "url": "https://github.com/Asher-1/RelateAnything-GGML"
     },
     {
-      "text": "https://huggingface.co/Asher-1/relateanything-ggml-full"
+      "text": "relateanything-ggml-full",
+      "url": "https://huggingface.co/Asher-1/relateanything-ggml-full"
     }
   ]
 }

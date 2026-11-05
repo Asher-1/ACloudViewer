@@ -499,8 +499,10 @@ events, while the GPU owner/depth path remains the source of visible-pixel
 truth. The source loads complete frames asynchronously; chunked streaming is
 an optional optimization. Focus animation is implemented; exact side-view/handle/dialog
 visuals and complete screenshot/gesture parity remain open.
-See [TODO.md](TODO.md) for separate lists of absent AICore models and
-still-pending supported workflows. The pose config reader currently
+See the "Source models with no matching AICore catalog" map in
+[MODEL_MATRIX.md](MODEL_MATRIX.md) for absent AICore models, and the
+"Open parity gap ledger" in [UPSTREAM_PARITY_AUDIT.md](UPSTREAM_PARITY_AUDIT.md)
+for still-pending supported workflows. The pose config reader currently
 accepts the source example's indented schema but not every valid YAML construct.
 Image cuboid editing includes the source front-corner and edge-center resize
 controls, visible rear-endpoint height controls, rear-center depth control,
@@ -576,7 +578,8 @@ comparison script and executed source fingerprints.
 
 The view comparison includes 18,216 creation-ray queries (maximum center delta
 `7.11e-15`) and 5,208 oriented ray-box queries. Remaining renderer/streaming and complete visual/interaction
-parity stay tracked in [TODO.md](TODO.md). Run the view-math comparison with
+parity stay tracked in the "Open parity gap ledger" of
+[UPSTREAM_PARITY_AUDIT.md](UPSTREAM_PARITY_AUDIT.md). Run the view-math comparison with
 `compare_pointcloud_view_upstream.py` using the same `--upstream`, `--probe`
 and `--output` arguments as the camera comparison above. The core archive and
 atomic sidecar/config transaction probes can be run with:
@@ -669,8 +672,8 @@ rules. The comparator still pins 96 DPI; the test probe explicitly sets the
 shared AA_Use96Dpi so fonts under older Qt offscreen follow that protocol too,
 and production fonts are unchanged. The report adds native Qt/font metrics, the
 reference Qt version and the probe SHA. The original RED, the intermediate DPI
-failure and the GREEN receipts are in
-[OCR_RELEASE_GATES.md](OCR_RELEASE_GATES.md); after the rebuild the config
+failure and the GREEN receipts remain in the git history of the retired
+`OCR_RELEASE_GATES.md` ledger; after the rebuild the config
 comparison still FAILs, and the review tri-state, the new canvas modes and all
 window/native-platform acceptance remain open.
 
@@ -779,17 +782,23 @@ in `AICORE_TEST_LLM_TEXT_MODEL`, `AICORE_TEST_LLM_VISION_MODEL` and
 `AICORE_TEST_LLM_MMPROJ`; missing assets fail rather than skip. Tests cover
 repeated text commands, two row-padded RGB images, text-model image rejection
 and corrupt-image stop/error manifest behavior. Source contracts and discovery
-do not prove these model tests passed: current execution and remaining build,
-RPC, independent accuracy/performance and platform gates are recorded in
-[OCR_RELEASE_GATES.md](OCR_RELEASE_GATES.md).
+do not prove these model tests passed: the live gate list is the OCR block of
+the "Open parity gap ledger" in
+[UPSTREAM_PARITY_AUDIT.md](UPSTREAM_PARITY_AUDIT.md), the gates themselves are the structured
+`validation_manifest.json` OCR rows executed by `validate_all.py`, and fresh
+reports live under `build_app/Testing/aicore_validation_ocr_*.json`.
 
 Runtime library paths must match the configured build; leave Qt's offscreen
 selection to CTest so its OpenGL point-cloud fixture can use Xvfb.
 The original exact-source OCR extension covered 30 F32 graph, orientation,
 page and selected-polygon scenarios. It now includes F16/Q8_0 candidates and
-labelled-page gates; the per-file state and local artifact paths are recorded
-in [OCR_RELEASE_GATES.md](OCR_RELEASE_GATES.md). These candidates require the
-named source checkout and its pinned ONNX assets and remain unpublished.
+labelled-page gates; gate ownership lives in the structured
+`validation_manifest.json` OCR rows (executed by `validate_all.py`, fresh
+reports under `build_app/Testing/aicore_validation_ocr_*.json`) and the open
+rows are listed in the "Open parity gap ledger" of
+[UPSTREAM_PARITY_AUDIT.md](UPSTREAM_PARITY_AUDIT.md). These candidates
+require the named source checkout and its pinned ONNX assets and remain
+unpublished.
 
 All files in `images/` are copied unchanged from X-AnyLabeling-GGML commit
 `926017d09b22564a78c55eb2f368c7b20faa0466` and remain under that

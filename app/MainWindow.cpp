@@ -2191,14 +2191,27 @@ QString MainWindow::formatBytes(qint64 bytes) {
 void MainWindow::initPlugins() {
     m_pluginUIManager->init();
 
-    // Set up dynamic tool bars
+    // Set up dynamic tool bars. The PCL Algorithms toolbar is opt-in
+    // (QPCL_PLUGIN_TOOLBAR, default OFF): its actions stay in the PCL menu
+    // regardless, keeping the right-side rail lean.
+#ifdef QPCL_PLUGIN_TOOLBAR
     QToolBar* glPclToolbar = m_pluginUIManager->glPclToolbar();
+#endif
     QToolBar* mainPluginToolbar = m_pluginUIManager->mainPluginToolbar();
+    QToolBar* aiCoreToolbar = m_pluginUIManager->aiCoreToolbar();
+#ifdef QPCL_PLUGIN_TOOLBAR
     addToolBar(Qt::RightToolBarArea, glPclToolbar);
+#endif
     addToolBar(Qt::RightToolBarArea, mainPluginToolbar);
+    // The AI Core toolbar is one draggable unit holding the grouped
+    // (info.json "group": "aicore") plugin actions.
+    addToolBar(Qt::RightToolBarArea, aiCoreToolbar);
     // Register plugin toolbars with layout manager
+#ifdef QPCL_PLUGIN_TOOLBAR
     m_layoutManager->registerRightSideToolBar(glPclToolbar);
+#endif
     m_layoutManager->registerRightSideToolBar(mainPluginToolbar);
+    m_layoutManager->registerRightSideToolBar(aiCoreToolbar);
 
     // Combine all additional plugin toolbars into a single unified toolbar
     // But exclude Python plugins - they should be handled separately
@@ -2314,8 +2327,11 @@ void MainWindow::initPlugins() {
 
     m_ui->menuToolbars->addAction(
             m_pluginUIManager->actionShowMainPluginToolbar());
+#ifdef QPCL_PLUGIN_TOOLBAR
     m_ui->menuToolbars->addAction(
             m_pluginUIManager->actionShowPCLAlgorithmToolbar());
+#endif
+    m_ui->menuToolbars->addAction(m_pluginUIManager->actionShowAICoreToolbar());
 
     // Apply unified icon size and style to all plugin toolbars
     // This includes glPclToolbar, mainPluginToolbar, and UnifiedPluginToolbar

@@ -162,6 +162,9 @@ option(CLOUDVIEWER_NEED_PCL          "Need PCL for enabled plugins"             
 if (PLUGIN_STANDARD_QPCL OR PLUGIN_STANDARD_MASONRY_QAUTO_SEG OR PLUGIN_STANDARD_MASONRY_QMANUAL_SEG)
     set(CLOUDVIEWER_NEED_PCL ON)
 endif()
+# Opt-in PCL Algorithms toolbar (default OFF): the PCL actions stay in the
+# PCL menu regardless; the toolbar only adds a right-rail entry.
+option(QPCL_PLUGIN_TOOLBAR           "Show the PCL Algorithms toolbar"          OFF)
 
 if(NOT WIN32)
     if (USE_VTK_BACKEND)

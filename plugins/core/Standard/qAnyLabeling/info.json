@@ -1,12 +1,24 @@
 {
   "type": "Standard",
   "core": true,
+  "group": "aicore",
   "name": "X-AnyLabeling Annotation",
   "icon": ":/CC/plugin/qAnyLabeling/images/icon.png",
-  "description": "X-AnyLabeling-style image annotation with native Qt editing and AICore GGML assistance.",
-  "authors": [{ "name": "ACloudViewer Contributors" }],
-  "maintainers": [{ "name": "ACloudViewer Team" }],
+  "description": "Native Qt image annotation workspace inspired by X-AnyLabeling, running fully local.<br/><br/><b>Annotation editing</b>: polygon, rectangle, rotation, quadrilateral, circle, line, point, line strip and cuboid shapes with live measurements; brush paint/erase with per-class targets; magic-wand region selection; group/ungroup and rectangle/polygon union; object rename, lock and visibility; undo/redo; label-only Save As and confirmed label deletion.<br/><br/><b>Compatibility</b>: X-AnyLabeling JSON sidecars round-trip unchanged (unknown fields preserved); masks, labels, scores, degrees, attributes, linking and groups follow the upstream visualization toggles and exclusive display modes; session settings and shortcuts persist between runs.<br/><br/><b>AICore assistance</b>: AI Describe runs a local vision model from the public llm catalog, and the model panel exposes shared AICore tasks (DA3, DeepLSD, ALIKED, YOLO, RF-DETR, SAM3, RMBG, face landmarks, RAM/Tag2Text, OCR) with models downloaded and verified through the shared AICore catalog/cache.",
+  "authors": [
+    {
+      "name": "ACloudViewer Contributors"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "ACloudViewer Team"
+    }
+  ],
   "references": [
-    { "text": "X-AnyLabeling: https://github.com/CVHub520/X-AnyLabeling" }
+    {
+      "text": "X-AnyLabeling",
+      "url": "https://github.com/CVHub520/X-AnyLabeling"
+    }
   ]
 }

@@ -476,6 +476,11 @@ AnnotationWindow::AnnotationWindow(QWidget* parent) : QMainWindow(parent) {
                                    "canvas/wheel_rectangle_editing/scale_step"))
                     .toDouble(),
             0.001, 1.0);
+    m_wheelNavigationMode =
+            settings.value(QStringLiteral("canvas/wheelNavigationMode"),
+                           annotationConfig::value(
+                                   "canvas/wheel_navigation_mode"))
+                    .toString();
     m_crosshairVisible =
             settings.value(QStringLiteral("canvas/crosshair/show"),
                            annotationConfig::value("canvas/crosshair/show"))
@@ -1046,6 +1051,126 @@ void AnnotationWindow::createUi() {
     m_opacitySlider->setObjectName(QStringLiteral("AnnotationOpacity"));
     m_brightnessSlider->setObjectName(QStringLiteral("AnnotationBrightness"));
     m_contrastSlider->setObjectName(QStringLiteral("AnnotationContrast"));
+    // Annotation check status (upstream canvas_adjustment status control):
+    // three-way pass/fail/pending state of the current image annotation.
+    auto* statusRow = new QHBoxLayout;
+    statusRow->setContentsMargins(0, 0, 0, 0);
+    statusRow->setSpacing(4);
+    auto* statusName = new QLabel(tr("Check"), m_adjustmentPanel);
+    statusName->setFixedWidth(64);
+    auto makeStateButton = [this](const QString& tip, const QString& text,
+                                  const QString& objectName) {
+        auto* button = new QToolButton(m_adjustmentPanel);
+        button->setCheckable(true);
+        button->setToolTip(tip);
+        button->setText(text);
+        button->setObjectName(objectName);
+        button->setFixedSize(34, 20);
+        button->setFocusPolicy(Qt::NoFocus);
+        return button;
+    };
+    m_checkStatePass = makeStateButton(tr("Mark annotation as checked"),
+                                       QStringLiteral("\u2713"),
+                                       QStringLiteral("AnnotationCheckPass"));
+    m_checkStateFail = makeStateButton(tr("Mark annotation as failed"),
+                                       QStringLiteral("\u2717"),
+                                       QStringLiteral("AnnotationCheckFail"));
+    m_checkStatePending = makeStateButton(
+            tr("Clear the check state"), QStringLiteral("\u2013"),
+            QStringLiteral("AnnotationCheckPending"));
+    connect(m_checkStatePass, &QToolButton::clicked, this,
+            [this]() { setAnnotationChecked(QJsonValue(true)); });
+    connect(m_checkStateFail, &QToolButton::clicked, this, [this]() {
+        setAnnotationChecked(QJsonValue(QStringLiteral("failed")));
+    });
+    connect(m_checkStatePending, &QToolButton::clicked, this,
+            [this]() { setAnnotationChecked(QJsonValue(false)); });
+    statusRow->addWidget(statusName);
+    statusRow->addWidget(m_checkStatePass);
+    statusRow->addWidget(m_checkStateFail);
+    statusRow->addWidget(m_checkStatePending);
+    statusRow->addStretch();
+    contentLayout->addLayout(statusRow);
+    // Attribute overlay font size (upstream configurable overlay font).
+    m_fontSizeSlider = addAdjustment(
+            tr("Attr Font"), 36,
+            annotationConfig::jsonValue(
+                    QStringLiteral("canvas/attribute_overlay/font_size"))
+                    .toInt(10),
+            m_fontSizeValue);
+    m_fontSizeSlider->setObjectName(QStringLiteral("AnnotationAttrFont"));
+    connect(m_fontSizeSlider, &QSlider::valueChanged, this, [this](int value) {
+        m_fontSizeValue->setText(QString::number(value));
+        m_canvas->setAttributeFontSize(value);
+    });
+    // Adjustable overlay grid (upstream canvas grid controls).
+    auto* gridRow = new QHBoxLayout;
+    gridRow->setContentsMargins(0, 0, 0, 0);
+    gridRow->setSpacing(4);
+    auto* gridName = new QLabel(tr("Grid"), m_adjustmentPanel);
+    gridName->setFixedWidth(64);
+    m_gridCheck = new QCheckBox(m_adjustmentPanel);
+    m_gridCheck->setObjectName(QStringLiteral("AnnotationGridCheck"));
+    m_gridCheck->setToolTip(tr("Show the coordinate grid"));
+    m_gridSizeSpin = new QSpinBox(m_adjustmentPanel);
+    m_gridSizeSpin->setRange(10, 2000);
+    m_gridSizeSpin->setValue(
+            annotationConfig::jsonValue(QStringLiteral("canvas/grid/size"))
+                    .toInt(100));
+    m_gridSizeSpin->setFixedWidth(70);
+    m_gridColorCombo = new QComboBox(m_adjustmentPanel);
+    m_gridColorCombo->addItem(tr("White"), QStringLiteral("white"));
+    m_gridColorCombo->addItem(tr("Black"), QStringLiteral("black"));
+    m_gridColorCombo->addItem(tr("Yellow"), QStringLiteral("yellow"));
+    m_gridColorCombo->addItem(tr("Cyan"), QStringLiteral("cyan"));
+    m_gridLabelsCheck = new QCheckBox(tr("Labels"), m_adjustmentPanel);
+    gridRow->addWidget(gridName);
+    gridRow->addWidget(m_gridCheck);
+    gridRow->addWidget(m_gridSizeSpin);
+    gridRow->addWidget(m_gridColorCombo);
+    gridRow->addWidget(m_gridLabelsCheck);
+    contentLayout->addLayout(gridRow);
+    auto* gridOpacityRow = new QHBoxLayout;
+    gridOpacityRow->setContentsMargins(0, 0, 0, 0);
+    gridOpacityRow->setSpacing(4);
+    auto* gridOpacityName = new QLabel(tr("Grid Opacity"), m_adjustmentPanel);
+    gridOpacityName->setFixedWidth(64);
+    m_gridOpacitySlider = new QSlider(Qt::Horizontal, m_adjustmentPanel);
+    m_gridOpacitySlider->setRange(0, 100);
+    m_gridOpacitySlider->setValue(
+            annotationConfig::jsonValue(QStringLiteral("canvas/grid/opacity"))
+                    .toInt(100));
+    m_gridOpacitySlider->setFixedWidth(120);
+    m_gridOpacitySlider->setFocusPolicy(Qt::NoFocus);
+    auto* gridOpacityValue = new QLabel(m_adjustmentPanel);
+    gridOpacityValue->setFixedWidth(38);
+    gridOpacityValue->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    gridOpacityValue->setText(QStringLiteral("100%"));
+    gridOpacityRow->addWidget(gridOpacityName);
+    gridOpacityRow->addWidget(m_gridOpacitySlider);
+    gridOpacityRow->addWidget(gridOpacityValue);
+    gridOpacityRow->addStretch();
+    contentLayout->addLayout(gridOpacityRow);
+    auto applyGrid = [this]() {
+        m_canvas->setGridOptions(
+                m_gridCheck->isChecked(), m_gridSizeSpin->value(),
+                m_gridColorCombo->currentData().toString(),
+                m_gridOpacitySlider->value(), m_gridLabelsCheck->isChecked());
+    };
+    connect(m_gridCheck, &QCheckBox::toggled, this, applyGrid);
+    connect(m_gridSizeSpin, qOverload<int>(&QSpinBox::valueChanged), this,
+            applyGrid);
+    connect(m_gridColorCombo, qOverload<int>(&QComboBox::currentIndexChanged),
+            this, applyGrid);
+    connect(m_gridLabelsCheck, &QCheckBox::toggled, this, applyGrid);
+    connect(m_gridOpacitySlider, &QSlider::valueChanged, this,
+            [this, gridOpacityValue](int value) {
+                gridOpacityValue->setText(QStringLiteral("%1%").arg(value));
+                m_canvas->setGridOptions(
+                        m_gridCheck->isChecked(), m_gridSizeSpin->value(),
+                        m_gridColorCombo->currentData().toString(), value,
+                        m_gridLabelsCheck->isChecked());
+            });
     adjustmentLayout->addWidget(adjustmentContent);
     m_opacityValue->setText(QStringLiteral("100%"));
     m_brightnessValue->setText(QStringLiteral("1.00"));
@@ -1069,6 +1194,7 @@ void AnnotationWindow::createUi() {
     m_canvas->setDoubleClickEditLabel(m_doubleClickEditLabel);
     m_canvas->setWheelRectangleEditing(m_wheelRectangleEditing,
                                        m_wheelAdjustStep, m_wheelScaleStep);
+    m_canvas->setWheelNavigationMode(m_wheelNavigationMode);
     m_canvas->setBrushPointDistance(m_brushPointDistance);
     m_canvas->setBrushHistoryLimits(m_brushMaxUndoSteps,
                                     m_brushMaxUndoMemoryMb);
@@ -4422,6 +4548,26 @@ void AnnotationWindow::createActions() {
                 if (row + 1 < m_files->count()) m_files->setCurrentRow(row + 1);
             });
     m_nextAction = nextAction;
+    // Fixed-step navigation (upstream image_jump_step, default 10).
+    const int jumpStep =
+            std::clamp(annotationConfig::jsonValue(
+                               QStringLiteral("label_widget/image_jump_step"))
+                               .toInt(10),
+                       1, 1000);
+    QAction* jumpNextAction =
+            addCommand(tr("Forward %1 Images").arg(jumpStep),
+                       QStringLiteral("next.png"), QKeySequence(),
+                       QStringLiteral("jump_next_images"), [this, jumpStep]() {
+                           const int row = m_files->currentRow();
+                           m_files->setCurrentRow(std::min(m_files->count() - 1,
+                                                           row + jumpStep));
+                       });
+    addCommand(tr("Back %1 Images").arg(jumpStep), QStringLiteral("prev.png"),
+               QKeySequence(), QStringLiteral("jump_prev_images"),
+               [this, jumpStep]() {
+                   const int row = m_files->currentRow();
+                   m_files->setCurrentRow(std::max(0, row - jumpStep));
+               });
     QAction* previousUncheckedAction =
             addCommand(tr("Prev Unchecked Image"), QStringLiteral("prev.png"),
                        QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_A),
@@ -5438,9 +5584,7 @@ void AnnotationWindow::createActions() {
         action->setShortcut(key);
         registerShortcut(action, id, tr("Dialog"));
         action->setEnabled(false);
-        const QString tip =
-                tr("TODO: reserved for a future AICore contract; see "
-                   "qAnyLabeling/TODO.md.");
+        const QString tip = tr("Reserved for a future AICore contract.");
         action->setToolTip(tip);
         action->setStatusTip(tip);
         viewMenu->addAction(action);
@@ -7275,11 +7419,25 @@ void AnnotationWindow::setAnnotationChecked(const QJsonValue& checked) {
 void AnnotationWindow::syncAnnotationChecked() {
     const QJsonValue checked =
             normalizedChecked(m_document.value(QStringLiteral("checked")));
+    const Qt::CheckState state = checked == QJsonValue(QStringLiteral("failed"))
+                                         ? Qt::PartiallyChecked
+                                 : checked == QJsonValue(true) ? Qt::Checked
+                                                               : Qt::Unchecked;
     const QSignalBlocker blocked(m_checked);
-    m_checked->setCheckState(checked == QJsonValue("failed")
-                                     ? Qt::PartiallyChecked
-                             : checked == QJsonValue(true) ? Qt::Checked
-                                                           : Qt::Unchecked);
+    m_checked->setCheckState(state);
+    // Mirror the state onto the canvas-panel check controls.
+    if (m_checkStatePass) {
+        const QSignalBlocker blockPass(m_checkStatePass);
+        m_checkStatePass->setChecked(state == Qt::Checked);
+    }
+    if (m_checkStateFail) {
+        const QSignalBlocker blockFail(m_checkStateFail);
+        m_checkStateFail->setChecked(state == Qt::PartiallyChecked);
+    }
+    if (m_checkStatePending) {
+        const QSignalBlocker blockPending(m_checkStatePending);
+        m_checkStatePending->setChecked(state == Qt::Unchecked);
+    }
     for (const auto& entry :
          {qMakePair(m_clearCheckedAction, QJsonValue(false)),
           qMakePair(m_toggleCheckedAction, QJsonValue(true)),

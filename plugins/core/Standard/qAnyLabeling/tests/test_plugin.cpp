@@ -374,6 +374,27 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "File menu contract failed\n");
         return 1;
     }
+    // v4.3.1 alignment: the new canvas-panel controls and the jump commands
+    // must exist with their pinned object names / texts.
+    if (!window->findChild<QWidget*>(QStringLiteral("AnnotationCheckPass")) ||
+        !window->findChild<QWidget*>(QStringLiteral("AnnotationCheckFail")) ||
+        !window->findChild<QWidget*>(
+                QStringLiteral("AnnotationCheckPending")) ||
+        !window->findChild<QSlider*>(QStringLiteral("AnnotationAttrFont")) ||
+        !window->findChild<QCheckBox*>(QStringLiteral("AnnotationGridCheck"))) {
+        std::fprintf(stderr, "v4.3.1 canvas-panel controls missing\n");
+        return 1;
+    }
+    bool jumpCommandsPresent = false;
+    for (QAction* action : window->findChildren<QAction*>()) {
+        if (action->text() == QStringLiteral("Forward 10 Images") ||
+            action->text() == QStringLiteral("Back 10 Images"))
+            jumpCommandsPresent = true;
+    }
+    if (!jumpCommandsPresent) {
+        std::fprintf(stderr, "Image jump-step commands missing\n");
+        return 1;
+    }
     QMenu* viewMenu = nullptr;
     for (QAction* action : window->menuBar()->actions()) {
         if (action->text() == QStringLiteral("View")) {

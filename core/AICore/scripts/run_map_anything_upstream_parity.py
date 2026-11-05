@@ -38,6 +38,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from digest_utils import sha256_file
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 COMPARATOR = SCRIPT_DIR / "compare_map_anything_parity.py"
@@ -177,13 +178,6 @@ def newer_source(root: Path, binary: Path) -> Path | None:
             return path
     return None
 
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1 << 20), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def reference_env(build: Path, root: Path) -> dict:

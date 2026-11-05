@@ -461,7 +461,10 @@ class ValidateAllTests(unittest.TestCase):
         manifest = VALIDATE_ALL.load_manifest(VALIDATE_ALL.DEFAULT_MANIFEST)
         rows = [s for s in manifest["scenarios"]
                 if "run_ocr_onnx_probe.py" in str(s.get("args", []))]
-        self.assertEqual(len(rows), 54)
+        # The tiny Q8_0 containers and the tiny-detector F16 container are
+        # retired (measured single-tensor residual / DB-boundary rounding),
+        # so 6 stems x 3 quants x roles minus those four rows.
+        self.assertEqual(len(rows), 50)
         sources = {a["id"]: a for a in manifest["input_assets"]}
         self.assertEqual(len([a for a in sources if a.startswith("ocr-onnx-")]), 12)
         for row in rows:
@@ -568,15 +571,20 @@ class ValidateAllTests(unittest.TestCase):
         manifest = VALIDATE_ALL.load_manifest(VALIDATE_ALL.DEFAULT_MANIFEST)
         rows = [s for s in manifest["scenarios"] if "--ground-truth" in s.get("args", [])
                 and "run_ocr_source_pipeline.py" in str(s["args"])]
-        self.assertEqual(len(rows), 54)
+        self.assertEqual(len(rows), 51)
         coverage = {(row["args"][row["args"].index("--stem") + 1],
                      row["args"][row["args"].index("--quant") + 1],
                      "receipts" if "-sroie-receipts-" in row["id"] else
                      "xfund" if "--evaluation" in row["args"] else "scenes") for row in rows}
+        # Tiny Q8_0 rows are retired and the tiny F16 rows run the F32
+        # detector graph (--det-quant), so tiny carries f32+f16 only.
         self.assertEqual(coverage, {(stem, quant, dataset)
                          for stem in ("ppocrv4-source", "ppocrv3-japan", "ppocrv5-mobile",
-                                      "ppocrv6-tiny", "ppocrv6-small", "ppocrv6-medium")
+                                      "ppocrv6-small", "ppocrv6-medium")
                          for quant in ("f32", "f16", "q8_0")
+                         for dataset in ("scenes", "xfund", "receipts")} |
+                                    {("ppocrv6-tiny", quant, dataset)
+                         for quant in ("f32", "f16")
                          for dataset in ("scenes", "xfund", "receipts")})
         assets = {a["id"]: a for a in manifest["input_assets"]}
         scenes = assets["ocr-detection-labelled-50"]

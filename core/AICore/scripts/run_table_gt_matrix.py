@@ -64,6 +64,7 @@ import statistics
 import subprocess
 import sys
 from pathlib import Path
+from digest_utils import sha256_file
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 SPEC = importlib.util.spec_from_file_location("table_teds", SCRIPT_DIR / "table_teds.py")
@@ -78,13 +79,6 @@ QUANTS = ("f32", "f16", "q8_0")
 # which is where the structure decode flips.
 JITTER_OFFSETS = ((-1, -1), (0, 0), (1, 1))
 
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def load_ground_truth(path: Path) -> tuple[dict[str, str], dict[str, list[float]]]:

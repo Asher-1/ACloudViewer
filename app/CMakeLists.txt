@@ -242,6 +242,12 @@ if (CLOUDVIEWER_NEED_PCL)
     target_link_libraries(${PROJECT_NAME} QPCL_PLUGIN_ALGORIGHM_LIB)
 endif ()
 
+# Opt-in PCL Algorithms toolbar (default OFF); requires the PCL plugin to
+# have any actions to show.
+if (QPCL_PLUGIN_TOOLBAR AND PLUGIN_STANDARD_QPCL)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE QPCL_PLUGIN_TOOLBAR)
+endif ()
+
 # Add custom preprocessor definitions
 if (WIN32)
     set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS)

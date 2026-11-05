@@ -16,6 +16,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from digest_utils import sha256_file
 
 SCRIPTS = Path(__file__).resolve().parent
 # The public probe lives with the task's other test contracts.
@@ -54,13 +55,6 @@ VEHICLE_GROUPS = [
               "truck", "estate"], -1.0),
 ]
 
-
-def digest(path: Path) -> str:
-    value = hashlib.sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(1 << 20), b""):
-            value.update(block)
-    return value.hexdigest()
 
 
 def decode(probabilities, groups):
@@ -128,7 +122,7 @@ def independent_reference(source: Path, image: Path, family: str,
     np.save(reference, probabilities)
     identity = work / f"pulc-{family}-reference.json"
     identity.write_text(json.dumps({
-        "source_sha256": digest(source),
+        "source_sha256": sha256_file(source),
         "source_revision": "r20231111",
         "family": family,
         "probabilities": probabilities.tolist(),
@@ -165,9 +159,9 @@ def main():
               file=sys.stderr)
         sys.exit(77)
 
-    if digest(args.source) != args.source_sha256:
+    if sha256_file(args.source) != args.source_sha256:
         raise SystemExit("source ONNX SHA-256 mismatch")
-    if digest(args.image) != args.image_sha256:
+    if sha256_file(args.image) != args.image_sha256:
         raise SystemExit("pinned input image SHA-256 mismatch")
 
     args.report.parent.mkdir(parents=True, exist_ok=True)
@@ -181,9 +175,9 @@ def main():
             "--model", str(args.model),
             "--image", str(args.image),
             "--reference", str(reference),
-            "--reference-sha256", digest(reference),
+            "--reference-sha256", sha256_file(reference),
             "--source-identity", str(identity),
-            "--source-identity-sha256", digest(identity),
+            "--source-identity-sha256", sha256_file(identity),
             "--backend", args.backend,
             "--quant", "f32",
             "--warmups", str(args.warmups),

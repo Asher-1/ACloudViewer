@@ -4149,7 +4149,7 @@
    "sha256": "1a8f9208ea84c8d3bc68a950ac963fa4dabee7b7c55c9f55537943c8885c5d49",
    "size_bytes": 93777313,
    "archive": true,
-   "description": "Pinned digest record only (tasks intentionally empty: no validation scenario consumes it, so the gate preflight must never download it). Official PP-OCR table-recognition validation pages — 50 zh + 50 ja real-document whole-page tables consumed by the qOCR plugin's tables-mode sample-data flow (ecvTestDataRepository Dataset::PpocrTables, shared download/extraction chain); the two deterministic demo members the dialog checks are pinned below",
+   "description": "Pinned digest record only (tasks intentionally empty: no validation scenario consumes it, so the gate preflight must never download it). Official PP-OCR table-recognition validation pages \u2014 50 zh + 50 ja real-document whole-page tables consumed by the qOCR plugin's tables-mode sample-data flow (ecvTestDataRepository Dataset::PpocrTables, shared download/extraction chain); the two deterministic demo members the dialog checks are pinned below",
    "extracted_files": [
     {
      "relative_path": "ocr_tables_data/zh_val_0.jpg",
@@ -24105,154 +24105,6 @@
    "fingerprint_policy": "stability_only"
   },
   {
-   "id": "ppocrv6-tiny-det-onnx-f16",
-   "task": "ocr",
-   "local_only": true,
-   "covered_globs": [
-    "ocr_models/ppocrv6-tiny-det-f16.gguf"
-   ],
-   "executable": "python",
-   "args": [
-    "{repo}/core/AICore/scripts/run_ocr_onnx_probe.py",
-    "--source",
-    "{assets}/ocr_onnx/ppocrv6_tiny_det_infer.onnx",
-    "--source-sha256",
-    "193bab7a04fca699a6c82e6abb5b81bdb28177f0abd4062552b04908dafb19f8",
-    "--model",
-    "{assets}/ocr_models/ppocrv6-tiny-det-f16.gguf",
-    "--image",
-    "{assets}/ppocr_testdata/tables/ppstructure_table.jpg",
-    "--role",
-    "det",
-    "--backend",
-    "{backend}",
-    "--probe",
-    "{binary:test_ocr_runtime}",
-    "--report",
-    "{scenario_report}",
-    "--warmups",
-    "{warmup_runs}",
-    "--runs",
-    "{inference_runs}",
-    "--max-diff",
-    "0.1",
-    "--measurement-profile",
-    "{profile}",
-    "--gpu-idle-timeout",
-    "{gpu_idle_timeout}",
-    "--extra-image",
-    "{assets}/ppocr_testdata/test_files/book.jpg",
-    "--threads",
-    "{threads}",
-    "--source-benchmark-root",
-    "{reference:ocr_cuda}",
-    "--max-side",
-    "960"
-   ],
-   "input_ids": [
-    "ocr-onnx-ppocrv6-tiny-det",
-    "ppocr-testdata"
-   ],
-   "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
-   "accuracy": {
-    "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:193bab7a04fca699a6c82e6abb5b81bdb28177f0abd4062552b04908dafb19f8",
-    "checks": [
-     {
-      "metric": "json0/stored_max_diff",
-      "op": "<",
-      "value": 0.001
-     },
-     {
-      "metric": "json0/accuracy_fixture_count",
-      "op": "==",
-      "value": 2
-     }
-    ],
-    "require_metrics": [
-     "json0/max_diff",
-     "json0/stored_max_diff",
-     "json0/mean_diff"
-    ]
-   },
-   "metric_parser": "generic",
-   "fingerprint_policy": "stability_only"
-  },
-  {
-   "id": "ppocrv6-tiny-det-onnx-q8_0",
-   "task": "ocr",
-   "local_only": true,
-   "covered_globs": [
-    "ocr_models/ppocrv6-tiny-det-q8_0.gguf"
-   ],
-   "executable": "python",
-   "args": [
-    "{repo}/core/AICore/scripts/run_ocr_onnx_probe.py",
-    "--source",
-    "{assets}/ocr_onnx/ppocrv6_tiny_det_infer.onnx",
-    "--source-sha256",
-    "193bab7a04fca699a6c82e6abb5b81bdb28177f0abd4062552b04908dafb19f8",
-    "--model",
-    "{assets}/ocr_models/ppocrv6-tiny-det-q8_0.gguf",
-    "--image",
-    "{assets}/ppocr_testdata/tables/ppstructure_table.jpg",
-    "--role",
-    "det",
-    "--backend",
-    "{backend}",
-    "--probe",
-    "{binary:test_ocr_runtime}",
-    "--report",
-    "{scenario_report}",
-    "--warmups",
-    "{warmup_runs}",
-    "--runs",
-    "{inference_runs}",
-    "--max-diff",
-    "0.6",
-    "--measurement-profile",
-    "{profile}",
-    "--gpu-idle-timeout",
-    "{gpu_idle_timeout}",
-    "--extra-image",
-    "{assets}/ppocr_testdata/test_files/book.jpg",
-    "--threads",
-    "{threads}",
-    "--source-benchmark-root",
-    "{reference:ocr_cuda}",
-    "--max-side",
-    "960"
-   ],
-   "input_ids": [
-    "ocr-onnx-ppocrv6-tiny-det",
-    "ppocr-testdata"
-   ],
-   "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
-   "accuracy": {
-    "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:193bab7a04fca699a6c82e6abb5b81bdb28177f0abd4062552b04908dafb19f8",
-    "checks": [
-     {
-      "metric": "json0/stored_max_diff",
-      "op": "<",
-      "value": 0.001
-     },
-     {
-      "metric": "json0/accuracy_fixture_count",
-      "op": "==",
-      "value": 2
-     }
-    ],
-    "require_metrics": [
-     "json0/max_diff",
-     "json0/stored_max_diff",
-     "json0/mean_diff"
-    ]
-   },
-   "metric_parser": "generic",
-   "fingerprint_policy": "stability_only"
-  },
-  {
    "id": "ppocrv6-tiny-rec-onnx-f16",
    "task": "ocr",
    "local_only": true,
@@ -24284,84 +24136,6 @@
     "{inference_runs}",
     "--max-diff",
     "0.001",
-    "--measurement-profile",
-    "{profile}",
-    "--gpu-idle-timeout",
-    "{gpu_idle_timeout}",
-    "--extra-image",
-    "{assets}/ppocr_testdata/imgs_words_ch/word_1.jpg",
-    "--extra-image",
-    "{assets}/ppocr_testdata/imgs_words_ch/word_2.jpg",
-    "--extra-image",
-    "{assets}/ppocr_testdata/imgs_words_ch/word_3.jpg",
-    "--threads",
-    "{threads}",
-    "--source-benchmark-root",
-    "{reference:ocr_cuda}"
-   ],
-   "input_ids": [
-    "ocr-onnx-ppocrv6-tiny-rec",
-    "ppocr-testdata"
-   ],
-   "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
-   "accuracy": {
-    "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:9ef676d6ed3c88256a2d92c640c44f25b0c40947e111b14b8be8f594091563e6",
-    "checks": [
-     {
-      "metric": "json0/stored_max_diff",
-      "op": "<",
-      "value": 0.001
-     },
-     {
-      "metric": "json0/accuracy_fixture_count",
-      "op": "==",
-      "value": 4
-     }
-    ],
-    "require_metrics": [
-     "json0/max_diff",
-     "json0/stored_max_diff",
-     "json0/stored_argmax_match",
-     "json0/mean_diff",
-     "json0/argmax_match"
-    ]
-   },
-   "metric_parser": "generic",
-   "fingerprint_policy": "stability_only"
-  },
-  {
-   "id": "ppocrv6-tiny-rec-onnx-q8_0",
-   "task": "ocr",
-   "local_only": true,
-   "covered_globs": [
-    "ocr_models/ppocrv6-tiny-rec-q8_0.gguf"
-   ],
-   "executable": "python",
-   "args": [
-    "{repo}/core/AICore/scripts/run_ocr_onnx_probe.py",
-    "--source",
-    "{assets}/ocr_onnx/ppocrv6_tiny_rec_infer.onnx",
-    "--source-sha256",
-    "9ef676d6ed3c88256a2d92c640c44f25b0c40947e111b14b8be8f594091563e6",
-    "--model",
-    "{assets}/ocr_models/ppocrv6-tiny-rec-q8_0.gguf",
-    "--image",
-    "{assets}/ppocr_testdata/words_en/word_2.png",
-    "--role",
-    "rec",
-    "--backend",
-    "{backend}",
-    "--probe",
-    "{binary:test_ocr_runtime}",
-    "--report",
-    "{scenario_report}",
-    "--warmups",
-    "{warmup_runs}",
-    "--runs",
-    "{inference_runs}",
-    "--max-diff",
-    "0.005",
     "--measurement-profile",
     "{profile}",
     "--gpu-idle-timeout",
@@ -25813,7 +25587,6 @@
    "task": "ocr",
    "local_only": true,
    "covered_globs": [
-    "ocr_models/ppocrv6-tiny-det-f16.gguf",
     "ocr_models/ppocrv6-tiny-rec-f16.gguf",
     "ocr_models/ppocr-cls-f16.gguf"
    ],
@@ -25836,100 +25609,8 @@
     "{scenario_report}",
     "--quant",
     "f16",
-    "--ground-truth",
-    "{assets}/ocr_det_dataset_examples/val.txt",
-    "--ground-truth-sha256",
-    "deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
-    "--image-root",
-    "{assets}/ocr_det_dataset_examples",
-    "--source-root",
-    "{reference:ocr_cuda}"
-   ],
-   "input_ids": [
-    "ocr-onnx-ppocrv6-tiny-det",
-    "ocr-onnx-ppocrv6-tiny-rec",
-    "ocr-onnx-ppocr-cls",
-    "ocr-detection-labelled-50"
-   ],
-   "accuracy_gate": "PaddleOCR official 50 validation images and original transcriptions: raw detection Hmean, fixed-GT-region CER/WER, complete-pipeline CER/WER. Every degradation relative to the unmodified source TextSystem <=0.005; micro-averaged. Source word/line granularity limits absolute detection Hmean. Not throughput evidence.",
-   "accuracy": {
-    "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
-    "checks": [
-     {
-      "metric": "hmean_delta",
-      "op": "<=",
-      "value": 0.005
-     },
-     {
-      "metric": "cer_delta",
-      "op": "<=",
-      "value": 0.005
-     },
-     {
-      "metric": "wer_delta",
-      "op": "<=",
-      "value": 0.005
-     },
-     {
-      "metric": "e2e_cer_delta",
-      "op": "<=",
-      "value": 0.005
-     },
-     {
-      "metric": "e2e_wer_delta",
-      "op": "<=",
-      "value": 0.005
-     },
-     {
-      "metric": "passes_source_gt_gate",
-      "op": "==",
-      "value": 1
-     }
-    ],
-    "require_metrics": [
-     "hmean_delta",
-     "cer_delta",
-     "wer_delta",
-     "e2e_cer_delta",
-     "e2e_wer_delta",
-     "json0/hmean",
-     "json0/cer",
-     "json0/wer",
-     "passes_source_gt_gate"
-    ]
-   },
-   "fingerprint_policy": "stability_only",
-   "metric_parser": "generic"
-  },
-  {
-   "id": "ppocrv6-tiny-labelled-scenes-q8_0",
-   "task": "ocr",
-   "local_only": true,
-   "covered_globs": [
-    "ocr_models/ppocrv6-tiny-det-q8_0.gguf",
-    "ocr_models/ppocrv6-tiny-rec-q8_0.gguf",
-    "ocr_models/ppocr-cls-q8_0.gguf"
-   ],
-   "executable": "python",
-   "args": [
-    "{repo}/core/AICore/scripts/run_ocr_source_pipeline.py",
-    "--threads",
-    "{threads}",
-    "--upstream",
-    "{reference:xanylabeling}",
-    "--assets",
-    "{assets}",
-    "--library",
-    "{build}/bin",
-    "--backend",
-    "{backend}",
-    "--stem",
-    "ppocrv6-tiny",
-    "--report",
-    "{scenario_report}",
-    "--quant",
-    "q8_0",
+    "--det-quant",
+    "f32",
     "--ground-truth",
     "{assets}/ocr_det_dataset_examples/val.txt",
     "--ground-truth-sha256",
@@ -27345,7 +27026,6 @@
    "task": "ocr",
    "local_only": true,
    "covered_globs": [
-    "ocr_models/ppocrv6-tiny-det-f16.gguf",
     "ocr_models/ppocrv6-tiny-rec-f16.gguf",
     "ocr_models/ppocr-cls-f16.gguf"
    ],
@@ -27368,84 +27048,8 @@
     "{scenario_report}",
     "--quant",
     "f16",
-    "--ground-truth",
-    "{assets}/xfund-v1.0/zh.val.json",
-    "--ground-truth-sha256",
-    "b11140881255916a16670ea5006295d0185b8376287aa4aa76ae4e1107f61e3d",
-    "--image-root",
-    "{assets}",
-    "--evaluation",
-    "recognition",
-    "--source-root",
-    "{reference:ocr_cuda}"
-   ],
-   "input_ids": [
-    "ocr-onnx-ppocrv6-tiny-det",
-    "ocr-onnx-ppocrv6-tiny-rec",
-    "ocr-onnx-ppocr-cls",
-    "ocr-xfund-zh-json",
-    "ocr-xfund-zh-zip"
-   ],
-   "accuracy_gate": "XFUND v1.0 held-out 50 zh forms: original human-labelled semantic field polygons and text through source/native fixed-region workflow. Micro CER/WER degradation <=0.005. Field boxes can span lines: no text-line Hmean or automatic KIE claim.",
-   "accuracy": {
-    "reference": "upstream",
-    "reference_id": "XFUND-v1.0:b11140881255916a16670ea5006295d0185b8376287aa4aa76ae4e1107f61e3d",
-    "checks": [
-     {
-      "metric": "cer_delta",
-      "op": "<=",
-      "value": 0.005
-     },
-     {
-      "metric": "wer_delta",
-      "op": "<=",
-      "value": 0.005
-     },
-     {
-      "metric": "passes_source_gt_gate",
-      "op": "==",
-      "value": 1
-     }
-    ],
-    "require_metrics": [
-     "json0/cer",
-     "json0/wer",
-     "cer_delta",
-     "wer_delta",
-     "passes_source_gt_gate"
-    ]
-   },
-   "fingerprint_policy": "stability_only",
-   "metric_parser": "generic"
-  },
-  {
-   "id": "ppocrv6-tiny-xfund-zh-recognition-q8_0",
-   "task": "ocr",
-   "local_only": true,
-   "covered_globs": [
-    "ocr_models/ppocrv6-tiny-det-q8_0.gguf",
-    "ocr_models/ppocrv6-tiny-rec-q8_0.gguf",
-    "ocr_models/ppocr-cls-q8_0.gguf"
-   ],
-   "executable": "python",
-   "args": [
-    "{repo}/core/AICore/scripts/run_ocr_source_pipeline.py",
-    "--threads",
-    "{threads}",
-    "--upstream",
-    "{reference:xanylabeling}",
-    "--assets",
-    "{assets}",
-    "--library",
-    "{build}/bin",
-    "--backend",
-    "{backend}",
-    "--stem",
-    "ppocrv6-tiny",
-    "--report",
-    "{scenario_report}",
-    "--quant",
-    "q8_0",
+    "--det-quant",
+    "f32",
     "--ground-truth",
     "{assets}/xfund-v1.0/zh.val.json",
     "--ground-truth-sha256",
@@ -28121,7 +27725,6 @@
    "task": "ocr",
    "local_only": true,
    "covered_globs": [
-    "ocr_models/ppocrv6-tiny-det-f16.gguf",
     "ocr_models/ppocrv6-tiny-rec-f16.gguf",
     "ocr_models/ppocr-cls-f16.gguf"
    ],
@@ -28135,85 +27738,9 @@
     "--model",
     "{assets}/ocr_models/ppocrv6-tiny-rec-f16.gguf",
     "--det",
-    "{assets}/ocr_models/ppocrv6-tiny-det-f16.gguf",
+    "{assets}/ocr_models/ppocrv6-tiny-det-f32.gguf",
     "--cls",
     "{assets}/ocr_models/ppocr-cls-f16.gguf",
-    "--image",
-    "{assets}/ppocr_testdata/words_en",
-    "--role",
-    "orientation",
-    "--backend",
-    "{backend}",
-    "--probe",
-    "{binary:test_ocr_orientation}",
-    "--report",
-    "{scenario_report}",
-    "--warmups",
-    "{warmup_runs}",
-    "--runs",
-    "{inference_runs}",
-    "--rec-source",
-    "{assets}/ocr_onnx/ppocrv6_tiny_rec_infer.onnx",
-    "--rec-source-sha256",
-    "9ef676d6ed3c88256a2d92c640c44f25b0c40947e111b14b8be8f594091563e6",
-    "--dictionary",
-    "{reference:xanylabeling}/anylabeling/services/auto_labeling/configs/ppocr/ppocrv6_tiny_dict.txt",
-    "--dictionary-sha256",
-    "c5cbe34ef40c29c4df07ed012bf96569cb69a2d2a01a07027e9f13cb832bd9cd",
-    "--source-benchmark-root",
-    "{reference:ocr_cuda}"
-   ],
-   "input_ids": [
-    "ocr-onnx-ppocr-cls",
-    "ppocr-testdata",
-    "ocr-onnx-ppocrv6-tiny-rec"
-   ],
-   "accuracy_gate": "Ten real upright/180 word crops; source classifier probabilities <0.001, strict threshold decisions at .9 and 1, all ten texts against this exact source recognizer/dictionary, padded BGR stride, mixed batch order and repeated context lifecycle.",
-   "accuracy": {
-    "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
-    "checks": [
-     {
-      "metric": "failures",
-      "op": "==",
-      "value": 0
-     },
-     {
-      "metric": "orientation_rows",
-      "op": ">=",
-      "value": 10
-     }
-    ],
-    "require_metrics": [
-     "thresholds",
-     "repeats"
-    ]
-   },
-   "metric_parser": "generic",
-   "fingerprint_policy": "stability_only"
-  },
-  {
-   "id": "ppocrv6-tiny-orientation-q8_0",
-   "task": "ocr",
-   "local_only": true,
-   "covered_globs": [
-    "ocr_models/ppocrv6-tiny-det-q8_0.gguf",
-    "ocr_models/ppocrv6-tiny-rec-q8_0.gguf",
-    "ocr_models/ppocr-cls-q8_0.gguf"
-   ],
-   "executable": "python",
-   "args": [
-    "{repo}/core/AICore/scripts/run_ocr_onnx_probe.py",
-    "--source",
-    "{assets}/ocr_onnx/ch_ppocr_mobile_v2.0_cls_infer.onnx",
-    "--source-sha256",
-    "cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
-    "--model",
-    "{assets}/ocr_models/ppocrv6-tiny-rec-q8_0.gguf",
-    "--det",
-    "{assets}/ocr_models/ppocrv6-tiny-det-q8_0.gguf",
-    "--cls",
-    "{assets}/ocr_models/ppocr-cls-q8_0.gguf",
     "--image",
     "{assets}/ppocr_testdata/words_en",
     "--role",
@@ -30811,7 +30338,6 @@
    "task": "ocr",
    "local_only": true,
    "covered_globs": [
-    "ocr_models/ppocrv6-tiny-det-f16.gguf",
     "ocr_models/ppocrv6-tiny-rec-f16.gguf",
     "ocr_models/ppocr-cls-f16.gguf"
    ],
@@ -30834,199 +30360,8 @@
     "{scenario_report}",
     "--quant",
     "f16",
-    "--ground-truth",
-    "{assets}/ocr_sroie_50/27be4271b251c256f695acbade9a801bffe85994/box",
-    "--ground-truth-sha256",
-    "2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
-    "--image-root",
-    "{assets}/ocr_sroie_50/27be4271b251c256f695acbade9a801bffe85994/img",
-    "--source-root",
-    "{reference:ocr_cuda}"
-   ],
-   "input_ids": [
-    "ocr-onnx-ppocrv6-tiny-det",
-    "ocr-onnx-ppocrv6-tiny-rec",
-    "ocr-onnx-ppocr-cls",
-    "ocr-sroie-receipt-000-labels",
-    "ocr-sroie-receipt-000-image",
-    "ocr-sroie-receipt-001-labels",
-    "ocr-sroie-receipt-001-image",
-    "ocr-sroie-receipt-002-labels",
-    "ocr-sroie-receipt-002-image",
-    "ocr-sroie-receipt-003-labels",
-    "ocr-sroie-receipt-003-image",
-    "ocr-sroie-receipt-004-labels",
-    "ocr-sroie-receipt-004-image",
-    "ocr-sroie-receipt-005-labels",
-    "ocr-sroie-receipt-005-image",
-    "ocr-sroie-receipt-006-labels",
-    "ocr-sroie-receipt-006-image",
-    "ocr-sroie-receipt-007-labels",
-    "ocr-sroie-receipt-007-image",
-    "ocr-sroie-receipt-008-labels",
-    "ocr-sroie-receipt-008-image",
-    "ocr-sroie-receipt-009-labels",
-    "ocr-sroie-receipt-009-image",
-    "ocr-sroie-receipt-010-labels",
-    "ocr-sroie-receipt-010-image",
-    "ocr-sroie-receipt-011-labels",
-    "ocr-sroie-receipt-011-image",
-    "ocr-sroie-receipt-012-labels",
-    "ocr-sroie-receipt-012-image",
-    "ocr-sroie-receipt-013-labels",
-    "ocr-sroie-receipt-013-image",
-    "ocr-sroie-receipt-014-labels",
-    "ocr-sroie-receipt-014-image",
-    "ocr-sroie-receipt-015-labels",
-    "ocr-sroie-receipt-015-image",
-    "ocr-sroie-receipt-016-labels",
-    "ocr-sroie-receipt-016-image",
-    "ocr-sroie-receipt-017-labels",
-    "ocr-sroie-receipt-017-image",
-    "ocr-sroie-receipt-018-labels",
-    "ocr-sroie-receipt-018-image",
-    "ocr-sroie-receipt-019-labels",
-    "ocr-sroie-receipt-019-image",
-    "ocr-sroie-receipt-020-labels",
-    "ocr-sroie-receipt-020-image",
-    "ocr-sroie-receipt-021-labels",
-    "ocr-sroie-receipt-021-image",
-    "ocr-sroie-receipt-022-labels",
-    "ocr-sroie-receipt-022-image",
-    "ocr-sroie-receipt-023-labels",
-    "ocr-sroie-receipt-023-image",
-    "ocr-sroie-receipt-024-labels",
-    "ocr-sroie-receipt-024-image",
-    "ocr-sroie-receipt-025-labels",
-    "ocr-sroie-receipt-025-image",
-    "ocr-sroie-receipt-026-labels",
-    "ocr-sroie-receipt-026-image",
-    "ocr-sroie-receipt-027-labels",
-    "ocr-sroie-receipt-027-image",
-    "ocr-sroie-receipt-028-labels",
-    "ocr-sroie-receipt-028-image",
-    "ocr-sroie-receipt-029-labels",
-    "ocr-sroie-receipt-029-image",
-    "ocr-sroie-receipt-030-labels",
-    "ocr-sroie-receipt-030-image",
-    "ocr-sroie-receipt-031-labels",
-    "ocr-sroie-receipt-031-image",
-    "ocr-sroie-receipt-032-labels",
-    "ocr-sroie-receipt-032-image",
-    "ocr-sroie-receipt-033-labels",
-    "ocr-sroie-receipt-033-image",
-    "ocr-sroie-receipt-034-labels",
-    "ocr-sroie-receipt-034-image",
-    "ocr-sroie-receipt-035-labels",
-    "ocr-sroie-receipt-035-image",
-    "ocr-sroie-receipt-036-labels",
-    "ocr-sroie-receipt-036-image",
-    "ocr-sroie-receipt-037-labels",
-    "ocr-sroie-receipt-037-image",
-    "ocr-sroie-receipt-038-labels",
-    "ocr-sroie-receipt-038-image",
-    "ocr-sroie-receipt-039-labels",
-    "ocr-sroie-receipt-039-image",
-    "ocr-sroie-receipt-040-labels",
-    "ocr-sroie-receipt-040-image",
-    "ocr-sroie-receipt-041-labels",
-    "ocr-sroie-receipt-041-image",
-    "ocr-sroie-receipt-042-labels",
-    "ocr-sroie-receipt-042-image",
-    "ocr-sroie-receipt-043-labels",
-    "ocr-sroie-receipt-043-image",
-    "ocr-sroie-receipt-044-labels",
-    "ocr-sroie-receipt-044-image",
-    "ocr-sroie-receipt-045-labels",
-    "ocr-sroie-receipt-045-image",
-    "ocr-sroie-receipt-046-labels",
-    "ocr-sroie-receipt-046-image",
-    "ocr-sroie-receipt-047-labels",
-    "ocr-sroie-receipt-047-image",
-    "ocr-sroie-receipt-048-labels",
-    "ocr-sroie-receipt-048-image",
-    "ocr-sroie-receipt-049-labels",
-    "ocr-sroie-receipt-049-image"
-   ],
-   "accuracy_gate": "Fixed first 50 corrected SROIE scanned receipt pages with original localisation CSV and transcriptions. Greedy quad-IoU>=0.5 Hmean, fixed-GT CER/WER and complete-pipeline CER/WER: every degradation from pinned source <=0.005. Contributor corpus subset; not official held-out DetEval competition results or performance evidence.",
-   "accuracy": {
-    "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
-    "checks": [
-     {
-      "metric": "hmean_delta",
-      "op": "<=",
-      "value": 0.005
-     },
-     {
-      "metric": "cer_delta",
-      "op": "<=",
-      "value": 0.005
-     },
-     {
-      "metric": "wer_delta",
-      "op": "<=",
-      "value": 0.005
-     },
-     {
-      "metric": "e2e_cer_delta",
-      "op": "<=",
-      "value": 0.005
-     },
-     {
-      "metric": "e2e_wer_delta",
-      "op": "<=",
-      "value": 0.005
-     },
-     {
-      "metric": "passes_source_gt_gate",
-      "op": "==",
-      "value": 1
-     }
-    ],
-    "require_metrics": [
-     "hmean_delta",
-     "cer_delta",
-     "wer_delta",
-     "e2e_cer_delta",
-     "e2e_wer_delta",
-     "json0/hmean",
-     "json0/cer",
-     "json0/wer",
-     "passes_source_gt_gate"
-    ]
-   },
-   "fingerprint_policy": "stability_only",
-   "metric_parser": "generic"
-  },
-  {
-   "id": "ppocrv6-tiny-sroie-receipts-q8_0",
-   "task": "ocr",
-   "local_only": true,
-   "covered_globs": [
-    "ocr_models/ppocrv6-tiny-det-q8_0.gguf",
-    "ocr_models/ppocrv6-tiny-rec-q8_0.gguf",
-    "ocr_models/ppocr-cls-q8_0.gguf"
-   ],
-   "executable": "python",
-   "args": [
-    "{repo}/core/AICore/scripts/run_ocr_source_pipeline.py",
-    "--threads",
-    "{threads}",
-    "--upstream",
-    "{reference:xanylabeling}",
-    "--assets",
-    "{assets}",
-    "--library",
-    "{build}/bin",
-    "--backend",
-    "{backend}",
-    "--stem",
-    "ppocrv6-tiny",
-    "--report",
-    "{scenario_report}",
-    "--quant",
-    "q8_0",
+    "--det-quant",
+    "f32",
     "--ground-truth",
     "{assets}/ocr_sroie_50/27be4271b251c256f695acbade9a801bffe85994/box",
     "--ground-truth-sha256",
@@ -37829,7 +37164,7 @@
     "{repo}/core/AICore/scripts/validation_manifest.json",
     "{reference:instantmesh_geometry_baseline}"
    ],
-   "accuracy_gate": "四图逐视图/平面固定绝对门及同权重原上游新增误差门；仅组件，不是完整链/性能验收",
+   "accuracy_gate": "\u56db\u56fe\u9010\u89c6\u56fe/\u5e73\u9762\u56fa\u5b9a\u7edd\u5bf9\u95e8\u53ca\u540c\u6743\u91cd\u539f\u4e0a\u6e38\u65b0\u589e\u8bef\u5dee\u95e8\uff1b\u4ec5\u7ec4\u4ef6\uff0c\u4e0d\u662f\u5b8c\u6574\u94fe/\u6027\u80fd\u9a8c\u6536",
    "accuracy": {
     "reference": "upstream",
     "reference_id": "InstantMesh-GGML:32b14574edc9caba95f03672bfa1eeddd13c3af7:geometry-component-limits:ff59edd5358abb3389c9200c1b9ab63e91fac7ad21e2550431461d081d18d757",
@@ -38830,7 +38165,7 @@
     "{repo}/core/AICore/scripts/validation_manifest.json",
     "{reference:instantmesh_geometry_baseline}"
    ],
-   "accuracy_gate": "四图逐视图/平面固定绝对门及同权重原上游新增误差门；仅组件，不是完整链/性能验收",
+   "accuracy_gate": "\u56db\u56fe\u9010\u89c6\u56fe/\u5e73\u9762\u56fa\u5b9a\u7edd\u5bf9\u95e8\u53ca\u540c\u6743\u91cd\u539f\u4e0a\u6e38\u65b0\u589e\u8bef\u5dee\u95e8\uff1b\u4ec5\u7ec4\u4ef6\uff0c\u4e0d\u662f\u5b8c\u6574\u94fe/\u6027\u80fd\u9a8c\u6536",
    "accuracy": {
     "reference": "upstream",
     "reference_id": "InstantMesh-GGML:32b14574edc9caba95f03672bfa1eeddd13c3af7:geometry-component-limits:ff59edd5358abb3389c9200c1b9ab63e91fac7ad21e2550431461d081d18d757",
@@ -39430,7 +38765,7 @@
     "{scenario_report}"
    ],
    "env": {},
-   "accuracy_gate": "Deterministic greedy output across repeats and context recreation, at least one resolved box on the ebike benchmark original, finite nonzero timings through the common timing struct, and a positive stable prompt token count. The former ==414 check reproduced the upstream README demo budget (demo image, default text, 7-box run); this row runs the ebike benchmark original with different text, so that number is not an invariant here — cross-implementation prompt-construction parity is owned by the vlxseek-detection-f16-upstream row's greedy token-identity gate.",
+   "accuracy_gate": "Deterministic greedy output across repeats and context recreation, at least one resolved box on the ebike benchmark original, finite nonzero timings through the common timing struct, and a positive stable prompt token count. The former ==414 check reproduced the upstream README demo budget (demo image, default text, 7-box run); this row runs the ebike benchmark original with different text, so that number is not an invariant here \u2014 cross-implementation prompt-construction parity is owned by the vlxseek-detection-f16-upstream row's greedy token-identity gate.",
    "accuracy": {
     "reference": "probe_invariant",
     "reference_id": "probe:vlxseek-detection-q8_0",
@@ -39558,7 +38893,7 @@
     "--task",
     "grounding_single",
     "--text",
-    "骑电动车的人",
+    "\u9a91\u7535\u52a8\u8f66\u7684\u4eba",
     "--lang",
     "zh",
     "--device",

@@ -179,6 +179,30 @@ rows. Every AICore plugin also exposes a headless batch command through
 `ecvAICoreBatchCommand.h`; established commands may use its schema-only
 compatibility bridge while retaining their proven runtime parser.
 
+### Plugin menu and toolbar grouping
+
+Plugins self-declare a UI group via the optional `"group"` field in
+`info.json` (read by `ccDefaultPluginInterface::pluginGroup()`); the
+application never hardcodes a plugin-name list. `ccPluginUIManager` keeps
+grouped plugins behind their own `Plugins` menu section (`addSection`, the
+same pattern as the third-party section) and on their own `QToolBar`, which
+is the draggable-as-a-unit surface. The only group today is `"aicore"`.
+
+- A new AICore plugin joins the group by adding `"group": "aicore"` to its
+  `info.json` — no app-layer change, no menu/toolbar code edit.
+- The group toolbar is created even when empty; its show/hide toggle only
+  enables once the toolbar has actions. A toolbar that is intentionally not
+  added to the main window (e.g. the PCL algorithms toolbar keeps menu-only
+  presence) must also lose its `menuToolbars` toggle, or the menu exposes a
+  dead switch.
+- **Stub vtable hazard**: `CVPluginStub` is a static library linked into
+  every plugin and is NOT in the `ACloudViewer` target closure. Adding a
+  virtual to a stub interface and rebuilding only `--target ACloudViewer`
+  leaves every plugin with a stale vtable — undefined behavior the moment
+  the app calls the new slot. Rebuild the full tree
+  (`cmake --build build_app -j`) and verify the stub → plugin `.so`
+  timestamp chain before shipping any grouped-plugin UI change.
+
 ### AICore plugin CMake closure
 
 Keep each AICore standard plugin structurally consistent with the maintained
@@ -270,6 +294,33 @@ the still/live/cancel/stale/error/teardown UI workflow. Record model and input
 digests, backend/device, quantization, build revision, dirty state, warmups,
 iterations, p50/p95, accuracy checks, and stability result.
 
+## Scripts & Tools Layout
+
+`core/AICore/scripts/` and `core/AICore/tools/` are two roles, not one
+directory to merge: `scripts/` holds the validation executors (the CI entry
+points — `validate_all.py`, the probe runners, the golden/eval scripts) that
+tests, CTest and docs invoke by path; `tools/` holds the offline artifact
+producers (converters, fixture exporters, calibration/QAT experiments).
+Merging them would churn ~50 path references across CMake, ctest, docs and
+the scripts' own cross-imports without removing any role.
+
+Maintenance rules:
+
+- Shared small helpers belong in one module per concern (for example
+  `scripts/digest_utils.py` owns the streamed SHA-256 helper). When a second
+  script needs a helper, promote it instead of copying; do not re-implement
+  per script.
+- A script never invents a second copy of a shared helper "just for one
+  call"; import it. The `sys.path` anchor used by `tools/` to reach
+  `scripts/` (see `tools/check_ocr_qat_math.py`) is the approved cross-role
+  import pattern.
+- Script deletions and moves must update every consumer in the same change:
+  CMake/CTest wiring, `validation_manifest.json` command templates, the
+  manifest self-tests in `scripts/test_validate_all.py` (row-count and
+  coverage assertions pin the retired/growing matrix), and the owning docs.
+- Every script stays a standalone CLI with `--help`; shared modules expose
+  functions only and never execute at import time.
+
 ## Accuracy and Performance Gates
 
 Accuracy gates are task-specific numeric or explicitly probe-owned invariants;
@@ -327,3 +378,6 @@ clock or from different model/input/quantization rows.
       Qt5 (Ubuntu 22.04 CI) and Qt6 (noble) paths compile.
 - [ ] Documentation updates the owning source and links here rather than
       copying another long checklist.
+- [ ] Plugin UI grouping is self-declared via info.json `"group"`; after any
+      stub-interface virtual addition the full tree (every plugin) was
+      rebuilt — no stale-vtable plugin .so remains next to the new binary.

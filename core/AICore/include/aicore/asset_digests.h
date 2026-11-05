@@ -328,12 +328,9 @@ inline constexpr AssetDigestEntry kAssetDigests[] = {
         {"ppocrv6-small-rec-f16.gguf", "48543319c045e7b4d05b2ed77008715bb750030bd95bbdc8ba8024c8871e40b0" },
         {"ppocrv6-small-rec-f32.gguf", "159df7215c842276cf288675b421d8a2d73c52b0816bdb724a862c04bf3f9a4e" },
         {"ppocrv6-small-rec-q8_0.gguf", "803a8053b03f1e7c7b5d1399909d8cb8bbf786613d24164f89add899371f17ec" },
-        {"ppocrv6-tiny-det-f16.gguf", "094971f24356d6fb6a1702bfcc6eafa45c2559355cba0784a11d2ade36c94c0a" },
         {"ppocrv6-tiny-det-f32.gguf", "9f0f264028796c6c61be5f79394367b0f9a2c5a46340b6c0041d0e8c81bfe5bb" },
-        {"ppocrv6-tiny-det-q8_0.gguf", "d1379d1a61b534de629cdb89b65b5320b483f64b8c06c0f9adc6bc6a323c7f97" },
-        {"ppocrv6-tiny-rec-f16.gguf", "b5a7a723e105e19d7b01d1b0cc3656c4456931eba9e7e7363d85ef92a736fb18" },
+        {"ppocrv6-tiny-rec-f16.gguf", "1cfbb886bbe77e1314113832244acdfe3359eedf6857a13ce589cb8b684b60e9" },
         {"ppocrv6-tiny-rec-f32.gguf", "0e8848426d046549f926f057dd1d7ae587f50d8e327be1dbcce418dad3006406" },
-        {"ppocrv6-tiny-rec-q8_0.gguf", "cbe2c4d34fcca7aacbff88b5a7f279d99cb3c18c2087fe80f463b68a9b8077a4" },
         // SLANet_plus table structure (PaddleX paddle3.0b2 SLANet_plus_infer.tar,
         // tar sha256 1c6ac146...ce971), same converter, `table` task.
         {"slanet-plus-table-f32.gguf", "c93a3a24e39c30bd67294a8abb543e3e0ed7ef1f2c6d67505349dee77aa87bf4" },

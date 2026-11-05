@@ -22,6 +22,18 @@ plugins/
 
 When adding a new plugin, add a `README.md` in the plugin directory and register the CMake option in [`BUILD.md`](../BUILD.md).
 
+## Plugin UI grouping
+
+Plugins self-declare a UI group via the optional `"group"` field in their
+`info.json` (read by `ccDefaultPluginInterface::pluginGroup()`). Grouped
+plugins cluster behind their own `Plugins` menu section and their own
+draggable toolbar instead of the generic plugin menu/toolbar. The only group
+today is `"aicore"` (the AI inference family: qDA3, qDeepLSD, qFaceDetect,
+qFreeSplatter, qGKD, qInstantMesh, qLightGlue, qLingbotMap, qMapAnything,
+qOCR, qOpenPCDet, qQuerySplat, qRFDetr, qRMBG, qSAM3, qSAM3D, qTrellis,
+qVLXSeek, qYOLO, qAnyLabeling); ungrouped plugins keep the historical order
+and toolbar.
+
 ---
 
 ## AI inference plugins (AICore)

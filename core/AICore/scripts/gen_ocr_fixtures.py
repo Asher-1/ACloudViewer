@@ -27,6 +27,7 @@ from collections import Counter
 import numpy as np
 
 import os as _os
+from digest_utils import sha256_file
 _DEBUG = _os.environ.get("OCR_SIM_DEBUG") == "1"
 
 GGUF_ALIGNMENT = 32
@@ -110,13 +111,6 @@ class Gguf:
         shape = tuple(reversed(ne)) if ne else ()
         return arr.reshape(shape)
 
-
-def sha256_file(path):
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(1 << 20), b""):
-            h.update(chunk)
-    return h.hexdigest()
 
 
 # ---------------------------------------------------------------------------

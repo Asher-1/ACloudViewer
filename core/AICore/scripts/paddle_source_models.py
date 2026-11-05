@@ -32,6 +32,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from gen_ocr_fixtures import Gguf  # noqa: E402
+from digest_utils import sha256_file
 
 # GGUF ocr.source.name -> (release archive URL, PaddleX official model whose
 # inference.yml describes the same pre/post-process).
@@ -47,13 +48,6 @@ SOURCES = {
         "en_PP-OCRv4_mobile_rec"),
 }
 
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(1 << 20), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def gguf_source(gguf_path: Path) -> tuple[str, str]:

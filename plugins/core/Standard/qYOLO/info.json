@@ -1,14 +1,32 @@
 {
   "type": "Standard",
   "core": true,
+  "group": "aicore",
   "name": "YOLO Detect, Segment & Depth",
   "icon": ":/CC/plugin/qYOLO/images/qYOLO.svg",
   "description": "YOLO real-time object detection, instance segmentation, and monocular absolute depth estimation via native GGML inference.",
-  "authors": [{ "name": "ACloudViewer Contributors" }],
-  "maintainers": [{ "name": "ACloudViewer Team" }],
+  "authors": [
+    {
+      "name": "ACloudViewer Contributors"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "ACloudViewer Team"
+    }
+  ],
   "references": [
-    { "text": "ultralytics-ggml: https://github.com/Asher-1/ultralytics-ggml" },
-    { "text": "Ultralytics YOLO: https://github.com/ultralytics/ultralytics" },
-    { "text": "Models: https://github.com/Asher-1/cloudViewer_downloads/releases/tag/yolo_gguf_models" }
+    {
+      "text": "ultralytics-ggml",
+      "url": "https://github.com/Asher-1/ultralytics-ggml"
+    },
+    {
+      "text": "Ultralytics YOLO",
+      "url": "https://github.com/ultralytics/ultralytics"
+    },
+    {
+      "text": "Models",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/tag/yolo_gguf_models"
+    }
   ]
 }

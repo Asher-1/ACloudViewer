@@ -440,6 +440,18 @@ private:
     QLabel* m_opacityValue = nullptr;
     QLabel* m_brightnessValue = nullptr;
     QLabel* m_contrastValue = nullptr;
+    // Canvas-panel annotation check status (upstream status controls).
+    QToolButton* m_checkStatePass = nullptr;
+    QToolButton* m_checkStateFail = nullptr;
+    QToolButton* m_checkStatePending = nullptr;
+    // Attribute overlay font size and image grid controls.
+    QSlider* m_fontSizeSlider = nullptr;
+    QLabel* m_fontSizeValue = nullptr;
+    QCheckBox* m_gridCheck = nullptr;
+    QSpinBox* m_gridSizeSpin = nullptr;
+    QComboBox* m_gridColorCombo = nullptr;
+    QCheckBox* m_gridLabelsCheck = nullptr;
+    QSlider* m_gridOpacitySlider = nullptr;
     QTimer* m_adjustmentTimer = nullptr;
     QVector<Model> m_models;
     QVector<Model> m_textModels;
@@ -519,6 +531,7 @@ private:
     bool m_wheelRectangleEditing = true;
     double m_wheelAdjustStep = 2.0;
     double m_wheelScaleStep = 0.05;
+    QString m_wheelNavigationMode = QStringLiteral("direct");
     bool m_crosshairVisible = true;
     double m_crosshairWidth = 2.0;
     QColor m_crosshairColor = QColor(QStringLiteral("#00FF00"));

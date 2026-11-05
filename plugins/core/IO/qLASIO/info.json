@@ -17,7 +17,7 @@
   "references": [
     {
         "text": "Specifications",
-        "url": "https://www.asprs.org/divisions-committees/lidar-division/laser-las-file-format-exchange-activities"
+        "url": "https://github.com/ASPRSorg/LAS"
     },
     {
         "text": "LASZip Library",

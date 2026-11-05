@@ -12,6 +12,7 @@ import time
 from pathlib import Path
 
 from huggingface_hub import HfApi
+from digest_utils import sha256_file
 
 REPO_BY_PREFIX = [
     ("da3_models/", "Asher-1/DA3_GGUF"),
@@ -31,13 +32,6 @@ def repo_for(relative_path: str) -> str:
     raise SystemExit(f"no repo mapping for {relative_path}")
 
 
-def sha256_of(path: Path) -> str:
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(1 << 22), b""):
-            h.update(chunk)
-    return h.hexdigest()
-
 
 def main() -> int:
     plan = json.loads(PLAN.read_text())
@@ -49,7 +43,7 @@ def main() -> int:
         repo = repo_for(rel)
         filename = Path(rel).name
 
-        digest = sha256_of(local)
+        digest = sha256_file(local)
         if digest != row["sha256"]:
             failures.append({"relative_path": rel, "error": "local sha mismatch"})
             print(json.dumps(failures[-1]), flush=True)

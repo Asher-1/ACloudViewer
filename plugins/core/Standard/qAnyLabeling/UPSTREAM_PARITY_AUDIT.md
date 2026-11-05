@@ -11,6 +11,217 @@ contracts. A focused pass does not establish complete upstream parity.
 - **Open**: no equivalent implementation or qualification is complete.
 - **Matches upstream absence**: upstream has no registered workflow; do not invent one and claim parity.
 
+
+## Open parity gap ledger (2026-11-05)
+
+This ledger owns the remaining upstream alignment rows (it moved
+here when `TODO.md` was retired; the closed-row evidence lives in
+the sections above and in git history).
+
+| # | Area | Gap | Owner / landing | Status |
+|---|------|-----|-----------------|--------|
+| 1 | OCR interaction | `skip_detection` selected-shape recognition | Public `aicore_ocr_recognize_regions`; update only descriptions, preserving geometry and metadata; explicit Run-button reset, autosave, reviewed state and undo/redo | Implemented for rectangles and polygons with at least three points; source normalization and CPU/CUDA/Vulkan worker/window checks below |
+| 2 | OCR interaction | Direction classifier `cls` (`use_angle_cls`, 0/180 flip before recognition) | Public AICore optional classifier/options/typed orientations; task-owned recipes and local converted F32 weights | Implemented for run/recognize and enabled by default; publication and complete dataset/release gates remain open |
+| 3 | OCR geometry | Full source det/rec polygon and transcription equality on a shared corpus | Consume the merged upstream OCR implementation; retain source integer corners and exact rectangle classification in the annotation adapter | LANDED (2026-11-05): `test_qanylabeling_ppocr_corpus` drives the PaddleOCR TableRec val split — 100 real-document pages, 5373 cells — through a full PPOCR det adapter round trip (import keeps exact integer corners and transcriptions, export restores them); dataset-level inference accuracy stays with the AICore gate |
+| 4a | OCR evidence | Current model/backend acceptance | Merged public OCR catalog: det-ch, rec-ch, rec-en and CDLA layout, F32/F16/Q8_0. Current common-runner results are 15/15 on each of CPU/CUDA/Vulkan, plus real-window checks on all three. Gate ownership moved fully into `validation_manifest.json` (structured OCR scenarios incl. the WER/CER/Hmean source-comparison rows) executed by `validate_all.py`; the retired OCR_RELEASE_GATES.md ledger is superseded (2026-11-05). **Tiny accuracy gates fixed (2026-11-05)**: the four open rows were traced to the tiny containers' residual quantized weights (each tiny Q8_0 container held exactly ONE weight tensor and the F16 detector's rounding shifted DB decision-boundary pixels on 3 of the 50 labelled pages). Fix: reconverted the tiny F16 containers with the detector graph and sigmoid path pinned F32 (policy `keep_f32`), published the new detector/recognizer F16 GGUFs (release 398339658, pins `45e2072c…`/`1cfbb886…` in `asset_digests.h`), and retired the tiny Q8_0 and tiny-detector-F16 variants (catalog `model_catalog.cpp` skips them; manifest rows removed; pipeline gained `--det-quant` for the mixed F32-detector + F16-recognizer rows). Fresh CPU tiny matrix: **13/13 PASS** (`aicore_validation_ocr_tiny_cpu.json`), incl. labelled-scenes-F16 with `hmean_delta=0.0, e2e_wer_delta=0.0`. Open: the GPU original-source comparison still needs the original-source CUDA reference build (`{reference:ocr_cuda}`) | Closed-row ledger below records the pre-migration history; the open rows above are the live gate list |
+| 4 | Region/KIE | Optional layout, PP-OCR KIE annotation format and source v5/v6 recipes | Layout is off by default; preserve real classes/reading order. Entity/link format round trip is implemented; source registers no SER/RE auto model. All six active source OCR presets have local F32 recipes through public OCR | Local workflows implemented; new weights unpublished; dataset/quantization gates execute as the same manifest rows as 4a |
+| 6 | Visual parity | Screenshot-level layout comparison against the in-tree upstream references | Manual fixture pass per panel using `docs/images/*` baselines; controlled GL geometry comparison is separate | Partial (2026-11-05): `test_qanylabeling_canvas_gate` adds rendering-difference gates for display modes, the overlay grid and fill-only opacity through the loaded plugin; full-window theme/typography fixture pass remains open |
+| 13 | Baseline evolution | Upstream v4.2.1 → v4.3.1 (27 commits, `cd26942a..4601c0e0`) landed after row 12 | Feature/fix commits verified in UPSTREAM_PARITY_AUDIT.md (Fresh observation 2026-11-05, second pass): landed check-status panel controls, attribute font size, overlay grid, image jump step, fill-only opacity; Unlimited-OCR-2/WeVisOne-VL await catalog weights; upstream batch-panel and Python-window fixes have no plugin counterpart | Checked — no reopened rows |
+| 7 | Point cloud | Remaining camera panels, shortcut/gesture and full-window rendering details | Cuboid geometry/sidecars/orthogonal editing, task classes, dataset transactions, multi-camera configuration and preview are implemented. GPU RGBA/depth ownership picking now covers occlusion, equal-depth ties, point footprints and continuous brush strokes. Selection projection now caches 16-pixel tiles and reuses them across brush events; 18,216 creation-ray queries match | Partial — background frame loading, bounded prefetch, selection tiles and focus animation are implemented; complete camera-panel and visual/interaction parity remain |
+| 9 | External services | Remaining `open_vision` and multi-model source pipelines | Remote Server transport already exists; ChatBot/VQA now share the asynchronous service client described below. Service inference stays remote; local inference stays in AICore | Partial; ChatBot/VQA workflow details and exact remaining model pipelines are still open |
+| 10 | Config module | Upstream `configs/auto_labeling/*.yaml` carries per-model interaction defaults (display_name, conf/iou thresholds, input size) that the picker should surface per model | AICore catalog owns model facts (ownership map): extend catalog entries with the interaction-default fields, plugin reads them from the catalog — never a private yaml table in the plugin | LANDED: facedetect 2026-09-30; the yolo catalog carries `confidence_threshold`/`iou_threshold` per entry and the picker applies them (`model.confDefault/iouDefault = entry->…` in AnnotationWindow, applied at selection); rfdetr entries carry `confidence_threshold`; the ocr preset entries carry the full source threshold set (det_thresh/box_thresh/unclip_ratio/max_side/rec_batch/cls_batch/drop_score) consumed by the OCR workflow |
+| 11 | Packaging | Run/.exe/.app installers must carry the plugin resources (translations qm, docs) and rely on catalog remote-download for models; default model per task must match upstream | Existing docker/build scripts + qrc resources; verify installer contents per platform (Linux/Windows/macOS) | Linux generated plugin install rules, stripping and Unicode-path relocation are verified below; complete Linux installer and native Windows/macOS package verification remain open |
+| 12 | Baseline evolution | Upstream v4.1.3 → v4.2.1 (43 commits, `745f6c35..cd26942a`) landed after this table was drafted | Feature/fix commits verified against the plugin tree in UPSTREAM_PARITY_AUDIT.md (Fresh observation 2026-11-05); visual overhaul tracked by gap #6 | Checked — no reopened rows; the Use Test Data bundle and the explicit-parameter attribute tests are plugin-side additions recorded in the same audit note |
+
+The detailed ledger below also retains older open workflow and validation
+items. New upstream additions are tracked separately above.
+
+---
+
+Reference: X-AnyLabeling-GGML commit `926017d09b22564a78c55eb2f368c7b20faa0466`.
+The dated research/rollout notes below preserve historical plans; the current
+public catalogs, implementation and follow-up evidence above take precedence.
+The source tree has 205 `anylabeling/configs/auto_labeling/*.yaml` model
+configurations with 92 distinct `type` values. A model is available here only when AICore publishes a matching
+task contract and a catalog GGUF. A similar output shape alone does not mean
+the source model has been ported. Re-check the live AICore catalogs before
+closing a row.
+
+Catalog-backed source `type` values whose corresponding workflows are fully
+or partly wired are `ram`, `rfdetr`, `rfdetr_seg`, `rmbg`, `scrfd`,
+`segment_anything_2`, `segment_anything_3`, `yolo26`, `yolo26_obb`,
+`yolo26_pose`, `yolo26_seg`, `yoloe`, `yolov8`, `yolov8_seg`, and `yolow`.
+This is a task-family mapping, not a claim that every source checkpoint or
+configuration is in the AICore catalog. The remaining 77 source types are
+listed below, including composite types that can reuse existing AICore models.
+
+## Fresh observation (2026-11-05, second pass)
+
+Note: the historical observations below reference the retired
+`OCR_RELEASE_GATES.md` ledger; its full text stays in this repository's git
+history, and the live OCR gate ownership is the structured
+`validation_manifest.json` OCR rows executed by `validate_all.py`.
+
+### Upstream baseline evolution: v4.2.1 → v4.3.1 (27 commits)
+
+Upstream moved from `cd26942a` (v4.2.1) to `4601c0e0` (v4.3.1): 27 commits,
+128 files. All feature/fix commits were checked against the plugin tree.
+
+Landed in the plugin during this pass:
+
+- Canvas-panel annotation check status controls (upstream `98c40c9d`):
+  pass/fail/pending buttons on the `canvas_adjustment` panel wired to the
+  existing `setAnnotationChecked` owner, mirrored in `syncAnnotationChecked`.
+- Configurable attribute-overlay font size (upstream `15a30881`): the
+  `canvas/attribute_overlay/font_size` key plus an adjustment-panel slider
+  feed `drawAnnotationAttributes`; the export path keeps the legacy default.
+- Adjustable overlay grid (upstream `05ad5927`): `setGridOptions` draws the
+  fixed-size image-space grid with visible-cell culling, optional coordinate
+  labels once cells exceed the text threshold, and panel controls
+  (`AnnotationGridCheck`, size spin, color combo, labels, opacity).
+- Configurable image jump step (upstream `421dfa9e`):
+  `label_widget/image_jump_step` (default 10) drives the new
+  "Forward/Back %1 Images" commands.
+- Fill-only opacity (upstream `faab50b2`): the opacity slider now adjusts
+  annotation fills only — the global paint opacity was removed, fills draw
+  in their own pass at the slider value, strokes stay fully opaque, and
+  masks keep the fill-class adjustment.
+- Wheel navigation mode (upstream `27ec8fa8`): the
+  `canvas/wheel_navigation_mode` key ("direct" default keeps cursor-anchored
+  zoom; "traditional" pans the viewport with the wheel) plus
+  `setWheelNavigationMode` on the canvas, wired through the settings/config
+  chain like the other wheel options.
+- Verified already present: File-menu Settings entry (`9ad69a93`), directed
+  relation arrows (`f2d6f4cd` rendering), keep-tool interactions, three-state
+  review shortcuts, wheel rectangle editing.
+
+Recorded without a plugin counterpart (honest boundaries):
+
+- Unlimited-OCR-2 multi-page PDF parsing (upstream `66ef84a0`) and
+  WeVisOne-VL previews (`0e91016e`) need new published weights and AICore
+  task support; the plugin consumes catalogs, it does not host model tables.
+- Concurrent multi-image classifier batching (upstream `beff01ff`) and
+  batch-processing skip-status filters (upstream `69f8d438`) belong to the
+  upstream auto-labeling batch panel; the plugin's GUI inference is
+  per-image (AutoRun) and its headless batch command has no image loop yet,
+  so there is no corresponding consumer to extend without inventing a new
+  panel.
+- UI-scale oscillation (`ff667b3a`) and dialog-exit restore (`537086d8`)
+  are Python-widget-specific fixes; the Qt C++ window/parent activation
+  path does not have the defect surface.
+- Workflow list reorder (`ab045172`) and the rotation-arrow restyle plus
+  auto-labeling button captions (`c0fa744d`) are visual/copy surface inside
+  the upstream widget system; the plugin has its own theme and rotation
+  direction rendering (gap #6 owns pixel-level acceptance).
+- Hidden-control shortcut guards (`83dc8fad`) patch the upstream pattern of
+  shortcuts that simulate clicks on panel buttons; every plugin shortcut is
+  a QAction command (`registerShortcut`), so no hidden-widget trigger
+  surface exists.
+- PPOCR export directory (`ce284215`) is already stronger in the plugin:
+  `exportPpocr` opens an explicit directory dialog pre-filled from
+  `m_outputDir` instead of silently picking a directory.
+
+New corpus and visual gates (gaps #3/#6 progress):
+
+- `test_qanylabeling_ppocr_corpus`: the PaddleOCR TableRec val split (100
+  real-document pages, 5373 cells) drives a full PPOCR det adapter round
+  trip — exact integer corners, exact transcriptions, exact rectangle
+  classification, both directions. Honest skip when the shared archive is
+  absent.
+- `test_qanylabeling_canvas_gate`: rendering-difference gates through the
+  loaded plugin — display modes, the overlay grid and the fill-only opacity
+  semantics (annotation-free frames must not react to the slider).
+- `test_plugin` now pins the v4.3.1 surfaces end to end: the check-status
+  buttons, the attribute font slider, the grid checkbox and the
+  Forward/Back 10 Images commands.
+
+### v4.3.1 examples/assets increment triage (2026-11-05)
+
+The upstream examples/assets additions were triaged against the Use Test
+Data bundle contract (plugin-consumable entry + official data + bounded
+size + clean annotation surface):
+
+- No existing bundle member changed upstream: the 73-member zip and its
+  pinned digest stay valid.
+- `examples/relation/relateanything/.data/relateanything.jpg` is the only
+  increment tied to a shipped plugin capability (relation annotation), but
+  it is an upstream UI screenshot (window chrome plus rendered labels), not
+  a clean annotation surface — it would break the all-clean image_modes
+  sequence and its baked-in labels would collide with real annotations.
+  Recorded for follow-up if upstream publishes a clean scene frame.
+- `unlimited_ocr_2`, `wevisone_vl` and `batch_assistance` assets are bound
+  to unpublished model weights (same boundary as the rows above); model
+  data flows through the AICore catalog chain, never the demo zip.
+
+### Upstream baseline evolution: v4.1.3 → v4.2.1 (43 commits)
+
+The audit baseline above (`745f6c35`, v4.1.3) is an ancestor of the live
+upstream HEAD `cd26942a` (v4.2.1). All 43 in-between commits were checked
+against the current plugin tree (feature/fix commits verified by code or
+test evidence; test-only, docs-only and release-bump commits need no plugin
+counterpart; visual-overhaul commits land through the plugin's own theme and
+panel system and are covered by the screenshot gate, gap #6, not by
+per-pixel tracking):
+
+- Implemented and evidenced: display modes label/instance/group/binary-mask
+  (`AnnotationCanvas.h` `DisplayMode`), square-constrained rectangle/rotation
+  with Shift press/release resync (`AnnotationCanvas.cpp` shift handling),
+  live status measurements H/W, segment length + linestrip total, circle
+  radius + circumference (`shapeMeasured`/`lineMeasured`/`circleMeasured`
+  wiring in `AnnotationWindow.cpp`), right-button panning while drawing,
+  toolbar visualization toggles, three-state annotation review with
+  shortcuts and search filters, session-only locking with bulk
+  visibility/lock controls (`Upstream 289befba/8f092a58` note), expandable
+  description editor, double-click polygon vertex editing, image-tags panel
+  default-on, toolbar horizontal wheel scrolling.
+- No plugin counterpart required: upstream test changes (`6d250499`),
+  docs-only (`cd26942a`), release bump (`d0c47e16`).
+- Visual overhaul set (`9dc0d990`, `3586a2ea`, `2cf04ecf`, `9977bf9e`,
+  `b517be1a`, `e3bcc2b9`, `d8ec076a`, `c818f1d7`, `1e1596e0`, `93518ca4`,
+  `05808579`, `e802fcd1`, `b117399f`, `3f63d06d`) is implemented through the
+  plugin workspace theme/panel system; remaining pixel-level acceptance is
+  gap #6 (screenshot gate), unchanged.
+
+### Use Test Data bundle (ACloudViewer-side extension)
+
+`File > Use Test Data` (four entries: image modes / point cloud / video
+tracking / compare view) is an ACloudViewer-only workflow; upstream
+registers no equivalent, so the parity contract is "matches upstream
+absence" plus the plugin-side acceptance below. The archive is assembled by
+`scripts/build_test_data.py` from upstream `cd26942a` (per-file provenance
+in the archive `MANIFEST.txt`), pinned in `ecvTestDataRepository.cpp` and
+`core/AICore/scripts/validation_manifest.json` (anylabeling-test-data),
+served from the cloudViewer_downloads release `anylabeling-test-data`, with
+cold/warm transport tests (`test_qanylabeling_testdata`) and a four-entry
+UI fill test in `test_plugin.cpp`. The 17 image_modes units cover every
+canvas shape type plus flags/attributes/tags/descriptions/group IDs/KIE
+linking; the point-cloud, tracking and compare entries reuse the official
+KITTI, tracking-video and LLVIP assets.
+
+### Attribute tests are explicit-parameter now
+
+`test_qanylabeling_attribute_run_path` / `test_qanylabeling_attribute_batch`
+no longer read `AICORE_TEST_ATTRIBUTE_*` environment variables: the
+converted PULC weights resolve through the AICore attribute catalog cache
+(`aicore_attribute_model_cache_dir()`), the real input image through the
+shared ObjectsDetection dataset, all resolved before the isolated data root
+takes over and passed as explicit arguments. Missing inputs skip honestly
+with return code 77 and generation guidance; these rows remain dedicated
+runner tests (the GitHub CI ctest set does not include them).
+
+### Open items carried forward
+
+- 306 new translation strings (Use Test Data menu, statuses) are marked
+  `unfinished` in the three `.ts` catalogs and fall back to English until
+  the next translation pass.
+- Video-classifier auto-fill stays unsupported: `VideoAnnotationDialog::openVideo`
+  requires a video + `VideoSidecar` JSON pair and upstream publishes no
+  sidecar sample for its demo video; fabricating one would break the
+  official-data provenance rule.
+- All other open rows are owned by the "Open parity gap ledger" section,
+  MODEL_MATRIX.md and the validation manifest; nothing in this pass reopens
+  them.
+
 ## Fresh observation (2026-10-29)
 
 ### Actual queue results
@@ -53,7 +264,10 @@ metadata is not live RPC success. Default registry remains 18 entries and
 rejects llm; explicit workspace harness native HELP returns LLM_GENERATE,
 batch/1 and 18 options. No global installation changed; source schema does
 not clear default-package/live-RPC gaps. Remaining gates are owned by
-`TODO.md`, `OCR_RELEASE_GATES.md` and Relate.
+the "Open parity gap ledger" section and Relate; the OCR gate execution moved into the
+structured `validation_manifest.json` rows via `validate_all.py` (the
+`OCR_RELEASE_GATES.md` ledger referenced by the older observations below was
+retired on 2026-11-05 and remains in git history).
 
 Earlier observations below retain their original boundary; actual results
 above supersede stale waiting progress.

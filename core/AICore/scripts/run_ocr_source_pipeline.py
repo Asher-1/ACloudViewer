@@ -265,6 +265,10 @@ def main():
     parser.add_argument("--stem", required=True, choices=("ppocrv4-source", "ppocrv3-japan", "ppocrv5-mobile", "ppocrv6-tiny", "ppocrv6-small", "ppocrv6-medium"))
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--quant", choices=("f32", "f16", "q8_0"), default="f32")
+    parser.add_argument("--det-quant", choices=("f32", "f16", "q8_0"),
+                        help="detector container override; the tiny detector's "
+                        "F16 rounding shifts DB decision-boundary pixels, so "
+                        "mixed-quantity rows run the F32 detector graph")
     parser.add_argument("--models-dir", type=Path)
     parser.add_argument("--ground-truth", type=Path)
     parser.add_argument("--ground-truth-sha256")
@@ -382,7 +386,9 @@ def main():
     library.aicore_ocr_result_release.argtypes = [C.c_void_p]
     library.aicore_ocr_last_error.restype = C.c_char_p
     models_dir = args.models_dir or args.assets / "ocr_models"
-    models = [models_dir / f"{args.stem}-{role}-{args.quant}.gguf" for role in ("det", "rec")]
+    det_quant = args.det_quant or args.quant
+    models = [models_dir / f"{args.stem}-det-{det_quant}.gguf",
+              models_dir / f"{args.stem}-rec-{args.quant}.gguf"]
     if args.stem == "ppocrv3-japan":
         models[0] = models_dir / f"ppocrv4-source-det-{args.quant}.gguf"
     models.append(models_dir / f"ppocr-cls-{args.quant}.gguf")
@@ -406,8 +412,9 @@ def main():
     for key, value in source_defaults.items():
         if abs(getattr(preset, key) - value) > 1e-6:
             raise ValueError(f"public recipe/source default mismatch: {key}")
-    for key, path in zip(("det_stem", "rec_stem", "cls_stem"), models):
-        if getattr(preset, key).decode() + f"-{args.quant}.gguf" != path.name:
+    for key, path, quant in zip(("det_stem", "rec_stem", "cls_stem"), models,
+                                (det_quant, args.quant, args.quant)):
+        if getattr(preset, key).decode() + f"-{quant}.gguf" != path.name:
             raise ValueError(f"public recipe/source model pairing mismatch: {key}")
     options = Options()
     options.struct_size, options.abi_version = C.sizeof(options), 1

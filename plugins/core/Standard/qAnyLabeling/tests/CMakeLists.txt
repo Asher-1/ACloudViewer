@@ -36,6 +36,20 @@ cloudviewer_add_plugin_test(test_qanylabeling_ppocr_document
 add_test(NAME test_qanylabeling_ppocr_document COMMAND test_qanylabeling_ppocr_document)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_ppocr_document)
 
+# Gap #3 corpus parity: the TableRec val split (100 real-document pages)
+# drives a full PPOCR det adapter round trip; skips honestly when the
+# shared ppocr_testdata archive is absent.
+cloudviewer_add_plugin_test(test_qanylabeling_ppocr_corpus
+    SOURCES test_ppocr_corpus_geometry.cpp
+        ${QAL_DIR}/src/AnnotationPpocr.cpp
+        ${QAL_DIR}/src/AnnotationArchive.cpp
+    INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/core/include
+        ${CMAKE_SOURCE_DIR}/libs/CVPluginAPI/include
+        ${CMAKE_SOURCE_DIR}/core/AICore/include
+    LIBS CVPluginAPI 3rdparty_googletest Qt${QT_VERSION_MAJOR}::Widgets)
+add_test(NAME test_qanylabeling_ppocr_corpus COMMAND test_qanylabeling_ppocr_corpus)
+cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_ppocr_corpus)
+
 cloudviewer_add_plugin_test(test_qanylabeling_ppocr_table
     SOURCES test_ppocr_table.cpp
         ${QAL_DIR}/src/PpocrTableEditor.cpp
@@ -122,6 +136,18 @@ cloudviewer_add_plugin_test(test_qanylabeling_remote
          Qt${QT_VERSION_MAJOR}::Network)
 add_test(NAME test_qanylabeling_remote COMMAND test_qanylabeling_remote)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_remote)
+
+# Gap #6 canvas visual gate: rendering-difference assertions driven through
+# the loaded plugin (display modes, overlay grid, fill-only opacity).
+cloudviewer_add_plugin_test(test_qanylabeling_canvas_gate
+    SOURCES test_canvas_visual_gate.cpp
+    INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/libs/CVPluginAPI/include
+        ${CMAKE_SOURCE_DIR}/core/AICore/include
+    LIBS CVPluginAPI CVPluginStub 3rdparty_googletest
+         Qt${QT_VERSION_MAJOR}::Widgets)
+add_test(NAME test_qanylabeling_canvas_gate
+    COMMAND test_qanylabeling_canvas_gate $<TARGET_FILE:QANYLABELING_PLUGIN>)
+cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_canvas_gate)
 
 if(TARGET 3rdparty_opencv)
     # cloudviewer_plugin_link_zlib_minizip links with the plain signature,

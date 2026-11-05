@@ -24,6 +24,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from digest_utils import sha256_file
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -62,13 +63,6 @@ def host_state() -> dict:
     return {"cpu_governors": governors, "cpu_frequency_khz": frequencies,
             "gpu_compute_processes": gpu_processes}
 
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def add_runtime_library_path(environment: dict[str, str], bench: Path,

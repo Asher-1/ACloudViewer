@@ -122,6 +122,18 @@ public:
     int shapeOpacity() const { return m_shapeOpacity; }
     void setMaskOpacity(int value);
     int maskOpacity() const { return m_maskOpacity; }
+    /** Adjustable overlay grid over the image (upstream canvas grid). */
+    void setGridOptions(bool enabled,
+                        int size,
+                        const QString& color,
+                        int opacity,
+                        bool labels);
+    /** Wheel navigation mode: "direct" (default, wheel zooms) or
+     *  "traditional" (wheel pans, upstream 27ec8fa8). */
+    void setWheelNavigationMode(const QString& mode);
+    /** Base font size (world units) of the attribute overlay boxes. */
+    void setAttributeFontSize(int size);
+    int attributeFontSize() const { return m_attributeFontSize; }
     void setMagicWandOptions(int threshold,
                              double dragSensitivity,
                              double luminanceWeight);
@@ -458,6 +470,13 @@ private:
     bool m_showDegrees = false;
     bool m_showLinking = true;
     int m_shapeOpacity = 100;
+    bool m_gridEnabled = false;
+    int m_gridSize = 100;
+    QColor m_gridColor = Qt::white;
+    int m_gridOpacity = 100;
+    bool m_gridLabels = false;
+    int m_attributeFontSize = 10;
+    QString m_wheelNavigationMode = QStringLiteral("direct");
     int m_maskOpacity = 80;
     DisplayMode m_displayMode = DisplayMode::Label;
     mutable int m_nextInstanceId = 0;
