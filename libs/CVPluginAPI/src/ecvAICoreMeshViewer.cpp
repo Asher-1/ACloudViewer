@@ -5,15 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// MSVC's <cmath> only exposes M_PI when _USE_MATH_DEFINES is defined before
-// the first expansion of any math header in this translation unit (the
-// Windows CI cudaON Release lane died with error C2065 'M_PI': undeclared
-// identifier at the paintGL orbit math; glibc exposes it unconditionally,
-// which is why Linux passes). Kept above every include because the Qt
-// include chain below is not under our control.
-#ifndef _USE_MATH_DEFINES
-#define _USE_MATH_DEFINES
-#endif
+// M_PI: MSVC exposure is provided by the target's _USE_MATH_DEFINES compile
+// definition in CVPluginAPI/CMakeLists.txt (same contract as qInstantMesh).
 
 #include "ecvAICoreMeshViewer.h"
 

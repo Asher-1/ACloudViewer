@@ -48,7 +48,13 @@ include( ${CMAKE_SOURCE_DIR}/plugins/cmake/PluginZlibMinizip.cmake )
 cloudviewer_plugin_link_zlib_minizip(${PROJECT_NAME}
 	PLUGIN_NAME CVPluginAPI)
 
-target_compile_definitions( ${PROJECT_NAME} PRIVATE CVPLUGIN_API_LIBRARY_BUILD )
+# _USE_MATH_DEFINES: the ecvAICoreMeshViewer orbit math uses M_PI. MSVC's
+# <cmath> only exposes M_PI with this macro defined; glibc exposes it
+# unconditionally (same contract the qInstantMesh target carried before the
+# viewer migrated here from qTrellis/qInstantMesh).
+target_compile_definitions( ${PROJECT_NAME} PRIVATE
+	CVPLUGIN_API_LIBRARY_BUILD
+	_USE_MATH_DEFINES )
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES
 	AUTOMOC ON
