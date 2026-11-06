@@ -15,10 +15,14 @@
 #pragma once
 
 // Dependency:
-#include "../glm.hpp"
-#include "../gtc/type_precision.hpp"
-#include "../gtc/quaternion.hpp"
-#include "../gtx/dual_quaternion.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/glm.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/gtc/type_precision.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/gtc/quaternion.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/gtx/dual_quaternion.hpp"
+
 #include <string>
 #include <cmath>
 

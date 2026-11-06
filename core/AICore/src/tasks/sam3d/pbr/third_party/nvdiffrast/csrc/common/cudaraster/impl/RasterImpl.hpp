@@ -7,9 +7,12 @@
 // license agreement from NVIDIA CORPORATION is strictly prohibited.
 
 #pragma once
-#include "PrivateDefs.hpp"
-#include "Buffer.hpp"
-#include "../CudaRaster.hpp"
+#include "tasks/sam3d/pbr/third_party/nvdiffrast/csrc/common/cudaraster/impl/PrivateDefs.hpp"
+
+#include "tasks/sam3d/pbr/third_party/nvdiffrast/csrc/common/cudaraster/impl/Buffer.hpp"
+
+#include "tasks/sam3d/pbr/third_party/nvdiffrast/csrc/common/cudaraster/CudaRaster.hpp"
+
 
 namespace CR
 {

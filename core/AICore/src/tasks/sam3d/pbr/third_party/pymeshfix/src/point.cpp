@@ -28,7 +28,8 @@
 *                                                                           *
 ****************************************************************************/
 
-#include "point.h"
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/point.h"
+
 #include <stdlib.h>
 #include <limits.h>
 #include <errno.h>

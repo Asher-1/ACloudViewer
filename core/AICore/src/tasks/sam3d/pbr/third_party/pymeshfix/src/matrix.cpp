@@ -29,7 +29,8 @@
 ****************************************************************************/
 
 #include <math.h>
-#include "matrix.h"
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/matrix.h"
+
 
 namespace T_MESH
 {

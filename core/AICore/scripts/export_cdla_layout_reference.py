@@ -18,7 +18,8 @@ import tempfile
 
 import numpy as np
 
-from layout_gt_eval import CDLA_LABELS, digest, verified_path
+from layout_gt_eval import CDLA_LABELS, verified_path
+from digest_utils import sha256_file
 from run_paddle_layout_reference import preprocess
 
 POSTPROCESS_SHA256 = "36f2de7434c74c4c11d2a6b06b0e514bb412c720f9bec2c785f37d7cabffeb3d"
@@ -61,7 +62,7 @@ def main():
     parser.add_argument("--device", choices=("cpu", "cuda"), required=True)
     parser.add_argument("--threads", type=int, default=4)
     args = parser.parse_args()
-    if args.threads < 1 or digest(args.postprocess_py) != POSTPROCESS_SHA256:
+    if args.threads < 1 or sha256_file(args.postprocess_py) != POSTPROCESS_SHA256:
         parser.error("invalid threads or original postprocessor SHA-256")
     distribution = "paddlepaddle-gpu" if args.device == "cuda" else "paddlepaddle"
     if importlib.metadata.version(distribution) != "3.0.0":
@@ -80,7 +81,7 @@ def main():
         raise ValueError("duplicate CDLA page")
     files = verified_source(args.source_root,
         json.loads(args.source_pins.read_text()), "layout", args.model)
-    dependencies = {str(path): digest(path) for path in (
+    dependencies = {str(path): sha256_file(path) for path in (
         Path(__file__), args.pins, args.source_pins, args.postprocess_py,
         args.model, *files.values(), Path(digest.__code__.co_filename),
         Path(preprocess.__code__.co_filename), Path(verified_source.__code__.co_filename))}
@@ -109,7 +110,7 @@ def main():
         raise ValueError("unexpected original layout graph inputs/outputs")
     handle = predictor.get_input_handle(inputs[0])
     report = dict(device=args.device, source_files=source_digests(dict(layout=files)),
-        **reference_identity(), pins_sha256=digest(args.pins), dependencies=dependencies,
+        **reference_identity(), pins_sha256=sha256_file(args.pins), dependencies=dependencies,
         postprocess_source=POSTPROCESS_SOURCE, postprocess_sha256=POSTPROCESS_SHA256,
         score_threshold=.5, nms_threshold=.5, images=[],
         scope="Original graph page accuracy only; CPU is diagnostic; no release timing claim")
@@ -134,7 +135,7 @@ def main():
             print(json.dumps(dict(pages=index + 1, planned=len(pins["pages"]))), flush=True)
     del handle, predictor, config
     gc.collect()
-    if any(digest(Path(path)) != sha for path, sha in dependencies.items()):
+    if any(sha256_file(Path(path)) != sha for path, sha in dependencies.items()):
         raise ValueError("layout reference dependency changed during export")
     args.report.write_text(json.dumps(report, indent=2) + "\n")
 

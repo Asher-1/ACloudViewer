@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include "../model.h"
+#include "tasks/openpcdet/model.h"
 
 namespace openpcdet::ext {
 

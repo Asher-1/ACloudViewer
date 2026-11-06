@@ -10,7 +10,7 @@
 // scatter mean), SparseUpsample (gather by the downsample inverse index) and
 // spconv's SubMConv3d (submanifold: output set == input set, missing
 // neighbours contribute zero).
-#include "sparse_ops.hpp"
+#include "tasks/sam3d/sparse_ops.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -19,7 +19,7 @@
 #include <map>
 #include <tuple>
 
-#include "mesh_ape_reference.hpp"
+#include "tasks/sam3d/mesh_ape_reference.hpp"
 
 namespace sam3d {
 

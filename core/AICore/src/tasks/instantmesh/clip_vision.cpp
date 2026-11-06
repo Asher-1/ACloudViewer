@@ -8,7 +8,7 @@
 // Implementation of the zero123++ CLIP vision encoder as a ggml compute graph.
 // See clip_vision.hpp for the architecture notes. Graph is rebuilt per forward
 // (same pattern as dino.cpp) so any backend works once weights are on it.
-#include "clip_vision.hpp"
+#include "tasks/instantmesh/clip_vision.hpp"
 
 #include <cmath>
 #include <cstdio>
@@ -16,7 +16,7 @@
 
 #include "ggml-alloc.h"
 #include "ggml-cpu.h"
-#include "numerics.hpp"
+#include "tasks/instantmesh/numerics.hpp"
 
 namespace instantmesh {
 

@@ -3,7 +3,8 @@
 // metadata needed to drive the graph, and hands tensors to the model.
 #pragma once
 
-#include "map_anything_common.hpp"
+#include "tasks/map_anything/map_anything_common.hpp"
+
 
 #include <memory>
 #include <vector>

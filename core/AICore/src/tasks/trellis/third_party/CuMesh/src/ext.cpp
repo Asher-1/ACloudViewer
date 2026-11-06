@@ -7,9 +7,9 @@
 
 #include <torch/extension.h>
 
-#include "cumesh.h"
-#include "hash/api.h"
-#include "remesh/api.h"
+#include "tasks/trellis/third_party/CuMesh/src/cumesh.h"
+#include "tasks/trellis/third_party/CuMesh/src/hash/api.h"
+#include "tasks/trellis/third_party/CuMesh/src/remesh/api.h"
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     // Hash functions

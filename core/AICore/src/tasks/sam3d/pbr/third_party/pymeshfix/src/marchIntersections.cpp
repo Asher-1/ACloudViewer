@@ -28,7 +28,8 @@
 *                                                                           *
 ****************************************************************************/
 
-#include "marchIntersections.h"
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/marchIntersections.h"
+
 
 namespace T_MESH
 {

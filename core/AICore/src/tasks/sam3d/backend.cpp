@@ -5,16 +5,16 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "backend.hpp"
+#include "tasks/sam3d/backend.hpp"
 
 #include <cstdint>
 #include <cstring>
 
-#include "common.hpp"
 #include "common/ggml_backend_registry.hpp"
 #include "common/ggml_backend_utils.hpp"
 #include "ggml-alloc.h"
 #include "ggml-cpu.h"
+#include "tasks/sam3d/common.hpp"
 
 namespace sam3d {
 

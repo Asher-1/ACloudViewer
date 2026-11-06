@@ -6,15 +6,15 @@
 // ----------------------------------------------------------------------------
 
 // SLat Gaussian decoder graph - see gs_decoder_graph.hpp.
-#include "gs_decoder_graph.hpp"
+#include "tasks/sam3d/gs_decoder_graph.hpp"
 
 #include <array>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
 
-#include "common.hpp"
-#include "graph_builder.hpp"
+#include "tasks/sam3d/common.hpp"
+#include "tasks/sam3d/graph_builder.hpp"
 
 namespace sam3d {
 namespace {

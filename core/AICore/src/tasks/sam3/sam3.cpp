@@ -9,7 +9,7 @@
 #define _USE_MATH_DEFINES
 #endif
 
-#include "sam3.h"
+#include "tasks/sam3/sam3.h"
 
 /* AICore common runtime (shared dynamic-backend discovery) */
 #include "common/ggml_backend_registry.hpp"

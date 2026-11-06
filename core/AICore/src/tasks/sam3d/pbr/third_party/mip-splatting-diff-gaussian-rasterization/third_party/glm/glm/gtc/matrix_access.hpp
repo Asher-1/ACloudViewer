@@ -13,7 +13,8 @@
 #pragma once
 
 // Dependency:
-#include "../detail/setup.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/setup.hpp"
+
 
 #if GLM_MESSAGES == GLM_ENABLE && !defined(GLM_EXT_INCLUDED)
 #	pragma message("GLM: GLM_GTC_matrix_access extension included")

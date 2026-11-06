@@ -2,7 +2,8 @@
 /// @file glm/ext/matrix_float3x3_precision.hpp
 
 #pragma once
-#include "../detail/type_mat3x3.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/type_mat3x3.hpp"
+
 
 namespace glm
 {

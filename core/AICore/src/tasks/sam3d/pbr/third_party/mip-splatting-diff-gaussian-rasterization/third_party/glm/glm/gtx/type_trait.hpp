@@ -21,9 +21,12 @@
 #endif
 
 // Dependency:
-#include "../detail/qualifier.hpp"
-#include "../gtc/quaternion.hpp"
-#include "../gtx/dual_quaternion.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/qualifier.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/gtc/quaternion.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/gtx/dual_quaternion.hpp"
+
 
 namespace glm
 {

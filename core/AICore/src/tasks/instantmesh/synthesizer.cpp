@@ -14,7 +14,7 @@
 //  2. The OSGDecoder MLPs (sdf / deformation / weight) as a single ggml graph
 //     scheduled on the selected backend, so those weights run on CPU/CUDA/
 //     Vulkan identically.
-#include "synthesizer.hpp"
+#include "tasks/instantmesh/synthesizer.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -26,7 +26,8 @@
 #include <vector>
 
 #include "aicore/runtime_capi.h"
-#include "numerics.hpp"
+#include "tasks/instantmesh/numerics.hpp"
+
 #ifdef IM_USE_OPENMP
 #include <omp.h>
 #endif

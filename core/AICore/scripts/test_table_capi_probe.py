@@ -5,6 +5,12 @@ import copy
 import json
 import unittest
 
+try:
+    import cv2  # noqa: F401
+except ModuleNotFoundError:  # test host without the opencv dep
+    import sys
+    print("SKIP: paddle reference tests require cv2")
+    sys.exit(77)
 from run_table_capi_probe import native_rows, timing_percentiles
 
 

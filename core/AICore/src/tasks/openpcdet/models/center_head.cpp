@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "center_head.h"
+#include "tasks/openpcdet/models/center_head.h"
 
 #include <ggml.h>
 

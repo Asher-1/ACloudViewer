@@ -15,7 +15,8 @@
 #pragma once
 
 // Dependencies
-#include "../detail/qualifier.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/qualifier.hpp"
+
 
 #if GLM_MESSAGES == GLM_ENABLE && !defined(GLM_EXT_INCLUDED)
 #	pragma message("GLM: GLM_EXT_matrix_relational extension included")

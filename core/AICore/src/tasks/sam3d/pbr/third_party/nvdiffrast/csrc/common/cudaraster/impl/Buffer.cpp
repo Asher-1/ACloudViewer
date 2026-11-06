@@ -6,8 +6,10 @@
 // distribution of this software and related documentation without an express
 // license agreement from NVIDIA CORPORATION is strictly prohibited.
 
-#include "../../framework.h"
-#include "Buffer.hpp"
+#include "tasks/sam3d/pbr/third_party/nvdiffrast/csrc/common/framework.h"
+
+#include "tasks/sam3d/pbr/third_party/nvdiffrast/csrc/common/cudaraster/impl/Buffer.hpp"
+
 
 using namespace CR;
 

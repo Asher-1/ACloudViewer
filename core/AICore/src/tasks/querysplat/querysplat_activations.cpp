@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "querysplat_activations.hpp"
+#include "tasks/querysplat/querysplat_activations.hpp"
 
 #include <algorithm>
 #include <cmath>

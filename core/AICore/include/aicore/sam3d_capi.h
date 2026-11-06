@@ -28,8 +28,7 @@
 //    path. The mesh decoder result is returned in memory as a typed struct.
 //  - All inference work is serialized per context; contexts may run in
 //    parallel (the GPU queue is shared through the process backend registry).
-#ifndef AICORE_SAM3D_CAPI_H
-#define AICORE_SAM3D_CAPI_H
+#pragma once
 
 #include <stdint.h>
 
@@ -389,5 +388,3 @@ AICORE_CAPI const char* aicore_sam3d_info_json(void);
 #ifdef __cplusplus
 }  // extern "C"
 #endif
-
-#endif  // AICORE_SAM3D_CAPI_H

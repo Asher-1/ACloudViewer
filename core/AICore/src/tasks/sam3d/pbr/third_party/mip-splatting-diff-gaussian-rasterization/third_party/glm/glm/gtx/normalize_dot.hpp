@@ -14,7 +14,8 @@
 #pragma once
 
 // Dependency:
-#include "../gtx/fast_square_root.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/gtx/fast_square_root.hpp"
+
 
 #if GLM_MESSAGES == GLM_ENABLE && !defined(GLM_EXT_INCLUDED)
 #	ifndef GLM_ENABLE_EXPERIMENTAL

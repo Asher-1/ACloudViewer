@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "voxelization.h"
+#include "tasks/openpcdet/ops/voxelization.h"
 
 #include <algorithm>
 #include <cmath>

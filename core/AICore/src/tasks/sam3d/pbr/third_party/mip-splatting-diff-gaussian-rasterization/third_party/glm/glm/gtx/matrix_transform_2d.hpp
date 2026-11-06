@@ -14,8 +14,10 @@
 #pragma once
 
 // Dependency:
-#include "../mat3x3.hpp"
-#include "../vec2.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/mat3x3.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/vec2.hpp"
+
 
 #if GLM_MESSAGES == GLM_ENABLE && !defined(GLM_EXT_INCLUDED)
 #	ifndef GLM_ENABLE_EXPERIMENTAL

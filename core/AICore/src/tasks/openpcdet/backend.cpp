@@ -6,7 +6,7 @@
 // ----------------------------------------------------------------------------
 
 // AICore adaptation of OpenPCDet-GGML's engine backend bundle. See backend.h.
-#include "backend.h"
+#include "tasks/openpcdet/backend.h"
 
 #include <cstring>
 #include <string>
@@ -14,7 +14,7 @@
 #include "common/ggml_backend_utils.hpp"
 #include "ggml-alloc.h"
 #include "ggml.h"
-#include "models/bev_backbone.h"
+#include "tasks/openpcdet/models/bev_backbone.h"
 
 namespace openpcdet {
 

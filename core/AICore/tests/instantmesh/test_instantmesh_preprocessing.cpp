@@ -7,8 +7,8 @@
 
 #include <QImage>
 
-#include "../../src/tasks/instantmesh/instantmesh_pipeline.cpp"
-#include "reference_inputs.hpp"
+#include "src/tasks/instantmesh/instantmesh_pipeline.cpp"
+#include "tests/instantmesh/reference_inputs.hpp"
 
 static QJsonObject e2e_identity() {
     auto identity = instantmesh_reference::identity(

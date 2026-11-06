@@ -9,8 +9,14 @@ from unittest.mock import patch
 
 import numpy as np
 
+try:
+    import cv2  # noqa: F401
+except ModuleNotFoundError:  # test host without the opencv dep
+    import sys
+    print("SKIP: paddle reference tests require cv2")
+    sys.exit(77)
 from run_ocr_paddle_layout_probe import accuracy_pass, canonical_heads, head_comparison, run
-from run_ocr_paddle_probe import digest
+from digest_utils import sha256_file
 
 
 class LayoutGraphTests(unittest.TestCase):
@@ -101,9 +107,9 @@ class LayoutGraphTests(unittest.TestCase):
                 heads = []
                 for index, value in enumerate(cpu):
                     path = root/f'head{index}.npy'; np.save(path, value)
-                    heads.append((str(path), digest(path)))
+                    heads.append((str(path), sha256_file(path)))
                 args = SimpleNamespace(input=root/'input.npy',
-                    input_sha256=digest(root/'input.npy'), reference_head=heads,
+                    input_sha256=sha256_file(root/'input.npy'), reference_head=heads,
                     source_root=root, source_pins=root/'pins.json', model=root/'model-f16.gguf',
                     source_python=Path('cpu-source'), source_gpu_python=Path('cuda-source'),
                     probe=root/'probe', report=root/'report.json', backend=backend,

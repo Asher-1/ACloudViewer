@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "voxelnext.h"
+#include "tasks/openpcdet/models/voxelnext.h"
 
 #include <ggml.h>
 
@@ -18,8 +18,8 @@
 #include <map>
 #include <numeric>
 
-#include "../extensions/center_head_ops.h"
-#include "../ops/voxelization.h"
+#include "tasks/openpcdet/extensions/center_head_ops.h"
+#include "tasks/openpcdet/ops/voxelization.h"
 
 namespace openpcdet {
 

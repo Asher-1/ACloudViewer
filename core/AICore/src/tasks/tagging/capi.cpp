@@ -17,7 +17,7 @@
 #include "aicore/tagging_capi.h"
 #include "common/data_root_util.hpp"
 #include "common/ggml_backend_utils.hpp"
-#include "session.hpp"
+#include "tasks/tagging/session.hpp"
 
 struct aicore_tagging_ctx {
     std::unique_ptr<aicore::tagging::Session> session;

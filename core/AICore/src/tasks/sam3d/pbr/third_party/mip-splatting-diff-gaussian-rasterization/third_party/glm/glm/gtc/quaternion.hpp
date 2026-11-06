@@ -14,22 +14,38 @@
 #pragma once
 
 // Dependency:
-#include "../gtc/constants.hpp"
-#include "../gtc/matrix_transform.hpp"
-#include "../ext/vector_relational.hpp"
-#include "../ext/quaternion_common.hpp"
-#include "../ext/quaternion_float.hpp"
-#include "../ext/quaternion_float_precision.hpp"
-#include "../ext/quaternion_double.hpp"
-#include "../ext/quaternion_double_precision.hpp"
-#include "../ext/quaternion_relational.hpp"
-#include "../ext/quaternion_geometric.hpp"
-#include "../ext/quaternion_trigonometric.hpp"
-#include "../ext/quaternion_transform.hpp"
-#include "../detail/type_mat3x3.hpp"
-#include "../detail/type_mat4x4.hpp"
-#include "../detail/type_vec3.hpp"
-#include "../detail/type_vec4.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/gtc/constants.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/gtc/matrix_transform.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/ext/vector_relational.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/ext/quaternion_common.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/ext/quaternion_float.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/ext/quaternion_float_precision.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/ext/quaternion_double.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/ext/quaternion_double_precision.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/ext/quaternion_relational.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/ext/quaternion_geometric.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/ext/quaternion_trigonometric.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/ext/quaternion_transform.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/type_mat3x3.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/type_mat4x4.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/type_vec3.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/type_vec4.hpp"
+
 
 #if GLM_MESSAGES == GLM_ENABLE && !defined(GLM_EXT_INCLUDED)
 #	pragma message("GLM: GLM_GTC_quaternion extension included")

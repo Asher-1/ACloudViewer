@@ -19,8 +19,10 @@
 
 #pragma once
 
-#include "detail/qualifier.hpp"
-#include "detail/setup.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/qualifier.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/setup.hpp"
+
 
 namespace glm
 {
@@ -118,4 +120,5 @@ namespace glm
 	/// @}
 }//namespace glm
 
-#include "detail/func_vector_relational.inl"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/func_vector_relational.inl"
+

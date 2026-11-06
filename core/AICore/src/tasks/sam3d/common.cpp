@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "common.hpp"
+#include "tasks/sam3d/common.hpp"
 
 #include <chrono>
 #include <cstdarg>

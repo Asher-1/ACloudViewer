@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "fdg_api.h"
+#include "tasks/trellis/third_party/o-voxel-fdg/fdg_api.h"
 
 template <typename T>
 static inline T clamp_val(T v, T lo, T hi) {

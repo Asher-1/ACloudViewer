@@ -4,14 +4,22 @@
 #pragma once
 
 // Dependency:
-#include "../detail/type_mat3x3.hpp"
-#include "../detail/type_mat4x4.hpp"
-#include "../detail/type_vec3.hpp"
-#include "../detail/type_vec4.hpp"
-#include "../ext/vector_relational.hpp"
-#include "../ext/quaternion_relational.hpp"
-#include "../gtc/constants.hpp"
-#include "../gtc/matrix_transform.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/type_mat3x3.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/type_mat4x4.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/type_vec3.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/type_vec4.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/ext/vector_relational.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/ext/quaternion_relational.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/gtc/constants.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/gtc/matrix_transform.hpp"
+
 
 namespace glm
 {

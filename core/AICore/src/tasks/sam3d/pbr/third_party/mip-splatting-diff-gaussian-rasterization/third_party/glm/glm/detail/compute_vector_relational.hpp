@@ -1,7 +1,8 @@
 #pragma once
 
 //#include "compute_common.hpp"
-#include "setup.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/setup.hpp"
+
 #include <limits>
 
 namespace glm{

@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "map_anything_gguf_loader.hpp"
+#include "tasks/map_anything/map_anything_gguf_loader.hpp"
 
 #include <cstring>
 

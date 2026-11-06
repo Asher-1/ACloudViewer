@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CUDA_RASTERIZER_FORWARD_H_INCLUDED
-#define CUDA_RASTERIZER_FORWARD_H_INCLUDED
+#pragma once
+
 
 #include <cuda.h>
 
@@ -65,5 +65,3 @@ void render(const dim3 grid,
             const float* bg_color,
             float* out_color);
 }  // namespace FORWARD
-
-#endif

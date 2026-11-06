@@ -15,13 +15,14 @@
 // layers.N.{cross,self}_attn.{q,k,v}_proj_weight/out_proj.weight,
 // layers.N.self_attn.in_proj_weight (q/k/v concatenated), layers.N.mlp.*,
 // norm.*, deconv.{weight,bias}.
-#ifndef INSTANTMESH_MODELS_LRM_TRANSFORMER_HPP
-#define INSTANTMESH_MODELS_LRM_TRANSFORMER_HPP
+#pragma once
+
 
 #include <memory>
 #include <string>
 
-#include "gguf_io.hpp"
+#include "tasks/instantmesh/gguf_io.hpp"
+
 #include "ggml.h"
 #include "ggml-backend.h"
 
@@ -59,5 +60,3 @@ float * lrm_transformer_forward(const LrmTransformerModel & model,
                                 int * out_h, int * out_w);
 
 } // namespace instantmesh
-
-#endif // INSTANTMESH_MODELS_LRM_TRANSFORMER_HPP

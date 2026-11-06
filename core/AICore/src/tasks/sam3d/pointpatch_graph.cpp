@@ -6,14 +6,14 @@
 // ----------------------------------------------------------------------------
 
 // PointPatchEmbed graph (cemb.emb2) - see pointpatch_graph.hpp for layout.
-#include "pointpatch_graph.hpp"
+#include "tasks/sam3d/pointpatch_graph.hpp"
 
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
 
-#include "common.hpp"
-#include "graph_builder.hpp"
+#include "tasks/sam3d/common.hpp"
+#include "tasks/sam3d/graph_builder.hpp"
 
 namespace sam3d {
 

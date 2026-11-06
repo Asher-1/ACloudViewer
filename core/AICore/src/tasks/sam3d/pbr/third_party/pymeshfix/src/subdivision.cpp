@@ -28,7 +28,8 @@
 *                                                                           *
 ****************************************************************************/
 
-#include "tmesh.h"
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/tmesh.h"
+
 
 using namespace T_MESH;
 

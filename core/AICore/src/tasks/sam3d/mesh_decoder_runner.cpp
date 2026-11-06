@@ -5,18 +5,18 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "mesh_decoder_runner.hpp"
+#include "tasks/sam3d/mesh_decoder_runner.hpp"
 
 #include <algorithm>
 #include <cmath>
 
-#include "backend.hpp"
-#include "common.hpp"
-#include "dtype_contract.hpp"
-#include "gguf_loader.hpp"
-#include "graph_builder.hpp"
-#include "mesh_decoder_graph.hpp"
-#include "sparse_ops.hpp"
+#include "tasks/sam3d/backend.hpp"
+#include "tasks/sam3d/common.hpp"
+#include "tasks/sam3d/dtype_contract.hpp"
+#include "tasks/sam3d/gguf_loader.hpp"
+#include "tasks/sam3d/graph_builder.hpp"
+#include "tasks/sam3d/mesh_decoder_graph.hpp"
+#include "tasks/sam3d/sparse_ops.hpp"
 
 namespace sam3d {
 

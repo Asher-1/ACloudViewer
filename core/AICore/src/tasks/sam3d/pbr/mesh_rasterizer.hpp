@@ -6,7 +6,8 @@
 #include <string>
 #include <vector>
 
-#include "asset_io.hpp"
+#include "tasks/sam3d/asset_io.hpp"
+
 
 namespace sam3d {
 

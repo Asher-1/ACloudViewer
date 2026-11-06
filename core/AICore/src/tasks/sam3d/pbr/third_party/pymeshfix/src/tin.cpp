@@ -28,7 +28,8 @@
 *                                                                           *
 ****************************************************************************/
 
-#include "tin.h"
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/tin.h"
+
 #include <stdlib.h>
 #include <string.h>
 

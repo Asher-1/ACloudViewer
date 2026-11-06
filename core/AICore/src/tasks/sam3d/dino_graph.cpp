@@ -11,14 +11,14 @@
 //   -> [cls | patches] + pos_embed -> insert 4 registers -> 24 blocks
 //   -> final LayerNorm -> drop registers -> tokens (cls + patches)
 // Tokens follow the repo convention: (C, N) in ggml ne[] order (ne[0] = C).
-#include "dino_graph.hpp"
+#include "tasks/sam3d/dino_graph.hpp"
 
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
 
-#include "common.hpp"
-#include "graph_builder.hpp"
+#include "tasks/sam3d/common.hpp"
+#include "tasks/sam3d/graph_builder.hpp"
 
 namespace sam3d {
 

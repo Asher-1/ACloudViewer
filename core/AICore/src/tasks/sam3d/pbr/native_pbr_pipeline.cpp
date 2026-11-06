@@ -5,7 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "native_pbr_pipeline.hpp"
+#include "tasks/sam3d/pbr/native_pbr_pipeline.hpp"
+
 
 #include <algorithm>
 #include <array>
@@ -13,11 +14,16 @@
 #include <utility>
 #include <vector>
 
-#include "mesh_postprocess.hpp"
-#include "mesh_rasterizer.hpp"
-#include "mesh_rasterizer_cuda.hpp"
-#include "mesh_uv.hpp"
-#include "texture_baker.hpp"
+#include "tasks/sam3d/pbr/mesh_postprocess.hpp"
+
+#include "tasks/sam3d/pbr/mesh_rasterizer.hpp"
+
+#include "tasks/sam3d/pbr/mesh_rasterizer_cuda.hpp"
+
+#include "tasks/sam3d/pbr/mesh_uv.hpp"
+
+#include "tasks/sam3d/pbr/texture_baker.hpp"
+
 
 namespace sam3d {
 

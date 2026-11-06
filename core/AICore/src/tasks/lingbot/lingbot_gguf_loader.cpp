@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "lingbot_gguf_loader.h"
+#include "tasks/lingbot/lingbot_gguf_loader.h"
 
 #include <ggml.h>
 #include <gguf.h>

@@ -10,13 +10,13 @@
 // src/models/geometry/rep_3d/flexicubes.py:
 //   _identify_surf_cubes -> _normalize_weights -> _get_case_id ->
 //   _identify_surf_edges -> _compute_vd -> _triangulate
-#include "flexicubes.hpp"
+#include "tasks/instantmesh/flexicubes.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <vector>
 
-#include "flexicubes_tables.hpp"
+#include "tasks/instantmesh/flexicubes_tables.hpp"
 
 namespace {
 

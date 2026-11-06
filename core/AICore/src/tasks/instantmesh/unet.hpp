@@ -22,12 +22,13 @@
 // Layout contract: identical to vae.cpp — all activations contiguous
 // [W,H,C,B] (== torch NCHW bytes); attention gathers [C,HW] via
 // cont(permute(2,1,0,3)); convs via conv()/conv_f32().
-#ifndef INSTANTMESH_MODELS_UNET_HPP
-#define INSTANTMESH_MODELS_UNET_HPP
+#pragma once
+
 
 #include <string>
 
-#include "gguf_io.hpp"
+#include "tasks/instantmesh/gguf_io.hpp"
+
 #include "ggml.h"
 #include "ggml-backend.h"
 
@@ -72,5 +73,3 @@ float * unet_forward_refonly(const UnetModel & model,
                              float timestep, int * out_h, int * out_w);
 
 } // namespace instantmesh
-
-#endif // INSTANTMESH_MODELS_UNET_HPP

@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "image_preprocess.hpp"
+#include "tasks/sam3d/image_preprocess.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -14,7 +14,7 @@
 #include <limits>
 #include <numeric>
 
-#include "common.hpp"
+#include "tasks/sam3d/common.hpp"
 
 namespace sam3d {
 namespace {

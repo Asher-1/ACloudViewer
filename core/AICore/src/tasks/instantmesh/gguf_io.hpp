@@ -5,8 +5,8 @@
 // metadata first, then allocates weights on the chosen backend and streams the
 // payloads directly from file (the standard llama.cpp / stable-diffusion.cpp
 // path: `no_alloc = true` then `ggml_backend_tensor_alloc`).
-#ifndef INSTANTMESH_CORE_GGUF_IO_HPP
-#define INSTANTMESH_CORE_GGUF_IO_HPP
+#pragma once
+
 
 #include <cstdint>
 #include <string>
@@ -51,5 +51,3 @@ bool load_gguf(const std::string & path, ggml_backend_t backend,
                GgufModel & out, std::string * error);
 
 } // namespace instantmesh
-
-#endif // INSTANTMESH_CORE_GGUF_IO_HPP

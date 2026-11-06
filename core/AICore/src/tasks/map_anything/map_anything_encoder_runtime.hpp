@@ -17,9 +17,12 @@
 // contract, where callers sweeping resolutions expect that cost.
 #pragma once
 
-#include "map_anything_backend.hpp"
-#include "map_anything_graph.hpp"
-#include "map_anything_gguf_loader.hpp"
+#include "tasks/map_anything/map_anything_backend.hpp"
+
+#include "tasks/map_anything/map_anything_graph.hpp"
+
+#include "tasks/map_anything/map_anything_gguf_loader.hpp"
+
 
 #include <memory>
 #include <string>

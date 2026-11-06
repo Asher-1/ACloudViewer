@@ -5,7 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "gaussian_renderer.hpp"
+#include "tasks/sam3d/pbr/gaussian_renderer.hpp"
+
 
 #include <algorithm>
 #include <cmath>

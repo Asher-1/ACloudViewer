@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "nms_3d.h"
+#include "tasks/openpcdet/ops/nms_3d.h"
 
 #include <algorithm>
 #include <cmath>

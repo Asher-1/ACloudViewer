@@ -28,13 +28,15 @@
 *                                                                           *
 ****************************************************************************/
 
-#ifndef _TMESH_H
-#define _TMESH_H
+#pragma once
 
-#include "tmesh_kernel.h"
-#include "vertex.h"
-#include "edge.h"
-#include "triangle.h"
-#include "tin.h"
 
-#endif //_TMESH_H
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/tmesh_kernel.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/vertex.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/edge.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/triangle.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/tin.h"

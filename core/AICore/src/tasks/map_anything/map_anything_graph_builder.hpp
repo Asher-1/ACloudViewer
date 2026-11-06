@@ -16,10 +16,14 @@
 // Everything else (gate/bench/eval infra) is architecture-agnostic.
 #pragma once
 
-#include "map_anything_backend.hpp"
-#include "map_anything_common.hpp"
-#include "map_anything_gguf_loader.hpp"
-#include "map_anything_graph.hpp"
+#include "tasks/map_anything/map_anything_backend.hpp"
+
+#include "tasks/map_anything/map_anything_common.hpp"
+
+#include "tasks/map_anything/map_anything_gguf_loader.hpp"
+
+#include "tasks/map_anything/map_anything_graph.hpp"
+
 
 #include <functional>
 #include <map>

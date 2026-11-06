@@ -11,8 +11,10 @@
 #include <string>
 #include <vector>
 
-#include "graph_builder.hpp"
-#include "gguf_loader.hpp"
+#include "tasks/sam3d/graph_builder.hpp"
+
+#include "tasks/sam3d/gguf_loader.hpp"
+
 
 namespace sam3d {
 

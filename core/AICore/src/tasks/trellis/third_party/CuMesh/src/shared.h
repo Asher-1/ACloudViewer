@@ -13,8 +13,8 @@
 
 #include <cub/cub.cuh>
 
-#include "cumesh.h"
-#include "utils.h"
+#include "tasks/trellis/third_party/CuMesh/src/cumesh.h"
+#include "tasks/trellis/third_party/CuMesh/src/utils.h"
 
 namespace cumesh {
 

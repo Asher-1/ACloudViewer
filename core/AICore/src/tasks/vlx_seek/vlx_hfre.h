@@ -27,7 +27,7 @@
 #include <string>
 #include <vector>
 
-#include "vlx_types.h"
+#include "tasks/vlx_seek/vlx_types.h"
 
 namespace vlx {
 

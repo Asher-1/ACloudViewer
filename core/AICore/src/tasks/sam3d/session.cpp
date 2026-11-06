@@ -17,36 +17,40 @@
 // scripts/dump_e2e_stages.py (ss_input_*.samt). Sampling uses the
 // PyTorch-compatible Philox stream; CPU/Vulkan receive the recorded CUDA
 // distribution-block contract. --noise-dir replays the torch reference noise.
-#include "asset_io.hpp"
-#include "dino_graph.hpp"
-#include "dtype_contract.hpp"
-#include "e2e_options.hpp"
-#include "flexicubes.hpp"
-#include "gs_decoder_graph.hpp"
-#include "image_preprocess.hpp"
-#include "mesh_decoder_runner.hpp"
-#include "moge_inference.hpp"
-#include "pointpatch_graph.hpp"
-#include "pose_decoder.hpp"
-#include "pytorch_philox_rng.hpp"
-#include "slat_flow_graph.hpp"
-#include "sparse_ops.hpp"
-#include "ss_decoder_graph.hpp"
-#include "ss_flow_graph.hpp"
+#include "tasks/sam3d/asset_io.hpp"
+#include "tasks/sam3d/dino_graph.hpp"
+#include "tasks/sam3d/dtype_contract.hpp"
+#include "tasks/sam3d/e2e_options.hpp"
+#include "tasks/sam3d/flexicubes.hpp"
+#include "tasks/sam3d/gs_decoder_graph.hpp"
+#include "tasks/sam3d/image_preprocess.hpp"
+#include "tasks/sam3d/mesh_decoder_runner.hpp"
+#include "tasks/sam3d/moge_inference.hpp"
+#include "tasks/sam3d/pointpatch_graph.hpp"
+#include "tasks/sam3d/pose_decoder.hpp"
+#include "tasks/sam3d/pytorch_philox_rng.hpp"
+#include "tasks/sam3d/slat_flow_graph.hpp"
+#include "tasks/sam3d/sparse_ops.hpp"
+#include "tasks/sam3d/ss_decoder_graph.hpp"
+#include "tasks/sam3d/ss_flow_graph.hpp"
+
 #if defined(SAM3D_USE_CUDA)
-#include "pytorch_cuda_rng.hpp"
+#include "tasks/sam3d/pytorch_cuda_rng.hpp"
+
 #endif
 #include <fstream>
 
-#include "backend.hpp"
-#include "common.hpp"
 #include "common/ggml_backend_registry.hpp"
-#include "gguf_loader.hpp"
-#include "graph_builder.hpp"
-#include "sam3dggml.h"
+#include "tasks/sam3d/backend.hpp"
+#include "tasks/sam3d/common.hpp"
+#include "tasks/sam3d/gguf_loader.hpp"
+#include "tasks/sam3d/graph_builder.hpp"
+#include "tasks/sam3d/sam3dggml.h"
+
 #if defined(SAM3D_USE_NVDIFFRAST_CUDARASTER)
-#include "gaussian_renderer.hpp"
-#include "native_pbr_pipeline.hpp"
+#include "tasks/sam3d/pbr/gaussian_renderer.hpp"
+#include "tasks/sam3d/pbr/native_pbr_pipeline.hpp"
+
 #endif
 
 #include <algorithm>

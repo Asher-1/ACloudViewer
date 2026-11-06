@@ -5,10 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CUDA_RASTERIZER_AUXILIARY_H_INCLUDED
-#define CUDA_RASTERIZER_AUXILIARY_H_INCLUDED
+#pragma once
 
-#include "config.h"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/cuda_rasterizer/config.h"
+
 #include "stdio.h"
 
 #define BLOCK_SIZE (BLOCK_X * BLOCK_Y)
@@ -168,5 +169,3 @@ __forceinline__ __device__ bool in_frustum(int idx,
             throw std::runtime_error(cudaGetErrorString(ret));         \
         }                                                              \
     }
-
-#endif

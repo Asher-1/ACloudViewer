@@ -6,13 +6,13 @@ model for release. Use a separate process for independent original-source
 validation of the serialized final checkpoint.
 """
 
+from pathlib import Path
 import argparse
 import collections
 import hashlib
 import json
 import math
 import os
-from pathlib import Path
 import sys
 import time
 
@@ -42,9 +42,8 @@ from ocr_qat_graph import (head_argmax_counts, head_distillation_loss,
 from ocr_qat_storage import storage_forward
 from paddle_ocr_extract import load_ocr_tensors
 
-
-def digest(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from digest_utils import sha256_file
 
 
 def write_json(path, value):
@@ -85,14 +84,14 @@ def train(args):
         raise ValueError("ranking controls must be finite and non-negative")
     pins = json.loads(args.pins.read_text())
     program, parameters = args.model / "model.pdmodel", args.model / "model.pdiparams"
-    if digest(program) != pins["program_sha256"] or digest(parameters) != pins["parameters_sha256"]:
+    if sha256_file(program) != pins["program_sha256"] or sha256_file(parameters) != pins["parameters_sha256"]:
         raise ValueError("original QAT model SHA-256 mismatch")
     images = pins["images"]
     if not images or len({entry["sha256"] for entry in images}) != len(images):
         raise ValueError("QAT needs distinct pinned training images")
     for entry in images:
         path = Path(entry["path"])
-        if not path.stem.startswith("train_") or digest(path) != entry["sha256"]:
+        if not path.stem.startswith("train_") or sha256_file(path) != entry["sha256"]:
             raise ValueError("QAT training image identity/split mismatch")
     args.output.mkdir(parents=True, exist_ok=False)
     named = dict(load_ocr_tensors(args.model)[0])
@@ -108,9 +107,9 @@ def train(args):
             raise ValueError("QAT storage plan contains no Q8_0 kernels")
     recipe = dict(
         scope=f"Fixed offline pilot; {len(images)} disjoint training pages, no held-out outputs; not release acceptance",
-        program_sha256=digest(program), parameters_sha256=digest(parameters),
-        pins_sha256=digest(args.pins), images=images, storage=storage,
-        storage_plan_sha256=digest(args.storage_plan) if args.storage == "Q8_0" else None,
+        program_sha256=sha256_file(program), parameters_sha256=sha256_file(parameters),
+        pins_sha256=sha256_file(args.pins), images=images, storage=storage,
+        storage_plan_sha256=sha256_file(args.storage_plan) if args.storage == "Q8_0" else None,
         epochs=args.epochs, learning_rate=args.learning_rate, seed=123,
         q8_learning_rate_multiplier=args.q8_learning_rate_multiplier,
         learning_rate_policy="Only Q8_0 masters receive the multiplier; F16 kernels "
@@ -132,7 +131,7 @@ def train(args):
         math_policy={"NVIDIA_TF32_OVERRIDE": os.environ["NVIDIA_TF32_OVERRIDE"]},
         teacher_device=args.teacher_device.upper(),
         teacher_gpu_id=args.teacher_gpu_id if args.teacher_device == "cuda" else None,
-        scripts={name: digest(Path(__file__).with_name(name)) for name in
+        scripts={name: sha256_file(Path(__file__).with_name(name)) for name in
                  ("train_ocr_storage_qat.py", "ocr_qat_graph.py", "ocr_qat_storage.py")},
         started_at=time.time(), release_qualified=False)
     write_json(args.output / "recipe.json", recipe)
@@ -282,13 +281,13 @@ def train(args):
     write_npz(args.output / "masters.npz", best_masters)
     write_npz(args.output / "final-masters.npz", final_masters)
     write_npz(args.output / "stored-weights.npz", deployed)
-    result = dict(recipe_sha256=digest(args.output / "recipe.json"),
+    result = dict(recipe_sha256=sha256_file(args.output / "recipe.json"),
                   training_graph_sha256=training_graph_sha256, steps=len(history),
                   trainable_tensors=len(masters), stored_forward_tensors=len(stored),
                   tensor_storage_counts=dict(collections.Counter(storage.values())),
                   fixed_nontrainable_state_unchanged=True,
-                  masters_sha256=digest(args.output / "masters.npz"),
-                  stored_weights_sha256=digest(args.output / "stored-weights.npz"),
+                  masters_sha256=sha256_file(args.output / "masters.npz"),
+                  stored_weights_sha256=sha256_file(args.output / "stored-weights.npz"),
                   train_argmax_by_epoch=epoch_argmax, best_epoch=best_epoch,
                   best_epoch_argmax=best_epoch_counts,
                   finished_at=time.time(), release_qualified=False,

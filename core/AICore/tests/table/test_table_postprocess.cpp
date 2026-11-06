@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include "table_postprocess.hpp"
+#include "tasks/table/table_postprocess.hpp"
 #include "tests/common/test_macros.hpp"
 
 static int failures = 0;

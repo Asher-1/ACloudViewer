@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "trellis2.h"
+#include "tasks/trellis/trellis2.h"
 
 #include <algorithm>
 #include <array>

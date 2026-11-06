@@ -28,10 +28,11 @@
 *                                                                           *
 ****************************************************************************/
 
-#ifndef _POINT_H
-#define _POINT_H
+#pragma once
 
-#include "basics.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/basics.h"
+
 
 namespace T_MESH
 {
@@ -294,6 +295,3 @@ extern const Point INFINITE_POINT;
 #define IS_FINITE_POINT(p) ((p).x < DBL_MAX)
 
 } //namespace T_MESH
-
-#endif // _POINT_H
-

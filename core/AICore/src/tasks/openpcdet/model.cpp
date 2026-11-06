@@ -5,13 +5,13 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "model.h"
+#include "tasks/openpcdet/model.h"
 
 #include <ggml.h>
 
 #include <cstdlib>
 
-#include "models/bev_backbone.h"
+#include "tasks/openpcdet/models/bev_backbone.h"
 
 namespace openpcdet {
 

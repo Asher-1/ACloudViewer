@@ -28,10 +28,11 @@
 *                                                                           *
 ****************************************************************************/
 
-#ifndef _TIN_H
-#define _TIN_H
+#pragma once
 
-#include "tmesh.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/tmesh.h"
+
 
 namespace T_MESH
 {
@@ -798,6 +799,3 @@ class Basic_TMesh
 #define IO_CSAVE_PERVERTEX_INDEXED	4
 
 } //namespace T_MESH
-
-#endif //_TIN_H
-

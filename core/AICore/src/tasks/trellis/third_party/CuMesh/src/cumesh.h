@@ -11,7 +11,7 @@
 #include <cuda_runtime.h>
 #include <torch/extension.h>
 
-#include "utils.h"
+#include "tasks/trellis/third_party/CuMesh/src/utils.h"
 
 #define BLOCK_SIZE 256
 

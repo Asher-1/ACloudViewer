@@ -28,7 +28,8 @@
 *                                                                           *
 ****************************************************************************/
 
-#include "tmesh_kernel.h"
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/tmesh_kernel.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>

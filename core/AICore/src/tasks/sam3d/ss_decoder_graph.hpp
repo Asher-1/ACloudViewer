@@ -2,7 +2,8 @@
 // structure latent to a 1x64^3 occupancy field.
 #pragma once
 
-#include "gguf_loader.hpp"
+#include "tasks/sam3d/gguf_loader.hpp"
+
 
 #include <vector>
 

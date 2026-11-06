@@ -28,10 +28,11 @@
 *                                                                           *
 ****************************************************************************/
 
-#ifndef DETECT_INTERSECTIONS_H
-#define DETECT_INTERSECTIONS_H
+#pragma once
 
-#include "tin.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/tin.h"
+
 
 namespace T_MESH
 {
@@ -55,5 +56,3 @@ public:
 };
 
 } //namespace T_MESH
-
-#endif // DETECT_INTERSECTIONS_H

@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CUDA_RASTERIZER_H_INCLUDED
-#define CUDA_RASTERIZER_H_INCLUDED
+#pragma once
+
 
 #include <functional>
 #include <vector>
@@ -87,5 +87,3 @@ public:
                          bool debug);
 };
 };  // namespace CudaRasterizer
-
-#endif

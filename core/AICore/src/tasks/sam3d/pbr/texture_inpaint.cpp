@@ -5,7 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "texture_inpaint.hpp"
+#include "tasks/sam3d/pbr/texture_inpaint.hpp"
+
 
 #include <cmath>
 #include <cstddef>

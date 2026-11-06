@@ -24,13 +24,15 @@
 #include "common/ggml_backend_registry.hpp"
 #include "common/ggml_backend_utils.hpp"
 #include "common/model_cache.hpp"
-#include "flexible_dual_grid.h"
-#include "marching_cubes.h"
-#include "mesh_export.h"
-#include "pbr_utils.h"
-#include "trellis2.h"
+#include "tasks/trellis/flexible_dual_grid.h"
+#include "tasks/trellis/marching_cubes.h"
+#include "tasks/trellis/mesh_export.h"
+#include "tasks/trellis/pbr_utils.h"
+#include "tasks/trellis/trellis2.h"
+
 #ifdef TRELLIS2_HAVE_MESH_TO_GRID
-#include "mesh_to_dual_grid.h"
+#include "tasks/trellis/mesh_to_dual_grid.h"
+
 #endif
 
 #include <algorithm>

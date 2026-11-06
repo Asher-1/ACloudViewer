@@ -5,13 +5,13 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "center_head_ops.h"
+#include "tasks/openpcdet/extensions/center_head_ops.h"
 
 #include <algorithm>
 #include <cmath>
 #include <numeric>
 
-#include "../ops/nms_3d.h"
+#include "tasks/openpcdet/ops/nms_3d.h"
 
 namespace openpcdet::ext {
 

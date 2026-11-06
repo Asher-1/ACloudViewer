@@ -14,8 +14,8 @@
 
 #include "aicore/runtime_capi.h"
 #include "common/model_cache.hpp"
-#include "third_party/stb/stb_image.h"
-#include "vlx_seek_runtime.h"
+#include "tasks/vlx_seek/third_party/stb/stb_image.h"
+#include "tasks/vlx_seek/vlx_seek_runtime.h"
 
 using vlx::VlxRunRequest;
 using vlx::VlxRunResult;

@@ -6,15 +6,15 @@
 // ----------------------------------------------------------------------------
 
 // SLat flow model single-step graph - see slat_flow_graph.hpp.
-#include "slat_flow_graph.hpp"
+#include "tasks/sam3d/slat_flow_graph.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
 
-#include "common.hpp"
-#include "graph_builder.hpp"
+#include "tasks/sam3d/common.hpp"
+#include "tasks/sam3d/graph_builder.hpp"
 
 namespace sam3d {
 

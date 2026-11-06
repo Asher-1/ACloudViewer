@@ -2,8 +2,10 @@
 /// @file glm/ext/vector_double4_precision.hpp
 
 #pragma once
-#include "../detail/setup.hpp"
-#include "../detail/type_vec4.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/setup.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/type_vec4.hpp"
+
 
 namespace glm
 {

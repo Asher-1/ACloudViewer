@@ -10,17 +10,14 @@ test fixtures and must never be published to the model cache.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
+import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from digest_utils import sha256_file
 
-def digest(path: Path) -> str:
-    hasher = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            hasher.update(chunk)
-    return hasher.hexdigest()
+
 
 
 def precision(filename: str) -> str:
@@ -54,7 +51,7 @@ def main() -> int:
         models.append({
             "filename": path.name,
             "bytes": path.stat().st_size,
-            "sha256": digest(path),
+            "sha256": sha256_file(path),
             "precision": model_precision,
             "cache_policy": policy,
             "cache_policy_reason": policy_reason,

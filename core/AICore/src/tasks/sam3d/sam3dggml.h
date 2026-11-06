@@ -16,8 +16,7 @@
 // scripts/dump_e2e_stages.py. `run_image_to_3d` is the native raw-image
 // counterpart: it executes MoGe, preprocessing, GGML generation, and the
 // optional native PBR branch without invoking Python at runtime.
-#ifndef SAM3D_GGML_H
-#define SAM3D_GGML_H
+#pragma once
 
 #include <array>
 #include <functional>
@@ -242,5 +241,3 @@ private:
 inline constexpr const char* kGraphFormatVersion = "1";
 
 }  // namespace sam3d
-
-#endif  // SAM3D_GGML_H

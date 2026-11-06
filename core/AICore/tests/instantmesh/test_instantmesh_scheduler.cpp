@@ -12,8 +12,8 @@
 #include <string>
 #include <vector>
 
-#include "reference_inputs.hpp"
 #include "src/tasks/instantmesh/scheduler.hpp"
+#include "tests/instantmesh/reference_inputs.hpp"
 
 namespace {
 std::vector<float> readReference(const std::filesystem::path& path,

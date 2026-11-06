@@ -18,14 +18,14 @@
 #include <vector>
 
 #include "aicore/asset_digests.h"
-#include "geometry_reference.hpp"
 #include "ggml-alloc.h"
-#include "reference_inputs.hpp"
 #include "src/common/ggml_backend_registry.hpp"
 #include "src/tasks/instantmesh/clip_vision.hpp"
 #include "src/tasks/instantmesh/synthesizer.hpp"
 #include "src/tasks/instantmesh/unet.hpp"
 #include "src/tasks/instantmesh/vae.hpp"
+#include "tests/instantmesh/geometry_reference.hpp"
+#include "tests/instantmesh/reference_inputs.hpp"
 
 namespace {
 std::vector<float> read(const std::filesystem::path& path, size_t count) {

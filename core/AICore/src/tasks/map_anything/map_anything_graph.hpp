@@ -14,8 +14,10 @@
 // The graph is rebuilt whenever (S, H, W) changes; weights are staged once.
 #pragma once
 
-#include "map_anything_backend.hpp"
-#include "map_anything_gguf_loader.hpp"
+#include "tasks/map_anything/map_anything_backend.hpp"
+
+#include "tasks/map_anything/map_anything_gguf_loader.hpp"
+
 
 #include <cstdint>
 #include <map>

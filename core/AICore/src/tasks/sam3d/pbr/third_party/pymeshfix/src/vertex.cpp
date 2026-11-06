@@ -28,9 +28,12 @@
 *                                                                           *
 ****************************************************************************/
 
-#include "vertex.h"
-#include "edge.h"
-#include "triangle.h"
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/vertex.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/edge.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/triangle.h"
+
 #include <stdlib.h>
 #include <errno.h>
 

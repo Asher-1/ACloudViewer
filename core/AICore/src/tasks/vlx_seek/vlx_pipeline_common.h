@@ -21,8 +21,8 @@
 #include <vector>
 
 #include "llama.h"
+#include "tasks/vlx_seek/vlx_types.h"
 #include "vlx_image_prep.h"  // ImageU8
-#include "vlx_types.h"
 
 namespace vlx {
 

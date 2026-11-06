@@ -18,14 +18,16 @@
 //   8. Return detections
 #pragma once
 
-#include "../model.h"
-#include "anchor_head.h"
-#include "anchor_head_multi.h"
-#include "bev_backbone.h"
-#include "center_head.h"
-#include "pillar_vfe.h"
+#include "tasks/openpcdet/model.h"
+#include "tasks/openpcdet/models/anchor_head.h"
+#include "tasks/openpcdet/models/anchor_head_multi.h"
+#include "tasks/openpcdet/models/bev_backbone.h"
+#include "tasks/openpcdet/models/center_head.h"
+#include "tasks/openpcdet/models/pillar_vfe.h"
+
 #ifdef AICORE_OPENPCDET_CUDA_EXT
-#include "../extensions/vfe_scatter_cuda.h"
+#include "tasks/openpcdet/extensions/vfe_scatter_cuda.h"
+
 #endif
 
 #include <string>

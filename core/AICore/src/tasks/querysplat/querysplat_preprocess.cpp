@@ -8,7 +8,7 @@
 // Preprocessing — implementation. See querysplat_preprocess.hpp.
 // resize_rgb_hwc / resize_planes are verbatim ports of upstream cpp_ggml
 // image_io.cpp (the antialias semantics comments carry over).
-#include "querysplat_preprocess.hpp"
+#include "tasks/querysplat/querysplat_preprocess.hpp"
 
 #include <algorithm>
 #include <cmath>

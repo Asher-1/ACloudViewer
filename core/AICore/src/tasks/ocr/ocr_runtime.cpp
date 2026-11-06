@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "ocr_runtime.hpp"
+#include "tasks/ocr/ocr_runtime.hpp"
 
 #include <algorithm>
 #include <climits>

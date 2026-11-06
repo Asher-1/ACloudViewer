@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "anchor_head_multi.h"
+#include "tasks/openpcdet/models/anchor_head_multi.h"
 
 #include <ggml.h>
 

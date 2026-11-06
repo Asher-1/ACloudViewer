@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "parta2.h"
+#include "tasks/openpcdet/models/parta2.h"
 
 #include <ggml.h>
 
@@ -13,9 +13,9 @@
 #include <cmath>
 #include <cstring>
 
-#include "../extensions/roi_ops.h"
-#include "../ops/nms_3d.h"
-#include "dense_anchor_pipeline.h"
+#include "tasks/openpcdet/extensions/roi_ops.h"
+#include "tasks/openpcdet/models/dense_anchor_pipeline.h"
+#include "tasks/openpcdet/ops/nms_3d.h"
 
 namespace openpcdet {
 

@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef AICORE_OCR_CAPI_H
-#define AICORE_OCR_CAPI_H
+#pragma once
 
 #include "aicore/export.h"
 #include "aicore/image_view.h"
@@ -333,5 +332,3 @@ AICORE_CAPI void aicore_ocr_runtime_shutdown(void);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* AICORE_OCR_CAPI_H */

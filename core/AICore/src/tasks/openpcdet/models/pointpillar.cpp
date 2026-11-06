@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "pointpillar.h"
+#include "tasks/openpcdet/models/pointpillar.h"
 
 #include <ggml.h>
 
@@ -19,9 +19,9 @@
 #include <thread>
 #include <vector>
 
-#include "../extensions/center_head_ops.h"
-#include "../ops/nms_3d.h"
-#include "../ops/voxelization.h"
+#include "tasks/openpcdet/extensions/center_head_ops.h"
+#include "tasks/openpcdet/ops/nms_3d.h"
+#include "tasks/openpcdet/ops/voxelization.h"
 
 namespace openpcdet {
 

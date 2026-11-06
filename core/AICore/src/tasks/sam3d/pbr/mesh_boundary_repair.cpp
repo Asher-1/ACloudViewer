@@ -12,10 +12,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include "mesh_postprocess.hpp"
+#include "tasks/sam3d/pbr/mesh_postprocess.hpp"
+
 
 #if defined(SAM3D_USE_MESHFIX_GPL)
-#include "tmesh.h"
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/tmesh.h"
+
 #endif
 
 namespace sam3d {

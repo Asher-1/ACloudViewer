@@ -30,8 +30,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "list.h"
-#include "jqsort.h"
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/list.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/jqsort.h"
+
 
 namespace T_MESH
 {

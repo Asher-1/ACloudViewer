@@ -33,8 +33,8 @@
 #include "common/capi_utils.hpp"
 #include "common/ggml_backend_registry.hpp"
 #include "common/model_cache.hpp"
-#include "sam3.h"
 #include "tasks/sam3/quantize.hpp"
+#include "tasks/sam3/sam3.h"
 
 namespace {
 

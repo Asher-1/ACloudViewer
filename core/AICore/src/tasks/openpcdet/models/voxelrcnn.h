@@ -7,13 +7,13 @@
 
 #pragma once
 
-#include "../model.h"
-#include "anchor_head.h"
-#include "bev_backbone.h"
-#include "caddn.h"
-#include "point_mlp.h"
-#include "sparse_backbone.h"
-#include "voxel_backbone_runner.h"
+#include "tasks/openpcdet/model.h"
+#include "tasks/openpcdet/models/anchor_head.h"
+#include "tasks/openpcdet/models/bev_backbone.h"
+#include "tasks/openpcdet/models/caddn.h"
+#include "tasks/openpcdet/models/point_mlp.h"
+#include "tasks/openpcdet/models/sparse_backbone.h"
+#include "tasks/openpcdet/models/voxel_backbone_runner.h"
 
 namespace openpcdet {
 

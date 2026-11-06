@@ -4,7 +4,7 @@
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-#include "vlx_hfre.h"
+#include "tasks/vlx_seek/vlx_hfre.h"
 
 #include <algorithm>
 #include <array>

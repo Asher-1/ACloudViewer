@@ -5,13 +5,15 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "mesh_uv.hpp"
+#include "tasks/sam3d/pbr/mesh_uv.hpp"
+
 
 #include <cstdint>
 #include <cstring>
 #include <vector>
 
-#include "xatlas.h"
+#include "tasks/sam3d/pbr/third_party/xatlas/xatlas.h"
+
 
 namespace sam3d {
 namespace {

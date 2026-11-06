@@ -4,7 +4,7 @@
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-#include "vlx_wedetect_graph.h"
+#include "tasks/vlx_seek/vlx_wedetect_graph.h"
 
 #include <algorithm>
 #include <array>
@@ -18,8 +18,8 @@
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
-#include "vlx_ggml_util.h"
-#include "vlx_gguf_loader.h"
+#include "tasks/vlx_seek/vlx_ggml_util.h"
+#include "tasks/vlx_seek/vlx_gguf_loader.h"
 
 namespace vlx {
 

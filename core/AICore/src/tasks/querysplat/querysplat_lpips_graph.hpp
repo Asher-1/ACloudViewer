@@ -16,7 +16,8 @@
 // F32 GEMM (ggml_conv_2d would round im2col to F16).
 #pragma once
 
-#include "map_anything_backend.hpp"
+#include "tasks/map_anything/map_anything_backend.hpp"
+
 
 #include <memory>
 #include <string>

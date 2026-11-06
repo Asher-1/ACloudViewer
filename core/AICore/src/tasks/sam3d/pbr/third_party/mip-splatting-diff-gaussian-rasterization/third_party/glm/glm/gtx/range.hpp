@@ -13,7 +13,8 @@
 #pragma once
 
 // Dependencies
-#include "../detail/setup.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/setup.hpp"
+
 
 #if GLM_MESSAGES == GLM_ENABLE && !defined(GLM_EXT_INCLUDED)
 #	ifndef GLM_ENABLE_EXPERIMENTAL
@@ -23,8 +24,10 @@
 #	endif
 #endif
 
-#include "../gtc/type_ptr.hpp"
-#include "../gtc/vec1.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/gtc/type_ptr.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/gtc/vec1.hpp"
+
 
 namespace glm
 {

@@ -10,12 +10,13 @@
 //
 // Weights: `zero123pp_cond_f32.gguf` produced by convert/convert_zero123pp.py,
 // tensor names prefixed `vis.` and otherwise identical to the HF state_dict.
-#ifndef INSTANTMESH_MODELS_CLIP_VISION_HPP
-#define INSTANTMESH_MODELS_CLIP_VISION_HPP
+#pragma once
+
 
 #include <string>
 
-#include "gguf_io.hpp"
+#include "tasks/instantmesh/gguf_io.hpp"
+
 #include "ggml.h"
 #include "ggml-backend.h"
 
@@ -49,5 +50,3 @@ float * clip_vision_encode(const ClipVisionModel & model, const float * image,
                            int B, int * out_dim);
 
 } // namespace instantmesh
-
-#endif // INSTANTMESH_MODELS_CLIP_VISION_HPP

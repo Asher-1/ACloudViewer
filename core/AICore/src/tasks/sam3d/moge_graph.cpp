@@ -5,12 +5,12 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "moge_graph.hpp"
+#include "tasks/sam3d/moge_graph.hpp"
 
 #include <cmath>
 #include <cstring>
 
-#include "common.hpp"
+#include "tasks/sam3d/common.hpp"
 
 namespace sam3d {
 namespace {

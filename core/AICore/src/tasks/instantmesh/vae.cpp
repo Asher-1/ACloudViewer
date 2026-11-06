@@ -26,7 +26,7 @@
 //     byte copy: NO conversion at either boundary, NO conv output reorder.
 //     The only genuine gathers are inside attention ([C,HW] flatten for
 //     mul_mat and back).
-#include "vae.hpp"
+#include "tasks/instantmesh/vae.hpp"
 
 #include <cmath>
 #include <cstdio>
@@ -34,7 +34,7 @@
 
 #include "ggml-alloc.h"
 #include "ggml-cpu.h"
-#include "numerics.hpp"
+#include "tasks/instantmesh/numerics.hpp"
 
 namespace instantmesh {
 

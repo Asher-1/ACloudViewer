@@ -5,11 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "depth_lss.h"
+#include "tasks/openpcdet/models/depth_lss.h"
 
 #include <ggml.h>
 
-#include "../backend.h"
+#include "tasks/openpcdet/backend.h"
 
 #if defined(__x86_64__) && !defined(OPCPD_NO_AVX2_EXP)
 #include <immintrin.h>

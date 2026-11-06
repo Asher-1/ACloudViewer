@@ -28,15 +28,16 @@
 *                                                                           *
 ****************************************************************************/
 
-#ifndef _BASICS_H
-#define _BASICS_H
+#pragma once
+
 
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
 #include <limits.h>
 #include <float.h>
-#include "coordinates.h"
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/coordinates.h"
+
 
 namespace T_MESH
 {
@@ -45,10 +46,6 @@ namespace T_MESH
 #define TMESH_VIRTUAL virtual
 #else
 #define TMESH_VIRTUAL
-#endif
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
 #endif
 
 #define TMESH_VERSION	"2.0"
@@ -146,6 +143,3 @@ inline void p_swap(void **a, void **b) {void *t = *a; *a = *b; *b = t;}
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 } //namespace T_MESH
-
-#endif //_BASICS_H
-

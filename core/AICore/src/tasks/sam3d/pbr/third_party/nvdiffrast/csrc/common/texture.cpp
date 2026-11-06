@@ -6,8 +6,10 @@
 // distribution of this software and related documentation without an express
 // license agreement from NVIDIA CORPORATION is strictly prohibited.
 
-#include "framework.h"
-#include "texture.h"
+#include "tasks/sam3d/pbr/third_party/nvdiffrast/csrc/common/framework.h"
+
+#include "tasks/sam3d/pbr/third_party/nvdiffrast/csrc/common/texture.h"
+
 
 //------------------------------------------------------------------------
 // Mip stack construction and access helpers.

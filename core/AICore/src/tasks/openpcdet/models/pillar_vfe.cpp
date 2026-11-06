@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "pillar_vfe.h"
+#include "tasks/openpcdet/models/pillar_vfe.h"
 
 #include <algorithm>
 #include <cmath>

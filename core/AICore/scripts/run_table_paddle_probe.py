@@ -18,7 +18,8 @@ import numpy as np
 
 from gen_ocr_fixtures import Gguf
 from run_ocr_onnx_probe import source_performance_pass
-from run_ocr_paddle_probe import comparison, digest, execute, source_environment
+from run_ocr_paddle_probe import comparison, execute, source_environment
+from digest_utils import sha256_file
 
 
 def decoded_outputs(outputs, vocab, eos):
@@ -83,9 +84,9 @@ def run(args):
                     scripts / 'ocr_paddle_environment.py',
                     scripts / 'ocr_paddle_metadata.py', args.input_index,
                     args.program, args.parameters, args.config, args.model]
-    before = {str(path): digest(path) for path in dependencies}
+    before = {str(path): sha256_file(path) for path in dependencies}
     for key in ('program', 'parameters', 'config'):
-        if digest(getattr(args, key)) != getattr(args, key + '_sha256'):
+        if sha256_file(getattr(args, key)) != getattr(args, key + '_sha256'):
             raise ValueError(f"original source {key} SHA-256 mismatch")
     model = Gguf(str(args.model)).kv
     if (model.get('ocr.source.name') != 'SLANet_plus_infer.tar'
@@ -94,7 +95,7 @@ def run(args):
     tokens = model['ocr.table.tokens']
     if not tokens or tokens[0] != 'sos' or tokens[-1] != 'eos':
         raise ValueError("SLANet vocabulary has no SOS/EOS contract")
-    if digest(args.input_index) != args.input_index_sha256:
+    if sha256_file(args.input_index) != args.input_index_sha256:
         raise ValueError("fixture index SHA-256 mismatch")
     index = json.loads(args.input_index.read_text())
     if not index or [entry['index'] for entry in index] != list(range(len(index))):
@@ -113,7 +114,7 @@ def run(args):
         if relative.name != str(relative):
             raise ValueError("fixture input must be a single file name")
         input_path = args.input_index.parent / relative
-        if digest(input_path) != entry['input']['sha256']:
+        if sha256_file(input_path) != entry['input']['sha256']:
             raise ValueError("fixture input SHA-256 mismatch")
         before[str(input_path)] = entry['input']['sha256']
         value = np.load(input_path)
@@ -133,7 +134,7 @@ def run(args):
             gpu=strict, strict=strict, timeout=args.gpu_idle_timeout)
         source = json.loads(target.read_text())
         archive = target.with_suffix('.npz')
-        if (source['device'] != device or source['output_sha256'] != digest(archive)
+        if (source['device'] != device or source['output_sha256'] != sha256_file(archive)
                 or source['program_sha256'] != args.program_sha256
                 or source['parameters_sha256'] != args.parameters_sha256
                 or source['input_sha256'] != entry['input']['sha256']
@@ -152,7 +153,7 @@ def run(args):
         np.save(str(stem) + '_probs.npy', expected[0])
         np.save(str(stem) + '_loc.npy', expected[1])
         references.append(expected)
-        sources.append(dict(report=str(target), report_sha256=digest(target),
+        sources.append(dict(report=str(target), report_sha256=sha256_file(target),
                             command=command, metadata=source, audit=audit))
     prefix = fixture_dir / 'native'
     command = [str(args.probe), str(fixture_dir), str(args.model), args.backend,
@@ -185,7 +186,7 @@ def run(args):
               and metrics['loc_max_diff'] < args.loc_max_diff)
     performance = source_performance_pass(native_metrics, sources[-1]['metadata'])
     report = dict(**metrics, exit_code=int(not passed or strict and not performance),
-        backend=args.backend, model_sha256=digest(args.model), dependencies=before,
+        backend=args.backend, model_sha256=sha256_file(args.model), dependencies=before,
         p50_ms=native_metrics['p50_ms'], p95_ms=native_metrics['p95_ms'],
         sampling=dict(warmups=args.warmups, runs=args.runs, threads=args.threads),
         input_index_sha256=args.input_index_sha256, output_sha256=output_digest.hexdigest(),
@@ -207,7 +208,7 @@ def run(args):
         report.update(gpu_audit_pass=int(audit['passed']),
             gpu_sampled_process_peak_mib=audit['sampled_process_peak_mib'],
             gpu_audit_archive=audit['archive_path'])
-    if any(digest(Path(path)) != sha for path, sha in before.items()):
+    if any(sha256_file(Path(path)) != sha for path, sha in before.items()):
         raise ValueError("probe dependency changed during execution")
     return report
 

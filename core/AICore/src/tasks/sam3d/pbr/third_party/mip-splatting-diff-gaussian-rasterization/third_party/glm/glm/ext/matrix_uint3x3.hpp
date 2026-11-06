@@ -13,7 +13,8 @@
 #pragma once
 
 // Dependency:
-#include "../mat3x3.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/mat3x3.hpp"
+
 
 #if GLM_MESSAGES == GLM_ENABLE && !defined(GLM_EXT_INCLUDED)
 #	pragma message("GLM: GLM_EXT_matrix_uint3x3 extension included")

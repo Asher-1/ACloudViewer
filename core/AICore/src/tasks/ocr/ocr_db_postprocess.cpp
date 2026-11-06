@@ -5,14 +5,14 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "ocr_db_postprocess.hpp"
+#include "tasks/ocr/ocr_db_postprocess.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
 
-#include "ocr_box_score.hpp"
-#include "ocr_rec_crop.hpp"
+#include "tasks/ocr/ocr_box_score.hpp"
+#include "tasks/ocr/ocr_rec_crop.hpp"
 
 // Ports keep upstream's operand types; the TU is compiled with
 // -ffp-contract=off (core/AICore/CMakeLists.txt) like ocr_rec_crop.cpp.

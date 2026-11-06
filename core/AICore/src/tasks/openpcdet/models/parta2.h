@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include "../model.h"
-#include "anchor_head.h"
-#include "bev_backbone.h"
-#include "point_mlp.h"
-#include "sparse_unet.h"
+#include "tasks/openpcdet/model.h"
+#include "tasks/openpcdet/models/anchor_head.h"
+#include "tasks/openpcdet/models/bev_backbone.h"
+#include "tasks/openpcdet/models/point_mlp.h"
+#include "tasks/openpcdet/models/sparse_unet.h"
 
 namespace openpcdet {
 

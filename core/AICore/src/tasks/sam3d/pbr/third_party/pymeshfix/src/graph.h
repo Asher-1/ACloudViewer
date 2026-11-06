@@ -28,11 +28,13 @@
 *                                                                           *
 ****************************************************************************/
 
-#ifndef _GRAPH_H
-#define _GRAPH_H
+#pragma once
 
-#include "list.h"
-#include "basics.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/list.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/basics.h"
+
 
 namespace T_MESH
 {
@@ -141,5 +143,3 @@ class Graph
 };
 
 } //namespace T_MESH
-
-#endif // _GRAPH_H

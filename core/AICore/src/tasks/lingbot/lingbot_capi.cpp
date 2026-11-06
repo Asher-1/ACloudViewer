@@ -21,12 +21,12 @@
 
 #include "aicore/backend_capi.h"
 #include "aicore/runtime_capi.h"
-#include "capi_utils.hpp"
+#include "common/capi_utils.hpp"
 #include "common/data_root_util.hpp"
 #include "common/ggml_backend_utils.hpp"
 #include "common/model_cache.hpp"
-#include "lingbot_model.h"
-#include "lingbot_skyseg.h"
+#include "tasks/lingbot/lingbot_model.h"
+#include "tasks/lingbot/lingbot_skyseg.h"
 
 namespace {
 

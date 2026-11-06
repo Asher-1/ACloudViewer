@@ -11,7 +11,7 @@
 // conditioning inputs checked against the independent framework processor.
 // Backend leases, RMBG delegation and typed output/export use AICore owners.
 
-#include "instantmesh_pipeline.hpp"
+#include "tasks/instantmesh/instantmesh_pipeline.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -26,22 +26,22 @@
 
 #include "aicore/rmbg_capi.h"
 #include "aicore/runtime_capi.h"
-#include "clip_vision.hpp"
 #include "common/debug_dump.hpp"
 #include "common/ggml_backend_registry.hpp"
 #include "common/ggml_backend_utils.hpp"
 #include "common/gguf_file_io.hpp"
 #include "common/image_utils.hpp"
-#include "dino.hpp"
-#include "flexicubes.hpp"
 #include "ggml-backend.h"
-#include "gguf_io.hpp"
-#include "lrm_transformer.hpp"
-#include "scheduler.hpp"
-#include "synthesizer.hpp"
-#include "texture_map.hpp"
-#include "unet.hpp"
-#include "vae.hpp"
+#include "tasks/instantmesh/clip_vision.hpp"
+#include "tasks/instantmesh/dino.hpp"
+#include "tasks/instantmesh/flexicubes.hpp"
+#include "tasks/instantmesh/gguf_io.hpp"
+#include "tasks/instantmesh/lrm_transformer.hpp"
+#include "tasks/instantmesh/scheduler.hpp"
+#include "tasks/instantmesh/synthesizer.hpp"
+#include "tasks/instantmesh/texture_map.hpp"
+#include "tasks/instantmesh/unet.hpp"
+#include "tasks/instantmesh/vae.hpp"
 
 namespace instantmesh {
 

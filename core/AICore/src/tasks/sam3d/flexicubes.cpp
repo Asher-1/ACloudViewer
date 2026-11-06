@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "flexicubes.hpp"
+#include "tasks/sam3d/flexicubes.hpp"
 
 #include <algorithm>
 #include <array>
@@ -17,7 +17,7 @@
 #include <utility>
 #include <vector>
 
-#include "flexicubes_tables.hpp"
+#include "tasks/sam3d/flexicubes_tables.hpp"
 
 namespace sam3d {
 namespace {

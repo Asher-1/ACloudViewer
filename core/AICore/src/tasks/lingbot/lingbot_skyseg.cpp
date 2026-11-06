@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "lingbot_skyseg.h"
+#include "tasks/lingbot/lingbot_skyseg.h"
 
 #include <ggml-alloc.h>
 #include <ggml-backend.h>

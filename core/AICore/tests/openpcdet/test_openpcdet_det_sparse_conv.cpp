@@ -30,7 +30,7 @@
 //
 // Exits 77 (skip) when no CUDA device is available.
 
-#include "extensions/deterministic_sparse_conv.h"
+#include "tasks/openpcdet/extensions/deterministic_sparse_conv.h"
 
 #ifdef AICORE_OPENPCDET_CUDA_EXT
 #include <cuda_runtime.h>
@@ -45,8 +45,8 @@
 #include <string>
 #include <vector>
 
-#include "backend.h"
-#include "extensions/sparse_ops.h"
+#include "tasks/openpcdet/backend.h"
+#include "tasks/openpcdet/extensions/sparse_ops.h"
 
 namespace {
 

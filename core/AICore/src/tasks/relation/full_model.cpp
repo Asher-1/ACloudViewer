@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "relateanything/full_model.hpp"
+#include "tasks/relation/relateanything/full_model.hpp"
 
 #include <json/json.h>
 
@@ -28,12 +28,12 @@
 #include <utility>
 #include <vector>
 
-#include "clip_tokenizer.hpp"
-#include "corpus_type_map.hpp"
 #include "ggml.h"
 #include "gguf.h"
-#include "relateanything/backend.hpp"
-#include "relateanything/gguf_model.hpp"
+#include "tasks/relation/clip_tokenizer.hpp"
+#include "tasks/relation/corpus_type_map.hpp"
+#include "tasks/relation/relateanything/backend.hpp"
+#include "tasks/relation/relateanything/gguf_model.hpp"
 
 namespace relateanything {
 namespace {

@@ -12,8 +12,8 @@
 #include <string>
 #include <vector>
 
-#include "../extensions/sparse_ops.h"
-#include "../gguf_loader.h"
+#include "tasks/openpcdet/extensions/sparse_ops.h"
+#include "tasks/openpcdet/gguf_loader.h"
 
 namespace openpcdet {
 

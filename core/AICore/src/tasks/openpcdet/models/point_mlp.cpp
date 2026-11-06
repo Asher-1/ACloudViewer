@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "point_mlp.h"
+#include "tasks/openpcdet/models/point_mlp.h"
 
 #include <ggml.h>
 

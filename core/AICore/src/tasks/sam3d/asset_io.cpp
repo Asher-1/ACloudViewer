@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "asset_io.hpp"
+#include "tasks/sam3d/asset_io.hpp"
 
 #include <QtCore/QBuffer>
 #include <QtCore/QString>

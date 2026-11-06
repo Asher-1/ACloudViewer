@@ -40,7 +40,7 @@
 
 #include "common/ggml_backend_utils.hpp"
 #include "ggml-backend.h"
-#include "table_runtime.hpp"
+#include "tasks/table/table_runtime.hpp"
 
 namespace {
 

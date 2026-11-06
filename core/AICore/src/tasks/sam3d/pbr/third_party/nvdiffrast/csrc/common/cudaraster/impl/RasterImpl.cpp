@@ -6,10 +6,14 @@
 // distribution of this software and related documentation without an express
 // license agreement from NVIDIA CORPORATION is strictly prohibited.
 
-#include "../../framework.h"
-#include "PrivateDefs.hpp"
-#include "Constants.hpp"
-#include "RasterImpl.hpp"
+#include "tasks/sam3d/pbr/third_party/nvdiffrast/csrc/common/framework.h"
+
+#include "tasks/sam3d/pbr/third_party/nvdiffrast/csrc/common/cudaraster/impl/PrivateDefs.hpp"
+
+#include "tasks/sam3d/pbr/third_party/nvdiffrast/csrc/common/cudaraster/impl/Constants.hpp"
+
+#include "tasks/sam3d/pbr/third_party/nvdiffrast/csrc/common/cudaraster/impl/RasterImpl.hpp"
+
 #include <cuda_runtime.h>
 
 using namespace CR;

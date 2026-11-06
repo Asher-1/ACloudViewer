@@ -6,19 +6,19 @@ are test/conversion dependencies only. A sidecar records input/model hashes
 and the resolved engine; the model's exact source digest is mandatory.
 """
 
+from pathlib import Path
 import argparse
 import hashlib
 import json
 import math
-from pathlib import Path
+import sys
 
 import cv2
 import numpy as np
 import onnxruntime as ort
 
-
-def digest(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from digest_utils import sha256_file
 
 
 def source_crop(image, quad):
@@ -88,7 +88,7 @@ def main():
     parser.add_argument("--threads", type=int, default=8)
     args = parser.parse_args()
     if args.threads < 1: parser.error("thread count must be positive")
-    if digest(args.model) != args.source_sha256: raise SystemExit("model digest mismatch")
+    if sha256_file(args.model) != args.source_sha256: raise SystemExit("model digest mismatch")
     image = cv2.imread(str(args.image))
     if image is None: raise SystemExit("image decode failed")
     if args.quad is not None:
@@ -105,7 +105,7 @@ def main():
     stem = {"det": "det_ch", "rec": "rec_ch", "cls": "cls"}[args.role]
     np.save(args.output / f"{stem}_input.npy", x)
     np.save(args.output / f"{stem}_reference.npy", y.astype(np.float32))
-    report = {"model_sha256": digest(args.model), "image_sha256": digest(args.image),
+    report = {"model_sha256": sha256_file(args.model), "image_sha256": sha256_file(args.image),
               "image": args.image.name, "role": args.role,
               "input_shape": list(x.shape), "output_shape": list(y.shape),
               "onnxruntime_version": ort.__version__, "provider": session.get_providers(),
@@ -126,7 +126,7 @@ def main():
         np.save(args.output / f"{stem}_stored_reference.npy", z.astype(np.float32))
         delta = np.abs(z.astype(np.float64) - y)
         report["stored_weights"] = {
-            "container_sha256": digest(args.weights), "storage_elements": storage,
+            "container_sha256": sha256_file(args.weights), "storage_elements": storage,
             "provider": rounded.get_providers(), "provider_options": rounded.get_provider_options(),
             "source_max_diff": float(delta.max()), "source_mean_diff": float(delta.mean()),
             "source_argmax_match": float(np.mean(z.argmax(-1) == y.argmax(-1)))

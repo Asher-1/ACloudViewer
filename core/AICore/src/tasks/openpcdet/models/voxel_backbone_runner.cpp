@@ -5,14 +5,15 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "voxel_backbone_runner.h"
+#include "tasks/openpcdet/models/voxel_backbone_runner.h"
 
-#include "../ops/voxelization.h"
 #include "common/debug_dump.hpp"
+#include "tasks/openpcdet/ops/voxelization.h"
 
 #ifdef AICORE_OPENPCDET_CUDA_EXT
-#include "../extensions/height_compression_cuda.h"
-#include "../extensions/sparse_rulebook_cuda.h"
+#include "tasks/openpcdet/extensions/height_compression_cuda.h"
+#include "tasks/openpcdet/extensions/sparse_rulebook_cuda.h"
+
 #endif
 
 #include <ggml.h>

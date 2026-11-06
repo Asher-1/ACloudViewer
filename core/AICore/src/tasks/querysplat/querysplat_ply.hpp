@@ -15,7 +15,8 @@
 //   rot:     as-is (w-last XYZW, matching the gaussian buffer)
 #pragma once
 
-#include "querysplat_activations.hpp"
+#include "tasks/querysplat/querysplat_activations.hpp"
+
 
 #include <string>
 #include <vector>

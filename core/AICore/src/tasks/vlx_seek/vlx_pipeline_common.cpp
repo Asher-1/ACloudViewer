@@ -6,7 +6,7 @@
 // ----------------------------------------------------------------------------
 // Shared pipeline helpers — bodies moved verbatim from vlx_cli.cpp (see the
 // header note). Behavior is frozen by the benchmark regression suite.
-#include "vlx_pipeline_common.h"
+#include "tasks/vlx_seek/vlx_pipeline_common.h"
 
 #include <algorithm>
 #include <cctype>
@@ -21,7 +21,7 @@
 #include <sstream>
 #include <thread>
 
-#include "vlx_image_prep.h"
+#include "tasks/vlx_seek/vlx_image_prep.h"
 
 namespace vlx {
 

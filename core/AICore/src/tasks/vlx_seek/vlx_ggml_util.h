@@ -13,7 +13,7 @@
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
-#include "vlx_gguf_loader.h"
+#include "tasks/vlx_seek/vlx_gguf_loader.h"
 
 namespace vlx {
 

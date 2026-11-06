@@ -28,8 +28,10 @@
 *                                                                           *
 ****************************************************************************/
 
-#include "tmesh.h"
-#include "jqsort.h"
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/tmesh.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/jqsort.h"
+
 #include <stdlib.h>
 #include <string.h>
 

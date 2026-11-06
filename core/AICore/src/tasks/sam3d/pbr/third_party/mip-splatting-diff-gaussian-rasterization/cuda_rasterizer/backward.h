@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef CUDA_RASTERIZER_BACKWARD_H_INCLUDED
-#define CUDA_RASTERIZER_BACKWARD_H_INCLUDED
+#pragma once
+
 
 #include <cuda.h>
 
@@ -65,5 +65,3 @@ void preprocess(int P,
                 const float4* conic_opacity,
                 float* dL_dopacity);
 }  // namespace BACKWARD
-
-#endif

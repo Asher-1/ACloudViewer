@@ -7,8 +7,10 @@
 // license agreement from NVIDIA CORPORATION is strictly prohibited.
 
 #pragma once
-#include "Defs.hpp"
-#include "Constants.hpp"
+#include "tasks/sam3d/pbr/third_party/nvdiffrast/csrc/common/cudaraster/impl/Defs.hpp"
+
+#include "tasks/sam3d/pbr/third_party/nvdiffrast/csrc/common/cudaraster/impl/Constants.hpp"
+
 
 namespace CR
 {

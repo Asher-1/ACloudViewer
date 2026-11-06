@@ -1,7 +1,9 @@
 #pragma once
 
-#include "relateanything/options.hpp"
-#include "relateanything/types.hpp"
+#include "tasks/relation/relateanything/options.hpp"
+
+#include "tasks/relation/relateanything/types.hpp"
+
 #include <memory>
 
 namespace relateanything {

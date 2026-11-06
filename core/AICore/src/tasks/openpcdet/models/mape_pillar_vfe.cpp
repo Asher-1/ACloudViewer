@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "mape_pillar_vfe.h"
+#include "tasks/openpcdet/models/mape_pillar_vfe.h"
 
 #include <algorithm>
 #include <cmath>

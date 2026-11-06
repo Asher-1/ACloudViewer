@@ -28,8 +28,10 @@
 *                                                                           *
 ****************************************************************************/
 
-#include "edge.h"
-#include "triangle.h"
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/edge.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/triangle.h"
+
 
 namespace T_MESH
 {

@@ -6,9 +6,12 @@
 // distribution of this software and related documentation without an express
 // license agreement from NVIDIA CORPORATION is strictly prohibited.
 
-#include "Defs.hpp"
-#include "../CudaRaster.hpp"
-#include "RasterImpl.hpp"
+#include "tasks/sam3d/pbr/third_party/nvdiffrast/csrc/common/cudaraster/impl/Defs.hpp"
+
+#include "tasks/sam3d/pbr/third_party/nvdiffrast/csrc/common/cudaraster/CudaRaster.hpp"
+
+#include "tasks/sam3d/pbr/third_party/nvdiffrast/csrc/common/cudaraster/impl/RasterImpl.hpp"
+
 
 using namespace CR;
 

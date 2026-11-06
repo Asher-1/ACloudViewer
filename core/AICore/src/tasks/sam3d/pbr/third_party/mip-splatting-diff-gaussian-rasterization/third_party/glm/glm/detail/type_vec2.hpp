@@ -3,11 +3,14 @@
 
 #pragma once
 
-#include "qualifier.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/qualifier.hpp"
+
 #if GLM_CONFIG_SWIZZLE == GLM_SWIZZLE_OPERATOR
-#	include "_swizzle.hpp"
+#	include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/_swizzle.hpp"
+
 #elif GLM_CONFIG_SWIZZLE == GLM_SWIZZLE_FUNCTION
-#	include "_swizzle_func.hpp"
+#	include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/_swizzle_func.hpp"
+
 #endif
 #include <cstddef>
 

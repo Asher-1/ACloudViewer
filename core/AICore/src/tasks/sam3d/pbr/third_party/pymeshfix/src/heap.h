@@ -28,10 +28,11 @@
 *                                                                           *
 ****************************************************************************/
 
-#ifndef _HEAP_H
-#define _HEAP_H
+#pragma once
 
-#include "basics.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/basics.h"
+
 
 namespace T_MESH
 {
@@ -90,5 +91,3 @@ class abstractHeap
 };
 
 } //namespace T_MESH
-
-#endif // _HEAP_H

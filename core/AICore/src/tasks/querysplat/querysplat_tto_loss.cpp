@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "querysplat_tto_loss.hpp"
+#include "tasks/querysplat/querysplat_tto_loss.hpp"
 
 #include <cmath>
 #include <cstring>

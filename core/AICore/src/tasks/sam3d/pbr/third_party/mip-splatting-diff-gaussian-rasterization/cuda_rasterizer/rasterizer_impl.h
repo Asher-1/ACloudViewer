@@ -13,7 +13,8 @@
 #include <iostream>
 #include <vector>
 
-#include "rasterizer.h"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/cuda_rasterizer/rasterizer.h"
+
 
 namespace CudaRasterizer {
 template <typename T>

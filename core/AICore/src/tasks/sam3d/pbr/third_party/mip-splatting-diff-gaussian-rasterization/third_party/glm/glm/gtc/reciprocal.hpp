@@ -13,12 +13,15 @@
 #pragma once
 
 // Dependencies
-#include "../detail/setup.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/setup.hpp"
+
 
 #if GLM_MESSAGES == GLM_ENABLE && !defined(GLM_EXT_INCLUDED)
 #	pragma message("GLM: GLM_GTC_reciprocal extension included")
 #endif
 
-#include "../ext/scalar_reciprocal.hpp"
-#include "../ext/vector_reciprocal.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/ext/scalar_reciprocal.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/ext/vector_reciprocal.hpp"
+
 

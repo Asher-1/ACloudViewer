@@ -13,8 +13,10 @@
 #pragma once
 
 // Dependency:
-#include "../mat4x2.hpp"
-#include "../ext/scalar_uint_sized.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/mat4x2.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/ext/scalar_uint_sized.hpp"
+
 
 #if GLM_MESSAGES == GLM_ENABLE && !defined(GLM_EXT_INCLUDED)
 #	pragma message("GLM: GLM_EXT_matrix_uint4x2_sized extension included")

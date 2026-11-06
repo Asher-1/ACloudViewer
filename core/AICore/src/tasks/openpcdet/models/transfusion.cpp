@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "transfusion.h"
+#include "tasks/openpcdet/models/transfusion.h"
 
 #include <ggml.h>
 
@@ -15,7 +15,7 @@
 #include <cstring>
 #include <numeric>
 
-#include "voxel_backbone_runner.h"
+#include "tasks/openpcdet/models/voxel_backbone_runner.h"
 
 namespace openpcdet {
 namespace {

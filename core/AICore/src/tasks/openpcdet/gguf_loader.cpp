@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "gguf_loader.h"
+#include "tasks/openpcdet/gguf_loader.h"
 
 #include <algorithm>
 

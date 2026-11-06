@@ -25,7 +25,7 @@
 #include "common/aicore_log.hpp"
 #include "common/capi_utils.hpp"
 #include "common/model_cache.hpp"
-#include "instantmesh_pipeline.hpp"
+#include "tasks/instantmesh/instantmesh_pipeline.hpp"
 
 using instantmesh::GenParams;
 using instantmesh::PipelineConfig;

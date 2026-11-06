@@ -28,10 +28,11 @@
 *                                                                           *
 ****************************************************************************/
 
-#ifndef _TRIANGLE_H
-#define _TRIANGLE_H
+#pragma once
 
-#include "tmesh.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/tmesh.h"
+
 
 namespace T_MESH
 {
@@ -213,6 +214,3 @@ class Triangle
 #define FOREACHTRIANGLEEDGE(t, e) for ((e) = (t)->e1; (e) != NULL; (e)=((e)==(t)->e3)?(NULL):((t)->nextEdge(e)))
 
 } //namespace T_MESH
-
-#endif // _TRIANGLE_H
-

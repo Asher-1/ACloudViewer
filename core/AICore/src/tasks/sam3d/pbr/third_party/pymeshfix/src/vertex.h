@@ -28,12 +28,15 @@
 *                                                                           *
 ****************************************************************************/
 
-#ifndef _VERTEX_H
-#define _VERTEX_H
+#pragma once
 
-#include "basics.h"
-#include "list.h"
-#include "point.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/basics.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/list.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/point.h"
+
 
 namespace T_MESH
 {
@@ -218,6 +221,3 @@ class ExtVertex
 };
 
 } //namespace T_MESH
-
-#endif //_VERTEX_H
-

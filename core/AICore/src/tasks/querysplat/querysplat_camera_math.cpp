@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "querysplat_camera_math.hpp"
+#include "tasks/querysplat/querysplat_camera_math.hpp"
 
 #include <algorithm>
 #include <cmath>

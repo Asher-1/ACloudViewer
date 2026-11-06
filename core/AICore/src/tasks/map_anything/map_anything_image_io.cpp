@@ -10,7 +10,7 @@
 // resampler below (same Keys a=-0.5 kernel family as the upstream stb
 // smoke path; the bit-exact parity anchor stays the --bin f32 feed).
 
-#include "map_anything_image_io.hpp"
+#include "tasks/map_anything/map_anything_image_io.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -18,7 +18,7 @@
 
 #include "aicore/map_anything_capi.h"
 #include "common/capi_utils.hpp"
-#include "map_anything_common.hpp"
+#include "tasks/map_anything/map_anything_common.hpp"
 
 namespace map_anything {
 

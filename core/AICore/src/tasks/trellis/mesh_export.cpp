@@ -5,16 +5,17 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "mesh_export.h"
+#include "tasks/trellis/mesh_export.h"
 
-#include "print_remesh.h"
+#include "tasks/trellis/print_remesh.h"
 
 #ifdef TRELLIS2_HAVE_CUMESH
-#include "cumesh_glue.h"
+#include "tasks/trellis/third_party/cumesh_glue/cumesh_glue.h"
+
 #endif
 
 #include "meshoptimizer.h"
-#include "xatlas.h"
+#include "tasks/trellis/third_party/xatlas/xatlas.h"
 
 // AICore image encode goes through Qt (QImage built-in PNG codec); no
 // third-party image writer is used in-tree.
@@ -33,7 +34,7 @@
 #include <tuple>
 #include <unordered_map>
 
-#include "aicore_log.hpp"
+#include "common/aicore_log.hpp"
 
 namespace t2glb {
 namespace {

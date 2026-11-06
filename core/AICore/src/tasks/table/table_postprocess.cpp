@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "table_postprocess.hpp"
+#include "tasks/table/table_postprocess.hpp"
 
 #include <algorithm>
 #include <cmath>

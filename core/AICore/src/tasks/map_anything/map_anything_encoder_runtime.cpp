@@ -4,7 +4,7 @@
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-#include "map_anything_encoder_runtime.hpp"
+#include "tasks/map_anything/map_anything_encoder_runtime.hpp"
 
 namespace map_anything {
 

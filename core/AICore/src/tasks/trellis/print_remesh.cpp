@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "print_remesh.h"
+#include "tasks/trellis/print_remesh.h"
 
 #include <algorithm>
 #include <atomic>

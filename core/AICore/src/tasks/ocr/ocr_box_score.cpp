@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "ocr_box_score.hpp"
+#include "tasks/ocr/ocr_box_score.hpp"
 
 #include <algorithm>
 #include <climits>

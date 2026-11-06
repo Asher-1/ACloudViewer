@@ -4,7 +4,8 @@
 #include <string>
 #include <vector>
 
-#include "mesh_rasterizer.hpp"
+#include "tasks/sam3d/pbr/mesh_rasterizer.hpp"
+
 
 namespace sam3d {
 

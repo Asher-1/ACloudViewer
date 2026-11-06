@@ -15,7 +15,7 @@
 #include <stdexcept>
 
 #include "common/image_utils.hpp"
-#include "relateanything/full_model.hpp"
+#include "tasks/relation/relateanything/full_model.hpp"
 
 namespace relateanything {
 namespace {

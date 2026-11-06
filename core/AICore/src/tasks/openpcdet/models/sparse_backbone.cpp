@@ -5,10 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "sparse_backbone.h"
+#include "tasks/openpcdet/models/sparse_backbone.h"
 
 #ifdef AICORE_OPENPCDET_CUDA_EXT
-#include "../extensions/sparse_rulebook_cuda.h"
+#include "tasks/openpcdet/extensions/sparse_rulebook_cuda.h"
+
 #endif
 
 #include <numeric>

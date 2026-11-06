@@ -6,22 +6,17 @@ fixture is a small binary input/output record consumed by a C++ test that links
 only libAICore and ggml.
 """
 
+from pathlib import Path
 import argparse
-import hashlib
 import json
 import struct
-from pathlib import Path
+import sys
 
 import numpy as np
 import onnxruntime as ort
 
-
-def digest(path: Path) -> str:
-    hasher = hashlib.sha256()
-    with path.open("rb") as source:
-        for chunk in iter(lambda: source.read(1024 * 1024), b""):
-            hasher.update(chunk)
-    return hasher.hexdigest()
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from digest_utils import sha256_file
 
 
 def expected_sha256(variant: str) -> str:
@@ -60,7 +55,7 @@ def main() -> int:
     args = parser.parse_args()
     if args.n1 < args.n0 or args.n0 <= 0:
         raise SystemExit("require 0 < n0 <= n1")
-    actual_digest = digest(args.model)
+    actual_digest = sha256_file(args.model)
     if actual_digest != expected_sha256(args.variant):
         raise SystemExit(f"reference model digest does not match pinned {args.variant}")
 

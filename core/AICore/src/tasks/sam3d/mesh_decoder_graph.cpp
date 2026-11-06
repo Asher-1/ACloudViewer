@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "mesh_decoder_graph.hpp"
+#include "tasks/sam3d/mesh_decoder_graph.hpp"
 
 #include <algorithm>
 #include <array>
@@ -13,7 +13,7 @@
 #include <cstring>
 #include <limits>
 
-#include "common.hpp"
+#include "tasks/sam3d/common.hpp"
 
 namespace sam3d {
 namespace {

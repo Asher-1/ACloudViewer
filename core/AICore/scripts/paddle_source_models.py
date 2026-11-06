@@ -102,6 +102,10 @@ def source_model_dir(gguf_path: Path, cache_root: Path) -> Path:
 
 
 if __name__ == "__main__":
+    if not sys.argv[1:] or "-h" in sys.argv or "--help" in sys.argv:
+        print("usage: paddle_source_models.py <paddle-model.gguf> ...")
+        print("prints the paddle source dir each GGUF was converted from")
+        sys.exit(0)
     for path in sys.argv[1:]:
         print(path, source_model_dir(Path(path), Path.home() / ".cache" /
                                      "aicore_paddle_sources"))

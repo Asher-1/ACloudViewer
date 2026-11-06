@@ -28,7 +28,8 @@
 *                                                                           *
 ****************************************************************************/
 
-#include "graph.h"
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/graph.h"
+
 
 namespace T_MESH
 {

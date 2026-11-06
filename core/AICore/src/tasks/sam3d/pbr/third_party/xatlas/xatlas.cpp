@@ -5,7 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "xatlas.h"
+#include "tasks/sam3d/pbr/third_party/xatlas/xatlas.h"
+
 #ifndef XATLAS_C_API
 #define XATLAS_C_API 0
 #endif

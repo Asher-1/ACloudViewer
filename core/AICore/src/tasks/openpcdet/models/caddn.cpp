@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "caddn.h"
+#include "tasks/openpcdet/models/caddn.h"
 
 #include <ggml.h>
 
@@ -15,8 +15,8 @@
 #include <cstring>
 #include <numeric>
 
-#include "../extensions/image_geometry_ops.h"
-#include "dense_anchor_pipeline.h"
+#include "tasks/openpcdet/extensions/image_geometry_ops.h"
+#include "tasks/openpcdet/models/dense_anchor_pipeline.h"
 
 namespace openpcdet {
 namespace {

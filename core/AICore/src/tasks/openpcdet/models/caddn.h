@@ -9,9 +9,9 @@
 
 #include <array>
 
-#include "../model.h"
-#include "anchor_head.h"
-#include "bev_backbone.h"
+#include "tasks/openpcdet/model.h"
+#include "tasks/openpcdet/models/anchor_head.h"
+#include "tasks/openpcdet/models/bev_backbone.h"
 
 namespace openpcdet {
 

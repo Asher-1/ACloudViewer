@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "conv_fuser.h"
+#include "tasks/openpcdet/models/conv_fuser.h"
 
 #include <ggml.h>
 

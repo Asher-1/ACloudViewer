@@ -9,7 +9,14 @@ from unittest.mock import patch
 
 import numpy as np
 
-from run_table_paddle_probe import compare_outputs, decoded_outputs, digest, run
+try:
+    import cv2  # noqa: F401
+except ModuleNotFoundError:  # test host without the opencv dep
+    import sys
+    print("SKIP: paddle reference tests require cv2")
+    sys.exit(77)
+from run_table_paddle_probe import compare_outputs, decoded_outputs, run
+from digest_utils import sha256_file
 
 
 class TableOriginalGraphTests(unittest.TestCase):
@@ -117,13 +124,13 @@ class TableOriginalGraphTests(unittest.TestCase):
                     (root / name).write_bytes(name.encode())
                 np.save(root / 'input.npy', np.zeros((1, 3, 2, 2), np.float32))
                 index = [dict(index=0, input=dict(file='input.npy',
-                                                sha256=digest(root / 'input.npy')))]
+                                                sha256=sha256_file(root / 'input.npy')))]
                 (root / 'index.json').write_text(json.dumps(index))
                 args = SimpleNamespace(backend='vulkan', measurement_profile=profile,
                     warmups=2, runs=10, threads=4, gpu_idle_timeout=10,
                     max_diff=.01, loc_max_diff=.01, model=root / 'model',
                     probe=root / 'probe', input_index=root / 'index.json',
-                    input_index_sha256=digest(root / 'index.json'),
+                    input_index_sha256=sha256_file(root / 'index.json'),
                     report=root / 'report.json')
                 # run() gates the reference environment on an existing
                 # interpreter file (absent reference = exit-77 skip), so the
@@ -135,7 +142,7 @@ class TableOriginalGraphTests(unittest.TestCase):
                 args.source_gpu_python = root / 'cuda-source'
                 for name in ('program', 'parameters', 'config'):
                     setattr(args, name, root / name)
-                    setattr(args, name + '_sha256', digest(root / name))
+                    setattr(args, name + '_sha256', sha256_file(root / name))
                 metadata = {'ocr.source.name': 'SLANet_plus_infer.tar',
                     'ocr.source.sha256': args.parameters_sha256,
                     'ocr.table.tokens': ['sos'] + [str(i) for i in range(1, 49)] + ['eos'],
@@ -153,11 +160,11 @@ class TableOriginalGraphTests(unittest.TestCase):
                         output = target.with_suffix('.npz')
                         np.savez(output, head0=source[0], head1=source[1])
                         target.write_text(json.dumps(dict(device='cuda',
-                            output_sha256=digest(output), program_sha256=args.program_sha256,
+                            output_sha256=sha256_file(output), program_sha256=args.program_sha256,
                             parameters_sha256=args.parameters_sha256,
                             input_sha256=index[0]['input']['sha256'],
                             warmups=2, runs=10, threads=4,
-                            distribution_identity_sha256=digest(
+                            distribution_identity_sha256=sha256_file(
                                 Path(__file__).with_name('ocr_paddle_metadata.py')),
                             p50_ms=1, p95_ms=1)))
                         text = ''

@@ -15,7 +15,8 @@
 #include <stdexcept>
 #include <vector>
 
-#include "relateanything/full_model.hpp"
+#include "tasks/relation/relateanything/full_model.hpp"
+
 int main(int argc, char** argv) {
     try {
         if (argc != 10 && argc != 11)

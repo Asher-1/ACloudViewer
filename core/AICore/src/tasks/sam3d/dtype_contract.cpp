@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "dtype_contract.hpp"
+#include "tasks/sam3d/dtype_contract.hpp"
 
 #include <algorithm>
 #include <filesystem>
@@ -16,8 +16,8 @@
 #include <utility>
 #include <vector>
 
-#include "common.hpp"
 #include "ggml.h"
+#include "tasks/sam3d/common.hpp"
 
 namespace sam3d {
 namespace {

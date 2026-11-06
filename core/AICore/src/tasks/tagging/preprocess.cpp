@@ -10,7 +10,7 @@
 #include <cmath>
 #include <stdexcept>
 
-#include "session.hpp"
+#include "tasks/tagging/session.hpp"
 
 namespace aicore {
 namespace tagging {

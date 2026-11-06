@@ -45,9 +45,9 @@
 #include <vector>
 
 #include "aicore/lingbot_capi.h"
-#include "lingbot_stream_parity_golden.h"
 #include "tests/common/test_macros.hpp"
 #include "tests/common/validation_probe.hpp"
+#include "tests/lingbot/lingbot_stream_parity_golden.h"
 
 namespace {
 

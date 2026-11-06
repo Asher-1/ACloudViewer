@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-#include "querysplat_npz.hpp"
+#include "tasks/querysplat/querysplat_npz.hpp"
 #include "tests/common/test_macros.hpp"
 
 namespace {

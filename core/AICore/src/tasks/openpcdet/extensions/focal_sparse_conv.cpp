@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "focal_sparse_conv.h"
+#include "tasks/openpcdet/extensions/focal_sparse_conv.h"
 
 #include <algorithm>
 #include <array>
@@ -16,7 +16,8 @@
 #include <iterator>
 #include <numeric>
 
-#include "deterministic_sparse_conv.h"
+#include "tasks/openpcdet/extensions/deterministic_sparse_conv.h"
+
 #ifdef _OPENMP
 #include <omp.h>
 #endif

@@ -18,7 +18,8 @@ import numpy as np
 
 from gen_ocr_fixtures import Gguf
 from run_ocr_onnx_probe import source_performance_pass
-from run_ocr_paddle_probe import digest, execute, source_environment
+from run_ocr_paddle_probe import execute, source_environment
+from digest_utils import sha256_file
 from run_table_paddle_probe import decoded_outputs
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
@@ -68,7 +69,7 @@ def run(args):
     if args.library.parent.resolve() != args.bench.parent.resolve():
         raise ValueError('library pin must belong to the harness source-owner directory')
     for name in ('program', 'parameters', 'index'):
-        if digest(getattr(args, name)) != getattr(args, name + '_sha256'):
+        if sha256_file(getattr(args, name)) != getattr(args, name + '_sha256'):
             raise ValueError(name + ' SHA-256 mismatch')
     scripts = Path(__file__).resolve().parent
     benchmark = scripts.parent / 'tools/bench_paddle_ocr_graph.py'
@@ -81,7 +82,7 @@ def run(args):
                     scripts / 'run_table_paddle_probe.py',
                     scripts / 'gpu_audit.py', scripts / 'ocr_paddle_environment.py',
                     scripts / 'ocr_paddle_metadata.py', args.model]
-    before = {str(p): digest(p) for p in dependencies}
+    before = {str(p): sha256_file(p) for p in dependencies}
     metadata = Gguf(str(args.model)).kv
     if (metadata.get('ocr.source.sha256') != args.parameters_sha256
             or metadata.get('ocr.source.name') != 'SLANet_plus_infer.tar'):
@@ -103,9 +104,9 @@ def run(args):
             if relative.name != str(relative):
                 raise ValueError('timing input must be a single file name')
             path = args.index.parent / relative
-            if digest(path) != entry[name]['sha256']:
+            if sha256_file(path) != entry[name]['sha256']:
                 raise ValueError(name + ' input SHA-256 mismatch')
-            before[str(path)] = digest(path)
+            before[str(path)] = sha256_file(path)
             files[name] = path
         # The index ties a losslessly encoded image to the independent source
         # input. Recheck the actual preprocessing rather than trusting the index.
@@ -117,7 +118,7 @@ def run(args):
         source_command = [str(args.source_gpu_python), str(benchmark),
             '--program', str(args.program), '--program-sha256', args.program_sha256,
             '--parameters', str(args.parameters), '--parameters-sha256', args.parameters_sha256,
-            '--input', str(files['input']), '--input-sha256', digest(files['input']),
+            '--input', str(files['input']), '--input-sha256', sha256_file(files['input']),
             '--device', 'cuda', '--expected-outputs', '2',
             '--warmups', str(args.warmups), '--runs', str(args.runs),
             '--threads', str(args.threads), '--audit-hold-ms', '1500',
@@ -127,10 +128,10 @@ def run(args):
             gpu=True, strict=True, timeout=args.gpu_idle_timeout)
         source = json.loads(source_path.read_text())
         archive = source_path.with_suffix('.npz')
-        if (source['device'] != 'cuda' or source['output_sha256'] != digest(archive)
+        if (source['device'] != 'cuda' or source['output_sha256'] != sha256_file(archive)
                 or source['program_sha256'] != args.program_sha256
                 or source['parameters_sha256'] != args.parameters_sha256
-                or source['input_sha256'] != digest(files['input'])
+                or source['input_sha256'] != sha256_file(files['input'])
                 or source['distribution_identity_sha256'] !=
                    before[str(scripts / 'ocr_paddle_metadata.py')]
                 or any(source[name] != getattr(args, name)
@@ -160,12 +161,12 @@ def run(args):
         output_hash.update(json.dumps(predictions, sort_keys=True).encode())
         fixtures.append(dict(index=entry['index'], **timing,
             source=source, source_timing=source_timing, source_report=str(source_path),
-            source_report_sha256=digest(source_path), source_audit=source_audit,
+            source_report_sha256=sha256_file(source_path), source_audit=source_audit,
             native_command=command, native_audit=audit))
-    if any(digest(Path(path)) != sha for path, sha in before.items()):
+    if any(sha256_file(Path(path)) != sha for path, sha in before.items()):
         raise ValueError('table timing dependency changed during measurement')
     return dict(exit_code=0, backend=args.backend, dependencies=before,
-        model_sha256=digest(args.model), library_sha256=digest(args.library),
+        model_sha256=sha256_file(args.model), library_sha256=sha256_file(args.library),
         output_sha256=output_hash.hexdigest(), fixtures=fixtures,
         p50_ms=max(f['p50_ms'] for f in fixtures),
         p95_ms=max(f['p95_ms'] for f in fixtures), decoded_token_match=1,

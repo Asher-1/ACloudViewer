@@ -16,7 +16,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from layout_gt_eval import CDLA_LABELS, digest, verified_path
+from layout_gt_eval import CDLA_LABELS, verified_path
+from digest_utils import sha256_file
 from run_ocr_source_pipeline import Options, View, aicore_library_path
 
 
@@ -40,7 +41,7 @@ def main():
     names = [page["image"]["path"] for page in pins["pages"]]
     if len(set(names)) != len(names):
         raise ValueError("duplicate CDLA page")
-    dependencies = {str(path): digest(path) for path in (Path(__file__), args.library,
+    dependencies = {str(path): sha256_file(path) for path in (Path(__file__), args.library,
         args.det, args.rec, args.layout, args.pins, Path(digest.__code__.co_filename),
         Path(__file__).with_name("run_ocr_source_pipeline.py"))}
     args.library = aicore_library_path(args.library)
@@ -78,7 +79,7 @@ def main():
         if labels != list(CDLA_LABELS):
             raise ValueError("GGUF/native layout class mapping differs from CDLA")
         report = dict(backend=args.backend, device=device, dependencies=dependencies,
-            pins_sha256=digest(args.pins), score_threshold=.5, nms_threshold=.5,
+            pins_sha256=sha256_file(args.pins), score_threshold=.5, nms_threshold=.5,
             images=[], scope="Layout page accuracy isolation only; no OCR, timing or release claim",
             detector=dict(max_side=32, limit_type="max", binarization_threshold=1,
                           box_score_threshold=1, required_text_boxes=0))
@@ -115,7 +116,7 @@ def main():
                 print(json.dumps(dict(pages=index + 1, planned=len(pins["pages"]))), flush=True)
     finally:
         library.aicore_ocr_context_destroy(ctx)
-    if any(digest(Path(path)) != sha for path, sha in dependencies.items()):
+    if any(sha256_file(Path(path)) != sha for path, sha in dependencies.items()):
         raise ValueError("layout consumer execution artifact changed during export")
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2) + "\n")

@@ -19,8 +19,8 @@
 // Coordinate convention: UV v=0 is the bottom row, v=1 the top; texture rows
 // with py=0 map to v=0. PNG output flips rows so row 0 (top) = v=1, matching
 // the OBJ+MTL loader expectation and the reference save_obj_with_mtl.
-#ifndef INSTANTMESH_MODELS_TEXTURE_MAP_HPP
-#define INSTANTMESH_MODELS_TEXTURE_MAP_HPP
+#pragma once
+
 
 #include <cstdint>
 #include <vector>
@@ -82,5 +82,3 @@ void rasterize_texture(const float * verts, const int32_t * faces,
                        std::vector<uint8_t> & out_mask);
 
 } // namespace instantmesh
-
-#endif // INSTANTMESH_MODELS_TEXTURE_MAP_HPP

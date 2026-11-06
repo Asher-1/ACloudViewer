@@ -6,14 +6,14 @@
 // ----------------------------------------------------------------------------
 
 // MOT sparse-structure DiT single-step graph - see ss_flow_graph.hpp.
-#include "ss_flow_graph.hpp"
+#include "tasks/sam3d/ss_flow_graph.hpp"
 
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
 
-#include "common.hpp"
-#include "graph_builder.hpp"
+#include "tasks/sam3d/common.hpp"
+#include "tasks/sam3d/graph_builder.hpp"
 
 namespace sam3d {
 

@@ -76,6 +76,10 @@ function(_aicore_test_common name)
     endif()
     target_include_directories(${name} PRIVATE ${AICORE_TEST_INC})
     target_include_directories(${name} PRIVATE ${AICORE_TEST_INC}/..)
+    # The converted full-path include style ("tasks/...") needs the AICore
+    # src/ root on every test target, the same PRIVATE root the main AICore
+    # target carries.
+    target_include_directories(${name} PRIVATE ${AICORE_TEST_INC}/../src)
     include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AICoreCompileDefinitions.cmake)
     aicore_apply_compile_definitions(${name})
     set_target_properties(${name} PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -286,6 +290,7 @@ function(aicore_add_capi_tool name source)
     else()
         target_include_directories(${name} PRIVATE ${AICORE_TEST_INC})
         target_include_directories(${name} PRIVATE ${AICORE_TEST_INC}/..)
+        target_include_directories(${name} PRIVATE ${AICORE_TEST_INC}/../src)
     endif()
     include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AICoreCompileDefinitions.cmake)
     aicore_apply_compile_definitions(${name})
@@ -502,7 +507,8 @@ aicore_add_capi_test(test_querysplat_capi querysplat LABELS capi;model)
 # src/tasks/querysplat directory (same whitebox convention as rfdetr).
 aicore_add_capi_test(test_querysplat_npz querysplat)
 target_include_directories(test_querysplat_npz PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/querysplat)
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/querysplat
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src)
 # Candidate half of the upstream cpp_ggml frames parity gate (NOT a ctest: it
 # needs the external vggt-cli reference; driven by the manifest row
 # map_anything-upstream-frames via run_map_anything_upstream_parity.py).
@@ -540,7 +546,8 @@ aicore_add_capi_test(test_ocr_capi_e2e ocr LABELS capi;ocr;model;e2e)
 add_executable(test_ocr_box_score ocr/test_ocr_box_score.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/ocr/ocr_box_score.cpp)
 target_include_directories(test_ocr_box_score PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/ocr ${CMAKE_CURRENT_SOURCE_DIR}/..)
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/ocr
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src ${CMAKE_CURRENT_SOURCE_DIR}/..)
 set_target_properties(test_ocr_box_score PROPERTIES
     CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 target_compile_definitions(test_ocr_box_score PRIVATE
@@ -789,6 +796,9 @@ set_tests_properties(test_image_png PROPERTIES LABELS "capi;image;export")
 # Scheduler needs no backend/weights; this white-box target compiles real Qt-free production sources without ggml.
 add_executable(test_instantmesh_scheduler instantmesh/test_instantmesh_scheduler.cpp
     ../src/tasks/instantmesh/scheduler.cpp)
+# The converted full-path include style ("tasks/...") needs the src/ root.
+target_include_directories(test_instantmesh_scheduler PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src)
 _aicore_test_common(test_instantmesh_scheduler NO_CTEST)
 target_link_libraries(test_instantmesh_scheduler PRIVATE Qt::Core)
 set(AICORE_INSTANTMESH_SCHEDULER_REFERENCE "${CMAKE_BINARY_DIR}/instantmesh_reference/scheduler"
@@ -1213,6 +1223,9 @@ aicore_add_yolo_optrace_test(test_yolo_world_optrace)
 #   reid_diag --gguf <file> --chw <f32.bin> [--device cuda] [--dump <prefix>]
 if(TARGET AICore_test)
     add_executable(reid_diag ${CMAKE_CURRENT_SOURCE_DIR}/../tools/reid_diag.cpp)
+    # The diag tool includes the converted "tasks/..." headers directly.
+    target_include_directories(reid_diag PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src)
     target_link_libraries(reid_diag PRIVATE AICore_test)
     if(NOT MSVC)
         target_compile_options(reid_diag PRIVATE -fPIC)
@@ -1765,11 +1778,30 @@ set_property(GLOBAL PROPERTY AICORE_TEST_TGT_test_instantmesh_synth_reference_co
     add_test(NAME test_table_capi_measurement
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_table_capi_probe.py)
+    # Hermetic sibling tests discovered by the script-level consumer audit:
+    # same stdlib-only shape as the rows above, so they run in every env.
+    add_test(NAME test_ocr_text_compare
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_compare_ocr_text.py)
+    add_test(NAME test_ocr_thread_protocol
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_ocr_thread_counts.py)
+    add_test(NAME test_paddle_source_models
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_paddle_source_models.py)
     set_tests_properties(test_ocr_probability_gate test_ocr_gpu_measurement_audit
         test_ocr_paddle_page_reference test_ocr_paddle_graph_reference
         test_ocr_paddle_layout_reference test_table_paddle_graph_reference
         test_ocr_paddle_reference_device test_table_capi_measurement
+        test_ocr_text_compare test_ocr_thread_protocol test_paddle_source_models
         PROPERTIES LABELS "fast;validation;ocr")
+    # The paddle-reference rows import the opencv-dependent runner chain;
+    # hosts without cv2 skip honestly instead of failing.
+    set_tests_properties(test_ocr_paddle_graph_reference
+        test_ocr_paddle_layout_reference test_table_paddle_graph_reference
+        test_table_capi_measurement test_ocr_thread_protocol
+        test_ocr_paddle_page_reference
+        PROPERTIES SKIP_RETURN_CODE 77)
 
     add_test(NAME test_aicore_plugin_boundaries
         COMMAND ${Python3_EXECUTABLE}

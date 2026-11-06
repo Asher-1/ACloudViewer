@@ -8,19 +8,19 @@ LoD headers and ordering are preserved byte for byte; only F32 payloads change.
 The original model files are never overwritten.
 """
 
+from pathlib import Path
 import argparse
 import hashlib
 import json
-from pathlib import Path
 import struct
+import sys
 
 import numpy as np
 
 from paddle_ocr_extract import _parse_tensor_desc, load_ocr_tensors
 
-
-def digest(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from digest_utils import sha256_file
 
 
 def payload_ranges(data):
@@ -123,7 +123,7 @@ def main():
     if (len({p.resolve() for p in inputs + outputs}) != 5 or
             any(p.exists() for p in outputs)):
         parser.error("outputs must be distinct new files outside the original input paths")
-    before = {str(path): digest(path) for path in inputs}
+    before = {str(path): sha256_file(path) for path in inputs}
     for name in ("program", "parameters", "model"):
         if before[str(getattr(args, name))] != getattr(args, name + "_sha256"):
             parser.error(f"{name} SHA-256 mismatch")
@@ -136,16 +136,16 @@ def main():
     named, _, _ = load_ocr_tensors(args.program.parent)
     values, storage = stored_values(args.model, named)
     result = replace_payloads(args.parameters.read_bytes(), named, values)
-    if before != {str(path): digest(path) for path in inputs}:
+    if before != {str(path): sha256_file(path) for path in inputs}:
         raise ValueError("input identities changed during reconstruction")
     for path in outputs:
         path.parent.mkdir(parents=True, exist_ok=True)
     with args.output_parameters.open("xb") as target:
         target.write(result)
     report = dict(schema=1, inputs=before,
-        script_sha256=digest(Path(__file__)),
-        extractor_sha256=digest(Path(load_ocr_tensors.__code__.co_filename)),
-        output_parameters_sha256=digest(args.output_parameters),
+        script_sha256=sha256_file(Path(__file__)),
+        extractor_sha256=sha256_file(Path(load_ocr_tensors.__code__.co_filename)),
+        output_parameters_sha256=sha256_file(args.output_parameters),
         parameter_count=len(named), parameters=storage,
         scope="Stored-weight Paddle attribution only; original FP32 accuracy gates remain mandatory")
     with args.report.open("x") as target:

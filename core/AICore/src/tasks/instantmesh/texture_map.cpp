@@ -6,7 +6,7 @@
 // ----------------------------------------------------------------------------
 
 // UV unwrapping + texture-map rasterization (ggml InstantMesh port).
-#include "texture_map.hpp"
+#include "tasks/instantmesh/texture_map.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <utility>
 
-#include "../trellis/third_party/xatlas/xatlas.h"
+#include "tasks/trellis/third_party/xatlas/xatlas.h"
 
 namespace instantmesh {
 

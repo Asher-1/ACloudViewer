@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "relateanything/gguf_model.hpp"
+#include "tasks/relation/relateanything/gguf_model.hpp"
 
 #include <algorithm>
 #include <chrono>

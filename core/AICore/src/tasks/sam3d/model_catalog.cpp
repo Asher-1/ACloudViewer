@@ -17,7 +17,7 @@
 // and an unconsumed row would fail the one-click coverage audit (see the
 // note beside the slat_decoder_gs entries).
 
-#include "model_catalog.hpp"
+#include "tasks/sam3d/model_catalog.hpp"
 
 #include <cstring>
 #include <vector>

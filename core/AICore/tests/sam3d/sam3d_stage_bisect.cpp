@@ -27,7 +27,7 @@
 #include <cstring>
 #include <string>
 
-#include "e2e_options.hpp"
+#include "tasks/sam3d/e2e_options.hpp"
 
 int main(int argc, char** argv) {
     if (argc < 3) {

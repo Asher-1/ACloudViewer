@@ -14,8 +14,10 @@
 
 #pragma once
 
-#include "detail/qualifier.hpp"
-#include "detail/_fixes.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/qualifier.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/_fixes.hpp"
+
 
 namespace glm
 {
@@ -535,5 +537,6 @@ namespace glm
 	/// @}
 }//namespace glm
 
-#include "detail/func_common.inl"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/func_common.inl"
+
 

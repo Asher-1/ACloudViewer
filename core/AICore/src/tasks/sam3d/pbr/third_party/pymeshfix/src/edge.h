@@ -28,11 +28,13 @@
 *                                                                           *
 ****************************************************************************/
 
-#ifndef _EDGE_H
-#define _EDGE_H
+#pragma once
 
-#include "basics.h"
-#include "vertex.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/basics.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/vertex.h"
+
 
 namespace T_MESH
 {
@@ -247,6 +249,3 @@ int lexEdgeCompare(const void *a, const void *b);
 int vtxEdgeCompare(const void *a, const void *b);
 
 } //namespace T_MESH
-
-#endif //_EDGE_H
-

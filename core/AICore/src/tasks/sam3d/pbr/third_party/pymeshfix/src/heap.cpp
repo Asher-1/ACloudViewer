@@ -30,7 +30,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "heap.h"
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/heap.h"
+
 
 namespace T_MESH
 {

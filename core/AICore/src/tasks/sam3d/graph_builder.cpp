@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "graph_builder.hpp"
+#include "tasks/sam3d/graph_builder.hpp"
 
 #include <cmath>
 #include <cstdlib>

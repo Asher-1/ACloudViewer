@@ -32,8 +32,8 @@
 #include <string>
 #include <vector>
 
-#include "../gguf_loader.h"
-#include "../model.h"
+#include "tasks/openpcdet/gguf_loader.h"
+#include "tasks/openpcdet/model.h"
 
 namespace openpcdet {
 

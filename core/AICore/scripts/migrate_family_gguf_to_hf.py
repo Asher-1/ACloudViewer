@@ -34,6 +34,10 @@ def repo_for(relative_path: str) -> str:
 
 
 def main() -> int:
+    if "-h" in sys.argv or "--help" in sys.argv:
+        print("usage: migrate_family_gguf_to_hf.py  (reads the plan at "
+              f"{PLAN}; no CLI arguments)")
+        return 0
     plan = json.loads(PLAN.read_text())
     api = HfApi()
     receipts, failures = [], []

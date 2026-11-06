@@ -21,11 +21,11 @@
 #include <string>
 #include <vector>
 
-#include "conv_fuser.h"
-#include "depth_lss.h"
-#include "lss_fpn.h"
-#include "swin_transformer.h"
-#include "transfusion.h"
+#include "tasks/openpcdet/models/conv_fuser.h"
+#include "tasks/openpcdet/models/depth_lss.h"
+#include "tasks/openpcdet/models/lss_fpn.h"
+#include "tasks/openpcdet/models/swin_transformer.h"
+#include "tasks/openpcdet/models/transfusion.h"
 
 namespace openpcdet {
 

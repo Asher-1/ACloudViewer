@@ -8,8 +8,10 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 
-#include "array_support.h"
-#include "tmesh.h"
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/array_support.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/tmesh.h"
+
 
 using namespace T_MESH;
 

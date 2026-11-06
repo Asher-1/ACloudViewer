@@ -28,8 +28,8 @@
 *                                                                           *
 ****************************************************************************/
 
-#ifndef _COORDINATES_H
-#define _COORDINATES_H
+#pragma once
+
 
 #include <stdio.h>
 #include <math.h>
@@ -173,6 +173,3 @@ typedef PM_Rational coord;
 #define TMESH_DETERMINANT3X3(a11, a12, a13, a21, a22, a23, a31, a32, a33) ((a11)*((a22)*(a33) - (a23)*(a32)) - (a12)*((a21)*(a33) - (a23)*(a31)) + (a13)*((a21)*(a32) - (a22)*(a31)))
 
 } //namespace T_MESH
-
-#endif //_COORDINATES_H
-

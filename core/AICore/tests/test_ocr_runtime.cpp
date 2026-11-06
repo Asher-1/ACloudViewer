@@ -35,7 +35,7 @@
 #include "common/ggml_backend_utils.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
-#include "ocr_runtime.hpp"
+#include "tasks/ocr/ocr_runtime.hpp"
 
 namespace {
 

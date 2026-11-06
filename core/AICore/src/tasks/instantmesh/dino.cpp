@@ -14,7 +14,7 @@
 //
 // F32 GEMM reuses the shared STRICT_F32 hint without changing other tasks'
 // arithmetic.
-#include "dino.hpp"
+#include "tasks/instantmesh/dino.hpp"
 
 #include <cmath>
 #include <cstdio>
@@ -24,7 +24,7 @@
 
 #include "ggml-alloc.h"
 #include "ggml-cpu.h"
-#include "numerics.hpp"
+#include "tasks/instantmesh/numerics.hpp"
 
 namespace instantmesh {
 

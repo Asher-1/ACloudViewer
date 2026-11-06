@@ -5,7 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "mesh_postprocess.hpp"
+#include "tasks/sam3d/pbr/mesh_postprocess.hpp"
+
 
 #include <vtkCellArray.h>
 #include <vtkNew.h>

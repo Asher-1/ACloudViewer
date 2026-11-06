@@ -5,8 +5,10 @@
 #include <string>
 #include <vector>
 
-#include "asset_io.hpp"
-#include "gaussian_renderer.hpp"
+#include "tasks/sam3d/asset_io.hpp"
+
+#include "tasks/sam3d/pbr/gaussian_renderer.hpp"
+
 
 namespace sam3d {
 

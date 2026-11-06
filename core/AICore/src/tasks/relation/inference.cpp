@@ -8,7 +8,7 @@
 #include <limits>
 #include <stdexcept>
 
-#include "relateanything/options.hpp"
+#include "tasks/relation/relateanything/options.hpp"
 
 namespace relateanything {
 void ModelOptions::validate_model() const {

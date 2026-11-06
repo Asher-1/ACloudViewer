@@ -3,8 +3,8 @@
 // The upstream core normally receives these definitions from its PyTorch
 // extension wrapper.  Keeping the adapter here lets the native runtime link
 // only CUDA runtime APIs, never Python, libtorch, or cuDNN.
-#ifndef SAM3D_NVDIFFRAST_STANDALONE_COMPAT_HPP
-#define SAM3D_NVDIFFRAST_STANDALONE_COMPAT_HPP
+#pragma once
+
 
 #include <cuda_runtime.h>
 
@@ -39,5 +39,3 @@ inline void check_nvdiffrast_cuda(cudaError_t status, const char* expression) {
     ::sam3d::check_nvdiffrast_cuda((expression), #expression)
 
 #define LOG(level) ::sam3d::NvdiffrastLogSink()
-
-#endif  // SAM3D_NVDIFFRAST_STANDALONE_COMPAT_HPP

@@ -19,14 +19,15 @@
 // Linear(64->64) ReLU Linear(64->out). Weights mirror the `decoder.` GGUF
 // names (after stripping the `synthesizer.` prefix): net_sdf/net_rgb/
 // net_deformation/net_weight.%d.{weight,bias}.
-#ifndef INSTANTMESH_MODELS_SYNTHESIZER_HPP
-#define INSTANTMESH_MODELS_SYNTHESIZER_HPP
+#pragma once
+
 
 #include <memory>
 #include <string>
 #include <functional>
 
-#include "gguf_io.hpp"
+#include "tasks/instantmesh/gguf_io.hpp"
+
 #include "ggml.h"
 #include "ggml-backend.h"
 
@@ -74,5 +75,3 @@ bool synthesizer_texture_forward(const SynthesizerModel & model,
                                  const float * points, int M, float ** rgb);
 
 } // namespace instantmesh
-
-#endif // INSTANTMESH_MODELS_SYNTHESIZER_HPP

@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "ocr_rec_crop.hpp"
+#include "tasks/ocr/ocr_rec_crop.hpp"
 
 #include <algorithm>
 #include <cfloat>

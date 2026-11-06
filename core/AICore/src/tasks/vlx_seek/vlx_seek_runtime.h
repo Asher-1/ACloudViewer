@@ -11,8 +11,8 @@
 #include <string>
 #include <vector>
 
+#include "tasks/vlx_seek/vlx_types.h"
 #include "vlx_pipeline_common.h"  // ResultBox, BoxD
-#include "vlx_types.h"
 
 namespace vlx {
 

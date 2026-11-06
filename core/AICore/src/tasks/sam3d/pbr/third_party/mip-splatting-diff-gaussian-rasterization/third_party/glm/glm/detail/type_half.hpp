@@ -1,6 +1,7 @@
 #pragma once
 
-#include "setup.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/setup.hpp"
+
 
 namespace glm{
 namespace detail

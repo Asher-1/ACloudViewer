@@ -28,10 +28,11 @@
 *                                                                           *
 ****************************************************************************/
 
-#ifndef MARCHING_INTS_H
-#define MARCHING_INTS_H
+#pragma once
 
-#include "tmesh.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/tmesh.h"
+
 
 namespace T_MESH
 {
@@ -129,5 +130,3 @@ private:
 };
 
 } //namespace T_MESH
-
-#endif // MARCHING_INTS_H

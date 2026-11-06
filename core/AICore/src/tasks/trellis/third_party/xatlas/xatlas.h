@@ -6,8 +6,6 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-#ifndef XATLAS_H
-#define XATLAS_H
 #include <stddef.h>
 #include <stdint.h>
 
@@ -268,5 +266,3 @@ const char *StringForEnum(AddMeshError error);
 const char *StringForEnum(ProgressCategory category);
 
 }  // namespace xatlas
-
-#endif  // XATLAS_H

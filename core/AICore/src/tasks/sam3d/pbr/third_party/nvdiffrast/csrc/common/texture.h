@@ -7,7 +7,8 @@
 // license agreement from NVIDIA CORPORATION is strictly prohibited.
 
 #pragma once
-#include "framework.h"
+#include "tasks/sam3d/pbr/third_party/nvdiffrast/csrc/common/framework.h"
+
 
 //------------------------------------------------------------------------
 // Constants.

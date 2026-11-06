@@ -13,7 +13,7 @@
 // keeps the port backend-agnostic (CPU/CUDA/Vulkan share one graph).
 //
 // ggml note: linear(W, x) = mul_mat_exact(ctx, W, x)  (W stored as [in, out]).
-#include "lrm_transformer.hpp"
+#include "tasks/instantmesh/lrm_transformer.hpp"
 
 #include <cmath>
 #include <cstdio>
@@ -21,7 +21,7 @@
 
 #include "ggml-alloc.h"
 #include "ggml-cpu.h"
-#include "numerics.hpp"
+#include "tasks/instantmesh/numerics.hpp"
 
 namespace instantmesh {
 

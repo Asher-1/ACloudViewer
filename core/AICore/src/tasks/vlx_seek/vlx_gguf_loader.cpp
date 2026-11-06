@@ -4,13 +4,13 @@
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-#include "vlx_gguf_loader.h"
+#include "tasks/vlx_seek/vlx_gguf_loader.h"
 
 #include <algorithm>
 #include <cstdio>
 #include <fstream>
 
-#include "vlx_gguf_loader.h"
+#include "tasks/vlx_seek/vlx_gguf_loader.h"
 
 namespace vlx {
 

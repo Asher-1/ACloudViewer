@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "bev_backbone.h"
+#include "tasks/openpcdet/models/bev_backbone.h"
 
 #include <ggml.h>
 

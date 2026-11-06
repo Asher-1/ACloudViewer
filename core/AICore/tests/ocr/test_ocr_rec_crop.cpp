@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 
-#include "ocr_rec_crop.hpp"
+#include "tasks/ocr/ocr_rec_crop.hpp"
 #include "tests/common/test_macros.hpp"
 
 static int failures = 0;

@@ -28,7 +28,8 @@
 *                                                                           *
 ****************************************************************************/
 
-#include "coordinates.h"
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/coordinates.h"
+
 #include <limits>
 #include <cmath>
 

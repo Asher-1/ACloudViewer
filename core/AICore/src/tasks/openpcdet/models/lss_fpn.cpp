@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "lss_fpn.h"
+#include "tasks/openpcdet/models/lss_fpn.h"
 
 #include <ggml.h>
 

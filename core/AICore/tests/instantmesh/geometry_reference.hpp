@@ -9,7 +9,8 @@
 #include <memory>
 
 #include "aicore/asset_digests.h"
-#include "reference_inputs.hpp"
+#include "tests/instantmesh/reference_inputs.hpp"
+
 #include "src/common/ggml_backend_registry.hpp"
 #include "src/tasks/instantmesh/dino.hpp"
 #include "src/tasks/instantmesh/lrm_transformer.hpp"

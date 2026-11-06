@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "pose_decoder.hpp"
+#include "tasks/sam3d/pose_decoder.hpp"
 
 #include <algorithm>
 #include <cmath>

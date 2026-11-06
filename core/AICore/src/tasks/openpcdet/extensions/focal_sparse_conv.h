@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 
-#include "sparse_ops.h"
+#include "tasks/openpcdet/extensions/sparse_ops.h"
 
 namespace openpcdet::ext {
 

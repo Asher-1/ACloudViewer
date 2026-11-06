@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "gguf_io.hpp"
+#include "tasks/instantmesh/gguf_io.hpp"
 
 #include <cstdio>
 #include <fstream>

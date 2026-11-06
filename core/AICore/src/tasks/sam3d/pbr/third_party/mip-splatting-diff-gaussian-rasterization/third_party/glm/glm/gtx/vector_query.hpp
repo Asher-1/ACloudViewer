@@ -13,7 +13,8 @@
 #pragma once
 
 // Dependency:
-#include "../glm.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/glm.hpp"
+
 #include <cfloat>
 #include <limits>
 

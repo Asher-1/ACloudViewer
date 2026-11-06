@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "querysplat_rasterizer.hpp"
+#include "tasks/querysplat/querysplat_rasterizer.hpp"
 
 #include <algorithm>
 #include <cmath>

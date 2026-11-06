@@ -20,12 +20,13 @@
 //
 // Weights: `zero123pp_vae_<p>.gguf` from convert/convert_zero123pp.py, tensor
 // names identical to the diffusers AutoencoderKL state_dict.
-#ifndef INSTANTMESH_MODELS_VAE_HPP
-#define INSTANTMESH_MODELS_VAE_HPP
+#pragma once
+
 
 #include <string>
 
-#include "gguf_io.hpp"
+#include "tasks/instantmesh/gguf_io.hpp"
+
 #include "ggml.h"
 #include "ggml-backend.h"
 
@@ -64,5 +65,3 @@ float * vae_decode(const VaeModel & model, const float * latents,
                    int B, int h, int w, int * out_h, int * out_w);
 
 } // namespace instantmesh
-
-#endif // INSTANTMESH_MODELS_VAE_HPP

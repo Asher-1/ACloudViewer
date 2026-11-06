@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "vlx_seek_runtime.h"
+#include "tasks/vlx_seek/vlx_seek_runtime.h"
 
 #include <algorithm>
 #include <cctype>
@@ -25,16 +25,16 @@
 #include "ggml-backend.h"
 #include "ggml.h"
 #include "llama.h"
-#include "third_party/stb/stb_image.h"
-#include "third_party/stb/stb_image_write.h"
-#include "vlx_ggml_util.h"
-#include "vlx_gguf_loader.h"
-#include "vlx_hfre.h"
-#include "vlx_image_prep.h"
-#include "vlx_mmproj_graph.h"
-#include "vlx_radio_graph.h"
-#include "vlx_simplefpn_graph.h"
-#include "vlx_wedetect_graph.h"
+#include "tasks/vlx_seek/third_party/stb/stb_image.h"
+#include "tasks/vlx_seek/third_party/stb/stb_image_write.h"
+#include "tasks/vlx_seek/vlx_ggml_util.h"
+#include "tasks/vlx_seek/vlx_gguf_loader.h"
+#include "tasks/vlx_seek/vlx_hfre.h"
+#include "tasks/vlx_seek/vlx_image_prep.h"
+#include "tasks/vlx_seek/vlx_mmproj_graph.h"
+#include "tasks/vlx_seek/vlx_radio_graph.h"
+#include "tasks/vlx_seek/vlx_simplefpn_graph.h"
+#include "tasks/vlx_seek/vlx_wedetect_graph.h"
 
 #define VLX_LOG_DEBUG(...) ::vlx::logf(AICORE_LOG_LEVEL_DEBUG, __VA_ARGS__)
 #define VLX_LOG_INFO(...) ::vlx::logf(AICORE_LOG_LEVEL_INFO, __VA_ARGS__)

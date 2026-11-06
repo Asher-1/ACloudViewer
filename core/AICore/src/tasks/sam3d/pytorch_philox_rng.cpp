@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "pytorch_philox_rng.hpp"
+#include "tasks/sam3d/pytorch_philox_rng.hpp"
 
 #include <algorithm>
 #include <array>

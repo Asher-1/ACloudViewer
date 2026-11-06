@@ -33,28 +33,6 @@ the sections above and in git history).
 | 11 | Packaging | Run/.exe/.app installers must carry the plugin resources (translations qm, docs) and rely on catalog remote-download for models; default model per task must match upstream | Existing docker/build scripts + qrc resources; verify installer contents per platform (Linux/Windows/macOS) | Linux generated plugin install rules, stripping and Unicode-path relocation are verified below; complete Linux installer and native Windows/macOS package verification remain open |
 | 12 | Baseline evolution | Upstream v4.1.3 → v4.2.1 (43 commits, `745f6c35..cd26942a`) landed after this table was drafted | Feature/fix commits verified against the plugin tree in UPSTREAM_PARITY_AUDIT.md (Fresh observation 2026-11-05); visual overhaul tracked by gap #6 | Checked — no reopened rows; the Use Test Data bundle and the explicit-parameter attribute tests are plugin-side additions recorded in the same audit note |
 
-The detailed ledger below also retains older open workflow and validation
-items. New upstream additions are tracked separately above.
-
----
-
-Reference: X-AnyLabeling-GGML commit `926017d09b22564a78c55eb2f368c7b20faa0466`.
-The dated research/rollout notes below preserve historical plans; the current
-public catalogs, implementation and follow-up evidence above take precedence.
-The source tree has 205 `anylabeling/configs/auto_labeling/*.yaml` model
-configurations with 92 distinct `type` values. A model is available here only when AICore publishes a matching
-task contract and a catalog GGUF. A similar output shape alone does not mean
-the source model has been ported. Re-check the live AICore catalogs before
-closing a row.
-
-Catalog-backed source `type` values whose corresponding workflows are fully
-or partly wired are `ram`, `rfdetr`, `rfdetr_seg`, `rmbg`, `scrfd`,
-`segment_anything_2`, `segment_anything_3`, `yolo26`, `yolo26_obb`,
-`yolo26_pose`, `yolo26_seg`, `yoloe`, `yolov8`, `yolov8_seg`, and `yolow`.
-This is a task-family mapping, not a claim that every source checkpoint or
-configuration is in the AICore catalog. The remaining 77 source types are
-listed below, including composite types that can reuse existing AICore models.
-
 ## Fresh observation (2026-11-05, second pass)
 
 Note: the historical observations below reference the retired

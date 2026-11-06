@@ -39,9 +39,9 @@
 #include "common/image_utils.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
-#include "ocr_db_postprocess.hpp"
-#include "ocr_rec_crop.hpp"
-#include "ocr_runtime.hpp"
+#include "tasks/ocr/ocr_db_postprocess.hpp"
+#include "tasks/ocr/ocr_rec_crop.hpp"
+#include "tasks/ocr/ocr_runtime.hpp"
 
 namespace {
 

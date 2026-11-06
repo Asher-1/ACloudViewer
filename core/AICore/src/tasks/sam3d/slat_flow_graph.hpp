@@ -12,9 +12,12 @@
 #include <string>
 #include <vector>
 
-#include "graph_builder.hpp"
-#include "gguf_loader.hpp"
-#include "sparse_ops.hpp"
+#include "tasks/sam3d/graph_builder.hpp"
+
+#include "tasks/sam3d/gguf_loader.hpp"
+
+#include "tasks/sam3d/sparse_ops.hpp"
+
 
 namespace sam3d {
 

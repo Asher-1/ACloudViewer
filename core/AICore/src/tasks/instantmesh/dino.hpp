@@ -11,13 +11,14 @@
 // whose tensor names mirror the PyTorch state_dict (after stripping the
 // `encoder.` prefix): `model.embeddings.*`, `model.encoder.layer.N.*`,
 // `camera_embedder.*`.
-#ifndef INSTANTMESH_MODELS_DINO_HPP
-#define INSTANTMESH_MODELS_DINO_HPP
+#pragma once
+
 
 #include <memory>
 #include <string>
 
-#include "gguf_io.hpp"
+#include "tasks/instantmesh/gguf_io.hpp"
+
 #include "ggml.h"
 #include "ggml-backend.h"
 
@@ -52,5 +53,3 @@ float * dino_encode(const DinoModel & model, const float * image,
                     int * out_seq, int * out_hidden);
 
 } // namespace instantmesh
-
-#endif // INSTANTMESH_MODELS_DINO_HPP

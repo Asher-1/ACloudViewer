@@ -22,25 +22,40 @@
 
 #include <functional>
 
-#include "../vec2.hpp"
-#include "../vec3.hpp"
-#include "../vec4.hpp"
-#include "../gtc/vec1.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/vec2.hpp"
 
-#include "../gtc/quaternion.hpp"
-#include "../gtx/dual_quaternion.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/vec3.hpp"
 
-#include "../mat2x2.hpp"
-#include "../mat2x3.hpp"
-#include "../mat2x4.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/vec4.hpp"
 
-#include "../mat3x2.hpp"
-#include "../mat3x3.hpp"
-#include "../mat3x4.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/gtc/vec1.hpp"
 
-#include "../mat4x2.hpp"
-#include "../mat4x3.hpp"
-#include "../mat4x4.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/gtc/quaternion.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/gtx/dual_quaternion.hpp"
+
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/mat2x2.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/mat2x3.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/mat2x4.hpp"
+
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/mat3x2.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/mat3x3.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/mat3x4.hpp"
+
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/mat4x2.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/mat4x3.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/mat4x4.hpp"
+
 
 #if !GLM_HAS_CXX11_STL
 #	error "GLM_GTX_hash requires C++11 standard library support"

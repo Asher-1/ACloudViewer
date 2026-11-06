@@ -21,7 +21,7 @@
 //     [Ah|Aw|Ah|Aw], rotate pairs (i, i+dh/2)), identity rows for the
 //     camera/register/cls/storage prefix, fed as {dh, 1, T, 1} inputs.
 
-#include "map_anything_graph.hpp"
+#include "tasks/map_anything/map_anything_graph.hpp"
 
 #include <string.h>
 
@@ -38,7 +38,7 @@
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
-#include "map_anything_graph_builder.hpp"
+#include "tasks/map_anything/map_anything_graph_builder.hpp"
 
 namespace map_anything {
 

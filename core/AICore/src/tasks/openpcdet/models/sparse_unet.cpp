@@ -5,14 +5,14 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "sparse_unet.h"
+#include "tasks/openpcdet/models/sparse_unet.h"
 
 #include <ggml.h>
 
 #include <algorithm>
 #include <array>
 
-#include "../ops/voxelization.h"
+#include "tasks/openpcdet/ops/voxelization.h"
 
 namespace openpcdet {
 

@@ -32,14 +32,14 @@ constexpr int kSam3dAbiVersion = AICORE_SAM3D_ABI_VERSION;
 
 }  // namespace
 
-#include "asset_io.hpp"
-#include "common.hpp"
 #include "common/capi_utils.hpp"
 #include "common/ggml_backend_registry.hpp"
 #include "common/runtime_cleanup.hpp"
-#include "model_catalog.hpp"
-#include "sam3dggml.h"
-#include "scene_assemble.hpp"
+#include "tasks/sam3d/asset_io.hpp"
+#include "tasks/sam3d/common.hpp"
+#include "tasks/sam3d/model_catalog.hpp"
+#include "tasks/sam3d/sam3dggml.h"
+#include "tasks/sam3d/scene_assemble.hpp"
 
 // Opaque struct definitions live at global scope so they complete the
 // typedefs declared in the public header (an anonymous-namespace definition

@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "sparse_ops.h"
+#include "tasks/openpcdet/extensions/sparse_ops.h"
 
 #include <algorithm>
 #include <array>

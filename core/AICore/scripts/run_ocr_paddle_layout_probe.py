@@ -17,7 +17,8 @@ import numpy as np
 from run_ocr_onnx_probe import (native_exit_is_diagnostic, probability_command,
                                 source_performance_pass)
 from run_ocr_paddle_pipeline import verified_source
-from run_ocr_paddle_probe import comparison, digest, execute, source_environment
+from run_ocr_paddle_probe import comparison, execute, source_environment
+from digest_utils import sha256_file
 
 
 def canonical_heads(values, references):
@@ -82,8 +83,8 @@ def source_run(args, files, python, target, device):
     benchmark = Path(__file__).resolve().parents[1] / "tools/bench_paddle_ocr_graph.py"
     command = [str(python), str(benchmark), "--program", str(files["program"]),
         "--parameters", str(files["parameters"]), "--input", str(args.input),
-        "--program-sha256", digest(files["program"]),
-        "--parameters-sha256", digest(files["parameters"]),
+        "--program-sha256", sha256_file(files["program"]),
+        "--parameters-sha256", sha256_file(files["parameters"]),
         "--input-sha256", args.input_sha256, "--device", device,
         "--expected-outputs", "8", "--threads", str(args.threads),
         "--warmups", str(args.warmups if device == "cuda" else 0),
@@ -120,12 +121,12 @@ def native_run(args, work, references, *, cpu=False):
 
 
 def run(args):
-    if digest(args.input) != args.input_sha256:
+    if sha256_file(args.input) != args.input_sha256:
         raise ValueError("input SHA-256 mismatch")
     references = []
     for path, expected in args.reference_head:
         path = Path(path)
-        if digest(path) != expected:
+        if sha256_file(path) != expected:
             raise ValueError("layout reference SHA-256 mismatch")
         references.append(np.load(path))
     canonical_heads(references, references)
@@ -138,11 +139,11 @@ def run(args):
         scripts / "run_ocr_paddle_pipeline.py", scripts / "run_ocr_onnx_probe.py",
         scripts / "gpu_audit.py", scripts.parent / "tools/bench_paddle_ocr_graph.py",
         args.source_pins, args.probe]
-    before = {str(p): digest(p) for p in dependencies}
+    before = {str(p): sha256_file(p) for p in dependencies}
     report = dict(exit_code=0, role="layout", backend=args.backend,
-        model_sha256=digest(args.model), input_sha256=args.input_sha256,
+        model_sha256=sha256_file(args.model), input_sha256=args.input_sha256,
         reference_sha256=[sha for _, sha in args.reference_head], dependencies=before,
-        source_files={key: digest(value) for key, value in files.items()},
+        source_files={key: sha256_file(value) for key, value in files.items()},
         scope="all eight original graph heads; no page-accuracy or full-release claim")
     gpu = args.backend != "cpu"
     controlled = gpu and args.measurement_profile == "release"
@@ -181,7 +182,7 @@ def run(args):
         report["native_cpu_comparison"] = "separate diagnostic; not a GPU release gate"
         output = args.report.with_suffix(".probabilities.npz")
         np.savez(output, **{f"head{i}": value for i, value in enumerate(native)})
-        report["output_sha256"] = digest(output)
+        report["output_sha256"] = sha256_file(output)
         if audit:
             report.update(gpu_audit_pass=int(audit["passed"]),
                 gpu_audit_archive=audit["archive_path"],
@@ -197,7 +198,7 @@ def run(args):
             graph_throughput_hz=1000 / report["p50_ms"])
         if controlled and not report["source_performance_pass"]:
             report["exit_code"] = 1
-    if before != {str(p): digest(p) for p in dependencies}:
+    if before != {str(p): sha256_file(p) for p in dependencies}:
         raise ValueError("layout probe dependencies changed during execution")
     return report
 

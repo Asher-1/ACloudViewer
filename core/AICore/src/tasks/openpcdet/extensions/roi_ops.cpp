@@ -5,13 +5,13 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "roi_ops.h"
+#include "tasks/openpcdet/extensions/roi_ops.h"
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
 
-#include "../ops/nms_3d.h"
+#include "tasks/openpcdet/ops/nms_3d.h"
 
 namespace openpcdet::ext {
 

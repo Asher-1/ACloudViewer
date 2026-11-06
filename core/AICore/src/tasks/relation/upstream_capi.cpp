@@ -14,8 +14,8 @@
 #include <string>
 #include <vector>
 
-#include "relateanything/c_api.h"
-#include "relateanything/full_model.hpp"
+#include "tasks/relation/relateanything/c_api.h"
+#include "tasks/relation/relateanything/full_model.hpp"
 
 namespace {
 struct Names;

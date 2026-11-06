@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "ss_decoder_graph.hpp"
+#include "tasks/sam3d/ss_decoder_graph.hpp"
 
 #include <cmath>
 #include <cstddef>
@@ -14,8 +14,8 @@
 #include <functional>
 #include <string>
 
-#include "common.hpp"
-#include "graph_builder.hpp"
+#include "tasks/sam3d/common.hpp"
+#include "tasks/sam3d/graph_builder.hpp"
 
 namespace sam3d {
 

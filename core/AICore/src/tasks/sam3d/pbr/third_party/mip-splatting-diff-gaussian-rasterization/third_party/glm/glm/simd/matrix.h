@@ -10,7 +10,8 @@
 
 #pragma once
 
-#include "geometric.h"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/simd/geometric.h"
+
 
 #if GLM_ARCH & GLM_ARCH_SSE2_BIT
 

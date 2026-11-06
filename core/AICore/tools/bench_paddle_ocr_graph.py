@@ -6,29 +6,25 @@ output copies, model loading, and the telemetry allocation hold are excluded.
 The parent probe verifies source identity and audits this separate process.
 """
 
+from pathlib import Path
 import argparse
 import gc
-import hashlib
 import importlib.metadata
 import json
 import os
 import sys
 import time
-from pathlib import Path
 
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from digest_utils import sha256_file
 from ocr_paddle_metadata import distribution_environment
-
-
-def digest(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def main():
     identity_module = Path(distribution_environment.__code__.co_filename)
-    identity_sha256 = digest(identity_module)
+    identity_sha256 = sha256_file(identity_module)
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("program", "parameters", "input", "report"):
         parser.add_argument("--" + name, type=Path, required=True)
@@ -45,7 +41,7 @@ def main():
             not 0 <= args.audit_hold_ms <= 10000):
         parser.error("invalid measurement counts")
     for name in ("program", "parameters", "input"):
-        if digest(getattr(args, name)) != getattr(args, name + "_sha256"):
+        if sha256_file(getattr(args, name)) != getattr(args, name + "_sha256"):
             parser.error(f"{name} SHA-256 mismatch")
     distribution = "paddlepaddle-gpu" if args.device == "cuda" else "paddlepaddle"
     if importlib.metadata.version(distribution) != "3.0.0":
@@ -110,13 +106,13 @@ def main():
         parameters_sha256=args.parameters_sha256, input_sha256=args.input_sha256,
         input_shape=list(x.shape), output_shape=list(outputs[0].shape),
         output_names=output_names, output_shapes=[list(output.shape) for output in outputs],
-        output_sha256=digest(output_path), device=args.device,
+        output_sha256=sha256_file(output_path), device=args.device,
         paddle_compiled_with_cuda=paddle.is_compiled_with_cuda(),
         predictor_uses_gpu=predictor_uses_gpu,
         paddle_version=importlib.metadata.version(distribution),
         **distribution_environment(),
         distribution_identity_sha256=identity_sha256,
-        paddle_library_sha256=digest(Path(paddle.base.libpaddle.__file__)),
+        paddle_library_sha256=sha256_file(Path(paddle.base.libpaddle.__file__)),
         logging_environment_keys=sorted(k for k in os.environ
                                         if k.startswith(("GLOG_", "MLOG_"))),
         threads=args.threads, warmups=args.warmups, runs=args.runs,
@@ -126,7 +122,7 @@ def main():
         ir_optim=False,
         audit_hold_ms=args.audit_hold_ms,
         timing_scope="synchronous predictor graph and dispatch; no input upload/output copy")
-    if digest(identity_module) != identity_sha256:
+    if sha256_file(identity_module) != identity_sha256:
         raise ValueError("package identity helper changed during execution")
     args.report.write_text(json.dumps(report, indent=2) + "\n")
 

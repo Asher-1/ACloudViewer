@@ -14,7 +14,8 @@
 #pragma once
 
 // Dependency:
-#include "../glm.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/glm.hpp"
+
 #include <cstdlib>
 
 #if GLM_MESSAGES == GLM_ENABLE && !defined(GLM_EXT_INCLUDED)

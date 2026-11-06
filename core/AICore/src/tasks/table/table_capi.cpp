@@ -36,8 +36,8 @@
 #include "common/ggml_backend_registry.hpp"
 #include "common/ggml_backend_utils.hpp"
 #include "common/image_utils.hpp"
-#include "table_postprocess.hpp"
-#include "table_runtime.hpp"
+#include "tasks/table/table_postprocess.hpp"
+#include "tasks/table/table_runtime.hpp"
 
 namespace {
 

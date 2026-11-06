@@ -2,7 +2,8 @@
 /// @file glm/ext/vector_double3.hpp
 
 #pragma once
-#include "../detail/type_vec3.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/type_vec3.hpp"
+
 
 namespace glm
 {

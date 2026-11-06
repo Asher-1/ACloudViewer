@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "querysplat_graph.hpp"
+#include "tasks/querysplat/querysplat_graph.hpp"
 
 #include <chrono>
 #include <cmath>
@@ -16,10 +16,10 @@
 #include "ggml-backend.h"
 #include "ggml.h"
 #include "gguf.h"
-#include "map_anything_common.hpp"
-#include "map_anything_gguf_loader.hpp"
-#include "querysplat_activations.hpp"
-#include "querysplat_log.hpp"
+#include "tasks/map_anything/map_anything_common.hpp"
+#include "tasks/map_anything/map_anything_gguf_loader.hpp"
+#include "tasks/querysplat/querysplat_activations.hpp"
+#include "tasks/querysplat/querysplat_log.hpp"
 
 namespace qs {
 

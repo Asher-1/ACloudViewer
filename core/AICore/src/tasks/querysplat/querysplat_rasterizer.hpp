@@ -21,7 +21,8 @@
 // row-major math).
 #pragma once
 
-#include "querysplat_activations.hpp"
+#include "tasks/querysplat/querysplat_activations.hpp"
+
 
 #include <cstdint>
 #include <string>

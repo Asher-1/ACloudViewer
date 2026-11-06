@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "pointnet2_ops.h"
+#include "tasks/openpcdet/extensions/pointnet2_ops.h"
 
 #include <algorithm>
 #include <array>

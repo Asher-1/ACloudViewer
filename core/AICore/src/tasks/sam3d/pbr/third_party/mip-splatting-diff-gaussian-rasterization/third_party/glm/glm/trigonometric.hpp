@@ -18,8 +18,10 @@
 
 #pragma once
 
-#include "detail/setup.hpp"
-#include "detail/qualifier.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/setup.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/qualifier.hpp"
+
 
 namespace glm
 {
@@ -207,4 +209,5 @@ namespace glm
 	/// @}
 }//namespace glm
 
-#include "detail/func_trigonometric.inl"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/detail/func_trigonometric.inl"
+

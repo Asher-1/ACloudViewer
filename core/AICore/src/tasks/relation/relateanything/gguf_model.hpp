@@ -1,7 +1,9 @@
 #pragma once
 
-#include "relateanything/backend.hpp"
-#include "relateanything/types.hpp"
+#include "tasks/relation/relateanything/backend.hpp"
+
+#include "tasks/relation/relateanything/types.hpp"
+
 
 #include "ggml.h"
 #include "gguf.h"

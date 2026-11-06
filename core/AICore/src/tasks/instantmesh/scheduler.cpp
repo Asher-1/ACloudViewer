@@ -19,7 +19,7 @@
 //                   sigma_down= sqrt(s2^2 - sigma_up^2)
 //                   d         = (x - pred_x0)/sigma
 //                   prev      = x + d*(sigma_down - sigma) + noise*sigma_up
-#include "scheduler.hpp"
+#include "tasks/instantmesh/scheduler.hpp"
 
 #include <algorithm>
 #include <cmath>

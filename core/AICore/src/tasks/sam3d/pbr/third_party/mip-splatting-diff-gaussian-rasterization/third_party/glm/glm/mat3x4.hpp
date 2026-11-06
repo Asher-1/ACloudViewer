@@ -2,7 +2,11 @@
 /// @file glm/mat3x4.hpp
 
 #pragma once
-#include "./ext/matrix_double3x4.hpp"
-#include "./ext/matrix_double3x4_precision.hpp"
-#include "./ext/matrix_float3x4.hpp"
-#include "./ext/matrix_float3x4_precision.hpp"
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/ext/matrix_double3x4.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/ext/matrix_double3x4_precision.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/ext/matrix_float3x4.hpp"
+
+#include "tasks/sam3d/pbr/third_party/mip-splatting-diff-gaussian-rasterization/third_party/glm/glm/ext/matrix_float3x4_precision.hpp"
+

@@ -38,7 +38,6 @@
 #include <thread>
 #include <vector>
 
-#include "common/validation_probe.hpp"
 #include "tasks/rfdetr/backend.hpp"
 #include "tasks/rfdetr/common.hpp"
 #include "tasks/rfdetr/image_io.hpp"
@@ -46,6 +45,7 @@
 #include "tasks/rfdetr/postprocess.hpp"
 #include "tasks/rfdetr/rfdetr.h"
 #include "tasks/rfdetr/rfdetr_model.hpp"
+#include "tests/common/validation_probe.hpp"
 
 namespace {
 

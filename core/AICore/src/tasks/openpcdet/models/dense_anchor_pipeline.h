@@ -10,12 +10,12 @@
 #include <string>
 #include <vector>
 
-#include "../backend.h"
-#include "../model.h"
-#include "anchor_head.h"
-#include "anchor_head_multi.h"
-#include "bev_backbone.h"
-#include "center_head.h"
+#include "tasks/openpcdet/backend.h"
+#include "tasks/openpcdet/model.h"
+#include "tasks/openpcdet/models/anchor_head.h"
+#include "tasks/openpcdet/models/anchor_head_multi.h"
+#include "tasks/openpcdet/models/bev_backbone.h"
+#include "tasks/openpcdet/models/center_head.h"
 
 namespace openpcdet {
 

@@ -35,7 +35,7 @@
 #include <vector>
 
 #include "aicore/openpcdet_capi.h"
-#include "common/validation_probe.hpp"
+#include "tests/common/validation_probe.hpp"
 
 namespace {
 

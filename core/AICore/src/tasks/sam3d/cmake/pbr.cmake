@@ -70,6 +70,10 @@ function(aicore_sam3d_wire_pbr target sam3d_src_dir)
         ${AICORE_SAM3D_PBR_SRC_DIR}/third_party/xatlas/xatlas.cpp)
     target_include_directories(AICore_sam3d_xatlas SYSTEM PUBLIC
         ${AICORE_SAM3D_PBR_SRC_DIR}/third_party/xatlas)
+    # The vendored tree uses the repo-wide full-path include style
+    # (#include "tasks/..."), which needs the AICore src/ root.
+    target_include_directories(AICore_sam3d_xatlas PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src)
     target_link_libraries(AICore_sam3d_xatlas PUBLIC Threads::Threads)
 
     # Inria mip-splatting forward Gaussian rasterizer (non-commercial),
@@ -89,7 +93,8 @@ function(aicore_sam3d_wire_pbr target sam3d_src_dir)
         ${AICORE_SAM3D_MIP_DIR}/cuda_rasterizer/rasterizer_impl.cu)
     target_include_directories(AICore_sam3d_mip_gaussian
         PUBLIC ${AICORE_SAM3D_MIP_DIR}/cuda_rasterizer
-        PRIVATE ${AICORE_SAM3D_MIP_DIR}/third_party/glm)
+        PRIVATE ${AICORE_SAM3D_MIP_DIR}/third_party/glm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src)
     target_link_libraries(AICore_sam3d_mip_gaussian PUBLIC CUDA::cudart)
     set_target_properties(AICore_sam3d_mip_gaussian PROPERTIES
         CXX_STANDARD 17 CUDA_STANDARD 17 CUDA_EXTENSIONS OFF)
@@ -120,7 +125,8 @@ function(aicore_sam3d_wire_pbr target sam3d_src_dir)
             ${AICORE_SAM3D_PBR_SRC_DIR}/nvdiffrast_standalone/nvdiffrast_common.cpp)
         target_include_directories(AICore_sam3d_nvdiffrast
             PUBLIC ${AICORE_SAM3D_NVDR_DIR}/csrc/common/cudaraster
-            PRIVATE ${AICORE_SAM3D_NVDR_DIR})
+            PRIVATE ${AICORE_SAM3D_NVDR_DIR}
+                ${CMAKE_CURRENT_SOURCE_DIR}/src)
         target_link_libraries(AICore_sam3d_nvdiffrast PUBLIC CUDA::cudart)
         set_target_properties(AICore_sam3d_nvdiffrast PROPERTIES
             CXX_STANDARD 17 CUDA_STANDARD 17 CUDA_EXTENSIONS OFF)
@@ -160,7 +166,8 @@ function(aicore_sam3d_wire_pbr target sam3d_src_dir)
             ${_aicore_sam3d_meshfix_dir}/triangle.cpp
             ${_aicore_sam3d_meshfix_dir}/vertex.cpp)
         target_include_directories(AICore_sam3d_meshfix PUBLIC
-            ${_aicore_sam3d_meshfix_dir})
+            ${_aicore_sam3d_meshfix_dir}
+            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
         if(CMAKE_SIZEOF_VOID_P EQUAL 8)
             target_compile_definitions(AICore_sam3d_meshfix PUBLIC
                 IS64BITPLATFORM)

@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "voxelrcnn.h"
+#include "tasks/openpcdet/models/voxelrcnn.h"
 
 #include <ggml.h>
 
@@ -15,13 +15,13 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "../extensions/deterministic_sparse_conv.h"
-#include "../extensions/focal_sparse_conv.h"
-#include "../extensions/roi_ops.h"
-#include "../ops/nms_3d.h"
-#include "../ops/voxelization.h"
-#include "dense_anchor_pipeline.h"
-#include "voxel_backbone_runner.h"
+#include "tasks/openpcdet/extensions/deterministic_sparse_conv.h"
+#include "tasks/openpcdet/extensions/focal_sparse_conv.h"
+#include "tasks/openpcdet/extensions/roi_ops.h"
+#include "tasks/openpcdet/models/dense_anchor_pipeline.h"
+#include "tasks/openpcdet/models/voxel_backbone_runner.h"
+#include "tasks/openpcdet/ops/nms_3d.h"
+#include "tasks/openpcdet/ops/voxelization.h"
 
 namespace openpcdet {
 

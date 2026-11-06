@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "deterministic_sparse_conv.h"
+#include "tasks/openpcdet/extensions/deterministic_sparse_conv.h"
 
 #include <algorithm>
 #ifdef _OPENMP

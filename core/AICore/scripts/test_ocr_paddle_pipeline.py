@@ -16,6 +16,12 @@ from unittest.mock import Mock, patch
 
 import numpy as np
 
+try:
+    import cv2  # noqa: F401
+except ModuleNotFoundError:  # test host without the opencv dep
+    import sys
+    print("SKIP: paddle reference tests require cv2")
+    sys.exit(77)
 from run_ocr_source_pipeline import aicore_library_path
 import run_ocr_paddle_pipeline as probe
 

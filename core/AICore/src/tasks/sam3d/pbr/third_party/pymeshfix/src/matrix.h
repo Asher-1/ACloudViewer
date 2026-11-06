@@ -28,13 +28,15 @@
 *                                                                           *
 ****************************************************************************/
 
-#ifndef MATRIX_H
-#define MATRIX_H
+#pragma once
+
 
 #include <stdio.h>
 #include <float.h>
-#include "coordinates.h"
-#include "list.h"
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/coordinates.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/list.h"
+
 
 namespace T_MESH
 {
@@ -296,6 +298,3 @@ class Matrix4x4
 };
 
 } //namespace T_MESH
-
-#endif // MATRIX_H
-

@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "bevfusion.h"
+#include "tasks/openpcdet/models/bevfusion.h"
 
 #include <algorithm>
 #include <chrono>
@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "common/debug_dump.hpp"
-#include "voxel_backbone_runner.h"
+#include "tasks/openpcdet/models/voxel_backbone_runner.h"
 
 namespace openpcdet {
 

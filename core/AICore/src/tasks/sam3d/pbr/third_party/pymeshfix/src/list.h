@@ -28,8 +28,8 @@
 *                                                                           *
 ****************************************************************************/
 
-#ifndef _JLIST_H
-#define _JLIST_H
+#pragma once
+
 
 #include <stdio.h>
 
@@ -177,6 +177,3 @@ class List
 #define FOREACHNODECIRCULAR(l, m, n) for ((n) = (m); ; (n)=((n)!=(l).tail())?((n)->next()):((l).head()))
 
 } //namespace T_MESH
-
-#endif // _JLIST_H
-

@@ -1,5 +1,5 @@
-#ifndef ARRAY_SUPPORT_HEADER_H
-#define ARRAY_SUPPORT_HEADER_H
+#pragma once
+
 
 #include <array>
 
@@ -68,5 +68,3 @@ NDArray<T, N> MakeNDArray(const std::array<int, N> shape, bool zero_initialize =
 
     return NDArray<T, N>(data, N, shape_, owner);
 }
-
-#endif // ARRAY_SUPPORT_HEADER_H

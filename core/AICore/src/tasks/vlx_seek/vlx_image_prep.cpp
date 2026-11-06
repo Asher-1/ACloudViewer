@@ -4,7 +4,7 @@
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-#include "vlx_image_prep.h"
+#include "tasks/vlx_seek/vlx_image_prep.h"
 
 #include <algorithm>
 #include <cmath>
@@ -20,8 +20,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #define STBI_NO_SIMD
-#include "third_party/stb/stb_image.h"
-#include "third_party/stb/stb_image_write.h"
+#include "tasks/vlx_seek/third_party/stb/stb_image.h"
+#include "tasks/vlx_seek/third_party/stb/stb_image_write.h"
 
 namespace vlx {
 

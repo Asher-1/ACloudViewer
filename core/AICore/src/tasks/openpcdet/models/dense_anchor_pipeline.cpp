@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "dense_anchor_pipeline.h"
+#include "tasks/openpcdet/models/dense_anchor_pipeline.h"
 
 #include <ggml.h>
 
@@ -16,9 +16,9 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "../extensions/center_head_ops.h"
-#include "../ops/nms_3d.h"
 #include "common/debug_dump.hpp"
+#include "tasks/openpcdet/extensions/center_head_ops.h"
+#include "tasks/openpcdet/ops/nms_3d.h"
 
 #ifdef _OPENMP
 #include <omp.h>

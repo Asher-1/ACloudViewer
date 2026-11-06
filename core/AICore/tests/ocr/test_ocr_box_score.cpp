@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 
-#include "ocr_box_score.hpp"
+#include "tasks/ocr/ocr_box_score.hpp"
 #include "tests/common/test_macros.hpp"
 
 static int failures = 0;

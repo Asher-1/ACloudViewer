@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "lingbot_model.h"
+#include "tasks/lingbot/lingbot_model.h"
 
 #include <ggml-alloc.h>
 #include <ggml-backend.h>
@@ -26,7 +26,7 @@
 #include <vector>
 
 #include "common/ggml_backend_registry.hpp"
-#include "lingbot_gguf_loader.h"
+#include "tasks/lingbot/lingbot_gguf_loader.h"
 
 namespace lingbot {
 

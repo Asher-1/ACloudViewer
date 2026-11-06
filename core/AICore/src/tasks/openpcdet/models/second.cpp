@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "second.h"
+#include "tasks/openpcdet/models/second.h"
 
 #include <algorithm>
 #include <chrono>
@@ -14,10 +14,10 @@
 #include <cstdlib>
 #include <limits>
 
-#include "../extensions/roi_ops.h"
 #include "common/debug_dump.hpp"
-#include "dense_anchor_pipeline.h"
-#include "voxel_backbone_runner.h"
+#include "tasks/openpcdet/extensions/roi_ops.h"
+#include "tasks/openpcdet/models/dense_anchor_pipeline.h"
+#include "tasks/openpcdet/models/voxel_backbone_runner.h"
 
 namespace openpcdet {
 

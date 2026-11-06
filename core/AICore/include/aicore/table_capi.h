@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef AICORE_TABLE_CAPI_H
-#define AICORE_TABLE_CAPI_H
+#pragma once
 
 #include "aicore/export.h"
 #include "aicore/image_view.h"
@@ -186,5 +185,3 @@ AICORE_CAPI void aicore_table_runtime_shutdown(void);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* AICORE_TABLE_CAPI_H */

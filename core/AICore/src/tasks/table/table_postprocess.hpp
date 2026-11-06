@@ -25,7 +25,8 @@
 #include <string>
 #include <vector>
 
-#include "table_runtime.hpp"
+#include "tasks/table/table_runtime.hpp"
+
 
 namespace aicore {
 namespace table {

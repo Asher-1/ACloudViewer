@@ -10,7 +10,14 @@ from unittest.mock import patch
 
 import numpy as np
 
-from run_ocr_paddle_probe import comparison, digest, execute, passes, run, source_environment
+try:
+    import cv2  # noqa: F401
+except ModuleNotFoundError:  # test host without the opencv dep
+    import sys
+    print("SKIP: paddle reference tests require cv2")
+    sys.exit(77)
+from run_ocr_paddle_probe import comparison, execute, passes, run, source_environment
+from digest_utils import sha256_file
 from ocr_paddle_metadata import distribution_environment
 
 
@@ -125,7 +132,7 @@ class PaddleGraphTests(unittest.TestCase):
 
     def test_gpu_release_compares_official_cuda_output_without_running_native_cpu(self):
         scripts = Path(__file__).resolve().parent
-        identity = digest(scripts / "ocr_paddle_metadata.py")
+        identity = sha256_file(scripts / "ocr_paddle_metadata.py")
         for profile, mismatch in (("release", False), ("release", True),
                                   ("developer", False), ("developer", True)):
             with self.subTest(profile=profile, mismatch=mismatch), tempfile.TemporaryDirectory() as directory:
@@ -143,8 +150,8 @@ class PaddleGraphTests(unittest.TestCase):
                     report=root / "report.json", warmups=2, runs=10, threads=4,
                     max_diff=.001, mean_diff=.001, source_max_diff=.001,
                     gpu_idle_timeout=10, measurement_profile=profile,
-                    input_sha256=digest(root / "input.npy"),
-                    reference_sha256=digest(root / "reference.npy"))
+                    input_sha256=sha256_file(root / "input.npy"),
+                    reference_sha256=sha256_file(root / "reference.npy"))
                 native_backends = []
 
                 def launch(command, target, **kwargs):
@@ -177,7 +184,7 @@ class PaddleGraphTests(unittest.TestCase):
 
     def test_gpu_truth_does_not_require_original_or_native_cpu_accuracy(self):
         scripts = Path(__file__).resolve().parent
-        identity = digest(scripts / 'ocr_paddle_metadata.py')
+        identity = sha256_file(scripts / 'ocr_paddle_metadata.py')
         for backend in ('cuda', 'vulkan'):
             with self.subTest(backend=backend), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
@@ -195,8 +202,8 @@ class PaddleGraphTests(unittest.TestCase):
                     report=root/'report.json', warmups=2, runs=10, threads=4,
                     max_diff=.001, mean_diff=.001, source_max_diff=.001,
                     gpu_idle_timeout=10, measurement_profile='release',
-                    input_sha256=digest(root/'input.npy'),
-                    reference_sha256=digest(root/'reference.npy'))
+                    input_sha256=sha256_file(root/'input.npy'),
+                    reference_sha256=sha256_file(root/'reference.npy'))
                 called = []
 
                 def launch(command, target, **kwargs):

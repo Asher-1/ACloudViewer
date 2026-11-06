@@ -18,7 +18,7 @@
 #include <vector>
 
 #include "aicore/yolo_capi.h"
-#include "common/validation_probe.hpp"
+#include "tests/common/validation_probe.hpp"
 
 namespace {
 

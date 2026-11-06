@@ -28,7 +28,8 @@
 *                                                                           *
 ****************************************************************************/
 
-#include "triangle.h"
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/triangle.h"
+
 #include <stdlib.h>
 
 namespace T_MESH

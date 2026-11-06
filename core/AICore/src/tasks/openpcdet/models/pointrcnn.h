@@ -9,8 +9,8 @@
 
 #include <vector>
 
-#include "../model.h"
-#include "point_mlp.h"
+#include "tasks/openpcdet/model.h"
+#include "tasks/openpcdet/models/point_mlp.h"
 
 namespace openpcdet {
 

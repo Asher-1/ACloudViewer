@@ -10,7 +10,7 @@
 // normalization math is kept expression-for-expression identical so a
 // composed scene stays bit-comparable with the upstream scene-assemble flow
 // on the same per-object PLY inputs.
-#include "scene_assemble.hpp"
+#include "tasks/sam3d/scene_assemble.hpp"
 
 #include <algorithm>
 #include <cmath>

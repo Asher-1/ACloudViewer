@@ -294,6 +294,24 @@ the still/live/cancel/stale/error/teardown UI workflow. Record model and input
 digests, backend/device, quantization, build revision, dirty state, warmups,
 iterations, p50/p95, accuracy checks, and stability result.
 
+## Full-Path Include Convention
+
+AICore task and vendored sources use the full-path include style
+(`#include "tasks/<task>/..."` and `#include "aicore/..."`), never
+sibling-relative includes. The style requires the includer's CMake target to
+carry the matching roots: every target that compiles files under
+`core/AICore/src/` needs `${CMAKE_CURRENT_SOURCE_DIR}/src` (or `../src` from
+`tests/`) as a PRIVATE include directory — the main `AICore` target has it,
+and internal static libs (for example the `AICore_sam3d_*` PBR helpers in
+`src/tasks/sam3d/cmake/pbr.cmake`) and direct-compile test targets each need
+it added explicitly. A migration that rewrites include lines without adding
+the roots, or removes a header guard while leaving its `#endif` behind (or
+drops the wrong pair member, breaking a later `#ifndef`), fails the whole
+build; after any such sweep, re-verify with a conditional-compilation stack
+scan over every touched header (`#if/#ifdef/#ifndef` must nest correctly,
+not merely balance numerically) and a full build of the internal helper
+targets, not only the main library.
+
 ## Scripts & Tools Layout
 
 `core/AICore/scripts/` and `core/AICore/tools/` are two roles, not one
@@ -318,6 +336,21 @@ Maintenance rules:
   CMake/CTest wiring, `validation_manifest.json` command templates, the
   manifest self-tests in `scripts/test_validate_all.py` (row-count and
   coverage assertions pin the retired/growing matrix), and the owning docs.
+- Removing or renaming a shared helper must also update every cross-module
+  importer in the same change: grep `from <module> import` across BOTH
+  directories, not just the file that owns the helper (a partial rename once
+  broke ten downstream importers while their own file compiled fine).
+- Obsolete-script identification is a consumer audit, not an impression: grep
+  each file's basename AND its import stem repo-wide (exclude only the file
+  itself); the manifest command templates and sibling `test_*.py` files count
+  as consumers even when they sit in the same directory. A zero-consumer file
+  whose capability is superseded gets deleted; a zero-consumer file with a
+  unique capability stays — conversion-host-only tooling (paddle/onnx/torch
+  experiment families, LoMa conversion) is intentionally not wired into CTest
+  because CI lacks those dependencies, and that is by design, not debt.
+  Hermetic stdlib-only sibling tests that lack CTest rows get wired with the
+  existing `add_test` + LABELS pattern instead of being left discoverable
+  only by pytest.
 - Every script stays a standalone CLI with `--help`; shared modules expose
   functions only and never execute at import time.
 

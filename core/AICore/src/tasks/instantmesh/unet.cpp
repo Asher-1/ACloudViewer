@@ -15,7 +15,7 @@
 // RefOnly: w-pass stores every attn1's post-norm hidden states; r-pass runs
 // attn1 as cross-attention with K/V source cat(h_r, h_w). Both passes live
 // in one graph so the w intermediates feed the r K/V directly.
-#include "unet.hpp"
+#include "tasks/instantmesh/unet.hpp"
 
 #include <cmath>
 #include <cstdio>
@@ -25,7 +25,7 @@
 
 #include "ggml-alloc.h"
 #include "ggml-cpu.h"
-#include "numerics.hpp"
+#include "tasks/instantmesh/numerics.hpp"
 
 namespace instantmesh {
 

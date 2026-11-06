@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "moge_inference.hpp"
+#include "tasks/sam3d/moge_inference.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -15,10 +15,10 @@
 #include <thread>
 #include <utility>
 
-#include "backend.hpp"
-#include "gguf_loader.hpp"
-#include "graph_builder.hpp"
-#include "moge_graph.hpp"
+#include "tasks/sam3d/backend.hpp"
+#include "tasks/sam3d/gguf_loader.hpp"
+#include "tasks/sam3d/graph_builder.hpp"
+#include "tasks/sam3d/moge_graph.hpp"
 
 namespace sam3d {
 namespace {

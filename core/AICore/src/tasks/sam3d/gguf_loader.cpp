@@ -5,12 +5,12 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "gguf_loader.hpp"
+#include "tasks/sam3d/gguf_loader.hpp"
 
 #include <cstdio>
 #include <cstring>
 
-#include "common.hpp"
+#include "tasks/sam3d/common.hpp"
 
 #if defined(__unix__) || defined(__APPLE__)
 #include <fcntl.h>

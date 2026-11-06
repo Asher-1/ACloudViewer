@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "image_geometry_ops.h"
+#include "tasks/openpcdet/extensions/image_geometry_ops.h"
 
 #include <cmath>
 

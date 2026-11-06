@@ -5,10 +5,12 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "mesh_rasterizer.hpp"
+#include "tasks/sam3d/pbr/mesh_rasterizer.hpp"
+
 
 #if defined(SAM3D_USE_NVDIFFRAST_CUDARASTER)
-#include "mesh_rasterizer_cuda.hpp"
+#include "tasks/sam3d/pbr/mesh_rasterizer_cuda.hpp"
+
 #endif
 
 #include <algorithm>

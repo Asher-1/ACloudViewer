@@ -28,12 +28,13 @@
 *                                                                           *
 ****************************************************************************/
 
-#ifndef _TMESH_KERNEL_H
-#define _TMESH_KERNEL_H
+#pragma once
 
-#include "basics.h"
-#include "list.h"
-#include "point.h"
-#include "matrix.h"
 
-#endif //_TMESH_KERNEL_H
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/basics.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/list.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/point.h"
+
+#include "tasks/sam3d/pbr/third_party/pymeshfix/src/matrix.h"

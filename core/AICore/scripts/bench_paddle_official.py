@@ -60,6 +60,11 @@ def emit_text_rows(results):
 
 
 def main():
+    if "-h" in sys.argv or "--help" in sys.argv:
+        print("usage: bench_paddle_official.py <image> [warmups] [iters] "
+              "[--det-gguf <gguf>] [--rec-gguf <gguf>] [--layout-gguf <gguf>] "
+              "[--cpu] [--recognize-full-image] [--language xx]")
+        return 0
     image = sys.argv[1]
     warmups = int(sys.argv[2]) if len(sys.argv) > 2 and not sys.argv[2].startswith("-") else 3
     iters = int(sys.argv[3]) if len(sys.argv) > 3 and not sys.argv[3].startswith("-") else 10

@@ -24,10 +24,10 @@
 #include <string>
 #include <vector>
 
-#include "../backend.h"
-#include "../gguf_loader.h"
-#include "../model.h"
-#include "bev_backbone.h"
+#include "tasks/openpcdet/backend.h"
+#include "tasks/openpcdet/gguf_loader.h"
+#include "tasks/openpcdet/model.h"
+#include "tasks/openpcdet/models/bev_backbone.h"
 
 namespace openpcdet {
 

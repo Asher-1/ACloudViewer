@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "swin_transformer.h"
+#include "tasks/openpcdet/models/swin_transformer.h"
 
 #include <ggml.h>
 

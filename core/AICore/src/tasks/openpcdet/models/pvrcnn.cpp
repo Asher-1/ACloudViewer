@@ -5,17 +5,17 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "pvrcnn.h"
+#include "tasks/openpcdet/models/pvrcnn.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 
-#include "../extensions/pointnet2_ops.h"
-#include "../extensions/roi_ops.h"
-#include "../ops/nms_3d.h"
-#include "dense_anchor_pipeline.h"
-#include "voxel_backbone_runner.h"
+#include "tasks/openpcdet/extensions/pointnet2_ops.h"
+#include "tasks/openpcdet/extensions/roi_ops.h"
+#include "tasks/openpcdet/models/dense_anchor_pipeline.h"
+#include "tasks/openpcdet/models/voxel_backbone_runner.h"
+#include "tasks/openpcdet/ops/nms_3d.h"
 
 namespace openpcdet {
 

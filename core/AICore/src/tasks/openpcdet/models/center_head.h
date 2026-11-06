@@ -10,8 +10,8 @@
 #include <string>
 #include <vector>
 
-#include "../gguf_loader.h"
-#include "bev_backbone.h"
+#include "tasks/openpcdet/gguf_loader.h"
+#include "tasks/openpcdet/models/bev_backbone.h"
 
 namespace openpcdet {
 

@@ -21,8 +21,8 @@
 #include "common/ggml_backend_registry.hpp"
 #include "common/ggml_backend_utils.hpp"
 #include "gguf.h"
-#include "relateanything/c_api.h"
-#include "relateanything/full_model.hpp"
+#include "tasks/relation/relateanything/c_api.h"
+#include "tasks/relation/relateanything/full_model.hpp"
 
 struct aicore_relation_ctx {
     aicore::runtime::BackendLease accelerator, cpu;

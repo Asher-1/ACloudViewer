@@ -7,6 +7,12 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+try:
+    import cv2  # noqa: F401
+except ModuleNotFoundError:  # test host without the opencv dep
+    import sys
+    print("SKIP: paddle reference tests require cv2")
+    sys.exit(77)
 import run_ocr_source_pipeline as source
 import run_ocr_paddle_pipeline as paddle
 import run_table_paddle_probe as table
