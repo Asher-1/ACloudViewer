@@ -3004,7 +3004,7 @@
    "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v2.0.0/pulc_person_attribute.onnx",
    "sha256": "3694c7f269585096eb378d1183bbdc4e8fa0e3dc0c89cb4591738cf538fd2827",
    "size_bytes": 6905296,
-   "description": "Independent PULC person attribute source model, X-AnyLabeling-GGML 745f6c355f94cddb06f6965b3a4118f82033e935"
+   "description": "Independent PULC person attribute source model, X-AnyLabeling-GGML 4601c0e0c4ce0941874e8de55a8db2d1815c9ba4"
   },
   {
    "id": "attr-onnx-pulc-vehicle",
@@ -3015,7 +3015,7 @@
    "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v2.0.0/pulc_vehicle_attribute.onnx",
    "sha256": "78362592b60c19b07cd3e41ad680dcc1fdff246e3fe450da8e46d45737a6e07c",
    "size_bytes": 6869427,
-   "description": "Independent PULC vehicle attribute source model, X-AnyLabeling-GGML 745f6c355f94cddb06f6965b3a4118f82033e935"
+   "description": "Independent PULC vehicle attribute source model, X-AnyLabeling-GGML 4601c0e0c4ce0941874e8de55a8db2d1815c9ba4"
   },
   {
    "id": "objects-detection-samples",
@@ -5411,7 +5411,7 @@
    "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v3.0.0/ch_ppocr_mobile_v2.0_cls_infer.onnx",
    "sha256": "cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
    "size_bytes": 582663,
-   "description": "Independent source model, X-AnyLabeling-GGML 745f6c355f94cddb06f6965b3a4118f82033e935"
+   "description": "Independent source model, X-AnyLabeling-GGML 4601c0e0c4ce0941874e8de55a8db2d1815c9ba4"
   },
   {
    "id": "ocr-onnx-ppocrv5-mobile-det",
@@ -5422,7 +5422,7 @@
    "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v3.0.0/ppocrv5_mobile_det_infer.onnx",
    "sha256": "ef79783d7db8ca8058b3499689c0b762d44417b4b18d5b42a441a5ee87b935cc",
    "size_bytes": 4768564,
-   "description": "Independent source model, X-AnyLabeling-GGML 745f6c355f94cddb06f6965b3a4118f82033e935"
+   "description": "Independent source model, X-AnyLabeling-GGML 4601c0e0c4ce0941874e8de55a8db2d1815c9ba4"
   },
   {
    "id": "ocr-onnx-ppocrv5-mobile-rec",
@@ -5433,7 +5433,7 @@
    "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v3.0.0/ppocrv5_mobile_rec_infer.onnx",
    "sha256": "821797e052c74eed8add29893b878cca77d3fb3791c058d041c96e09edc18ed2",
    "size_bytes": 16525530,
-   "description": "Independent source model, X-AnyLabeling-GGML 745f6c355f94cddb06f6965b3a4118f82033e935"
+   "description": "Independent source model, X-AnyLabeling-GGML 4601c0e0c4ce0941874e8de55a8db2d1815c9ba4"
   },
   {
    "id": "ocr-onnx-ppocrv6-medium-det",
@@ -5444,7 +5444,7 @@
    "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v3.0.0/ppocrv6_medium_det_infer.onnx",
    "sha256": "eb13b44b25bb36f89528b68720af8a61d9cf381176107f465db1757b65d086e1",
    "size_bytes": 62032837,
-   "description": "Independent source model, X-AnyLabeling-GGML 745f6c355f94cddb06f6965b3a4118f82033e935"
+   "description": "Independent source model, X-AnyLabeling-GGML 4601c0e0c4ce0941874e8de55a8db2d1815c9ba4"
   },
   {
    "id": "ocr-onnx-ppocrv6-medium-rec",
@@ -5455,7 +5455,7 @@
    "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v3.0.0/ppocrv6_medium_rec_infer.onnx",
    "sha256": "9c09abf0957f7968c7586464b7397b84ad2387a0497a351af40e9acc71b673ba",
    "size_bytes": 76554979,
-   "description": "Independent source model, X-AnyLabeling-GGML 745f6c355f94cddb06f6965b3a4118f82033e935"
+   "description": "Independent source model, X-AnyLabeling-GGML 4601c0e0c4ce0941874e8de55a8db2d1815c9ba4"
   },
   {
    "id": "ocr-onnx-ppocrv6-small-det",
@@ -5466,7 +5466,7 @@
    "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v3.0.0/ppocrv6_small_det_infer.onnx",
    "sha256": "d73e0058b7a8086bbd57f3d10b8bcd4ff95363f67e06e2762b5e814fe9c9410e",
    "size_bytes": 9880512,
-   "description": "Independent source model, X-AnyLabeling-GGML 745f6c355f94cddb06f6965b3a4118f82033e935"
+   "description": "Independent source model, X-AnyLabeling-GGML 4601c0e0c4ce0941874e8de55a8db2d1815c9ba4"
   },
   {
    "id": "ocr-onnx-ppocrv6-small-rec",
@@ -5477,7 +5477,7 @@
    "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v3.0.0/ppocrv6_small_rec_infer.onnx",
    "sha256": "5435fd747c9e0efe15a96d0b378d5bd157e9492ed8fd80edf08f30d02fa24634",
    "size_bytes": 21159378,
-   "description": "Independent source model, X-AnyLabeling-GGML 745f6c355f94cddb06f6965b3a4118f82033e935"
+   "description": "Independent source model, X-AnyLabeling-GGML 4601c0e0c4ce0941874e8de55a8db2d1815c9ba4"
   },
   {
    "id": "ocr-onnx-ppocrv6-tiny-det",
@@ -5488,7 +5488,7 @@
    "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v3.0.0/ppocrv6_tiny_det_infer.onnx",
    "sha256": "193bab7a04fca699a6c82e6abb5b81bdb28177f0abd4062552b04908dafb19f8",
    "size_bytes": 1780590,
-   "description": "Independent source model, X-AnyLabeling-GGML 745f6c355f94cddb06f6965b3a4118f82033e935"
+   "description": "Independent source model, X-AnyLabeling-GGML 4601c0e0c4ce0941874e8de55a8db2d1815c9ba4"
   },
   {
    "id": "ocr-onnx-ppocrv6-tiny-rec",
@@ -5499,7 +5499,7 @@
    "url": "https://github.com/CVHub520/X-AnyLabeling/releases/download/v3.0.0/ppocrv6_tiny_rec_infer.onnx",
    "sha256": "9ef676d6ed3c88256a2d92c640c44f25b0c40947e111b14b8be8f594091563e6",
    "size_bytes": 4462639,
-   "description": "Independent source model, X-AnyLabeling-GGML 745f6c355f94cddb06f6965b3a4118f82033e935"
+   "description": "Independent source model, X-AnyLabeling-GGML 4601c0e0c4ce0941874e8de55a8db2d1815c9ba4"
   },
   {
    "id": "ocr-onnx-ppocrv4-source-det",
@@ -11423,7 +11423,7 @@
    "accuracy_gate": "Independent original-source PULC probabilities on the pinned bus.jpg input: per-output error < 0.001 against a freshly regenerated onnxruntime reference, and every decoded attribute group must match the C ABI selection. Local converted artifacts; not release or dataset-accuracy evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:3694c7f269585096eb378d1183bbdc4e8fa0e3dc0c89cb4591738cf538fd2827",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:3694c7f269585096eb378d1183bbdc4e8fa0e3dc0c89cb4591738cf538fd2827",
     "checks": [
      {
       "metric": "maximum_output_error",
@@ -11487,7 +11487,7 @@
    "accuracy_gate": "Independent original-source PULC probabilities on the pinned bus.jpg input: per-output error < 0.001 against a freshly regenerated onnxruntime reference, and every decoded attribute group must match the C ABI selection. Local converted artifacts; not release or dataset-accuracy evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:78362592b60c19b07cd3e41ad680dcc1fdff246e3fe450da8e46d45737a6e07c",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:78362592b60c19b07cd3e41ad680dcc1fdff246e3fe450da8e46d45737a6e07c",
     "checks": [
      {
       "metric": "maximum_output_error",
@@ -20660,7 +20660,7 @@
    "accuracy_gate": "Independent original-source ONNX probabilities on 10 real inputs (cls); max error < 0.001, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
     "checks": [
      {
       "metric": "json0/max_diff",
@@ -20747,7 +20747,7 @@
    "accuracy_gate": "Independent original-source ONNX probabilities on 2 real inputs (det); max error < 0.001, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ef79783d7db8ca8058b3499689c0b762d44417b4b18d5b42a441a5ee87b935cc",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ef79783d7db8ca8058b3499689c0b762d44417b4b18d5b42a441a5ee87b935cc",
     "checks": [
      {
       "metric": "json0/max_diff",
@@ -20836,7 +20836,7 @@
    "accuracy_gate": "Independent original-source ONNX probabilities on 5 real inputs (rec); max error < 0.001, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:821797e052c74eed8add29893b878cca77d3fb3791c058d041c96e09edc18ed2",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:821797e052c74eed8add29893b878cca77d3fb3791c058d041c96e09edc18ed2",
     "checks": [
      {
       "metric": "json0/max_diff",
@@ -20923,7 +20923,7 @@
    "accuracy_gate": "Independent original-source ONNX probabilities on 2 real inputs (det); max error < 0.001, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:eb13b44b25bb36f89528b68720af8a61d9cf381176107f465db1757b65d086e1",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:eb13b44b25bb36f89528b68720af8a61d9cf381176107f465db1757b65d086e1",
     "checks": [
      {
       "metric": "json0/max_diff",
@@ -21001,7 +21001,7 @@
    "accuracy_gate": "Independent original-source ONNX probabilities on 4 real inputs (rec); max error < 0.001, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:9c09abf0957f7968c7586464b7397b84ad2387a0497a351af40e9acc71b673ba",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:9c09abf0957f7968c7586464b7397b84ad2387a0497a351af40e9acc71b673ba",
     "checks": [
      {
       "metric": "json0/max_diff",
@@ -21088,7 +21088,7 @@
    "accuracy_gate": "Independent original-source ONNX probabilities on 2 real inputs (det); max error < 0.001, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:d73e0058b7a8086bbd57f3d10b8bcd4ff95363f67e06e2762b5e814fe9c9410e",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:d73e0058b7a8086bbd57f3d10b8bcd4ff95363f67e06e2762b5e814fe9c9410e",
     "checks": [
      {
       "metric": "json0/max_diff",
@@ -21166,7 +21166,7 @@
    "accuracy_gate": "Independent original-source ONNX probabilities on 4 real inputs (rec); max error < 0.001, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:5435fd747c9e0efe15a96d0b378d5bd157e9492ed8fd80edf08f30d02fa24634",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:5435fd747c9e0efe15a96d0b378d5bd157e9492ed8fd80edf08f30d02fa24634",
     "checks": [
      {
       "metric": "json0/max_diff",
@@ -21253,7 +21253,7 @@
    "accuracy_gate": "Independent original-source ONNX probabilities on 2 real inputs (det); max error < 0.001, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:193bab7a04fca699a6c82e6abb5b81bdb28177f0abd4062552b04908dafb19f8",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:193bab7a04fca699a6c82e6abb5b81bdb28177f0abd4062552b04908dafb19f8",
     "checks": [
      {
       "metric": "json0/max_diff",
@@ -21331,7 +21331,7 @@
    "accuracy_gate": "Independent original-source ONNX probabilities on 4 real inputs (rec); max error < 0.001, plus mean error for detection or exact per-step argmax for recognition/classification. Independently check dequantized stored weights. Local converted artifacts; not release or dataset-accuracy evidence. Native CPU comparisons are diagnostic only; release additionally compares native GPU probabilities and latency with the original-source CUDA graph.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:9ef676d6ed3c88256a2d92c640c44f25b0c40947e111b14b8be8f594091563e6",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:9ef676d6ed3c88256a2d92c640c44f25b0c40947e111b14b8be8f594091563e6",
     "checks": [
      {
       "metric": "json0/max_diff",
@@ -21423,7 +21423,7 @@
    "accuracy_gate": "Ten real upright/180 word crops; source classifier probabilities <0.001, strict threshold decisions at .9 and 1, all ten texts against this exact source recognizer/dictionary, padded BGR stride, mixed batch order and repeated context lifecycle.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
     "checks": [
      {
       "metric": "failures",
@@ -21499,7 +21499,7 @@
    "accuracy_gate": "Ten real upright/180 word crops; source classifier probabilities <0.001, strict threshold decisions at .9 and 1, all ten texts against this exact source recognizer/dictionary, padded BGR stride, mixed batch order and repeated context lifecycle.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
     "checks": [
      {
       "metric": "failures",
@@ -21575,7 +21575,7 @@
    "accuracy_gate": "Ten real upright/180 word crops; source classifier probabilities <0.001, strict threshold decisions at .9 and 1, all ten texts against this exact source recognizer/dictionary, padded BGR stride, mixed batch order and repeated context lifecycle.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
     "checks": [
      {
       "metric": "failures",
@@ -21651,7 +21651,7 @@
    "accuracy_gate": "Ten real upright/180 word crops; source classifier probabilities <0.001, strict threshold decisions at .9 and 1, all ten texts against this exact source recognizer/dictionary, padded BGR stride, mixed batch order and repeated context lifecycle.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
     "checks": [
      {
       "metric": "failures",
@@ -21710,7 +21710,7 @@
    "accuracy_gate": "One pinned real page vs unmodified source TextSystem: same retained count and exact text, max quad coordinate error <=2 pixels, two calls through padded BGR C ABI. Not dataset accuracy or release performance.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ppocr_testdata/tables/ppstructure_table.jpg",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ppocr_testdata/tables/ppstructure_table.jpg",
     "checks": [
      {
       "metric": "json0/missing_or_extra",
@@ -21787,7 +21787,7 @@
    "accuracy_gate": "One pinned real page vs unmodified source TextSystem: same retained count and exact text, max quad coordinate error <=2 pixels, two calls through padded BGR C ABI. Not dataset accuracy or release performance.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ppocr_testdata/tables/ppstructure_table.jpg",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ppocr_testdata/tables/ppstructure_table.jpg",
     "checks": [
      {
       "metric": "json0/missing_or_extra",
@@ -21864,7 +21864,7 @@
    "accuracy_gate": "One pinned real page vs unmodified source TextSystem: same retained count and exact text, max quad coordinate error <=2 pixels, two calls through padded BGR C ABI. Not dataset accuracy or release performance.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ppocr_testdata/tables/ppstructure_table.jpg",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ppocr_testdata/tables/ppstructure_table.jpg",
     "checks": [
      {
       "metric": "json0/missing_or_extra",
@@ -21941,7 +21941,7 @@
    "accuracy_gate": "One pinned real page vs unmodified source TextSystem: same retained count and exact text, max quad coordinate error <=2 pixels, two calls through padded BGR C ABI. Not dataset accuracy or release performance.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ppocr_testdata/tables/ppstructure_table.jpg",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ppocr_testdata/tables/ppstructure_table.jpg",
     "checks": [
      {
       "metric": "json0/missing_or_extra",
@@ -22289,7 +22289,7 @@
    "accuracy_gate": "Ten real upright/180 word crops; source classifier probabilities <0.001, strict threshold decisions at .9 and 1, all ten texts against this exact source recognizer/dictionary, padded BGR stride, mixed batch order and repeated context lifecycle.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
     "checks": [
      {
       "metric": "failures",
@@ -22348,7 +22348,7 @@
    "accuracy_gate": "One pinned real page vs unmodified source TextSystem: same retained count and exact text, max quad coordinate error <=2 pixels, two calls through padded BGR C ABI. Not dataset accuracy or release performance.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ppocr_testdata/tables/ppstructure_table.jpg",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ppocr_testdata/tables/ppstructure_table.jpg",
     "checks": [
      {
       "metric": "json0/missing_or_extra",
@@ -22442,7 +22442,7 @@
    "accuracy_gate": "Ten real upright/180 word crops; source classifier probabilities <0.001, strict threshold decisions at .9 and 1, all ten texts against this exact source recognizer/dictionary, padded BGR stride, mixed batch order and repeated context lifecycle.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
     "checks": [
      {
       "metric": "failures",
@@ -22501,7 +22501,7 @@
    "accuracy_gate": "One pinned real page vs unmodified source TextSystem: same retained count and exact text, max quad coordinate error <=2 pixels, two calls through padded BGR C ABI. Not dataset accuracy or release performance.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ppocr_testdata/tables/ppstructure_table.jpg",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ppocr_testdata/tables/ppstructure_table.jpg",
     "checks": [
      {
       "metric": "json0/missing_or_extra",
@@ -22579,7 +22579,7 @@
    "accuracy_gate": "Ten selected real-page regions vs source TextSystem: skewed quad, triangle, polygon, fractional and border-crossing coordinates, reversed input/reading order; exact text, quad error <=0.001, two calls. Reject nonfinite/out-of-int32/short polygons and preserve degenerate slots. Not dataset accuracy or release performance.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ppocr_testdata/tables/ppstructure_table.jpg",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ppocr_testdata/tables/ppstructure_table.jpg",
     "checks": [
      {
       "metric": "json0/missing_or_extra",
@@ -22657,7 +22657,7 @@
    "accuracy_gate": "Ten selected real-page regions vs source TextSystem: skewed quad, triangle, polygon, fractional and border-crossing coordinates, reversed input/reading order; exact text, quad error <=0.001, two calls. Reject nonfinite/out-of-int32/short polygons and preserve degenerate slots. Not dataset accuracy or release performance.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ppocr_testdata/tables/ppstructure_table.jpg",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ppocr_testdata/tables/ppstructure_table.jpg",
     "checks": [
      {
       "metric": "json0/missing_or_extra",
@@ -22735,7 +22735,7 @@
    "accuracy_gate": "Ten selected real-page regions vs source TextSystem: skewed quad, triangle, polygon, fractional and border-crossing coordinates, reversed input/reading order; exact text, quad error <=0.001, two calls. Reject nonfinite/out-of-int32/short polygons and preserve degenerate slots. Not dataset accuracy or release performance.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ppocr_testdata/tables/ppstructure_table.jpg",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ppocr_testdata/tables/ppstructure_table.jpg",
     "checks": [
      {
       "metric": "json0/missing_or_extra",
@@ -22813,7 +22813,7 @@
    "accuracy_gate": "Ten selected real-page regions vs source TextSystem: skewed quad, triangle, polygon, fractional and border-crossing coordinates, reversed input/reading order; exact text, quad error <=0.001, two calls. Reject nonfinite/out-of-int32/short polygons and preserve degenerate slots. Not dataset accuracy or release performance.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ppocr_testdata/tables/ppstructure_table.jpg",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ppocr_testdata/tables/ppstructure_table.jpg",
     "checks": [
      {
       "metric": "json0/missing_or_extra",
@@ -22891,7 +22891,7 @@
    "accuracy_gate": "Ten selected real-page regions vs source TextSystem: skewed quad, triangle, polygon, fractional and border-crossing coordinates, reversed input/reading order; exact text, quad error <=0.001, two calls. Reject nonfinite/out-of-int32/short polygons and preserve degenerate slots. Not dataset accuracy or release performance.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ppocr_testdata/tables/ppstructure_table.jpg",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ppocr_testdata/tables/ppstructure_table.jpg",
     "checks": [
      {
       "metric": "json0/missing_or_extra",
@@ -22969,7 +22969,7 @@
    "accuracy_gate": "Ten selected real-page regions vs source TextSystem: skewed quad, triangle, polygon, fractional and border-crossing coordinates, reversed input/reading order; exact text, quad error <=0.001, two calls. Reject nonfinite/out-of-int32/short polygons and preserve degenerate slots. Not dataset accuracy or release performance.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ppocr_testdata/tables/ppstructure_table.jpg",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ppocr_testdata/tables/ppstructure_table.jpg",
     "checks": [
      {
       "metric": "json0/missing_or_extra",
@@ -23065,7 +23065,7 @@
    "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
     "checks": [
      {
       "metric": "json0/stored_max_diff",
@@ -23146,7 +23146,7 @@
    "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
     "checks": [
      {
       "metric": "json0/stored_max_diff",
@@ -23222,7 +23222,7 @@
    "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ef79783d7db8ca8058b3499689c0b762d44417b4b18d5b42a441a5ee87b935cc",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ef79783d7db8ca8058b3499689c0b762d44417b4b18d5b42a441a5ee87b935cc",
     "checks": [
      {
       "metric": "json0/stored_max_diff",
@@ -23296,7 +23296,7 @@
    "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ef79783d7db8ca8058b3499689c0b762d44417b4b18d5b42a441a5ee87b935cc",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ef79783d7db8ca8058b3499689c0b762d44417b4b18d5b42a441a5ee87b935cc",
     "checks": [
      {
       "metric": "json0/stored_max_diff",
@@ -23383,7 +23383,7 @@
    "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:821797e052c74eed8add29893b878cca77d3fb3791c058d041c96e09edc18ed2",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:821797e052c74eed8add29893b878cca77d3fb3791c058d041c96e09edc18ed2",
     "checks": [
      {
       "metric": "json0/stored_max_diff",
@@ -23472,7 +23472,7 @@
    "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:821797e052c74eed8add29893b878cca77d3fb3791c058d041c96e09edc18ed2",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:821797e052c74eed8add29893b878cca77d3fb3791c058d041c96e09edc18ed2",
     "checks": [
      {
       "metric": "json0/stored_max_diff",
@@ -23548,7 +23548,7 @@
    "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:eb13b44b25bb36f89528b68720af8a61d9cf381176107f465db1757b65d086e1",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:eb13b44b25bb36f89528b68720af8a61d9cf381176107f465db1757b65d086e1",
     "checks": [
      {
       "metric": "json0/stored_max_diff",
@@ -23622,7 +23622,7 @@
    "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:eb13b44b25bb36f89528b68720af8a61d9cf381176107f465db1757b65d086e1",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:eb13b44b25bb36f89528b68720af8a61d9cf381176107f465db1757b65d086e1",
     "checks": [
      {
       "metric": "json0/stored_max_diff",
@@ -23698,7 +23698,7 @@
    "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:9c09abf0957f7968c7586464b7397b84ad2387a0497a351af40e9acc71b673ba",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:9c09abf0957f7968c7586464b7397b84ad2387a0497a351af40e9acc71b673ba",
     "checks": [
      {
       "metric": "json0/stored_max_diff",
@@ -23776,7 +23776,7 @@
    "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:9c09abf0957f7968c7586464b7397b84ad2387a0497a351af40e9acc71b673ba",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:9c09abf0957f7968c7586464b7397b84ad2387a0497a351af40e9acc71b673ba",
     "checks": [
      {
       "metric": "json0/stored_max_diff",
@@ -23852,7 +23852,7 @@
    "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:d73e0058b7a8086bbd57f3d10b8bcd4ff95363f67e06e2762b5e814fe9c9410e",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:d73e0058b7a8086bbd57f3d10b8bcd4ff95363f67e06e2762b5e814fe9c9410e",
     "checks": [
      {
       "metric": "json0/stored_max_diff",
@@ -23926,7 +23926,7 @@
    "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:d73e0058b7a8086bbd57f3d10b8bcd4ff95363f67e06e2762b5e814fe9c9410e",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:d73e0058b7a8086bbd57f3d10b8bcd4ff95363f67e06e2762b5e814fe9c9410e",
     "checks": [
      {
       "metric": "json0/stored_max_diff",
@@ -24002,7 +24002,7 @@
    "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:5435fd747c9e0efe15a96d0b378d5bd157e9492ed8fd80edf08f30d02fa24634",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:5435fd747c9e0efe15a96d0b378d5bd157e9492ed8fd80edf08f30d02fa24634",
     "checks": [
      {
       "metric": "json0/stored_max_diff",
@@ -24080,7 +24080,7 @@
    "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:5435fd747c9e0efe15a96d0b378d5bd157e9492ed8fd80edf08f30d02fa24634",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:5435fd747c9e0efe15a96d0b378d5bd157e9492ed8fd80edf08f30d02fa24634",
     "checks": [
      {
       "metric": "json0/stored_max_diff",
@@ -24158,7 +24158,7 @@
    "accuracy_gate": "F16/Q8 raw original-source probability and argmax metrics are diagnostic; stored-weight maximum error remains gated, and real labelled page/region accuracy consumers determine task quality. Complete fixture coverage is mandatory.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:9ef676d6ed3c88256a2d92c640c44f25b0c40947e111b14b8be8f594091563e6",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:9ef676d6ed3c88256a2d92c640c44f25b0c40947e111b14b8be8f594091563e6",
     "checks": [
      {
       "metric": "json0/stored_max_diff",
@@ -24688,7 +24688,7 @@
    "accuracy_gate": "PaddleOCR official 50 validation images and original transcriptions: raw detection Hmean, fixed-GT-region CER/WER, complete-pipeline CER/WER. Every degradation relative to the unmodified source TextSystem <=0.005; micro-averaged. Source word/line granularity limits absolute detection Hmean. Not throughput evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -24782,7 +24782,7 @@
    "accuracy_gate": "PaddleOCR official 50 validation images and original transcriptions: raw detection Hmean, fixed-GT-region CER/WER, complete-pipeline CER/WER. Every degradation relative to the unmodified source TextSystem <=0.005; micro-averaged. Source word/line granularity limits absolute detection Hmean. Not throughput evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -24876,7 +24876,7 @@
    "accuracy_gate": "PaddleOCR official 50 validation images and original transcriptions: raw detection Hmean, fixed-GT-region CER/WER, complete-pipeline CER/WER. Every degradation relative to the unmodified source TextSystem <=0.005; micro-averaged. Source word/line granularity limits absolute detection Hmean. Not throughput evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -24970,7 +24970,7 @@
    "accuracy_gate": "PaddleOCR official 50 validation images and original transcriptions: raw detection Hmean, fixed-GT-region CER/WER, complete-pipeline CER/WER. Every degradation relative to the unmodified source TextSystem <=0.005; micro-averaged. Source word/line granularity limits absolute detection Hmean. Not throughput evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -25064,7 +25064,7 @@
    "accuracy_gate": "PaddleOCR official 50 validation images and original transcriptions: raw detection Hmean, fixed-GT-region CER/WER, complete-pipeline CER/WER. Every degradation relative to the unmodified source TextSystem <=0.005; micro-averaged. Source word/line granularity limits absolute detection Hmean. Not throughput evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -25158,7 +25158,7 @@
    "accuracy_gate": "PaddleOCR official 50 validation images and original transcriptions: raw detection Hmean, fixed-GT-region CER/WER, complete-pipeline CER/WER. Every degradation relative to the unmodified source TextSystem <=0.005; micro-averaged. Source word/line granularity limits absolute detection Hmean. Not throughput evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -25252,7 +25252,7 @@
    "accuracy_gate": "PaddleOCR official 50 validation images and original transcriptions: raw detection Hmean, fixed-GT-region CER/WER, complete-pipeline CER/WER. Every degradation relative to the unmodified source TextSystem <=0.005; micro-averaged. Source word/line granularity limits absolute detection Hmean. Not throughput evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -25346,7 +25346,7 @@
    "accuracy_gate": "PaddleOCR official 50 validation images and original transcriptions: raw detection Hmean, fixed-GT-region CER/WER, complete-pipeline CER/WER. Every degradation relative to the unmodified source TextSystem <=0.005; micro-averaged. Source word/line granularity limits absolute detection Hmean. Not throughput evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -25440,7 +25440,7 @@
    "accuracy_gate": "PaddleOCR official 50 validation images and original transcriptions: raw detection Hmean, fixed-GT-region CER/WER, complete-pipeline CER/WER. Every degradation relative to the unmodified source TextSystem <=0.005; micro-averaged. Source word/line granularity limits absolute detection Hmean. Not throughput evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -25534,7 +25534,7 @@
    "accuracy_gate": "PaddleOCR official 50 validation images and original transcriptions: raw detection Hmean, fixed-GT-region CER/WER, complete-pipeline CER/WER. Every degradation relative to the unmodified source TextSystem <=0.005; micro-averaged. Source word/line granularity limits absolute detection Hmean. Not throughput evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -25629,7 +25629,7 @@
    "accuracy_gate": "PaddleOCR official 50 validation images and original transcriptions: raw detection Hmean, fixed-GT-region CER/WER, complete-pipeline CER/WER. Every degradation relative to the unmodified source TextSystem <=0.005; micro-averaged. Source word/line granularity limits absolute detection Hmean. Not throughput evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -25723,7 +25723,7 @@
    "accuracy_gate": "PaddleOCR official 50 validation images and original transcriptions: raw detection Hmean, fixed-GT-region CER/WER, complete-pipeline CER/WER. Every degradation relative to the unmodified source TextSystem <=0.005; micro-averaged. Source word/line granularity limits absolute detection Hmean. Not throughput evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -25817,7 +25817,7 @@
    "accuracy_gate": "PaddleOCR official 50 validation images and original transcriptions: raw detection Hmean, fixed-GT-region CER/WER, complete-pipeline CER/WER. Every degradation relative to the unmodified source TextSystem <=0.005; micro-averaged. Source word/line granularity limits absolute detection Hmean. Not throughput evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -25911,7 +25911,7 @@
    "accuracy_gate": "PaddleOCR official 50 validation images and original transcriptions: raw detection Hmean, fixed-GT-region CER/WER, complete-pipeline CER/WER. Every degradation relative to the unmodified source TextSystem <=0.005; micro-averaged. Source word/line granularity limits absolute detection Hmean. Not throughput evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -26005,7 +26005,7 @@
    "accuracy_gate": "PaddleOCR official 50 validation images and original transcriptions: raw detection Hmean, fixed-GT-region CER/WER, complete-pipeline CER/WER. Every degradation relative to the unmodified source TextSystem <=0.005; micro-averaged. Source word/line granularity limits absolute detection Hmean. Not throughput evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -26099,7 +26099,7 @@
    "accuracy_gate": "PaddleOCR official 50 validation images and original transcriptions: raw detection Hmean, fixed-GT-region CER/WER, complete-pipeline CER/WER. Every degradation relative to the unmodified source TextSystem <=0.005; micro-averaged. Source word/line granularity limits absolute detection Hmean. Not throughput evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -26193,7 +26193,7 @@
    "accuracy_gate": "PaddleOCR official 50 validation images and original transcriptions: raw detection Hmean, fixed-GT-region CER/WER, complete-pipeline CER/WER. Every degradation relative to the unmodified source TextSystem <=0.005; micro-averaged. Source word/line granularity limits absolute detection Hmean. Not throughput evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:ocr-det-labelled-50:deeae0207fa5f2d9dddce390f7343b54cb6c073bada75b25653c91c87bba9209",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -27623,7 +27623,7 @@
    "accuracy_gate": "Ten real upright/180 word crops; source classifier probabilities <0.001, strict threshold decisions at .9 and 1, all ten texts against this exact source recognizer/dictionary, padded BGR stride, mixed batch order and repeated context lifecycle.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
     "checks": [
      {
       "metric": "failures",
@@ -27699,7 +27699,7 @@
    "accuracy_gate": "Ten real upright/180 word crops; source classifier probabilities <0.001, strict threshold decisions at .9 and 1, all ten texts against this exact source recognizer/dictionary, padded BGR stride, mixed batch order and repeated context lifecycle.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
     "checks": [
      {
       "metric": "failures",
@@ -27774,7 +27774,7 @@
    "accuracy_gate": "Ten real upright/180 word crops; source classifier probabilities <0.001, strict threshold decisions at .9 and 1, all ten texts against this exact source recognizer/dictionary, padded BGR stride, mixed batch order and repeated context lifecycle.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
     "checks": [
      {
       "metric": "failures",
@@ -27850,7 +27850,7 @@
    "accuracy_gate": "Ten real upright/180 word crops; source classifier probabilities <0.001, strict threshold decisions at .9 and 1, all ten texts against this exact source recognizer/dictionary, padded BGR stride, mixed batch order and repeated context lifecycle.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
     "checks": [
      {
       "metric": "failures",
@@ -27926,7 +27926,7 @@
    "accuracy_gate": "Ten real upright/180 word crops; source classifier probabilities <0.001, strict threshold decisions at .9 and 1, all ten texts against this exact source recognizer/dictionary, padded BGR stride, mixed batch order and repeated context lifecycle.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
     "checks": [
      {
       "metric": "failures",
@@ -28002,7 +28002,7 @@
    "accuracy_gate": "Ten real upright/180 word crops; source classifier probabilities <0.001, strict threshold decisions at .9 and 1, all ten texts against this exact source recognizer/dictionary, padded BGR stride, mixed batch order and repeated context lifecycle.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
     "checks": [
      {
       "metric": "failures",
@@ -28078,7 +28078,7 @@
    "accuracy_gate": "Ten real upright/180 word crops; source classifier probabilities <0.001, strict threshold decisions at .9 and 1, all ten texts against this exact source recognizer/dictionary, padded BGR stride, mixed batch order and repeated context lifecycle.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
     "checks": [
      {
       "metric": "failures",
@@ -28154,7 +28154,7 @@
    "accuracy_gate": "Ten real upright/180 word crops; source classifier probabilities <0.001, strict threshold decisions at .9 and 1, all ten texts against this exact source recognizer/dictionary, padded BGR stride, mixed batch order and repeated context lifecycle.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
     "checks": [
      {
       "metric": "failures",
@@ -28230,7 +28230,7 @@
    "accuracy_gate": "Ten real upright/180 word crops; source classifier probabilities <0.001, strict threshold decisions at .9 and 1, all ten texts against this exact source recognizer/dictionary, padded BGR stride, mixed batch order and repeated context lifecycle.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
     "checks": [
      {
       "metric": "failures",
@@ -28306,7 +28306,7 @@
    "accuracy_gate": "Ten real upright/180 word crops; source classifier probabilities <0.001, strict threshold decisions at .9 and 1, all ten texts against this exact source recognizer/dictionary, padded BGR stride, mixed batch order and repeated context lifecycle.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
     "checks": [
      {
       "metric": "failures",
@@ -28382,7 +28382,7 @@
    "accuracy_gate": "Ten real upright/180 word crops; source classifier probabilities <0.001, strict threshold decisions at .9 and 1, all ten texts against this exact source recognizer/dictionary, padded BGR stride, mixed batch order and repeated context lifecycle.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445",
     "checks": [
      {
       "metric": "failures",
@@ -28548,7 +28548,7 @@
    "accuracy_gate": "Fixed first 50 corrected SROIE scanned receipt pages with original localisation CSV and transcriptions. Greedy quad-IoU>=0.5 Hmean, fixed-GT CER/WER and complete-pipeline CER/WER: every degradation from pinned source <=0.005. Contributor corpus subset; not official held-out DetEval competition results or performance evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -28741,7 +28741,7 @@
    "accuracy_gate": "Fixed first 50 corrected SROIE scanned receipt pages with original localisation CSV and transcriptions. Greedy quad-IoU>=0.5 Hmean, fixed-GT CER/WER and complete-pipeline CER/WER: every degradation from pinned source <=0.005. Contributor corpus subset; not official held-out DetEval competition results or performance evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -28934,7 +28934,7 @@
    "accuracy_gate": "Fixed first 50 corrected SROIE scanned receipt pages with original localisation CSV and transcriptions. Greedy quad-IoU>=0.5 Hmean, fixed-GT CER/WER and complete-pipeline CER/WER: every degradation from pinned source <=0.005. Contributor corpus subset; not official held-out DetEval competition results or performance evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -29127,7 +29127,7 @@
    "accuracy_gate": "Fixed first 50 corrected SROIE scanned receipt pages with original localisation CSV and transcriptions. Greedy quad-IoU>=0.5 Hmean, fixed-GT CER/WER and complete-pipeline CER/WER: every degradation from pinned source <=0.005. Contributor corpus subset; not official held-out DetEval competition results or performance evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -29320,7 +29320,7 @@
    "accuracy_gate": "Fixed first 50 corrected SROIE scanned receipt pages with original localisation CSV and transcriptions. Greedy quad-IoU>=0.5 Hmean, fixed-GT CER/WER and complete-pipeline CER/WER: every degradation from pinned source <=0.005. Contributor corpus subset; not official held-out DetEval competition results or performance evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -29513,7 +29513,7 @@
    "accuracy_gate": "Fixed first 50 corrected SROIE scanned receipt pages with original localisation CSV and transcriptions. Greedy quad-IoU>=0.5 Hmean, fixed-GT CER/WER and complete-pipeline CER/WER: every degradation from pinned source <=0.005. Contributor corpus subset; not official held-out DetEval competition results or performance evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -29706,7 +29706,7 @@
    "accuracy_gate": "Fixed first 50 corrected SROIE scanned receipt pages with original localisation CSV and transcriptions. Greedy quad-IoU>=0.5 Hmean, fixed-GT CER/WER and complete-pipeline CER/WER: every degradation from pinned source <=0.005. Contributor corpus subset; not official held-out DetEval competition results or performance evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -29899,7 +29899,7 @@
    "accuracy_gate": "Fixed first 50 corrected SROIE scanned receipt pages with original localisation CSV and transcriptions. Greedy quad-IoU>=0.5 Hmean, fixed-GT CER/WER and complete-pipeline CER/WER: every degradation from pinned source <=0.005. Contributor corpus subset; not official held-out DetEval competition results or performance evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -30092,7 +30092,7 @@
    "accuracy_gate": "Fixed first 50 corrected SROIE scanned receipt pages with original localisation CSV and transcriptions. Greedy quad-IoU>=0.5 Hmean, fixed-GT CER/WER and complete-pipeline CER/WER: every degradation from pinned source <=0.005. Contributor corpus subset; not official held-out DetEval competition results or performance evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -30285,7 +30285,7 @@
    "accuracy_gate": "Fixed first 50 corrected SROIE scanned receipt pages with original localisation CSV and transcriptions. Greedy quad-IoU>=0.5 Hmean, fixed-GT CER/WER and complete-pipeline CER/WER: every degradation from pinned source <=0.005. Contributor corpus subset; not official held-out DetEval competition results or performance evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -30479,7 +30479,7 @@
    "accuracy_gate": "Fixed first 50 corrected SROIE scanned receipt pages with original localisation CSV and transcriptions. Greedy quad-IoU>=0.5 Hmean, fixed-GT CER/WER and complete-pipeline CER/WER: every degradation from pinned source <=0.005. Contributor corpus subset; not official held-out DetEval competition results or performance evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -30672,7 +30672,7 @@
    "accuracy_gate": "Fixed first 50 corrected SROIE scanned receipt pages with original localisation CSV and transcriptions. Greedy quad-IoU>=0.5 Hmean, fixed-GT CER/WER and complete-pipeline CER/WER: every degradation from pinned source <=0.005. Contributor corpus subset; not official held-out DetEval competition results or performance evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -30865,7 +30865,7 @@
    "accuracy_gate": "Fixed first 50 corrected SROIE scanned receipt pages with original localisation CSV and transcriptions. Greedy quad-IoU>=0.5 Hmean, fixed-GT CER/WER and complete-pipeline CER/WER: every degradation from pinned source <=0.005. Contributor corpus subset; not official held-out DetEval competition results or performance evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -31058,7 +31058,7 @@
    "accuracy_gate": "Fixed first 50 corrected SROIE scanned receipt pages with original localisation CSV and transcriptions. Greedy quad-IoU>=0.5 Hmean, fixed-GT CER/WER and complete-pipeline CER/WER: every degradation from pinned source <=0.005. Contributor corpus subset; not official held-out DetEval competition results or performance evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -31251,7 +31251,7 @@
    "accuracy_gate": "Fixed first 50 corrected SROIE scanned receipt pages with original localisation CSV and transcriptions. Greedy quad-IoU>=0.5 Hmean, fixed-GT CER/WER and complete-pipeline CER/WER: every degradation from pinned source <=0.005. Contributor corpus subset; not official held-out DetEval competition results or performance evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -31444,7 +31444,7 @@
    "accuracy_gate": "Fixed first 50 corrected SROIE scanned receipt pages with original localisation CSV and transcriptions. Greedy quad-IoU>=0.5 Hmean, fixed-GT CER/WER and complete-pipeline CER/WER: every degradation from pinned source <=0.005. Contributor corpus subset; not official held-out DetEval competition results or performance evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
     "checks": [
      {
       "metric": "hmean_delta",
@@ -31637,7 +31637,7 @@
    "accuracy_gate": "Fixed first 50 corrected SROIE scanned receipt pages with original localisation CSV and transcriptions. Greedy quad-IoU>=0.5 Hmean, fixed-GT CER/WER and complete-pipeline CER/WER: every degradation from pinned source <=0.005. Contributor corpus subset; not official held-out DetEval competition results or performance evidence.",
    "accuracy": {
     "reference": "upstream",
-    "reference_id": "745f6c355f94cddb06f6965b3a4118f82033e935:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
+    "reference_id": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4:sroie-27be4271b251c256f695acbade9a801bffe85994:receipts-000-049:2d1c39b5fc6d44ce1565439f05adf7b23f1357542bf15ea0a80e11b5ae60ef4e",
     "checks": [
      {
       "metric": "hmean_delta",

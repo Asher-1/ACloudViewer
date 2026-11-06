@@ -385,7 +385,10 @@ class GpuPageReferenceTest(unittest.TestCase):
                 self.assertIn("--source-gpu-python", args, row["id"]);counts["paddle"] += 1
             if any(a.endswith("/run_ocr_onnx_probe.py") for a in args) and "orientation" in args:
                 self.assertIn("--source-benchmark-root", args, row["id"]);counts["orientation"] += 1
-        self.assertEqual(counts, {"onnx": 66, "paddle": 21, "orientation": 18})
+        # The tiny Q8_0 containers and the tiny-detector F16 container are
+        # retired (3 source-pipeline rows, 1 orientation row), matching the
+        # manifest edit that test_validate_all.py already accounts for.
+        self.assertEqual(counts, {"onnx": 63, "paddle": 21, "orientation": 17})
 
 
 if __name__ == "__main__":

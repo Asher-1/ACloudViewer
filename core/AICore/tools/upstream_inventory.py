@@ -11,9 +11,13 @@ import json
 from pathlib import Path, PurePosixPath
 import re
 import subprocess
+import sys
 import tarfile
 
 import yaml
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from digest_utils import sha256_file
 
 ANYLABELING_REVISION = "cd26942a007b6ce7bd521de801a6cfd455d7fd9b"
 LLAMA_REVISION = "707616feb5f379e99ff7442680a55b4a1704c7c9"
@@ -297,8 +301,7 @@ def derive_manifest_coverage(expected, manifest, aliases=()):
                 raise ValueError(f"conflicting alias digest for {alias['url']}")
         elif alias["sha256"] in by_digest and alias.get("verified_file"):
             path = Path(alias["verified_file"])
-            with path.open("rb") as stream:
-                digest = hashlib.file_digest(stream, "sha256").hexdigest()
+            digest = sha256_file(path)
             if digest != alias["sha256"] or path.stat().st_size != alias.get("bytes"):
                 raise ValueError(f"alias bytes or SHA-256 mismatch for {alias['url']}")
             pins[alias["url"]] = (by_digest[alias["sha256"]], alias["sha256"])
@@ -343,11 +346,10 @@ class GitSource:
 class ArchiveSource:
     def __init__(self, path):
         self.digests = {}
+        digest = sha256_file(path)
+        if digest != LLAMA_ARCHIVE_SHA256:
+            raise ValueError("llama archive SHA-256 does not match the approved pin")
         with path.open("rb") as stream:
-            digest = hashlib.file_digest(stream, "sha256").hexdigest()
-            if digest != LLAMA_ARCHIVE_SHA256:
-                raise ValueError("llama archive SHA-256 does not match the approved pin")
-            stream.seek(0)
             with tarfile.open(fileobj=stream, mode="r:gz") as archive:
                 prefix = "llama.cpp-" + LLAMA_REVISION + "/"
                 self.contents = {}

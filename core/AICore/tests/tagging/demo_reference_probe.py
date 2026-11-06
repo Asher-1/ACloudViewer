@@ -80,7 +80,7 @@ def annotation_preprocess(image: Path, upstream: str) -> tuple[object, str]:
     from PIL import Image
     root = Path(upstream).resolve()
     revision = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()
-    expected = "745f6c355f94cddb06f6965b3a4118f82033e935"
+    expected = "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4"
     if revision != expected:
         raise RuntimeError(f"AnyLabeling reference requires {expected}; got {revision}")
     source = root / "anylabeling/services/auto_labeling/__base__/ram.py"

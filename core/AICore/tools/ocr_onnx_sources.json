@@ -130,7 +130,7 @@
       }
     }
   ],
-  "upstream_commit": "745f6c355f94cddb06f6965b3a4118f82033e935",
+  "upstream_commit": "4601c0e0c4ce0941874e8de55a8db2d1815c9ba4",
   "identical_source_aliases": [
     {
       "name": "ch_ppocr_mobile_v2.0_cls_infer.onnx",

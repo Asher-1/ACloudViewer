@@ -9,10 +9,8 @@ against the original F32 eight heads still fails, with DFL checked per group ove
 four independent 8-bin distributions. The historical region-level optional-box or
 page-metric passes below do not replace this gate. An independent Paddle
 stored-weight graph has reproduced the remaining flips on CUDA/Vulkan, and two
-rounds of real stored QAT still did not eliminate them; the latest per-file
-evidence is in
-[OCR_RELEASE_GATES.md](../../../../../plugins/core/Standard/qAnyLabeling/OCR_RELEASE_GATES.md).
-The independent ggml entry point is retained until all model/task regressions
+rounds of real stored QAT still did not eliminate them. The independent ggml
+entry point is retained until all model/task regressions
 are complete, and executed developer diagnostics are not written up as release
 qualification.
 
@@ -425,14 +423,12 @@ reads the actual ONNX topology/shapes/constants, rejects unsupported operators o
 attributes, and the recognizer embeds the source dictionary and its SHA-256 into
 the GGUF; the installation package needs no additional OCR dictionary. The source
 program and dictionaries come from the pinned X-AnyLabeling-GGML commit
-`745f6c355f94cddb06f6965b3a4118f82033e935`, and the models come from the
+`4601c0e0c4ce0941874e8de55a8db2d1815c9ba4`, and the models come from the
 CVHub520 v0.2.2/v2.4.0/v3.0.0 resources named in its configuration. The
 conversion preserves provenance and does not change the licenses of the source
 project and checkpoints. F16/Q8 are candidates pending verification; the
 historical policy failures and the evidence for the current SHA values are kept
-separately, and nothing may be listed as supported merely because it loads. The
-current per-file status is in
-[`OCR_RELEASE_GATES.md`](../../../../../plugins/core/Standard/qAnyLabeling/OCR_RELEASE_GATES.md).
+separately, and nothing may be listed as supported merely because it loads.
 
 ```bash
 # Verify the SHA against the source manifest first; rec must be given its

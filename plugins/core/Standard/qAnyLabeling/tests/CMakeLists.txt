@@ -46,7 +46,10 @@ cloudviewer_add_plugin_test(test_qanylabeling_ppocr_corpus
     INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/core/include
         ${CMAKE_SOURCE_DIR}/libs/CVPluginAPI/include
         ${CMAKE_SOURCE_DIR}/core/AICore/include
-    LIBS CVPluginAPI 3rdparty_googletest Qt${QT_VERSION_MAJOR}::Widgets)
+    # Threads::Threads is a hard link dep of gtest on glibc < 2.34 (focal
+    # gcc 9): without it the archive's pthread_getspecific stays undefined
+    # and the test target fails to link on the focal lane only.
+    LIBS CVPluginAPI 3rdparty_googletest Threads::Threads Qt${QT_VERSION_MAJOR}::Widgets)
 add_test(NAME test_qanylabeling_ppocr_corpus COMMAND test_qanylabeling_ppocr_corpus)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_ppocr_corpus)
 
@@ -143,7 +146,7 @@ cloudviewer_add_plugin_test(test_qanylabeling_canvas_gate
     SOURCES test_canvas_visual_gate.cpp
     INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/libs/CVPluginAPI/include
         ${CMAKE_SOURCE_DIR}/core/AICore/include
-    LIBS CVPluginAPI CVPluginStub 3rdparty_googletest
+    LIBS CVPluginAPI CVPluginStub 3rdparty_googletest Threads::Threads
          Qt${QT_VERSION_MAJOR}::Widgets)
 add_test(NAME test_qanylabeling_canvas_gate
     COMMAND test_qanylabeling_canvas_gate $<TARGET_FILE:QANYLABELING_PLUGIN>)

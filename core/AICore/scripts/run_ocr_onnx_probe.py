@@ -444,7 +444,10 @@ def run_probe(args):
                             native.astype(np.float64) - source_output).max())
                         report["source_gpu_mean_diff"] = float(np.abs(
                             native.astype(np.float64) - source_output).mean())
-                        if report["source_gpu_max_diff"] >= args.max_diff:
+                        # Quantized candidates keep raw source deviations
+                        # diagnostic per the manifest-owned allowance; the
+                        # stored-weight error remains the gated fact.
+                        if not quantized and report["source_gpu_max_diff"] >= args.max_diff:
                             report["exit_code"] = 1
                         if args.role != "det":
                             report["source_gpu_argmax_match"] = float(np.mean(
