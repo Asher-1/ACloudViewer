@@ -1478,7 +1478,11 @@ endif()
 add_custom_target(aicore-contract-tests
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-tests=error -L capi
             ${_aicore_contract_model_exclude}
-            -j1
+            # -j4 matches the 4-core Windows CI runner; -j1 serial execution
+            # pushed the contract stage past the job timeout (232 min serial
+            # ctest + 95 min build = 327 min > 330 min cap). Contract tests
+            # are independent processes with no shared GPU/resource state.
+            -j4
             -C $<CONFIG>
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMENT "Running AICore public contract tests"
