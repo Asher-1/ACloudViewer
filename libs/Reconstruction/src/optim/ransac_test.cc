@@ -35,58 +35,60 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#include "base/pose.h"
-#include "base/similarity_transform.h"
-#include "estimators/similarity_transform.h"
+#include "geometry/pose.h"
+#include "geometry/similarity_transform.h"
+#include "estimators/solvers/similarity_transform.h"
 #include "optim/ransac.h"
-#include "util/random.h"
+#include "math/random.h"
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(TestOptions) {
+TEST(optim_ransac, TestOptions) {
   RANSACOptions options;
-  BOOST_CHECK_EQUAL(options.max_error, 0);
-  BOOST_CHECK_EQUAL(options.min_inlier_ratio, 0.1);
-  BOOST_CHECK_EQUAL(options.confidence, 0.99);
-  BOOST_CHECK_EQUAL(options.min_num_trials, 0);
-  BOOST_CHECK_EQUAL(options.max_num_trials, std::numeric_limits<size_t>::max());
+  EXPECT_EQ(options.max_error, 0);
+  EXPECT_EQ(options.min_inlier_ratio, 0.1);
+  EXPECT_EQ(options.confidence, 0.99);
+  EXPECT_EQ(options.min_num_trials, 0);
+  EXPECT_EQ(options.max_num_trials, std::numeric_limits<int>::max());
+  EXPECT_EQ(options.num_threads, 1);
 }
 
-BOOST_AUTO_TEST_CASE(TestReport) {
+TEST(optim_ransac, TestReport) {
   RANSAC<SimilarityTransformEstimator<3>>::Report report;
-  BOOST_CHECK_EQUAL(report.success, false);
-  BOOST_CHECK_EQUAL(report.num_trials, 0);
-  BOOST_CHECK_EQUAL(report.support.num_inliers, 0);
-  BOOST_CHECK_EQUAL(report.support.residual_sum,
+  EXPECT_EQ(report.success, false);
+  EXPECT_EQ(report.num_trials, 0);
+  EXPECT_EQ(report.support.num_inliers, 0);
+  EXPECT_EQ(report.support.residual_sum,
                     std::numeric_limits<double>::max());
-  BOOST_CHECK_EQUAL(report.inlier_mask.size(), 0);
+  EXPECT_EQ(report.inlier_mask.size(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(TestNumTrials) {
-  BOOST_CHECK_EQUAL(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
+TEST(optim_ransac, TestNumTrials) {
+  // Expected values from upstream d3ccaf35 optim/ransac_test.cc (the
+  // without-replacement stopping criterion; the third round of the E2E
+  // alignment switched the implementation to that formula but left these
+  // expectations at the legacy pow-approximation values).
+  EXPECT_EQ(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
                         1, 100, 0.99, 1.0),
-                    4605168);
-  BOOST_CHECK_EQUAL(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
+                    18446744073709551615llu);
+  EXPECT_EQ(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
                         10, 100, 0.99, 1.0),
-                    4603);
-  BOOST_CHECK_EQUAL(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
+                    6204);
+  EXPECT_EQ(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
                         10, 100, 0.999, 1.0),
-                    6905);
-  BOOST_CHECK_EQUAL(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
+                    9305);
+  EXPECT_EQ(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
                         10, 100, 0.999, 2.0),
-                    13809);
-  BOOST_CHECK_EQUAL(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
+                    18610);
+  EXPECT_EQ(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
+                        50, 100, 0.99, 1.0),
+                    36);
+  EXPECT_EQ(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
                         100, 100, 0.99, 1.0),
                     1);
-  BOOST_CHECK_EQUAL(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
-                        100, 100, 0.999, 1.0),
-                    1);
-  BOOST_CHECK_EQUAL(RANSAC<SimilarityTransformEstimator<3>>::ComputeNumTrials(
-                        100, 100, 0, 1.0),
-                    1);
 }
 
-BOOST_AUTO_TEST_CASE(TestSimilarityTransform) {
+TEST(optim_ransac, TestSimilarityTransform) {
   SetPRNGSeed(0);
 
   const size_t num_samples = 1000;
@@ -118,21 +120,95 @@ BOOST_AUTO_TEST_CASE(TestSimilarityTransform) {
   RANSAC<SimilarityTransformEstimator<3>> ransac(options);
   const auto report = ransac.Estimate(src, dst);
 
-  BOOST_CHECK_EQUAL(report.success, true);
-  BOOST_CHECK_GT(report.num_trials, 0);
+  EXPECT_EQ(report.success, true);
+  EXPECT_GT(report.num_trials, 0);
 
   // Make sure outliers were detected correctly.
-  BOOST_CHECK_EQUAL(report.support.num_inliers, num_samples - num_outliers);
+  EXPECT_EQ(report.support.num_inliers, num_samples - num_outliers);
   for (size_t i = 0; i < num_samples; ++i) {
     if (i < num_outliers) {
-      BOOST_CHECK(!report.inlier_mask[i]);
+      EXPECT_FALSE(report.inlier_mask[i]);
     } else {
-      BOOST_CHECK(report.inlier_mask[i]);
+      EXPECT_TRUE(report.inlier_mask[i]);
     }
   }
 
   // Make sure original transformation is estimated correctly.
   const double matrix_diff =
       (orig_tform.Matrix().topLeftCorner<3, 4>() - report.model).norm();
-  BOOST_CHECK(std::abs(matrix_diff) < 1e-6);
+  EXPECT_TRUE(std::abs(matrix_diff) < 1e-6);
+}
+
+TEST(optim_ransac, ParallelSimilarityTransform) {
+  SetPRNGSeed(0);
+  const size_t num_samples = 1000;
+  const size_t num_outliers = 400;
+  const SimilarityTransform3 orig_tform(2, ComposeIdentityQuaternion(),
+                                        Eigen::Vector3d(100, 10, 10));
+  std::vector<Eigen::Vector3d> src;
+  std::vector<Eigen::Vector3d> dst;
+  for (size_t i = 0; i < num_samples; ++i) {
+    src.emplace_back(i, std::sqrt(i) + 2, std::sqrt(2 * i + 2));
+    dst.push_back(src.back());
+    orig_tform.TransformPoint(&dst.back());
+  }
+  for (size_t i = 0; i < num_outliers; ++i) {
+    dst[i] = Eigen::Vector3d(RandomReal(-3000.0, -2000.0),
+                             RandomReal(-4000.0, -3000.0),
+                             RandomReal(-5000.0, -4000.0));
+  }
+
+  RANSACOptions options;
+  options.max_error = 10;
+  options.random_seed = kDefaultPRNGSeed;
+  options.num_threads = 4;
+  RANSAC<SimilarityTransformEstimator<3>> ransac(options);
+  const auto report = ransac.Estimate(src, dst);
+
+  ASSERT_TRUE(report.success);
+  EXPECT_GT(report.num_trials, 0);
+  EXPECT_EQ(report.support.num_inliers, num_samples - num_outliers);
+  const double matrix_diff =
+      (orig_tform.Matrix().topLeftCorner<3, 4>() - report.model).norm();
+  EXPECT_LT(matrix_diff, 1e-6);
+}
+
+TEST(optim_ransac, ReproducibilityWithRandomSeed) {
+  SetPRNGSeed(0);
+  const size_t num_samples = 1000;
+  const SimilarityTransform3 orig_tform(
+      2, Eigen::Vector4d::Random().normalized(),
+      Eigen::Vector3d(100, 10, 10));
+  std::vector<Eigen::Vector3d> src;
+  std::vector<Eigen::Vector3d> dst;
+  for (size_t i = 0; i < num_samples; ++i) {
+    src.emplace_back(i, std::sqrt(i) + 2, std::sqrt(2 * i + 2));
+    dst.push_back(src.back());
+    orig_tform.TransformPoint(&dst.back());
+  }
+  for (size_t i = 0; i < 400; ++i) {
+    dst[i] = Eigen::Vector3d(RandomReal(-3000.0, -2000.0),
+                             RandomReal(-4000.0, -3000.0),
+                             RandomReal(-5000.0, -4000.0));
+  }
+
+  RANSACOptions options;
+  options.max_error = 10;
+  options.random_seed = 42;
+  RANSAC<SimilarityTransformEstimator<3>> ransac1(options);
+  const auto report1 = ransac1.Estimate(src, dst);
+  RANSAC<SimilarityTransformEstimator<3>> ransac2(options);
+  const auto report2 = ransac2.Estimate(src, dst);
+
+  ASSERT_TRUE(report1.success);
+  ASSERT_TRUE(report2.success);
+  EXPECT_EQ(report1.support.num_inliers, report2.support.num_inliers);
+  EXPECT_EQ(report1.inlier_mask, report2.inlier_mask);
+  EXPECT_EQ((report1.model - report2.model).norm(), 0.0);
+
+  options.random_seed = 123;
+  RANSAC<SimilarityTransformEstimator<3>> ransac3(options);
+  const auto report3 = ransac3.Estimate(src, dst);
+  ASSERT_TRUE(report3.success);
+  EXPECT_GT((report1.model - report3.model).norm(), 0.0);
 }

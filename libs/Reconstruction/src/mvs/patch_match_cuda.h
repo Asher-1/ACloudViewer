@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <cuda_runtime.h>
-
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -21,6 +19,7 @@
 #include "mvs/image.h"
 #include "mvs/normal_map.h"
 #include "mvs/patch_match.h"
+#include "util/cuda_to_hip.h"
 
 namespace colmap {
 namespace mvs {

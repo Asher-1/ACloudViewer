@@ -11,7 +11,7 @@
 #include <cstdio>
 #include <vector>
 
-#include "reconstruct.hpp"
+#include "tasks/depth/reconstruct.hpp"
 
 static bool approx(double a, double b, double eps) {
     return std::fabs(a - b) <= eps;

@@ -1,7 +1,9 @@
 #pragma once
 #include "ggml.h"
-#include "model_loader.hpp"
-#include "attention.hpp"
+#include "tasks/depth/model_loader.hpp"
+
+#include "tasks/depth/attention.hpp"
+
 namespace aicore {
 namespace depth {
 struct BlockWeights {

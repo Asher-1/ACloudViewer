@@ -1,0 +1,76 @@
+{
+  "schema": 1,
+  "updated_at": "2026-10-21T08:53:30.606002+00:00",
+  "scope": "Targeted migration CUDA fix only; complete task/backend regression and controlled performance remain open.",
+  "source_pin": {
+    "path": "3rdparty/llama/migration-source.json",
+    "sha256": "0a00d415f70c594ae655ab1b77afceccd74eb54efc670845d99155c15362f6c2"
+  },
+  "patch": {
+    "path": "3rdparty/llama/experimental/patches/0006-acv-cuda-native-output-stride.patch",
+    "sha256": "7456794960c593c5eb5d54b51075be15a887bf3135e84f758b6cc97bdd74b52c"
+  },
+  "root_cause": "Rebased native F16 mul_mat_cast output used nb1 / sizeof(float), halving cuBLAS ldc. CUDA GEMM_EX rejected parameter 16. Divide destination byte stride by its element size.",
+  "upstream_contract": "https://docs.nvidia.com/cuda/archive/11.8.0/cublas/index.html",
+  "pristine_replay": {
+    "path": "build_llama_dual_gpu_3nl01j4j/stride-fix/patch-evidence.json",
+    "sha256": "5b947ad61a1acd81d4d65881f2d251cf5fcaf324d9f0b1de60b24506f5a229c0"
+  },
+  "numeric_test": {
+    "path": "3rdparty/llama/experimental/cuda_matmul_stride_test.cpp",
+    "sha256": "3b067c29c50e5deb311893dc36fe6ca7ffc1b6567ee406b75638fef0a56b5ab7"
+  },
+  "numeric_receipt": {
+    "path": "build_llama_dual_gpu_3nl01j4j/stride-fix/unit-results.json",
+    "sha256": "647e858c73626b9496a244756db0f3d3e817fcda821882816285f4f0fbf9a746"
+  },
+  "numeric_results": {
+    "old_module_exit": -6,
+    "fixed_module_exit": 0,
+    "cases": 6,
+    "max_abs_error": 0,
+    "scope": "F16/F32 output; single, batched and broadcast; scalar exact dyadic oracle"
+  },
+  "invalid_first_focus": {
+    "path": "build_llama_dual_gpu_3nl01j4j/stride-fix/probe-path-correction.json",
+    "sha256": "ff789bf7d77e4483be2d22bb6c63e8956c7280526d48bf26c70af0df72e12457"
+  },
+  "corrected_layout": {
+    "path": "build_llama_dual_gpu_3nl01j4j/stride-fix/elf-layout-receipt.json",
+    "sha256": "b1f216773e602ec3f33647751f36c496abf9c05603128642ea202c03feb0368e"
+  },
+  "sam3": {
+    "attempts": "build_llama_dual_gpu_3nl01j4j/stride-fix/Testing/sam3-f16-v4-cuda.attempts.jsonl",
+    "report": "build_llama_dual_gpu_3nl01j4j/stride-fix/Testing/sam3-f16-v4-cuda.json",
+    "candidate_completed": [
+      {
+        "returncode": 0,
+        "mask_iou": 0.99967423,
+        "score_error": 0.00016046,
+        "fingerprints": {
+          "json0/output_hash": "5fc3bb964776beed"
+        }
+      },
+      {
+        "returncode": 0,
+        "mask_iou": 0.99967423,
+        "score_error": 0.00016046,
+        "fingerprints": {
+          "json0/output_hash": "5fc3bb964776beed"
+        }
+      }
+    ],
+    "full_focused_report": {
+      "path": "build_llama_dual_gpu_3nl01j4j/stride-fix/Testing/sam3-f16-v4-cuda.json",
+      "sha256": "0e118a752ce2d00642c95a05d07747b9cfe63343ae29af4ee80c113db6aed364"
+    },
+    "verdict": "PASS",
+    "baseline_and_candidate_exit0_repeats": 2,
+    "attempts_identity": {
+      "path": "build_llama_dual_gpu_3nl01j4j/stride-fix/Testing/sam3-f16-v4-cuda.attempts.jsonl",
+      "sha256": "cce041b5d196bb02a4508e3545167e58c9d6fd9e08590ced8f0e2d861a1d8b7c"
+    }
+  },
+  "complete_regression_pass": false,
+  "production_entry_removal_allowed": false
+}

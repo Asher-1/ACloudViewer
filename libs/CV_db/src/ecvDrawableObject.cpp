@@ -14,6 +14,7 @@ ccDrawableObject::ccDrawableObject() {
     setForceRedraw(false);
     setVisible(true);
     setSelected(false);
+    m_nameIn3DOverlayCreated = false;
     lockVisibility(false);
     showColors(false);
     showNormals(false);
@@ -46,6 +47,7 @@ ccDrawableObject::ccDrawableObject(const ccDrawableObject& object)
       m_glTrans(object.m_glTrans),
       m_glTransEnabled(object.m_glTransEnabled),
       m_showNameIn3D(object.m_showNameIn3D),
+      m_nameIn3DOverlayCreated(false),
       m_pointGaussianEnabled(object.m_pointGaussianEnabled),
       m_pointGaussianRadius(object.m_pointGaussianRadius),
       m_pointGaussianShaderPreset(object.m_pointGaussianShaderPreset),

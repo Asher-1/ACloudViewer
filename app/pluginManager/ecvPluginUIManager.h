@@ -44,6 +44,9 @@ public:
     QToolBar *glPclToolbar();
     QAction *actionShowPCLAlgorithmToolbar();
 
+    QToolBar *aiCoreToolbar();
+    QAction *actionShowAICoreToolbar();
+
     void updateMenus();
     void handleSelectionChanged();
 
@@ -66,6 +69,8 @@ private:
                              const QList<QAction *> &actions);
     void addActionsToToolBar(const QString &moduleName,
                              const QList<QAction *> &actions);
+    void addAIActionsToToolBar(ccStdPluginInterface *stdPlugin,
+                               const QList<QAction *> &actions);
 
     void enablePCLAlgorithm();
     void disablePCLAlgorithm();
@@ -92,4 +97,8 @@ private:
 
     QToolBar *m_pclAlgorithmsToolbar;
     QAction *m_showPCLAlgorithmToolbar;
+
+    QToolBar *m_aiCoreToolbar;  // grouped AI Core plugin actions (draggable
+                                // as one unit)
+    QAction *m_showAICoreToolbar;
 };

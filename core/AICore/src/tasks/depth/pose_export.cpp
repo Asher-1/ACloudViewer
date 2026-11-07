@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "pose_export.hpp"
+#include "tasks/depth/pose_export.hpp"
 
 #include <cstdio>
 

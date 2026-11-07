@@ -1,26 +1,26 @@
-# 无限问答模式
+# Infinite Q&A Mode
 
-让 Cursor Agent 进入持续问答循环，适合需要反复讨论、逐步确认方案后再执行的场景。
+Puts the agent into a continuous Q&A loop for scenarios that need repeated discussion and step-by-step confirmation before execution.
 
-## 解决的痛点
+## Problem Solved
 
-默认情况下 Agent 回复后对话就结束了，用户需要手动输入才能继续。无限问答模式让 Agent 每次回复后自动提供上下文相关的快捷选项，形成持续的交互循环。Agent 可以正常执行所有操作（修改代码、搜索、分析等），只是每一步都有选项引导，直到用户主动退出。
+By default the dialogue ends after each reply and the user must type manually to continue. Infinite Q&A mode makes the agent append context-aware quick options after every reply, forming a continuous interaction loop. The agent can still perform any operation (code edits, search, analysis, etc.) — every step is just guided by options until the user actively exits.
 
-## 安装
+## Installation
 
-从 Skill Market 下载并解压到 `~/.agents/skills/infinite-qa-mode/`
+Download from the Skill Market and extract to `~/.agents/skills/infinite-qa-mode/`
 
-## 使用
+## Usage
 
-在 Cursor 中对 Agent 说：
+Tell the agent in Cursor:
 
 ```
-开始无限问答模式
+Start infinite Q&A mode
 ```
 
-Agent 会进入问答循环，每次回复后自动提供选项供你选择。选择"退出问答"即可结束循环并开始执行。
+The agent enters the Q&A loop and offers options after every reply. Select "Exit Q&A" to end the loop and proceed with execution.
 
-## 项目结构
+## Project Structure
 
 ```
 infinite-qa-mode/
@@ -32,4 +32,4 @@ infinite-qa-mode/
 
 ---
 
-作者：@yunshanpeng
+Author: @yunshanpeng

@@ -7,6 +7,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ChamferDistanceTransform.cpp
 		${CMAKE_CURRENT_LIST_DIR}/CloudSamplingTools.cpp
 		${CMAKE_CURRENT_LIST_DIR}/Console.cpp
+		${CMAKE_CURRENT_LIST_DIR}/CrashHandler.cpp
 		${CMAKE_CURRENT_LIST_DIR}/Logging.cpp
 		${CMAKE_CURRENT_LIST_DIR}/CVKdTree.cpp
 		${CMAKE_CURRENT_LIST_DIR}/TrueKdTree.cpp

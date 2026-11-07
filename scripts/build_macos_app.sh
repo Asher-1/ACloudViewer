@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Requirements as follows:
 # conda env create -f .ci/conda_macos_cloudViewer.yml
-# conda activate python3.8
+# conda activate python3.10
 
 # use lower target(11.0) version for compacibility
 export MACOSX_DEPLOYMENT_TARGET=11.0
@@ -41,7 +41,7 @@ fi
 echo "conda env create and activate..."
 export CONDA_PREFIX="${CONDA_ROOT}/envs/${ENV_NAME}"
 cp ${CLOUDVIEWER_SOURCE_ROOT}/.ci/conda_macos_cloudViewer.yml /tmp/conda_macos_cloudViewer.yml
-sed -i "" "s/3.8/${PYTHON_VERSION}/g" /tmp/conda_macos_cloudViewer.yml
+sed -i "" "s/3.10/${PYTHON_VERSION}/g" /tmp/conda_macos_cloudViewer.yml
 # mamba env create -f /tmp/conda_macos_cloudViewer.yml # just for speedup
 conda env create -f /tmp/conda_macos_cloudViewer.yml
 conda activate ${ENV_NAME} \

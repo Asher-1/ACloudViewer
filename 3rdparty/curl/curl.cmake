@@ -41,7 +41,18 @@ ExternalProject_Add(
         -DCURL_USE_LIBSSH2=OFF
         -DCURL_USE_OPENSSL=ON
         -DCURL_USE_LIBPSL=OFF
+        # Pin every OpenSSL artifact explicitly: with OPENSSL_ROOT_DIR alone,
+        # FindOpenSSL can resolve to the environment's OpenSSL 3 (e.g. the
+        # conda env), whose headers emit OSSL_PROVIDER/OSSL_STORE references
+        # that the prebuilt boringssl cannot satisfy at link time.
         -DOPENSSL_ROOT_DIR=${BORINGSSL_ROOT_DIR}
+        -DOPENSSL_INCLUDE_DIR=${BORINGSSL_ROOT_DIR}/include
+        -DOPENSSL_SSL_LIBRARY=${BORINGSSL_ROOT_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}ssl${CMAKE_STATIC_LIBRARY_SUFFIX}
+        -DOPENSSL_CRYPTO_LIBRARY=${BORINGSSL_ROOT_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}crypto${CMAKE_STATIC_LIBRARY_SUFFIX}
+        # CURL_ZSTD defaults to AUTO: whenever a zstd is visible (conda env),
+        # libcurl silently gains ZSTD_* references that no Windows consumer
+        # links, failing the pybind wheel with LNK2001.
+        -DCURL_ZSTD=OFF
         -DZLIB_ROOT=${CMAKE_BINARY_DIR}/zlib
         ${curl_cmake_extra_args}
         ${ExternalProject_CMAKE_ARGS_hidden}

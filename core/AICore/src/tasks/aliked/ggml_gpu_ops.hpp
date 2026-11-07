@@ -1,9 +1,12 @@
 #pragma once
 
-#include "backend.h"
+#include "tasks/aliked/backend.h"
 
-#include "ggml_cnn.hpp"
-#include "gpu_tensor.hpp"
+
+#include "tasks/aliked/ggml_cnn.hpp"
+
+#include "tasks/aliked/gpu_tensor.hpp"
+
 
 #include <string>
 

@@ -9,46 +9,22 @@
 
 #include <QtCore>
 #include <QtWidgets>
+#include <functional>
 
+#include "controllers/option_manager.h"
 #include "ui/options_widget.h"
-#include "util/option_manager.h"
 
 namespace colmap {
 
-class MapperGeneralOptionsWidget : public OptionsWidget {
-public:
-    MapperGeneralOptionsWidget(QWidget* parent, OptionManager* options);
-};
-
-class MapperTriangulationOptionsWidget : public OptionsWidget {
-public:
-    MapperTriangulationOptionsWidget(QWidget* parent, OptionManager* options);
-};
-
-class MapperRegistrationOptionsWidget : public OptionsWidget {
-public:
-    MapperRegistrationOptionsWidget(QWidget* parent, OptionManager* options);
-};
-
-class MapperInitializationOptionsWidget : public OptionsWidget {
-public:
-    MapperInitializationOptionsWidget(QWidget* parent, OptionManager* options);
-};
-
-class MapperBundleAdjustmentOptionsWidget : public OptionsWidget {
-public:
-    MapperBundleAdjustmentOptionsWidget(QWidget* parent,
-                                        OptionManager* options);
-};
-
-class MapperFilteringOptionsWidget : public OptionsWidget {
-public:
-    MapperFilteringOptionsWidget(QWidget* parent, OptionManager* options);
-};
+// Selects which mapper the GUI runs when starting a reconstruction.
+enum class MapperType { INCREMENTAL, HIERARCHICAL, GLOBAL };
 
 class ReconstructionOptionsWidget : public QWidget {
 public:
-    ReconstructionOptionsWidget(QWidget* parent, OptionManager* options);
+    ReconstructionOptionsWidget(QWidget* parent,
+                                OptionManager* options,
+                                MapperType* mapper_type,
+                                std::function<void()> on_mapper_type_changed);
 };
 
 }  // namespace colmap

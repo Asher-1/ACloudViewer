@@ -36,36 +36,36 @@
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(TestDefault) {
+TEST(util_timer, TestDefault) {
   Timer timer;
-  BOOST_CHECK_EQUAL(timer.ElapsedMicroSeconds(), 0);
-  BOOST_CHECK_EQUAL(timer.ElapsedSeconds(), 0);
-  BOOST_CHECK_EQUAL(timer.ElapsedMinutes(), 0);
-  BOOST_CHECK_EQUAL(timer.ElapsedHours(), 0);
+  EXPECT_EQ(timer.ElapsedMicroSeconds(), 0);
+  EXPECT_EQ(timer.ElapsedSeconds(), 0);
+  EXPECT_EQ(timer.ElapsedMinutes(), 0);
+  EXPECT_EQ(timer.ElapsedHours(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(TestStart) {
+TEST(util_timer, TestStart) {
   Timer timer;
   timer.Start();
-  BOOST_CHECK_GE(timer.ElapsedMicroSeconds(), 0);
-  BOOST_CHECK_GE(timer.ElapsedSeconds(), 0);
-  BOOST_CHECK_GE(timer.ElapsedMinutes(), 0);
-  BOOST_CHECK_GE(timer.ElapsedHours(), 0);
+  EXPECT_GE(timer.ElapsedMicroSeconds(), 0);
+  EXPECT_GE(timer.ElapsedSeconds(), 0);
+  EXPECT_GE(timer.ElapsedMinutes(), 0);
+  EXPECT_GE(timer.ElapsedHours(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(TestPause) {
+TEST(util_timer, TestPause) {
   Timer timer;
   timer.Start();
   timer.Pause();
   double prev_time = timer.ElapsedMicroSeconds();
   for (size_t i = 0; i < 1000; ++i) {
-    BOOST_CHECK_EQUAL(timer.ElapsedMicroSeconds(), prev_time);
+    EXPECT_EQ(timer.ElapsedMicroSeconds(), prev_time);
     prev_time = timer.ElapsedMicroSeconds();
   }
   timer.Resume();
   for (size_t i = 0; i < 1000; ++i) {
-    BOOST_CHECK_GE(timer.ElapsedMicroSeconds(), prev_time);
+    EXPECT_GE(timer.ElapsedMicroSeconds(), prev_time);
   }
   timer.Reset();
-  BOOST_CHECK_EQUAL(timer.ElapsedMicroSeconds(), 0);
+  EXPECT_EQ(timer.ElapsedMicroSeconds(), 0);
 }

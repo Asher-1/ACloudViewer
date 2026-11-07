@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="#101c33"/>
+  <!-- multi-view frames feeding the reconstruction -->
+  <rect x="6" y="7" width="20" height="14" rx="2" fill="none" stroke="#64b5f6" stroke-width="2.5"/>
+  <rect x="12" y="12" width="20" height="14" rx="2" fill="none" stroke="#90caf9" stroke-width="2.5"/>
+  <rect x="18" y="17" width="20" height="14" rx="2" fill="none" stroke="#bbdefb" stroke-width="2.5"/>
+  <!-- reconstructed world-frame point cloud -->
+  <circle cx="47" cy="11" r="2.1" fill="#ffd54f"/>
+  <circle cx="54" cy="15" r="2.1" fill="#ffb74d"/>
+  <circle cx="46" cy="19" r="2.1" fill="#4fc3f7"/>
+  <circle cx="53" cy="23" r="2.1" fill="#aed581"/>
+  <circle cx="44" cy="27" r="2.1" fill="#ff8a65"/>
+  <circle cx="51" cy="30" r="2.1" fill="#ffd54f"/>
+  <!-- family badges: the VGGT camera backbone + the MapAnything task -->
+  <rect x="6" y="36" width="27" height="12" rx="3" fill="#1d4ed8"/>
+  <text x="19.5" y="45.5" font-family="sans-serif" font-size="9.5" font-weight="bold" fill="#ffffff" text-anchor="middle">VGGT</text>
+  <rect x="35" y="36" width="23" height="12" rx="3" fill="#0f766e"/>
+  <text x="46.5" y="45.5" font-family="sans-serif" font-size="8.5" font-weight="bold" fill="#ffffff" text-anchor="middle">MAP·3D</text>
+  <!-- MapAnything wordmark -->
+  <text x="32" y="58" font-family="sans-serif" font-size="7.5" font-weight="bold" fill="#93c5fd" text-anchor="middle">MAPANYTHING</text>
+</svg>

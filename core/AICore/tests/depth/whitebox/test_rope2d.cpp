@@ -8,9 +8,10 @@
 #include <cstdlib>
 #include <vector>
 
-#include "backend.hpp"
-#include "parity.hpp"
-#include "rope2d.hpp"
+#include "tasks/depth/backend.hpp"
+#include "tasks/depth/rope2d.hpp"
+#include "tests/depth/whitebox/parity.hpp"
+
 int main() {
     const char* base = std::getenv("AICORE_TEST_DEPTH_BASELINE");
     if (!base) return 77;

@@ -416,14 +416,14 @@ void GlobalUtil::InitGLParam(int NotTargetGL)
 
 void GlobalUtil::SelectDisplay()
 {
-#ifdef _WIN32
+#ifdef WIN32
 	if(_WindowDisplay == NULL) return;
 
 	HDC hdc = CreateDC(_WindowDisplay, _WindowDisplay, NULL, NULL);
 	_WindowDisplay = NULL;
 	if(hdc == NULL)
 	{
-		std::cout << "WARNING: invalid dispaly specified\n";
+		std::cout << "ERROR: invalid dispaly specified\n";
 		return;
 	}
 

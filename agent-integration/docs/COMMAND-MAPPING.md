@@ -10,6 +10,8 @@ Legend for the **RPC method** column: **(H)** headless binary / process API only
 
 | CLI command / group | MCP tool(s) | JSON-RPC method(s) |
 |---------------------|-------------|---------------------|
+| `ai list`, `ai schema`, `ai run` | `list_ai_tasks`, `get_ai_schema`, `run_ai_batch` | `aicore.batch` **(B)** |
+| `plugin run` | `run_plugin_command` | — isolated binary subprocess **(H)** |
 | `info`, `formats`, `version` | `get_info`, `list_formats` | — **(H)** |
 | `convert` | `convert_format` | `file.convert` **(G)**; headless MCP uses binary **(H)** |
 | `batch-convert` | `batch_convert` | — **(H)** |
@@ -38,6 +40,7 @@ Legend for the **RPC method** column: **(H)** headless binary / process API only
 | `process color-seg-scalar` | `color_seg_scalar` | — **(H)** |
 | `process g3point` | `g3point` | — **(H)** |
 | `process draco-settings` | `draco_settings` | — **(H)** |
+
 | `process e57-settings` | `e57_settings` | — **(H)** |
 | `process las-settings` | `las_settings` | — **(H)** |
 | `process csv-matrix-settings` | `csv_matrix_settings` | — **(H)** |
@@ -58,13 +61,57 @@ Legend for the **RPC method** column: **(H)** headless binary / process API only
 | `open`, `export` | `open_file`, `export_entity` | `open`, `export` **(G)** |
 | `transform apply` / `transform apply-file` | `transform_apply`, `transform_apply_file` | `transform.apply` **(B)** |
 | `reconstruct` (Colmap) | `colmap_*`, `colmap_run` | `colmap.reconstruct`, `colmap.run` **(H)** subprocess / **(G)** RPC |
+| `sam3d generate` (batch image-to-3D) | — | `sam3d.generate` **(G)** RPC / **(H)** direct: `-SILENT -SAM3D_GENERATE …` |
+| `mapanything reconstruct` (multi-view metric 3D) | — | `mapanything.reconstruct` **(G)** RPC / **(H)** direct: `-SILENT -MAP_ANYTHING_RECONSTRUCT …` (merged world-frame PLY + RESULT_JSON; batch-friendly on GPU-less machines via `?device=cpu`) |
 | `sibr` | `sibr_*` | — **(H)** (external SIBR tools) |
 | `methods` | `list_rpc_methods` | `methods.list` **(G)** |
 | `session` | `get_session_info` (and CLI session commands) | — **(B)** |
+| — (upstream `spirula` CLI, shipped at `bin/ACloudViewer/spirula` with `BUILD_SPIRULA=ON`) | — | `spirula.version`, `spirula.devices`, `spirula.launch`, `spirula.cli`, `spirula.import` **(G)** |
+| `ui list-actions` / `ui trigger-action` | — | `ui.listActions`, `ui.triggerAction` **(G)** |
+| `qt invoke` | — | `qt.invokeMethod` **(G)** (Qt reflection on any Q_INVOKABLE/slot; parameterized targets must take QVariant) |
+| `view list` / `view pick-entity` / `view pick-point` / `view select-region` | — | `view.list`, `view.pickEntity`, `view.pickPoint`, `view.selectRegion` **(G)** (agent-test pick probes) |
+| `lingbotmap run-test-scene` / `lingbotmap replay` / `lingbotmap display` | — | `qt.invokeMethod` on `LingbotMapDialog` **(G)** (Q_INVOKABLE driver surface: rpcStartTestScene, rpcStartReplay/rpcPausePlayback/rpcStopReplay/rpcSeekFrame, rpcCommitResultDisplay — the same signal chains the dialog buttons emit) |
+
+## Spirula Studio (3DGS training)
+
+`spirula` is the standalone GPLv3 trainer built by `BUILD_SPIRULA` (see
+`3rdparty/spirula/spirula.cmake`). It is a first-class headless CLI — call it
+directly (`spirula train <dataset>`, `spirula mesh <run>`, `spirula --device N`,
+`spirula <command> --help`) without any GUI session.
+
+Inside a **running GUI**, the `spirula.*` JSON-RPC methods wrap the same
+executable: `spirula.version` / `spirula.devices` (read-only), `spirula.launch`
+(starts the official GUI), `spirula.cli` (whitelisted subcommands — detached by
+default, synchronous with `timeout_ms`) and `spirula.import` (lands a trained
+`splat.ply` / `mesh.ply` / run directory into the scene tree). Zero patches to
+upstream: agent-side orchestration stays in the RPC/harness layer.
 
 \* The `sf` and `normals` CLI groups are **aliases** (same implementations as the matching `process …` subcommands); see [Scalar Field Commands](#scalar-field-commands) and [Normal Vector Commands](#normal-vector-commands).
 
-When the **MCP server** runs in **`--mode headless`**, tools invoke the **ACloudViewer binary** (`-SILENT` …) instead of RPC—there is no JSON-RPC method in that path. When **`--mode gui`**, GUI tools forward to the matching **`category.action`** RPC methods above.
+When the **MCP server** runs in **`--mode headless`**, tools invoke the **ACloudViewer binary** (`-SILENT` …) instead of RPC—there is no JSON-RPC method in that path. When **`--mode gui`**, GUI tools forward to the matching **`category.action`** RPC methods above. `run_plugin_command` always uses an isolated headless process; `run_ai_batch` uses `aicore.batch` in GUI mode and the same registered command directly in headless mode.
+
+## AICore Batch Registry
+
+| Task | Native command | Input shape |
+|------|----------------|-------------|
+| `rmbg` | `RMBG_REMOVE` | images |
+| `deeplsd` | `DEEPLSD_LINES` | images |
+| `rfdetr` | `RFDETR_DETECT` | images |
+| `yolo` / `yolo-track` | `YOLO_PREDICT` / `YOLO_TRACK` | images / video-or-frames |
+| `da3` | `DA3_DEPTH` | images-or-sets |
+| `face` / `gkd` / `ocr` | `FACE_DETECT` / `GKD_KEYPOINTS` / `OCR_RECOGNIZE` | images |
+| `sam3` | `SAM3_SEGMENT` | images |
+| `lightglue` | `LIGHTGLUE_MATCH` | image-pairs |
+| `freesplatter` | `FREESPLATTER_RECONSTRUCT` | image-sets |
+| `trellis` | `TRELLIS_GENERATE` | images |
+| `lingbot-map` | `LINGBOT_MAP_RECONSTRUCT` | sequence-or-video |
+| `anylabel` | `ANYLABEL_INFER` | images |
+| `map-anything` | `MAP_ANYTHING_RECONSTRUCT` | image-sets |
+| `sam3d` | `SAM3D_GENERATE` | images |
+
+Every native command must return `acloudviewer.aicore.batch/1` from
+`HELP RESULT_JSON <path>`. `ai schema` exposes that installed-binary contract;
+the Python registry stores only stable task identity and input shape.
 
 ## Plugin Processing Commands
 
@@ -224,7 +271,11 @@ headless mode:
   ├── process (55+ commands, incl. crop, 24 plugin processors, 8 IO settings, 3 colorimetric filters, 18 PCL tools)
   ├── sf (11 commands)
   ├── normals (6 commands)
-  ├── reconstruct (12+ Colmap commands)
+  ├── reconstruct (24 Colmap commands: auto/sparse/hierarchical-sparse/match/
+│  │    extract-features/undistort/dense-stereo/fuse/poisson/delaunay-mesh/
+│  │    advancing-front/texture-mesh/triangulate/filter-points/bundle-adjust/
+│  │    register-images/transform-model/crop-model/convert-model/analyze-model/
+│  │    simplify-mesh/color-extract/create-database/mesh)
   ├── sibr (10+ commands)
   └── transform apply-file
 

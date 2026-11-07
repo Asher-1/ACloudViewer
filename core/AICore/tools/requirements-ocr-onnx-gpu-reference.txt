@@ -1,0 +1,22 @@
+# Independent original/stored-weight ONNX graphs: CPython 3.11, Linux x86_64,
+# CUDA 11.8 / cuDNN 8. Use a fresh venv without system site packages.
+# Both onnx and gguf are required to reconstruct stored constants; installing
+# onnxruntime-gpu alone can run the original graph but cannot validate storage.
+numpy==1.26.4
+onnx==1.16.2
+onnxruntime-gpu==1.18.1
+opencv-python-headless==4.11.0.86
+gguf==0.19.0
+protobuf==7.35.0
+# Source TextSystem page decoding/crops and polygon postprocessing.
+PyYAML==6.0.3
+Pillow==12.2.0
+six==1.17.0
+shapely==2.0.7
+pyclipper==1.4.0
+nvidia-cuda-runtime-cu11==11.8.89
+nvidia-cuda-nvrtc-cu11==11.8.89
+nvidia-cublas-cu11==11.11.3.6
+nvidia-cudnn-cu11==8.9.6.50
+nvidia-cufft-cu11==10.9.0.58
+nvidia-curand-cu11==10.3.0.86

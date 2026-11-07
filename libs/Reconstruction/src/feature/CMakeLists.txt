@@ -32,13 +32,28 @@
 set(FOLDER_NAME "feature")
 
 COLMAP_ADD_SOURCES(
-    extraction.h extraction.cc
-    matching.h matching.cc
+    aliked.h aliked.cc
+    extractor.h extractor.cc
+    index.h index.cc
+    learned_matchers.h learned_matchers.cc
+    lightglue.h lightglue.cc
+    loma.h loma.cc
+    matcher.h matcher.cc
+    model_cache.h model_cache.cc
     sift.h sift.cc
     types.h types.cc
     utils.h utils.cc
 )
 
 COLMAP_ADD_TEST(feature_utils_test utils_test.cc)
+
+COLMAP_ADD_TEST(aliked_test aliked_test.cc)
+COLMAP_ADD_TEST(extractor_test extractor_test.cc)
+COLMAP_ADD_TEST(index_test index_test.cc)
+COLMAP_ADD_TEST(loma_test loma_test.cc)
+COLMAP_ADD_TEST(matcher_test matcher_test.cc)
+COLMAP_ADD_TEST(lightglue_test lightglue_test.cc)
+COLMAP_ADD_TEST(onnx_matchers_test onnx_matchers_test.cc)
+COLMAP_ADD_TEST(onnx_utils_test onnx_utils_test.cc)
 COLMAP_ADD_TEST(sift_test sift_test.cc)
 COLMAP_ADD_TEST(types_test types_test.cc)

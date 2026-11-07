@@ -23,7 +23,9 @@ import os, sys, types, json, subprocess, argparse, numpy as np
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
-DA3_SRC = "/tmp/da3-src/src"
+DA3_SRC = os.environ.get("DA3_SRC", "")
+if not DA3_SRC:
+    raise RuntimeError("DA3_SRC must point to the upstream depth-anything-3/src directory")
 
 OUT_PNG = os.path.join(ROOT, "dumps", "e2e_ray_pose_input.png")
 PROCESS_RES = 504

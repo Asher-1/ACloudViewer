@@ -1,0 +1,92 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
+
+#include <ceres/ceres.h>
+
+#include <memory>
+
+#include "estimators/bundle_adjustment_ceres.h"
+#include "estimators/rotation_averaging.h"
+#include "math/math.h"
+#include "util/hash_containers.h"
+#include "util/types.h"
+
+namespace colmap {
+
+class PoseGraph;
+class Reconstruction;
+
+// Ceres-specific rotation averaging options. Solver-agnostic options (e.g.,
+// reweighting, skip_initialization, refine_sensor_from_rig) are in
+// RotationEstimatorOptions.
+struct CeresRotationAveragerOptions {
+    // Robust loss function applied to the relative-rotation residuals.
+    CeresLossFunctionType loss_function_type = CeresLossFunctionType::CAUCHY;
+    // Loss function scale in degrees.
+    double loss_function_scale = 0.5;
+
+    // Number of solver iterations of a Huber-loss warm-start (with the same
+    // loss_function_scale) run by RotationEstimator before the main solve. The
+    // linear tails of the Huber loss widen the basin of convergence from the
+    // maximum spanning tree initialization, which narrow redescending losses
+    // can otherwise get trapped in. Set to 0 to disable.
+    int max_num_warm_start_iterations = 5;
+
+    ceres::Solver::Options solver_options;
+
+    CeresRotationAveragerOptions();
+};
+
+// Optimizes frame and sensor rotations in place. The reconstruction must
+// outlive this object. Unlike the RunRotationAveraging() pipeline, it has no
+// gravity/pose priors, outlier filtering, or frame deregistration. Uses the
+// Ceres-specific options in options.ceres and the solver-agnostic options
+// reweighting, skip_initialization, and refine_sensor_from_rig.
+class CeresRotationAverager {
+public:
+    CeresRotationAverager(const RotationEstimatorOptions& options,
+                          const PoseGraph& pose_graph,
+                          Reconstruction& reconstruction);
+    CeresRotationAverager(const CeresRotationAverager&) = delete;
+    CeresRotationAverager& operator=(const CeresRotationAverager&) = delete;
+
+    ceres::Solver::Options solver_options;
+
+    ceres::Solver::Summary Solve();
+    ceres::Problem& Problem();
+    const ceres::Problem& Problem() const;
+    void AddRelativeRotationResidual(
+            image_t image_id1,
+            image_t image_id2,
+            const Eigen::Quaterniond& cam2_from_cam1,
+            const std::shared_ptr<ceres::LossFunction>& loss_function);
+
+private:
+    void InitializeRotations(const RotationEstimatorOptions& options,
+                             const PoseGraph& pose_graph,
+                             const FlatHashSet<image_t>& image_ids);
+    void SetupParameterBlocks(const RotationEstimatorOptions& options,
+                              const FlatHashSet<image_t>& image_ids);
+
+    Reconstruction& reconstruction_;
+    FlatHashMap<ceres::LossFunction*, std::shared_ptr<ceres::LossFunction>>
+            losses_;
+    std::unique_ptr<ceres::Problem> problem_;
+};
+
+// Creates the averager with residuals for all valid pose graph edges. Callers
+// may add residuals or change parameter block constancy through Problem().
+// MST initialization requires sensor rotations for all rigs in the
+// reconstruction when sensor refinement is disabled.
+std::unique_ptr<CeresRotationAverager> CreateDefaultCeresRotationAverager(
+        const RotationEstimatorOptions& options,
+        const PoseGraph& pose_graph,
+        Reconstruction& reconstruction);
+
+}  // namespace colmap

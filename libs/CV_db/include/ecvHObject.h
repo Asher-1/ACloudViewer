@@ -24,6 +24,11 @@ class ecvOrientedBBox;
 //! Hierarchical CLOUDVIEWER  Object
 class CV_DB_LIB_API ccHObject : public ccObject, public ccDrawableObject {
 public:  // construction
+    //! Per-pass self-time probe for ccHObject::draw segments (see .cpp):
+    //! attributes the unexplained draw-tree time to the recursion body.
+    static void resetDrawSelfProbe();
+    static void logDrawSelfProbe();
+
     //! Default constructor
     /** \param name object name (optional)
      **/

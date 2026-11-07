@@ -1,0 +1,11 @@
+diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
+--- a/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -6387,6 +6387,7 @@ vk_pipeline ggml_vk_get_cpy_pipeline(ggml_backend_vk_context * ctx, const ggml_t
+         case GGML_TYPE_Q2_0:
+         case GGML_TYPE_Q4_0:
+         case GGML_TYPE_Q4_1:
++        case GGML_TYPE_Q4_K:
+         case GGML_TYPE_Q5_0:
+         case GGML_TYPE_Q5_1:
+         case GGML_TYPE_Q8_0:

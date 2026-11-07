@@ -44,8 +44,8 @@ public:
     // app-specific: Public data for UI visualization
     // These collect results during reconstruction for display
     std::vector<std::vector<colmap::PlyPoint>> fused_points_;
-    std::vector<std::string> meshing_paths_;
-    std::vector<std::string> textured_paths_;
+    std::vector<std::filesystem::path> meshing_paths_;
+    std::vector<std::filesystem::path> textured_paths_;
     bool texturing_success_ = false;
 
 protected:
@@ -54,9 +54,10 @@ protected:
             size_t reconstruction_idx,
             const std::vector<colmap::PlyPoint>& points) override;
     void OnMeshGenerated(size_t reconstruction_idx,
-                         const std::string& mesh_path) override;
-    void OnTexturedMeshGenerated(size_t reconstruction_idx,
-                                 const std::string& textured_path) override;
+                         const std::filesystem::path& mesh_path) override;
+    void OnTexturedMeshGenerated(
+            size_t reconstruction_idx,
+            const std::filesystem::path& textured_path) override;
 
     // Override to initialize data containers
     void RunDenseMapper() override;

@@ -104,6 +104,11 @@ public:
     //! QString version of ccLog::PrintDebug
     static bool PrintDebug(const QString& message);
 
+    //! Diagnostics gate for developer probes (pick/selection/performance
+    //! tracing). Disabled by default so the per-interaction log I/O never
+    //! stalls the flows it measures; enable with ACV_DIAGNOSTICS=1.
+    static bool diagnosticsEnabled();
+
     //! Prints out a formatted warning message in console
     /** Works just like the 'printf' command.
         \return always 'false'

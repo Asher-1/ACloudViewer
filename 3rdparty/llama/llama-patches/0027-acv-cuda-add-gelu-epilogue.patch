@@ -1,0 +1,89 @@
+diff --git a/src/ggml-cuda/ggml-cuda.cu b/src/ggml-cuda/ggml-cuda.cu
+--- a/src/ggml-cuda/ggml-cuda.cu
++++ b/src/ggml-cuda/ggml-cuda.cu
+@@ -4546,6 +4546,16 @@
+     if (ggml_cuda_fusion_disabled()) {
+         return 0;
+     }
+ 
++    // 显式标记且相邻的单消费者 ADD/GELU 才可省略中间写出。
++    if (cgraph->nodes[i]->op == GGML_OP_ADD &&
++        ggml_elementwise_get_epilogue_hint(cgraph->nodes[i]) == GGML_EPILOGUE_GELU &&
++        i + 1 < cgraph->n_nodes && cgraph->nodes[i + 1]->op == GGML_OP_UNARY &&
++        ggml_get_unary_op(cgraph->nodes[i + 1]) == GGML_UNARY_OP_GELU_ERF &&
++        ggml_can_fuse(cgraph, i, { GGML_OP_ADD, GGML_OP_UNARY }) &&
++        ggml_cuda_op_add_gelu_erf(*cuda_ctx, cgraph->nodes[i], cgraph->nodes[i + 1])) {
++        return 1;
++    }
++
+     ggml_tensor * node = cgraph->nodes[i];
+ 
+diff --git a/src/ggml-cuda/unary.cu b/src/ggml-cuda/unary.cu
+--- a/src/ggml-cuda/unary.cu
++++ b/src/ggml-cuda/unary.cu
+@@ -230,6 +230,52 @@
+ void ggml_cuda_op_gelu_erf(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+     ggml_cuda_op_unary<op_gelu_erf>(ctx, dst);
+ }
+ 
++// O(n)：复用原 GELU 算术；不新增完整中间张量。
++static __global__ void add_gelu_erf_bias_kernel(const float * a, const float * b, float * dst,
++                                              const int64_t ne0, const int64_t n) {
++    ggml_cuda_pdl_lc();
++    const int64_t i = (int64_t) blockDim.x*blockIdx.x + threadIdx.x;
++    if (i >= n) {
++        return;
++    }
++    ggml_cuda_pdl_sync();
++    dst[i] = op_gelu_erf(a[i] + b[i % ne0]);
++}
++
++bool ggml_cuda_op_add_gelu_erf(ggml_backend_cuda_context & ctx, const ggml_tensor * add, ggml_tensor * gelu) {
++    const ggml_tensor * a = add->src[0];
++    const ggml_tensor * b = add->src[1];
++    if (add->type != GGML_TYPE_F32 || gelu->type != GGML_TYPE_F32 ||
++        !a || !b || a->type != GGML_TYPE_F32 || b->type != GGML_TYPE_F32 ||
++        gelu->src[0] != add || ggml_is_empty(a) ||
++        !ggml_is_contiguous(a) || !ggml_is_contiguous(add) || !ggml_is_contiguous(gelu) ||
++        !ggml_are_same_shape(a, add) || !ggml_are_same_shape(add, gelu) ||
++        ggml_nrows(b) != 1 || b->ne[0] != a->ne[0] || !ggml_is_contiguous(b)) {
++        return false;
++    }
++
++    // 原分配器可能复用已结束生命周期的输入。逐元素同址覆盖 a 安全，
++    // 但偏移重叠或覆盖广播 bias 会形成跨线程读写竞争，必须回退。
++    const uintptr_t dst_start = (uintptr_t) gelu->data;
++    const uintptr_t dst_end = dst_start + ggml_nbytes(gelu);
++    const auto overlaps = [dst_start, dst_end](const ggml_tensor * src) {
++        const uintptr_t begin = (uintptr_t) src->data;
++        const uintptr_t end = begin + ggml_nbytes(src);
++        return begin < dst_end && dst_start < end;
++    };
++    if (overlaps(b) || (overlaps(a) && a->data != gelu->data)) {
++        return false;
++    }
++
++    const int64_t n = ggml_nelements(gelu);
++    const int num_blocks = (int) ((n + CUDA_GELU_BLOCK_SIZE - 1) / CUDA_GELU_BLOCK_SIZE);
++    const ggml_cuda_kernel_launch_params launch_params = ggml_cuda_kernel_launch_params(
++        (dim3) num_blocks, CUDA_GELU_BLOCK_SIZE, 0, ctx.stream());
++    ggml_cuda_kernel_launch(add_gelu_erf_bias_kernel, launch_params,
++        (const float *) a->data, (const float *) b->data, (float *) gelu->data, gelu->ne[0], n);
++    return true;
++}
++
+ void ggml_cuda_op_gelu_quick(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+     ggml_cuda_op_unary<op_gelu_quick>(ctx, dst);
+diff --git a/src/ggml-cuda/unary.cuh b/src/ggml-cuda/unary.cuh
+--- a/src/ggml-cuda/unary.cuh
++++ b/src/ggml-cuda/unary.cuh
+@@ -34,6 +34,9 @@
+ void ggml_cuda_op_silu_back(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
+ 
+ void ggml_cuda_op_gelu_erf(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
+ 
++// 已验证域的显式 ADD/GELU 写出；不支持的类型、布局或别名保留分离路径。
++bool ggml_cuda_op_add_gelu_erf(ggml_backend_cuda_context & ctx, const ggml_tensor * add, ggml_tensor * gelu);
++
+ void ggml_cuda_op_gelu_quick(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
+ 

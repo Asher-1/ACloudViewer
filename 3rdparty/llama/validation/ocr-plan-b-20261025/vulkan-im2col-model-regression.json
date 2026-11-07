@@ -1,0 +1,701 @@
+[
+  {
+    "backend": "vulkan",
+    "model": "ppocr-det-ch-f32.gguf",
+    "batches": 1,
+    "command": [
+      "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/bin/aicore_tests/test_ocr_runtime",
+      "/home/ludahai/cloudViewer_data/extract/ocr_fixtures",
+      "/home/ludahai/cloudViewer_data/extract/ocr_models/ppocr-det-ch-f32.gguf",
+      "det",
+      "Vulkan",
+      "-1",
+      "dump=/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/vulkan-det-f32-n1-spatial.bin",
+      "1.0",
+      "2",
+      "10",
+      "4"
+    ],
+    "exit_code": 0,
+    "metrics": [
+      {
+        "task": "det",
+        "backend": "Vulkan",
+        "max_diff": 3.6e-05,
+        "mean_diff": 2e-08,
+        "p50_ms": 10.89,
+        "p95_ms": 10.93
+      }
+    ],
+    "sha256": "28eac686eb4b38b695eaa4dbd57e33573195d6594d12dea5094df3921f58e7d3",
+    "before": {
+      "exit_code": 0,
+      "metrics": [
+        {
+          "task": "det",
+          "backend": "Vulkan",
+          "max_diff": 3.6e-05,
+          "mean_diff": 2e-08,
+          "p50_ms": 11.92,
+          "p95_ms": 13.42
+        }
+      ],
+      "sha256": "28eac686eb4b38b695eaa4dbd57e33573195d6594d12dea5094df3921f58e7d3"
+    },
+    "bitwise_equal": true
+  },
+  {
+    "backend": "vulkan",
+    "model": "ppocr-det-ch-f16.gguf",
+    "batches": 1,
+    "command": [
+      "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/bin/aicore_tests/test_ocr_runtime",
+      "/home/ludahai/cloudViewer_data/extract/ocr_fixtures",
+      "/home/ludahai/cloudViewer_data/extract/ocr_models/ppocr-det-ch-f16.gguf",
+      "det",
+      "Vulkan",
+      "-1",
+      "dump=/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/vulkan-det-f16-n1-spatial.bin",
+      "1.0",
+      "2",
+      "10",
+      "4"
+    ],
+    "exit_code": 0,
+    "metrics": [
+      {
+        "task": "det",
+        "backend": "Vulkan",
+        "max_diff": 0.061652,
+        "mean_diff": 4.743e-05,
+        "p50_ms": 10.42,
+        "p95_ms": 10.49
+      }
+    ],
+    "sha256": "0c8dd2ac3cef538a7264cfc30760080ae010804208cbbb138058a220921c9795",
+    "before": {
+      "exit_code": 0,
+      "metrics": [
+        {
+          "task": "det",
+          "backend": "Vulkan",
+          "max_diff": 0.061652,
+          "mean_diff": 4.743e-05,
+          "p50_ms": 11.63,
+          "p95_ms": 13.0
+        }
+      ],
+      "sha256": "0c8dd2ac3cef538a7264cfc30760080ae010804208cbbb138058a220921c9795"
+    },
+    "bitwise_equal": true
+  },
+  {
+    "backend": "vulkan",
+    "model": "ppocr-det-ch-q8_0.gguf",
+    "batches": 1,
+    "command": [
+      "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/bin/aicore_tests/test_ocr_runtime",
+      "/home/ludahai/cloudViewer_data/extract/ocr_fixtures",
+      "/home/ludahai/cloudViewer_data/extract/ocr_models/ppocr-det-ch-q8_0.gguf",
+      "det",
+      "Vulkan",
+      "-1",
+      "dump=/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/vulkan-det-q8_0-n1-spatial.bin",
+      "1.0",
+      "2",
+      "10",
+      "4"
+    ],
+    "exit_code": 0,
+    "metrics": [
+      {
+        "task": "det",
+        "backend": "Vulkan",
+        "max_diff": 0.490869,
+        "mean_diff": 0.00024627,
+        "p50_ms": 10.44,
+        "p95_ms": 10.44
+      }
+    ],
+    "sha256": "159606e50873b2cd8922af00f7dde9dcc1f8c870c0cf3daf318729649d5ba74c",
+    "before": {
+      "exit_code": 0,
+      "metrics": [
+        {
+          "task": "det",
+          "backend": "Vulkan",
+          "max_diff": 0.490869,
+          "mean_diff": 0.00024627,
+          "p50_ms": 11.44,
+          "p95_ms": 11.97
+        }
+      ],
+      "sha256": "159606e50873b2cd8922af00f7dde9dcc1f8c870c0cf3daf318729649d5ba74c"
+    },
+    "bitwise_equal": true
+  },
+  {
+    "backend": "vulkan",
+    "model": "ppocr-rec-ch-f32.gguf",
+    "batches": 1,
+    "command": [
+      "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/bin/aicore_tests/test_ocr_runtime",
+      "/home/ludahai/cloudViewer_data/extract/ocr_fixtures",
+      "/home/ludahai/cloudViewer_data/extract/ocr_models/ppocr-rec-ch-f32.gguf",
+      "rec",
+      "Vulkan",
+      "-1",
+      "dump=/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/vulkan-rec-ch-f32-n1-spatial.bin",
+      "1.0",
+      "2",
+      "10",
+      "4"
+    ],
+    "exit_code": 0,
+    "metrics": [
+      {
+        "task": "rec",
+        "backend": "Vulkan",
+        "max_diff": 7e-06,
+        "mean_diff": 0.0,
+        "argmax_match": 1,
+        "p50_ms": 4.09,
+        "p95_ms": 4.09
+      }
+    ],
+    "sha256": "b8448ae10d36e9a0aab8a8e141b66bc4ba2acbe06e7bee23e1a8a8b0424cb051",
+    "before": {
+      "exit_code": 0,
+      "metrics": [
+        {
+          "task": "rec",
+          "backend": "Vulkan",
+          "max_diff": 7e-06,
+          "mean_diff": 0.0,
+          "argmax_match": 1,
+          "p50_ms": 4.09,
+          "p95_ms": 4.66
+        }
+      ],
+      "sha256": "b8448ae10d36e9a0aab8a8e141b66bc4ba2acbe06e7bee23e1a8a8b0424cb051"
+    },
+    "bitwise_equal": true
+  },
+  {
+    "backend": "vulkan",
+    "model": "ppocr-rec-ch-f32.gguf",
+    "batches": 3,
+    "command": [
+      "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/bin/aicore_tests/test_ocr_runtime",
+      "/home/ludahai/cloudViewer_data/extract/ocr_fixtures",
+      "/home/ludahai/cloudViewer_data/extract/ocr_models/ppocr-rec-ch-f32.gguf",
+      "rec",
+      "Vulkan",
+      "-1",
+      "dump=/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/vulkan-rec-ch-f32-n3-spatial.bin",
+      "1.0",
+      "2",
+      "10",
+      "4"
+    ],
+    "exit_code": 0,
+    "metrics": [
+      {
+        "task": "rec",
+        "backend": "Vulkan",
+        "max_diff": 7e-06,
+        "mean_diff": 0.0,
+        "argmax_match": 1,
+        "p50_ms": 6.89,
+        "p95_ms": 7.55
+      }
+    ],
+    "sha256": "a85bc8f879938193ce184a369deafdb25d11d46833b0fb715c1acedcf71604df",
+    "before": {
+      "exit_code": 0,
+      "metrics": [
+        {
+          "task": "rec",
+          "backend": "Vulkan",
+          "max_diff": 7e-06,
+          "mean_diff": 0.0,
+          "argmax_match": 1,
+          "p50_ms": 6.91,
+          "p95_ms": 7.72
+        }
+      ],
+      "sha256": "a85bc8f879938193ce184a369deafdb25d11d46833b0fb715c1acedcf71604df"
+    },
+    "bitwise_equal": true
+  },
+  {
+    "backend": "vulkan",
+    "model": "ppocr-rec-ch-f16.gguf",
+    "batches": 1,
+    "command": [
+      "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/bin/aicore_tests/test_ocr_runtime",
+      "/home/ludahai/cloudViewer_data/extract/ocr_fixtures",
+      "/home/ludahai/cloudViewer_data/extract/ocr_models/ppocr-rec-ch-f16.gguf",
+      "rec",
+      "Vulkan",
+      "-1",
+      "dump=/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/vulkan-rec-ch-f16-n1-spatial.bin",
+      "1.0",
+      "2",
+      "10",
+      "4"
+    ],
+    "exit_code": 0,
+    "metrics": [
+      {
+        "task": "rec",
+        "backend": "Vulkan",
+        "max_diff": 7.2e-05,
+        "mean_diff": 0.0,
+        "argmax_match": 1,
+        "p50_ms": 4.19,
+        "p95_ms": 5.52
+      }
+    ],
+    "sha256": "54243ee0b30e6b77580838d3ef57c3cdf3023b16d175d30c608cccc16974ebaf",
+    "before": {
+      "exit_code": 0,
+      "metrics": [
+        {
+          "task": "rec",
+          "backend": "Vulkan",
+          "max_diff": 7.2e-05,
+          "mean_diff": 0.0,
+          "argmax_match": 1,
+          "p50_ms": 4.23,
+          "p95_ms": 4.68
+        }
+      ],
+      "sha256": "54243ee0b30e6b77580838d3ef57c3cdf3023b16d175d30c608cccc16974ebaf"
+    },
+    "bitwise_equal": true
+  },
+  {
+    "backend": "vulkan",
+    "model": "ppocr-rec-ch-f16.gguf",
+    "batches": 3,
+    "command": [
+      "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/bin/aicore_tests/test_ocr_runtime",
+      "/home/ludahai/cloudViewer_data/extract/ocr_fixtures",
+      "/home/ludahai/cloudViewer_data/extract/ocr_models/ppocr-rec-ch-f16.gguf",
+      "rec",
+      "Vulkan",
+      "-1",
+      "dump=/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/vulkan-rec-ch-f16-n3-spatial.bin",
+      "1.0",
+      "2",
+      "10",
+      "4"
+    ],
+    "exit_code": 0,
+    "metrics": [
+      {
+        "task": "rec",
+        "backend": "Vulkan",
+        "max_diff": 7.2e-05,
+        "mean_diff": 0.0,
+        "argmax_match": 1,
+        "p50_ms": 6.87,
+        "p95_ms": 7.77
+      }
+    ],
+    "sha256": "252d74dfb09c1d38f7b18f051b068018c9a675ec6aacca7e81574519717eb6e4",
+    "before": {
+      "exit_code": 0,
+      "metrics": [
+        {
+          "task": "rec",
+          "backend": "Vulkan",
+          "max_diff": 7.2e-05,
+          "mean_diff": 0.0,
+          "argmax_match": 1,
+          "p50_ms": 7.35,
+          "p95_ms": 8.61
+        }
+      ],
+      "sha256": "252d74dfb09c1d38f7b18f051b068018c9a675ec6aacca7e81574519717eb6e4"
+    },
+    "bitwise_equal": true
+  },
+  {
+    "backend": "vulkan",
+    "model": "ppocr-rec-ch-q8_0.gguf",
+    "batches": 1,
+    "command": [
+      "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/bin/aicore_tests/test_ocr_runtime",
+      "/home/ludahai/cloudViewer_data/extract/ocr_fixtures",
+      "/home/ludahai/cloudViewer_data/extract/ocr_models/ppocr-rec-ch-q8_0.gguf",
+      "rec",
+      "Vulkan",
+      "-1",
+      "dump=/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/vulkan-rec-ch-q8_0-n1-spatial.bin",
+      "1.0",
+      "2",
+      "10",
+      "4"
+    ],
+    "exit_code": 0,
+    "metrics": [
+      {
+        "task": "rec",
+        "backend": "Vulkan",
+        "max_diff": 0.000119,
+        "mean_diff": 1e-08,
+        "argmax_match": 1,
+        "p50_ms": 4.08,
+        "p95_ms": 4.76
+      }
+    ],
+    "sha256": "d40339d5ff66c445fd723c7c21ea89cdc1ce4fbc5c99f71353ac6949ba40bff9",
+    "before": {
+      "exit_code": 0,
+      "metrics": [
+        {
+          "task": "rec",
+          "backend": "Vulkan",
+          "max_diff": 0.000119,
+          "mean_diff": 1e-08,
+          "argmax_match": 1,
+          "p50_ms": 4.35,
+          "p95_ms": 5.11
+        }
+      ],
+      "sha256": "d40339d5ff66c445fd723c7c21ea89cdc1ce4fbc5c99f71353ac6949ba40bff9"
+    },
+    "bitwise_equal": true
+  },
+  {
+    "backend": "vulkan",
+    "model": "ppocr-rec-ch-q8_0.gguf",
+    "batches": 3,
+    "command": [
+      "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/bin/aicore_tests/test_ocr_runtime",
+      "/home/ludahai/cloudViewer_data/extract/ocr_fixtures",
+      "/home/ludahai/cloudViewer_data/extract/ocr_models/ppocr-rec-ch-q8_0.gguf",
+      "rec",
+      "Vulkan",
+      "-1",
+      "dump=/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/vulkan-rec-ch-q8_0-n3-spatial.bin",
+      "1.0",
+      "2",
+      "10",
+      "4"
+    ],
+    "exit_code": 0,
+    "metrics": [
+      {
+        "task": "rec",
+        "backend": "Vulkan",
+        "max_diff": 0.000119,
+        "mean_diff": 1e-08,
+        "argmax_match": 1,
+        "p50_ms": 6.87,
+        "p95_ms": 7.44
+      }
+    ],
+    "sha256": "101001b76d7fabefd12d75001b8aff2edce06dadf3e93831117c9bac6539e629",
+    "before": {
+      "exit_code": 0,
+      "metrics": [
+        {
+          "task": "rec",
+          "backend": "Vulkan",
+          "max_diff": 0.000119,
+          "mean_diff": 1e-08,
+          "argmax_match": 1,
+          "p50_ms": 7.14,
+          "p95_ms": 8.03
+        }
+      ],
+      "sha256": "101001b76d7fabefd12d75001b8aff2edce06dadf3e93831117c9bac6539e629"
+    },
+    "bitwise_equal": true
+  },
+  {
+    "backend": "vulkan",
+    "model": "ppocr-rec-en-f32.gguf",
+    "batches": 1,
+    "command": [
+      "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/bin/aicore_tests/test_ocr_runtime",
+      "/home/ludahai/cloudViewer_data/extract/ocr_fixtures",
+      "/home/ludahai/cloudViewer_data/extract/ocr_models/ppocr-rec-en-f32.gguf",
+      "rec",
+      "Vulkan",
+      "-1",
+      "dump=/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/vulkan-rec-en-f32-n1-spatial.bin",
+      "1.0",
+      "2",
+      "10",
+      "4"
+    ],
+    "exit_code": 0,
+    "metrics": [
+      {
+        "task": "rec",
+        "backend": "Vulkan",
+        "max_diff": 0.0,
+        "mean_diff": 0.0,
+        "argmax_match": 1,
+        "p50_ms": 4.12,
+        "p95_ms": 4.7
+      }
+    ],
+    "sha256": "a0696f8994980ad73a544051e8ea9628f9c73174427ab06bc29707c0ef518b5f",
+    "before": {
+      "exit_code": 0,
+      "metrics": [
+        {
+          "task": "rec",
+          "backend": "Vulkan",
+          "max_diff": 0.0,
+          "mean_diff": 0.0,
+          "argmax_match": 1,
+          "p50_ms": 4.2,
+          "p95_ms": 5.57
+        }
+      ],
+      "sha256": "a0696f8994980ad73a544051e8ea9628f9c73174427ab06bc29707c0ef518b5f"
+    },
+    "bitwise_equal": true
+  },
+  {
+    "backend": "vulkan",
+    "model": "ppocr-rec-en-f32.gguf",
+    "batches": 3,
+    "command": [
+      "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/bin/aicore_tests/test_ocr_runtime",
+      "/home/ludahai/cloudViewer_data/extract/ocr_fixtures",
+      "/home/ludahai/cloudViewer_data/extract/ocr_models/ppocr-rec-en-f32.gguf",
+      "rec",
+      "Vulkan",
+      "-1",
+      "dump=/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/vulkan-rec-en-f32-n3-spatial.bin",
+      "1.0",
+      "2",
+      "10",
+      "4"
+    ],
+    "exit_code": 0,
+    "metrics": [
+      {
+        "task": "rec",
+        "backend": "Vulkan",
+        "max_diff": 0.0,
+        "mean_diff": 0.0,
+        "argmax_match": 1,
+        "p50_ms": 6.72,
+        "p95_ms": 7.34
+      }
+    ],
+    "sha256": "ed5108df55145e62a65565ee5d31b6cac32a2764b2af89a76876bc456e8a7540",
+    "before": {
+      "exit_code": 0,
+      "metrics": [
+        {
+          "task": "rec",
+          "backend": "Vulkan",
+          "max_diff": 0.0,
+          "mean_diff": 0.0,
+          "argmax_match": 1,
+          "p50_ms": 7.59,
+          "p95_ms": 8.23
+        }
+      ],
+      "sha256": "ed5108df55145e62a65565ee5d31b6cac32a2764b2af89a76876bc456e8a7540"
+    },
+    "bitwise_equal": true
+  },
+  {
+    "backend": "vulkan",
+    "model": "ppocr-rec-en-f16.gguf",
+    "batches": 1,
+    "command": [
+      "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/bin/aicore_tests/test_ocr_runtime",
+      "/home/ludahai/cloudViewer_data/extract/ocr_fixtures",
+      "/home/ludahai/cloudViewer_data/extract/ocr_models/ppocr-rec-en-f16.gguf",
+      "rec",
+      "Vulkan",
+      "-1",
+      "dump=/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/vulkan-rec-en-f16-n1-spatial.bin",
+      "1.0",
+      "2",
+      "10",
+      "4"
+    ],
+    "exit_code": 0,
+    "metrics": [
+      {
+        "task": "rec",
+        "backend": "Vulkan",
+        "max_diff": 0.000574,
+        "mean_diff": 4.7e-07,
+        "argmax_match": 1,
+        "p50_ms": 4.02,
+        "p95_ms": 4.06
+      }
+    ],
+    "sha256": "e9e1a1eb9fe7e6f1a7c46cf6c5df53a9dd80621fc25c518a0e85e126f104aa98",
+    "before": {
+      "exit_code": 0,
+      "metrics": [
+        {
+          "task": "rec",
+          "backend": "Vulkan",
+          "max_diff": 0.000574,
+          "mean_diff": 4.7e-07,
+          "argmax_match": 1,
+          "p50_ms": 4.27,
+          "p95_ms": 4.8
+        }
+      ],
+      "sha256": "e9e1a1eb9fe7e6f1a7c46cf6c5df53a9dd80621fc25c518a0e85e126f104aa98"
+    },
+    "bitwise_equal": true
+  },
+  {
+    "backend": "vulkan",
+    "model": "ppocr-rec-en-f16.gguf",
+    "batches": 3,
+    "command": [
+      "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/bin/aicore_tests/test_ocr_runtime",
+      "/home/ludahai/cloudViewer_data/extract/ocr_fixtures",
+      "/home/ludahai/cloudViewer_data/extract/ocr_models/ppocr-rec-en-f16.gguf",
+      "rec",
+      "Vulkan",
+      "-1",
+      "dump=/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/vulkan-rec-en-f16-n3-spatial.bin",
+      "1.0",
+      "2",
+      "10",
+      "4"
+    ],
+    "exit_code": 0,
+    "metrics": [
+      {
+        "task": "rec",
+        "backend": "Vulkan",
+        "max_diff": 0.000574,
+        "mean_diff": 4.7e-07,
+        "argmax_match": 1,
+        "p50_ms": 6.67,
+        "p95_ms": 6.68
+      }
+    ],
+    "sha256": "62f917122ac6089f45657ea1171c1175c8190508365c05d590afa3c27329602e",
+    "before": {
+      "exit_code": 0,
+      "metrics": [
+        {
+          "task": "rec",
+          "backend": "Vulkan",
+          "max_diff": 0.000574,
+          "mean_diff": 4.7e-07,
+          "argmax_match": 1,
+          "p50_ms": 6.97,
+          "p95_ms": 8.46
+        }
+      ],
+      "sha256": "62f917122ac6089f45657ea1171c1175c8190508365c05d590afa3c27329602e"
+    },
+    "bitwise_equal": true
+  },
+  {
+    "backend": "vulkan",
+    "model": "ppocr-rec-en-q8_0.gguf",
+    "batches": 1,
+    "command": [
+      "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/bin/aicore_tests/test_ocr_runtime",
+      "/home/ludahai/cloudViewer_data/extract/ocr_fixtures",
+      "/home/ludahai/cloudViewer_data/extract/ocr_models/ppocr-rec-en-q8_0.gguf",
+      "rec",
+      "Vulkan",
+      "-1",
+      "dump=/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/vulkan-rec-en-q8_0-n1-spatial.bin",
+      "1.0",
+      "2",
+      "10",
+      "4"
+    ],
+    "exit_code": 0,
+    "metrics": [
+      {
+        "task": "rec",
+        "backend": "Vulkan",
+        "max_diff": 0.003899,
+        "mean_diff": 6.81e-06,
+        "argmax_match": 1,
+        "p50_ms": 4.03,
+        "p95_ms": 4.08
+      }
+    ],
+    "sha256": "20431eb245fe721b680e21d5f2567ccc0334ba7a1a0e4c77d31e245456182ff4",
+    "before": {
+      "exit_code": 0,
+      "metrics": [
+        {
+          "task": "rec",
+          "backend": "Vulkan",
+          "max_diff": 0.003899,
+          "mean_diff": 6.81e-06,
+          "argmax_match": 1,
+          "p50_ms": 4.32,
+          "p95_ms": 4.91
+        }
+      ],
+      "sha256": "20431eb245fe721b680e21d5f2567ccc0334ba7a1a0e4c77d31e245456182ff4"
+    },
+    "bitwise_equal": true
+  },
+  {
+    "backend": "vulkan",
+    "model": "ppocr-rec-en-q8_0.gguf",
+    "batches": 3,
+    "command": [
+      "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/bin/aicore_tests/test_ocr_runtime",
+      "/home/ludahai/cloudViewer_data/extract/ocr_fixtures",
+      "/home/ludahai/cloudViewer_data/extract/ocr_models/ppocr-rec-en-q8_0.gguf",
+      "rec",
+      "Vulkan",
+      "-1",
+      "dump=/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/vulkan-rec-en-q8_0-n3-spatial.bin",
+      "1.0",
+      "2",
+      "10",
+      "4"
+    ],
+    "exit_code": 0,
+    "metrics": [
+      {
+        "task": "rec",
+        "backend": "Vulkan",
+        "max_diff": 0.003899,
+        "mean_diff": 6.81e-06,
+        "argmax_match": 1,
+        "p50_ms": 6.72,
+        "p95_ms": 7.34
+      }
+    ],
+    "sha256": "7b6788bddbf1f948da6aa11041840ae09dcbe1613a701842bea7b30b01a587a2",
+    "before": {
+      "exit_code": 0,
+      "metrics": [
+        {
+          "task": "rec",
+          "backend": "Vulkan",
+          "max_diff": 0.003899,
+          "mean_diff": 6.81e-06,
+          "argmax_match": 1,
+          "p50_ms": 7.06,
+          "p95_ms": 7.84
+        }
+      ],
+      "sha256": "7b6788bddbf1f948da6aa11041840ae09dcbe1613a701842bea7b30b01a587a2"
+    },
+    "bitwise_equal": true
+  }
+]

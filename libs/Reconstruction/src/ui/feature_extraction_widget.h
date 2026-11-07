@@ -10,8 +10,8 @@
 #include <QtCore>
 #include <QtWidgets>
 
+#include "controllers/option_manager.h"
 #include "util/misc.h"
-#include "util/option_manager.h"
 
 namespace colmap {
 
@@ -28,7 +28,7 @@ private:
 
     QGroupBox* CreateCameraModelBox();
 
-    void SelectCameraModel(const int code);
+    void SelectCameraModel(int code);
     void Extract();
 
     QWidget* parent_;

@@ -2,9 +2,13 @@
 
 ![Plugin icon](images/qDA3.svg)
 
+![qDA3 dialog and depth result](images/qDA3.png)
+
+*The DA3 dialog in **Depth (single)** mode: the estimated depth map and the 3D-unprojected point cloud are added to the DB tree and rendered in the viewer.*
+
 Integrates [Depth Anything 3](https://github.com/DepthAnything/Depth-Anything-V3) into ACloudViewer. Runs **GGUF models** via C++17 / [ggml](https://github.com/ggml-org/ggml) (derived from [depth-anything.cpp](https://github.com/mudler/depth-anything.cpp)) with no Python/PyTorch runtime.
 
-> **Build index:** see [plugins/README.md](../../README.md).
+> **Build index:** see [plugins/README.md](../../../README.md).
 
 [![Model on Hugging Face](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-md.svg)](https://huggingface.co/mudler/depth-anything.cpp-gguf)
 
@@ -32,7 +36,7 @@ flowchart TB
 
 | Component | Path | Role |
 |-----------|------|------|
-| `libAICore.so` | `core/AICore/` | Shared inference library (DA3 + FreeSplatter) |
+| `libAICore.so` | `core/AICore/` | Monolithic runtime shared by every AICore task and plugin |
 | `QDA3_PLUGIN` | This directory | Interactive depth / pose / export |
 | `DA3DepthController` | `libs/Reconstruction/` | Automatic reconstruction pipeline hook |
 
@@ -71,6 +75,15 @@ flowchart TD
 | **Export COLMAP** | `cameras/` / `images/` / `points3D` |
 | **Quantize Model** | Convert to f16 / q8_0 / q4_k GGUF |
 | **Model Info** | GGUF JSON metadata |
+
+### Visual results
+
+Depth maps for every model family / quantization pair (small → giant, f32 →
+q4_k) are pre-rendered under `examples/demos/`; one photo through all of them:
+
+![DA3 depth comparison across models](https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qDA3/examples/demos/comparison/canyon_all_models.png)
+
+*Same canyon photo, depth maps from all shipped model / quantization combos — see [`examples/demos/BENCHMARK.md`](examples/demos/BENCHMARK.md).*
 
 ### Typical workflow
 
@@ -195,12 +208,17 @@ Header: `core/AICore/include/aicore/depth_capi.h`
 ```c
 #include "aicore/depth_capi.h"
 
-aicore_depth_ctx* ctx = aicore_depth_load("model.gguf", 8);
-int h, w, is_metric;
-float *depth, *conf, ext[12], intr[9];
-aicore_depth_depth_dense(ctx, "photo.jpg", &h, &w, &depth, &conf, NULL,
-                         ext, intr, &is_metric);
-aicore_depth_free_floats(depth);
+aicore_depth_options* opts = aicore_depth_options_new();
+aicore_depth_options_set_threads(opts, 8);
+aicore_depth_options_set_device(opts, "auto");
+aicore_depth_ctx* ctx = aicore_depth_load_opts("model.gguf", opts);
+aicore_depth_options_free(opts);
+int rc;
+aicore_depth_dense_result dense{};
+rc = aicore_depth_depth_dense(ctx, "photo.jpg", &dense);
+/* dense.depth [H*W], dense.conf, dense.ext[12], dense.intr[9],
+   dense.is_metric (see aicore_depth_dense_result) */
+aicore_depth_dense_result_free(&dense);
 aicore_depth_free(ctx);
 ```
 

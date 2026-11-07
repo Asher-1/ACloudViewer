@@ -15,6 +15,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QPainter>
+#include <QStandardPaths>
 #include <QVector3D>
 #include <algorithm>
 #include <cmath>
@@ -31,12 +32,13 @@ QString modelCacheDir() {
     char* dir = aicore_facedetect_model_cache_dir();
     if (dir) {
         const QString result = QString::fromUtf8(dir);
-        aicore_facedetect_free_string(dir);
+        aicore_facedetect_free_buffer(dir);
         return result;
     }
 #endif
-    return QDir::homePath() +
-           QStringLiteral("/cloudViewer_data/extract/facedetect_models");
+    return QDir(QStandardPaths::writableLocation(
+                        QStandardPaths::AppDataLocation))
+            .filePath(QStringLiteral("extract/facedetect_models"));
 }
 
 QImage padImageForDetection(const QImage& src) {
@@ -234,6 +236,20 @@ void scaleFaceBoxes(std::vector<FaceDetectBox>* faces, float scale) {
     }
 }
 
+void offsetFaceBoxes(std::vector<FaceDetectBox>* faces, float dx, float dy) {
+    if (!faces) return;
+    for (FaceDetectBox& box : *faces) {
+        box.x1 += dx;
+        box.x2 += dx;
+        box.y1 += dy;
+        box.y2 += dy;
+        for (int i = 0; i < 5; ++i) {
+            box.landmarks[i][0] += dx;
+            box.landmarks[i][1] += dy;
+        }
+    }
+}
+
 QString formatMatchLabel(const QString& name, float distance) {
     return QStringLiteral("%1 (d=%2)").arg(name).arg(distance, 0, 'f', 3);
 }
@@ -275,24 +291,21 @@ QImage loadRgbForInference(const QString& path) {
     const int rc = aicore_facedetect_load_path_rgb(path.toUtf8().constData(),
                                                    &rgb, &w, &h);
     if (rc != 0 || rgb == nullptr || w <= 0 || h <= 0) {
-        if (rgb) aicore_facedetect_free_vec(reinterpret_cast<float*>(rgb));
+        if (rgb) aicore_facedetect_free_buffer(reinterpret_cast<float*>(rgb));
         return {};
     }
 
-    QImage img(w, h, QImage::Format_RGB888);
-    const int rowBytes = w * 3;
-    const size_t totalBytes =
-            static_cast<size_t>(rowBytes) * static_cast<size_t>(h);
-    if (img.bytesPerLine() == rowBytes) {
-        std::memcpy(img.bits(), rgb, totalBytes);
-    } else {
-        for (int y = 0; y < h; ++y) {
-            std::memcpy(img.scanLine(y),
-                        rgb + static_cast<size_t>(y) * rowBytes,
-                        static_cast<size_t>(rowBytes));
-        }
+    // Take over the malloc'd AICore buffer directly (AICore allocates with
+    // std::malloc) — QImage frees it via the cleanup callback on destruction.
+    // This removes a full-frame memcpy + free on every registry embed.
+    QImage img(
+            rgb, w, h, w * 3, QImage::Format_RGB888,
+            [](void* p) { std::free(p); }, rgb);
+    if (img.isNull()) {
+        // Cleanup was never installed on a failed wrap — release manually.
+        std::free(rgb);
+        return {};
     }
-    aicore_facedetect_free_vec(reinterpret_cast<float*>(rgb));
     return img;
 }
 
@@ -321,15 +334,30 @@ const uint8_t* tightRgb888Bytes(const QImage& rgb,
 std::vector<FaceDetectBox> detectBoxesFromRgb(aicore_facedetect_ctx* ctx,
                                               const QImage& rgb) {
     if (!ctx || rgb.isNull()) return {};
-    QByteArray tight;
-    int w = 0;
-    int h = 0;
-    const uint8_t* bytes = tightRgb888Bytes(rgb, &w, &h, &tight);
-    if (!bytes) return {};
-    char* json = aicore_facedetect_detect_rgb_json(ctx, bytes, w, h);
-    const QByteArray payload = json ? QByteArray(json) : QByteArray();
-    if (json) aicore_facedetect_free_string(json);
-    return parseDetectJson(payload);
+    const aicore_image_view view{
+            reinterpret_cast<const uint8_t*>(rgb.constBits()), rgb.width(),
+            rgb.height(), static_cast<size_t>(rgb.bytesPerLine()),
+            AICORE_IMAGE_RGB8};
+    if (aicore_facedetect_detect_image(ctx, &view) != 0) return {};
+    std::vector<FaceDetectBox> out;
+    const size_t count = aicore_facedetect_detection_count(ctx);
+    out.reserve(count);
+    for (size_t i = 0; i < count; ++i) {
+        aicore_facedetect_detection d{};
+        if (aicore_facedetect_detection_at(ctx, i, &d) != 0) continue;
+        FaceDetectBox box;
+        box.x1 = d.x1;
+        box.y1 = d.y1;
+        box.x2 = d.x2;
+        box.y2 = d.y2;
+        box.score = d.score;
+        for (int k = 0; k < 5; ++k) {
+            box.landmarks[k][0] = d.landmarks_xy10[2 * k];
+            box.landmarks[k][1] = d.landmarks_xy10[2 * k + 1];
+        }
+        out.push_back(box);
+    }
+    return out;
 }
 
 namespace {
@@ -341,19 +369,6 @@ bool faceBoxHasLandmarks(const FaceDetectBox& box) {
         }
     }
     return false;
-}
-
-void offsetFaceBoxes(std::vector<FaceDetectBox>* faces, float dx, float dy) {
-    if (!faces) return;
-    for (FaceDetectBox& box : *faces) {
-        box.x1 += dx;
-        box.y1 += box.x2 += dx;
-        box.y2 += dy;
-        for (int i = 0; i < 5; ++i) {
-            box.landmarks[i][0] += dx;
-            box.landmarks[i][1] += dy;
-        }
-    }
 }
 
 bool embedRgbLandmarks(aicore_facedetect_ctx* ctx,
@@ -380,10 +395,10 @@ bool embedRgbLandmarks(aicore_facedetect_ctx* ctx,
                                                          landmarks, &vec, &dim);
     if (rc == 0 && vec && dim > 0) {
         out->assign(vec, vec + dim);
-        aicore_facedetect_free_vec(vec);
+        aicore_facedetect_free_buffer(vec);
         return true;
     }
-    if (vec) aicore_facedetect_free_vec(vec);
+    if (vec) aicore_facedetect_free_buffer(vec);
     return false;
 }
 
@@ -391,17 +406,19 @@ bool tryDetectAlignedEmbed(aicore_facedetect_ctx* ctx,
                            const QImage& rgb,
                            float minDetectionScore,
                            std::vector<float>* out,
-                           const QString& logTag,
-                           int faceCount) {
+                           const QString& logTag) {
     if (rgb.isNull()) return false;
-    if (const FaceDetectBox* primary = pickPrimaryFaceBox(
-                detectBoxesFromRgb(ctx, rgb), minDetectionScore)) {
+    // Detect exactly once per image — callers used to run a second full
+    // detect inference just to fill the log's face count.
+    const std::vector<FaceDetectBox> boxes = detectBoxesFromRgb(ctx, rgb);
+    if (const FaceDetectBox* primary =
+                pickPrimaryFaceBox(boxes, minDetectionScore)) {
         if (embedFaceBoxFromFrame(ctx, rgb, *primary, minDetectionScore, out)) {
             CVLog::Print(QString("[FaceDetect] embed %1: detect-aligned "
                                  "(score=%2, %3 face(s))")
                                  .arg(logTag)
                                  .arg(primary->score, 0, 'f', 3)
-                                 .arg(faceCount));
+                                 .arg(boxes.size()));
             return true;
         }
     }
@@ -428,10 +445,10 @@ bool embedCropWithFallback(aicore_facedetect_ctx* ctx,
                                                    &vec, &dim);
         if (rc == 0 && vec && dim > 0) {
             out->assign(vec, vec + dim);
-            aicore_facedetect_free_vec(vec);
+            aicore_facedetect_free_buffer(vec);
             return true;
         }
-        if (vec) aicore_facedetect_free_vec(vec);
+        if (vec) aicore_facedetect_free_buffer(vec);
         return false;
     };
 
@@ -453,10 +470,10 @@ bool embedImagePathWithFallback(aicore_facedetect_ctx* ctx,
                 ctx, path.toUtf8().constData(), minScore, &vec, &dim);
         if (rc == 0 && vec && dim > 0) {
             out->assign(vec, vec + dim);
-            aicore_facedetect_free_vec(vec);
+            aicore_facedetect_free_buffer(vec);
             return true;
         }
-        if (vec) aicore_facedetect_free_vec(vec);
+        if (vec) aicore_facedetect_free_buffer(vec);
     }
     QImage rgb = loadRgbForInference(path);
     if (rgb.isNull()) return false;
@@ -491,9 +508,7 @@ bool embedImagePathDetectAligned(aicore_facedetect_ctx* ctx,
     const QString fileName = QFileInfo(path).fileName();
     QImage rgb = loadRgbForInference(path);
 
-    if (tryDetectAlignedEmbed(
-                ctx, rgb, minDetectionScore, out, fileName,
-                static_cast<int>(detectBoxesFromRgb(ctx, rgb).size()))) {
+    if (tryDetectAlignedEmbed(ctx, rgb, minDetectionScore, out, fileName)) {
         return true;
     }
 

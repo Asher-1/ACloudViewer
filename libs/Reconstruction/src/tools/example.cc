@@ -29,9 +29,9 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
-#include "base/reconstruction.h"
+#include "scene/reconstruction.h"
 #include "util/logging.h"
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
 
 using namespace colmap;
 

@@ -9,9 +9,10 @@
 
 #include <QtCore>
 #include <QtWidgets>
+#include <filesystem>
 
+#include "controllers/option_manager.h"
 #include "util/misc.h"
-#include "util/option_manager.h"
 
 namespace colmap {
 
@@ -24,8 +25,8 @@ public:
 
     std::string GetDatabasePath() const;
     std::string GetImagePath() const;
-    void SetDatabasePath(const std::string& path);
-    void SetImagePath(const std::string& path);
+    void SetDatabasePath(const std::filesystem::path& path);
+    void SetImagePath(const std::filesystem::path& path);
 
 private:
     void Save();

@@ -16,7 +16,11 @@ set_target_properties(free_splatter-cli PROPERTIES
     CXX_STANDARD_REQUIRED ON
 )
 
-cloudviewer_set_bin_runtime_output_directory(free_splatter-cli)
+# User-facing CLI tool (not a test): keep it beside the app in bin/. Do NOT
+# route it through cloudviewer_set_bin_runtime_output_directory(), which is
+# reserved for unit-test binaries (bin/plugin_test/).
+set_target_properties(free_splatter-cli PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 target_include_directories(free_splatter-cli PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}

@@ -22,7 +22,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "base/reconstruction.h"
+#include "scene/reconstruction.h"
 #include "mvs/workspace.h"
 #include "util/logging.h"
 #include "util/misc.h"
@@ -1792,49 +1792,49 @@ QImage MvsTexturing::ComputeGradientMagnitudeImage(const QImage& image) {
     } else {
         gray = image.convertToFormat(QImage::Format_Grayscale8);
     }
-    
+
     const int width = gray.width();
     const int height = gray.height();
-    
+
     // Create output GMI image
     QImage gmi(width, height, QImage::Format_Grayscale8);
     gmi.fill(0);
-    
+
     // Compute gradients using Sobel operator
     // Sobel kernels:
     // Gx = [-1 0 1; -2 0 2; -1 0 1]
     // Gy = [-1 -2 -1; 0 0 0; 1 2 1]
-    
+
     std::vector<float> magnitudes;
     magnitudes.reserve((width - 2) * (height - 2));
-    
+
     for (int y = 1; y < height - 1; y++) {
         const uchar* row_prev = gray.constScanLine(y - 1);
         const uchar* row_curr = gray.constScanLine(y);
         const uchar* row_next = gray.constScanLine(y + 1);
-        
+
         for (int x = 1; x < width - 1; x++) {
             // Sobel Gx (horizontal gradient)
             int gx = -static_cast<int>(row_prev[x - 1]) + static_cast<int>(row_prev[x + 1])
                      - 2 * static_cast<int>(row_curr[x - 1]) + 2 * static_cast<int>(row_curr[x + 1])
                      - static_cast<int>(row_next[x - 1]) + static_cast<int>(row_next[x + 1]);
-            
+
             // Sobel Gy (vertical gradient)
             int gy = -static_cast<int>(row_prev[x - 1]) - 2 * static_cast<int>(row_prev[x]) - static_cast<int>(row_prev[x + 1])
                      + static_cast<int>(row_next[x - 1]) + 2 * static_cast<int>(row_next[x]) + static_cast<int>(row_next[x + 1]);
-            
+
             // Gradient magnitude
             float mag = std::sqrt(static_cast<float>(gx * gx + gy * gy));
             magnitudes.push_back(mag);
         }
     }
-    
+
     // Find max magnitude for normalization
     float max_mag = 0.0f;
     for (float mag : magnitudes) {
         max_mag = std::max(max_mag, mag);
     }
-    
+
     // Normalize and store
     size_t idx = 0;
     for (int y = 1; y < height - 1; y++) {
@@ -1845,7 +1845,7 @@ QImage MvsTexturing::ComputeGradientMagnitudeImage(const QImage& image) {
             idx++;
         }
     }
-    
+
     return gmi;
 }
 
@@ -1855,19 +1855,19 @@ bool MvsTexturing::IsPointInTriangle(float px, float py,
                                     const Eigen::Vector2f& p2,
                                     const Eigen::Vector2f& p3) const {
     // Use barycentric coordinates method
-    float denom = (p2.y() - p3.y()) * (p1.x() - p3.x()) + 
+    float denom = (p2.y() - p3.y()) * (p1.x() - p3.x()) +
                   (p3.x() - p2.x()) * (p1.y() - p3.y());
-    
+
     if (std::abs(denom) < 1e-10f) {
         return false;  // Degenerate triangle
     }
-    
-    float a = ((p2.y() - p3.y()) * (px - p3.x()) + 
+
+    float a = ((p2.y() - p3.y()) * (px - p3.x()) +
                (p3.x() - p2.x()) * (py - p3.y())) / denom;
-    float b = ((p3.y() - p1.y()) * (px - p3.x()) + 
+    float b = ((p3.y() - p1.y()) * (px - p3.x()) +
                (p1.x() - p3.x()) * (py - p3.y())) / denom;
     float c = 1.0f - a - b;
-    
+
     return a >= 0.0f && b >= 0.0f && c >= 0.0f;
 }
 
@@ -1887,7 +1887,7 @@ float MvsTexturing::CalculateGMIQuality(size_t view_id,
                 if (view_id >= gradient_magnitude_images_.size()) {
                     gradient_magnitude_images_.resize(texture_views_.size());
                 }
-                gradient_magnitude_images_[view_id] = 
+                gradient_magnitude_images_[view_id] =
                     ComputeGradientMagnitudeImage(*view->image_data);
             } else {
                 return 0.0f;  // Image not loaded
@@ -1896,35 +1896,35 @@ float MvsTexturing::CalculateGMIQuality(size_t view_id,
             return 0.0f;
         }
     }
-    
+
     const QImage& gmi = gradient_magnitude_images_[view_id];
     if (gmi.isNull()) {
         return 0.0f;
     }
-    
+
     // Calculate bounding box of triangle
     float min_x = std::min({p1.x(), p2.x(), p3.x()});
     float max_x = std::max({p1.x(), p2.x(), p3.x()});
     float min_y = std::min({p1.y(), p2.y(), p3.y()});
     float max_y = std::max({p1.y(), p2.y(), p3.y()});
-    
+
     // Clamp to image bounds
     min_x = std::max(0.0f, min_x);
     max_x = std::min(static_cast<float>(gmi.width() - 1), max_x);
     min_y = std::max(0.0f, min_y);
     max_y = std::min(static_cast<float>(gmi.height() - 1), max_y);
-    
+
     // Sample GMI values in the triangle region
     std::vector<float> samples;
     samples.reserve(static_cast<size_t>((max_x - min_x + 1) * (max_y - min_y + 1)));
-    
+
     for (int y = static_cast<int>(std::floor(min_y)); y <= static_cast<int>(std::ceil(max_y)); y++) {
         if (y < 0 || y >= gmi.height()) continue;
         const uchar* row = gmi.constScanLine(y);
-        
+
         for (int x = static_cast<int>(std::floor(min_x)); x <= static_cast<int>(std::ceil(max_x)); x++) {
             if (x < 0 || x >= gmi.width()) continue;
-            
+
             // Check if point is inside triangle
             if (IsPointInTriangle(static_cast<float>(x), static_cast<float>(y), p1, p2, p3)) {
                 float gmi_value = static_cast<float>(row[x]) / 255.0f;
@@ -1932,19 +1932,19 @@ float MvsTexturing::CalculateGMIQuality(size_t view_id,
             }
         }
     }
-    
+
     if (samples.empty()) {
         return 0.0f;
     }
-    
+
     // Use median for robustness against outliers (like OpenMVS)
     std::sort(samples.begin(), samples.end());
     float median_gmi = samples[samples.size() / 2];
-    
+
     // Calculate projected triangle area
     float area = 0.5f * std::abs((p2.x() - p1.x()) * (p3.y() - p1.y()) -
                                   (p3.x() - p1.x()) * (p2.y() - p1.y()));
-    
+
     // Combine GMI with area: quality = GMI_median * sqrt(area)
     // Following OpenMVS approach: higher gradient = better texture quality
     // Scale by sqrt(area) to balance resolution vs coverage
@@ -1972,7 +1972,7 @@ bool MvsTexturing::SaveOBJModel(const std::string& output_path,
     std::string root, ext;
     colmap::SplitFileExtension(output_path, &root, &ext);
     std::string prefix = (ext == ".obj" || ext == ".OBJ") ? root : output_path;
-    std::string output_dir = colmap::GetParentDir(prefix);
+    auto output_dir = colmap::GetParentDir(prefix);
     std::string base_name = colmap::GetPathBaseName(prefix);
 
     // Helper to format material names (material0000, material0001, ...)
@@ -2020,7 +2020,7 @@ bool MvsTexturing::SaveOBJModel(const std::string& output_path,
 
         // Build texture path (ObjFilter's saveAsMTL will save it automatically)
         std::string texture_filename = base_name + "_" + material_name + "_map_Kd.png";
-        std::string texture_path = colmap::JoinPaths(output_dir, texture_filename);
+        std::string texture_path = (output_dir / texture_filename).string();
 
         // Create material
         ccMaterial::Shared mat(new ccMaterial(QString::fromStdString(material_name)));
@@ -2040,7 +2040,7 @@ bool MvsTexturing::SaveOBJModel(const std::string& output_path,
 
     // Step 3: Build texture coordinates table (all atlases combined)
     TextureCoordsContainer* texCoords = new TextureCoordsContainer();
-    
+
     size_t total_texcoords = 0;
     for (const auto& atlas : texture_atlases_) {
         total_texcoords += atlas.texcoords.size();
@@ -2070,7 +2070,7 @@ bool MvsTexturing::SaveOBJModel(const std::string& output_path,
     // Step 5: Add faces by atlas order (naturally groups by material!)
     // This is the key: processing atlases in order means faces are naturally grouped
     size_t texcoord_offset = 0;
-    
+
     for (size_t atlas_idx = 0; atlas_idx < texture_atlases_.size(); ++atlas_idx) {
         const auto& atlas = texture_atlases_[atlas_idx];
         int material_idx = static_cast<int>(atlas_idx);
@@ -2080,21 +2080,21 @@ bool MvsTexturing::SaveOBJModel(const std::string& output_path,
 
         for (size_t i = 0; i < atlas_faces.size(); ++i) {
             size_t mesh_face_idx = atlas_faces[i];
-            
+
             // Get vertex indices from original mesh
             const cloudViewer::VerticesIndexes* tri = mesh.getTriangleVertIndexes(mesh_face_idx);
-            
+
             // Add triangle
             export_mesh->addTriangle(tri->i1, tri->i2, tri->i3);
-            
+
             // Add material index (all faces in this loop have same material!)
             export_mesh->addTriangleMtlIndex(material_idx);
-            
+
             // Add texture coordinate indices (offset by accumulated texcoords)
             int tc_idx0 = static_cast<int>(texcoord_offset + atlas_texcoord_ids[i * 3 + 0]);
             int tc_idx1 = static_cast<int>(texcoord_offset + atlas_texcoord_ids[i * 3 + 1]);
             int tc_idx2 = static_cast<int>(texcoord_offset + atlas_texcoord_ids[i * 3 + 2]);
-            
+
             export_mesh->addTriangleTexCoordIndexes(tc_idx0, tc_idx1, tc_idx2);
         }
 

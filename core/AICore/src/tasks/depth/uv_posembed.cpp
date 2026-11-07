@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "uv_posembed.hpp"
+#include "tasks/depth/uv_posembed.hpp"
 
 #include <cmath>
 #include <vector>

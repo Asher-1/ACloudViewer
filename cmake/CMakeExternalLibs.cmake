@@ -35,6 +35,7 @@ if(USE_QT6)
             Concurrent
             PrintSupport
             Sql
+            LinguistTools
         REQUIRED
     )
     
@@ -237,6 +238,7 @@ else()
             Concurrent
             PrintSupport
             Sql
+            LinguistTools
         REQUIRED
     )
     

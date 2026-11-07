@@ -1,0 +1,30 @@
+diff --git a/src/ggml-cuda/ggml-cuda.cu b/src/ggml-cuda/ggml-cuda.cu
+--- a/src/ggml-cuda/ggml-cuda.cu
++++ b/src/ggml-cuda/ggml-cuda.cu
+@@ -2267,8 +2267,26 @@
+     // RelateAnything keeps upstream's F16 MMA routing, whose arithmetic is
+     // distinct from the owner-scoped TRELLIS F32-accumulate requirement.
+     const bool prec_f32 = (dst->op_params[0] == GGML_PREC_F32) &&
+                           strncmp(dst->name, "relateanything_", 15) != 0;
++
++    // FaceDetect's im2col contractions used native cuBLAS before MMVF
++    // expanded its Ampere thin-batch selection. Preserve that arithmetic
++    // only for these graph-owned convolutions; unrelated tasks keep MMVF.
++    // The newly selected half2 MMVF differs even for identical stored inputs.
++    const char * face_weight_name = ggml_get_name(src1);
++    const bool face_im2col = src0->type == GGML_TYPE_F16 &&
++        src1->type == GGML_TYPE_F32 && src0->op == GGML_OP_RESHAPE &&
++        src0->src[0] != nullptr && src0->src[0]->op == GGML_OP_IM2COL &&
++        face_weight_name != nullptr &&
++        (strncmp(face_weight_name, "det.", 4) == 0 ||
++         strncmp(face_weight_name, "rec.", 4) == 0);
++    if (!prec_f32 && face_im2col && ne11 > 1 && ampere_mma_available(cc) &&
++            ggml_cuda_should_use_mmvf(src0->type, cc, warp_size,
++                                     src0->ne, src0->nb, ne11, dst->name)) {
++        ggml_cuda_mul_mat_cublas(ctx, src0, src1, dst);
++        return;
++    }
+ 
+     if (!prec_f32 && ggml_cuda_should_use_mmvf(src0->type, cc, warp_size, src0->ne, src0->nb, ne11, dst->name)) {
+         // The custom F16 vector kernel can be used over batched cuBLAS GEMM.
+         // But this is only faster for GPUs without tensor cores or with a thin src0 matrix (particularly KQV in attention)

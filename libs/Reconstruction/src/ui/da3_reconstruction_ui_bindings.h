@@ -12,6 +12,7 @@
 #include <QDoubleSpinBox>
 #include <QLabel>
 #include <QObject>
+#include <filesystem>
 
 #include "controllers/da3_depth_controller.h"
 
@@ -73,10 +74,10 @@ public:
             const DA3ReconstructionUiControls& controls);
     static void ApplyHybridDenseTooltips(
             const DA3ReconstructionUiControls& controls,
-            const std::string& image_path = {});
+            const std::filesystem::path& image_path = {});
     static void UpdateHybridDenseHint(
             const DA3ReconstructionUiControls& controls,
-            const std::string& image_path = {});
+            const std::filesystem::path& image_path = {});
     // Hide/disable DA3 pipeline options when libAICore is unavailable.
     static void SetAICoreAvailable(const DA3ReconstructionUiControls& controls,
                                    bool available);

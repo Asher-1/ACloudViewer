@@ -42,6 +42,7 @@
 #include <vtkActor.h>
 #include <vtkActor2D.h>
 #include <vtkAppendFilter.h>
+#include <vtkAppendPolyData.h>
 #include <vtkCellArray.h>
 #include <vtkCellCenters.h>
 #include <vtkCellData.h>
@@ -806,6 +807,73 @@ bool cvSelectionHighlighter::highlightSelection(
     if (selectionData.isEmpty()) {
         CVLog::Warning("[cvSelectionHighlighter] Selection data is empty");
         return false;
+    }
+
+    // actorInfo IDs address the displayed polydata. Primary IDs may instead
+    // address the source object after vtkOriginal{Point,Cell}Ids remapping;
+    // using them to index the displayed polydata highlights unrelated points.
+    // Merge every available actor-local overlay, including a single actor.
+    const auto infos = selectionData.actorInfos();
+    const bool hasRenderableActorInfo = std::any_of(
+            infos.cbegin(), infos.cend(), [](const cvActorSelectionInfo& info) {
+                return info.polyData && !info.selectedIds.isEmpty();
+            });
+    if (hasRenderableActorInfo) {
+        Visualization::VtkVis* vis = getVtkVis();
+        if (!vis) return false;
+        const bool isPointSelection =
+                (selectionData.fieldAssociation() !=
+                 cvSelectionData::FieldAssociation::CELLS);
+        vtkNew<vtkAppendPolyData> append;
+        bool anyBlock = false;
+        for (const auto& info : infos) {
+            if (!info.polyData || info.selectedIds.isEmpty()) continue;
+            vtkNew<vtkIdTypeArray> ids;
+            ids->SetNumberOfTuples(
+                    static_cast<vtkIdType>(info.selectedIds.size()));
+            for (vtkIdType k = 0; k < ids->GetNumberOfTuples(); ++k) {
+                ids->SetValue(k, static_cast<vtkIdType>(info.selectedIds[k]));
+            }
+            vtkSmartPointer<vtkPolyData> blockOverlay;
+            if (isPointSelection) {
+                blockOverlay = buildSelectionMarkerPolyData(
+                        info.polyData, ids,
+                        static_cast<int>(selectionData.fieldAssociation()));
+            } else {
+                blockOverlay = extractSelectionPolyData(
+                        info.polyData, ids,
+                        static_cast<int>(selectionData.fieldAssociation()));
+            }
+            if (blockOverlay && blockOverlay->GetNumberOfPoints() > 0) {
+                append->AddInputData(blockOverlay);
+                anyBlock = true;
+            }
+        }
+        if (!anyBlock) return false;
+        append->Update();
+        vtkSmartPointer<vtkPolyData> merged = append->GetOutput();
+        if (!merged || merged->GetNumberOfPoints() == 0) return false;
+        const int kind = isPointSelection ? SelectionOverlayPoints
+                                          : SelectionOverlaySurface;
+        applySelectionOverlay(vis, merged,
+                              static_cast<SelectionOverlayKind>(kind),
+                              kSelectionOverlayId, false);
+        if (mode == SELECTED) {
+            removeActorFromVisualizer(m_selectedActorId);
+            m_selectedActor = nullptr;
+            emit selectionOverlayUpdated(merged, kind);
+            scheduleAllViewsUpdate();
+        } else if (mode == HOVER || mode == PRESELECTED) {
+            if (mode == HOVER) {
+                removeActorFromVisualizer(m_hoverActorId);
+                m_hoverActor = nullptr;
+            } else {
+                removeActorFromVisualizer(m_preselectedActorId);
+                m_preselectedActor = nullptr;
+            }
+            scheduleAllViewsUpdate();
+        }
+        return true;
     }
 
     vtkPolyData* polyData = getPolyDataForSelection(&selectionData);

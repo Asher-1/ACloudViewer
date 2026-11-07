@@ -32,7 +32,9 @@ ccPluginUIManager::ccPluginUIManager(ecvMainAppInterface *appInterface,
       m_mainPluginToolbar(nullptr),
       m_showPluginToolbar(nullptr),
       m_pclAlgorithmsToolbar(nullptr),
-      m_showPCLAlgorithmToolbar(nullptr) {
+      m_showPCLAlgorithmToolbar(nullptr),
+      m_aiCoreToolbar(nullptr),
+      m_showAICoreToolbar(nullptr) {
     setupActions();
     setupMenus();
     setupToolbars();
@@ -47,6 +49,7 @@ void ccPluginUIManager::init() {
     m_pclAlgorithmMenu->setEnabled(false);
 
     m_mainPluginToolbar->setVisible(false);
+    m_aiCoreToolbar->setVisible(false);
 
     QVector<ccStdPluginInterface *> coreStdPlugins;
     QVector<ccStdPluginInterface *> thirdPartyStdPlugins;
@@ -142,14 +145,37 @@ void ccPluginUIManager::init() {
         }
     }
 
-    // add core standard plugins to menu & tool bar
+    // add core standard plugins to menu & tool bar. Grouped plugins (e.g.
+    // the "AI Core" family, self-declared via info.json "group") cluster
+    // behind their own menu section and their own toolbar so they read as
+    // one family and stay draggable as a unit; the rest keep the historical
+    // order.
+    QVector<ccStdPluginInterface *> aiCoreStdPlugins;
     for (ccStdPluginInterface *plugin : coreStdPlugins) {
+        if (plugin->pluginGroup() == QStringLiteral("aicore")) {
+            aiCoreStdPlugins.append(plugin);
+            continue;
+        }
+
         QList<QAction *> actions = plugin->getActions();
 
         addActionsToMenu(plugin, actions);
         addActionsToToolBar(plugin, actions);
 
         plugin->onNewSelection(m_appInterface->getSelectedEntities());
+    }
+
+    if (!aiCoreStdPlugins.isEmpty()) {
+        m_pluginMenu->addSection(tr("AI Core"));
+
+        for (ccStdPluginInterface *plugin : aiCoreStdPlugins) {
+            QList<QAction *> actions = plugin->getActions();
+
+            addActionsToMenu(plugin, actions);
+            addAIActionsToToolBar(plugin, actions);
+
+            plugin->onNewSelection(m_appInterface->getSelectedEntities());
+        }
     }
 
     // add 3rd standard party plugins to menu & tool bar (if any )
@@ -218,7 +244,28 @@ void ccPluginUIManager::init() {
         m_showPCLAlgorithmToolbar->setEnabled(true);
     }
 
+#ifdef QPCL_PLUGIN_TOOLBAR
     m_showPCLAlgorithmToolbar->setChecked(m_pclAlgorithmsToolbar->isEnabled());
+
+    if (m_aiCoreToolbar->isEnabled()) {
+        m_showAICoreToolbar->setEnabled(true);
+    }
+
+    m_showAICoreToolbar->setChecked(m_aiCoreToolbar->isEnabled());
+#else
+    // Opt-out build: the PCL toolbar is never mounted, but a QMainWindow
+    // auto-manages child toolbars the moment one becomes visible — keep it
+    // explicitly hidden and its toggle dead, or it pops up at the top.
+    m_pclAlgorithmsToolbar->setVisible(false);
+    m_showPCLAlgorithmToolbar->setEnabled(false);
+    m_showPCLAlgorithmToolbar->setChecked(false);
+
+    if (m_aiCoreToolbar->isEnabled()) {
+        m_showAICoreToolbar->setEnabled(true);
+    }
+
+    m_showAICoreToolbar->setChecked(m_aiCoreToolbar->isEnabled());
+#endif
 }
 
 QMenu *ccPluginUIManager::pluginMenu() const { return m_pluginMenu; }
@@ -238,6 +285,12 @@ QAction *ccPluginUIManager::actionShowMainPluginToolbar() {
 }
 
 QToolBar *ccPluginUIManager::glPclToolbar() { return m_pclAlgorithmsToolbar; }
+
+QToolBar *ccPluginUIManager::aiCoreToolbar() { return m_aiCoreToolbar; }
+
+QAction *ccPluginUIManager::actionShowAICoreToolbar() {
+    return m_showAICoreToolbar;
+}
 
 QAction *ccPluginUIManager::actionShowPCLAlgorithmToolbar() {
     return m_showPCLAlgorithmToolbar;
@@ -304,6 +357,10 @@ void ccPluginUIManager::setupActions() {
     m_showPCLAlgorithmToolbar = new QAction(tr("PCL Algorithm"), this);
     m_showPCLAlgorithmToolbar->setCheckable(true);
     m_showPCLAlgorithmToolbar->setEnabled(false);
+
+    m_showAICoreToolbar = new QAction(tr("AI Core"), this);
+    m_showAICoreToolbar->setCheckable(true);
+    m_showAICoreToolbar->setEnabled(false);
 }
 
 void ccPluginUIManager::setupMenus() {
@@ -397,6 +454,19 @@ void ccPluginUIManager::addActionsToToolBar(const QString &moduleName,
     }
 }
 
+// Grouped ("aicore") plugin actions land on the dedicated AI Core toolbar
+// so the whole family can be dragged, floated and docked as one unit;
+// multi-action plugins contribute all their actions instead of spawning
+// per-plugin toolbars that the unified toolbar would merge again.
+void ccPluginUIManager::addAIActionsToToolBar(ccStdPluginInterface *stdPlugin,
+                                              const QList<QAction *> &actions) {
+    if (m_aiCoreToolbar == nullptr) return;
+
+    for (QAction *action : actions) {
+        m_aiCoreToolbar->addAction(action);
+    }
+}
+
 void ccPluginUIManager::setupToolbars() {
     m_mainPluginToolbar = new QToolBar(tr("Plugins"), m_parentWidget);
 
@@ -411,6 +481,13 @@ void ccPluginUIManager::setupToolbars() {
 
     connect(m_showPCLAlgorithmToolbar, &QAction::toggled,
             m_pclAlgorithmsToolbar, &QToolBar::setVisible);
+
+    m_aiCoreToolbar = new QToolBar(tr("AI Core"), m_parentWidget);
+
+    m_aiCoreToolbar->setObjectName(QStringLiteral("AI Core Toolbar"));
+
+    connect(m_showAICoreToolbar, &QAction::toggled, m_aiCoreToolbar,
+            &QToolBar::setVisible);
 }
 
 void ccPluginUIManager::enablePCLAlgorithm() {

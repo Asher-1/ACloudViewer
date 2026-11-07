@@ -45,13 +45,16 @@ void SPRT::Update(const Options& options) {
 bool SPRT::Evaluate(const std::vector<double>& residuals,
                     const double max_residual, size_t* num_inliers,
                     size_t* num_eval_samples) {
-  num_inliers = 0;
+  // Fork fix (surfaced by optim/sprt_test.cc, batch 24): the inlier counter
+  // must be written through the out-parameter; writing the pointer itself
+  // left the caller's counter untouched.
+  *num_inliers = 0;
 
   double likelihood_ratio = 1;
 
   for (size_t i = 0; i < residuals.size(); ++i) {
     if (std::abs(residuals[i]) <= max_residual) {
-      num_inliers += 1;
+      *num_inliers += 1;
       likelihood_ratio *= delta_epsilon_;
     } else {
       likelihood_ratio *= delta_1_epsilon_1_;

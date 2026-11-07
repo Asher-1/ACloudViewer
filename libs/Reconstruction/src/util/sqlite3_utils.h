@@ -24,6 +24,11 @@ inline int SQLite3CallHelper(const int result_code,
         case SQLITE_DONE:
             return result_code;
         default:
+            // Fork adjudication: upstream throws std::runtime_error here so
+            // callers can recover (e.g. the duplicate two-view-geometry write
+            // contract); the fork exits because its call sites are not yet
+            // exception-safe. Revisit with the W17.2b database abstraction
+            // split.
             fprintf(stderr, "SQLite error [%s, line %i]: %s\n",
                     filename.c_str(), line_number, sqlite3_errstr(result_code));
             exit(EXIT_FAILURE);

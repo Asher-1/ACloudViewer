@@ -47,6 +47,7 @@
 #include <vtkInformation.h>
 #include <vtkIntArray.h>
 #include <vtkMapper.h>
+#include <vtkMultiBlockDataSet.h>
 #include <vtkPlanes.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
@@ -337,11 +338,9 @@ vtkSmartPointer<vtkIdTypeArray> cvSelectionPipeline::extractSelectionIds(
     vtkSmartPointer<vtkIdTypeArray> merged =
             vtkSmartPointer<vtkIdTypeArray>::New();
 
-    int targetFieldType = (fieldAssociation == SURFACE_CELLS ||
-                           fieldAssociation == FRUSTUM_CELLS ||
-                           fieldAssociation == POLYGON_CELLS)
-                                  ? vtkSelectionNode::CELL
-                                  : vtkSelectionNode::POINT;
+    const int targetFieldType = fieldAssociation == FIELD_ASSOCIATION_CELLS
+                                        ? vtkSelectionNode::CELL
+                                        : vtkSelectionNode::POINT;
 
     for (unsigned int i = 0; i < numNodes; ++i) {
         vtkSelectionNode* node = selection->GetNode(i);
@@ -819,76 +818,100 @@ cvSelectionData cvSelectionPipeline::convertToCvSelectionData(
     }
 
     // Extract IDs
-    vtkSmartPointer<vtkIdTypeArray> ids =
-            extractSelectionIds(selection, fieldAssociation);
-    if (!ids || ids->GetNumberOfTuples() == 0) {
-        return cvSelectionData();
-    }
+    // NODE-BASED conversion (ParaView semantics): the hardware selector
+    // emits ONE NODE PER HIT PROP — and for a composite group actor, ONE
+    // NODE PER HIT BLOCK, each carrying COMPOSITE_INDEX and CELL/POINT ids
+    // that are LOCAL TO THAT BLOCK. The previous implementation merged all
+    // nodes' ids and attached them to the group actor's whole multiblock, so
+    // block-local ids were applied against the flat multiblock space — the
+    // highlighted/selected cells landed on unrelated geometry (reported:
+    // "cells rect/polygon selection highlights cells far from the framed
+    // region, while points selection is correct" — points on a dedicated
+    // actor never hit the multi-block path).
+    const bool wantCells = fieldAssociation == FIELD_ASSOCIATION_CELLS;
+    const int targetFieldType =
+            wantCells ? vtkSelectionNode::CELL : vtkSelectionNode::POINT;
+    // Nodes carrying the OPPOSITE field type are foreign hits (e.g. the
+    // vertices-cloud point actor drawn over the mesh) and must be dropped;
+    // unset types (-1) are accepted for leniency.
+    const int oppositeFieldType =
+            wantCells ? vtkSelectionNode::POINT : vtkSelectionNode::CELL;
 
-    // Create selection data
-    cvSelectionData result(ids, static_cast<cvSelectionData::FieldAssociation>(
-                                        fieldAssociation));
+    cvSelectionData result;
+    bool primarySet = false;
 
-    // Extract and populate actor information (ParaView-style)
-    QMap<vtkProp*, vtkDataSet*> dataMap = extractDataFromSelection(selection);
+    for (unsigned int i = 0; i < selection->GetNumberOfNodes(); ++i) {
+        vtkSelectionNode* node = selection->GetNode(i);
+        if (!node) continue;
 
-    for (auto it = dataMap.begin(); it != dataMap.end(); ++it) {
-        vtkProp* prop = it.key();
-        vtkDataSet* data = it.value();
-
+        vtkInformation* properties = node->GetProperties();
+        vtkProp* prop = properties && properties->Has(vtkSelectionNode::PROP())
+                                ? vtkProp::SafeDownCast(properties->Get(
+                                          vtkSelectionNode::PROP()))
+                                : nullptr;
         vtkActor* actor = vtkActor::SafeDownCast(prop);
+        if (!actor) continue;
 
-        // Handle both vtkPolyData and other data types (e.g.,
-        // vtkUnstructuredGrid) The mapper's input might be vtkPolyData or
-        // another data type
-        vtkPolyData* polyData = vtkPolyData::SafeDownCast(data);
+        vtkIdTypeArray* nodeIds =
+                vtkIdTypeArray::SafeDownCast(node->GetSelectionList());
+        if (!nodeIds || nodeIds->GetNumberOfTuples() == 0) continue;
 
-        // If data is not vtkPolyData, try to get it from the actor's mapper
-        if (!polyData && actor) {
-            vtkMapper* mapper = actor->GetMapper();
-            if (mapper) {
-                polyData = vtkPolyData::SafeDownCast(mapper->GetInput());
+        const int nodeFieldType = node->GetFieldType();
+        if (nodeFieldType == oppositeFieldType) continue;
+
+        // Resolve the polydata the node's ids refer to.
+        vtkPolyData* polyData = nullptr;
+        // COMPOSITE_INDEX: for composite-mapper selections the node's ids are
+        // LOCAL to that block.
+        vtkIdType compositeIndex = -1;
+        if (properties &&
+            properties->Has(vtkSelectionNode::COMPOSITE_INDEX())) {
+            compositeIndex =
+                    properties->Get(vtkSelectionNode::COMPOSITE_INDEX());
+            auto* mb = vtkMultiBlockDataSet::SafeDownCast(
+                    actor->GetMapper() ? actor->GetMapper()->GetInput()
+                                       : nullptr);
+            if (mb && compositeIndex >= 1 &&
+                compositeIndex <= mb->GetNumberOfBlocks()) {
+                polyData = vtkPolyData::SafeDownCast(
+                        mb->GetBlock(compositeIndex - 1));
             }
         }
-
-        if (actor && polyData) {
-            // Get Z-value from selection node if available
-            // Z-value represents depth (closer to camera = smaller value)
-            double zValue = 1.0;  // Default: far plane
-
-            for (unsigned int i = 0; i < selection->GetNumberOfNodes(); ++i) {
-                vtkSelectionNode* node = selection->GetNode(i);
-                if (node &&
-                    node->GetProperties()->Has(vtkSelectionNode::PROP())) {
-                    vtkProp* nodeProp =
-                            vtkProp::SafeDownCast(node->GetProperties()->Get(
-                                    vtkSelectionNode::PROP()));
-                    if (nodeProp == prop) {
-                        // Extract Z-value if available
-                        // Note: VTK's hardware selector doesn't typically store
-                        // Z in properties Z-buffering is handled internally
-                        // during rendering For multi-actor selection, we use
-                        // the order of nodes as priority
-                        zValue = 1.0 - (static_cast<double>(i) /
-                                        selection->GetNumberOfNodes());
-                        break;
-                    }
-                }
-            }
-
-            // Add actor info to selection data
-            cvActorSelectionInfo info;
-            info.actor = actor;
-            info.polyData = polyData;
-            info.zValue = zValue;
-            result.addActorInfo(info);
-        } else {
-            CVLog::Warning(
-                    QString("[cvSelectionPipeline] Failed to add actor info: "
-                            "actor=%1, polyData=%2")
-                            .arg(actor ? "valid" : "null")
-                            .arg(polyData ? "valid" : "null"));
+        // 3) Fallback: the actor's own input (dedicated actors).
+        if (!polyData && actor->GetMapper()) {
+            polyData =
+                    vtkPolyData::SafeDownCast(actor->GetMapper()->GetInput());
         }
+        if (!polyData) continue;
+
+        // The hardware selector IDs address the displayed polydata. Keep
+        // those local IDs in actorInfo for the highlighter, while the primary
+        // selection retains source IDs for export and DB-object operations.
+        vtkSmartPointer<vtkIdTypeArray> sourceIds =
+                remapToSourceIds(nodeIds, polyData, wantCells);
+
+        const double zValue =
+                1.0 - (static_cast<double>(i) / selection->GetNumberOfNodes());
+
+        cvActorSelectionInfo info;
+        info.actor = actor;
+        info.polyData = polyData;
+        info.zValue = zValue;
+        if (compositeIndex >= 1) {
+            info.blockIndex = static_cast<unsigned int>(compositeIndex - 1);
+        }
+        for (vtkIdType j = 0; j < nodeIds->GetNumberOfTuples(); ++j) {
+            info.selectedIds.append(static_cast<qint64>(nodeIds->GetValue(j)));
+        }
+
+        if (!primarySet) {
+            // Primary IDs address the source object, not the displayed mesh.
+            result = cvSelectionData(sourceIds,
+                                     wantCells ? cvSelectionData::CELLS
+                                               : cvSelectionData::POINTS);
+            primarySet = true;
+        }
+        result.addActorInfo(info);
     }
 
     return result;
@@ -1309,29 +1332,46 @@ cvSelectionData cvSelectionPipeline::combineSelections(
 
     cvSelectionData result(resultArray, sel1.fieldAssociation());
 
-    // CRITICAL: Preserve actor info from sel2 (the new selection)
-    // This allows source object lookup to work correctly for extraction
-    // Reference: ParaView maintains representation info across selection
-    // operations
-    for (int i = 0; i < sel2.actorCount(); ++i) {
-        result.addActorInfo(sel2.actorInfo(i));
-    }
-    // Also add actor info from sel1 if not already present (for
-    // ADDITION/TOGGLE)
-    if (operation == OPERATION_ADDITION || operation == OPERATION_TOGGLE) {
-        for (int i = 0; i < sel1.actorCount(); ++i) {
-            // Check if actor already exists in result
-            bool found = false;
-            for (int j = 0; j < result.actorCount(); ++j) {
-                if (result.actorInfo(j).actor == sel1.actorInfo(i).actor) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                result.addActorInfo(sel1.actorInfo(i));
+    // Source IDs above serve export/DB consumers. The highlighter uses the
+    // actor-local render IDs below, so they must undergo the same operation
+    // independently for every actor/block. A shared actor may represent many
+    // composite blocks, whose local IDs are only meaningful within polyData.
+    QVector<cvActorSelectionInfo> actorInfos = sel1.actorInfos();
+    auto findActorInfo = [&actorInfos](const cvActorSelectionInfo& candidate) {
+        for (int i = 0; i < actorInfos.size(); ++i) {
+            const cvActorSelectionInfo& existing = actorInfos[i];
+            if (existing.actor == candidate.actor &&
+                existing.polyData == candidate.polyData &&
+                existing.blockIndex == candidate.blockIndex) {
+                return i;
             }
         }
+        return -1;
+    };
+    for (const cvActorSelectionInfo& incoming : sel2.actorInfos()) {
+        const int index = findActorInfo(incoming);
+        if (index < 0) {
+            if (operation != OPERATION_SUBTRACTION) {
+                actorInfos.append(incoming);
+            }
+            continue;
+        }
+
+        QSet<qint64> localIds;
+        for (qint64 id : actorInfos[index].selectedIds) localIds.insert(id);
+        QSet<qint64> incomingIds;
+        for (qint64 id : incoming.selectedIds) incomingIds.insert(id);
+        if (operation == OPERATION_ADDITION) {
+            localIds += incomingIds;
+        } else if (operation == OPERATION_SUBTRACTION) {
+            localIds -= incomingIds;
+        } else {  // OPERATION_TOGGLE
+            localIds = (localIds - incomingIds) + (incomingIds - localIds);
+        }
+        actorInfos[index].selectedIds = localIds.values().toVector();
+    }
+    for (const cvActorSelectionInfo& info : actorInfos) {
+        if (!info.selectedIds.isEmpty()) result.addActorInfo(info);
     }
 
     return result;

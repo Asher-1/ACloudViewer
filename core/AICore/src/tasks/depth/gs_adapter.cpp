@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "gs_adapter.hpp"
+#include "tasks/depth/gs_adapter.hpp"
 
 #include <algorithm>
 #include <cmath>

@@ -67,7 +67,7 @@ void ConsistencyGraph::GetImageIdxs(const int row, const int col,
   }
 }
 
-void ConsistencyGraph::Read(const std::string& path) {
+void ConsistencyGraph::Read(const std::filesystem::path& path) {
   std::fstream text_file(path, std::ios::in | std::ios::binary);
   CHECK(text_file.is_open()) << path;
 
@@ -100,7 +100,7 @@ void ConsistencyGraph::Read(const std::string& path) {
   InitializeMap(width, height);
 }
 
-void ConsistencyGraph::Write(const std::string& path) const {
+void ConsistencyGraph::Write(const std::filesystem::path& path) const {
   std::fstream text_file(path, std::ios::out);
   CHECK(text_file.is_open()) << path;
   text_file << map_.cols() << "&" << map_.rows() << "&" << 1 << "&";

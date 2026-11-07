@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/CC/plugin/qTrellis">
+        <file>info.json</file>
+        <file>images/qTrellis.svg</file>
+    </qresource>
+</RCC>

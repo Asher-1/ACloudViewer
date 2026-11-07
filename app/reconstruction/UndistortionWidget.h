@@ -9,16 +9,17 @@
 
 #include <QtCore>
 #include <QtWidgets>
+#include <filesystem>
 
 #include "ThreadControlWidget.h"
-#include "base/undistortion.h"
+#include "image/undistortion.h"
 #include "ui/options_widget.h"
 
 namespace colmap {
 class Reconstruction;
 }
 
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
 
 namespace cloudViewer {
 
@@ -41,7 +42,7 @@ private:
 
     QComboBox* output_format_;
     colmap::UndistortCameraOptions undistortion_options_;
-    std::string output_path_;
+    std::filesystem::path output_path_;
 };
 
 }  // namespace cloudViewer

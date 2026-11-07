@@ -232,6 +232,18 @@ protected:
      * @return Interface ID string
      */
     virtual const QString& IID() const = 0;
+
+    /**
+     * @brief Get the plugin UI group
+     *
+     * Optional self-declaration from info.json ("group"). The application
+     * clusters grouped plugins in the Plugins menu and toolbars (e.g. the
+     * "AI Core" family) without hardcoding plugin names. Empty string =
+     * ungrouped (default). Appended at the end of the interface so
+     * third-party implementations keep compiling unchanged.
+     * @return Group id (e.g., "aicore") or an empty string
+     */
+    virtual QString pluginGroup() const { return QString(); }
 };
 
 Q_DECLARE_METATYPE(const ccPluginInterface*);

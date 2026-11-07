@@ -96,6 +96,13 @@ else
     echo "PLUGIN_IO_QRDB will be disabled"
 fi
 
+# NINJA_GRAPH_CHECK=ON (set by Dockerfile.ci and Dockerfile.ci.qt6) first
+# configures a throwaway Ninja Multi-Config tree with the same options and
+# fails on build-graph errors the Windows Ninja build would hit.
+if [ "${NINJA_GRAPH_CHECK:-OFF}" = "ON" ]; then
+    BUILD_OPTIONS="${BUILD_OPTIONS} ninja_graph_check"
+fi
+
 if [ "${ONLY_BUILD_CUDA}" = "ON" ]; then
     echo "Start to build GUI package with CUDA..."
     echo

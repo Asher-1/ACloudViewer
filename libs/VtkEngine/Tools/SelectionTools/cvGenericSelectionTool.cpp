@@ -474,71 +474,27 @@ cvSelectionData cvGenericSelectionTool::applyModifier(
         const cvSelectionData& newSelection,
         const cvSelectionData& currentSelection,
         SelectionModifier modifier) {
-    if (newSelection.isEmpty()) {
-        return currentSelection;
-    }
-
-    if (currentSelection.isEmpty() ||
-        modifier == SelectionModifier::SELECTION_DEFAULT) {
-        return newSelection;
-    }
-
-    // Get ID sets
-    QVector<qint64> newIds = newSelection.ids();
-    QVector<qint64> currentIds = currentSelection.ids();
-    QSet<qint64> resultSet = qSetFromVector(currentIds);
-
+    cvSelectionPipeline::CombineOperation operation =
+            cvSelectionPipeline::OPERATION_DEFAULT;
     switch (modifier) {
-        case SelectionModifier::SELECTION_ADDITION: {
-            // Add new IDs to current selection
-            for (qint64 id : newIds) {
-                resultSet.insert(id);
-            }
+        case SelectionModifier::SELECTION_ADDITION:
+            operation = cvSelectionPipeline::OPERATION_ADDITION;
             break;
-        }
-
-        case SelectionModifier::SELECTION_SUBTRACTION: {
-            // Remove new IDs from current selection
-            for (qint64 id : newIds) {
-                resultSet.remove(id);
-            }
+        case SelectionModifier::SELECTION_SUBTRACTION:
+            operation = cvSelectionPipeline::OPERATION_SUBTRACTION;
             break;
-        }
-
-        case SelectionModifier::SELECTION_TOGGLE: {
-            // Toggle: add if not present, remove if present
-            for (qint64 id : newIds) {
-                if (resultSet.contains(id)) {
-                    resultSet.remove(id);
-                } else {
-                    resultSet.insert(id);
-                }
-            }
+        case SelectionModifier::SELECTION_TOGGLE:
+            operation = cvSelectionPipeline::OPERATION_TOGGLE;
             break;
-        }
-
         default:
             break;
     }
 
-    // Convert back to vector
-    QVector<qint64> resultIds = qVectorFromSet(resultSet);
-
-    // Create result selection
-    cvSelectionData result(resultIds, newSelection.fieldAssociation());
-
-    // Merge actor information
-    if (modifier == SelectionModifier::SELECTION_ADDITION ||
-        modifier == SelectionModifier::SELECTION_TOGGLE) {
-        for (int i = 0; i < currentSelection.actorCount(); ++i) {
-            result.addActorInfo(currentSelection.actorInfo(i));
-        }
-    }
-    for (int i = 0; i < newSelection.actorCount(); ++i) {
-        result.addActorInfo(newSelection.actorInfo(i));
-    }
-
-    return result;
+    // The fallback picker must preserve the same actor/block-local ID
+    // semantics as the pipeline path. Duplicating only the source-ID set
+    // operation here would let selected overlays diverge between the paths.
+    return cvSelectionPipeline::combineSelections(currentSelection,
+                                                  newSelection, operation);
 }
 
 //-----------------------------------------------------------------------------

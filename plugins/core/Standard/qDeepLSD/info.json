@@ -1,12 +1,24 @@
 {
   "type": "Standard",
   "core": true,
+  "group": "aicore",
   "name": "DeepLSD Wireframe",
   "icon": ":/CC/plugin/qDeepLSD/images/qDeepLSD.svg",
   "description": "DeepLSD line wireframe extraction via GGML (distance field + angle).",
-  "authors": [{ "name": "ACloudViewer Contributors" }],
-  "maintainers": [{ "name": "ACloudViewer Team" }],
+  "authors": [
+    {
+      "name": "ACloudViewer Contributors"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "ACloudViewer Team"
+    }
+  ],
   "references": [
-    { "text": "DeepLSD: https://github.com/cvg/DeepLSD" }
+    {
+      "text": "DeepLSD",
+      "url": "https://github.com/cvg/DeepLSD"
+    }
   ]
 }

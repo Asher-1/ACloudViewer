@@ -1,0 +1,4152 @@
+{
+  "schema": 1,
+  "status": "Experimental candidates only. v17 Small-det f16 and v19 Tiny-det/rec q8_0 pass source probability graphs and the tested 50 scene/50 receipt pages on CPU/CUDA/Vulkan. v19 Tiny detector/recognizer contain only 0.23903%/0.57945% Q8_0 parameters; they are explicit mixed-precision experiments, not pure Q8_0 or a compression/speedup claim. Activation calibration uses 256 SHA-pinned training crops and standard ggml Q8_0 bytes. These regressions were used in candidate selection, not untouched held-out certification. Full labelled-page coverage, controlled release-profile A/B, publication and cold-download closure remain mandatory. No policy is a product default; conversion requires explicit --precision-policy and, for the calibrated recipe, --calibration-root.",
+  "sources": {
+    "193bab7a04fca699a6c82e6abb5b81bdb28177f0abd4062552b04908dafb19f8": {
+      "f16": {
+        "keep_f32": [
+          "conv2d_112.w_0"
+        ]
+      },
+      "q8_0": {
+        "keep_f32": [
+          "conv2d_112.w_0"
+        ],
+        "keep_f16": [
+          "auto.cast.95",
+          "auto.cast.98",
+          "conv2d_108.w_0",
+          "conv2d_109.w_0",
+          "conv2d_110.w_0",
+          "conv2d_111.w_0",
+          "conv2d_114.w_0",
+          "conv2d_115.w_0",
+          "conv2d_116.w_0",
+          "conv2d_118.w_0",
+          "conv2d_119.w_0",
+          "conv2d_120.w_0",
+          "conv2d_121.w_0",
+          "conv2d_122.w_0",
+          "conv2d_123.w_0",
+          "conv2d_125.w_0",
+          "conv2d_126.w_0",
+          "conv2d_127.w_0",
+          "conv2d_129.w_0",
+          "conv2d_130.w_0",
+          "conv2d_131.w_0",
+          "conv2d_132.w_0",
+          "conv2d_133.w_0",
+          "conv2d_134.w_0",
+          "conv2d_136.w_0",
+          "conv2d_137.w_0",
+          "conv2d_138.w_0",
+          "conv2d_140.w_0",
+          "conv2d_141.w_0",
+          "conv2d_142.w_0",
+          "conv2d_144.w_0",
+          "conv2d_145.w_0",
+          "conv2d_146.w_0",
+          "conv2d_148.w_0",
+          "conv2d_149.w_0",
+          "conv2d_150.w_0",
+          "conv2d_151.w_0",
+          "conv2d_152.w_0",
+          "conv2d_153.w_0",
+          "conv2d_155.w_0",
+          "conv2d_156.w_0",
+          "conv2d_157.w_0",
+          "conv2d_159.w_0",
+          "conv2d_160.w_0",
+          "conv2d_161.w_0",
+          "conv2d_162.w_0",
+          "conv2d_163.w_0",
+          "conv2d_164.w_0",
+          "conv2d_165.w_0",
+          "conv2d_166.w_0",
+          "conv2d_20.w_0",
+          "conv2d_21.w_0",
+          "conv2d_33.w_0",
+          "conv2d_34.w_0",
+          "conv2d_43.w_0",
+          "conv2d_44.w_0",
+          "conv2d_56.w_0",
+          "conv2d_57.w_0",
+          "conv2d_64.w_0",
+          "conv2d_65.w_0",
+          "conv2d_66.w_0",
+          "conv2d_7.w_0",
+          "conv2d_70.w_0",
+          "conv2d_71.w_0",
+          "conv2d_72.w_0",
+          "conv2d_73.w_0",
+          "conv2d_74.w_0",
+          "conv2d_75.w_0",
+          "conv2d_79.w_0",
+          "conv2d_8.w_0",
+          "conv2d_80.w_0",
+          "conv2d_81.w_0",
+          "conv2d_82.w_0",
+          "conv2d_83.w_0",
+          "conv2d_84.w_0",
+          "conv2d_88.w_0",
+          "conv2d_89.w_0",
+          "conv2d_90.w_0",
+          "conv2d_91.w_0",
+          "conv2d_92.w_0",
+          "conv2d_93.w_0",
+          "conv2d_98.w_0",
+          "conv2d_99.w_0"
+        ]
+      }
+    },
+    "5435fd747c9e0efe15a96d0b378d5bd157e9492ed8fd80edf08f30d02fa24634": {
+      "f16": {},
+      "q8_0": {
+        "keep_f16": [
+          "conv2d_70.w_0",
+          "conv2d_122.w_0",
+          "conv2d_95.w_0",
+          "conv2d_111.w_0",
+          "conv2d_103.w_0",
+          "conv2d_107.w_0",
+          "conv2d_87.w_0",
+          "conv2d_106.w_0",
+          "conv2d_121.w_0",
+          "conv2d_114.w_0",
+          "conv2d_58.w_0"
+        ]
+      }
+    },
+    "821797e052c74eed8add29893b878cca77d3fb3791c058d041c96e09edc18ed2": {
+      "f16": {
+        "keep_f32": [
+          "conv2d_136.w_0",
+          "conv2d_145.w_0",
+          "conv2d_137.w_0",
+          "conv2d_146.w_0",
+          "conv2d_144.w_0",
+          "conv2d_108.w_0",
+          "conv2d_147.w_0",
+          "conv2d_138.w_0",
+          "conv2d_139.w_0",
+          "conv2d_140.w_0",
+          "conv2d_156.w_0",
+          "conv2d_143.w_0",
+          "conv2d_155.w_0",
+          "conv2d_142.w_0",
+          "conv2d_154.w_0",
+          "conv2d_157.w_0",
+          "conv2d_150.w_0",
+          "conv2d_161.w_0",
+          "conv2d_163.w_0"
+        ]
+      },
+      "q8_0": {
+        "keep_f32": [
+          "conv2d_108.w_0",
+          "conv2d_136.w_0",
+          "conv2d_137.w_0",
+          "conv2d_138.w_0",
+          "conv2d_139.w_0",
+          "conv2d_140.w_0",
+          "conv2d_142.w_0",
+          "conv2d_143.w_0",
+          "conv2d_144.w_0",
+          "conv2d_145.w_0",
+          "conv2d_146.w_0",
+          "conv2d_147.w_0",
+          "conv2d_150.w_0",
+          "conv2d_154.w_0",
+          "conv2d_155.w_0",
+          "conv2d_156.w_0",
+          "conv2d_157.w_0",
+          "conv2d_161.w_0",
+          "conv2d_163.w_0"
+        ],
+        "keep_f16": [
+          "conv2d_141.w_0",
+          "conv2d_107.w_0",
+          "conv2d_159.w_0",
+          "conv2d_134.w_0"
+        ]
+      }
+    },
+    "9c09abf0957f7968c7586464b7397b84ad2387a0497a351af40e9acc71b673ba": {
+      "f16": {},
+      "q8_0": {
+        "keep_f16": [
+          "conv2d_77.w_0",
+          "conv2d_111.w_0",
+          "conv2d_75.w_0",
+          "conv2d_92.w_0",
+          "conv2d_122.w_0",
+          "conv2d_74.w_0"
+        ]
+      }
+    },
+    "9ef676d6ed3c88256a2d92c640c44f25b0c40947e111b14b8be8f594091563e6": {
+      "f16": {
+        "keep_f32": [
+          "conv2d_0.w_0",
+          "conv2d_1.w_0",
+          "conv2d_17.w_0",
+          "conv2d_18.w_0",
+          "conv2d_4.w_0",
+          "conv2d_43.w_0",
+          "conv2d_44.w_0",
+          "conv2d_47.w_0",
+          "conv2d_48.w_0",
+          "conv2d_5.w_0",
+          "conv2d_50.w_0",
+          "conv2d_51.w_0",
+          "conv2d_52.w_0",
+          "conv2d_54.w_0",
+          "conv2d_55.w_0",
+          "conv2d_56.w_0",
+          "conv2d_59.w_0",
+          "conv2d_60.w_0",
+          "conv2d_61.w_0",
+          "conv2d_63.w_0",
+          "conv2d_65.w_0",
+          "conv2d_69.w_0",
+          "conv2d_70.w_0",
+          "conv2d_71.w_0",
+          "conv2d_74.w_0",
+          "conv2d_75.w_0"
+        ]
+      },
+      "q8_0": {
+        "keep_f32": [
+          "conv2d_0.w_0",
+          "conv2d_1.w_0",
+          "conv2d_17.w_0",
+          "conv2d_18.w_0",
+          "conv2d_4.w_0",
+          "conv2d_43.w_0",
+          "conv2d_44.w_0",
+          "conv2d_47.w_0",
+          "conv2d_48.w_0",
+          "conv2d_5.w_0",
+          "conv2d_50.w_0",
+          "conv2d_51.w_0",
+          "conv2d_52.w_0",
+          "conv2d_54.w_0",
+          "conv2d_55.w_0",
+          "conv2d_56.w_0",
+          "conv2d_59.w_0",
+          "conv2d_60.w_0",
+          "conv2d_61.w_0",
+          "conv2d_63.w_0",
+          "conv2d_65.w_0",
+          "conv2d_69.w_0",
+          "conv2d_70.w_0",
+          "conv2d_71.w_0",
+          "conv2d_74.w_0",
+          "conv2d_75.w_0"
+        ],
+        "keep_f16": [
+          "conv2d_31.w_0",
+          "conv2d_45.w_0",
+          "conv2d_49.w_0",
+          "conv2d_58.w_0",
+          "conv2d_62.w_0",
+          "conv2d_66.w_0",
+          "conv2d_67.w_0",
+          "conv2d_73.w_0",
+          "p2o.pd_op.unsqueeze.0.0",
+          "p2o.pd_op.unsqueeze.2.0"
+        ],
+        "activation_q8": {
+          "algorithm": "activation-error-feedback-q8_0-v1",
+          "images": [
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_61.jpg",
+              "sha256": "5b704fed3700048f61a6f528793349cdc7596139c7cd93a7d8a91125ea34d1ec",
+              "quad": [
+                655.0,
+                287.0,
+                698.0,
+                287.0,
+                696.0,
+                309.0,
+                652.0,
+                309.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_61.jpg",
+              "sha256": "5b704fed3700048f61a6f528793349cdc7596139c7cd93a7d8a91125ea34d1ec",
+              "quad": [
+                701.0,
+                285.0,
+                759.0,
+                285.0,
+                759.0,
+                308.0,
+                701.0,
+                308.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_61.jpg",
+              "sha256": "5b704fed3700048f61a6f528793349cdc7596139c7cd93a7d8a91125ea34d1ec",
+              "quad": [
+                1044.0,
+                531.0,
+                1074.0,
+                536.0,
+                1076.0,
+                585.0,
+                1046.0,
+                579.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_61.jpg",
+              "sha256": "5b704fed3700048f61a6f528793349cdc7596139c7cd93a7d8a91125ea34d1ec",
+              "quad": [
+                1077.0,
+                535.0,
+                1114.0,
+                539.0,
+                1117.0,
+                595.0,
+                1079.0,
+                585.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_61.jpg",
+              "sha256": "5b704fed3700048f61a6f528793349cdc7596139c7cd93a7d8a91125ea34d1ec",
+              "quad": [
+                1119.0,
+                539.0,
+                1160.0,
+                543.0,
+                1158.0,
+                601.0,
+                1120.0,
+                593.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_61.jpg",
+              "sha256": "5b704fed3700048f61a6f528793349cdc7596139c7cd93a7d8a91125ea34d1ec",
+              "quad": [
+                1164.0,
+                542.0,
+                1252.0,
+                545.0,
+                1253.0,
+                624.0,
+                1166.0,
+                602.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_61.jpg",
+              "sha256": "5b704fed3700048f61a6f528793349cdc7596139c7cd93a7d8a91125ea34d1ec",
+              "quad": [
+                1032.0,
+                177.0,
+                1185.0,
+                73.0,
+                1191.0,
+                143.0,
+                1038.0,
+                223.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_61.jpg",
+              "sha256": "5b704fed3700048f61a6f528793349cdc7596139c7cd93a7d8a91125ea34d1ec",
+              "quad": [
+                1190.0,
+                73.0,
+                1270.0,
+                19.0,
+                1278.0,
+                91.0,
+                1194.0,
+                133.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_603.jpg",
+              "sha256": "684cfea07557987b59c9f1f05b9b96a8e0342cd9207d275b26443e9ed7dd3db1",
+              "quad": [
+                231.0,
+                225.0,
+                343.0,
+                233.0,
+                342.0,
+                253.0,
+                230.0,
+                245.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_233.jpg",
+              "sha256": "82f4fc9a35ae1199585b8e62d5f88b16476340e507486622abdf53e63c66250c",
+              "quad": [
+                495.0,
+                126.0,
+                553.0,
+                118.0,
+                555.0,
+                139.0,
+                497.0,
+                146.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_233.jpg",
+              "sha256": "82f4fc9a35ae1199585b8e62d5f88b16476340e507486622abdf53e63c66250c",
+              "quad": [
+                459.0,
+                131.0,
+                495.0,
+                127.0,
+                496.0,
+                145.0,
+                460.0,
+                149.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_233.jpg",
+              "sha256": "82f4fc9a35ae1199585b8e62d5f88b16476340e507486622abdf53e63c66250c",
+              "quad": [
+                437.0,
+                34.0,
+                523.0,
+                22.0,
+                525.0,
+                51.0,
+                439.0,
+                62.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_233.jpg",
+              "sha256": "82f4fc9a35ae1199585b8e62d5f88b16476340e507486622abdf53e63c66250c",
+              "quad": [
+                431.0,
+                136.0,
+                459.0,
+                132.0,
+                460.0,
+                151.0,
+                431.0,
+                154.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_233.jpg",
+              "sha256": "82f4fc9a35ae1199585b8e62d5f88b16476340e507486622abdf53e63c66250c",
+              "quad": [
+                460.0,
+                153.0,
+                498.0,
+                148.0,
+                499.0,
+                166.0,
+                460.0,
+                171.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_233.jpg",
+              "sha256": "82f4fc9a35ae1199585b8e62d5f88b16476340e507486622abdf53e63c66250c",
+              "quad": [
+                499.0,
+                150.0,
+                527.0,
+                147.0,
+                527.0,
+                163.0,
+                499.0,
+                166.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_233.jpg",
+              "sha256": "82f4fc9a35ae1199585b8e62d5f88b16476340e507486622abdf53e63c66250c",
+              "quad": [
+                446.0,
+                180.0,
+                491.0,
+                173.0,
+                493.0,
+                193.0,
+                448.0,
+                200.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_233.jpg",
+              "sha256": "82f4fc9a35ae1199585b8e62d5f88b16476340e507486622abdf53e63c66250c",
+              "quad": [
+                497.0,
+                172.0,
+                548.0,
+                167.0,
+                547.0,
+                187.0,
+                496.0,
+                192.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_233.jpg",
+              "sha256": "82f4fc9a35ae1199585b8e62d5f88b16476340e507486622abdf53e63c66250c",
+              "quad": [
+                453.0,
+                202.0,
+                546.0,
+                190.0,
+                548.0,
+                211.0,
+                454.0,
+                222.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_612.jpg",
+              "sha256": "b613b464e92b8b52c13b0723dff37e52a508ad6b91f912e9038025385e99dd0a",
+              "quad": [
+                483.0,
+                197.0,
+                529.0,
+                174.0,
+                530.0,
+                197.0,
+                485.0,
+                221.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_612.jpg",
+              "sha256": "b613b464e92b8b52c13b0723dff37e52a508ad6b91f912e9038025385e99dd0a",
+              "quad": [
+                531.0,
+                168.0,
+                607.0,
+                136.0,
+                608.0,
+                166.0,
+                532.0,
+                198.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_612.jpg",
+              "sha256": "b613b464e92b8b52c13b0723dff37e52a508ad6b91f912e9038025385e99dd0a",
+              "quad": [
+                613.0,
+                128.0,
+                691.0,
+                100.0,
+                691.0,
+                131.0,
+                613.0,
+                160.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_872.jpg",
+              "sha256": "b4a642f8e699e714b7c93cb2aa33078ee22ce54dfa7c5583dc4abc1668528d69",
+              "quad": [
+                482.0,
+                73.0,
+                573.0,
+                60.0,
+                576.0,
+                88.0,
+                485.0,
+                101.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_872.jpg",
+              "sha256": "b4a642f8e699e714b7c93cb2aa33078ee22ce54dfa7c5583dc4abc1668528d69",
+              "quad": [
+                673.0,
+                42.0,
+                776.0,
+                20.0,
+                779.0,
+                50.0,
+                676.0,
+                72.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_872.jpg",
+              "sha256": "b4a642f8e699e714b7c93cb2aa33078ee22ce54dfa7c5583dc4abc1668528d69",
+              "quad": [
+                453.0,
+                97.0,
+                614.0,
+                77.0,
+                612.0,
+                109.0,
+                451.0,
+                129.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_872.jpg",
+              "sha256": "b4a642f8e699e714b7c93cb2aa33078ee22ce54dfa7c5583dc4abc1668528d69",
+              "quad": [
+                633.0,
+                70.0,
+                821.0,
+                36.0,
+                825.0,
+                67.0,
+                637.0,
+                101.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_872.jpg",
+              "sha256": "b4a642f8e699e714b7c93cb2aa33078ee22ce54dfa7c5583dc4abc1668528d69",
+              "quad": [
+                449.0,
+                123.0,
+                620.0,
+                104.0,
+                622.0,
+                168.0,
+                451.0,
+                187.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_872.jpg",
+              "sha256": "b4a642f8e699e714b7c93cb2aa33078ee22ce54dfa7c5583dc4abc1668528d69",
+              "quad": [
+                634.0,
+                104.0,
+                831.0,
+                70.0,
+                834.0,
+                134.0,
+                637.0,
+                168.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_872.jpg",
+              "sha256": "b4a642f8e699e714b7c93cb2aa33078ee22ce54dfa7c5583dc4abc1668528d69",
+              "quad": [
+                551.0,
+                192.0,
+                651.0,
+                219.0,
+                649.0,
+                256.0,
+                549.0,
+                229.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_872.jpg",
+              "sha256": "b4a642f8e699e714b7c93cb2aa33078ee22ce54dfa7c5583dc4abc1668528d69",
+              "quad": [
+                936.0,
+                278.0,
+                978.0,
+                275.0,
+                978.0,
+                296.0,
+                936.0,
+                299.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_424.jpg",
+              "sha256": "2413cd0eb868bdad41dcc9d474ccd975399df9c7f14f5f9353e6dc5ad200a9e0",
+              "quad": [
+                406.0,
+                93.0,
+                563.0,
+                78.0,
+                566.0,
+                112.0,
+                410.0,
+                127.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_665.jpg",
+              "sha256": "8064188fbdd0780c00f03ae0d00bc4c7b914a70ba77c133eb81943904ac60998",
+              "quad": [
+                778.0,
+                154.0,
+                905.0,
+                129.0,
+                907.0,
+                186.0,
+                780.0,
+                194.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_732.jpg",
+              "sha256": "226fbaea090605a693987cc7f27d87209f8b4de690b340faa19870d790683f95",
+              "quad": [
+                458.0,
+                241.0,
+                516.0,
+                244.0,
+                513.0,
+                260.0,
+                455.0,
+                257.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_732.jpg",
+              "sha256": "226fbaea090605a693987cc7f27d87209f8b4de690b340faa19870d790683f95",
+              "quad": [
+                420.0,
+                257.0,
+                503.0,
+                258.0,
+                493.0,
+                271.0,
+                410.0,
+                270.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_732.jpg",
+              "sha256": "226fbaea090605a693987cc7f27d87209f8b4de690b340faa19870d790683f95",
+              "quad": [
+                477.0,
+                199.0,
+                546.0,
+                203.0,
+                544.0,
+                211.0,
+                475.0,
+                207.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_732.jpg",
+              "sha256": "226fbaea090605a693987cc7f27d87209f8b4de690b340faa19870d790683f95",
+              "quad": [
+                367.0,
+                238.0,
+                438.0,
+                241.0,
+                433.0,
+                258.0,
+                362.0,
+                255.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_215.jpg",
+              "sha256": "9b00e3f8e09e1b3152ebd34a6dc3278635d6d60e07cc47f7b2ece239352859da",
+              "quad": [
+                49.0,
+                139.0,
+                73.0,
+                135.0,
+                74.0,
+                151.0,
+                50.0,
+                155.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_215.jpg",
+              "sha256": "9b00e3f8e09e1b3152ebd34a6dc3278635d6d60e07cc47f7b2ece239352859da",
+              "quad": [
+                82.0,
+                33.0,
+                103.0,
+                29.0,
+                102.0,
+                47.0,
+                81.0,
+                51.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_215.jpg",
+              "sha256": "9b00e3f8e09e1b3152ebd34a6dc3278635d6d60e07cc47f7b2ece239352859da",
+              "quad": [
+                8.0,
+                155.0,
+                27.0,
+                154.0,
+                27.0,
+                174.0,
+                8.0,
+                175.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_215.jpg",
+              "sha256": "9b00e3f8e09e1b3152ebd34a6dc3278635d6d60e07cc47f7b2ece239352859da",
+              "quad": [
+                499.0,
+                97.0,
+                536.0,
+                94.0,
+                539.0,
+                120.0,
+                501.0,
+                123.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_215.jpg",
+              "sha256": "9b00e3f8e09e1b3152ebd34a6dc3278635d6d60e07cc47f7b2ece239352859da",
+              "quad": [
+                171.0,
+                14.0,
+                220.0,
+                5.0,
+                221.0,
+                27.0,
+                172.0,
+                36.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_215.jpg",
+              "sha256": "9b00e3f8e09e1b3152ebd34a6dc3278635d6d60e07cc47f7b2ece239352859da",
+              "quad": [
+                512.0,
+                144.0,
+                557.0,
+                143.0,
+                556.0,
+                163.0,
+                512.0,
+                164.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_215.jpg",
+              "sha256": "9b00e3f8e09e1b3152ebd34a6dc3278635d6d60e07cc47f7b2ece239352859da",
+              "quad": [
+                582.0,
+                89.0,
+                628.0,
+                84.0,
+                631.0,
+                103.0,
+                584.0,
+                107.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_289.jpg",
+              "sha256": "16a5b6ffd1848607d79b5b1578799ca45fd3c5aa1f1c71199534ec638f0db35c",
+              "quad": [
+                1007.0,
+                51.0,
+                1110.0,
+                58.0,
+                1103.0,
+                86.0,
+                1001.0,
+                79.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_289.jpg",
+              "sha256": "16a5b6ffd1848607d79b5b1578799ca45fd3c5aa1f1c71199534ec638f0db35c",
+              "quad": [
+                806.0,
+                273.0,
+                896.0,
+                287.0,
+                890.0,
+                315.0,
+                800.0,
+                301.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_289.jpg",
+              "sha256": "16a5b6ffd1848607d79b5b1578799ca45fd3c5aa1f1c71199534ec638f0db35c",
+              "quad": [
+                619.0,
+                246.0,
+                727.0,
+                263.0,
+                721.0,
+                292.0,
+                613.0,
+                275.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_289.jpg",
+              "sha256": "16a5b6ffd1848607d79b5b1578799ca45fd3c5aa1f1c71199534ec638f0db35c",
+              "quad": [
+                839.0,
+                38.0,
+                939.0,
+                45.0,
+                934.0,
+                66.0,
+                835.0,
+                59.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_289.jpg",
+              "sha256": "16a5b6ffd1848607d79b5b1578799ca45fd3c5aa1f1c71199534ec638f0db35c",
+              "quad": [
+                758.0,
+                36.0,
+                794.0,
+                37.0,
+                790.0,
+                59.0,
+                755.0,
+                58.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_838.jpg",
+              "sha256": "92d08c5c5889bdb8a892a3a8e10ebbf7d4dd21eaf8646fd4ed0164dfa0b9f06d",
+              "quad": [
+                86.0,
+                4.0,
+                168.0,
+                18.0,
+                156.0,
+                62.0,
+                73.0,
+                47.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_838.jpg",
+              "sha256": "92d08c5c5889bdb8a892a3a8e10ebbf7d4dd21eaf8646fd4ed0164dfa0b9f06d",
+              "quad": [
+                168.0,
+                6.0,
+                223.0,
+                21.0,
+                217.0,
+                37.0,
+                161.0,
+                23.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_838.jpg",
+              "sha256": "92d08c5c5889bdb8a892a3a8e10ebbf7d4dd21eaf8646fd4ed0164dfa0b9f06d",
+              "quad": [
+                60.0,
+                77.0,
+                148.0,
+                93.0,
+                138.0,
+                132.0,
+                50.0,
+                116.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_838.jpg",
+              "sha256": "92d08c5c5889bdb8a892a3a8e10ebbf7d4dd21eaf8646fd4ed0164dfa0b9f06d",
+              "quad": [
+                45.0,
+                137.0,
+                137.0,
+                155.0,
+                127.0,
+                193.0,
+                35.0,
+                175.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_838.jpg",
+              "sha256": "92d08c5c5889bdb8a892a3a8e10ebbf7d4dd21eaf8646fd4ed0164dfa0b9f06d",
+              "quad": [
+                146.0,
+                153.0,
+                262.0,
+                184.0,
+                253.0,
+                223.0,
+                137.0,
+                192.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_410.jpg",
+              "sha256": "53f7da7b8a105a5a892e023da68a9226fef3c4dcc03d1d7f8df8f6ec449fd30c",
+              "quad": [
+                590.0,
+                239.0,
+                615.0,
+                239.0,
+                615.0,
+                249.0,
+                590.0,
+                249.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_410.jpg",
+              "sha256": "53f7da7b8a105a5a892e023da68a9226fef3c4dcc03d1d7f8df8f6ec449fd30c",
+              "quad": [
+                640.0,
+                140.0,
+                665.0,
+                142.0,
+                664.0,
+                158.0,
+                639.0,
+                156.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_410.jpg",
+              "sha256": "53f7da7b8a105a5a892e023da68a9226fef3c4dcc03d1d7f8df8f6ec449fd30c",
+              "quad": [
+                652.0,
+                42.0,
+                759.0,
+                20.0,
+                760.0,
+                89.0,
+                653.0,
+                110.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_410.jpg",
+              "sha256": "53f7da7b8a105a5a892e023da68a9226fef3c4dcc03d1d7f8df8f6ec449fd30c",
+              "quad": [
+                641.0,
+                101.0,
+                699.0,
+                105.0,
+                698.0,
+                136.0,
+                640.0,
+                132.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_410.jpg",
+              "sha256": "53f7da7b8a105a5a892e023da68a9226fef3c4dcc03d1d7f8df8f6ec449fd30c",
+              "quad": [
+                768.0,
+                122.0,
+                806.0,
+                129.0,
+                806.0,
+                160.0,
+                769.0,
+                152.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_410.jpg",
+              "sha256": "53f7da7b8a105a5a892e023da68a9226fef3c4dcc03d1d7f8df8f6ec449fd30c",
+              "quad": [
+                1002.0,
+                181.0,
+                1086.0,
+                181.0,
+                1086.0,
+                206.0,
+                1002.0,
+                206.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_410.jpg",
+              "sha256": "53f7da7b8a105a5a892e023da68a9226fef3c4dcc03d1d7f8df8f6ec449fd30c",
+              "quad": [
+                1111.0,
+                485.0,
+                1279.0,
+                515.0,
+                1276.0,
+                556.0,
+                1109.0,
+                526.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_410.jpg",
+              "sha256": "53f7da7b8a105a5a892e023da68a9226fef3c4dcc03d1d7f8df8f6ec449fd30c",
+              "quad": [
+                452.0,
+                149.0,
+                474.0,
+                151.0,
+                471.0,
+                225.0,
+                449.0,
+                224.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_410.jpg",
+              "sha256": "53f7da7b8a105a5a892e023da68a9226fef3c4dcc03d1d7f8df8f6ec449fd30c",
+              "quad": [
+                589.0,
+                226.0,
+                623.0,
+                227.0,
+                623.0,
+                239.0,
+                589.0,
+                239.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_410.jpg",
+              "sha256": "53f7da7b8a105a5a892e023da68a9226fef3c4dcc03d1d7f8df8f6ec449fd30c",
+              "quad": [
+                639.0,
+                158.0,
+                697.0,
+                161.0,
+                697.0,
+                176.0,
+                639.0,
+                173.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_307.jpg",
+              "sha256": "99a15fda720a8126591b21527b0ed927d772ec7d97c376ce899549644dd23f5a",
+              "quad": [
+                442.0,
+                75.0,
+                500.0,
+                68.0,
+                500.0,
+                81.0,
+                442.0,
+                88.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_307.jpg",
+              "sha256": "99a15fda720a8126591b21527b0ed927d772ec7d97c376ce899549644dd23f5a",
+              "quad": [
+                470.0,
+                82.0,
+                497.0,
+                79.0,
+                498.0,
+                92.0,
+                471.0,
+                95.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_307.jpg",
+              "sha256": "99a15fda720a8126591b21527b0ed927d772ec7d97c376ce899549644dd23f5a",
+              "quad": [
+                1132.0,
+                315.0,
+                1184.0,
+                307.0,
+                1185.0,
+                332.0,
+                1133.0,
+                340.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_875.jpg",
+              "sha256": "8c01b5badb4ddd0eb05f3a4401e55f2bfb89beaeb8c3e55ca209e7b2bc4d707e",
+              "quad": [
+                260.0,
+                223.0,
+                285.0,
+                218.0,
+                288.0,
+                235.0,
+                263.0,
+                240.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_875.jpg",
+              "sha256": "8c01b5badb4ddd0eb05f3a4401e55f2bfb89beaeb8c3e55ca209e7b2bc4d707e",
+              "quad": [
+                285.0,
+                217.0,
+                338.0,
+                211.0,
+                337.0,
+                228.0,
+                284.0,
+                234.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_875.jpg",
+              "sha256": "8c01b5badb4ddd0eb05f3a4401e55f2bfb89beaeb8c3e55ca209e7b2bc4d707e",
+              "quad": [
+                1133.0,
+                67.0,
+                1226.0,
+                0.0,
+                1237.0,
+                41.0,
+                1144.0,
+                108.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_875.jpg",
+              "sha256": "8c01b5badb4ddd0eb05f3a4401e55f2bfb89beaeb8c3e55ca209e7b2bc4d707e",
+              "quad": [
+                1215.0,
+                280.0,
+                1276.0,
+                282.0,
+                1276.0,
+                338.0,
+                1215.0,
+                335.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_632.jpg",
+              "sha256": "af0537b7c7048f178c64af043101a868b1cfa5a09efd97df654bad607dcf24d3",
+              "quad": [
+                405.0,
+                196.0,
+                603.0,
+                183.0,
+                603.0,
+                242.0,
+                405.0,
+                255.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_632.jpg",
+              "sha256": "af0537b7c7048f178c64af043101a868b1cfa5a09efd97df654bad607dcf24d3",
+              "quad": [
+                395.0,
+                268.0,
+                451.0,
+                264.0,
+                450.0,
+                288.0,
+                393.0,
+                293.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_632.jpg",
+              "sha256": "af0537b7c7048f178c64af043101a868b1cfa5a09efd97df654bad607dcf24d3",
+              "quad": [
+                459.0,
+                264.0,
+                503.0,
+                262.0,
+                505.0,
+                285.0,
+                460.0,
+                287.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_632.jpg",
+              "sha256": "af0537b7c7048f178c64af043101a868b1cfa5a09efd97df654bad607dcf24d3",
+              "quad": [
+                512.0,
+                260.0,
+                622.0,
+                251.0,
+                623.0,
+                275.0,
+                513.0,
+                284.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_91.jpg",
+              "sha256": "b51d5d77f2febc1f65283222a5cc45649537e1c80cffe7e3b76bf0fde8fda16d",
+              "quad": [
+                92.0,
+                337.0,
+                237.0,
+                294.0,
+                248.0,
+                330.0,
+                103.0,
+                373.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_91.jpg",
+              "sha256": "b51d5d77f2febc1f65283222a5cc45649537e1c80cffe7e3b76bf0fde8fda16d",
+              "quad": [
+                159.0,
+                579.0,
+                243.0,
+                545.0,
+                251.0,
+                568.0,
+                167.0,
+                602.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_91.jpg",
+              "sha256": "b51d5d77f2febc1f65283222a5cc45649537e1c80cffe7e3b76bf0fde8fda16d",
+              "quad": [
+                251.0,
+                544.0,
+                308.0,
+                524.0,
+                315.0,
+                543.0,
+                258.0,
+                564.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_91.jpg",
+              "sha256": "b51d5d77f2febc1f65283222a5cc45649537e1c80cffe7e3b76bf0fde8fda16d",
+              "quad": [
+                386.0,
+                383.0,
+                427.0,
+                365.0,
+                436.0,
+                396.0,
+                395.0,
+                415.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_91.jpg",
+              "sha256": "b51d5d77f2febc1f65283222a5cc45649537e1c80cffe7e3b76bf0fde8fda16d",
+              "quad": [
+                363.0,
+                445.0,
+                554.0,
+                326.0,
+                575.0,
+                391.0,
+                383.0,
+                511.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_91.jpg",
+              "sha256": "b51d5d77f2febc1f65283222a5cc45649537e1c80cffe7e3b76bf0fde8fda16d",
+              "quad": [
+                339.0,
+                203.0,
+                469.0,
+                183.0,
+                476.0,
+                207.0,
+                346.0,
+                227.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_91.jpg",
+              "sha256": "b51d5d77f2febc1f65283222a5cc45649537e1c80cffe7e3b76bf0fde8fda16d",
+              "quad": [
+                321.0,
+                236.0,
+                503.0,
+                204.0,
+                509.0,
+                228.0,
+                327.0,
+                259.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_91.jpg",
+              "sha256": "b51d5d77f2febc1f65283222a5cc45649537e1c80cffe7e3b76bf0fde8fda16d",
+              "quad": [
+                130.0,
+                387.0,
+                246.0,
+                337.0,
+                282.0,
+                420.0,
+                133.0,
+                459.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_91.jpg",
+              "sha256": "b51d5d77f2febc1f65283222a5cc45649537e1c80cffe7e3b76bf0fde8fda16d",
+              "quad": [
+                344.0,
+                271.0,
+                372.0,
+                267.0,
+                377.0,
+                279.0,
+                346.0,
+                282.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_91.jpg",
+              "sha256": "b51d5d77f2febc1f65283222a5cc45649537e1c80cffe7e3b76bf0fde8fda16d",
+              "quad": [
+                305.0,
+                243.0,
+                339.0,
+                333.0,
+                325.0,
+                343.0,
+                289.0,
+                255.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_641.jpg",
+              "sha256": "b83d0dadff4107a0b9fa69b25105a5bfa0cfd06435ff573c853328ba98bfd696",
+              "quad": [
+                600.0,
+                85.0,
+                697.0,
+                97.0,
+                695.0,
+                127.0,
+                598.0,
+                115.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_641.jpg",
+              "sha256": "b83d0dadff4107a0b9fa69b25105a5bfa0cfd06435ff573c853328ba98bfd696",
+              "quad": [
+                458.0,
+                175.0,
+                500.0,
+                175.0,
+                500.0,
+                186.0,
+                458.0,
+                186.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_761.jpg",
+              "sha256": "c8cd299dc21602c4edf6602b9f74e5ff6d044485011a59aa6f26c573ada75213",
+              "quad": [
+                293.0,
+                324.0,
+                489.0,
+                317.0,
+                491.0,
+                348.0,
+                296.0,
+                355.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_761.jpg",
+              "sha256": "c8cd299dc21602c4edf6602b9f74e5ff6d044485011a59aa6f26c573ada75213",
+              "quad": [
+                506.0,
+                315.0,
+                610.0,
+                313.0,
+                608.0,
+                344.0,
+                503.0,
+                346.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_761.jpg",
+              "sha256": "c8cd299dc21602c4edf6602b9f74e5ff6d044485011a59aa6f26c573ada75213",
+              "quad": [
+                1032.0,
+                404.0,
+                1112.0,
+                400.0,
+                1116.0,
+                417.0,
+                1036.0,
+                422.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_137.jpg",
+              "sha256": "6bef0943067a0266d10117ee0fb2b9c12c3d2b78551fac4d6df16f5991bbaff9",
+              "quad": [
+                600.0,
+                207.0,
+                638.0,
+                205.0,
+                637.0,
+                226.0,
+                599.0,
+                228.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_137.jpg",
+              "sha256": "6bef0943067a0266d10117ee0fb2b9c12c3d2b78551fac4d6df16f5991bbaff9",
+              "quad": [
+                603.0,
+                231.0,
+                633.0,
+                228.0,
+                631.0,
+                250.0,
+                602.0,
+                253.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_137.jpg",
+              "sha256": "6bef0943067a0266d10117ee0fb2b9c12c3d2b78551fac4d6df16f5991bbaff9",
+              "quad": [
+                593.0,
+                275.0,
+                643.0,
+                272.0,
+                644.0,
+                284.0,
+                594.0,
+                287.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_964.jpg",
+              "sha256": "97b3c2c5abd007aa8330725e8d7519cfec6832c50aa307735f24b118ad40ad28",
+              "quad": [
+                433.0,
+                156.0,
+                793.0,
+                113.0,
+                802.0,
+                175.0,
+                439.0,
+                220.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_7.jpg",
+              "sha256": "be5aa25fa2ccf280d2dd7a40776b031cb6ef01395cc0bcd9e3e799069b96f426",
+              "quad": [
+                869.0,
+                67.0,
+                920.0,
+                61.0,
+                923.0,
+                85.0,
+                872.0,
+                91.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_7.jpg",
+              "sha256": "be5aa25fa2ccf280d2dd7a40776b031cb6ef01395cc0bcd9e3e799069b96f426",
+              "quad": [
+                886.0,
+                144.0,
+                934.0,
+                141.0,
+                932.0,
+                157.0,
+                884.0,
+                160.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_304.jpg",
+              "sha256": "802bd85479be3269323a586aecfcb094446c8df0a794ef84c42eae1b6b79d17c",
+              "quad": [
+                1014.0,
+                268.0,
+                1153.0,
+                282.0,
+                1150.0,
+                317.0,
+                1011.0,
+                304.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_795.jpg",
+              "sha256": "57a0ab3f655efbaa9968c395773a169fa051355592bf2d420e59a2cea4a8b0c9",
+              "quad": [
+                1040.0,
+                117.0,
+                1092.0,
+                114.0,
+                1096.0,
+                143.0,
+                1043.0,
+                146.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_795.jpg",
+              "sha256": "57a0ab3f655efbaa9968c395773a169fa051355592bf2d420e59a2cea4a8b0c9",
+              "quad": [
+                742.0,
+                170.0,
+                813.0,
+                165.0,
+                817.0,
+                183.0,
+                746.0,
+                187.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_795.jpg",
+              "sha256": "57a0ab3f655efbaa9968c395773a169fa051355592bf2d420e59a2cea4a8b0c9",
+              "quad": [
+                826.0,
+                165.0,
+                895.0,
+                161.0,
+                897.0,
+                182.0,
+                828.0,
+                186.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_795.jpg",
+              "sha256": "57a0ab3f655efbaa9968c395773a169fa051355592bf2d420e59a2cea4a8b0c9",
+              "quad": [
+                895.0,
+                160.0,
+                950.0,
+                160.0,
+                950.0,
+                181.0,
+                895.0,
+                181.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_795.jpg",
+              "sha256": "57a0ab3f655efbaa9968c395773a169fa051355592bf2d420e59a2cea4a8b0c9",
+              "quad": [
+                948.0,
+                161.0,
+                1012.0,
+                157.0,
+                1013.0,
+                176.0,
+                949.0,
+                180.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_795.jpg",
+              "sha256": "57a0ab3f655efbaa9968c395773a169fa051355592bf2d420e59a2cea4a8b0c9",
+              "quad": [
+                587.0,
+                358.0,
+                605.0,
+                356.0,
+                605.0,
+                369.0,
+                587.0,
+                371.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_795.jpg",
+              "sha256": "57a0ab3f655efbaa9968c395773a169fa051355592bf2d420e59a2cea4a8b0c9",
+              "quad": [
+                221.0,
+                330.0,
+                319.0,
+                325.0,
+                321.0,
+                347.0,
+                223.0,
+                353.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_524.jpg",
+              "sha256": "7cc935e873667c3ea3cc0579cf928ae7ad05da826036ba7cd78943ab48fcbf9d",
+              "quad": [
+                270.0,
+                138.0,
+                397.0,
+                129.0,
+                398.0,
+                180.0,
+                271.0,
+                189.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_708.jpg",
+              "sha256": "468e63e3206a05659f6d8df1109a8cad4e7d6e3341b1f2b127c6447f6fe23df7",
+              "quad": [
+                535.0,
+                196.0,
+                641.0,
+                160.0,
+                645.0,
+                213.0,
+                535.0,
+                244.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_708.jpg",
+              "sha256": "468e63e3206a05659f6d8df1109a8cad4e7d6e3341b1f2b127c6447f6fe23df7",
+              "quad": [
+                694.0,
+                132.0,
+                785.0,
+                106.0,
+                790.0,
+                170.0,
+                700.0,
+                196.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_619.jpg",
+              "sha256": "787710fc9b0a3614950cec998af52d0930177488b7737f1304f7a9cd43268dcc",
+              "quad": [
+                999.0,
+                72.0,
+                1275.0,
+                8.0,
+                1278.0,
+                66.0,
+                1002.0,
+                130.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_760.jpg",
+              "sha256": "2f17129b39fab446bec9c4bca1f1118b25f8dff200021c9939b0e784eab2bcaa",
+              "quad": [
+                677.0,
+                91.0,
+                1042.0,
+                68.0,
+                1052.0,
+                142.0,
+                687.0,
+                164.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_760.jpg",
+              "sha256": "2f17129b39fab446bec9c4bca1f1118b25f8dff200021c9939b0e784eab2bcaa",
+              "quad": [
+                28.0,
+                328.0,
+                199.0,
+                320.0,
+                196.0,
+                354.0,
+                25.0,
+                363.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_457.jpg",
+              "sha256": "009f983421f3fa920dc6c073d32ad3c0816a9027c2cd17e992f4c75f1ff4d6dd",
+              "quad": [
+                401.0,
+                246.0,
+                525.0,
+                229.0,
+                530.0,
+                251.0,
+                406.0,
+                269.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_100.jpg",
+              "sha256": "b083dae19ce226994d644ed242075d832f799af01fc919bf3b2cc8963e6544b9",
+              "quad": [
+                645.0,
+                19.0,
+                686.0,
+                13.0,
+                692.0,
+                43.0,
+                651.0,
+                48.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_100.jpg",
+              "sha256": "b083dae19ce226994d644ed242075d832f799af01fc919bf3b2cc8963e6544b9",
+              "quad": [
+                689.0,
+                19.0,
+                719.0,
+                13.0,
+                724.0,
+                32.0,
+                694.0,
+                38.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_100.jpg",
+              "sha256": "b083dae19ce226994d644ed242075d832f799af01fc919bf3b2cc8963e6544b9",
+              "quad": [
+                549.0,
+                92.0,
+                572.0,
+                80.0,
+                578.0,
+                98.0,
+                555.0,
+                110.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_100.jpg",
+              "sha256": "b083dae19ce226994d644ed242075d832f799af01fc919bf3b2cc8963e6544b9",
+              "quad": [
+                684.0,
+                172.0,
+                729.0,
+                160.0,
+                734.0,
+                176.0,
+                689.0,
+                188.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_131.jpg",
+              "sha256": "02716dd5402ba62096f531f2e64e4191554369a8a7bccd7e89728b81fbc07c1a",
+              "quad": [
+                452.0,
+                85.0,
+                541.0,
+                89.0,
+                542.0,
+                135.0,
+                452.0,
+                131.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_131.jpg",
+              "sha256": "02716dd5402ba62096f531f2e64e4191554369a8a7bccd7e89728b81fbc07c1a",
+              "quad": [
+                854.0,
+                206.0,
+                904.0,
+                205.0,
+                906.0,
+                225.0,
+                855.0,
+                227.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_131.jpg",
+              "sha256": "02716dd5402ba62096f531f2e64e4191554369a8a7bccd7e89728b81fbc07c1a",
+              "quad": [
+                1050.0,
+                201.0,
+                1083.0,
+                195.0,
+                1083.0,
+                215.0,
+                1050.0,
+                221.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_131.jpg",
+              "sha256": "02716dd5402ba62096f531f2e64e4191554369a8a7bccd7e89728b81fbc07c1a",
+              "quad": [
+                1110.0,
+                185.0,
+                1153.0,
+                176.0,
+                1154.0,
+                198.0,
+                1111.0,
+                207.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_131.jpg",
+              "sha256": "02716dd5402ba62096f531f2e64e4191554369a8a7bccd7e89728b81fbc07c1a",
+              "quad": [
+                1161.0,
+                175.0,
+                1220.0,
+                163.0,
+                1220.0,
+                183.0,
+                1161.0,
+                196.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_131.jpg",
+              "sha256": "02716dd5402ba62096f531f2e64e4191554369a8a7bccd7e89728b81fbc07c1a",
+              "quad": [
+                1232.0,
+                160.0,
+                1279.0,
+                148.0,
+                1279.0,
+                170.0,
+                1232.0,
+                181.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_131.jpg",
+              "sha256": "02716dd5402ba62096f531f2e64e4191554369a8a7bccd7e89728b81fbc07c1a",
+              "quad": [
+                743.0,
+                281.0,
+                774.0,
+                274.0,
+                787.0,
+                431.0,
+                755.0,
+                439.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_131.jpg",
+              "sha256": "02716dd5402ba62096f531f2e64e4191554369a8a7bccd7e89728b81fbc07c1a",
+              "quad": [
+                823.0,
+                345.0,
+                860.0,
+                344.0,
+                862.0,
+                355.0,
+                826.0,
+                357.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_220.jpg",
+              "sha256": "ab2d6545aa5897799514939040a673d30a69528b40b887c5c374f248634eb70a",
+              "quad": [
+                673.0,
+                260.0,
+                730.0,
+                249.0,
+                731.0,
+                269.0,
+                673.0,
+                280.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_284.jpg",
+              "sha256": "83218d5ff9637f068e44d2d7cefacbc822c0f67374c25326e663b93e98d476a1",
+              "quad": [
+                943.0,
+                317.0,
+                1160.0,
+                349.0,
+                1160.0,
+                384.0,
+                943.0,
+                351.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_284.jpg",
+              "sha256": "83218d5ff9637f068e44d2d7cefacbc822c0f67374c25326e663b93e98d476a1",
+              "quad": [
+                865.0,
+                341.0,
+                1276.0,
+                409.0,
+                1276.0,
+                501.0,
+                861.0,
+                410.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_284.jpg",
+              "sha256": "83218d5ff9637f068e44d2d7cefacbc822c0f67374c25326e663b93e98d476a1",
+              "quad": [
+                549.0,
+                218.0,
+                594.0,
+                215.0,
+                594.0,
+                230.0,
+                549.0,
+                233.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_284.jpg",
+              "sha256": "83218d5ff9637f068e44d2d7cefacbc822c0f67374c25326e663b93e98d476a1",
+              "quad": [
+                593.0,
+                262.0,
+                655.0,
+                266.0,
+                655.0,
+                296.0,
+                593.0,
+                292.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_284.jpg",
+              "sha256": "83218d5ff9637f068e44d2d7cefacbc822c0f67374c25326e663b93e98d476a1",
+              "quad": [
+                579.0,
+                288.0,
+                731.0,
+                303.0,
+                731.0,
+                330.0,
+                578.0,
+                315.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_284.jpg",
+              "sha256": "83218d5ff9637f068e44d2d7cefacbc822c0f67374c25326e663b93e98d476a1",
+              "quad": [
+                572.0,
+                313.0,
+                659.0,
+                324.0,
+                659.0,
+                351.0,
+                571.0,
+                339.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_284.jpg",
+              "sha256": "83218d5ff9637f068e44d2d7cefacbc822c0f67374c25326e663b93e98d476a1",
+              "quad": [
+                661.0,
+                323.0,
+                733.0,
+                332.0,
+                734.0,
+                354.0,
+                661.0,
+                345.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_284.jpg",
+              "sha256": "83218d5ff9637f068e44d2d7cefacbc822c0f67374c25326e663b93e98d476a1",
+              "quad": [
+                661.0,
+                344.0,
+                746.0,
+                356.0,
+                746.0,
+                380.0,
+                661.0,
+                368.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_284.jpg",
+              "sha256": "83218d5ff9637f068e44d2d7cefacbc822c0f67374c25326e663b93e98d476a1",
+              "quad": [
+                1074.0,
+                262.0,
+                1204.0,
+                273.0,
+                1206.0,
+                301.0,
+                1076.0,
+                291.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_284.jpg",
+              "sha256": "83218d5ff9637f068e44d2d7cefacbc822c0f67374c25326e663b93e98d476a1",
+              "quad": [
+                930.0,
+                251.0,
+                1027.0,
+                260.0,
+                1026.0,
+                285.0,
+                930.0,
+                276.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_284.jpg",
+              "sha256": "83218d5ff9637f068e44d2d7cefacbc822c0f67374c25326e663b93e98d476a1",
+              "quad": [
+                860.0,
+                407.0,
+                1074.0,
+                458.0,
+                1075.0,
+                496.0,
+                861.0,
+                445.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_284.jpg",
+              "sha256": "83218d5ff9637f068e44d2d7cefacbc822c0f67374c25326e663b93e98d476a1",
+              "quad": [
+                1081.0,
+                456.0,
+                1276.0,
+                505.0,
+                1274.0,
+                545.0,
+                1079.0,
+                496.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_284.jpg",
+              "sha256": "83218d5ff9637f068e44d2d7cefacbc822c0f67374c25326e663b93e98d476a1",
+              "quad": [
+                945.0,
+                617.0,
+                1120.0,
+                690.0,
+                1110.0,
+                718.0,
+                935.0,
+                645.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_284.jpg",
+              "sha256": "83218d5ff9637f068e44d2d7cefacbc822c0f67374c25326e663b93e98d476a1",
+              "quad": [
+                854.0,
+                634.0,
+                920.0,
+                664.0,
+                912.0,
+                693.0,
+                845.0,
+                663.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_284.jpg",
+              "sha256": "83218d5ff9637f068e44d2d7cefacbc822c0f67374c25326e663b93e98d476a1",
+              "quad": [
+                923.0,
+                669.0,
+                980.0,
+                694.0,
+                971.0,
+                718.0,
+                914.0,
+                693.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_123.jpg",
+              "sha256": "c5fc128a4e28bea838f468f7a1e5700ce55e74d7a9c392a1f9c92439287e0a10",
+              "quad": [
+                1029.0,
+                322.0,
+                1080.0,
+                332.0,
+                1079.0,
+                355.0,
+                1028.0,
+                344.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_123.jpg",
+              "sha256": "c5fc128a4e28bea838f468f7a1e5700ce55e74d7a9c392a1f9c92439287e0a10",
+              "quad": [
+                1023.0,
+                95.0,
+                1159.0,
+                84.0,
+                1159.0,
+                128.0,
+                1023.0,
+                139.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_123.jpg",
+              "sha256": "c5fc128a4e28bea838f468f7a1e5700ce55e74d7a9c392a1f9c92439287e0a10",
+              "quad": [
+                1085.0,
+                142.0,
+                1142.0,
+                139.0,
+                1139.0,
+                166.0,
+                1081.0,
+                168.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_123.jpg",
+              "sha256": "c5fc128a4e28bea838f468f7a1e5700ce55e74d7a9c392a1f9c92439287e0a10",
+              "quad": [
+                1027.0,
+                190.0,
+                1104.0,
+                190.0,
+                1101.0,
+                244.0,
+                1028.0,
+                242.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_123.jpg",
+              "sha256": "c5fc128a4e28bea838f468f7a1e5700ce55e74d7a9c392a1f9c92439287e0a10",
+              "quad": [
+                1026.0,
+                288.0,
+                1086.0,
+                297.0,
+                1084.0,
+                318.0,
+                1024.0,
+                309.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_123.jpg",
+              "sha256": "c5fc128a4e28bea838f468f7a1e5700ce55e74d7a9c392a1f9c92439287e0a10",
+              "quad": [
+                1026.0,
+                144.0,
+                1080.0,
+                141.0,
+                1080.0,
+                165.0,
+                1025.0,
+                169.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_123.jpg",
+              "sha256": "c5fc128a4e28bea838f468f7a1e5700ce55e74d7a9c392a1f9c92439287e0a10",
+              "quad": [
+                1028.0,
+                356.0,
+                1079.0,
+                368.0,
+                1078.0,
+                389.0,
+                1027.0,
+                376.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_771.jpg",
+              "sha256": "f7c70421938c526922ba1b366e14dbbb796b1db5ac8b4830f0d72540af72135b",
+              "quad": [
+                59.0,
+                393.0,
+                143.0,
+                397.0,
+                140.0,
+                423.0,
+                56.0,
+                418.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_771.jpg",
+              "sha256": "f7c70421938c526922ba1b366e14dbbb796b1db5ac8b4830f0d72540af72135b",
+              "quad": [
+                3.0,
+                340.0,
+                188.0,
+                346.0,
+                185.0,
+                376.0,
+                0.0,
+                370.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_771.jpg",
+              "sha256": "f7c70421938c526922ba1b366e14dbbb796b1db5ac8b4830f0d72540af72135b",
+              "quad": [
+                46.0,
+                427.0,
+                148.0,
+                432.0,
+                142.0,
+                461.0,
+                40.0,
+                456.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_771.jpg",
+              "sha256": "f7c70421938c526922ba1b366e14dbbb796b1db5ac8b4830f0d72540af72135b",
+              "quad": [
+                52.0,
+                504.0,
+                121.0,
+                506.0,
+                116.0,
+                533.0,
+                47.0,
+                531.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_110.jpg",
+              "sha256": "e1166bc19395e10cb631addb5818e8372e1444f036d409b2172f56a0773f3cab",
+              "quad": [
+                2.0,
+                555.0,
+                270.0,
+                518.0,
+                274.0,
+                572.0,
+                7.0,
+                610.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_107.jpg",
+              "sha256": "4a821d546d7a05d59d94050bebc15217b221eb74018b67b9f7c882e6c5cb6c54",
+              "quad": [
+                765.0,
+                468.0,
+                819.0,
+                452.0,
+                824.0,
+                464.0,
+                770.0,
+                481.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_107.jpg",
+              "sha256": "4a821d546d7a05d59d94050bebc15217b221eb74018b67b9f7c882e6c5cb6c54",
+              "quad": [
+                878.0,
+                447.0,
+                953.0,
+                425.0,
+                956.0,
+                463.0,
+                882.0,
+                485.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_107.jpg",
+              "sha256": "4a821d546d7a05d59d94050bebc15217b221eb74018b67b9f7c882e6c5cb6c54",
+              "quad": [
+                955.0,
+                425.0,
+                997.0,
+                414.0,
+                1001.0,
+                449.0,
+                959.0,
+                461.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_226.jpg",
+              "sha256": "d33ae1ac82f4ce3ebc0d877ce4c0dbf02c2a45e91e11d605d7b083f60567e4aa",
+              "quad": [
+                389.0,
+                221.0,
+                643.0,
+                213.0,
+                644.0,
+                243.0,
+                389.0,
+                252.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_226.jpg",
+              "sha256": "d33ae1ac82f4ce3ebc0d877ce4c0dbf02c2a45e91e11d605d7b083f60567e4aa",
+              "quad": [
+                41.0,
+                251.0,
+                106.0,
+                250.0,
+                106.0,
+                270.0,
+                41.0,
+                271.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_380.jpg",
+              "sha256": "80d7780249a2ed8039408758c717f4ec2bec660928872dd80e08a9e1467069d1",
+              "quad": [
+                538.0,
+                400.0,
+                589.0,
+                401.0,
+                589.0,
+                429.0,
+                538.0,
+                428.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_380.jpg",
+              "sha256": "80d7780249a2ed8039408758c717f4ec2bec660928872dd80e08a9e1467069d1",
+              "quad": [
+                554.0,
+                430.0,
+                603.0,
+                430.0,
+                603.0,
+                459.0,
+                553.0,
+                458.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_380.jpg",
+              "sha256": "80d7780249a2ed8039408758c717f4ec2bec660928872dd80e08a9e1467069d1",
+              "quad": [
+                906.0,
+                285.0,
+                983.0,
+                284.0,
+                984.0,
+                302.0,
+                906.0,
+                303.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_380.jpg",
+              "sha256": "80d7780249a2ed8039408758c717f4ec2bec660928872dd80e08a9e1467069d1",
+              "quad": [
+                987.0,
+                283.0,
+                1079.0,
+                282.0,
+                1076.0,
+                302.0,
+                984.0,
+                304.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_380.jpg",
+              "sha256": "80d7780249a2ed8039408758c717f4ec2bec660928872dd80e08a9e1467069d1",
+              "quad": [
+                957.0,
+                419.0,
+                1061.0,
+                429.0,
+                1060.0,
+                450.0,
+                956.0,
+                440.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_380.jpg",
+              "sha256": "80d7780249a2ed8039408758c717f4ec2bec660928872dd80e08a9e1467069d1",
+              "quad": [
+                805.0,
+                234.0,
+                1079.0,
+                232.0,
+                1081.0,
+                280.0,
+                808.0,
+                282.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_380.jpg",
+              "sha256": "80d7780249a2ed8039408758c717f4ec2bec660928872dd80e08a9e1467069d1",
+              "quad": [
+                521.0,
+                385.0,
+                555.0,
+                385.0,
+                555.0,
+                397.0,
+                521.0,
+                396.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_380.jpg",
+              "sha256": "80d7780249a2ed8039408758c717f4ec2bec660928872dd80e08a9e1467069d1",
+              "quad": [
+                557.0,
+                385.0,
+                615.0,
+                387.0,
+                616.0,
+                399.0,
+                558.0,
+                397.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_769.jpg",
+              "sha256": "7f470c6c3b968796df30727d0f935f3722717b24858c1f04423dac2cf3c25c24",
+              "quad": [
+                863.0,
+                194.0,
+                1145.0,
+                140.0,
+                1161.0,
+                225.0,
+                880.0,
+                280.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_769.jpg",
+              "sha256": "7f470c6c3b968796df30727d0f935f3722717b24858c1f04423dac2cf3c25c24",
+              "quad": [
+                972.0,
+                284.0,
+                1067.0,
+                280.0,
+                1069.0,
+                313.0,
+                975.0,
+                317.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_769.jpg",
+              "sha256": "7f470c6c3b968796df30727d0f935f3722717b24858c1f04423dac2cf3c25c24",
+              "quad": [
+                1230.0,
+                285.0,
+                1270.0,
+                284.0,
+                1271.0,
+                302.0,
+                1231.0,
+                303.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_800.jpg",
+              "sha256": "69c936e6656829f04c68d411acb011bd3d8b98a0c23a6d33ef0e36e6a64a82d9",
+              "quad": [
+                1022.0,
+                250.0,
+                1109.0,
+                232.0,
+                1113.0,
+                267.0,
+                1027.0,
+                285.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_800.jpg",
+              "sha256": "69c936e6656829f04c68d411acb011bd3d8b98a0c23a6d33ef0e36e6a64a82d9",
+              "quad": [
+                1118.0,
+                35.0,
+                1176.0,
+                1.0,
+                1216.0,
+                2.0,
+                1130.0,
+                61.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_800.jpg",
+              "sha256": "69c936e6656829f04c68d411acb011bd3d8b98a0c23a6d33ef0e36e6a64a82d9",
+              "quad": [
+                1195.0,
+                511.0,
+                1260.0,
+                534.0,
+                1263.0,
+                558.0,
+                1197.0,
+                534.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_800.jpg",
+              "sha256": "69c936e6656829f04c68d411acb011bd3d8b98a0c23a6d33ef0e36e6a64a82d9",
+              "quad": [
+                1197.0,
+                570.0,
+                1276.0,
+                605.0,
+                1278.0,
+                670.0,
+                1211.0,
+                634.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_800.jpg",
+              "sha256": "69c936e6656829f04c68d411acb011bd3d8b98a0c23a6d33ef0e36e6a64a82d9",
+              "quad": [
+                1014.0,
+                185.0,
+                1071.0,
+                164.0,
+                1077.0,
+                199.0,
+                1019.0,
+                220.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_800.jpg",
+              "sha256": "69c936e6656829f04c68d411acb011bd3d8b98a0c23a6d33ef0e36e6a64a82d9",
+              "quad": [
+                1155.0,
+                185.0,
+                1217.0,
+                168.0,
+                1220.0,
+                186.0,
+                1158.0,
+                203.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_800.jpg",
+              "sha256": "69c936e6656829f04c68d411acb011bd3d8b98a0c23a6d33ef0e36e6a64a82d9",
+              "quad": [
+                1147.0,
+                252.0,
+                1264.0,
+                232.0,
+                1272.0,
+                294.0,
+                1155.0,
+                302.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_800.jpg",
+              "sha256": "69c936e6656829f04c68d411acb011bd3d8b98a0c23a6d33ef0e36e6a64a82d9",
+              "quad": [
+                1155.0,
+                352.0,
+                1188.0,
+                352.0,
+                1185.0,
+                374.0,
+                1156.0,
+                373.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_800.jpg",
+              "sha256": "69c936e6656829f04c68d411acb011bd3d8b98a0c23a6d33ef0e36e6a64a82d9",
+              "quad": [
+                1191.0,
+                349.0,
+                1249.0,
+                354.0,
+                1247.0,
+                378.0,
+                1188.0,
+                373.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_800.jpg",
+              "sha256": "69c936e6656829f04c68d411acb011bd3d8b98a0c23a6d33ef0e36e6a64a82d9",
+              "quad": [
+                1066.0,
+                396.0,
+                1140.0,
+                418.0,
+                1138.0,
+                491.0,
+                1064.0,
+                468.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_800.jpg",
+              "sha256": "69c936e6656829f04c68d411acb011bd3d8b98a0c23a6d33ef0e36e6a64a82d9",
+              "quad": [
+                1069.0,
+                500.0,
+                1164.0,
+                537.0,
+                1163.0,
+                566.0,
+                1074.0,
+                524.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_800.jpg",
+              "sha256": "69c936e6656829f04c68d411acb011bd3d8b98a0c23a6d33ef0e36e6a64a82d9",
+              "quad": [
+                1083.0,
+                568.0,
+                1175.0,
+                617.0,
+                1177.0,
+                656.0,
+                1093.0,
+                603.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_58.jpg",
+              "sha256": "c81e33e3db3ab74b40df4a96f123ec88bf764482ae5751bd8077cf86e5718766",
+              "quad": [
+                931.0,
+                400.0,
+                1040.0,
+                348.0,
+                1052.0,
+                374.0,
+                943.0,
+                426.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_58.jpg",
+              "sha256": "c81e33e3db3ab74b40df4a96f123ec88bf764482ae5751bd8077cf86e5718766",
+              "quad": [
+                913.0,
+                460.0,
+                1005.0,
+                417.0,
+                1016.0,
+                444.0,
+                924.0,
+                487.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_247.jpg",
+              "sha256": "b944e1057fbadf42db11110d05ccf5e1921b56a82a22f0b04da9a80f4e0260c9",
+              "quad": [
+                27.0,
+                114.0,
+                78.0,
+                117.0,
+                78.0,
+                139.0,
+                28.0,
+                137.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_247.jpg",
+              "sha256": "b944e1057fbadf42db11110d05ccf5e1921b56a82a22f0b04da9a80f4e0260c9",
+              "quad": [
+                518.0,
+                227.0,
+                559.0,
+                222.0,
+                559.0,
+                243.0,
+                519.0,
+                248.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_247.jpg",
+              "sha256": "b944e1057fbadf42db11110d05ccf5e1921b56a82a22f0b04da9a80f4e0260c9",
+              "quad": [
+                520.0,
+                273.0,
+                548.0,
+                271.0,
+                550.0,
+                302.0,
+                521.0,
+                304.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_519.jpg",
+              "sha256": "50ddc7eee0e0fa3b4024b67817f53ad71f41971669e7b4664e0e2cca2880763c",
+              "quad": [
+                743.0,
+                140.0,
+                783.0,
+                138.0,
+                786.0,
+                155.0,
+                746.0,
+                158.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_519.jpg",
+              "sha256": "50ddc7eee0e0fa3b4024b67817f53ad71f41971669e7b4664e0e2cca2880763c",
+              "quad": [
+                780.0,
+                135.0,
+                823.0,
+                134.0,
+                826.0,
+                155.0,
+                782.0,
+                156.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_519.jpg",
+              "sha256": "50ddc7eee0e0fa3b4024b67817f53ad71f41971669e7b4664e0e2cca2880763c",
+              "quad": [
+                821.0,
+                131.0,
+                881.0,
+                129.0,
+                885.0,
+                150.0,
+                825.0,
+                153.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_519.jpg",
+              "sha256": "50ddc7eee0e0fa3b4024b67817f53ad71f41971669e7b4664e0e2cca2880763c",
+              "quad": [
+                737.0,
+                160.0,
+                813.0,
+                156.0,
+                815.0,
+                171.0,
+                738.0,
+                175.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_519.jpg",
+              "sha256": "50ddc7eee0e0fa3b4024b67817f53ad71f41971669e7b4664e0e2cca2880763c",
+              "quad": [
+                812.0,
+                156.0,
+                847.0,
+                153.0,
+                848.0,
+                169.0,
+                813.0,
+                173.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_519.jpg",
+              "sha256": "50ddc7eee0e0fa3b4024b67817f53ad71f41971669e7b4664e0e2cca2880763c",
+              "quad": [
+                848.0,
+                153.0,
+                896.0,
+                151.0,
+                895.0,
+                171.0,
+                847.0,
+                173.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_519.jpg",
+              "sha256": "50ddc7eee0e0fa3b4024b67817f53ad71f41971669e7b4664e0e2cca2880763c",
+              "quad": [
+                742.0,
+                198.0,
+                801.0,
+                198.0,
+                800.0,
+                224.0,
+                741.0,
+                224.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_519.jpg",
+              "sha256": "50ddc7eee0e0fa3b4024b67817f53ad71f41971669e7b4664e0e2cca2880763c",
+              "quad": [
+                806.0,
+                195.0,
+                901.0,
+                198.0,
+                900.0,
+                224.0,
+                805.0,
+                221.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_519.jpg",
+              "sha256": "50ddc7eee0e0fa3b4024b67817f53ad71f41971669e7b4664e0e2cca2880763c",
+              "quad": [
+                742.0,
+                225.0,
+                881.0,
+                226.0,
+                893.0,
+                276.0,
+                755.0,
+                275.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_519.jpg",
+              "sha256": "50ddc7eee0e0fa3b4024b67817f53ad71f41971669e7b4664e0e2cca2880763c",
+              "quad": [
+                755.0,
+                275.0,
+                895.0,
+                279.0,
+                896.0,
+                304.0,
+                756.0,
+                300.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_95.jpg",
+              "sha256": "68ca2ef29adef11577d5c6111b64339b202660759f59ad6c02892d656e44d31f",
+              "quad": [
+                537.0,
+                20.0,
+                678.0,
+                14.0,
+                678.0,
+                45.0,
+                537.0,
+                51.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_95.jpg",
+              "sha256": "68ca2ef29adef11577d5c6111b64339b202660759f59ad6c02892d656e44d31f",
+              "quad": [
+                538.0,
+                49.0,
+                604.0,
+                48.0,
+                604.0,
+                72.0,
+                538.0,
+                73.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_95.jpg",
+              "sha256": "68ca2ef29adef11577d5c6111b64339b202660759f59ad6c02892d656e44d31f",
+              "quad": [
+                539.0,
+                76.0,
+                577.0,
+                77.0,
+                577.0,
+                102.0,
+                539.0,
+                102.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_95.jpg",
+              "sha256": "68ca2ef29adef11577d5c6111b64339b202660759f59ad6c02892d656e44d31f",
+              "quad": [
+                583.0,
+                74.0,
+                645.0,
+                74.0,
+                646.0,
+                102.0,
+                584.0,
+                102.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_95.jpg",
+              "sha256": "68ca2ef29adef11577d5c6111b64339b202660759f59ad6c02892d656e44d31f",
+              "quad": [
+                1058.0,
+                1.0,
+                1273.0,
+                1.0,
+                1273.0,
+                22.0,
+                1058.0,
+                30.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_205.jpg",
+              "sha256": "3b2f7b45aab1bea5fad307e23ea2ff6d89bfd49f17c3808d9c8e5122790fe4d8",
+              "quad": [
+                240.0,
+                213.0,
+                282.0,
+                189.0,
+                291.0,
+                203.0,
+                250.0,
+                227.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_205.jpg",
+              "sha256": "3b2f7b45aab1bea5fad307e23ea2ff6d89bfd49f17c3808d9c8e5122790fe4d8",
+              "quad": [
+                37.0,
+                109.0,
+                84.0,
+                105.0,
+                83.0,
+                125.0,
+                36.0,
+                129.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_205.jpg",
+              "sha256": "3b2f7b45aab1bea5fad307e23ea2ff6d89bfd49f17c3808d9c8e5122790fe4d8",
+              "quad": [
+                594.0,
+                180.0,
+                734.0,
+                180.0,
+                736.0,
+                203.0,
+                596.0,
+                203.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_694.jpg",
+              "sha256": "b03aa6392099424d1353e1c8cc459819e659c2d39a096f976e4319225cc1ed47",
+              "quad": [
+                189.0,
+                486.0,
+                285.0,
+                459.0,
+                287.0,
+                481.0,
+                190.0,
+                514.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_694.jpg",
+              "sha256": "b03aa6392099424d1353e1c8cc459819e659c2d39a096f976e4319225cc1ed47",
+              "quad": [
+                463.0,
+                360.0,
+                592.0,
+                379.0,
+                581.0,
+                413.0,
+                467.0,
+                385.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_694.jpg",
+              "sha256": "b03aa6392099424d1353e1c8cc459819e659c2d39a096f976e4319225cc1ed47",
+              "quad": [
+                1081.0,
+                522.0,
+                1227.0,
+                563.0,
+                1222.0,
+                585.0,
+                1083.0,
+                547.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_935.jpg",
+              "sha256": "ce7c6081bb9df8f50cf288fbb6d7bcdf7c54c4e07912a861cc1a7e73202e9e34",
+              "quad": [
+                398.0,
+                170.0,
+                541.0,
+                122.0,
+                546.0,
+                185.0,
+                404.0,
+                233.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_935.jpg",
+              "sha256": "ce7c6081bb9df8f50cf288fbb6d7bcdf7c54c4e07912a861cc1a7e73202e9e34",
+              "quad": [
+                341.0,
+                256.0,
+                466.0,
+                216.0,
+                468.0,
+                241.0,
+                343.0,
+                281.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_935.jpg",
+              "sha256": "ce7c6081bb9df8f50cf288fbb6d7bcdf7c54c4e07912a861cc1a7e73202e9e34",
+              "quad": [
+                474.0,
+                205.0,
+                652.0,
+                148.0,
+                655.0,
+                180.0,
+                477.0,
+                236.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_459.jpg",
+              "sha256": "ef71da6e69bd9c90346f42382cef95bcc6183940bd243607f1a0640fe844932a",
+              "quad": [
+                103.0,
+                121.0,
+                197.0,
+                116.0,
+                201.0,
+                176.0,
+                107.0,
+                181.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_459.jpg",
+              "sha256": "ef71da6e69bd9c90346f42382cef95bcc6183940bd243607f1a0640fe844932a",
+              "quad": [
+                211.0,
+                123.0,
+                341.0,
+                120.0,
+                345.0,
+                173.0,
+                215.0,
+                175.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_459.jpg",
+              "sha256": "ef71da6e69bd9c90346f42382cef95bcc6183940bd243607f1a0640fe844932a",
+              "quad": [
+                348.0,
+                118.0,
+                523.0,
+                118.0,
+                532.0,
+                175.0,
+                357.0,
+                175.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_459.jpg",
+              "sha256": "ef71da6e69bd9c90346f42382cef95bcc6183940bd243607f1a0640fe844932a",
+              "quad": [
+                1131.0,
+                110.0,
+                1168.0,
+                109.0,
+                1172.0,
+                139.0,
+                1135.0,
+                140.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_459.jpg",
+              "sha256": "ef71da6e69bd9c90346f42382cef95bcc6183940bd243607f1a0640fe844932a",
+              "quad": [
+                1170.0,
+                111.0,
+                1192.0,
+                109.0,
+                1195.0,
+                135.0,
+                1172.0,
+                138.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_459.jpg",
+              "sha256": "ef71da6e69bd9c90346f42382cef95bcc6183940bd243607f1a0640fe844932a",
+              "quad": [
+                1193.0,
+                109.0,
+                1212.0,
+                108.0,
+                1213.0,
+                133.0,
+                1195.0,
+                134.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_459.jpg",
+              "sha256": "ef71da6e69bd9c90346f42382cef95bcc6183940bd243607f1a0640fe844932a",
+              "quad": [
+                1.0,
+                129.0,
+                91.0,
+                127.0,
+                95.0,
+                180.0,
+                0.0,
+                185.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_459.jpg",
+              "sha256": "ef71da6e69bd9c90346f42382cef95bcc6183940bd243607f1a0640fe844932a",
+              "quad": [
+                526.0,
+                130.0,
+                560.0,
+                129.0,
+                564.0,
+                161.0,
+                530.0,
+                163.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_299.jpg",
+              "sha256": "fab73ff88928304db28aef508261833d0841cf9fd8ed5d526abb3502444e02ca",
+              "quad": [
+                371.0,
+                78.0,
+                472.0,
+                66.0,
+                472.0,
+                89.0,
+                371.0,
+                101.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_299.jpg",
+              "sha256": "fab73ff88928304db28aef508261833d0841cf9fd8ed5d526abb3502444e02ca",
+              "quad": [
+                566.0,
+                73.0,
+                685.0,
+                59.0,
+                686.0,
+                83.0,
+                567.0,
+                96.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_299.jpg",
+              "sha256": "fab73ff88928304db28aef508261833d0841cf9fd8ed5d526abb3502444e02ca",
+              "quad": [
+                881.0,
+                16.0,
+                940.0,
+                9.0,
+                942.0,
+                25.0,
+                883.0,
+                32.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_299.jpg",
+              "sha256": "fab73ff88928304db28aef508261833d0841cf9fd8ed5d526abb3502444e02ca",
+              "quad": [
+                1085.0,
+                23.0,
+                1120.0,
+                23.0,
+                1120.0,
+                37.0,
+                1086.0,
+                38.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_347.jpg",
+              "sha256": "d95646dde7eae9ab017d0af8b912959f20e4dcab05dde35fb49a4225df8058d0",
+              "quad": [
+                607.0,
+                519.0,
+                643.0,
+                516.0,
+                644.0,
+                531.0,
+                608.0,
+                534.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_347.jpg",
+              "sha256": "d95646dde7eae9ab017d0af8b912959f20e4dcab05dde35fb49a4225df8058d0",
+              "quad": [
+                587.0,
+                497.0,
+                660.0,
+                489.0,
+                661.0,
+                506.0,
+                587.0,
+                515.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_347.jpg",
+              "sha256": "d95646dde7eae9ab017d0af8b912959f20e4dcab05dde35fb49a4225df8058d0",
+              "quad": [
+                2.0,
+                276.0,
+                85.0,
+                278.0,
+                81.0,
+                326.0,
+                0.0,
+                324.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_788.jpg",
+              "sha256": "c1980209e870ba2dea9924402c4070a4ebaf5d8c3090ffff4930254d949b0481",
+              "quad": [
+                645.0,
+                101.0,
+                775.0,
+                18.0,
+                779.0,
+                85.0,
+                649.0,
+                167.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_788.jpg",
+              "sha256": "c1980209e870ba2dea9924402c4070a4ebaf5d8c3090ffff4930254d949b0481",
+              "quad": [
+                326.0,
+                209.0,
+                384.0,
+                213.0,
+                383.0,
+                226.0,
+                325.0,
+                222.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_788.jpg",
+              "sha256": "c1980209e870ba2dea9924402c4070a4ebaf5d8c3090ffff4930254d949b0481",
+              "quad": [
+                386.0,
+                213.0,
+                410.0,
+                216.0,
+                408.0,
+                228.0,
+                384.0,
+                226.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_658.jpg",
+              "sha256": "ec189cc0f9cee4b33976dd9ab44eb406ac2acc8167a562db62db3c4fee6f3ecd",
+              "quad": [
+                718.0,
+                207.0,
+                806.0,
+                188.0,
+                813.0,
+                244.0,
+                726.0,
+                263.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_658.jpg",
+              "sha256": "ec189cc0f9cee4b33976dd9ab44eb406ac2acc8167a562db62db3c4fee6f3ecd",
+              "quad": [
+                805.0,
+                178.0,
+                925.0,
+                151.0,
+                932.0,
+                204.0,
+                812.0,
+                232.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_24.jpg",
+              "sha256": "531689aafa5959e20e911984b73a911906e93db0a60e71e66ca0953a26a312a4",
+              "quad": [
+                175.0,
+                386.0,
+                209.0,
+                378.0,
+                212.0,
+                393.0,
+                178.0,
+                401.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_24.jpg",
+              "sha256": "531689aafa5959e20e911984b73a911906e93db0a60e71e66ca0953a26a312a4",
+              "quad": [
+                597.0,
+                392.0,
+                678.0,
+                356.0,
+                684.0,
+                401.0,
+                604.0,
+                436.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_24.jpg",
+              "sha256": "531689aafa5959e20e911984b73a911906e93db0a60e71e66ca0953a26a312a4",
+              "quad": [
+                695.0,
+                368.0,
+                742.0,
+                350.0,
+                745.0,
+                371.0,
+                698.0,
+                393.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_24.jpg",
+              "sha256": "531689aafa5959e20e911984b73a911906e93db0a60e71e66ca0953a26a312a4",
+              "quad": [
+                701.0,
+                397.0,
+                773.0,
+                367.0,
+                777.0,
+                386.0,
+                706.0,
+                422.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_24.jpg",
+              "sha256": "531689aafa5959e20e911984b73a911906e93db0a60e71e66ca0953a26a312a4",
+              "quad": [
+                212.0,
+                378.0,
+                267.0,
+                365.0,
+                269.0,
+                378.0,
+                214.0,
+                391.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_24.jpg",
+              "sha256": "531689aafa5959e20e911984b73a911906e93db0a60e71e66ca0953a26a312a4",
+              "quad": [
+                268.0,
+                364.0,
+                311.0,
+                354.0,
+                313.0,
+                367.0,
+                271.0,
+                377.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_24.jpg",
+              "sha256": "531689aafa5959e20e911984b73a911906e93db0a60e71e66ca0953a26a312a4",
+              "quad": [
+                314.0,
+                353.0,
+                335.0,
+                348.0,
+                337.0,
+                361.0,
+                316.0,
+                365.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_452.jpg",
+              "sha256": "a75f0df09028a2b1a060c4019c124defa72b8d26c8169e5ea29fcc0c81ff17da",
+              "quad": [
+                356.0,
+                581.0,
+                518.0,
+                660.0,
+                512.0,
+                698.0,
+                350.0,
+                620.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_452.jpg",
+              "sha256": "a75f0df09028a2b1a060c4019c124defa72b8d26c8169e5ea29fcc0c81ff17da",
+              "quad": [
+                1024.0,
+                395.0,
+                1115.0,
+                407.0,
+                1113.0,
+                444.0,
+                1022.0,
+                432.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_452.jpg",
+              "sha256": "a75f0df09028a2b1a060c4019c124defa72b8d26c8169e5ea29fcc0c81ff17da",
+              "quad": [
+                387.0,
+                564.0,
+                409.0,
+                574.0,
+                407.0,
+                586.0,
+                385.0,
+                576.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_417.jpg",
+              "sha256": "e69cf29cf9454919728940c9182652c15d695f8633f533da726ca107c0fa5dee",
+              "quad": [
+                701.0,
+                179.0,
+                734.0,
+                178.0,
+                736.0,
+                196.0,
+                702.0,
+                197.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_417.jpg",
+              "sha256": "e69cf29cf9454919728940c9182652c15d695f8633f533da726ca107c0fa5dee",
+              "quad": [
+                736.0,
+                177.0,
+                804.0,
+                174.0,
+                804.0,
+                193.0,
+                736.0,
+                196.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_417.jpg",
+              "sha256": "e69cf29cf9454919728940c9182652c15d695f8633f533da726ca107c0fa5dee",
+              "quad": [
+                800.0,
+                137.0,
+                861.0,
+                135.0,
+                861.0,
+                153.0,
+                799.0,
+                156.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_417.jpg",
+              "sha256": "e69cf29cf9454919728940c9182652c15d695f8633f533da726ca107c0fa5dee",
+              "quad": [
+                425.0,
+                187.0,
+                500.0,
+                185.0,
+                500.0,
+                204.0,
+                426.0,
+                206.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_417.jpg",
+              "sha256": "e69cf29cf9454919728940c9182652c15d695f8633f533da726ca107c0fa5dee",
+              "quad": [
+                386.0,
+                187.0,
+                423.0,
+                187.0,
+                424.0,
+                206.0,
+                387.0,
+                207.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_59.jpg",
+              "sha256": "1ef1a2d625740e9fcf342320f5d676848eb4ab4b6f12990edae4ba18045018e0",
+              "quad": [
+                559.0,
+                218.0,
+                761.0,
+                223.0,
+                763.0,
+                255.0,
+                561.0,
+                250.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_59.jpg",
+              "sha256": "1ef1a2d625740e9fcf342320f5d676848eb4ab4b6f12990edae4ba18045018e0",
+              "quad": [
+                577.0,
+                187.0,
+                660.0,
+                188.0,
+                663.0,
+                221.0,
+                580.0,
+                219.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_59.jpg",
+              "sha256": "1ef1a2d625740e9fcf342320f5d676848eb4ab4b6f12990edae4ba18045018e0",
+              "quad": [
+                404.0,
+                123.0,
+                620.0,
+                121.0,
+                622.0,
+                155.0,
+                406.0,
+                157.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_59.jpg",
+              "sha256": "1ef1a2d625740e9fcf342320f5d676848eb4ab4b6f12990edae4ba18045018e0",
+              "quad": [
+                407.0,
+                155.0,
+                481.0,
+                155.0,
+                484.0,
+                187.0,
+                410.0,
+                188.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_59.jpg",
+              "sha256": "1ef1a2d625740e9fcf342320f5d676848eb4ab4b6f12990edae4ba18045018e0",
+              "quad": [
+                486.0,
+                155.0,
+                667.0,
+                155.0,
+                669.0,
+                188.0,
+                488.0,
+                187.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_59.jpg",
+              "sha256": "1ef1a2d625740e9fcf342320f5d676848eb4ab4b6f12990edae4ba18045018e0",
+              "quad": [
+                434.0,
+                92.0,
+                557.0,
+                88.0,
+                558.0,
+                121.0,
+                436.0,
+                124.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_59.jpg",
+              "sha256": "1ef1a2d625740e9fcf342320f5d676848eb4ab4b6f12990edae4ba18045018e0",
+              "quad": [
+                412.0,
+                186.0,
+                569.0,
+                189.0,
+                572.0,
+                220.0,
+                415.0,
+                218.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_59.jpg",
+              "sha256": "1ef1a2d625740e9fcf342320f5d676848eb4ab4b6f12990edae4ba18045018e0",
+              "quad": [
+                418.0,
+                218.0,
+                551.0,
+                221.0,
+                554.0,
+                251.0,
+                421.0,
+                248.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_59.jpg",
+              "sha256": "1ef1a2d625740e9fcf342320f5d676848eb4ab4b6f12990edae4ba18045018e0",
+              "quad": [
+                421.0,
+                255.0,
+                468.0,
+                256.0,
+                468.0,
+                271.0,
+                421.0,
+                270.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_59.jpg",
+              "sha256": "1ef1a2d625740e9fcf342320f5d676848eb4ab4b6f12990edae4ba18045018e0",
+              "quad": [
+                617.0,
+                307.0,
+                725.0,
+                304.0,
+                726.0,
+                318.0,
+                619.0,
+                321.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_59.jpg",
+              "sha256": "1ef1a2d625740e9fcf342320f5d676848eb4ab4b6f12990edae4ba18045018e0",
+              "quad": [
+                619.0,
+                323.0,
+                692.0,
+                321.0,
+                694.0,
+                335.0,
+                621.0,
+                336.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_59.jpg",
+              "sha256": "1ef1a2d625740e9fcf342320f5d676848eb4ab4b6f12990edae4ba18045018e0",
+              "quad": [
+                696.0,
+                320.0,
+                745.0,
+                320.0,
+                746.0,
+                333.0,
+                697.0,
+                334.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_59.jpg",
+              "sha256": "1ef1a2d625740e9fcf342320f5d676848eb4ab4b6f12990edae4ba18045018e0",
+              "quad": [
+                639.0,
+                339.0,
+                672.0,
+                340.0,
+                673.0,
+                353.0,
+                639.0,
+                353.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_59.jpg",
+              "sha256": "1ef1a2d625740e9fcf342320f5d676848eb4ab4b6f12990edae4ba18045018e0",
+              "quad": [
+                688.0,
+                337.0,
+                745.0,
+                336.0,
+                746.0,
+                354.0,
+                689.0,
+                355.0
+              ]
+            },
+            {
+              "relative_path": "ocr_det_dataset_examples/images/train_img_59.jpg",
+              "sha256": "1ef1a2d625740e9fcf342320f5d676848eb4ab4b6f12990edae4ba18045018e0",
+              "quad": [
+                471.0,
+                257.0,
+                499.0,
+                257.0,
+                500.0,
+                272.0,
+                472.0,
+                272.0
+              ]
+            }
+          ],
+          "kernels": {
+            "conv2d_30.w_0": 0.01
+          }
+        }
+      }
+    },
+    "a41b9e79b60be6314ab0db1a0920b1650a710489020e2de2b452821f4b5adec9": {
+      "f16": {
+        "keep_f32": [
+          "conv2d_157.w_0",
+          "conv2d_118.w_0",
+          "conv2d_182.w_0",
+          "conv2d_171.w_0",
+          "conv2d_176.w_0",
+          "conv2d_158.w_0",
+          "conv2d_107.w_0",
+          "conv2d_172.w_0",
+          "conv2d_175.w_0",
+          "conv2d_164.w_0"
+        ]
+      },
+      "q8_0": {
+        "keep_f16": [
+          "conv2d_180.w_0",
+          "conv2d_162.w_0",
+          "conv2d_166.w_0",
+          "conv2d_184.w_0",
+          "conv2d_145.w_0",
+          "conv2d_160.w_0",
+          "conv2d_117.w_0",
+          "conv2d_168.w_0"
+        ],
+        "keep_f32": [
+          "conv2d_157.w_0",
+          "conv2d_118.w_0",
+          "conv2d_182.w_0",
+          "conv2d_171.w_0",
+          "conv2d_176.w_0",
+          "conv2d_158.w_0",
+          "conv2d_107.w_0",
+          "conv2d_172.w_0",
+          "conv2d_175.w_0",
+          "conv2d_164.w_0"
+        ]
+      }
+    },
+    "cf443393df5e23f068c113f2ee5ee286918da7c386535a4ccd8c9c815d808445": {
+      "f16": {
+        "keep_f32": [
+          "conv2d_0.w_0",
+          "conv2d_1.w_0",
+          "conv2d_2.w_0",
+          "conv2d_3.w_0",
+          "conv2d_5.w_0",
+          "conv2d_7.w_0"
+        ]
+      },
+      "q8_0": {
+        "keep_f32": [
+          "conv2d_0.w_0",
+          "conv2d_1.w_0",
+          "conv2d_2.w_0",
+          "conv2d_3.w_0",
+          "conv2d_4.w_0",
+          "conv2d_5.w_0",
+          "conv2d_7.w_0"
+        ],
+        "keep_f16": [
+          "conv2d_11.w_0",
+          "conv2d_14.w_0",
+          "conv2d_16.w_0",
+          "conv2d_47.w_0",
+          "conv2d_52.w_0"
+        ]
+      }
+    },
+    "d2a7720d45a54257208b1e13e36a8479894cb74155a5efe29462512d42f49da9": {
+      "f16": {},
+      "q8_0": {
+        "keep_f16": [
+          "conv2d_403.w_0",
+          "conv2d_413.w_0",
+          "conv2d_transpose_0.w_0",
+          "conv2d_397.w_0",
+          "conv2d_156.w_0",
+          "conv2d_150.w_0",
+          "conv2d_144.w_0",
+          "conv2d_138.w_0",
+          "conv2d_159.w_0"
+        ],
+        "keep_f32": [
+          "conv2d_394.w_0"
+        ]
+      }
+    },
+    "d73e0058b7a8086bbd57f3d10b8bcd4ff95363f67e06e2762b5e814fe9c9410e": {
+      "f16": {
+        "keep_f32": [
+          "conv2d_122.w_0"
+        ]
+      },
+      "q8_0": {
+        "keep_f16": [
+          "conv2d_154.w_0",
+          "conv2d_138.w_0",
+          "auto.cast.95",
+          "conv2d_113.w_0",
+          "conv2d_145.w_0",
+          "conv2d_170.w_0",
+          "conv2d_71.w_0",
+          "conv2d_81.w_0",
+          "conv2d_134.w_0"
+        ],
+        "keep_f32": [
+          "conv2d_116.w_0"
+        ]
+      }
+    },
+    "eb13b44b25bb36f89528b68720af8a61d9cf381176107f465db1757b65d086e1": {
+      "f16": {
+        "keep_f32": [
+          "conv2d_171.w_0",
+          "conv2d_177.w_0",
+          "conv2d_175.w_0",
+          "conv2d_203.w_0",
+          "conv2d_181.w_0",
+          "conv2d_233.w_0",
+          "conv2d_188.w_0",
+          "conv2d_182.w_0",
+          "conv2d_226.w_0",
+          "conv2d_234.w_0",
+          "conv2d_185.w_0",
+          "conv2d_199.w_0",
+          "conv2d_8.w_0"
+        ]
+      },
+      "q8_0": {
+        "keep_f16": [
+          "conv2d_172.w_0",
+          "conv2d_173.w_0",
+          "conv2d_7.w_0",
+          "conv2d_34.w_0",
+          "conv2d_205.w_0",
+          "conv2d_241.w_0",
+          "conv2d_183.w_0",
+          "conv2d_194.w_0",
+          "_v_715",
+          "auto.cast.135",
+          "conv2d_196.w_0",
+          "conv2d_213.w_0",
+          "conv2d_174.w_0",
+          "conv2d_197.w_0",
+          "conv2d_209.w_0",
+          "conv2d_186.w_0",
+          "conv2d_179.w_0",
+          "conv2d_208.w_0",
+          "conv2d_212.w_0",
+          "conv2d_178.w_0",
+          "conv2d_91.w_0",
+          "conv2d_189.w_0",
+          "conv2d_43.w_0",
+          "conv2d_20.w_0",
+          "conv2d_33.w_0",
+          "conv2d_190.w_0",
+          "conv2d_21.w_0"
+        ],
+        "keep_f32": [
+          "conv2d_171.w_0",
+          "conv2d_177.w_0",
+          "conv2d_175.w_0",
+          "conv2d_203.w_0",
+          "conv2d_181.w_0",
+          "conv2d_233.w_0",
+          "conv2d_188.w_0",
+          "conv2d_182.w_0",
+          "conv2d_226.w_0",
+          "conv2d_234.w_0",
+          "conv2d_185.w_0",
+          "conv2d_199.w_0",
+          "conv2d_8.w_0"
+        ]
+      }
+    },
+    "ef79783d7db8ca8058b3499689c0b762d44417b4b18d5b42a441a5ee87b935cc": {
+      "f16": {
+        "keep_f32": [
+          "conv2d_166.w_0",
+          "conv2d_162.w_0",
+          "conv2d_179.w_0",
+          "conv2d_0.w_0",
+          "conv2d_169.w_0",
+          "conv2d_165.w_0",
+          "conv2d_178.w_0",
+          "conv2d_176.w_0",
+          "conv2d_161.w_0",
+          "conv2d_173.w_0",
+          "conv2d_180.w_0",
+          "conv2d_164.w_0",
+          "conv2d_170.w_0"
+        ]
+      },
+      "q8_0": {
+        "keep_f16": [
+          "conv2d_188.w_0",
+          "conv2d_186.w_0",
+          "conv2d_159.w_0",
+          "conv2d_174.w_0",
+          "conv2d_transpose_0.w_0",
+          "conv2d_172.w_0",
+          "conv2d_138.w_0",
+          "conv2d_132.w_0",
+          "conv2d_182.w_0",
+          "conv2d_184.w_0",
+          "conv2d_134.w_0",
+          "conv2d_144.w_0",
+          "conv2d_133.w_0"
+        ],
+        "keep_f32": [
+          "conv2d_166.w_0",
+          "conv2d_162.w_0",
+          "conv2d_179.w_0",
+          "conv2d_0.w_0",
+          "conv2d_169.w_0",
+          "conv2d_165.w_0",
+          "conv2d_178.w_0",
+          "conv2d_176.w_0",
+          "conv2d_161.w_0",
+          "conv2d_173.w_0",
+          "conv2d_180.w_0",
+          "conv2d_164.w_0",
+          "conv2d_170.w_0"
+        ]
+      }
+    },
+    "f38bc0cef411ffb75483b37b8005f9400e4b60a0afd44ff777861737695f52e2": {
+      "f16": {
+        "keep_f32": [
+          "conv2d_1.w_0",
+          "conv2d_9.w_0",
+          "conv2d_32.w_0",
+          "conv2d_0.w_0",
+          "conv2d_27.w_0",
+          "conv2d_5.w_0",
+          "conv2d_30.w_0",
+          "conv2d_19.w_0",
+          "conv2d_4.w_0",
+          "conv2d_6.w_0",
+          "conv2d_11.w_0",
+          "conv2d_3.w_0",
+          "conv2d_26.w_0",
+          "conv2d_2.w_0",
+          "conv2d_22.w_0",
+          "conv2d_35.w_0",
+          "conv2d_14.w_0",
+          "conv2d_13.w_0",
+          "conv2d_17.w_0",
+          "conv2d_10.w_0",
+          "conv2d_20.w_0",
+          "conv2d_12.w_0",
+          "conv2d_15.w_0",
+          "conv2d_29.w_0",
+          "conv2d_7.w_0",
+          "conv2d_8.w_0",
+          "conv2d_21.w_0",
+          "conv2d_31.w_0",
+          "conv2d_23.w_0"
+        ]
+      },
+      "q8_0": {
+        "keep_f16": [
+          "conv2d_8.w_0",
+          "conv2d_18.w_0",
+          "conv2d_29.w_0",
+          "conv2d_28.w_0",
+          "conv2d_16.w_0",
+          "conv2d_20.w_0",
+          "conv2d_31.w_0",
+          "conv2d_34.w_0",
+          "conv2d_12.w_0"
+        ],
+        "keep_f32": [
+          "conv2d_1.w_0",
+          "conv2d_9.w_0",
+          "conv2d_32.w_0",
+          "conv2d_0.w_0",
+          "conv2d_27.w_0",
+          "conv2d_5.w_0",
+          "conv2d_30.w_0",
+          "conv2d_19.w_0",
+          "conv2d_4.w_0",
+          "conv2d_6.w_0",
+          "conv2d_11.w_0",
+          "conv2d_3.w_0",
+          "conv2d_26.w_0",
+          "conv2d_2.w_0",
+          "conv2d_22.w_0",
+          "conv2d_35.w_0",
+          "conv2d_14.w_0",
+          "conv2d_13.w_0",
+          "conv2d_17.w_0",
+          "conv2d_10.w_0"
+        ]
+      }
+    }
+  }
+}

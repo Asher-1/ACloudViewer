@@ -17,6 +17,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "ecvAICoreRuntimeHelpers.h"
+
 #ifdef AICore_ENABLED
 #include "aicore/gaussian_capi.h"
 #include "aicore/runtime_capi.h"
@@ -81,6 +83,13 @@ FreeSplatterWorker::FreeSplatterWorker(const Settings& settings,
 }
 
 FreeSplatterWorker::~FreeSplatterWorker() {
+    // onTaskFinished deleteLater()s the worker from a queued slot while
+    // run() may still be returning; ~QThread aborts on a running thread
+    // and the token/context below must outlive every run() access.
+    if (isRunning()) {
+        requestTaskCancel();
+        wait();
+    }
 #ifdef AICore_ENABLED
     aicore_cancel_token_free(m_cancelToken);
 #endif
@@ -99,22 +108,24 @@ void FreeSplatterWorker::run() {
     emit taskFinished(false);
     return;
 #else
-    AICoreInferenceGuard inferenceGuard(m_cancelToken, m_settings.device);
-    if (!inferenceGuard.locked()) {
-        emit taskFinished(false);
-        return;
-    }
     bool ok = false;
-    switch (m_settings.mode) {
-        case Mode::Reconstruct:
-            ok = runReconstruct();
-            break;
-        case Mode::ModelInfo:
-            ok = runModelInfo();
-            break;
-        default:
-            emit logMessage("[Error] Unknown mode.");
-            break;
+    {
+        // Released before taskFinished: the receiver may delete the worker
+        // (and its cancel token) or start the next device task right away.
+        AICoreInferenceGuard inferenceGuard(m_cancelToken, m_settings.device);
+        if (inferenceGuard.locked()) {
+            switch (m_settings.mode) {
+                case Mode::Reconstruct:
+                    ok = runReconstruct();
+                    break;
+                case Mode::ModelInfo:
+                    ok = runModelInfo();
+                    break;
+                default:
+                    emit logMessage("[Error] Unknown mode.");
+                    break;
+            }
+        }
     }
     emit taskFinished(ok);
 #endif
@@ -127,10 +138,7 @@ void FreeSplatterWorker::stashContext(aicore_gaussian_ctx* ctx) {
 }
 
 void FreeSplatterWorker::releaseContextOnMainThread() {
-    if (m_pendingCtx) {
-        aicore_gaussian_free(m_pendingCtx);
-        m_pendingCtx = nullptr;
-    }
+    ecvAICoreRuntime::releasePending(m_pendingCtx, &aicore_gaussian_free);
 }
 
 aicore_gaussian_ctx* FreeSplatterWorker::loadModel() {
@@ -173,7 +181,7 @@ aicore_gaussian_ctx* FreeSplatterWorker::loadModel() {
     if (char* infoJ = aicore_gaussian_info_json(ctx)) {
         const QJsonObject mi =
                 QJsonDocument::fromJson(QByteArray(infoJ)).object();
-        aicore_gaussian_free_string(infoJ);
+        aicore_gaussian_free_buffer(infoJ);
         const QString resolved = mi.value(QStringLiteral("device")).toString();
         aicore_inference_log::log_device_resolved(QStringLiteral("FS"),
                                                   resolved);
@@ -218,7 +226,7 @@ bool FreeSplatterWorker::runReconstruct() {
                                 .arg(use2dgs ? "2DGS" : "3DGS")
                                 .arg(geom.sh_degree)
                                 .arg(shRes ? "+residual" : ""));
-        aicore_gaussian_free_string(infoJ);
+        aicore_gaussian_free_buffer(infoJ);
     } else {
         emit logMessage(
                 QString("[FS] Model: %1x%2, %3 gaussian channels, SH degree %4")
@@ -309,7 +317,7 @@ bool FreeSplatterWorker::runReconstruct() {
         const QString resolvedDevice =
                 modelInfo.value(QStringLiteral("device")).toString();
         if (!resolvedDevice.isEmpty()) devLabel = resolvedDevice;
-        aicore_gaussian_free_string(info);
+        aicore_gaussian_free_buffer(info);
     }
     emit logMessage(
             QString("[FS] [3/4] Running inference on %1 image(s) [%2]...")
@@ -343,7 +351,7 @@ bool FreeSplatterWorker::runReconstruct() {
         emit logMessage(QString("[Error] Inference failed: %1")
                                 .arg(err ? err : "unknown"));
         if (gaussians) {
-            aicore_gaussian_free_floats(gaussians);
+            aicore_gaussian_free_buffer(gaussians);
         }
         stashContext(ctx);
         return false;
@@ -371,8 +379,12 @@ bool FreeSplatterWorker::runReconstruct() {
     result.width = W;
     result.gaussianChannels = gc;
     result.shDegree = geom.sh_degree;
-    result.gaussians.resize(static_cast<int>(n_out));
-    std::copy(gaussians, gaussians + n_out, result.gaussians.begin());
+    // Transfer ownership of the AICore output buffer directly — no second
+    // full-size copy (~350 MB for a 24-view 2DGS object run). shared_ptr
+    // refcounts across the queued signal; the buffer must NOT be freed here.
+    result.gaussianCount = n_out;
+    result.gaussians =
+            std::shared_ptr<float>(gaussians, aicore_gaussian_free_buffer);
     result.resolvedDevice = devLabel;
     result.runtimeMs = inferTimer.elapsed();
 
@@ -380,7 +392,11 @@ bool FreeSplatterWorker::runReconstruct() {
         emit logMessage("[FS] Estimating camera poses...");
         result.cam2world.resize(n * 16);
         float focal = 0.0f;
-        ret = aicore_gaussian_estimate_poses(gaussians, n, H, W, gc,
+        aicore_gaussian_geometry geom{};
+        geom.image_height = H;
+        geom.image_width = W;
+        geom.gaussian_channels = gc;
+        ret = aicore_gaussian_estimate_poses(&geom, result.gaussians.get(), n,
                                              m_settings.opacityThreshold,
                                              result.cam2world.data(), &focal);
         if (ret == 0) {
@@ -392,8 +408,6 @@ bool FreeSplatterWorker::runReconstruct() {
             emit logMessage("[Warning] Pose estimation failed (non-fatal).");
         }
     }
-
-    aicore_gaussian_free_floats(gaussians);
 
     emit progressUpdate(100, 100);
     emit resultReady(result);
@@ -416,7 +430,7 @@ bool FreeSplatterWorker::runModelInfo() {
     char* info = aicore_gaussian_info_json(ctx);
     if (info) {
         emit modelInfoReady(QString::fromUtf8(info));
-        aicore_gaussian_free_string(info);
+        aicore_gaussian_free_buffer(info);
         emit progressUpdate(100, 100);
         stashContext(ctx);
         return true;

@@ -222,7 +222,7 @@ jq '.download_data["v3.9.4"]' docs/downloads_data.json
 - **[Deployment Guide](DEPLOYMENT.md)** - How to deploy to GitHub Pages
 - **[Version Management](../guides/VERSION_MANAGEMENT.md)** - Documentation version management
 - **[Scripts Documentation](scripts/README.md)** - Detailed documentation for automation scripts
-- **[GitHub Actions Workflows](../../.github/workflows/)** - CI/CD workflow configurations
+- **[GitHub Actions Workflows](https://github.com/Asher-1/ACloudViewer/tree/main/.github/workflows)** - CI/CD workflow configurations
 
 ## 🎯 Summary
 

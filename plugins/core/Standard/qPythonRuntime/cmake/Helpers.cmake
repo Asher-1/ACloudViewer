@@ -1,3 +1,19 @@
+# Share converter declarations and strict linking across embedded modules, extensions and tests.
+function(qpythonruntime_configure_bindings target)
+  set(_binding_types "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../wrapper/BindingTypes.h")
+  if(MSVC)
+    target_compile_options(${target} PRIVATE "/FI${_binding_types}")
+  else()
+    target_compile_options(${target} PRIVATE "SHELL:-include \"${_binding_types}\"")
+  endif()
+  set_target_properties(${target} PROPERTIES
+    INTERPROCEDURAL_OPTIMIZATION ON CXX_VISIBILITY_PRESET hidden)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND
+     CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "9.0")
+    target_link_options(${target} PRIVATE -Werror=odr)
+  endif()
+endfunction()
+
 # This function sets a global PYTHON_BASE_PREFIX cache variable
 function(setup_python_env)
   execute_process(

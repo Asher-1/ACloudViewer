@@ -1,0 +1,35 @@
+{
+  "scope": "Relocated legacy patch runner replay and idempotence; no model inference",
+  "build": "build_llama_patch_relocated_7jh5_7es",
+  "source_archive_sha256": "3b0d4f1fe7c278824d4bb753b7402733576985689bd40e9cc719eca627131d24",
+  "tree_sha256": "e504bb4a881524e8bd727220890386bb11b8d6a149e26fa5e1d2edcd1c4f98e6",
+  "compared_baseline": "build_llama_migration_nxgOqD/old-patched",
+  "replay_codes": [
+    0,
+    0
+  ],
+  "current_manifest": {
+    "path": "3rdparty/llama/ggml-patches/manifest.yaml",
+    "bytes": 39794,
+    "sha256": "b0a41f6196194f3e72f6ba8d477ced391df9dd398d195bb97c7f9502b27305b5"
+  },
+  "current_runner": {
+    "path": "3rdparty/llama/ggml-patches/apply_ggml_patches.py",
+    "bytes": 10616,
+    "sha256": "5fc6b6d67041001463d85075ca2a8d037b8b9ae71de412020687b10464bb6230"
+  },
+  "current_replay_logs": [
+    {
+      "path": "build_llama_patch_relocated_7jh5_7es/replay-current-paths-1.log",
+      "bytes": 2787,
+      "sha256": "43d9799101b7f0e60664ff5bcce681a130a5e47fbf297e957a4b11af8eb47dd6"
+    },
+    {
+      "path": "build_llama_patch_relocated_7jh5_7es/replay-current-paths-2.log",
+      "bytes": 2787,
+      "sha256": "43d9799101b7f0e60664ff5bcce681a130a5e47fbf297e957a4b11af8eb47dd6"
+    }
+  ],
+  "current_tree_sha256": "e504bb4a881524e8bd727220890386bb11b8d6a149e26fa5e1d2edcd1c4f98e6",
+  "current_baseline_match": true
+}

@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "genderage_graph.hpp"
+#include "tasks/facedetect/genderage_graph.hpp"
 
 #include <algorithm>
 #include <array>
@@ -13,14 +13,14 @@
 #include <stdexcept>
 #include <string>
 
-#include "align.hpp"
-#include "backend.hpp"
-#include "common.hpp"
-#include "detect.hpp"
 #include "ggml.h"
-#include "graph_ops.hpp"
-#include "model_loader.hpp"
-#include "preprocess.hpp"
+#include "tasks/facedetect/align.hpp"
+#include "tasks/facedetect/backend.hpp"
+#include "tasks/facedetect/common.hpp"
+#include "tasks/facedetect/detect.hpp"
+#include "tasks/facedetect/graph_ops.hpp"
+#include "tasks/facedetect/model_loader.hpp"
+#include "tasks/facedetect/preprocess.hpp"
 
 namespace fd {
 
@@ -50,7 +50,7 @@ ggml_tensor* ga_batchnorm(ggml_context* ctx,
     const int64_t ne1[4] = {1, 1, 1, 1};
     ggml_tensor* eps_t = graph_input_tensor(ctx, GGML_TYPE_F32, 1, ne1,
                                             keep.back().data(), sizeof(float));
-    ggml_tensor* inv_std = ggml_sqrt(ctx, ggml_add1(ctx, var, eps_t));
+    ggml_tensor* inv_std = ggml_sqrt(ctx, ggml_add(ctx, var, eps_t));
     ggml_tensor* scale = ggml_div(ctx, gamma, inv_std);
     ggml_tensor* shift = ggml_sub(ctx, beta, ggml_mul(ctx, mean, scale));
 

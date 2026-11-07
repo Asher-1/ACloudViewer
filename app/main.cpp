@@ -33,11 +33,7 @@
 
 // QT
 #include <QDir>
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-#include <QSurfaceFormat>
-#else
-#include <QGLFormat>
-#endif
+#include <QFileInfo>
 #include <QMessageBox>
 #include <QOffscreenSurface>
 #include <QOpenGLContext>
@@ -45,11 +41,13 @@
 #include <QPixmap>
 #include <QSplashScreen>
 #include <QStorageInfo>
+#include <QSurfaceFormat>
 #include <QSysInfo>
 #include <QTime>
 #include <QTimer>
 #include <QTranslator>
 #include <QtWidgets/QApplication>
+#include <cstdio>  // fprintf: fatal errors on unattended platforms
 #ifdef CC_GAMEPAD_SUPPORT
 #include <QGamepadManager>
 #endif
@@ -64,6 +62,16 @@
 #include <cstdlib>  // For putenv
 #include <cstring>
 #endif
+
+#if defined(__GLIBC__) || defined(__linux__)
+#include <execinfo.h>  // backtrace: symbolized stack on crash
+
+#include <cstdlib>
+#endif
+
+#include <CrashHandler.h>
+
+#include "ecvConsole.h"
 
 // COMMON
 #include "CommonSettings.h"
@@ -188,6 +196,18 @@ QString GetGPUInfo() {
     }
 
     return gpuInfo;
+}
+
+// offscreen/minimal platforms run unattended: a modal box would never be
+// dismissed and turn a startup failure into a hang.
+void ShowFatalError(const QString& message) {
+    const QString platform = QGuiApplication::platformName();
+    if (platform == QLatin1String("offscreen") ||
+        platform == QLatin1String("minimal")) {
+        fprintf(stderr, "Error: %s\n", qPrintable(message));
+        return;
+    }
+    QMessageBox::critical(nullptr, QObject::tr("Error"), message);
 }
 
 // Function to print all system hardware information
@@ -623,26 +643,23 @@ int main(int argc, char* argv[]) {
     QTimer splashTimer;
     // standard mode
     if (!commandLine) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        // One probe for Qt5 and Qt6: QOpenGLContext/QSurfaceFormat are QtGui
+        // API since Qt 5.0 (GetGPUInfo uses them unconditionally). The former
+        // Qt5 branch, QGLFormat::openGLVersionFlags(), dereferences a null
+        // context when none can be created (offscreen QPA without an X
+        // display). Desktop GL only, as that branch required: VTK is built
+        // for desktop OpenGL, so an ES context (ANGLE) is rejected here.
         QOpenGLContext context;
         QSurfaceFormat format;
         format.setVersion(2, 1);
         context.setFormat(format);
-        if (!context.create() || !context.isValid()) {
-            QMessageBox::critical(nullptr, QObject::tr("Error"),
-                                  QObject::tr("This application needs OpenGL "
-                                              "2.1 at least to run!"));
+        if (!context.create() || !context.isValid() || context.isOpenGLES() ||
+            context.format().version() < qMakePair(2, 1)) {
+            ShowFatalError(
+                    QObject::tr("This application needs OpenGL "
+                                "2.1 at least to run!"));
             return EXIT_FAILURE;
         }
-#else
-        if ((QGLFormat::openGLVersionFlags() & QGLFormat::OpenGL_Version_2_1) ==
-            0) {
-            QMessageBox::critical(nullptr, QObject::tr("Error"),
-                                  QObject::tr("This application needs OpenGL "
-                                              "2.1 at least to run!"));
-            return EXIT_FAILURE;
-        }
-#endif
 
         // splash screen
         QPixmap pixmap(QString::fromUtf8(
@@ -685,9 +702,9 @@ int main(int argc, char* argv[]) {
         MainWindow* mainWindow = MainWindow::TheInstance();
 
         if (!mainWindow) {
-            QMessageBox::critical(nullptr, QObject::tr("Error"),
-                                  QObject::tr("Failed to initialize the main "
-                                              "application window?!"));
+            ShowFatalError(
+                    QObject::tr("Failed to initialize the main "
+                                "application window?!"));
             return EXIT_FAILURE;
         }
 
@@ -830,16 +847,41 @@ int main(int argc, char* argv[]) {
 
         QDir::setCurrent(workingDir.absolutePath());
 
+        // Unified crash collector (core): fatal signals, unhandled SEH,
+        // uncaught C++ exceptions AND caught exceptions (throw-site stack
+        // snapshotted at __cxa_throw) append to THIS session's crash log —
+        // same name prefix as the session's main log
+        // (ACloudViewer.<stamp>.<pid>.crash.log) so each run's crashes land
+        // beside its own log, 1:1, instead of mixing into one shared file.
+        QString crashLogName;
+        ecvConsole* console = ecvConsole::TheInstance(/*autoInit=*/false);
+        const QString sessionLog =
+                console ? console->currentLogFilePath() : QString();
+        if (!sessionLog.isEmpty()) {
+            crashLogName = QFileInfo(sessionLog).completeBaseName() +
+                           QStringLiteral(".crash.log");
+        } else {
+            // No session log (silent/CLI runs): keep the stable name.
+            crashLogName = QStringLiteral("ACloudViewer.crash.log");
+        }
+        ecvCrashHandler::install(
+                QDir(ecvConsole::getLogDirectory()).filePath(crashLogName));
+
         // let's rock!
         try {
-            // mainWindow->drawWidgets();
             result = app.exec();
         } catch (const std::exception& e) {
+            // Unified crash-log record (the exception was CAUGHT here, so
+            // std::terminate / the signal collectors never see it; the
+            // throw-site stack comes from the __cxa_throw snapshot).
+            ecvCrashHandler::logUnhandledException(QString::fromUtf8(e.what()));
             QMessageBox::warning(
                     nullptr, QObject::tr("ECV crashed!"),
                     QObject::tr("Hum, it seems that ECV has crashed... Sorry "
-                                "about that :)\n") +
-                            e.what());
+                                "about that :)\n%1\n\nThe details have been "
+                                "written to the crash log (%2 in the logs "
+                                "folder).")
+                            .arg(QString::fromUtf8(e.what()), crashLogName));
         } catch (...) {
             QMessageBox::warning(nullptr, QObject::tr("ECV crashed!"),
                                  QObject::tr("Hum, it seems that ECV has "

@@ -21,6 +21,9 @@ void define_GenericDistribution(py::module &cccorelib)
 {
 
     py::class_<cloudViewer::GenericDistribution> GenericDistribution(cccorelib, "GenericDistribution");
+    // The shared header disables STL copying; publish the corresponding opaque class.
+    py::bind_vector<cloudViewer::GenericDistribution::ScalarContainer>(GenericDistribution,
+                                                                       "ScalarContainer");
     GenericDistribution
         .def("getName", &cloudViewer::GenericDistribution::getName, py::return_value_policy::reference)
         .def("isValid", &cloudViewer::GenericDistribution::isValid)

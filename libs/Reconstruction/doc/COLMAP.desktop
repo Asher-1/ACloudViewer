@@ -1,7 +1,7 @@
 [Desktop Entry]
-Name=Colmap
+Name=COLMAP
 Comment=Structure-from-Motion and Multi-View Stereo
-Exec=colmap.sh gui
+Exec=colmap gui
 Icon=colmap
 Terminal=false
 Categories=Graphics;3DGraphics;

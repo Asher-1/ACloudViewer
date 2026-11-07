@@ -1,0 +1,63 @@
+diff --git a/src/ggml-cuda/fattn-common.cuh b/src/ggml-cuda/fattn-common.cuh
+--- a/src/ggml-cuda/fattn-common.cuh
++++ b/src/ggml-cuda/fattn-common.cuh
+@@ -1108,7 +1108,8 @@
+         const size_t n_lists = size_t(ntiles_x) * mask->ne[3];
+ 
+         KV_max.alloc(size_t(n_kv_max)*n_lists + n_lists);
+-        ggml_cuda_flash_attn_ext_compact_mask(mask, KV_max.ptr, KV_max.ptr + size_t(n_kv_max)*n_lists, Q->ne[1], ncols1, n_kv_max, main_stream);
++        // Select this dispatch namespace; ADL also sees the shared global helper.
++        (ggml_cuda_flash_attn_ext_compact_mask)(mask, KV_max.ptr, KV_max.ptr + size_t(n_kv_max)*n_lists, Q->ne[1], ncols1, n_kv_max, main_stream);
+     }
+ 
+     // Optional optimization where the mask is scanned to determine whether part of the calculation can be skipped.
+diff --git a/src/ggml-cuda/fattn.cuh b/src/ggml-cuda/fattn.cuh
+--- a/src/ggml-cuda/fattn.cuh
++++ b/src/ggml-cuda/fattn.cuh
+@@ -1,4 +1,8 @@
+ #include "common.cuh"
++
++// Shared helper used by the independently compiled arithmetic twins.
++void ggml_cuda_flash_attn_ext_compact_mask(
++        const ggml_tensor * mask, int32_t * indices, int32_t * counts, int32_t n_queries, int32_t ncols1, int32_t n_kv_max, cudaStream_t stream);
+ 
+ void ggml_cuda_flash_attn_ext(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
+ 
+diff --git a/src/ggml-cuda/precise/fattn-precise.cu b/src/ggml-cuda/precise/fattn-precise.cu
+--- a/src/ggml-cuda/precise/fattn-precise.cu
++++ b/src/ggml-cuda/precise/fattn-precise.cu
+@@ -15,6 +15,15 @@
+ #include "sam3d-precise.cuh"
+ 
+ namespace ggml_cuda_precise {
++
++// The shared sparse-mask helper is defined by the upstream dispatcher outside
++// the arithmetic twin namespace. Forward to that implementation explicitly.
++void ggml_cuda_flash_attn_ext_compact_mask(
++        const ggml_tensor * mask, int32_t * indices, int32_t * counts,
++        int32_t n_queries, int32_t ncols1, int32_t n_kv_max, cudaStream_t stream) {
++    ::ggml_cuda_flash_attn_ext_compact_mask(mask, indices, counts, n_queries, ncols1, n_kv_max, stream);
++}
++
+ 
+ #include "../fattn-common.cuh"
+ #include "../fattn-mma-f16.cuh"
+diff --git a/src/ggml-cuda/relateanything-fattn.cu b/src/ggml-cuda/relateanything-fattn.cu
+--- a/src/ggml-cuda/relateanything-fattn.cu
++++ b/src/ggml-cuda/relateanything-fattn.cu
+@@ -7,6 +7,15 @@
+ #include "fattn.cuh"
+ 
+ namespace relateanything_cuda {
++
++// The shared sparse-mask helper is defined by the upstream dispatcher outside
++// the arithmetic twin namespace. Forward to that implementation explicitly.
++void ggml_cuda_flash_attn_ext_compact_mask(
++        const ggml_tensor * mask, int32_t * indices, int32_t * counts,
++        int32_t n_queries, int32_t ncols1, int32_t n_kv_max, cudaStream_t stream) {
++    ::ggml_cuda_flash_attn_ext_compact_mask(mask, indices, counts, n_queries, ncols1, n_kv_max, stream);
++}
++
+ #include "fattn-mma-f16.cuh"
+ 
+ DECL_FATTN_MMA_F16_CASE(64, 64, 8, 1);

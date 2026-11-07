@@ -207,6 +207,26 @@ void PythonConfig::initBundled()
     const QString pythonEnvDirPath(QApplication::applicationDirPath() + "/plugins/Python");
 #endif
     initFromLocation(pythonEnvDirPath);
+#ifdef ACV_QPYTHONRUNTIME_BUILD_PREFIX
+    if (m_pythonHome.isEmpty())
+    {
+        // Dev/test builds run from the build tree, where the bundled layout
+        // is absent, so initFromLocation leaves EMPTY home and path while
+        // keeping type Bundled. The interpreter then boots isolated with an
+        // empty home and derives its module search path from whichever
+        // libpython happened to load — on hosts with a same-ABI distro
+        // python (noble's /usr/lib/python3.12 vs the pyenv build python)
+        // that resolves a different site-packages set and the build
+        // interpreter's packages (numpy, ...) vanish (CI cpu-noble:
+        // 'ModuleNotFoundError: No module named numpy' in
+        // test_qpythonruntime_plugin_loading, reproduced and verified in a
+        // noble container). Anchor at the interpreter the plugin was
+        // compiled against instead; a pyenv/conda prefix has neither
+        // pyvenv.cfg nor conda-meta, so this yields the explicit flat
+        // bundled layout without spawning a python process.
+        initFromLocation(QString::fromUtf8(ACV_QPYTHONRUNTIME_BUILD_PREFIX));
+    }
+#endif
 }
 
 void PythonConfig::initBundledFromLayout(const QString &prefix)

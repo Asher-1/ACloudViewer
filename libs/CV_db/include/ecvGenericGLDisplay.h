@@ -139,7 +139,7 @@ public:
     // Refresh / redraw
     // ================================================================
 
-    virtual void redraw(bool only2D = false, bool forceRedraw = true) = 0;
+    virtual void redraw(bool only2D = false, bool forceRedraw = false) = 0;
     virtual void refresh(bool only2D = false) = 0;
     virtual void toBeRefreshed() = 0;
 
@@ -315,6 +315,12 @@ public:
         Q_UNUSED(param);
     }
 
+    /** Channel switch for massive-sensor scenes (qLingbotMap replay):
+     *  while suspended, camera sensors render as DEDICATED per-camera
+     *  actors so per-frame visibility is a plain actor flip instead of
+     *  composite per-block attributes. Default no-op for backends
+     *  without the composite aggregation. */
+    virtual void setCameraAggregationSuspended(bool) {}
     virtual bool hideShowEntities(const ccGLDrawContext& context) {
         Q_UNUSED(context);
         return true;
@@ -440,6 +446,16 @@ public:
         Q_UNUSED(viewID);
         Q_UNUSED(intensity);
         Q_UNUSED(triggerRender);
+    }
+    //! Composite-rendering queries (massive-import aggregation). Defaults:
+    //! no composite state (backends without the composite registry).
+    virtual bool hasCompositeGroup(const QString& viewID) {
+        Q_UNUSED(viewID);
+        return false;
+    }
+    virtual bool isCompositeLeafEntity(const QString& viewID) {
+        Q_UNUSED(viewID);
+        return false;
     }
     virtual double getLightIntensity() const { return 1.0; }
     virtual void setLightIntensity(double intensity) { Q_UNUSED(intensity); }

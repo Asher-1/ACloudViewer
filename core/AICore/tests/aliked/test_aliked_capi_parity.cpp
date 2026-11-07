@@ -33,6 +33,7 @@
 #include "aicore/aliked_capi.h"
 #include "aicore/backend_capi.h"
 #include "aicore/lightglue_capi.h"
+#include "tests/common/validation_probe.hpp"
 
 namespace {
 
@@ -444,7 +445,12 @@ int main(int argc, char** argv) {
 
     int failures = 0;
     int available_backends = 0;
-    const char* backends[] = {"cuda", "vulkan"};
+    double selected_median_ms = 0.0;
+    float selected_kpt_median = 0.0f;
+    float selected_cos_median = 0.0f;
+    uint64_t selected_hash = 0;
+    const char* selected_backend = "";
+    const char* backends[] = {"cuda", "vulkan", "metal"};
     for (const char* backend : backends) {
         if (only != nullptr && only[0] != '\0' &&
             std::strcmp(only, backend) != 0) {
@@ -501,6 +507,15 @@ int main(int argc, char** argv) {
                          backend, kKptMedianTolPx, kDescCosMedianTol);
             ++failures;
         }
+        selected_backend = backend;
+        selected_median_ms = gpu.median_ms;
+        selected_kpt_median = kpt_med;
+        selected_cos_median = cos_med;
+        selected_hash = aicore::test::fnv1a(
+                gpu.keypoints.data(), gpu.keypoints.size() * sizeof(float));
+        selected_hash = aicore::test::fnv1aAppend(
+                selected_hash, gpu.descriptors.data(),
+                gpu.descriptors.size() * sizeof(float));
     }
 
     // A selected device that was never exercised is not a green parity
@@ -510,5 +525,13 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "SKIP: no requested GPU backend was available\n");
         return 77;
     }
+    std::printf(
+            "{\"suite\":\"aicore-validation\",\"task\":\"aliked\","
+            "\"device\":\"%s\",\"inference_p50_ms\":%.6f,"
+            "\"kpt_median_px\":%.8f,\"descriptor_cosine_median\":%.8f,"
+            "\"output_hash\":\"%016llx\"}\n",
+            selected_backend, selected_median_ms, selected_kpt_median,
+            selected_cos_median,
+            static_cast<unsigned long long>(selected_hash));
     return failures > 0 ? 1 : 0;
 }

@@ -25,6 +25,35 @@ target_sources(tests PRIVATE
 
 target_include_directories(tests PRIVATE ".")
 
+# Monolithic test runner (500MB+ linked against the full library): keep it out
+# of bin/ alongside the other grouped test folders (colmap_test/, aicore_tests/,
+# plugin_test/). Unix consumers agree on the flat path bin/cloudviewer_test/tests
+# (docker/docker_test.sh, util/ci_utils.sh run_cpp_unit_tests, tests/README.md).
+# The per-config properties are load-bearing on MSVC:
+# CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING (default ON) makes
+# cloudviewer_apply_dev_runtime_bin_layout() set per-config variables
+# (CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=bin/<Config>), and a per-config
+# target property initialized from those variables OVERRIDES the generic
+# RUNTIME_OUTPUT_DIRECTORY set here. The per-config values carry a $<CONFIG>
+# generator expression because a per-config property is used verbatim — no
+# configuration subdirectory is appended (measured: with a plain value the
+# MSVC link emitted bin\cloudviewer_test\tests.exe while windows.yml locates
+# the runner at bin\cloudviewer_test\<Config>\tests.exe, run 38852073162).
+# The per-config properties must stay MSVC-only: a single-config Unix generator
+# with CMAKE_BUILD_TYPE=Release also honors RUNTIME_OUTPUT_DIRECTORY_RELEASE,
+# and its $<CONFIG> evaluates to Release, moving the runner to
+# bin/cloudviewer_test/Release/tests; docker_test.sh then exits 127 with
+# "No such file or directory" (measured: minimal two-property CMake project
+# reproduces the precedence; run 38918190650 linked the runner there).
+set_target_properties(tests PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/cloudviewer_test")
+if(MSVC)
+    set_target_properties(tests PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin/cloudviewer_test/$<CONFIG>"
+        RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin/cloudviewer_test/$<CONFIG>"
+        RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/bin/cloudviewer_test/$<CONFIG>")
+endif()
+
 # Fix Qt -fPIC requirement
 cloudViewer_set_targets_independent(tests)
 
@@ -63,7 +92,8 @@ if (WIN32)
   add_custom_command(
       TARGET tests
       POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:tbb> "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/"
+      # $<TARGET_FILE_DIR:tests> follows the grouped runtime output directory.
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:tbb> "$<TARGET_FILE_DIR:tests>/"
   )
 endif()
 

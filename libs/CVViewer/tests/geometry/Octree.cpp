@@ -7,6 +7,7 @@
 
 #include "cloudViewer/geometry/Octree.h"
 
+#include <DgmOctree.h>
 #include <ecvPointCloud.h>
 #include <json/json.h>
 
@@ -20,6 +21,21 @@
 
 namespace cloudViewer {
 namespace tests {
+
+TEST(DgmOctree, ConstantsHaveStorage) {
+    // Volatile reads require actual storage even in an optimized test build.
+    // A static const initializer alone leaves these references undefined.
+    const volatile int* level = &DgmOctree::MAX_OCTREE_LEVEL;
+    const volatile int* length = &DgmOctree::MAX_OCTREE_LENGTH;
+    const volatile DgmOctree::CellCode* invalid = &DgmOctree::INVALID_CELL_CODE;
+#ifdef OCTREE_CODES_64_BITS
+    EXPECT_EQ(*level, 21);
+#else
+    EXPECT_EQ(*level, 10);
+#endif
+    EXPECT_EQ(*length, 1 << *level);
+    EXPECT_EQ(*invalid, ~static_cast<DgmOctree::CellCode>(0));
+}
 
 TEST(Octree, ConstructorWithoutSize) {
     geometry::Octree octree(10);

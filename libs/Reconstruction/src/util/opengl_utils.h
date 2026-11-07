@@ -37,8 +37,9 @@ public:
                          int opengl_minor_version = 1);
 
     // Make the OpenGL context available by moving it from the thread where it
-    // was created to the current thread and making it current.
-    void MakeCurrent();
+    // was created to the current thread and making it current. Returns
+    // whether the context is valid afterwards.
+    bool MakeCurrent();
 
     // Check whether the machine has OpenGL and we can create the context.
     static bool HasOpenGL();
@@ -74,7 +75,7 @@ class OpenGLContextManager {
 public:
     OpenGLContextManager(int opengl_major_version = 2,
                          int opengl_minor_version = 1) {}
-    inline void MakeCurrent() {}
+    inline bool MakeCurrent() { return true; }
     inline static bool HasOpenGL() { return false; }
 };
 

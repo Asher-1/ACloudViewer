@@ -10,7 +10,7 @@
 #include <QtCore>
 #include <QtWidgets>
 
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
 
 namespace cloudViewer {
 

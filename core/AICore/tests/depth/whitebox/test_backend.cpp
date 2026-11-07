@@ -8,8 +8,8 @@
 #include <cstdio>
 #include <vector>
 
-#include "backend.hpp"
 #include "ggml.h"
+#include "tasks/depth/backend.hpp"
 int main() {
     aicore::depth::Backend be;
     aicore::depth::GraphInputPool pool;

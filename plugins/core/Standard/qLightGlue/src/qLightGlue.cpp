@@ -7,6 +7,8 @@
 
 #include "qLightGlue.h"
 
+#include "LightGlueBatchCommand.h"
+
 #ifdef AICore_ENABLED
 #include "aicore/backend_capi.h"
 #include "aicore/lightglue_capi.h"
@@ -68,6 +70,14 @@ void qLightGlue::onNewSelection(const ccHObject::Container& selectedEntities) {
 }
 
 QList<QAction*> qLightGlue::getActions() { return {m_action}; }
+
+void qLightGlue::registerCommands(ccCommandLineInterface* cmd) {
+    if (cmd == nullptr) {
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandLightGlueMatch));
+}
 
 bool qLightGlue::warmupInferenceBackend(const QString& device,
                                         QString* logMsg) const {

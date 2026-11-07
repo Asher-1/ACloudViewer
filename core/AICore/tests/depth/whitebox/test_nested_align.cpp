@@ -16,8 +16,8 @@
 #include <string>
 #include <vector>
 
-#include "nested.hpp"
-#include "parity.hpp"
+#include "tasks/depth/nested.hpp"
+#include "tests/depth/whitebox/parity.hpp"
 
 int main() {
     const char* base = std::getenv("AICORE_TEST_DEPTH_BASELINE_NESTED");

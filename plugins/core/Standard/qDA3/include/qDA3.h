@@ -26,6 +26,7 @@ public:
 
     void onNewSelection(const ccHObject::Container& selectedEntities) override;
     QList<QAction*> getActions() override;
+    void registerCommands(ccCommandLineInterface* cmd) override;
 
 private slots:
     void showDialog();
@@ -40,7 +41,6 @@ private slots:
 
 private:
     void refreshDbImages();
-    void clearStagedInputFiles();
     ccImage* findDbImage(const QString& name) const;
     // Collect usable ccImage names from the DB tree selection: direct
     // ccImage picks plus recursive scan of selected groups/folders.
@@ -53,7 +53,6 @@ private:
     DA3Dialog* m_dialog = nullptr;
     DA3Worker* m_worker = nullptr;
     DA3Dialog::Settings m_currentSettings;
-    QStringList m_stagedInputFiles;
     ccHObject::Container m_selectedEntities;
 
     DA3DepthResult m_lastDepthResult;

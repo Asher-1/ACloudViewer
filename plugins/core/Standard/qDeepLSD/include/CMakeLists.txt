@@ -3,4 +3,5 @@ target_sources( ${PROJECT_NAME}
         ${CMAKE_CURRENT_LIST_DIR}/qDeepLSD.h
         ${CMAKE_CURRENT_LIST_DIR}/DeepLSDDialog.h
         ${CMAKE_CURRENT_LIST_DIR}/DeepLSDWorker.h
+        ${CMAKE_CURRENT_LIST_DIR}/DeepLSDBatchCommand.h
 )

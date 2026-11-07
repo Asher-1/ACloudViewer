@@ -100,9 +100,44 @@ function(cloudviewer_set_plugin_module_output_directory target)
     endif()
 endfunction()
 
+# Plugin / plugin-API unit tests are grouped under bin/plugin_test/
+# (mirroring bin/colmap_test/ and bin/aicore_tests/) so the main bin/ only
+# holds the app, plugins, and shared libraries. ctest resolves each binary
+# through the target name / $<TARGET_FILE>, and build-tree RPATHs are
+# absolute, so the subfolder does not affect test discovery or loading.
+# Resolve the directory holding the Qt runtime libraries for whichever Qt
+# major version this build links (Qt5 / Qt6 / unprefixed alias). Batch C
+# test-layout consumers (RPATH / ctest ENVIRONMENT) must not hardcode a
+# version: Qt6 exports Qt6::<mod> plus a Qt::<mod> alias, while Qt5 only
+# exports Qt5::<mod>; conda-forge Qt5 additionally defines Qt::<mod> as an
+# INTERFACE aggregate without LOCATION, so the alias is only usable through
+# ALIASED_TARGET (same caveat as the AICore layout's Qt5/6::Gui chain).
+function(cloudviewer_resolve_qt_lib_dir out_var)
+    set(_qt_core_target "")
+    if (TARGET Qt5::Core)
+        set(_qt_core_target Qt5::Core)
+    elseif (TARGET Qt6::Core)
+        set(_qt_core_target Qt6::Core)
+    elseif (TARGET Qt::Core)
+        get_target_property(_qt_core_alias Qt::Core ALIASED_TARGET)
+        if (_qt_core_alias)
+            set(_qt_core_target ${_qt_core_alias})
+        endif ()
+    endif ()
+    set(${out_var} "")
+    if (_qt_core_target)
+        get_target_property(_qt_core_loc ${_qt_core_target} LOCATION)
+        if (_qt_core_loc)
+            get_filename_component(_qt_dir "${_qt_core_loc}" DIRECTORY)
+            set(${out_var} "${_qt_dir}")
+        endif ()
+    endif ()
+    set(${out_var} "${${out_var}}" PARENT_SCOPE)
+endfunction()
+
 function(cloudviewer_set_bin_runtime_output_directory target)
     if(MSVC)
-        set(_bin_root "${CMAKE_BINARY_DIR}/bin")
+        set(_bin_root "${CMAKE_BINARY_DIR}/bin/plugin_test")
         set_target_properties(${target} PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY_DEBUG "${_bin_root}/Debug"
             RUNTIME_OUTPUT_DIRECTORY_RELEASE "${_bin_root}/Release"
@@ -110,16 +145,147 @@ function(cloudviewer_set_bin_runtime_output_directory target)
         )
     else()
         set_target_properties(${target} PROPERTIES
-            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/plugin_test"
         )
     endif()
 endfunction()
 
+# Standard boilerplate for a plugin unit-test executable, shared by the
+# plugins' tests/ subdirectories: PIC objects everywhere, GNU ld -no-pie on
+# Linux (Apple ld64 warns "argument unused" for it), and the shared
+# bin/plugin_test/ runtime layout. Qt AUTOMOC/AUTORCC come from the global
+# directory settings in CMakeExternalLibs.cmake. Register the ctest row at
+# the call site (COMMAND may need wrappers such as xvfb-run or extra
+# arguments) and pair with cloudviewer_set_plugin_test_env[_offscreen] for
+# the runtime environment.
+function(cloudviewer_add_plugin_test target)
+    cmake_parse_arguments(PARG "" "" "SOURCES;LIBS;INCLUDES;DEFINES" ${ARGN})
+    add_executable(${target} ${PARG_SOURCES})
+    if(PARG_INCLUDES)
+        target_include_directories(${target} PRIVATE ${PARG_INCLUDES})
+    endif()
+    if(PARG_LIBS)
+        target_link_libraries(${target} PRIVATE ${PARG_LIBS})
+    endif()
+    if(PARG_DEFINES)
+        target_compile_definitions(${target} PRIVATE ${PARG_DEFINES})
+    endif()
+    if(NOT MSVC)
+        set_target_properties(${target} PROPERTIES
+            POSITION_INDEPENDENT_CODE ON)
+        target_compile_options(${target} PRIVATE -fPIC)
+        if(UNIX AND NOT APPLE)
+            target_link_options(${target} PRIVATE "-no-pie")
+        endif()
+    endif()
+    cloudviewer_set_bin_runtime_output_directory(${target})
+endfunction()
+
+
+# Batch C test-layout companion: ctest environment for tests relocated under
+# bin/plugin_test/ (PATH for MSVC DLLs; LD_LIBRARY_PATH for Linux/macOS with
+# Qt and the vendored opencv resolved from their configure-time locations).
+# Offscreen variant: merges QT_QPA_PLATFORM into the same ENVIRONMENT value
+# (a second set_tests_properties would overwrite the first).
+function(cloudviewer_resolve_python_lib_dir out_var)
+    # pybind11::embed consumers resolve libpython at runtime from
+    # LD_LIBRARY_PATH, not from the link line: DT_NEEDED carries no path, so
+    # a build configured against a non-system interpreter (pyenv shim,
+    # conda) can be silently served the DISTRO libpython of the same ABI
+    # version by ldconfig at test time. The two builds share the ABI tag
+    # (e.g. two 3.12's) but not their site-packages, so the embedded
+    # interpreter reports "No module named 'numpy'" for packages that are
+    # installed in the build interpreter. Pin the interpreter the build
+    # actually linked by putting its library directory first.
+    # FindPython publishes the per-config library under internal names
+    # (_Python3_LIBRARY_RELEASE / _DEBUG) and only fills Python3_LIBRARY
+    # itself for single-config lookups; accept either spelling.
+    # Cache variables must be read with get_property to be visible inside
+    # functions.
+    set(_cv_python_lib "")
+    foreach (_cv_var_name
+             Python3_LIBRARY
+             _Python3_LIBRARY_RELEASE
+             _Python3_LIBRARY_DEBUG
+             _Python3_LIBRARY)
+        get_property(_cv_candidate CACHE ${_cv_var_name} PROPERTY VALUE)
+        if (_cv_candidate)
+            set(_cv_python_lib "${_cv_candidate}")
+            break()
+        endif ()
+    endforeach ()
+    if (_cv_python_lib)
+        get_filename_component(_cv_python_lib_dir "${_cv_python_lib}" DIRECTORY)
+        set(${out_var} "${_cv_python_lib_dir}" PARENT_SCOPE)
+    else ()
+        set(${out_var} "" PARENT_SCOPE)
+    endif ()
+endfunction()
+
+function(cloudviewer_set_plugin_test_env_offscreen test_name)
+    cloudviewer_resolve_qt_lib_dir(_qt_lib_dir)
+    cloudviewer_resolve_python_lib_dir(_cv_python_lib_dir)
+    if (MSVC)
+        # Windows PATH is semicolon-separated, so a raw $ENV{PATH} inside the
+        # ENVIRONMENT value splits the ctest property list: every directory
+        # after the first fragment becomes a dangling item without '=' and is
+        # silently dropped, leaving the test without the conda Qt runtime
+        # (STATUS_DLL_NOT_FOUND at load). Escape the inherited separators so
+        # the whole PATH stays one ENVIRONMENT list item.
+        string(REPLACE ";" "\\;" _cv_inherited_path "$ENV{PATH}")
+        set_tests_properties(${test_name} PROPERTIES
+                ENVIRONMENT "QT_QPA_PLATFORM=offscreen;PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;${_cv_inherited_path}")
+    else ()
+        set_tests_properties(${test_name} PROPERTIES
+                ENVIRONMENT "QT_QPA_PLATFORM=offscreen;LD_LIBRARY_PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}:${_qt_lib_dir}:${CMAKE_BINARY_DIR}/external/lib:${_cv_python_lib_dir}:$ENV{LD_LIBRARY_PATH}")
+    endif ()
+endfunction()
+
+function(cloudviewer_set_plugin_test_env test_name)
+    cloudviewer_resolve_qt_lib_dir(_qt_lib_dir)
+    cloudviewer_resolve_python_lib_dir(_cv_python_lib_dir)
+    if (MSVC)
+        # Same Windows PATH escaping as the offscreen variant above: without
+        # it the inherited PATH is truncated to its first fragment and any
+        # test whose binary really imports the conda Qt DLLs dies in the
+        # Windows loader with 0xc0000135 before main() runs.
+        string(REPLACE ";" "\\;" _cv_inherited_path "$ENV{PATH}")
+        set_tests_properties(${test_name} PROPERTIES
+                ENVIRONMENT "PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;${_cv_inherited_path}")
+    else ()
+        set_tests_properties(${test_name} PROPERTIES
+                ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}:${_qt_lib_dir}:${CMAKE_BINARY_DIR}/external/lib:${_cv_python_lib_dir}:$ENV{LD_LIBRARY_PATH}")
+    endif ()
+endfunction()
+
 function(cloudviewer_set_examples_runtime_output_directory target)
     # Per-target override matches legacy EXAMPLE_BIN_DIR = bin/examples on all platforms.
-    set_target_properties(${target} PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/examples"
-    )
+    # MSVC needs two extra steps to make that override actually stick and to keep
+    # the example links out of the archive directory:
+    # 1. The dev-layout macros export CMAKE_RUNTIME_OUTPUT_DIRECTORY_<CONFIG>
+    #    (e.g. bin/Release); CMake snapshots those into per-target
+    #    RUNTIME_OUTPUT_DIRECTORY_<CONFIG> properties at add_executable() time,
+    #    and a per-config property beats the generic one set here — the example
+    #    would land in bin/Release/ instead of bin/examples/. Re-derive the
+    #    override with $<CONFIG> so one property covers every configuration.
+    # 2. On MSVC an executable link also writes an import library into
+    #    ARCHIVE_OUTPUT_DIRECTORY (lib/<CONFIG> in CI), where every static
+    #    archive lives. Under Ninja Multi-Config the last wave of example
+    #    links runs concurrently and a real-time AV scan holding the freshly
+    #    written files made one link fail with LNK1114 ERROR_SHARING_VIOLATION
+    #    (Flann.exe -> lib\Release\Flann.lib, run 39273926318). Keeping the
+    #    import libs beside the example binaries isolates them from the
+    #    archive directory entirely.
+    if (MSVC)
+        set_target_properties(${target} PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/examples/$<CONFIG>"
+            ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/examples/$<CONFIG>"
+        )
+    else ()
+        set_target_properties(${target} PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/examples"
+        )
+    endif ()
 endfunction()
 
 # AICore unit tests share ggml backends already copied to bin/ by the AICore target.
@@ -130,21 +296,78 @@ function(cloudviewer_set_aicore_test_runtime_layout target)
         set_target_properties(${target} PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY "${_bin_root}/aicore_tests"
         )
-        foreach(_cfg IN ITEMS Debug Release RelWithDebInfo)
-            string(TOUPPER "${_cfg}" _cfg_upper)
-            set_tests_properties(${target} PROPERTIES
-                "ENVIRONMENT_${_cfg_upper}"
-                    "PATH=${_bin_root}/${_cfg};$ENV{PATH}"
-            )
-        endforeach()
+        # Manual benchmarks (bench_rfdetr_perf, bench_sam3_backend_acceptance,
+        # cmp_sam3_vit_stages) are plain executables without add_test();
+        # set_tests_properties on a name that is not a registered test is a
+        # fatal configure error, so guard the ctest-only ENVIRONMENT_<CONFIG>
+        # properties with if(TEST).
+        if(TEST ${target})
+            # Escape the inherited Windows PATH exactly like
+            # cloudviewer_set_plugin_test_env above; a raw $ENV{PATH} would
+            # split the property list and drop every directory after the
+            # first fragment.
+            string(REPLACE ";" "\\;" _cv_inherited_path "$ENV{PATH}")
+            foreach(_cfg IN ITEMS Debug Release RelWithDebInfo)
+                string(TOUPPER "${_cfg}" _cfg_upper)
+                set_tests_properties(${target} PROPERTIES
+                    "ENVIRONMENT_${_cfg_upper}"
+                        "PATH=${_bin_root}/${_cfg}\;${_cv_inherited_path}"
+                )
+            endforeach()
+        endif()
     else()
         set_target_properties(${target} PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/aicore_tests"
         )
         if(APPLE)
             set(_rpath "@loader_path/..")
+            # Test binaries inherit Qt through AICore's PUBLIC Qt link. Qt
+            # dylibs use @rpath install names, so dyld also needs Qt's lib
+            # directory on the search path (BUILD_WITH_INSTALL_RPATH skips
+            # CMake's automatic rpath computation). $<TARGET_FILE_DIR:...>
+            # resolves Qt's IMPORTED_LOCATION(_<CONFIG>) whichever form the
+            # Qt package ships (plain LOCATION is NOTFOUND for config-only
+            # imports, e.g. conda-forge Qt5).  The versioned targets
+            # (Qt5::Gui/Qt6::Gui) are the real shared libraries and must be
+            # checked first: conda-forge Qt5 defines Qt::Gui as an INTERFACE
+            # aggregate target with no file location, which TARGET_FILE_DIR
+            # rejects.  The unversioned Qt::Gui fallback is only usable when
+            # it resolves to a real library via ALIASED_TARGET.
+            if(TARGET Qt5::Gui)
+                list(APPEND _rpath "$<TARGET_FILE_DIR:Qt5::Gui>")
+            elseif(TARGET Qt6::Gui)
+                list(APPEND _rpath "$<TARGET_FILE_DIR:Qt6::Gui>")
+            elseif(TARGET Qt::Gui)
+                get_target_property(_qt_gui_alias Qt::Gui ALIASED_TARGET)
+                if(_qt_gui_alias)
+                    list(APPEND _rpath "$<TARGET_FILE_DIR:${_qt_gui_alias}>")
+                endif()
+            endif()
         else()
             set(_rpath "\$ORIGIN/..")
+            # Build-tree-only addition (batch C test-layout fix): the vendored
+            # opencv (libopencv_world.so.<abi>) lives under external/lib and is
+            # a transitive dependency of libAICore; without it, link-time and
+            # run-time resolution fail once tests moved out of bin/.
+            list(APPEND _rpath "${CMAKE_BINARY_DIR}/external/lib")
+            set_target_properties(${target} PROPERTIES
+                BUILD_RPATH "${_rpath}"
+                INSTALL_RPATH "\$ORIGIN/.."
+            )
+            # DT_RPATH (not RUNPATH) so the executable's search list also
+            # covers indirect dependencies such as libAICore's opencv.
+            if (NOT MSVC)
+                target_link_options(${target} PRIVATE "-Wl,--disable-new-dtags")
+            endif ()
+            # Systems with a second system-wide Qt (different 5.x minor) must
+            # load the Qt that AICore was built against: prepend the resolved
+            # Qt lib dir for ctest runs (batch C test-layout fix).
+            cloudviewer_resolve_qt_lib_dir(_qt_dir_for_env)
+            if (TEST ${target})
+                set_tests_properties(${target} PROPERTIES
+                        ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/bin:${_qt_dir_for_env}:${CMAKE_BINARY_DIR}/external/lib:$ENV{LD_LIBRARY_PATH}")
+            endif ()
+            return()
         endif()
         set_target_properties(${target} PROPERTIES
             BUILD_RPATH "${_rpath}"

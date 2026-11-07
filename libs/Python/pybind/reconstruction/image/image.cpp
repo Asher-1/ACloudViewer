@@ -9,6 +9,7 @@
 
 #include "pipelines/image.h"
 #include "pybind/docstring.h"
+#include "pybind/reconstruction/hash_container_casters.h"
 #include "pybind/reconstruction/reconstruction_options.h"
 
 namespace cloudViewer {
@@ -111,7 +112,8 @@ void pybind_image_methods(py::module &m) {
           py::call_guard<py::gil_scoped_release>(),
           "Function for the registeration of images", "database_path"_a,
           "input_path"_a, "output_path"_a,
-          "incremental_mapper_options"_a = colmap::IncrementalMapperOptions());
+          "incremental_mapper_options"_a =
+                  colmap::IncrementalPipelineOptions());
     docstring::FunctionDocInject(m, "register_image",
                                  map_shared_argument_docstrings);
 

@@ -393,7 +393,7 @@ void Cloth::handle_slop_connected(const std::vector<int>& edgePoints,
     while (!que.empty()) {
         int index = que.front();
         que.pop();
-        // ÅÐ¶ÏÖÜ±ßµãÊÇ·ñÐèÒª´¦Àí
+        // Decide whether boundary points need processing.
         int index_center =
                 connected[index].y * num_particles_width + connected[index].x;
         for (size_t i = 0; i < neibors[index].size(); i++) {

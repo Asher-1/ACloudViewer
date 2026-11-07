@@ -18,6 +18,8 @@
 #include <cstring>
 #include <vector>
 
+#include "ecvAICoreRuntimeHelpers.h"
+
 #ifdef AICore_ENABLED
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -43,6 +45,13 @@ LightGlueWorker::LightGlueWorker(const Settings& settings, QObject* parent)
 }
 
 LightGlueWorker::~LightGlueWorker() {
+    // onTaskFinished deleteLater()s the worker from a queued slot while
+    // run() may still be returning; ~QThread aborts on a running thread
+    // and the token/context below must outlive every run() access.
+    if (isRunning()) {
+        requestTaskCancel();
+        wait();
+    }
 #ifdef AICore_ENABLED
     aicore_cancel_token_free(m_cancelToken);
 #endif
@@ -57,10 +66,7 @@ void LightGlueWorker::requestTaskCancel() {
 
 void LightGlueWorker::releaseContextOnMainThread() {
 #ifdef AICore_ENABLED
-    if (m_pendingCtx) {
-        aicore_lightglue_free(m_pendingCtx);
-        m_pendingCtx = nullptr;
-    }
+    ecvAICoreRuntime::releasePending(m_pendingCtx, &aicore_lightglue_free);
 #endif
 }
 
@@ -68,7 +74,7 @@ void LightGlueWorker::releaseContextOnMainThread() {
 
 namespace {
 
-QString resolvedDeviceFromInfoJson(char* info, void (*freeFn)(char*)) {
+QString resolvedDeviceFromInfoJson(char* info, void (*freeFn)(void*)) {
     if (!info) return {};
     const QJsonObject obj = QJsonDocument::fromJson(QByteArray(info)).object();
     freeFn(info);
@@ -116,51 +122,6 @@ QString canonicalDeviceFromResolved(const QString& resolved,
         return QStringLiteral("opencl");
     if (lower.contains(QStringLiteral("cpu"))) return QStringLiteral("cpu");
     return fallback;
-}
-
-bool extract_feature_pair(const LightGlueWorker::Settings& settings,
-                          lightglue_plugin::OwnedFeatures* f0,
-                          lightglue_plugin::OwnedFeatures* f1,
-                          QString* log) {
-    if (settings.inputPaths.size() != 2) {
-        return false;
-    }
-    const QString p0 = settings.inputPaths[0];
-    const QString p1 = settings.inputPaths[1];
-    std::string err;
-
-    if (settings.matcherType != 1) {
-        const QString extractor =
-                resolve_aliked_extractor_gguf(settings.modelPath);
-        if (log) {
-            *log = QStringLiteral("[LG] ALIKED extractor: %1").arg(extractor);
-        }
-        if (!lightglue_plugin::extract_aliked_ggml(
-                    p0, extractor, settings.device, settings.maxKeypoints,
-                    settings.maxResize, settings.threads, f0, &err)) {
-            if (log) *log = QString::fromStdString(err);
-            return false;
-        }
-        if (!lightglue_plugin::extract_aliked_ggml(
-                    p1, extractor, settings.device, settings.maxKeypoints,
-                    settings.maxResize, settings.threads, f1, &err)) {
-            if (log) *log = QString::fromStdString(err);
-            return false;
-        }
-        return true;
-    }
-
-    if (!lightglue_plugin::extract_sift_opencv(p0, settings.maxKeypoints,
-                                               settings.maxResize, f0, &err)) {
-        if (log) *log = QString::fromStdString(err);
-        return false;
-    }
-    if (!lightglue_plugin::extract_sift_opencv(p1, settings.maxKeypoints,
-                                               settings.maxResize, f1, &err)) {
-        if (log) *log = QString::fromStdString(err);
-        return false;
-    }
-    return true;
 }
 
 QVector<QPointF> keypoints_to_qt(const aicore_lightglue_features& f) {
@@ -222,6 +183,158 @@ bool load_gray_same_size(const QString& p0,
 
 }  // namespace
 
+aicore_lightglue_ctx* LightGlueWorker::loadContext(const Settings& settings,
+                                                   const QString& device,
+                                                   QString* error) {
+    aicore_lightglue_options* opts = aicore_lightglue_options_new();
+    if (!device.isEmpty()) {
+        aicore_lightglue_options_set_device(opts, device.toStdString().c_str());
+    }
+    aicore_lightglue_options_set_threads(opts, settings.threads);
+    aicore_lightglue_options_set_min_score(opts, settings.minScore);
+    aicore_lightglue_options_set_matcher_type(opts, settings.matcherType);
+    aicore_lightglue_ctx* ctx = aicore_lightglue_load_opts(
+            settings.modelPath.toStdString().c_str(), opts);
+    aicore_lightglue_options_free(opts);
+    if (!ctx) {
+        *error = QStringLiteral("Failed to allocate LightGlue context.");
+    } else if (const char* err = aicore_lightglue_last_error(ctx)) {
+        *error = QStringLiteral("Failed to load model: %1").arg(err);
+    }
+    return ctx;
+}
+
+QString LightGlueWorker::canonicalDevice(aicore_lightglue_ctx* ctx,
+                                         const QString& fallback) {
+    // The context resolves "auto" / "gpu" to a concrete backend (e.g.
+    // "CUDA0"); map it back to the canonical form ("cuda") so the ALIKED
+    // extractor — whose backend may not understand "auto" — receives an
+    // explicit device string.
+    char* info = aicore_lightglue_info_json(ctx);
+    const QString resolved =
+            resolvedDeviceFromInfoJson(info, aicore_lightglue_free_buffer);
+    return canonicalDeviceFromResolved(resolved, fallback);
+}
+
+bool LightGlueWorker::extractFeatures(const Settings& settings,
+                                      const QString& imagePath,
+                                      lightglue_plugin::OwnedFeatures* out,
+                                      QString* error) {
+    std::string err;
+    const bool ok =
+            settings.matcherType != 1
+                    ? lightglue_plugin::extract_aliked_ggml(
+                              imagePath,
+                              resolve_aliked_extractor_gguf(settings.modelPath),
+                              settings.device, settings.maxKeypoints,
+                              settings.maxResize, settings.threads, out, &err)
+                    : lightglue_plugin::extract_sift_opencv(
+                              imagePath, settings.maxKeypoints,
+                              settings.maxResize, out, &err);
+    if (!ok) *error = QString::fromStdString(err);
+    return ok;
+}
+
+bool LightGlueWorker::matchFeatures(aicore_lightglue_ctx* ctx,
+                                    aicore_lightglue_ctx** cpuFallback,
+                                    const Settings& settings,
+                                    const lightglue_plugin::OwnedFeatures& f0,
+                                    const lightglue_plugin::OwnedFeatures& f1,
+                                    LightGlueRunResult* out,
+                                    QString* log,
+                                    QString* error) {
+    QElapsedTimer timer;
+    timer.start();
+    aicore_lightglue_match* matches = nullptr;
+    int32_t n_matches = 0;
+    const int matchRet = aicore_lightglue_run_match(ctx, &f0.view, &f1.view,
+                                                    &matches, &n_matches);
+    if (aicore_cancel_requested()) {
+        if (matches) aicore_lightglue_free_matches(matches);
+        *error = QStringLiteral("Task cancelled.");
+        return false;
+    }
+    if (matchRet != 0) {
+        const char* matchErr = aicore_lightglue_last_error(ctx);
+        *error = QStringLiteral("Matching failed: %1")
+                         .arg(matchErr ? matchErr : "unknown");
+        return false;
+    }
+
+    // Robustness across machines: the ggml Vulkan backend can emit a
+    // degenerate (all-zero) assignment for the LightGlue matcher on some GPUs,
+    // collapsing every keypoint to 0 mutual matches even though CPU/CUDA
+    // produce correct matches (cpu/cuda yield ~160 matches for the same pair).
+    // This is a backend numerical-correctness quirk, NOT a model-precision
+    // issue — f16/q8/f32 all exhibit it on Vulkan. When a GPU run returns 0
+    // matches, transparently retry the matcher on CPU. Features are host-side
+    // and backend-independent, so they are reused as-is.
+    aicore_lightglue_ctx* used = ctx;
+    if (n_matches == 0 &&
+        aicore_is_gpu_device(settings.device.toUtf8().constData())) {
+        if (log) {
+            *log = QStringLiteral(
+                           "[LG] 0 matches on %1 — retrying matcher on CPU "
+                           "(ggml GPU backend workaround).")
+                           .arg(settings.device);
+        }
+        if (matches) aicore_lightglue_free_matches(matches);
+        matches = nullptr;
+        if (*cpuFallback == nullptr) {
+            QString loadError;
+            *cpuFallback =
+                    loadContext(settings, QStringLiteral("cpu"), &loadError);
+            if (!loadError.isEmpty()) {
+                *error = QStringLiteral("CPU matcher fallback: %1")
+                                 .arg(loadError);
+                return false;
+            }
+        }
+        used = *cpuFallback;
+        if (aicore_lightglue_run_match(used, &f0.view, &f1.view, &matches,
+                                       &n_matches) != 0) {
+            const char* matchErr = aicore_lightglue_last_error(used);
+            *error = QStringLiteral("CPU matcher fallback failed: %1")
+                             .arg(matchErr ? matchErr : "unknown");
+            return false;
+        }
+    }
+
+    LightGlueRunResult& result = *out;
+    result.imagePath0 = settings.inputPaths.value(0);
+    result.imagePath1 = settings.inputPaths.value(1);
+    result.imageName0 =
+            result.imagePath0.startsWith("db://")
+                    ? result.imagePath0.mid(5)
+                    : QFileInfo(result.imagePath0).completeBaseName();
+    result.imageName1 =
+            result.imagePath1.startsWith("db://")
+                    ? result.imagePath1.mid(5)
+                    : QFileInfo(result.imagePath1).completeBaseName();
+    result.sourceName = result.imageName0 + "_x_" + result.imageName1;
+    {
+        char* info = aicore_lightglue_info_json(used);
+        result.resolvedDevice =
+                resolvedDeviceFromInfoJson(info, aicore_lightglue_free_buffer);
+    }
+    result.nKeypoints0 = f0.view.n_keypoints;
+    result.nKeypoints1 = f1.view.n_keypoints;
+    result.imageWidth0 = f0.view.image_width;
+    result.imageHeight0 = f0.view.image_height;
+    result.imageWidth1 = f1.view.image_width;
+    result.imageHeight1 = f1.view.image_height;
+    result.keypoints0 = keypoints_to_qt(f0.view);
+    result.keypoints1 = keypoints_to_qt(f1.view);
+    result.runtimeMs = timer.elapsed();
+    result.matches.reserve(n_matches);
+    for (int32_t i = 0; i < n_matches; ++i) {
+        result.matches.append(
+                {matches[i].idx1, matches[i].idx2, matches[i].score});
+    }
+    aicore_lightglue_free_matches(matches);
+    return true;
+}
+
 bool LightGlueWorker::runModelInfo() {
     aicore_inference_log::log_device_request(QStringLiteral("LG"),
                                              m_settings.device);
@@ -251,7 +364,7 @@ bool LightGlueWorker::runModelInfo() {
     {
         char* info = aicore_lightglue_info_json(ctx);
         const QString resolved =
-                resolvedDeviceFromInfoJson(info, aicore_lightglue_free_string);
+                resolvedDeviceFromInfoJson(info, aicore_lightglue_free_buffer);
         aicore_inference_log::log_device_resolved(QStringLiteral("LG"),
                                                   resolved);
     }
@@ -259,7 +372,7 @@ bool LightGlueWorker::runModelInfo() {
     char* json = aicore_lightglue_info_json(ctx);
     if (json) {
         emit modelInfoReady(QString::fromUtf8(json));
-        aicore_lightglue_free_string(json);
+        aicore_lightglue_free_buffer(json);
     }
     m_pendingCtx = ctx;
     emit progressUpdate(100, 100);
@@ -280,64 +393,41 @@ bool LightGlueWorker::runMatch() {
                                              m_settings.device);
     emit logMessage("[LG] Loading model: " + m_settings.modelPath);
 
-    aicore_lightglue_options* opts = aicore_lightglue_options_new();
-    if (!m_settings.device.isEmpty()) {
-        aicore_lightglue_options_set_device(
-                opts, m_settings.device.toStdString().c_str());
-    }
-    aicore_lightglue_options_set_threads(opts, m_settings.threads);
-    aicore_lightglue_options_set_min_score(opts, m_settings.minScore);
-    aicore_lightglue_options_set_matcher_type(opts, m_settings.matcherType);
-
-    aicore_lightglue_ctx* ctx = aicore_lightglue_load_opts(
-            m_settings.modelPath.toStdString().c_str(), opts);
-    aicore_lightglue_options_free(opts);
-    if (!ctx) {
-        emit logMessage("[Error] Failed to allocate LightGlue context.");
-        return false;
-    }
-    if (const char* err = aicore_lightglue_last_error(ctx)) {
-        emit logMessage(QString("[Error] Failed to load model: %1").arg(err));
+    QString error;
+    aicore_lightglue_ctx* ctx =
+            loadContext(m_settings, m_settings.device, &error);
+    if (!error.isEmpty()) {
+        emit logMessage(QStringLiteral("[Error] %1").arg(error));
         m_pendingCtx = ctx;
         return false;
     }
     {
         char* info = aicore_lightglue_info_json(ctx);
         const QString resolved =
-                resolvedDeviceFromInfoJson(info, aicore_lightglue_free_string);
+                resolvedDeviceFromInfoJson(info, aicore_lightglue_free_buffer);
         aicore_inference_log::log_device_resolved(QStringLiteral("LG"),
                                                   resolved);
     }
 
     emit progressUpdate(20, 100);
-
-    // Resolve the device for ALIKED feature extraction from the already-
-    // loaded LightGlue context.  The context resolves "auto" / "gpu" to a
-    // concrete backend (e.g. "CUDA0"); we map that back to the canonical
-    // form ("cuda") so the ALIKED extractor — whose backend may not
-    // understand "auto" — receives an explicit device string.
-    {
-        char* info = aicore_lightglue_info_json(ctx);
-        const QString resolved =
-                resolvedDeviceFromInfoJson(info, aicore_lightglue_free_string);
-        m_settings.device =
-                canonicalDeviceFromResolved(resolved, m_settings.device);
-    }
+    m_settings.device = canonicalDevice(ctx, m_settings.device);
 
     emit logMessage("[LG] Extracting features (device=" + m_settings.device +
                     QStringLiteral(")..."));
+    if (m_settings.matcherType != 1) {
+        emit logMessage(QStringLiteral("[LG] ALIKED extractor: %1")
+                                .arg(resolve_aliked_extractor_gguf(
+                                        m_settings.modelPath)));
+    }
 
     lightglue_plugin::OwnedFeatures f0;
     lightglue_plugin::OwnedFeatures f1;
-    QString extractLog;
-    if (!extract_feature_pair(m_settings, &f0, &f1, &extractLog)) {
-        emit logMessage(QString("[Error] Feature extraction failed: %1")
-                                .arg(extractLog));
+    if (!extractFeatures(m_settings, m_settings.inputPaths[0], &f0, &error) ||
+        !extractFeatures(m_settings, m_settings.inputPaths[1], &f1, &error)) {
+        emit logMessage(
+                QString("[Error] Feature extraction failed: %1").arg(error));
         m_pendingCtx = ctx;
         return false;
-    }
-    if (!extractLog.isEmpty()) {
-        emit logMessage(extractLog);
     }
 
     emit progressUpdate(45, 100);
@@ -345,115 +435,31 @@ bool LightGlueWorker::runMatch() {
                             .arg(f0.view.n_keypoints)
                             .arg(f1.view.n_keypoints));
 
-    aicore_lightglue_match* matches = nullptr;
-    int32_t n_matches = 0;
-    const int matchRet = aicore_lightglue_run_match(ctx, &f0.view, &f1.view,
-                                                    &matches, &n_matches);
-    emit progressUpdate(94, 100);
-    if (isInterruptionRequested() || aicore_cancel_requested()) {
-        if (matches) aicore_lightglue_free_matches(matches);
-        m_pendingCtx = ctx;
-        emit logMessage("[LG] Task cancelled.");
-        return false;
-    }
-    if (matchRet != 0) {
-        const char* matchErr = aicore_lightglue_last_error(ctx);
-        emit logMessage(QString("[Error] Matching failed: %1")
-                                .arg(matchErr ? matchErr : "unknown"));
-        m_pendingCtx = ctx;
-        return false;
-    }
-
-    // Robustness across machines: the ggml Vulkan backend can emit a
-    // degenerate (all-zero) assignment for the LightGlue matcher on some GPUs,
-    // collapsing every keypoint to 0 mutual matches even though CPU/CUDA
-    // produce correct matches (cpu/cuda yield ~160 matches for the same pair).
-    // This is a backend numerical-correctness quirk, NOT a model-precision
-    // issue — f16/q8/f32 all exhibit it on Vulkan. When a GPU run returns 0
-    // matches, transparently retry the matcher on CPU. Features are host-side
-    // and backend-independent, so they are reused as-is.
-    if (matchRet == 0 && n_matches == 0 &&
-        aicore_is_gpu_device(m_settings.device.toUtf8().constData())) {
-        emit logMessage(
-                QStringLiteral("[LG] 0 matches on %1 — retrying matcher on CPU "
-                               "(ggml GPU backend workaround).")
-                        .arg(m_settings.device));
-        if (matches) aicore_lightglue_free_matches(matches);
-        matches = nullptr;
-        aicore_lightglue_free(ctx);
-        ctx = nullptr;
-
-        aicore_lightglue_options* cpuOpts = aicore_lightglue_options_new();
-        aicore_lightglue_options_set_device(cpuOpts, "cpu");
-        aicore_lightglue_options_set_threads(cpuOpts, m_settings.threads);
-        aicore_lightglue_options_set_min_score(cpuOpts, m_settings.minScore);
-        aicore_lightglue_options_set_matcher_type(cpuOpts,
-                                                  m_settings.matcherType);
-        ctx = aicore_lightglue_load_opts(
-                m_settings.modelPath.toStdString().c_str(), cpuOpts);
-        aicore_lightglue_options_free(cpuOpts);
-        if (!ctx) {
-            emit logMessage("[Error] CPU matcher fallback failed to load.");
-            m_pendingCtx = nullptr;
-            return false;
-        }
-        if (const char* err = aicore_lightglue_last_error(ctx)) {
-            emit logMessage(
-                    QString("[Error] CPU matcher fallback: %1").arg(err));
-            m_pendingCtx = ctx;
-            return false;
-        }
-        const int cpuRet = aicore_lightglue_run_match(ctx, &f0.view, &f1.view,
-                                                      &matches, &n_matches);
-        emit progressUpdate(94, 100);
-        if (cpuRet != 0) {
-            const char* matchErr = aicore_lightglue_last_error(ctx);
-            emit logMessage(QString("[Error] CPU matcher fallback failed: %1")
-                                    .arg(matchErr ? matchErr : "unknown"));
-            m_pendingCtx = ctx;
-            return false;
-        }
-    }
-
     LightGlueRunResult result;
-    result.imagePath0 = m_settings.inputPaths[0];
-    result.imagePath1 = m_settings.inputPaths[1];
-    result.imageName0 =
-            result.imagePath0.startsWith("db://")
-                    ? result.imagePath0.mid(5)
-                    : QFileInfo(result.imagePath0).completeBaseName();
-    result.imageName1 =
-            result.imagePath1.startsWith("db://")
-                    ? result.imagePath1.mid(5)
-                    : QFileInfo(result.imagePath1).completeBaseName();
-    result.sourceName = result.imageName0 + "_x_" + result.imageName1;
-    {
-        char* info = aicore_lightglue_info_json(ctx);
-        result.resolvedDevice =
-                resolvedDeviceFromInfoJson(info, aicore_lightglue_free_string);
+    aicore_lightglue_ctx* cpuCtx = nullptr;
+    QString matchLog;
+    const bool matched = matchFeatures(ctx, &cpuCtx, m_settings, f0, f1,
+                                       &result, &matchLog, &error);
+    emit progressUpdate(94, 100);
+    if (!matchLog.isEmpty()) emit logMessage(matchLog);
+    if (cpuCtx) {
+        // The CPU fallback replaces the GPU matcher (same as before the
+        // per-step split): keep a single pending context for teardown.
+        aicore_lightglue_free(ctx);
+        ctx = cpuCtx;
     }
-    result.nKeypoints0 = f0.view.n_keypoints;
-    result.nKeypoints1 = f1.view.n_keypoints;
-    result.imageWidth0 = f0.view.image_width;
-    result.imageHeight0 = f0.view.image_height;
-    result.imageWidth1 = f1.view.image_width;
-    result.imageHeight1 = f1.view.image_height;
-    result.keypoints0 = keypoints_to_qt(f0.view);
-    result.keypoints1 = keypoints_to_qt(f1.view);
-    result.runtimeMs = timer.elapsed();
-    result.matches.reserve(n_matches);
-    for (int32_t i = 0; i < n_matches; ++i) {
-        result.matches.append(
-                {matches[i].idx1, matches[i].idx2, matches[i].score});
-    }
-
-    aicore_lightglue_free_matches(matches);
     m_pendingCtx = ctx;
+    if (!matched || isInterruptionRequested()) {
+        emit logMessage(matched ? QStringLiteral("[LG] Task cancelled.")
+                                : QStringLiteral("[Error] %1").arg(error));
+        return false;
+    }
+    result.runtimeMs = timer.elapsed();
 
     emit progressUpdate(100, 100);
     aicore_inference_log::log_inference_done(
             QStringLiteral("LG"), result.resolvedDevice, result.runtimeMs,
-            QStringLiteral("%1 mutual matches").arg(n_matches));
+            QStringLiteral("%1 mutual matches").arg(result.matches.size()));
     emit resultReady(result);
     return true;
 }

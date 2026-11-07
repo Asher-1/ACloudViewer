@@ -1,0 +1,173 @@
+diff --git a/src/ggml-vulkan/ggml-vulkan-types.h b/src/ggml-vulkan/ggml-vulkan-types.h
+--- a/src/ggml-vulkan/ggml-vulkan-types.h
++++ b/src/ggml-vulkan/ggml-vulkan-types.h
+@@ -1003,6 +1003,7 @@
+     std::map<vk_conv3d_pipeline_state, vk_pipeline> pipeline_conv3d_f16_f32[CONV_SHAPE_COUNT];
+     vk_pipeline pipeline_conv2d_dw_whcn_f32, pipeline_conv2d_dw_whcn_f16_f32, pipeline_conv2d_dw_whcn_f16;
+     vk_pipeline pipeline_conv2d_dw_cwhn_f32, pipeline_conv2d_dw_cwhn_f16_f32, pipeline_conv2d_dw_cwhn_f16;
++    vk_pipeline pipeline_conv2d_dw7_cwhn_f32, pipeline_conv2d_dw7_cwhn_f16_f32;
+     // fast-path helpers for CONV_TRANSPOSE_2D with 2x2 kernel + stride 2
+     vk_pipeline pipeline_conv_transpose_2d_reorder_f32, pipeline_conv_transpose_2d_reorder_f16;
+     vk_pipeline pipeline_conv_transpose_2d_interleave_f32;
+diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
+--- a/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -294,6 +294,24 @@
+     return tensor_offset - descriptor_offset;
+ }
+ 
++static constexpr uint32_t VK_CONV2D_DW7_TILE_X = 7;
++
++static bool ggml_vk_conv2d_dw7_eligible(const ggml_backend_vk_context * ctx, const ggml_tensor * dst) {
++    const ggml_tensor * knl = dst->src[0];
++    const ggml_tensor * src = dst->src[1];
++    const int32_t * params = dst->op_params;
++    return dst->type == GGML_TYPE_F32 && src->type == GGML_TYPE_F32 &&
++           (knl->type == GGML_TYPE_F32 || knl->type == GGML_TYPE_F16) &&
++           ggml_is_contiguous_channels(src) && ggml_is_contiguous_channels(dst) &&
++           knl->ne[0] == 7 && knl->ne[1] == 7 &&
++           params[0] == 1 && params[1] == 1 && params[4] == 1 && params[5] == 1 && dst->ne[2] % 4 == 0 &&
++           ggml_vk_tensor_buffer_offset(ctx, src) % 16 == 0 && ggml_vk_tensor_buffer_offset(ctx, dst) % 16 == 0;
++}
++
++static uint32_t ggml_vk_conv2d_dw7_invocations(const ggml_tensor * dst) {
++    return (uint32_t) (dst->ne[3] * dst->ne[1] * CEIL_DIV(dst->ne[0], VK_CONV2D_DW7_TILE_X) * (dst->ne[2] / 4));
++}
++
+ uint32_t ggml_vk_concat_unit_size(const ggml_tensor * src0, const ggml_tensor * src1, const ggml_tensor * dst) {
+     const uint32_t type_size  = ggml_type_size(dst->type);
+     const uint32_t block_size = ggml_blck_size(dst->type);
+@@ -4107,5 +4125,7 @@
+     ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw_whcn_f16, "conv2d_dw_whcn_f16", conv2d_dw_whcn_f16_len, conv2d_dw_whcn_f16_data, "main", 4, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw_cwhn_f16, "conv2d_dw_cwhn_f16", conv2d_dw_cwhn_f16_len, conv2d_dw_cwhn_f16_data, "main", 4, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw7_cwhn_f32, "conv2d_dw7_cwhn_f32", conv2d_dw7_cwhn_f32_len, conv2d_dw7_cwhn_f32_data, "main", 4, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw7_cwhn_f16_f32, "conv2d_dw7_cwhn_f16_f32", conv2d_dw7_cwhn_f16_f32_len, conv2d_dw7_cwhn_f16_f32_data, "main", 4, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
+ 
+     for (uint32_t use_push = 0; use_push < 2; ++use_push) {
+         for (uint32_t i = 0; i < num_topk_moe_pipelines; ++i) {
+@@ -9648,5 +9668,9 @@
+         return nullptr;
+     case GGML_OP_CONV_2D_DW:
++        if (ggml_vk_conv2d_dw7_eligible(ctx, dst)) {
++            return src0->type == GGML_TYPE_F16 ? ctx->device->pipeline_conv2d_dw7_cwhn_f16_f32
++                                             : ctx->device->pipeline_conv2d_dw7_cwhn_f32;
++        }
+         if (src0->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32) {
+             if (ggml_is_contiguous(src1)) {
+                 return ctx->device->pipeline_conv2d_dw_whcn_f32;
+@@ -10034,6 +10058,9 @@
+             if (op == GGML_OP_CPY && !ggml_is_quantized(src0->type) && ggml_is_quantized(dst->type)) {
+                 ne = CEIL_DIV(ne, ggml_blck_size(dst->type));
+             }
++            if (op == GGML_OP_CONV_2D_DW && ggml_vk_conv2d_dw7_eligible(ctx, dst)) {
++                ne = ggml_vk_conv2d_dw7_invocations(dst);
++            }
+             if (ne > 262144) {
+                 elements = { 512, 512, CEIL_DIV(ne, 262144) };
+             } else if (ne > 512) {
+diff --git a/src/ggml-vulkan/vulkan-shaders/conv2d_dw.comp b/src/ggml-vulkan/vulkan-shaders/conv2d_dw.comp
+--- a/src/ggml-vulkan/vulkan-shaders/conv2d_dw.comp
++++ b/src/ggml-vulkan/vulkan-shaders/conv2d_dw.comp
+@@ -1,5 +1,7 @@
+ #version 450
+ 
++#extension GL_EXT_control_flow_attributes : enable
++
+ #include "types.glsl"
+ 
+ layout (push_constant) uniform parameter
+@@ -28,6 +30,11 @@
+ layout (binding = 2) writeonly buffer D {D_TYPE dst_data[];};
+ layout (binding = 3) readonly buffer C {float bias_data[];};
+ 
++#ifdef DW7
++layout (binding = 1) readonly buffer B4 {vec4 src_data4[];};
++layout (binding = 2) writeonly buffer D4 {vec4 dst_data4[];};
++#endif
++
+ layout(local_size_x = 512, local_size_y = 1, local_size_z = 1) in;
+ 
+ FLOAT_TYPE conv_2d_dw_whcn(uint idx) {
+@@ -117,8 +124,64 @@
+ }
+ #endif
+ 
++#ifdef DW7
++#define DW7_TILE_X 7
++uint conv_2d_dw7_invocations() {
++    return p.batches * p.dst_h * ((p.dst_w + DW7_TILE_X - 1) / DW7_TILE_X) * (p.channels / 4);
++}
++
++void conv_2d_dw7_cwhn(uint idx) {
++    const uint channels4 = p.channels / 4;
++    const uint tiles_x = (p.dst_w + DW7_TILE_X - 1) / DW7_TILE_X;
++    const uint c4 = idx % channels4;
++    uint rest = idx / channels4;
++    const uint tile = rest % tiles_x;
++    rest /= tiles_x;
++    const uint dst_y = rest % p.dst_h;
++    const uint n = rest / p.dst_h;
++    const uint dst_x = tile * DW7_TILE_X;
++    const uint c = c4 * 4;
++    vec4 acc[DW7_TILE_X];
++    [[unroll]] for (uint j = 0; j < DW7_TILE_X; ++j) acc[j] = vec4(0);
++    const uint src_i = n * p.src_h * p.src_w * channels4 + c4;
++    [[unroll]] for (uint ky = 0; ky < 7; ++ky) {
++        const uint src_y = dst_y + ky - p.pad_y;
++        if (src_y >= p.src_h) continue;
++        vec4 k[7];
++        [[unroll]] for (uint kx = 0; kx < 7; ++kx) {
++            const uint ki = p.a_offset + (ky * 7 + kx) * p.channels + c;
++            k[kx] = vec4(FLOAT_TYPE(knl_data[ki]), FLOAT_TYPE(knl_data[ki + 1]),
++                         FLOAT_TYPE(knl_data[ki + 2]), FLOAT_TYPE(knl_data[ki + 3]));
++        }
++        const uint row = p.b_offset / 4 + src_i + src_y * p.src_w * channels4;
++        [[unroll]] for (uint i = 0; i < DW7_TILE_X + 6; ++i) {
++            const uint src_x = dst_x + i - p.pad_x;
++            if (src_x >= p.src_w) continue;
++            const vec4 v = src_data4[row + src_x * channels4];
++            [[unroll]] for (uint j = 0; j < DW7_TILE_X; ++j) {
++                const int kx = int(i) - int(j);
++                if (kx >= 0 && kx < 7) acc[j] = fma(v, k[kx], acc[j]);
++            }
++        }
++    }
++    const uint bi = p.c_offset + c;
++    const vec4 b = p.has_bias != 0 ? vec4(bias_data[bi], bias_data[bi + 1], bias_data[bi + 2], bias_data[bi + 3]) : vec4(0);
++    const uint dst_i = p.d_offset / 4 + (n * p.dst_h + dst_y) * p.dst_w * channels4 + c4;
++    [[unroll]] for (uint j = 0; j < DW7_TILE_X; ++j) {
++        if (dst_x + j < p.dst_w) {
++            precise vec4 rounded = acc[j];
++            precise vec4 result = p.has_bias != 0 ? rounded + b : rounded;
++            dst_data4[dst_i + (dst_x + j) * channels4] = result;
++        }
++    }
++}
++#endif
++
+ void main() {
+     uint idx = gl_GlobalInvocationID.z * 262144 + gl_GlobalInvocationID.y * 512 + gl_GlobalInvocationID.x;
++#ifdef DW7
++    if (idx < conv_2d_dw7_invocations()) conv_2d_dw7_cwhn(idx);
++#else
+     if (idx >= p.ne) {
+         return;
+     }
+@@ -142,5 +205,6 @@
+ #endif
+     precise FLOAT_TYPE final_value = p.has_bias != 0 ? rounded + FLOAT_TYPE(bias_data[p.c_offset + c]) : rounded;
+     dst_data[p.d_offset + idx] = D_TYPE(final_value);
++#endif
+ }
+ 
+diff --git a/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp b/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+--- a/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
++++ b/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+@@ -1262,5 +1262,7 @@
+     string_to_spv("conv2d_dw_whcn_f16", "conv2d_dw.comp", merge_maps(base_dict, {{"A_TYPE", "float16_t"}, {"B_TYPE", "float16_t"}, {"D_TYPE", "float16_t"}, {"DW_F16", "1"}, {"WHCN", "1"}}));
+     string_to_spv("conv2d_dw_cwhn_f16", "conv2d_dw.comp", merge_maps(base_dict, {{"A_TYPE", "float16_t"}, {"B_TYPE", "float16_t"}, {"D_TYPE", "float16_t"}, {"DW_F16", "1"}, {"CWHN", "1"}}));
++    string_to_spv("conv2d_dw7_cwhn_f32", "conv2d_dw.comp", merge_maps(base_dict, {{"A_TYPE", "float"}, {"B_TYPE", "float"}, {"D_TYPE", "float"}, {"CWHN", "1"}, {"DW7", "1"}}));
++    string_to_spv("conv2d_dw7_cwhn_f16_f32", "conv2d_dw.comp", merge_maps(base_dict, {{"A_TYPE", "float16_t"}, {"B_TYPE", "float"}, {"D_TYPE", "float"}, {"CWHN", "1"}, {"DW7", "1"}}));
+ 
+     string_to_spv("roll_f32", "roll.comp", merge_maps(base_dict, {{"A_TYPE", "float"}, {"D_TYPE", "float"}}));
+ 

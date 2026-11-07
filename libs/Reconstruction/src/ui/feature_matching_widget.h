@@ -10,8 +10,7 @@
 #include <QtCore>
 #include <QtWidgets>
 
-#include "util/misc.h"
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
 
 namespace colmap {
 
