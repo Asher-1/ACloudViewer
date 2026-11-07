@@ -1,6 +1,7 @@
 {
   "type": "Standard",
   "core": true,
+  "group": "aicore",
   "name": "Recognize Anything (RAM++)",
   "icon": ":/CC/plugin/qRAM/images/qRAM.svg",
   "description": "RAM / RAM++ image tagging and Tag2Text captioning through AICore, with image batches, camera/video, reusable model caches and exports.",

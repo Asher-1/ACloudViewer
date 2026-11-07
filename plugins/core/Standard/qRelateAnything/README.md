@@ -79,6 +79,18 @@ pacing: frames are consumer-driven, so every delivered frame is inferred
 Kalman box filter has zero position/velocity cross terms, so its velocity never
 moves; the port reproduces that as written.
 
+## Demo
+
+### Image mode — `horse.jpg`
+
+![RelateAnything image demo](images/relate_anything_test.jpg)
+*Default `relsgg-vits16plus-q8_0` model on the built-in `horse.jpg` sample. The Results table lists 8 detected objects and 6 subject–predicate–object relations (e.g. person → riding → horse at 0.78, person → wearing → watch at 0.62). The annotated preview shows instance masks and calibrated relation arrows.*
+
+### Video mode — barrel racing
+
+![RelateAnything video demo](images/relate_anything_video_test.jpg)
+*Video / camera tab processing the sample barrel-racing clip (`r3c_adoption_54729571599.webm`). Detected objects (person, helmet, horse, barrel) are linked by temporal-stabilised relations: riding 0.76, pedaling 0.47, hitting 0.42, beside 0.41.*
+
 ## Build
 
 ```bash

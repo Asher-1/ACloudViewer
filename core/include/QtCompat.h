@@ -1514,3 +1514,26 @@ inline void qtCompatSetHeadingLevel(QTextBlockFormat& format, int level) {
     format.setProperty(QTextFormat::UserProperty + 1, level);
 #endif
 }
+
+// ----------------------------------------------------------------------------
+// QLabel::pixmap() Compatibility
+// ----------------------------------------------------------------------------
+// Qt5: QLabel::pixmap() returns const QPixmap* (nullptr when no pixmap set)
+// Qt6: QLabel::pixmap(Qt::ReturnByValue) returns QPixmap by value
+//        (isNull() == true when no pixmap set)
+//
+// qtCompatLabelPixmap() always returns QPixmap by value on every Qt version.
+// ----------------------------------------------------------------------------
+
+#include <QLabel>
+#include <QPixmap>
+
+inline QPixmap qtCompatLabelPixmap(const QLabel* label) {
+    if (!label) return QPixmap();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    return label->pixmap(Qt::ReturnByValue);
+#else
+    const QPixmap* pm = label->pixmap();
+    return pm ? *pm : QPixmap();
+#endif
+}

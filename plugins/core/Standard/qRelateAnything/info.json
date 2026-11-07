@@ -1,7 +1,8 @@
 {
   "type": "Standard",
   "core": true,
-  "name": "RelateAnything",
+  "group": "aicore",
+  "name": "RelateAnything Scene Relations",
   "icon": ":/CC/plugin/qRelateAnything/images/qRelateAnything.svg",
   "description": "Scene relations for images, batches, videos and cameras through AICore.",
   "authors": [

@@ -23,6 +23,9 @@ qRAM::qRAM(QObject* parent)
     : QObject(parent), ccStdPluginInterface(":/CC/plugin/qRAM/info.json") {
     m_action = new QAction(QIcon(":/CC/plugin/qRAM/images/qRAM.svg"),
                            tr("Recognize Anything (RAM++)"), this);
+    m_action->setToolTip(
+            tr("RAM / RAM++ image tagging and Tag2Text captioning — "
+               "open-vocabulary recognition via native GGML inference"));
     connect(m_action, &QAction::triggered, this, &qRAM::showDialog);
     connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this,
             [this]() {

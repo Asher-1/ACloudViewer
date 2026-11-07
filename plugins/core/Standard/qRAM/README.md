@@ -76,6 +76,11 @@ Models and samples share `CLOUDVIEWER_DATA_ROOT`, defaulting to
 `extract/`. A missing or corrupt demo is repaired from a verified cached ZIP
 before requesting a download.
 
+## Demo
+
+![qRAM Tag2Text demo](images/ram_test.jpg)
+*Tag2Text F16 on the official `demo1.jpg` sample. The dialog shows the generated caption ("a white dog sitting on a green couch in a living room with a small table and plants") and the top-10 tag table with probabilities and thresholds. The DB tree on the left stores the annotated result image with full RAM metadata (model, device, tags, caption).*
+
 ## Published models
 
 The combo box and `aicore_tagging_model_at()` are backed by the complete

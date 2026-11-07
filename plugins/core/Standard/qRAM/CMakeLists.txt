@@ -5,8 +5,10 @@ option( PLUGIN_STANDARD_QRAM "Install Recognize Anything (RAM/RAM++/Tag2Text) pl
 if( PLUGIN_STANDARD_QRAM )
     project( QRAM_PLUGIN )
 
+    # AICore is required — skip plugin entirely if unavailable
     if(NOT TARGET AICore)
-        message(WARNING "qRAM needs AICore_ENABLED")
+        message(WARNING "qRAM: AICore target not available — skipping plugin. "
+                        "Enable AICore_ENABLED and re-run CMake.")
         return()
     endif()
 
@@ -40,7 +42,11 @@ if( PLUGIN_STANDARD_QRAM )
         target_link_libraries( ${PROJECT_NAME} video_base )
     endif()
 
-    if( BUILD_UNIT_TESTS OR AICore_BUILD_TESTS )
-        add_subdirectory( tests )
+    if(MSVC)
+        target_compile_definitions(${PROJECT_NAME} PRIVATE _USE_MATH_DEFINES)
+    endif()
+
+    if(BUILD_UNIT_TESTS OR AICore_BUILD_TESTS)
+        add_subdirectory(tests)
     endif()
 endif()

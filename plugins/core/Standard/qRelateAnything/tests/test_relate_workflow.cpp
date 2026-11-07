@@ -34,6 +34,7 @@
 #include <memory>
 #include <stdexcept>
 
+#include "QtCompat.h"
 #include "RelateAnythingDialog.h"
 #include "RelateAnythingVideoWidget.h"
 #include "ecvClickableImageLabel.h"
@@ -580,7 +581,7 @@ int main(int argc, char** argv) {
             }
             auto previews = video->findChildren<ecvClickableImageLabel*>();
             check(!previews.isEmpty() &&
-                          !previews.front()->pixmap(Qt::ReturnByValue).isNull(),
+                          !qtCompatLabelPixmap(previews.front()).isNull(),
                   "annotated video preview");
             dialog.findChild<QPushButton*>("relateCancel")->click();
             check(wait([&] { return run->isEnabled(); }),

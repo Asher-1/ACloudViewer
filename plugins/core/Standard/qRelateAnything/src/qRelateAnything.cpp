@@ -25,7 +25,11 @@ qRelateAnything::qRelateAnything(QObject* parent)
       ccStdPluginInterface(":/CC/plugin/qRelateAnything/info.json") {
     m_action = new QAction(
             QIcon(":/CC/plugin/qRelateAnything/images/qRelateAnything.svg"),
-            tr("RelateAnything"), this);
+            tr("RelateAnything Scene Relations"), this);
+    m_action->setToolTip(
+            tr("Scene relations for images, batches, videos and cameras "
+               "— segmentation, grounding, counting and tracking via native "
+               "GGML inference"));
     connect(m_action, &QAction::triggered, this, &qRelateAnything::showDialog);
     connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this,
             [this]() {
