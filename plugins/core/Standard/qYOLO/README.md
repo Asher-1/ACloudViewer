@@ -74,6 +74,10 @@ the DB tree with full per-detection metadata.
 | ![YOLO pose keypoints](images/yolo-pose.jpg) | ![YOLO oriented boxes](images/yolo-obb.jpg) |
 | **Classification (ImageNet top-5)** | **Live (camera / video)** |
 | ![YOLO classification](images/yolo-cls.jpg) | ![YOLO live video segmentation](images/yolo-video-seg.jpg) |
+| **Tracking (multi-object, stable IDs across frames)** | **ReID (appearance embedding for track association)** |
+| ![YOLO multi-object tracking](images/yolo-track.jpg) | ![YOLO ReID appearance embedding](images/yolo-reid.jpg) |
+
+*Track assigns stable IDs across frames (all six official Ultralytics tracker modes supported). ReID encoder extracts appearance features for occlusion-aware re-association (used by deepocsort / botsort).*
 
 ### Open-vocabulary — YOLO-World (CLIP text)
 

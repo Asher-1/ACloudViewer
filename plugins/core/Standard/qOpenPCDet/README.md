@@ -14,6 +14,12 @@ wireframe ccPolyline boxes + annotated point-cloud export in the DB tree
 + CSV export
 ```
 
+## Demo
+
+![PointPillars detection on KITTI sample](images/pointpillar_test.jpg)
+
+*PointPillars (`kitti_pointpillar`, f16) on the bundled KITTI sample frame: per-class colored wireframe boxes overlaid on the source point cloud. Cars, pedestrians and cyclists are detected and labeled with confidence scores.*
+
 ## Build
 
 ```bash

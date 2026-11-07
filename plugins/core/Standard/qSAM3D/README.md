@@ -41,6 +41,12 @@ First runs load ~2-6 GB of weights from the model cache; an RTX 3060-class GPU
 completes a full 25-step run in roughly 2.5-5 minutes depending on
 quantization.
 
+## Demo
+
+![SAM 3D Objects — segmented output with prompt](images/sam3_seg_with_prompt.jpg)
+
+*Single-image 3D generation with SAM 3D Objects: the pipeline produces a Gaussian splat PLY and an optional FlexiCubes mesh from one input image. The example shows a prompted segmentation result with the 3D reconstruction overlaid.*
+
 ## Notes
 
 - The mask semantics follow the official pipeline: binary alpha (`> 0`

@@ -15,6 +15,34 @@ in `core/AICore/src/tasks/gkd/` — no Python at runtime.
 | **Multimodal** | keypoint texts **and** support image + keypoints (counts must match) | text row *i* fuses with visual row *i* (official semantics) |
 | **Multi-object** | object classes + keypoint texts (+ optional support) | YOLO-World boxes (existing `aicore_yolo_*` WORLD models) → GKD per box |
 
+## Demo gallery
+
+### Text prompt mode
+
+| Chair skeleton keypoints (10 points, scoring 0.83–0.93) | Hand X-ray skeleton (24-point `hand_xray` schema) |
+|:---:|:---:|
+| ![Text prompts — chair skeleton](images/text_prompts_with_chair_skeleton.jpg) | ![Text prompts — hand X-ray skeleton](images/text_prompts_with_hand_skeleton.jpg) |
+
+*Left: official `keypoint 1..10 of chair` demo — in-training phrases score 0.83–0.93 on all ten points. Right: hand X-ray with the 24-point `hand_xray` schema; 24/24 kept at 0.9+ where the generic "fingertip" prompt scored 0.04.*
+
+### Visual 1-shot mode
+
+![Visual 1-shot — cross-instance detection](images/visual_one_shot.jpg)
+
+*The fixed support image (2007_003778.jpg, three annotated keypoints: left eye · right eye · nose) drives detection on a rotating set of query images — cross-instance, open-world few-shot.*
+
+### Multimodal mode
+
+![Multimodal — text + visual fusion](images/multi_modal.jpg)
+
+*Text keypoints and support image keypoints are fused (counts must match): text row *i* combines with visual row *i*, following the official multimodal semantics.*
+
+### Multi-object mode
+
+![Multi-object — YOLO-World boxes → GKD per box](images/multi-objects.jpg)
+
+*Object classes + keypoint texts (+ optional support): YOLO-World detects boxes first, then GKD runs per box. The example shows the official `alpaca_150.jpg` 20-point quadruped demo.*
+
 ## Dialog layout
 
 The dialog follows the qYOLO task-page layout: a grouped mode list on the

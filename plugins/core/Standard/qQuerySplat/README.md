@@ -29,6 +29,12 @@ Everything runs locally through `libAICore` — no Python at runtime.
    the gsplat renders as images, exports the standard 3DGS PLY, and writes
    a JSON run summary.
 
+## Demo
+
+![QuerySplat Gaussian Splatting prediction](images/querysplat_test.jpg)
+
+*Feed-forward 3D Gaussian Splatting from a small set of unposed images: the VGGT-Omega encoder exports cached-layer tokens, the QuerySplat decoder turns them into 524 288 gaussians, and the built-in gsplat-semantics CPU rasterizer renders the predicted views. Optional TTO fine-tunes the decoder KV memory against the input pixels.*
+
 ## Models
 
 | File | Role | Size |

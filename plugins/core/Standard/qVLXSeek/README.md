@@ -87,6 +87,30 @@ box.
   compose in the dialog through the "External boxes (JSON file)" proposal
   source.
 
+## Demo gallery
+
+Each of the seven upstream tasks produces an annotated output on the demo images. The examples below use the bundled test data (see *Actions* → *Try sample data*).
+
+| Detection — “people riding electric bikes” | Grounding (single) — “the person in a white shirt” |
+|:---:|:---:|
+| ![VLX-Seek detection](images/detection.jpg) | ![VLX-Seek grounding single](images/grounding_single.jpg) |
+| *Enumerates every matching instance (3 riders detected).* | *Retrieves the single best region for the described target.* |
+
+| Counting — “water bottles” | Reasoning detection — “the woman wearing red clothes” |
+|:---:|:---:|
+| ![VLX-Seek counting](images/counting.jpg) | ![VLX-Seek reasoning detection](images/reasoning_detection.jpg) |
+| *Counts all visible instances of the prompted object.* | *Composes object detection with attribute reasoning.* |
+
+| Brief region caption (target index 1) | Region OCR (target index 0, PP-OCR proposals) |
+|:---:|:---:|
+| ![VLX-Seek brief region caption](images/brief_region_caption.jpg) | ![VLX-Seek region OCR](images/region_ocr.jpg) |
+| *Generates a short caption for a detector-proposal region.* | *Reads text at the target index using PP-OCR text-line proposals.* |
+
+| VQA — “What are the people doing in this image?” |
+|:---:|
+| ![VLX-Seek VQA](images/vqa.jpg) |
+| *Visual question answering: produces a text answer only (no boxes exported).* |
+
 ## Models
 
 All GGUFs come from the pinned revision of

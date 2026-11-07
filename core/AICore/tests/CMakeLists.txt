@@ -1483,10 +1483,21 @@ add_custom_target(aicore-contract-tests
             # ctest + 95 min build = 327 min > 330 min cap). Contract tests
             # are independent processes with no shared GPU/resource state.
             -j4
+            # --progress forces ctest to emit per-test start/finish lines
+            # even when Ninja buffers custom-command output; without this the
+            # CI log stays silent for the entire stage and hides the test
+            # that hangs (if any) behind a 254-minute wall of nothing.
+            --progress
+            # Per-test timeout (seconds). If a single test hangs (e.g. Vulkan
+            # backend initialization on a GPU-less runner), kill it instead
+            # of letting it consume the entire job time budget.
+            --timeout 300
             -C $<CONFIG>
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMENT "Running AICore public contract tests"
-    VERBATIM
+    # USES_TERMINAL tells Ninja not to buffer this command's output, so
+    # --progress lines reach the CI log in real time.
+    VERBATIM USES_TERMINAL
 )
 
 # --- Catalog vs release asset consistency (network; CI only) ---------------

@@ -24,6 +24,12 @@ The "Geometry only" preset skips the Zero123++ diffusion and replicates the
 input image as the six views (the upstream benchmark path — faster, lower
 geometric quality).
 
+## Demo
+
+![InstantMesh single-image to 3D mesh](images/instantmesh_test.jpg)
+
+*Single-image to textured 3D mesh: the input image (left) goes through RMBG-2.0 matting, Zero123++ multi-view diffusion (6 views), DINO ViT-B/16 encoding, triplane transformer, FlexiCubes isosurface extraction and xatlas UV unwrap. The result is a textured mesh exported as GLB or OBJ/MTL/PNG.*
+
 ## Models
 
 Published at <https://huggingface.co/Asher-1/InstantMesh-GUFF> (14 GGUFs;

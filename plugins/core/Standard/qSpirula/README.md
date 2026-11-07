@@ -23,6 +23,51 @@ Over a **running GUI session** the same operations are exposed as JSON-RPC
 methods (`spirula.version/devices/launch/cli/import`) — see
 `agent-integration/docs/COMMAND-MAPPING.md`.
 
+## Gallery — Reconstruction Examples
+
+The following examples demonstrate the quality of 3D Gaussian Splatting
+reconstructions produced by Spirula Studio:
+
+### Indoor Scene Reconstruction
+
+![Indoor reconstruction](images/spirula_indoor_reconstruction.jpg)
+
+*High-quality indoor scene reconstruction: **Ceramic Studio** by victorsaliba.
+Montreal ceramic studio scanned with Spirula Studio, 1M splats.
+Dataset: ~50 photos, demonstrating detailed texture and geometry capture.*
+
+### Outdoor Architectural Scene
+
+![Outdoor scene](images/spirula_outdoor_scene.jpg)
+
+*Historic architectural reconstruction: **Parish Church of Saint Maurice** 
+(Kroměříž, Czech Republic) by tanha. Gothic architecture with stained glass
+windows and ornate altar. Dataset: 746 photos (Fujifilm XT2 + Viltrox 9mm),
+9.97M splats, demonstrating large-scale architectural reconstruction.*
+
+### Object Scan
+
+![Object scan](images/spirula_object_scan.jpg)
+
+*Detailed object reconstruction: **Infinity Octo Art MK** by naturalsplats.
+Wendy Taylor's iconic Octo sculpture (Milton Keynes), stainless steel
+infinite loop. 1.99M splats, demonstrating accurate geometry and material
+capture for archival and visualization purposes.*
+
+### 360° Video Reconstruction
+
+![360 scene](images/spirula_360_reconstruction.jpg)
+
+*Panoramic reconstruction: **Panorama Torunia** by kamilroszak.
+View from the Old Town Hall tower in Toruń, Poland. 533MB ultra-large
+scene with 14.9M splats. Spirula Studio natively supports 360° cameras
+and equirectangular images — no undistortion preprocessing required.*
+
+> **Note:** All example reconstructions are from the
+> [SuperSplat Spirula Studio Gallery](https://superspl.at/explore/software/spirula-studio).
+> Credits to the original authors (victorsaliba, tanha, naturalsplats, kamilroszak).
+> To add your own examples, place images in the `images/` directory.
+
 ## Roadmap: true gaussian-splat rendering (planned)
 
 Today imported gaussians display as a colored point cloud. The planned

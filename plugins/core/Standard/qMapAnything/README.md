@@ -201,6 +201,13 @@ missing checkpoint through the shared `ecvModelDownloader` on first Run.
   (torch VGGT-1B itself gives q50 = 1.02 on courtyard frames 8..15), so the
   old absolute `conf >= 5` (0.8) default emptied whole scenes.
 
+## Reconstruction gallery
+
+| Courtyard (ETH3D benchmark, 38 views, VGGT-Omega 1B 512) | Relief scene (multi-view reconstruction) |
+|:---:|:---:|
+| ![Courtyard reconstruction](images/courtyard_reconstruction.png) | ![Relief reconstruction](images/relief_reconstruction.png) |
+| *Metric-colored point cloud anchored to the benchmark GT frame (Sim3 scale 11.34, ~4.8 M points, extent 25.8 × 23.5 × 18.7 m). The 2 cm conf-priority voxel is applied.* | *Feed-forward metric reconstruction from unposed multi-view images — no COLMAP, no SfM. Camera poses and scene shape are inferred from the image set alone.* |
+
 ## Scene driver and device memory
 
 GUI worker and `-MAP_ANYTHING_RECONSTRUCT` run one Qt-free driver

@@ -306,6 +306,13 @@ official PointCloudViewer's display controls against the LAST result
   `Overview` view buttons): jump to the frame-0 camera pose or refit the
   view on the whole reconstruction.
 
+## Reconstruction gallery
+
+| Courthouse outdoor stream (286 frames, q8, 518×294, scale=8 / window=64) | Loop indoor loop closure (office walkthrough, ~300 frames) |
+|:---:|:---:|
+| ![Courthouse reconstruction](images/courthouse_reconstruction.png) | ![Loop reconstruction](images/loop_reconstruction.png) |
+| *Outdoor scene with sky masking enabled. Per-frame point clouds and camera frustums are streamed incrementally; the online group grows at streaming pace.* | *Indoor office walkthrough demonstrating loop closure — no sky masking needed. Sequential frames are aligned and stitched into a consistent map.* |
+
 ## Memory notes
 
 The release KV-cache profile (scale=8, window=64) needs ~21 GiB of GPU
