@@ -141,6 +141,15 @@ void QuerySplatDialog::buildUi() {
     m_taskStatusLabel = new QLabel(this);
     rootLayout->addWidget(m_taskStatusLabel);
 
+    // Shared HTTPS model downloader. startModelDownload() wires its
+    // progress/log/finished signals per request and disconnects on finish, so
+    // only the object itself has to live here as a child of the dialog.
+    // Without this the pointer stayed null and clicking Run on a cold cache
+    // dereferenced it in ecvModelDownloader::download (macOS-only repro: the
+    // Linux dev boxes already had the decoder GGUF cached, so the download
+    // branch was never reached).
+    m_downloader = new ecvModelDownloader(this);
+
     connect(m_runBtn, &QPushButton::clicked, this, &QuerySplatDialog::onRun);
     connect(m_cancelBtn, &QPushButton::clicked, this,
             &QuerySplatDialog::onCancel);

@@ -220,6 +220,34 @@ struct QuerySplatDecoder::Impl {
     ggml_tensor* adam_v[4] = {nullptr, nullptr, nullptr, nullptr};
     ggml_tensor* tb_out[4] = {nullptr, nullptr, nullptr, nullptr};
 
+    // Explicit destructor: ggml resources (contexts, backend buffers,
+    // allocators) are raw pointers that must be freed in reverse allocation
+    // order. The weight buffer/context (wbuf/wctx) are never released on any
+    // other path, so without this they leak on every decoder teardown. The
+    // graph (gctx/galloc) and TTO resources are already freed and null-set by
+    // ensure_shape()/tto_end() during normal use; the null guards below make
+    // this destructor the single reclaim point for whatever is still live
+    // when the decoder dies (last-built graph, an abandoned TTO session).
+    ~Impl() {
+        // TTO session resources (independent of the main graph)
+        if (tf_galloc) ggml_gallocr_free(tf_galloc);
+        if (tb_galloc) ggml_gallocr_free(tb_galloc);
+        if (tgalloc) ggml_gallocr_free(tgalloc);
+        if (tbuf) ggml_backend_buffer_free(tbuf);
+        if (tbuf_ctx) ggml_free(tbuf_ctx);
+        if (tctx) ggml_free(tctx);
+
+        // Main graph resources: allocator before context (galloc owns
+        // backend buffers allocated from gctx tensors)
+        if (galloc) ggml_gallocr_free(galloc);
+        if (gctx) ggml_free(gctx);
+
+        // Weight resources: backend buffer before context (wbuf owns
+        // GPU memory staged from wctx tensors)
+        if (wbuf) ggml_backend_buffer_free(wbuf);
+        if (wctx) ggml_free(wctx);
+    }
+
     ggml_tensor* w(const char* name) const {
         auto it = wt.find(name);
         if (it == wt.end()) {
