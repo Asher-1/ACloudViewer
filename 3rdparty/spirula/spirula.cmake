@@ -184,11 +184,24 @@ set(SPIRULA_EXECUTABLE "${SPIRULA_EXE}" CACHE INTERNAL
 # libglvnd/libvulkan-loader only — the same Vulkan loader dependency the main
 # app already carries), so nothing else needs to be bundled.
 if(APPLE)
-    # ACloudViewer_MAC_BASE_DIR is defined in app/Mac/CMakeLists.txt at the
-    # build-tree scope. Resolve it at INSTALL time (escaped ${...}) instead of
-    # at configure time: spirula.cmake is processed before app/Mac, so a
-    # configure-time expansion baked an empty prefix into the install script
-    # and the copy targeted /Contents/MacOS (permission denied).
+    # --- Build-time deploy: copy spirula next to the main app binary so
+    # SpirulaLocator's applicationDirPath probe finds it without requiring
+    # `make install`. Mirrors the POST_BUILD pattern used by plugins in
+    # plugins/cmake/Plugins.cmake.
+    set(_SPIRULA_APP_MACOS "${CMAKE_BINARY_DIR}/bin/${MAIN_APP_NAME}.app/Contents/MacOS")
+    add_custom_target(spirula_deploy ALL
+        DEPENDS ext_spirula
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${_SPIRULA_APP_MACOS}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${SPIRULA_EXE}" "${_SPIRULA_APP_MACOS}/${SPIRULA_EXE_NAME}"
+        COMMENT "Deploying spirula to app bundle (${_SPIRULA_APP_MACOS})"
+        VERBATIM)
+
+    # --- Install-time deploy: also copy into the install-prefix bundle so
+    # `cmake --install` keeps the same layout. ACloudViewer_MAC_BASE_DIR is
+    # defined in app/Mac/CMakeLists.txt at the build-tree scope; resolve it
+    # at INSTALL time (escaped ${...}) because spirula.cmake may be processed
+    # before that file on some configurations.
     install(CODE
         "if(DEFINED ACLOUDVIEWER_MAC_BASE_DIR)
              execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different

@@ -136,6 +136,20 @@ if (APPLE AND GGML_MODULE_SUFFIX)
         "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/${MAIN_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
         "${_GGML_SRC_DIR}" "${GGML_MODULE_SUFFIX}")
 endif()
+
+# Spirula Studio executable (BUILD_SPIRULA): on macOS the install step places
+# it inside the .app bundle (Contents/MacOS); carry it into the deployed
+# bundle so SpirulaLocator's applicationDirPath probe succeeds at runtime.
+if (APPLE)
+    set(_spirula_src "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/${MAIN_APP_NAME}${APP_EXTENSION}/Contents/MacOS/spirula")
+    if(EXISTS "${_spirula_src}")
+        file(COPY "${_spirula_src}"
+            DESTINATION "${MAIN_DEPLOY_PATH}/${MAIN_APP_NAME}${APP_EXTENSION}/Contents/MacOS"
+            USE_SOURCE_PERMISSIONS)
+    endif()
+    unset(_spirula_src)
+endif()
+
 if (UNIX AND NOT APPLE)
     # deploy libs, plugins and translations for ACloudViewer
     file(COPY 
@@ -537,13 +551,13 @@ if (${PACKAGE} STREQUAL "ON") # package
             # Write dmgbuild settings file
             # Note: dmgbuild automatically copies the background image into the DMG
             # as '.background.png'. We only need to specify the installer .app in 'files'.
-            # Window size matches the background image (640x360) so it fills perfectly.
+            # Window size matches the background image (640x480) so it fills perfectly.
             # No Applications symlink: this is an installer DMG, users double-click the .app.
             file(WRITE "${_DMGBUILD_SETTINGS}"
                 "import os\n"
                 "appname = '${_APP_NAME_IN_DMG}'\n"
                 "icon_size = 96\n"
-                "window_rect = ((200, 100), (640, 440))\n"
+                "window_rect = ((200, 100), (640, 480))\n"
                 "background = '${_DMG_STAGING}/.background/dmg_background.png'\n"
                 "show_status_bar = False\n"
                 "show_toolbar = False\n"
