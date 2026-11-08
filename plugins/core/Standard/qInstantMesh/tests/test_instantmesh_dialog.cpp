@@ -159,8 +159,9 @@ static int test_real_sample_cache(const QString& root) {
         // plugin differences can cause 1-3 pixel deviations in dialog size.
         // Allow up to 5 pixels tolerance per dimension.
         const QSize actualSize = dialog.size();
-        const int sizeDelta = std::max(std::abs(actualSize.width() - size.width()),
-                                       std::abs(actualSize.height() - size.height()));
+        const int sizeDelta =
+                std::max(std::abs(actualSize.width() - size.width()),
+                         std::abs(actualSize.height() - size.height()));
         check(sizeDelta <= 5,
               "The real panda UI must approximately fit the requested window "
               "size (<=5px tolerance per dimension)");
@@ -312,8 +313,9 @@ int main(int argc, char** argv) {
             // Cross-platform UI tolerance: Windows DPI scaling and Qt platform
             // plugin differences can cause 1-3 pixel deviations in dialog size.
             const QSize actualSize = dialog.size();
-            const int sizeDelta = std::max(std::abs(actualSize.width() - size.width()),
-                                           std::abs(actualSize.height() - size.height()));
+            const int sizeDelta =
+                    std::max(std::abs(actualSize.width() - size.width()),
+                             std::abs(actualSize.height() - size.height()));
             check(sizeDelta <= 5,
                   "The dialog must approximately fit the requested window size "
                   "(<=5px tolerance per dimension)");
