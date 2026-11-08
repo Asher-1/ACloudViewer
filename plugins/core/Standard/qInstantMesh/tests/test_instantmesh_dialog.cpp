@@ -311,7 +311,8 @@ int main(int argc, char** argv) {
             dialog.resize(size);
             QApplication::processEvents();
             // Cross-platform UI tolerance: Windows DPI scaling and Qt platform
-            // plugin differences can cause 3-10 pixel deviations in dialog size.
+            // plugin differences can cause 3-10 pixel deviations in dialog
+            // size.
             const QSize actualSize = dialog.size();
             const int sizeDelta =
                     std::max(std::abs(actualSize.width() - size.width()),
