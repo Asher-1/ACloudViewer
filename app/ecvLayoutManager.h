@@ -51,6 +51,9 @@ public:  // Layout operations
     //! Reposition the unified plugin toolbar to the end of the first row
     void repositionUnifiedPluginToolbar();
 
+    //! Reposition the AI Core toolbar to the end of the top area
+    void repositionAICoreToolbar();
+
     //! Hide additional plugin toolbars that have been merged into
     //! UnifiedPluginToolbar
     void hideAdditionalPluginToolbars();

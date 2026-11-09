@@ -241,6 +241,42 @@ void ecvLayoutManager::repositionUnifiedPluginToolbar() {
     unifiedPluginToolbar->show();
 }
 
+void ecvLayoutManager::repositionAICoreToolbar() {
+    QList<QToolBar*> allToolbars = m_mainWindow->findChildren<QToolBar*>();
+    QToolBar* aiCoreToolbar = nullptr;
+
+    for (QToolBar* tb : allToolbars) {
+        if (tb->objectName() == "AI Core Toolbar") {
+            aiCoreToolbar = tb;
+            break;
+        }
+    }
+
+    if (!aiCoreToolbar) {
+        // No AI Core plugins loaded — nothing to reposition
+        return;
+    }
+
+    // Ensure it's attached to main window
+    if (aiCoreToolbar->parent() != m_mainWindow) {
+        aiCoreToolbar->setParent(m_mainWindow);
+    }
+
+    // Move to top area if it was restored to a different area (e.g. right)
+    Qt::ToolBarArea area = m_mainWindow->toolBarArea(aiCoreToolbar);
+    if (area == Qt::NoToolBarArea) {
+        m_mainWindow->addToolBar(Qt::TopToolBarArea, aiCoreToolbar);
+    } else if (area != Qt::TopToolBarArea) {
+        m_mainWindow->removeToolBar(aiCoreToolbar);
+        m_mainWindow->addToolBar(Qt::TopToolBarArea, aiCoreToolbar);
+    }
+
+    // Do NOT force visibility here — the user's toggle
+    // (m_showAICoreToolbar) is the single source of truth for
+    // visibility.  restoreState() already restored the correct
+    // visibility; overriding it would desync the toggle.
+}
+
 void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
     // Get all toolbars and categorize them
     QList<QToolBar*> toolBars = m_mainWindow->findChildren<QToolBar*>();
@@ -271,9 +307,11 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
             continue;
         }
 
-        // Skip hidden toolbars
+        // Skip hidden toolbars, but always process the AI Core and Unified
+        // toolbars so their area positioning is corrected even when hidden.
         if (!toolbar->isVisible() && toolbar->parent() == m_mainWindow &&
-            toolbar->objectName() != "UnifiedPluginToolbar") {
+            toolbar->objectName() != "UnifiedPluginToolbar" &&
+            toolbar->objectName() != "AI Core Toolbar") {
             continue;
         }
 
@@ -336,6 +374,7 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
     QList<QToolBar*> reconstructionToolbars;
     QList<QToolBar*> pythonPluginToolbars;
     QToolBar* unifiedPluginToolbar = nullptr;
+    QToolBar* aiCoreToolbar = nullptr;
 
     for (QToolBar* toolbar : topToolbars) {
         QString toolbarName = toolbar->objectName();
@@ -349,6 +388,9 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
         } else if (ccPluginUIManager::isPythonPluginToolbar(toolbar)) {
             // Collect Python plugin toolbars separately
             pythonPluginToolbars.append(toolbar);
+        } else if (toolbarName == "AI Core Toolbar") {
+            // Collect AI Core toolbar to place it at the end of top area
+            aiCoreToolbar = toolbar;
         } else {
             toolbarMap[toolbarName] = toolbar;
         }
@@ -413,6 +455,13 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
         toolbar->setVisible(true);
         setToolbarIconSize(toolbar, screenWidth);
     }
+
+    // Add AI Core toolbar at the very end of top area (last grouped toolbar)
+    if (aiCoreToolbar) {
+        m_mainWindow->addToolBar(Qt::TopToolBarArea, aiCoreToolbar);
+        aiCoreToolbar->setVisible(true);
+        setToolbarIconSize(aiCoreToolbar, screenWidth);
+    }
 #else
     // Windows/Linux: 2-row layout
     // Add UnifiedPluginToolbar at end of first row
@@ -457,7 +506,23 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
         toolbar->setVisible(true);
         setToolbarIconSize(toolbar, screenWidth);
     }
+
+    // Add AI Core toolbar at the very end of top area (last grouped toolbar)
+    if (aiCoreToolbar) {
+        m_mainWindow->addToolBar(Qt::TopToolBarArea, aiCoreToolbar);
+        aiCoreToolbar->setVisible(true);
+        setToolbarIconSize(aiCoreToolbar, screenWidth);
+    }
 #endif
+
+    // Sync the AI Core toggle with the toolbar's actual visibility.
+    // setupToolbarLayout() forces the toolbar visible (first-launch default).
+    // The toggle (set to checked in init() based on isEnabled()) must match
+    // so that subsequent user clicks correctly toggle visibility.
+    if (QToolBar* aiCore = m_pluginManager->aiCoreToolbar()) {
+        m_pluginManager->actionShowAICoreToolbar()->setChecked(
+                aiCore->isVisible());
+    }
 
     CVLog::PrintVerbose("[ecvLayoutManager] Toolbar layout configured");
 }
@@ -597,6 +662,19 @@ void ecvLayoutManager::restoreGUILayout(bool forceDefault) {
         // Ensure UnifiedPluginToolbar is visible
         repositionUnifiedPluginToolbar();
 
+        // Ensure AI Core toolbar is in the top area (may have been restored
+        // to the right side from a previously saved layout)
+        repositionAICoreToolbar();
+
+        // Sync the AI Core toggle with the toolbar's actual visibility.
+        // init() sets the toggle checked based on isEnabled(), but
+        // restoreState() may have restored a different visibility.
+        // Without this sync the toggle and toolbar would be out of sync.
+        if (QToolBar* aiCore = m_pluginManager->aiCoreToolbar()) {
+            m_pluginManager->actionShowAICoreToolbar()->setChecked(
+                    aiCore->isVisible());
+        }
+
         // Update icon sizes for all toolbars after restoring layout
         // This ensures icons are properly sized even when restoring from saved
         // state
@@ -690,6 +768,16 @@ bool ecvLayoutManager::restoreCustomLayout() {
     // Restore custom layout
     m_mainWindow->restoreGeometry(geometry.toByteArray());
     m_mainWindow->restoreState(state.toByteArray());
+
+    // Ensure key toolbars are in their correct default areas after restore
+    repositionUnifiedPluginToolbar();
+    repositionAICoreToolbar();
+
+    // Sync the AI Core toggle with the toolbar's actual visibility
+    if (QToolBar* aiCore = m_pluginManager->aiCoreToolbar()) {
+        m_pluginManager->actionShowAICoreToolbar()->setChecked(
+                aiCore->isVisible());
+    }
 
     CVLog::PrintVerbose(
             "[ecvLayoutManager] Custom layout restored successfully");

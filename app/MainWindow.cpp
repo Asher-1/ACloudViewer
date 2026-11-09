@@ -2205,13 +2205,16 @@ void MainWindow::initPlugins() {
     addToolBar(Qt::RightToolBarArea, mainPluginToolbar);
     // The AI Core toolbar is one draggable unit holding the grouped
     // (info.json "group": "aicore") plugin actions.
-    addToolBar(Qt::RightToolBarArea, aiCoreToolbar);
+    // Default to top area; layout manager places it at the end of the
+    // top toolbar rows so it appears after all other grouped toolbars.
+    addToolBar(Qt::TopToolBarArea, aiCoreToolbar);
     // Register plugin toolbars with layout manager
 #ifdef QPCL_PLUGIN_TOOLBAR
     m_layoutManager->registerRightSideToolBar(glPclToolbar);
 #endif
     m_layoutManager->registerRightSideToolBar(mainPluginToolbar);
-    m_layoutManager->registerRightSideToolBar(aiCoreToolbar);
+    // aiCoreToolbar intentionally NOT registered as right-side — it
+    // belongs in the top area and will be positioned by setupToolbarLayout().
 
     // Combine all additional plugin toolbars into a single unified toolbar
     // But exclude Python plugins - they should be handled separately
