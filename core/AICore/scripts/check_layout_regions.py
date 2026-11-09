@@ -41,6 +41,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from runtime_environment import prepend_runtime_paths
 from digest_utils import sha256_file
 
 REGION = re.compile(r"^REGION \d+ cls=(\d+) order=-?\d+ score=([0-9.]+) "
@@ -127,9 +128,8 @@ def main() -> int:
     reference = json.loads(args.reference.read_text(encoding="utf-8"))
     environment = os.environ.copy()
     build_bin = args.bench.resolve().parent
-    environment["LD_LIBRARY_PATH"] = os.pathsep.join(
-        [str(build_bin)] + ([environment["LD_LIBRARY_PATH"]]
-                            if environment.get("LD_LIBRARY_PATH") else []))
+    prepend_runtime_paths(environment,
+                          [build_bin, build_bin.parent / "external" / "lib"])
 
     total_ref = total_pred = optional_missed = 0
     ious: list[float] = []

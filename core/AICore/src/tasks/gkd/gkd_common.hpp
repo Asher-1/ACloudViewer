@@ -16,16 +16,15 @@
 #include <string>
 #include <vector>
 
+#include "aicore/export.h"
+
 namespace gkd {
 
 enum class LogLevel { Debug = 0, Info, Warn, Error };
 
 void set_log_level(LogLevel level);
 void logf(LogLevel level, const char* fmt, ...)
-#if defined(__GNUC__)
-    __attribute__((format(printf, 2, 3)))
-#endif
-    ;
+        AICORE_PRINTF_FORMAT(2, 3);
 
 #define GKD_LOG_DEBUG(...) ::gkd::logf(::gkd::LogLevel::Debug, __VA_ARGS__)
 #define GKD_LOG_INFO(...) ::gkd::logf(::gkd::LogLevel::Info, __VA_ARGS__)

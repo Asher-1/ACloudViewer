@@ -65,11 +65,13 @@ VLXSeekDialog::VLXSeekDialog(QWidget* parent) : QDialog(parent) {
     // ----
     m_inputLabel = new QLabel(tr("Input image:"), this);
     m_inputEdit = new QLineEdit(this);
+    m_inputEdit->setObjectName(QStringLiteral("inputImage"));
     m_inputEdit->setPlaceholderText(
             tr("Image path (DB selection, test data "
                "or file)"));
     m_browseButton = ecvAICoreUi::makeBrowseBtn(tr("Browse..."), this);
     m_testDataButton = ecvAICoreUi::makeSampleDataBtn(this);
+    m_testDataButton->setObjectName(QStringLiteral("sampleData"));
     m_testDataButton->setToolTip(
             tr("Downloads the official VLX-Seek test images once into the "
                "shared data root and fills the demo image plus a showcase "
@@ -258,6 +260,9 @@ VLXSeekDialog::VLXSeekDialog(QWidget* parent) : QDialog(parent) {
     });
 
     m_downloader = new ecvModelDownloader(this);
+
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
     connect(m_downloader, &ecvModelDownloader::progress, this,
             &VLXSeekDialog::onDownloadProgress);
     connect(m_downloader, &ecvModelDownloader::finished, this,
@@ -265,6 +270,30 @@ VLXSeekDialog::VLXSeekDialog(QWidget* parent) : QDialog(parent) {
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
             [this](const QString& message) {
                 m_statusLabel->setText(message);
+            });
+
+    connect(this, &QDialog::finished, this, [this] {
+        m_testDataBusy = false;
+        m_testDataButton->setEnabled(true);
+        m_pendingAction = PendingAction::None;
+    });
+    auto& repository = ecvTestDataRepository::instance();
+    connect(&repository, &ecvTestDataRepository::datasetReady, this,
+            [this](bool ok, ecvTestDataRepository::Dataset kind) {
+                if (!m_testDataBusy ||
+                    kind != ecvTestDataRepository::Dataset::VlxSeek)
+                    return;
+                m_testDataBusy = false;
+                m_testDataButton->setEnabled(true);
+                if (!ok) {
+                    m_statusLabel->setText(
+                            tr("Test data preparation failed (see console "
+                               "for details)"));
+                    return;
+                }
+                const QString demo = ecvTestDataRepository::findDatasetFile(
+                        kind, demoImageForCurrentTask());
+                applyDemoScene(demo);
             });
 
     updateRunState();
@@ -364,6 +393,7 @@ void VLXSeekDialog::onBrowse() {
 }
 
 void VLXSeekDialog::onUseTestData() {
+    if (m_testDataBusy) return;
     // Absent cache is a recoverable preparation, not an error: the shared
     // repository downloads, verifies and extracts once, then this slot
     // refills the input from the task-optimal demo member.
@@ -377,25 +407,9 @@ void VLXSeekDialog::onUseTestData() {
             return;
         }
     }
+    m_testDataBusy = true;
     m_testDataButton->setEnabled(false);
     m_statusLabel->setText(tr("Preparing official test images..."));
-    connect(
-            &repo, &ecvTestDataRepository::datasetReady, this,
-            [this](bool ok, ecvTestDataRepository::Dataset kind) {
-                if (kind != ecvTestDataRepository::Dataset::VlxSeek) return;
-                m_testDataButton->setEnabled(true);
-                if (!ok) {
-                    m_statusLabel->setText(
-                            tr("Test data preparation failed (see console "
-                               "for details)"));
-                    return;
-                }
-                const QString demo = ecvTestDataRepository::findDatasetFile(
-                        ecvTestDataRepository::Dataset::VlxSeek,
-                        demoImageForCurrentTask());
-                applyDemoScene(demo);
-            },
-            Qt::UniqueConnection);
     repo.ensureDatasetReady(ecvTestDataRepository::Dataset::VlxSeek);
 }
 
@@ -594,7 +608,7 @@ bool VLXSeekDialog::ensureModelsAvailable() {
             return false;
         }
         const QString path = QDir(cache).filePath(need.entry.filename);
-        if (QFileInfo::exists(path)) continue;
+        if (ecvAssetIntegrity::isModelVerified(path)) continue;
         if (m_downloadInProgress) return false;  // one download at a time
         m_statusLabel->setText(tr("Downloading %1 (%2)...")
                                        .arg(need.entry.filename, need.role));
@@ -740,6 +754,9 @@ void VLXSeekDialog::onRun() {
 }
 
 void VLXSeekDialog::onCancel() {
+    m_testDataBusy = false;
+    m_testDataButton->setEnabled(true);
+    m_pendingAction = PendingAction::None;
     if (m_downloadInProgress) {
         m_downloader->cancel();
         return;

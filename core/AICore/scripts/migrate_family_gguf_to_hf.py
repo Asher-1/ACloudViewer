@@ -8,6 +8,7 @@ afterwards. Catalog URL switching happens in the C++ sources separately.
 import hashlib
 import json
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -22,7 +23,7 @@ REPO_BY_PREFIX = [
 ]
 
 CACHE_ROOT = Path.home() / "cloudViewer_data" / "extract"
-PLAN = Path("/tmp/hf-family-plan.json")
+PLAN = Path(tempfile.gettempdir()) / "hf-family-plan.json"
 
 
 def repo_for(relative_path: str) -> str:
@@ -86,7 +87,7 @@ def main() -> int:
             failures.append(receipt)
         print(json.dumps(receipt), flush=True)
 
-    Path("/tmp/hf-family-receipts.json").write_text(
+    (Path(tempfile.gettempdir()) / "hf-family-receipts.json").write_text(
         json.dumps(receipts, indent=1) + "\n")
     print(f"processed {len(receipts)} rows, failures: {len(failures)}",
           flush=True)

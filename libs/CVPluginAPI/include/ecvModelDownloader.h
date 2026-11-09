@@ -45,6 +45,7 @@ public:
         // minBytes default is 64 KiB: large enough to reject empty/HTML
         // pages, small enough to admit the smallest ALIKED
         // (aliked-n16rot-q8_0.gguf is ~714 KiB on disk).
+        // Set zero to disable this floor for small non-model assets.
         qint64 minBytes = 64 * 1024;
         bool requireGgufMagic = true;
         // Content identity pinned in source (algo + hex digest, e.g. the
@@ -70,9 +71,15 @@ public:
     /** e.g. "12.3 MB / 45.6 MB (27%)". */
     static QString formatDownloadProgress(qint64 received, qint64 total);
 
-    bool isBusy() const { return m_busy; }
+    /** Includes backoff: the accepted request owns the downloader until
+     *  completion or cancellation, including between transport attempts. */
+    bool isBusy() const {
+        return m_busy || (m_retryTimer && m_retryTimer->isActive());
+    }
 
 public slots:
+    /** Reuse an intact destination without network access. Cache hits emit
+     *  finished synchronously; initialize continuation state before calling. */
     void download(const Request& request);
     void cancel();
 

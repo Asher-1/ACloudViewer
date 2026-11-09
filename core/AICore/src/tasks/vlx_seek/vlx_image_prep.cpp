@@ -11,6 +11,8 @@
 #include <cstdio>
 #include <cstring>
 
+#include "FileSystem.h"
+
 #if defined(ACV_VLX_HAVE_LIBJPEG)
 #include <jpeglib.h>
 
@@ -97,15 +99,19 @@ bool decode_jpeg(const std::vector<uint8_t>& buf,
 bool decode_image(const std::string& path, ImageU8* out, std::string* err) {
     std::vector<uint8_t> buf;
     {
-        std::FILE* f = std::fopen(path.c_str(), "rb");
+        std::FILE* f =
+                cloudViewer::utility::filesystem::FOpen(path.c_str(), "rb");
         if (!f) {
             if (err) *err = "cannot open " + path;
             return false;
         }
-        std::fseek(f, 0, SEEK_END);
-        const long n = std::ftell(f);
-        std::fseek(f, 0, SEEK_SET);
-        buf.resize(size_t(std::max(n, 0L)));
+        size_t size = 0;
+        if (!cloudViewer::utility::filesystem::FSize(f, size)) {
+            std::fclose(f);
+            if (err) *err = "cannot determine size of " + path;
+            return false;
+        }
+        buf.resize(size);
         const size_t got = std::fread(buf.data(), 1, buf.size(), f);
         std::fclose(f);
         if (got != buf.size()) {

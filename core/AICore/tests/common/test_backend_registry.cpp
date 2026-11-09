@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "common/ggml_backend_registry.hpp"
+#include "common/ggml_backend_utils.hpp"
 #include "tasks/facedetect/backend.hpp"
 
 namespace {
@@ -27,6 +28,11 @@ int main() {
             aicore::runtime::acquire_backend_lease("cpu", 1, &error);
     if (!first)
         return Fail(error.empty() ? "first lease failed" : error.c_str());
+
+    if (ggml_common::flash_attention_sequence_limit(first.handle()) !=
+        INT64_MAX) {
+        return Fail("CPU backend incorrectly inherits the GPU attention limit");
+    }
 
     aicore::runtime::BackendLease second =
             aicore::runtime::acquire_backend_lease("cpu", 1, &error);

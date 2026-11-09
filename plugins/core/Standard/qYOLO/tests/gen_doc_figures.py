@@ -10,15 +10,18 @@ yolo-reid.jpg  : per-identity embedding similarity matrix from the real
 Not a ctest — doc asset generation (needs ultralytics + a detector ckpt).
 """
 import subprocess
+import os
+from pathlib import Path
 import sys
+import tempfile
 
 import cv2
 import numpy as np
 
-sys.path.insert(0, "plugins/core/Standard/qYOLO/tests")
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import track_parity_check as tpc  # reuse the deterministic frame/det chain
 
-IMAGES_DIR = "plugins/core/Standard/qYOLO/images"
+IMAGES_DIR = Path(__file__).resolve().parents[1] / "images"
 PALETTE = ((66, 186, 66), (214, 112, 32), (66, 66, 214), (180, 66, 214))
 
 
@@ -42,7 +45,7 @@ def render_strip(frames, rows_per_frame, out_path, picks=(0, 10, 17, 25)):
     print("wrote", out_path, strip.shape)
 
 
-def reid_matrix(frames, rows_per_frame, gguf, out_path):
+def reid_matrix(frames, rows_per_frame, gguf, out_path, diagnostic=None):
     """Real reid-encoder similarity: prep each tracked row's crop exactly
     like tasks/reid/capi.cpp (save_one_box + stretch) and run the published
     f32 GGUF through reid_diag (same graph the plugin uses)."""
@@ -65,21 +68,26 @@ def reid_matrix(frames, rows_per_frame, gguf, out_path):
 
     # Batch the CHW prep in torch-free numpy; embed via reid_diag per crop.
     embs = []
-    for tid, f, r in crops:
-        x1, y1 = int(r[0]), int(r[1])
-        x2, y2 = x1 + int(r[2]), y1 + int(r[3])
-        # The frames were drawn in RGB; keep bytes identical to capi input.
-        crop = frames[f][max(0, y1):y2, max(0, x1):x2]
-        chw = np.ascontiguousarray(
-            cv2.resize(crop, (224, 224),
-                       interpolation=cv2.INTER_LINEAR).transpose(2, 0, 1)[0:3]
-        ).astype(np.float32) / 255.0
-        chw.tofile("/tmp/reid/fig.chw.bin")
-        out = "/tmp/reid/fig"
-        subprocess.run(["build_app/bin/aicore_tests/reid_diag", "--gguf", gguf,
-                        "--chw", "/tmp/reid/fig.chw.bin", "--device", "cuda",
-                        "--dump", out], check=True, capture_output=True)
-        embs.append(np.fromfile(out + ".embed.bin", dtype=np.float32))
+    diagnostic = Path(diagnostic or tpc.resolve_build_binary("reid_diag"))
+    with tempfile.TemporaryDirectory(prefix="q-yolo-reid-") as tmp:
+        tmp = Path(tmp)
+        for index, (tid, f, r) in enumerate(crops):
+            x1, y1 = int(r[0]), int(r[1])
+            x2, y2 = x1 + int(r[2]), y1 + int(r[3])
+            # The frames were drawn in RGB; keep bytes identical to capi input.
+            crop = frames[f][max(0, y1):y2, max(0, x1):x2]
+            chw = np.ascontiguousarray(
+                cv2.resize(crop, (224, 224),
+                           interpolation=cv2.INTER_LINEAR).transpose(2, 0, 1)[0:3]
+            ).astype(np.float32) / 255.0
+            chw_path = tmp / f"crop-{index}.chw.bin"
+            out = tmp / f"crop-{index}"
+            chw.tofile(chw_path)
+            subprocess.run([str(diagnostic), "--gguf", str(gguf),
+                            "--chw", str(chw_path), "--device", "cuda",
+                            "--dump", str(out)], check=True,
+                           capture_output=True)
+            embs.append(np.fromfile(str(out) + ".embed.bin", dtype=np.float32))
     E = np.stack(embs)
     S = E @ E.T / (np.linalg.norm(E, axis=1)[:, None]
                    * np.linalg.norm(E, axis=1)[None, :] + 1e-12)
@@ -108,13 +116,22 @@ def reid_matrix(frames, rows_per_frame, gguf, out_path):
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--detector", default="yolo26n.pt")
+    ap.add_argument("--harness", default=None)
+    ap.add_argument("--reid-gguf", default=os.environ.get(
+        "AICORE_TEST_YOLO_REID_GGUF", str(Path.home() / "cloudViewer_data" /
+                                           "extract" / "yolo_models" /
+                                           "reid-yolo26n-cls-f32.gguf")))
+    ap.add_argument("--output-dir", type=Path, default=IMAGES_DIR)
+    args = ap.parse_args()
     from ultralytics import YOLO
-    model = YOLO("yolo26n.pt")
+    model = YOLO(args.detector)
     frames = tpc.make_frames(30)
     rows = tpc.detect_rows(model, frames)
 
     # C++ tracker output via the parity harness (the plugin tracker).
-    harness = "build_app/bin/track_parity_harness"
+    harness = args.harness or str(tpc.resolve_build_binary("track_parity_harness"))
     lines = ["TRACK bytetrack"]
     for f, rs in enumerate(rows):
         lines.append(f"F {f} {len(rs)} " + " ".join(
@@ -134,11 +151,11 @@ def main():
                 rows_out.append(v)  # x1 y1 w h id score cls idx
         tracked.append(rows_out)
 
-    render_strip(frames, tracked, f"{IMAGES_DIR}/yolo-track.jpg")
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    render_strip(frames, tracked, str(args.output_dir / "yolo-track.jpg"))
     reid_matrix(frames, tracked,
-                "/home/ludahai/cloudViewer_data/extract/yolo_models/"
-                "reid-yolo26n-cls-f32.gguf",
-                f"{IMAGES_DIR}/yolo-reid.jpg")
+                args.reid_gguf,
+                args.output_dir / "yolo-reid.jpg")
 
 
 if __name__ == "__main__":

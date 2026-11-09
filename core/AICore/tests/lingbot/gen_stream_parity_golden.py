@@ -35,11 +35,15 @@ import argparse
 import json
 import math
 import os
+import shutil
 import struct
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+from runtime_environment import executable_name, find_build_tool
 
 LBF3_MAGIC = 0x4C424633
 GRID = 16
@@ -50,6 +54,9 @@ BACKENDS = {
     "vulkan": ("build-vulkan", "Vulkan0", "vulkan", "Vulkan"),
     "cpu": ("build-cuda", "cpu", "cpu", "Cpu"),
 }
+
+
+resolve_build_tool = find_build_tool
 
 
 def read_lbf3(path: Path):
@@ -101,8 +108,9 @@ def main() -> int:
                     "lingbot_stream_parity_golden.h")
     args = ap.parse_args()
 
-    probe = args.build / "bin" / "aicore_tests" / "test_lingbot_stream_parity"
-    dumper = args.build / "bin" / "aicore_tests" / "dump_lingbot_frames"
+    probe = resolve_build_tool(args.build,
+                               "aicore_tests/test_lingbot_stream_parity")
+    dumper = resolve_build_tool(args.build, "aicore_tests/dump_lingbot_frames")
     for tool in (probe, dumper):
         if not tool.is_file():
             raise SystemExit(f"missing tool: {tool}")
@@ -121,7 +129,11 @@ def main() -> int:
             src = args.input_dir / f"{i:06d}.png"
             if not src.is_file():
                 raise SystemExit(f"missing fixture frame: {src}")
-            (stage / f"{i:08d}.png").symlink_to(src.resolve())
+            destination = stage / f"{i:08d}.png"
+            # Windows runners often have Developer Mode disabled, so symlink
+            # creation is not a portable fixture operation. A byte-preserving
+            # copy keeps the input contract and works on every host.
+            shutil.copy2(src, destination)
         stream = tmp / "frames.f32"
         # Inherit the parent environment (PATH/LD_LIBRARY_PATH matter for
         # the test binaries on Qt-installed hosts) and add the probe vars.
@@ -141,7 +153,7 @@ def main() -> int:
         captures = {}
         for key in [b.strip() for b in args.backends.split(",") if b.strip()]:
             build_dir, cli_backend, dump_device, golden_name = BACKENDS[key]
-            cli = args.upstream_repo / "cpp_ggml" / build_dir / "lingbot-map-cli"
+            cli = args.upstream_repo / "cpp_ggml" / build_dir / executable_name("lingbot-map-cli")
             if not cli.is_file():
                 raise SystemExit(f"missing upstream CLI for {key}: {cli}")
             up_dir = tmp / f"upstream-{key}"

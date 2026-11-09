@@ -7,6 +7,8 @@
 
 // C API implementation for LightGlue feature matching.
 
+#include <FileSystem.h>
+
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -254,7 +256,8 @@ AICORE_CAPI int aicore_lightglue_load_fixture(
         aicore_lightglue_features* image0,
         aicore_lightglue_features* image1) {
     if (!path || !image0 || !image1) return -1;
-    std::ifstream stream(path, std::ios::binary);
+    std::ifstream stream = cloudViewer::utility::filesystem::OpenInputStream(
+            path, std::ios::binary);
     char magic[8];
     uint32_t version, m, n, dim, width0, height0, width1, height1, flags;
     if (!stream.read(magic, sizeof(magic)) ||

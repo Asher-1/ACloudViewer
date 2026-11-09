@@ -2,6 +2,8 @@
 
 #include <cstdio>
 
+#include "aicore/export.h"
+
 #ifdef AICore_HAS_CVLOG
 #include <CVLog.h>
 #define AICORE_LOG_PRINT(tag, ...) CVLog::Print(tag __VA_ARGS__)
@@ -40,10 +42,7 @@ void aicore_set_log_level(int level);
 int aicore_get_log_level(void);
 /** Format and forward at an explicit level (see AICORE_LOG_LEVEL_*). */
 void aicore_log_at(int level, const char* tag, const char* fmt, ...)
-#if defined(__GNUC__) || defined(__clang__)
-        __attribute__((format(printf, 3, 4)))
-#endif
-        ;
+        AICORE_PRINTF_FORMAT(3, 4);
 #ifdef __cplusplus
 }
 #endif

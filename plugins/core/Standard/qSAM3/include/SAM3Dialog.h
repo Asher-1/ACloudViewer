@@ -238,10 +238,7 @@ private slots:
     void onDeviceChanged(int idx);
     void onPageChanged(int index);
     void requestTestData();
-    void onTestDataDownloadFinished(bool success,
-                                    ecvTestDataRepository::Dataset kind);
-    void onTestDataExtractionFinished(bool success,
-                                      ecvTestDataRepository::Dataset kind);
+    void onTestDataReady(bool success, ecvTestDataRepository::Dataset kind);
 
 protected:
     void showEvent(QShowEvent* e) override;

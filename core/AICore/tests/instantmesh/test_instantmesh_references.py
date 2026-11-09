@@ -26,10 +26,11 @@ def diffusion_capture(tmp_path):
     root.mkdir()
     capture.mkdir()
     shutil.copy2(Path(source) / "provenance.json", root / "provenance.json")
-    # Linked reference payloads are read-only; mutations below replace only the copied receipt.
+    # Copy reference payloads so the fixture does not require Windows
+    # Developer Mode or SeCreateSymbolicLinkPrivilege.
     for path in Path(source).iterdir():
         if path.is_file() and path.name != "provenance.json":
-            (root / path.name).symlink_to(path.resolve())
+            shutil.copy2(path, root / path.name)
     for name in ("launch.json", "gui.log", "decode-input.bin", "decode-output.bin"):
         shutil.copy2(Path(captured) / name, capture / name)
     return probe, root, capture
@@ -55,7 +56,7 @@ def test_real_diffusion_capture_authentication_fails_closed(diffusion_capture, m
         if mutation == "reference_identity":
             data["checkpoint_revision"] = "invalid"
         elif mutation == "reference_inventory":
-            (root / "unauthenticated_alias.bin").symlink_to((root / "ref_latents.bin").resolve())
+            shutil.copy2(root / "ref_latents.bin", root / "unauthenticated_alias.bin")
             for key in ("files_sha256", "files_bytes"):
                 data[key]["unauthenticated_alias.bin"] = data[key].pop("ref_latents.bin")
         else:

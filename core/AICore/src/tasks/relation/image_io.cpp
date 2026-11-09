@@ -31,8 +31,8 @@ struct Pixels {
 };
 Pixels load_rgb(const std::filesystem::path &path) {
     aicore::img::Image image;
-    if (!aicore::img::load_image_rgb(path.string(), image))
-        throw std::runtime_error("cannot decode image: " + path.string());
+    if (!aicore::img::load_image_rgb(path.u8string(), image))
+        throw std::runtime_error("cannot decode image: " + path.u8string());
     Pixels out;
     out.width = image.width;
     out.height = image.height;
@@ -234,7 +234,7 @@ ImageInput read_image_request(const std::filesystem::path &path) {
     if (!stream || (magic != "RAIP1" && magic != "RAIP2") || count > 10000)
         throw std::runtime_error("invalid RAIP request");
     ImageOptions options;
-    options.image = std::filesystem::path(image);
+    options.image = std::filesystem::u8path(image);
     if (options.image.is_relative())
         options.image = path.parent_path() / options.image;
     options.boxes_xyxy.resize(count * 4);
@@ -264,11 +264,12 @@ ImageInput read_image_request(const std::filesystem::path &path) {
         if (!stream)
             throw std::runtime_error("truncated RAIP optional regions");
         if (!mask_path.empty()) {
-            auto file = std::filesystem::path(mask_path);
+            auto file = std::filesystem::u8path(mask_path);
             if (file.is_relative()) file = path.parent_path() / file;
             std::ifstream masks(file, std::ios::binary);
             if (!masks)
-                throw std::runtime_error("cannot open masks: " + file.string());
+                throw std::runtime_error("cannot open masks: " +
+                                         file.u8string());
             const auto bytes = std::filesystem::file_size(file);
             const auto pixels = load_rgb(options.image);
             if (bytes !=

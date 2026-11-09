@@ -7,6 +7,8 @@
 
 #include "tasks/depth/glb_export.hpp"
 
+#include <FileSystem.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -434,7 +436,8 @@ bool write_glb(const std::string& path,
     const bool emit_bin = bin_len > 0;
     uint32_t total = 12 + 8 + json_len + (emit_bin ? 8 + bin_len : 0);
 
-    std::ofstream f(path, std::ios::binary);
+    std::ofstream f = cloudViewer::utility::filesystem::OpenOutputStream(
+            path, std::ios::binary);
     if (!f) return false;
     std::vector<uint8_t> hdr;
     put_u32(hdr, 0x46546C67);  // "glTF"

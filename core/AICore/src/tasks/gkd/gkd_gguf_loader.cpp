@@ -12,18 +12,11 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "FileSystem.h"
 #include "common/gguf_file_io.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "tasks/gkd/gkd_common.hpp"
-
-#if defined(__unix__) || defined(__APPLE__)
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#define GKD_HAS_MMAP 1
-#endif
 
 namespace gkd {
 
@@ -213,40 +206,37 @@ std::unique_ptr<GkdModel> load_gkd_model(const std::string& path,
 
     // Map the file and copy tensor payloads into the backend buffer.
     size_t data_offset = gguf_get_data_offset(m->gguf);
-#if defined(GKD_HAS_MMAP)
-    int fd = open(path.c_str(), O_RDONLY);
-    if (fd < 0) {
-        GKD_LOG_ERROR("cannot reopen %s", path.c_str());
-        return nullptr;
-    }
-    struct stat st {};
-    fstat(fd, &st);
-    size_t file_size = (size_t)st.st_size;
-    void* base = mmap(nullptr, file_size, PROT_READ, MAP_PRIVATE, fd, 0);
-    if (base == MAP_FAILED) {
-        GKD_LOG_ERROR("mmap failed for %s", path.c_str());
-        close(fd);
-        return nullptr;
-    }
-    const uint8_t* file_base = (const uint8_t*)base;
-#else
-    FILE* f = fopen(path.c_str(), "rb");
-    if (!f) {
-        GKD_LOG_ERROR("cannot reopen %s", path.c_str());
-        return nullptr;
-    }
-    fseek(f, 0, SEEK_END);
-    size_t file_size = ftell(f);
-    std::vector<uint8_t> file_buf(file_size);
-    fseek(f, 0, SEEK_SET);
-    if (fread(file_buf.data(), 1, file_size, f) != file_size) {
-        GKD_LOG_ERROR("short read on %s", path.c_str());
+    cloudViewer::utility::filesystem::ReadOnlyMappedFile mapping;
+    std::vector<uint8_t> file_buf;
+    const uint8_t* file_base = nullptr;
+    size_t file_size = 0;
+    if (cloudViewer::utility::filesystem::ReadOnlyMappedFile::IsSupported()) {
+        if (!mapping.Open(path)) {
+            GKD_LOG_ERROR("cannot map %s", path.c_str());
+            return nullptr;
+        }
+        file_base = mapping.Data();
+        file_size = mapping.Size();
+    } else {
+        FILE* f = cloudViewer::utility::filesystem::FOpen(path.c_str(), "rb");
+        if (!f) {
+            GKD_LOG_ERROR("cannot reopen %s", path.c_str());
+            return nullptr;
+        }
+        if (!cloudViewer::utility::filesystem::FSize(f, file_size)) {
+            GKD_LOG_ERROR("cannot determine size of %s", path.c_str());
+            fclose(f);
+            return nullptr;
+        }
+        file_buf.resize(file_size);
+        if (fread(file_buf.data(), 1, file_size, f) != file_size) {
+            GKD_LOG_ERROR("short read on %s", path.c_str());
+            fclose(f);
+            return nullptr;
+        }
         fclose(f);
-        return nullptr;
+        file_base = file_buf.data();
     }
-    fclose(f);
-    const uint8_t* file_base = file_buf.data();
-#endif
 
     for (int64_t i = 0; i < n_tensors; i++) {
         const char* name = gguf_get_tensor_name(m->gguf, i);
@@ -259,11 +249,6 @@ std::unique_ptr<GkdModel> load_gkd_model(const std::string& path,
         }
         ggml_backend_tensor_set(t, file_base + off, 0, size);
     }
-
-#if defined(GKD_HAS_MMAP)
-    munmap(base, file_size);
-    close(fd);
-#endif
 
     // Tokenizer arrays.
     m->bpe_vocab = kv::arr_str(m->gguf, "gkd.tokenizer.vocab");

@@ -119,6 +119,7 @@ private:
 
     ecvModelDownloader* m_downloader = nullptr;
     bool m_downloadInProgress = false;
+    bool m_testDataBusy = false;
     QString m_downloadTargetFilename;
     enum class PendingAction {
         None,

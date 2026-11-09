@@ -155,16 +155,18 @@ aicore_relation_ctx *aicore_relation_create(
         text.threads = threads;
         text.strict_f32 = options->strict_f32 > 0;
         text.strict_f32_auto = options->strict_f32 < 0;
-        text.text_student = options->text_student_path
-                                    ? options->text_student_path
-                                    : options->model_path;
-        if (options->tokenizer_path) text.tokenizer = options->tokenizer_path;
+        text.text_student = std::filesystem::u8path(
+                options->text_student_path ? options->text_student_path
+                                           : options->model_path);
+        if (options->tokenizer_path)
+            text.tokenizer = std::filesystem::u8path(options->tokenizer_path);
         if (options->diagnostic_directory && *options->diagnostic_directory) {
-            std::filesystem::create_directories(options->diagnostic_directory);
+            std::filesystem::create_directories(
+                    std::filesystem::u8path(options->diagnostic_directory));
             text.token_output =
-                    (std::filesystem::path(options->diagnostic_directory) /
+                    (std::filesystem::u8path(options->diagnostic_directory) /
                      "text-token-ids.json")
-                            .string();
+                            .u8string();
         }
         if (ctx->text_only) {
             gguf_init_params params{};

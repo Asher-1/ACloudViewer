@@ -7,6 +7,8 @@
 
 #include "ecvTestDataRepository.h"
 
+#include <FileSystem.h>
+
 #include <QCryptographicHash>
 #include <QDir>
 #include <QDirIterator>
@@ -277,10 +279,8 @@ constexpr const char* kOpenPCDetSha256 =
 // ----------------------------------------------------------------------------
 
 QString ecvTestDataRepository::dataRoot() {
-    const QString configuredRoot =
-            qEnvironmentVariable("CLOUDVIEWER_DATA_ROOT");
-    if (!configuredRoot.isEmpty()) return configuredRoot;
-    return QDir(QDir::homePath()).filePath(QStringLiteral("cloudViewer_data"));
+    return QString::fromUtf8(
+            cloudViewer::utility::filesystem::LocateDataRoot().c_str());
 }
 
 QString ecvTestDataRepository::downloadDir() {
@@ -314,6 +314,15 @@ QString ecvTestDataRepository::findDatasetFile(Dataset kind,
     }
 
     const QString root = extractPath(kind);
+    if (isSingleFileDataset(kind)) {
+        const auto info = getDatasetInfo(kind);
+        if (fileName != info.zipFileName) return {};
+        return ecvAssetIntegrity::isVerified(
+                       root, info.anchor, 0, false,
+                       ecvAssetIntegrity::OnMiss::DeepVerify)
+                       ? QFileInfo(root).absoluteFilePath()
+                       : QString();
+    }
     if (!QDir(root).exists()) return {};
 
     if (kind == Dataset::RelateAnything) {
@@ -388,16 +397,22 @@ QString ecvTestDataRepository::findDatasetFile(Dataset kind,
         return {};  // Only declared demo members participate in autofill.
     }
 
-    if (kind == Dataset::RAM && fileName == QStringLiteral("demo1.jpg")) {
-        const QString demo =
-                QDir(root).filePath(QStringLiteral("demo/demo1.jpg"));
+    if (kind == Dataset::RAM &&
+        (fileName == QStringLiteral("demo1.jpg") ||
+         fileName == QStringLiteral("ram_demo1_to_4.avi"))) {
+        const bool video = fileName == QStringLiteral("ram_demo1_to_4.avi");
+        const QString demo = QDir(root).filePath("demo/" + fileName);
         const ecvAssetIntegrity::Anchor anchor{
                 QCryptographicHash::Sha256,
-                QByteArray("1b2906f4058a69936df49cb6156ec4cd117a286b420e1eb1476"
-                           "4033bf8f3c05f")};
+                video ? QByteArray("53c17ba6b53bde9b21660142a1685bfa8ce4a32d6"
+                                   "ab9c0cc08f1c57ce944b202")
+                      : QByteArray(
+                                "1b2906f4058a69936df49cb6156ec4cd117a286b420e"
+                                "1eb14764033bf8f3c05f")};
         return ecvAssetIntegrity::isVerified(
                        demo, anchor, 0, false,
-                       ecvAssetIntegrity::OnMiss::DeepVerify, 5701095)
+                       ecvAssetIntegrity::OnMiss::DeepVerify,
+                       video ? 262706 : 5701095)
                        ? QFileInfo(demo).absoluteFilePath()
                        : QString();
     }
@@ -698,18 +713,28 @@ bool ecvTestDataRepository::isExtractedComplete(Dataset kind) const {
     bool extractedComplete = false;
     switch (kind) {
         case Dataset::RelateAnything:
-            extractedComplete =
-                    !findDatasetFile(kind, QStringLiteral("skateboard.jpg"))
-                             .isEmpty() &&
-                    !findDatasetFile(
-                             kind,
-                             QStringLiteral("r3c_adoption_54729571599.webm"))
-                             .isEmpty();
+            extractedComplete = true;
+            for (const char* name :
+                 {"skateboard.jpg", "horse.jpg", "frisbee.jpg", "tennis.jpg",
+                  "catlaptop.jpg", "bicycle.jpg",
+                  "r3c_adoption_54729571599.webm"}) {
+                if (findDatasetFile(kind, QString::fromLatin1(name))
+                            .isEmpty()) {
+                    extractedComplete = false;
+                    break;
+                }
+            }
             break;
         case Dataset::RAM:
-            extractedComplete =
-                    !findDatasetFile(kind, QStringLiteral("demo1.jpg"))
-                             .isEmpty();
+            extractedComplete = true;
+            for (const char* name : {"demo1.jpg", "demo2.jpg", "demo3.jpg",
+                                     "demo4.jpg", "ram_demo1_to_4.avi"}) {
+                if (findDatasetFile(kind, QString::fromLatin1(name))
+                            .isEmpty()) {
+                    extractedComplete = false;
+                    break;
+                }
+            }
             break;
         case Dataset::Monstree:
             extractedComplete = !getMonstreeImages(extract).isEmpty();
@@ -741,11 +766,16 @@ bool ecvTestDataRepository::isExtractedComplete(Dataset kind) const {
             // The main single-image-to-3D samples live in examples_images/.
             // Extensions do not prove valid contents; corrupt caches must
             // continue through verified ZIP/download recovery.
-            const auto images = getImage2MeshImages(extract);
-            extractedComplete = std::any_of(
-                    images.cbegin(), images.cend(), [](const QString& path) {
-                        return !QImageReader(path).read().isNull();
-                    });
+            const auto hasReadableImage = [](const QStringList& images) {
+                return std::any_of(
+                        images.cbegin(), images.cend(),
+                        [](const QString& path) {
+                            return !QImageReader(path).read().isNull();
+                        });
+            };
+            extractedComplete =
+                    hasReadableImage(getImage2MeshImages(extract)) &&
+                    hasReadableImage(getSam3dObjectImages(extract));
             break;
         }
         case Dataset::SAM3:
@@ -870,11 +900,12 @@ bool ecvTestDataRepository::isDatasetAvailable(Dataset kind) const {
 }
 
 void ecvTestDataRepository::finishExtraction(Dataset kind, bool success) {
+    const bool settlesPreparation = m_ensurePending && kind == m_ensureKind;
+    if (settlesPreparation) m_ensurePending = false;
     emit extractionFinished(success, kind);
     // ensureDatasetReady convergence: exactly one datasetReady per accepted
     // call, from this single choke point.
-    if (m_ensurePending && kind == m_ensureKind) {
-        m_ensurePending = false;
+    if (settlesPreparation) {
         emit datasetReady(success, kind);
     }
 }
@@ -971,7 +1002,8 @@ void ecvTestDataRepository::startDownload(Dataset kind) {
 void ecvTestDataRepository::cancelDownload() {
     if (m_downloadInProgress && m_downloader) {
         m_downloader->cancel();
-        m_downloadInProgress = false;
+        // onDownloaderFinished settles cancellation synchronously. Do not
+        // overwrite a new request started by its datasetReady callback.
     }
 }
 
@@ -990,16 +1022,19 @@ void ecvTestDataRepository::onDownloaderProgress(qint64 received,
 void ecvTestDataRepository::onDownloaderFinished(bool ok,
                                                  const QString& destPath) {
     m_downloadInProgress = false;
-    const auto info = getDatasetInfo(m_currentDataset);
+    const Dataset completedKind = m_currentDataset;
+    const auto info = getDatasetInfo(completedKind);
 
     if (!ok) {
         emit downloadLogMessage(
                 QStringLiteral("[Error] Failed to download %1 dataset")
                         .arg(info.displayName));
-        emit downloadFinished(false, m_currentDataset);
-        if (m_ensurePending && m_currentDataset == m_ensureKind) {
-            m_ensurePending = false;
-            emit datasetReady(false, m_currentDataset);
+        const bool settlesPreparation =
+                m_ensurePending && completedKind == m_ensureKind;
+        if (settlesPreparation) m_ensurePending = false;
+        emit downloadFinished(false, completedKind);
+        if (settlesPreparation) {
+            emit datasetReady(false, completedKind);
         }
         return;
     }
@@ -1010,11 +1045,11 @@ void ecvTestDataRepository::onDownloaderFinished(bool ok,
     emit downloadLogMessage(
             QStringLiteral("[Info] Downloaded %1 dataset successfully")
                     .arg(info.displayName));
-    emit downloadFinished(true, m_currentDataset);
+    emit downloadFinished(true, completedKind);
     // ensureDatasetReady chain: the repository owns the download->extract
     // ordering (legacy downloadFinished consumers stay informational).
-    if (m_ensurePending && m_currentDataset == m_ensureKind) {
-        extractDataset(m_currentDataset);
+    if (m_ensurePending && completedKind == m_ensureKind) {
+        extractDataset(completedKind);
     }
 }
 
@@ -1035,38 +1070,30 @@ struct UnzFileCloser {
 };
 using UniqueUnzFile = std::unique_ptr<void, UnzFileCloser>;
 
-#ifdef Q_OS_WIN
-// Windows: _wfopen supports Unicode paths (UTF-16), unlike fopen which uses
-// the ANSI code page. minizip's unzOpen64 internally calls fopen, so we
-// provide a custom file function table that uses _wfopen.
-static voidpf ZCALLBACK wfopen64_file_func(voidpf /*opaque*/,
-                                           const void* filename,
-                                           int mode) {
-    const wchar_t* wpath = static_cast<const wchar_t*>(filename);
-    const wchar_t* wmode = nullptr;
+// minizip's default fopen callback uses the Windows ANSI code page. Keep
+// archive paths UTF-8 and let the common filesystem boundary handle them.
+static voidpf ZCALLBACK utf8_fopen64_file_func(voidpf /*opaque*/,
+                                               const void* filename,
+                                               int mode) {
+    const char* path = static_cast<const char*>(filename);
+    const char* fileMode = nullptr;
     if ((mode & ZLIB_FILEFUNC_MODE_READWRITEFILTER) == ZLIB_FILEFUNC_MODE_READ)
-        wmode = L"rb";
+        fileMode = "rb";
     else if (mode & ZLIB_FILEFUNC_MODE_EXISTING)
-        wmode = L"r+b";
+        fileMode = "r+b";
     else if (mode & ZLIB_FILEFUNC_MODE_CREATE)
-        wmode = L"wb";
-    if (wpath && wmode) return _wfopen(wpath, wmode);
+        fileMode = "wb";
+    if (path && fileMode)
+        return cloudViewer::utility::filesystem::FOpen(path, fileMode);
     return nullptr;
 }
-#endif
 
 UniqueUnzFile openUnzFile(const QString& path) {
-#ifdef Q_OS_WIN
-    // Pass wide-string path so our custom open func can use _wfopen
     zlib_filefunc64_def filefunc;
     fill_fopen64_filefunc(&filefunc);
-    filefunc.zopen64_file = wfopen64_file_func;
-    const std::wstring wpath = path.toStdWString();
-    return UniqueUnzFile(unzOpen2_64(wpath.c_str(), &filefunc));
-#else
-    // macOS/Linux: fopen uses UTF-8 natively
-    return UniqueUnzFile(unzOpen64(path.toUtf8().constData()));
-#endif
+    filefunc.zopen64_file = utf8_fopen64_file_func;
+    const QByteArray utf8Path = path.toUtf8();
+    return UniqueUnzFile(unzOpen2_64(utf8Path.constData(), &filefunc));
 }
 
 int extractCurrentZipEntry(unzFile uf, const QString& extractDir) {
@@ -1235,6 +1262,12 @@ bool ecvTestDataRepository::extractDataset(Dataset kind) {
             finishExtraction(kind, false);
             return false;
         }
+        // The source was verified above. Record the materialized copy so
+        // subsequent lookups share its size/mtime evidence without rehashing.
+        if (!ecvAssetIntegrity::markVerified(dest, info.anchor)) {
+            finishExtraction(kind, false);
+            return false;
+        }
         emit downloadLogMessage(
                 QStringLiteral("[Test data] Materialized %1 -> %2")
                         .arg(QFileInfo(zip).fileName(), dest));
@@ -1266,12 +1299,12 @@ bool ecvTestDataRepository::extractDataset(Dataset kind) {
         return false;
     }
 
-    // Verify extraction result
+    // Verify the actual members consumed by every registered sample action.
     const QString expectedDir = extractPath(kind);
-    if (!QDir(expectedDir).exists()) {
+    if (!isExtractedComplete(kind)) {
         emit downloadLogMessage(
                 QStringLiteral("[Error] Extraction completed but expected "
-                               "directory not found: %1")
+                               "dataset members are missing or invalid: %1")
                         .arg(expectedDir));
         finishExtraction(kind, false);
         return false;

@@ -212,6 +212,15 @@ bool ecvAssetIntegrity::isVerified(const QString& path,
     return noLedgerExactSize > 0 ? fi.size() == noLedgerExactSize : true;
 }
 
+bool ecvAssetIntegrity::isModelVerified(const QString& path,
+                                        qint64 noLedgerExactSize) {
+    return isVerified(path,
+                      {QCryptographicHash::Sha256,
+                       PinnedDigest(QFileInfo(path).fileName())},
+                      64 * 1024, true, OnMiss::CheapChecksOnly,
+                      noLedgerExactSize);
+}
+
 bool ecvAssetIntegrity::markVerified(const QString& path,
                                      const Anchor& anchor) {
     const QFileInfo fi(path);

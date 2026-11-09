@@ -7,37 +7,23 @@
 
 #include "tasks/depth/depth_export.hpp"
 
+#include <FileSystem.h>
+
 #include <QImage>
 #include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <vector>
 
-#ifndef _WIN32
-#include <fcntl.h>
-#include <unistd.h>
-#endif  // !_WIN32
-
 namespace aicore {
 namespace depth {
-
-//! Open an output file with safe (non-world-writable) permissions.
-static std::FILE* open_output_file(const std::string& path) {
-#ifdef _WIN32
-    return std::fopen(path.c_str(), "wb");
-#else
-    int fd = ::open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    if (fd < 0) return nullptr;
-    return ::fdopen(fd, "wb");
-#endif  // _WIN32
-}
 
 bool write_pfm(const std::string& path,
                const std::vector<float>& depth,
                int H,
                int W) {
     if (H <= 0 || W <= 0 || depth.size() != (size_t)H * (size_t)W) return false;
-    std::FILE* f = open_output_file(path);
+    std::FILE* f = cloudViewer::utility::filesystem::FOpenForWrite(path);
     if (!f) return false;
     std::fprintf(f, "Pf\n%d %d\n-1.0\n", W, H);
     bool ok = true;

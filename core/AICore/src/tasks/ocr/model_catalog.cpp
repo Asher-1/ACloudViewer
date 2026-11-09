@@ -62,14 +62,6 @@ static constexpr const VariantInfo kVariants[] = {
 
 static constexpr int kVariantCount = sizeof(kVariants) / sizeof(kVariants[0]);
 
-static char* dupString(const char* s) {
-#ifdef _MSC_VER
-    return _strdup(s);
-#else
-    return strdup(s);
-#endif
-}
-
 struct ModelRow {
     const char* filename;
     const char* download_url;
@@ -103,9 +95,11 @@ static std::vector<ModelRow> buildModels() {
                              ? " (Japanese) "
                              : " (CDLA document regions) ") +
                     kQuantNotes[qi];
-            rows.push_back({dupString(filename.c_str()), dupString(url.c_str()),
-                            dupString(display.c_str()), dupString(variant.role),
-                            dupString(variant.language)});
+            rows.push_back({aicore::capi::dup_cstr(filename.c_str()),
+                            aicore::capi::dup_cstr(url.c_str()),
+                            aicore::capi::dup_cstr(display.c_str()),
+                            aicore::capi::dup_cstr(variant.role),
+                            aicore::capi::dup_cstr(variant.language)});
         }
     }
     return rows;

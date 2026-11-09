@@ -19,6 +19,7 @@ except ModuleNotFoundError:  # test host without the opencv dep
 from run_ocr_paddle_probe import comparison, execute, passes, run, source_environment
 from digest_utils import sha256_file
 from ocr_paddle_metadata import distribution_environment
+from runtime_environment import windows_reference_path
 
 
 class PaddleGraphTests(unittest.TestCase):
@@ -94,6 +95,18 @@ class PaddleGraphTests(unittest.TestCase):
         self.assertEqual(environment["PYTHONNOUSERSITE"], "1")
         if os.name != "nt":
             self.assertNotIn("/foreign/lib", environment.get("LD_LIBRARY_PATH", ""))
+
+    def test_windows_reference_path_keeps_system_and_excludes_test_runtime(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            system = root / "system"
+            candidate = root / "candidate"
+            system.mkdir()
+            candidate.mkdir()
+            (system / "kernel32.dll").touch()
+            (candidate / "GGML-CPU.DLL").touch()
+            paths = os.pathsep.join(map(str, (system, candidate)))
+            self.assertEqual(windows_reference_path(paths), [str(system)])
 
     def test_source_crash_cannot_certify_an_existing_report(self):
         with tempfile.TemporaryDirectory() as directory:

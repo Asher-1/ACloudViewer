@@ -388,6 +388,13 @@ void RFDetrDialog::setupUi() {
 
     // Downloader.
     m_downloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
+    connect(this, &QDialog::finished, this, [this] {
+        m_testDataDownloadInProgress = false;
+        m_pendingTestDataTarget = TestDataTarget::None;
+        setTestDataControlsEnabled(true);
+    });
     connect(m_downloader, &ecvModelDownloader::progress, this,
             [this](qint64 received, qint64 total) {
                 m_progress->setVisible(true);
@@ -408,6 +415,7 @@ void RFDetrDialog::setupUi() {
                 m_progress->setVisible(false);
                 m_downloadLabel->setVisible(false);
                 if (!ok) {
+                    m_pendingActionAfterDownload = PendingAction::None;
                     appendLog(tr("[RF-DETR] Download failed: %1").arg(path));
                     return;
                 }
@@ -418,7 +426,7 @@ void RFDetrDialog::setupUi() {
                     if (action == PendingAction::Run) {
                         onRun();
                     } else if (action == PendingAction::LiveStart) {
-                        startLiveStream();
+                        onLiveStart();
                     }
                 }
             });
@@ -442,10 +450,6 @@ void RFDetrDialog::setupUi() {
             [this](const QString& message) {
                 if (m_testDataDownloadInProgress) appendLog(message);
             });
-    connect(&repo, &ecvTestDataRepository::downloadFinished, this,
-            [this](bool success, ecvTestDataRepository::Dataset kind) {
-                onTestDataDownloadFinished(success, kind);
-            });
     connect(&repo, &ecvTestDataRepository::extractionProgress, this,
             [this](int current, int total) {
                 if (!m_testDataDownloadInProgress || total <= 0) return;
@@ -453,9 +457,9 @@ void RFDetrDialog::setupUi() {
                 m_progress->setValue(current);
                 m_progress->setVisible(true);
             });
-    connect(&repo, &ecvTestDataRepository::extractionFinished, this,
+    connect(&repo, &ecvTestDataRepository::datasetReady, this,
             [this](bool success, ecvTestDataRepository::Dataset kind) {
-                onTestDataExtractionFinished(success, kind);
+                onTestDataReady(success, kind);
             });
 }
 
@@ -589,7 +593,7 @@ bool RFDetrDialog::ensureModelAvailable(PendingAction action) {
         appendLog(tr("[RF-DETR] Select a model first."));
         return false;
     }
-    if (!QFileInfo::exists(resolveModelPath())) {
+    if (!ecvAssetIntegrity::isModelVerified(resolveModelPath())) {
         RFDetrModelEntry entry;
         if (!RFDetrHelpers::findModelByFilename(filename, &entry)) {
             appendLog(tr("[RF-DETR] Model file not found: %1").arg(filename));
@@ -613,7 +617,7 @@ void RFDetrDialog::startDownload(const RFDetrModelEntry& model) {
     QDir().mkpath(RFDetrHelpers::modelCacheDir());
     const QString dest =
             RFDetrHelpers::modelCacheDir() + QDir::separator() + model.filename;
-    if (QFile::exists(dest)) {
+    if (ecvAssetIntegrity::isModelVerified(dest)) {
         appendLog(tr("[RF-DETR] Model already present: %1").arg(dest));
         return;
     }
@@ -1006,29 +1010,15 @@ void RFDetrDialog::requestTestData(TestDataTarget target) {
     }
 
     const auto kind = ecvTestDataRepository::Dataset::ObjectsDetection;
-    const auto info = ecvTestDataRepository::getDatasetInfo(kind);
     m_testDataDownloadInProgress = true;
     setTestDataControlsEnabled(false);
-    if (ecvAssetIntegrity::isVerified(ecvTestDataRepository::zipPath(kind),
-                                      info.anchor, 0, false,
-                                      ecvAssetIntegrity::OnMiss::DeepVerify)) {
-        appendLog(tr("[Test data] Extracting cached archive..."));
-        m_progress->setRange(0, 0);
-        m_progress->setValue(0);
-        m_progress->setVisible(true);
-        m_downloadLabel->setText(
-                tr("Extracting object detection test data..."));
-        m_downloadLabel->setVisible(true);
-        repo.extractDataset(kind);
-        return;
-    }
 
     m_downloadLabel->setText(tr("Downloading object detection test data..."));
     m_downloadLabel->setVisible(true);
     m_progress->setRange(0, 100);
     m_progress->setValue(0);
     m_progress->setVisible(true);
-    repo.startDownload(kind);
+    repo.ensureDatasetReady(kind);
 }
 
 bool RFDetrDialog::loadRequestedTestData() {
@@ -1059,33 +1049,8 @@ bool RFDetrDialog::loadRequestedTestData() {
     return true;
 }
 
-void RFDetrDialog::onTestDataDownloadFinished(
-        bool success, ecvTestDataRepository::Dataset kind) {
-    if (!m_testDataDownloadInProgress ||
-        kind != ecvTestDataRepository::Dataset::ObjectsDetection) {
-        return;
-    }
-
-    if (!success) {
-        appendLog(tr("[Test data] Download failed."));
-        m_testDataDownloadInProgress = false;
-        m_downloadLabel->setVisible(false);
-        m_progress->setRange(0, 100);
-        m_progress->setVisible(false);
-        setTestDataControlsEnabled(true);
-        m_pendingTestDataTarget = TestDataTarget::None;
-        return;
-    }
-
-    appendLog(tr("[Test data] Extracting..."));
-    m_downloadLabel->setText(tr("Extracting object detection test data..."));
-    m_progress->setRange(0, 0);  // indeterminate / busy
-    m_progress->setVisible(true);
-    ecvTestDataRepository::instance().extractDataset(kind);
-}
-
-void RFDetrDialog::onTestDataExtractionFinished(
-        bool success, ecvTestDataRepository::Dataset kind) {
+void RFDetrDialog::onTestDataReady(bool success,
+                                   ecvTestDataRepository::Dataset kind) {
     if (!m_testDataDownloadInProgress ||
         kind != ecvTestDataRepository::Dataset::ObjectsDetection) {
         return;
@@ -1136,6 +1101,9 @@ void RFDetrDialog::closeEvent(QCloseEvent* event) {
     }
     saveSettings();
     m_liveWidget->saveSettings();
+    m_testDataDownloadInProgress = false;
+    m_pendingTestDataTarget = TestDataTarget::None;
+    setTestDataControlsEnabled(true);
     event->accept();
 }
 

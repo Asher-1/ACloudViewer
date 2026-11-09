@@ -171,8 +171,6 @@ VideoTab::VideoTab(QWidget* parent) : QWidget(parent) {
             [this](const QString& message) {
                 if (m_testDataDownloadInProgress) appendLog(message);
             });
-    connect(&repo, &ecvTestDataRepository::downloadFinished, this,
-            &VideoTab::onTestDataDownloadFinished);
     connect(&repo, &ecvTestDataRepository::extractionProgress, this,
             [this](int current, int total) {
                 if (!m_testDataDownloadInProgress || total <= 0) return;
@@ -183,8 +181,8 @@ VideoTab::VideoTab(QWidget* parent) : QWidget(parent) {
                     m_progress->setValue(current * 100 / total);
                 }
             });
-    connect(&repo, &ecvTestDataRepository::extractionFinished, this,
-            &VideoTab::onTestDataExtractionFinished);
+    connect(&repo, &ecvTestDataRepository::datasetReady, this,
+            &VideoTab::onTestDataReady);
 
     // Fill the test-video picker from the (possibly cached) SAM3 dataset.
     populateTestVideoCombo();
@@ -2178,7 +2176,6 @@ void VideoTab::onUseTestData() {
     }
 
     const auto kind = ecvTestDataRepository::Dataset::SAM3;
-    const auto info = ecvTestDataRepository::getDatasetInfo(kind);
     m_testDataDownloadInProgress = true;
     setTestDataControlsEnabled(false);
     if (m_progress) {
@@ -2188,42 +2185,14 @@ void VideoTab::onUseTestData() {
     if (m_downloadLabel) {
         m_downloadLabel->setVisible(true);
     }
-    if (ecvAssetIntegrity::isVerified(ecvTestDataRepository::zipPath(kind),
-                                      info.anchor, 0, false,
-                                      ecvAssetIntegrity::OnMiss::DeepVerify)) {
-        appendLog(tr("[Test data] Extracting cached archive..."));
-        setStatus(tr("Extracting SAM3 test data..."));
-        repo.extractDataset(kind);
-        return;
-    }
+
     appendLog(tr("[Test data] Downloading SAM3 test data..."));
     setStatus(tr("Downloading SAM3 test data..."));
-    repo.startDownload(kind);
+    repo.ensureDatasetReady(kind);
 }
 
-void VideoTab::onTestDataDownloadFinished(bool success,
-                                          ecvTestDataRepository::Dataset kind) {
-    if (!m_testDataDownloadInProgress ||
-        kind != ecvTestDataRepository::Dataset::SAM3) {
-        return;
-    }
-    if (!success) {
-        appendLog(tr("[Test data] Download failed."));
-        m_testDataDownloadInProgress = false;
-        setTestDataControlsEnabled(true);
-        if (m_progress) m_progress->setVisible(false);
-        if (m_downloadLabel) m_downloadLabel->setVisible(false);
-        setStatus(tr("Ready."));
-        return;
-    }
-    appendLog(tr("[Test data] Extracting..."));
-    setStatus(tr("Extracting SAM3 test data..."));
-    if (m_progress) m_progress->setValue(0);
-    ecvTestDataRepository::instance().extractDataset(kind);
-}
-
-void VideoTab::onTestDataExtractionFinished(
-        bool success, ecvTestDataRepository::Dataset kind) {
+void VideoTab::onTestDataReady(bool success,
+                               ecvTestDataRepository::Dataset kind) {
     if (!m_testDataDownloadInProgress ||
         kind != ecvTestDataRepository::Dataset::SAM3) {
         return;

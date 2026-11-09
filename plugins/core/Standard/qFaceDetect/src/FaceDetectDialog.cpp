@@ -70,14 +70,6 @@ bool isSupportedImageFile(const QString& filePath) {
                                Qt::CaseInsensitive);
 }
 
-bool isValidCachedGguf(const QFileInfo& fi) {
-    return ecvAssetIntegrity::isVerified(
-            fi.absoluteFilePath(),
-            {QCryptographicHash::Sha256,
-             ecvAssetIntegrity::PinnedDigest(fi.fileName())},
-            64 * 1024, true, ecvAssetIntegrity::OnMiss::CheapChecksOnly);
-}
-
 }  // namespace
 
 QString FaceDetectDialog::modelCacheDir() {
@@ -388,6 +380,9 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
             });
 
     m_downloader = new ecvModelDownloader(this);
+
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
             &FaceDetectDialog::appendLog);
     connect(m_downloader, &ecvModelDownloader::progress, this,
@@ -407,23 +402,24 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
             });
     connect(m_downloader, &ecvModelDownloader::finished, this,
             [this](bool ok, const QString& dest) {
-                const QString finishedFilename = QFileInfo(dest).fileName();
                 m_downloadInProgress = false;
                 m_downloadLabel->setVisible(false);
                 if (ok) {
                     appendLog(tr("[OK] Downloaded model: %1").arg(dest));
-                    populateModelCombo(finishedFilename);
+                    // A landmark download must preserve the detector choice.
+                    populateModelCombo();
                     populateLandmarkModelCombo();
-                    if (m_autoRunAfterDownload) {
-                        m_autoRunAfterDownload = false;
-                        onRun();
-                    }
+                    auto resume = std::move(m_resumeAfterDownload);
+                    m_resumeAfterDownload = {};
+                    if (resume) resume();
                 } else {
-                    populateModelCombo(finishedFilename);
-                    m_autoRunAfterDownload = false;
+                    populateModelCombo();
+                    m_resumeAfterDownload = {};
                 }
             });
     m_testDataDownloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_testDataDownloader,
+            &ecvModelDownloader::cancel);
     connect(m_testDataDownloader, &ecvModelDownloader::logMessage, this,
             &FaceDetectDialog::appendLog);
     connect(m_testDataDownloader, &ecvModelDownloader::progress, this,
@@ -976,7 +972,7 @@ void FaceDetectDialog::populateModelCombo(const QString& keepFilename) {
         const QFileInfo fi(cache + QLatin1Char('/') +
                            QString::fromUtf8(m->filename));
         const QString suffix =
-                isValidCachedGguf(fi)
+                ecvAssetIntegrity::isModelVerified(fi.absoluteFilePath())
                         ? QString(" [%1] \u2713")
                                   .arg(ecvModelDownloader::formatFileSize(
                                           fi.size()))
@@ -1036,7 +1032,7 @@ void FaceDetectDialog::populateLandmarkModelCombo(const QString& keepFilename) {
         added.insert(fn);
         const QFileInfo fi(cache + QLatin1Char('/') + fn);
         const QString suffix =
-                isValidCachedGguf(fi)
+                ecvAssetIntegrity::isModelVerified(fi.absoluteFilePath())
                         ? QString(" [%1] \u2713")
                                   .arg(ecvModelDownloader::formatFileSize(
                                           fi.size()))
@@ -1170,6 +1166,12 @@ QString FaceDetectDialog::defaultLandmarkModelPathOnDisk() const {
 
 void FaceDetectDialog::ensureLandmarkModelPathFilled() {
     if (!m_customLandmarkModelPath) return;
+    if (m_landmarkModelCombo &&
+        m_landmarkModelCombo->currentData().toString() !=
+                QStringLiteral("CUSTOM")) {
+        syncLandmarkPathFromCombo();
+        return;
+    }
     const QString current = m_customLandmarkModelPath->text().trimmed();
     if (!current.isEmpty() && QFileInfo::exists(current)) return;
 
@@ -1201,6 +1203,11 @@ QString FaceDetectDialog::resolveLandmarkModelFilename() const {
 }
 
 QString FaceDetectDialog::resolveLandmarkModelPath() const {
+    if (m_landmarkModelCombo &&
+        m_landmarkModelCombo->currentData().toString() !=
+                QStringLiteral("CUSTOM")) {
+        return QDir(modelCacheDir()).filePath(resolveLandmarkModelFilename());
+    }
     if (m_customLandmarkModelPath) {
         const QString typed = m_customLandmarkModelPath->text().trimmed();
         if (!typed.isEmpty()) return typed;
@@ -1580,7 +1587,7 @@ void FaceDetectDialog::onLiveStart() {
     if (!m_liveWidget) return;
     // Live tab only supports Detect / Recognize — never DenseLandmarks — so
     // only verify the face detector model, not the landmark model.
-    if (!ensureDetectorAvailable()) return;
+    if (!ensureDetectorAvailable([this]() { onLiveStart(); })) return;
     syncLiveConfig();
 
     const FaceLiveDetectWidget::Config liveCfg = m_liveWidget->config();
@@ -1702,10 +1709,11 @@ void FaceDetectDialog::onModeChanged(int) {
     }
 }
 
-bool FaceDetectDialog::ensureModelAvailable() {
+bool FaceDetectDialog::ensureModelAvailable(std::function<void()> resume) {
+    if (m_downloadInProgress) return false;
     const QString path = resolveModelPath();
     if (path.isEmpty()) return false;
-    if (!QFile::exists(path) || !isValidCachedGguf(QFileInfo(path))) {
+    if (!ecvAssetIntegrity::isModelVerified(path)) {
         const QString data = m_modelCombo->currentData().toString();
         if (data == "CUSTOM") {
             QMessageBox::warning(
@@ -1716,6 +1724,7 @@ bool FaceDetectDialog::ensureModelAvailable() {
         if (const aicore_facedetect_model_entry* m =
                     aicore_facedetect_model_by_filename(
                             data.toUtf8().constData())) {
+            m_resumeAfterDownload = resume;
             startDownload(m);
             return false;
         }
@@ -1727,7 +1736,7 @@ bool FaceDetectDialog::ensureModelAvailable() {
 
     const QString landmarkPath = resolveLandmarkModelPath();
     if (!landmarkPath.isEmpty() && QFile::exists(landmarkPath) &&
-        isValidCachedGguf(QFileInfo(landmarkPath))) {
+        ecvAssetIntegrity::isModelVerified(landmarkPath)) {
         return true;
     }
 
@@ -1750,14 +1759,16 @@ bool FaceDetectDialog::ensureModelAvailable() {
                "points.\n\n"
                "Downloading %1 now\u2026")
                     .arg(lmFilename));
+    m_resumeAfterDownload = resume;
     startDownload(m);
     return false;
 }
 
-bool FaceDetectDialog::ensureDetectorAvailable() {
+bool FaceDetectDialog::ensureDetectorAvailable(std::function<void()> resume) {
+    if (m_downloadInProgress) return false;
     const QString path = resolveModelPath();
     if (path.isEmpty()) return false;
-    if (!QFile::exists(path) || !isValidCachedGguf(QFileInfo(path))) {
+    if (!ecvAssetIntegrity::isModelVerified(path)) {
         const QString data = m_modelCombo->currentData().toString();
         if (data == "CUSTOM") {
             QMessageBox::warning(
@@ -1768,6 +1779,7 @@ bool FaceDetectDialog::ensureDetectorAvailable() {
         if (const aicore_facedetect_model_entry* m =
                     aicore_facedetect_model_by_filename(
                             data.toUtf8().constData())) {
+            m_resumeAfterDownload = resume;
             startDownload(m);
             return false;
         }
@@ -1783,7 +1795,6 @@ void FaceDetectDialog::startDownload(
     const QString dest = modelCacheDir() + QLatin1Char('/') +
                          QString::fromUtf8(model->filename);
     m_downloadInProgress = true;
-    m_autoRunAfterDownload = true;
     m_downloadLabel->setVisible(true);
     m_downloadLabel->setText(
             tr("Downloading %1 ...").arg(QString::fromUtf8(model->filename)));
@@ -1794,13 +1805,16 @@ void FaceDetectDialog::startDownload(
     ecvModelDownloader::Request req;
     req.url = QString::fromUtf8(model->download_url);
     req.destPath = dest;
+    req.contentAnchor = {QCryptographicHash::Sha256,
+                         ecvAssetIntegrity::PinnedDigest(
+                                 QString::fromUtf8(model->filename))};
     m_downloader->download(req);
 }
 
 void FaceDetectDialog::cancelDownload() {
     if (m_downloader) m_downloader->cancel();
     m_downloadInProgress = false;
-    m_autoRunAfterDownload = false;
+    m_resumeAfterDownload = {};
     m_downloadLabel->setVisible(false);
 }
 
@@ -1809,7 +1823,7 @@ void FaceDetectDialog::onRun() {
         appendLog(tr("[Error] Input image required."));
         return;
     }
-    if (!ensureModelAvailable()) return;
+    if (!ensureModelAvailable([this]() { onRun(); })) return;
 
     const Mode mode = static_cast<Mode>(m_modeCombo->currentData().toInt());
     if (mode == Mode::DenseLandmarks) {
@@ -2148,7 +2162,11 @@ void FaceDetectDialog::applyFriendsTestBundle(
         const bool needsGallery = !bundle.galleryEntries.isEmpty() ||
                                   !bundle.extractRoot.isEmpty();
         if (needsGallery) {
-            if (!ensureModelAvailable()) {
+            if (!ensureDetectorAvailable([this, bundle, fillRegistry,
+                                          fillLiveVideo, fillBatchImage]() {
+                    applyFriendsTestBundle(bundle, fillRegistry, fillLiveVideo,
+                                           fillBatchImage);
+                })) {
                 appendLog(
                         tr("[Test data] Face model required before gallery "
                            "registration."));
@@ -2232,7 +2250,13 @@ void FaceDetectDialog::startTestDataPostProcess(
     }
 
     if (fillRegistry) {
-        if (!ensureModelAvailable()) {
+        if (!ensureDetectorAvailable([this, bundle, fillRegistry, fillLiveVideo,
+                                      fillBatchImage, extractZipFirst, zipPath,
+                                      clearExistingEntries]() {
+                startTestDataPostProcess(bundle, fillRegistry, fillLiveVideo,
+                                         fillBatchImage, extractZipFirst,
+                                         zipPath, clearExistingEntries);
+            })) {
             appendLog(
                     tr("[Test data] Face model required before gallery "
                        "registration."));

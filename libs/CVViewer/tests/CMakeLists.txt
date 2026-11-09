@@ -51,7 +51,8 @@ if(MSVC)
     set_target_properties(tests PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin/cloudviewer_test/$<CONFIG>"
         RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin/cloudviewer_test/$<CONFIG>"
-        RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/bin/cloudviewer_test/$<CONFIG>")
+        RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/bin/cloudviewer_test/$<CONFIG>"
+        RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_BINARY_DIR}/bin/cloudviewer_test/$<CONFIG>")
 endif()
 
 # Fix Qt -fPIC requirement

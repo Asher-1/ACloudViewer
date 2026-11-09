@@ -5,14 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include <Parallel.h>
-
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 #include <CPUInfo.h>
 #include <Logging.h>
+#include <Parallel.h>
 
 #include <cstdlib>
 #include <string>
@@ -34,7 +29,7 @@ int EstimateMaxThreads() {
         !GetEnvVar("OMP_DYNAMIC").empty()) {
         // See the full list of OpenMP environment variables at:
         // https://www.openmp.org/spec-html/5.0/openmpch6.html
-        return omp_get_max_threads();
+        return GetMaxThreads();
     } else {
         // Returns the number of physical cores.
         return utility::CPUInfo::GetInstance().NumCores();
@@ -45,13 +40,7 @@ int EstimateMaxThreads() {
 #endif
 }
 
-int GetThreadNum() {
-#ifdef _OPENMP
-    return omp_get_thread_num();
-#else
-    return 0;  // No parallelism available, so thread ID is always 0.
-#endif
-}
+int GetThreadNum() { return GetOpenMPThreadNum(); }
 
 bool InParallel() {
     // TODO: when we add TBB/Parallel STL support to ParallelFor, update this.

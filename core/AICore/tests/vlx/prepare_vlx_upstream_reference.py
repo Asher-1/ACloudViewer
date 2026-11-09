@@ -29,6 +29,9 @@ import tarfile
 import urllib.request
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+from runtime_environment import executable_name
+
 REPO = Path(__file__).resolve().parents[4]
 OWNER = REPO / "3rdparty" / "llama" / "llama_cpp.cmake"
 
@@ -103,7 +106,7 @@ def main() -> int:
     marker = out / "READY"
     bin_dir = None
     for candidate in (src / "cpp_ggml" / "build", src / "cpp_ggml" / "build"):
-        exe = candidate / ("vlx-cli.exe" if os.name == "nt" else "vlx-cli")
+        exe = candidate / executable_name("vlx-cli")
         if exe.is_file():
             bin_dir = candidate
             break

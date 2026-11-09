@@ -1,11 +1,11 @@
 """Process isolation shared by independent Paddle accuracy/performance probes."""
 
 import os
-import sys
+from runtime_environment import loader_variable, reference_runtime_environment
 
 
 def source_environment(python):
-    environment = os.environ.copy()
+    environment = reference_runtime_environment(os.environ)
     for key in ("LD_PRELOAD", "PYTHONPATH"):
         environment.pop(key, None)
     # Paddle 3.0.0 links duplicate glog static string owners. A host-supplied
@@ -17,8 +17,9 @@ def source_environment(python):
     root = python.absolute().parent.parent
     candidates = list(root.glob("lib/python*/site-packages/nvidia/*/lib"))
     candidates += list(root.glob("Lib/site-packages/nvidia/*/bin"))
-    variable = ("PATH" if os.name == "nt" else "DYLD_LIBRARY_PATH"
-                if sys.platform == "darwin" else "LD_LIBRARY_PATH")
-    environment[variable] = os.pathsep.join(map(str, candidates))
+    variable = loader_variable()
+    runtime_paths = list(map(str, candidates))
+    runtime_paths.extend([environment[variable]] if environment.get(variable) else [])
+    environment[variable] = os.pathsep.join(runtime_paths)
     environment["PYTHONNOUSERSITE"] = "1"
     return environment

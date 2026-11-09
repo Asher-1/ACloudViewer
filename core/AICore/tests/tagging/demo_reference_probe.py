@@ -22,6 +22,9 @@ import sys
 import tempfile
 
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+from runtime_environment import executable_name, is_windows, loader_variable, windows_reference_path
+
 REVISION = "136d09dff71802bc7b6abedb326785bca8b2fcb4"
 SCRIPT = "cpp_ggml/scripts/parity_reference.py"
 
@@ -142,7 +145,7 @@ def materialize(args: argparse.Namespace, unknown: list[str]) -> int:
     if args.backend.lower() == "cpu" and model.name.endswith("-q8_0.gguf"):
         cpu = cache / (model.name[:-5] + ".cpu.f32")
         if not cpu.is_file():
-            binary = upstream / "cpp_ggml/build-cpu/ram-ggml"
+            binary = upstream / "cpp_ggml/build-cpu" / executable_name("ram-ggml")
             if not binary.is_file():
                 raise RuntimeError(
                     f"CPU Q8 truth requires the upstream binary: {binary}"
@@ -155,10 +158,11 @@ def materialize(args: argparse.Namespace, unknown: list[str]) -> int:
             # has an embedded RUNPATH to its own ggml build; clear the
             # candidate-only overrides and let the dynamic loader use it.
             runtime_env = os.environ.copy()
-            if os.name != "nt":
-                runtime_env.pop(
-                    "DYLD_LIBRARY_PATH" if sys.platform == "darwin"
-                    else "LD_LIBRARY_PATH", None)
+            if is_windows():
+                runtime_env["PATH"] = os.pathsep.join(
+                    windows_reference_path(runtime_env.get("PATH", "")))
+            else:
+                runtime_env.pop(loader_variable(), None)
             runtime_env.pop("GGML_BACKEND_PATH", None)
             runtime_env["OMP_NUM_THREADS"] = str(effective_threads)
             runtime_env["OMP_DYNAMIC"] = "FALSE"

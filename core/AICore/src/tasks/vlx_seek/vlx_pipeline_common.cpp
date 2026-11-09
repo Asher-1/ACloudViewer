@@ -8,6 +8,8 @@
 // header note). Behavior is frozen by the benchmark regression suite.
 #include "tasks/vlx_seek/vlx_pipeline_common.h"
 
+#include <FileSystem.h>
+
 #include <algorithm>
 #include <cctype>
 #include <charconv>
@@ -102,7 +104,8 @@ std::string boxes_to_json(const std::vector<Box>& boxes) {
 // Returns false silently when the file cannot be opened: dump failures must
 // never break the run that produced the tensors.
 bool write_file(const std::string& path, const void* data, size_t bytes) {
-    std::ofstream file(path, std::ios::binary | std::ios::trunc);
+    std::ofstream file = cloudViewer::utility::filesystem::OpenOutputStream(
+            path, std::ios::binary | std::ios::trunc);
     if (!file) return false;
     if (bytes && data) {
         file.write(static_cast<const char*>(data),

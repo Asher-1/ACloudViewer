@@ -3,7 +3,7 @@
 scripts/ggml_upgrade_verify.py: identical inputs, one variable changed,
 machine-readable comparison output).
 
-Runs the AICore TRELLIS.2 pipeline (libAICore.so) on one or more compute
+Runs the AICore TRELLIS.2 pipeline (the platform AICore runtime) on one or more compute
 backends for a fixed image + quality + seed and reports per-stage wall times
 plus geometry hashes, so backend precision/speed regressions are visible in
 one table:
@@ -11,7 +11,7 @@ one table:
     python3 core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py \
         --models ~/models --image test.png --device cuda,vulkan --pipeline 512
 
-Requires: AICore built (build_app/bin/libAICore.so), the TRELLIS GGUFs in
+Requires: AICore built (build_app/bin/AICore.dll or libAICore.*), the TRELLIS GGUFs in
 --models (dino/ss_flow/ss_dec for coarse; + slat_flow/shape_dec/shape_enc/
 tex_dec/tex_slat_flow_512 for 512), optionally rmbg.
 """
@@ -22,9 +22,14 @@ import hashlib
 import json
 import math
 import os
+from pathlib import Path
 import struct
 import sys
 import time
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "scripts"))
+from runtime_environment import (load_shared_library, resolve_aicore_library,
+                                 preload_shared_libraries)
 
 # aicore_trellis_stage / pipeline_type / background_mode (trellis_capi.h).
 STAGE_NAMES = {
@@ -37,17 +42,14 @@ PIPE_ALIASES = {"coarse": PIPE_COARSE, "512": PIPE_512, "1024": PIPE_1024}
 
 
 def find_lib(root_hint=None):
-    candidates = []
-    if root_hint:
-        candidates.append(os.path.join(root_hint, "libAICore.so"))
-    here = os.path.dirname(os.path.abspath(__file__))
-    # core/AICore/src/tasks/trellis/tools -> repo root is six levels up.
-    candidates.append(os.path.join(here, "..", "..", "..", "..", "..", "..",
-                                   "build_app", "bin", "libAICore.so"))
-    for c in candidates:
-        if os.path.exists(c):
-            return os.path.abspath(c)
-    raise SystemExit("libAICore.so not found (hint: --lib)")
+    roots = ([root_hint] if root_hint else []) + [
+        Path(__file__).resolve().parents[6] / "build_app"]
+    for root in roots:
+        try:
+            return str(resolve_aicore_library(root))
+        except FileNotFoundError:
+            continue
+    raise SystemExit("AICore runtime not found (hint: --lib)")
 
 
 # void (*)(void* user, int stage, int step, int total)
@@ -199,23 +201,18 @@ def main():
     ap.add_argument("--quant", choices=("f16", "q8", "f32", "mixed"), default="q8")
     ap.add_argument("--steps", type=int, default=12)
     ap.add_argument("--seed", type=int, default=42)
-    ap.add_argument("--lib", default=None, help="path to libAICore.so")
+    ap.add_argument("--lib", default=None, help="path to the AICore runtime library")
     ap.add_argument("--torch-lib", default=None,
-                    help="dir holding libtorch.so (required when the build "
-                         "enabled AICore_USE_CUMESH; preloaded so dlopen can "
-                         "resolve the libaicore_cumesh dependency chain)")
+                    help="Torch runtime directory for the CuMesh dependency chain")
     args = ap.parse_args()
 
     lib_path = find_lib(args.lib)
-    if args.torch_lib:
-        # dlopen resolves DT_NEEDED breadth-first; preloading the torch core
-        # in dependency order lets libaicore_cumesh.so resolve afterwards.
-        for name in ("libc10.so", "libc10_cuda.so", "libtorch_cpu.so",
-                     "libtorch_cuda.so", "libtorch.so"):
-            ctypes.CDLL(os.path.join(args.torch_lib, name),
-                        mode=ctypes.RTLD_GLOBAL)
-    ctypes.CDLL(lib_path, mode=ctypes.RTLD_GLOBAL)
-    lib = ctypes.CDLL(lib_path)
+    torch_libraries = (preload_shared_libraries(
+            Path(args.torch_lib), ("c10", "c10_cuda", "torch_cpu", "torch_cuda", "torch"))
+            if args.torch_lib else [])
+    lib = load_shared_library(lib_path, global_symbols=True,
+                              runtime_dirs=[Path(args.torch_lib)] if args.torch_lib else [])
+    lib._aicore_preloaded_dependencies = torch_libraries
     lib.aicore_trellis_abi_version.restype = ctypes.c_int
     # Explicit prototypes: without argtypes ctypes narrows pointer returns to
     # 32-bit ints and every handle deref segfaults.

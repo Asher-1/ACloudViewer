@@ -72,6 +72,12 @@ QString MapAnythingDialog::modelCacheDir() {
 void MapAnythingDialog::setupUi() {
     resize(1080, 720);
     m_downloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
+    connect(this, &QDialog::finished, this, [this] {
+        m_testDataBusy = false;
+        m_testDataBtn->setEnabled(true);
+    });
 
     auto* rootLayout = new QVBoxLayout(this);
 
@@ -602,6 +608,8 @@ void MapAnythingDialog::onRun() {
 }
 
 void MapAnythingDialog::onCancel() {
+    m_testDataBusy = false;
+    m_testDataBtn->setEnabled(true);
     if (m_downloadInProgress) {
         cancelDownload();
         return;
@@ -857,17 +865,19 @@ bool MapAnythingDialog::loadTestDataScene(Dataset kind) {
 
 void MapAnythingDialog::onTestDataProgress(int percent,
                                            const QString& statusText) {
+    if (!m_testDataBusy) return;
     setProgress(percent, 100);
     m_taskStatusLabel->setText(statusText);
 }
 
 void MapAnythingDialog::onTestDataLog(const QString& message) {
+    if (!m_testDataBusy) return;
     appendLog(message);
 }
 
 void MapAnythingDialog::onTestDataReady(bool success,
                                         ecvTestDataRepository::Dataset kind) {
-    if (kind != m_pendingScene) return;
+    if (!m_testDataBusy || kind != m_pendingScene) return;
     m_testDataBusy = false;
     m_testDataBtn->setEnabled(true);
     setProgress(0, 100);

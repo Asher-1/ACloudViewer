@@ -226,10 +226,7 @@ private:
     void servePendingTestData();
     /** Load one request's file into its panel / the Live widget. */
     bool loadTestDataFor(TestDataTarget target, const QString& task);
-    void onTestDataDownloadFinished(bool success,
-                                    ecvTestDataRepository::Dataset kind);
-    void onTestDataExtractionFinished(bool success,
-                                      ecvTestDataRepository::Dataset kind);
+    void onTestDataReady(bool success, ecvTestDataRepository::Dataset kind);
     void setTestDataControlsEnabled(bool enabled);
 
     /** The task panel of the currently active task-list entry. */

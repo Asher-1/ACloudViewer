@@ -77,7 +77,7 @@ void read_tensor_data(const std::filesystem::path &path,
     std::ifstream stream(path, std::ios::binary);
     if (!stream)
         throw std::runtime_error("cannot open GGUF tensor data: " +
-                                 path.string());
+                                 path.u8string());
     for (int64_t i = 0; i < gguf_get_n_tensors(gguf); ++i) {
         const char *name = gguf_get_tensor_name(gguf, i);
         const auto it = tensors.find(name);
@@ -120,9 +120,9 @@ Model::Model(const ModelOptions &options)
     gguf_init_params params{};
     params.no_alloc = true;
     params.ctx = &tensor_context_;
-    gguf_ = gguf_init_from_file(path.string().c_str(), params);
+    gguf_ = gguf_init_from_file(path.u8string().c_str(), params);
     if (!gguf_ || !tensor_context_) {
-        throw std::runtime_error("cannot load GGUF model: " + path.string());
+        throw std::runtime_error("cannot load GGUF model: " + path.u8string());
     }
 
     const int64_t architecture_id =
@@ -308,7 +308,7 @@ PairOutput Model::infer(const PairInput &input) {
 PairInput read_pair_input(const std::filesystem::path &path) {
     std::ifstream stream(path, std::ios::binary);
     if (!stream)
-        throw std::runtime_error("cannot open input: " + path.string());
+        throw std::runtime_error("cannot open input: " + path.u8string());
     char magic[sizeof(kInputMagic)]{};
     read_exact(stream, magic, sizeof(magic));
     if (std::memcmp(magic, kInputMagic, sizeof(magic)) != 0)
@@ -344,7 +344,7 @@ void write_pair_output(const std::filesystem::path &path,
     }
     std::ofstream stream(path, std::ios::binary);
     if (!stream)
-        throw std::runtime_error("cannot create output: " + path.string());
+        throw std::runtime_error("cannot create output: " + path.u8string());
     stream.write(kOutputMagic, sizeof(kOutputMagic));
     const auto pairs = static_cast<std::uint32_t>(output.pair_count);
     const auto predicates = static_cast<std::uint32_t>(output.predicate_count);
@@ -364,7 +364,7 @@ void write_pair_output(const std::filesystem::path &path,
                  static_cast<std::streamsize>(output.predicate_logits.size() *
                                               sizeof(float)));
     if (!stream)
-        throw std::runtime_error("failed writing output: " + path.string());
+        throw std::runtime_error("failed writing output: " + path.u8string());
 }
 
 }  // namespace relateanything

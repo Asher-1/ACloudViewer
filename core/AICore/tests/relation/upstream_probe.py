@@ -27,6 +27,9 @@ import traceback
 from types import SimpleNamespace
 import numpy as np
 import accuracy
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'scripts'))
+from runtime_environment import (loader_variable, linked_library_paths,
+                                 reference_runtime_environment)
 SNAPSHOT = Path(__file__).resolve().parents[2] / 'src/tasks/relation/UPSTREAM.json'
 REVISION = json.loads(SNAPSHOT.read_text())['commit']
 
@@ -233,17 +236,14 @@ def verify_upstream(upstream, binary, env, backend=None):
 
 
 def loaded_libraries(binary, env):
-    if platform.system()!='Linux':return {}
-    output=subprocess.check_output(['ldd',str(binary)],env=env,text=True)
-    paths=re.findall(r'=> (\S+) \(',output)
-    return {p:digest(p) for p in paths if Path(p).name.startswith(
+    paths=linked_library_paths(binary, env)
+    return {str(p):digest(p) for p in paths if p.name.startswith(
         ('libAICore','libggml','libcublas','libcudart'))}
 
 
 def runtime_environments(env, build, backend):
-    candidate=env.copy();native=env.copy()
-    for variable in ('GGML_BACKEND_PATH','LD_LIBRARY_PATH','DYLD_LIBRARY_PATH'):
-        native.pop(variable,None)
+    candidate=env.copy();native=reference_runtime_environment(env)
+    variable = loader_variable()
     if backend=='cuda':
         cache=(build/'CMakeCache.txt').read_text()
         paths=[]
@@ -256,9 +256,10 @@ def runtime_environments(env, build, backend):
         # Match the toolkit recorded by the native build. Removing every
         # library path can silently select an older system cuBLAS with the
         # same soname and change both arithmetic and performance.
-        native['LD_LIBRARY_PATH']=os.pathsep.join(paths)
-        candidate['LD_LIBRARY_PATH']=os.pathsep.join(
-            paths+([candidate['LD_LIBRARY_PATH']] if candidate.get('LD_LIBRARY_PATH') else []))
+        native[variable]=os.pathsep.join(
+            paths+([native[variable]] if native.get(variable) else []))
+        candidate[variable]=os.pathsep.join(
+            paths+([candidate[variable]] if candidate.get(variable) else []))
     return candidate,native
 
 

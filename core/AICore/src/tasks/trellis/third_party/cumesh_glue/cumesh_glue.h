@@ -16,14 +16,20 @@
 //
 // Allocated output buffers must be freed via cumesh_free_buffer().
 
-#include <cstdint>
+#include <aicore/export.h>
+
+#if defined(CUMESH_GLUE_BUILD)
+#define CUMESH_GLUE_API AICORE_SYMBOL_EXPORT
+#else
+#define CUMESH_GLUE_API AICORE_SYMBOL_IMPORT
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // ── Memory ──────────────────────────────────────────────────────────
-void cumesh_free_buffer(void* ptr);
+CUMESH_GLUE_API void cumesh_free_buffer(void* ptr);
 
 // ── Chart clustering (CuMesh compute_charts) ────────────────────────
 // Runs the upstream pipeline:
@@ -31,7 +37,7 @@ void cumesh_free_buffer(void* ptr);
 //   2. CuMesh.remove_degenerate_faces()
 //   3. CuMesh.get_manifold_face_adjacency()
 //   4. CuMesh.compute_charts(threshold_cone_half_angle_rad, ...)
-//   5. Copies chart data back to CPU; writes face_chart_ids (nt ints)
+//   5. Copies chart data back to CPU after face/vertex compaction
 //
 // threshold_cone_half_angle_rad — cone merging threshold (upstream default
 // ~1.57 rad / 90°) refine_iterations / global_iterations / smooth_strength —
@@ -39,7 +45,7 @@ void cumesh_free_buffer(void* ptr);
 //
 // Returns 1 on success, 0 on failure. On success the caller owns the
 // output buffers and must free them via cumesh_free_buffer().
-int cumesh_compute_charts(
+CUMESH_GLUE_API int cumesh_compute_charts(
         const float* verts,
         int nv,
         const int* tris,
@@ -51,9 +57,10 @@ int cumesh_compute_charts(
         float area_penalty_weight,
         float perimeter_area_ratio_weight,
         // Outputs (caller frees via cumesh_free_buffer):
-        int** out_face_chart_ids,    // [nt] chart id per face
-        int** out_chart_vertex_map,  // [nv_in] maps chart vertex → input vertex
-        int** out_chart_faces,       // [nt_out * 3] chart-local face indices
+        int** out_face_chart_ids,    // [nt_out] chart id per cleaned face
+        int** out_chart_vertex_map,  // [chart_vertex_offset[n_charts]], cleaned
+                                     // vertex indices
+        int** out_chart_faces,  // [nt_out * 3] indices into chart_vertex_map
         int** out_chart_faces_offset,   // [n_charts + 1]
         int** out_chart_vertex_offset,  // [n_charts + 1]
         int* out_n_charts,
@@ -62,14 +69,14 @@ int cumesh_compute_charts(
 // ── Simplified mesh cleanup (CuMesh remove_degenerate_faces) ────────
 // Removes degenerate faces and unreferenced vertices on the GPU.
 // Returns updated verts/tris through output pointers.
-int cumesh_clean_mesh(const float* verts,
-                      int nv,
-                      const int* tris,
-                      int nt,
-                      float** out_verts,
-                      int* out_nv,
-                      int** out_tris,
-                      int* out_nt);
+CUMESH_GLUE_API int cumesh_clean_mesh(const float* verts,
+                                      int nv,
+                                      const int* tris,
+                                      int nt,
+                                      float** out_verts,
+                                      int* out_nv,
+                                      int** out_tris,
+                                      int* out_nt);
 
 #ifdef __cplusplus
 }

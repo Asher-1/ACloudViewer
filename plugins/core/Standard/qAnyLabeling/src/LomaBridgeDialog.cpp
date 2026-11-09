@@ -448,6 +448,8 @@ LomaBridgeDialog::LomaBridgeDialog(bool lightglue, QWidget* parent)
     connect(m_accept, &QPushButton::clicked, this, &QDialog::accept);
     connect(cancel, &QPushButton::clicked, this, &QDialog::reject);
     m_downloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
     connect(m_downloader, &ecvModelDownloader::progress, this,
             [this](qint64 received, qint64 total) {
                 m_status->setText(ecvModelDownloader::formatDownloadProgress(
@@ -544,10 +546,7 @@ void LomaBridgeDialog::runMatching() {
             return;
         }
         const QString path = modelPath(combo);
-        const ecvAssetIntegrity::Anchor anchor{
-                QCryptographicHash::Sha256,
-                ecvAssetIntegrity::PinnedDigest(QFileInfo(path).fileName())};
-        if (!ecvAssetIntegrity::isVerified(path, anchor, 1024 * 1024, true))
+        if (!ecvAssetIntegrity::isModelVerified(path))
             m_pendingModels.append(path);
     }
     if (!m_pendingModels.isEmpty()) {
@@ -601,7 +600,7 @@ void LomaBridgeDialog::downloadNextModel() {
     ecvModelDownloader::Request request;
     request.url = QString::fromUtf8(url);
     request.destPath = path;
-    request.minBytes = 1024 * 1024;
+    request.minBytes = 64 * 1024;
     request.contentAnchor = {
             QCryptographicHash::Sha256,
             ecvAssetIntegrity::PinnedDigest(QFileInfo(path).fileName())};

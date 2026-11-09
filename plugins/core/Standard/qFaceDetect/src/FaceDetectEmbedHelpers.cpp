@@ -15,7 +15,6 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QPainter>
-#include <QStandardPaths>
 #include <QVector3D>
 #include <algorithm>
 #include <cmath>
@@ -36,9 +35,7 @@ QString modelCacheDir() {
         return result;
     }
 #endif
-    return QDir(QStandardPaths::writableLocation(
-                        QStandardPaths::AppDataLocation))
-            .filePath(QStringLiteral("extract/facedetect_models"));
+    return {};
 }
 
 QImage padImageForDetection(const QImage& src) {

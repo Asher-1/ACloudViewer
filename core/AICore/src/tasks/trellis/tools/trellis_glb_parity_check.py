@@ -10,7 +10,7 @@ Isolates the data-generation layer from the display layer:
 Usage:
   python3 core/AICore/src/tasks/trellis/tools/trellis_glb_parity_check.py \
       --sidecar /path/cuda_q8.t2mesh --upstream /path/cuda_q8.glb \
-      [--lib build_app/bin/libAICore.so] [--out /tmp/acv_parity.glb]
+      [--lib build_app/bin/AICore.dll] [--out /tmp/acv_parity.glb]
 """
 
 import argparse
@@ -21,6 +21,10 @@ import os
 import struct
 import sys
 import tempfile
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "scripts"))
+from runtime_environment import load_shared_library, resolve_aicore_library
 
 
 def parse_t2mesh(path):
@@ -45,7 +49,7 @@ def parse_t2mesh(path):
 
 
 def bake_with_libaicore(lib_path, verts, tris, pbr, nv, nt, debug=False):
-    lib = ctypes.CDLL(lib_path)
+    lib = load_shared_library(lib_path)
     _P = ctypes.c_void_p
     if debug:
         try:
@@ -114,10 +118,9 @@ def main():
     verts, normals, tris, pbr, nv, nt = parse_t2mesh(args.sidecar)
     lib = args.lib
     if not lib:
-        cand = os.path.join(os.path.dirname(__file__), "..", "..", "..",
-                            "..", "..", "..",
-                            "build_app/bin/libAICore.so")
-        lib = os.path.abspath(cand)
+        repo = Path(__file__).resolve().parents[6]
+        lib = repo / "build_app" / "bin"
+    lib = resolve_aicore_library(lib)
     acv = bake_with_libaicore(lib, verts, tris, pbr, nv, nt,
                               debug=args.debug)
     open(args.out, "wb").write(acv)

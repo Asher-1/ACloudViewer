@@ -16,10 +16,23 @@
 
 import argparse
 import json
+import os
+from pathlib import Path
 import statistics
+import sys
+import tempfile
 import time
 
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from runtime_environment import find_binary
+
+
+def default_build_probe(name: str) -> str:
+    """Find a probe in single- or multi-config CMake output."""
+    build_root = Path(os.environ.get("CLOUDVIEWER_BUILD_DIR", "build_app"))
+    return str(find_binary(build_root, name))
 
 
 def build_probe_inputs(imgsz, boxes):
@@ -169,10 +182,11 @@ def aicore_embed(probe, gguf, device, img, boxes, imgsz):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--gguf", required=True)
-    ap.add_argument("--pt", default="/tmp/reid/yolo26n-cls.pt")
+    ap.add_argument("--pt", default=str(Path(tempfile.gettempdir()) / "reid" /
+                                          "yolo26n-cls.pt"))
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--quant", default="f16")
-    ap.add_argument("--probe", default="build_app/bin/aicore_tests/reid_probe")
+    ap.add_argument("--probe", default=default_build_probe("reid_probe"))
     ap.add_argument("--output", default=None)
     args = ap.parse_args()
 

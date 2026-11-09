@@ -10,6 +10,7 @@ host only.
 import argparse
 import json
 import sys
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -339,6 +340,8 @@ def main() -> None:
     parser.add_argument("graph_json", type=Path)
     parser.add_argument("--input-npy", type=Path, required=True)
     parser.add_argument("--log", type=Path, default=None)
+    parser.add_argument("--output", type=Path,
+                        default=Path(tempfile.gettempdir()) / "ocr_sim_reference.npy")
     args = parser.parse_args()
 
     doc = json.loads(args.graph_json.read_text())
@@ -355,7 +358,8 @@ def main() -> None:
         fetch = last[-1]
     print("simulated output shape:", fetch.shape,
           "sum:", float(np.sum(fetch.astype(np.float64))))
-    np.save("/tmp/ocr_sim_reference.npy", fetch)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    np.save(args.output, fetch)
     if log:
         log.close()
 

@@ -126,14 +126,14 @@ bool load_gguf(const char *path,
     if (!weights.load_gguf(path, err)) return false;
     if (!weights.get_f32("sq0_conv_in_weight")) {
         const std::filesystem::path decoder =
-                std::filesystem::path(path).parent_path() /
+                std::filesystem::u8path(path).parent_path() /
                 "decoder_alpha_f16.gguf";
         if (!std::filesystem::exists(decoder)) {
             err = "GGUF has no decoder weights; use a unified GGUF or place " +
-                  decoder.string() + " beside the encoder";
+                  decoder.u8string() + " beside the encoder";
             return false;
         }
-        if (!weights.merge_gguf(decoder.string().c_str(), err)) return false;
+        if (!weights.merge_gguf(decoder.u8string().c_str(), err)) return false;
     }
 
     // Metadata is optional for split compatibility files.

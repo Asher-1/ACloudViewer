@@ -28,6 +28,10 @@ import tempfile
 import time
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "scripts"))
+from runtime_environment import (load_shared_library, shared_library_names,
+                                 resolve_aicore_library as resolve_library)
+
 
 class ModelPaths(ctypes.Structure):
     _fields_ = [("struct_size", ctypes.c_uint32), ("abi_version", ctypes.c_uint32)] + [
@@ -102,21 +106,6 @@ def validate_backend(requested, actual):
                wanted in ("cuda", "vulkan", "metal") and actual.startswith(wanted))
     if not matches or (index and actual != wanted + index):
         raise ValueError(f"backend mismatch: requested={requested}, actual={actual}")
-
-
-def resolve_library(path):
-    """Explicit file or build/install directory; never fall back to old candidates in other builds or the system."""
-    path = Path(path).expanduser()
-    if path.is_file():
-        return path.resolve()
-    names = (("AICore.dll", "libAICore.dll") if os.name == "nt" else
-             ("libAICore.dylib",) if sys.platform == "darwin" else ("libAICore.so",))
-    for directory in (path / "bin", path / "lib", path):
-        for name in names:
-            candidate = directory / name
-            if candidate.is_file():
-                return candidate.resolve()
-    raise FileNotFoundError(f"AICore library unavailable: {path}")
 
 
 # ctypes progress callback (user, stage, ...) -> None; module-level so
@@ -369,11 +358,7 @@ def compare_diffusion_capture(reference, capture):
 
 
 def load_library(path):
-    directory = resolve_library(path).parent
-    # Windows dependency DLL-directory handles must outlive library use; leave system DLL search paths unchanged.
-    dll_directory = os.add_dll_directory(str(directory)) if os.name == "nt" else None
-    lib = ctypes.CDLL(str(resolve_library(path)))
-    lib._dll_directory = dll_directory
+    lib = load_shared_library(resolve_library(path))
     lib.aicore_instantmesh_abi_version.restype = ctypes.c_int
     # Explicit prototypes: without argtypes ctypes narrows pointer arguments
     # to 32-bit ints and every handle deref segfaults (see trellis probe).
@@ -448,9 +433,14 @@ def assemble_and_compare_capture(reference, capture_dir, image_bytes, lib_path):
     (capture / "gui.log").write_text("\n".join(records) + "\n")
     lib_file = Path(lib_path)
     if lib_file.is_dir():
-        candidate = lib_file / "libAICore.so"
-        lib_file = candidate if candidate.exists() else lib_file
-    plugin = lib_file.parent / "plugins" / "libQINSTANTMESH_PLUGIN.so"
+        try:
+            lib_file = resolve_library(lib_file)
+        except FileNotFoundError:
+            pass
+    plugin_names = shared_library_names("QINSTANTMESH_PLUGIN")
+    plugin = next((lib_file.parent / "plugins" / name for name in plugin_names
+                   if (lib_file.parent / "plugins" / name).is_file()),
+                  lib_file.parent / "plugins" / plugin_names[0])
     try:
         head = subprocess.run(
             ["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parent,

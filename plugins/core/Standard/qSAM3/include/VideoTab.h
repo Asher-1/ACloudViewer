@@ -100,10 +100,7 @@ private slots:
     /** One-click test: download (cached) the SAM3 test dataset and open the
      *  video selected in the test-video picker. */
     void onUseTestData();
-    void onTestDataDownloadFinished(bool success,
-                                    ecvTestDataRepository::Dataset kind);
-    void onTestDataExtractionFinished(bool success,
-                                      ecvTestDataRepository::Dataset kind);
+    void onTestDataReady(bool success, ecvTestDataRepository::Dataset kind);
 
 protected:
     /** Space = play/pause, Right = step, Left = previous frame (upstream

@@ -14,17 +14,6 @@ PARITY = importlib.util.module_from_spec(SPEC)
 sys.modules["upstream_parity"] = PARITY
 SPEC.loader.exec_module(PARITY)
 
-# The vendored flash-attention twin is a generated artifact of the
-# map-anything vendoring pipeline, not a committed source file. On a fresh
-# checkout the parity row cannot run at all, so follow the tier's absent
-# reference sentinel (exit 77 = ctest skip) instead of failing the fast
-# lane on every machine that has not vendored the reference yet.
-if not PARITY.MAPANY_PATCH.is_file():
-    print("run_map_anything_upstream_parity: map_anything_merged twin not "
-          "vendored in this checkout, skipping", file=sys.stderr)
-    sys.exit(77)
-
-
 class NewerSourceTest(unittest.TestCase):
     def make_tree(self, root: Path) -> tuple[Path, Path]:
         cpp = root / "cpp_ggml"
@@ -77,20 +66,27 @@ class ReferenceEnvTest(unittest.TestCase):
             own = root / "cpp_ggml" / "build-cuda" / "lib"
             for d in (build / "bin", copy, toolkit, own):
                 d.mkdir(parents=True)
-            (copy / "libggml-base.so.0").write_text("")
-            (own / "libggml-base.so.0").write_text("")
-            (toolkit / "libcudart.so.12").write_text("")
+            if os.name == "nt":
+                ggml_name, cudart_name = "ggml-base.dll", "cudart64_12.dll"
+            elif sys.platform == "darwin":
+                ggml_name, cudart_name = "libggml-base.dylib", "libcudart.12.dylib"
+            else:
+                ggml_name, cudart_name = "libggml-base.so.0", "libcudart.so.12"
+            (copy / ggml_name).write_text("")
+            (own / ggml_name).write_text("")
+            (toolkit / cudart_name).write_text("")
             entries = [str(build / "bin"), str(copy), str(toolkit), str(own)]
-            saved = os.environ.get("LD_LIBRARY_PATH")
-            os.environ["LD_LIBRARY_PATH"] = os.pathsep.join(entries)
+            variable = PARITY.loader_variable()
+            saved = os.environ.get(variable)
+            os.environ[variable] = os.pathsep.join(entries)
             try:
                 env = PARITY.reference_env(build, root)
             finally:
                 if saved is None:
-                    del os.environ["LD_LIBRARY_PATH"]
+                    del os.environ[variable]
                 else:
-                    os.environ["LD_LIBRARY_PATH"] = saved
-            self.assertEqual(env["LD_LIBRARY_PATH"].split(os.pathsep),
+                    os.environ[variable] = saved
+            self.assertEqual(env[variable].split(os.pathsep),
                              [str(toolkit), str(own)])
 
 
@@ -111,6 +107,8 @@ class VendoredTwinTest(unittest.TestCase):
             self.assertEqual(PARITY.vendored_twin(patch),
                              {"k.cuh": b"#pragma once\nint k;"})
 
+    @unittest.skipUnless(PARITY.MAPANY_PATCH.is_file(),
+                         "generated MapAnything twin has not been vendored")
     def test_repository_twin_extracts_the_three_flash_attention_sources(self):
         twin = PARITY.vendored_twin(PARITY.MAPANY_PATCH)
         self.assertEqual(sorted(twin), ["fattn-common.cuh", "fattn-mma-f16.cuh",

@@ -18,7 +18,6 @@
 #include <QKeyEvent>
 #include <QMessageBox>
 #include <QSettings>
-#include <QStandardPaths>
 #include <QVBoxLayout>
 
 #include "aicore/backend_capi.h"
@@ -49,10 +48,7 @@ bool isValidCachedGguf(const QFileInfo& fi) {
     const aicore_model_entry* entry = aicore_model_by_filename(
             AICORE_MODEL_FAMILY_DEEPLSD, filename.constData());
     if (!entry || !entry->sha256 || !*entry->sha256) return false;
-    return ecvAssetIntegrity::isVerified(
-            fi.absoluteFilePath(),
-            {QCryptographicHash::Sha256, QByteArray(entry->sha256)}, 64 * 1024,
-            true, ecvAssetIntegrity::OnMiss::CheapChecksOnly);
+    return ecvAssetIntegrity::isModelVerified(fi.absoluteFilePath());
 }
 
 }  // namespace
@@ -79,16 +75,17 @@ QString DeepLSDDialog::modelCacheDir() {
         aicore_deeplsd_free_buffer(dir);
         return result;
     }
-    return QDir(QStandardPaths::writableLocation(
-                        QStandardPaths::AppDataLocation))
-            .filePath(QStringLiteral("extract/deeplsd_models"));
+    return {};
 }
 
 DeepLSDDialog::DeepLSDDialog(QWidget* parent) : QDialog(parent) {
+    connect(this, &QDialog::finished, this, &DeepLSDDialog::onCancel);
     setWindowTitle(tr("DeepLSD Line Extraction"));
     setMinimumSize(ecvAICoreUi::dpiScaled(720), 0);
     setupUi();
     m_downloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
             &DeepLSDDialog::appendLog);
     connect(m_downloader, &ecvModelDownloader::progress, this,
@@ -110,6 +107,7 @@ DeepLSDDialog::DeepLSDDialog(QWidget* parent) : QDialog(parent) {
             [this](bool ok, const QString& dest) {
                 const QString finishedFilename = QFileInfo(dest).fileName();
                 m_downloadInProgress = false;
+                m_cancelBtn->setEnabled(false);
                 m_downloadLabel->setVisible(false);
                 if (ok) {
                     appendLog(tr("[OK] Downloaded model: %1").arg(dest));
@@ -137,28 +135,13 @@ DeepLSDDialog::DeepLSDDialog(QWidget* parent) : QDialog(parent) {
             [this](const QString& message) {
                 if (m_testDataDownloadInProgress) appendLog(message);
             });
-    connect(&testDataRepo, &ecvTestDataRepository::downloadFinished, this,
-            [this](bool success, ecvTestDataRepository::Dataset kind) {
-                if (!m_testDataDownloadInProgress ||
-                    kind != ecvTestDataRepository::Dataset::ObjectsDetection) {
-                    return;
-                }
-                if (!success) {
-                    m_testDataDownloadInProgress = false;
-                    m_testDataBtn->setEnabled(true);
-                    m_downloadLabel->setVisible(false);
-                    return;
-                }
-                m_downloadLabel->setText(tr("Extracting test data..."));
-                ecvTestDataRepository::instance().extractDataset(kind);
-            });
     connect(&testDataRepo, &ecvTestDataRepository::extractionProgress, this,
             [this](int current, int total) {
                 if (!m_testDataDownloadInProgress || total <= 0) return;
                 m_progress->setRange(0, total);
                 m_progress->setValue(current);
             });
-    connect(&testDataRepo, &ecvTestDataRepository::extractionFinished, this,
+    connect(&testDataRepo, &ecvTestDataRepository::datasetReady, this,
             [this](bool success, ecvTestDataRepository::Dataset kind) {
                 if (!m_testDataDownloadInProgress ||
                     kind != ecvTestDataRepository::Dataset::ObjectsDetection) {
@@ -170,7 +153,7 @@ DeepLSDDialog::DeepLSDDialog(QWidget* parent) : QDialog(parent) {
                 if (success) {
                     loadTestImage();
                 } else {
-                    appendLog(tr("[Test data] Extraction failed."));
+                    appendLog(tr("[Test data] Dataset preparation failed."));
                 }
             });
     CVLog::Print(QString("[DeepLSD] Model cache: %1").arg(modelCacheDir()));
@@ -684,17 +667,9 @@ void DeepLSDDialog::onUseTestData() {
     m_testDataDownloadInProgress = true;
     m_testDataBtn->setEnabled(false);
     m_downloadLabel->setVisible(true);
-    const auto info = ecvTestDataRepository::getDatasetInfo(kind);
-    if (ecvAssetIntegrity::isVerified(ecvTestDataRepository::zipPath(kind),
-                                      info.anchor, 0, false,
-                                      ecvAssetIntegrity::OnMiss::DeepVerify)) {
-        m_downloadLabel->setText(tr("Extracting cached test data..."));
-        repo.extractDataset(kind);
-        return;
-    }
 
     m_downloadLabel->setText(tr("Downloading shared test data..."));
-    repo.startDownload(kind);
+    repo.ensureDatasetReady(kind);
 }
 
 void DeepLSDDialog::loadTestImage() {
@@ -746,6 +721,7 @@ void DeepLSDDialog::startDownload(const DeepLSDBuiltinModel& model) {
     QDir().mkpath(modelCacheDir());
     const QString dest = modelCacheDir() + "/" + model.filename;
     m_downloadInProgress = true;
+    m_cancelBtn->setEnabled(true);
     m_downloadLabel->setText(tr("Downloading %1 ...").arg(model.filename));
     m_downloadLabel->setVisible(true);
     m_progress->setValue(0);
@@ -762,6 +738,7 @@ void DeepLSDDialog::startDownload(const DeepLSDBuiltinModel& model) {
 void DeepLSDDialog::cancelDownload() {
     if (m_downloader) m_downloader->cancel();
     m_downloadInProgress = false;
+    m_cancelBtn->setEnabled(false);
     m_downloadLabel->setVisible(false);
 }
 
@@ -770,7 +747,13 @@ void DeepLSDDialog::onRun() {
     emit runRequested(getSettings());
 }
 
-void DeepLSDDialog::onCancel() { emit cancelRequested(); }
+void DeepLSDDialog::onCancel() {
+    m_autoRunAfterDownload = false;
+    m_testDataDownloadInProgress = false;
+    m_testDataBtn->setEnabled(true);
+    cancelDownload();
+    emit cancelRequested();
+}
 
 void DeepLSDDialog::closeEvent(QCloseEvent* event) {
     if (m_taskRunning || m_downloadInProgress || m_testDataDownloadInProgress) {
@@ -784,7 +767,6 @@ void DeepLSDDialog::closeEvent(QCloseEvent* event) {
         }
     }
     saveSettings();
-    onCancel();
     QDialog::closeEvent(event);
 }
 

@@ -12,6 +12,7 @@ if(UNIX AND NOT APPLE)
 endif()
 cloudviewer_set_bin_runtime_output_directory(test_sam3_video_mask_archive)
 add_test(NAME test_sam3_video_mask_archive COMMAND test_sam3_video_mask_archive)
+cloudviewer_set_plugin_test_env(test_sam3_video_mask_archive)
 
 if(NOT TARGET 3rdparty_googletest)
     message(STATUS "qSAM3 tests: googletest not available — skipping")

@@ -6,6 +6,8 @@
 // ----------------------------------------------------------------------------
 #include "tasks/vlx_seek/vlx_gguf_loader.h"
 
+#include <FileSystem.h>
+
 #include <algorithm>
 #include <cstdio>
 #include <fstream>
@@ -90,7 +92,8 @@ size_t GgufFile::type_size(GgmlDType t) {
 }
 
 bool GgufFile::load(const std::string& path, std::string* err) {
-    std::ifstream in(path, std::ios::binary);
+    std::ifstream in = cloudViewer::utility::filesystem::OpenInputStream(
+            path, std::ios::binary);
     if (!in) {
         if (err) *err = "cannot open " + path;
         return false;

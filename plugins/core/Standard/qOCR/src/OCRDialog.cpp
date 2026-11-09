@@ -91,6 +91,7 @@ bool writeTableFile(const QString& path,
 }  // namespace
 
 OCRDialog::OCRDialog(QWidget* parent) : QDialog(parent) {
+    connect(this, &QDialog::finished, this, &OCRDialog::onCancel);
     setObjectName(QStringLiteral("qOCRWorkspace"));
     setWindowTitle(tr("OCR Text Recognition (PP-OCRv4)"));
     setMinimumSize(ecvAICoreUi::dpiScaled(680), ecvAICoreUi::dpiScaled(520));
@@ -320,6 +321,8 @@ OCRDialog::OCRDialog(QWidget* parent) : QDialog(parent) {
 
     // ---- wiring ------------------------------------------------------------
     m_downloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
     connect(m_downloader, &ecvModelDownloader::progress, this,
             [this](qint64 received, qint64 total) {
                 m_progress->setVisible(true);
@@ -523,6 +526,7 @@ void OCRDialog::pumpQueue() {
     const QString url =
             QStringLiteral("%1%2").arg(QString::fromUtf8(base), filename);
     m_downloadInProgress = true;
+    m_cancelButton->setEnabled(true);
     m_downloadButton->setEnabled(false);
     startDownload(url, QDir(cacheDir()).filePath(filename),
                   /*verifyDigest=*/true, 1024 * 1024);
@@ -551,6 +555,7 @@ void OCRDialog::startDownload(const QString& url,
 
 void OCRDialog::onDownloadFinished(bool ok, const QString& destPath) {
     m_downloadInProgress = false;
+    m_cancelButton->setEnabled(false);
     m_downloadButton->setEnabled(true);
     m_progress->setVisible(false);
     m_downloadLabel->setVisible(false);
@@ -846,7 +851,12 @@ void OCRDialog::onRun() {
     emit runRequested(runSettings());
 }
 
-void OCRDialog::onCancel() { emit cancelRequested(); }
+void OCRDialog::onCancel() {
+    m_testDataInProgress = false;
+    m_testDataButton->setEnabled(true);
+    if (m_downloadInProgress) m_downloader->cancel();
+    emit cancelRequested();
+}
 
 OCRRunSettings OCRDialog::runSettings() const {
     OCRRunSettings settings;
@@ -1234,7 +1244,7 @@ void OCRDialog::closeEvent(QCloseEvent* event) {
             return;
         }
     }
-    emit cancelRequested();
+    onCancel();
     saveSettings();
     event->accept();
 }

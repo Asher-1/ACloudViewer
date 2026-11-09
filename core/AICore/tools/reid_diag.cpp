@@ -15,6 +15,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -87,9 +88,23 @@ int main(int argc, char** argv) {
                 chw[2 * (size_t)plane + p] = row[x * 3 + 2] / 255.0f;
             }
         }
-        const std::string prefix = dump_prefix != nullptr
-                                           ? std::string(dump_prefix)
-                                           : std::string("/tmp/reid/cpp");
+        const std::string prefix =
+                dump_prefix != nullptr
+                        ? std::string(dump_prefix)
+                        : (std::filesystem::temp_directory_path() / "reid" /
+                           "cpp")
+                                  .string();
+        const std::filesystem::path prefix_path(prefix);
+        std::error_code directory_error;
+        if (!prefix_path.parent_path().empty())
+            std::filesystem::create_directories(prefix_path.parent_path(),
+                                                directory_error);
+        if (directory_error) {
+            fprintf(stderr, "cannot create dump directory %s: %s\n",
+                    prefix_path.parent_path().string().c_str(),
+                    directory_error.message().c_str());
+            return 3;
+        }
         const std::string chw_path = prefix + ".chw.bin";
         std::ofstream fc(chw_path, std::ios::binary);
         fc.write(reinterpret_cast<const char*>(chw.data()),

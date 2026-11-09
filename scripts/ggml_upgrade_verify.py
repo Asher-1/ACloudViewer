@@ -20,7 +20,7 @@ Usage:
     python3 scripts/ggml_upgrade_verify.py \
         --baseline /path/to/build_app \
         --candidate /path/to/build-ggml021 \
-        [--report /tmp/ggml_upgrade_report.md] [--threshold 5.0] \
+        [--report <temp-dir>/ggml_upgrade_report.md] [--threshold 5.0] \
         [--only yolo,rfdetr] [--device vulkan]
 
 Environment (auto-derived unless overridden):
@@ -34,10 +34,10 @@ Environment (auto-derived unless overridden):
     QT_LIB_DIR                    (default /opt/qt515/lib)
     CLOUDVIEWER_DATA_ROOT         (default ~/cloudViewer_data)
 
-The LD_LIBRARY_PATH wiring below is Linux-first. It is harmless on
-macOS/Windows: the env var is ignored by their loaders, and the test
-binaries resolve libAICore via the build-tree install name (macOS) or
-exe-directory DLL search (Windows) on the machine they were built on.
+The probe environment uses the platform loader variable and the same
+multi-config build layout as the Windows CI. This keeps upgrade checks
+usable on Linux, macOS and Windows instead of relying on a POSIX-only
+``LD_LIBRARY_PATH`` convention.
 """
 
 from __future__ import annotations
@@ -49,6 +49,7 @@ import re
 import statistics
 import subprocess
 import sys
+import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -102,10 +103,22 @@ class ProbeResult:
 
 
 def find_binary(build_dir: Path, rel: str) -> Path | None:
-    for sub in ("bin/aicore_tests", "bin"):
-        p = build_dir / sub / rel
-        if p.is_file() and os.access(p, os.X_OK):
-            return p
+    configs = [value for value in (os.environ.get("AICORE_BUILD_CONFIG"),
+                                   "Release", "RelWithDebInfo", "Debug",
+                                   "MinSizeRel") if value]
+    directories = [build_dir / "bin"]
+    for config in configs:
+        directories.extend((build_dir / "bin" / config,
+                            build_dir / "bin" / "aicore_tests" / config,
+                            build_dir / "bin" / "plugin_test" / config))
+    directories.extend((build_dir / "bin" / "aicore_tests",
+                        build_dir / "bin" / "plugin_test"))
+    suffixes = (".exe", "") if os.name == "nt" else ("",)
+    for directory in directories:
+        for suffix in suffixes:
+            p = directory / (rel + suffix)
+            if p.is_file() and (os.name == "nt" or os.access(p, os.X_OK)):
+                return p
     return None
 
 
@@ -232,12 +245,42 @@ def probe_env(args, extra: dict | None = None) -> dict:
     return env
 
 
-def build_ld_path(build_dir: Path, args) -> str:
-    parts = [str(build_dir / "bin"), args.qt_lib]
-    existing = os.environ.get("LD_LIBRARY_PATH", "")
+def loader_variable() -> str:
+    if os.name == "nt":
+        return "PATH"
+    if sys.platform == "darwin":
+        return "DYLD_LIBRARY_PATH"
+    return "LD_LIBRARY_PATH"
+
+
+def build_loader_path(build_dir: Path, args) -> str:
+    bin_dir = build_dir / "bin"
+    if os.name == "nt":
+        # Visual Studio/Ninja Multi-Config puts both the executable and its
+        # AICore/ggml DLLs below bin/<Config>. Keep the selected configuration
+        # first so a stale Debug tree cannot satisfy a Release probe.
+        configs = [value for value in (
+            os.environ.get("AICORE_BUILD_CONFIG", ""), "Release",
+            "RelWithDebInfo", "Debug", "MinSizeRel") if value]
+        runtime_dirs = []
+        for config in dict.fromkeys(configs):
+            runtime_dirs.extend((bin_dir / config,
+                                 bin_dir / config / "aicore_tests",
+                                 bin_dir / config / "plugin_test",
+                                 bin_dir / "aicore_tests" / config,
+                                 bin_dir / "plugin_test" / config))
+        runtime_dirs.append(bin_dir)
+        parts = [str(path) for path in runtime_dirs if path.is_dir()]
+        if not parts:
+            parts = [str(bin_dir)]
+    else:
+        parts = [str(bin_dir)]
+    if args.qt_lib:
+        parts.append(args.qt_lib)
+    existing = os.environ.get(loader_variable(), "")
     if existing:
         parts.append(existing)
-    return ":".join(parts)
+    return os.pathsep.join(parts)
 
 
 def run_probe(name: str, family: str, rel: str, argv_extra: list[str],
@@ -248,7 +291,8 @@ def run_probe(name: str, family: str, rel: str, argv_extra: list[str],
         return ProbeResult(name, "skipped",
                            note=f"binary not found: {rel}")
 
-    env = probe_env(args, {"LD_LIBRARY_PATH": build_ld_path(build_dir, args)})
+    variable = loader_variable()
+    env = probe_env(args, {variable: build_loader_path(build_dir, args)})
     cmd = [str(binary)] + argv_extra
     if name == "yolo_cpu":
         env["AICORE_TEST_YOLO_DEVICE"] = "cpu"
@@ -400,7 +444,7 @@ def main() -> int:
     ap.add_argument("--repo", type=Path,
                     default=Path(__file__).resolve().parents[1])
     ap.add_argument("--report", type=Path,
-                    default=Path("/tmp/ggml_upgrade_report.md"))
+                    default=Path(tempfile.gettempdir()) / "ggml_upgrade_report.md")
     ap.add_argument("--threshold", type=float, default=5.0,
                     help="regression threshold percent (default 5)")
     ap.add_argument("--device", default="vulkan")

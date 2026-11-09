@@ -17,6 +17,7 @@
 // scripts/dump_e2e_stages.py (ss_input_*.samt). Sampling uses the
 // PyTorch-compatible Philox stream; CPU/Vulkan receive the recorded CUDA
 // distribution-block contract. --noise-dir replays the torch reference noise.
+#include "FileSystem.h"
 #include "tasks/sam3d/asset_io.hpp"
 #include "tasks/sam3d/dino_graph.hpp"
 #include "tasks/sam3d/dtype_contract.hpp"
@@ -41,6 +42,7 @@
 #include <fstream>
 
 #include "common/ggml_backend_registry.hpp"
+#include "common/ggml_backend_utils.hpp"
 #include "tasks/sam3d/backend.hpp"
 #include "tasks/sam3d/common.hpp"
 #include "tasks/sam3d/gguf_loader.hpp"
@@ -68,13 +70,6 @@
 #include <unordered_set>
 #include <vector>
 
-#ifdef _WIN32
-/* MSVC provides no strncasecmp (POSIX); _strnicmp is the equivalent
- * case-insensitive n-char compare. Defined after all includes so the
- * replacement never rewrites declarations inside vendored headers. */
-#define strncasecmp _strnicmp
-#endif
-
 namespace sam3d {
 
 namespace {
@@ -92,7 +87,7 @@ namespace {
 // only when the runtime resolved a non-CUDA backend.
 static bool be_is_cuda(const char* be) {
     if (be == nullptr) return false;
-    if (strncasecmp(be, "cuda", 4) == 0) return true;
+    if (ggml_common::to_lower(be).compare(0, 4, "cuda") == 0) return true;
 #if defined(SAM3D_USE_CUDA)
     return std::strcmp(be, "auto") == 0;
 #else
@@ -460,7 +455,8 @@ std::vector<std::vector<float>> run_dino_batch(
     out_n = js[0].out->ne[1];
     if (dino_dbg && dino_dbg_out) {
         const auto& t = js[0].out;
-        std::ofstream df(dino_dbg_out, std::ios::binary);
+        std::ofstream df = cloudViewer::utility::filesystem::OpenOutputStream(
+                dino_dbg_out, std::ios::binary);
         df.write(reinterpret_cast<const char*>(outs[0].data()),
                  std::streamsize(outs[0].size() * sizeof(float)));
         df.close();
@@ -830,7 +826,7 @@ bool write_gaussian_ply(const std::string& path,
                         const std::vector<float>& opacity,
                         const std::vector<float>& scaling,
                         const std::vector<float>& rotation) {
-    FILE* f = fopen(path.c_str(), "wb");
+    FILE* f = cloudViewer::utility::filesystem::FOpen(path.c_str(), "wb");
     if (!f) return false;
     char head[1024];
     snprintf(head, sizeof(head),
@@ -2529,9 +2525,9 @@ int cmd_e2e(const E2eOptions& opt) {
             if (opt.progress) {
                 opt.progress(kStagePbr, 1, 0);
             }
-            auto texture_path = std::filesystem::path(out_pbr);
+            auto texture_path = std::filesystem::u8path(out_pbr);
             texture_path.replace_extension(".base_color.png");
-            if (!write_rgba_png(texture_path.string(),
+            if (!write_rgba_png(texture_path.u8string(),
                                 pbr_result.mesh.material.base_color_texture,
                                 mesh_error)) {
                 LOGE("e2e: failed to write base-color texture: %s",
@@ -2620,7 +2616,7 @@ public:
     ~ScopedConditionDirectory() {
         if (!remove_on_exit_) return;
         std::error_code error;
-        std::filesystem::remove_all(path_, error);
+        std::filesystem::remove_all(std::filesystem::u8path(path_), error);
         if (error) {
             LOGW("image-to-3d: unable to remove temporary conditions %s: %s",
                  path_.c_str(), error.message().c_str());
@@ -2631,7 +2627,8 @@ public:
         if (!requested_path.empty()) {
             path_ = requested_path;
             std::error_code filesystem_error;
-            std::filesystem::create_directories(path_, filesystem_error);
+            std::filesystem::create_directories(std::filesystem::u8path(path_),
+                                                filesystem_error);
             if (filesystem_error) {
                 error = "cannot create condition directory '" + path_ +
                         "': " + filesystem_error.message();
@@ -2657,7 +2654,7 @@ public:
             filesystem_error.clear();
             if (std::filesystem::create_directory(candidate,
                                                   filesystem_error)) {
-                path_ = candidate.string();
+                path_ = candidate.u8string();
                 remove_on_exit_ = true;
                 return true;
             }
@@ -2785,8 +2782,8 @@ struct ImageTo3DSession::Impl {
         // (aicore_sam3d_options_set_pbr_frozen_input). This gate fires before
         // any weight IO, so it is reachable on model-free builds.
         if (!opts.out_pbr.empty() &&
-            !(backend &&
-              strncasecmp(backend->backend_name(), "cuda", 4) == 0)) {
+            !(backend && ggml_common::to_lower(backend->backend_name())
+                                         .compare(0, 4, "cuda") == 0)) {
             result.error =
                     "the official PBR assembly requires a CUDA session "
                     "(resolved backend: " +
@@ -2991,10 +2988,11 @@ struct ImageTo3DSession::Impl {
         // family is decided from the RESOLVED backend name so an "auto"
         // request that lands on CUDA takes the same per-stage layout as an
         // explicit "cuda" request.
-        e2e.shared_backend = (backend && strncasecmp(backend->backend_name(),
-                                                     "cuda", 4) == 0)
-                                     ? nullptr
-                                     : backend.get();
+        e2e.shared_backend =
+                (backend && ggml_common::to_lower(backend->backend_name())
+                                            .compare(0, 4, "cuda") == 0)
+                        ? nullptr
+                        : backend.get();
         e2e.artifacts = opts.artifacts;
         e2e.decode_mesh = opts.decode_mesh;
         e2e.scene_attributes = opts.scene_attributes;

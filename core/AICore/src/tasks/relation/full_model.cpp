@@ -81,10 +81,10 @@ struct TensorLoader {
             gguf_init_params params{};
             params.no_alloc = true;
             params.ctx = &weights_ctx;
-            gguf = gguf_init_from_file(path.string().c_str(), params);
+            gguf = gguf_init_from_file(path.u8string().c_str(), params);
             if (!gguf || !weights_ctx)
                 throw std::runtime_error("cannot load full graph GGUF: " +
-                                         path.string());
+                                         path.u8string());
             const auto graph_id = gguf_find_key(gguf, "ra.graph_kind");
             if (graph_id < 0 ||
                 gguf_get_kv_type(gguf, graph_id) != GGUF_TYPE_STRING ||
@@ -125,7 +125,7 @@ struct TensorLoader {
             std::ifstream stream(path, std::ios::binary);
             if (!stream)
                 throw std::runtime_error("cannot read full graph GGUF: " +
-                                         path.string());
+                                         path.u8string());
             for (int64_t i = 0; i < gguf_get_n_tensors(gguf); ++i) {
                 const char *emitted = gguf_get_tensor_name(gguf, i);
                 ggml_tensor *tensor = ggml_get_tensor(weights_ctx, emitted);
@@ -3235,7 +3235,7 @@ ImageInput read_image_input(const std::filesystem::path &path) {
     if (path.extension() == ".raip") return read_image_request(path);
     std::ifstream stream(path, std::ios::binary);
     if (!stream)
-        throw std::runtime_error("cannot open RAIM input: " + path.string());
+        throw std::runtime_error("cannot open RAIM input: " + path.u8string());
     char magic[sizeof(kImageMagic)]{};
     read_exact(stream, magic, sizeof(magic));
     const bool extended = std::memcmp(magic, kImageMagic2, sizeof(magic)) == 0;
@@ -3292,7 +3292,7 @@ void write_image_output(const std::filesystem::path &path,
         throw std::runtime_error("invalid full graph output");
     std::ofstream stream(path, std::ios::binary);
     if (!stream)
-        throw std::runtime_error("cannot create output: " + path.string());
+        throw std::runtime_error("cannot create output: " + path.u8string());
     stream.write(kImageOutputMagic, sizeof(kImageOutputMagic));
     const auto p = static_cast<std::uint32_t>(output.pair_count),
                v = static_cast<std::uint32_t>(output.predicate_count);
@@ -3320,7 +3320,7 @@ void write_image_input(const std::filesystem::path &path,
                        const ImageInput &input) {
     std::ofstream stream(path, std::ios::binary);
     if (!stream)
-        throw std::runtime_error("cannot write RAIM: " + path.string());
+        throw std::runtime_error("cannot write RAIM: " + path.u8string());
     const std::uint32_t flags = (!input.coverage.empty() ? 1u : 0u) |
                                 (!input.fill.empty() ? 2u : 0u) |
                                 (!input.box_scores.empty() ? 4u : 0u);

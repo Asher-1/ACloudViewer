@@ -7,6 +7,8 @@
 
 #include "tasks/aliked/aliked_gpu_ops.hpp"
 
+#include <FileSystem.h>
+
 #include "tasks/aliked/deform_conv.hpp"
 #include "tasks/aliked/ggml_gpu_ops.hpp"
 #include "tasks/aliked/gpu_sync.hpp"
@@ -316,7 +318,8 @@ void WriteTensorRecord(std::ofstream &out,
 void ClearAlikedDcnParityEntries() { DcnParityEntries().clear(); }
 
 bool WriteAlikedDcnParityDump(const std::string &path, std::string *error) {
-    std::ofstream out(path, std::ios::binary | std::ios::trunc);
+    std::ofstream out = cloudViewer::utility::filesystem::OpenOutputStream(
+            path, std::ios::binary | std::ios::trunc);
     if (!out) {
         if (error) {
             *error = "failed to open DCN dump: " + path;

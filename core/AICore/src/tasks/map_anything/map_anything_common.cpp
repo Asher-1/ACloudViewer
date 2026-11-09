@@ -12,6 +12,8 @@
 #include <cstdio>
 #include <string>
 
+#include "FileSystem.h"
+
 namespace map_anything {
 
 namespace {
@@ -77,14 +79,17 @@ void log_error(const char* fmt, ...) {
 }
 
 std::vector<uint8_t> read_file_bytes(const std::string& path) {
-    FILE* f = fopen(path.c_str(), "rb");
+    FILE* f = cloudViewer::utility::filesystem::FOpen(path.c_str(), "rb");
     if (!f) {
         log_error("cannot open file: %s", path.c_str());
         return {};
     }
-    fseek(f, 0, SEEK_END);
-    const long size = ftell(f);
-    fseek(f, 0, SEEK_SET);
+    size_t size = 0;
+    if (!cloudViewer::utility::filesystem::FSize(f, size)) {
+        log_error("cannot determine size of %s", path.c_str());
+        fclose(f);
+        return {};
+    }
     std::vector<uint8_t> buf((size_t)size);
     if (size > 0 && fread(buf.data(), 1, (size_t)size, f) != (size_t)size) {
         log_error("short read on %s", path.c_str());
@@ -100,7 +105,7 @@ bool dump_tensor(const ggml_tensor* t, const std::string& path) {
         log_error("dump_tensor: null tensor or data for %s", path.c_str());
         return false;
     }
-    FILE* f = fopen(path.c_str(), "wb");
+    FILE* f = cloudViewer::utility::filesystem::FOpen(path.c_str(), "wb");
     if (!f) {
         log_error("dump_tensor: cannot open %s", path.c_str());
         return false;

@@ -58,7 +58,8 @@ def qt_lib_dir(build: pathlib.Path):
         for key in ("Qt5Core_DIR:", "Qt6Core_DIR:"):
             if line.startswith(key):
                 # <prefix>/lib/cmake/Qt5Core -> <prefix>/lib
-                return str(pathlib.Path(line.split("=", 1)[1]).parents[1])
+                lib_dir = pathlib.Path(line.split("=", 1)[1]).parents[1]
+                return str(lib_dir.parent / "bin" if os.name == "nt" else lib_dir)
     return None
 
 
@@ -289,10 +290,33 @@ def main():
             ap.error(f"budget {b} has no GUI equivalent "
                      f"({GUI_DEFAULT_BUDGET} or {GUI_RESPONSIVE_BUDGET})")
     bin_dir = args.build / "bin"
-    args.harness = bin_dir / "plugin_test" / "map_anything_worker_parity_harness"
-    args.acloudviewer = bin_dir / "ACloudViewer"
+    configs = [os.environ.get("AICORE_BUILD_CONFIG", ""), "Release",
+               "RelWithDebInfo", "Debug", "MinSizeRel"]
+    candidates = []
+    for config in configs:
+        if config:
+            candidates.extend([
+                bin_dir / config / "map_anything_worker_parity_harness",
+                bin_dir / "plugin_test" / config / "map_anything_worker_parity_harness",
+                bin_dir / config / "ACloudViewer",
+            ])
+    candidates.extend([
+        bin_dir / "plugin_test" / "map_anything_worker_parity_harness",
+        bin_dir / "ACloudViewer",
+    ])
+
+    def locate(stem):
+        for candidate in candidates:
+            if candidate.name == stem and candidate.is_file():
+                return candidate
+            if candidate.name == stem and (candidate.with_suffix(".exe")).is_file():
+                return candidate.with_suffix(".exe")
+        return None
+
+    args.harness = locate("map_anything_worker_parity_harness")
+    args.acloudviewer = locate("ACloudViewer")
     for exe in (args.harness, args.acloudviewer):
-        if not exe.is_file():
+        if exe is None or not exe.is_file():
             print(f"missing executable: {exe}", file=sys.stderr)
             return 77
     images = sorted(
@@ -307,9 +331,30 @@ def main():
     env = dict(os.environ)
     env.setdefault("QT_QPA_PLATFORM", "offscreen")
     qt = qt_lib_dir(args.build.resolve())
-    libs = [str((bin_dir).resolve())] + ([qt] if qt else [])
-    env["LD_LIBRARY_PATH"] = os.pathsep.join(
-        libs + [env.get("LD_LIBRARY_PATH", "")])
+    if os.name == "nt":
+        configs = [value for value in (
+            os.environ.get("AICORE_BUILD_CONFIG", ""), "Release",
+            "RelWithDebInfo", "Debug", "MinSizeRel") if value]
+        runtime_dirs = []
+        for config in dict.fromkeys(configs):
+            runtime_dirs.extend((bin_dir / config,
+                                 bin_dir / config / "plugin_test",
+                                 bin_dir / "plugin_test" / config,
+                                 bin_dir / config / "aicore_tests",
+                                 bin_dir / "aicore_tests" / config))
+        runtime_dirs.append(bin_dir)
+        libs = [str(path.resolve()) for path in runtime_dirs if path.is_dir()]
+        if not libs:
+            libs = [str(bin_dir.resolve())]
+    else:
+        libs = [str(bin_dir.resolve())]
+    if qt:
+        libs.append(qt)
+    loader_variable = ("PATH" if os.name == "nt" else
+                       "DYLD_LIBRARY_PATH" if sys.platform == "darwin" else
+                       "LD_LIBRARY_PATH")
+    env[loader_variable] = os.pathsep.join(
+        libs + [env.get(loader_variable, "")])
 
     args.out.mkdir(parents=True, exist_ok=True)
     rows, missing = [], []

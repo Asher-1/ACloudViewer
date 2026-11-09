@@ -16,16 +16,9 @@
 // propagation per run, records stage latency, and compares Vulkan to the CPU
 // reference: mask IoU >= 0.98, max box error <= 1 px, score error <= 5e-3.
 
-// MSVC provides no <strings.h>/strncasecmp (POSIX); _strnicmp is the
-// equivalent (same pattern as sam3.cpp).
-#if defined(_MSC_VER)
-#define strncasecmp _strnicmp
-#else
-#include <strings.h>
-#endif
-
 #include <QImage>
 #include <QImageReader>
+#include <QProcess>
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -109,19 +102,20 @@ bool load_image(const char *path, Image *out) {
 }
 
 long long gpu_vram_mib() {
-#if defined(__linux__)
-    FILE *pipe =
-            popen("nvidia-smi --query-gpu=memory.used "
-                  "--format=csv,noheader,nounits 2>/dev/null",
-                  "r");
-    if (!pipe) return -1;
-    long long mib = -1;
-    (void)std::fscanf(pipe, "%lld", &mib);
-    (void)pclose(pipe);
-    return mib;
-#else
-    return -1;
-#endif
+    QProcess process;
+    process.start("nvidia-smi", QStringList{"--query-gpu=memory.used",
+                                            "--format=csv,noheader,nounits"});
+    if (!process.waitForFinished(5000)) {
+        process.kill();
+        process.waitForFinished();
+        return -1;
+    }
+    if (process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0)
+        return -1;
+    bool ok = false;
+    const auto line = process.readAllStandardOutput().split('\n').value(0);
+    const auto mib = line.trimmed().toLongLong(&ok);
+    return ok ? mib : -1;
 }
 
 double percentile(std::vector<double> values, double q) {
@@ -214,8 +208,11 @@ bool run_backend(const char *device,
         const size_t selector_length = std::strcspn(device, ":");
         if (std::strcmp(device, "cpu") != 0 &&
             std::strcmp(device, "auto") != 0 &&
-            strncasecmp(timings->backend.c_str(), device, selector_length) !=
-                    0) {
+            !QString::fromUtf8(timings->backend.c_str())
+                     .startsWith(
+                             QString::fromUtf8(
+                                     device, static_cast<int>(selector_length)),
+                             Qt::CaseInsensitive)) {
             std::fprintf(stderr, "[%s] requested backend resolved to %s\n",
                          device, timings->backend.c_str());
             aicore_sam3_free(ctx);

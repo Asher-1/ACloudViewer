@@ -19,6 +19,8 @@ Not a ctest — needs the ultralytics package and a detector checkpoint.
 """
 import argparse
 import io
+import os
+from pathlib import Path
 import subprocess
 import sys
 
@@ -30,21 +32,59 @@ TOL_SCORE = 5e-4
 TYPES = ("bytetrack", "botsort", "ocsort", "deepocsort", "fasttrack",
          "tracktrack")
 
+REPOSITORY_ROOT = Path(__file__).resolve().parents[5]
+
+
+def build_configurations():
+    selected = os.environ.get("AICORE_BUILD_CONFIG", "").strip()
+    configs = ["Release", "RelWithDebInfo", "Debug", "MinSizeRel"]
+    if selected:
+        configs.insert(0, selected)
+    return tuple(dict.fromkeys(configs))
+
+
+def resolve_build_binary(name, build_root=None):
+    """Resolve a CMake single- or multi-config helper executable."""
+    requested = Path(name)
+    if requested.is_file():
+        return requested
+    root = Path(build_root or os.environ.get("CLOUDVIEWER_BUILD_DIR", "build_app"))
+    binary_name = requested.name
+    candidates = []
+    for config in build_configurations():
+        candidates.extend((
+            root / "bin" / config / binary_name,
+            root / "bin" / "aicore_tests" / config / binary_name,
+            root / "bin" / "plugin_test" / config / binary_name,
+        ))
+    candidates.extend((
+        root / "bin" / binary_name,
+        root / "bin" / "aicore_tests" / binary_name,
+        requested,
+    ))
+    expanded = []
+    for candidate in candidates:
+        expanded.append(candidate)
+        if os.name == "nt" and candidate.suffix.lower() != ".exe":
+            expanded.append(candidate.with_name(candidate.name + ".exe"))
+    return next((candidate for candidate in expanded if candidate.is_file()),
+                expanded[0])
+
 
 def make_frames(n, w=640, h=480):
     """Deterministic frames: real-object sprites (crops taken from bus.jpg,
     detected once) pasted at moving positions over a seeded noise field.
     Real patches keep the detector confident; the motion script exercises
     Lost/Refind/occlusion/flicker paths."""
-    import os
     import cv2
     from PIL import Image
-    bus = os.path.join(os.path.dirname(__file__), "../../../..")
-    bus = os.path.abspath(os.path.join(
-        bus, "../dl/ultralytics-ggml/ultralytics/assets/bus.jpg"))
-    if not os.path.exists(bus):
-        bus = "/home/ludahai/develop/code/github/dl/ultralytics-ggml/"
-        bus += "ultralytics/assets/bus.jpg"
+    ultralytics_root = Path(os.environ.get(
+        "ULTRALYTICS_GGML_ROOT",
+        str(REPOSITORY_ROOT.parent / "dl" / "ultralytics-ggml")))
+    bus = ultralytics_root / "ultralytics" / "assets" / "bus.jpg"
+    if not bus.is_file():
+        raise FileNotFoundError(
+            f"missing bus.jpg; set ULTRALYTICS_GGML_ROOT (looked in {bus})")
     src = np.asarray(Image.open(bus).convert("RGB"))
 
     from ultralytics import YOLO
@@ -100,8 +140,9 @@ def detect_rows(model, frames):
 def official_track(type_name, rows_per_frame):
     from ultralytics.trackers.track import TRACKER_MAP
     from ultralytics.utils import IterableSimpleNamespace, YAML
-    yaml = (f"/home/ludahai/.pyenv/versions/3.11/lib/python3.11/site-packages/"
-            f"ultralytics/cfg/trackers/{type_name}.yaml")
+    import ultralytics
+    yaml = (Path(ultralytics.__file__).resolve().parent / "cfg" / "trackers" /
+            f"{type_name}.yaml")
     cfg = IterableSimpleNamespace(**YAML.load(yaml))
     # The official runtime starts each tracker in a fresh process; the id
     # counter is class-global and TRACKTRACK (not a BYTETracker subclass)
@@ -192,10 +233,12 @@ def diff_frames(official, cpp):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--harness", default="build_app/bin/track_parity_harness")
+    ap.add_argument("--harness", default=None)
     ap.add_argument("--frames", type=int, default=30)
     ap.add_argument("--detector", default="yolo26n.pt")
     args = ap.parse_args()
+    if args.harness is None:
+        args.harness = str(resolve_build_binary("track_parity_harness"))
 
     from ultralytics import YOLO
     model = YOLO(args.detector)

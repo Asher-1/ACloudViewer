@@ -39,6 +39,7 @@ import subprocess
 import sys
 from pathlib import Path
 from digest_utils import sha256_file
+from runtime_environment import loader_variable
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 COMPARATOR = SCRIPT_DIR / "compare_map_anything_parity.py"
@@ -199,12 +200,13 @@ def reference_env(build: Path, root: Path) -> dict:
         path = Path(entry).resolve()
         if path.is_relative_to(build):
             return True
-        return not path.is_relative_to(root) and path.is_dir() and \
-            any(path.glob("libggml*"))
+        if path.is_relative_to(root) or not path.is_dir():
+            return False
+        return any(any(path.glob(pattern)) for pattern in
+                   ("libggml*", "ggml*.dll", "libggml*.dll"))
 
-    for key in ("LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH"):
-        if key not in env:
-            continue
+    key = loader_variable()
+    if key in env:
         kept = [entry for entry in env[key].split(os.pathsep)
                 if entry and not foreign(entry)]
         if kept:

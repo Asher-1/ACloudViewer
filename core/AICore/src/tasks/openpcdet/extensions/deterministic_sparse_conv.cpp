@@ -7,11 +7,9 @@
 
 #include "tasks/openpcdet/extensions/deterministic_sparse_conv.h"
 
-#include <algorithm>
-#ifdef _OPENMP
-#include <omp.h>
-#endif
+#include <Parallel.h>
 
+#include <algorithm>
 namespace openpcdet::det {
 
 void det_sparse_conv_cpu(const float* feat,
@@ -26,10 +24,7 @@ void det_sparse_conv_cpu(const float* feat,
     // Parallelize across disjoint (v, o) cells only: each cell's k-outer /
     // c-inner serial det_fma reduction never changes with scheduling, so the
     // output is bit-identical to the serial run and to the CUDA kernel.
-#ifdef _OPENMP
-#pragma omp parallel for collapse(2) \
-        num_threads(std::min(8, omp_get_max_threads()))
-#endif
+    CV_OMP_PARALLEL_FOR_2D(num_threads(cloudViewer::utility::GetMaxThreads(8)))
     for (int v = 0; v < n_out; ++v)
         for (int o = 0; o < C_out; ++o)
             out[static_cast<size_t>(v) * C_out + o] = det_sparse_conv_cell(

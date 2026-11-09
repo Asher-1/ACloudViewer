@@ -24,6 +24,7 @@
 #include <QApplication>
 #include <QMainWindow>
 #include <QProgressDialog>
+#include <QThread>
 #include <QtConcurrentRun>
 #include <QtGui>
 
@@ -31,12 +32,6 @@
 #include <mesh/corkMesh.h>
 
 // system
-#if defined(CV_WINDOWS)
-#include "windows.h"
-#else
-#include <time.h>
-#include <unistd.h>
-#endif
 
 qCork::qCork(QObject* parent /*=0*/)
     : QObject(parent),
@@ -360,11 +355,7 @@ void qCork::doAction() {
 
         // wait until process is finished!
         while (!future.isFinished()) {
-#if defined(CV_WINDOWS)
-            ::Sleep(500);
-#else
-            usleep(500 * 1000);
-#endif
+            QThread::msleep(500);
 
             pDlg.setValue(pDlg.value() + 1);
             QApplication::processEvents();

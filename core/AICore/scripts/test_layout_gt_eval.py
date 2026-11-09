@@ -118,8 +118,8 @@ class CdlaConversionTests(unittest.TestCase):
     def pins(self):
         (self.root / "page.json").write_text(json.dumps(self.annotation))
         return dict(labels=list(layout.CDLA_LABELS), pages=[dict(
-            image=dict(path="page.jpg", sha256=layout.digest(self.root / "page.jpg")),
-            annotation=dict(path="page.json", sha256=layout.digest(self.root / "page.json")))])
+            image=dict(path="page.jpg", sha256=layout.sha256_file(self.root / "page.jpg")),
+            annotation=dict(path="page.json", sha256=layout.sha256_file(self.root / "page.json")))])
 
     def test_rasterized_bounds_include_edge_pixels(self):
         gt = layout.cdla_ground_truth(self.root, self.pins())

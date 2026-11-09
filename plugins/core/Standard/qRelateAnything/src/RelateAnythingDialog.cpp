@@ -751,6 +751,8 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
     connect(m_download, &QPushButton::clicked, this,
             [this]() { ensureModel(false); });
     m_downloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
             &RelateAnythingDialog::log);
     connect(m_downloader, &ecvModelDownloader::progress, this,
@@ -774,7 +776,7 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
                 if (ok && ensureModel(again) && again) run();
             });
     auto& repository = ecvTestDataRepository::instance();
-    connect(&repository, &ecvTestDataRepository::downloadFinished, this,
+    connect(&repository, &ecvTestDataRepository::datasetReady, this,
             [this](bool ok, ecvTestDataRepository::Dataset kind) {
                 if (kind != ecvTestDataRepository::Dataset::RelateAnything ||
                     !m_waitingForSample)
@@ -784,7 +786,7 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
                 if (ok)
                     useTestData();
                 else
-                    log(tr("Sample data download failed."));
+                    log(tr("Sample data preparation failed."));
             });
     connect(&repository, &ecvTestDataRepository::downloadLogMessage, this,
             &RelateAnythingDialog::log);
@@ -1178,12 +1180,7 @@ void RelateAnythingDialog::useTestData() {
     };
     auto demos = find();
     QString video = repo.findDatasetFile(kind, "r3c_adoption_54729571599.webm");
-    if ((demos.contains(QString()) || video.isEmpty()) &&
-        repo.isDatasetAvailable(kind)) {
-        repo.extractDataset(kind);
-        demos = find();
-        video = repo.findDatasetFile(kind, "r3c_adoption_54729571599.webm");
-    }
+
     if (demos.contains(QString()) || video.isEmpty()) {
         if (repo.isDownloadInProgress()) {
             log(tr("Another shared sample download is running."));
@@ -1191,7 +1188,7 @@ void RelateAnythingDialog::useTestData() {
         }
         m_waitingForSample = true;
         m_sample->setEnabled(false);
-        repo.startDownload(kind);
+        repo.ensureDatasetReady(kind);
         return;
     }
     const bool videoTab =

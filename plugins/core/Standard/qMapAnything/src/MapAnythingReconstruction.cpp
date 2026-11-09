@@ -7,6 +7,8 @@
 
 #include "MapAnythingReconstruction.h"
 
+#include <FileSystem.h>
+
 #include <Eigen/Dense>
 #include <algorithm>
 #include <cmath>
@@ -752,7 +754,7 @@ bool write_ply(const std::string& path,
                const Cloud& cloud,
                const std::vector<size_t>* indices,
                const double* offset) {
-    std::FILE* f = std::fopen(path.c_str(), "wb");
+    std::FILE* f = cloudViewer::utility::filesystem::FOpen(path, "wb");
     if (f == nullptr) return false;
     const size_t count = indices != nullptr ? indices->size() : cloud.size();
     const char* type = offset != nullptr ? "double" : "float";

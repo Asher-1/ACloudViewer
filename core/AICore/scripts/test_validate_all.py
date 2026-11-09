@@ -78,7 +78,10 @@ class CandidateAssetsTests(unittest.TestCase):
             self.apply([self.row])
         other = self.root / "shared.gguf"
         other.write_bytes(b"candidate bytes")
-        self.path.symlink_to(other)
+        try:
+            self.path.symlink_to(other)
+        except OSError as exc:
+            self.skipTest(f"symlink creation unavailable: {exc}")
         with self.assertRaisesRegex(ValueError, "isolated"):
             self.apply([self.row])
 
@@ -908,6 +911,29 @@ class ValidateAllTests(unittest.TestCase):
             self.assertEqual(env[variable].split(VALIDATE_ALL.os.pathsep),
                              [str(build / "bin"), str(expected.resolve())])
 
+    def test_windows_runtime_layout_finds_configured_exe_and_prepends_config_dir(self):
+        with tempfile.TemporaryDirectory() as temp:
+            build = Path(temp) / "build"
+            runtime = build / "bin" / "Release"
+            debug_runtime = build / "bin" / "Debug"
+            runtime.mkdir(parents=True)
+            debug_runtime.mkdir(parents=True)
+            executable = runtime / "test_catalog_dump_urls.exe"
+            executable.write_bytes(b"MZ")
+            (build / "CMakeCache.txt").write_text(
+                "CMAKE_CONFIGURATION_TYPES:STRING=Debug;Release\n",
+                encoding="utf-8")
+            with mock.patch.object(VALIDATE_ALL.os, "name", "nt"), \
+                    mock.patch.object(VALIDATE_ALL.os, "pathsep", ";"):
+                self.assertEqual(VALIDATE_ALL.find_binary(
+                    build, "test_catalog_dump_urls"), executable.resolve())
+                env = {"PATH": "C:\\runner\\bin"}
+                VALIDATE_ALL.add_runtime_library_path(env, build)
+                paths = env["PATH"].split(";")
+                self.assertIn(str(runtime), paths)
+                self.assertLess(paths.index(str(runtime)), paths.index(str(debug_runtime)))
+                self.assertLess(paths.index(str(runtime)), paths.index("C:\\runner\\bin"))
+
     def test_fingerprint_stability_requires_every_attempt_to_match(self):
         Attempt = VALIDATE_ALL.Attempt
         stable, failures = VALIDATE_ALL.stable_fingerprints([
@@ -1367,28 +1393,37 @@ class ValidateAllTests(unittest.TestCase):
             catalog = root / 'catalog'
             row = {'task': 'depth', 'relative_path': 'da3_models/model.gguf',
                    'url': 'https://example.invalid/model.gguf', 'sha256': 'a' * 64, 'size_bytes': 123}
-            catalog.write_text('#!' + sys.executable + '\nprint(' + repr(json.dumps(row)) + ')\n')
-            catalog.chmod(0o755)
+            # The production catalog is a native executable.  A shebang file
+            # is not executable through CreateProcess on Windows, so this
+            # unit test supplies the catalog stdout at the subprocess boundary
+            # while still asserting that the configured binary is invoked.
+            catalog.write_bytes(b"catalog fixture")
             args = SimpleNamespace(build=root, catalog_binary=catalog, full=True, models='')
             manifest = {'tasks': ['attribute', 'depth'], 'scenarios': [
                 {'id': 'local', 'task': 'attribute', 'local_only': True,
                  'covered_globs': ['attribute_models/person-f32.gguf']},
                 {'id': 'published', 'task': 'depth', 'model_glob': 'da3_models/model.gguf'}]}
-            try:
-                assets = VALIDATE_ALL.load_model_catalog(args, manifest, {'attribute'})
-            except ValueError as error:
-                self.fail('A local-only task must not require a fictitious download catalog: ' + str(error))
-            self.assertEqual(assets, [])
-            assets = VALIDATE_ALL.load_model_catalog(args, manifest, {'attribute', 'depth'})
-            self.assertEqual([str(asset.relative_path) for asset in assets], ['da3_models/model.gguf'])
-            # No non-local_only scenario and no empty task may waive the
-            # published-catalog obligation.
-            manifest['scenarios'].append({'id': 'must-publish', 'task': 'attribute',
-                                          'model_glob': 'da3_models/model.gguf'})
-            with self.assertRaisesRegex(ValueError, 'no assets for tasks: attribute'):
-                VALIDATE_ALL.load_model_catalog(args, manifest, {'attribute'})
-            with self.assertRaisesRegex(ValueError, 'no assets for tasks: empty'):
-                VALIDATE_ALL.load_model_catalog(args, {'scenarios': []}, {'empty'})
+            def catalog_run(command, **kwargs):
+                self.assertEqual(command, [str(catalog.resolve()), "--json"])
+                return SimpleNamespace(returncode=0, stdout=json.dumps(row) + "\n",
+                                       stderr="")
+            with mock.patch.object(VALIDATE_ALL.subprocess, "run",
+                                   side_effect=catalog_run):
+                try:
+                    assets = VALIDATE_ALL.load_model_catalog(args, manifest, {'attribute'})
+                except ValueError as error:
+                    self.fail('A local-only task must not require a fictitious download catalog: ' + str(error))
+                self.assertEqual(assets, [])
+                assets = VALIDATE_ALL.load_model_catalog(args, manifest, {'attribute', 'depth'})
+                self.assertEqual([str(asset.relative_path) for asset in assets], ['da3_models/model.gguf'])
+                # No non-local_only scenario and no empty task may waive the
+                # published-catalog obligation.
+                manifest['scenarios'].append({'id': 'must-publish', 'task': 'attribute',
+                                              'model_glob': 'da3_models/model.gguf'})
+                with self.assertRaisesRegex(ValueError, 'no assets for tasks: attribute'):
+                    VALIDATE_ALL.load_model_catalog(args, manifest, {'attribute'})
+                with self.assertRaisesRegex(ValueError, 'no assets for tasks: empty'):
+                    VALIDATE_ALL.load_model_catalog(args, {'scenarios': []}, {'empty'})
 
     def test_catalog_parser_rejects_path_traversal(self):
         row = {

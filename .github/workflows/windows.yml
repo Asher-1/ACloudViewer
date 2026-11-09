@@ -164,6 +164,9 @@ jobs:
           activate-environment: cloudViewer
           auto-activate-base: false
           environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+      - name: Install CUDA PyTorch for CuMesh Windows build smoke
+        if: matrix.CONFIG == 'Release' && matrix.BUILD_CUDA_MODULE == 'ON'
+        run: python -m pip install --no-cache-dir "torch==2.7.1+cu126" --index-url https://download.pytorch.org/whl/cu126
       - name: Set up fixed CMake
         uses: ./.github/actions/setup-cmake
       - name: Set up MSVC environment
@@ -172,6 +175,34 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
+      - name: Build Trellis CuMesh with native Windows CUDA dependencies
+        if: matrix.CONFIG == 'Release' && matrix.BUILD_CUDA_MODULE == 'ON'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $smokeBuild = Join-Path $env:RUNNER_TEMP 'cumesh Windows build smoke'
+          $env:TORCH_CUDA_ARCH_LIST = '7.5'
+          $smokePython = (python -c 'import sys; print(sys.executable)').Trim()
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path $smokePython)) { throw 'CuMesh Conda Python unavailable' }
+          cmake -S core/AICore/tests/cumesh-cmake -B $smokeBuild `
+            -G 'Ninja Multi-Config' `
+            "-DPython3_EXECUTABLE=$smokePython" `
+            -DCMAKE_CUDA_ARCHITECTURES=75
+          if ($LASTEXITCODE -ne 0) { throw "CuMesh Windows configure failed: $LASTEXITCODE" }
+          cmake --build $smokeBuild --config Release --target aicore_cumesh_smoke --parallel 2
+          if ($LASTEXITCODE -ne 0) { throw "CuMesh Windows build failed: $LASTEXITCODE" }
+          $savedPath = $env:PATH
+          try {
+            # Load only the DLLs staged with the binaries, plus Windows/MSVC
+            # system runtimes; Conda and CUDA on PATH must not mask omissions.
+            $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot"
+            & (Join-Path $smokeBuild 'bin\Release\aicore_cumesh_smoke.exe')
+            if ($LASTEXITCODE -ne 0) { throw "CuMesh Windows runtime dependency smoke failed: $LASTEXITCODE" }
+            & (Join-Path $smokeBuild 'bin\CloudViewer\aicore_cumesh_smoke.exe')
+            if ($LASTEXITCODE -ne 0) { throw "CuMesh CloudViewer runtime deployment smoke failed: $LASTEXITCODE" }
+          } finally {
+            $env:PATH = $savedPath
+          }
       - name: Check build diagnostics contracts
         if: matrix.CONFIG == 'Release' && matrix.BUILD_CUDA_MODULE == 'OFF'
         run: |
@@ -515,6 +546,15 @@ jobs:
           }
           
           Write-Host "C++ unit tests passed successfully."
+      - name: Run foundation portability tests
+        if: ${{ matrix.CONFIG == 'Release' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        working-directory: ${{ env.SRC_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # These standalone CTest executables are outside tests.exe and the
+          # AICore C ABI selection. Exercise Unicode I/O and host loop fallbacks.
+          ctest --test-dir (Join-Path $env:SRC_DIR "build") -C "${{ matrix.CONFIG }}" -R '^test_(filesystem|parallel|host_parallel)$' --no-tests=error --output-on-failure -j1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Run qPythonRuntime native tests
         # Same conditioning as the C++ unit tests above: Debug matrix entries
         # run the env-setup steps only (build_win_app.ps1 is Release-only),

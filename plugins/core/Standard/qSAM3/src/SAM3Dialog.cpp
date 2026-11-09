@@ -450,6 +450,8 @@ SAM3Dialog::SAM3Dialog(QWidget* parent) : QDialog(parent) {
     // Shared model downloader (qDA3-style): catalog GGUFs land in the AICore
     // model cache (sam3_models) and are verified by size + GGUF magic.
     m_modelDownloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_modelDownloader,
+            &ecvModelDownloader::cancel);
     connect(m_modelDownloader, &ecvModelDownloader::logMessage, this,
             &SAM3Dialog::appendLog);
     connect(m_modelDownloader, &ecvModelDownloader::progress, this,
@@ -561,6 +563,8 @@ void SAM3Dialog::keyPressEvent(QKeyEvent* e) {
 }
 
 void SAM3Dialog::releaseGpuResidency() {
+    m_testDataDownloadInProgress = false;
+    setTestDataControlsEnabled(true);
     // Cancels a running task (bounded wait) and drops every resident
     // context; safe to call repeatedly (closeEvent and rejected both land
     // here).
@@ -965,10 +969,6 @@ void SAM3Dialog::setupUi() {
             [this](const QString& message) {
                 if (m_testDataDownloadInProgress) appendLog(message);
             });
-    connect(&repo, &ecvTestDataRepository::downloadFinished, this,
-            [this](bool success, ecvTestDataRepository::Dataset kind) {
-                onTestDataDownloadFinished(success, kind);
-            });
     connect(&repo, &ecvTestDataRepository::extractionProgress, this,
             [this](int current, int total) {
                 if (!m_testDataDownloadInProgress || total <= 0) return;
@@ -979,9 +979,9 @@ void SAM3Dialog::setupUi() {
                     m_progress->setValue(current * 100 / total);
                 }
             });
-    connect(&repo, &ecvTestDataRepository::extractionFinished, this,
+    connect(&repo, &ecvTestDataRepository::datasetReady, this,
             [this](bool success, ecvTestDataRepository::Dataset kind) {
-                onTestDataExtractionFinished(success, kind);
+                onTestDataReady(success, kind);
             });
 
     populateModelCombo(m_tabsUi[0].modelCombo, Sam3Tab::Full);
@@ -2136,7 +2136,6 @@ void SAM3Dialog::requestTestData() {
     }
 
     const auto kind = ecvTestDataRepository::Dataset::SAM3;
-    const auto info = ecvTestDataRepository::getDatasetInfo(kind);
     m_testDataDownloadInProgress = true;
     setTestDataControlsEnabled(false);
     if (m_progress) {
@@ -2146,17 +2145,10 @@ void SAM3Dialog::requestTestData() {
     if (m_downloadLabel) {
         m_downloadLabel->setVisible(true);
     }
-    if (ecvAssetIntegrity::isVerified(ecvTestDataRepository::zipPath(kind),
-                                      info.anchor, 0, false,
-                                      ecvAssetIntegrity::OnMiss::DeepVerify)) {
-        appendLog(tr("[Test data] Extracting cached archive..."));
-        updateStatus(tr("Extracting SAM3 test data..."));
-        repo.extractDataset(kind);
-        return;
-    }
+
     appendLog(tr("[Test data] Downloading SAM3 test data..."));
     updateStatus(tr("Downloading SAM3 test data..."));
-    repo.startDownload(kind);
+    repo.ensureDatasetReady(kind);
 }
 
 bool SAM3Dialog::loadRequestedTestData() {
@@ -2226,29 +2218,8 @@ void SAM3Dialog::populateTestDataCombos() {
     }
 }
 
-void SAM3Dialog::onTestDataDownloadFinished(
-        bool success, ecvTestDataRepository::Dataset kind) {
-    if (!m_testDataDownloadInProgress ||
-        kind != ecvTestDataRepository::Dataset::SAM3) {
-        return;
-    }
-    if (!success) {
-        appendLog(tr("[Test data] Download failed."));
-        m_testDataDownloadInProgress = false;
-        setTestDataControlsEnabled(true);
-        if (m_progress) m_progress->setVisible(false);
-        if (m_downloadLabel) m_downloadLabel->setVisible(false);
-        updateStatus(tr("Ready."));
-        return;
-    }
-    appendLog(tr("[Test data] Extracting..."));
-    updateStatus(tr("Extracting SAM3 test data..."));
-    if (m_progress) m_progress->setValue(0);
-    ecvTestDataRepository::instance().extractDataset(kind);
-}
-
-void SAM3Dialog::onTestDataExtractionFinished(
-        bool success, ecvTestDataRepository::Dataset kind) {
+void SAM3Dialog::onTestDataReady(bool success,
+                                 ecvTestDataRepository::Dataset kind) {
     if (!m_testDataDownloadInProgress ||
         kind != ecvTestDataRepository::Dataset::SAM3) {
         return;

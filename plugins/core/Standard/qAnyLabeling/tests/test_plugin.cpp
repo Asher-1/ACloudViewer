@@ -2939,8 +2939,8 @@ int main(int argc, char** argv) {
     // over the open image and stores the caption as the image description.
     // Without a downloaded catalog vision model this block skips — the real
     // model/accuracy gates live in the AICore llm validation matrix.
+    QString visionModel;
     {
-        QString visionModel;
         for (const auto& value : LocalChatEngine::models()) {
             const auto entry = value.toObject();
             if (entry.value(QStringLiteral("vision")).toBool() &&
@@ -3000,7 +3000,7 @@ int main(int argc, char** argv) {
     // select its object row, and the per-shape pass must store a fresh crop
     // caption in that shape's sidecar description (the OCR sink), replacing
     // the fixture value.
-    {
+    if (!visionModel.isEmpty()) {
         const QString regionImage =
                 directory.path() + QStringLiteral("/region.png");
         const QString regionSidecar =

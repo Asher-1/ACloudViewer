@@ -7,6 +7,8 @@
 
 #include "tasks/yolo/yolo_postprocess.hpp"
 
+#include <Parallel.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -64,9 +66,7 @@ void resize_horizontal_rows(const float* src,
                             const LinearAxis& x_axis,
                             float* dst,
                             int dst_w) {
-#if defined(_OPENMP)
-#pragma omp parallel for schedule(static) num_threads(8) if (src_h >= 32)
-#endif
+    CV_OMP_PARALLEL_FOR(schedule(static) num_threads(8) if (src_h >= 32))
     for (int y = 0; y < src_h; ++y) {
         const float* src_row = src + (size_t)y * src_w;
         float* dst_row = dst + (size_t)y * dst_w;
@@ -526,9 +526,7 @@ std::vector<uint8_t> semantic_restore_logits(const std::vector<float>& logits,
         resize_horizontal_rows(logits.data() + (size_t)c * grid_plane, grid_w,
                                grid_h, grid_x, grid_horizontal.data(),
                                canvas_w);
-#if defined(_OPENMP)
-#pragma omp parallel for schedule(static) num_threads(8) if (crop_h >= 64)
-#endif
+        CV_OMP_PARALLEL_FOR(schedule(static) num_threads(8) if (crop_h >= 64))
         for (int y = 0; y < crop_h; ++y) {
             const int canvas_y = y + top;
             const int y0 = grid_y.lo[canvas_y];
@@ -550,9 +548,7 @@ std::vector<uint8_t> semantic_restore_logits(const std::vector<float>& logits,
                 dst[x] = v0 * (1.0f - wy) + v1 * wy;
             }
         }
-#if defined(_OPENMP)
-#pragma omp parallel for schedule(static) num_threads(8) if (source_h >= 64)
-#endif
+        CV_OMP_PARALLEL_FOR(schedule(static) num_threads(8) if (source_h >= 64))
         for (int y = 0; y < source_h; ++y) {
             const int y0 = source_y.lo[y];
             const int y1 = source_y.hi[y];

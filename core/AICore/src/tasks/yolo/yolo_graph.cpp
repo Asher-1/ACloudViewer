@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "FileSystem.h"
 #include "common/debug_dump.hpp"
 #include "common/gguf_file_io.hpp"
 #include "ggml-alloc.h"
@@ -1765,7 +1766,8 @@ bool session_ensure_host_weights(Session* s) {
                        s->model.gguf_path.c_str());
         return false;
     }
-    FILE* f = std::fopen(s->model.gguf_path.c_str(), "rb");
+    FILE* f = cloudViewer::utility::filesystem::FOpen(
+            s->model.gguf_path.c_str(), "rb");
     if (!f) {
         gguf_free(g);
         YOLO_LOG_ERROR("ensure_host_weights: cannot open %s",
@@ -1776,7 +1778,8 @@ bool session_ensure_host_weights(Session* s) {
     for (auto& [name, ht] : s->model.tensors) {
         if (!ht.data.empty()) continue;
         const int64_t tid = gguf_find_tensor(g, name.c_str());
-        if (tid < 0 || std::fseek(f, (long)ht.file_offset, SEEK_SET) != 0) {
+        if (tid < 0 ||
+            !cloudViewer::utility::filesystem::FSeek(f, ht.file_offset)) {
             ok = false;
             break;
         }
@@ -2084,7 +2087,7 @@ bool session_prepare_visual_masks(Session* s, const LetterboxInfo& info) {
         }
     }
     if (const char* mdump = aicore::debug::savpe_mask_dump_path()) {
-        FILE* f = std::fopen(mdump, "wb");
+        FILE* f = cloudViewer::utility::filesystem::FOpen(mdump, "wb");
         if (f != nullptr) {
             std::fwrite(masks, sizeof(float), s->vp_pending.size(), f);
             std::fclose(f);

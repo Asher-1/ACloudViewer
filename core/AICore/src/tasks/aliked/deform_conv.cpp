@@ -7,12 +7,10 @@
 
 #include "tasks/aliked/deform_conv.hpp"
 
+#include <Parallel.h>
+
 #include <algorithm>
 #include <array>
-
-#if defined(_OPENMP)
-#include <omp.h>
-#endif
 
 namespace lightglue::aliked_internal {
 namespace {
@@ -21,10 +19,6 @@ inline int32_t IndexNchw(
         int32_t c, int32_t y, int32_t x, int32_t h, int32_t w) {
     return c * h * w + y * w + x;
 }
-
-#if defined(_OPENMP)
-int CpuDeformConvThreads() { return std::min(8, omp_get_max_threads()); }
-#endif
 
 }  // namespace
 
@@ -51,9 +45,8 @@ void DeformConv2d(const std::vector<float> &input,
     // Each output spatial position owns a disjoint set of output elements.
     // Parallelizing positions therefore preserves the per-element summation
     // order, which keeps ALIKED's CPU/Vulkan parity unchanged.
-#if defined(_OPENMP)
-#pragma omp parallel for schedule(static) num_threads(CpuDeformConvThreads())
-#endif
+    CV_OMP_PARALLEL_FOR(schedule(static) num_threads(
+            cloudViewer::utility::GetMaxThreads(8)))
     for (int32_t oy = 0; oy < ih; ++oy) {
         for (int32_t ox = 0; ox < iw; ++ox) {
             // ALIKED's DCN layers have at most 128 output channels.  A fixed

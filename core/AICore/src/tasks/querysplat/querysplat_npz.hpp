@@ -12,6 +12,8 @@
 // party dependency; verified against numpy.load in the export tests.
 #pragma once
 
+#include "FileSystem.h"
+
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -90,7 +92,7 @@ inline std::string npy_header(const std::vector<int64_t>& shape) {
 inline bool write_npz(const std::string& path,
                       const std::vector<NpzArray>& arrays) {
     if (arrays.empty()) return false;
-    FILE* f = std::fopen(path.c_str(), "wb");
+    FILE* f = cloudViewer::utility::filesystem::FOpen(path.c_str(), "wb");
     if (!f) return false;
 
     std::string body;      // local records + payloads

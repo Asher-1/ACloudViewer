@@ -67,9 +67,7 @@ QString facedetectModelCacheDir() {
         aicore_facedetect_free_buffer(dir);
         return result;
     }
-    return QDir(QStandardPaths::writableLocation(
-                        QStandardPaths::AppDataLocation))
-            .filePath(QStringLiteral("extract/facedetect_models"));
+    return {};
 }
 
 QString facedetectCachePath(const QString& filename) {

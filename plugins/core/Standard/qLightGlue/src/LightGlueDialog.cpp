@@ -21,7 +21,6 @@
 #include <QKeyEvent>
 #include <QMessageBox>
 #include <QSettings>
-#include <QStandardPaths>
 #include <QVBoxLayout>
 
 #include "aicore/aliked_capi.h"
@@ -58,10 +57,7 @@ bool isValidCachedGguf(const QFileInfo& fi, aicore_model_family family) {
     const aicore_model_entry* entry =
             aicore_model_by_filename(family, filename.constData());
     if (!entry || !entry->sha256 || !*entry->sha256) return false;
-    return ecvAssetIntegrity::isVerified(
-            fi.absoluteFilePath(),
-            {QCryptographicHash::Sha256, QByteArray(entry->sha256)}, 64 * 1024,
-            true, ecvAssetIntegrity::OnMiss::CheapChecksOnly);
+    return ecvAssetIntegrity::isModelVerified(fi.absoluteFilePath());
 }
 
 QStringList listImageFilesInDir(const QString& dirPath) {
@@ -96,11 +92,7 @@ QVector<LightGlueBuiltinModel> LightGlueDialog::builtinModels() {
 
 QString LightGlueDialog::modelCacheDir() {
     char* dir = aicore_lightglue_model_cache_dir();
-    if (!dir) {
-        return QDir(QStandardPaths::writableLocation(
-                            QStandardPaths::AppDataLocation))
-                .filePath(QStringLiteral("extract/lightglue_models"));
-    }
+    if (!dir) return {};
     QString result = QString::fromUtf8(dir);
     aicore_lightglue_free_buffer(dir);
     return result;
@@ -120,6 +112,12 @@ LightGlueDialog::LightGlueDialog(QWidget* parent) : QDialog(parent) {
     setMinimumSize(ecvAICoreUi::dpiScaled(720), 0);
     setupUi();
     m_downloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
+    connect(this, &QDialog::finished, this, [this] {
+        m_testDataInProgress = false;
+        m_useTestDataBtn->setEnabled(true);
+    });
     // Test data flows through the shared ecvTestDataRepository (the
     // Dataset::LightGlueTestImages registration owns the URL, the zip
     // cache, the integrity ledger, and extraction) — the dialog only
@@ -135,8 +133,6 @@ LightGlueDialog::LightGlueDialog(QWidget* parent) : QDialog(parent) {
                     m_progress->setValue(percent);
                 }
             });
-    connect(&testDataRepo, &ecvTestDataRepository::downloadFinished, this,
-            &LightGlueDialog::onTestDataDownloadFinished);
     connect(&testDataRepo, &ecvTestDataRepository::extractionProgress, this,
             [this](int current, int total) {
                 if (!m_testDataInProgress || !m_progress || total <= 0) {
@@ -145,8 +141,8 @@ LightGlueDialog::LightGlueDialog(QWidget* parent) : QDialog(parent) {
                 m_progress->setRange(0, total);
                 m_progress->setValue(current);
             });
-    connect(&testDataRepo, &ecvTestDataRepository::extractionFinished, this,
-            &LightGlueDialog::onTestDataExtractionFinished);
+    connect(&testDataRepo, &ecvTestDataRepository::datasetReady, this,
+            &LightGlueDialog::onTestDataReady);
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
             &LightGlueDialog::appendLog);
     connect(m_downloader, &ecvModelDownloader::progress, this,
@@ -1369,6 +1365,8 @@ void LightGlueDialog::onRun() {
 }
 
 void LightGlueDialog::onCancel() {
+    m_testDataInProgress = false;
+    m_useTestDataBtn->setEnabled(true);
     if (m_downloadInProgress) {
         cancelDownload();
         appendLog(tr("[LG] Download canceled."));
@@ -1443,14 +1441,7 @@ void LightGlueDialog::onUseTestData() {
     m_progress->setRange(0, 100);
     m_progress->setValue(0);
     m_progress->setVisible(true);
-    if (repo.isDatasetAvailable(kind)) {
-        appendLog(
-                tr("[Test data] Extracting the cached LightGlue demo "
-                   "pair..."));
-        // Synchronous extraction; extractionFinished completes the fill.
-        repo.extractDataset(kind);
-        return;
-    }
+
     if (repo.isDownloadInProgress()) {
         // One shared downloader slot serves every plugin's datasets.
         appendLog(
@@ -1462,29 +1453,15 @@ void LightGlueDialog::onUseTestData() {
     appendLog(
             tr("[Test data] Downloading the official LightGlue demo pair "
                "(sacre_coeur day/night)..."));
-    repo.startDownload(kind);
+    repo.ensureDatasetReady(kind);
 }
 
-void LightGlueDialog::onTestDataDownloadFinished(
-        bool success, ecvTestDataRepository::Dataset kind) {
+void LightGlueDialog::onTestDataReady(bool success,
+                                      ecvTestDataRepository::Dataset kind) {
     if (kind != ecvTestDataRepository::Dataset::LightGlueTestImages) return;
     if (!m_testDataInProgress) return;
     if (!success) {
-        appendLog(tr("[Test data] Download failed."));
-        finishTestDataFill();
-        return;
-    }
-    // Synchronous extraction; extractionFinished completes the fill.
-    ecvTestDataRepository::instance().extractDataset(
-            ecvTestDataRepository::Dataset::LightGlueTestImages);
-}
-
-void LightGlueDialog::onTestDataExtractionFinished(
-        bool success, ecvTestDataRepository::Dataset kind) {
-    if (kind != ecvTestDataRepository::Dataset::LightGlueTestImages) return;
-    if (!m_testDataInProgress) return;
-    if (!success) {
-        appendLog(tr("[Test data] Extraction failed."));
+        appendLog(tr("[Test data] Dataset preparation failed."));
         finishTestDataFill();
         return;
     }

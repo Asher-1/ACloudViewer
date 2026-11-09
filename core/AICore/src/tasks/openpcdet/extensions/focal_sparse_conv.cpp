@@ -7,6 +7,8 @@
 
 #include "tasks/openpcdet/extensions/focal_sparse_conv.h"
 
+#include <Parallel.h>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -17,10 +19,6 @@
 #include <numeric>
 
 #include "tasks/openpcdet/extensions/deterministic_sparse_conv.h"
-
-#ifdef _OPENMP
-#include <omp.h>
-#endif
 
 namespace openpcdet::ext {
 
@@ -225,9 +223,9 @@ void focal_check_repeat(const std::vector<float> &features,
         return static_cast<int64_t>(packed[static_cast<size_t>(index)] &
                                     0xFFFFFFFFull);
     };
-// Each unique group writes disjoint output rows, so the merge can run in
-// parallel without changing any accumulation order inside a group.
-#pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
+    // Each unique group writes disjoint output rows, so the merge can run in
+    // parallel without changing any accumulation order inside a group.
+    CV_OMP_PARALLEL_FOR(num_threads(cloudViewer::utility::GetMaxThreads(8)))
     for (int64_t u = 0; u < uniq; ++u) {
         // PyTorch flips the sorted sequence before unique_consecutive, so the
         // output order is the reversed (descending-key) group order.
@@ -304,7 +302,7 @@ bool focal_split_voxels(
 
     // mask_voxel / mask_kernel (sigmoid).
     std::vector<float> mask_voxel(n), mask_kernel(n * off_count);
-#pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
+    CV_OMP_PARALLEL_FOR(num_threads(cloudViewer::utility::GetMaxThreads(8)))
     for (int64_t i = 0; i < n; ++i) {
         mask_voxel[i] = sigmoidf(imps[i * kernel_volume + (kernel_volume - 1)]);
         for (int k = 0; k < off_count; ++k)
@@ -353,7 +351,7 @@ bool focal_split_voxels(
     // mask_voxel).
     fore_features.assign(static_cast<size_t>(fcount) * channels, 0.0f);
     fore_coordinates.assign(static_cast<size_t>(fcount) * 4, 0);
-#pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
+    CV_OMP_PARALLEL_FOR(num_threads(cloudViewer::utility::GetMaxThreads(8)))
     for (int64_t i = 0; i < fcount; ++i) {
         const int64_t src = idx_fore[i];
         const float mult = mask_multi ? mask_voxel[src] : 1.0f;
@@ -367,7 +365,7 @@ bool focal_split_voxels(
     // selection can run in parallel: count per row, prefix-sum the offsets,
     // then fill the output at disjoint offsets.
     std::vector<int64_t> sel_offsets(static_cast<size_t>(fcount) + 1, 0);
-#pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
+    CV_OMP_PARALLEL_FOR(num_threads(cloudViewer::utility::GetMaxThreads(8)))
     for (int64_t i = 0; i < fcount; ++i) {
         const int64_t src = idx_fore[i];
         const int32_t *base = &coordinates[src * 4];
@@ -395,7 +393,7 @@ bool focal_split_voxels(
     const int64_t mcount = running;
     std::vector<std::array<int32_t, 3>> sel_coords(static_cast<size_t>(mcount));
     std::vector<float> sel_mask(static_cast<size_t>(mcount));
-#pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
+    CV_OMP_PARALLEL_FOR(num_threads(cloudViewer::utility::GetMaxThreads(8)))
     for (int64_t i = 0; i < fcount; ++i) {
         const int64_t src = idx_fore[i];
         const int32_t *base = &coordinates[src * 4];
@@ -432,7 +430,7 @@ bool focal_split_voxels(
     std::copy(fore_features.begin(), fore_features.end(), cat_feat.begin());
     std::copy(fore_coordinates.begin(), fore_coordinates.end(),
               cat_coord.begin());
-#pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
+    CV_OMP_PARALLEL_FOR(num_threads(cloudViewer::utility::GetMaxThreads(8)))
     for (int64_t i = 0; i < mcount; ++i) {
         const int32_t b =
                 fore_coordinates[0];  // batch id is constant for this element
@@ -450,7 +448,7 @@ bool focal_split_voxels(
     const int64_t bcount = static_cast<int64_t>(idx_back.size());
     back_features.assign(static_cast<size_t>(bcount) * channels, 0.0f);
     back_coordinates.assign(static_cast<size_t>(bcount) * 4, 0);
-#pragma omp parallel for num_threads(std::min(8, omp_get_max_threads()))
+    CV_OMP_PARALLEL_FOR(num_threads(cloudViewer::utility::GetMaxThreads(8)))
     for (int64_t i = 0; i < bcount; ++i) {
         const int64_t src = idx_back[i];
         std::copy_n(&features[src * channels], channels,

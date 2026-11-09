@@ -56,6 +56,7 @@ target_include_directories( map_anything_worker_parity_harness PRIVATE
 target_compile_definitions( map_anything_worker_parity_harness PRIVATE AICore_ENABLED )
 target_link_libraries( map_anything_worker_parity_harness PRIVATE
     AICore
+    CVCoreLib
     # MapAnythingGeometry.cpp includes <Eigen/Dense>; the project provider
     # retains the same include/dependency contract for system and vendored Eigen.
     3rdparty_eigen3

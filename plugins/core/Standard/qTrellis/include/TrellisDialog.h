@@ -78,6 +78,7 @@ public:
                           int step,
                           int total);
     void setRunning(bool running);
+    void done(int result) override;
     void setImagePreview(const QImage& image);
     void refreshModelState();
 
@@ -166,7 +167,7 @@ protected:
     void showEvent(QShowEvent* event) override;
 
 private:
-    enum class PendingAction { None, Run, OneClick };
+    enum class PendingAction { None, Run };
 
     void buildGeneratePage(QWidget* page);
     void buildExportPage(QWidget* page);
@@ -257,9 +258,13 @@ private:
 
     TrellisRunResult m_lastResult;  // export-page source (last generation)
     ecvModelDownloader* m_downloader = nullptr;
+    QPushButton* m_runButton = nullptr;
+    QPushButton* m_oneClickButton = nullptr;
+    QPushButton* m_cancelButton = nullptr;
     QStringList m_pendingDownloads;
     bool m_downloadInProgress = false;
     bool m_taskRunning = false;
+    bool m_samplePreparationPending = false;
     bool m_firstShow = true;  // lock the dialog size on first show (see §13.4)
     PendingAction m_pendingActionAfterDownload = PendingAction::None;
 };

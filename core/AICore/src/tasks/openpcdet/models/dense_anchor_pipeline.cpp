@@ -20,10 +20,6 @@
 #include "tasks/openpcdet/extensions/center_head_ops.h"
 #include "tasks/openpcdet/ops/nms_3d.h"
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 namespace openpcdet {
 
 namespace {

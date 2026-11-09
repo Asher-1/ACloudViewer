@@ -11454,7 +11454,7 @@ void AnnotationWindow::runDetection() {
     const ecvAssetIntegrity::Anchor anchor{
             QCryptographicHash::Sha256,
             ecvAssetIntegrity::PinnedDigest(filename)};
-    if (ecvAssetIntegrity::isVerified(path, anchor, 1024 * 1024, true)) {
+    if (ecvAssetIntegrity::isVerified(path, anchor, 64 * 1024, true)) {
         // The detector stage needs its own files when fewer than two
         // rectangles are selected; fetch what is missing, one file per round
         // (the finished handler re-enters runDetection()).
@@ -11498,7 +11498,7 @@ void AnnotationWindow::runDetection() {
     ecvModelDownloader::Request request;
     request.url = found->url;
     request.destPath = path;
-    request.minBytes = 1024 * 1024;
+    request.minBytes = 64 * 1024;
     request.contentAnchor = anchor;
     m_runAfterDownload = true;
     // RelateAnything re-enters runDetection() so its detector stage

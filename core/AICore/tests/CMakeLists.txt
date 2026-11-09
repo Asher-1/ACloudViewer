@@ -68,11 +68,12 @@ function(_aicore_test_common name)
         endif()
     endforeach()
     if(NOT MSVC)
-        # Qt is built with -reduce-relocations: every AICore test binary
-        # compiles with -fPIC and links -no-pie (same requirement as the
-        # AICore libraries themselves).
+        # Linux Qt with -reduce-relocations requires PIC without PIE.
+        # Darwin uses a different linker; do not pass the GNU-only flag.
         target_compile_options(${name} PRIVATE -Wall -Wextra -fPIC)
-        target_link_options(${name} PRIVATE "-no-pie")
+        if(NOT APPLE)
+            target_link_options(${name} PRIVATE "-no-pie")
+        endif()
     endif()
     target_include_directories(${name} PRIVATE ${AICORE_TEST_INC})
     target_include_directories(${name} PRIVATE ${AICORE_TEST_INC}/..)
@@ -94,6 +95,11 @@ function(_aicore_test_common name)
     else()
         set_tests_properties(${name} PROPERTIES SKIP_RETURN_CODE 77)
     endif()
+    # Register the row before applying its runtime environment.  In
+    # particular, this is required for CTest's ENVIRONMENT_MODIFICATION;
+    # applying it while only the executable target exists silently leaves the
+    # Windows multi-config test without its bin/<Config> DLL directory.
+    cloudviewer_set_test_runtime_environment(${name})
 endfunction()
 
 # --- Tier filters (single source of truth) ---------------------------------
@@ -136,6 +142,13 @@ function(add_test)
             "${_aicore_at_tgt}")
     endif()
     _add_test(${ARGN})
+    if(_aicore_at_NAME AND
+       "${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${AICORE_TESTS_DIR}")
+        # Python validation rows and wrapper tests can launch C API binaries
+        # indirectly. Apply the same Windows multi-config DLL contract to
+        # those rows as to target-backed tests.
+        cloudviewer_set_test_runtime_environment(${_aicore_at_NAME})
+    endif()
 endfunction()
 
 # External (plugin-directory) registration for tests that belong to an AICore
@@ -154,6 +167,7 @@ function(aicore_register_test)
         message(FATAL_ERROR "aicore_register_test: unknown target ${AIRT_TARGET}")
     endif()
     add_test(NAME ${AIRT_NAME} COMMAND ${AIRT_TARGET})
+    cloudviewer_set_test_runtime_environment(${AIRT_NAME})
     if(AIRT_LABELS)
         set_tests_properties(${AIRT_NAME} PROPERTIES LABELS "${AIRT_LABELS}")
     endif()
@@ -384,6 +398,7 @@ endfunction()
 if(TARGET AICore_test)
     # White-box tests compile private AICore implementation sources.
     aicore_add_whitebox_test(test_data_root common)
+    set_tests_properties(test_data_root PROPERTIES LABELS "capi")
     aicore_add_whitebox_test(test_backend_registry common)
     aicore_add_whitebox_test(test_image_view_contract common)
     aicore_add_whitebox_test(test_gguf_keys depth)
@@ -490,6 +505,19 @@ aicore_add_capi_test(test_loma_b128_e2e_reference_gate loma LABELS capi;model;re
 aicore_add_capi_test(test_loma_matcher_reference_gate loma LABELS capi;model;validation)
 
 aicore_add_capi_test(test_aliked_capi_contract aliked)
+add_executable(test_host_parallel common/test_host_parallel.cpp
+    ../src/tasks/aliked/tensor_ops.cpp
+    ../src/tasks/aliked/deform_conv.cpp
+    ../src/tasks/openpcdet/extensions/deterministic_sparse_conv.cpp
+    ../src/tasks/openpcdet/extensions/sparse_ops.cpp)
+target_link_libraries(test_host_parallel PRIVATE CVCoreLib ${GGML_DEPENDENCY_TARGET})
+target_include_directories(test_host_parallel PRIVATE ${GGML_INCLUDE_DIRS})
+add_dependencies(test_host_parallel ${GGML_DEPENDENCY_TARGET})
+if(TARGET OpenMP::OpenMP_CXX)
+    target_link_libraries(test_host_parallel PRIVATE OpenMP::OpenMP_CXX)
+endif()
+_aicore_test_common(test_host_parallel)
+set_tests_properties(test_host_parallel PROPERTIES LABELS "fast;common;parallel")
 aicore_add_capi_test(test_aliked_capi_parity aliked LABELS capi;model;gpu)
 aicore_add_capi_test(test_aliked_e2e_smoke aliked LABELS capi;model;gpu;smoke)
 
@@ -505,7 +533,7 @@ aicore_add_capi_test(test_querysplat_capi querysplat LABELS capi;model)
 # npz export writer contract (store-ZIP + .npy layout; no model needed).
 # The writer is a task-internal header: the include dir points at the real
 # src/tasks/querysplat directory (same whitebox convention as rfdetr).
-aicore_add_capi_test(test_querysplat_npz querysplat)
+aicore_add_capi_test(test_querysplat_npz querysplat LIBS CVCoreLib)
 target_include_directories(test_querysplat_npz PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/querysplat
     ${CMAKE_CURRENT_SOURCE_DIR}/../src)
@@ -754,7 +782,7 @@ if(NOT MSVC)
     target_compile_options(AICore_sam3_diagnostics PRIVATE -fPIC)
 endif()
 aicore_apply_compile_definitions(AICore_sam3_diagnostics)
-target_link_libraries(AICore_sam3_diagnostics PRIVATE AICore)
+target_link_libraries(AICore_sam3_diagnostics PRIVATE AICore CVCoreLib)
 # sam3.cpp calls dladdr() through ggml_backend_utils.hpp.  Because this
 # implementation is archived into a static library, the final executable
 # must carry the platform's dynamic-loader library explicitly.
@@ -1612,9 +1640,14 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
             # The python probes dlopen libAICore directly through ctypes, so
             # the loader must resolve the indirect Qt dependencies (for
             # example libQt5Concurrent) from the configured Qt tree instead
-            # of falling back to a mismatched host system library.
-            list(APPEND _aicore_validation_runtime_env
-                 "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:${_aicore_qt_core_target}>:$ENV{LD_LIBRARY_PATH}")
+            # of falling back to a mismatched host system library. Windows
+            # uses PATH and the Python runner adds the target/configuration
+            # directories itself; exporting a POSIX LD_LIBRARY_PATH there is
+            # both ineffective and misleading.
+            if(NOT MSVC)
+                list(APPEND _aicore_validation_runtime_env
+                     "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:${_aicore_qt_core_target}>:$ENV{LD_LIBRARY_PATH}")
+            endif()
             break()
         endif()
     endforeach()
@@ -1635,7 +1668,9 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
         list(APPEND _aicore_validation_reference_args --reference "${_aicore_reference}")
     endforeach()
     add_custom_target(aicore-validate-all
-        COMMAND ${CMAKE_COMMAND} -E env ${_aicore_validation_runtime_env}
+        COMMAND ${CMAKE_COMMAND} -E env
+                "AICORE_BUILD_CONFIG=$<CONFIG>"
+                ${_aicore_validation_runtime_env}
                 ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/validate_all.py
                 --build ${CMAKE_BINARY_DIR}
@@ -1666,10 +1701,25 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
     endif()
 
     add_test(NAME test_aicore_validation_runner
-        COMMAND ${Python3_EXECUTABLE}
+        COMMAND ${CMAKE_COMMAND} -E env
+                "AICORE_BUILD_CONFIG=$<CONFIG>"
+                ${_aicore_validation_runtime_env}
+                ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_validate_all.py)
     set_tests_properties(test_aicore_validation_runner PROPERTIES
         LABELS "fast;validation")
+
+    add_test(NAME test_aicore_runtime_environment
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_runtime_environment.py)
+    set_tests_properties(test_aicore_runtime_environment PROPERTIES
+        LABELS "fast;validation")
+
+    add_test(NAME test_yolo_parity_launcher
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/yolo/test_run_upstream_parity.py)
+    set_tests_properties(test_yolo_parity_launcher PROPERTIES
+        LABELS "fast;validation;yolo")
 
     add_test(NAME test_upstream_inventory
         COMMAND ${Python3_EXECUTABLE}
@@ -1844,10 +1894,18 @@ set(_aicore_fast_bins "")
 set(_aicore_contract_bins "")
 set(_aicore_model_bins "")
 foreach(_aicore_t IN LISTS _aicore_registry_tests)
+    # Apply the loader contract to script-only rows too.  They may launch a
+    # C API executable or ctypes-loaded library even when no target is owned
+    # by the row itself.
+    cloudviewer_set_test_runtime_environment(${_aicore_t})
     get_property(_aicore_tgt GLOBAL PROPERTY "AICORE_TEST_TGT_${_aicore_t}")
     if(NOT _aicore_tgt)
         continue() # script / cmake -P / multi-binary commands: nothing to build
     endif()
+    # Some model-free and reference rows are registered directly with
+    # add_test() after their executable was prepared with NO_CTEST.  Apply the
+    # same loader contract to those rows here, after the registry has captured
+    # the test, instead of relying on the order of individual declarations.
     get_test_property(${_aicore_t} LABELS _aicore_labels)
     if(NOT _aicore_labels OR _aicore_labels MATCHES "NOTFOUND")
         set(_aicore_labels "")

@@ -12,6 +12,7 @@
 #include <gtest/gtest.h>
 
 #include <cstdio>
+#include <filesystem>
 #include <fstream>
 #include <vector>
 
@@ -103,16 +104,16 @@ TEST(QyoloTrackerConfig, DefaultsMirrorOfficialYamls) {
 TEST(QyoloTrackerConfig, YamlOverride) {
     // Flat "key: value" map, same as the official tracker YAMLs; unknown
     // keys are ignored (Python getattr-with-default reads).
-    const char* path = "qyolo_tracker_test_config.yaml";
+    const std::string path = u8"qyolo_\u8ddf\u8e2a_\U0001f680 config.yaml";
     {
-        std::ofstream out(path);
+        std::ofstream out(std::filesystem::u8path(path));
         out << "tracker_type: bytetrack\n";
         out << "track_buffer: 77\n";
         out << "not_a_real_key: 1\n";
     }
     TrackConfig cfg;
     EXPECT_TRUE(qyolo::track::load_tracker_config_yaml(path, cfg));
-    std::remove(path);
+    std::filesystem::remove(std::filesystem::u8path(path));
     EXPECT_EQ(cfg.tracker_type, "bytetrack");
     EXPECT_EQ(cfg.track_buffer, 77);
     // Untouched keys keep the current values (override semantics).

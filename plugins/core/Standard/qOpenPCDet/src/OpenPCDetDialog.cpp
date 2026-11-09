@@ -225,6 +225,8 @@ void OpenPCDetDialog::setupUi() {
 
     // Downloader.
     m_downloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
     connect(m_downloader, &ecvModelDownloader::progress, this,
             [this](qint64 received, qint64 total) {
                 m_progress->setVisible(true);
@@ -1052,7 +1054,7 @@ bool OpenPCDetDialog::ensureModelAvailable(PendingAction action) {
         appendLog(tr("[OpenPCDet] Select a model first."));
         return false;
     }
-    if (!QFileInfo::exists(resolveModelPath(filename))) {
+    if (!ecvAssetIntegrity::isModelVerified(resolveModelPath(filename))) {
         OpenPCDetModelEntry entry;
         if (!OpenPCDetHelpers::findModelByFilename(filename, &entry)) {
             appendLog(tr("[OpenPCDet] Model file not found: %1").arg(filename));
@@ -1076,7 +1078,7 @@ void OpenPCDetDialog::startDownload(const OpenPCDetModelEntry& model) {
     QDir().mkpath(OpenPCDetHelpers::modelCacheDir());
     const QString dest = OpenPCDetHelpers::modelCacheDir() + QDir::separator() +
                          model.filename;
-    if (QFile::exists(dest)) {
+    if (ecvAssetIntegrity::isModelVerified(dest)) {
         appendLog(tr("[OpenPCDet] Model already present: %1").arg(dest));
         return;
     }

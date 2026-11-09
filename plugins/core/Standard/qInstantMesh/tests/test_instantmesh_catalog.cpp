@@ -17,6 +17,7 @@
 
 #include "InstantMeshModelCatalog.h"
 #include "ecvAssetIntegrity.h"
+#include "ecvModelDownloader.h"
 
 namespace {
 
@@ -75,6 +76,23 @@ TEST(InstantMeshCatalog, PresetShapes) {
     EXPECT_TRUE(presets[1].files[0].isEmpty());
     EXPECT_TRUE(presets[1].files[1].isEmpty());
     EXPECT_TRUE(presets[1].files[2].isEmpty());
+}
+
+TEST(InstantMeshCatalog, SharedDownloadFloorAdmitsEveryPublishedModel) {
+    const auto catalog = InstantMeshHelpers::catalogModels();
+    ASSERT_FALSE(catalog.isEmpty());
+    const ecvModelDownloader::Request request;
+    int smallSynthesizers = 0;
+    for (const auto& entry : catalog) {
+        EXPECT_GE(entry.sizeBytes, request.minBytes)
+                << entry.filename.toStdString();
+        EXPECT_FALSE(entry.sha256.isEmpty());
+        if (entry.role == QStringLiteral("synthesizer")) {
+            EXPECT_LT(entry.sizeBytes, 1024 * 1024);
+            ++smallSynthesizers;
+        }
+    }
+    EXPECT_EQ(smallSynthesizers, 3);
 }
 
 TEST(InstantMeshCatalog, PresetsUseCanonicalF16Names) {

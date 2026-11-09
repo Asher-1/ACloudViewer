@@ -25,6 +25,9 @@
 #include <cstdio>
 #include <cstring>
 #include <deque>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <limits>
 #include <optional>
 #include <unordered_map>
@@ -3294,16 +3297,14 @@ bool default_tracker_config(const std::string& type, TrackConfig& out) {
 }
 
 bool load_tracker_config_yaml(const std::string& path, TrackConfig& out) {
-    FILE* f = fopen(path.c_str(), "rb");
+    std::ifstream f(std::filesystem::u8path(path), std::ios::binary);
     if (!f) {
         fprintf(stderr, "failed to open tracker config %s\n", path.c_str());
         return false;
     }
-    std::string content;
-    char buf[4096];
-    size_t n;
-    while ((n = fread(buf, 1, sizeof(buf), f)) > 0) content.append(buf, n);
-    fclose(f);
+    const std::string content((std::istreambuf_iterator<char>(f)),
+                              std::istreambuf_iterator<char>());
+    if (f.bad()) return false;
 
     auto trim = [](std::string s) {
         const auto b = s.find_first_not_of(" \t\r");

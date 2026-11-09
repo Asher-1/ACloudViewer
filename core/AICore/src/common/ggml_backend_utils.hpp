@@ -58,6 +58,19 @@ inline std::string to_lower(std::string s) {
     return s;
 }
 
+// Compatibility lookup for Vulkan extension symbols in older backend builds
+// without registry exports. Keep the module resident for returned pointers.
+inline void* vulkan_extension_symbol(const char* name) {
+#if defined(__linux__) || defined(__APPLE__)
+    if (void* symbol = dlsym(RTLD_DEFAULT, name)) return symbol;
+    static void* module = dlopen("libggml-vulkan.so", RTLD_LAZY | RTLD_GLOBAL);
+    return module ? dlsym(module, name) : nullptr;
+#else
+    (void)name;
+    return nullptr;
+#endif
+}
+
 // Default CPU threads = physical cores. SMT siblings only add contention for
 // matmul-heavy work, so on x86 (logical == 2x physical) we halve -- but ONLY
 // when SMT is actually on. ARM / Apple silicon have no SMT.
@@ -294,6 +307,15 @@ inline std::string registry_backend_id(const char* reg_name) {
     if (name.find("vulkan") != std::string::npos) return "vulkan";
     if (name.find("cpu") != std::string::npos) return "cpu";
     return name;
+}
+
+// Metal's patched attention kernel and CPU accept unbounded sequences.
+// Other GPU kernels retain the existing 65535-token safety limit.
+inline int64_t flash_attention_sequence_limit(ggml_backend_t backend) {
+    const auto device = ggml_backend_get_device(backend);
+    const char* name = ggml_backend_reg_name(ggml_backend_dev_backend_reg(device));
+    return is_cpu_backend(backend) || registry_backend_id(name) == "metal"
+           ? INT64_MAX : 65535;
 }
 
 // Optional knobs for resolve_gpu_group(). All control stays interface-only:

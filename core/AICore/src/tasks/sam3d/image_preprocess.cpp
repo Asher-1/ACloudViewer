@@ -424,7 +424,7 @@ bool save_condition(const std::filesystem::path& directory,
                     const char* name,
                     const std::vector<int64_t>& shape,
                     const std::vector<float>& values) {
-    return save_raw_tensor_f32((directory / name).string(), shape,
+    return save_raw_tensor_f32((directory / name).u8string(), shape,
                                values.data());
 }
 
@@ -552,7 +552,7 @@ bool write_ss_conditions(const std::string& directory,
         return false;
     }
     std::error_code filesystem_error;
-    const std::filesystem::path root(directory);
+    const auto root = std::filesystem::u8path(directory);
     std::filesystem::create_directories(root, filesystem_error);
     if (filesystem_error) {
         error = "cannot create condition directory '" + directory +
@@ -573,15 +573,15 @@ bool write_ss_conditions(const std::string& directory,
                         input.rgb_image_mask) ||
         !save_condition(root, "ss_input_rgb_pointmap.samt", image_shape,
                         input.rgb_pointmap) ||
-        !save_raw_tensor_f32((root / "ss_input_pointmap_scale.samt").string(),
+        !save_raw_tensor_f32((root / "ss_input_pointmap_scale.samt").u8string(),
                              vector_shape, input.pointmap_scale.data()) ||
-        !save_raw_tensor_f32((root / "ss_input_pointmap_shift.samt").string(),
+        !save_raw_tensor_f32((root / "ss_input_pointmap_shift.samt").u8string(),
                              vector_shape, input.pointmap_shift.data()) ||
         !save_raw_tensor_f32(
-                (root / "ss_input_rgb_pointmap_scale.samt").string(),
+                (root / "ss_input_rgb_pointmap_scale.samt").u8string(),
                 vector_shape, input.pointmap_scale.data()) ||
         !save_raw_tensor_f32(
-                (root / "ss_input_rgb_pointmap_shift.samt").string(),
+                (root / "ss_input_rgb_pointmap_shift.samt").u8string(),
                 vector_shape, input.pointmap_shift.data())) {
         error = "failed to write one or more native condition SAMT tensors";
         return false;

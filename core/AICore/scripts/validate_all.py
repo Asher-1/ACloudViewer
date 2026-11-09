@@ -31,6 +31,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import Any
+from runtime_environment import (configured_qt_library_dir, embedded_qt_library_dir,
+                                 find_binary, is_windows, loader_variable,
+                                 runtime_directories as _runtime_directories)
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -1142,19 +1145,6 @@ def release_manifest_accuracy_contract_failures(
     return failures
 
 
-def find_binary(build: Path, name: str) -> Path:
-    suffixes = (".exe", "") if os.name == "nt" else ("",)
-    # bin/plugin_test holds plugin-level unit tests (for example the
-    # qRelateAnything temporal tracker tests) that manifest rows may consume.
-    for directory in (build / "bin" / "aicore_tests", build / "bin",
-                      build / "bin" / "plugin_test"):
-        for suffix in suffixes:
-            candidate = directory / f"{name}{suffix}"
-            if candidate.is_file():
-                return candidate.resolve()
-    return (build / "bin" / "aicore_tests" / name).resolve()
-
-
 def model_quant(path: Path) -> str:
     match = re.search(r"-(f32|f16|q8_0|q8|q4_0|q4_k)\.gguf$", path.name,
                       re.IGNORECASE)
@@ -1739,152 +1729,25 @@ def runtime_env(spec: RunSpec, args: argparse.Namespace) -> dict[str, str]:
     return env
 
 
-def configured_qt_library_dir(build: Path) -> Path | None:
-    """Recover the configured Qt runtime directory for direct CLI runs.
-
-    CTest injects AICORE_QT_LIBRARY_DIR, but users also invoke this script
-    directly. Reading CMakeCache keeps the spawned catalog/probe binaries on
-    the same Qt major/minor build instead of mixing the host Qt with the one
-    linked into AICore.
-    """
-    cache = build / "CMakeCache.txt"
-    try:
-        lines = cache.read_text(encoding="utf-8", errors="replace").splitlines()
-    except OSError:
-        return None
-    cmake_dirs: list[Path] = []
-    prefixes: list[Path] = []
-    for line in lines:
-        if "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        variable = key.split(":", 1)[0]
-        if variable in ("Qt5Core_DIR", "Qt6Core_DIR") and value:
-            cmake_dirs.append(Path(value))
-        elif variable == "CMAKE_PREFIX_PATH":
-            prefixes.extend(Path(item) for item in value.split(";") if item)
-    candidates: list[Path] = []
-    for directory in cmake_dirs:
-        if len(directory.parents) >= 2:
-            qt_lib = directory.parents[1]
-            candidates.extend(([qt_lib.parent / "bin", qt_lib]
-                               if os.name == "nt" else [qt_lib]))
-    for prefix in prefixes:
-        candidates.append(prefix / ("bin" if os.name == "nt" else "lib"))
-    return next((path.resolve() for path in candidates if path.is_dir()), None)
-
-
-def _elf_runtime_dirs(binary: Path) -> list[Path]:
-    """Extract DT_RUNPATH/DT_RPATH entries from an ELF binary (Linux)."""
-    readelf = shutil.which("readelf")
-    if not readelf:
-        return []
-    try:
-        result = subprocess.run([readelf, "-d", str(binary)],
-                                capture_output=True, text=True, timeout=30)
-    except (OSError, subprocess.TimeoutExpired):
-        return []
-    dirs: list[Path] = []
-    for line in result.stdout.splitlines():
-        if "RPATH" not in line and "RUNPATH" not in line:
-            continue
-        match = re.search(r"\[(.*)\]", line)
-        if not match:
-            continue
-        for entry in match.group(1).split(":"):
-            entry = entry.replace("$ORIGIN", str(binary.parent))
-            entry = entry.replace("${ORIGIN}", str(binary.parent))
-            if entry:
-                dirs.append(Path(entry))
-    return dirs
-
-
-def _macho_runtime_dirs(binary: Path) -> list[Path]:
-    """Extract LC_RPATH entries from a Mach-O binary (macOS)."""
-    otool = shutil.which("otool")
-    if not otool:
-        return []
-    try:
-        result = subprocess.run([otool, "-l", str(binary)],
-                                capture_output=True, text=True, timeout=30)
-    except (OSError, subprocess.TimeoutExpired):
-        return []
-    dirs: list[Path] = []
-    lines = result.stdout.splitlines()
-    for i, line in enumerate(lines):
-        if line.strip() == "cmd LC_RPATH" and i + 1 < len(lines):
-            match = re.search(r"path\s+(.+)\s*\(offset\s+\d+\)", lines[i + 1])
-            if match:
-                entry = match.group(1).replace("@loader_path", str(binary.parent))
-                if entry:
-                    dirs.append(Path(entry))
-    return dirs
-
-
-def _qt_core_names() -> tuple[str, ...]:
-    if os.name == "nt":
-        return ("Qt6Core.dll", "Qt5Core.dll")
-    if sys.platform == "darwin":
-        return ("libQt6Core.6.dylib", "libQt5Core.5.dylib", "libQt6Core.dylib",
-                "libQt5Core.dylib")
-    return ("libQt6Core.so.6", "libQt5Core.so.5")
-
-
-def embedded_qt_library_dir(build: Path) -> Path | None:
-    """Resolve the Qt runtime directory from the binaries' embedded paths.
-
-    The loader resolves a shared library's own DT_NEEDED entries with that
-    library's DT_RUNPATH, not the executable's, so fronting only the probe
-    path still lets libAICore's Qt dependency fall through to a host Qt of a
-    different minor version (Qt_5.15 symbol-version failure). The build
-    bakes the absolute Qt runtime directory into every linked binary's
-    RUNPATH/LC_RPATH, so reading it back from disk is machine-independent
-    for in-place builds and needs no hardcoded path anywhere.
-    """
-    core_names = _qt_core_names()
-    bin_dir = build / "bin"
-    candidates: list[Path] = []
-    if os.name == "nt":
-        # PE has no runpath; Qt runtimes are deployed next to the binaries.
-        candidates.append(bin_dir)
-        tests_dir = bin_dir / "aicore_tests"
-        if tests_dir.is_dir():
-            candidates.append(tests_dir)
-    else:
-        binaries = [bin_dir / ("libAICore.dylib" if sys.platform == "darwin"
-                               else "libAICore.so")]
-        tests_dir = bin_dir / "aicore_tests"
-        if tests_dir.is_dir():
-            for probe in sorted(tests_dir.iterdir()):
-                if probe.is_file() and os.access(probe, os.X_OK):
-                    binaries.append(probe)
-                    break
-        for binary in binaries:
-            if not binary.is_file():
-                continue
-            dirs = (_macho_runtime_dirs(binary) if sys.platform == "darwin"
-                    else _elf_runtime_dirs(binary))
-            candidates.extend(dirs)
-    for candidate in candidates:
-        try:
-            resolved = candidate.resolve()
-        except OSError:
-            continue
-        if not resolved.is_dir():
-            continue
-        if any((resolved / name).is_file() for name in core_names):
-            return resolved
-    return None
-
-
 def add_runtime_library_path(env: dict[str, str], build: Path) -> None:
-    if os.name == "nt":
-        variable = "PATH"
-    elif sys.platform == "darwin":
-        variable = "DYLD_LIBRARY_PATH"
+    variable = loader_variable()
+    runtime_dirs = _runtime_directories(build)
+    # Keep the flat bin directory as a stable first entry even for a staged
+    # tree that has not copied its configuration subdirectory yet.  Existing
+    # multi-config directories follow it and therefore cover both AICore and
+    # plugin test layouts without requiring a caller-specific path convention.
+    if is_windows():
+        # Windows has no RPATH and the executable's directory is not enough
+        # for sibling AICore/plugin DLLs in a multi-config build. Include the
+        # selected config and grouped test directories before the inherited
+        # PATH; nonexistent candidates are harmless and filtered out.
+        parts = [str(path) for path in runtime_dirs if path.is_dir()]
+        if not parts:
+            parts = [str(build.resolve() / "bin")]
     else:
-        variable = "LD_LIBRARY_PATH"
-    parts = [str(build / "bin")]
+        parts = [str(build / "bin")]
+        parts.extend(str(path) for path in runtime_dirs
+                     if path != build.resolve() / "bin" and path.is_dir())
     qt_library_dir = env.get("AICORE_QT_LIBRARY_DIR")
     if not qt_library_dir:
         configured_qt = configured_qt_library_dir(build)
@@ -1906,7 +1769,13 @@ def add_runtime_library_path(env: dict[str, str], build: Path) -> None:
         parts.append(cuda_library_dir)
     if env.get(variable):
         parts.append(env[variable])
-    env[variable] = os.pathsep.join(parts)
+    # Remove duplicates while preserving the search order that pins the build
+    # runtime ahead of a system Qt/CUDA installation.
+    unique_parts: list[str] = []
+    for part in parts:
+        if part and part not in unique_parts:
+            unique_parts.append(part)
+    env[variable] = os.pathsep.join(unique_parts)
 
 
 def run_attempt(spec: RunSpec, args: argparse.Namespace) -> Attempt:
@@ -2084,21 +1953,25 @@ def file_identity(path: Path) -> dict[str, Any]:
 
 def cpu_backend_module_score(module: Path, build: Path) -> tuple[int | None, str | None]:
     """Read the same host-compatibility score used by ggml CPU dispatch."""
-    script = (
-        "import ctypes, sys; "
-        "backend = ctypes.CDLL(sys.argv[1]); "
-        "print(int(backend.ggml_backend_score()))"
-    )
+    script = """
+import sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[2])
+from runtime_environment import load_shared_library
+backend = load_shared_library(Path(sys.argv[1]))
+print(int(backend.ggml_backend_score()))
+"""
     env = os.environ.copy()
-    path_key = ("PATH" if os.name == "nt" else
-                "DYLD_LIBRARY_PATH" if sys.platform == "darwin" else
-                "LD_LIBRARY_PATH")
-    library_path = os.pathsep.join(
-        [str(build / "bin"), env.get(path_key, "")]).rstrip(os.pathsep)
-    env[path_key] = library_path
+    path_key = loader_variable()
+    runtime_dirs = _runtime_directories(build)
+    library_dirs = [str(path) for path in runtime_dirs if path.is_dir()]
+    if not library_dirs:
+        library_dirs = [str(build / "bin")]
+    env[path_key] = os.pathsep.join(
+        library_dirs + ([env[path_key]] if env.get(path_key) else []))
     try:
         completed = subprocess.run(
-            [sys.executable, "-c", script, str(module)],
+            [sys.executable, "-c", script, str(module), str(SCRIPT_DIR)],
             capture_output=True, text=True, timeout=15, env=env)
     except subprocess.TimeoutExpired:
         return None, "timed out loading CPU backend module"
@@ -2116,7 +1989,7 @@ def cpu_backend_profile(build: Path) -> dict[str, Any]:
     build = build.resolve()
     module_names: set[str] = set()
     module_paths: dict[str, Path] = {}
-    for directory in (build / "bin", build / "bin" / "aicore_tests"):
+    for directory in _runtime_directories(build):
         if not directory.is_dir():
             continue
         for path in directory.glob("*ggml-cpu*"):

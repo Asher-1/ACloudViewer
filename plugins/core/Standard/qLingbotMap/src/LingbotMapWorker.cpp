@@ -765,17 +765,11 @@ void LingbotMapWorker::run() {
         return;
     }
 
-    char* deviceName = nullptr;
-    {
-        // aicore_lingbot_context_device returns a borrowed string owned by
-        // the context; copy through info-free accessors only.
-        const char* dev = aicore_lingbot_context_device(ctx);
-        deviceName = dev ? strdup(dev) : nullptr;
-    }
-    emit logMessage(tr("[LingbotMap] Model ready (device: %1)")
-                            .arg(deviceName ? QString::fromUtf8(deviceName)
-                                            : QStringLiteral("?")));
-    free(deviceName);
+    const char* dev = aicore_lingbot_context_device(ctx);
+    const QString deviceName =
+            dev ? QString::fromUtf8(dev) : QStringLiteral("?");
+    emit logMessage(
+            tr("[LingbotMap] Model ready (device: %1)").arg(deviceName));
 
     if (m_settings.skySource == Settings::SkySource::Native) {
         emit taskStage(tr("Loading sky segmentation"), -1);

@@ -7,28 +7,13 @@
 
 #include "tasks/openpcdet/extensions/sparse_ops.h"
 
+#include <Parallel.h>
+
 #include <algorithm>
 #include <array>
 #include <cstdint>
 #include <limits>
 #include <vector>
-
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
-// Memory-bandwidth-bound OpenMP regions (hash probes, radix counting) scale
-// poorly beyond ~8 threads on this class of NUMA machines: random access to a
-// shared table saturates the L2/L3 interconnect and 32 threads measured ~6x
-// SLOWER than 8. Cap the parallelism explicitly instead of trusting the
-// environment default.
-static inline int map_threads() {
-#ifdef _OPENMP
-    return std::min(8, omp_get_max_threads());
-#else
-    return 1;
-#endif
-}
 
 namespace openpcdet::ext {
 
@@ -199,7 +184,12 @@ void radix_sort_u64(std::vector<uint64_t> &values) {
     // thrashed L2 and measured slower than the serial path).
     constexpr int passes = 8;  // 64-bit / 8-bit digits
     constexpr size_t buckets = 1u << 8;
-    const int max_threads = map_threads();
+    // Memory-bandwidth-bound OpenMP regions (hash probes, radix counting) scale
+    // poorly beyond ~8 threads on this class of NUMA machines: random access to
+    // a shared table saturates the L2/L3 interconnect and 32 threads measured
+    // ~6x SLOWER than 8. Cap the parallelism explicitly instead of trusting the
+    // environment default.
+    const int max_threads = cloudViewer::utility::GetMaxThreads(8);
     const int n_threads =
             std::min<int>(max_threads, std::max<int>(1, (int)(n / 8192)));
     if (n_threads <= 1) {
@@ -227,7 +217,7 @@ void radix_sort_u64(std::vector<uint64_t> &values) {
     for (int digit = 0; digit < passes; ++digit) {
         const unsigned shift = static_cast<unsigned>(digit * 8);
         for (auto &counts : thread_counts) counts.fill(0);
-#pragma omp parallel for num_threads(n_threads) schedule(static)
+        CV_OMP_PARALLEL_FOR(num_threads(n_threads) schedule(static))
         for (int64_t t = 0; t < n_threads; ++t) {
             const int64_t begin = t * chunk;
             const int64_t end = std::min<int64_t>(begin + chunk, (int64_t)n);
@@ -258,7 +248,7 @@ void radix_sort_u64(std::vector<uint64_t> &values) {
                 acc += count;
             }
         }
-#pragma omp parallel for num_threads(n_threads) schedule(static)
+        CV_OMP_PARALLEL_FOR(num_threads(n_threads) schedule(static))
         for (int64_t t = 0; t < n_threads; ++t) {
             const int64_t begin = t * chunk;
             const int64_t end = std::min<int64_t>(begin + chunk, (int64_t)n);
@@ -318,7 +308,7 @@ void build_compact_rulebook(sparse_indice_map &map) {
     const size_t n_out = static_cast<size_t>(map.output_active_count());
     std::vector<int32_t> valid_per_k(k_volume, 0);
 #ifdef _OPENMP
-    const int n_threads = map_threads();
+    const int n_threads = cloudViewer::utility::GetMaxThreads(8);
     if (n_out > 4096 && n_threads > 1) {
         // Per-thread histograms (k_volume ints each), merged afterwards; the
         // shared-vector reduction form is not portable across compilers.
@@ -326,7 +316,7 @@ void build_compact_rulebook(sparse_indice_map &map) {
                 static_cast<size_t>(n_threads),
                 std::vector<int32_t>(k_volume, 0));
         const int64_t chunk = (int64_t)((n_out + n_threads - 1) / n_threads);
-#pragma omp parallel for num_threads(n_threads) schedule(static)
+        CV_OMP_PARALLEL_FOR(num_threads(n_threads) schedule(static))
         for (int64_t t = 0; t < n_threads; ++t) {
             auto &counts = thread_counts[static_cast<size_t>(t)];
             const int64_t begin = t * chunk;
@@ -362,10 +352,8 @@ void build_compact_rulebook(sparse_indice_map &map) {
     map.compact_offsets[k_volume] = running;
     map.compact_indices.assign(static_cast<size_t>(running), 0);
     map.scatter_rows.assign(n_out * k_volume, -1);
-#ifdef _OPENMP
-#pragma omp parallel for num_threads(map_threads()) \
-        schedule(dynamic) if (k_volume > 1)
-#endif
+    CV_OMP_PARALLEL_FOR(num_threads(cloudViewer::utility::GetMaxThreads(8))
+                                schedule(dynamic) if (k_volume > 1))
     for (int64_t ki = 0; ki < static_cast<int64_t>(k_volume); ++ki) {
         int32_t pos = 0;
         for (size_t out_row = 0; out_row < n_out; ++out_row) {
@@ -556,7 +544,7 @@ bool build_sparse_indice_map(const sparse_tensor &input,
     // Mixed-radix axis weights for the SubM key-delta shortcut below.
     const int64_t w_yx = static_cast<int64_t>(in_shape[1]) * in_shape[2];
     const int64_t w_x = in_shape[2];
-#pragma omp parallel for num_threads(map_threads())
+    CV_OMP_PARALLEL_FOR(num_threads(cloudViewer::utility::GetMaxThreads(8)))
     for (int64_t out_row_i = 0;
          out_row_i < static_cast<int64_t>(output_coords.size()); ++out_row_i) {
         const size_t out_row = static_cast<size_t>(out_row_i);

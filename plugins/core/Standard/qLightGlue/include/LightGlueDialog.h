@@ -105,10 +105,7 @@ private slots:
     void onUseTestData();
     //! Shared ecvTestDataRepository broadcasts, filter-guarded by dataset
     //! kind (the singleton serves every plugin's test data).
-    void onTestDataDownloadFinished(bool success,
-                                    ecvTestDataRepository::Dataset kind);
-    void onTestDataExtractionFinished(bool success,
-                                      ecvTestDataRepository::Dataset kind);
+    void onTestDataReady(bool success, ecvTestDataRepository::Dataset kind);
 
 private:
     void setupUi();

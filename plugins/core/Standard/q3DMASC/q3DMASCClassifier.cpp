@@ -19,6 +19,7 @@
 #include <ecvScalarField.h>
 
 #include <QMutex>
+#include <QThread>
 
 // qPDALIO
 #include "../../../core/IO/qPDALIO/include/LASFields.h"
@@ -39,11 +40,7 @@
 #include <omp.h>
 #endif
 
-#if defined(CV_MAC_OS) || defined(CV_LINUX)
-#include <unistd.h>
-
 #include <algorithm>
-#endif
 
 using namespace masc;
 
@@ -675,11 +672,7 @@ bool Classifier::train(const ccPointCloud* cloud,
     });
 
     while (!future.isFinished()) {
-#if defined(CV_WINDOWS)
-        ::Sleep(500);
-#else
-        usleep(500 * 1000);
-#endif
+        QThread::msleep(500);
         if (pDlg) {
             if (pDlg->wasCanceled()) {
                 //				future.cancel();

@@ -7,6 +7,8 @@
 
 #include "tasks/trellis/trellis2.h"
 
+#include <FileSystem.h>
+
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -106,7 +108,8 @@ bool trellis2_load_dinodata(const std::string &path,
                             std::string *error) {
     out = trellis2_dino_cond{};
 
-    std::ifstream f(path, std::ios::binary);
+    std::ifstream f = cloudViewer::utility::filesystem::OpenInputStream(
+            path, std::ios::binary);
     if (!f) {
         set_error(error, "cannot open file: " + path);
         return false;
@@ -421,7 +424,8 @@ trellis2_ss_flow_model *trellis2_ss_flow_load(const std::string &path,
             return nullptr;
         }
 
-        std::ifstream fin(path, std::ios::binary);
+        std::ifstream fin = cloudViewer::utility::filesystem::OpenInputStream(
+                path, std::ios::binary);
         if (!fin) {
             set_error(error, "cannot reopen file for weight data: " + path);
             trellis2_ss_flow_free(m);
@@ -1162,7 +1166,8 @@ trellis2_ss_dec_model *trellis2_ss_dec_load(const std::string &path,
             trellis2_ss_dec_free(m);
             return nullptr;
         }
-        std::ifstream fin(path, std::ios::binary);
+        std::ifstream fin = cloudViewer::utility::filesystem::OpenInputStream(
+                path, std::ios::binary);
         if (!fin) {
             set_error(error, "cannot reopen file for weight data: " + path);
             trellis2_ss_dec_free(m);
@@ -1490,7 +1495,8 @@ trellis2_dino_model *trellis2_dino_load(const std::string &path,
             return nullptr;
         }
 
-        std::ifstream fin(path, std::ios::binary);
+        std::ifstream fin = cloudViewer::utility::filesystem::OpenInputStream(
+                path, std::ios::binary);
         if (!fin) {
             set_error(error, "cannot reopen file for weight data: " + path);
             trellis2_dino_free(m);
@@ -2322,7 +2328,8 @@ bool trellis2_save_dinodata(const std::string &path,
         return false;
     }
 
-    std::ofstream f(path, std::ios::binary);
+    std::ofstream f = cloudViewer::utility::filesystem::OpenOutputStream(
+            path, std::ios::binary);
     if (!f) {
         set_error(error, "cannot open for writing: " + path);
         return false;
@@ -2451,7 +2458,8 @@ trellis2_slat_flow_model *trellis2_slat_flow_load(const std::string &path,
             trellis2_slat_flow_free(m);
             return nullptr;
         }
-        std::ifstream fin(path, std::ios::binary);
+        std::ifstream fin = cloudViewer::utility::filesystem::OpenInputStream(
+                path, std::ios::binary);
         if (!fin) {
             set_error(error, "cannot reopen file for weight data: " + path);
             trellis2_slat_flow_free(m);
@@ -3100,7 +3108,8 @@ static trellis2_shape_dec_model *dec_load_impl(const std::string &path,
             trellis2_shape_dec_free(m);
             return nullptr;
         }
-        std::ifstream fin(path, std::ios::binary);
+        std::ifstream fin = cloudViewer::utility::filesystem::OpenInputStream(
+                path, std::ios::binary);
         if (!fin) {
             set_error(error, "cannot reopen file for weight data: " + path);
             trellis2_shape_dec_free(m);
@@ -3831,7 +3840,8 @@ trellis2_shape_enc_model *trellis2_shape_enc_load(const std::string &path,
             trellis2_shape_enc_free(m);
             return nullptr;
         }
-        std::ifstream fin(path, std::ios::binary);
+        std::ifstream fin = cloudViewer::utility::filesystem::OpenInputStream(
+                path, std::ios::binary);
         if (!fin) {
             set_error(error, "cannot reopen file for weight data: " + path);
             trellis2_shape_enc_free(m);

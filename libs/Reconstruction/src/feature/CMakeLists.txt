@@ -57,3 +57,10 @@ COLMAP_ADD_TEST(onnx_matchers_test onnx_matchers_test.cc)
 COLMAP_ADD_TEST(onnx_utils_test onnx_utils_test.cc)
 COLMAP_ADD_TEST(sift_test sift_test.cc)
 COLMAP_ADD_TEST(types_test types_test.cc)
+
+if(TESTS_ENABLED)
+    # These suites create real inference sessions from catalog weights.
+    # Keep asset downloads out of the offline unit-test selection.
+    set_property(TEST feature/aliked_test feature/loma_test
+        feature/lightglue_test APPEND PROPERTY LABELS model)
+endif()

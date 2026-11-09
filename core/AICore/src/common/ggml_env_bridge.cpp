@@ -7,6 +7,8 @@
 
 #include "common/ggml_env_bridge.hpp"
 
+#include <FileSystem.h>
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -22,19 +24,11 @@ std::mutex g_mutex;
 bool g_backends_loaded = false;
 
 void set_env(const char* key, const char* value) {
-#ifdef _WIN32
-    _putenv_s(key, value);
-#else
-    setenv(key, value, 1);
-#endif
+    cloudViewer::utility::filesystem::SetEnvVar(key, value);
 }
 
 void clear_env(const char* key) {
-#ifdef _WIN32
-    _putenv_s(key, "");
-#else
-    unsetenv(key);
-#endif
+    cloudViewer::utility::filesystem::SetEnvVar(key, {});
 }
 
 void apply_bool(const char* key, const std::optional<bool>& value) {

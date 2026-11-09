@@ -317,6 +317,22 @@ elseif (WIN32)
                 -Command "& '${PACK_SCRIPTS}' '${SOURCE_BIN_PATH}/${MAIN_APP_NAME}' '${DEPLOY_LIB_PATH}' @(${PS_SEARCH_PATHS}) -Recursive"
     )
 
+    # Torch's full DLL set includes CUDA/delay-loaded dependencies. Match the
+    # configure-time redistribution policy instead of bypassing the opt-in.
+    if(AICore_USE_CUDA AND AICore_CUDA_ENABLED AND AICore_BUNDLE_CUDA_RUNTIME)
+        set(_cumesh_runtime_src
+            "${CMAKE_INSTALL_PREFIX}/${LIBS_FOLDER_NAME}/cumesh-runtime")
+        # Only the current manifest may select DLLs from a reused install prefix.
+        foreach(_cumesh_runtime_name IN LISTS AICORE_CUMESH_RUNTIME_NAMES)
+            if(NOT EXISTS "${_cumesh_runtime_src}/${_cumesh_runtime_name}")
+                message(FATAL_ERROR "Missing CuMesh runtime DLL: ${_cumesh_runtime_name}")
+            endif()
+            file(COPY "${_cumesh_runtime_src}/${_cumesh_runtime_name}"
+                 DESTINATION "${DEPLOY_LIB_PATH}"
+                 USE_SOURCE_PERMISSIONS)
+        endforeach()
+    endif()
+
     if(AICore_BUNDLE_CUDA_RUNTIME AND AICore_CUDA_ENABLED)
         set(_bundled_cuda_src "${CMAKE_INSTALL_PREFIX}/${LIBS_FOLDER_NAME}/cuda-runtime")
         set(_bundled_cuda_dst "${DEPLOY_LIB_PATH}/cuda-runtime")

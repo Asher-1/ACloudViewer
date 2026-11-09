@@ -23,6 +23,8 @@ import numpy as np
 import onnxruntime as ort
 import yaml
 
+from runtime_environment import load_shared_library, resolve_aicore_library, venv_python
+
 class Options(C.Structure):
     _fields_ = [("struct_size", C.c_size_t), ("abi_version", C.c_uint32),
                 ("det", C.c_char_p), ("rec", C.c_char_p), ("layout", C.c_char_p),
@@ -71,13 +73,10 @@ def aicore_library_path(path):
     library = Path(os.path.abspath(os.fspath(path)))
     if not library.is_dir():
         return library
-    name = ("AICore.dll" if os.name == "nt" else
-            "libAICore.dylib" if sys.platform == "darwin" else
-            "libAICore.so")
-    for candidate in (library / name, library / "Release" / name):
-        if candidate.is_file():
-            return candidate
-    raise ValueError(f"built AICore library unavailable under {library}")
+    try:
+        return resolve_aicore_library(library)
+    except FileNotFoundError as error:
+        raise ValueError(str(error)) from error
 
 
 def evaluate_labeled_pages(args, system, library, ctx, preset, identity):
@@ -284,7 +283,7 @@ def main():
     parser.add_argument("--source-cuda-child", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
     if args.source_root:
-        args.source_python = args.source_root / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+        args.source_python = venv_python(args.source_root)
     # The common runner uses zero for the probe default. Resolve it once
     # before configuring either the original graph or the native context.
     if args.threads == 0:
@@ -371,7 +370,7 @@ def main():
         if any(row is None for row in expected):
             raise ValueError("source custom workflow did not retain all regions")
     library_path = aicore_library_path(args.library)
-    library = C.CDLL(str(library_path))
+    library = load_shared_library(library_path)
     library.aicore_ocr_context_create.argtypes = [C.POINTER(Options)]
     library.aicore_ocr_context_create.restype = C.c_void_p
     library.aicore_ocr_context_destroy.argtypes = [C.c_void_p]

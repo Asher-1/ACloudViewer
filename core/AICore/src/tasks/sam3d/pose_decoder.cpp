@@ -230,7 +230,7 @@ bool write_native_pose_json(const std::string& path,
                             const NativeInstancePose& pose,
                             std::string& error) {
     std::error_code filesystem_error;
-    const std::filesystem::path output_path(path);
+    const auto output_path = std::filesystem::u8path(path);
     if (!output_path.parent_path().empty()) {
         std::filesystem::create_directories(output_path.parent_path(),
                                             filesystem_error);

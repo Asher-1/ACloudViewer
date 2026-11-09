@@ -79,6 +79,7 @@ static_assert(sizeof(kSceneLabels) / sizeof(kSceneLabels[0]) ==
 }  // namespace
 
 QuerySplatDialog::QuerySplatDialog(QWidget* parent) : QDialog(parent) {
+    connect(this, &QDialog::finished, this, &QuerySplatDialog::onCancel);
     buildUi();
     refreshModelList();
 }
@@ -149,6 +150,8 @@ void QuerySplatDialog::buildUi() {
     // Linux dev boxes already had the decoder GGUF cached, so the download
     // branch was never reached).
     m_downloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
 
     connect(m_runBtn, &QPushButton::clicked, this, &QuerySplatDialog::onRun);
     connect(m_cancelBtn, &QPushButton::clicked, this,
@@ -457,7 +460,7 @@ void QuerySplatDialog::onUseTestData() {
 
 void QuerySplatDialog::onTestDataReady(bool ok,
                                        ecvTestDataRepository::Dataset kind) {
-    if (kind != m_pendingTestDataset) return;
+    if (!m_testDataBusy || kind != m_pendingTestDataset) return;
     m_testDataBusy = false;
     m_testDataBtn->setEnabled(true);
     setProgress(0, 100);
@@ -568,7 +571,7 @@ bool QuerySplatDialog::ensureModelsAvailable() {
     if (m_ttoCheck->isChecked()) {
         const QString lp =
                 decoderCacheDir() + QStringLiteral("/lpips-vgg-f32.gguf");
-        if (!QFileInfo::exists(lp)) {
+        if (!ecvAssetIntegrity::isModelVerified(lp)) {
             QuerySplatModelEntry lpEntry;
             if (!QuerySplatHelpers::findModelByFilename(
                          QStringLiteral("lpips-vgg-f32.gguf"), &lpEntry)
@@ -600,6 +603,7 @@ void QuerySplatDialog::queueNextDownload() {
 
 void QuerySplatDialog::startModelDownload(const QuerySplatModelEntry& model) {
     m_downloadInProgress = true;
+    m_cancelBtn->setEnabled(true);
     m_runBtn->setEnabled(false);
     ecvModelDownloader::Request request;
     request.url = model.downloadUrl;
@@ -633,6 +637,7 @@ void QuerySplatDialog::onModelDownloadLog(const QString& msg) {
 void QuerySplatDialog::onModelDownloadFinished(bool ok,
                                                const QString& destPath) {
     m_downloadInProgress = false;
+    m_cancelBtn->setEnabled(false);
     m_runBtn->setEnabled(true);
     m_downloadLabel->clear();
     disconnect(m_downloader, nullptr, this, nullptr);
@@ -712,4 +717,11 @@ void QuerySplatDialog::onRun() {
     emit runRequested(getSettings());
 }
 
-void QuerySplatDialog::onCancel() { emit cancelRequested(); }
+void QuerySplatDialog::onCancel() {
+    m_pendingAfterDownload.clear();
+    m_pendingDownloads.clear();
+    m_testDataBusy = false;
+    m_testDataBtn->setEnabled(true);
+    if (m_downloadInProgress) m_downloader->cancel();
+    emit cancelRequested();
+}

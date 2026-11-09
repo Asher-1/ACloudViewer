@@ -137,6 +137,8 @@ public:
     void setAppInterface(ecvMainAppInterface* app) { m_app = app; }
 
     Settings settings() const;
+    //! Exact selected pipeline dependencies; preview excludes reconstruction.
+    QStringList requiredModelFiles(bool previewOnly = false) const;
     //! Logs to the shared application console (no in-dialog log panel).
     //! The optional level maps onto ecvMainAppInterface::dispToConsole.
     void appendLog(const QString& message,
@@ -146,6 +148,7 @@ public:
     //! statusText overrides the default "Running the SAM 3D pipeline..."
     //! line (the preview-only run shows its own message).
     void setRunning(bool running, const QString& statusText = QString());
+    void done(int result) override;
 
 signals:
     void runRequested(const Sam3dDialog::Settings& settings);
@@ -169,6 +172,12 @@ private slots:
     void downloadNextModel();
 
 private:
+    bool ensureModelsAvailable(bool previewOnly);
+    void setDownloadBusy(bool busy);
+    enum class PendingAction { None, Run, Preview };
+    PendingAction m_pendingAction = PendingAction::None;
+    bool m_samplePreparationPending = false;
+    QWidget* m_optionsPanel = nullptr;
     void restoreDefaults();
     void populateTestImage();
 

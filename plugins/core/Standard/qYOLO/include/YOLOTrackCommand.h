@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include <FileSystem.h>
+
 #include <QDir>
 #include <QFileInfo>
 #include <QImage>
@@ -262,7 +264,8 @@ struct CommandYoloTrack : public ccCommandLineInterface::Command {
 
         FILE* jf = nullptr;
         if (!tracksJson.isEmpty()) {
-            jf = std::fopen(tracksJson.toUtf8().constData(), "wb");
+            jf = cloudViewer::utility::filesystem::FOpen(
+                    tracksJson.toUtf8().constData(), "wb");
             if (jf == nullptr) {
                 aicore_yolo_free(ctx);
                 return cmd.error(

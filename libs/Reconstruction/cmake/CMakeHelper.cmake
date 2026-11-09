@@ -411,22 +411,11 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
         # gate must stay GPU-independent for GPU-less CI runners).
         set_property(GLOBAL APPEND PROPERTY COLMAP_RECONSTRUCTION_TESTS
                      "${TARGET_NAME}")
-        if (MSVC)
-            # Tests live under bin/colmap_test/ but the shared DLLs are
-            # centralized in bin/<Config>/; Windows has no RPATH, so prepend
-            # the DLL directory for every test (requires CMake >= 3.22 for
-            # generator expressions in ENVIRONMENT).
-            set_tests_properties("${FOLDER_NAME}/${TARGET_NAME}" PROPERTIES
-                    ENVIRONMENT "PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;$ENV{PATH}")
-        else ()
-            # Linux/macOS: same reasoning for shared libraries that live in
-            # bin/ (e.g. libAICore.so, whose own $ORIGIN RUNPATH deliberately
-            # hides build paths, so its vendored-opencv dependency must be
-            # resolved from the environment) plus the Qt and vendored-opencv
-            # directories resolved above (batch C test-layout fix).
-            set_tests_properties("${FOLDER_NAME}/${TARGET_NAME}" PROPERTIES
-                    ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}:${_COLMAP_QT_LIB_DIR}:${CMAKE_BINARY_DIR}/external/lib:${COLMAP_TEST_RUNTIME_DIR}:$ENV{LD_LIBRARY_PATH}")
-        endif ()
+        # Keep the complete runner environment and prepend the build runtime
+        # using the host-native path separator. Serialising PATH into the
+        # ENVIRONMENT list truncates Windows paths at every semicolon.
+        cloudviewer_set_test_runtime_environment("${FOLDER_NAME}/${TARGET_NAME}"
+            "${COLMAP_TEST_RUNTIME_DIR}")
         # Tests are build-tree diagnostics, not release artifacts. Skipping
         # the post-link strip avoids a second writer touching the executable
         # while highly parallel Make builds finalize test targets.
@@ -469,11 +458,7 @@ macro(COLMAP_ADD_CUDA_TEST TARGET_NAME)
         # their tests by name, so exclude this one explicitly by label.
         set_tests_properties("${FOLDER_NAME}/${TARGET_NAME}" PROPERTIES
                 LABELS gpu)
-        if (MSVC)
-            # Same DLL-path guarantee as COLMAP_ADD_TEST above.
-            set_tests_properties("${FOLDER_NAME}/${TARGET_NAME}" PROPERTIES
-                    ENVIRONMENT "PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;$ENV{PATH}")
-        endif ()
+        cloudviewer_set_test_runtime_environment("${FOLDER_NAME}/${TARGET_NAME}")
 
         # Enforce 3rd party dependencies
         cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
@@ -517,11 +502,7 @@ macro(COLMAP_ADD_HIP_TEST TARGET_NAME)
         # Needs a ROCm device; see COLMAP_ADD_CUDA_TEST.
         set_tests_properties("${FOLDER_NAME}/${TARGET_NAME}" PROPERTIES
                 LABELS gpu)
-        if (MSVC)
-            # Same DLL-path guarantee as COLMAP_ADD_TEST above.
-            set_tests_properties("${FOLDER_NAME}/${TARGET_NAME}" PROPERTIES
-                    ENVIRONMENT "PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;$ENV{PATH}")
-        endif ()
+        cloudviewer_set_test_runtime_environment("${FOLDER_NAME}/${TARGET_NAME}")
         cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
         cloudViewer_set_global_properties(${TARGET_NAME})
         cloudViewer_set_cloudViewer_lib_properties(${TARGET_NAME})

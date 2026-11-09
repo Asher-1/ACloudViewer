@@ -13,6 +13,8 @@
 #include <cstring>
 #include <mutex>
 
+#include "FileSystem.h"
+
 namespace sam3d {
 
 static LogLevel g_log_level = LogLevel::Info;
@@ -63,7 +65,7 @@ ScopedTimer::~ScopedTimer() { LOGD("%s took %.2f ms", name, now_ms() - t0); }
 static constexpr uint32_t kSamtMagic = 0x544D4153;  // "SAMT" little endian
 
 bool save_raw_tensor(const std::string& path, const RawTensor& t) {
-    FILE* f = fopen(path.c_str(), "wb");
+    FILE* f = cloudViewer::utility::filesystem::FOpen(path.c_str(), "wb");
     if (!f) return false;
     const int32_t nd = (int32_t)t.ne.size();
     const int32_t type = (int32_t)t.type;
@@ -103,7 +105,7 @@ bool save_raw_tensor_i32(const std::string& path,
 }
 
 bool load_raw_tensor(const std::string& path, RawTensor& out) {
-    FILE* f = fopen(path.c_str(), "rb");
+    FILE* f = cloudViewer::utility::filesystem::FOpen(path.c_str(), "rb");
     if (!f) return false;
     uint32_t magic = 0;
     int32_t nd = 0, type = 0;
@@ -167,11 +169,13 @@ void copy_tensor_to_float(const struct ggml_tensor* t,
 }
 
 bool read_file_bytes(const std::string& path, std::vector<uint8_t>& out) {
-    FILE* f = fopen(path.c_str(), "rb");
+    FILE* f = cloudViewer::utility::filesystem::FOpen(path.c_str(), "rb");
     if (!f) return false;
-    fseek(f, 0, SEEK_END);
-    long size = ftell(f);
-    fseek(f, 0, SEEK_SET);
+    size_t size = 0;
+    if (!cloudViewer::utility::filesystem::FSize(f, size)) {
+        fclose(f);
+        return false;
+    }
     out.resize(size);
     const bool ok = fread(out.data(), 1, size, f) == (size_t)size;
     fclose(f);
@@ -181,7 +185,7 @@ bool read_file_bytes(const std::string& path, std::vector<uint8_t>& out) {
 bool write_file_bytes(const std::string& path,
                       const void* data,
                       size_t nbytes) {
-    FILE* f = fopen(path.c_str(), "wb");
+    FILE* f = cloudViewer::utility::filesystem::FOpen(path.c_str(), "wb");
     if (!f) return false;
     const bool ok = fwrite(data, 1, nbytes, f) == nbytes;
     fclose(f);
@@ -189,7 +193,7 @@ bool write_file_bytes(const std::string& path,
 }
 
 bool file_exists(const std::string& path) {
-    FILE* f = fopen(path.c_str(), "rb");
+    FILE* f = cloudViewer::utility::filesystem::FOpen(path.c_str(), "rb");
     if (!f) return false;
     fclose(f);
     return true;

@@ -12,7 +12,9 @@ add_executable(test_composite_block_registry test_composite_block_registry.cpp)
 # must compile with -fPIC (-fPIE is NOT enough, per qglobal.h).
 set_target_properties(test_composite_block_registry PROPERTIES
     POSITION_INDEPENDENT_CODE ON)
-target_compile_options(test_composite_block_registry PRIVATE -fPIC)
+if(NOT MSVC)
+    target_compile_options(test_composite_block_registry PRIVATE -fPIC)
+endif()
 
 target_link_libraries(test_composite_block_registry PRIVATE
     QVTK_ENGINE_LIB

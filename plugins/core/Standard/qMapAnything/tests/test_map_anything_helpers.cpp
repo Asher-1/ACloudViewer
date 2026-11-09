@@ -12,6 +12,7 @@
 // MSVC hides M_PI behind _USE_MATH_DEFINES; the FoV test uses it.
 #define _USE_MATH_DEFINES
 
+#include <FileSystem.h>
 #include <gtest/gtest.h>
 
 #include <QDir>
@@ -516,11 +517,18 @@ TEST(QMapAnythingFilter, VoxelOnlyInMetricFrame) {
 
 TEST(QMapAnythingFilter, WritePlyHeaderAndPayload) {
     MR::Cloud c = makeCloud({{1, 2, 3}});
+    QTemporaryDir directory;
+    ASSERT_TRUE(directory.isValid());
     const std::string path =
-            ::testing::TempDir() + "qmapanything_write_ply_test.ply";
+            directory
+                    .filePath(QString::fromUtf8(
+                            u8"\u70b9\u4e91_\U0001f680 output.ply"))
+                    .toUtf8()
+                    .toStdString();
     const std::vector<size_t> idx = {0, 2};
     ASSERT_TRUE(MR::write_ply(path, c, &idx));
-    std::ifstream in(path, std::ios::binary);
+    std::ifstream in = cloudViewer::utility::filesystem::OpenInputStream(
+            path, std::ios::binary);
     const std::string bytes((std::istreambuf_iterator<char>(in)),
                             std::istreambuf_iterator<char>());
     const std::string marker = "end_header\n";
@@ -531,7 +539,8 @@ TEST(QMapAnythingFilter, WritePlyHeaderAndPayload) {
     float x1 = 0.0f;
     std::memcpy(&x1, bytes.data() + body + marker.size() + 15, 4);
     EXPECT_FLOAT_EQ(x1, 3.0f);  // second record is index 2
-    std::remove(path.c_str());
+    in.close();
+    ASSERT_TRUE(QFile::remove(QString::fromUtf8(path.c_str())));
 }
 
 TEST(QMapAnythingGeometry, MedianIsNumpyMedian) {

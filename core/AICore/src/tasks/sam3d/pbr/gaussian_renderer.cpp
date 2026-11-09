@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <FileSystem.h>
+
 #include "tasks/sam3d/pbr/gaussian_renderer.hpp"
 
 
@@ -87,7 +89,8 @@ bool GaussianSplatSet::valid() const {
 bool load_gaussian_splat_ply(const std::string& path,
                              GaussianSplatSet& splats,
                              std::string& error) {
-    std::ifstream input(path, std::ios::binary);
+    std::ifstream input = cloudViewer::utility::filesystem::OpenInputStream(
+            path, std::ios::binary);
     if (!input) {
         error = "cannot open Gaussian PLY '" + path + "'";
         return false;
