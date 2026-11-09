@@ -109,13 +109,7 @@ QVector<FreeSplatterBuiltinModel> FreeSplatterDialog::builtinModels() {
 
 QString FreeSplatterDialog::modelCacheDir() {
     char* dir = aicore_gaussian_model_cache_dir();
-    if (!dir) {
-        // Fallback: ~/cloudViewer_data/extract/freesplatter_models
-        return QDir(QDir(QDir(QDir::homePath())
-                                 .filePath(QStringLiteral("cloudViewer_data")))
-                            .filePath(QStringLiteral("extract")))
-                .filePath(QStringLiteral("freesplatter_models"));
-    }
+    if (!dir) return {};
     QString result = QString::fromUtf8(dir);
     aicore_gaussian_free_buffer(dir);
     return result;
@@ -139,6 +133,10 @@ FreeSplatterDialog::FreeSplatterDialog(QWidget* parent) : QDialog(parent) {
     setMinimumHeight(0);
     setupUi();
     m_downloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
+    connect(this, &QDialog::finished, this,
+            [this] { m_testDataDownloadInProgress = false; });
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
             &FreeSplatterDialog::appendLog);
 
@@ -156,13 +154,9 @@ FreeSplatterDialog::FreeSplatterDialog(QWidget* parent) : QDialog(parent) {
             });
     connect(&repo, &ecvTestDataRepository::downloadLogMessage, this,
             &FreeSplatterDialog::appendLog);
-    connect(&repo, &ecvTestDataRepository::downloadFinished, this,
+    connect(&repo, &ecvTestDataRepository::datasetReady, this,
             [this](bool success, ecvTestDataRepository::Dataset kind) {
-                onTestDataDownloadFinished(success, static_cast<int>(kind));
-            });
-    connect(&repo, &ecvTestDataRepository::extractionFinished, this,
-            [this](bool success, ecvTestDataRepository::Dataset kind) {
-                onTestDataExtractionFinished(success, static_cast<int>(kind));
+                onTestDataReady(success, static_cast<int>(kind));
             });
     connect(&repo, &ecvTestDataRepository::extractionProgress, this,
             [this](int current, int total) {
@@ -1364,6 +1358,7 @@ void FreeSplatterDialog::cancelDownload() {
 }
 
 void FreeSplatterDialog::onCancel() {
+    m_testDataDownloadInProgress = false;
     if (m_downloadInProgress) {
         cancelDownload();
         return;
@@ -1906,23 +1901,7 @@ void FreeSplatterDialog::ensureFriendsTestData() {
         }
     }
 
-    // 2. Check if zip is already cached
-    if (repo.isDatasetAvailable(kind)) {
-        appendLog(tr("[Test data] Extracting cached FriendsFaces archive..."));
-        m_progressBar->setMaximum(0);
-        m_progressBar->setTextVisible(true);
-        m_progressBar->setFormat(tr("Extracting..."));
-        m_progressBar->setValue(0);
-        m_progressBar->setVisible(true);
-        m_downloadLabel->setVisible(true);
-        m_downloadLabel->setText(tr("Extracting FriendsFaces test data..."));
-        m_testDataDownloadInProgress = true;
-        m_testDataDatasetKind = static_cast<int>(kind);
-        repo.extractDataset(kind);
-        return;
-    }
-
-    // 3. Download the zip
+    // Prepare through the shared cache/download/extraction service.
     m_testDataDownloadInProgress = true;
     m_testDataDatasetKind = static_cast<int>(kind);
     m_downloadLabel->setVisible(true);
@@ -1932,7 +1911,7 @@ void FreeSplatterDialog::ensureFriendsTestData() {
     m_progressBar->setFormat(tr("%p%"));
     m_progressBar->setValue(0);
     m_progressBar->setVisible(true);
-    repo.startDownload(kind);
+    repo.ensureDatasetReady(kind);
 }
 
 void FreeSplatterDialog::ensureMonstreeTestData() {
@@ -1960,23 +1939,7 @@ void FreeSplatterDialog::ensureMonstreeTestData() {
         }
     }
 
-    // 2. Check if zip is already cached
-    if (repo.isDatasetAvailable(kind)) {
-        appendLog(tr("[Test data] Extracting cached Monstree archive..."));
-        m_progressBar->setMaximum(0);
-        m_progressBar->setTextVisible(true);
-        m_progressBar->setFormat(tr("Extracting..."));
-        m_progressBar->setValue(0);
-        m_progressBar->setVisible(true);
-        m_downloadLabel->setVisible(true);
-        m_downloadLabel->setText(tr("Extracting Monstree test data..."));
-        m_testDataDownloadInProgress = true;
-        m_testDataDatasetKind = static_cast<int>(kind);
-        repo.extractDataset(kind);
-        return;
-    }
-
-    // 3. Download the zip
+    // Prepare through the shared cache/download/extraction service.
     m_testDataDownloadInProgress = true;
     m_testDataDatasetKind = static_cast<int>(kind);
     m_downloadLabel->setVisible(true);
@@ -1986,36 +1949,11 @@ void FreeSplatterDialog::ensureMonstreeTestData() {
     m_progressBar->setFormat(tr("%p%"));
     m_progressBar->setValue(0);
     m_progressBar->setVisible(true);
-    repo.startDownload(kind);
+    repo.ensureDatasetReady(kind);
 }
 
-void FreeSplatterDialog::onTestDataDownloadFinished(bool success, int kind) {
-    if (!m_testDataDownloadInProgress) return;
-
-    if (!success) {
-        appendLog(tr("[Test data] Download failed."));
-        m_testDataDownloadInProgress = false;
-        m_downloadLabel->setVisible(false);
-        m_progressBar->setRange(0, 100);
-        m_progressBar->setVisible(false);
-        return;
-    }
-
-    // Download succeeded — now extract
-    const auto dataset = static_cast<TestDataset>(kind);
-    const QString label = (dataset == TestDataset::Monstree)
-                                  ? QStringLiteral("Monstree")
-                                  : QStringLiteral("FriendsFaces");
-    appendLog(tr("[Test data] Extracting..."));
-    m_downloadLabel->setText(tr("Extracting %1 test data...").arg(label));
-    m_progressBar->setRange(0, 0);  // indeterminate / busy
-    m_progressBar->setFormat(tr("Extracting..."));
-
-    TestDataRepo::instance().extractDataset(dataset);
-}
-
-void FreeSplatterDialog::onTestDataExtractionFinished(bool success, int kind) {
-    if (!m_testDataDownloadInProgress) return;
+void FreeSplatterDialog::onTestDataReady(bool success, int kind) {
+    if (!m_testDataDownloadInProgress || kind != m_testDataDatasetKind) return;
     m_testDataDownloadInProgress = false;
 
     if (!success) {

@@ -13,6 +13,7 @@
 
 #include <QAction>
 #include <QCoreApplication>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QMainWindow>
@@ -69,8 +70,8 @@ void qRAM::showDialog() {
                                                          result.json["model"]
                                                                  .toString()),
                                          ecvPluginDbNaming::sanitizeSegment(
-                                                 result.source.section('/',
-                                                                       -1)),
+                                                 QFileInfo(result.source)
+                                                         .fileName()),
                                          ecvPluginDbNaming::deviceTagFromName(
                                                  result.device)),
                             m_app);

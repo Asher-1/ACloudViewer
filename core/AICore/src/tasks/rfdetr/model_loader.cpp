@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "FileSystem.h"
 #include "common/gguf_file_io.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
@@ -31,7 +32,8 @@ namespace {
 const char* kFormatVersion = "2";
 
 bool file_exists(const std::string& path) {
-    std::ifstream f(path, std::ios::binary);
+    std::ifstream f = cloudViewer::utility::filesystem::OpenInputStream(
+            path, std::ios::binary);
     return f.is_open();
 }
 
@@ -459,7 +461,7 @@ rfdetr_status model_realize_weights(Model& m, ggml_backend_t backend) {
         return RFDETR_ERR_MODEL_LOAD;
     }
 
-    FILE* fp = std::fopen(m.path.c_str(), "rb");
+    FILE* fp = cloudViewer::utility::filesystem::FOpen(m.path.c_str(), "rb");
     if (!fp) {
         rfdetr_logf(RFDETR_LOG_ERROR, "model_realize_weights: open failed: %s",
                     m.path.c_str());
@@ -488,7 +490,7 @@ rfdetr_status model_realize_weights(Model& m, ggml_backend_t backend) {
         const size_t nbytes = ggml_nbytes(t);
         buf.resize(nbytes);
 
-        if (std::fseek(fp, (long)offset, SEEK_SET) != 0 ||
+        if (!cloudViewer::utility::filesystem::FSeek(fp, offset) ||
             std::fread(buf.data(), 1, nbytes, fp) != nbytes) {
             rfdetr_logf(RFDETR_LOG_ERROR,
                         "model_realize_weights: read failed for '%s'", name);

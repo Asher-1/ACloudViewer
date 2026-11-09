@@ -99,10 +99,11 @@ ra_context *ra_create(const ra_options *options) {
         auto &o = ctx->options;
         if (options->backend_binding)
             o.backend_binding = *options->backend_binding;
-        o.model = options->model_path;
+        o.model = std::filesystem::u8path(options->model_path);
         o.backend = options->backend ? options->backend : "cpu";
         if (options->diagnostic_directory)
-            o.dump_directory = options->diagnostic_directory;
+            o.dump_directory =
+                    std::filesystem::u8path(options->diagnostic_directory);
         require(o.backend == "cpu" || o.backend == "cuda" ||
                         o.backend == "vulkan",
                 "invalid backend");
@@ -119,19 +120,24 @@ ra_context *ra_create(const ra_options *options) {
         o.quant_f32_input = options->quant_f32_input != 0;
         o.raw_logits = options->raw_logits != 0;
         o.decompose = options->decompose != 0;
-        if (options->vocabulary_path) o.vocabulary = options->vocabulary_path;
+        if (options->vocabulary_path)
+            o.vocabulary = std::filesystem::u8path(options->vocabulary_path);
         if (options->vocabulary_names_path)
-            o.vocabulary_names = options->vocabulary_names_path;
+            o.vocabulary_names =
+                    std::filesystem::u8path(options->vocabulary_names_path);
         if (options->predicate_type_map_path)
-            o.predicate_type_map = options->predicate_type_map_path;
+            o.predicate_type_map =
+                    std::filesystem::u8path(options->predicate_type_map_path);
         o.flash_attention = options->flash_attention != 0;
         o.compact_pairs = options->compact_pairs != 0;
         o.fused_vocabulary = options->fused_vocabulary != 0;
         o.cache_positions = options->cache_positions != 0;
         o.retain_features = options->retain_features != 0;
         if (options->text_student_path)
-            o.text_student = options->text_student_path;
-        if (options->tokenizer_path) o.tokenizer = options->tokenizer_path;
+            o.text_student =
+                    std::filesystem::u8path(options->text_student_path);
+        if (options->tokenizer_path)
+            o.tokenizer = std::filesystem::u8path(options->tokenizer_path);
         require(options->predicate_text_count <= 10000 &&
                         (!options->predicate_text_count ||
                          options->predicate_texts),

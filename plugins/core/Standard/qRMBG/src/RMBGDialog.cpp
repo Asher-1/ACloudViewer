@@ -337,6 +337,13 @@ void RMBGDialog::setupUi() {
 
     // Downloader.
     m_downloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
+    connect(this, &QDialog::finished, this, [this] {
+        m_testDataDownloadInProgress = false;
+        m_pendingTestDataTarget = TestDataTarget::None;
+        setTestDataControlsEnabled(true);
+    });
     connect(m_downloader, &ecvModelDownloader::progress, this,
             [this](qint64 received, qint64 total) {
                 m_progress->setVisible(true);
@@ -357,6 +364,7 @@ void RMBGDialog::setupUi() {
                 m_progress->setVisible(false);
                 m_downloadLabel->setVisible(false);
                 if (!ok) {
+                    m_pendingActionAfterDownload = PendingAction::None;
                     appendLog(tr("[RMBG] Download failed: %1").arg(path));
                     return;
                 }
@@ -367,7 +375,7 @@ void RMBGDialog::setupUi() {
                     if (action == PendingAction::Run) {
                         onRun();
                     } else if (action == PendingAction::LiveStart) {
-                        startLiveStream();
+                        onLiveStart();
                     }
                 }
             });
@@ -390,10 +398,6 @@ void RMBGDialog::setupUi() {
             [this](const QString& message) {
                 if (m_testDataDownloadInProgress) appendLog(message);
             });
-    connect(&testDataRepo, &ecvTestDataRepository::downloadFinished, this,
-            [this](bool success, ecvTestDataRepository::Dataset kind) {
-                onTestDataDownloadFinished(success, kind);
-            });
     connect(&testDataRepo, &ecvTestDataRepository::extractionProgress, this,
             [this](int current, int total) {
                 if (!m_testDataDownloadInProgress || total <= 0) return;
@@ -401,9 +405,9 @@ void RMBGDialog::setupUi() {
                 m_progress->setValue(current);
                 m_progress->setVisible(true);
             });
-    connect(&testDataRepo, &ecvTestDataRepository::extractionFinished, this,
+    connect(&testDataRepo, &ecvTestDataRepository::datasetReady, this,
             [this](bool success, ecvTestDataRepository::Dataset kind) {
-                onTestDataExtractionFinished(success, kind);
+                onTestDataReady(success, kind);
             });
 }
 
@@ -524,7 +528,7 @@ bool RMBGDialog::ensureModelAvailable(PendingAction action) {
         appendLog(tr("[RMBG] Select a model first."));
         return false;
     }
-    if (!QFileInfo::exists(resolveModelPath())) {
+    if (!ecvAssetIntegrity::isModelVerified(resolveModelPath())) {
         RMBGModelEntry entry;
         if (!RMBGHelpers::findModelByFilename(filename, &entry)) {
             appendLog(tr("[RMBG] Model file not found: %1").arg(filename));
@@ -548,7 +552,7 @@ void RMBGDialog::startDownload(const RMBGModelEntry& model) {
     QDir().mkpath(RMBGHelpers::modelCacheDir());
     const QString dest =
             RMBGHelpers::modelCacheDir() + QDir::separator() + model.filename;
-    if (QFile::exists(dest)) {
+    if (ecvAssetIntegrity::isModelVerified(dest)) {
         appendLog(tr("[RMBG] Model already present: %1").arg(dest));
         return;
     }
@@ -824,24 +828,15 @@ void RMBGDialog::requestTestData(TestDataTarget target) {
     }
 
     const auto kind = ecvTestDataRepository::Dataset::FriendsFaces;
-    const auto info = ecvTestDataRepository::getDatasetInfo(kind);
     m_testDataDownloadInProgress = true;
     setTestDataControlsEnabled(false);
     m_downloadLabel->setVisible(true);
     m_progress->setVisible(true);
-    if (ecvAssetIntegrity::isVerified(ecvTestDataRepository::zipPath(kind),
-                                      info.anchor, 0, false,
-                                      ecvAssetIntegrity::OnMiss::DeepVerify)) {
-        m_downloadLabel->setText(tr("Extracting cached test data..."));
-        m_progress->setRange(0, 0);
-        repo.extractDataset(kind);
-        return;
-    }
 
     m_downloadLabel->setText(tr("Downloading FriendsFaces test data..."));
     m_progress->setRange(0, 100);
     m_progress->setValue(0);
-    repo.startDownload(kind);
+    repo.ensureDatasetReady(kind);
 }
 
 bool RMBGDialog::loadRequestedTestData() {
@@ -872,29 +867,8 @@ bool RMBGDialog::loadRequestedTestData() {
     return true;
 }
 
-void RMBGDialog::onTestDataDownloadFinished(
-        bool success, ecvTestDataRepository::Dataset kind) {
-    if (!m_testDataDownloadInProgress ||
-        kind != ecvTestDataRepository::Dataset::FriendsFaces) {
-        return;
-    }
-    if (!success) {
-        appendLog(tr("[Test data] Download failed."));
-        m_testDataDownloadInProgress = false;
-        m_pendingTestDataTarget = TestDataTarget::None;
-        setTestDataControlsEnabled(true);
-        m_downloadLabel->setVisible(false);
-        m_progress->setVisible(false);
-        return;
-    }
-
-    m_downloadLabel->setText(tr("Extracting FriendsFaces test data..."));
-    m_progress->setRange(0, 0);
-    ecvTestDataRepository::instance().extractDataset(kind);
-}
-
-void RMBGDialog::onTestDataExtractionFinished(
-        bool success, ecvTestDataRepository::Dataset kind) {
+void RMBGDialog::onTestDataReady(bool success,
+                                 ecvTestDataRepository::Dataset kind) {
     if (!m_testDataDownloadInProgress ||
         kind != ecvTestDataRepository::Dataset::FriendsFaces) {
         return;
@@ -941,6 +915,9 @@ void RMBGDialog::closeEvent(QCloseEvent* event) {
     }
     saveSettings();
     m_liveWidget->saveSettings();
+    m_testDataDownloadInProgress = false;
+    m_pendingTestDataTarget = TestDataTarget::None;
+    setTestDataControlsEnabled(true);
     event->accept();
 }
 

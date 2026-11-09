@@ -24,6 +24,7 @@
 #include <QVBoxLayout>
 #include <cstring>
 
+#include "aicore/rmbg_capi.h"
 #include "aicore/sam3_capi.h"
 #include "aicore/sam3d_capi.h"
 #include "ecvAICoreUiHelper.h"
@@ -36,8 +37,10 @@ namespace {
 // Shared SAM3 model cache root (aicore_sam3_model_cache_dir), used by the
 // segmentation-model combobox annotations and the download queue.
 QString sam3ModelCacheDir() {
-    const char* cache = aicore_sam3_model_cache_dir();
-    return cache ? QString::fromUtf8(cache) : QString();
+    char* cache = aicore_sam3_model_cache_dir();
+    const QString path = cache ? QString::fromUtf8(cache) : QString();
+    aicore_sam3_free_buffer(cache);
+    return path;
 }
 
 // The model files the current dtype needs, in download order (the MoGe
@@ -57,6 +60,39 @@ QStringList sam3dRequiredModels(const QString& dtype, bool generateMesh) {
 QString sam3dModelCacheDir() {
     const char* cache = aicore_sam3d_model_cache_dir();
     return cache ? QString::fromUtf8(cache) : QString();
+}
+
+// Project the public catalogs into the shared transport request. Cache checks
+// and ingestion must use exactly the same size/digest contract.
+ecvModelDownloader::Request modelRequest(const QString& filename) {
+    ecvModelDownloader::Request req;
+    req.contentAnchor = {QCryptographicHash::Sha256,
+                         ecvAssetIntegrity::PinnedDigest(filename)};
+    const QByteArray name = filename.toUtf8();
+    if (const auto* entry = aicore_sam3d_model_by_filename(name.constData())) {
+        req.url = QString::fromUtf8(entry->download_url);
+        const QString cache = sam3dModelCacheDir();
+        if (cache.isEmpty()) return {};
+        req.destPath = QDir(cache).filePath(filename);
+        req.contentAnchor.digestHex = QByteArray(entry->sha256);
+        req.ingestExactSize = entry->size_bytes;
+    } else if (const auto* entry =
+                       aicore_sam3_model_by_filename(name.constData())) {
+        req.url = QString::fromUtf8(entry->download_url);
+        const QString cache = sam3ModelCacheDir();
+        if (cache.isEmpty()) return {};
+        req.destPath = QDir(cache).filePath(filename);
+        req.ingestExactSize = entry->size_bytes;
+    } else if (const auto* entry =
+                       aicore_rmbg_model_by_filename(name.constData())) {
+        req.url = QString::fromUtf8(entry->download_url);
+        char* cache = aicore_rmbg_model_cache_dir();
+        const QString directory = QString::fromUtf8(cache);
+        aicore_rmbg_free_buffer(cache);
+        if (directory.isEmpty()) return {};
+        req.destPath = QDir(directory).filePath(filename);
+    }
+    return req;
 }
 
 // Build capability probe: the official PBR chain is a compile-scoped AICore
@@ -82,6 +118,7 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
     // Image source -----------------------------------------------------------
     auto* imageRow = new QHBoxLayout;
     m_imageEdit = new QLineEdit(this);
+    m_imageEdit->setObjectName(QStringLiteral("sourceImage"));
     m_imageEdit->setPlaceholderText(
             tr("Source image (PNG/JPEG; alpha = mask)"));
     auto* browseImage = new QPushButton(tr("Browse..."), this);
@@ -107,12 +144,14 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
     form->addRow(tr("Device:"), m_deviceCombo);
 
     m_dtypeCombo = new QComboBox(this);
+    m_dtypeCombo->setObjectName(QStringLiteral("quantization"));
     m_dtypeCombo->addItems({QStringLiteral("f16"), QStringLiteral("q8_0"),
                             QStringLiteral("q4_k (light)")});
     m_dtypeCombo->setCurrentIndex(2);
     auto* dtypeRow = new QHBoxLayout;
     dtypeRow->addWidget(m_dtypeCombo, 1);
     m_downloadBtn = new QPushButton(tr("Download models"), this);
+    m_downloadBtn->setObjectName(QStringLiteral("downloadModels"));
     m_downloadBtn->setToolTip(tr(
             "Fetch the missing GGUF models for the selected quantization from\n"
             "huggingface.co/Asher-1/SAM_3D_OBJECTS_GGUF into the shared "
@@ -137,8 +176,10 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
 
     m_rmbgCheck = new QCheckBox(
             tr("Remove background (RMBG; builds the object mask)"), this);
+    m_rmbgCheck->setObjectName(QStringLiteral("removeBackground"));
     m_rmbgCheck->setChecked(true);
     m_rmbgDtypeCombo = new QComboBox(this);
+    m_rmbgDtypeCombo->setObjectName(QStringLiteral("rmbgQuantization"));
     m_rmbgDtypeCombo->addItem(QStringLiteral("q8_0"));
     m_rmbgDtypeCombo->addItem(QStringLiteral("f16"));
     m_rmbgDtypeCombo->setToolTip(
@@ -167,6 +208,7 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
 
     m_texturedMeshCheck = new QCheckBox(
             tr("Textured mesh (FlexiCubes decode + UV-atlas bake)"), this);
+    m_texturedMeshCheck->setObjectName(QStringLiteral("texturedMesh"));
     m_texturedMeshCheck->setChecked(true);
     m_texturedMeshCheck->setToolTip(
             tr("Extends the pipeline past the point cloud: FlexiCubes mesh\n"
@@ -277,6 +319,7 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
     // <n>.png at the image resolution.
     m_sceneCheck = new QCheckBox(
             tr("Multi-object scene mode (per-object mask directory)"), this);
+    m_sceneCheck->setObjectName(QStringLiteral("sceneMode"));
     m_sceneCheck->setChecked(false);
     m_sceneCheck->setToolTip(
             tr("Reconstruct every <n>.png mask in the directory as an\n"
@@ -287,6 +330,7 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
     form->addRow(QString(), m_sceneCheck);
     auto* masksRow = new QHBoxLayout;
     m_masksDirEdit = new QLineEdit(this);
+    m_masksDirEdit->setObjectName(QStringLiteral("masksDirectory"));
     m_masksDirEdit->setPlaceholderText(
             tr("Directory of per-object masks (0.png, 1.png, ...)"));
     m_browseMasksBtn = new QPushButton(tr("Browse..."), this);
@@ -311,6 +355,7 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
     // explicit mask directory stays as the manual/interop fallback.
     auto* promptsRow = new QHBoxLayout;
     m_promptsEdit = new QLineEdit(this);
+    m_promptsEdit->setObjectName(QStringLiteral("conceptPrompts"));
     m_promptsEdit->setPlaceholderText(
             tr("Comma-separated SAM3 prompts (empty = use the mask "
                "directory)"));
@@ -385,6 +430,7 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
     // accuracy/size trade). Cached entries are annotated in-place.
     auto* sam3ModelRow = new QHBoxLayout;
     m_sam3ModelCombo = new QComboBox(this);
+    m_sam3ModelCombo->setObjectName(QStringLiteral("segmentationModel"));
     const QString sam3Cache = sam3ModelCacheDir();
     for (int i = 0; i < aicore_sam3_model_count(); ++i) {
         const aicore_sam3_model_entry* e = aicore_sam3_model_at(i);
@@ -452,7 +498,9 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
             updateOutputEnabled);
     updateOutputEnabled();
 
-    layout->addLayout(form);
+    m_optionsPanel = new QWidget(this);
+    m_optionsPanel->setLayout(form);
+    layout->addWidget(m_optionsPanel);
 
     m_progress = new QProgressBar(this);
     m_progress->setRange(0, 1);
@@ -480,6 +528,7 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
     m_runButton = new QPushButton(tr("Generate"), this);
     m_runButton->setDefault(true);
     m_cancelButton = new QPushButton(tr("Cancel"), this);
+    m_cancelButton->setObjectName(QStringLiteral("cancelTask"));
     m_cancelButton->setEnabled(false);
     buttons->addStretch(1);
     buttons->addWidget(m_cancelButton);
@@ -489,11 +538,19 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
     connect(m_runButton, &QPushButton::clicked, this, &Sam3dDialog::emitRun);
     connect(m_previewMasksBtn, &QPushButton::clicked, this,
             &Sam3dDialog::emitPreviewMasks);
-    connect(m_cancelButton, &QPushButton::clicked, this,
-            &Sam3dDialog::cancelRequested);
+    connect(m_cancelButton, &QPushButton::clicked, this, [this]() {
+        if (m_downloadInProgress) {
+            m_pendingAction = PendingAction::None;
+            m_downloader->cancel();
+        } else {
+            emit cancelRequested();
+        }
+    });
 
     // Shared model downloader (AICore catalog URLs / sizes / SHA-256).
     m_downloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
     connect(m_downloader, &ecvModelDownloader::progress, this,
             [this](qint64 received, qint64 total) {
                 if (total > 0) {
@@ -506,9 +563,14 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
             [this](const QString& message) { appendLog(message); });
     connect(m_downloader, &ecvModelDownloader::finished, this,
             [this](bool ok, const QString& path) {
-                m_downloadInProgress = false;
+                if (!m_downloadInProgress) return;
                 if (!ok) {
+                    m_status->setText(
+                            tr("Model download failed or cancelled. Retry to "
+                               "continue."));
                     m_pendingDownloads.clear();
+                    m_pendingAction = PendingAction::None;
+                    setDownloadBusy(false);
                     appendLog(tr("[SAM3D] Download failed: %1 — retry, or "
                                  "fetch the file manually from the URL shown "
                                  "in the log and place it at that path.")
@@ -524,38 +586,26 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
     auto& testDataRepo = ecvTestDataRepository::instance();
     connect(&testDataRepo, &ecvTestDataRepository::downloadProgress, this,
             [this](int percent, const QString& statusText) {
+                if (!m_samplePreparationPending) return;
                 m_progress->setRange(0, 100);
                 m_progress->setValue(percent);
                 m_status->setText(statusText);
             });
     connect(&testDataRepo, &ecvTestDataRepository::downloadLogMessage, this,
             [this](const QString& message) { appendLog(message); });
-    connect(&testDataRepo, &ecvTestDataRepository::downloadFinished, this,
+    connect(&testDataRepo, &ecvTestDataRepository::datasetReady, this,
             [this](bool success, ecvTestDataRepository::Dataset dataset) {
-                if (dataset != ecvTestDataRepository::Dataset::Image2Mesh) {
+                if (!m_samplePreparationPending ||
+                    dataset != ecvTestDataRepository::Dataset::Image2Mesh) {
                     return;
                 }
-                if (success) {
-                    appendLog(tr("[SAM3D] Sample data downloaded"));
-                    m_status->setText(tr("Extracting sample data..."));
-                    if (ecvTestDataRepository::instance().extractDataset(
-                                ecvTestDataRepository::Dataset::Image2Mesh)) {
-                        return;  // extractionFinished continues the chain
-                    }
-                }
-                m_status->setText(tr("Sample data download failed."));
-            });
-    connect(&testDataRepo, &ecvTestDataRepository::extractionFinished, this,
-            [this](bool success, ecvTestDataRepository::Dataset dataset) {
-                if (dataset != ecvTestDataRepository::Dataset::Image2Mesh) {
-                    return;
-                }
+                m_samplePreparationPending = false;
                 if (success) {
                     appendLog(tr("[SAM3D] Sample data ready"));
                     m_status->clear();
                     populateTestImage();
                 } else {
-                    m_status->setText(tr("Sample data extraction failed."));
+                    m_status->setText(tr("Sample data preparation failed."));
                 }
             });
 
@@ -569,6 +619,16 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
 }
 
 Sam3dDialog::~Sam3dDialog() = default;
+
+void Sam3dDialog::done(int result) {
+    m_pendingAction = PendingAction::None;
+    m_pendingDownloads.clear();
+    m_samplePreparationPending = false;
+    if (m_downloadInProgress) m_downloader->cancel();
+    setDownloadBusy(false);
+    if (m_running) emit cancelRequested();
+    QDialog::done(result);
+}
 
 void Sam3dDialog::restoreDefaults() {
     // No silent default: file exports are opt-in and require the user to
@@ -646,6 +706,7 @@ void Sam3dDialog::setProgress(int percent) {
 }
 
 void Sam3dDialog::emitPreviewMasks() {
+    if (m_running || m_downloadInProgress) return;
     const Settings s = settings();
     if (s.imagePath.isEmpty()) {
         m_status->setText(tr("Select a source image first."));
@@ -655,6 +716,9 @@ void Sam3dDialog::emitPreviewMasks() {
         m_status->setText(tr("Scene mode needs prompts or a mask directory."));
         return;
     }
+    m_pendingAction = PendingAction::Preview;
+    if (!ensureModelsAvailable(true)) return;
+    m_pendingAction = PendingAction::None;
     Settings preview = s;
     preview.previewOnly = true;
     preview.segPreview = true;
@@ -663,9 +727,11 @@ void Sam3dDialog::emitPreviewMasks() {
 
 void Sam3dDialog::setRunning(bool running, const QString& statusText) {
     m_running = running;
-    m_runButton->setEnabled(!running);
-    m_previewMasksBtn->setEnabled(!running && m_sceneCheck->isChecked());
-    m_cancelButton->setEnabled(running);
+    m_optionsPanel->setEnabled(!running && !m_downloadInProgress);
+    m_runButton->setEnabled(!running && !m_downloadInProgress);
+    m_previewMasksBtn->setEnabled(!running && !m_downloadInProgress &&
+                                  m_sceneCheck->isChecked());
+    m_cancelButton->setEnabled(running || m_downloadInProgress);
     m_progress->setRange(0, running ? 0 : 1);
     m_progress->setValue(running ? 0 : 1);
     m_status->setText(running ? (statusText.isEmpty() ? tr("Running the SAM 3D "
@@ -675,6 +741,7 @@ void Sam3dDialog::setRunning(bool running, const QString& statusText) {
 }
 
 void Sam3dDialog::emitRun() {
+    if (m_running || m_downloadInProgress) return;
     const Settings s = settings();
     if (s.imagePath.isEmpty()) {
         m_status->setText(tr("Select a source image first."));
@@ -714,6 +781,9 @@ void Sam3dDialog::emitRun() {
             return;
         }
     }
+    m_pendingAction = PendingAction::Run;
+    if (!ensureModelsAvailable(false)) return;
+    m_pendingAction = PendingAction::None;
     emit runRequested(s);
 }
 
@@ -747,126 +817,86 @@ void Sam3dDialog::onTestDataClicked() {
         return;
     }
 
-    // 2. Zip cached and intact: extract, then populate (signal chain).
-    const auto info = ecvTestDataRepository::getDatasetInfo(kind);
-    if (ecvAssetIntegrity::isVerified(ecvTestDataRepository::zipPath(kind),
-                                      info.anchor, 0, false,
-                                      ecvAssetIntegrity::OnMiss::DeepVerify)) {
-        m_progress->setRange(0, 100);
-        m_status->setText(tr("Extracting sample data..."));
-        repo.extractDataset(kind);
-        return;
-    }
-
-    // 3. Nothing cached: download (downloadFinished -> extraction ->
-    //    populateTestImage).
+    // Prepare through the shared cache/download/extract service.
     if (repo.isDownloadInProgress()) return;
-    m_status->setText(tr("Downloading sample data..."));
-    repo.startDownload(kind);
+    m_samplePreparationPending = true;
+    m_status->setText(tr("Preparing sample data..."));
+    repo.ensureDatasetReady(kind);
+}
+
+QStringList Sam3dDialog::requiredModelFiles(bool previewOnly) const {
+    const Settings s = settings();
+    QStringList files;
+    if (!previewOnly) {
+        static const char* kQuant[] = {"f16", "q8_0", "q4_k"};
+        files = sam3dRequiredModels(QString::fromLatin1(kQuant[s.dtypeIndex]),
+                                    s.outputTexturedMesh);
+        if (s.conceptPrompts.isEmpty() && s.masksDir.isEmpty() && s.useRmbg) {
+            files << (s.rmbgDtypeIndex == 0 ? QStringLiteral("rmbg_q8.gguf")
+                                            : QStringLiteral("rmbg_f16.gguf"));
+        }
+    }
+    // Supplied masks need no segmentation network. Preview needs no 3D/RMBG.
+    if (!s.conceptPrompts.isEmpty()) files << s.sam3ModelFile;
+    return files;
+}
+
+void Sam3dDialog::setDownloadBusy(bool busy) {
+    m_downloadInProgress = busy;
+    m_cancelButton->setEnabled(busy || m_running);
+    m_optionsPanel->setEnabled(!busy && !m_running);
+    m_runButton->setEnabled(!busy && !m_running);
+    m_previewMasksBtn->setEnabled(!busy && !m_running &&
+                                  m_sceneCheck->isChecked());
+    m_progress->setRange(0, busy ? 0 : 1);
+    m_progress->setValue(busy ? 0 : 1);
+}
+
+bool Sam3dDialog::ensureModelsAvailable(bool previewOnly) {
+    m_pendingDownloads.clear();
+    for (const QString& filename : requiredModelFiles(previewOnly)) {
+        const auto req = modelRequest(filename);
+        if (req.destPath.isEmpty() || req.url.isEmpty()) {
+            m_pendingAction = PendingAction::None;
+            m_status->setText(tr("Model is absent from the AICore catalogs: %1")
+                                      .arg(filename));
+            return false;
+        }
+        if (!ecvAssetIntegrity::isVerified(
+                    req.destPath, req.contentAnchor, req.minBytes,
+                    req.requireGgufMagic,
+                    ecvAssetIntegrity::OnMiss::CheapChecksOnly,
+                    req.ingestExactSize)) {
+            m_pendingDownloads << filename;
+        }
+    }
+    if (m_pendingDownloads.isEmpty()) return true;
+    setDownloadBusy(true);
+    downloadNextModel();
+    return false;
 }
 
 void Sam3dDialog::onDownloadModels() {
-    const QString cacheDir = sam3dModelCacheDir();
-    if (cacheDir.isEmpty()) {
-        m_status->setText(tr("SAM 3D model cache is unavailable."));
-        return;
+    if (m_running || m_downloadInProgress) return;
+    m_pendingAction = PendingAction::None;
+    if (ensureModelsAvailable(false)) {
+        appendLog(tr("[SAM3D] Selected pipeline models are already cached."));
     }
-    QDir().mkpath(cacheDir);
-    static const char* kQuant[] = {"f16", "q8_0", "q4_k"};
-    const QString dtype =
-            QString::fromLatin1(kQuant[m_dtypeCombo->currentIndex()]);
-
-    m_pendingDownloads.clear();
-    for (const QString& name :
-         sam3dRequiredModels(dtype, m_texturedMeshCheck->isChecked())) {
-        const QString path = QDir(cacheDir).filePath(name);
-        const aicore_sam3d_model_entry* entry =
-                aicore_sam3d_model_by_filename(name.toUtf8().constData());
-        if (QFileInfo::exists(path)) {
-            // Cheap ledger/stat re-check; a corrupt file re-queues it.
-            const ecvAssetIntegrity::Anchor anchor{
-                    QCryptographicHash::Sha256,
-                    entry ? QByteArray(entry->sha256) : QByteArray()};
-            if (ecvAssetIntegrity::isVerified(
-                        path, anchor, 1024 * 1024, true,
-                        ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
-                continue;
-            }
-        }
-        m_pendingDownloads << name;
-    }
-    // The selected SAM3 segmentation model (scene-mode dependency) rides
-    // the same queue: URL/size come from the AICore sam3 catalog.
-    const QString sam3File = m_sam3ModelCombo->currentData().toString();
-    if (!sam3File.isEmpty() &&
-        !QFileInfo::exists(QDir(sam3ModelCacheDir()).filePath(sam3File))) {
-        m_pendingDownloads << sam3File;
-    }
-
-    if (m_pendingDownloads.isEmpty()) {
-        appendLog(tr("[SAM3D] Nothing to download (%1 / %2 cache).")
-                          .arg(dtype, cacheDir));
-        return;
-    }
-    qint64 totalBytes = 0;
-    for (const QString& name : m_pendingDownloads) {
-        if (const aicore_sam3d_model_entry* entry =
-                    aicore_sam3d_model_by_filename(name.toUtf8().constData())) {
-            totalBytes += entry->size_bytes;
-        } else if (const aicore_sam3_model_entry* sam3Entry =
-                           aicore_sam3_model_by_filename(
-                                   name.toUtf8().constData())) {
-            totalBytes += sam3Entry->size_bytes;
-        }
-    }
-    appendLog(tr("[SAM3D] %1 model(s) to download (%2 total).")
-                      .arg(m_pendingDownloads.size())
-                      .arg(ecvModelDownloader::formatFileSize(totalBytes)));
-    m_downloadBtn->setEnabled(false);
-    downloadNextModel();
 }
 
 void Sam3dDialog::downloadNextModel() {
     if (m_pendingDownloads.isEmpty()) {
-        appendLog(tr("[SAM3D] All model downloads finished."));
-        m_downloadBtn->setEnabled(true);
-        m_progress->setRange(0, 1);
-        m_progress->setValue(1);
+        appendLog(tr("[SAM3D] Selected pipeline model downloads finished."));
+        setDownloadBusy(false);
+        const PendingAction action = m_pendingAction;
+        m_pendingAction = PendingAction::None;
+        if (action == PendingAction::Run) emitRun();
+        if (action == PendingAction::Preview) emitPreviewMasks();
         return;
     }
     const QString filename = m_pendingDownloads.takeFirst();
-    // The AICore catalogs supply the download URL and size for every
-    // published model; qSAM3D deliberately owns no duplicate model table.
-    // The SAM3 segmentation catalog carries no per-file SHA-256, so its
-    // finalize gates on the GGUF magic + the catalog size instead.
-    QString url;
-    QString dest;
-    qint64 minBytes = 1024 * 1024;
-    ecvAssetIntegrity::Anchor anchor{QCryptographicHash::Sha256, QByteArray()};
-    if (const aicore_sam3d_model_entry* entry =
-                aicore_sam3d_model_by_filename(filename.toUtf8().constData())) {
-        url = QString::fromUtf8(entry->download_url);
-        dest = QDir(sam3dModelCacheDir()).filePath(filename);
-        anchor = {QCryptographicHash::Sha256, QByteArray(entry->sha256)};
-    } else if (const aicore_sam3_model_entry* sam3Entry =
-                       aicore_sam3_model_by_filename(
-                               filename.toUtf8().constData())) {
-        url = QString::fromUtf8(sam3Entry->download_url);
-        dest = QDir(sam3ModelCacheDir()).filePath(filename);
-        minBytes = std::max<qint64>(minBytes, sam3Entry->size_bytes);
-    } else {
-        appendLog(tr("[SAM3D] Model is absent from the AICore catalogs: %1")
-                          .arg(filename));
-        downloadNextModel();
-        return;
-    }
+    const auto req = modelRequest(filename);
     appendLog(tr("[SAM3D] Downloading %1...\n  URL: %2\n  Dest: %3")
-                      .arg(filename, url, dest));
-    m_downloadInProgress = true;
-    ecvModelDownloader::Request req;
-    req.url = url;
-    req.destPath = dest;
-    req.minBytes = minBytes;
-    req.contentAnchor = anchor;  // streamed content check (sam3d models)
+                      .arg(filename, req.url, req.destPath));
     m_downloader->download(req);
 }

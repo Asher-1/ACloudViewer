@@ -672,7 +672,7 @@ cmake --build build_app --target ext_ggml -j4
 | Public links | `Qt::Core Qt::Gui` (PUBLIC — a consequence of the `depth_image.h` Qt exception) |
 | OpenMP | ALIKED SIMD/collapse kernels (MSVC uses `/openmp:experimental` and strips 3rdparty_ggml's default `/openmp`) |
 | ALIKED acceleration | `AICore_CUDA_ENABLED` → `aliked_cuda.cu` (statically linked cudart on UNIX so libAICore carries no libcudart DT_NEEDED); `AICore_VULKAN_ENABLED` → `vulkan_aliked_dispatch.cpp` |
-| Trellis CuMesh | `AICore_USE_CUMESH` (default ON; degrades step-by-step with loud warnings when CUDA/libtorch/Python headers are missing; mesh_export falls back to simple_unwrap; builds a separate `aicore_cumesh` SHARED linked to libtorch+libpython) |
+| Trellis CuMesh | `AICore_USE_CUMESH` (default ON; needs CUDA Toolkit 12.3+, CUDA-enabled Torch, and Python development files; degrades with a warning when unavailable; uses TorchConfig's platform libraries on Linux/Windows; mesh_export tries CPU cone clustering, then simple_unwrap on failure) |
 | Version script | `cmake/aicore.exports.map` (Linux); `AICore_capi_link` serves only executables that link the C API directly under `GGML_BACKEND_DL` |
 | Task registration | New task = GLOB + existence check + include paths inside the existing monolithic `core/AICore/CMakeLists.txt` target; **no** task-specific shared libraries |
 
@@ -926,3 +926,34 @@ The current matrix protocol and acceptance thresholds live in
 | ggml upgrade and controlled A/B | `.agents/skills/ggml-upgrade/SKILL.md`, `docs/guides/ggml_upgrade_pipeline.md` |
 | Test protocol | [`../tests/TESTING.md`](../tests/TESTING.md) |
 | Plugin catalog | [`../../plugins/README.md`](../../plugins/README.md) |
+
+## 16. Platform service ownership
+
+Tasks call capabilities and do not detect the host OS or compiler. File
+services use `cloudViewer::utility::filesystem` in CVCoreLib (`FileSystem.h`):
+UTF-8 C/C++ stream opening, directory operations, 64-bit seek/tell/size, and
+owned read-only mapping. String paths use UTF-8; native filesystem paths are
+kept native until they cross a string API. The
+foundation regression is `core/tests/test_filesystem.cpp`; AICore's fast gate
+also builds it. AICore already depends on CVCoreLib, so there is no parallel
+AICore file-service layer.
+
+Backend-native discovery and device capability policy belong to
+`src/common/ggml_backend_utils.hpp`; pragma/OpenMP compatibility and capped
+runtime thread queries belong to CVCoreLib's `Parallel.h`. Its existing
+`EstimateMaxThreads()` retains the physical-core policy; `GetMaxThreads(cap)`
+queries the current OpenMP limit without changing that policy. Runtime and
+thread-ID queries used with header directives follow the caller's OpenMP flags,
+including builds where CVCoreLib and AICore have different flags. Export,
+deprecation and printf-format attributes belong to
+`include/aicore/export.h`. Tasks retain algorithm choices and context ownership.
+A task may request an attention limit or mapping support without inferring it
+from Windows, Linux or macOS. Vendor code and ISA-specific kernels retain their
+own upstream/build contracts.
+
+Python tools share `scripts/runtime_environment.py` for artifact naming,
+configuration directories, native loading, reference isolation and dependency
+inspection. Callers select the reference or dependency set; that module owns
+how the host implements the request. See
+[`WINDOWS_CI_PORTABILITY_AUDIT.md`](WINDOWS_CI_PORTABILITY_AUDIT.md) for evidence,
+intentional boundaries and native-platform validation still outstanding.

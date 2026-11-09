@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+#include "FileSystem.h"
 #include "aicore/backend_capi.h"
 #include "aicore/openpcdet_capi.h"
 #include "aicore/runtime_capi.h"
@@ -131,18 +132,20 @@ struct dir_tap_sink {
                     int64_t n_cols) const {
         if (dir.empty()) return;
         std::error_code ec;
-        std::filesystem::create_directories(dir, ec);
+        std::filesystem::create_directories(std::filesystem::u8path(dir), ec);
         if (ec) return;
         std::string fname = name;
         for (char& c : fname) {
             if (c == '/' || c == '.') c = '_';
         }
-        FILE* f = std::fopen((dir + "/" + fname + ".f32").c_str(), "wb");
+        FILE* f = cloudViewer::utility::filesystem::FOpen(
+                (dir + "/" + fname + ".f32").c_str(), "wb");
         if (f == nullptr) return;
         std::fwrite(data, sizeof(float), static_cast<size_t>(n_rows * n_cols),
                     f);
         std::fclose(f);
-        FILE* m = std::fopen((dir + "/" + fname + ".meta.json").c_str(), "w");
+        FILE* m = cloudViewer::utility::filesystem::FOpen(
+                (dir + "/" + fname + ".meta.json").c_str(), "w");
         if (m != nullptr) {
             std::fprintf(m,
                          "{\"name\":\"%s\",\"n_rows\":%lld,\"n_cols\":%lld}\n",
@@ -483,7 +486,8 @@ struct SceneFileBuffer {
 };
 
 bool read_scene_bin(const std::string& path, std::vector<float>& out) {
-    std::ifstream stream(path, std::ios::binary | std::ios::ate);
+    std::ifstream stream = cloudViewer::utility::filesystem::OpenInputStream(
+            path, std::ios::binary | std::ios::ate);
     if (!stream) return false;
     const std::streampos size = stream.tellg();
     stream.seekg(0);
@@ -527,7 +531,8 @@ AICORE_CAPI int aicore_openpcdet_load_scene_dir(const char* scene_dir,
         return -1;
     }
     // scene.json: num_cameras / image_height / image_width / image_channels.
-    std::ifstream json(prefix + "scene.json");
+    std::ifstream json = cloudViewer::utility::filesystem::OpenInputStream(
+            prefix + "scene.json");
     if (!json) {
         delete[] buffers;
         if (error != nullptr) *error = dup_cstr("scene.json");

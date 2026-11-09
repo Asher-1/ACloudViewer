@@ -286,6 +286,13 @@ int main(int argc, char** argv) {
           "Image2Mesh must not be ready with only corrupt images and no valid "
           "ZIP");
     if (!sample.save(directory + "/A.png")) return 1;
+    check(!ecvTestDataRepository::instance().isDatasetAvailable(kind),
+          "The shared bundle must also prepare SAM3D's consumed subtree");
+    const QString sam3dDirectory =
+            ecvTestDataRepository::extractPath(kind) + "/sam3d_images/scene";
+    if (!QDir().mkpath(sam3dDirectory) ||
+        !sample.save(sam3dDirectory + "/image.png"))
+        return 1;
     check(ecvTestDataRepository::instance().isDatasetAvailable(kind),
           "Allow offline reuse when cartoon_panda.png is absent but a "
           "decodable candidate "

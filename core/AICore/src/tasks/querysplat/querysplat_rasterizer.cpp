@@ -7,15 +7,13 @@
 
 #include "tasks/querysplat/querysplat_rasterizer.hpp"
 
+#include <Parallel.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <thread>
 #include <vector>
-
-#ifdef QS_USE_OPENMP
-#include <omp.h>
-#endif
 
 namespace qs {
 
@@ -282,7 +280,7 @@ RenderedViews render_gaussians(const GaussianOutput& g,
         // ---- project all gaussians (independent per gaussian) ----
         vp.proj.resize((size_t)N);
 #ifdef QS_USE_OPENMP
-#pragma omp parallel for schedule(static)
+        CV_OMP_PARALLEL_FOR(schedule(static))
 #endif
         for (int i = 0; i < N; i++) {
             const float* src = &g.data[(size_t)i * stride];
@@ -338,7 +336,7 @@ RenderedViews render_gaussians(const GaussianOutput& g,
         // g.data. O(E log E_tile) for E bin entries.
         vp.splats.resize(vp.keys.size());
 #ifdef QS_USE_OPENMP
-#pragma omp parallel for schedule(dynamic, 4)
+        CV_OMP_PARALLEL_FOR(schedule(dynamic, 4))
 #endif
         for (int t = 0; t < n_tiles; t++) {
             const size_t b = (size_t)vp.tile_start[(size_t)t],
@@ -410,7 +408,7 @@ RenderedViews render_gaussians(const GaussianOutput& g,
         float* dep = &out.depths[(size_t)v * H * W];
         int32_t* lst = &out.last_k[(size_t)v * H * W];
 #ifdef QS_USE_OPENMP
-#pragma omp parallel for schedule(dynamic, 4)
+        CV_OMP_PARALLEL_FOR(schedule(dynamic, 4))
 #endif
         for (int t = 0; t < n_tiles; t++) {
             const int px0 = (t % tiles_x) * kTile, py0 = (t / tiles_x) * kTile;
@@ -716,8 +714,7 @@ bool render_backward(const GaussianOutput& g,
     constexpr int kMaxBwdThreads = 12;
     int nthreads = 1;
 #ifdef QS_USE_OPENMP
-    nthreads = std::min(kMaxBwdThreads, omp_get_max_threads());
-    if (nthreads < 1) nthreads = 1;
+    nthreads = cloudViewer::utility::GetMaxThreads(kMaxBwdThreads);
 #endif
     struct Seeds {
         std::vector<float> conic;  // N*3
@@ -762,7 +759,7 @@ bool render_backward(const GaussianOutput& g,
         // identical pipeline as forward (projection + bins + sort + splats)
         vp.proj.resize((size_t)N);
 #ifdef QS_USE_OPENMP
-#pragma omp parallel for schedule(static)
+        CV_OMP_PARALLEL_FOR(schedule(static))
 #endif
         for (int i = 0; i < N; i++) {
             const float* src = &g.data[(size_t)i * stride];
@@ -808,7 +805,7 @@ bool render_backward(const GaussianOutput& g,
         }
         vp.splats.resize(vp.keys.size());
 #ifdef QS_USE_OPENMP
-#pragma omp parallel for schedule(dynamic, 4)
+        CV_OMP_PARALLEL_FOR(schedule(dynamic, 4))
 #endif
         for (int t = 0; t < n_tiles; t++) {
             const size_t b = (size_t)vp.tile_start[(size_t)t],
@@ -839,11 +836,12 @@ bool render_backward(const GaussianOutput& g,
         const float* alpha_out = &fwd.alphas[(size_t)v * H * W];  // 1 - T_final
         const float* dimg = d_images + (size_t)v * 3 * H * W;
 #ifdef QS_USE_OPENMP
-#pragma omp parallel for schedule(dynamic, 4) num_threads(nthreads)
+        CV_OMP_PARALLEL_FOR(schedule(dynamic, 4) num_threads(nthreads))
 #endif
         for (int t = 0; t < n_tiles; t++) {
 #ifdef QS_USE_OPENMP
-            Seeds& sd = seeds[(size_t)omp_get_thread_num()];
+            Seeds& sd =
+                    seeds[(size_t)cloudViewer::utility::GetOpenMPThreadNum()];
 #else
             Seeds& sd = seeds[0];
 #endif
@@ -906,7 +904,7 @@ bool render_backward(const GaussianOutput& g,
 
         // ---- reduce threads + projection chain (per gaussian) ----
 #ifdef QS_USE_OPENMP
-#pragma omp parallel for schedule(static)
+        CV_OMP_PARALLEL_FOR(schedule(static))
 #endif
         for (int i = 0; i < N; i++) {
             float vconic[3] = {0.f, 0.f, 0.f}, vxy[2] = {0.f, 0.f};

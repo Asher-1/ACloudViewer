@@ -13,6 +13,7 @@
 #include <cstring>
 #include <stdexcept>
 
+#include "FileSystem.h"
 #include "ggml-backend.h"
 #include "ggml.h"
 #include "gguf.h"
@@ -735,7 +736,7 @@ struct QuerySplatDecoder::Impl {
             auto maybe_write = [&](const char* name,
                                    const std::vector<float>& v) {
                 if (dump_dir.empty()) return;  // TTO mode: seams only
-                FILE* fp = fopen(
+                FILE* fp = cloudViewer::utility::filesystem::FOpen(
                         (std::string(dir) + "/" + name + ".bin").c_str(), "wb");
                 if (fp) {
                     fwrite(v.data(), 4, v.size(), fp);
@@ -744,7 +745,7 @@ struct QuerySplatDecoder::Impl {
             };
             auto write_bin = [&](const char* name,
                                  const std::vector<float>& v) {
-                FILE* fp = fopen(
+                FILE* fp = cloudViewer::utility::filesystem::FOpen(
                         (std::string(dir) + "/" + name + ".bin").c_str(), "wb");
                 if (fp) {
                     fwrite(v.data(), 4, v.size(), fp);

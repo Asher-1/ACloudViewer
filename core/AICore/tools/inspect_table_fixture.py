@@ -23,7 +23,8 @@ Output: ``<out>/table_<k>_paddle_cells.png`` overlays, ``<out>/report.html``
 
     inspect_table_fixture.py --fixtures ~/cloudViewer_data/extract/ocr_fixtures \
         --images ~/cloudViewer_data/extract/ppocr_testdata/table_rec/images \
-        --model-dir SLANet_plus_infer --gt .../table_rec/val.txt --out /tmp/fx
+        --model-dir SLANet_plus_infer --gt .../table_rec/val.txt \
+        --out <temp-dir>/fx
 """
 
 from __future__ import annotations
@@ -42,6 +43,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from convert_paddle_ocr_gguf import table_metadata  # noqa: E402
 import table_teds as TEDS  # noqa: E402
+from runtime_environment import prepend_runtime_paths  # noqa: E402
 
 
 def wrap(structure: str) -> str:
@@ -83,8 +85,8 @@ def draw(image_path: Path, cells, out_path: Path) -> None:
 def aicore_structures(bench: Path, table: Path, images: list[Path],
                       device: str) -> dict[str, str]:
     env = os.environ.copy()
-    lib = [str(bench.resolve().parent), str(bench.resolve().parent.parent / "external" / "lib")]
-    env["LD_LIBRARY_PATH"] = os.pathsep.join(lib + [env.get("LD_LIBRARY_PATH", "")])
+    lib = [bench.resolve().parent, bench.resolve().parent.parent / "external" / "lib"]
+    prepend_runtime_paths(env, lib)
     proc = subprocess.run([str(bench), "--table", str(table), "--device", device,
                            *map(str, images)], capture_output=True, text=True,
                           env=env, check=True)

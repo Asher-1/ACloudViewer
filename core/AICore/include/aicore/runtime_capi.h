@@ -28,17 +28,10 @@ typedef struct aicore_cancel_token aicore_cancel_token;
  */
 AICORE_CAPI void aicore_runtime_shutdown(void);
 
-#if defined(_MSC_VER)
-#define AICORE_LEGACY_API  \
-    __declspec(deprecated( \
-            "use task-owned cancellation tokens or device_task_lock"))
-#elif defined(__GNUC__) || defined(__clang__)
-#define AICORE_LEGACY_API      \
-    __attribute__((deprecated( \
-            "use task-owned cancellation tokens or device_task_lock")))
-#else
-#define AICORE_LEGACY_API
-#endif
+#define AICORE_LEGACY_API                            \
+    AICORE_DEPRECATED(                               \
+            "use task-owned cancellation tokens or " \
+            "device_task_lock")
 
 /** Allocate an independent task cancellation token. */
 AICORE_CAPI aicore_cancel_token* aicore_cancel_token_new(void);

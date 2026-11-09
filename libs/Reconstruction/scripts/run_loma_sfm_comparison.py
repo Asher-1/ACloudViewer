@@ -100,13 +100,13 @@ def child_environment(runtime_library_dirs: list[Path]) -> dict[str, str]:
     runtime_dirs = [str(path) for path in runtime_library_dirs if path.is_dir()]
     if runtime_dirs:
         if os.name == "nt":
-            library_variable, separator = "PATH", ";"
+            library_variable = "PATH"
         elif sys.platform == "darwin":
-            library_variable, separator = "DYLD_LIBRARY_PATH", ":"
+            library_variable = "DYLD_LIBRARY_PATH"
         else:
-            library_variable, separator = "LD_LIBRARY_PATH", ":"
-        environment[library_variable] = separator.join(
-            runtime_dirs + [environment.get(library_variable, "")]).rstrip(separator)
+            library_variable = "LD_LIBRARY_PATH"
+        environment[library_variable] = os.pathsep.join(
+            runtime_dirs + [environment.get(library_variable, "")]).rstrip(os.pathsep)
     return environment
 
 

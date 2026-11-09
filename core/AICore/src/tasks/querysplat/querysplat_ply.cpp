@@ -14,6 +14,8 @@
 #include <cstdio>
 #include <cstring>
 
+#include "FileSystem.h"
+
 namespace qs {
 
 namespace {
@@ -80,7 +82,7 @@ bool save_gaussian_ply(const GaussianOutput& g,
         if (g.opacity[(size_t)i] >= opacity_threshold) keep.push_back((int)i);
     }
 
-    FILE* fp = fopen(path.c_str(), "wb");
+    FILE* fp = cloudViewer::utility::filesystem::FOpen(path.c_str(), "wb");
     if (!fp) return false;
     // std::string header: the property list length varies with the SH degree
     // (9 f_rest props at degree 1) and a fixed stack buffer once overflowed.
@@ -135,7 +137,7 @@ bool save_gaussian_ply(const GaussianOutput& g,
 }
 
 bool save_gaussians_bin(const GaussianOutput& g, const std::string& path) {
-    FILE* fp = fopen(path.c_str(), "wb");
+    FILE* fp = cloudViewer::utility::filesystem::FOpen(path.c_str(), "wb");
     if (!fp) return false;
     fwrite(g.data.data(), sizeof(float), g.data.size(), fp);
     fclose(fp);
@@ -170,7 +172,7 @@ bool save_colored_pointcloud_ply(const GaussianOutput& g,
         };
         cols.push_back({u8(rgb[0]), u8(rgb[1]), u8(rgb[2])});
     }
-    FILE* f = fopen(path.c_str(), "wb");
+    FILE* f = cloudViewer::utility::filesystem::FOpen(path.c_str(), "wb");
     if (!f) return false;
     std::string header =
             "ply\nformat binary_little_endian 1.0\n"

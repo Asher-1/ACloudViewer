@@ -24,6 +24,7 @@
 #include <memory>
 #include <random>
 
+#include "FileSystem.h"
 #include "aicore/rmbg_capi.h"
 #include "aicore/runtime_capi.h"
 #include "common/debug_dump.hpp"
@@ -844,8 +845,10 @@ bool PipelineContext::Impl::zero123pp_multiview(const PipelineConfig &cfg,
         // retained pair always belongs to the last forward. Never affects
         // any result.
         const std::string &dir = cfg.capture_dir;
-        std::FILE *in = std::fopen((dir + "/decode-input.bin").c_str(), "wb");
-        std::FILE *out = std::fopen((dir + "/decode-output.bin").c_str(), "wb");
+        std::FILE *in = cloudViewer::utility::filesystem::FOpen(
+                (dir + "/decode-input.bin").c_str(), "wb");
+        std::FILE *out = cloudViewer::utility::filesystem::FOpen(
+                (dir + "/decode-output.bin").c_str(), "wb");
         const size_t dec_n = (size_t)3 * dh * dw;
         const bool ok = in &&
                         std::fwrite(latents.data(), sizeof(float), lat_n, in) ==

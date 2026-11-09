@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <FileSystem.h>
+
 #include <QCryptographicHash>
 #include <array>
 #include <cstring>
@@ -13,6 +15,7 @@
 #include <vector>
 
 #include "aicore/yolo_capi.h"
+#include "common/capi_utils.hpp"
 #include "common/gguf_file_io.hpp"
 #include "gguf.h"
 
@@ -158,16 +161,6 @@ static constexpr const char* kQuantNotes[] = {
         "F16 \xe2\x80\x94 half precision (recommended)",
         "Q8_0 \xe2\x80\x94 8-bit quant, best accuracy/size trade",
 };
-
-// MSVC names the POSIX helper "_strdup"; keep a portable wrapper so the
-// catalog builds warning-clean on all three platforms.
-static char* dupString(const char* s) {
-#ifdef _MSC_VER
-    return _strdup(s);
-#else
-    return strdup(s);
-#endif
-}
 
 struct ModelRow {
     const char* filename;
@@ -371,9 +364,11 @@ static std::vector<ModelRow> buildModels() {
             std::string url = std::string(kDownloadBase) + filename;
             std::string display = std::string(info.display) + " \xe2\x80\x94 " +
                                   kQuantNotes[qi_eff];
-            rows.push_back({dupString(filename.c_str()), dupString(url.c_str()),
-                            dupString(display.c_str()),
-                            dupString(kQuantNotes[qi_eff]), license, info.task,
+            rows.push_back({aicore::capi::dup_cstr(filename.c_str()),
+                            aicore::capi::dup_cstr(url.c_str()),
+                            aicore::capi::dup_cstr(display.c_str()),
+                            aicore::capi::dup_cstr(kQuantNotes[qi_eff]),
+                            license, info.task,
                             std::strcmp(info.task, "depth") == 0 ? 1 : 0,
                             std::strncmp(info.name, "yolo26", 6) == 0 &&
                                             std::strcmp(info.task, "text") != 0
@@ -569,7 +564,8 @@ AICORE_CAPI int aicore_yolo_verify_model(const char* path,
     if (quant == "f16") qi = 1;
     if (quant == "q8_0") qi = 2;
 
-    std::ifstream in(path, std::ios::binary);
+    std::ifstream in = cloudViewer::utility::filesystem::OpenInputStream(
+            path, std::ios::binary);
     if (!in) return -1;
     in.seekg(0, std::ios::end);
     const std::streamoff file_size = in.tellg();

@@ -7,6 +7,7 @@
 
 #include "tasks/loma/quantize.hpp"
 
+#include <FileSystem.h>
 #include <ggml.h>
 #include <gguf.h>
 
@@ -231,7 +232,9 @@ bool QuantizeModel(const std::string& input_gguf,
         success = false;
     }
     if (success) {
-        std::ofstream stream(output_gguf, std::ios::binary | std::ios::app);
+        std::ofstream stream =
+                cloudViewer::utility::filesystem::OpenOutputStream(
+                        output_gguf, std::ios::binary | std::ios::app);
         const size_t alignment = gguf_get_alignment(output);
         // New gguf_context instances in ggml 0.21 do not populate
         // gguf_get_data_offset() until a file is re-opened. The documented

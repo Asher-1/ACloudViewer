@@ -1036,7 +1036,7 @@ static bool xatlas_unwrap_with_face_material(
 //   xatlas::ComputeCharts          — per-chart parameterization
 //   xatlas::PackCharts             — optimal packing
 //
-// The env-var T2GLB_NOCUMESH disables this and falls back to the CPU clusterer.
+// UnwrapMode::Auto selects this path when CuMesh is compiled in.
 #ifdef TRELLIS2_HAVE_CUMESH
 static bool cumesh_unwrap(const std::vector<float> &dverts,
                           const std::vector<float> &dnrm,
@@ -1074,35 +1074,19 @@ static bool cumesh_unwrap(const std::vector<float> &dverts,
         return false;
     }
 
-    // Save CuMesh mapping arrays BEFORE we free them.
-    std::vector<int> saved_vmap(chart_vmap, chart_vmap + (size_t)dnv);
-    std::vector<int> saved_vert_off(chart_vert_off,
-                                    chart_vert_off + (size_t)(n_charts + 1));
-    std::vector<int> saved_face_off(chart_faces_off,
-                                    chart_faces_off + (size_t)(n_charts + 1));
-    std::vector<int> saved_face_cid(face_cid, face_cid + (size_t)nt_out);
-
-    // CuMesh returns chart_faces which separates faces per chart, but the
-    // face_cid maps every output face back to its chart.  We need the
-    // face_cid in original-triangle order.  CuMesh's remove_degenerate_faces
-    // may drop faces, so the nt_out in face_cid may differ from dnt.  Our
-    // decimated mesh is already clean, so nt_out == dnt for practical cases.
-    // We build face_material from face_cid (the chart assignment) and feed
-    // the ORIGINAL mesh indices to xatlas (the decimated geometry is already
-    // a clean manifold mesh).  Per-face material ID makes each CuMesh chart
-    // a hard xatlas chart boundary.
-    const int nt_actual = (int)saved_face_cid.size();
-
     GLBLOG("CuMesh clustered %d -> %d tris into %d charts (%.2fs)", dnt, nt_out,
            n_charts, now_s() - t0);
 
-    if (n_charts <= 0 || nt_actual <= 0) {
+    // xatlas consumes the original triangles. If cleanup dropped any face,
+    // its compacted chart ids no longer correspond to those triangles; let
+    // the existing CPU fallback unwrap the original mesh instead.
+    if (n_charts <= 0 || nt_out != dnt) {
         cumesh_free_buffer(face_cid);
         cumesh_free_buffer(chart_vmap);
         cumesh_free_buffer(chart_faces);
         cumesh_free_buffer(chart_faces_off);
         cumesh_free_buffer(chart_vert_off);
-        err = "CuMesh produced zero charts";
+        err = "CuMesh changed face topology or produced zero charts";
         return false;
     }
 
@@ -1110,9 +1094,8 @@ static bool cumesh_unwrap(const std::vector<float> &dverts,
     // ORIGINAL mesh indices to xatlas (the decimated geometry is already a
     // clean manifold mesh).  Per-face material ID makes each CuMesh chart a
     // hard xatlas chart boundary.
-    std::vector<uint32_t> face_mat((size_t)nt_actual);
-    for (int i = 0; i < nt_actual; ++i)
-        face_mat[i] = (uint32_t)saved_face_cid[i];
+    std::vector<uint32_t> face_mat((size_t)dnt);
+    for (int i = 0; i < dnt; ++i) face_mat[i] = (uint32_t)face_cid[i];
 
     // CuMesh buffers no longer needed.
     cumesh_free_buffer(face_cid);
@@ -1122,8 +1105,8 @@ static bool cumesh_unwrap(const std::vector<float> &dverts,
     cumesh_free_buffer(chart_vert_off);
 
     const bool ok = xatlas_unwrap_with_face_material(
-            dverts, dnrm, dpbr, dnv, dtris, nt_actual, face_mat, opt, TS, opos,
-            onrm, ouv, opbr, oidx, AW, AH, err);
+            dverts, dnrm, dpbr, dnv, dtris, dnt, face_mat, opt, TS, opos, onrm,
+            ouv, opbr, oidx, AW, AH, err);
     if (ok)
         GLBLOG("cumesh unwrap: %u verts, %u tris, %d charts packed @%dx%d "
                "(%.2fs)",
@@ -1679,10 +1662,10 @@ bool bake_atlas_locked(const PreparedMesh &mesh,
     std::vector<uint32_t> oidx;
     int AW = TS, AH = TS;
     // UV unwrap priority (first success wins; all paths bake identically):
-    //   1. T2GLB_XATLAS env — explicit bare-xatlas chart unwrap (debug /
+    //   1. UnwrapMode::XAtlas — explicit bare-xatlas chart unwrap (debug /
     //      regression; its own clustering is minutes-slow on large meshes)
     //   2. CuMesh GPU chart clustering — only in libtorch-linked builds
-    //      (TRELLIS2_CUMESH=ON); T2GLB_NOCUMESH skips it
+    //      (AICore_USE_CUMESH=ON), selected by UnwrapMode::Auto
     //   3. cone_cluster_unwrap — CPU normal-cone clustering (CuMesh's
     //      algorithm, dependency-free) + xatlas parameterization: the
     //      chart-quality default without libtorch, seconds not minutes
@@ -1691,7 +1674,7 @@ bool bake_atlas_locked(const PreparedMesh &mesh,
     // T2GLB_XATLAS / T2GLB_NOCUMESH environment pair upstream): Auto follows
     // the full quality chain (cumesh GPU when compiled in -> CPU cone
     // clustering -> 6-bin projection); XAtlas skips straight to xatlas
-    // charting; Simple skips GPU/xatlas and starts at cone clustering.
+    // charting; Simple skips GPU/bare-xatlas and starts at cone clustering.
     const bool force_xatlas = opt.unwrap == UnwrapMode::XAtlas;
     bool unwrapped = false;
     const char *unwrap_mode = "none";

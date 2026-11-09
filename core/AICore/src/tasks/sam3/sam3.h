@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include "aicore/export.h"
+
 /*
 ** ── DLL Export Decoration ────────────────────────────────────────────────
 **
@@ -25,14 +27,10 @@
 ** (the CMake target sets this via target_compile_definitions).
 */
 #ifdef SAM3_SHARED
-#if defined(_WIN32) && !defined(__MINGW32__)
 #ifdef SAM3_BUILD
-#define SAM3_API __declspec(dllexport)
+#define SAM3_API AICORE_PRIVATE_SYMBOL_EXPORT
 #else
-#define SAM3_API __declspec(dllimport)
-#endif
-#else
-#define SAM3_API __attribute__((visibility("default")))
+#define SAM3_API AICORE_PRIVATE_SYMBOL_IMPORT
 #endif
 #else
 #define SAM3_API

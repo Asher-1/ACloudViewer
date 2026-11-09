@@ -182,8 +182,9 @@ void FaceDetectTestDataWorker::run() {
     Job job = m_job;
 
     const int extractEntries =
-            job.extractZipFirst ? FaceDetectTestData::zipEntryCount(job.zipPath)
-                                : 0;
+            job.extractZipFirst
+                    ? ecvTestDataRepository::zipEntryCount(job.zipPath)
+                    : 0;
     const QVector<FaceDetectGalleryEntry> plannedEntries =
             resolveRegistrationEntries(job);
     const int registerCountEstimate =
@@ -202,7 +203,7 @@ void FaceDetectTestDataWorker::run() {
         const int extractWeight =
                 (extractFileTotal > 0 ? extractFileTotal : 1) *
                 kWeightExtractEntry;
-        if (!FaceDetectTestData::extractZip(
+        if (!ecvTestDataRepository::extractZip(
                     job.zipPath, job.extractParentDir,
                     [&](int current, int total) {
                         if (extractFileTotal <= 0 && total > 0) {

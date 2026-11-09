@@ -1,7 +1,7 @@
 #!/bin/sh
-appname=`basename $0 | sed s,\.sh$,,`  
+appname=$(basename "$0" .sh)
 
-dirname=`dirname $0`
+dirname=$(dirname "$0")
 tmp="${dirname#?}"  
 
 if [ "${dirname%$tmp}" != "/" ]; then
@@ -37,6 +37,6 @@ for _cuda_root in "${CUDA_PATH:-}" "${CUDA_HOME:-}" /usr/local/cuda /usr/local/c
 done
 export LD_LIBRARY_PATH
 
-export PYTHONPATH=$dirname/plugins/Python
+export PYTHONPATH="$dirname/plugins/Python"
 
-$dirname/$appname "$@"
+"$dirname/$appname" "$@"

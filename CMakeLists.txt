@@ -220,6 +220,10 @@ option(ENABLE_AVX512 "Enable AVX-512 instructions (requires compatible CPU)"    
 
 # AICore: all AICore_* options — see cmake/AICoreOptions.cmake
 include(cmake/AICoreOptions.cmake)
+# Foundation tests must also be discoverable when the AI runtime is disabled.
+if(BUILD_UNIT_TESTS)
+    enable_testing()
+endif()
 
 option(PACKAGE "Package the build results with zip or not"                      OFF)
 
@@ -1009,6 +1013,34 @@ elseif (WIN32)
     set(PACK_SCRIPTS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/scripts/platforms/windows")
     file(REAL_PATH "${CMAKE_BINARY_DIR}/${CloudViewer_INSTALL_BIN_DIR}/${CMAKE_BUILD_TYPE}" BINNARY_REAL_PATH)
     set(EXTERNAL_INSTALL_DIRS ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/bin ${BINNARY_REAL_PATH})
+    get_property(_cumesh_torch_runtime_dir GLOBAL PROPERTY
+                 AICORE_CUMESH_TORCH_RUNTIME_DIR)
+    if(_cumesh_torch_runtime_dir AND IS_DIRECTORY "${_cumesh_torch_runtime_dir}")
+        list(APPEND EXTERNAL_INSTALL_DIRS "${_cumesh_torch_runtime_dir}")
+    endif()
+    get_property(_cumesh_python_runtime_dirs GLOBAL PROPERTY
+                 AICORE_CUMESH_PYTHON_RUNTIME_DIRS)
+    foreach(_cumesh_python_runtime_dir IN LISTS _cumesh_python_runtime_dirs)
+        if(IS_DIRECTORY "${_cumesh_python_runtime_dir}")
+            list(APPEND EXTERNAL_INSTALL_DIRS "${_cumesh_python_runtime_dir}")
+        endif()
+    endforeach()
+    set(_cumesh_runtime_names "")
+    # Search paths above serve required Torch/Python dependency resolution.
+    # Full DLL redistribution also includes CUDA and must be explicitly enabled.
+    if(AICore_USE_CUDA AND AICore_CUDA_ENABLED
+       AND AICore_BUNDLE_CUDA_RUNTIME AND TARGET aicore_cumesh)
+        get_property(_cumesh_runtime_dlls GLOBAL PROPERTY AICORE_CUMESH_RUNTIME_DLLS)
+        if(_cumesh_runtime_dlls)
+            install(FILES ${_cumesh_runtime_dlls}
+                    DESTINATION "${CloudViewer_INSTALL_LIB_DIR}/cumesh-runtime"
+                    COMPONENT Runtime)
+            foreach(_cumesh_runtime_dll IN LISTS _cumesh_runtime_dlls)
+                get_filename_component(_cumesh_runtime_name "${_cumesh_runtime_dll}" NAME)
+                list(APPEND _cumesh_runtime_names "${_cumesh_runtime_name}")
+            endforeach()
+        endif()
+    endif()
 endif()
 message(STATUS "EXTERNAL_INSTALL_DIRS: ${EXTERNAL_INSTALL_DIRS}")
 set(ACLOUDVIEWER_PACKAGE_NAME "${MAIN_APP_NAME}-${CLOUDVIEWER_VERSION_FULL}-${MACHINE_NAME}-${ACLOUDVIEWER_DEVICE}-${ARC_NAME}")
@@ -1084,8 +1116,10 @@ if (PACKAGE_TOOL AND NOT PACKAGE_TOOL MATCHES "-NOTFOUND$")
     install(CODE "set(PACKAGE_TOOL \"${PACKAGE_TOOL}\")")
 endif()
 install(CODE "set(PACKAGE \"${PACKAGE}\")")
+install(CODE "set(AICore_USE_CUDA \"${AICore_USE_CUDA}\")")
 install(CODE "set(AICore_CUDA_ENABLED \"${AICore_CUDA_ENABLED}\")")
 install(CODE "set(AICore_BUNDLE_CUDA_RUNTIME \"${AICore_BUNDLE_CUDA_RUNTIME}\")")
+install(CODE "set(AICORE_CUMESH_RUNTIME_NAMES \"${_cumesh_runtime_names}\")")
 install(CODE "set(GGML_MODULE_SUFFIX \"${GGML_MODULE_SUFFIX}\")")
 install(CODE "set(CMAKE_SHARED_LIBRARY_PREFIX \"${CMAKE_SHARED_LIBRARY_PREFIX}\")")
 install(CODE "set(_PYTHON_EXECUTABLE \"${Python3_EXECUTABLE}\")")

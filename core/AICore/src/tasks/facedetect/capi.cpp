@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Parallel.h>
+
 #include <algorithm>
 #include <chrono>
 #include <cstdlib>
@@ -676,18 +678,14 @@ AICORE_CAPI int aicore_facedetect_cosine_distance_matrix(const float* queries,
 
     const int64_t pair_count =
             static_cast<int64_t>(query_count) * gallery_count;
-#ifdef _OPENMP
-#pragma omp parallel for schedule(static) if (pair_count >= 64)
-#endif
+    CV_OMP_PARALLEL_FOR(schedule(static) if (pair_count >= 64))
     for (int64_t pair = 0; pair < pair_count; ++pair) {
         const int q = static_cast<int>(pair / gallery_count);
         const int g = static_cast<int>(pair % gallery_count);
         const float* query = queries + static_cast<size_t>(q) * dim;
         const float* row = gallery + static_cast<size_t>(g) * dim;
         float dot = 0.0f;
-#ifdef _OPENMP
-#pragma omp simd reduction(+ : dot)
-#endif
+        CV_OMP_SIMD(reduction(+ : dot))
         for (int d = 0; d < dim; ++d) {
             dot += query[d] * row[d];
         }

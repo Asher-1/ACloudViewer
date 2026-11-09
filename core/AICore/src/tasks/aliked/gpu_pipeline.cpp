@@ -7,6 +7,7 @@
 
 #include "tasks/aliked/gpu_pipeline.hpp"
 
+#include <Parallel.h>
 #include <ggml-backend.h>
 
 #include "tasks/aliked/aliked_gpu_ops.hpp"
@@ -488,9 +489,7 @@ bool AddInPlaceGpu(internal::Backend *backend,
             }
             return false;
         }
-#if defined(_OPENMP)
-#pragma omp parallel for schedule(static)
-#endif
+        CV_OMP_PARALLEL_FOR(schedule(static))
         for (int64_t i = 0; i < static_cast<int64_t>(lhs.size()); ++i) {
             lhs[static_cast<size_t>(i)] += rhs[static_cast<size_t>(i)];
         }

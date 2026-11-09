@@ -9,6 +9,8 @@
 // Adapted from free-splatter.cpp/src/free_splatter.cpp to use the project's
 // ggml_common, Qt image I/O, and PLY export modules.
 
+#include <FileSystem.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -540,7 +542,8 @@ AICORE_CAPI int aicore_gaussian_export_splat(const float* gaussians,
         keep.resize(max_splats);
     }
 
-    std::ofstream stream(output_path, std::ios::binary);
+    std::ofstream stream = cloudViewer::utility::filesystem::OpenOutputStream(
+            output_path, std::ios::binary);
     if (!stream) return -1;
     constexpr float kShC0 = 0.28209479177387814f;
     for (const auto& item : keep) {
@@ -586,7 +589,8 @@ AICORE_CAPI int aicore_gaussian_export_cloud_splat(
         order.resize(max_splats);
     }
 
-    std::ofstream stream(output_path, std::ios::binary);
+    std::ofstream stream = cloudViewer::utility::filesystem::OpenOutputStream(
+            output_path, std::ios::binary);
     if (!stream) return -1;
     for (size_t i : order) {
         const aicore_gaussian_point& point = cloud[i];

@@ -16,6 +16,7 @@ import tempfile
 from pathlib import Path
 
 from gpu_audit import run_audited
+from runtime_environment import loader_variable, venv_python
 
 
 def main():
@@ -59,8 +60,7 @@ def main():
                         help="native versus independent identical-weight ONNX tolerance")
     args = parser.parse_args()
     if args.source_benchmark_root:
-        args.source_benchmark_python = args.source_benchmark_root / (
-            "Scripts/python.exe" if os.name == "nt" else "bin/python")
+        args.source_benchmark_python = venv_python(args.source_benchmark_root)
     if args.threads < 0:
         parser.error("thread count must be nonnegative")
     args.threads = args.threads or 8
@@ -236,7 +236,7 @@ def source_environment(python):
     candidates = list(root.glob("lib/python*/site-packages/nvidia/*/lib"))
     candidates += list(root.glob("Lib/site-packages/nvidia/*/bin"))
     candidates += list(root.glob("Lib/site-packages/nvidia/*/lib"))
-    variable = "PATH" if os.name == "nt" else "DYLD_LIBRARY_PATH" if sys.platform == "darwin" else "LD_LIBRARY_PATH"
+    variable = loader_variable()
     environment[variable] = os.pathsep.join([str(p) for p in candidates] + [environment.get(variable, "")])
     return environment
 

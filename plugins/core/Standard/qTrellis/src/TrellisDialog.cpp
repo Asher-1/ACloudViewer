@@ -183,6 +183,7 @@ void TrellisDialog::buildGeneratePage(QWidget* page) {
     inputLayout->setHorizontalSpacing(ecvAICoreUi::hSpacing());
     inputLayout->setVerticalSpacing(ecvAICoreUi::tightVSpacing());
     m_imagePath = new QLineEdit(inputGroup);
+    m_imagePath->setObjectName(QStringLiteral("sourceImage"));
     m_imagePath->setPlaceholderText(tr("PNG / JPEG / WebP image..."));
     m_browseImageBtn = ecvAICoreUi::makeBrowseBtn(tr("Browse..."), inputGroup);
     m_useTestDataBtn = ecvAICoreUi::makeSampleDataBtn(inputGroup);
@@ -254,6 +255,7 @@ void TrellisDialog::buildGeneratePage(QWidget* page) {
     modelLayout->setVerticalSpacing(ecvAICoreUi::tightVSpacing());
     modelLayout->addWidget(new QLabel(tr("Quality:"), modelGroup), 0, 0);
     m_presetCombo = new QComboBox(modelGroup);
+    m_presetCombo->setObjectName(QStringLiteral("pipelinePreset"));
     const QVector<TrellisPreset> presets = TrellisHelpers::presets();
     for (const TrellisPreset& p : presets) {
         m_presetCombo->addItem(p.name, p.description);
@@ -267,6 +269,7 @@ void TrellisDialog::buildGeneratePage(QWidget* page) {
     // q8 variant uses it, halving the VRAM/RAM footprint (the
     // precision-sensitive decoders shape_dec / shape_enc / tex_dec have no
     // q8 variant and always stay f16). f16 is the full reference chain.
+    m_quantCombo->setObjectName(QStringLiteral("quantization"));
     m_quantCombo->addItem(tr("q8 (recommended, low VRAM)"),
                           QStringLiteral("q8"));
     m_quantCombo->addItem(tr("f16 (reference)"), QStringLiteral("f16"));
@@ -280,6 +283,7 @@ void TrellisDialog::buildGeneratePage(QWidget* page) {
     modelLayout->addWidget(m_quantCombo, 1, 1, 1, 3);
 
     m_textureCheck = new QCheckBox(tr("PBR textures"), modelGroup);
+    m_textureCheck->setObjectName(QStringLiteral("textureEnabled"));
     m_textureCheck->setChecked(true);
     m_textureCheck->setToolTip(
             tr("Shape encoder + texture decoder + texture "
@@ -289,6 +293,7 @@ void TrellisDialog::buildGeneratePage(QWidget* page) {
 
     m_rmbgCheck =
             new QCheckBox(tr("AI background removal (RMBG-2.0)"), modelGroup);
+    m_rmbgCheck->setObjectName(QStringLiteral("removeBackground"));
     m_rmbgCheck->setChecked(true);
     m_rmbgCheck->setToolTip(
             tr("Remove the background with the in-tree "
@@ -496,7 +501,10 @@ void TrellisDialog::buildGeneratePage(QWidget* page) {
                "'PBR textures' to be checked (an untextured run has "
                "nothing to bake)."));
     oneClickBtn->setMinimumWidth(ecvAICoreUi::dpiScaled(120));
-    auto* cancelBtn = new QPushButton(tr("Cancel"), this);
+    m_runButton = runBtn;
+    m_oneClickButton = oneClickBtn;
+    auto* cancelBtn = m_cancelButton = new QPushButton(tr("Cancel"), this);
+    cancelBtn->setObjectName(QStringLiteral("cancelTask"));
     cancelBtn->setEnabled(false);
     root->addLayout(ecvAICoreUi::makeActionRow(runBtn, oneClickBtn, cancelBtn));
     connect(oneClickBtn, &QPushButton::clicked, this,
@@ -510,8 +518,6 @@ void TrellisDialog::buildGeneratePage(QWidget* page) {
 
     connect(m_browseImageBtn, &QPushButton::clicked, this,
             &TrellisDialog::onBrowseImage);
-    connect(m_useTestDataBtn, &QPushButton::clicked, this,
-            &TrellisDialog::onTestDataClicked);
     connect(m_presetCombo, qOverload<int>(&QComboBox::currentIndexChanged),
             this, &TrellisDialog::onPresetChanged);
     connect(m_quantCombo, qOverload<int>(&QComboBox::currentIndexChanged), this,
@@ -533,6 +539,8 @@ void TrellisDialog::buildGeneratePage(QWidget* page) {
 
     // Downloader.
     m_downloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
     connect(m_downloader, &ecvModelDownloader::progress, this,
             [this](qint64 received, qint64 total) {
                 m_progress->setVisible(true);
@@ -546,9 +554,12 @@ void TrellisDialog::buildGeneratePage(QWidget* page) {
             &TrellisDialog::appendLog);
     connect(m_downloader, &ecvModelDownloader::finished, this,
             [this](bool ok, const QString& path) {
+                if (!m_downloadInProgress) return;
                 m_downloadInProgress = false;
+                setRunning(m_taskRunning);
                 if (!ok) {
                     m_pendingDownloads.clear();
+                    m_pendingActionAfterDownload = PendingAction::None;
                     appendLog(
                             tr("[TRELLIS] Download failed: %1 — retry, or "
                                "fetch the file manually from the mirror shown "
@@ -566,54 +577,24 @@ void TrellisDialog::buildGeneratePage(QWidget* page) {
     auto& testDataRepo = ecvTestDataRepository::instance();
     connect(&testDataRepo, &ecvTestDataRepository::downloadProgress, this,
             [this](int percent, const QString& statusText) {
+                if (!m_samplePreparationPending) return;
                 m_progress->setVisible(true);
                 m_progress->setRange(0, 100);
                 m_progress->setValue(percent);
                 m_stageLabel->setVisible(true);
                 m_stageLabel->setText(statusText);
             });
-    connect(&testDataRepo, &ecvTestDataRepository::downloadFinished, this,
+    connect(&testDataRepo, &ecvTestDataRepository::datasetReady, this,
             [this](bool success, ecvTestDataRepository::Dataset dataset) {
-                if (dataset != ecvTestDataRepository::Dataset::Image2Mesh) {
+                if (!m_samplePreparationPending ||
+                    dataset != ecvTestDataRepository::Dataset::Image2Mesh) {
                     return;
                 }
-                if (success) {
-                    appendLog(tr("[TRELLIS] Sample data downloaded"));
-                    // Fall through to extraction; the extracted() signal
-                    // populates the picker.
-                    const auto info =
-                            ecvTestDataRepository::getDatasetInfo(dataset);
-                    if (ecvAssetIntegrity::isVerified(
-                                ecvTestDataRepository::zipPath(dataset),
-                                info.anchor, 0, false,
-                                ecvAssetIntegrity::OnMiss::DeepVerify)) {
-                        m_progress->setRange(0, 100);
-                        m_progress->setValue(0);
-                        m_stageLabel->setText(tr("Extracting sample data..."));
-                        ecvTestDataRepository::instance().extractDataset(
-                                dataset);
-                    } else {
-                        appendLog(
-                                tr("[TRELLIS] Sample data integrity check "
-                                   "failed"));
-                        m_progress->setVisible(false);
-                        m_stageLabel->setVisible(false);
-                    }
-                } else {
-                    appendLog(tr("[TRELLIS] Sample data download failed"));
-                    m_progress->setVisible(false);
-                    m_stageLabel->setVisible(false);
-                }
-            });
-    connect(&testDataRepo, &ecvTestDataRepository::extractionFinished, this,
-            [this](bool success, ecvTestDataRepository::Dataset dataset) {
-                if (dataset != ecvTestDataRepository::Dataset::Image2Mesh) {
-                    return;
-                }
+                m_samplePreparationPending = false;
                 if (success) {
                     onTestDataExtracted();
                 } else {
-                    appendLog(tr("[TRELLIS] Sample data extraction failed"));
+                    appendLog(tr("[TRELLIS] Sample data preparation failed"));
                     m_progress->setVisible(false);
                     m_stageLabel->setVisible(false);
                 }
@@ -722,6 +703,11 @@ void TrellisDialog::closeEvent(QCloseEvent* event) {
     }
     saveSettings();
     QDialog::closeEvent(event);
+}
+
+void TrellisDialog::done(int result) {
+    onCancel();
+    QDialog::done(result);
 }
 
 void TrellisDialog::keyPressEvent(QKeyEvent* event) {
@@ -850,35 +836,41 @@ void TrellisDialog::setProgressStage(int stageId,
 
 void TrellisDialog::setRunning(bool running) {
     m_taskRunning = running;
-    m_browseImageBtn->setEnabled(!running);
-    m_useTestDataBtn->setEnabled(!running);
-    m_downloadBtn->setEnabled(!running);
-    m_presetCombo->setEnabled(!running);
-    m_quantCombo->setEnabled(!running);
-    m_textureCheck->setEnabled(!running);
-    m_rmbgCheck->setEnabled(!running);
+    const bool busy = running || m_downloadInProgress;
+    m_runButton->setEnabled(!busy);
+    m_oneClickButton->setEnabled(!busy);
+    m_cancelButton->setEnabled(busy);
+    m_imagePath->setEnabled(!busy);
+    m_testImageCombo->setEnabled(!busy && m_testImageCombo->count() > 0);
+    m_browseImageBtn->setEnabled(!busy);
+    m_useTestDataBtn->setEnabled(!busy);
+    m_downloadBtn->setEnabled(!busy);
+    m_presetCombo->setEnabled(!busy);
+    m_quantCombo->setEnabled(!busy);
+    m_textureCheck->setEnabled(!busy);
+    m_rmbgCheck->setEnabled(!busy);
     // Parameter rows: the checkboxes toggle with running state, the
     // spinboxes stay disabled while their row is in auto mode.
-    m_stepsAuto->setEnabled(!running);
-    m_steps->setEnabled(!running && !m_stepsAuto->isChecked());
-    m_guidanceAuto->setEnabled(!running);
-    m_guidance->setEnabled(!running && !m_guidanceAuto->isChecked());
-    m_textureStepsAuto->setEnabled(!running);
-    m_textureSteps->setEnabled(!running && !m_textureStepsAuto->isChecked());
-    m_seedRandom->setEnabled(!running);
-    m_seed->setEnabled(!running && !m_seedRandom->isChecked());
-    m_deviceCombo->setEnabled(!running);
-    m_threads->setEnabled(!running);
-    m_addToDbCheck->setEnabled(!running);
-    m_addRmbgToDbCheck->setEnabled(!running && m_rmbgCheck->isChecked());
-    m_saveGlbDir->setEnabled(!running);
+    m_stepsAuto->setEnabled(!busy);
+    m_steps->setEnabled(!busy && !m_stepsAuto->isChecked());
+    m_guidanceAuto->setEnabled(!busy);
+    m_guidance->setEnabled(!busy && !m_guidanceAuto->isChecked());
+    m_textureStepsAuto->setEnabled(!busy);
+    m_textureSteps->setEnabled(!busy && !m_textureStepsAuto->isChecked());
+    m_seedRandom->setEnabled(!busy);
+    m_seed->setEnabled(!busy && !m_seedRandom->isChecked());
+    m_deviceCombo->setEnabled(!busy);
+    m_threads->setEnabled(!busy);
+    m_addToDbCheck->setEnabled(!busy);
+    m_addRmbgToDbCheck->setEnabled(!busy && m_rmbgCheck->isChecked());
+    m_saveGlbDir->setEnabled(!busy);
     // Export page: the re-bake shares the runtime and consumes the last
     // result, so its controls lock while any run (generation or bake) is on.
-    m_exportTextureSize->setEnabled(!running);
-    m_exportComponentFilter->setEnabled(!running);
-    m_exportDestination->setEnabled(!running);
-    m_rebakeBtn->setEnabled(!running && m_rebakeAvailable);
-    m_printWrapBtn->setEnabled(!running && m_printWrapAvailable);
+    m_exportTextureSize->setEnabled(!busy);
+    m_exportComponentFilter->setEnabled(!busy);
+    m_exportDestination->setEnabled(!busy);
+    m_rebakeBtn->setEnabled(!busy && m_rebakeAvailable);
+    m_printWrapBtn->setEnabled(!busy && m_printWrapAvailable);
     if (running) {
         // Reset the inference sweep so the first stage callback is visible
         // instead of leaving the bar at a stale download/previous-run value.
@@ -1026,9 +1018,8 @@ QStringList TrellisDialog::missingPresetFiles() const {
     if (idx < 0 || idx >= presets.size()) return {};
     QStringList needed = TrellisHelpers::resolvePresetFiles(
             presets[idx], cacheDir, quantization());
-    if (m_textureCheck->isChecked() && idx == 0) {
-        // Texture requires a fine preset; ignore for coarse.
-    }
+    // Worker fields 6..9 are used only by the optional texture pipeline.
+    if (!m_textureCheck->isChecked()) needed = needed.mid(0, 6);
     QStringList missing;
     for (const QString& p : needed) {
         if (p.isEmpty()) continue;  // preset placeholder (model not in set)
@@ -1054,36 +1045,9 @@ QStringList TrellisDialog::missingPresetFiles() const {
 }
 
 void TrellisDialog::onDownloadModels() {
-    const QString cacheDir = TrellisHelpers::modelCacheDir();
-    const QString rmbgCacheDir = TrellisHelpers::rmbgModelCacheDir();
-    QDir().mkpath(cacheDir);
-    QDir().mkpath(rmbgCacheDir);
-    const QVector<TrellisPreset> presets = TrellisHelpers::presets();
-    const int idx = m_presetCombo->currentIndex();
-    if (idx < 0 || idx >= presets.size()) return;
-    const QStringList needed = TrellisHelpers::resolvePresetFiles(
-            presets[idx], cacheDir, quantization());
-
-    m_pendingDownloads.clear();
-    for (const QString& p : needed) {
-        if (p.isEmpty()) continue;  // preset placeholder (model not in set)
-        const QString name = QFileInfo(p).fileName();
-        if (!TrellisHelpers::isValidModelFile(p, name)) {
-            m_pendingDownloads << name;
-        }
-    }
-    if (m_rmbgCheck->isChecked()) {
-        const QString rmbgName = TrellisHelpers::isValidModelFile(
-                                         rmbgCacheDir + QLatin1Char('/') +
-                                                 QStringLiteral("rmbg_q8.gguf"),
-                                         QStringLiteral("rmbg_q8.gguf"))
-                                         ? QStringLiteral("rmbg_q8.gguf")
-                                         : QStringLiteral("rmbg_f16.gguf");
-        if (!TrellisHelpers::isValidModelFile(
-                    rmbgCacheDir + QLatin1Char('/') + rmbgName, rmbgName)) {
-            m_pendingDownloads << rmbgName;
-        }
-    }
+    if (m_downloadInProgress) return;
+    // Use the same selected dependency set as Run and the status label.
+    m_pendingDownloads = missingPresetFiles();
     if (m_pendingDownloads.isEmpty()) {
         appendLog(tr("[TRELLIS] Nothing to download."));
         updateModelStatus();
@@ -1110,7 +1074,7 @@ void TrellisDialog::downloadNextModel() {
         updateModelStatus();
         if (m_pendingActionAfterDownload == PendingAction::Run) {
             m_pendingActionAfterDownload = PendingAction::None;
-            onRun();
+            runWithMode(m_runMode);
         }
         return;
     }
@@ -1132,6 +1096,7 @@ void TrellisDialog::downloadNextModel() {
     appendLog(tr("[TRELLIS] Downloading %1...\n  URL: %2\n  Dest: %3")
                       .arg(filename, url, dest));
     m_downloadInProgress = true;
+    setRunning(m_taskRunning);
     ecvModelDownloader::Request req;
     req.url = url;
     req.destPath = dest;
@@ -1154,25 +1119,13 @@ void TrellisDialog::onTestDataClicked() {
         return;
     }
 
-    // 2. Zip cached and intact: extract, then populate (signal chain).
-    const auto info = ecvTestDataRepository::getDatasetInfo(kind);
-    if (ecvAssetIntegrity::isVerified(ecvTestDataRepository::zipPath(kind),
-                                      info.anchor, 0, false,
-                                      ecvAssetIntegrity::OnMiss::DeepVerify)) {
-        m_progress->setRange(0, 100);
-        m_progress->setVisible(true);
-        m_stageLabel->setVisible(true);
-        m_stageLabel->setText(tr("Extracting sample data..."));
-        repo.extractDataset(kind);
-        return;
-    }
-
-    // 3. Nothing cached: download (downloadFinished -> extraction -> populate).
+    // Prepare through the shared cache/download/extract service.
+    m_samplePreparationPending = true;
     m_progress->setRange(0, 100);
     m_progress->setVisible(true);
     m_stageLabel->setVisible(true);
-    m_stageLabel->setText(tr("Downloading sample data..."));
-    repo.startDownload(kind);
+    m_stageLabel->setText(tr("Preparing sample data..."));
+    repo.ensureDatasetReady(kind);
 }
 
 void TrellisDialog::ensureImage2MeshDataset() {
@@ -1241,10 +1194,12 @@ void TrellisDialog::onTestDataExtracted() {
 }
 
 void TrellisDialog::runWithMode(TrellisRunMode mode) {
+    if (m_downloadInProgress) return;
     if (m_imagePath->text().trimmed().isEmpty()) {
         appendLog(tr("[TRELLIS] Select an input image first."));
         return;
     }
+    m_runMode = mode;
     // Ensure every required model is present; download what is missing.
     const QStringList missing = missingPresetFiles();
     if (!missing.isEmpty()) {
@@ -1254,7 +1209,6 @@ void TrellisDialog::runWithMode(TrellisRunMode mode) {
         onDownloadModels();
         return;
     }
-    m_runMode = mode;
     saveSettings();
     resetStageStrip(m_lastPreviewImage);
     emit runRequested(getSettings());
@@ -1277,7 +1231,13 @@ void TrellisDialog::onRunOneClick() {
     runWithMode(TrellisRunMode::Full);
 }
 
-void TrellisDialog::onCancel() { emit cancelRequested(); }
+void TrellisDialog::onCancel() {
+    m_pendingActionAfterDownload = PendingAction::None;
+    m_pendingDownloads.clear();
+    m_samplePreparationPending = false;
+    if (m_downloadInProgress) m_downloader->cancel();
+    if (m_taskRunning) emit cancelRequested();
+}
 
 void TrellisDialog::refreshModelState() { updateModelStatus(); }
 

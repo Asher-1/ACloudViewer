@@ -20,6 +20,8 @@
 #include <sstream>
 #include <unordered_map>
 
+#include "FileSystem.h"
+
 namespace sam3d {
 namespace {
 
@@ -388,7 +390,7 @@ bool write_pbr_glb(const std::string& path,
     append_u32(glb, kBinChunk);
     append_values(glb, bin);
 
-    FILE* file = std::fopen(path.c_str(), "wb");
+    FILE* file = cloudViewer::utility::filesystem::FOpen(path.c_str(), "wb");
     if (file == nullptr) {
         error = "cannot open GLB output '" + path + "'";
         return false;

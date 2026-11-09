@@ -7,13 +7,11 @@
 
 #include "tasks/querysplat/querysplat_tto_loss.hpp"
 
+#include <Parallel.h>
+
 #include <cmath>
 #include <cstring>
 #include <vector>
-
-#ifdef QS_USE_OPENMP
-#include <omp.h>
-#endif
 
 namespace qs {
 
@@ -44,7 +42,7 @@ void conv11_separable(
         const float* src, float* dst, int H, int W, const float* w1d) {
     std::vector<float> tmp((size_t)H * W);
 #ifdef QS_USE_OPENMP
-#pragma omp parallel for schedule(static)
+    CV_OMP_PARALLEL_FOR(schedule(static))
 #endif
     for (int y = 0; y < H; y++) {
         for (int x = 0; x < W; x++) {
@@ -58,7 +56,7 @@ void conv11_separable(
         }
     }
 #ifdef QS_USE_OPENMP
-#pragma omp parallel for schedule(static)
+    CV_OMP_PARALLEL_FOR(schedule(static))
 #endif
     for (int y = 0; y < H; y++) {
         for (int x = 0; x < W; x++) {
@@ -99,7 +97,7 @@ void ssim_forward(const float* img1,
     out->dm_dsig1.assign((size_t)V * 3 * plane, 0.f);
     out->dm_dsig12.assign((size_t)V * 3 * plane, 0.f);
 #ifdef QS_USE_OPENMP
-#pragma omp parallel for schedule(static)
+    CV_OMP_PARALLEL_FOR(schedule(static))
 #endif
     for (int b = 0; b < V * 3; b++) {
         const float* x = img1 + (size_t)b * plane;
@@ -176,7 +174,7 @@ void fused_ssim_backward(const float* img1,
     ssim_forward(img1, img2, V, H, W, w1d, &f);
     const size_t plane = (size_t)H * W;
 #ifdef QS_USE_OPENMP
-#pragma omp parallel for schedule(static)
+    CV_OMP_PARALLEL_FOR(schedule(static))
 #endif
     for (int b = 0; b < V * 3; b++) {
         // per-b scratch: the b loop is parallel, so nothing here may be shared

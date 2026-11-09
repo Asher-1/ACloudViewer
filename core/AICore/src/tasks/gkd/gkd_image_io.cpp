@@ -10,15 +10,13 @@
 
 #include "tasks/gkd/gkd_image_io.hpp"
 
+#include <Parallel.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 
 #include "tasks/gkd/gkd_common.hpp"
-
-#ifdef _OPENMP
-#include <omp.h>
-#endif
 
 namespace gkd {
 
@@ -168,9 +166,7 @@ RgbImage resize_bilinear_pil(const RgbImage& src, int dst_w, int dst_h) {
 
     // horizontal pass into a uint8 intermediate (pass order matters)
     RgbImage tmp(dst_w, src.h);
-#ifdef _OPENMP
-#pragma omp parallel for schedule(static)
-#endif
+    CV_OMP_PARALLEL_FOR(schedule(static))
     for (int y = 0; y < src.h; y++) {
         const uint8_t* srow = src.row(y);
         uint8_t* drow = tmp.row(y);
@@ -192,9 +188,7 @@ RgbImage resize_bilinear_pil(const RgbImage& src, int dst_w, int dst_h) {
     }
 
     RgbImage dst(dst_w, dst_h);
-#ifdef _OPENMP
-#pragma omp parallel for schedule(static)
-#endif
+    CV_OMP_PARALLEL_FOR(schedule(static))
     for (int y = 0; y < dst_h; y++) {
         const int ymin = ys.xmin[y], n = ys.cnt[y];
         const int32_t* k = &ys.k[(size_t)y * ys.ksize];
@@ -355,9 +349,7 @@ static void normalize_pixels(const RgbImage& img,
                              const float stdv[3],
                              float* out_chw) {
     const int w = img.w, h = img.h;
-#ifdef _OPENMP
-#pragma omp parallel for schedule(static)
-#endif
+    CV_OMP_PARALLEL_FOR(schedule(static))
     for (int c = 0; c < 3; c++) {
         for (int y = 0; y < h; y++) {
             const uint8_t* px = img.row(y);

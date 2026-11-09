@@ -35,6 +35,7 @@
 #include <string>
 #include <vector>
 
+#include "FileSystem.h"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
@@ -1189,7 +1190,8 @@ struct VGGTRuntime::Impl : IGraphBuilder {
         if (MAP_DUMP_ACTIVE()) {
             std::string d(MAP_DUMP_DIR());
             auto save = [&](const std::string& f, const std::vector<float>& v) {
-                FILE* fp = fopen((d + "/" + f).c_str(), "wb");
+                FILE* fp = cloudViewer::utility::filesystem::FOpen(
+                        (d + "/" + f).c_str(), "wb");
                 if (!fp) return;
                 fwrite(v.data(), 4, v.size(), fp);
                 fclose(fp);
@@ -1378,7 +1380,8 @@ struct VGGTRuntime::Impl : IGraphBuilder {
             if (MAP_DUMP_ACTIVE()) {
                 std::string f = std::string(MAP_DUMP_DIR()) + "/cpp_uv" +
                                 std::to_string(i) + ".bin";
-                FILE* fp = fopen(f.c_str(), "wb");
+                FILE* fp = cloudViewer::utility::filesystem::FOpen(f.c_str(),
+                                                                   "wb");
                 fwrite(host_uv_dp[i].data(), 4, host_uv_dp[i].size(), fp);
                 fclose(fp);
             }
@@ -1417,7 +1420,8 @@ struct VGGTRuntime::Impl : IGraphBuilder {
         if (MAP_DUMP_ACTIVE()) {
             auto write_bin = [](const std::string& path, const float* data,
                                 size_t n) {
-                FILE* fp = fopen(path.c_str(), "wb");
+                FILE* fp = cloudViewer::utility::filesystem::FOpen(path.c_str(),
+                                                                   "wb");
                 if (!fp) {
                     log_info("dump skipped (cannot open) %s", path.c_str());
                     return;
@@ -2607,7 +2611,8 @@ struct VGGTRuntime::VGGTImpl : VGGTRuntime::Impl {
             std::vector<float> tmp(ggml_nelements(dbg_nodes[i]));
             ggml_backend_tensor_get(dbg_nodes[i], tmp.data(), 0,
                                     tmp.size() * sizeof(float));
-            FILE* fp = fopen(dbg_names[i].c_str(), "wb");
+            FILE* fp = cloudViewer::utility::filesystem::FOpen(
+                    dbg_names[i].c_str(), "wb");
             if (fp) {
                 fwrite(tmp.data(), 4, tmp.size(), fp);
                 fclose(fp);
@@ -2617,7 +2622,8 @@ struct VGGTRuntime::VGGTImpl : VGGTRuntime::Impl {
             std::vector<float> tmp(ggml_nelements(dbg_nodes_late[i]));
             ggml_backend_tensor_get(dbg_nodes_late[i], tmp.data(), 0,
                                     tmp.size() * sizeof(float));
-            FILE* fp = fopen(dbg_names_late[i].c_str(), "wb");
+            FILE* fp = cloudViewer::utility::filesystem::FOpen(
+                    dbg_names_late[i].c_str(), "wb");
             if (fp) {
                 fwrite(tmp.data(), 4, tmp.size(), fp);
                 fclose(fp);
@@ -2627,10 +2633,10 @@ struct VGGTRuntime::VGGTImpl : VGGTRuntime::Impl {
             std::vector<float> tmp(ggml_nelements(dbg_all_tok));
             ggml_backend_tensor_get(dbg_all_tok, tmp.data(), 0,
                                     tmp.size() * sizeof(float));
-            FILE* fp =
-                    fopen((std::string(MAP_DUMP_DIR()) + "/vg_all_tokens.bin")
-                                  .c_str(),
-                          "wb");
+            FILE* fp = cloudViewer::utility::filesystem::FOpen(
+                    (std::string(MAP_DUMP_DIR()) + "/vg_all_tokens.bin")
+                            .c_str(),
+                    "wb");
             if (fp) {
                 fwrite(tmp.data(), 4, tmp.size(), fp);
                 fclose(fp);
@@ -3093,7 +3099,8 @@ struct VGGTRuntime::Pi3Impl : VGGTRuntime::VGGTImpl {
             std::vector<float> tmp(ggml_nelements(dbg_nodes[i]));
             ggml_backend_tensor_get(dbg_nodes[i], tmp.data(), 0,
                                     tmp.size() * sizeof(float));
-            FILE* fp = fopen(dbg_names[i].c_str(), "wb");
+            FILE* fp = cloudViewer::utility::filesystem::FOpen(
+                    dbg_names[i].c_str(), "wb");
             if (fp) {
                 fwrite(tmp.data(), 4, tmp.size(), fp);
                 fclose(fp);
@@ -3569,7 +3576,8 @@ struct VGGTRuntime::MapAnythingImpl final : VGGTRuntime::VGGTImpl {
             std::vector<float> tmp(ggml_nelements(dbg_nodes[i]));
             ggml_backend_tensor_get(dbg_nodes[i], tmp.data(), 0,
                                     tmp.size() * sizeof(float));
-            FILE* fp = fopen(dbg_names[i].c_str(), "wb");
+            FILE* fp = cloudViewer::utility::filesystem::FOpen(
+                    dbg_names[i].c_str(), "wb");
             if (fp) {
                 fwrite(tmp.data(), 4, tmp.size(), fp);
                 fclose(fp);
@@ -4162,7 +4170,8 @@ struct VGGTRuntime::Dust3rImpl final : VGGTRuntime::VGGTImpl {
             std::vector<float> tmp(ggml_nelements(dbg_nodes[i]));
             ggml_backend_tensor_get(dbg_nodes[i], tmp.data(), 0,
                                     tmp.size() * sizeof(float));
-            FILE* fp = fopen(dbg_names[i].c_str(), "wb");
+            FILE* fp = cloudViewer::utility::filesystem::FOpen(
+                    dbg_names[i].c_str(), "wb");
             if (fp) {
                 fwrite(tmp.data(), 4, tmp.size(), fp);
                 fclose(fp);
@@ -4732,7 +4741,8 @@ struct VGGTRuntime::Pi3XImpl final : VGGTRuntime::Pi3Impl {
             std::vector<float> tmp(ggml_nelements(dbg_nodes[i]));
             ggml_backend_tensor_get(dbg_nodes[i], tmp.data(), 0,
                                     tmp.size() * sizeof(float));
-            FILE* fp = fopen(dbg_names[i].c_str(), "wb");
+            FILE* fp = cloudViewer::utility::filesystem::FOpen(
+                    dbg_names[i].c_str(), "wb");
             if (fp) {
                 fwrite(tmp.data(), 4, tmp.size(), fp);
                 fclose(fp);

@@ -14,6 +14,8 @@
 #include <filesystem>
 #include <vector>
 
+#include "FileSystem.h"
+
 namespace gkd {
 
 static LogLevel g_level = LogLevel::Info;
@@ -59,9 +61,10 @@ void dump_f32(const std::string& path,
     size_t slash = path.rfind('/');
     if (slash != std::string::npos) {
         std::error_code ec;
-        std::filesystem::create_directories(path.substr(0, slash), ec);
+        std::filesystem::create_directories(
+                std::filesystem::u8path(path.substr(0, slash)), ec);
     }
-    FILE* f = std::fopen(path.c_str(), "wb");
+    FILE* f = cloudViewer::utility::filesystem::FOpen(path.c_str(), "wb");
     if (!f) {
         GKD_LOG_ERROR("cannot open %s for writing", path.c_str());
         return;

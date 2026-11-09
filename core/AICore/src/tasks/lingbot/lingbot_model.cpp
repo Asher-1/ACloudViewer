@@ -7,6 +7,7 @@
 
 #include "tasks/lingbot/lingbot_model.h"
 
+#include <FileSystem.h>
 #include <ggml-alloc.h>
 #include <ggml-backend.h>
 #include <ggml-cpu.h>
@@ -2628,7 +2629,9 @@ bool model::infer(const float *images,
             std::string dump_path = dump;
             if (frames == 1 && p_->backend_name != "cpu")
                 dump_path += "." + std::to_string(inference_index);
-            std::ofstream out(dump_path, std::ios::binary);
+            std::ofstream out =
+                    cloudViewer::utility::filesystem::OpenOutputStream(
+                            dump_path, std::ios::binary);
             out.write(reinterpret_cast<const char *>(values.data()),
                       static_cast<std::streamsize>(n * sizeof(float)));
         }
@@ -2660,7 +2663,9 @@ bool model::infer(const float *images,
                 if (di < 2)
                     std::fprintf(stderr, "DBG writing [%zu] %s (n=%zu)\n", di,
                                  path.c_str(), n);
-                std::ofstream out(path, std::ios::binary);
+                std::ofstream out =
+                        cloudViewer::utility::filesystem::OpenOutputStream(
+                                path, std::ios::binary);
                 if (!out) {
                     std::fprintf(stderr, "DBG open FAILED: %s\n", path.c_str());
                     continue;

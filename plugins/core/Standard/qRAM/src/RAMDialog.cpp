@@ -359,6 +359,8 @@ RAMDialog::RAMDialog(QWidget* parent) : QDialog(parent) {
     connect(m_download, &QPushButton::clicked, this,
             [this]() { ensureModel(false); });
     m_downloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
             &RAMDialog::log);
     connect(m_downloader, &ecvModelDownloader::progress, this,
@@ -377,7 +379,7 @@ RAMDialog::RAMDialog(QWidget* parent) : QDialog(parent) {
                 if (ok && again) run();
             });
     auto& repository = ecvTestDataRepository::instance();
-    connect(&repository, &ecvTestDataRepository::downloadFinished, this,
+    connect(&repository, &ecvTestDataRepository::datasetReady, this,
             [this](bool ok, ecvTestDataRepository::Dataset kind) {
                 if (kind != ecvTestDataRepository::Dataset::RAM ||
                     !m_waitingForSample)
@@ -387,7 +389,7 @@ RAMDialog::RAMDialog(QWidget* parent) : QDialog(parent) {
                 if (ok)
                     useTestData();
                 else
-                    log(tr("Sample data download failed."));
+                    log(tr("Sample data preparation failed."));
             });
     connect(&repository, &ecvTestDataRepository::downloadLogMessage, this,
             &RAMDialog::log);
@@ -475,27 +477,16 @@ void RAMDialog::useTestData() {
     for (int index = 1; index <= 4; ++index)
         demos << repo.findDatasetFile(kind,
                                       QStringLiteral("demo%1.jpg").arg(index));
-    if (demos.front().isEmpty() && repo.isDatasetAvailable(kind)) {
-        repo.extractDataset(kind);
-        demos.clear();
-        for (int index = 1; index <= 4; ++index)
-            demos << repo.findDatasetFile(
-                    kind, QStringLiteral("demo%1.jpg").arg(index));
-    }
-    if (demos.front().isEmpty()) {
+
+    if (demos.contains(QString()) ||
+        repo.findDatasetFile(kind, "ram_demo1_to_4.avi").isEmpty()) {
         if (repo.isDownloadInProgress()) {
             log(tr("Another shared sample download is running."));
             return;
         }
         m_waitingForSample = true;
         m_sample->setEnabled(false);
-        repo.startDownload(kind);
-        return;
-    }
-    if (std::any_of(demos.cbegin(), demos.cend(),
-                    [](const QString& path) { return path.isEmpty(); })) {
-        log(tr("The RAM sample archive is missing one or more official "
-               "demos."));
+        repo.ensureDatasetReady(kind);
         return;
     }
     const bool videoTab = m_tabs->currentWidget() == m_video->parentWidget();
@@ -517,18 +508,8 @@ bool RAMDialog::loadSampleVideo() {
     auto& repo = ecvTestDataRepository::instance();
     const auto kind = ecvTestDataRepository::Dataset::RAM;
     QString videoPath = repo.findDatasetFile(kind, "ram_demo1_to_4.avi");
-    if (videoPath.isEmpty() && repo.isDatasetAvailable(kind)) {
-        repo.extractDataset(kind);
-        videoPath = repo.findDatasetFile(kind, "ram_demo1_to_4.avi");
-    }
-    const ecvAssetIntegrity::Anchor anchor{
-            QCryptographicHash::Sha256,
-            QByteArray("53c17ba6b53bde9b21660142a1685bfa8ce4a32d6ab9c0cc08f1c57"
-                       "ce944b202")};
-    if (videoPath.isEmpty() ||
-        !ecvAssetIntegrity::isVerified(videoPath, anchor, 0, false,
-                                       ecvAssetIntegrity::OnMiss::DeepVerify,
-                                       262706)) {
+
+    if (videoPath.isEmpty()) {
         log(tr("The verified RAM sample video is unavailable in the cached "
                "archive."));
         return false;

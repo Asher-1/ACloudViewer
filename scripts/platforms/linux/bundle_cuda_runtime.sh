@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
-# Bundle NVIDIA CUDA runtime libraries required by libggml-cuda for driver-only
+# Bundle NVIDIA CUDA runtime libraries required by a CUDA module for driver-only
 # deployment. libcuda.so.* is never copied (provided by the NVIDIA driver).
 #
-# Usage: bundle_cuda_runtime.sh <libggml-cuda.so> <dest_dir> [extra_lib_dirs_colon_separated]
+# Usage: bundle_cuda_runtime.sh <module.so> <dest_dir> [extra_lib_dirs_colon_separated] [ggml|torch]
 
 set -euo pipefail
 
 GGML_CUDA_MODULE="${1:?libggml-cuda module path required}"
 DEST_DIR="${2:?destination directory required}"
 EXTRA_LIB_DIRS="${3:-}"
+RUNTIME_PROFILE="${4:-ggml}"
+case "$RUNTIME_PROFILE" in
+    ggml|torch) ;;
+    *) echo "Error: unknown CUDA runtime profile: $RUNTIME_PROFILE" >&2; exit 1 ;;
+esac
 
 if [ ! -f "$GGML_CUDA_MODULE" ]; then
     echo "Error: ggml CUDA module not found: $GGML_CUDA_MODULE" >&2
@@ -28,6 +33,14 @@ should_bundle_name() {
             return 0
             ;;
     esac
+    if [ "$RUNTIME_PROFILE" = torch ]; then
+        case "$base" in
+            libcusparse*.so*|libcusolver*.so*|libcufft.so*|libcurand.so*|\
+            libcudnn*.so*|libnccl.so*|libcufile.so*|libcupti.so*|libnvToolsExt.so*)
+                return 0
+                ;;
+        esac
+    fi
     return 1
 }
 
@@ -73,8 +86,14 @@ copy_real_file() {
         return 0
     fi
 
+    # Reinstalling into the same prefix can resolve a dependency from there.
+    if [ "$src_path" -ef "$dest_dir/$dest_name" ]; then
+        COPIED[$dest_name]=1
+        return 0
+    fi
+
     echo "Bundling CUDA runtime: $src_path -> $dest_dir/$dest_name" >&2
-    cp -f "$src_path" "$dest_dir/$dest_name"
+    cp -f "$src_path" "$dest_dir/$dest_name" || return 1
     COPIED[$dest_name]=1
     return 0
 }
@@ -129,7 +148,16 @@ resolve_and_copy() {
     return 0
 }
 
-echo "Scanning ggml CUDA module: $GGML_CUDA_MODULE"
+echo "Scanning CUDA module ($RUNTIME_PROFILE): $GGML_CUDA_MODULE"
+# Torch wheels resolve CUDA dependencies through package-relative RUNPATHs.
+# Retain those resolved directories before flattening files into the bundle,
+# so recursive checks can still locate their transitive dependencies.
+mapfile -t MODULE_REFS < <(library_refs "$GGML_CUDA_MODULE")
+for lib_ref in "${MODULE_REFS[@]}"; do
+    if [ -f "$lib_ref" ]; then
+        EXTRA_LIB_DIRS="${EXTRA_LIB_DIRS:+$EXTRA_LIB_DIRS:}$(dirname "$lib_ref")"
+    fi
+done
 # Feed BOTH resolved paths and "not found" bare sonames into resolve_and_copy:
 # when the CUDA toolkit lib dir is not registered in ldconfig, ldd reports
 # "not found" for libcudart/libcublas even though EXTRA_LIB_DIRS can locate
@@ -137,7 +165,7 @@ echo "Scanning ggml CUDA module: $GGML_CUDA_MODULE"
 while IFS= read -r lib_ref; do
     [ -n "$lib_ref" ] || continue
     resolve_and_copy "$lib_ref" || BUNDLE_FAILED=1
-done < <(library_refs "$GGML_CUDA_MODULE")
+done < <(printf '%s\n' "${MODULE_REFS[@]}")
 
 if [ "$BUNDLE_FAILED" -ne 0 ]; then
     echo "Error: CUDA runtime dependency closure is incomplete" >&2

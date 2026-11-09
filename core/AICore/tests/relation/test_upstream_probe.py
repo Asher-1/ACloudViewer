@@ -187,7 +187,10 @@ class UpstreamProbeTests(unittest.TestCase):
             root = Path(name)
             (root / 'cpp_ggml').mkdir()
             (root / 'other').mkdir()
-            (root / 'cpp_ggml/build-cpu').symlink_to(root / 'other')
+            try:
+                (root / 'cpp_ggml/build-cpu').symlink_to(root / 'other')
+            except OSError as error:
+                self.skipTest(f'symlinks unavailable: {error}')
             with self.assertRaisesRegex(RuntimeError, 'symlink'):
                 probe.upstream_build_dir(root, 'cpu')
 

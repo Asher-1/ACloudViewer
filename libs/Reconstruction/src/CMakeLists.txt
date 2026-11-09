@@ -328,8 +328,19 @@ if (TESTS_ENABLED)
                 set(_L3_ACV_TARGET colmap_exe)
             endif ()
         endif ()
+        # The Windows CI generator is Ninja Multi-Config, where the runtime
+        # DLLs are emitted below bin/<CONFIG>.  CMAKE_RUNTIME_OUTPUT_DIRECTORY
+        # is intentionally not used here: it is empty for some multi-config
+        # targets and otherwise points at the generic property that loses the
+        # active configuration.  Keep the path generator-expression based so
+        # the opt-in gate works for Release, Debug, and other configurations.
+        if (MSVC)
+            set(_L3_RUNTIME_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
+        else ()
+            set(_L3_RUNTIME_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
+        endif ()
         set(_L3_RUNTIME_LIBRARY_ARGS
-            --runtime-library-dir "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+            --runtime-library-dir "${_L3_RUNTIME_OUTPUT_DIR}"
             --runtime-library-dir "${CMAKE_BINARY_DIR}/external/lib")
         cloudviewer_resolve_qt_lib_dir(_L3_QT_LIBRARY_DIR)
         if (_L3_QT_LIBRARY_DIR)

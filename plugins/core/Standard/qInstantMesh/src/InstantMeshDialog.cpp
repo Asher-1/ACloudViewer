@@ -74,6 +74,7 @@ protected:
 }  // namespace
 
 InstantMeshDialog::InstantMeshDialog(QWidget* parent) : QDialog(parent) {
+    connect(this, &QDialog::finished, this, &InstantMeshDialog::onCancel);
     setAttribute(Qt::WA_DeleteOnClose, false);
     setupUi();
     loadSettings();
@@ -335,6 +336,8 @@ void InstantMeshDialog::buildGeneratePage(QWidget* page) {
     connect(m_downloadBtn, &QPushButton::clicked, this,
             &InstantMeshDialog::onDownloadModels);
     m_downloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
             &InstantMeshDialog::appendLog);
     connect(m_downloader, &ecvModelDownloader::progress, this,
@@ -350,6 +353,7 @@ void InstantMeshDialog::buildGeneratePage(QWidget* page) {
     connect(m_downloader, &ecvModelDownloader::finished, this,
             [this](bool ok, const QString& destPath) {
                 m_downloadInProgress = false;
+                m_cancelBtn->setEnabled(false);
                 if (!ok) {
                     appendLog(tr("[InstantMesh] Download failed: %1")
                                       .arg(destPath));
@@ -762,6 +766,7 @@ void InstantMeshDialog::onDownloadModels() {
                                              totalBytes)
                                    : QStringLiteral("RMBG shared cache")));
     m_downloadInProgress = false;
+    m_cancelBtn->setEnabled(false);
     downloadNextModel();
 }
 
@@ -824,14 +829,14 @@ void InstantMeshDialog::downloadNextModel() {
     appendLog(tr("[InstantMesh] Downloading %1...\n  URL: %2\n  Dest: %3")
                       .arg(filename, url, dest));
     m_downloadInProgress = true;
+    m_cancelBtn->setEnabled(true);
     ecvModelDownloader::Request req;
     req.url = url;
     req.destPath = dest;
-    req.minBytes = 1024 * 1024;
+    // Use the shared model floor: every published synthesizer is < 1 MiB.
+    // The catalog digest, rather than a guessed size, validates its bytes.
     if (!sha.isEmpty()) {
         req.contentAnchor = {QCryptographicHash::Sha256, sha};
-    } else {
-        req.minBytes = 16 * 1024 * 1024;  // RMBG GGUFs are >250 MB
     }
     m_downloader->download(req);
 }
@@ -936,7 +941,12 @@ void InstantMeshDialog::onRun() {
     emit runRequested(getSettings());
 }
 
-void InstantMeshDialog::onCancel() { emit cancelRequested(); }
+void InstantMeshDialog::onCancel() {
+    m_pendingActionAfterDownload = PendingAction::None;
+    m_pendingDownloads.clear();
+    if (m_downloadInProgress) m_downloader->cancel();
+    emit cancelRequested();
+}
 
 void InstantMeshDialog::appendLog(const QString& msg) {
     aicore_inference_log::log(msg);
@@ -1161,17 +1171,14 @@ void InstantMeshDialog::openMesh3D(int slot) {
 void InstantMeshDialog::closeEvent(QCloseEvent* event) {
     m_acceptDataResults = false;
     m_pendingActionAfterDownload = PendingAction::None;
-    if (m_taskRunning) emit cancelRequested();
     saveSettings();
     QDialog::closeEvent(event);
 }
 
 void InstantMeshDialog::reject() {
-    // closeEvent already detached and requested cancellation before Qt rejects.
-    const bool cancel = m_acceptDataResults && m_taskRunning;
+    // Detach data results before the finished hook cancels pending work.
     m_acceptDataResults = false;
     m_pendingActionAfterDownload = PendingAction::None;
-    if (cancel) emit cancelRequested();
     QDialog::reject();
 }
 

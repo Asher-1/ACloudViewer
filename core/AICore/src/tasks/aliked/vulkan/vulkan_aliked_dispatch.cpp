@@ -14,11 +14,8 @@
 #include <exception>
 #include <mutex>
 
+#include "common/ggml_backend_utils.hpp"
 #include "tasks/aliked/aliked_common.hpp"
-
-#if defined(AICORE_VULKAN_ALIKED) && (defined(__linux__) || defined(__APPLE__))
-#include <dlfcn.h>
-#endif
 
 namespace lightglue::aliked_internal {
 namespace {
@@ -141,17 +138,9 @@ Fn ResolveFn(ggml_backend_reg_t reg, const char *name) {
             return reinterpret_cast<Fn>(p);
         }
     }
-#if defined(AICORE_VULKAN_ALIKED) && (defined(__linux__) || defined(__APPLE__))
-    if (void *p = dlsym(RTLD_DEFAULT, name)) {
+#if defined(AICORE_VULKAN_ALIKED)
+    if (void *p = ggml_common::vulkan_extension_symbol(name)) {
         return reinterpret_cast<Fn>(p);
-    }
-    static void *vk_module = []() -> void * {
-        return dlopen("libggml-vulkan.so", RTLD_LAZY | RTLD_GLOBAL);
-    }();
-    if (vk_module != nullptr) {
-        if (void *p = dlsym(vk_module, name)) {
-            return reinterpret_cast<Fn>(p);
-        }
     }
 #endif
     return nullptr;

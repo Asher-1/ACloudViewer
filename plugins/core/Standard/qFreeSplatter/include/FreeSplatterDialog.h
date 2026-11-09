@@ -243,7 +243,6 @@ private:
     // --- Test data: FriendsFaces (video) + Monstree (images) ---
     void ensureFriendsTestData();
     void ensureMonstreeTestData();
-    void onTestDataDownloadFinished(bool success, int kind);
-    void onTestDataExtractionFinished(bool success, int kind);
+    void onTestDataReady(bool success, int kind);
     void loadTestDataAfterExtract(int kind);
 };

@@ -148,8 +148,10 @@ option(AICore_USE_SAM3D_PBR_MESHFIX
     "SAM3D PBR: compile+link the vendored pymeshfix 79adef9 TMesh boundary repair (GPL-3.0-or-commercial license acknowledgment)"
     ON)
 option(AICore_USE_CUMESH
-    "Trellis: CuMesh GPU chart clustering for the UV-atlas bake (default ON; auto-disabled with a warning when CUDA/libtorch/Python headers are unavailable)"
+    "Trellis: CuMesh GPU chart clustering for the UV-atlas bake (default ON; needs CUDA 12.3+, CUDA-enabled Torch, and Python development files)"
     ON)
+set(CUMESH_TORCH_DIR "" CACHE PATH
+    "Directory containing TorchConfig.cmake for Trellis CuMesh (empty: discover from Python3)")
 
 # Read-only configure results: set only in aicore_sync_results_from_ggml() as CACHE
 # entries. Do NOT initialize normal variables here — they would shadow the cache

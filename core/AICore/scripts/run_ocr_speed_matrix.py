@@ -17,6 +17,7 @@ import statistics
 import subprocess
 import sys
 from pathlib import Path
+from runtime_environment import prepend_runtime_paths
 
 QUANTS = ("f32", "f16", "q8_0")
 
@@ -61,8 +62,8 @@ def main() -> int:
             raise SystemExit(f"missing required file: {path}")
 
     env = dict(os.environ)
-    lib_dir = str(args.bench.resolve().parent)
-    env["LD_LIBRARY_PATH"] = lib_dir + os.pathsep + env.get("LD_LIBRARY_PATH", "")
+    lib_dir = args.bench.resolve().parent
+    prepend_runtime_paths(env, [lib_dir, lib_dir.parent / "external" / "lib"])
     rows = []
     if args.output.is_file():
         previous = json.loads(args.output.read_text(encoding="utf-8"))

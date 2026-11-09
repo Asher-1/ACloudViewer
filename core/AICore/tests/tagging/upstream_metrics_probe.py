@@ -18,6 +18,9 @@ import tempfile
 import threading
 import time
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+from runtime_environment import loader_variable, resolve_aicore_library
+
 
 def gpu_overlap_pids(samples, allowed_pids, child_pid):
     """Return external CUDA compute PIDs; desktop graphics are observational."""
@@ -184,8 +187,7 @@ def upstream_backend_env(upstream, backend, build=None):
     build = build or upstream / "cpp_ggml" / f"build-{backend}"
     lib_dir = build / "third_party" / "ggml" / "src"
     env = os.environ.copy()
-    variable = ("PATH" if os.name == "nt" else "DYLD_LIBRARY_PATH"
-                if sys.platform == "darwin" else "LD_LIBRARY_PATH")
+    variable = loader_variable()
     library_paths = [str(lib_dir), str(lib_dir / f"ggml-{backend}"), str(build / "bin")]
     if env.get(variable):
         library_paths.append(env[variable])
@@ -234,6 +236,16 @@ def candidate_build_settings(build):
     if not settings:
         raise RuntimeError(f"candidate ggml build settings unavailable: {dependency}")
     return settings
+
+
+def candidate_runtime_path(probe):
+    """Find AICore next to a probe or in the build's flat/config bin layout."""
+    for directory in Path(probe).resolve().parents:
+        try:
+            return resolve_aicore_library(directory)
+        except FileNotFoundError:
+            pass
+    return None
 
 
 def probability_alignment(scores, baseline_scores, truth_scores):
@@ -580,6 +592,7 @@ def main():
     upstream_settings = build_settings(upstream_build)
     compiled_main = Path(upstream_settings.get("CMAKE_HOME_DIRECTORY",
                                                upstream / "cpp_ggml")) / "src/main.cpp"
+    candidate_runtime = candidate_runtime_path(args.probe)
     report = {"upstream_revision": revision, "raw_outputs": str(work),
               "model": args.model.name, "backend": args.backend, "threads": args.threads,
               "cpu_precision": "auto",
@@ -597,9 +610,11 @@ def main():
                   "wait_process_pids": args.wait_process_pid,
                   "samples": "per-command raw logs include the upstream GPU process audit"},
               "candidate_probe_sha256": hashlib.sha256(args.probe.read_bytes()).hexdigest(),
+              "candidate_runtime_path": str(candidate_runtime)
+                  if candidate_runtime else None,
               "candidate_runtime_sha256": hashlib.sha256(
-                  (args.probe.parents[1] / "libAICore.so").read_bytes()).hexdigest()
-                  if (args.probe.parents[1] / "libAICore.so").is_file() else None,
+                  candidate_runtime.read_bytes()).hexdigest()
+                  if candidate_runtime else None,
               "candidate_ggml_build_settings": candidate_build_settings(args.probe.parents[2]),
               "upstream_binary_sha256": hashlib.sha256((upstream_build / "ram-ggml").read_bytes()).hexdigest(),
               "upstream_source_sha256": hashlib.sha256((upstream / "cpp_ggml/src/main.cpp").read_bytes()).hexdigest(),

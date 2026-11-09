@@ -15,6 +15,25 @@ from run_ocr_onnx_probe import (accuracy_crops, accuracy_inputs,
     probability_command, probability_gate, source_performance_pass)
 
 
+def aicore_library_path(path):
+    """Resolve the platform runtime without importing the heavy OCR pipeline."""
+    runtime = Path(os.path.abspath(os.fspath(path)))
+    if not runtime.is_dir():
+        return runtime
+    if os.name == "nt":
+        names = ("AICore.dll", "AICore_d.dll")
+    elif sys.platform == "darwin":
+        names = ("libAICore.dylib",)
+    else:
+        names = ("libAICore.so",)
+    for directory in (runtime, runtime / "Release", runtime / "Debug"):
+        for name in names:
+            candidate = directory / name
+            if candidate.is_file():
+                return candidate
+    raise ValueError(f"built AICore library unavailable under {runtime}")
+
+
 class ProbabilityGateTests(unittest.TestCase):
     def test_quantized_raw_exit_needs_complete_outputs(self):
         self.assertTrue(native_exit_is_diagnostic(1, quantized=True,
@@ -390,8 +409,15 @@ class OrientationStoredTruthTests(unittest.TestCase):
         self.assertIn(backend, ("cpu", "cuda", "vulkan"))
         models = [assets / f"ocr_models/{name}-q8_0.gguf"
                   for name in ("ppocrv6-tiny-det", "ppocrv6-tiny-rec", "ppocr-cls")]
-        paths = [runtime / "libAICore.so", *models, fixture / "orientation.json",
-                 fixture / "orientation.png", *runtime.glob("libggml*.so")]
+        library_path = aicore_library_path(runtime)
+        if os.name == "nt":
+            backend_paths = list(runtime.glob("*.dll"))
+        elif sys.platform == "darwin":
+            backend_paths = list(runtime.glob("libggml*.dylib"))
+        else:
+            backend_paths = list(runtime.glob("libggml*.so"))
+        paths = [library_path, *models, fixture / "orientation.json",
+                 fixture / "orientation.png", *backend_paths]
         sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
         before = {str(path): sha(path) for path in paths}
         reference = json.loads((fixture / "orientation.json").read_text())
@@ -402,7 +428,7 @@ class OrientationStoredTruthTests(unittest.TestCase):
         padded[:, :width * 3] = image.reshape(height, width * 3)
         view = View(padded.ctypes.data, width, height, padded.strides[0], 4)
         quads = np.asarray([row["quad"] for row in reference["rows"]], np.float32).reshape(-1)
-        library = c.CDLL(str(runtime / "libAICore.so"))
+        library = c.CDLL(str(library_path))
         library.aicore_ocr_context_create.argtypes = [c.POINTER(Options)]
         library.aicore_ocr_context_create.restype = c.c_void_p
         library.aicore_ocr_context_destroy.argtypes = [c.c_void_p]

@@ -26,6 +26,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <map>
 #include <string>
 #include <thread>
@@ -653,12 +654,24 @@ int main(int argc, char** argv) {
             const ggml_tensor* t = ggml_graph_node(graph, i);
             if (!t || !t->data || t->type != GGML_TYPE_F32) continue;
             if (i >= dumpFrom && getenv("AICORE_OCR_DUMP_TAIL")) {
+                const std::filesystem::path dumpDir =
+                        std::filesystem::temp_directory_path() /
+                        "aicore-ocr-tail";
+                std::error_code dumpError;
+                std::filesystem::create_directories(dumpDir, dumpError);
+                if (dumpError) {
+                    std::fprintf(stderr,
+                                 "cannot create OCR dump directory: %s\n",
+                                 dumpError.message().c_str());
+                    continue;
+                }
                 // also dump the second operand of binary tail ops
                 if (t->src[1] && t->src[1]->type == GGML_TYPE_F32 &&
                     ggml_nbytes(t->src[1]) < 1 << 16) {
-                    char sp[160];
-                    snprintf(sp, sizeof(sp), "/tmp/tailsrc1_%03d.f32", i);
-                    FILE* sf = fopen(sp, "wb");
+                    const auto sourcePath =
+                            dumpDir /
+                            ("tailsrc1_" + std::to_string(i) + ".f32");
+                    FILE* sf = fopen(sourcePath.string().c_str(), "wb");
                     if (sf) {
                         const ggml_tensor* sv = t->src[1];
                         for (int64_t i3 = 0; i3 < sv->ne[3]; ++i3)
@@ -678,10 +691,10 @@ int main(int argc, char** argv) {
                         fclose(sf);
                     }
                 }
-                char path[160];
-                snprintf(path, sizeof(path), "/tmp/tail_%03d_%s.f32", i,
-                         ggml_op_desc(t));
-                FILE* df = fopen(path, "wb");
+                const auto dumpPath =
+                        dumpDir / ("tail_" + std::to_string(i) + "_" +
+                                   ggml_op_desc(t) + ".f32");
+                FILE* df = fopen(dumpPath.string().c_str(), "wb");
                 if (df) {
                     // strided write (views may be non-contiguous)
                     for (int64_t i3 = 0; i3 < t->ne[3]; ++i3)

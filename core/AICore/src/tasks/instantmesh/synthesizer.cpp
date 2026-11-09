@@ -16,6 +16,8 @@
 //     Vulkan identically.
 #include "tasks/instantmesh/synthesizer.hpp"
 
+#include <Parallel.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -26,15 +28,10 @@
 #include <vector>
 
 #include "aicore/runtime_capi.h"
-#include "tasks/instantmesh/numerics.hpp"
-
-#ifdef IM_USE_OPENMP
-#include <omp.h>
-#endif
-
 #include "common/ggml_backend_utils.hpp"
 #include "ggml-alloc.h"
 #include "ggml-cpu.h"
+#include "tasks/instantmesh/numerics.hpp"
 
 namespace instantmesh {
 
@@ -148,8 +145,8 @@ void sample_triplanes(const SynthesizerModel& m,
     const int plane_stride = C * H * W;
     const int total = N * M;
 #ifdef IM_USE_OPENMP
-#pragma omp parallel for schedule(static) \
-        num_threads(std::max(1, omp_get_max_threads()))
+    CV_OMP_PARALLEL_FOR(
+            schedule(static) num_threads(cloudViewer::utility::GetMaxThreads()))
 #endif
     for (int it = 0; it < total; ++it) {
         const int n = it / M;

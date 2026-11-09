@@ -202,19 +202,6 @@ QString locateBundleRoot() {
 // Path and verification functions are now inline in the header,
 // delegating to ecvTestDataRepository for cross-plugin consistency.
 
-// zipEntryCount and extractZip delegate to ecvTestDataRepository
-// to avoid duplicating minizip extraction logic.
-int zipEntryCount(const QString& zipPath) {
-    return ecvTestDataRepository::zipEntryCount(zipPath);
-}
-
-bool extractZip(const QString& zipPath,
-                const QString& extractParentDir,
-                const ExtractProgressFn& onProgress) {
-    return ecvTestDataRepository::extractZip(zipPath, extractParentDir,
-                                             onProgress);
-}
-
 QVector<FaceDetectGalleryEntry> loadGalleryEntries(const QString& bundleRoot) {
     QVector<FaceDetectGalleryEntry> out;
     const QString galleryDir =

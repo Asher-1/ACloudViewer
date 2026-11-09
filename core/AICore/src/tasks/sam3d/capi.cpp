@@ -10,6 +10,8 @@
 // storage, and reports the common pipeline timing contract. Exceptions from
 // the C++ session are fenced; they never cross this boundary.
 
+#include <FileSystem.h>
+
 #include <array>
 #include <chrono>
 #include <cmath>
@@ -428,7 +430,7 @@ aicore_sam3d_ctx* aicore_sam3d_load_opts(const aicore_sam3d_options* options,
                                        "/slat_decoder_mesh-" +
                                        std::string(dtype) + ".gguf";
         std::error_code ec;
-        if (std::filesystem::exists(mesh_model, ec)) {
+        if (std::filesystem::exists(std::filesystem::u8path(mesh_model), ec)) {
             ctx->caps |= AICORE_SAM3D_CAP_MESH;
         }
     }
@@ -547,7 +549,7 @@ aicore_sam3d_result* aicore_sam3d_generate(aicore_sam3d_ctx* ctx,
         // The assembly consumes the FlexiCubes mesh and reads the written
         // Gaussian PLY back, exactly like the upstream --pbr-out flow.
         request.decode_mesh = true;
-        request.out_pbr = (pbr_scratch / "pbr.glb").string();
+        request.out_pbr = (pbr_scratch / "pbr.glb").u8string();
     }
 
     // In-memory artifact sink: no scratch directories, no PLY header re-scan,
@@ -649,7 +651,9 @@ aicore_sam3d_result* aicore_sam3d_generate(aicore_sam3d_ctx* ctx,
         {
             // The session encoded the official GLB to the scratch path;
             // lift the bytes into the result and drop the scratch dir.
-            std::ifstream glb_file(request.out_pbr, std::ios::binary);
+            std::ifstream glb_file =
+                    cloudViewer::utility::filesystem::OpenInputStream(
+                            request.out_pbr, std::ios::binary);
             if (glb_file) {
                 result->pbr_glb.assign(std::istreambuf_iterator<char>(glb_file),
                                        std::istreambuf_iterator<char>());

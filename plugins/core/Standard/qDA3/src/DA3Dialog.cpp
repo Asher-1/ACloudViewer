@@ -168,6 +168,12 @@ DA3Dialog::DA3Dialog(QWidget* parent) : QDialog(parent) {
     setMinimumSize(ecvAICoreUi::dpiScaled(620), 0);
     setupUi();
     m_downloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
+    connect(this, &QDialog::finished, this, [this] {
+        m_testDataInProgress = false;
+        m_useTestDataBtn->setEnabled(true);
+    });
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
             &DA3Dialog::appendLog);
     connect(m_downloader, &ecvModelDownloader::progress, this,
@@ -214,6 +220,31 @@ DA3Dialog::DA3Dialog(QWidget* parent) : QDialog(parent) {
             });
     CVLog::Print(QString("[DA3] Model cache: %1").arg(modelCacheDir()));
     aicore_inference_log::log_backend_probe(QStringLiteral("DA3"));
+    auto& repository = ecvTestDataRepository::instance();
+    connect(&repository, &ecvTestDataRepository::downloadProgress, this,
+            [this](int percent, const QString&) {
+                if (!m_testDataInProgress) return;
+                m_progressBar->setValue(percent);
+            });
+    connect(&repository, &ecvTestDataRepository::extractionProgress, this,
+            [this](int current, int total) {
+                if (!m_testDataInProgress || total <= 0) return;
+                m_progressBar->setRange(0, total);
+                m_progressBar->setValue(current);
+            });
+    connect(&repository, &ecvTestDataRepository::datasetReady, this,
+            [this](bool success, ecvTestDataRepository::Dataset kind) {
+                if (!m_testDataInProgress ||
+                    kind != ecvTestDataRepository::Dataset::Monstree)
+                    return;
+                m_testDataInProgress = false;
+                m_useTestDataBtn->setEnabled(true);
+                m_progressBar->setVisible(false);
+                if (success)
+                    onUseTestData();
+                else
+                    appendLog(tr("[Test data] Dataset preparation failed."));
+            });
 }
 
 void DA3Dialog::setAppInterface(ecvMainAppInterface* app) { m_app = app; }
@@ -778,6 +809,8 @@ void DA3Dialog::cancelDownload() {
 }
 
 void DA3Dialog::onCancel() {
+    m_testDataInProgress = false;
+    m_useTestDataBtn->setEnabled(true);
     if (m_downloadInProgress) {
         cancelDownload();
         return;
@@ -1068,94 +1101,15 @@ void DA3Dialog::onUseTestData() {
         }
     }
 
-    // Check if zip is cached
-    if (repo.isDatasetAvailable(kind)) {
-        appendLog(tr("[Test data] Extracting cached Monstree archive..."));
-        m_testDataInProgress = true;
-        m_useTestDataBtn->setEnabled(false);
-        m_progressBar->setRange(0, 100);
-        m_progressBar->setValue(0);
-        m_progressBar->setFormat(tr("Extracting... %p%"));
-        m_progressBar->setVisible(true);
-        repo.extractDataset(kind);
-        return;
-    }
-
-    // Need to download
     if (m_testDataInProgress || m_downloadInProgress) {
         appendLog(tr("[Test data] Another operation is in progress."));
         return;
     }
-
-    appendLog(tr("[Test data] Downloading Monstree dataset..."));
     m_testDataInProgress = true;
     m_useTestDataBtn->setEnabled(false);
     m_progressBar->setRange(0, 100);
     m_progressBar->setValue(0);
-    m_progressBar->setFormat(tr("Downloading... %p%"));
+    m_progressBar->setFormat(tr("Preparing test data... %p%"));
     m_progressBar->setVisible(true);
-
-    // Progress connections
-    auto onDownloadProgress = [this](int percent, const QString& status) {
-        if (m_testDataInProgress && m_progressBar) {
-            m_progressBar->setValue(percent);
-            m_progressBar->setFormat(tr("Downloading... %p%"));
-        }
-    };
-    auto onExtractionProgress = [this](int current, int total) {
-        if (m_testDataInProgress && m_progressBar && total > 0) {
-            if (m_progressBar->maximum() != total) {
-                m_progressBar->setRange(0, total);
-            }
-            m_progressBar->setValue(current);
-            m_progressBar->setFormat(tr("Extracting... %v/%m"));
-        }
-    };
-
-    // One-shot connections
-    auto onFinished = [this, &repo, kind](bool success,
-                                          ecvTestDataRepository::Dataset) {
-        if (!m_testDataInProgress) return;
-        if (!success) {
-            appendLog(tr("[Test data] Download failed."));
-            m_testDataInProgress = false;
-            m_useTestDataBtn->setEnabled(true);
-            m_progressBar->setVisible(false);
-            return;
-        }
-        appendLog(tr("[Test data] Extracting..."));
-        m_progressBar->setValue(0);
-        m_progressBar->setFormat(tr("Extracting... %p%"));
-        repo.extractDataset(kind);
-    };
-    auto onExtracted = [this, kind](bool success,
-                                    ecvTestDataRepository::Dataset) {
-        if (!m_testDataInProgress) return;
-        m_testDataInProgress = false;
-        m_useTestDataBtn->setEnabled(true);
-        m_progressBar->setVisible(false);
-        if (!success) {
-            appendLog(tr("[Test data] Extraction failed."));
-            return;
-        }
-        const QString root = ecvTestDataRepository::extractPath(kind);
-        const QStringList images =
-                ecvTestDataRepository::getMonstreeImages(root);
-        if (!images.isEmpty()) {
-            m_inputPath->setText(images.join(";"));
-            appendLog(tr("[Test data] Loaded %1 images from Monstree dataset")
-                              .arg(images.size()));
-        } else {
-            appendLog(tr("[Test data] No images found in bundle."));
-        }
-    };
-
-    connect(&repo, &ecvTestDataRepository::downloadProgress, this,
-            onDownloadProgress);
-    connect(&repo, &ecvTestDataRepository::extractionProgress, this,
-            onExtractionProgress);
-    connect(&repo, &ecvTestDataRepository::downloadFinished, this, onFinished);
-    connect(&repo, &ecvTestDataRepository::extractionFinished, this,
-            onExtracted);
-    repo.startDownload(kind);
+    repo.ensureDatasetReady(kind);
 }

@@ -6,6 +6,7 @@ import copy
 import ctypes as C
 import io
 import json
+import os
 import sys
 import tarfile
 import tempfile
@@ -34,9 +35,12 @@ class PaddleReferenceTest(unittest.TestCase):
             build_bin = root / "candidate" / "bin"
             runtime.mkdir()
             build_bin.mkdir(parents=True)
-            target = runtime / "libAICore.so"
+            name = ("AICore.dll" if os.name == "nt" else
+                    "libAICore.dylib" if sys.platform == "darwin" else
+                    "libAICore.so")
+            target = runtime / name
             target.write_bytes(b"runtime")
-            link = build_bin / "libAICore.so"
+            link = build_bin / name
             try:
                 link.symlink_to(target)
             except OSError as error:

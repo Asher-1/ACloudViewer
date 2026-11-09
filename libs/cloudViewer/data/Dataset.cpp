@@ -18,17 +18,7 @@
 namespace cloudViewer {
 namespace data {
 
-std::string LocateDataRoot() {
-    std::string data_root = "";
-    if (const char* env_p = std::getenv("CLOUDVIEWER_DATA_ROOT")) {
-        data_root = std::string(env_p);
-    }
-    if (data_root.empty()) {
-        data_root =
-                utility::filesystem::GetHomeDirectory() + "/cloudViewer_data";
-    }
-    return data_root;
-}
+std::string LocateDataRoot() { return utility::filesystem::LocateDataRoot(); }
 
 static std::string InternalDownloadsPrefix =
         "https://github.com/isl-org/open3d_downloads/releases/download/";

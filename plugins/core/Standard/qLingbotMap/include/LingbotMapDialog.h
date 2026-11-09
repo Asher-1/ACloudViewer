@@ -254,10 +254,7 @@ private:
     void populateTestDataScenes();
     void applyTestSceneSelection();
     void requestTestData();
-    void onTestDataDownloadFinished(bool success,
-                                    ecvTestDataRepository::Dataset kind);
-    void onTestDataExtractionFinished(bool success,
-                                      ecvTestDataRepository::Dataset kind);
+    void onTestDataReady(bool success, ecvTestDataRepository::Dataset kind);
     void finishTestDataFlow();
     void refreshSkySourceOptions();
     /** Refreshes the dataset → model/pipeline guidance hint. */
@@ -265,10 +262,10 @@ private:
     QComboBox* m_testSceneCombo = nullptr;
     QPushButton* m_testDataBtn = nullptr;
     bool m_testDataInProgress = false;
-    ecvTestDataRepository::Dataset m_pendingMaskDownload =
+    ecvTestDataRepository::Dataset m_pendingTestDataset =
             ecvTestDataRepository::Dataset::LingbotMapCourthouse;
     bool m_maskDownloadPending = false;
     /** Run clicked while the selected test video was still uncached: the
-     *  extraction-finished handler starts the run automatically. */
+     *  dataset-ready handler starts the run automatically. */
     bool m_pendingRunAfterTestData = false;
 };

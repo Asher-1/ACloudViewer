@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "FileSystem.h"
 #include "aicore/backend_capi.h"
 #include "aicore/runtime_capi.h"
 #include "aicore/yolo_capi.h"
@@ -614,8 +615,8 @@ AICORE_CAPI aicore_yolo_ctx* aicore_yolo_load_opts(
                 // which passes a not-yet-downloaded cache-dir path here).
                 // Let the loader report the real open error instead.
                 std::error_code probe_ec;
-                const bool path_exists =
-                        std::filesystem::exists(gguf_path, probe_ec);
+                const bool path_exists = std::filesystem::exists(
+                        std::filesystem::u8path(gguf_path), probe_ec);
                 if (path_exists && !aicore_yolo_gguf_has_savpe(gguf_path)) {
                     ctx->last_error =
                             "visual prompts need a YOLOE GGUF converted with "
@@ -642,8 +643,8 @@ AICORE_CAPI aicore_yolo_ctx* aicore_yolo_load_opts(
         // paths themselves degrade gracefully, this keeps the host alive.
         {
             std::error_code size_ec;
-            const auto model_bytes =
-                    std::filesystem::file_size(gguf_path, size_ec);
+            const auto model_bytes = std::filesystem::file_size(
+                    std::filesystem::u8path(gguf_path), size_ec);
             if (!size_ec &&
                 !ggml_common::gpu_admission_check(
                         ctx->device, static_cast<size_t>(model_bytes),
@@ -1650,7 +1651,7 @@ static aicore_yolo_segment_result* run_segment(aicore_yolo_ctx* ctx,
                 std::vector<float> vpe((size_t)ggml_nelements(s->savpe_out));
                 ggml_backend_tensor_get(s->savpe_out, vpe.data(), 0,
                                         vpe.size() * sizeof(float));
-                FILE* f = std::fopen(dump, "wb");
+                FILE* f = cloudViewer::utility::filesystem::FOpen(dump, "wb");
                 if (f != nullptr) {
                     std::fwrite(vpe.data(), sizeof(float), vpe.size(), f);
                     std::fclose(f);
@@ -1670,7 +1671,8 @@ static aicore_yolo_segment_result* run_segment(aicore_yolo_ctx* ctx,
                 ggml_backend_tensor_get(node, d.data(), 0,
                                         d.size() * sizeof(float));
                 std::string path = std::string(dump) + suffix;
-                FILE* f2 = std::fopen(path.c_str(), "wb");
+                FILE* f2 = cloudViewer::utility::filesystem::FOpen(path.c_str(),
+                                                                   "wb");
                 if (f2 != nullptr) {
                     std::fwrite(d.data(), sizeof(float), d.size(), f2);
                     std::fclose(f2);
@@ -1693,7 +1695,8 @@ static aicore_yolo_segment_result* run_segment(aicore_yolo_ctx* ctx,
                     std::vector<float> d((size_t)ggml_nelements(t));
                     ggml_backend_tensor_get(t, d.data(), 0,
                                             d.size() * sizeof(float));
-                    FILE* fe2 = std::fopen(ep.c_str(), "wb");
+                    FILE* fe2 = cloudViewer::utility::filesystem::FOpen(
+                            ep.c_str(), "wb");
                     if (fe2 != nullptr) {
                         std::fwrite(d.data(), sizeof(float), d.size(), fe2);
                         std::fclose(fe2);

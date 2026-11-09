@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "aicore/rfdetr_capi.h"
+#include "common/capi_utils.hpp"
 
 namespace {
 
@@ -66,16 +67,6 @@ static int isSegmentationVariant(int vi) {
     return vi >= kVariantSegStart ? 1 : 0;
 }
 
-// MSVC names the POSIX helper "_strdup"; keep a portable wrapper so the
-// catalog builds warning-clean on all three platforms.
-static char* dupString(const char* s) {
-#ifdef _MSC_VER
-    return _strdup(s);
-#else
-    return strdup(s);
-#endif
-}
-
 struct ModelRow {
     const char* filename;
     const char* download_url;
@@ -96,9 +87,10 @@ static std::vector<ModelRow> buildModels() {
             std::string url = std::string(kDownloadBase) + filename;
             std::string display = std::string(variantDisplayName(vi)) +
                                   " \xe2\x80\x94 " + kQuantNotes[qi];
-            rows.push_back({dupString(filename.c_str()), dupString(url.c_str()),
-                            dupString(display.c_str()),
-                            dupString(kQuantNotes[qi]),
+            rows.push_back({aicore::capi::dup_cstr(filename.c_str()),
+                            aicore::capi::dup_cstr(url.c_str()),
+                            aicore::capi::dup_cstr(display.c_str()),
+                            aicore::capi::dup_cstr(kQuantNotes[qi]),
                             "Apache-2.0 (Roboflow RF-DETR)",
                             isSegmentationVariant(vi)});
         }

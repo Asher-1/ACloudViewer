@@ -205,7 +205,8 @@ AICORE_CAPI aicore_gkd_ctx* aicore_gkd_load_opts(
     // time turns into a clean, actionable load error here).
     {
         std::error_code size_ec;
-        const auto model_bytes = std::filesystem::file_size(gguf_path, size_ec);
+        const auto model_bytes = std::filesystem::file_size(
+                std::filesystem::u8path(gguf_path), size_ec);
         if (!size_ec &&
             !ggml_common::gpu_admission_check(device_request,
                                               static_cast<size_t>(model_bytes),

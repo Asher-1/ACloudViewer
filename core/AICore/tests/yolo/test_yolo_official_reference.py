@@ -32,8 +32,8 @@ def digest(path):
 
 def runtime_library(build):
     """Select runtime libraries only from the specified build, with no host-install fallback."""
-    for directory in (build / "bin", build / "bin/Release"):
-        for name in ("libAICore.so", "libAICore.dylib", "AICore.dll"):
+    for directory in (build / "bin", build / "bin/Release", build / "bin/Debug"):
+        for name in ("AICore.dll", "AICore_d.dll", "libAICore.so", "libAICore.dylib"):
             path = directory / name
             if path.is_file():
                 return path

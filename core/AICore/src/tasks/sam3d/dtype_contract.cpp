@@ -120,7 +120,7 @@ public:
 
     bool flush(bool complete, std::string& error) const {
         if (output_path_.empty()) return true;
-        const std::filesystem::path output(output_path_);
+        const auto output = std::filesystem::u8path(output_path_);
         const std::filesystem::path parent = output.parent_path();
         std::error_code filesystem_error;
         if (!parent.empty())

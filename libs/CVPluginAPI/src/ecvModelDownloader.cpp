@@ -110,8 +110,8 @@ void ecvModelDownloader::cleanupActiveReply() {
 }
 
 void ecvModelDownloader::cancel() {
-    if (!m_busy) return;
-    const bool wasBusy = m_busy;
+    if (!isBusy()) return;
+    const QString dest = m_destPath;
     if (m_stallTimer) m_stallTimer->stop();
     if (m_retryTimer) m_retryTimer->stop();
     cleanupActiveReply();
@@ -119,7 +119,7 @@ void ecvModelDownloader::cancel() {
     // H2 fix: emit finished(false) exactly once so the caller can re-enable
     // its controls. cleanupActiveReply() already set m_busy=false, so the
     // handler won't call cancel() again.
-    if (wasBusy) emit finished(false, m_destPath);
+    emit finished(false, dest);
 }
 
 QUrl ecvModelDownloader::hfDownloadUrl(const QString& repoId,
@@ -129,8 +129,21 @@ QUrl ecvModelDownloader::hfDownloadUrl(const QString& repoId,
 }
 
 void ecvModelDownloader::download(const Request& request) {
-    if (m_busy) {
+    if (isBusy()) {
         emit logMessage(tr("[Download] Already in progress."));
+        return;
+    }
+    // Manual download actions and pipeline queues share the same cache
+    // contract as Run. A valid destination needs no transport, even offline.
+    if (!request.destPath.isEmpty() &&
+        ecvAssetIntegrity::isVerified(
+                request.destPath, request.contentAnchor, request.minBytes,
+                request.requireGgufMagic,
+                ecvAssetIntegrity::OnMiss::CheapChecksOnly,
+                request.ingestExactSize)) {
+        emit logMessage(
+                tr("[Download] Already cached: %1").arg(request.destPath));
+        emit finished(true, request.destPath);
         return;
     }
     if (request.url.isEmpty() || request.destPath.isEmpty()) {
@@ -169,7 +182,9 @@ void ecvModelDownloader::startAttempt() {
     }
 
     m_destPath = m_request.destPath;
-    m_minValidBytes = m_request.minBytes > 0 ? m_request.minBytes : 64 * 1024;
+    // Honor the same floor on ingestion and cache hits. Ordinary pinned
+    // assets may explicitly disable the model-sized default with zero.
+    m_minValidBytes = qMax<qint64>(0, m_request.minBytes);
     m_contentAnchor = m_request.contentAnchor;
     m_ingestExactSize = m_request.ingestExactSize;
     m_requireGgufMagic = m_request.requireGgufMagic;
@@ -321,6 +336,9 @@ void ecvModelDownloader::startAttempt() {
 
 void ecvModelDownloader::scheduleRetry(const QString& reason) {
     ++m_attempt;
+    const int delay = qMin(kRetryDelayBaseMs << qMin(m_attempt, 4), 15000);
+    // Publish the waiting state before callbacks can cancel or submit work.
+    m_retryTimer->start(delay);
     // Rotate to the next URL candidate each attempt (direct → mirror1 →
     // mirror2 → …) so an unreachable endpoint cannot burn all attempts.
     if (!m_candidates.isEmpty()) {
@@ -331,13 +349,11 @@ void ecvModelDownloader::scheduleRetry(const QString& reason) {
                                     .arg(m_candidates.at(m_candidateIndex)));
         }
     }
-    const int delay = qMin(kRetryDelayBaseMs << qMin(m_attempt, 4), 15000);
     emit logMessage(tr("[Download] %1 — retrying in %2 s (attempt %3/%4)")
                             .arg(reason)
                             .arg(delay / 1000)
                             .arg(m_attempt + 1)
                             .arg(kMaxAttempts));
-    m_retryTimer->start(delay);
 }
 
 void ecvModelDownloader::finishAttempt(bool transportOk) {
@@ -433,7 +449,6 @@ void ecvModelDownloader::finishAttempt(bool transportOk) {
     cleanupActiveReply();
 
     if (!ok && !permanent && m_attempt + 1 < kMaxAttempts) {
-        emit logMessage(tr("[Download] Failed: %1").arg(failureReason));
         scheduleRetry(failureReason);
         return;
     }

@@ -760,6 +760,16 @@ void YOLODialog::setupUi() {
 
     // Downloader.
     m_downloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
+    connect(this, &QDialog::finished, this, [this] {
+        m_testDataDownloadInProgress = false;
+        m_pendingTestDataTarget = TestDataTarget::None;
+        m_pendingTestDataTask.clear();
+        m_followupTestDataTarget = TestDataTarget::None;
+        m_followupTestDataTask.clear();
+        setTestDataControlsEnabled(true);
+    });
     connect(m_downloader, &ecvModelDownloader::progress, this,
             [this](qint64 received, qint64 total) {
                 m_progress->setVisible(true);
@@ -780,6 +790,7 @@ void YOLODialog::setupUi() {
                 m_progress->setVisible(false);
                 m_downloadLabel->setVisible(false);
                 if (!ok) {
+                    m_pendingActionAfterDownload = PendingAction::None;
                     appendLog(tr("[YOLO] Download failed: %1").arg(path));
                     return;
                 }
@@ -790,7 +801,7 @@ void YOLODialog::setupUi() {
                     if (action == PendingAction::Run) {
                         onRun();
                     } else if (action == PendingAction::LiveStart) {
-                        startLiveStream();
+                        onLiveStart();
                     }
                 }
             });
@@ -815,10 +826,6 @@ void YOLODialog::setupUi() {
             [this](const QString& message) {
                 if (m_testDataDownloadInProgress) appendLog(message);
             });
-    connect(&repo, &ecvTestDataRepository::downloadFinished, this,
-            [this](bool success, ecvTestDataRepository::Dataset kind) {
-                onTestDataDownloadFinished(success, kind);
-            });
     connect(&repo, &ecvTestDataRepository::extractionProgress, this,
             [this](int current, int total) {
                 if (!m_testDataDownloadInProgress || total <= 0) return;
@@ -826,9 +833,9 @@ void YOLODialog::setupUi() {
                 m_progress->setValue(current);
                 m_progress->setVisible(true);
             });
-    connect(&repo, &ecvTestDataRepository::extractionFinished, this,
+    connect(&repo, &ecvTestDataRepository::datasetReady, this,
             [this](bool success, ecvTestDataRepository::Dataset kind) {
-                onTestDataExtractionFinished(success, kind);
+                onTestDataReady(success, kind);
             });
 }
 
@@ -1291,7 +1298,8 @@ bool YOLODialog::ensureModelAvailable(PendingAction action) {
             appendLog(tr("[Error] Select a model first."));
             return false;
         }
-        if (!QFileInfo::exists(m_liveWidget->resolveModelPath())) {
+        if (!ecvAssetIntegrity::isModelVerified(
+                    m_liveWidget->resolveModelPath())) {
             YOLOModelEntry entry;
             if (!YOLOHelpers::findModelByFilename(filename, &entry)) {
                 appendLog(tr("[Error] Model file not found: %1").arg(filename));
@@ -1401,7 +1409,7 @@ bool YOLODialog::ensureModelAvailable(PendingAction action) {
             return false;
         }
     }
-    if (!QFileInfo::exists(panel->modelPath())) {
+    if (!ecvAssetIntegrity::isModelVerified(panel->modelPath())) {
         YOLOModelEntry entry;
         if (!YOLOHelpers::findModelByFilename(filename, &entry)) {
             appendLog(tr("[Error] Model file not found: %1").arg(filename));
@@ -1437,7 +1445,7 @@ bool YOLODialog::ensureModelAvailable(PendingAction action) {
                 appendLog(tr("[YOLO] Select a text model first."));
                 return false;
             }
-            if (!QFileInfo::exists(panel->textModelPath())) {
+            if (!ecvAssetIntegrity::isModelVerified(panel->textModelPath())) {
                 YOLOModelEntry entry;
                 if (!YOLOHelpers::findModelByFilename(textFilename, &entry)) {
                     appendLog(tr("[YOLO] Text model file not found: %1")
@@ -1464,7 +1472,7 @@ void YOLODialog::startDownload(const YOLOModelEntry& model) {
     QDir().mkpath(YOLOHelpers::modelCacheDir());
     const QString dest =
             YOLOHelpers::modelCacheDir() + QDir::separator() + model.filename;
-    if (QFile::exists(dest)) {
+    if (ecvAssetIntegrity::isModelVerified(dest)) {
         appendLog(tr("[YOLO] Model already present: %1").arg(dest));
         return;
     }
@@ -1484,7 +1492,7 @@ void YOLODialog::startDownload(const YOLOModelEntry& model) {
 }
 
 void YOLODialog::cancelDownload() {
-    if (m_downloadInProgress) m_downloader->cancel();
+    if (m_downloadInProgress && m_downloader) m_downloader->cancel();
 }
 
 void YOLODialog::onBrowseCustomModel() {
@@ -1843,8 +1851,8 @@ void YOLODialog::requestTestData(TestDataTarget target) {
         ecvTestDataRepository::instance().isDownloadInProgress()) {
         // The shared repository serves one download at a time (single
         // downloader slot, shared by every plugin). Queue this request
-        // instead of dropping it: the repository's downloadFinished /
-        // extractionFinished broadcasts resume the queued slots.
+        // instead of dropping it: the repository's datasetReady broadcasts
+        // resume the queued slots.
         if (m_pendingTestDataTarget == TestDataTarget::None) {
             m_pendingTestDataTarget = target;
             m_pendingTestDataTask = task;
@@ -1886,29 +1894,15 @@ void YOLODialog::advancePendingTestData() {
     }
 
     const auto kind = ecvTestDataRepository::Dataset::ObjectsDetection;
-    const auto info = ecvTestDataRepository::getDatasetInfo(kind);
     m_testDataDownloadInProgress = true;
     setTestDataControlsEnabled(false);
-    if (ecvAssetIntegrity::isVerified(ecvTestDataRepository::zipPath(kind),
-                                      info.anchor, 0, false,
-                                      ecvAssetIntegrity::OnMiss::DeepVerify)) {
-        appendLog(tr("[Test data] Extracting cached archive..."));
-        m_progress->setRange(0, 0);
-        m_progress->setValue(0);
-        m_progress->setVisible(true);
-        m_downloadLabel->setText(
-                tr("Extracting object detection test data..."));
-        m_downloadLabel->setVisible(true);
-        repo.extractDataset(kind);
-        return;
-    }
 
     m_downloadLabel->setText(tr("Downloading object detection test data..."));
     m_downloadLabel->setVisible(true);
     m_progress->setRange(0, 100);
     m_progress->setValue(0);
     m_progress->setVisible(true);
-    repo.startDownload(kind);
+    repo.ensureDatasetReady(kind);
 }
 
 void YOLODialog::servePendingTestData() {
@@ -2005,71 +1999,15 @@ bool YOLODialog::loadTestDataFor(TestDataTarget target, const QString& task) {
     return true;
 }
 
-void YOLODialog::onTestDataDownloadFinished(
-        bool success, ecvTestDataRepository::Dataset kind) {
+void YOLODialog::onTestDataReady(bool success,
+                                 ecvTestDataRepository::Dataset kind) {
     const bool ours = m_testDataDownloadInProgress;
-    const bool haveQueued = m_pendingTestDataTarget != TestDataTarget::None ||
-                            m_followupTestDataTarget != TestDataTarget::None;
-    if (!ours && !haveQueued) return;  // a broadcast we did not ask for
-
-    if (kind != ecvTestDataRepository::Dataset::ObjectsDetection) {
-        // A foreign download of ANOTHER dataset finished: the repository
-        // slot is free now (the repo clears its busy flag before this
-        // signal) — resume our queued chain, which was waiting for the
-        // slot, not for this dataset. Deferred so the repo's slot state
-        // is settled regardless of slot-invocation order.
-        if (!ours) {
-            QTimer::singleShot(0, this, [this]() { advancePendingTestData(); });
-        }
-        return;
-    }
-
-    if (!success) {
-        if (ours) {
-            m_testDataDownloadInProgress = false;
-            m_downloadLabel->setVisible(false);
-            m_progress->setRange(0, 100);
-            m_progress->setVisible(false);
-            setTestDataControlsEnabled(true);
-            appendLog(tr("[Test data] Download failed."));
-            // Drop the failed request; a queued follow-up retries once
-            // from our side (the repo slot is free now — bounded retry).
-            m_pendingTestDataTarget = TestDataTarget::None;
-            m_pendingTestDataTask.clear();
-            if (m_followupTestDataTarget != TestDataTarget::None) {
-                m_pendingTestDataTarget = m_followupTestDataTarget;
-                m_pendingTestDataTask = m_followupTestDataTask;
-                m_followupTestDataTarget = TestDataTarget::None;
-                m_followupTestDataTask.clear();
-                advancePendingTestData();
-            }
-            return;
-        }
-        // Foreign chain for OUR dataset failed: retry once from our side.
+    if (!ours && kind != ecvTestDataRepository::Dataset::ObjectsDetection &&
+        (m_pendingTestDataTarget != TestDataTarget::None ||
+         m_followupTestDataTarget != TestDataTarget::None)) {
         QTimer::singleShot(0, this, [this]() { advancePendingTestData(); });
         return;
     }
-
-    if (ours) {
-        appendLog(tr("[Test data] Extracting..."));
-        m_downloadLabel->setText(
-                tr("Extracting object detection test data..."));
-        m_progress->setRange(0, 0);  // indeterminate / busy
-        m_progress->setVisible(true);
-        ecvTestDataRepository::instance().extractDataset(kind);
-        return;
-    }
-    // Queued on a foreign chain for OUR dataset: its starter extracts
-    // next and the extractionFinished broadcast serves the queued slots —
-    // do not extract the same archive twice on the GUI thread.
-    appendLog(
-            tr("[Test data] Download finished — loading after "
-               "extraction..."));
-}
-
-void YOLODialog::onTestDataExtractionFinished(
-        bool success, ecvTestDataRepository::Dataset kind) {
-    const bool ours = m_testDataDownloadInProgress;
     if (ours && kind == ecvTestDataRepository::Dataset::ObjectsDetection) {
         m_testDataDownloadInProgress = false;
 
@@ -2080,7 +2018,7 @@ void YOLODialog::onTestDataExtractionFinished(
         setTestDataControlsEnabled(true);
 
         if (!success) {
-            appendLog(tr("[Test data] Failed to extract zip archive."));
+            appendLog(tr("[Test data] Dataset preparation failed."));
             // Same bounded-retry contract as the download-failure path:
             // the queued follow-up takes over as the pending request.
             m_pendingTestDataTarget = TestDataTarget::None;
@@ -2139,6 +2077,12 @@ void YOLODialog::closeEvent(QCloseEvent* event) {
     }
     saveSettings();
     m_liveWidget->saveSettings();
+    m_testDataDownloadInProgress = false;
+    m_pendingTestDataTarget = TestDataTarget::None;
+    m_pendingTestDataTask.clear();
+    m_followupTestDataTarget = TestDataTarget::None;
+    m_followupTestDataTask.clear();
+    setTestDataControlsEnabled(true);
     event->accept();
 }
 

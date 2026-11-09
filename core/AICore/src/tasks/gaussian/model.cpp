@@ -19,6 +19,7 @@
 #include <thread>
 #include <vector>
 
+#include "common/ggml_backend_utils.hpp"
 #include "tasks/gaussian/common.hpp"
 
 // Parallel-for over [0,n): splits into contiguous chunks, one per hardware
@@ -213,14 +214,11 @@ bool model::forward(const float *images,
     const float scale = 1.0f / std::sqrt((float)dh);  // 1/8
     const float eps = h.ln_eps;
 
-    // Vulkan FA kernel asserts ne01 < 65536.  Metal is patched (see
-    // 3rdparty/llama/ggml-patches/manifest.yaml: metal_merged) to remove the
-    // assert and auto-tune command-buffer splitting, so only non-Apple GPU
-    // backends need capping.
-#ifndef __APPLE__
-    static constexpr int64_t kMaxFASeq = 65535;
+    // Keep the attention kernel's limit with shared backend capabilities.
+    const int64_t kMaxFASeq =
+            ggml_common::flash_attention_sequence_limit(be.be);
     std::vector<float> subsampled_buf;
-    if (!be.is_cpu()) {
+    if (S > kMaxFASeq) {
         const int64_t limit_N = kMaxFASeq / TPV;
         if (N > limit_N) {
             const int64_t vf = C * IMG * IMG;
@@ -238,7 +236,6 @@ bool model::forward(const float *images,
             S = N * TPV;
         }
     }
-#endif
 
     // The historical FREE_SPLATTER_PROFILE timing hook was development
     // scaffolding and is removed.

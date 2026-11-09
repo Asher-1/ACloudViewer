@@ -38,6 +38,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "FileSystem.h"
+
 namespace mc {
 
 struct Mesh {
@@ -269,7 +271,7 @@ inline Mesh extract(const float* field,
 }
 
 inline bool write_obj(const Mesh& m, const char* path) {
-    FILE* f = std::fopen(path, "wb");
+    FILE* f = cloudViewer::utility::filesystem::FOpen(path, "wb");
     if (!f) return false;
     std::fprintf(f, "# trellis2.cpp isosurface  (%zu verts, %zu tris)\n",
                  m.n_verts(), m.n_tris());

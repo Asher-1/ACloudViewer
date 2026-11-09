@@ -9,6 +9,8 @@
 // Converts free-splatter's activated Gaussians to 3DGS PLY format.
 #include "tasks/gaussian/ply_export.hpp"
 
+#include <FileSystem.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -167,7 +169,8 @@ bool export_ply_sibr(const float* gaussians,
         return false;
     }
 
-    std::ofstream f(out_path, std::ios::binary);
+    std::ofstream f = cloudViewer::utility::filesystem::OpenOutputStream(
+            out_path, std::ios::binary);
     if (!f) {
         err = "cannot write to: " + out_path;
         return false;

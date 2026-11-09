@@ -55,14 +55,6 @@ static constexpr const char* kQuantNotes[] = {
         "F16 \xe2\x80\x94 half precision (recommended)",
         "Q8_0 \xe2\x80\x94 8-bit matmul weights (lightest)"};
 
-static char* dupString(const char* s) {
-#ifdef _MSC_VER
-    return _strdup(s);
-#else
-    return strdup(s);
-#endif
-}
-
 struct ModelRow {
     const char* filename;
     const char* download_url;
@@ -82,10 +74,11 @@ static std::vector<ModelRow> buildModels() {
             const std::string display = std::string("AnyCalib ") +
                                         kVariants[v].label + " " +
                                         kQuantNotes[q];
-            rows.push_back(
-                    ModelRow{dupString(filename.c_str()),
-                             dupString(url.c_str()), dupString(display.c_str()),
-                             kVariants[v].role, kVariants[v].resolution});
+            rows.push_back(ModelRow{aicore::capi::dup_cstr(filename.c_str()),
+                                    aicore::capi::dup_cstr(url.c_str()),
+                                    aicore::capi::dup_cstr(display.c_str()),
+                                    kVariants[v].role,
+                                    kVariants[v].resolution});
         }
     }
     return rows;
@@ -125,5 +118,5 @@ aicore_anycalib_model_by_filename(const char* filename) {
 }
 
 AICORE_CAPI char* aicore_anycalib_model_cache_dir(void) {
-    return dupString(aicore::anycalib_model_cache_dir().c_str());
+    return aicore::capi::dup_cstr(aicore::anycalib_model_cache_dir().c_str());
 }

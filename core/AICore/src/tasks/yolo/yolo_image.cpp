@@ -7,15 +7,13 @@
 
 #include "tasks/yolo/yolo_image.hpp"
 
+#include <Parallel.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 
 #include "common/image_utils.hpp"
-
-#if defined(_OPENMP)
-#include <omp.h>
-#endif
 
 namespace yolo {
 
@@ -131,9 +129,7 @@ void letterbox_image(const Image& img,
     // (which measures ~0.4 ms preprocess vs ~2.7 ms single-threaded here).
     // Cap at 8 threads: the row workload is small, so oversubscribing the
     // thread pool costs more in wakeup/sync than it saves.
-#if defined(_OPENMP)
-#pragma omp parallel for schedule(static) num_threads(8) if (new_h >= 64)
-#endif
+    CV_OMP_PARALLEL_FOR(schedule(static) num_threads(8) if (new_h >= 64))
     for (int y = 0; y < new_h; y++) {
         for (int x = 0; x < new_w; x++) {
             const size_t dst = (size_t)(y + top) * canvas_w + x + left;

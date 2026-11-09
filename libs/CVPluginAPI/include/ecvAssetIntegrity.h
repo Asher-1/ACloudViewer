@@ -55,6 +55,12 @@ public:
                                   qint64 minBytes = 0,
                                   bool requireGgufMagic = false);
 
+    /** Shared GGUF cache check using the published filename's digest.
+     *  Accepts small ALIKED models and reuses ingestion evidence without
+     *  hashing on the GUI thread. Custom filenames use cheap checks. */
+    static bool isModelVerified(const QString& path,
+                                qint64 noLedgerExactSize = 0);
+
     /**
      * One-shot full-file hash compare against the anchor. Never touches the
      * ledger. The anchor must carry a digest; with an empty digest there is

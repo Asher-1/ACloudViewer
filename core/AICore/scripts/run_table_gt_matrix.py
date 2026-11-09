@@ -64,6 +64,7 @@ import statistics
 import subprocess
 import sys
 from pathlib import Path
+from runtime_environment import prepend_runtime_paths
 from digest_utils import sha256_file
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -110,9 +111,7 @@ def runtime_environment(bench: Path, extra_dirs: list[Path]) -> dict[str, str]:
     environment = os.environ.copy()
     build_bin = bench.resolve().parent
     directories = [build_bin, build_bin.parent / "external" / "lib", *extra_dirs]
-    existing = environment.get("LD_LIBRARY_PATH", "")
-    environment["LD_LIBRARY_PATH"] = os.pathsep.join(
-        [str(d) for d in directories if d.is_dir()] + ([existing] if existing else []))
+    prepend_runtime_paths(environment, directories)
     return environment
 
 

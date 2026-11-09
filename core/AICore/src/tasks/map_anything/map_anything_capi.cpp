@@ -157,16 +157,16 @@ bool dump_preprocessed_frames(aicore_map_anything_ctx* ctx,
                               const std::vector<float>& frames) {
     if (ctx->dump_dir.empty()) return true;
     const std::filesystem::path path =
-            std::filesystem::path(ctx->dump_dir) / "cpp_frames_f32.bin";
+            std::filesystem::u8path(ctx->dump_dir) / "cpp_frames_f32.bin";
     std::ofstream file(path, std::ios::binary | std::ios::trunc);
     if (!file) {
-        ctx->last_error = "cannot open preprocessing dump: " + path.string();
+        ctx->last_error = "cannot open preprocessing dump: " + path.u8string();
         return false;
     }
     file.write(reinterpret_cast<const char*>(frames.data()),
                static_cast<std::streamsize>(frames.size() * sizeof(float)));
     if (!file) {
-        ctx->last_error = "cannot write preprocessing dump: " + path.string();
+        ctx->last_error = "cannot write preprocessing dump: " + path.u8string();
         return false;
     }
     return true;
@@ -304,7 +304,8 @@ AICORE_CAPI aicore_map_anything_ctx* aicore_map_anything_load_opts(
     // actionable load error here).
     {
         std::error_code size_ec;
-        const auto model_bytes = std::filesystem::file_size(gguf_path, size_ec);
+        const auto model_bytes = std::filesystem::file_size(
+                std::filesystem::u8path(gguf_path), size_ec);
         if (!size_ec &&
             !ggml_common::gpu_admission_check(ctx->device_request,
                                               static_cast<size_t>(model_bytes),

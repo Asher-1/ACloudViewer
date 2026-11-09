@@ -12,8 +12,9 @@ endif()
 cloudviewer_set_bin_runtime_output_directory(test_ram_workflow)
 add_dependencies(test_ram_workflow QRAM_PLUGIN)
 add_test(NAME test_ram_workflow COMMAND test_ram_workflow
-    --plugin-module $<TARGET_FILE:QRAM_PLUGIN>)
-set_tests_properties(test_ram_workflow PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    --plugin-module $<TARGET_FILE:QRAM_PLUGIN>
+    --aicore-library $<TARGET_FILE:AICore>)
+cloudviewer_set_plugin_test_env_offscreen(test_ram_workflow)
 if(TARGET aicore-fast-tests)
     add_dependencies(aicore-fast-tests test_ram_workflow)
 endif()

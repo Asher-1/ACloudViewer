@@ -538,6 +538,14 @@ void GKDDialog::setupUi() {
 
     // Downloader (HF resolve-main URLs; digest-anchored ingestion).
     m_downloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
+    connect(this, &QDialog::finished, this, [this] {
+        m_testDataDownloadInProgress = false;
+        m_pendingTestDataMode.clear();
+        m_followupTestDataMode.clear();
+        setTestDataControlsEnabled(true);
+    });
     connect(m_downloader, &ecvModelDownloader::progress, this,
             [this](qint64 received, qint64 total) {
                 m_progress->setVisible(true);
@@ -558,6 +566,7 @@ void GKDDialog::setupUi() {
                 m_progress->setVisible(false);
                 m_downloadLabel->setVisible(false);
                 if (!ok) {
+                    m_pendingActionAfterDownload = PendingAction::None;
                     appendLog(tr("[GKD] Download failed: %1").arg(path));
                     return;
                 }
@@ -585,8 +594,6 @@ void GKDDialog::setupUi() {
             [this](const QString& message) {
                 if (m_testDataDownloadInProgress) appendLog(message);
             });
-    connect(&testDataRepo, &ecvTestDataRepository::downloadFinished, this,
-            &GKDDialog::onTestDataDownloadFinished);
     connect(&testDataRepo, &ecvTestDataRepository::extractionProgress, this,
             [this](int current, int total) {
                 if (!m_testDataDownloadInProgress || total <= 0) return;
@@ -594,8 +601,8 @@ void GKDDialog::setupUi() {
                 m_progress->setValue(current);
                 m_progress->setVisible(true);
             });
-    connect(&testDataRepo, &ecvTestDataRepository::extractionFinished, this,
-            &GKDDialog::onTestDataExtractionFinished);
+    connect(&testDataRepo, &ecvTestDataRepository::datasetReady, this,
+            &GKDDialog::onTestDataReady);
 }
 
 void GKDDialog::setAppInterface(ecvMainAppInterface* app) { m_app = app; }
@@ -918,7 +925,7 @@ bool GKDDialog::ensureModelAvailable(PendingAction action) {
         appendLog(tr("[GKD] Select a model first."));
         return false;
     }
-    if (!QFileInfo::exists(resolveModelPath())) {
+    if (!ecvAssetIntegrity::isModelVerified(resolveModelPath())) {
         GKDModelEntry entry;
         if (!GKDHelpers::findModelByFilename(filename, &entry)) {
             appendLog(tr("[GKD] Model file not found: %1").arg(filename));
@@ -944,7 +951,7 @@ void GKDDialog::startDownload(const GKDModelEntry& model,
             destDir.isEmpty() ? GKDHelpers::modelCacheDir() : destDir;
     QDir().mkpath(dir);
     const QString dest = dir + QDir::separator() + model.filename;
-    if (QFile::exists(dest)) {
+    if (ecvAssetIntegrity::isModelVerified(dest)) {
         appendLog(tr("[GKD] Model already present: %1").arg(dest));
         return;
     }
@@ -981,7 +988,8 @@ bool GKDDialog::ensureYoloModelAvailable() {
                        "detector and a text-encoder GGUF."));
             return false;
         }
-        if (QFileInfo::exists(resolveYoloModelPath(combo))) continue;
+        if (ecvAssetIntegrity::isModelVerified(resolveYoloModelPath(combo)))
+            continue;
 #ifdef AICore_ENABLED
         const aicore_yolo_model_entry* e =
                 aicore_yolo_model_by_filename(filename.toUtf8().constData());
@@ -1182,10 +1190,11 @@ void GKDDialog::onRun() {
 }
 
 void GKDDialog::onCancel() {
+    m_testDataDownloadInProgress = false;
+    m_pendingTestDataMode.clear();
+    m_followupTestDataMode.clear();
+    setTestDataControlsEnabled(true);
     cancelDownload();
-    if (m_testDataDownloadInProgress) {
-        ecvTestDataRepository::instance().cancelDownload();
-    }
     emit cancelRequested();
 }
 
@@ -1375,8 +1384,8 @@ void GKDDialog::requestTestData() {
     if (m_testDataDownloadInProgress || repo.isDownloadInProgress()) {
         // The shared repository serves one download at a time (single
         // downloader slot, shared by every plugin). Queue this request
-        // instead of dropping it: the repository's downloadFinished /
-        // extractionFinished broadcasts resume the queued slots.
+        // instead of dropping it: the repository's datasetReady broadcasts
+        // resume the queued slots.
         if (m_pendingTestDataMode.isEmpty()) {
             m_pendingTestDataMode = mode;
         } else {
@@ -1414,28 +1423,16 @@ void GKDDialog::advancePendingTestData() {
     }
 
     const auto kind = datasetForMode(m_pendingTestDataMode);
-    const auto info = ecvTestDataRepository::getDatasetInfo(kind);
     m_testDataDownloadInProgress = true;
     setTestDataControlsEnabled(false);
-    if (ecvAssetIntegrity::isVerified(ecvTestDataRepository::zipPath(kind),
-                                      info.anchor, 0, false,
-                                      ecvAssetIntegrity::OnMiss::DeepVerify)) {
-        appendLog(tr("[Test data] Extracting cached archive..."));
-        m_progress->setRange(0, 0);  // indeterminate / busy
-        m_progress->setValue(0);
-        m_progress->setVisible(true);
-        m_downloadLabel->setText(tr("Extracting test data..."));
-        m_downloadLabel->setVisible(true);
-        repo.extractDataset(kind);
-        return;
-    }
+
     appendLog(tr("[Test data] Downloading the mode's official demo data..."));
     m_downloadLabel->setText(tr("Downloading test data..."));
     m_downloadLabel->setVisible(true);
     m_progress->setRange(0, 100);
     m_progress->setValue(0);
     m_progress->setVisible(true);
-    repo.startDownload(kind);
+    repo.ensureDatasetReady(kind);
 }
 
 void GKDDialog::servePendingTestData() {
@@ -1545,69 +1542,18 @@ void GKDDialog::setTestDataControlsEnabled(bool enabled) {
     }
 }
 
-void GKDDialog::onTestDataDownloadFinished(
-        bool success, ecvTestDataRepository::Dataset kind) {
+void GKDDialog::onTestDataReady(bool success,
+                                ecvTestDataRepository::Dataset kind) {
     const bool ours = m_testDataDownloadInProgress;
     const bool haveQueued = !m_pendingTestDataMode.isEmpty() ||
                             !m_followupTestDataMode.isEmpty();
     if (!ours && !haveQueued) return;  // a broadcast we did not ask for
-
     if (!m_pendingTestDataMode.isEmpty() &&
         kind != datasetForMode(m_pendingTestDataMode)) {
-        // A foreign download of ANOTHER dataset finished: the repository
-        // slot is free now (the repo clears its busy flag before this
-        // signal) — resume our queued chain, which was waiting for the
-        // slot, not for this dataset. Deferred so the repo's slot state
-        // is settled regardless of slot-invocation order.
         if (!ours) {
             QTimer::singleShot(0, this, [this]() { advancePendingTestData(); });
         }
         return;
-    }
-
-    if (!success) {
-        m_testDataDownloadInProgress = false;
-        m_downloadLabel->setVisible(false);
-        m_progress->setRange(0, 100);
-        m_progress->setVisible(false);
-        setTestDataControlsEnabled(true);
-        appendLog(tr("[Test data] Download failed."));
-        // Drop the failed request; a queued follow-up retries once from
-        // our side (the repo slot is free now — bounded retry).
-        m_pendingTestDataMode.clear();
-        if (!m_followupTestDataMode.isEmpty()) {
-            m_pendingTestDataMode = m_followupTestDataMode;
-            m_followupTestDataMode.clear();
-            advancePendingTestData();
-        }
-        return;
-    }
-
-    if (ours) {
-        appendLog(tr("[Test data] Extracting..."));
-        m_downloadLabel->setText(tr("Extracting test data..."));
-        m_progress->setRange(0, 0);  // indeterminate / busy
-        m_progress->setVisible(true);
-        ecvTestDataRepository::instance().extractDataset(kind);
-        return;
-    }
-    // Queued on a foreign chain for OUR dataset: its starter extracts next
-    // and the extractionFinished broadcast serves the queued slots — do
-    // not extract the same archive twice on the GUI thread.
-    appendLog(
-            tr("[Test data] Download finished — loading after "
-               "extraction..."));
-}
-
-void GKDDialog::onTestDataExtractionFinished(
-        bool success, ecvTestDataRepository::Dataset kind) {
-    const bool ours = m_testDataDownloadInProgress;
-    const bool haveQueued = !m_pendingTestDataMode.isEmpty() ||
-                            !m_followupTestDataMode.isEmpty();
-    if (!ours && !haveQueued) return;  // a broadcast we did not ask for
-    if (!m_pendingTestDataMode.isEmpty() &&
-        kind != datasetForMode(m_pendingTestDataMode)) {
-        return;  // a foreign dataset we are not queued on
     }
 
     m_testDataDownloadInProgress = false;
@@ -1618,7 +1564,7 @@ void GKDDialog::onTestDataExtractionFinished(
     setTestDataControlsEnabled(true);
 
     if (!success) {
-        appendLog(tr("[Test data] Failed to extract zip archive."));
+        appendLog(tr("[Test data] Dataset preparation failed."));
         // Same bounded-retry contract as the download-failure path: the
         // queued follow-up takes over as the pending request.
         m_pendingTestDataMode.clear();

@@ -7,6 +7,7 @@
 
 #include "tasks/openpcdet/models/caddn.h"
 
+#include <Parallel.h>
 #include <ggml.h>
 
 #include <algorithm>
@@ -137,7 +138,7 @@ bool sample_frustum(const hparams &hp,
     }
     std::vector<float> probabilities(static_cast<size_t>(width) * height *
                                      bins);
-#pragma omp parallel for schedule(static)
+    CV_OMP_PARALLEL_FOR(schedule(static))
     for (int pixel = 0; pixel < width * height; ++pixel) {
         float maximum = -INFINITY;
         for (int depth = 0; depth <= bins; ++depth)
@@ -171,7 +172,7 @@ bool sample_frustum(const hparams &hp,
         return false;
     const int nx = hp.grid_size[0], ny = hp.grid_size[1], nz = hp.grid_size[2];
     voxel.assign(static_cast<size_t>(nx) * ny * nz * channels, 0.0f);
-#pragma omp parallel for collapse(2) schedule(static)
+    CV_OMP_PARALLEL_FOR_2D(schedule(static))
     for (int x = 0; x < nx; ++x)
         for (int y = 0; y < ny; ++y) {
             for (int z = 0; z < nz; ++z) {

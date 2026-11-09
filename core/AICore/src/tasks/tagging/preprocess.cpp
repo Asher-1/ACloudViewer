@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Parallel.h>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -76,9 +78,7 @@ std::vector<float> preprocess(const img::Image& image,
     // Pillow's separable antialias filter uses 22-bit coefficients and rounds
     // to uint8 after EACH axis. A float/cv resize changes threshold decisions.
     std::vector<uint8_t> horizontal(size_t(image.height) * size * 3);
-#if defined(_OPENMP)
-#pragma omp parallel for num_threads(threads) schedule(static)
-#endif
+    CV_OMP_PARALLEL_FOR(num_threads(threads) schedule(static))
     for (int y = 0; y < image.height; ++y)
         for (int x = 0; x < size; ++x)
             for (int c = 0; c < 3; ++c) {
@@ -91,9 +91,7 @@ std::vector<float> preprocess(const img::Image& image,
     std::vector<float> pixels(size * size * 3);
     constexpr float mean[] = {.485f, .456f, .406f},
                     stddev[] = {.229f, .224f, .225f};
-#if defined(_OPENMP)
-#pragma omp parallel for num_threads(threads) schedule(static)
-#endif
+    CV_OMP_PARALLEL_FOR(num_threads(threads) schedule(static))
     for (int y = 0; y < size; ++y)
         for (int x = 0; x < size; ++x)
             for (int c = 0; c < 3; ++c) {

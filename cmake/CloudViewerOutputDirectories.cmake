@@ -182,11 +182,9 @@ function(cloudviewer_add_plugin_test target)
 endfunction()
 
 
-# Batch C test-layout companion: ctest environment for tests relocated under
-# bin/plugin_test/ (PATH for MSVC DLLs; LD_LIBRARY_PATH for Linux/macOS with
-# Qt and the vendored opencv resolved from their configure-time locations).
-# Offscreen variant: merges QT_QPA_PLATFORM into the same ENVIRONMENT value
-# (a second set_tests_properties would overwrite the first).
+# CTest runtime environment for tests relocated under bin/plugin_test/ or one
+# of the other shared test directories.  The helper below prepends build-tree
+# loader paths without serialising the host PATH as a CMake list.
 function(cloudviewer_resolve_python_lib_dir out_var)
     # pybind11::embed consumers resolve libpython at runtime from
     # LD_LIBRARY_PATH, not from the link line: DT_NEEDED carries no path, so
@@ -223,39 +221,71 @@ function(cloudviewer_resolve_python_lib_dir out_var)
 endfunction()
 
 function(cloudviewer_set_plugin_test_env_offscreen test_name)
-    cloudviewer_resolve_qt_lib_dir(_qt_lib_dir)
-    cloudviewer_resolve_python_lib_dir(_cv_python_lib_dir)
-    if (MSVC)
-        # Windows PATH is semicolon-separated, so a raw $ENV{PATH} inside the
-        # ENVIRONMENT value splits the ctest property list: every directory
-        # after the first fragment becomes a dangling item without '=' and is
-        # silently dropped, leaving the test without the conda Qt runtime
-        # (STATUS_DLL_NOT_FOUND at load). Escape the inherited separators so
-        # the whole PATH stays one ENVIRONMENT list item.
-        string(REPLACE ";" "\\;" _cv_inherited_path "$ENV{PATH}")
-        set_tests_properties(${test_name} PROPERTIES
-                ENVIRONMENT "QT_QPA_PLATFORM=offscreen;PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;${_cv_inherited_path}")
-    else ()
-        set_tests_properties(${test_name} PROPERTIES
-                ENVIRONMENT "QT_QPA_PLATFORM=offscreen;LD_LIBRARY_PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}:${_qt_lib_dir}:${CMAKE_BINARY_DIR}/external/lib:${_cv_python_lib_dir}:$ENV{LD_LIBRARY_PATH}")
-    endif ()
+    cloudviewer_set_test_runtime_environment(${test_name})
+    # ENVIRONMENT is intentionally kept for scalar values.  The runtime path
+    # uses ENVIRONMENT_MODIFICATION so CTest preserves the runner's complete
+    # PATH/LD_LIBRARY_PATH and applies the host-native path-list separator.
+    set_property(TEST ${test_name} APPEND PROPERTY ENVIRONMENT
+        "QT_QPA_PLATFORM=offscreen")
 endfunction()
 
 function(cloudviewer_set_plugin_test_env test_name)
+    cloudviewer_set_test_runtime_environment(${test_name})
+endfunction()
+
+# Add the build-tree runtime directories to a registered CTest row without
+# serialising the configure-time PATH.  ENVIRONMENT values are CMake lists,
+# so embedding a Windows PATH there loses every entry after the first `;`.
+# ENVIRONMENT_MODIFICATION (CMake >= 3.22, project minimum 3.24) performs the
+# operation at test time with the host-native separator and leaves the runner
+# environment intact for every other test. Additional arguments are runtime
+# directories owned by the caller (for example COLMAP's existing test path).
+function(cloudviewer_set_test_runtime_environment test_name)
+    if (NOT TEST ${test_name})
+        return()
+    endif()
+
     cloudviewer_resolve_qt_lib_dir(_qt_lib_dir)
     cloudviewer_resolve_python_lib_dir(_cv_python_lib_dir)
     if (MSVC)
-        # Same Windows PATH escaping as the offscreen variant above: without
-        # it the inherited PATH is truncated to its first fragment and any
-        # test whose binary really imports the conda Qt DLLs dies in the
-        # Windows loader with 0xc0000135 before main() runs.
-        string(REPLACE ";" "\\;" _cv_inherited_path "$ENV{PATH}")
-        set_tests_properties(${test_name} PROPERTIES
-                ENVIRONMENT "PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>\;${_cv_inherited_path}")
-    else ()
-        set_tests_properties(${test_name} PROPERTIES
-                ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}:${_qt_lib_dir}:${CMAKE_BINARY_DIR}/external/lib:${_cv_python_lib_dir}:$ENV{LD_LIBRARY_PATH}")
-    endif ()
+        set(_cv_loader_var PATH)
+    elseif (APPLE)
+        set(_cv_loader_var DYLD_LIBRARY_PATH)
+    else()
+        set(_cv_loader_var LD_LIBRARY_PATH)
+    endif()
+    set(_cv_runtime_modifications "")
+    if (NOT MSVC AND _cv_python_lib_dir)
+        list(APPEND _cv_runtime_modifications
+            "${_cv_loader_var}=path_list_prepend:${_cv_python_lib_dir}")
+    endif()
+    foreach (_cv_runtime_directory IN LISTS ARGN)
+        list(APPEND _cv_runtime_modifications
+            "${_cv_loader_var}=path_list_prepend:${_cv_runtime_directory}")
+    endforeach()
+    if (NOT MSVC)
+        list(APPEND _cv_runtime_modifications
+            "${_cv_loader_var}=path_list_prepend:${CMAKE_BINARY_DIR}/external/lib")
+    endif()
+    if (NOT MSVC AND _qt_lib_dir)
+        list(APPEND _cv_runtime_modifications
+            "${_cv_loader_var}=path_list_prepend:${_qt_lib_dir}")
+    endif()
+    if (MSVC)
+        list(APPEND _cv_runtime_modifications
+            "PATH=path_list_prepend:${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
+    else()
+        list(APPEND _cv_runtime_modifications
+            "${_cv_loader_var}=path_list_prepend:${CMAKE_BINARY_DIR}/bin")
+    endif()
+    get_property(_cv_existing_modifications TEST ${test_name}
+        PROPERTY ENVIRONMENT_MODIFICATION)
+    foreach (_cv_modification IN LISTS _cv_runtime_modifications)
+        if (NOT _cv_modification IN_LIST _cv_existing_modifications)
+            set_property(TEST ${test_name} APPEND PROPERTY
+                ENVIRONMENT_MODIFICATION "${_cv_modification}")
+        endif()
+    endforeach()
 endfunction()
 
 function(cloudviewer_set_examples_runtime_output_directory target)
@@ -280,6 +310,10 @@ function(cloudviewer_set_examples_runtime_output_directory target)
         set_target_properties(${target} PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/examples/$<CONFIG>"
             ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/examples/$<CONFIG>"
+            RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin/examples/Debug"
+            RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin/examples/Release"
+            RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/bin/examples/RelWithDebInfo"
+            RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_BINARY_DIR}/bin/examples/MinSizeRel"
         )
     else ()
         set_target_properties(${target} PROPERTIES
@@ -292,29 +326,9 @@ endfunction()
 function(cloudviewer_set_aicore_test_runtime_layout target)
     if(MSVC)
         set(_bin_root "${CMAKE_BINARY_DIR}/bin")
-        # Legacy layout used a single RUNTIME_OUTPUT_DIRECTORY under aicore_tests/.
         set_target_properties(${target} PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY "${_bin_root}/aicore_tests"
         )
-        # Manual benchmarks (bench_rfdetr_perf, bench_sam3_backend_acceptance,
-        # cmp_sam3_vit_stages) are plain executables without add_test();
-        # set_tests_properties on a name that is not a registered test is a
-        # fatal configure error, so guard the ctest-only ENVIRONMENT_<CONFIG>
-        # properties with if(TEST).
-        if(TEST ${target})
-            # Escape the inherited Windows PATH exactly like
-            # cloudviewer_set_plugin_test_env above; a raw $ENV{PATH} would
-            # split the property list and drop every directory after the
-            # first fragment.
-            string(REPLACE ";" "\\;" _cv_inherited_path "$ENV{PATH}")
-            foreach(_cfg IN ITEMS Debug Release RelWithDebInfo)
-                string(TOUPPER "${_cfg}" _cfg_upper)
-                set_tests_properties(${target} PROPERTIES
-                    "ENVIRONMENT_${_cfg_upper}"
-                        "PATH=${_bin_root}/${_cfg}\;${_cv_inherited_path}"
-                )
-            endforeach()
-        endif()
     else()
         set_target_properties(${target} PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/aicore_tests"
@@ -358,14 +372,6 @@ function(cloudviewer_set_aicore_test_runtime_layout target)
             # covers indirect dependencies such as libAICore's opencv.
             if (NOT MSVC)
                 target_link_options(${target} PRIVATE "-Wl,--disable-new-dtags")
-            endif ()
-            # Systems with a second system-wide Qt (different 5.x minor) must
-            # load the Qt that AICore was built against: prepend the resolved
-            # Qt lib dir for ctest runs (batch C test-layout fix).
-            cloudviewer_resolve_qt_lib_dir(_qt_dir_for_env)
-            if (TEST ${target})
-                set_tests_properties(${target} PROPERTIES
-                        ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/bin:${_qt_dir_for_env}:${CMAKE_BINARY_DIR}/external/lib:$ENV{LD_LIBRARY_PATH}")
             endif ()
             return()
         endif()

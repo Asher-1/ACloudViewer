@@ -441,10 +441,10 @@ find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
     if(MSVC)
         # MSVC's default /openmp is OpenMP 2.0, which does NOT support
-        # '#pragma omp simd' or the 'collapse' clause (C7660/C4849). The
-        # built-in /openmp:experimental enables them (no optional LLVM
-        # component required), so the ALIKED SIMD/collapse kernels keep their
-        # full performance on Windows instead of being disabled.
+        # '#pragma omp simd' or the 'collapse' clause (C7660/C4849). Enable
+        # SIMD with /openmp:experimental (no optional LLVM component required).
+        # Parallel.h gates collapse independently on the advertised OpenMP
+        # version and retains outer-loop parallelism on OpenMP 2.0.
         #
         # The dependency owner links OpenMP::OpenMP_CXX on its interface,
         # propagating /openmp. Strip it here first — /openmp:experimental
@@ -456,6 +456,7 @@ if(OpenMP_CXX_FOUND)
                 INTERFACE_LINK_LIBRARIES "${_ggml_omp}")
         endif()
         target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/openmp:experimental>)
+        target_compile_definitions(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:CV_OPENMP_SIMD_ENABLED>)
     else()
         target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_CXX)
     endif()
@@ -576,12 +577,13 @@ endif()
 # AICore mirrors the upstream default (ON) but degrades gracefully — with a
 # loud warning per missing prerequisite, instead of upstream's silent
 # disable or a hard configure failure:
-#   CUDA off | libtorch missing | Python headers missing
+#   CUDA off | CUDA toolkit < 12.3 | CUDA-enabled Torch missing
+#   Python development files missing
 #     → chart clustering off; mesh_export falls back to simple_unwrap.
 # Point CUMESH_TORCH_DIR at the directory containing TorchConfig.cmake
-# (e.g. <conda-env>/lib/python3.*/site-packages/torch/share/cmake/Torch).
+# (or leave it empty to discover Torch from Python3_EXECUTABLE).
 # Task-owned wiring (graceful guard ladder, vendored SHARED build against
-# libtorch/libpython, hash.cu torch version gate) lives in
+# platform-specific Torch libraries, hash.cu torch version gate) lives in
 # src/tasks/trellis/cmake/cumesh.cmake; the AICore_USE_CUMESH switch and
 # CUMESH_TORCH_DIR are declared in cmake/AICoreOptions.cmake.
 include(${AICORE_TRELLIS_SRC_DIR}/cmake/cumesh.cmake)
@@ -722,10 +724,21 @@ if(GGML_DYNAMIC_BACKENDS AND GGML_RUNTIME_LIB_DIR AND GGML_BACKEND_DIR)
     # aicore_tests/ sits beside libAICore.so; ggml's backend loader may probe the
     # executable directory first when scripts set LD_LIBRARY_PATH=.../aicore_tests.
     if(AICore_BUILD_TESTS)
+        if(MSVC)
+            # AICore tests use the Ninja Multi-Config layout
+            # bin/aicore_tests/<CONFIG>.  Keep the backend DLLs beside those
+            # executables; a flat destination works on Unix but leaves the
+            # Windows loader dependent on an incidental PATH entry.
+            set(_aicore_test_backend_dest
+                "${CMAKE_BINARY_DIR}/bin/aicore_tests/$<CONFIG>")
+        else()
+            set(_aicore_test_backend_dest
+                "${CMAKE_BINARY_DIR}/bin/aicore_tests")
+        endif()
         set(_aicore_test_backend_copy_args
             -DCOPY_BACKEND_MODULES=ON
             -DGGML_BACKEND_DIR="${GGML_BACKEND_DIR}"
-            -DDEST_DIR="${CMAKE_BINARY_DIR}/bin/aicore_tests"
+            -DDEST_DIR="${_aicore_test_backend_dest}"
             -DLIB_PREFIX="${CMAKE_SHARED_LIBRARY_PREFIX}"
             -DLIB_SUFFIX="${GGML_MODULE_SUFFIX}"
             -DGPU_FILES_PIPE="${_aicore_gpu_backend_files_pipe}")
@@ -855,6 +868,7 @@ if(AICore_BUILD_TESTS)
                         INTERFACE_LINK_LIBRARIES "${_ggml_omp_t}")
                 endif()
                 target_compile_options(AICore_test PUBLIC $<$<COMPILE_LANGUAGE:CXX>:/openmp:experimental>)
+                target_compile_definitions(AICore_test PUBLIC $<$<COMPILE_LANGUAGE:CXX>:CV_OPENMP_SIMD_ENABLED>)
             else()
                 target_link_libraries(AICore_test PUBLIC OpenMP::OpenMP_CXX)
             endif()
@@ -915,14 +929,20 @@ add_executable(test_ocr_runtime tests/test_ocr_runtime.cpp
     # needs the shared log-level accessor TU).
     ${AICORE_BRIDGE_CLOSURE_SOURCES})
 target_include_directories(test_ocr_runtime PRIVATE
-    ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${AICORE_INC_DIR} ${CMAKE_SOURCE_DIR}/core/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/ocr
     ${JSONCPP_INCLUDE_DIRS})
 # The probe is deliberately independent of the AICore shared library: the
 # ocr interpreter sources are compiled into this target directly, so the
 # parity ctest stays runnable while unrelated task sources (e.g. the sam3d
 # vendor migration) break the main-library closure.
-target_link_libraries(test_ocr_runtime PRIVATE ${GGML_DEPENDENCY_TARGET} 3rdparty_jsoncpp)
+target_link_libraries(test_ocr_runtime PRIVATE ${GGML_DEPENDENCY_TARGET}
+    3rdparty_jsoncpp CVCoreLib)
+# CVCoreLib exposes Qt headers on Linux; Qt builds with -reduce-relocations
+# reject an executable TU compiled only with the project's default -fPIE.
+target_compile_options(test_ocr_runtime PRIVATE
+    $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:-fPIC>)
 aicore_apply_compile_definitions(test_ocr_runtime)
 
 # AnyCalib parity probe (batch AG): the ggml graph runs against the ONNX
@@ -934,6 +954,7 @@ target_include_directories(anycalib_parity_probe PRIVATE ${AICORE_INC_DIR})
 target_link_libraries(anycalib_parity_probe PRIVATE AICore)
 set_target_properties(anycalib_parity_probe PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/aicore_tests)
+cloudviewer_set_aicore_test_runtime_layout(anycalib_parity_probe)
 set_target_properties(test_ocr_runtime PROPERTIES
     POSITION_INDEPENDENT_CODE ON CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
     # The backend .so modules (ggml-cuda/vulkan/cpu-*) live beside
@@ -951,21 +972,25 @@ if(TARGET aicore-fast-tests)
     add_dependencies(aicore-fast-tests test_ocr_runtime)
     add_test(NAME test_paddle_program_io_contract COMMAND test_ocr_runtime --program-io-contract)
     set_tests_properties(test_paddle_program_io_contract PROPERTIES LABELS "common;contract")
+    cloudviewer_set_test_runtime_environment(test_paddle_program_io_contract)
     add_test(NAME test_ocr_dw_bias_cpu COMMAND test_ocr_runtime
         --dw-bias-contract CPU "${GGML_MODULE_DIR}")
     set_tests_properties(test_ocr_dw_bias_cpu PROPERTIES LABELS "ocr;ggml"
         SKIP_RETURN_CODE 77)
+    cloudviewer_set_test_runtime_environment(test_ocr_dw_bias_cpu)
     if(AICore_CUDA_ENABLED)
         add_test(NAME test_ocr_dw_bias_cuda COMMAND test_ocr_runtime
             --dw-bias-contract CUDA0 "${GGML_MODULE_DIR}")
         set_tests_properties(test_ocr_dw_bias_cuda PROPERTIES LABELS "ocr;ggml;gpu"
             SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
+        cloudviewer_set_test_runtime_environment(test_ocr_dw_bias_cuda)
     endif()
     if(AICore_VULKAN_ENABLED)
         add_test(NAME test_ocr_dw_bias_vulkan COMMAND test_ocr_runtime
             --dw-bias-contract Vulkan0 "${GGML_MODULE_DIR}")
         set_tests_properties(test_ocr_dw_bias_vulkan PROPERTIES LABELS "ocr;ggml;gpu"
             SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
+        cloudviewer_set_test_runtime_environment(test_ocr_dw_bias_vulkan)
     endif()
 endif()
 
@@ -979,11 +1004,15 @@ add_executable(test_table_runtime tests/test_table_runtime.cpp
     src/common/blocked_conv.cpp
     ${AICORE_BRIDGE_CLOSURE_SOURCES})
 target_include_directories(test_table_runtime PRIVATE
-    ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${AICORE_INC_DIR} ${CMAKE_SOURCE_DIR}/core/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/ocr
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/table
     ${JSONCPP_INCLUDE_DIRS})
-target_link_libraries(test_table_runtime PRIVATE ${GGML_DEPENDENCY_TARGET} 3rdparty_jsoncpp)
+target_link_libraries(test_table_runtime PRIVATE ${GGML_DEPENDENCY_TARGET}
+    3rdparty_jsoncpp CVCoreLib)
+target_compile_options(test_table_runtime PRIVATE
+    $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:-fPIC>)
 aicore_apply_compile_definitions(test_table_runtime)
 set_target_properties(test_table_runtime PROPERTIES
     POSITION_INDEPENDENT_CODE ON CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
@@ -1005,6 +1034,7 @@ endif()
 set_target_properties(aicore_gguf_quantize PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/aicore_tests"
     FOLDER "core/tools")
+cloudviewer_set_aicore_test_runtime_layout(aicore_gguf_quantize)
 if(GGML_DYNAMIC_BACKENDS AND GGML_RUNTIME_LIB_DIR AND GGML_BACKEND_DIR)
         string(REPLACE ";" "|" _quantize_gpu_pipe "${GGML_GPU_BACKEND_MODULE_FILES}")
         set(_copy_script "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CopyGgmlBackends.cmake")
@@ -1047,6 +1077,7 @@ set_target_properties(reid_probe PROPERTIES
     POSITION_INDEPENDENT_CODE ON
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/aicore_tests"
     FOLDER "core/tools")
+cloudviewer_set_aicore_test_runtime_layout(reid_probe)
 if(NOT MSVC)
     target_compile_options(reid_probe PRIVATE -fPIC)
     target_link_options(reid_probe PRIVATE "-no-pie")

@@ -14,6 +14,8 @@
 //   free_splatter-cli [--device DEV] [--splat OUT.splat] [--out OUT.f32]
 //                     [--opacity-threshold T] [--max-splats N] [--dump-taps
 //                     DIR] MODEL.gguf  (IMAGES... | INPUT.f32)
+#include <FileSystem.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -260,7 +262,8 @@ int main(int argc, char **argv) {
                 (size_t)2 * geo.image_height * geo.image_width * gc;
         std::vector<float> gbuf;
         if (inputs.size() == 1 && ends_with(inputs[0], ".f32")) {
-            std::ifstream f(inputs[0], std::ios::binary | std::ios::ate);
+            std::ifstream f = cloudViewer::utility::filesystem::OpenInputStream(
+                    inputs[0], std::ios::binary | std::ios::ate);
             if (!f) {
                 std::fprintf(stderr, "cannot open %s\n", inputs[0].c_str());
                 free_splatter_free(ctx);
@@ -394,7 +397,9 @@ int main(int argc, char **argv) {
                         "note: --min-parallax re-pairs keyframes; ignored for "
                         ".f32 dumps (fixed pairs) -- accumulating all.\n");
             for (size_t k = 0; k < npairs; k++) {
-                std::ifstream f(inputs[k], std::ios::binary | std::ios::ate);
+                std::ifstream f =
+                        cloudViewer::utility::filesystem::OpenInputStream(
+                                inputs[k], std::ios::binary | std::ios::ate);
                 if (!f) {
                     std::fprintf(stderr, "cannot open %s\n", inputs[k].c_str());
                     free_splatter_accumulator_free(acc);
@@ -587,7 +592,9 @@ int main(int argc, char **argv) {
                     }
                     free_splatter_buf_free(root);
                 }
-                std::ofstream mf(dir + "/manifest.json");
+                std::ofstream mf =
+                        cloudViewer::utility::filesystem::OpenOutputStream(
+                                dir + "/manifest.json");
                 mf << "{ \"reframe\": true, \"steps\": [\n";
                 for (size_t L = 0; L < labels.size(); L++)
                     mf << "    {\"splat\":\"" << base << "_" << L
@@ -661,7 +668,8 @@ int main(int argc, char **argv) {
     const int64_t per_view =
             (int64_t)geo.in_channels * geo.image_height * geo.image_width;
     if (inputs.size() == 1 && ends_with(inputs[0], ".f32")) {
-        std::ifstream f(inputs[0], std::ios::binary | std::ios::ate);
+        std::ifstream f = cloudViewer::utility::filesystem::OpenInputStream(
+                inputs[0], std::ios::binary | std::ios::ate);
         if (!f) {
             std::fprintf(stderr, "cannot open %s\n", inputs[0].c_str());
             free_splatter_free(ctx);
@@ -697,7 +705,8 @@ int main(int argc, char **argv) {
     std::printf("ran %d views -> %zu gaussian floats\n", n_views, n_out);
 
     if (out_path) {
-        std::ofstream o(out_path, std::ios::binary);
+        std::ofstream o = cloudViewer::utility::filesystem::OpenOutputStream(
+                out_path, std::ios::binary);
         o.write((const char *)out, (std::streamsize)n_out * sizeof(float));
     }
     if (splat_path)

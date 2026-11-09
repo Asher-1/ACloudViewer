@@ -1014,7 +1014,7 @@ bool readExisting(const QString& path,
 
 QString frameKey(QString name) {
     name.replace(QLatin1Char('\\'), QLatin1Char('/'));
-    name = name.section(QLatin1Char('/'), -1);
+    name = QFileInfo(name).fileName();
     const QString extension = QFileInfo(name).suffix().toLower();
     if (extension == QStringLiteral("bin") ||
         extension == QStringLiteral("ply") ||

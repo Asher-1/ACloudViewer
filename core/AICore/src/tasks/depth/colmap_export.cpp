@@ -7,6 +7,8 @@
 
 #include "tasks/depth/colmap_export.hpp"
 
+#include <FileSystem.h>
+
 #include <cstdio>
 #include <cstring>
 #include <filesystem>
@@ -54,7 +56,7 @@ bool write_colmap(const std::string& dir,
                   int N,
                   bool binary) {
     std::error_code ec;
-    std::filesystem::create_directories(dir, ec);
+    std::filesystem::create_directories(std::filesystem::u8path(dir), ec);
     if (ec) return false;
 
     // 1. Confidence threshold (numpy percentile, linear interp) over all conf.
@@ -121,7 +123,9 @@ bool write_colmap(const std::string& dir,
     if (binary) {
         // -- cameras.bin --
         {
-            std::ofstream o(dir + "/cameras.bin", std::ios::binary);
+            std::ofstream o =
+                    cloudViewer::utility::filesystem::OpenOutputStream(
+                            dir + "/cameras.bin", std::ios::binary);
             if (!o) return false;
             put<uint64_t>(o, (uint64_t)N);
             for (int i = 0; i < N; ++i) {
@@ -138,7 +142,9 @@ bool write_colmap(const std::string& dir,
         }
         // -- images.bin --
         {
-            std::ofstream o(dir + "/images.bin", std::ios::binary);
+            std::ofstream o =
+                    cloudViewer::utility::filesystem::OpenOutputStream(
+                            dir + "/images.bin", std::ios::binary);
             if (!o) return false;
             put<uint64_t>(o, (uint64_t)N);
             for (int i = 0; i < N; ++i) {
@@ -166,7 +172,9 @@ bool write_colmap(const std::string& dir,
         }
         // -- points3D.bin --
         {
-            std::ofstream o(dir + "/points3D.bin", std::ios::binary);
+            std::ofstream o =
+                    cloudViewer::utility::filesystem::OpenOutputStream(
+                            dir + "/points3D.bin", std::ios::binary);
             if (!o) return false;
             put<uint64_t>(o, (uint64_t)num_points);
             for (size_t p = 0; p < num_points; ++p) {
@@ -189,7 +197,8 @@ bool write_colmap(const std::string& dir,
     // ----------------------- text format -----------------------
     // -- cameras.txt --
     {
-        std::ofstream o(dir + "/cameras.txt");
+        std::ofstream o = cloudViewer::utility::filesystem::OpenOutputStream(
+                dir + "/cameras.txt");
         if (!o) return false;
         o << "# Camera list with one line of data per camera:\n"
           << "#   CAMERA_ID, MODEL, WIDTH, HEIGHT, PARAMS[]\n"
@@ -205,7 +214,8 @@ bool write_colmap(const std::string& dir,
     }
     // -- images.txt --
     {
-        std::ofstream o(dir + "/images.txt");
+        std::ofstream o = cloudViewer::utility::filesystem::OpenOutputStream(
+                dir + "/images.txt");
         if (!o) return false;
         double mean_obs = 0.0;
         if (N > 0) {
@@ -239,7 +249,8 @@ bool write_colmap(const std::string& dir,
     }
     // -- points3D.txt --
     {
-        std::ofstream o(dir + "/points3D.txt");
+        std::ofstream o = cloudViewer::utility::filesystem::OpenOutputStream(
+                dir + "/points3D.txt");
         if (!o) return false;
         const double mean_track =
                 num_points ? 1.0 : 0.0;  // single obs per point

@@ -79,6 +79,8 @@ int main(int argc, char** argv) {
                       "milliseconds", "120000"});
     parser.addOption({"plugin-module",
                       "Load and check the built plugin module.", "path"});
+    parser.addOption({"aicore-library",
+                      "Record the built AICore runtime library.", "path"});
     parser.addOption({"upstream-binary",
                       "Compare UI options with this upstream ram-ggml build.",
                       "path"});
@@ -144,6 +146,29 @@ int main(int argc, char** argv) {
         return QString(QCryptographicHash::hash(file.readAll(),
                                                 QCryptographicHash::Sha256)
                                .toHex());
+    };
+    auto candidateAICoreLibrary = [&]() {
+        const QString configured = parser.value("aicore-library");
+        if (!configured.isEmpty()) return configured;
+        const QStringList names = {
+#if defined(Q_OS_WIN)
+                QStringLiteral("AICore.dll"),
+                QStringLiteral("AICore_d.dll"),
+#elif defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+                QStringLiteral("libAICore.dylib"),
+#else
+                QStringLiteral("libAICore.so"),
+#endif
+        };
+        QDir directory(QCoreApplication::applicationDirPath());
+        for (int level = 0; level < 4; ++level) {
+            for (const QString& name : names) {
+                const QString candidate = directory.filePath(name);
+                if (QFileInfo::exists(candidate)) return candidate;
+            }
+            if (!directory.cdUp()) break;
+        }
+        return QString();
     };
     QTemporaryDir outputs;
     const QString outputDir = parser.isSet("output-dir")
@@ -621,10 +646,18 @@ int main(int argc, char** argv) {
         auto env = QProcessEnvironment::systemEnvironment();
         const QString build = upstream.absolutePath(),
                       ggml = build + "/third_party/ggml/src";
+        QString libraryPathVariable;
+#if defined(Q_OS_WIN)
+        libraryPathVariable = QStringLiteral("PATH");
+#elif defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+        libraryPathVariable = QStringLiteral("DYLD_LIBRARY_PATH");
+#else
+        libraryPathVariable = QStringLiteral("LD_LIBRARY_PATH");
+#endif
         QStringList libraries{ggml, ggml + "/ggml-" + backend, build + "/bin"};
-        if (env.contains("LD_LIBRARY_PATH"))
-            libraries << env.value("LD_LIBRARY_PATH");
-        env.insert("LD_LIBRARY_PATH", libraries.join(':'));
+        if (env.contains(libraryPathVariable))
+            libraries << env.value(libraryPathVariable);
+        env.insert(libraryPathVariable, libraries.join(QDir::listSeparator()));
         env.remove("GGML_BACKEND_PATH");
         struct OptionCase {
             QString name;
@@ -856,10 +889,7 @@ int main(int argc, char** argv) {
                                  upstream.absoluteFilePath()},
                                 {"upstream_binary_sha256", upstreamDigest},
                                 {"candidate_aicore_sha256",
-                                 sha256File(
-                                         QDir(QCoreApplication::
-                                                      applicationDirPath())
-                                                 .filePath("../libAICore.so"))},
+                                 sha256File(candidateAICoreLibrary())},
                                 {"candidate_plugin_sha256",
                                  sha256File(parser.value("plugin-module"))},
                                 {"label_space", space},

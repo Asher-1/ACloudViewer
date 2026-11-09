@@ -7,6 +7,8 @@
 
 #include "tasks/instantmesh/gguf_io.hpp"
 
+#include <FileSystem.h>
+
 #include <cstdio>
 #include <fstream>
 #include <memory>
@@ -177,7 +179,8 @@ bool load_gguf(const std::string& path,
     // Stream weight payloads from the file into the backend memory.
     // std::ifstream (not fseek/long): zero123pp UNet f32 exceeds 2 GiB and
     // long offsets overflow on Windows.
-    std::ifstream f(path, std::ios::binary);
+    std::ifstream f = cloudViewer::utility::filesystem::OpenInputStream(
+            path, std::ios::binary);
     if (!f) {
         if (error) *error = "fopen failed: " + path;
         return false;

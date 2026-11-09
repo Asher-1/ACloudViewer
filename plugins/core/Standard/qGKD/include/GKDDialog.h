@@ -118,10 +118,7 @@ private slots:
     void onCancel();
     void onDbListActivated(QListWidgetItem* item);
     void requestTestData();
-    void onTestDataDownloadFinished(bool success,
-                                    ecvTestDataRepository::Dataset kind);
-    void onTestDataExtractionFinished(bool success,
-                                      ecvTestDataRepository::Dataset kind);
+    void onTestDataReady(bool success, ecvTestDataRepository::Dataset kind);
 
 protected:
     void closeEvent(QCloseEvent* event) override;

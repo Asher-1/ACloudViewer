@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include "aicore/export.h"
+
 /*
 ** ── DLL Export Decoration ────────────────────────────────────────────────
 **
@@ -21,14 +23,10 @@
 ** nothing and there is no ABI surface.
 */
 #ifdef TRELLIS2_SHARED
-#if defined(_WIN32) && !defined(__MINGW32__)
 #ifdef TRELLIS2_BUILD
-#define TRELLIS2_API __declspec(dllexport)
+#define TRELLIS2_API AICORE_PRIVATE_SYMBOL_EXPORT
 #else
-#define TRELLIS2_API __declspec(dllimport)
-#endif
-#else
-#define TRELLIS2_API __attribute__((visibility("default")))
+#define TRELLIS2_API AICORE_PRIVATE_SYMBOL_IMPORT
 #endif
 #else
 #define TRELLIS2_API

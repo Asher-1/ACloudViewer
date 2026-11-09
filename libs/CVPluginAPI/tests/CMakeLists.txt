@@ -6,6 +6,18 @@ if(NOT TARGET Qt${QT_VERSION_MAJOR}::Widgets)
     find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui Widgets)
 endif()
 
+function(_cvpluginapi_register_asset_test name)
+    if(COMMAND aicore_register_test)
+        # Include cache contracts in the existing native CI contract gate.
+        aicore_register_test(NAME ${name} TARGET ${name}
+            LABELS "cvpluginapi;capi")
+    else()
+        add_test(NAME ${name} COMMAND ${name})
+        set_tests_properties(${name} PROPERTIES LABELS "cvpluginapi")
+    endif()
+    cloudviewer_set_plugin_test_env(${name})
+endfunction()
+
 add_executable(test_cvpluginapi_ui_helpers test_ui_helpers.cpp)
 
 target_include_directories(test_cvpluginapi_ui_helpers PRIVATE
@@ -23,7 +35,9 @@ if(NOT MSVC)
     target_compile_options(test_cvpluginapi_ui_helpers PRIVATE -Wall -Wextra -fPIC)
     set_target_properties(test_cvpluginapi_ui_helpers PROPERTIES
         POSITION_INDEPENDENT_CODE ON)
-    target_link_options(test_cvpluginapi_ui_helpers PRIVATE "-no-pie")
+    if(NOT APPLE)
+        target_link_options(test_cvpluginapi_ui_helpers PRIVATE "-no-pie")
+    endif()
 endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_cvpluginapi_ui_helpers)
@@ -42,13 +56,43 @@ if(NOT MSVC)
     target_compile_options(test_cvpluginapi_asset_integrity PRIVATE -Wall -Wextra -fPIC)
     set_target_properties(test_cvpluginapi_asset_integrity PROPERTIES
         POSITION_INDEPENDENT_CODE ON)
-    target_link_options(test_cvpluginapi_asset_integrity PRIVATE "-no-pie")
+    if(NOT APPLE)
+        target_link_options(test_cvpluginapi_asset_integrity PRIVATE "-no-pie")
+    endif()
 endif()
 cloudviewer_set_bin_runtime_output_directory(test_cvpluginapi_asset_integrity)
-add_test(NAME test_cvpluginapi_asset_integrity
-    COMMAND test_cvpluginapi_asset_integrity)
-cloudviewer_set_plugin_test_env(test_cvpluginapi_asset_integrity)
-set_tests_properties(test_cvpluginapi_asset_integrity PROPERTIES LABELS "cvpluginapi")
+_cvpluginapi_register_asset_test(test_cvpluginapi_asset_integrity)
+
+# Real HTTP transport with a local server; no external assets or network.
+add_executable(test_cvpluginapi_model_downloader test_model_downloader.cpp)
+target_include_directories(test_cvpluginapi_model_downloader PRIVATE
+    ${CMAKE_SOURCE_DIR}/core/AICore/include)
+target_link_libraries(test_cvpluginapi_model_downloader PRIVATE
+    CVPluginAPI Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Network)
+if(NOT MSVC)
+    target_compile_options(test_cvpluginapi_model_downloader PRIVATE -Wall -Wextra -fPIC)
+    if(NOT APPLE)
+        target_link_options(test_cvpluginapi_model_downloader PRIVATE "-no-pie")
+    endif()
+endif()
+cloudviewer_set_bin_runtime_output_directory(test_cvpluginapi_model_downloader)
+_cvpluginapi_register_asset_test(test_cvpluginapi_model_downloader)
+
+# Cached archive preparation and completion state, without external assets.
+add_executable(test_cvpluginapi_dataset_repository test_dataset_repository.cpp)
+target_include_directories(test_cvpluginapi_dataset_repository PRIVATE
+    ${CMAKE_SOURCE_DIR}/core/AICore/include)
+target_link_libraries(test_cvpluginapi_dataset_repository PRIVATE
+    CVPluginAPI Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui
+    Qt${QT_VERSION_MAJOR}::Network)
+if(NOT MSVC)
+    target_compile_options(test_cvpluginapi_dataset_repository PRIVATE -Wall -Wextra -fPIC)
+    if(NOT APPLE)
+        target_link_options(test_cvpluginapi_dataset_repository PRIVATE "-no-pie")
+    endif()
+endif()
+cloudviewer_set_bin_runtime_output_directory(test_cvpluginapi_dataset_repository)
+_cvpluginapi_register_asset_test(test_cvpluginapi_dataset_repository)
 
 # Focused unit tests for the shared AICore runtime helper header
 # (include/ecvAICoreRuntimeHelpers.h). Header-only under test, but the lock
@@ -70,7 +114,9 @@ if(NOT MSVC)
     target_compile_options(test_cvpluginapi_runtime_helpers PRIVATE -Wall -Wextra -fPIC)
     set_target_properties(test_cvpluginapi_runtime_helpers PROPERTIES
         POSITION_INDEPENDENT_CODE ON)
-    target_link_options(test_cvpluginapi_runtime_helpers PRIVATE "-no-pie")
+    if(NOT APPLE)
+        target_link_options(test_cvpluginapi_runtime_helpers PRIVATE "-no-pie")
+    endif()
 endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_cvpluginapi_runtime_helpers)

@@ -7,6 +7,8 @@
 
 #include "tasks/querysplat/querysplat_lpips_graph.hpp"
 
+#include <Parallel.h>
+
 #include <cmath>
 #include <cstring>
 #include <map>
@@ -232,7 +234,7 @@ void host_conv_relu(const float* in,
                     const float* bias,
                     float* out) {
 #ifdef QS_USE_OPENMP
-#pragma omp parallel for collapse(2) schedule(static)
+    CV_OMP_PARALLEL_FOR_2D(schedule(static))
 #endif
     for (int oc = 0; oc < OC; oc++) {
         for (int y = 0; y < H; y++) {
@@ -269,7 +271,7 @@ void host_conv_input_grad(const float* dout,
                           int C,
                           float* din) {
 #ifdef QS_USE_OPENMP
-#pragma omp parallel for collapse(2) schedule(static)
+    CV_OMP_PARALLEL_FOR_2D(schedule(static))
 #endif
     for (int y = 0; y < H; y++) {
         for (int x = 0; x < W; x++) {

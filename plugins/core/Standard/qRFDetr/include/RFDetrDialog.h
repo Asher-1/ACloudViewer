@@ -121,10 +121,7 @@ private:
 
     void requestTestData(TestDataTarget target);
     bool loadRequestedTestData();
-    void onTestDataDownloadFinished(bool success,
-                                    ecvTestDataRepository::Dataset kind);
-    void onTestDataExtractionFinished(bool success,
-                                      ecvTestDataRepository::Dataset kind);
+    void onTestDataReady(bool success, ecvTestDataRepository::Dataset kind);
     void setTestDataControlsEnabled(bool enabled);
 
     // ---- class filter helpers ----

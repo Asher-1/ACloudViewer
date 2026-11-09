@@ -9,6 +9,7 @@
 // ABI, options lifecycle, error paths, image preprocessing (real decode
 // path), model catalog and runtime plumbing.
 
+#include <QFileInfo>
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -344,7 +345,9 @@ static void test_catalog_digest_scope(const char* catalog_binary) {
         if (row["task"].toString() != QStringLiteral("instantmesh")) continue;
         ++count;
         const QByteArray name =
-                row["relative_path"].toString().section('/', -1).toUtf8();
+                QFileInfo(row["relative_path"].toString().replace('\\', '/'))
+                        .fileName()
+                        .toUtf8();
         const auto* entry =
                 aicore_instantmesh_model_by_filename(name.constData());
         AICORE_CHECK(entry != nullptr);

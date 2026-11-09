@@ -183,7 +183,9 @@ def export_reference(args, pins, sources):
             target = Path(temporary) / role
             target.mkdir()
             for key, name in (("program", "inference.pdmodel"), ("parameters", "inference.pdiparams")):
-                (target / name).symlink_to(files[key].resolve())
+                # Windows runners do not guarantee Developer Mode, so avoid
+                # requiring symlink privileges for temporary source staging.
+                shutil.copy2(files[key], target / name)
             config = files["config"]
             (target / "inference.yml").write_bytes(config if isinstance(config, bytes) else config.read_bytes())
             dirs[role] = str(target)

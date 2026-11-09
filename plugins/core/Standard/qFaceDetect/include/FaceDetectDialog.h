@@ -22,6 +22,7 @@
 #include <QTabWidget>
 #include <QToolButton>
 #include <QWidget>
+#include <functional>
 
 #include "FaceDetectTestData.h"
 #include "FaceDetectWorker.h"
@@ -169,11 +170,11 @@ private:
      *  when catalog has an entry (used to trigger auto-download). */
     QString resolveLandmarkModelFilename() const;
     QString defaultLandmarkModelFilename() const;
-    bool ensureModelAvailable();
+    bool ensureModelAvailable(std::function<void()> resume);
     /** Check only the face detector model is downloaded and ready.
      *  Skips the Dense-Landmarks landmark-model check — used by the Live tab
      *  which only supports Detect / Recognize, never DenseLandmarks. */
-    bool ensureDetectorAvailable();
+    bool ensureDetectorAvailable(std::function<void()> resume);
     void startDownload(const aicore_facedetect_model_entry* model);
     void cancelDownload();
     void updateImagePreview();
@@ -252,7 +253,7 @@ private:
     bool m_testPostFillLiveVideo = false;
     bool m_testPostFillBatchImage = false;
     bool m_testClearExistingEntries = true;
-    bool m_autoRunAfterDownload = false;
+    std::function<void()> m_resumeAfterDownload;
     int m_activeTabHeight = -1;
     // Dialog height minus the tab widget height, measured once on the
     // first show (layout settled, no user resize yet).  A measured

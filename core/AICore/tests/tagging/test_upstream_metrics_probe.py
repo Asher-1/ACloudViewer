@@ -14,6 +14,7 @@ import cpu_precision_reference
 from upstream_metrics_probe import (active_graphics_processes,
                                     aicore_latency_ms, execute_audited,
                                     candidate_build_settings,
+                                    candidate_runtime_path,
                                     gpu_overlap_pids, include_graphics_audit,
                                     metrics_for_backend, probability_alignment,
                                     truth_cache, upstream_backend_env)
@@ -137,6 +138,30 @@ class IndependentAccuracyTests(unittest.TestCase):
 
 
 class TimingAuditTests(unittest.TestCase):
+    def test_candidate_runtime_resolution_supports_windows_multiconfig_layout(self):
+        with tempfile.TemporaryDirectory() as directory:
+            build_bin = Path(directory) / "bin"
+            probe = build_bin / "aicore_tests" / "Release" / "test_tagging_probe.exe"
+            runtime = build_bin / "Release" / "AICore.dll"
+            probe.parent.mkdir(parents=True)
+            runtime.parent.mkdir(parents=True, exist_ok=True)
+            probe.write_bytes(b"probe")
+            runtime.write_bytes(b"runtime")
+            with patch("runtime_environment.aicore_library_names", return_value=("AICore.dll",)):
+                self.assertEqual(candidate_runtime_path(probe), runtime)
+
+    def test_candidate_runtime_resolution_supports_flat_unix_layout(self):
+        with tempfile.TemporaryDirectory() as directory:
+            build_bin = Path(directory) / "bin"
+            probe = build_bin / "aicore_tests" / "test_tagging_probe"
+            runtime = build_bin / "libAICore.so"
+            probe.parent.mkdir(parents=True)
+            runtime.parent.mkdir(parents=True, exist_ok=True)
+            probe.write_bytes(b"probe")
+            runtime.write_bytes(b"runtime")
+            with patch("runtime_environment.aicore_library_names", return_value=("libAICore.so",)):
+                self.assertEqual(candidate_runtime_path(probe), runtime)
+
     def test_aicore_latency_uses_typed_pipeline_timing_not_caller_decode_wall(self):
         self.assertEqual(aicore_latency_ms({"latency_ms": 12.0,
                                             "e2e_ms": 9.5}), 9.5)

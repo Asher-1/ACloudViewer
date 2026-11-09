@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <FileSystem.h>
+
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
@@ -33,7 +35,8 @@ using aicore::capi::dup_cstr;
 bool read_file_bytes(const char* path,
                      std::vector<uint8_t>& out,
                      std::string* err) {
-    std::ifstream f(path, std::ios::binary);
+    std::ifstream f = cloudViewer::utility::filesystem::OpenInputStream(
+            path, std::ios::binary);
     if (!f.is_open()) {
         if (err) *err = std::string("cannot open file: ") + path;
         return false;

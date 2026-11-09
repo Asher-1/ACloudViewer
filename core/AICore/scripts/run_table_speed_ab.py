@@ -36,6 +36,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import table_teds as TEDS  # noqa: E402
+from runtime_environment import prepend_runtime_paths  # noqa: E402
 
 QUANTS = ("f32", "f16", "q8_0")
 
@@ -47,11 +48,14 @@ def pct(values: list[float], p: float) -> float:
 
 def host_state() -> dict:
     state = {}
-    try:
-        state["cpu_governor"] = Path(
-            "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor").read_text().strip()
-    except OSError:
-        state["cpu_governor"] = "unknown"
+    governor = Path("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor")
+    if governor.is_file():
+        try:
+            state["cpu_governor"] = governor.read_text().strip()
+        except OSError:
+            state["cpu_governor"] = "unknown"
+    else:
+        state["cpu_governor"] = "unsupported"
     for key, query in (("gpu", "name,clocks.sm,clocks.max.sm,utilization.gpu,memory.used"),):
         try:
             state[key] = subprocess.run(
@@ -135,8 +139,7 @@ def run_aicore(scope: str, backend: str, quant: str, images: list[str], args) ->
     cmd += ["--list", str(listing)]
     env = os.environ.copy()
     bin_dir = args.bench.resolve().parent
-    env["LD_LIBRARY_PATH"] = os.pathsep.join(
-        [str(bin_dir), str(bin_dir.parent / "external" / "lib"), env.get("LD_LIBRARY_PATH", "")])
+    prepend_runtime_paths(env, [bin_dir, bin_dir.parent / "external" / "lib"])
     proc = subprocess.run(cmd, capture_output=True, text=True, env=env)
     if proc.returncode != 0:
         raise SystemExit(f"bench_table {scope}/{backend}/{quant} failed:\n{proc.stderr[-3000:]}")

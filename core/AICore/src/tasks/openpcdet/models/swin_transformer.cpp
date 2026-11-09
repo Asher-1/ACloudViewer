@@ -17,6 +17,7 @@
 #include <numeric>
 #include <vector>
 
+#include "FileSystem.h"
 #include "common/debug_dump.hpp"
 
 namespace openpcdet {
@@ -1064,7 +1065,8 @@ bool run_swin_transformer(engine_backend &backend,
                                  batch_size);
         ggml_backend_tensor_get(input, inbuf.data(), 0,
                                 inbuf.size() * sizeof(float));
-        FILE *f = std::fopen("swin_input_dump.bin", "wb");
+        FILE *f = cloudViewer::utility::filesystem::FOpen("swin_input_dump.bin",
+                                                          "wb");
         if (f) {
             std::fwrite(inbuf.data(), sizeof(float), inbuf.size(), f);
             std::fclose(f);
@@ -1178,7 +1180,8 @@ bool run_swin_transformer(engine_backend &backend,
         size_t n = (size_t)W * H * embed_dims * batch_size;  // [W,H,C,B]
         std::vector<float> buf(n);
         ggml_backend_tensor_get(conv_raw, buf.data(), 0, n * sizeof(float));
-        FILE *f = std::fopen("swin_conv_raw.bin", "wb");
+        FILE *f = cloudViewer::utility::filesystem::FOpen("swin_conv_raw.bin",
+                                                          "wb");
         if (f) {
             std::fwrite(buf.data(), sizeof(float), n, f);
             std::fclose(f);

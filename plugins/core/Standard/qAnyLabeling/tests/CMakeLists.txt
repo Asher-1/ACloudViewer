@@ -304,6 +304,10 @@ if(QANYLABELING_XVFB_RUN)
     add_test(NAME test_qanylabeling_pointcloud_ui
         COMMAND ${QANYLABELING_XVFB_RUN} -a
             $<TARGET_FILE:test_qanylabeling_pointcloud_ui>)
+    cloudviewer_set_plugin_test_env(test_qanylabeling_pointcloud_ui)
+    # Xvfb supplies the X11/GLX context required by the renderer assertions.
+    set_property(TEST test_qanylabeling_pointcloud_ui APPEND PROPERTY
+        ENVIRONMENT "QT_QPA_PLATFORM=xcb")
 endif()
 
 cloudviewer_add_plugin_test(test_qanylabeling_canvas

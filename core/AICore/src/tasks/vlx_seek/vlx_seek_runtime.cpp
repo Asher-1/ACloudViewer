@@ -195,7 +195,7 @@ bool VlxSeekRuntime::load() {
     auto file_bytes = [](const std::string& p) -> size_t {
         std::error_code ec;
         const auto sz =
-                std::filesystem::file_size(std::filesystem::path(p), ec);
+                std::filesystem::file_size(std::filesystem::u8path(p), ec);
         return ec ? 0 : size_t(sz);
     };
     const size_t need = file_bytes(wedetect_path) + file_bytes(vision_path) +

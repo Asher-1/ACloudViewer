@@ -152,6 +152,7 @@ void lingbotAutoKvProfile(uint64_t gpuTotalBytes,
 
 LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     : QDialog(parent, Qt::Window) {
+    connect(this, &QDialog::finished, this, &LingbotMapDialog::onCancel);
     setWindowTitle(tr("LingBot-Map Streaming 3D Reconstruction"));
     // Modeless: the reconstruction runs on a worker thread, so the render
     // window must stay fully mouse-interactive while the dialog is open
@@ -944,13 +945,13 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
             });
     connect(&testDataRepo, &ecvTestDataRepository::downloadLogMessage, this,
             &LingbotMapDialog::appendLog);
-    connect(&testDataRepo, &ecvTestDataRepository::downloadFinished, this,
-            &LingbotMapDialog::onTestDataDownloadFinished);
-    connect(&testDataRepo, &ecvTestDataRepository::extractionFinished, this,
-            &LingbotMapDialog::onTestDataExtractionFinished);
+    connect(&testDataRepo, &ecvTestDataRepository::datasetReady, this,
+            &LingbotMapDialog::onTestDataReady);
 
     // Downloader (HF resolve-main URLs; digest-anchored ingestion).
     m_downloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
     connect(m_downloader, &ecvModelDownloader::progress, this,
             [this](qint64 received, qint64 total) {
                 m_progress->setVisible(true);
@@ -968,9 +969,11 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     connect(m_downloader, &ecvModelDownloader::finished, this,
             [this](bool ok, const QString& path) {
                 m_downloadInProgress = false;
+                m_cancelButton->setEnabled(false);
                 m_progress->setVisible(false);
                 m_downloadLabel->setVisible(false);
                 if (!ok) {
+                    m_pendingActionAfterDownload = PendingAction::None;
                     appendLog(tr("[LingbotMap] Download failed: %1").arg(path));
                     return;
                 }
@@ -1173,7 +1176,7 @@ bool LingbotMapDialog::ensureModelAvailable(PendingAction action) {
         appendLog(tr("[LingbotMap] Select a model first."));
         return false;
     }
-    if (!QFileInfo::exists(resolveModelPath())) {
+    if (!ecvAssetIntegrity::isModelVerified(resolveModelPath())) {
         LingbotCatalogEntry entry;
         if (!findEntryByFilename(catalogByRole("map"), filename, &entry)) {
             appendLog(
@@ -1204,13 +1207,14 @@ void LingbotMapDialog::startDownload(const QString& filename) {
     QDir().mkpath(lingbotModelCacheDir());
     const QString dest =
             lingbotModelCacheDir() + QDir::separator() + entry.filename;
-    if (QFile::exists(dest)) {
+    if (ecvAssetIntegrity::isModelVerified(dest)) {
         appendLog(tr("[LingbotMap] Model already present: %1").arg(dest));
         return;
     }
     appendLog(tr("[LingbotMap] Downloading %1 (%2)…")
                       .arg(entry.filename, entry.downloadUrl));
     m_downloadInProgress = true;
+    m_cancelButton->setEnabled(true);
     m_downloadLabel->setVisible(true);
     ecvModelDownloader::Request req;
     req.url = entry.downloadUrl;
@@ -1300,17 +1304,10 @@ void LingbotMapDialog::onRun() {
                         m_testSceneCombo->currentData().toString(), &scene) &&
                 ecvTestDataRepository::isSingleFileDataset(scene);
         if (isTestVideo) {
-            if (ecvTestDataRepository::instance().isDatasetAvailable(scene)) {
-                applyTestSceneSelection();  // fills the video input
-                onRun();                    // re-collect settings and run
-            } else {
-                m_pendingRunAfterTestData = true;
-                appendLog(
-                        tr("[LingbotMap] Test video not cached yet — "
-                           "downloading it; the run starts "
-                           "automatically when ready."));
-                requestTestData();
-            }
+            // Availability may mean only the download is cached. The
+            // shared service must materialize it before Run is resumed.
+            m_pendingRunAfterTestData = true;
+            requestTestData();
             return;
         }
         QMessageBox::warning(this, tr("LingBot-Map"),
@@ -1324,13 +1321,14 @@ void LingbotMapDialog::onRun() {
         return;
     }
     if (s.skySource == LingbotMapWorker::Settings::SkySource::Native &&
-        !QFileInfo::exists(s.skysegModelPath)) {
+        !ecvAssetIntegrity::isModelVerified(s.skysegModelPath)) {
         // Auto-download the selected skyseg model when missing.
         const QString skysegName = m_skysegCombo->currentData().toString();
         if (!skysegName.isEmpty() &&
             findEntryByFilename(catalogByRole("skyseg"), skysegName, nullptr)) {
             appendLog(tr("[LingbotMap] Sky model missing — downloading %1…")
                               .arg(skysegName));
+            m_pendingActionAfterDownload = PendingAction::Run;
             startDownload(skysegName);
             return;
         }
@@ -1350,7 +1348,14 @@ void LingbotMapDialog::onRun() {
     emit runRequested(s);
 }
 
-void LingbotMapDialog::onCancel() { emit cancelRequested(); }
+void LingbotMapDialog::onCancel() {
+    m_pendingActionAfterDownload = PendingAction::None;
+    m_pendingRunAfterTestData = false;
+    m_maskDownloadPending = false;
+    if (m_testDataInProgress) finishTestDataFlow();
+    if (m_downloadInProgress) m_downloader->cancel();
+    emit cancelRequested();
+}
 
 void LingbotMapDialog::closeEvent(QCloseEvent* event) {
     // Uniform plugin-close semantics: if a reconstruction, download, or
@@ -1366,7 +1371,6 @@ void LingbotMapDialog::closeEvent(QCloseEvent* event) {
             return;
         }
     }
-    emit cancelRequested();
     saveSettings();
     QDialog::closeEvent(event);
 }
@@ -2043,90 +2047,39 @@ void LingbotMapDialog::requestTestData() {
     auto& repo = ecvTestDataRepository::instance();
     if (repo.isDownloadInProgress()) {
         appendLog(tr("[Test data] Another test-data download is running."));
+        m_pendingRunAfterTestData = false;
         return;
     }
     m_testDataInProgress = true;
+    m_pendingTestDataset = scene;
+    m_maskDownloadPending = false;
+    m_testSceneCombo->setEnabled(false);
     m_testDataBtn->setEnabled(false);
     m_runButton->setEnabled(false);
     m_progress->setVisible(true);
     m_progress->setValue(0);
     m_downloadLabel->setVisible(true);
 
-    if (!repo.isDatasetAvailable(scene)) {
-        appendLog(tr("[Test data] Downloading %1…")
-                          .arg(ecvTestDataRepository::getDatasetInfo(scene)
-                                       .displayName));
-        repo.startDownload(scene);
-        return;
-    }
-    if (ecvTestDataRepository::isSingleFileDataset(scene)) {
-        // Video datasets: apply directly when the mp4 is materialized.
-        if (ecvTestDataRepository::instance().isDatasetAvailable(scene)) {
-            applyTestSceneSelection();
-            finishTestDataFlow();
-        } else {
-            // Not cached even though the earlier availability check said
-            // so — fall through to the download path above is impossible
-            // here; report and bail out.
-            appendLog(
-                    tr("[Test data] Video asset missing — retry the "
-                       "download."));
-            finishTestDataFlow();
-        }
-        return;
-    }
-    if (!ecvTestDataRepository::getLingbotMapImages(
-                 ecvTestDataRepository::extractPath(scene))
-                 .isEmpty()) {
-        // Already extracted — apply the selection directly.
-        applyTestSceneSelection();
-        // Queue the paired mask bundle when the cached-mask source needs it.
-        if (m_skySourceCombo->currentData().toString() ==
-            QStringLiteral("cached")) {
-            ecvTestDataRepository::Dataset maskKind;
-            if (lingbotMaskDatasetFor(scene, &maskKind) &&
-                !ecvTestDataRepository::instance().isDatasetAvailable(
-                        maskKind)) {
-                m_maskDownloadPending = true;
-                m_pendingMaskDownload = maskKind;
-                repo.startDownload(maskKind);
-                return;
-            }
-        }
-        finishTestDataFlow();
-        return;
-    }
-    // Verified zip cached — extract it.
-    appendLog(tr("[Test data] Extracting cached archive..."));
-    repo.extractDataset(scene);
+    repo.ensureDatasetReady(scene);
 }
 
 void LingbotMapDialog::finishTestDataFlow() {
     m_testDataInProgress = false;
+    m_maskDownloadPending = false;
+    m_testSceneCombo->setEnabled(true);
     m_testDataBtn->setEnabled(true);
     m_runButton->setEnabled(true);
     m_progress->setVisible(false);
     m_downloadLabel->setVisible(false);
 }
 
-void LingbotMapDialog::onTestDataDownloadFinished(
-        bool success, ecvTestDataRepository::Dataset kind) {
+void LingbotMapDialog::onTestDataReady(bool success,
+                                       ecvTestDataRepository::Dataset kind) {
     if (!m_testDataInProgress) return;
+    if (kind != m_pendingTestDataset) return;
+    m_maskDownloadPending = false;
     if (!success) {
-        appendLog(tr("[Test data] Download failed."));
-        m_pendingRunAfterTestData = false;
-        finishTestDataFlow();
-        return;
-    }
-    appendLog(tr("[Test data] Extracting…"));
-    ecvTestDataRepository::instance().extractDataset(kind);
-}
-
-void LingbotMapDialog::onTestDataExtractionFinished(
-        bool success, ecvTestDataRepository::Dataset kind) {
-    if (!m_testDataInProgress) return;
-    if (!success) {
-        appendLog(tr("[Test data] Failed to extract zip archive."));
+        appendLog(tr("[Test data] Dataset preparation failed."));
         m_pendingRunAfterTestData = false;
         finishTestDataFlow();
         return;
@@ -2168,11 +2121,10 @@ void LingbotMapDialog::onTestDataExtractionFinished(
     if (m_skySourceCombo->currentData().toString() ==
         QStringLiteral("cached")) {
         ecvTestDataRepository::Dataset maskKind;
-        if (lingbotMaskDatasetFor(kind, &maskKind) &&
-            !ecvTestDataRepository::instance().isDatasetAvailable(maskKind)) {
+        if (lingbotMaskDatasetFor(kind, &maskKind)) {
             m_maskDownloadPending = true;
-            m_pendingMaskDownload = maskKind;
-            ecvTestDataRepository::instance().startDownload(maskKind);
+            m_pendingTestDataset = maskKind;
+            ecvTestDataRepository::instance().ensureDatasetReady(maskKind);
             return;
         }
     }

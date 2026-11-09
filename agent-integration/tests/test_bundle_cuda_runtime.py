@@ -32,10 +32,10 @@ def compile_library(directory, name, symbol, dependencies=(), rpath=None):
     return library
 
 
-def bundle(module, destination, extra=""):
+def bundle(module, destination, extra="", profile="ggml"):
     env = dict(os.environ)
     env.pop("LD_LIBRARY_PATH", None)
-    return subprocess.run(["bash", str(SCRIPT), str(module), str(destination), str(extra)],
+    return subprocess.run(["bash", str(SCRIPT), str(module), str(destination), str(extra), profile],
                           env=env, capture_output=True, text=True, timeout=30)
 
 
@@ -95,3 +95,91 @@ def test_same_library_referenced_twice_is_copied_once(tmp_path):
     assert result.returncode == 0, result.stdout + result.stderr
     assert result.stderr.count("Bundling CUDA runtime:") == 2
     assert {path.name for path in destination.iterdir()} == {"libcublas.so.99", "libcublasLt.so.99"}
+
+
+def test_reinstall_reuses_a_runtime_already_in_the_destination(tmp_path):
+    destination = tmp_path / "bundle with spaces"
+    runtime = compile_library(destination, "libcudart.so.99", "runtime_fixture")
+    module = compile_library(tmp_path / "module", "libggml-cuda.so", "module_fixture",
+                             [(destination, runtime.name, "runtime_fixture")],
+                             rpath=destination)
+    original = runtime.read_bytes()
+    result = bundle(module, destination)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "are the same file" not in result.stderr
+    assert runtime.read_bytes() == original
+
+
+def test_copy_failure_is_not_reported_as_a_successful_bundle(tmp_path, monkeypatch):
+    runtime_dir = tmp_path / "runtime"
+    runtime = compile_library(runtime_dir, "libcudart.so.99", "runtime_fixture")
+    module = compile_library(tmp_path / "module", "libggml-cuda.so", "module_fixture",
+                             [(runtime_dir, runtime.name, "runtime_fixture")],
+                             rpath=runtime_dir)
+    fake_bin = tmp_path / "fake-bin"
+    fake_bin.mkdir()
+    failing_copy = fake_bin / "cp"
+    failing_copy.write_text("#!/bin/sh\nexit 1\n")
+    failing_copy.chmod(0o755)
+    monkeypatch.setenv("PATH", str(fake_bin) + os.pathsep + os.environ["PATH"])
+    result = bundle(module, tmp_path / "bundle")
+    assert result.returncode != 0, "A failed copy must fail runtime deployment"
+
+
+def test_torch_profile_preserves_wheel_runtime_closure_without_driver(tmp_path):
+    runtime = tmp_path / "torch wheel runtime"
+    leaf = compile_library(runtime, "libnvJitLink.so.99", "jit_fixture")
+    sparse = compile_library(runtime, "libcusparse.so.99", "sparse_fixture",
+                             [(runtime, leaf.name, "jit_fixture")], rpath=runtime)
+    driver = compile_library(runtime, "libcuda.so.99", "driver_fixture")
+    module = compile_library(tmp_path / "module", "libaicore_cumesh.so", "module_fixture",
+                             [(runtime, sparse.name, "sparse_fixture"),
+                              (runtime, driver.name, "driver_fixture")], rpath=runtime)
+    destination = tmp_path / "bundle"
+    result = bundle(module, destination, profile="torch")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert {path.name for path in destination.iterdir()} == {sparse.name, leaf.name}
+    for original in (sparse, leaf):
+        assert (destination / original.name).read_bytes() == original.read_bytes()
+    general = tmp_path / "general bundle"
+    general.mkdir()
+    result = subprocess.run(["bash", str(ROOT / "scripts/platforms/linux/pack_ubuntu.sh"),
+                             str(module), str(general), str(runtime)],
+                            capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert not list(general.iterdir()), "CUDA runtime must not be shipped twice"
+
+
+@pytest.mark.parametrize("scan_directory", [False, True])
+def test_general_packager_preserves_paths_with_spaces(tmp_path, scan_directory):
+    runtime = tmp_path / "torch library directory"
+    leaf = compile_library(runtime, "libfixture_leaf.so.1", "leaf_fixture")
+    module = compile_library(tmp_path / "module directory", "libaicore_cumesh.so",
+                             "module_fixture", [(runtime, leaf.name, "leaf_fixture")],
+                             rpath=runtime)
+    destination = tmp_path / "installer libraries"
+    destination.mkdir()
+    target = module.parent if scan_directory else module
+    result = subprocess.run(["bash", str(ROOT / "scripts/platforms/linux/pack_ubuntu.sh"),
+                             str(target), str(destination), str(runtime)],
+                            capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (destination / leaf.name).is_file(), result.stdout + result.stderr
+    assert (destination / leaf.name).read_bytes() == leaf.read_bytes()
+
+
+def test_application_launcher_preserves_spaced_prefix_and_arguments(tmp_path):
+    prefix = tmp_path / "installed viewer"
+    (prefix / "lib/cuda-runtime").mkdir(parents=True)
+    launcher = prefix / "Viewer fixture.sh"
+    shutil.copyfile(ROOT / "scripts/ACloudViewer/ACloudViewer.sh", launcher)
+    binary = prefix / "Viewer fixture"
+    binary.write_text('#!/bin/sh\nprintf "%s\\n" "$@" "$LD_LIBRARY_PATH"\n')
+    binary.chmod(0o755)
+    result = subprocess.run(["sh", str(launcher), "--fixture", "input with spaces"],
+                            capture_output=True, text=True, timeout=10)
+    assert result.returncode == 0, result.stdout + result.stderr
+    lines = result.stdout.splitlines()
+    assert lines[:2] == ["--fixture", "input with spaces"]
+    assert lines[2].split(":")[:3] == [str(prefix / "lib/cuda-runtime"),
+                                       str(prefix), str(prefix / "lib")]

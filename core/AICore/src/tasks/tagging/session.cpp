@@ -7,6 +7,8 @@
 
 #include "tasks/tagging/session.hpp"
 
+#include <FileSystem.h>
+
 #include <algorithm>
 #include <array>
 #include <cctype>
@@ -53,7 +55,8 @@ struct block_q8_0 {
 static_assert(sizeof(block_q8_0) == sizeof(ggml_fp16_t) + QK8_0,
               "block_q8_0 layout mismatch");
 std::vector<std::string> lines(const std::string &path) {
-    std::ifstream stream(path);
+    std::ifstream stream =
+            cloudViewer::utility::filesystem::OpenInputStream(path);
     require(stream.good(), "cannot open " + path);
     std::vector<std::string> result;
     for (std::string line; std::getline(stream, line);) result.push_back(line);
@@ -224,7 +227,8 @@ struct Model {
             tag_thresholds.assign(tag_names.size(), 0.5f);
         if (embedding_path.empty()) return;
         require(!tag_names.empty(), "--label-embedding requires --tag-list");
-        std::ifstream file(embedding_path, std::ios::binary | std::ios::ate);
+        std::ifstream file = cloudViewer::utility::filesystem::OpenInputStream(
+                embedding_path, std::ios::binary | std::ios::ate);
         require(file.good(), "cannot open label embedding " + embedding_path);
         const std::streamsize bytes = file.tellg();
         require(bytes > 0 && bytes % sizeof(float) == 0,
@@ -1234,9 +1238,9 @@ struct CaptionEngine {
                    const float *data,
                    size_t count) const {
         if (trace_dir.empty()) return;
-        std::filesystem::create_directories(trace_dir);
-        std::ofstream file(trace_dir + "/" + name,
-                           std::ios::binary | std::ios::trunc);
+        std::filesystem::create_directories(std::filesystem::u8path(trace_dir));
+        std::ofstream file = cloudViewer::utility::filesystem::OpenOutputStream(
+                trace_dir + "/" + name, std::ios::binary | std::ios::trunc);
         require(file.good(), "cannot write caption trace " + name);
         file.write(reinterpret_cast<const char *>(data), count * sizeof(float));
     }
@@ -1245,9 +1249,9 @@ struct CaptionEngine {
                    const int32_t *data,
                    size_t count) const {
         if (trace_dir.empty()) return;
-        std::filesystem::create_directories(trace_dir);
-        std::ofstream file(trace_dir + "/" + name,
-                           std::ios::binary | std::ios::trunc);
+        std::filesystem::create_directories(std::filesystem::u8path(trace_dir));
+        std::ofstream file = cloudViewer::utility::filesystem::OpenOutputStream(
+                trace_dir + "/" + name, std::ios::binary | std::ios::trunc);
         require(file.good(), "cannot write caption trace " + name);
         file.write(reinterpret_cast<const char *>(data),
                    count * sizeof(int32_t));

@@ -51,7 +51,13 @@ if(BUILD_UNIT_TESTS)
   # provenance check, not a runtime binding contract, so it lives outside the
   # pytest-collected tests directory and is only registered when libclang exists.
   file(GLOB _qpythonruntime_llvm_lib_dirs LIST_DIRECTORIES true /usr/lib/llvm-*/lib)
-  find_library(QPYTHONRUNTIME_LIBCLANG NAMES clang libclang.so.1
+  # ctypes loads shared libraries; a static libclang.a is not a candidate,
+  # even when the application's dependency search prefers static archives.
+  if(QPYTHONRUNTIME_LIBCLANG MATCHES "\\.a$")
+    unset(QPYTHONRUNTIME_LIBCLANG CACHE)
+  endif()
+  find_file(QPYTHONRUNTIME_LIBCLANG NAMES libclang.so libclang.so.1 libclang.dylib
+    libclang.dll clang.dll
     libclang-18.so.1 libclang-17.so.1 libclang-14.so.1 libclang-10.so.1
     HINTS ${_qpythonruntime_llvm_lib_dirs})
   if(QPYTHONRUNTIME_LIBCLANG)

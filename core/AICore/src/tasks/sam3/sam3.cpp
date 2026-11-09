@@ -11,6 +11,8 @@
 
 #include "tasks/sam3/sam3.h"
 
+#include "FileSystem.h"
+
 /* AICore common runtime (shared dynamic-backend discovery) */
 #include "common/ggml_backend_registry.hpp"
 #include "common/ggml_backend_utils.hpp"
@@ -58,13 +60,6 @@
 #define SAM3_LOG_LEVEL 1
 #endif
 #include "common/aicore_log.hpp"
-
-#ifdef _WIN32
-/* MSVC provides no strncasecmp (POSIX); _strnicmp is the equivalent
- * case-insensitive n-char compare. Defined after all includes so the
- * replacement never rewrites declarations inside vendored headers. */
-#define strncasecmp _strnicmp
-#endif
 
 #define SAM3_LOG(level, ...)                          \
     do {                                              \
@@ -3108,7 +3103,8 @@ static bool sam3_load_tensors_from_gguf(const char* path,
         int64_t n_el = 1;
         for (int i = 0; i < GGML_MAX_DIMS; ++i) n_el *= src->ne[i];
         std::vector<char> buf(nbytes);
-        if (fseek(f, (long)(data_offset + src_offset), SEEK_SET) != 0 ||
+        if (!cloudViewer::utility::filesystem::FSeek(
+                    f, data_offset + src_offset) ||
             fread(buf.data(), 1, nbytes, f) != nbytes) {
             AICORE_LOG_ERROR("[sam3] ",
                              "%s: failed to read tensor '%s' at offset %zu\n",

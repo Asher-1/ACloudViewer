@@ -25,6 +25,7 @@ import sys
 import tempfile
 from pathlib import Path
 from digest_utils import sha256_file
+from runtime_environment import prepend_runtime_paths
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -40,17 +41,20 @@ QUANTS = ("f32", "f16", "q8_0")
 def host_state() -> dict:
     """Capture, but never mutate, the host state that changes Vulkan p95."""
     governors = {}
-    for governor in Path("/sys/devices/system/cpu").glob("cpu*/cpufreq/scaling_governor"):
-        try:
-            governors[governor.parts[-3]] = governor.read_text().strip()
-        except OSError:
-            continue
+    cpu_sysfs = Path("/sys/devices/system/cpu")
+    if cpu_sysfs.is_dir():
+        for governor in cpu_sysfs.glob("cpu*/cpufreq/scaling_governor"):
+            try:
+                governors[governor.parts[-3]] = governor.read_text().strip()
+            except OSError:
+                continue
     frequencies = {}
-    for frequency in Path("/sys/devices/system/cpu").glob("cpu*/cpufreq/scaling_cur_freq"):
-        try:
-            frequencies[frequency.parts[-3]] = int(frequency.read_text().strip())
-        except (OSError, ValueError):
-            continue
+    if cpu_sysfs.is_dir():
+        for frequency in cpu_sysfs.glob("cpu*/cpufreq/scaling_cur_freq"):
+            try:
+                frequencies[frequency.parts[-3]] = int(frequency.read_text().strip())
+            except (OSError, ValueError):
+                continue
     gpu_processes = []
     try:
         completed = subprocess.run(
@@ -70,10 +74,7 @@ def add_runtime_library_path(environment: dict[str, str], bench: Path,
     """Keep benchmark subprocesses on the same AICore/Qt libraries as build."""
     build_bin = bench.resolve().parent
     directories = [build_bin, build_bin.parent / "external" / "lib", *extra_dirs]
-    existing = environment.get("LD_LIBRARY_PATH", "")
-    environment["LD_LIBRARY_PATH"] = os.pathsep.join(
-        [str(directory) for directory in directories if directory.is_dir()] +
-        ([existing] if existing else []))
+    prepend_runtime_paths(environment, directories)
 
 
 def parse_summary(output: str, source: str) -> dict:
