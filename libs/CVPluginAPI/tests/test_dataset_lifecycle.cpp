@@ -24,7 +24,8 @@ int main(int argc, char** argv) {
             downloader = repository->findChild<ecvModelDownloader*>();
             if (!downloader ||
                 repository != &ecvTestDataRepository::instance()) {
-                std::fprintf(stderr, "cycle %d: shared service missing\n", cycle);
+                std::fprintf(stderr, "cycle %d: shared service missing\n",
+                             cycle);
                 return 1;
             }
         }
