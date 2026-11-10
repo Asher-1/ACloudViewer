@@ -1,0 +1,287 @@
+name: CI Windows Unicode installed script control
+permissions: &id001
+  contents: read
+  actions: read
+env:
+  PIP_VER: 23.2.1
+  WHEEL_VER: 0.38.4
+  STOOLS_VER: 67.3.2
+  JEDI_VER: 0.17.2
+  IDNA_VER: '2.8'
+  CUDA_VERSION: 12.6.0
+  SRC_DIR: D:\a\ACloudViewer\ACloudViewer
+  INSTALL_DIR: C:\dev\cloudViewer_install
+  NPROC: 8
+  DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+  VULKAN_SDK_VERSION: 1.4.350.0
+jobs:
+  windows:
+    permissions: *id001
+    runs-on: windows-2022
+    if: '!contains(github.event.head_commit.message, ''[skip ci]'')'
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version:
+        - '3.12'
+        BUILD_SHARED_LIBS:
+        - 'OFF'
+        STATIC_RUNTIME:
+        - 'OFF'
+        BUILD_CUDA_MODULE:
+        - 'OFF'
+        CONFIG:
+        - Release
+    env:
+      CONDA_DEP_FILE_CLOUDVIEWER: .ci/conda_windows_cloudViewer.yml
+      CLOUDVIEWER_GENERATOR: Ninja Multi-Config
+      COLD_BUILD: ${{ (github.event_name == 'release' || github.event_name == 'schedule' || github.event.inputs.cold_build == 'true') && 'true' || 'false' }}
+    steps:
+    - name: Setup DEVELOPER_BUILD
+      run: "if ($env:GITHUB_EVENT_NAME -eq \"release\") {\n  echo \"DEVELOPER_BUILD=OFF\" >> $env:GITHUB_ENV\n} else {\n  echo \"DEVELOPER_BUILD=$env:DEVELOPER_BUILD\" >> $env:GITHUB_ENV\n}\n"
+    - name: Disk space used
+      run: Get-PSDrive
+    - name: Install CUDA
+      uses: Jimver/cuda-toolkit@v0.2.23
+      if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
+      id: cuda-toolkit
+      with:
+        cuda: ${{ env.CUDA_VERSION }}
+        sub-packages: '["nvcc", "visual_studio_integration", "cublas", "cublas_dev", "cudart", "cusolver", "cusolver_dev", "cusparse", "cusparse_dev", "npp", "npp_dev", "thrust", "nvtx", "curand", "curand_dev", "nvrtc_dev"]'
+        method: network
+        use-github-cache: 'false'
+        use-local-cache: 'false'
+    - name: Setup ENV
+      if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
+      run: '$CUDA_VER_FULL = "${{ env.CUDA_VERSION }}"
+
+        $CUDA_VER_ARR = $CUDA_VER_FULL.Split(".")
+
+        $CUDA_VER = "$($CUDA_VER_ARR[0]).$($CUDA_VER_ARR[1])"
+
+        $CUDA_VER_ID = "$($CUDA_VER_ARR[0])_$($CUDA_VER_ARR[1])"
+
+
+        # Add CUDA environment variables.
+
+        $CUDA_PATH = "${{ steps.cuda-toolkit.outputs.CUDA_PATH }}"
+
+        echo "CUDA_PATH=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+        echo "CUDA_PATH_V$CUDA_VER_ID=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+        echo "$CUDA_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+
+        echo "DEVELOPER_BUILD is $env:DEVELOPER_BUILD"
+
+        '
+    - name: Checkout source code
+      uses: actions/checkout@v4
+    - name: Install Vulkan SDK
+      shell: powershell
+      run: '# LunarG silent install -> $GITHUB_WORKSPACE/VULKAN_SDK/{Include,Bin,Lib,...}
+
+        # Do not use humbletim 7z extract on SDK >= 1.4.313 (Include/ missing).
+
+        $sdkRoot = Join-Path $env:GITHUB_WORKSPACE ''VULKAN_SDK''
+
+        New-Item -ItemType Directory -Force -Path $sdkRoot | Out-Null
+
+        .\util\vulkan\install_vulkan_sdk_windows.ps1 -InstallRoot $sdkRoot -SkipProfile
+
+        '
+    - name: Sync ACloudViewer Vulkan env
+      shell: powershell
+      run: .\util\vulkan\sync_vulkan_env_from_sdk.ps1
+    - name: Set up python version
+      run: '(Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.10", "${{ matrix.python_version }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+
+        '
+    - name: Set up Python environment
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        architecture: x64
+        activate-environment: cloudViewer
+        auto-activate-base: false
+        environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+    - name: Set up fixed CMake
+      uses: ./.github/actions/setup-cmake
+    - name: Set up MSVC environment
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+    - name: Build Trellis CuMesh (plain CUDA, no Torch or Python)
+      if: matrix.CONFIG == 'Release' && matrix.BUILD_CUDA_MODULE == 'ON'
+      shell: powershell
+      run: "$ErrorActionPreference = 'Stop'\n$smokeBuild = Join-Path $env:RUNNER_TEMP 'cumesh Windows build smoke'\ncmake -S core/AICore/tests/cumesh-cmake -B $smokeBuild `\n  -G 'Ninja Multi-Config' `\n  -DCMAKE_CUDA_ARCHITECTURES=75\nif ($LASTEXITCODE -ne 0) { throw \"CuMesh Windows configure failed: $LASTEXITCODE\" }\ncmake --build $smokeBuild --config Release --target aicore_cumesh_smoke --parallel 2\nif ($LASTEXITCODE -ne 0) { throw \"CuMesh Windows build failed: $LASTEXITCODE\" }\n$savedPath = $env:PATH\ntry {\n  # Load only the DLLs staged with the binaries, plus Windows/MSVC\n  # system runtimes; Conda and CUDA on PATH must not mask omissions.\n  $env:PATH = \"$env:SystemRoot\\System32;$env:SystemRoot\"\n  & (Join-Path $smokeBuild 'bin\\Release\\aicore_cumesh_smoke.exe')\n  if ($LASTEXITCODE -ne 0) { throw \"CuMesh Windows runtime dependency smoke failed: $LASTEXITCODE\" }\n  & (Join-Path $smokeBuild 'bin\\CloudViewer\\aicore_cumesh_smoke.exe')\n  if ($LASTEXITCODE -ne 0) { throw \"CuMesh CloudViewer runtime deployment smoke failed: $LASTEXITCODE\" }\n} finally {\n  $env:PATH = $savedPath\n}\n"
+    - name: Check build diagnostics contracts
+      if: matrix.CONFIG == 'Release' && matrix.BUILD_CUDA_MODULE == 'OFF'
+      run: "$ErrorActionPreference = 'Stop'\n. \"${{ env.SRC_DIR }}\\util\\ci_utils.ps1\"\n$fixture = Join-Path $env:RUNNER_TEMP 'diagnostics-contract'\n$env:RUNNER_TEMP = Join-Path $fixture 'evidence'\n$env:GITHUB_STEP_SUMMARY = Join-Path $fixture 'summary.md'\n$fixtureBuild = Join-Path $fixture 'build'\nNew-Item -ItemType Directory -Force -Path $env:RUNNER_TEMP, (Join-Path $fixtureBuild 'child') | Out-Null\nPush-Location $fixtureBuild\ntry {\n  'root-CPU' | Set-Content '.ninja_log'\n  'child-CPU' | Set-Content 'child/.ninja_log'\n  $global:fixtureCode = 7\n  $global:fixtureThrow = $false\n  function global:cmake {\n    $global:capturedArgs = @($args)\n    $global:LASTEXITCODE = $global:fixtureCode\n    if ($global:fixtureThrow) { throw 'fixture-command-error' }\n    'fixture-output'\n  }\n  $output = Invoke-CMakeStage -Name 'fixture-CPU' -CMakeArgs @('--build', 'path with spaces')\n  if ($LASTEXITCODE -ne 7 -or $output -ne 'fixture-output' -or\n      $global:capturedArgs.Count -ne 2 -or $global:capturedArgs[1] -ne 'path with spaces') {\n    throw 'CMake diagnostics wrapper changed output, arguments or exit code'\n  }\n  $timingPath = Join-Path $env:RUNNER_TEMP 'build-timings.jsonl'\n  $timing = Get-Content $timingPath | ConvertFrom-Json\n  if ($timing.exit_code -ne 7 -or $timing.seconds -lt 0 -or\n      $timing.arguments[1] -ne 'path with spaces' -or $timing.build_directory -ne $fixtureBuild) {\n    throw 'Stage timing is not bound to the command and build directory'\n  }\n  'root-CUDA' | Set-Content '.ninja_log'\n  'child-CUDA' | Set-Content 'child/.ninja_log'\n  $global:fixtureCode = 0\n  $output = Invoke-CMakeStage -Name 'fixture-CUDA' -CMakeArgs @('--build', '.')\n  if ($LASTEXITCODE -ne 0 -or $output -ne 'fixture-output') { throw 'Successful exit code was changed' }\n  foreach ($pass in @('CPU', 'CUDA')) {\n    $snapshot = Join-Path $env:RUNNER_TEMP \"ninja-fixture-$pass\"\n    if ((Get-Content (Join-Path $snapshot '.ninja_log')) -ne \"root-$pass\" -or\n        (Get-Content (Join-Path $snapshot 'child/.ninja_log')) -ne \"child-$pass\") {\n      throw 'CPU/CUDA pass root or child graph snapshot is missing'\n    }\n  }\n  function global:Invoke-SccacheFixture {\n    $global:statsCalls++\n    $global:LASTEXITCODE = $global:statsCode\n    $global:statsFixture\n  }\n  $env:SCCACHE_PATH = 'Invoke-SccacheFixture'\n  $env:CLOUDVIEWER_COMPILER_LAUNCHER = 'fixture-launcher'\n  $global:statsCalls = 0\n  $global:statsCode = 0\n  $global:statsFixture = '{\"stats\":{\"compile_requests\":3,\"cache_hits\":{\"counts\":{\"C/C++\":2},\"adv_counts\":{\"c++ [msvc]\":2}},\"cache_misses\":{\"counts\":{\"CUDA\":3,\"PTX\":1},\"adv_counts\":{\"cuda [nvcc]\":3,\"ptx [ptxas]\":1}},\"cache_errors\":{\"counts\":{},\"adv_counts\":{}}}}'\n  $global:LASTEXITCODE = 9\n  $report = (Write-SccacheStats -Label 'fixture' 6>&1) -join \"`n\"\n  if ($LASTEXITCODE -ne 9 -or $report -notmatch '\\| C/C\\+\\+ \\| 2 \\| 0 \\| 0 \\|' -or\n      $report -notmatch '\\| CUDA \\| 0 \\| 3 \\| 0 \\|' -or $report -notmatch '\\| PTX \\| 0 \\| 1 \\| 0 \\|' -or\n      $report -notmatch '\\| cuda \\[nvcc\\] \\| 0 \\| 3 \\| 0 \\|' -or\n      $report -notmatch '\\| c\\+\\+ \\[msvc\\] \\| 2 \\| 0 \\| 0 \\|' -or $report -notmatch '2 hits, 4 misses, 0 errors' -or\n      (Get-Content (Join-Path $env:RUNNER_TEMP 'sccache-stats.json') -Raw).Trim() -ne $global:statsFixture -or\n      (Get-Content $env:GITHUB_STEP_SUMMARY -Raw) -notmatch 'cannot be used as a source-file hit rate or an end-to-end speedup ratio') {\n    throw 'sccache categories, raw response, performance claim boundary or exit-code preservation failed'\n  }\n  foreach ($empty in @('{\"stats\":{\"compile_requests\":0}}', '{\"stats\":{\"compile_requests\":3,\"cache_hits\":{\"counts\":{}},\"cache_misses\":{\"counts\":{}},\"cache_errors\":{\"counts\":{}}}}')) {\n    $global:statsFixture = $empty\n    $report = (Write-SccacheStats -Label 'empty' 6>&1) -join \"`n\"\n    if ($LASTEXITCODE -ne 9 -or $report -match '::notice' -or $report -match 'skipped') { throw 'Empty stats were incorrectly reported' }\n  }\n  foreach ($invalid in @('{invalid', '{}', '{\"stats\":{\"compile_requests\":3}}')) {\n    $global:statsFixture = $invalid\n    $report = (Write-SccacheStats -Label 'invalid' 6>&1) -join \"`n\"\n    if ($LASTEXITCODE -ne 9 -or $report -notmatch 'skipped' -or $report -match '::notice' -or\n        (Get-Content (Join-Path $env:RUNNER_TEMP 'sccache-stats.json') -Raw).Trim() -ne $invalid) {\n      throw 'Invalid stats were not preserved or changed the exit code'\n    }\n  }\n  $global:statsCode = 5\n  $report = (Write-SccacheStats -Label 'failed-stats' 6>&1) -join \"`n\"\n  if ($LASTEXITCODE -ne 9 -or $report -notmatch 'skipped') { throw 'Stats command failure overwrote the upstream exit code' }\n  $global:statsCode = 0\n  $global:statsFixture = '{\"stats\":{\"compile_requests\":0}}'\n  $global:fixtureCode = 17\n  $global:fixtureThrow = $true\n  $thrown = $false\n  try { Invoke-CMakeStage -Name 'exception' -CMakeArgs @('--build', '.') }\n  catch { if ($_ -notmatch 'fixture-command-error') { throw }; $thrown = $true }\n  $lastTiming = Get-Content $timingPath | Select-Object -Last 1 | ConvertFrom-Json\n  if (-not $thrown -or $LASTEXITCODE -ne 17 -or $null -ne $lastTiming.exit_code) {\n    throw 'Diagnostics overwrote the original exception or exit code'\n  }\n  $global:fixtureThrow = $false\n  $global:fixtureCode = 7\n  $beforeCalls = $global:statsCalls\n  $env:RUNNER_TEMP = Join-Path $fixtureBuild '.ninja_log'\n  $output = Invoke-CMakeStage -Name 'failed-write' -CMakeArgs @('--build', '.')\n  if ($LASTEXITCODE -ne 7 -or $output -ne 'fixture-output' -or $global:statsCalls -ne ($beforeCalls + 1)) {\n    throw 'Diagnostics write failure affected the build or prevented cache stats collection'\n  }\n  $env:RUNNER_TEMP = ''\n  $env:GITHUB_STEP_SUMMARY = ''\n  $global:fixtureNative = (Get-Process -Id $PID).Path\n  function global:cmake { & $global:fixtureNative -NoProfile -Command \"Write-Output 'native-output'; exit 7\" }\n  $PSNativeCommandUseErrorActionPreference = $false\n  $output = Invoke-CMakeStage -Name 'native-exit' -CMakeArgs @('--build', '.')\n  if ($LASTEXITCODE -ne 7 -or $output -ne 'native-output') { throw 'Native process exit code or output was changed' }\n  $PSNativeCommandUseErrorActionPreference = $true\n  $thrown = $false\n  try { Invoke-CMakeStage -Name 'native-exception' -CMakeArgs @('--build', '.') | Out-Null }\n  catch [System.Management.Automation.NativeCommandExitException] { $thrown = $true }\n  if (-not $thrown -or $LASTEXITCODE -ne 7) { throw 'Native exception exit code was overwritten' }\n} finally { Pop-Location }\n$global:LASTEXITCODE = 0\nWrite-Host 'Build diagnostics contracts passed (files, categories, exceptions, write failures, native exit codes)'\n"
+    - name: Set up sccache binary (warm runs only)
+      if: env.COLD_BUILD != 'true'
+      id: sccache
+      continue-on-error: true
+      uses: mozilla-actions/sccache-action@v0.0.11
+      with:
+        version: v0.19.0
+        disable_annotations: 'true'
+    - name: Restore exact production CPU object cache
+      uses: actions/download-artifact@v4
+      with:
+        github-token: ${{ github.token }}
+        run-id: 42853201527
+        name: sccache-win-app-cudaOFF-150_merge
+        path: ${{ runner.temp }}\sccache
+    - name: Enable sccache launcher
+      if: env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success'
+      run: 'New-Item -ItemType Directory -Force -Path "${{ runner.temp }}\sccache" | Out-Null
+
+        echo "SCCACHE_DIR=${{ runner.temp }}\sccache" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+        echo "SCCACHE_CACHE_SIZE=10G" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+        echo "CLOUDVIEWER_COMPILER_LAUNCHER=$env:SCCACHE_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+        echo "SCCACHE_IDLE_TIMEOUT=36000" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+        echo "SCCACHE_POOL_T0=$((Get-Date).ToUniversalTime().Ticks)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+        $env:SCCACHE_DIR = "${{ runner.temp }}\sccache"
+
+        $env:SCCACHE_CACHE_SIZE = "10G"
+
+        $env:SCCACHE_IDLE_TIMEOUT = "36000"
+
+        & $env:SCCACHE_PATH --start-server
+
+        & $env:SCCACHE_PATH --show-stats | Select-String -Pattern "Cache location|Cache size|Max cache size|Version"
+
+        '
+    - name: Install dependencies
+      run: '# Deploy QtIFW for installer packaging (pre-built, hosted on cloudViewer_downloads).
+
+        Invoke-WebRequest -Uri "https://github.com/Asher-1/cloudViewer_downloads/releases/download/qt-ifw/QtIFW-4.6.1-win.zip" -OutFile "C:\QtIFW-4.6.1-win.zip"
+
+        Expand-Archive "C:\QtIFW-4.6.1-win.zip" "C:\" -Force && Remove-Item "C:\QtIFW-4.6.1-win.zip"
+
+        $env:PATH = "C:\QtIFW-4.6.1-win\bin;$env:PATH"
+
+        echo $env:PATH
+
+        echo "PATH=$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+
+        Invoke-WebRequest -Uri "https://github.com/Asher-1/cloudViewer_downloads/releases/download/1.9.4/3rdparty_downloads.zip" -OutFile "3rdparty_downloads.zip"
+
+        Expand-Archive "3rdparty_downloads.zip" "${{ env.SRC_DIR }}" -Force && Remove-Item "3rdparty_downloads.zip"
+
+        '
+    - name: Fix Windows 11 appverifUI issues
+      run: "echo \"Running Windows 11 appverifUI fix script...\"\n$ErrorActionPreference = 'Continue'\n& \"${{ env.SRC_DIR }}\\scripts\\platforms\\windows\\fix_win11_appverifUI.bat\"\nif ($LASTEXITCODE -ne 0) {\n  Write-Warning \"appverifUI fix script returned exit code: $LASTEXITCODE\"\n}\n$ErrorActionPreference = 'Stop'\n"
+    - name: Checkout official CLI toolchain
+      uses: ./.github/actions/checkout-agent-harness
+    - name: Download actual production CPU installer
+      uses: actions/download-artifact@v4
+      with:
+        github-token: ${{ github.token }}
+        run-id: 42853201527
+        pattern: ACloudViewer-*-win-cpu-*.exe
+        path: ${{ runner.temp }}/installer
+        merge-multiple: true
+    - name: Install official CLI and reproduce installed Unicode failures
+      shell: pwsh
+      run: '$ErrorActionPreference=''Stop''
+
+        pip install -e "_cli-anything/acloudviewer/agent-harness[dev]"
+
+        if ($LASTEXITCODE -ne 0) { throw ''CLI installation failed'' }
+
+        New-Item -ItemType Directory -Force evidence | Out-Null
+
+        $installer=Get-ChildItem "${{ runner.temp }}\installer" -Filter ''*.exe'' -Recurse | Select-Object -First 1
+
+        if (-not $installer) { throw ''Missing actual production installer'' }
+
+        $installDir=Join-Path $env:USERPROFILE ''ACloudViewer-Unicode-Control''
+
+        & $installer.FullName --root $installDir --accept-licenses --accept-messages --confirm-command install
+
+        if ($LASTEXITCODE -ne 0) { throw ''Production installation failed'' }
+
+        "UNICODE_INSTALL_DIR=$installDir" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+        $env:PATH="$installDir;$installDir\lib;$installDir\bin;$installDir\plugins;$installDir\platforms;$env:CONDA_PREFIX\Library\bin;$env:PATH"
+
+        $env:ACV_BINARY=Join-Path $installDir ''ACloudViewer.exe''
+
+        $env:ACV_REQUIRE_BINARY=''1''
+
+        python -m pytest plugins/core/Standard/qPythonRuntime/tests/test_binding_contracts.py -q --acloudviewer_exe="$env:ACV_BINARY" --junitxml=evidence/unicode-baseline.xml 2>&1 | Tee-Object evidence/unicode-baseline.txt
+
+        if ($LASTEXITCODE -eq 0) { throw ''Expected the production Unicode baseline to fail'' }
+
+        @''
+
+        import xml.etree.ElementTree as ET
+
+        r=ET.parse(''evidence/unicode-baseline.xml'').getroot()
+
+        cases=r.findall(''.//testcase'');failed=[c for c in cases if c.find(''failure'') is not None]
+
+        assert len(cases)==48 and len(failed)==24, (len(cases),len(failed))
+
+        assert all(''True-'' in c.attrib[''name''] for c in failed)
+
+        print(''Confirmed baseline: 24 ASCII passes, 24 Unicode path failures'')
+
+        ''@ | python
+
+        if ($LASTEXITCODE -ne 0) { throw ''Baseline mismatch'' }
+
+        exit 0
+
+        '
+    - name: Build actual application with Unicode command-line arguments
+      id: build
+      if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' && matrix.CONFIG == 'Release' }}
+      timeout-minutes: ${{ (env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success') && 330 || 360 }}
+      working-directory: ${{ env.SRC_DIR }}
+      run: "$ErrorActionPreference = 'Stop'\n\n# Set environment variables for build script\n# These will be used by build_win_app.ps1\n$env:STATIC_RUNTIME = \"${{ matrix.STATIC_RUNTIME }}\"\n$env:DEVELOPER_BUILD = \"${{ env.DEVELOPER_BUILD }}\"\n$env:BUILD_SHARED_LIBS = \"${{ matrix.BUILD_SHARED_LIBS }}\"\n$env:BUILD_CUDA_MODULE = \"${{ matrix.BUILD_CUDA_MODULE }}\"\n# IGNORE_TEST: Set to ON to skip tests in build script (tests run separately in workflow)\n$env:IGNORE_TEST = \"ON\"\necho \"IGNORE_TEST=$env:IGNORE_TEST\"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append\n$env:ONLY_BUILD_CUDA = \"${{ matrix.BUILD_CUDA_MODULE }}\"\necho \"ONLY_BUILD_CUDA=$env:ONLY_BUILD_CUDA\"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append\n\n# Call build script with named parameters\n& \"${{ env.SRC_DIR }}\\scripts\\build_win_app.ps1\" `\n  -PythonVersion \"${{ matrix.python_version }}\" `\n  -ACloudViewerInstall \"${{ env.INSTALL_DIR }}\" 2>&1 | `\n  Tee-Object -FilePath \"${{ runner.temp }}\\windows-build.log\"\n# Propagate build exit code (exit N in .ps1 sets $LASTEXITCODE,\n# but the Tee-Object pipeline above resets the step exit code)\nif ($LASTEXITCODE -ne 0) {\n    Write-Error \"build_win_app.ps1 failed with exit code $LASTEXITCODE\"\n    exit $LASTEXITCODE\n}\n\n\nexit 0\n"
+    - name: Replace only the actual application EXE and verify every binding contract
+      shell: pwsh
+      run: '$ErrorActionPreference=''Stop''
+
+        $installDir=$env:UNICODE_INSTALL_DIR
+
+        Get-FileHash "$installDir\ACloudViewer.exe" | Format-List
+
+        Copy-Item build/bin/Release/ACloudViewer.exe "$installDir\ACloudViewer.exe" -Force
+
+        Get-FileHash "$installDir\ACloudViewer.exe" | Format-List
+
+        $env:PATH="$installDir;$installDir\lib;$installDir\bin;$installDir\plugins;$installDir\platforms;$env:CONDA_PREFIX\Library\bin;$env:PATH"
+
+        $env:ACV_BINARY=Join-Path $installDir ''ACloudViewer.exe''
+
+        $env:ACV_REQUIRE_BINARY=''1''
+
+        python -m pytest plugins/core/Standard/qPythonRuntime/tests/test_binding_contracts.py -q --acloudviewer_exe="$env:ACV_BINARY" --junitxml=evidence/unicode-fixed.xml 2>&1 | Tee-Object evidence/unicode-fixed.txt
+
+        if ($LASTEXITCODE -ne 0) { throw ''Fixed production Unicode contracts failed'' }
+
+        exit 0
+
+        '
+    - name: Save Unicode production evidence
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-unicode-control
+        path: 'evidence
+
+          ${{ runner.temp }}/windows-build.log'
+'on':
+  push:
+    branches:
+    - ci/windows-unicode-probe-20261111

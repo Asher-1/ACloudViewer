@@ -20,7 +20,7 @@ class QDialog;
 class ccCommandLineParser : public ccCommandLineInterface {
 public:
     //! Parses the input command
-    static int Parse(int nargs, char** args, ccPluginInterfaceList& plugins);
+    static int Parse(const QStringList& args, ccPluginInterfaceList& plugins);
 
     //! Destructor
     ~ccCommandLineParser() override;
