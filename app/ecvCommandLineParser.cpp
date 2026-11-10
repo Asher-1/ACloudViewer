@@ -56,10 +56,9 @@ bool ccCommandLineParser::error(const QString& message) const {
     return false;
 }
 
-int ccCommandLineParser::Parse(int nargs,
-                               char** args,
+int ccCommandLineParser::Parse(const QStringList& args,
                                ccPluginInterfaceList& plugins) {
-    if (!args || nargs < 2) {
+    if (args.size() < 2) {
         assert(false);
         return EXIT_SUCCESS;
     }
@@ -69,11 +68,9 @@ int ccCommandLineParser::Parse(int nargs,
 
     parser->registerBuiltInCommands();
 
-    for (int i = 1; i < nargs;
-         ++i)  //'i=1' because first argument is always program executable file!
-    {
-        parser->arguments().push_back(QString(args[i]));
-    }
+    // Preserve Qt's native Unicode arguments. Windows CRT char** argv may
+    // already have replaced characters outside the active code page with '?'.
+    parser->arguments() = args.mid(1);
 
     assert(!parser->arguments().empty());
 

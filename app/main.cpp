@@ -696,7 +696,7 @@ int main(int argc, char* argv[]) {
     if (commandLine) {
         // command line processing (no GUI)
         result = ccCommandLineParser::Parse(
-                argc, argv, ccPluginManager::get().pluginList());
+                app.arguments(), ccPluginManager::get().pluginList());
     } else {
         // main window init.
         MainWindow* mainWindow = MainWindow::TheInstance();

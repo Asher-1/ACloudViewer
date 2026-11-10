@@ -58,14 +58,47 @@ find_vulkan_setup_script() {
     find "${VULKAN_SDK_ROOT}" -maxdepth 3 -name setup-env.sh -type f -print -quit 2>/dev/null || true
 }
 
+download_vulkan_file() {
+    local url="$1" destination="$2" attempt status
+    # Focal's curl 7.68 does not retry connection resets with --retry, and
+    # predates --retry-all-errors. Restart failed transfers with bounded retries.
+    for attempt in 1 2 3 4 5; do
+        if curl --fail --location --connect-timeout 30 \
+            --speed-limit 1024 --speed-time 60 \
+            "${url}" --output "${destination}"; then
+            return 0
+        else
+            status=$?
+        fi
+        rm -f "${destination}"
+        if [[ "${attempt}" -eq 5 ]]; then
+            return "${status}"
+        fi
+        echo "WARNING: download failed (curl ${status}, attempt ${attempt}/5); retrying ${url}." >&2
+        sleep "$((attempt * 5))"
+    done
+}
+
 fetch_vulkan_sdk_sha256() {
     if [[ -n "${VULKAN_SDK_SHA256:-}" ]]; then
         echo "${VULKAN_SDK_SHA256}"
         return
     fi
-    curl --fail --location --retry 3 --silent \
+    local checksum_file checksum
+    checksum_file="$(mktemp "${TMPDIR:-/tmp}/acloudviewer-vulkan-sha.XXXXXX")"
+    if ! download_vulkan_file \
         "https://sdk.lunarg.com/sdk/sha/${VULKAN_SDK_VERSION}/linux/vulkan_sdk.tar.xz.txt" \
-        | awk '{print $1}'
+        "${checksum_file}"; then
+        rm -f "${checksum_file}"
+        return 1
+    fi
+    checksum="$(awk '{print $1}' "${checksum_file}")"
+    rm -f "${checksum_file}"
+    if [[ ! "${checksum}" =~ ^[[:xdigit:]]{64}$ ]]; then
+        echo "ERROR: invalid Vulkan SDK SHA256 response." >&2
+        return 1
+    fi
+    printf '%s\n' "${checksum}"
 }
 
 install_glslc_from_source() {
@@ -218,7 +251,7 @@ install_vulkan_sdk_tarball() {
 
     sha256="$(fetch_vulkan_sdk_sha256)"
     echo "Downloading Vulkan SDK ${VULKAN_SDK_VERSION} headers/tools from ${url}"
-    curl --fail --location --retry 3 "${url}" --output "${archive}"
+    download_vulkan_file "${url}" "${archive}"
     actual_sha256="$(sha256sum "${archive}" | awk '{print $1}')"
     if [[ "${actual_sha256}" != "${sha256}" ]]; then
         echo "ERROR: Vulkan SDK SHA256 mismatch: got ${actual_sha256}, expected ${sha256}." >&2
