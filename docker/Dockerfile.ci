@@ -65,6 +65,7 @@ RUN if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then \
 
 # Update apt and install libs needed by Qt
 # First install basic tools, then setup Kitware repo with proper key handling
+# No build step uses apt-file; installing it enables unrelated Contents indexes.
 COPY docker/scripts/apt_install.sh /usr/local/bin/cloudviewer-apt-install
 RUN chmod +x /usr/local/bin/cloudviewer-apt-install
 RUN apt-get clean \
@@ -83,7 +84,6 @@ RUN apt-get clean \
         curl \
         vim \
         tree \
-        apt-file \
         net-tools \
         mesa-utils \
         # reference cloudViewer
