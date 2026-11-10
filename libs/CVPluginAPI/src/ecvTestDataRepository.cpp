@@ -9,12 +9,15 @@
 
 #include <FileSystem.h>
 
+#include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
 #include <QImageReader>
+#include <QPointer>
+#include <QThread>
 #include <algorithm>
 #include <functional>
 
@@ -681,8 +684,15 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
 // ----------------------------------------------------------------------------
 
 ecvTestDataRepository& ecvTestDataRepository::instance() {
-    static ecvTestDataRepository s_instance;
-    return s_instance;
+    auto* application = QCoreApplication::instance();
+    Q_ASSERT(application);
+    Q_ASSERT(QThread::currentThread() == application->thread());
+    // Destroy the downloader and its network threads with the application.
+    // A static QObject in this DLL would be destroyed under the Windows
+    // loader lock, where waiting for those threads can deadlock process exit.
+    static QPointer<ecvTestDataRepository> s_instance;
+    if (!s_instance) s_instance = new ecvTestDataRepository(application);
+    return *s_instance;
 }
 
 ecvTestDataRepository::ecvTestDataRepository(QObject* parent)

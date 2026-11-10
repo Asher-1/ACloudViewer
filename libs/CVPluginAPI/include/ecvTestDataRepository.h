@@ -132,7 +132,8 @@ public:
         QString extractGroupName;
     };
 
-    /** Returns the singleton instance. */
+    /** Returns the shared instance owned by QCoreApplication.
+     *  Call from the application's thread, while the application exists. */
     static ecvTestDataRepository& instance();
 
     /** Get metadata for a dataset. */
