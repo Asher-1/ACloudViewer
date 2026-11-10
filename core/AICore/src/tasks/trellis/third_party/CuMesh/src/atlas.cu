@@ -5,8 +5,6 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include <c10/cuda/CUDAStream.h>
-
 #include <cub/cub.cuh>
 
 #include "cumesh.h"
@@ -1048,53 +1046,34 @@ void CuMesh::compute_charts(float threshold_cone_half_angle_rad,
     construct_chart_mesh(*this, stream);
 }
 
-std::tuple<int,
-           torch::Tensor,
-           torch::Tensor,
-           torch::Tensor,
-           torch::Tensor,
-           torch::Tensor>
-CuMesh::read_atlas_charts() {
-    cudaStream_t stream = current_stream();
+HostAtlasCharts CuMesh::read_atlas_charts() {
+    // Plain synchronous device-to-host copies on the legacy default stream:
+    // they order after every kernel launched by compute_charts. Sizes and
+    // element order are exactly those of the former tensor read-back.
+    HostAtlasCharts out;
+    out.num_charts = this->atlas_num_charts;
 
-    auto chart_ids =
-            torch::empty({static_cast<int64_t>(this->faces.size)},
-                         torch::dtype(torch::kInt32).device(torch::kCUDA));
-    CUDA_CHECK(cudaMemcpyAsync(
-            chart_ids.data_ptr<int>(), this->atlas_chart_ids.ptr,
-            this->faces.size * sizeof(int), cudaMemcpyDeviceToDevice, stream));
-    auto vertex_map = torch::empty(
-            {static_cast<int64_t>(this->atlas_chart_vertex_map.size)},
-            torch::dtype(torch::kInt32).device(torch::kCUDA));
-    CUDA_CHECK(cudaMemcpyAsync(vertex_map.data_ptr<int>(),
-                               this->atlas_chart_vertex_map.ptr,
-                               this->atlas_chart_vertex_map.size * sizeof(int),
-                               cudaMemcpyDeviceToDevice, stream));
-    auto chart_faces = torch::empty(
-            {static_cast<int64_t>(this->atlas_chart_faces.size), 3},
-            torch::dtype(torch::kInt32).device(torch::kCUDA));
-    CUDA_CHECK(cudaMemcpyAsync(chart_faces.data_ptr<int>(),
-                               this->atlas_chart_faces.ptr,
-                               this->atlas_chart_faces.size * 3 * sizeof(int),
-                               cudaMemcpyDeviceToDevice, stream));
-    auto chart_vertex_offset = torch::empty(
-            {static_cast<int64_t>(this->atlas_chart_vertex_offset.size)},
-            torch::dtype(torch::kInt32).device(torch::kCUDA));
-    CUDA_CHECK(
-            cudaMemcpyAsync(chart_vertex_offset.data_ptr<int>(),
-                            this->atlas_chart_vertex_offset.ptr,
-                            this->atlas_chart_vertex_offset.size * sizeof(int),
-                            cudaMemcpyDeviceToDevice, stream));
-    auto chart_face_offset = torch::empty(
-            {static_cast<int64_t>(this->atlas_chart_faces_offset.size)},
-            torch::dtype(torch::kInt32).device(torch::kCUDA));
-    CUDA_CHECK(
-            cudaMemcpyAsync(chart_face_offset.data_ptr<int>(),
-                            this->atlas_chart_faces_offset.ptr,
-                            this->atlas_chart_faces_offset.size * sizeof(int),
-                            cudaMemcpyDeviceToDevice, stream));
-    return std::make_tuple(this->atlas_num_charts, chart_ids, vertex_map,
-                           chart_faces, chart_vertex_offset, chart_face_offset);
+    // chart ids are indexed by the (cleaned, compacted) faces.
+    std::vector<int> ids(this->faces.size);
+    if (!ids.empty()) {
+        CUDA_CHECK(cudaMemcpy(ids.data(), this->atlas_chart_ids.ptr,
+                              ids.size() * sizeof(int),
+                              cudaMemcpyDeviceToHost));
+    }
+    out.chart_ids = std::move(ids);
+    out.chart_vertex_map = this->atlas_chart_vertex_map.to_host();
+
+    // int3 is three tightly packed ints, so this is the flat [F * 3] layout.
+    std::vector<int> chart_faces(this->atlas_chart_faces.size * 3);
+    if (!chart_faces.empty()) {
+        CUDA_CHECK(cudaMemcpy(chart_faces.data(), this->atlas_chart_faces.ptr,
+                              chart_faces.size() * sizeof(int),
+                              cudaMemcpyDeviceToHost));
+    }
+    out.chart_faces = std::move(chart_faces);
+    out.chart_vertex_offset = this->atlas_chart_vertex_offset.to_host();
+    out.chart_face_offset = this->atlas_chart_faces_offset.to_host();
+    return out;
 }
 
 }  // namespace cumesh

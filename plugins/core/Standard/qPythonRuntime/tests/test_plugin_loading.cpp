@@ -25,9 +25,18 @@
 int main(int argc, char **argv)
 {
     QTemporaryDir settings;
-    if (!settings.isValid() || argc != 2)
+    if (!settings.isValid() || (argc != 2 && argc != 3))
         return 1;
     qputenv("XDG_CONFIG_HOME", settings.path().toUtf8());
+#if defined(__linux__)
+    // Mesa/LLVM can expose libedit globally before the embedded interpreter starts.
+    // Keep it loaded to reproduce its symbol collision with GNU readline.
+    if (argc == 3 && !dlopen(argv[2], RTLD_NOW | RTLD_GLOBAL))
+    {
+        std::fprintf(stderr, "FAIL: libedit preload: %s\n", dlerror());
+        return 1;
+    }
+#endif
     QApplication app(argc, argv);
     QPluginLoader loader(QString::fromLocal8Bit(argv[1]));
 #if !defined(_WIN32)
@@ -73,6 +82,17 @@ int main(int argc, char **argv)
                            "assert field.getHistogram() == []\n");
     if (result != 0)
         return 1;
+#if defined(__linux__) && defined(RTLD_DEEPBIND)
+    if (argc == 3 &&
+        PyRun_SimpleString("import os, sys, readline\n"
+                           "assert not (sys.getdlopenflags() & os.RTLD_DEEPBIND)\n"
+                           "readline.clear_history()\n"
+                           "readline.add_history('embedded readline')\n"
+                           "assert readline.get_history_item(1) == 'embedded readline'\n"
+                           "readline.remove_history_item(0)\n"
+                           "assert readline.get_current_history_length() == 0\n") != 0)
+        return 1;
+#endif
     standard->stop();
     std::puts("PASS: Qt interface discovery, repeatable actions and production module import");
     return 0;

@@ -378,3 +378,64 @@ required when including the shared filesystem boundary's Qt headers. All 43
 modified Python files and four modified shell scripts pass syntax checks;
 both working-tree and index whitespace checks pass. `manifest.json` records
 source hashes; `contract-selection.txt` lists the exact contract selection.
+
+## Complete unit-test follow-up
+
+The broader application test run exposed additional issues that the earlier
+focused selection did not cover:
+
+- The AnyLabeling point-cloud UI regression needs an X11 OpenGL context under
+  Xvfb. It now uses the existing shared runtime environment with the `xcb`
+  platform. Its optional region-description action also observes the same
+  vision-model availability gate as whole-image description, preventing an
+  unrelated offline unit run from starting a model download.
+- AnyCalib now registers its eight asset-free cases separately from its real
+  model cases. ALIKED, Loma and LightGlue reconstruction tests that require
+  model assets are classified as model integration tests. Their inference
+  acceptance remains required separately; unit success does not certify it.
+- FreeSplatter's console tool compiles with `-fPIC` when using the shared
+  filesystem boundary's Qt headers. It still links as a PIE executable on the
+  tested Linux toolchain; disabling PIE is unnecessary.
+- Embedded Python crashed under Xvfb when Mesa/LLVM loaded libedit before
+  Python's GNU readline extension. The captured stack shows incompatible
+  history entries reaching `_py_free_history_entry`. Runtime initialization
+  now imports optional readline with Linux deep binding and immediately
+  restores the previous import flags, including on failure. Other extension
+  modules retain their normal loading behavior. A production-plugin regression
+  preloads real libedit globally and exercises readline history; it segfaulted
+  before the fix and passes afterward. The complete binding suite also passes
+  in the original Xvfb environment.
+- CV_io image I/O consumes the existing shared filesystem functions after
+  removing its duplicate UTF-8 file helper. Real JPEG and PNG write/read checks
+  pass in a directory and filenames containing spaces, Chinese and emoji.
+
+Follow-up logs, exact test selections, source hashes and explicit exclusions
+are recorded in `build_app/Testing/precommit-review/followup`. Tests requiring
+real models, network downloads or upstream reference checkouts are recorded
+separately; they are not silently counted as passing unit tests. Native
+Windows/macOS acceptance and the complete real-model/backend matrix remain
+open as listed above.
+
+Final follow-up results on Linux:
+
+| Gate | Result | Evidence under `followup/` |
+|---|---|---|
+| Entire configured application/plugin/test build | Passed | `build-final-after-readline.log` |
+| Broad offline CTest selection | 361 passed, 1 skipped, 0 failed | `unit-final-verified.log`, `unit-final-verified.xml`, `unit-selection-final-verified.txt` |
+| GPU kernel/backend unit selection | 7 passed, 0 failed | `gpu-final-verified.log`, `gpu-final-verified.xml` |
+| Modified Python test suites | 308 passed, 131 skipped, 146 subtests passed | `python-source-final-explicit.log`, `python-source-selection.txt` |
+| Agent integration selection | 258 passed, 3 skipped, 274 deselected | `agent-current-commit.log`, `agent-current-commit.xml` |
+| Strict public AICore/plugin boundaries | Passed | `boundaries-final.log` |
+| Modified Python/shell syntax | 43 Python files, 4 shell scripts passed | `syntax-final.json` |
+| CV_io Unicode JPEG/PNG round trips | Both passed | `image-io-unicode.log` |
+
+The single outer CTest skip is the authenticated RelateAnything upstream
+reference; its independent temporal replay unit test passes. Python skips are
+explicit optional real-reference cases, and the agent skips require native
+PowerShell. The embedded Python suite separately reports six Windows-only
+skips on Linux. The 135 unrun model/network/reference integration tests are
+listed in `excluded-integration-final-verified.json`. Before/after runtime
+hashes show no application or shared-library changes during the final CTest
+and GPU runs (`verified-runtime-changes.json` is empty). `manifest.json` pins
+the current source and evidence hashes; earlier failing logs are retained for
+the readline regression's before/after comparison.

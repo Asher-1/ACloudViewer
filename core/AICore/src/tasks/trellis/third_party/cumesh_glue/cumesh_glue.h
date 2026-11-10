@@ -10,9 +10,8 @@
 // cumesh_glue — thin native C wrapper around JeffreyXiang/CuMesh (MIT).
 //
 // Exposes GPU-accelerated chart clustering (compute_charts) and supporting
-// mesh-cleanup routines without requiring PyTorch types in the caller. The
-// cu file in this directory compiles the CuMesh CUDA sources and links
-// libtorch internally; the header stays torch-free.
+// mesh-cleanup routines. The CuMesh CUDA sources are plain CUDA/CUB code; the
+// only runtime dependencies are the CUDA runtime and the C++ standard library.
 //
 // Allocated output buffers must be freed via cumesh_free_buffer().
 

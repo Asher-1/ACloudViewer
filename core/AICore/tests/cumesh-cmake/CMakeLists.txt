@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.24)
 project(AICoreCuMeshBuildSmoke LANGUAGES CXX CUDA)
 enable_testing()
 
-find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 find_package(CUDAToolkit REQUIRED)
 
 option(CUMESH_SMOKE_REQUIRE_ENABLED
@@ -59,16 +58,6 @@ else()
 endif()
 
 if(WIN32 AND TARGET aicore_cumesh)
-    get_property(_torch_runtime_dir GLOBAL PROPERTY
-        AICORE_CUMESH_TORCH_RUNTIME_DIR)
-    if(NOT IS_DIRECTORY "${_torch_runtime_dir}")
-        message(FATAL_ERROR "CuMesh Torch runtime directory is unavailable: ${_torch_runtime_dir}")
-    endif()
-    get_property(_python_runtime_dirs GLOBAL PROPERTY
-        AICORE_CUMESH_PYTHON_RUNTIME_DIRS)
-    if(NOT _python_runtime_dirs)
-        message(FATAL_ERROR "CuMesh Python runtime DLL directory is unavailable")
-    endif()
     add_custom_command(TARGET aicore_cumesh_smoke POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
             "$<TARGET_FILE:aicore_cumesh_smoke>"

@@ -7,27 +7,62 @@
 
 #pragma once
 
-#include <c10/cuda/CUDAStream.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
-#include <torch/extension.h>
 
+#include <algorithm>
+#include <cfloat>
+#include <climits>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <limits>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <tuple>
+#include <unordered_map>
 #include <vector>
 
-#define CUDA_CHECK(call)                                                    \
-    do {                                                                    \
-        const cudaError_t error_code = call;                                \
-        if (error_code != cudaSuccess) {                                    \
-            TORCH_CHECK(false, "[CuMesh] CUDA error:\n",                    \
-                        "    File:       ", __FILE__, "\n",                 \
-                        "    Line:       ", __LINE__, "\n",                 \
-                        "    Error code: ", error_code, "\n",               \
-                        "    Error text: ", cudaGetErrorString(error_code), \
-                        "\n");                                              \
-        }                                                                   \
+namespace cumesh {
+namespace detail {
+
+// Raised for every failed CUDA call. Derives from std::exception so the C
+// glue's catch blocks keep converting failures into a 0 return value.
+[[noreturn]] inline void cuda_check_fail(const char* file,
+                                         int line,
+                                         cudaError_t error_code) {
+    std::ostringstream message;
+    message << "[CuMesh] CUDA error:\n"
+            << "    File:       " << file << "\n"
+            << "    Line:       " << line << "\n"
+            << "    Error code: " << static_cast<int>(error_code) << "\n"
+            << "    Error text: " << cudaGetErrorString(error_code) << "\n";
+    throw std::runtime_error(message.str());
+}
+
+}  // namespace detail
+}  // namespace cumesh
+
+#define CUDA_CHECK(call)                                                      \
+    do {                                                                      \
+        const cudaError_t error_code = call;                                  \
+        if (error_code != cudaSuccess) {                                      \
+            ::cumesh::detail::cuda_check_fail(__FILE__, __LINE__, error_code); \
+        }                                                                     \
     } while (0)
 
 namespace cumesh {
+
+/**
+ * Stream every CuMesh kernel and copy is ordered on: the legacy default
+ * stream. The glue previously pinned PyTorch's current stream to its default
+ * stream (handle 0) for the whole call, so this is the identical stream.
+ */
+inline cudaStream_t current_stream() { return cudaStream_t(0); }
 
 /**
  * A GPU buffer class that manages device memory.
@@ -49,7 +84,7 @@ struct Buffer {
 
     void free() {
         if (ptr != nullptr) {
-            cudaStream_t stream = at::cuda::getCurrentCUDAStream().stream();
+            cudaStream_t stream = current_stream();
             CUDA_CHECK(cudaStreamSynchronize(stream));
             CUDA_CHECK(cudaFree(ptr));
         }
@@ -71,7 +106,7 @@ struct Buffer {
         if (new_size > capacity) {
             T* new_ptr;
             CUDA_CHECK(cudaMalloc(&new_ptr, new_size * sizeof(T)));
-            cudaStream_t stream = at::cuda::getCurrentCUDAStream().stream();
+            cudaStream_t stream = current_stream();
             CUDA_CHECK(cudaMemcpyAsync(new_ptr, ptr, this->size * sizeof(T),
                                        cudaMemcpyDeviceToDevice, stream));
             CUDA_CHECK(cudaStreamSynchronize(stream));
@@ -83,16 +118,26 @@ struct Buffer {
     }
 
     void zero() {
-        cudaStream_t stream = at::cuda::getCurrentCUDAStream().stream();
+        cudaStream_t stream = current_stream();
         CUDA_CHECK(cudaMemsetAsync(ptr, 0, size * sizeof(T), stream));
     }
 
     void fill(T val) {
-        cudaStream_t stream = at::cuda::getCurrentCUDAStream().stream();
+        cudaStream_t stream = current_stream();
         std::vector<T> tmp(size, val);
         CUDA_CHECK(cudaMemcpyAsync(ptr, tmp.data(), size * sizeof(T),
                                    cudaMemcpyHostToDevice, stream));
         CUDA_CHECK(cudaStreamSynchronize(stream));
+    }
+
+    /** Synchronous device-to-host copy of the first `size` elements. */
+    std::vector<T> to_host() const {
+        std::vector<T> host(size);
+        if (size > 0) {
+            CUDA_CHECK(cudaMemcpy(host.data(), ptr, size * sizeof(T),
+                                  cudaMemcpyDeviceToHost));
+        }
+        return host;
     }
 };
 

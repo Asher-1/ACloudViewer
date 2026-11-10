@@ -39,6 +39,18 @@ if(BUILD_UNIT_TESTS)
   set_property(TEST test_qpythonruntime_plugin_loading APPEND PROPERTY
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
   set_tests_properties(test_qpythonruntime_plugin_loading PROPERTIES TIMEOUT 60)
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_library(QPYTHONRUNTIME_TEST_LIBEDIT NAMES edit libedit.so.2)
+    if(QPYTHONRUNTIME_TEST_LIBEDIT)
+      add_test(NAME test_qpythonruntime_readline_isolation
+        COMMAND test_qpythonruntime_plugin_loading
+          $<TARGET_FILE:QPYTHONRUNTIME_PLUGIN> ${QPYTHONRUNTIME_TEST_LIBEDIT})
+      cloudviewer_set_plugin_test_env(test_qpythonruntime_readline_isolation)
+      set_property(TEST test_qpythonruntime_readline_isolation APPEND PROPERTY
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+      set_tests_properties(test_qpythonruntime_readline_isolation PROPERTIES TIMEOUT 60)
+    endif()
+  endif()
   add_test(NAME test_qpythonruntime_binding_contracts
     COMMAND ${PYTHON_EXECUTABLE} -m pytest -p no:cacheprovider -q
       --acloudviewer_exe=$<TARGET_FILE:ACloudViewer>

@@ -108,7 +108,7 @@ endif()
 # patch simply compiles the CUDA-only kernels out.
 _ggml_read_synced_cache(GGML_USE_SAM3D_OPS BOOL ON
     "Internal: required by the unified AICore task set")
-set(_GGML_SAM3D_DEPS_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/ggml/sam3d-deps")
+set(_GGML_SAM3D_DEPS_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/${_GGML_OWNER_PREFIX}/sam3d-deps")
 if(GGML_USE_SAM3D_OPS AND _GGML_CUDA_ENABLED)
     # PyTorch 2.5.1 mem-efficient attention public header closure, pinned by
     # content hash (header-only; neither libtorch nor cuDNN is linked).
