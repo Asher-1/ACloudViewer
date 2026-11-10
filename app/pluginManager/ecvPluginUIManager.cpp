@@ -399,15 +399,13 @@ void ccPluginUIManager::addActionsToToolBar(ccStdPluginInterface *stdPlugin,
         QToolBar *toolBar = new QToolBar(
                 pluginName + QStringLiteral(" toolbar"), m_parentWidget);
 
-        if (toolBar != nullptr) {
-            m_additionalPluginToolbars.push_back(toolBar);
+        m_additionalPluginToolbars.push_back(toolBar);
 
-            toolBar->setObjectName(pluginName);
-            toolBar->setEnabled(true);
+        toolBar->setObjectName(pluginName);
+        toolBar->setEnabled(true);
 
-            for (QAction *action : actions) {
-                toolBar->addAction(action);
-            }
+        for (QAction *action : actions) {
+            toolBar->addAction(action);
         }
     } else  // otherwise we just add it to the main tool bar
     {
