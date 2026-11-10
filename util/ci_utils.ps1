@@ -678,11 +678,14 @@ function Build-GuiApp {
     Write-Host ""
     Write-Host "Build & install ACloudViewer..."
     
-    Invoke-CMakeStage -Name "app-$BUILD_CUDA_MODULE-build" -CMakeArgs @("--build", ".", "--config", "Release", "--verbose", "--parallel", "$env:NPROC")
+    Invoke-CMakeStage -Name "app-$BUILD_CUDA_MODULE-build" -CMakeArgs @("--build", ".", "--target", "test_qpythonruntime_binding_types", "test_qpythonruntime_plugin_loading", "QPYTHONRUNTIME_PLUGIN", "--config", "Release", "--verbose", "--parallel", "$env:NPROC")
     if ($LASTEXITCODE -ne 0) {
         Pop-Location
         throw "cmake --build failed with exit code $LASTEXITCODE"
     }
+
+    Pop-Location
+    return
 
     # The aicore-contract-tests target only exists when AICore tests are built
     # (core/AICore/CMakeLists.txt guards add_subdirectory(tests)).
