@@ -1,4 +1,4 @@
-name: CI macOS dependency identity diagnosis
+name: CI macOS loader regression verification
 'on':
   push:
     branches:
@@ -6,76 +6,42 @@ name: CI macOS dependency identity diagnosis
 permissions:
   contents: read
 jobs:
-  loader-contract:
+  loader-regression:
     runs-on: macos-15
     steps:
     - uses: actions/checkout@v4
     - uses: ./.github/actions/setup-cmake
-    - name: Compare explicit dependency identity under the production helper
-      run: 'mkdir -p /tmp/loader-contract
+    - name: Verify production helper against dependency identity and fallback contracts
+      run: 'set -e
 
-        cat > /tmp/loader-contract/CMakeLists.txt <<''CMAKE''
+        cp cmake/CloudViewerOutputDirectories.cmake /tmp/fixed-helper.cmake
 
-        cmake_minimum_required(VERSION 3.24)
+        sed ''s/set(_cv_loader_var DYLD_FALLBACK_LIBRARY_PATH)/set(_cv_loader_var DYLD_LIBRARY_PATH)/'' /tmp/fixed-helper.cmake > cmake/CloudViewerOutputDirectories.cmake
 
-        project(LoaderContract LANGUAGES C)
+        cmake -S core/tests/runtime-environment -B /tmp/runtime-before
 
-        enable_testing()
-
-        include("$ENV{LOADER_HELPER}")
-
-        file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/pinned.c" "int dependency_value(void) { return 1; }\n")
-
-        file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/shadow.c" "int dependency_value(void) { return 2; }\n")
-
-        file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/probe.c" "#include <stdio.h>\nextern int dependency_value(void);\nint main(void) { int n=dependency_value(); fprintf(stderr, \"Dependency value: %d (expected 1)\\n\",n); return n==1 ? 0 : 1; }\n")
-
-        add_library(pinned SHARED "${CMAKE_CURRENT_BINARY_DIR}/pinned.c")
-
-        set_target_properties(pinned PROPERTIES OUTPUT_NAME cv_env_probe LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/pinned" BUILD_WITH_INSTALL_NAME_DIR TRUE INSTALL_NAME_DIR "${CMAKE_BINARY_DIR}/pinned" MACOSX_RPATH OFF)
-
-        add_library(shadow SHARED "${CMAKE_CURRENT_BINARY_DIR}/shadow.c")
-
-        set_target_properties(shadow PROPERTIES OUTPUT_NAME cv_env_probe LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-
-        add_executable(probe "${CMAKE_CURRENT_BINARY_DIR}/probe.c")
-
-        target_link_libraries(probe PRIVATE pinned)
-
-        add_test(NAME pinned_dependency COMMAND probe)
-
-        cloudviewer_set_test_runtime_environment(pinned_dependency)
-
-        CMAKE
-
-        export LOADER_HELPER="$GITHUB_WORKSPACE/cmake/CloudViewerOutputDirectories.cmake"
-
-        cmake -S /tmp/loader-contract -B /tmp/loader-contract/before
-
-        cmake --build /tmp/loader-contract/before --parallel 2
-
-        otool -L /tmp/loader-contract/before/probe
-
-        /tmp/loader-contract/before/probe
+        cmake --build /tmp/runtime-before --parallel 2
 
         set +e
 
-        ctest --test-dir /tmp/loader-contract/before --output-on-failure
+        ctest --test-dir /tmp/runtime-before --output-on-failure
 
         before_status=$?
 
         set -e
 
-        if [ "$before_status" -eq 0 ]; then echo ''Expected loader override was not reproduced''; exit 1; fi
+        cp /tmp/fixed-helper.cmake cmake/CloudViewerOutputDirectories.cmake
 
-        sed ''s/set(_cv_loader_var DYLD_LIBRARY_PATH)/set(_cv_loader_var DYLD_FALLBACK_LIBRARY_PATH)/'' "$LOADER_HELPER" > /tmp/loader-contract/fallback-helper.cmake
+        if [ "$before_status" -eq 0 ]; then echo ''Expected dependency replacement did not fail''; exit 1; fi
 
-        export LOADER_HELPER=/tmp/loader-contract/fallback-helper.cmake
+        cmake -S core/tests/runtime-environment -B /tmp/runtime-after
 
-        cmake -S /tmp/loader-contract -B /tmp/loader-contract/after
+        cmake --build /tmp/runtime-after --parallel 2
 
-        cmake --build /tmp/loader-contract/after --parallel 2
+        ctest --test-dir /tmp/runtime-after -V
 
-        ctest --test-dir /tmp/loader-contract/after --output-on-failure
+        otool -L /tmp/runtime-after/pinned_probe
+
+        otool -L /tmp/runtime-after/fallback_probe
 
         '

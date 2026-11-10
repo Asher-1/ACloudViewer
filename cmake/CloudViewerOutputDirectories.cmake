@@ -250,7 +250,10 @@ function(cloudviewer_set_test_runtime_environment test_name)
     if (MSVC)
         set(_cv_loader_var PATH)
     elseif (APPLE)
-        set(_cv_loader_var DYLD_LIBRARY_PATH)
+        # Preserve absolute install names and LC_RPATH resolution. A global
+        # DYLD_LIBRARY_PATH also replaces system dependencies (including libc++)
+        # with same-named Conda libraries, even when they were not linked here.
+        set(_cv_loader_var DYLD_FALLBACK_LIBRARY_PATH)
     else()
         set(_cv_loader_var LD_LIBRARY_PATH)
     endif()
