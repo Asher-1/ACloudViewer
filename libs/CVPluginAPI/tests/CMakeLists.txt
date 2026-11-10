@@ -94,6 +94,21 @@ endif()
 cloudviewer_set_bin_runtime_output_directory(test_cvpluginapi_dataset_repository)
 _cvpluginapi_register_asset_test(test_cvpluginapi_dataset_repository)
 
+# The shared service must be destroyed with QApplication, before DLL teardown.
+add_executable(test_cvpluginapi_dataset_lifecycle test_dataset_lifecycle.cpp)
+target_include_directories(test_cvpluginapi_dataset_lifecycle PRIVATE
+    ${CMAKE_SOURCE_DIR}/core/AICore/include)
+target_link_libraries(test_cvpluginapi_dataset_lifecycle PRIVATE
+    CVPluginAPI Qt${QT_VERSION_MAJOR}::Core)
+if(NOT MSVC)
+    target_compile_options(test_cvpluginapi_dataset_lifecycle PRIVATE -Wall -Wextra -fPIC)
+    if(NOT APPLE)
+        target_link_options(test_cvpluginapi_dataset_lifecycle PRIVATE "-no-pie")
+    endif()
+endif()
+cloudviewer_set_bin_runtime_output_directory(test_cvpluginapi_dataset_lifecycle)
+_cvpluginapi_register_asset_test(test_cvpluginapi_dataset_lifecycle)
+
 # Focused unit tests for the shared AICore runtime helper header
 # (include/ecvAICoreRuntimeHelpers.h). Header-only under test, but the lock
 # helper exercises the real exported C API, so link libAICore.

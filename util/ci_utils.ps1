@@ -678,7 +678,7 @@ function Build-GuiApp {
     Write-Host ""
     Write-Host "Build & install ACloudViewer..."
     
-    Invoke-CMakeStage -Name "app-$BUILD_CUDA_MODULE-build" -CMakeArgs @("--build", ".", "--target", "test_cvpluginapi_dataset_repository", "test_qsam3d_model_selection", "test_qtrellis_model_selection", "test_qvlxseek_dialog", "test_qopenpcdet_dialog", "test_qinstantmesh_dialog", "test_qinstantmesh_plugin", "--config", "Release", "--verbose", "--parallel", "$env:NPROC")
+    Invoke-CMakeStage -Name "app-$BUILD_CUDA_MODULE-build" -CMakeArgs @("--build", ".", "--target", "test_cvpluginapi_dataset_repository", "test_qsam3d_model_selection", "test_qtrellis_model_selection", "test_qvlxseek_dialog", "test_qopenpcdet_dialog", "test_qinstantmesh_dialog", "test_qinstantmesh_plugin", "test_cvpluginapi_dataset_lifecycle", "--config", "Release", "--verbose", "--parallel", "$env:NPROC")
     if ($LASTEXITCODE -ne 0) {
         Pop-Location
         throw "cmake --build failed with exit code $LASTEXITCODE"
