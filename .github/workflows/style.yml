@@ -31,6 +31,10 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -U -r python/requirements_style.txt
+      - name: Verify Vulkan download recovery
+        run: |
+          bash -n util/vulkan/install_vulkan_linux.sh
+          python -W error util/vulkan/tests/test_vulkan_download.py -v
       - name: Apply style formatting
         if: github.event_name == 'pull_request'
         run: |

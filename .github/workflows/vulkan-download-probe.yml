@@ -1,0 +1,40 @@
+name: CI Focal Vulkan transfer control
+'on':
+  push:
+    branches:
+    - ci/vulkan-download-probe-20261111
+permissions:
+  contents: read
+jobs:
+  focal:
+    runs-on: ubuntu-latest
+    container: ubuntu:20.04
+    timeout-minutes: 20
+    steps:
+    - name: Install native Focal transfer tools
+      run: 'apt-get update
+
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends curl ca-certificates python3 xz-utils
+
+        '
+    - uses: actions/checkout@v4
+    - name: Verify real TCP reset and integrity failures
+      run: 'python3 -W error util/vulkan/tests/test_vulkan_download.py -v
+
+        '
+    - name: Download verify and extract real LunarG SDK with curl7.68
+      run: 'python3 - <<''PY''
+
+        import pathlib,subprocess
+
+        s=pathlib.Path(''util/vulkan/install_vulkan_linux.sh'').read_text()
+
+        functions=s[s.index(''version_at_least() {''):s.index(''\nmkdir -p "${ACLOUDVIEWER_LOCAL_ROOT}"\n'')]
+
+        script=''set -euo pipefail\n''+functions+''\nVULKAN_SDK_VERSION=1.4.350.0\nVULKAN_SDK_ROOT="${RUNNER_TEMP}/sdk-control"\ncurl --version\ninstall_vulkan_sdk_tarball\nfind "$VULKAN_SDK_ROOT" -name setup-env.sh -print\n''
+
+        subprocess.run([''bash'',''-c'',script],check=True)
+
+        PY
+
+        '
