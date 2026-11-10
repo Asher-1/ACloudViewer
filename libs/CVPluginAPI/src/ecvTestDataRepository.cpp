@@ -699,7 +699,7 @@ ecvTestDataRepository::ecvTestDataRepository(QObject* parent)
             });
 }
 
-ecvTestDataRepository::~ecvTestDataRepository() = default;
+ecvTestDataRepository::~ecvTestDataRepository() { std::fprintf(stderr, "repository destructor body\n"); }
 
 // ----------------------------------------------------------------------------
 // Availability query

@@ -24,6 +24,7 @@
 
 #define REQUIRE(condition)                                               \
     do {                                                                 \
+        std::fprintf(stderr, "checkpoint line %d\n", __LINE__); \
         if (!(condition)) {                                              \
             std::fprintf(stderr, "line %d: %s\n", __LINE__, #condition); \
             return 1;                                                    \
@@ -31,6 +32,8 @@
     } while (false)
 
 int main(int argc, char** argv) {
+    std::setvbuf(stdout, nullptr, _IONBF, 0);
+    std::setvbuf(stderr, nullptr, _IONBF, 0);
     QApplication app(argc, argv);
     QTemporaryDir temporary;
     REQUIRE(temporary.isValid());
@@ -119,5 +122,6 @@ int main(int argc, char** argv) {
     repository.cancelDownload();
     std::puts(
             "VLXSeek: cached ZIP fill, warm reuse and stale callbacks passed");
+    std::fprintf(stderr, "body done, returning from main\n");
     return 0;
 }

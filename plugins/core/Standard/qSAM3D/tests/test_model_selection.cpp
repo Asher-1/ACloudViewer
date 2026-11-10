@@ -26,6 +26,7 @@
 
 #define REQUIRE(condition)                                               \
     do {                                                                 \
+        std::fprintf(stderr, "checkpoint line %d\n", __LINE__); \
         if (!(condition)) {                                              \
             std::fprintf(stderr, "line %d: %s\n", __LINE__, #condition); \
             return 1;                                                    \
@@ -34,6 +35,8 @@
 
 int main(int argc, char** argv) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
+    std::setvbuf(stdout, nullptr, _IONBF, 0);
+    std::setvbuf(stderr, nullptr, _IONBF, 0);
     QApplication app(argc, argv);
     QTemporaryDir temporary;
     REQUIRE(temporary.isValid());
@@ -167,5 +170,6 @@ int main(int argc, char** argv) {
     std::puts(
             "SAM3D selected dependency and repeated cached Run workflow passed "
             "(UI fixtures only)");
+    std::fprintf(stderr, "body done, returning from main\n");
     return 0;
 }

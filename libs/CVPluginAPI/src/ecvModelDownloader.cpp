@@ -49,7 +49,7 @@ ecvModelDownloader::ecvModelDownloader(QObject* parent) : QObject(parent) {
     connect(m_retryTimer, &QTimer::timeout, this, [this]() { startAttempt(); });
 }
 
-ecvModelDownloader::~ecvModelDownloader() { cancel(); }
+ecvModelDownloader::~ecvModelDownloader() { std::fprintf(stderr, "downloader cancel begin\n"); cancel(); std::fprintf(stderr, "downloader cancel done\n"); }
 
 QString ecvModelDownloader::formatFileSize(qint64 bytes) {
     if (bytes < 0) {
