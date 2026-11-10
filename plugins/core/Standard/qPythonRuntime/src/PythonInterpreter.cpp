@@ -369,6 +369,25 @@ void PythonInterpreter::initialize(const PythonConfig &config)
         Py_Initialize();
     }
 
+#if defined(Q_OS_LINUX) && defined(RTLD_DEEPBIND)
+    // Mesa/LLVM may already expose libedit's incompatible readline symbols.
+    // Bind this optional C extension to its own dependency before user imports.
+    // Restore the flags even on failure; C++ extensions must retain normal loading.
+    py::dict readlineGlobals;
+    readlineGlobals["deepbind"] = RTLD_DEEPBIND;
+    py::exec(R"(
+import importlib.util
+import sys
+if importlib.util.find_spec("readline") is not None:
+    flags = sys.getdlopenflags()
+    try:
+        sys.setdlopenflags(flags | deepbind)
+        import readline
+    finally:
+        sys.setdlopenflags(flags)
+)", readlineGlobals);
+#endif
+
     // Make sure this module is imported
     // so that we can later easily construct our consoles.
     py::module::import("ccinternals");
