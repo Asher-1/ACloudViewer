@@ -1,4 +1,4 @@
-name: CI native failure diagnosis
+name: CI macOS production crash diagnosis
 'on':
   push:
     branches:
@@ -39,17 +39,13 @@ jobs:
         '
     - name: Checkout source code
       uses: actions/checkout@v4
-    - name: Restore compiler cache (stash)
-      id: ccache-restore
-      continue-on-error: true
-      uses: apache/infrastructure-actions/stash/restore@e3e0a2261a9c6d5bdd882802b303f34b1511b6df
+    - name: Restore the exact previous PR compiler cache
+      uses: actions/download-artifact@v4
       with:
-        key: ccache-macos-${{ runner.arch }}-app
+        name: ccache-macos-ARM64-app-150_merge
         path: ${{ env.CCACHE_DIR }}
-    - name: Seed compiler cache from legacy release asset
-      if: steps.ccache-restore.outputs.stash-hit != 'true'
-      continue-on-error: true
-      run: "ASSET=\"ccache-macos-app.tar.gz\"\nmkdir -p \"$CCACHE_DIR\"\ncurl -fsSL --retry 3 -o /tmp/ccache-restore.tar.gz \\\n  \"https://github.com/Asher-1/cloudViewer_downloads/releases/download/ci-ccache/${ASSET}\" \\\n  && tar -xzf /tmp/ccache-restore.tar.gz -C \"$CCACHE_DIR\" \\\n  || echo \"[cache] no legacy pool; using a cold build\"\nrm -f /tmp/ccache-restore.tar.gz\n"
+        run-id: 42635273772
+        github-token: ${{ github.token }}
     - name: Set up Python version
       run: 'sed -i "" "s/3.10/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
 
@@ -130,7 +126,7 @@ jobs:
     - name: Backtrace the failing production UI executables
       if: always()
       shell: bash -l {0}
-      run: "mkdir -p /tmp/ui-crash-results\nfor name in test_qopenpcdet_dialog test_qinstantmesh_dialog test_qinstantmesh_plugin; do\n  exe=\"$(find \"$PWD/build/bin\" -type f -name \"$name\" | head -1)\"\n  if [ -z \"$exe\" ]; then continue; fi\n  otool -L \"$exe\" > \"/tmp/ui-crash-results/$name-libraries.txt\"\n  for mode in clean override; do\n    if [ \"$mode\" = override ]; then\n      export DYLD_LIBRARY_PATH=\"$PWD/build/bin:$CONDA_PREFIX/lib:$PWD/build/external/lib\"\n    else\n      unset DYLD_LIBRARY_PATH\n    fi\n    QT_QPA_PLATFORM=offscreen lldb -b -o run -o 'thread backtrace all' -o 'image list' -o quit -- \"$exe\" > \"/tmp/ui-crash-results/$name-$mode.txt\" 2>&1\n    cat \"/tmp/ui-crash-results/$name-$mode.txt\"\n  done\ndone\nfind \"$HOME/Library/Logs/DiagnosticReports\" -maxdepth 1 -type f -name '*test_q*' -exec cp {} /tmp/ui-crash-results/ \\; 2>/dev/null || true\n"
+      run: "df -h\nvm_stat\nmkdir -p /tmp/ui-crash-results\nfor name in test_qopenpcdet_dialog test_qinstantmesh_dialog test_qinstantmesh_plugin; do\n  exe=\"$(find \"$PWD/build/bin\" -type f -name \"$name\" | head -1)\"\n  if [ -z \"$exe\" ]; then continue; fi\n  otool -L \"$exe\" > \"/tmp/ui-crash-results/$name-libraries.txt\"\n  for mode in clean override; do\n    if [ \"$mode\" = override ]; then\n      export DYLD_LIBRARY_PATH=\"$PWD/build/bin:$CONDA_PREFIX/lib:$PWD/build/external/lib\"\n    else\n      unset DYLD_LIBRARY_PATH\n    fi\n    QT_QPA_PLATFORM=offscreen lldb -b -o run -o 'thread backtrace all' -o 'image list' -o quit -- \"$exe\" > \"/tmp/ui-crash-results/$name-$mode.txt\" 2>&1\n    cat \"/tmp/ui-crash-results/$name-$mode.txt\"\n  done\ndone\nfind \"$HOME/Library/Logs/DiagnosticReports\" -maxdepth 1 -type f -name '*test_q*' -exec cp {} /tmp/ui-crash-results/ \\; 2>/dev/null || true\n"
     - name: Upload native UI backtraces
       if: always()
       uses: actions/upload-artifact@v4
@@ -139,39 +135,3 @@ jobs:
         path: /tmp/ui-crash-results
         if-no-files-found: warn
     timeout-minutes: 180
-  windows-cumesh:
-    runs-on: windows-2022
-    timeout-minutes: 35
-    steps:
-    - uses: actions/checkout@v4
-    - name: Install CUDA
-      uses: Jimver/cuda-toolkit@v0.2.23
-      with:
-        cuda: 12.6.0
-        sub-packages: '["nvcc", "cudart", "thrust"]'
-        method: network
-        use-github-cache: 'false'
-        use-local-cache: 'false'
-    - uses: ./.github/actions/setup-cmake
-    - uses: ilammy/msvc-dev-cmd@v1
-      with:
-        arch: x64
-    - name: Compile the plain CUDA CuMesh bridge
-      shell: powershell
-      run: '$ErrorActionPreference = ''Stop''
-
-        $smokeBuild = Join-Path $env:RUNNER_TEMP ''cumesh Windows build smoke''
-
-        cmake -S core/AICore/tests/cumesh-cmake -B $smokeBuild -G ''Ninja Multi-Config'' -DCMAKE_CUDA_ARCHITECTURES=75
-
-        if ($LASTEXITCODE -ne 0) { throw ''CuMesh configure failed'' }
-
-        cmake --build $smokeBuild --config Release --target aicore_cumesh_smoke --parallel 2
-
-        if ($LASTEXITCODE -ne 0) { throw ''CuMesh build failed'' }
-
-        ctest --test-dir $smokeBuild -C Release --output-on-failure
-
-        if ($LASTEXITCODE -ne 0) { throw ''CuMesh contract failed'' }
-
-        '
