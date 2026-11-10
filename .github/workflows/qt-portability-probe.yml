@@ -63,11 +63,43 @@ jobs:
     - name: Build only the three production UI tests
       id: build
       shell: bash -l {0}
-      run: "set -e -o pipefail\nexport PATH=\"${HOME}/QtIFW-4.6.1-darwin-ARM64-static/bin:$CONDA_PREFIX/lib:$PATH\"\nexport PKG_CONFIG_PATH=\"$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH\"\npython3 - <<'PATCH'\nfrom pathlib import Path\np=Path('util/ci_utils.sh')\ns=p.read_text()\na='    make -j\"$NPROC\"\n    cmake --build . --target aicore-contract-tests -j \"$NPROC\"'\nb='    make -j\"$NPROC\" test_qopenpcdet_dialog test_qinstantmesh_dialog test_qinstantmesh_plugin\n    popd\n    return 0'\nassert s.count(a)==1\np.write_text(s.replace(a,b))\nPATCH\nsource util/ci_utils.sh\nccache -z\nbuild_gui_app with_conda package_installer 2>&1 | tee /tmp/macos-build.log\nccache -s\n"
+      run: 'set -e -o pipefail
+
+        export PATH="${HOME}/QtIFW-4.6.1-darwin-ARM64-static/bin:$CONDA_PREFIX/lib:$PATH"
+
+        export PKG_CONFIG_PATH="$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
+
+        python3 - <<''PATCH''
+
+        from pathlib import Path
+
+        p=Path(''util/ci_utils.sh'')
+
+        s=p.read_text()
+
+        a=chr(10).join([''    make -j"$NPROC"'', ''    cmake --build . --target aicore-contract-tests -j "$NPROC"''])
+
+        b=chr(10).join([''    make -j"$NPROC" test_qopenpcdet_dialog test_qinstantmesh_dialog test_qinstantmesh_plugin'', ''    popd'', ''    return 0''])
+
+        assert s.count(a)==1
+
+        p.write_text(s.replace(a,b))
+
+        PATCH
+
+        source util/ci_utils.sh
+
+        ccache -z
+
+        build_gui_app with_conda package_installer 2>&1 | tee /tmp/macos-build.log
+
+        ccache -s
+
+        '
     - name: Compare the identical production binaries under each loader mode
       if: always()
       shell: bash -l {0}
-      run: "set +e\nmkdir -p /tmp/ui-crash-results\npaths=\"$PWD/build/bin:$CONDA_PREFIX/lib:$PWD/build/external/lib\"\nfor name in test_qopenpcdet_dialog test_qinstantmesh_dialog test_qinstantmesh_plugin; do\n exe=\"$PWD/build/bin/plugin_test/$name\"\n [ -f \"$exe\" ] || continue\n env -u DYLD_LIBRARY_PATH QT_QPA_PLATFORM=offscreen \"$exe\" > \"/tmp/ui-crash-results/$name-clean.txt\" 2>&1\n echo \"$name clean=$?\" | tee -a /tmp/ui-crash-results/status.txt\n QT_QPA_PLATFORM=offscreen DYLD_LIBRARY_PATH=\"$paths\" \"$exe\" > \"/tmp/ui-crash-results/$name-override.txt\" 2>&1\n echo \"$name override=$?\" | tee -a /tmp/ui-crash-results/status.txt\n lldb -b -o \"settings set target.env-vars QT_QPA_PLATFORM=offscreen DYLD_LIBRARY_PATH=$paths\" -o run -k 'thread backtrace all' -k 'image list' -- \"$exe\" > \"/tmp/ui-crash-results/$name-backtrace.txt\" 2>&1\n echo \"$name lldb=$?\" | tee -a /tmp/ui-crash-results/status.txt\n find \"$HOME/Library/Logs/DiagnosticReports\" -maxdepth 1 -type f -name '*test_q*' -exec cp {} /tmp/ui-crash-results/ \\; 2>/dev/null\n cat \"/tmp/ui-crash-results/$name-backtrace.txt\"\ndone\nunset DYLD_LIBRARY_PATH\npython3 - <<'PATCH'\nfrom pathlib import Path\np=Path('cmake/CloudViewerOutputDirectories.cmake');s=p.read_text();assert 'set(_cv_loader_var DYLD_LIBRARY_PATH)' in s;p.write_text(s.replace('set(_cv_loader_var DYLD_LIBRARY_PATH)','set(_cv_loader_var DYLD_FALLBACK_LIBRARY_PATH)'))\nPATCH\nset -e\ncmake -S . -B build\nctest --test-dir build -R '^test_q(openpcdet_dialog|instantmesh_dialog|instantmesh_plugin)$' -V --output-on-failure | tee /tmp/ui-crash-results/fallback-ctest.txt\n"
+      run: "set +e\nmkdir -p /tmp/ui-crash-results\npaths=\"$PWD/build/bin:$CONDA_PREFIX/lib:$PWD/build/external/lib\"\nfor name in test_qopenpcdet_dialog test_qinstantmesh_dialog test_qinstantmesh_plugin; do\n exe=\"$PWD/build/bin/plugin_test/$name\"\n [ -x \"$exe\" ] || { echo \"Missing required executable: $exe\"; exit 1; }\n env -u DYLD_LIBRARY_PATH QT_QPA_PLATFORM=offscreen \"$exe\" > \"/tmp/ui-crash-results/$name-clean.txt\" 2>&1\n echo \"$name clean=$?\" | tee -a /tmp/ui-crash-results/status.txt\n QT_QPA_PLATFORM=offscreen DYLD_LIBRARY_PATH=\"$paths\" \"$exe\" > \"/tmp/ui-crash-results/$name-override.txt\" 2>&1\n echo \"$name override=$?\" | tee -a /tmp/ui-crash-results/status.txt\n lldb -b -o \"settings set target.env-vars QT_QPA_PLATFORM=offscreen DYLD_LIBRARY_PATH=$paths\" -o run -k 'thread backtrace all' -k 'image list' -- \"$exe\" > \"/tmp/ui-crash-results/$name-backtrace.txt\" 2>&1\n echo \"$name lldb=$?\" | tee -a /tmp/ui-crash-results/status.txt\n find \"$HOME/Library/Logs/DiagnosticReports\" -maxdepth 1 -type f -name '*test_q*' -exec cp {} /tmp/ui-crash-results/ \\; 2>/dev/null\n cat \"/tmp/ui-crash-results/$name-backtrace.txt\"\ndone\nunset DYLD_LIBRARY_PATH\npython3 - <<'PATCH'\nfrom pathlib import Path\np=Path('cmake/CloudViewerOutputDirectories.cmake');s=p.read_text();assert 'set(_cv_loader_var DYLD_LIBRARY_PATH)' in s;p.write_text(s.replace('set(_cv_loader_var DYLD_LIBRARY_PATH)','set(_cv_loader_var DYLD_FALLBACK_LIBRARY_PATH)'))\nPATCH\nset -e -o pipefail\ncmake -S . -B build\nctest --test-dir build -R '^test_q(openpcdet_dialog|instantmesh_dialog|instantmesh_plugin)$' --no-tests=error -V --output-on-failure | tee /tmp/ui-crash-results/fallback-ctest.txt\n"
     - name: Upload native crash evidence
       if: always()
       uses: actions/upload-artifact@v4
