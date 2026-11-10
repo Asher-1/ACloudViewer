@@ -76,7 +76,10 @@ int main(int argc, char **argv)
         return 1;
     // Import the registered production modules and exercise the formerly broken value boundary.
     const int result =
-        PyRun_SimpleString("import pycc, cccorelib\n"
+        PyRun_SimpleString("import sys, pycc, cccorelib\n"
+                           "assert all('\\r' not in p and '\\n' not in p for p in sys.path)\n"
+                           "print('Embedded Python prefix:', sys.prefix, flush=True)\n"
+                           "print('Embedded Python paths:', sys.path, flush=True)\n"
                            "cloud = pycc.ccPointCloud('plugin loading')\n"
                            "field = cloud.getScalarField(cloud.addScalarField('values'))\n"
                            "assert field.getHistogram() == []\n");

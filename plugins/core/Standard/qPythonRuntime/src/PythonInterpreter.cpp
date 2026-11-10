@@ -307,22 +307,26 @@ void PythonInterpreter::initialize(const PythonConfig &config)
         // test_qpythonruntime_plugin_loading; reproduced and diagnosed in a
         // noble container: home-anchored boots still miss site-packages).
         // Set the search path explicitly from the config's path string
-        // (split on both ';' — this file's historical join separator — and
-        // ':' — the POSIX env separator) so the boot is host-independent.
+        // Accept the historical ';' separator and the native list separator.
+        // Windows drive letters contain ':', so only POSIX may split on it.
         {
             const std::wstring joined(m_config.pythonPath() ? m_config.pythonPath() : L"");
             std::vector<std::wstring> pathItems;
             size_t start = 0;
             while (start <= joined.size())
             {
+#ifdef Q_OS_WINDOWS
+                size_t sep = joined.find(L';', start);
+#else
                 size_t sep = joined.find_first_of(L";:", start);
+#endif
                 if (sep == std::wstring::npos)
                     sep = joined.size();
                 std::wstring item = joined.substr(start, sep - start);
-                const size_t first = item.find_first_not_of(L" \t");
+                const size_t first = item.find_first_not_of(L" \t\r\n");
                 if (first != std::wstring::npos)
                 {
-                    const size_t last = item.find_last_not_of(L" \t");
+                    const size_t last = item.find_last_not_of(L" \t\r\n");
                     pathItems.push_back(item.substr(first, last - first + 1));
                 }
                 if (sep == joined.size())
