@@ -65,15 +65,16 @@ RUN if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then \
 
 # Update apt and install libs needed by Qt
 # First install basic tools, then setup Kitware repo with proper key handling
-RUN apt-get clean && apt-get update --fix-missing -y \
-    && apt-get install -y apt-utils software-properties-common tzdata gnupg ca-certificates curl \
+COPY docker/scripts/apt_install.sh /usr/local/bin/cloudviewer-apt-install
+RUN chmod +x /usr/local/bin/cloudviewer-apt-install
+RUN apt-get clean \
+    && cloudviewer-apt-install apt-utils software-properties-common tzdata gnupg ca-certificates curl \
     && mkdir -p /usr/share/keyrings \
     && curl -fsSL https://apt.kitware.com/keys/kitware-archive-latest.asc \
        | gpg --dearmor -o /usr/share/keyrings/kitware-archive-keyring.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $(lsb_release -c --short) main" \
        | tee /etc/apt/sources.list.d/kitware.list >/dev/null \
-    && apt-get update --fix-missing -y \
-    && apt-get install --fix-missing -yq --no-install-recommends \
+    && cloudviewer-apt-install -q --no-install-recommends \
         build-essential \
         ccache \
         git  \
@@ -164,8 +165,7 @@ RUN apt-get clean && apt-get update --fix-missing -y \
 # Install Qt5
 # Uses system default Qt5 packages (Qt 5.12+ on Ubuntu 20.04, Qt 5.15+ on Ubuntu 22.04+)
 # All versions meet the minimum requirement of Qt 5.12+
-RUN apt-get -y update && \
-    apt-get install -qy \
+RUN cloudviewer-apt-install -q \
       libqt5svg5-dev libqt5opengl5-dev qtbase5-dev qttools5-dev qttools5-dev-tools qml-module-qtquick* \
       libqt5websockets5-dev libqt5xmlpatterns5-dev libqt5x11extras5-dev qt5-image-formats-plugins \
       qttranslations5-l10n qtdeclarative5-dev qtdeclarative5-dev-tools libqt5quickcontrols2-5 libqt5networkauth5-dev && \

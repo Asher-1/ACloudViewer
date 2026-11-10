@@ -1,0 +1,26 @@
+name: CI Ubuntu complete apt transaction control
+'on':
+  push:
+    branches:
+    - ci/apt-transaction-probe-20261110
+permissions:
+  contents: read
+jobs:
+  apt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+        - '20.04'
+        - '24.04'
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Validate retry boundaries
+      run: "python3 - <<'PYTEST'\nimport json, os, pathlib, subprocess, tempfile\nscript=pathlib.Path('docker/scripts/apt_install.sh').resolve()\nwith tempfile.TemporaryDirectory() as td:\n p=pathlib.Path(td)\n apt=p/'apt-get'\n apt.write_text('''#!/usr/bin/env python3\nimport json,os,pathlib,sys\np=pathlib.Path(os.environ['APT_PROBE_DIR']); f=p/'calls.json'; calls=json.loads(f.read_text()) if f.exists() else []\na=sys.argv[1:]; phase='update' if 'update' in a else 'install'; calls.append([phase,a]); f.write_text(json.dumps(calls)); count=sum(c[0]==phase for c in calls)\nexit(100 if count<=int(os.environ.get('FAIL_'+phase.upper(),'0')) else 0)\n''')\n apt.chmod(0o755)\n for command in ['rm','sleep']:\n  f=p/command;f.write_text('#!/bin/sh\\nprintf \"%s\\\\n\" \"$*\" >> \"$APT_PROBE_DIR/'+command+'.log\"\\n');f.chmod(0o755)\n for up,ins,expected in [(0,0,0),(2,0,0),(0,1,0),(2,1,0),(5,0,1),(0,5,1)]:\n  for f in ['calls.json','rm.log','sleep.log']:(p/f).unlink(missing_ok=True)\n  env=dict(os.environ,PATH=str(p)+':'+os.environ['PATH'],APT_PROBE_DIR=str(p),FAIL_UPDATE=str(up),FAIL_INSTALL=str(ins))\n  r=subprocess.run(['bash',str(script),'-q','--no-install-recommends','qtbase5-dev','libqhull*'],env=env,text=True,capture_output=True)\n  assert r.returncode==expected,(up,ins,r.returncode,r.stderr)\n  calls=json.loads((p/'calls.json').read_text()); updates=[c for c in calls if c[0]=='update']; installs=[c for c in calls if c[0]=='install']\n  assert len(updates)==min(5,1+up+ins)\n  assert len(installs)==max(0,len(updates)-up)\n  for phase,args in calls:\n   assert 'Acquire::Retries=3' in args\n   if phase=='update':assert 'APT::Update::Error-Mode=any' in args\n   else: assert args[-4:]==['-q','--no-install-recommends','qtbase5-dev','libqhull*']\n  assert (p/'sleep.log').read_text().splitlines()==[str(15*n) for n in range(1,len(updates))] if len(updates)>1 else not (p/'sleep.log').exists()\n  print('PASS',up,'update failures;',ins,'install failures; exit',r.returncode,'transactions',len(updates))\n\nPYTEST"
+    - name: Build actual CI dependency and Qt installation layers
+      env:
+        UBUNTU_VERSION: ${{ matrix.version }}
+      run: "python3 - <<'PYDF'\nfrom pathlib import Path\ns=Path('docker/Dockerfile.ci').read_text().split('CMD [',1)[0]\nPath('/tmp/Dockerfile.apt-control').write_text(s)\nPYDF\ndocker build --progress=plain -f /tmp/Dockerfile.apt-control \\\n --build-arg BASE_IMAGE=ubuntu:\"$UBUNTU_VERSION\" \\\n --build-arg DEVELOPER_BUILD=ON --build-arg CMAKE_VERSION=cmake-3.31.8-linux-x86_64 \\\n --build-arg PYTHON_VERSION=3.12 --build-arg BUILD_SHARED_LIBS=OFF \\\n --build-arg BUILD_CUDA_MODULE=OFF --build-arg BUILD_TENSORFLOW_OPS=OFF \\\n --build-arg BUILD_PYTORCH_OPS=OFF --build-arg PACKAGE=ON \\\n --build-arg QT_BASE_DIR=/usr .\n"
