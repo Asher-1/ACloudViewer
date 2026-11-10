@@ -1,4 +1,4 @@
-name: CI Windows Qt network cancellation diagnosis
+name: CI Windows Qt DLL network lifetime diagnosis
 'on':
   push:
     branches:
@@ -19,9 +19,9 @@ jobs:
     - uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: x64
-    - name: Compare immediate abort and event-loop shutdown
+    - name: Compare DLL static and application-owned network lifetime
       shell: pwsh
-      run: "$ErrorActionPreference = 'Stop'\ncmake -S .ci/network-probe -B network-build -G Ninja -DCMAKE_BUILD_TYPE=Release \"-DCMAKE_PREFIX_PATH=$env:CONDA_PREFIX/Library\"\nif ($LASTEXITCODE -ne 0) { throw 'configure failed' }\ncmake --build network-build --parallel 2\nif ($LASTEXITCODE -ne 0) { throw 'build failed' }\nNew-Item -ItemType Directory -Force evidence | Out-Null\nforeach ($mode in @('rapid','http','before','after')) {\n $out=Join-Path $PWD \"evidence/$mode-out.txt\"\n $err=Join-Path $PWD \"evidence/$mode-err.txt\"\n $process=Start-Process -FilePath \"$PWD/network-build/network_cancel.exe\" -ArgumentList $mode -PassThru -NoNewWindow -RedirectStandardOutput $out -RedirectStandardError $err\n if (-not $process.WaitForExit(15000)) {\n   \"TIMEOUT $mode\" | Tee-Object -FilePath evidence/status.txt -Append\n   Stop-Process -Id $process.Id -Force\n } else {\n   \"EXIT $mode=$($process.ExitCode)\" | Tee-Object -FilePath evidence/status.txt -Append\n }\n Get-Content $err\n}\nGet-Command cdb,windbg,procdump -ErrorAction SilentlyContinue | Format-List Source\nexit 0\n"
+      run: "$ErrorActionPreference = 'Stop'\ncmake -S .ci/network-probe -B network-build -G Ninja -DCMAKE_BUILD_TYPE=Release \"-DCMAKE_PREFIX_PATH=$env:CONDA_PREFIX/Library\"\nif ($LASTEXITCODE -ne 0) { throw 'configure failed' }\ncmake --build network-build --parallel 2\nif ($LASTEXITCODE -ne 0) { throw 'build failed' }\nNew-Item -ItemType Directory -Force evidence | Out-Null\nforeach ($mode in @('rapid','http','static','owned')) {\n $out=Join-Path $PWD \"evidence/$mode-out.txt\"\n $err=Join-Path $PWD \"evidence/$mode-err.txt\"\n $process=Start-Process -FilePath \"$PWD/network-build/network_cancel.exe\" -ArgumentList $mode -PassThru -NoNewWindow -RedirectStandardOutput $out -RedirectStandardError $err\n if (-not $process.WaitForExit(15000)) {\n   \"TIMEOUT $mode\" | Tee-Object -FilePath evidence/status.txt -Append\n   Stop-Process -Id $process.Id -Force\n } else {\n   \"EXIT $mode=$($process.ExitCode)\" | Tee-Object -FilePath evidence/status.txt -Append\n }\n Get-Content $err\n}\nGet-Command cdb,windbg,procdump -ErrorAction SilentlyContinue | Format-List Source\nexit 0\n"
     - name: Save cancellation evidence
       if: always()
       uses: actions/upload-artifact@v4
