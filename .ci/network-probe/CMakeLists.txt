@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.24)
+project(QtNetworkCancel LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+find_package(Qt5 REQUIRED COMPONENTS Core Network)
+add_executable(network_cancel network_cancel.cpp)
+target_link_libraries(network_cancel PRIVATE Qt5::Core Qt5::Network)
