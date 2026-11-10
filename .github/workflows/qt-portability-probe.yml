@@ -1,0 +1,61 @@
+name: CI Qt portability diagnosis
+'on':
+  push:
+    branches:
+    - ci/qt-portability-probe-20261110
+permissions:
+  contents: read
+jobs:
+  qt-probe:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+    - uses: actions/checkout@v4
+    - name: Match application Conda Python
+      run: sed -i '' 's/python=3.10/python=3.12/g' .ci/conda_macos_cloudViewer.yml
+    - uses: conda-incubator/setup-miniconda@v3
+      with:
+        activate-environment: cloudViewer
+        auto-activate-base: false
+        environment-file: .ci/conda_macos_cloudViewer.yml
+    - name: Compile and compare the loader environments
+      shell: bash -l {0}
+      run: "mkdir -p /tmp/qt-probe\ncat > /tmp/qt-probe/qt-probe.cpp <<'CPP'\n#include\
+        \ <QApplication>\n#include <QImageReader>\n#include <QLabel>\n#include <QPainter>\n\
+        #include <QVBoxLayout>\n#include <QPushButton>\n#include <QTemporaryDir>\n\
+        #include <QFile>\n#include <cstdio>\nint main(int argc, char** argv) {\n \
+        \ QApplication app(argc, argv);\n  std::fprintf(stderr, \"Qt %s, platform\
+        \ %s\\n\", qVersion(), qPrintable(QGuiApplication::platformName()));\n  QTemporaryDir\
+        \ temp;\n  QFile file(temp.filePath(\"sample.png\"));\n  file.open(QIODevice::WriteOnly);\n\
+        \  file.write(QByteArray::fromHex(\"50360a3120310a3235350aff0000\"));\n  file.close();\n\
+        \  QImageReader reader(file.fileName());\n  auto image = reader.read();\n\
+        \  std::fprintf(stderr, \"PNM in PNG path: null=%d, format=%s, error=%s\\\
+        n\", image.isNull(), reader.format().constData(), qPrintable(reader.errorString()));\n\
+        \  QWidget window;\n  auto* layout = new QVBoxLayout(&window);\n  layout->addWidget(new\
+        \ QLabel(\"ACloudViewer sample dialog\"));\n  layout->addWidget(new QPushButton(\"\
+        Show sample\"));\n  window.resize(600, 400);\n  std::fprintf(stderr, \"before\
+        \ show\\n\"); std::fflush(stderr);\n  window.show();\n  for (int i=0;i<10;++i)\
+        \ QApplication::processEvents();\n  std::fprintf(stderr, \"before render\\\
+        n\"); std::fflush(stderr);\n  auto pixmap=window.grab();\n  std::fprintf(stderr,\
+        \ \"rendered %d x %d\\n\", pixmap.width(), pixmap.height());\n  return 0;\n\
+        }\nCPP\ncat > /tmp/qt-probe/CMakeLists.txt <<'CMAKE'\ncmake_minimum_required(VERSION\
+        \ 3.16)\nproject(QtCIProbe LANGUAGES CXX)\nfind_package(Qt5 REQUIRED COMPONENTS\
+        \ Widgets)\nadd_executable(qt-probe qt-probe.cpp)\ntarget_link_libraries(qt-probe\
+        \ PRIVATE Qt5::Widgets)\nCMAKE\ncmake -S /tmp/qt-probe -B /tmp/qt-probe/build\
+        \ -DCMAKE_PREFIX_PATH=\"$CONDA_PREFIX\"\ncmake --build /tmp/qt-probe/build\
+        \ --parallel 2\nmkdir -p /tmp/qt-probe/results\nset +e\nQT_QPA_PLATFORM=offscreen\
+        \ DYLD_PRINT_LIBRARIES=1 /tmp/qt-probe/build/qt-probe > /tmp/qt-probe/results/clean.log\
+        \ 2>&1\nclean_status=$?\nQT_QPA_PLATFORM=offscreen DYLD_PRINT_LIBRARIES=1\
+        \ DYLD_LIBRARY_PATH=\"$CONDA_PREFIX/lib\" /tmp/qt-probe/build/qt-probe > /tmp/qt-probe/results/override.log\
+        \ 2>&1\noverride_status=$?\nprintf 'clean_status=%s\\noverride_status=%s\\\
+        n' \"$clean_status\" \"$override_status\" | tee /tmp/qt-probe/results/status.txt\n\
+        tail -50 /tmp/qt-probe/results/clean.log\ntail -50 /tmp/qt-probe/results/override.log\n\
+        find \"$HOME/Library/Logs/DiagnosticReports\" -maxdepth 1 -type f -name '*qt-probe*'\
+        \ -exec cp {} /tmp/qt-probe/results/ \\; 2>/dev/null\nexit 0\n"
+    - name: Upload logs and native crash reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: qt-portability-diagnosis
+        path: /tmp/qt-probe/results
+        if-no-files-found: warn
