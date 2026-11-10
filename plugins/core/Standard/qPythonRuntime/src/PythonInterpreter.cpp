@@ -383,9 +383,13 @@ if importlib.util.find_spec("readline") is not None:
     try:
         sys.setdlopenflags(flags | deepbind)
         import readline
+    except ImportError:
+        # readline is optional; a broken extension must not abort startup.
+        pass
     finally:
         sys.setdlopenflags(flags)
-)", readlineGlobals);
+)",
+             readlineGlobals);
 #endif
 
     // Make sure this module is imported

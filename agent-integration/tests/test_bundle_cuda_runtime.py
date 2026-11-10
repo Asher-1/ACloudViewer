@@ -32,10 +32,10 @@ def compile_library(directory, name, symbol, dependencies=(), rpath=None):
     return library
 
 
-def bundle(module, destination, extra="", profile="ggml"):
+def bundle(module, destination, extra=""):
     env = dict(os.environ)
     env.pop("LD_LIBRARY_PATH", None)
-    return subprocess.run(["bash", str(SCRIPT), str(module), str(destination), str(extra), profile],
+    return subprocess.run(["bash", str(SCRIPT), str(module), str(destination), str(extra)],
                           env=env, capture_output=True, text=True, timeout=30)
 
 
@@ -124,30 +124,6 @@ def test_copy_failure_is_not_reported_as_a_successful_bundle(tmp_path, monkeypat
     monkeypatch.setenv("PATH", str(fake_bin) + os.pathsep + os.environ["PATH"])
     result = bundle(module, tmp_path / "bundle")
     assert result.returncode != 0, "A failed copy must fail runtime deployment"
-
-
-def test_torch_profile_preserves_wheel_runtime_closure_without_driver(tmp_path):
-    runtime = tmp_path / "torch wheel runtime"
-    leaf = compile_library(runtime, "libnvJitLink.so.99", "jit_fixture")
-    sparse = compile_library(runtime, "libcusparse.so.99", "sparse_fixture",
-                             [(runtime, leaf.name, "jit_fixture")], rpath=runtime)
-    driver = compile_library(runtime, "libcuda.so.99", "driver_fixture")
-    module = compile_library(tmp_path / "module", "libaicore_cumesh.so", "module_fixture",
-                             [(runtime, sparse.name, "sparse_fixture"),
-                              (runtime, driver.name, "driver_fixture")], rpath=runtime)
-    destination = tmp_path / "bundle"
-    result = bundle(module, destination, profile="torch")
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert {path.name for path in destination.iterdir()} == {sparse.name, leaf.name}
-    for original in (sparse, leaf):
-        assert (destination / original.name).read_bytes() == original.read_bytes()
-    general = tmp_path / "general bundle"
-    general.mkdir()
-    result = subprocess.run(["bash", str(ROOT / "scripts/platforms/linux/pack_ubuntu.sh"),
-                             str(module), str(general), str(runtime)],
-                            capture_output=True, text=True, timeout=30)
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert not list(general.iterdir()), "CUDA runtime must not be shipped twice"
 
 
 @pytest.mark.parametrize("scan_directory", [False, True])

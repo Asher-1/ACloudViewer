@@ -63,33 +63,45 @@ int main(int argc, char** argv) {
                                         "2f6d696e69332f6672616d652e6a7067504b05"
                                         "0600000000010001004e00000052000000"
                                         "0000")));
-    REQUIRE(fixture(
-            Dataset::Image2Mesh,
-            QByteArray::fromHex(
-                    "504b0304140000000000d664695d86f687660e0000000e0000002d0000"
-                    "00696d6167655f"
-                    "746f5f6d6573685f646174612f6578616d706c65735f696d616765732f"
-                    "73616d706c652e"
-                    "706e6750360a3120310a3235350aff0000504b0304140000000000d664"
-                    "695d86f687660e"
-                    "0000000e0000002f000000696d6167655f746f5f6d6573685f64617461"
-                    "2f73616d33645f"
-                    "696d616765732f7363656e652f696d6167652e706e6750360a3120310a"
-                    "3235350aff0000"
-                    "504b01021403140000000000d664695d86f687660e0000000e0000002d"
-                    "00000000000000"
-                    "00000000800100000000696d6167655f746f5f6d6573685f646174612f"
-                    "6578616d706c65"
-                    "735f696d616765732f73616d706c652e706e67504b0102140314000000"
-                    "0000d664695d86"
-                    "f687660e0000000e0000002f0000000000000000000000800159000000"
-                    "696d6167655f74"
-                    "6f5f6d6573685f646174612f73616d33645f696d616765732f7363656e"
-                    "652f696d616765"
-                    "2e706e67504b05060000000002000200b8000000b40000000000")));
+    // Store real PNG contents: Qt 5.12 does not decode PPM bytes through a
+    // .png path, unlike newer Qt versions that sniff the contents again.
+    REQUIRE(fixture(Dataset::Image2Mesh,
+                    QByteArray::fromHex("504b0304140000000000d664495d510fda0245"
+                                        "000000450000002d000000696d6167655f"
+                                        "746f5f6d6573685f646174612f6578616d706c"
+                                        "65735f696d616765732f73616d706c652e"
+                                        "706e6789504e470d0a1a0a0000000d49484452"
+                                        "00000001000000010802000000907753de"
+                                        "0000000c49444154789c63f8cfc00000030101"
+                                        "00c9fe92ef0000000049454e44ae426082"
+                                        "504b0304140000000000d664495d510fda0245"
+                                        "000000450000002f000000696d6167655f"
+                                        "746f5f6d6573685f646174612f73616d33645f"
+                                        "696d616765732f7363656e652f696d6167"
+                                        "652e706e6789504e470d0a1a0a0000000d4948"
+                                        "4452000000010000000108020000009077"
+                                        "53de0000000c49444154789c63f8cfc0000003"
+                                        "010100c9fe92ef0000000049454e44ae42"
+                                        "6082504b01021403140000000000d664495d51"
+                                        "0fda0245000000450000002d0000000000"
+                                        "000000000000800100000000696d6167655f74"
+                                        "6f5f6d6573685f646174612f6578616d70"
+                                        "6c65735f696d616765732f73616d706c652e70"
+                                        "6e67504b01021403140000000000d66449"
+                                        "5d510fda0245000000450000002f0000000000"
+                                        "000000000000800190000000696d616765"
+                                        "5f746f5f6d6573685f646174612f73616d3364"
+                                        "5f696d616765732f7363656e652f696d61"
+                                        "67652e706e67504b05060000000002000200b8"
+                                        "000000220100000000")));
     int completions = 0;
     int failures = 0;
     int extracts = 0;
+    QObject::connect(&repository, &Repository::downloadLogMessage, &app,
+                     [](const QString& message) {
+                         std::fprintf(stderr, "%s\n",
+                                      message.toUtf8().constData());
+                     });
     QObject::connect(&repository, &Repository::extractionFinished, &app,
                      [&](bool, Dataset) { ++extracts; });
     QObject::connect(
@@ -97,6 +109,11 @@ int main(int argc, char** argv) {
             [&](bool ok, Dataset kind) {
                 ++completions;
                 if (!ok) ++failures;
+                std::fprintf(stderr,
+                             "dataset %d: ready=%d, completions=%d, "
+                             "failures=%d, extracts=%d\n",
+                             static_cast<int>(kind), ok, completions, failures,
+                             extracts);
                 if (ok && kind == Dataset::Monstree && completions == 1)
                     repository.ensureDatasetReady(Dataset::Image2Mesh);
             });

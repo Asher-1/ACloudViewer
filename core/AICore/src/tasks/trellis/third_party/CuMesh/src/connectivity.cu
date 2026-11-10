@@ -5,8 +5,6 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include <c10/cuda/CUDAStream.h>
-
 #include <cub/cub.cuh>
 
 #include "cumesh.h"

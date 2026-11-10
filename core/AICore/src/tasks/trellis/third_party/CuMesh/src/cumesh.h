@@ -9,13 +9,28 @@
 
 #include <cuda.h>
 #include <cuda_runtime.h>
-#include <torch/extension.h>
 
 #include "tasks/trellis/third_party/CuMesh/src/utils.h"
 
 #define BLOCK_SIZE 256
 
 namespace cumesh {
+
+/** Host copy of a mesh: positions are [V * 3] floats, faces [F * 3] ints. */
+struct HostMesh {
+    std::vector<float> vertices;
+    std::vector<int> faces;
+};
+
+/** Host copy of the atlas chart data produced by compute_charts. */
+struct HostAtlasCharts {
+    int num_charts = 0;
+    std::vector<int> chart_ids;            // [F]
+    std::vector<int> chart_vertex_map;     // [chart_vertex_offset[C]]
+    std::vector<int> chart_faces;          // [F * 3]
+    std::vector<int> chart_vertex_offset;  // [C + 1]
+    std::vector<int> chart_face_offset;    // [C + 1]
+};
 
 class CuMesh {
 public:
@@ -106,97 +121,22 @@ public:
     void clear_cache();
 
     /**
-     * Initialize mesh
+     * Initialize mesh from host memory.
      *
-     * @param vertices The vertex positions as an [V, 3] tensor.
-     * @param faces The triangle faces as an [F, 3] tensor.
+     * @param host_vertices [num_vertices * 3] packed float positions.
+     * @param num_vertices Vertex count.
+     * @param host_faces [num_faces * 3] packed int indices.
+     * @param num_faces Face count.
      */
-    void init(const torch::Tensor& vertices, const torch::Tensor& faces);
+    void init(const float* host_vertices,
+              size_t num_vertices,
+              const int* host_faces,
+              size_t num_faces);
 
     /**
-     * Get the mesh.
-     *
-     * @return A tuple of the vertex positions and the triangle faces.
+     * Copy the current mesh to host memory.
      */
-    std::tuple<torch::Tensor, torch::Tensor> read();
-
-    /**
-     * Get the face normals.
-     *
-     * @return The face normals as an [F, 3] tensor.
-     */
-    torch::Tensor read_face_normals();
-
-    /**
-     * Get the normals of the vertices.
-     *
-     * @return The vertex normals as an [V, 3] tensor.
-     */
-    torch::Tensor read_vertex_normals();
-
-    /**
-     * Get the edges of the mesh.
-     *
-     * @return The edges as an [E, 2] tensor.
-     */
-    torch::Tensor read_edges();
-
-    /**
-     * Get the boundaries of the mesh.
-     *
-     * @return The boundaries as an [B] tensor.
-     *         Each element is the index of a boundary edge.
-     */
-    torch::Tensor read_boundaries();
-
-    /**
-     * Get the manifold faces adjacency.
-     *
-     * @return The manifold faces adjacency as an [M, 2] tensor.
-     */
-    torch::Tensor read_manifold_face_adjacency();
-
-    /**
-     * Get the manifold boundary adjacency.
-     *
-     * @return The manifold boundary adjacency as an [M, 2] tensor.
-     */
-    torch::Tensor read_manifold_boundary_adjacency();
-
-    /**
-     * Get the connected components of the mesh.
-     *
-     * @return A tuple of:
-     * - The number of connected components.
-     * - The connected components ids as an [F] tensor.
-     */
-    std::tuple<int, torch::Tensor> read_connected_components();
-
-    /**
-     * Get the connected components of the mesh boundaries.
-     *
-     * @return A tuple of:
-     * - The number of boundary connected components.
-     * - The boundary connected components ids as an [B] tensor.
-     */
-    std::tuple<int, torch::Tensor> read_boundary_connected_components();
-
-    /**
-     * Get the boundary loops of the mesh.
-     *
-     * @return A tuple of:
-     * - The number of boundary loops.
-     * - The boundary loops as an [L] tensor.
-     * - The boundary loops offsets as an [L+1] tensor.
-     */
-    std::tuple<int, torch::Tensor, torch::Tensor> read_boundary_loops();
-
-    /**
-     * Get all cached data.
-     *
-     * @return A dictionary of all cached data.
-     */
-    std::unordered_map<std::string, torch::Tensor> read_all_cache();
+    HostMesh read();
 
     // Geometric functions
 
@@ -359,7 +299,7 @@ public:
     /**
      * Remove faces.
      */
-    void remove_faces(torch::Tensor& face_mask);
+    void remove_faces(const bool* face_mask);
     void _remove_faces(uint8_t* face_mask);
 
     /**
@@ -493,23 +433,9 @@ public:
                         float perimeter_area_ratio_weight);
 
     /**
-     * Read the atlas charts.
-     *
-     * @return A tuple of:
-     * - The number of charts.
-     * - The chart ids as an [F] tensor.
-     * - The chart vertex map as an [V] tensor.
-     * - The chart faces as an [F, 3] tensor.
-     * - The chart vertices offset as an [C+1] tensor.
-     * - The chart faces offset as an [C+1] tensor.
+     * Copy the atlas charts to host memory (see HostAtlasCharts).
      */
-    std::tuple<int,
-               torch::Tensor,
-               torch::Tensor,
-               torch::Tensor,
-               torch::Tensor,
-               torch::Tensor>
-    read_atlas_charts();
+    HostAtlasCharts read_atlas_charts();
 };
 
 }  // namespace cumesh

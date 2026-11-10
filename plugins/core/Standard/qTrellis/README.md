@@ -69,10 +69,8 @@ image ──► (RMBG-2.0 background removal, optional) ──► preprocess
   (`aicore::apply_trellis_math_profile`), matching the upstream CUDA/Vulkan
   parity fixes.
 - **CuMesh GPU chart clustering (optional)** — when ACloudViewer is built
-  with `AICore_USE_CUMESH=ON` (needs AICore CUDA + CUDA Toolkit 12.3+ + a
-  CUDA-enabled Torch package + Python development files;
-  `CUMESH_TORCH_DIR` may point to `TorchConfig.cmake`'s directory, otherwise
-  Torch is discovered from the configured Python environment),
+  with `AICore_USE_CUMESH=ON` (needs AICore CUDA + CUDA Toolkit 12.3+; plain
+  CUDA/CUB, no Torch or Python),
   the GLB bake's Auto unwrap uses CuMesh normal-cone chart clustering as
   hard xatlas chart boundaries, matching the upstream mesh2glb default;
   otherwise CPU normal-cone clustering feeds xatlas, with chartless

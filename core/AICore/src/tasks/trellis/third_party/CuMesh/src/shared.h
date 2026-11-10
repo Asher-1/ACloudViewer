@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <c10/cuda/CUDAStream.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
 
@@ -17,10 +16,6 @@
 #include "tasks/trellis/third_party/CuMesh/src/utils.h"
 
 namespace cumesh {
-
-inline cudaStream_t current_stream() {
-    return at::cuda::getCurrentCUDAStream().stream();
-}
 
 template <typename T>
 __global__ void arange_kernel(T* array, int N, int stride = 1) {
