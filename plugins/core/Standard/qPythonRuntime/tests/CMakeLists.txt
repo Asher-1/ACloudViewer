@@ -15,6 +15,12 @@ if(BUILD_UNIT_TESTS)
   cloudviewer_set_bin_runtime_output_directory(test_qpythonruntime_binding_types)
   add_test(NAME test_qpythonruntime_binding_types COMMAND test_qpythonruntime_binding_types)
   cloudviewer_set_plugin_test_env(test_qpythonruntime_binding_types)
+  if(WIN32)
+    # This standalone embedding executable has no adjacent Lib directory.
+    # Use the stdlib belonging to its linked Python, just as the plugin does.
+    set_property(TEST test_qpythonruntime_binding_types APPEND PROPERTY
+      ENVIRONMENT "PYTHONHOME=${QPYTHONRUNTIME_BUILD_PYTHON_PREFIX}")
+  endif()
 
   add_executable(test_qpythonruntime_plugin_loading test_plugin_loading.cpp)
   set_target_properties(test_qpythonruntime_plugin_loading PROPERTIES
@@ -39,6 +45,18 @@ if(BUILD_UNIT_TESTS)
   set_property(TEST test_qpythonruntime_plugin_loading APPEND PROPERTY
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
   set_tests_properties(test_qpythonruntime_plugin_loading PROPERTIES TIMEOUT 60)
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_library(QPYTHONRUNTIME_TEST_LIBEDIT NAMES edit libedit.so.2)
+    if(QPYTHONRUNTIME_TEST_LIBEDIT)
+      add_test(NAME test_qpythonruntime_readline_isolation
+        COMMAND test_qpythonruntime_plugin_loading
+          $<TARGET_FILE:QPYTHONRUNTIME_PLUGIN> ${QPYTHONRUNTIME_TEST_LIBEDIT})
+      cloudviewer_set_plugin_test_env(test_qpythonruntime_readline_isolation)
+      set_property(TEST test_qpythonruntime_readline_isolation APPEND PROPERTY
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+      set_tests_properties(test_qpythonruntime_readline_isolation PROPERTIES TIMEOUT 60)
+    endif()
+  endif()
   add_test(NAME test_qpythonruntime_binding_contracts
     COMMAND ${PYTHON_EXECUTABLE} -m pytest -p no:cacheprovider -q
       --acloudviewer_exe=$<TARGET_FILE:ACloudViewer>

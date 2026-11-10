@@ -463,8 +463,10 @@ void PythonConfig::initFromPythonExecutable(const QString &pythonExecutable)
         return;
     }
 
-    m_pythonPath = pathsAndHome.takeFirst();
-    m_pythonHome = pathsAndHome.takeFirst();
+    // QProcess preserves Windows CRLF. Remove the record terminators before
+    // appending another path, otherwise the final directory contains '\r'.
+    m_pythonPath = pathsAndHome.takeFirst().trimmed();
+    m_pythonHome = pathsAndHome.takeFirst().trimmed();
 
 #if defined(USE_EMBEDDED_MODULES)
     m_pythonPath.append(BundledSitePackagesPath());

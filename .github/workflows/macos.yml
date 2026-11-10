@@ -95,6 +95,12 @@ jobs:
           environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
       - name: Set up fixed CMake
         uses: ./.github/actions/setup-cmake
+
+      - name: Verify macOS test dependency loading
+        run: |
+          cmake -S core/tests/runtime-environment -B /tmp/test-runtime-environment
+          cmake --build /tmp/test-runtime-environment --parallel 2
+          ctest --test-dir /tmp/test-runtime-environment --output-on-failure
       
       - name: Install dependencies
         run: |
@@ -174,7 +180,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-build-log-${{ runner.arch }}
-          path: /tmp/macos-build.log
+          path: |
+            /tmp/macos-build.log
+            build/Testing/Temporary/LastTest.log
+            ~/Library/Logs/DiagnosticReports/test_*.ips
           if-no-files-found: ignore
 
       - name: qPythonRuntime native binding contracts

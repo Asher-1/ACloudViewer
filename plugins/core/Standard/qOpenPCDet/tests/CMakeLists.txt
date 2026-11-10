@@ -18,12 +18,6 @@ cloudviewer_set_bin_runtime_output_directory(test_qopenpcdet_dialog)
 add_test(NAME test_qopenpcdet_dialog COMMAND test_qopenpcdet_dialog)
 cloudviewer_set_plugin_test_env_offscreen(test_qopenpcdet_dialog)
 set_tests_properties(test_qopenpcdet_dialog PROPERTIES LABELS "capi;openpcdet;cvpluginapi")
-# Windows CI: UI tests are unreliable in offscreen mode (potential deadlock).
-# Skip on Windows until Qt offscreen rendering is fully stable.
-if(WIN32)
-    set_tests_properties(test_qopenpcdet_dialog PROPERTIES DISABLED TRUE)
-    message(STATUS "qOpenPCDet UI test 'test_qopenpcdet_dialog' disabled on Windows (CI stability)")
-endif()
 
 if(NOT TARGET 3rdparty_googletest)
     message(STATUS "qOpenPCDet tests: googletest not available — skipping")

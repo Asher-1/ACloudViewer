@@ -672,7 +672,7 @@ cmake --build build_app --target ext_ggml -j4
 | Public links | `Qt::Core Qt::Gui` (PUBLIC — a consequence of the `depth_image.h` Qt exception) |
 | OpenMP | ALIKED SIMD/collapse kernels (MSVC uses `/openmp:experimental` and strips 3rdparty_ggml's default `/openmp`) |
 | ALIKED acceleration | `AICore_CUDA_ENABLED` → `aliked_cuda.cu` (statically linked cudart on UNIX so libAICore carries no libcudart DT_NEEDED); `AICore_VULKAN_ENABLED` → `vulkan_aliked_dispatch.cpp` |
-| Trellis CuMesh | `AICore_USE_CUMESH` (default ON; needs CUDA Toolkit 12.3+, CUDA-enabled Torch, and Python development files; degrades with a warning when unavailable; uses TorchConfig's platform libraries on Linux/Windows; mesh_export tries CPU cone clustering, then simple_unwrap on failure) |
+| Trellis CuMesh | `AICore_USE_CUMESH` (default ON; needs CUDA Toolkit 12.3+ only: plain CUDA/CUB with the static CUDA runtime, no Torch or Python; degrades with a warning when unavailable; mesh_export tries CPU cone clustering, then simple_unwrap on failure) |
 | Version script | `cmake/aicore.exports.map` (Linux); `AICore_capi_link` serves only executables that link the C API directly under `GGML_BACKEND_DL` |
 | Task registration | New task = GLOB + existence check + include paths inside the existing monolithic `core/AICore/CMakeLists.txt` target; **no** task-specific shared libraries |
 
@@ -696,7 +696,7 @@ by `cmake/AICoreOptions.cmake` and must not be passed as user configuration.
 | `AICore_USE_METAL` / `USE_VULKAN` / `USE_CUDA` / `USE_SYCL`(+`SYCL_USE_DNN`) / `USE_OPENCL` | Backend switches (SYCL/OpenCL are explicit opt-in development backends) |
 | `AICore_BUNDLE_CUDA_RUNTIME` / `AICore_CUDA_FORCE_MMQ` | Bundle the CUDA runtime / force MMQ quantization kernels |
 | `AICore_CPU_ALL_VARIANTS` | Multi-variant CPU backend |
-| `AICore_USE_CUMESH` (+`CUMESH_TORCH_DIR`) | Trellis GPU chart clustering |
+| `AICore_USE_CUMESH` | Trellis GPU chart clustering |
 | `AICORE_TEST_ASSET_ROOT` / `AICORE_TEST_AUTO_DOWNLOAD` / `AICORE_TEST_DEVICE` / `AICORE_TEST_ENABLE_MODEL_TESTS` | Test asset root / explicit download / device / model-test switches (see TESTING.md) |
 
 ### 11.4 Deployment Shape

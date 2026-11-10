@@ -152,7 +152,9 @@ static int test_real_sample_cache(const QString& root) {
            exposure.elapsed() < 3000)
         QApplication::processEvents(QEventLoop::AllEvents, 20);
     dialog.setProgressStage(1, "Diffusion", 5, 75);
-    for (const QSize size : {QSize(640, 480), QSize(800, 600)}) {
+    const QSize minimum = dialog.minimumSize();
+    for (const QSize size :
+         {minimum, QSize(800, 600).expandedTo(minimum + QSize(120, 120))}) {
         dialog.resize(size);
         QApplication::processEvents();
         // Cross-platform UI tolerance: Windows DPI scaling and Qt platform
@@ -314,7 +316,9 @@ int main(int argc, char** argv) {
         // The window minimum is pinned to the real layout minimum (geometry
         // conservation); the smallest supported size is that floor, and a
         // larger probe confirms normal resizing.
-        for (const QSize size : {dialog.minimumSize(), QSize(800, 600)}) {
+        const QSize minimum = dialog.minimumSize();
+        for (const QSize size :
+             {minimum, QSize(800, 600).expandedTo(minimum + QSize(120, 120))}) {
             dialog.resize(size);
             QApplication::processEvents();
             // Cross-platform UI tolerance: Windows DPI scaling and Qt platform
@@ -324,6 +328,13 @@ int main(int argc, char** argv) {
             const int sizeDelta =
                     std::max(std::abs(actualSize.width() - size.width()),
                              std::abs(actualSize.height() - size.height()));
+            if (sizeDelta > 15) {
+                std::fprintf(stderr,
+                             "Requested=%dx%d actual=%dx%d minimum=%dx%d\n",
+                             size.width(), size.height(), actualSize.width(),
+                             actualSize.height(), dialog.minimumWidth(),
+                             dialog.minimumHeight());
+            }
             check(sizeDelta <= 15,
                   "The dialog must approximately fit the requested window size "
                   "(<=15px tolerance per dimension)");

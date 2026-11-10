@@ -5,8 +5,6 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include <c10/cuda/CUDAStream.h>
-
 #include <cub/cub.cuh>
 
 #include "cumesh.h"
@@ -32,7 +30,7 @@ static __global__ void copy_T_to_T3_kernel(const T* input,
     output[tid] = {input[3 * tid], input[3 * tid + 1], input[3 * tid + 2]};
 }
 
-void CuMesh::remove_faces(torch::Tensor& face_mask) {
+void CuMesh::remove_faces(const bool* face_mask) {
     cudaStream_t stream = current_stream();
     size_t F = this->faces.size;
 
@@ -42,14 +40,12 @@ void CuMesh::remove_faces(torch::Tensor& face_mask) {
     CUDA_CHECK(cudaMalloc(&cu_new_num_faces, sizeof(int)));
     CUDA_CHECK(cudaMalloc(&cu_new_faces, F * sizeof(int3)));
     CUDA_CHECK(cub::DeviceSelect::Flagged(
-            nullptr, temp_storage_bytes, this->faces.ptr,
-            face_mask.data_ptr<bool>(), cu_new_faces, cu_new_num_faces, F,
-            stream));
+            nullptr, temp_storage_bytes, this->faces.ptr, face_mask,
+            cu_new_faces, cu_new_num_faces, F, stream));
     this->cub_temp_storage.resize(temp_storage_bytes);
     CUDA_CHECK(cub::DeviceSelect::Flagged(
             this->cub_temp_storage.ptr, temp_storage_bytes, this->faces.ptr,
-            face_mask.data_ptr<bool>(), cu_new_faces, cu_new_num_faces, F,
-            stream));
+            face_mask, cu_new_faces, cu_new_num_faces, F, stream));
     int new_num_faces;
     CUDA_CHECK(cudaMemcpyAsync(&new_num_faces, cu_new_num_faces, sizeof(int),
                                cudaMemcpyDeviceToHost, stream));

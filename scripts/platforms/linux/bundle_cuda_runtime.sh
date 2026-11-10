@@ -2,18 +2,13 @@
 # Bundle NVIDIA CUDA runtime libraries required by a CUDA module for driver-only
 # deployment. libcuda.so.* is never copied (provided by the NVIDIA driver).
 #
-# Usage: bundle_cuda_runtime.sh <module.so> <dest_dir> [extra_lib_dirs_colon_separated] [ggml|torch]
+# Usage: bundle_cuda_runtime.sh <module.so> <dest_dir> [extra_lib_dirs_colon_separated]
 
 set -euo pipefail
 
 GGML_CUDA_MODULE="${1:?libggml-cuda module path required}"
 DEST_DIR="${2:?destination directory required}"
 EXTRA_LIB_DIRS="${3:-}"
-RUNTIME_PROFILE="${4:-ggml}"
-case "$RUNTIME_PROFILE" in
-    ggml|torch) ;;
-    *) echo "Error: unknown CUDA runtime profile: $RUNTIME_PROFILE" >&2; exit 1 ;;
-esac
 
 if [ ! -f "$GGML_CUDA_MODULE" ]; then
     echo "Error: ggml CUDA module not found: $GGML_CUDA_MODULE" >&2
@@ -33,14 +28,6 @@ should_bundle_name() {
             return 0
             ;;
     esac
-    if [ "$RUNTIME_PROFILE" = torch ]; then
-        case "$base" in
-            libcusparse*.so*|libcusolver*.so*|libcufft.so*|libcurand.so*|\
-            libcudnn*.so*|libnccl.so*|libcufile.so*|libcupti.so*|libnvToolsExt.so*)
-                return 0
-                ;;
-        esac
-    fi
     return 1
 }
 
@@ -148,9 +135,8 @@ resolve_and_copy() {
     return 0
 }
 
-echo "Scanning CUDA module ($RUNTIME_PROFILE): $GGML_CUDA_MODULE"
-# Torch wheels resolve CUDA dependencies through package-relative RUNPATHs.
-# Retain those resolved directories before flattening files into the bundle,
+echo "Scanning CUDA module: $GGML_CUDA_MODULE"
+# Retain resolved RUNPATH directories before flattening files into the bundle,
 # so recursive checks can still locate their transitive dependencies.
 mapfile -t MODULE_REFS < <(library_refs "$GGML_CUDA_MODULE")
 for lib_ref in "${MODULE_REFS[@]}"; do

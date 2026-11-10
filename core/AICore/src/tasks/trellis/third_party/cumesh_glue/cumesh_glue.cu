@@ -5,12 +5,14 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include <c10/cuda/CUDAGuard.h>
 #include <cuda_runtime_api.h>
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
+#include <exception>
 #include <memory>
+#include <vector>
 
 #include "cumesh_glue.h"
 
@@ -21,17 +23,14 @@
 // ── Local helpers ──────────────────────────────────────────────────
 namespace {
 
-// The C API receives host pointers, while CuMesh::init copies device memory.
-// Upload before entering CuMesh; the temporary tensors own the GPU storage.
-torch::Tensor wrap_positions(const float* v, int nv) {
-    return torch::from_blob(const_cast<float*>(v), {(int64_t)nv, 3},
-                            torch::TensorOptions().dtype(torch::kFloat32))
-            .to(torch::kCUDA);
-}
-torch::Tensor wrap_faces(const int* f, int nt) {
-    return torch::from_blob(const_cast<int*>(f), {(int64_t)nt, 3},
-                            torch::TensorOptions().dtype(torch::kInt32))
-            .to(torch::kCUDA);
+// Copy a host vector into a malloc'd array the caller releases through
+// cumesh_free_buffer(). Returns nullptr for an empty source or on failure.
+template <typename T>
+T* to_malloc_array(const std::vector<T>& src) {
+    if (src.empty()) return nullptr;
+    T* dst = static_cast<T*>(std::malloc(src.size() * sizeof(T)));
+    if (dst) std::memcpy(dst, src.data(), src.size() * sizeof(T));
+    return dst;
 }
 
 }  // namespace
@@ -73,15 +72,12 @@ int cumesh_compute_charts(const float* verts,
     if (!verts || !tris || nv <= 0 || nt <= 0) return 0;
 
     try {
-        // CuMesh mixes default-stream kernels with current-stream work.
-        // Keep both on the default stream and restore the caller's stream.
-        const c10::cuda::CUDAStreamGuard stream_guard(
-                c10::cuda::getDefaultCUDAStream());
-        // 1. Wrap raw pointers as torch tensors and init CuMesh on GPU
+        // Every CuMesh kernel and copy runs on the legacy default stream
+        // (cumesh::current_stream()), so no stream state is shared with the
+        // caller and nothing needs restoring.
+        // 1. Upload the host arrays and init CuMesh on the GPU
         cumesh::CuMesh mesh;
-        torch::Tensor tvert = wrap_positions(verts, nv);
-        torch::Tensor tface = wrap_faces(tris, nt);
-        mesh.init(tvert, tface);
+        mesh.init(verts, (size_t)nv, tris, (size_t)nt);
 
         // 2. Remove degenerate faces (default thresholds)
         mesh.remove_degenerate_faces(1e-4f, 1e-4f);
@@ -94,68 +90,42 @@ int cumesh_compute_charts(const float* verts,
                             global_iterations, smooth_strength,
                             area_penalty_weight, perimeter_area_ratio_weight);
 
-        // 5. Read chart data from GPU
-        auto [num_charts, chart_ids_t, chart_vmap_t, chart_faces_t,
-              chart_vertex_off_t, chart_face_off_t] = mesh.read_atlas_charts();
+        // 5. Read chart data from the GPU (synchronous host copies)
+        const cumesh::HostAtlasCharts charts = mesh.read_atlas_charts();
+        const int num_charts = charts.num_charts;
 
-        // Chart IDs are indexed by the cleaned, compacted faces.
-        const int nf = (int)chart_ids_t.size(0);
+        // Chart IDs are indexed by the cleaned, compacted faces; chart
+        // vertices map to cleaned vertices and may repeat across boundaries;
+        // chart faces index chart_vertex_map as a flat [nt_out * 3] array.
+        const int nf = (int)charts.chart_ids.size();
+        const int nf_chart = (int)(charts.chart_faces.size() / 3);
         if (num_charts <= 0 || nf <= 0) return 0;
+        if (charts.chart_vertex_map.empty() || nf_chart <= 0) return 0;
+        // Both offset arrays hold [num_charts + 1] entries.
+        const size_t n_offsets = (size_t)num_charts + 1;
+        if (charts.chart_vertex_offset.size() < n_offsets ||
+            charts.chart_face_offset.size() < n_offsets) {
+            return 0;
+        }
+
         std::unique_ptr<int, decltype(&std::free)> face_chart_ids(
-                (int*)std::malloc((size_t)nf * sizeof(int)), &std::free);
-        if (!face_chart_ids ||
-            cudaMemcpy(face_chart_ids.get(), chart_ids_t.data_ptr<int>(),
-                       (size_t)nf * sizeof(int),
-                       cudaMemcpyDeviceToHost) != cudaSuccess) {
-            return 0;
-        }
-
-        // Chart vertices map to cleaned mesh vertices and may be duplicated
-        // across chart boundaries.
-        const int nv_in = (int)chart_vmap_t.size(0);
-        if (nv_in <= 0) return 0;
+                to_malloc_array(charts.chart_ids), &std::free);
         std::unique_ptr<int, decltype(&std::free)> chart_vertex_map(
-                (int*)std::malloc((size_t)nv_in * sizeof(int)), &std::free);
-        if (!chart_vertex_map ||
-            cudaMemcpy(chart_vertex_map.get(), chart_vmap_t.data_ptr<int>(),
-                       (size_t)nv_in * sizeof(int),
-                       cudaMemcpyDeviceToHost) != cudaSuccess) {
-            return 0;
-        }
-
-        // Chart faces (indices into chart_vertex_map, flat [nt_out * 3])
-        const int nf_chart = (int)chart_faces_t.size(0);
-        if (nf_chart <= 0) return 0;
-        const size_t chart_faces_bytes = (size_t)nf_chart * 3 * sizeof(int);
+                to_malloc_array(charts.chart_vertex_map), &std::free);
         std::unique_ptr<int, decltype(&std::free)> chart_faces(
-                (int*)std::malloc(chart_faces_bytes), &std::free);
-        if (!chart_faces ||
-            cudaMemcpy(chart_faces.get(), chart_faces_t.data_ptr<int>(),
-                       chart_faces_bytes,
-                       cudaMemcpyDeviceToHost) != cudaSuccess) {
-            return 0;
-        }
-
-        // Chart vertex offset (per chart, [num_charts + 1])
-        const size_t offsets_bytes = (size_t)(num_charts + 1) * sizeof(int);
+                to_malloc_array(charts.chart_faces), &std::free);
         std::unique_ptr<int, decltype(&std::free)> chart_vertex_offset(
-                (int*)std::malloc(offsets_bytes), &std::free);
-        if (!chart_vertex_offset ||
-            cudaMemcpy(chart_vertex_offset.get(),
-                       chart_vertex_off_t.data_ptr<int>(), offsets_bytes,
-                       cudaMemcpyDeviceToHost) != cudaSuccess) {
-            return 0;
-        }
-
-        // Chart face offset (per chart, [num_charts + 1])
+                (int*)std::malloc(n_offsets * sizeof(int)), &std::free);
         std::unique_ptr<int, decltype(&std::free)> chart_faces_offset(
-                (int*)std::malloc(offsets_bytes), &std::free);
-        if (!chart_faces_offset ||
-            cudaMemcpy(chart_faces_offset.get(),
-                       chart_face_off_t.data_ptr<int>(), offsets_bytes,
-                       cudaMemcpyDeviceToHost) != cudaSuccess) {
+                (int*)std::malloc(n_offsets * sizeof(int)), &std::free);
+        if (!face_chart_ids || !chart_vertex_map || !chart_faces ||
+            !chart_vertex_offset || !chart_faces_offset) {
             return 0;
         }
+        std::memcpy(chart_vertex_offset.get(),
+                    charts.chart_vertex_offset.data(), n_offsets * sizeof(int));
+        std::memcpy(chart_faces_offset.get(), charts.chart_face_offset.data(),
+                    n_offsets * sizeof(int));
 
         *out_face_chart_ids = face_chart_ids.release();
         *out_chart_vertex_map = chart_vertex_map.release();
@@ -192,34 +162,19 @@ int cumesh_clean_mesh(const float* verts,
     if (!verts || !tris || nv <= 0 || nt <= 0) return 0;
 
     try {
-        const c10::cuda::CUDAStreamGuard stream_guard(
-                c10::cuda::getDefaultCUDAStream());
         cumesh::CuMesh mesh;
-        mesh.init(wrap_positions(verts, nv), wrap_faces(tris, nt));
+        mesh.init(verts, (size_t)nv, tris, (size_t)nt);
         mesh.remove_degenerate_faces(1e-4f, 1e-4f);
 
-        auto [new_verts, new_faces] = mesh.read();
+        const cumesh::HostMesh cleaned = mesh.read();
+        const int nvo = (int)(cleaned.vertices.size() / 3);
+        const int nto = (int)(cleaned.faces.size() / 3);
 
-        const int nvo = (int)new_verts.size(0);
-        const int nto = (int)new_faces.size(0);
-
-        if (nvo < 0 || nto < 0) return 0;
-        const size_t verts_bytes = (size_t)nvo * 3 * sizeof(float);
-        const size_t tris_bytes = (size_t)nto * 3 * sizeof(int);
         std::unique_ptr<float, decltype(&std::free)> host_verts(
-                nvo > 0 ? (float*)std::malloc(verts_bytes) : nullptr,
-                &std::free);
+                to_malloc_array(cleaned.vertices), &std::free);
         std::unique_ptr<int, decltype(&std::free)> host_tris(
-                nto > 0 ? (int*)std::malloc(tris_bytes) : nullptr, &std::free);
+                to_malloc_array(cleaned.faces), &std::free);
         if ((nvo > 0 && !host_verts) || (nto > 0 && !host_tris)) return 0;
-        if ((verts_bytes > 0 &&
-             cudaMemcpy(host_verts.get(), new_verts.data_ptr<float>(),
-                        verts_bytes, cudaMemcpyDeviceToHost) != cudaSuccess) ||
-            (tris_bytes > 0 &&
-             cudaMemcpy(host_tris.get(), new_faces.data_ptr<int>(), tris_bytes,
-                        cudaMemcpyDeviceToHost) != cudaSuccess)) {
-            return 0;
-        }
         *out_verts = host_verts.release();
         *out_tris = host_tris.release();
         *out_nv = nvo;

@@ -577,15 +577,14 @@ endif()
 # AICore mirrors the upstream default (ON) but degrades gracefully — with a
 # loud warning per missing prerequisite, instead of upstream's silent
 # disable or a hard configure failure:
-#   CUDA off | CUDA toolkit < 12.3 | CUDA-enabled Torch missing
-#   Python development files missing
+#   CUDA off | CUDA toolkit < 12.3 | vendored CuMesh sources missing
 #     → chart clustering off; mesh_export falls back to simple_unwrap.
-# Point CUMESH_TORCH_DIR at the directory containing TorchConfig.cmake
-# (or leave it empty to discover Torch from Python3_EXECUTABLE).
-# Task-owned wiring (graceful guard ladder, vendored SHARED build against
-# platform-specific Torch libraries, hash.cu torch version gate) lives in
-# src/tasks/trellis/cmake/cumesh.cmake; the AICore_USE_CUMESH switch and
-# CUMESH_TORCH_DIR are declared in cmake/AICoreOptions.cmake.
+# The compiled CuMesh core is plain CUDA/CUB (no libtorch, no Python, no
+# pybind); the pybind entry point ext.cpp and the hash/remesh/simplify sources
+# that need torch are vendored for reference only and are not built.
+# Task-owned wiring (graceful guard ladder, vendored SHARED build with the
+# static CUDA runtime) lives in src/tasks/trellis/cmake/cumesh.cmake; the
+# AICore_USE_CUMESH switch is declared in cmake/AICoreOptions.cmake.
 include(${AICORE_TRELLIS_SRC_DIR}/cmake/cumesh.cmake)
 aicore_trellis_wire_cumesh(${PROJECT_NAME} ${AICORE_TRELLIS_SRC_DIR})
 # Vulkan ALIKED custom compute: 3rdparty/llama/llama-patches/0005-acv-vulkan-operators.patch
