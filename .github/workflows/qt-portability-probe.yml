@@ -39,13 +39,6 @@ jobs:
         '
     - name: Checkout source code
       uses: actions/checkout@v4
-    - name: Restore the exact previous PR compiler cache
-      uses: actions/download-artifact@v4
-      with:
-        name: ccache-macos-ARM64-app-150_merge
-        path: ${{ env.CCACHE_DIR }}
-        run-id: 42635273772
-        github-token: ${{ github.token }}
     - name: Restore completed production compiler cache
       uses: actions/download-artifact@v4
       with:
@@ -53,6 +46,10 @@ jobs:
         path: ${{ env.CCACHE_DIR }}
         run-id: 42758429277
         github-token: ${{ github.token }}
+    - name: Set up Python version
+      run: 'sed -i "" "s/3.10/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+
+        '
     - name: Set up Python environment
       uses: conda-incubator/setup-miniconda@v3
       with:
@@ -63,61 +60,9 @@ jobs:
       uses: ./.github/actions/setup-cmake
     - name: Install dependencies
       run: "brew install ccache pkg-config\n\nif [[ ${{ runner.arch }} == \"ARM64\" ]]; then\n  brew install gcc\n  FC=\"$(brew --prefix)/bin/gfortran\"\n  test -x \"$FC\"\n  \"$FC\" --version\n  echo \"FC=$FC\" >> \"$GITHUB_ENV\"\n  echo \"$(dirname \"$FC\")\" >> \"$GITHUB_PATH\"\nfi\n\n# Native ARM64 Qt IFW with STATIC Qt (built via scripts/platforms/mac/build_static_qt_ifw.sh).\n# The old dynamic-Qt ARM64 IFW produced installers whose maintenancetool\n# crashed on auto-uninstall (dyld: Library not loaded @rpath/libQt5Widgets.5.dylib).\n# Static link matches the official x86_64 IFW: zero @rpath deps, self-contained.\ncurl -L \"https://github.com/Asher-1/cloudViewer_downloads/releases/download/qt-ifw/QtIFW-4.6.1-darwin-ARM64-static.zip\" -o ~/QtIFW-4.6.1-darwin-ARM64-static.zip\nunzip -q ~/QtIFW-4.6.1-darwin-ARM64-static.zip -d ~/\nrm ~/QtIFW-4.6.1-darwin-ARM64-static.zip\nls -hal ~/QtIFW-4.6.1-darwin-ARM64-static/bin\n\n# Disk cache only, not resident RAM; leave room for the complete working set.\nccache -M 10G\n# A stash restored on a different macos-15 image version must still\n# hit: key on compiler bytes instead of the image-local compiler\n# mtime, and ignore LANG/LC_* (they only localize diagnostics).\nccache --set-config=compiler_check=content\nccache --set-config=sloppiness=locale\n"
-    - name: Config and build APP
+    - name: Build only the three production UI tests
       id: build
       shell: bash -l {0}
-      run: 'set -e -o pipefail
-
-        export PATH="${HOME}/QtIFW-4.6.1-darwin-ARM64-static/bin:$PATH"
-
-        export PKG_CONFIG_PATH="$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
-
-        export PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH"
-
-        echo "PATH=$PATH" >> $GITHUB_ENV
-
-        echo "DEVELOPER_BUILD is ${{ env.DEVELOPER_BUILD }}"
-
-        echo "INSTALL_DIR is ${{ env.INSTALL_DIR }}"
-
-
-        ccache -z
-
-        ccache -s
-
-        trap ''ccache -s'' EXIT
-
-        echo "Start to build GUI package On MacOS..."
-
-        source util/ci_utils.sh
-
-        print_ccache_key_inputs
-
-        # Tee the full build log to a file so it can be uploaded as an
-
-        # artifact below (GitHub truncates very long step logs in the UI).
-
-        build_gui_app with_conda package_installer 2>&1 | tee /tmp/macos-build.log
-
-
-        CLOUDVIEWER_VERSION_FULL="$(grep -F CLOUDVIEWER_VERSION_FULL build/CMakeCache.txt | cut -f2 -d''='')"
-
-        DEVEL_PKG_NAME="$(basename ${{ env.INSTALL_DIR }}/ACloudViewer-${CLOUDVIEWER_VERSION_FULL}*.dmg)"
-
-        echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
-
-        '
-    - name: Build only the three production UI tests
-      if: ${{ always() && !cancelled() && contains(fromJSON('["success","failure"]'), steps.build.outcome) }}
-      continue-on-error: true
-      uses: apache/infrastructure-actions/stash/save@e3e0a2261a9c6d5bdd882802b303f34b1511b6df
-      with:
-        key: ccache-macos-${{ runner.arch }}-app
-        path: ${{ env.CCACHE_DIR }}
-        retention-days: 14
-        compression-level: 0
-        include-hidden-files: true
-        if-no-files-found: ignore
       run: "set -e -o pipefail\nexport PATH=\"${HOME}/QtIFW-4.6.1-darwin-ARM64-static/bin:$CONDA_PREFIX/lib:$PATH\"\nexport PKG_CONFIG_PATH=\"$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH\"\npython3 - <<'PATCH'\nfrom pathlib import Path\np=Path('util/ci_utils.sh')\ns=p.read_text()\na='    make -j\"$NPROC\"\n    cmake --build . --target aicore-contract-tests -j \"$NPROC\"'\nb='    make -j\"$NPROC\" test_qopenpcdet_dialog test_qinstantmesh_dialog test_qinstantmesh_plugin\n    popd\n    return 0'\nassert s.count(a)==1\np.write_text(s.replace(a,b))\nPATCH\nsource util/ci_utils.sh\nccache -z\nbuild_gui_app with_conda package_installer 2>&1 | tee /tmp/macos-build.log\nccache -s\n"
     - name: Compare the identical production binaries under each loader mode
       if: always()
