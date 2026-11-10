@@ -191,6 +191,12 @@ jobs:
 
         New-Item -ItemType Directory -Force evidence | Out-Null
 
+        $pythonPrefix=(python -c "import sys; print(sys.prefix)").Trim()
+
+        Copy-Item (Join-Path $pythonPrefix ''python312.dll'') build/bin/Release/python312.dll -Force
+
+        $env:PYTHONHOME=$null
+
         ctest --test-dir build -C Release -R ''^test_qpythonruntime_(binding_types|plugin_loading)$'' --no-tests=error --output-on-failure -j1 2>&1 | Tee-Object evidence/python-baseline.txt
 
         if ($LASTEXITCODE -eq 0) { throw ''Expected the production Python baseline to fail'' }
