@@ -1,4 +1,4 @@
-name: CI Qt SVG and concurrent paint diagnosis
+name: CI macOS dependency identity diagnosis
 'on':
   push:
     branches:
@@ -6,25 +6,76 @@ name: CI Qt SVG and concurrent paint diagnosis
 permissions:
   contents: read
 jobs:
-  qt-probe:
+  loader-contract:
     runs-on: macos-15
-    timeout-minutes: 25
     steps:
     - uses: actions/checkout@v4
-    - name: Match application Conda Python
-      run: sed -i '' 's/python=3.10/python=3.12/g' .ci/conda_macos_cloudViewer.yml
-    - uses: conda-incubator/setup-miniconda@v3
-      with:
-        activate-environment: cloudViewer
-        auto-activate-base: false
-        environment-file: .ci/conda_macos_cloudViewer.yml
-    - name: Compile and compare the loader environments
-      shell: bash -l {0}
-      run: "mkdir -p /tmp/qt-probe\ncat > /tmp/qt-probe/qt-probe.cpp <<'CPP'\n#include <QApplication>\n#include <QIcon>\n#include <QPainter>\n#include <QDialog>\n#include <QImageReader>\n#include <QListWidget>\n#include <QScrollArea>\n#include <QTableWidget>\n#include <QLineEdit>\n#include <QComboBox>\n#include <QPushButton>\n#include <QGridLayout>\n#include <QProgressBar>\n#include <cstdio>\n#include \"ecvAICoreUiHelper.h\"\nint main(int argc, char **argv) {\n QApplication app(argc,argv);\n std::fprintf(stderr,\"Qt %s style %s\\n\",qVersion(),qPrintable(app.style()->objectName()));\n QIcon icon(QString::fromUtf8(qgetenv(\"GITHUB_WORKSPACE\")) + \"/plugins/core/Standard/qInstantMesh/images/qInstantMesh.svg\");\n for(int size : {32,64,128}) { auto pixmap=icon.pixmap(size,size); if(pixmap.isNull()) return 2; std::fprintf(stderr,\"SVG rendered %d\\n\",size); }\n QDialog dialog;dialog.setWindowIcon(icon);auto* layout=new QVBoxLayout(&dialog);\n layout->addWidget(ecvAICoreUi::makeSampleDataBtn());\n auto* nav=new QListWidget();nav->setStyleSheet(\"QListWidget { border: none; } QListWidget::item { padding: 6px 8px; }\");\n for(int i=0;i<35;++i){auto* item=new QListWidgetItem(QStringLiteral(\"Checkpoint %1: KITTI nuScenes - F32/F16/Q8\").arg(i),nav);if(i%10==0){item->setFlags(Qt::NoItemFlags);auto font=item->font();font.setBold(true);item->setFont(font);item->setForeground(dialog.palette().mid());}}\n nav->setCurrentRow(4);layout->addWidget(nav);\n auto* label=ecvAICoreUi::makeHintLabel(QStringLiteral(\"<html><body style='font-family: Arial, Helvetica, Sans-serif'><b>GPU model</b> &#9654; &#9989; &#128193;<br>Pipeline: input to mesh</body></html>\"));layout->addWidget(label);\n auto* scroll=new QScrollArea();scroll->setWidgetResizable(true);auto* form=new QWidget();auto* grid=new QGridLayout(form);\n for(int i=0;i<10;++i){grid->addWidget(ecvAICoreUi::makeHintLabel(QStringLiteral(\"<b>Model checkpoint %1</b><br>Parameters\").arg(i)),i,0);auto* combo=new QComboBox();combo->addItems({\"F32\",\"F16\",\"Q8_0\"});grid->addWidget(combo,i,1);grid->addWidget(new QDoubleSpinBox(),i,2);}\n scroll->setWidget(form);layout->addWidget(scroll);layout->addWidget(new QTableWidget(4,9));\n auto* progress=new QProgressBar();progress->setRange(0,100);progress->setValue(5);layout->addWidget(progress);dialog.resize(800,600);\n std::fprintf(stderr,\"before show\\n\");std::fflush(stderr);dialog.show();\n for(int i=0;i<20;++i)QApplication::processEvents();\n std::fprintf(stderr,\"before grab\\n\");std::fflush(stderr);auto px=dialog.grab();\n std::fprintf(stderr,\"grabbed %dx%d\\n\",px.width(),px.height());return 0;\n}\nCPP\ncat > /tmp/qt-probe/CMakeLists.txt <<'CMAKE'\ncmake_minimum_required(VERSION 3.16)\nproject(QtCIProbe LANGUAGES CXX)\nfind_package(Qt5 REQUIRED COMPONENTS Widgets Svg)\nadd_executable(qt-probe qt-probe.cpp)\ntarget_link_libraries(qt-probe PRIVATE Qt5::Widgets Qt5::Svg)\ntarget_include_directories(qt-probe PRIVATE \"$ENV{GITHUB_WORKSPACE}/libs/CVPluginAPI/include\")\nCMAKE\ncmake -S /tmp/qt-probe -B /tmp/qt-probe/build -DCMAKE_PREFIX_PATH=\"$CONDA_PREFIX\"\ncmake --build /tmp/qt-probe/build --parallel 2\nmkdir -p /tmp/qt-probe/results\nset +e\nQT_QPA_PLATFORM=offscreen DYLD_PRINT_LIBRARIES=1 /tmp/qt-probe/build/qt-probe > /tmp/qt-probe/results/clean.log 2>&1\nclean_status=$?\nQT_QPA_PLATFORM=offscreen DYLD_PRINT_LIBRARIES=1 DYLD_LIBRARY_PATH=\"$CONDA_PREFIX/lib\" /tmp/qt-probe/build/qt-probe > /tmp/qt-probe/results/override.log 2>&1\noverride_status=$?\nprintf 'clean_status=%s\\noverride_status=%s\\n' \"$clean_status\" \"$override_status\" | tee /tmp/qt-probe/results/status.txt\ntail -120 /tmp/qt-probe/results/clean.log\ntail -120 /tmp/qt-probe/results/override.log\nQT_QPA_PLATFORM=offscreen lldb -b -o \"settings set target.env-vars QT_QPA_PLATFORM=offscreen DYLD_LIBRARY_PATH=$CONDA_PREFIX/lib\" -o run -o 'thread backtrace all' -o 'image list' -o quit -- /tmp/qt-probe/build/qt-probe > /tmp/qt-probe/results/override-backtrace.log 2>&1\ntail -160 /tmp/qt-probe/results/override-backtrace.log\nfind \"$HOME/Library/Logs/DiagnosticReports\" -maxdepth 1 -type f -name '*qt-probe*' -exec cp {} /tmp/qt-probe/results/ \\; 2>/dev/null\nfailures=0\nfor round in $(seq 1 12); do\n  pids=()\n  for lane in 1 2 3 4; do\n    QT_QPA_PLATFORM=offscreen DYLD_LIBRARY_PATH=\"$CONDA_PREFIX/lib\" /tmp/qt-probe/build/qt-probe > \"/tmp/qt-probe/results/parallel-$round-$lane.log\" 2>&1 &\n    pids+=(\"$!\")\n  done\n  for pid in \"${pids[@]}\"; do\n    wait \"$pid\" || failures=$((failures+1))\n  done\ndone\nprintf 'Parallel paints: 48; failures: %s\\n' \"$failures\"\nexit \"$failures\"\n"
-    - name: Upload logs and native crash reports
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: qt-portability-diagnosis
-        path: /tmp/qt-probe/results
-        if-no-files-found: warn
+    - uses: ./.github/actions/setup-cmake
+    - name: Compare explicit dependency identity under the production helper
+      run: 'mkdir -p /tmp/loader-contract
+
+        cat > /tmp/loader-contract/CMakeLists.txt <<''CMAKE''
+
+        cmake_minimum_required(VERSION 3.24)
+
+        project(LoaderContract LANGUAGES C)
+
+        enable_testing()
+
+        include("$ENV{LOADER_HELPER}")
+
+        file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/pinned.c" "int dependency_value(void) { return 1; }\n")
+
+        file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/shadow.c" "int dependency_value(void) { return 2; }\n")
+
+        file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/probe.c" "#include <stdio.h>\nextern int dependency_value(void);\nint main(void) { int n=dependency_value(); fprintf(stderr, \"Dependency value: %d (expected 1)\\n\",n); return n==1 ? 0 : 1; }\n")
+
+        add_library(pinned SHARED "${CMAKE_CURRENT_BINARY_DIR}/pinned.c")
+
+        set_target_properties(pinned PROPERTIES OUTPUT_NAME cv_env_probe LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/pinned" BUILD_WITH_INSTALL_NAME_DIR TRUE INSTALL_NAME_DIR "${CMAKE_BINARY_DIR}/pinned" MACOSX_RPATH OFF)
+
+        add_library(shadow SHARED "${CMAKE_CURRENT_BINARY_DIR}/shadow.c")
+
+        set_target_properties(shadow PROPERTIES OUTPUT_NAME cv_env_probe LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+
+        add_executable(probe "${CMAKE_CURRENT_BINARY_DIR}/probe.c")
+
+        target_link_libraries(probe PRIVATE pinned)
+
+        add_test(NAME pinned_dependency COMMAND probe)
+
+        cloudviewer_set_test_runtime_environment(pinned_dependency)
+
+        CMAKE
+
+        export LOADER_HELPER="$GITHUB_WORKSPACE/cmake/CloudViewerOutputDirectories.cmake"
+
+        cmake -S /tmp/loader-contract -B /tmp/loader-contract/before
+
+        cmake --build /tmp/loader-contract/before --parallel 2
+
+        otool -L /tmp/loader-contract/before/probe
+
+        /tmp/loader-contract/before/probe
+
+        set +e
+
+        ctest --test-dir /tmp/loader-contract/before --output-on-failure
+
+        before_status=$?
+
+        set -e
+
+        if [ "$before_status" -eq 0 ]; then echo ''Expected loader override was not reproduced''; exit 1; fi
+
+        sed ''s/set(_cv_loader_var DYLD_LIBRARY_PATH)/set(_cv_loader_var DYLD_FALLBACK_LIBRARY_PATH)/'' "$LOADER_HELPER" > /tmp/loader-contract/fallback-helper.cmake
+
+        export LOADER_HELPER=/tmp/loader-contract/fallback-helper.cmake
+
+        cmake -S /tmp/loader-contract -B /tmp/loader-contract/after
+
+        cmake --build /tmp/loader-contract/after --parallel 2
+
+        ctest --test-dir /tmp/loader-contract/after --output-on-failure
+
+        '
