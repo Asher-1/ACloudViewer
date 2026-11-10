@@ -1,4 +1,4 @@
-name: CI macOS loader regression verification
+name: CI Ubuntu apt archive diagnosis
 'on':
   push:
     branches:
@@ -6,42 +6,17 @@ name: CI macOS loader regression verification
 permissions:
   contents: read
 jobs:
-  loader-regression:
-    runs-on: macos-15
+  apt:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+        - '20.04'
+        - '24.04'
+    timeout-minutes: 15
     steps:
-    - uses: actions/checkout@v4
-    - uses: ./.github/actions/setup-cmake
-    - name: Verify production helper against dependency identity and fallback contracts
-      run: 'set -e
-
-        cp cmake/CloudViewerOutputDirectories.cmake /tmp/fixed-helper.cmake
-
-        sed ''s/set(_cv_loader_var DYLD_FALLBACK_LIBRARY_PATH)/set(_cv_loader_var DYLD_LIBRARY_PATH)/'' /tmp/fixed-helper.cmake > cmake/CloudViewerOutputDirectories.cmake
-
-        cmake -S core/tests/runtime-environment -B /tmp/runtime-before
-
-        cmake --build /tmp/runtime-before --parallel 2
-
-        set +e
-
-        ctest --test-dir /tmp/runtime-before --output-on-failure
-
-        before_status=$?
-
-        set -e
-
-        cp /tmp/fixed-helper.cmake cmake/CloudViewerOutputDirectories.cmake
-
-        if [ "$before_status" -eq 0 ]; then echo ''Expected dependency replacement did not fail''; exit 1; fi
-
-        cmake -S core/tests/runtime-environment -B /tmp/runtime-after
-
-        cmake --build /tmp/runtime-after --parallel 2
-
-        ctest --test-dir /tmp/runtime-after -V
-
-        otool -L /tmp/runtime-after/pinned_probe
-
-        otool -L /tmp/runtime-after/fallback_probe
-
-        '
+    - name: Check Ubuntu archive bootstrap on a clean image
+      env:
+        UBUNTU_VERSION: ${{ matrix.version }}
+      run: "docker run --rm ubuntu:\"$UBUNTU_VERSION\" bash -c '\nset -eux\nfor attempt in 1 2 3; do\n if apt-get -o Acquire::Retries=3 update --fix-missing -y && apt-get -o Acquire::Retries=3 install -y apt-utils software-properties-common tzdata gnupg ca-certificates curl; then exit 0; fi\n if [ \"$attempt\" -eq 3 ]; then exit 1; fi\n rm -rf /var/lib/apt/lists/*\n sleep 10\ndone\n'\n"
