@@ -1,4 +1,4 @@
-name: CI macOS production crash diagnosis
+name: CI macOS production loader control
 'on':
   push:
     branches:
@@ -46,10 +46,13 @@ jobs:
         path: ${{ env.CCACHE_DIR }}
         run-id: 42635273772
         github-token: ${{ github.token }}
-    - name: Set up Python version
-      run: 'sed -i "" "s/3.10/${{ matrix.python_version }}/g" ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
-
-        '
+    - name: Restore completed production compiler cache
+      uses: actions/download-artifact@v4
+      with:
+        name: ccache-macos-ARM64-app-ci_qt-portability-probe-20261110
+        path: ${{ env.CCACHE_DIR }}
+        run-id: 42758429277
+        github-token: ${{ github.token }}
     - name: Set up Python environment
       uses: conda-incubator/setup-miniconda@v3
       with:
@@ -104,7 +107,7 @@ jobs:
         echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
 
         '
-    - name: Save compiler cache (stash)
+    - name: Build only the three production UI tests
       if: ${{ always() && !cancelled() && contains(fromJSON('["success","failure"]'), steps.build.outcome) }}
       continue-on-error: true
       uses: apache/infrastructure-actions/stash/save@e3e0a2261a9c6d5bdd882802b303f34b1511b6df
@@ -115,23 +118,18 @@ jobs:
         compression-level: 0
         include-hidden-files: true
         if-no-files-found: ignore
-    - name: Upload build log
-      if: always()
-      continue-on-error: true
-      uses: actions/upload-artifact@v4
-      with:
-        name: macos-build-log-${{ runner.arch }}
-        path: /tmp/macos-build.log
-        if-no-files-found: ignore
-    - name: Backtrace the failing production UI executables
+      run: "set -e -o pipefail\nexport PATH=\"${HOME}/QtIFW-4.6.1-darwin-ARM64-static/bin:$CONDA_PREFIX/lib:$PATH\"\nexport PKG_CONFIG_PATH=\"$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH\"\npython3 - <<'PATCH'\nfrom pathlib import Path\np=Path('util/ci_utils.sh')\ns=p.read_text()\na='    make -j\"$NPROC\"\n    cmake --build . --target aicore-contract-tests -j \"$NPROC\"'\nb='    make -j\"$NPROC\" test_qopenpcdet_dialog test_qinstantmesh_dialog test_qinstantmesh_plugin\n    popd\n    return 0'\nassert s.count(a)==1\np.write_text(s.replace(a,b))\nPATCH\nsource util/ci_utils.sh\nccache -z\nbuild_gui_app with_conda package_installer 2>&1 | tee /tmp/macos-build.log\nccache -s\n"
+    - name: Compare the identical production binaries under each loader mode
       if: always()
       shell: bash -l {0}
-      run: "df -h\nvm_stat\nmkdir -p /tmp/ui-crash-results\nfor name in test_qopenpcdet_dialog test_qinstantmesh_dialog test_qinstantmesh_plugin; do\n  exe=\"$(find \"$PWD/build/bin\" -type f -name \"$name\" | head -1)\"\n  if [ -z \"$exe\" ]; then continue; fi\n  otool -L \"$exe\" > \"/tmp/ui-crash-results/$name-libraries.txt\"\n  for mode in clean override; do\n    if [ \"$mode\" = override ]; then\n      export DYLD_LIBRARY_PATH=\"$PWD/build/bin:$CONDA_PREFIX/lib:$PWD/build/external/lib\"\n    else\n      unset DYLD_LIBRARY_PATH\n    fi\n    QT_QPA_PLATFORM=offscreen lldb -b -o run -o 'thread backtrace all' -o 'image list' -o quit -- \"$exe\" > \"/tmp/ui-crash-results/$name-$mode.txt\" 2>&1\n    cat \"/tmp/ui-crash-results/$name-$mode.txt\"\n  done\ndone\nfind \"$HOME/Library/Logs/DiagnosticReports\" -maxdepth 1 -type f -name '*test_q*' -exec cp {} /tmp/ui-crash-results/ \\; 2>/dev/null || true\n"
-    - name: Upload native UI backtraces
+      run: "set +e\nmkdir -p /tmp/ui-crash-results\npaths=\"$PWD/build/bin:$CONDA_PREFIX/lib:$PWD/build/external/lib\"\nfor name in test_qopenpcdet_dialog test_qinstantmesh_dialog test_qinstantmesh_plugin; do\n exe=\"$PWD/build/bin/plugin_test/$name\"\n [ -f \"$exe\" ] || continue\n env -u DYLD_LIBRARY_PATH QT_QPA_PLATFORM=offscreen \"$exe\" > \"/tmp/ui-crash-results/$name-clean.txt\" 2>&1\n echo \"$name clean=$?\" | tee -a /tmp/ui-crash-results/status.txt\n QT_QPA_PLATFORM=offscreen DYLD_LIBRARY_PATH=\"$paths\" \"$exe\" > \"/tmp/ui-crash-results/$name-override.txt\" 2>&1\n echo \"$name override=$?\" | tee -a /tmp/ui-crash-results/status.txt\n lldb -b -o \"settings set target.env-vars QT_QPA_PLATFORM=offscreen DYLD_LIBRARY_PATH=$paths\" -o run -k 'thread backtrace all' -k 'image list' -- \"$exe\" > \"/tmp/ui-crash-results/$name-backtrace.txt\" 2>&1\n echo \"$name lldb=$?\" | tee -a /tmp/ui-crash-results/status.txt\n find \"$HOME/Library/Logs/DiagnosticReports\" -maxdepth 1 -type f -name '*test_q*' -exec cp {} /tmp/ui-crash-results/ \\; 2>/dev/null\n cat \"/tmp/ui-crash-results/$name-backtrace.txt\"\ndone\nunset DYLD_LIBRARY_PATH\npython3 - <<'PATCH'\nfrom pathlib import Path\np=Path('cmake/CloudViewerOutputDirectories.cmake');s=p.read_text();assert 'set(_cv_loader_var DYLD_LIBRARY_PATH)' in s;p.write_text(s.replace('set(_cv_loader_var DYLD_LIBRARY_PATH)','set(_cv_loader_var DYLD_FALLBACK_LIBRARY_PATH)'))\nPATCH\nset -e\ncmake -S . -B build\nctest --test-dir build -R '^test_q(openpcdet_dialog|instantmesh_dialog|instantmesh_plugin)$' -V --output-on-failure | tee /tmp/ui-crash-results/fallback-ctest.txt\n"
+    - name: Upload native crash evidence
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: production-ui-crashes
-        path: /tmp/ui-crash-results
+        name: production-loader-controls
+        path: '/tmp/ui-crash-results
+
+          /tmp/macos-build.log'
         if-no-files-found: warn
     timeout-minutes: 180
