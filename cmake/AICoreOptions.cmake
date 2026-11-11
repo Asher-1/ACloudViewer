@@ -148,7 +148,7 @@ option(AICore_USE_SAM3D_PBR_MESHFIX
     "SAM3D PBR: compile+link the vendored pymeshfix 79adef9 TMesh boundary repair (GPL-3.0-or-commercial license acknowledgment)"
     ON)
 option(AICore_USE_CUMESH
-    "Trellis: CuMesh GPU chart clustering for the UV-atlas bake (default ON; needs CUDA 12.3+; plain CUDA/CUB, no Torch or Python)"
+    "Trellis: CuMesh GPU chart clustering for the UV-atlas bake (default ON; needs CUDA 11.4+; plain CUDA/CUB, no Torch or Python)"
     ON)
 
 # Read-only configure results: set only in aicore_sync_results_from_ggml() as CACHE

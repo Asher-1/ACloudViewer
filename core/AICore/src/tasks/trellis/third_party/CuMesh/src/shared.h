@@ -170,11 +170,12 @@ int compress_ids(T* ids,
 
     // scan diff
     temp_storage_bytes = 0;
-    CUDA_CHECK(cub::DeviceScan::ExclusiveSum(nullptr, temp_storage_bytes,
-                                             cu_new_ids, N, stream));
-    cub_temp_storage.resize(temp_storage_bytes);
     CUDA_CHECK(cub::DeviceScan::ExclusiveSum(
-            cub_temp_storage.ptr, temp_storage_bytes, cu_new_ids, N, stream));
+            nullptr, temp_storage_bytes, cu_new_ids, cu_new_ids, N, stream));
+    cub_temp_storage.resize(temp_storage_bytes);
+    CUDA_CHECK(cub::DeviceScan::ExclusiveSum(cub_temp_storage.ptr,
+                                             temp_storage_bytes, cu_new_ids,
+                                             cu_new_ids, N, stream));
 
     // scatter
     scatter_kernel<<<(N + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, 0,

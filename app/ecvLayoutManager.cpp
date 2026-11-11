@@ -198,6 +198,22 @@ void ecvLayoutManager::hideAdditionalPluginToolbars() {
     }
 }
 
+void ecvLayoutManager::placeAICoreToolbarOnTop() {
+    QToolBar* toolbar = m_mainWindow->findChild<QToolBar*>("AI Core Toolbar");
+    if (!toolbar || toolbar->parent() != m_mainWindow) {
+        return;
+    }
+    // removeToolBar followed by addToolBar appends the toolbar at the end of
+    // the last row of the top area, which is where the Python plugin toolbars
+    // sit, so the AI Core toolbar always ends up right after them. A toolbar
+    // the user has closed is not reopened: restoring a layout must not undo
+    // that choice.
+    const bool wasVisible = toolbar->isVisible();
+    m_mainWindow->removeToolBar(toolbar);
+    m_mainWindow->addToolBar(Qt::TopToolBarArea, toolbar);
+    toolbar->setVisible(wasVisible);
+}
+
 void ecvLayoutManager::repositionUnifiedPluginToolbar() {
     // Find UnifiedPluginToolbar - search all children
     QList<QToolBar*> allToolbars = m_mainWindow->findChildren<QToolBar*>();
@@ -354,7 +370,9 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
         }
     }
 
-    // Add first row toolbars
+    // Add first row toolbars. The AI Core toolbar is not part of this row: it
+    // belongs at the very end of the last row, after the Python plugin
+    // toolbars, so it is held back here and appended there.
     QStringList firstRowOrder = {"mainToolBar", "SFToolBar", "FilterToolBar"};
     for (const QString& name : firstRowOrder) {
         if (toolbarMap.contains(name)) {
@@ -364,6 +382,14 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
             setToolbarIconSize(toolbar, screenWidth);
             toolbarMap.remove(name);
         }
+    }
+
+    // Held back so the "remaining toolbars" loops do not place it before the
+    // Python plugin toolbars.
+    QToolBar* aiCoreToolbar = nullptr;
+    if (toolbarMap.contains("AI Core Toolbar")) {
+        aiCoreToolbar = toolbarMap.value("AI Core Toolbar");
+        toolbarMap.remove("AI Core Toolbar");
     }
 
 #ifdef Q_OS_MAC
@@ -413,6 +439,14 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
         toolbar->setVisible(true);
         setToolbarIconSize(toolbar, screenWidth);
     }
+
+    // The AI Core toolbar follows the Python plugin toolbars, so it is the
+    // last toolbar of the last row.
+    if (aiCoreToolbar) {
+        m_mainWindow->addToolBar(Qt::TopToolBarArea, aiCoreToolbar);
+        aiCoreToolbar->setVisible(true);
+        setToolbarIconSize(aiCoreToolbar, screenWidth);
+    }
 #else
     // Windows/Linux: 2-row layout
     // Add UnifiedPluginToolbar at end of first row
@@ -456,6 +490,14 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
         m_mainWindow->addToolBar(Qt::TopToolBarArea, toolbar);
         toolbar->setVisible(true);
         setToolbarIconSize(toolbar, screenWidth);
+    }
+
+    // The AI Core toolbar follows the Python plugin toolbars, so it is the
+    // last toolbar of the last row.
+    if (aiCoreToolbar) {
+        m_mainWindow->addToolBar(Qt::TopToolBarArea, aiCoreToolbar);
+        aiCoreToolbar->setVisible(true);
+        setToolbarIconSize(aiCoreToolbar, screenWidth);
     }
 #endif
 
@@ -597,6 +639,10 @@ void ecvLayoutManager::restoreGUILayout(bool forceDefault) {
         // Ensure UnifiedPluginToolbar is visible
         repositionUnifiedPluginToolbar();
 
+        // A saved state predating the last-row placement keeps the AI Core
+        // toolbar elsewhere; it belongs after the Python plugin toolbars.
+        placeAICoreToolbarOnTop();
+
         // Update icon sizes for all toolbars after restoring layout
         // This ensures icons are properly sized even when restoring from saved
         // state
@@ -690,6 +736,14 @@ bool ecvLayoutManager::restoreCustomLayout() {
     // Restore custom layout
     m_mainWindow->restoreGeometry(geometry.toByteArray());
     m_mainWindow->restoreState(state.toByteArray());
+
+    // Apply the same position invariants as restoreGUILayout: hide unified
+    // toolbars, ensure UnifiedPluginToolbar is visible, and place the AI Core
+    // toolbar at the end of the last top row, after the Python plugin
+    // toolbars, even when the saved custom layout predates that rule.
+    hideAdditionalPluginToolbars();
+    repositionUnifiedPluginToolbar();
+    placeAICoreToolbarOnTop();
 
     CVLog::PrintVerbose(
             "[ecvLayoutManager] Custom layout restored successfully");

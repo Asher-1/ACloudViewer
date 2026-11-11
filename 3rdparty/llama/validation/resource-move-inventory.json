@@ -53,8 +53,6 @@
       "yolo_merged/0001-yolo-ggml-backend-integration.patch": "63955e9192ec97f607d955991bfb9ffa274b67c9b5f0499ecb7bd87a9403f5ff"
     },
     "sam3d": {
-      "pytorch-mem-eff-attention-compat/ATen/cuda/PhiloxUtils.cuh": "b976433bb7ea8411a60e4984dd66c1fd6b2a3513dbc5db1212af52fc79b32a3e",
-      "pytorch-mem-eff-attention-compat/c10/util/Exception.h": "c37acf6ae16801775a79e153d4b109032bf9164268beba13a5072efe1d8384b0",
       "spconv/cumm-include/tensorview/cc17.h": "912a0da1dd187176e4b59e4925f46e97220a4a0d9f469b31e4b208eaed5049fe",
       "spconv/cumm-include/tensorview/check.h": "f38a29e470594abdc8cafd507ae3c927ab686a724588512e5f865d780d2d941b",
       "spconv/cumm-include/tensorview/common.h": "d3deaf0a2a2a711b58f06fd7762fe073bef6fdc23e7344bb06852aa7230cb61a",
@@ -148,8 +146,6 @@
       "spconv/cumm-include/tensorview/prettyprint.h": "28c3d91af52e3fa5a52f894574f7b75d0b134052de35cef7efe2c954c93975e8",
       "spconv/cumm-include/tensorview/profile/all.h": "2998cc332d5f71138d7ad63d1563961f4a9327731d3603334a489eb39cf0b7db",
       "spconv/cumm-include/tensorview/profile/cuda_profiler.h": "70a936d46c76968f77e4c526de3c1c4a76c8b7109e58ade87c628a58e1fe0771",
-      "spconv/cumm-include/tensorview/pybind.h": "7ae2bb2b7bea3b0aa9a8bd97a5068ab019b5a39afe02e8f6c252c54f827b8b13",
-      "spconv/cumm-include/tensorview/pybind_utils.h": "b970ef732eeb6e0cde12c78ceb6e123592fee191e7ef3c8f222fcdefc3e4cbbe",
       "spconv/cumm-include/tensorview/simple_ops.h": "a960726f4916c2773080da3b4df9ccae71f2d818f9c0a3192c17b216d4400267",
       "spconv/cumm-include/tensorview/tensor.h": "4b9a9fb670ce1ff108e0e1013a2a6b60628958759c70a4b2c990abedb91eabf3",
       "spconv/cumm-include/tensorview/tensorview.h": "1548edb54b418239208c0bcdaeb36450a001a6b8e94f484eb56d5cce4857cf25",
@@ -159,7 +155,6 @@
       "spconv/cumm-include/tensorview/thirdparty/tsl/robin_map.h": "2e400c405450a5caad44e050ea27f4190dd4fc6178fb87b0b077be66dd2e0ae0",
       "spconv/cumm-include/tensorview/thirdparty/tsl/robin_set.h": "9b9a3eef885e0c105cbc636c18c13cfd8e3088b30ef00c7cb7bd2eac11fab2b9",
       "spconv/cumm-include/tensorview/tools.h": "dd5b5c5635d4f06a368e6a0be8a26c3d955feab117f022964b4e835d49e5048d",
-      "spconv/cumm-include/tensorview/torch_utils.h": "18aec2250a289f4ce22e9d3dde114ed78731241bc3b7f6599335fdb659ca25cb",
       "spconv/cumm-include/tensorview/utility/tuplehash.h": "ffc039ab0aff90bff4c2d706163f525587c0ef494b8a0a76e8360206676093f5",
       "spconv/include/sam3d_spconv/cumm/common/CUDALibs.h": "2c18a43287e3615f7ed07040ef7a27d214926bc2f7d04a2c47d6931a0174625d",
       "spconv/include/sam3d_spconv/cumm/common/CummNVRTCLib.h": "c1614fd3e1d7e37873c1f35f480179aea85a0d0727fbaf282f9510152465fc85",

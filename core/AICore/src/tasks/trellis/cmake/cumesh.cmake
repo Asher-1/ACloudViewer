@@ -14,7 +14,7 @@
 # The user-facing switch is declared in cmake/AICoreOptions.cmake; everything
 # below is task-owned. A missing prerequisite demotes the feature with a loud
 # warning instead of failing configure:
-#   CUDA off | CUDA toolkit < 12.3 | vendored CuMesh sources missing
+#   CUDA off | CUDA toolkit < 11.4 | vendored CuMesh sources missing
 #     → GPU clustering off; mesh_export tries CPU cone clustering, then
 #       simple_unwrap if CPU clustering fails.
 
@@ -45,10 +45,10 @@ function(aicore_trellis_wire_cumesh target trellis_src_dir)
                     "AICore: CuMesh needs the CUDA Toolkit — building without GPU chart clustering"
             )
             set(AICORE_CUMESH_ENABLED OFF)
-        elseif(CUDAToolkit_VERSION VERSION_LESS 12.3)
+        elseif(CUDAToolkit_VERSION VERSION_LESS 11.4)
             message(
                 WARNING
-                    "AICore: CuMesh needs CUDA Toolkit 12.3 or newer (found ${CUDAToolkit_VERSION}; vendored CUB code uses in-place DeviceScan added in 12.3) — building without GPU chart clustering"
+                    "AICore: CuMesh needs CUDA Toolkit 11.4 or newer (found ${CUDAToolkit_VERSION}; the vendored kernels use the Ampere cp.async path and CUB device APIs) — building without GPU chart clustering"
             )
             set(AICORE_CUMESH_ENABLED OFF)
         endif()

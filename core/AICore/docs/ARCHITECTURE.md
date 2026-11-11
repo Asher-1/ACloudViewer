@@ -672,7 +672,7 @@ cmake --build build_app --target ext_ggml -j4
 | Public links | `Qt::Core Qt::Gui` (PUBLIC — a consequence of the `depth_image.h` Qt exception) |
 | OpenMP | ALIKED SIMD/collapse kernels (MSVC uses `/openmp:experimental` and strips 3rdparty_ggml's default `/openmp`) |
 | ALIKED acceleration | `AICore_CUDA_ENABLED` → `aliked_cuda.cu` (statically linked cudart on UNIX so libAICore carries no libcudart DT_NEEDED); `AICore_VULKAN_ENABLED` → `vulkan_aliked_dispatch.cpp` |
-| Trellis CuMesh | `AICore_USE_CUMESH` (default ON; needs CUDA Toolkit 12.3+ only: plain CUDA/CUB with the static CUDA runtime, no Torch or Python; degrades with a warning when unavailable; mesh_export tries CPU cone clustering, then simple_unwrap on failure) |
+| Trellis CuMesh | `AICore_USE_CUMESH` (default ON; needs CUDA Toolkit 11.4+ only: plain CUDA/CUB with the static CUDA runtime, no Torch or Python; degrades with a warning when unavailable; mesh_export tries CPU cone clustering, then simple_unwrap on failure) |
 | Version script | `cmake/aicore.exports.map` (Linux); `AICore_capi_link` serves only executables that link the C API directly under `GGML_BACKEND_DL` |
 | Task registration | New task = GLOB + existence check + include paths inside the existing monolithic `core/AICore/CMakeLists.txt` target; **no** task-specific shared libraries |
 

@@ -143,13 +143,13 @@ void CuMesh::remove_unreferenced_vertices() {
 
     // Get vertices map
     size_t temp_storage_bytes = 0;
-    CUDA_CHECK(cub::DeviceScan::ExclusiveSum(nullptr, temp_storage_bytes,
-                                             cu_vertex_is_referenced, V + 1,
-                                             stream));
+    CUDA_CHECK(cub::DeviceScan::ExclusiveSum(
+            nullptr, temp_storage_bytes, cu_vertex_is_referenced,
+            cu_vertex_is_referenced, V + 1, stream));
     this->cub_temp_storage.resize(temp_storage_bytes);
     CUDA_CHECK(cub::DeviceScan::ExclusiveSum(
             this->cub_temp_storage.ptr, temp_storage_bytes,
-            cu_vertex_is_referenced, V + 1, stream));
+            cu_vertex_is_referenced, cu_vertex_is_referenced, V + 1, stream));
     int new_num_vertices;
     CUDA_CHECK(cudaMemcpyAsync(&new_num_vertices, cu_vertex_is_referenced + V,
                                sizeof(int), cudaMemcpyDeviceToHost, stream));
@@ -221,12 +221,19 @@ static __global__ void select_first_in_each_group_kernel(const int3* faces,
     }
 }
 
-struct int3_decomposer {
-    __host__ __device__ ::cuda::std::tuple<int&, int&, int&> operator()(
-            int3& key) const {
-        return {key.x, key.y, key.z};
-    }
-};
+// Pulls one component of an int3 so the faces can be ordered with the plain
+// key/value radix sort that CUB ships in both CUDA 11 and 12. Three stable
+// passes (z, then y, then x) reproduce the lexicographic order the CCCL 2.x
+// decomposer overload gave in a single pass.
+static __global__ void extract_face_component_kernel(const int3* faces,
+                                                     int* component,
+                                                     int which,
+                                                     size_t n) {
+    const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    if (tid >= n) return;
+    const int3 face = faces[tid];
+    component[tid] = which == 0 ? face.x : which == 1 ? face.y : face.z;
+}
 
 void CuMesh::remove_duplicate_faces() {
     cudaStream_t stream = current_stream();
@@ -258,15 +265,52 @@ void CuMesh::remove_duplicate_faces() {
     CUDA_CHECK(cudaMalloc(&cu_sorted_indices_output, F * sizeof(int)));
     CUDA_CHECK(cudaMalloc(&cu_sorted_faces_output, F * sizeof(int3)));
 
-    CUDA_CHECK(cub::DeviceRadixSort::SortPairs(
-            nullptr, temp_storage_bytes, cu_sorted_faces,
-            cu_sorted_faces_output, cu_sorted_face_indices,
-            cu_sorted_indices_output, F, int3_decomposer{}, stream));
-    this->cub_temp_storage.resize(temp_storage_bytes);
-    CUDA_CHECK(cub::DeviceRadixSort::SortPairs(
-            this->cub_temp_storage.ptr, temp_storage_bytes, cu_sorted_faces,
-            cu_sorted_faces_output, cu_sorted_face_indices,
-            cu_sorted_indices_output, F, int3_decomposer{}, stream));
+    // Least-significant component first, so the final pass (x) dominates.
+    // Each pass is stable, so the result matches a single lexicographic sort.
+    int* cu_component;
+    int* cu_component_sorted;
+    CUDA_CHECK(cudaMalloc(&cu_component, F * sizeof(int)));
+    CUDA_CHECK(cudaMalloc(&cu_component_sorted, F * sizeof(int)));
+    int3* faces_in = cu_sorted_faces;
+    int3* faces_out = cu_sorted_faces_output;
+    int* idx_in = cu_sorted_face_indices;
+    int* idx_out = cu_sorted_indices_output;
+    for (int component = 2; component >= 0; --component) {
+        extract_face_component_kernel<<<(F + BLOCK_SIZE - 1) / BLOCK_SIZE,
+                                        BLOCK_SIZE, 0, stream>>>(
+                faces_in, cu_component, component, F);
+        CUDA_CHECK(cudaGetLastError());
+        // Two paired sorts per pass: CUB 11.x sorts one value array at a time,
+        // and both arrays must follow the component order. The second sort
+        // repeats the first exactly, so the two permutations agree.
+        temp_storage_bytes = 0;
+        CUDA_CHECK(cub::DeviceRadixSort::SortPairs(
+                nullptr, temp_storage_bytes, cu_component, cu_component_sorted,
+                faces_in, faces_out, F, 0, sizeof(int) * 8, stream));
+        this->cub_temp_storage.resize(temp_storage_bytes);
+        CUDA_CHECK(cub::DeviceRadixSort::SortPairs(
+                this->cub_temp_storage.ptr, temp_storage_bytes, cu_component,
+                cu_component_sorted, faces_in, faces_out, F, 0, sizeof(int) * 8,
+                stream));
+        temp_storage_bytes = 0;
+        CUDA_CHECK(cub::DeviceRadixSort::SortPairs(
+                nullptr, temp_storage_bytes, cu_component, cu_component_sorted,
+                idx_in, idx_out, F, 0, sizeof(int) * 8, stream));
+        this->cub_temp_storage.resize(temp_storage_bytes);
+        CUDA_CHECK(cub::DeviceRadixSort::SortPairs(
+                this->cub_temp_storage.ptr, temp_storage_bytes, cu_component,
+                cu_component_sorted, idx_in, idx_out, F, 0, sizeof(int) * 8,
+                stream));
+        int3* swap_faces = faces_in;
+        faces_in = faces_out;
+        faces_out = swap_faces;
+        int* swap_idx = idx_in;
+        idx_in = idx_out;
+        idx_out = swap_idx;
+    }
+    // Three passes is odd, so the ordered data lands in the *_output buffers.
+    CUDA_CHECK(cudaFree(cu_component));
+    CUDA_CHECK(cudaFree(cu_component_sorted));
 
     // Select first in each group of duplicate faces (based on sorted faces)
     uint8_t* cu_face_mask_sorted;
@@ -500,11 +544,12 @@ void CuMesh::fill_holes(float max_hole_perimeter) {
     }
     temp_storage_bytes = 0;
     CUDA_CHECK(cub::DeviceScan::InclusiveSum(
-            nullptr, temp_storage_bytes, cu_loop_bound_loop_ids, E, stream));
+            nullptr, temp_storage_bytes, cu_loop_bound_loop_ids,
+            cu_loop_bound_loop_ids, E, stream));
     this->cub_temp_storage.resize(temp_storage_bytes);
     CUDA_CHECK(cub::DeviceScan::InclusiveSum(
             this->cub_temp_storage.ptr, temp_storage_bytes,
-            cu_loop_bound_loop_ids, E, stream));
+            cu_loop_bound_loop_ids, cu_loop_bound_loop_ids, E, stream));
 
     // Mask loop boundaries
     uint8_t* cu_loop_boundary_mask;
@@ -565,13 +610,14 @@ void CuMesh::fill_holes(float max_hole_perimeter) {
         CUDA_CHECK(cudaGetLastError());
     }
     temp_storage_bytes = 0;
-    CUDA_CHECK(cub::DeviceScan::InclusiveSum(nullptr, temp_storage_bytes,
-                                             cu_new_loop_bound_loop_ids,
-                                             new_num_loop_boundaries, stream));
+    CUDA_CHECK(cub::DeviceScan::InclusiveSum(
+            nullptr, temp_storage_bytes, cu_new_loop_bound_loop_ids,
+            cu_new_loop_bound_loop_ids, new_num_loop_boundaries, stream));
     this->cub_temp_storage.resize(temp_storage_bytes);
     CUDA_CHECK(cub::DeviceScan::InclusiveSum(
             this->cub_temp_storage.ptr, temp_storage_bytes,
-            cu_new_loop_bound_loop_ids, new_num_loop_boundaries, stream));
+            cu_new_loop_bound_loop_ids, cu_new_loop_bound_loop_ids,
+            new_num_loop_boundaries, stream));
 
     // Calculate new vertex positions as average of loop vertices
     Vec3f* cu_new_loop_bound_centers;

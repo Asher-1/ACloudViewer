@@ -2204,14 +2204,14 @@ void MainWindow::initPlugins() {
 #endif
     addToolBar(Qt::RightToolBarArea, mainPluginToolbar);
     // The AI Core toolbar is one draggable unit holding the grouped
-    // (info.json "group": "aicore") plugin actions.
-    addToolBar(Qt::RightToolBarArea, aiCoreToolbar);
+    // (info.json "group": "aicore") plugin actions. It belongs on the top
+    // row with the other plugin toolbars, not on the right rail.
+    addToolBar(Qt::TopToolBarArea, aiCoreToolbar);
     // Register plugin toolbars with layout manager
 #ifdef QPCL_PLUGIN_TOOLBAR
     m_layoutManager->registerRightSideToolBar(glPclToolbar);
 #endif
     m_layoutManager->registerRightSideToolBar(mainPluginToolbar);
-    m_layoutManager->registerRightSideToolBar(aiCoreToolbar);
 
     // Combine all additional plugin toolbars into a single unified toolbar
     // But exclude Python plugins - they should be handled separately
@@ -2319,9 +2319,12 @@ void MainWindow::initPlugins() {
         }
     }
 
-    // Set up dynamic menus
-    m_ui->menuBar->insertMenu(m_ui->menuDisplay->menuAction(),
-                              m_pluginUIManager->pclAlgorithmMenu());
+    // Set up dynamic menus. PCL algorithms are plugin content, so their menu
+    // lives inside the Plugins menu instead of taking its own menu-bar slot.
+    if (!m_pluginUIManager->pclAlgorithmMenu()->isEmpty()) {
+        m_pluginUIManager->pluginMenu()->addMenu(
+                m_pluginUIManager->pclAlgorithmMenu());
+    }
     m_ui->menuBar->insertMenu(m_ui->menuDisplay->menuAction(),
                               m_pluginUIManager->pluginMenu());
 

@@ -55,6 +55,40 @@ else()
     if(CUMESH_SMOKE_GPU)
         add_test(NAME cumesh_gpu_mesh COMMAND aicore_cumesh_smoke --gpu)
     endif()
+
+    # Bit-level parity of remove_duplicate_faces against a CPU reference that
+    # reproduces the three-pass radix order and the rewritten in-place scan.
+    # The CuMesh sources are compiled into the test rather than linked from
+    # aicore_cumesh: that library exports only the C glue, so the C++ methods
+    # are not available to a consumer on platforms with hidden visibility.
+    add_executable(aicore_cumesh_dedup_parity cumesh_dedup_parity.cu
+        "${_trellis_src_dir}/third_party/CuMesh/src/atlas.cu"
+        "${_trellis_src_dir}/third_party/CuMesh/src/clean_up.cu"
+        "${_trellis_src_dir}/third_party/CuMesh/src/connectivity.cu"
+        "${_trellis_src_dir}/third_party/CuMesh/src/cumesh.cu"
+        "${_trellis_src_dir}/third_party/CuMesh/src/geometry.cu"
+        "${_trellis_src_dir}/third_party/CuMesh/src/io.cu"
+        "${_trellis_src_dir}/third_party/CuMesh/src/shared.cu")
+    set_target_properties(aicore_cumesh_dedup_parity PROPERTIES
+        CUDA_STANDARD 17 CUDA_STANDARD_REQUIRED ON
+        CUDA_RUNTIME_LIBRARY Static
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+    target_include_directories(aicore_cumesh_dedup_parity PRIVATE
+        "${_trellis_src_dir}/../.."
+        "${_trellis_src_dir}/third_party/CuMesh/src"
+        "${_trellis_src_dir}")
+    target_compile_options(aicore_cumesh_dedup_parity PRIVATE
+        $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>
+        $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
+    target_link_libraries(aicore_cumesh_dedup_parity PRIVATE
+                          CUDA::cudart_static)
+    if(NOT "${_smoke_cuda_architectures}" STREQUAL "")
+        set_target_properties(aicore_cumesh_dedup_parity PROPERTIES
+            CUDA_ARCHITECTURES "${_smoke_cuda_architectures}")
+    endif()
+    if(CUMESH_SMOKE_GPU)
+        add_test(NAME cumesh_dedup_parity COMMAND aicore_cumesh_dedup_parity)
+    endif()
 endif()
 
 if(WIN32 AND TARGET aicore_cumesh)

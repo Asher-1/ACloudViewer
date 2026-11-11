@@ -114,8 +114,10 @@ if(GGML_USE_SAM3D_OPS AND _GGML_CUDA_ENABLED)
     # content hash (header-only; neither libtorch nor cuDNN is linked).
     set(_sam3d_memeff_dir "${_GGML_SAM3D_DEPS_DIR}/pytorch-v2.5.1-mem-eff-attention")
     set(_sam3d_pytorch_url "https://raw.githubusercontent.com/pytorch/pytorch/v2.5.1/aten/src")
+    # Optional third argument: suffix appended to the stored file name only
+    # (the upstream URL and the pinned digest always refer to the pristine file).
     function(_ggml_sam3d_fetch_memeff_header relative_path expected_sha256)
-        set(destination "${_sam3d_memeff_dir}/${relative_path}")
+        set(destination "${_sam3d_memeff_dir}/${relative_path}${ARGV2}")
         if(EXISTS "${destination}")
             file(SHA256 "${destination}" actual_sha256)
             if(actual_sha256 STREQUAL expected_sha256)
@@ -154,8 +156,64 @@ if(GGML_USE_SAM3D_OPS AND _GGML_CUDA_ENABLED)
     _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/iterators/predicated_tile_iterator_residual_last.h" "880a3383d716b50f5527564d01e066a8eabeace93a534562065c55fa4faaf220")
     _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/iterators/transpose_warp_iterator.h" "8eb466e7e3013da32d0a083a3e5df978d7983b83a2dd2a5e362c526892ae894e")
     _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/iterators/warp_iterator_from_smem.h" "3e97f7b3eae7cb5c21fb9b18761a6472b0b1b317923508c6a0cfcf8240983258")
-    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/kernel_forward.h" "6019c38609117f0b7c28c7f2da4cbd24713aaa3d37b028d23da744bfd46dd2ec")
     _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/transform/tile_smem_loader.h" "798f55c4a47fadbaad11316d7a175f1063f63919069e034cf67debc946a2ecb0")
+
+    # kernel_forward.h is the only header that reaches into ATen/c10. It is
+    # fetched pristine (digest-pinned) under a ".pristine" name, then written to
+    # its real path with the two PyTorch includes replaced by the equivalent
+    # inline definitions. Only host-side TORCH_CHECK (-> assert) and the Philox
+    # state carrier are replaced; every device-side line is untouched, so the
+    # kernel's tensor-core reduction order is preserved bit for bit.
+    set(_memeff_kf_rel "ATen/native/transformers/cuda/mem_eff_attention/kernel_forward.h")
+    _ggml_sam3d_fetch_memeff_header("${_memeff_kf_rel}"
+        "6019c38609117f0b7c28c7f2da4cbd24713aaa3d37b028d23da744bfd46dd2ec" ".pristine")
+    file(READ "${_sam3d_memeff_dir}/${_memeff_kf_rel}.pristine" _memeff_kf_text)
+    set(_memeff_inc_philox "#include <ATen/cuda/PhiloxUtils.cuh>")
+    set(_memeff_inc_exception "#include <c10/util/Exception.h>")
+    string(FIND "${_memeff_kf_text}" "${_memeff_inc_philox}" _memeff_pos_philox)
+    string(FIND "${_memeff_kf_text}" "${_memeff_inc_exception}" _memeff_pos_exception)
+    if(_memeff_pos_philox EQUAL -1 OR _memeff_pos_exception EQUAL -1)
+        message(FATAL_ERROR
+            "SAM3D: pinned kernel_forward.h no longer contains the expected "
+            "PhiloxUtils.cuh / Exception.h includes; update the inline shim")
+    endif()
+    set(_memeff_shim [=[
+// ---- Inline replacement for <ATen/cuda/PhiloxUtils.cuh> and
+// <c10/util/Exception.h>: no PyTorch runtime or header is needed. The host
+// input contracts checked by TORCH_CHECK are validated by ggml before launch.
+#include <cassert>
+#include <cstdint>
+#include <utility>
+#define TORCH_CHECK(condition, ...) assert(condition)
+namespace at {
+struct PhiloxCudaState {
+    std::uint64_t seed_ = 0;
+    std::uint64_t offset_ = 0;
+    bool captured_ = false;
+    constexpr PhiloxCudaState(std::uint64_t seed, std::uint64_t offset)
+        : seed_(seed), offset_(offset) {}
+};
+namespace cuda {
+namespace philox {
+__host__ __device__ inline std::pair<std::uint64_t, std::uint64_t> unpack(
+        const PhiloxCudaState& state) {
+    return {state.seed_, state.offset_};
+}
+}  // namespace philox
+}  // namespace cuda
+}  // namespace at
+]=])
+    string(REPLACE "${_memeff_inc_philox}" "${_memeff_shim}" _memeff_kf_patched "${_memeff_kf_text}")
+    string(REPLACE "${_memeff_inc_exception}" "// (c10/util/Exception.h inlined above)" _memeff_kf_patched "${_memeff_kf_patched}")
+    set(_memeff_kf_dest "${_sam3d_memeff_dir}/${_memeff_kf_rel}")
+    set(_memeff_kf_current "")
+    if(EXISTS "${_memeff_kf_dest}")
+        file(READ "${_memeff_kf_dest}" _memeff_kf_current)
+    endif()
+    if(NOT _memeff_kf_current STREQUAL _memeff_kf_patched)
+        file(WRITE "${_memeff_kf_dest}" "${_memeff_kf_patched}")
+        message(STATUS "ggml: wrote PyTorch-free kernel_forward.h for SAM3D")
+    endif()
 
     # CUTLASS pinned tarball (BSD-3).
     set(_sam3d_cutlass_dir "${_GGML_SAM3D_DEPS_DIR}/cutlass-bbe579a9e3beb6ea6626d9227ec32d0dae119a49")
@@ -181,7 +239,6 @@ if(GGML_USE_SAM3D_OPS AND _GGML_CUDA_ENABLED)
     list(APPEND GGML_CMAKE_ARGS
         -DGGML_SAM3D_OPS=ON
         -DGGML_SAM3D_MEMEFF_DIR=${_sam3d_memeff_dir}
-        -DGGML_SAM3D_MEMEFF_COMPAT_DIR=${_LLAMA_RUNTIME_DIR}/sam3d/pytorch-mem-eff-attention-compat
         -DGGML_SAM3D_CUTLASS_DIR=${_sam3d_cutlass_dir}
         -DGGML_SAM3D_SPCONV_DIR=${_LLAMA_RUNTIME_DIR}/sam3d/spconv)
     # GGML_CUDA_FAST_MATH is no longer forced OFF here: the sam3d upstream
