@@ -35,6 +35,8 @@ jobs:
         run: |
           bash -n util/vulkan/install_vulkan_linux.sh
           python -W error util/vulkan/tests/test_vulkan_download.py -v
+      - name: Verify RealSense connectivity recovery
+        run: python -W error 3rdparty/librealsense/tests/test_connectivity.py -v
       - name: Apply style formatting
         if: github.event_name == 'pull_request'
         run: |
