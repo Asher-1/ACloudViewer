@@ -257,42 +257,6 @@ void ecvLayoutManager::repositionUnifiedPluginToolbar() {
     unifiedPluginToolbar->show();
 }
 
-void ecvLayoutManager::repositionAICoreToolbar() {
-    QList<QToolBar*> allToolbars = m_mainWindow->findChildren<QToolBar*>();
-    QToolBar* aiCoreToolbar = nullptr;
-
-    for (QToolBar* tb : allToolbars) {
-        if (tb->objectName() == "AI Core Toolbar") {
-            aiCoreToolbar = tb;
-            break;
-        }
-    }
-
-    if (!aiCoreToolbar) {
-        // No AI Core plugins loaded — nothing to reposition
-        return;
-    }
-
-    // Ensure it's attached to main window
-    if (aiCoreToolbar->parent() != m_mainWindow) {
-        aiCoreToolbar->setParent(m_mainWindow);
-    }
-
-    // Move to top area if it was restored to a different area (e.g. right)
-    Qt::ToolBarArea area = m_mainWindow->toolBarArea(aiCoreToolbar);
-    if (area == Qt::NoToolBarArea) {
-        m_mainWindow->addToolBar(Qt::TopToolBarArea, aiCoreToolbar);
-    } else if (area != Qt::TopToolBarArea) {
-        m_mainWindow->removeToolBar(aiCoreToolbar);
-        m_mainWindow->addToolBar(Qt::TopToolBarArea, aiCoreToolbar);
-    }
-
-    // Do NOT force visibility here — the user's toggle
-    // (m_showAICoreToolbar) is the single source of truth for
-    // visibility.  restoreState() already restored the correct
-    // visibility; overriding it would desync the toggle.
-}
-
 void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
     // Get all toolbars and categorize them
     QList<QToolBar*> toolBars = m_mainWindow->findChildren<QToolBar*>();
@@ -424,14 +388,6 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
             setToolbarIconSize(toolbar, screenWidth);
             toolbarMap.remove(name);
         }
-    }
-
-    // Held back so the "remaining toolbars" loops do not place it before the
-    // Python plugin toolbars.
-    QToolBar* aiCoreToolbar = nullptr;
-    if (toolbarMap.contains("AI Core Toolbar")) {
-        aiCoreToolbar = toolbarMap.value("AI Core Toolbar");
-        toolbarMap.remove("AI Core Toolbar");
     }
 
 #ifdef Q_OS_MAC
