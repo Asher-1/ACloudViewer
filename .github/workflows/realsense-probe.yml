@@ -1,0 +1,26 @@
+name: CI macOS RealSense connectivity control
+'on':
+  push:
+    branches: [ci/realsense-connectivity-probe-20261111]
+permissions:
+  contents: read
+jobs:
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Verify real CMake transfer recovery
+        run: python3 -W error 3rdparty/librealsense/tests/test_connectivity.py -v
+      - name: Baseline and fixed actual RealSense ExternalProject
+        run: python3 -u .github/realsense_native_probe.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: realsense-native-control
+          path: |
+            ${{ runner.temp }}/realsense-control/**/*.log
+            ${{ runner.temp }}/realsense-control/**/CMakeCache.txt
+            ${{ runner.temp }}/realsense-control/**/flags.make
