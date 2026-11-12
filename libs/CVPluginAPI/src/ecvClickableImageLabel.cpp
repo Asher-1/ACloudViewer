@@ -10,6 +10,7 @@
 #include <QDialog>
 #include <QHBoxLayout>
 #include <QMouseEvent>
+#include <QPainter>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QVBoxLayout>
@@ -18,6 +19,54 @@
 #include <cmath>
 
 namespace {
+
+/** Strided opacity probe: true when the image carries an alpha channel with
+ *  at least one non-opaque sample. Opaque images (regular photos, meshes
+ *  rendered on opaque backdrops) must pass through byte-identical, so the
+ *  checker backdrop below never costs them a repaint. */
+bool hasMeaningfulAlpha(const QImage& image) {
+    if (!image.hasAlphaChannel()) return false;
+    const int w = image.width();
+    const int h = image.height();
+    const int64_t count = int64_t(w) * h;
+    const int64_t samples = std::min<int64_t>(count, 4096);
+    const int64_t stride = std::max<int64_t>(1, count / samples);
+    for (int64_t idx = 0; idx < count; idx += stride) {
+        if (image.pixelColor(int(idx % w), int(idx / w)).alpha() < 255) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/** Transparency indicator composited under RGBA previews. Without it a matted
+ *  image (e.g. an RMBG cut-out) paints its removed background in the host
+ *  widget's color and reads as "the original, unchanged". The pattern is
+ *  generated at display time: the thumbnail path composites in display
+ *  pixels so the tiles stay readable at thumbnail scale, while the zoomable
+ *  preview bakes the pattern into the image once so the tiles scale with the
+ *  content under zoom and pan (the Photoshop-style document backdrop). */
+QImage composeCheckerBackdrop(const QImage& image, int tile) {
+    if (!hasMeaningfulAlpha(image) || tile <= 0) return image;
+    QImage backdrop(image.size(), QImage::Format_ARGB32_Premultiplied);
+    QPainter p(&backdrop);
+    // Two neutral greys: light enough to keep white subjects readable, dark
+    // enough to expose a white removed background.
+    const QColor light(255, 255, 255);
+    const QColor dark(204, 204, 204);
+    p.fillRect(backdrop.rect(), light);
+    for (int y = 0; y < image.height(); y += tile) {
+        for (int x = 0; x < image.width(); x += tile) {
+            if (((x / tile) + (y / tile)) & 1) {
+                p.fillRect(x, y, std::min(tile, image.width() - x),
+                           std::min(tile, image.height() - y), dark);
+            }
+        }
+    }
+    p.drawImage(0, 0, image);
+    p.end();
+    return backdrop;
+}
 
 /** Interaction controller behind the enlarged-preview dialog: fit-to-window
  *  on open, wheel zoom anchored at the cursor, drag panning, double-click
@@ -184,8 +233,12 @@ void ecvClickableImageLabel::setPreviewImage(const QImage& image,
     const QSize target = displaySize.isValid() && !displaySize.isEmpty()
                                  ? displaySize
                                  : QSize(96, 96);
-    setPixmap(QPixmap::fromImage(image.scaled(target, Qt::KeepAspectRatio,
-                                              Qt::SmoothTransformation)));
+    // Removed backgrounds must stay visible at thumbnail scale: composite
+    // the checker in display pixels (post-scale), not in source pixels.
+    QImage display =
+            image.scaled(target, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    display = composeCheckerBackdrop(display, 8);
+    setPixmap(QPixmap::fromImage(display));
     if (displaySize.isValid() && !displaySize.isEmpty()) {
         setFixedSize(target);
         setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -216,6 +269,13 @@ void ecvClickableImageLabel::showEnlargedImage(QWidget* parent,
     if (image.isNull()) {
         return;
     }
+    // Bake the transparency backdrop into the zoom target once: the tiles
+    // then scale with the content under zoom and pan (a document backdrop)
+    // instead of staying a screen-fixed grid behind the image. Sizing keeps
+    // the original dimensions — the composite does not change them.
+    const int bakeTile =
+            std::max(16, std::min(image.width(), image.height()) / 64);
+    const QImage zoomable = composeCheckerBackdrop(image, bakeTile);
 
     QDialog dlg(parent);
     dlg.setWindowTitle(title.isEmpty() ? QObject::tr("Image Preview") : title);
@@ -246,7 +306,7 @@ void ecvClickableImageLabel::showEnlargedImage(QWidget* parent,
     layout->addWidget(hint);
 
     // Owns wheel zoom, drag pan, and the fit-on-show/resize behavior.
-    new PreviewZoomController(label, scroll, image);
+    new PreviewZoomController(label, scroll, zoomable);
 
     dlg.exec();
 }

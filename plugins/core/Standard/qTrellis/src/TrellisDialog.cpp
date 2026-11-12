@@ -1424,11 +1424,15 @@ void TrellisDialog::setStageState(int slot, int state) {
 
 void TrellisDialog::setStagePreview(const TrellisStagePreview& preview) {
     if (!preview.rawBlob.isEmpty()) m_lastVoxelBlob = preview.rawBlob;
-    // Map the AICore stage onto the strip slot: voxel sets (SS_FLOW /
-    // SS_DEC / UPSAMPLE) light the Voxels chip, mesh keyframes and decodes
-    // (SLAT_FLOW* / SHAPE_DEC*) the Mesh chip.
+    // Map the AICore stage onto the strip slot: the preprocess matted image
+    // lights the Preprocess chip as soon as the RMBG stage completes, voxel
+    // sets (SS_FLOW / SS_DEC / UPSAMPLE) light the Voxels chip, and mesh
+    // keyframes and decodes (SLAT_FLOW* / SHAPE_DEC*) the Mesh chip.
     int slot = -1;
     switch (preview.stage) {
+        case AICORE_TRELLIS_STAGE_PREPROCESS:
+            slot = 1;
+            break;
         case AICORE_TRELLIS_STAGE_SS_FLOW:
         case AICORE_TRELLIS_STAGE_SS_DEC:
         case AICORE_TRELLIS_STAGE_UPSAMPLE:

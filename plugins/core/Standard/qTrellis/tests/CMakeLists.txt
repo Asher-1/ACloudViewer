@@ -1,5 +1,7 @@
 add_executable(test_qtrellis_model_selection test_model_selection.cpp
-    ../src/TrellisDialog.cpp ../src/TrellisModelCatalog.cpp ../include/TrellisDialog.h)
+    ../src/TrellisDialog.cpp ../src/TrellisModelCatalog.cpp
+    ../src/TrellisWorker.cpp ../include/TrellisDialog.h
+    ../include/TrellisWorker.h)
 set_target_properties(test_qtrellis_model_selection PROPERTIES AUTOMOC ON
     CXX_STANDARD 17 POSITION_INDEPENDENT_CODE ON)
 target_include_directories(test_qtrellis_model_selection PRIVATE ../include)

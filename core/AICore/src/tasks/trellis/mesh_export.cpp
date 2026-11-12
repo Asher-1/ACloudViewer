@@ -353,6 +353,88 @@ void pad4(std::vector<uint8_t> &b, uint8_t fill) {
     while (b.size() % 4) b.push_back(fill);
 }
 
+// Realign per-vertex normals onto the triangle-winding hemisphere by majority
+// vote — flipping FACES is forbidden here. The decoder mesh is consistently
+// oriented (every shared edge is traversed in opposite directions by its two
+// faces), so re-winding an individually frustrated face tears that shared-edge
+// orientation: the face and its neighbours then disagree about
+// gl_FrontFacing, and every winding-based double-sided viewer (stock VTK
+// fragment flip, glTF gl_FrontFacing) shades the seam inconsistently —
+// per-face luminance speckle on metals, measured as a manifold-edge
+// consistency drop from 100% to 97.6% on a real bake. Normals are the only
+// quantity a viewer shades with per vertex, so on vertices shared by
+// frustrated and agreeing faces the majority side wins (a tie keeps the
+// decoder's data) and the minority keeps at most a one-face seam.
+// Returns the number of faces still frustrated after the vote, for logging.
+template <typename Index>
+uint32_t realign_normals_to_winding(const std::vector<float> &verts,
+                                    std::vector<float> &nrm,
+                                    const std::vector<Index> &idx) {
+    const size_t nv = verts.size() / 3;
+    const size_t ntri = idx.size() / 3;
+    if (verts.size() < 9 || nrm.size() != verts.size() || ntri == 0) return 0;
+    // Pass 1: per-face frustration flag + per-vertex frustrated/total votes.
+    // Three passes over O(n) data; each pass is cheap relative to the bake.
+    std::vector<uint32_t> total((size_t)nv, 0), against((size_t)nv, 0);
+    for (size_t t = 0; t < ntri; ++t) {
+        const size_t a = (size_t)idx[3 * t], b = (size_t)idx[3 * t + 1],
+                     c = (size_t)idx[3 * t + 2];
+        if (a >= nv || b >= nv || c >= nv) continue;
+        const float e1[3] = {verts[3 * b] - verts[3 * a],
+                             verts[3 * b + 1] - verts[3 * a + 1],
+                             verts[3 * b + 2] - verts[3 * a + 2]};
+        const float e2[3] = {verts[3 * c] - verts[3 * a],
+                             verts[3 * c + 1] - verts[3 * a + 1],
+                             verts[3 * c + 2] - verts[3 * a + 2]};
+        const float fn[3] = {e1[1] * e2[2] - e1[2] * e2[1],
+                             e1[2] * e2[0] - e1[0] * e2[2],
+                             e1[0] * e2[1] - e1[1] * e2[0]};
+        const float tn[3] = {nrm[3 * a] + nrm[3 * b] + nrm[3 * c],
+                             nrm[3 * a + 1] + nrm[3 * b + 1] + nrm[3 * c + 1],
+                             nrm[3 * a + 2] + nrm[3 * b + 2] + nrm[3 * c + 2]};
+        // Hemisphere decided by the sign only; a degenerate face (zero cross
+        // product) yields dot == 0 and votes for neither side.
+        const float dot = fn[0] * tn[0] + fn[1] * tn[1] + fn[2] * tn[2];
+        if (dot < 0.0f) {
+            ++against[a];
+            ++against[b];
+            ++against[c];
+        }
+        ++total[a];
+        ++total[b];
+        ++total[c];
+    }
+    // Pass 2: majority vote per vertex.
+    for (size_t v = 0; v < nv; ++v) {
+        if (2 * against[v] > total[v]) {
+            nrm[3 * v] = -nrm[3 * v];
+            nrm[3 * v + 1] = -nrm[3 * v + 1];
+            nrm[3 * v + 2] = -nrm[3 * v + 2];
+        }
+    }
+    // Pass 3: residual frustration after the vote (logging ground truth).
+    uint32_t residual = 0;
+    for (size_t t = 0; t < ntri; ++t) {
+        const size_t a = (size_t)idx[3 * t], b = (size_t)idx[3 * t + 1],
+                     c = (size_t)idx[3 * t + 2];
+        if (a >= nv || b >= nv || c >= nv) continue;
+        const float e1[3] = {verts[3 * b] - verts[3 * a],
+                             verts[3 * b + 1] - verts[3 * a + 1],
+                             verts[3 * b + 2] - verts[3 * a + 2]};
+        const float e2[3] = {verts[3 * c] - verts[3 * a],
+                             verts[3 * c + 1] - verts[3 * a + 1],
+                             verts[3 * c + 2] - verts[3 * a + 2]};
+        const float fn[3] = {e1[1] * e2[2] - e1[2] * e2[1],
+                             e1[2] * e2[0] - e1[0] * e2[2],
+                             e1[0] * e2[1] - e1[1] * e2[0]};
+        const float tn[3] = {nrm[3 * a] + nrm[3 * b] + nrm[3 * c],
+                             nrm[3 * a + 1] + nrm[3 * b + 1] + nrm[3 * c + 1],
+                             nrm[3 * a + 2] + nrm[3 * b + 2] + nrm[3 * c + 2]};
+        if (fn[0] * tn[0] + fn[1] * tn[1] + fn[2] * tn[2] < 0.0f) ++residual;
+    }
+    return residual;
+}
+
 void write_glb(const std::vector<float> &pos,
                const std::vector<float> &nrm,
                const std::vector<float> &uv,
@@ -1895,16 +1977,21 @@ bool bake_atlas_locked(const PreparedMesh &mesh,
     // glTF packs metallic in B and roughness in G. Base color is stored as
     // generated (sRGB-like), matching upstream's base_color*255 texture path.
     //
-    // Alpha cleanup (T2GLB_ALPHA_CLEAN, default on): the decoder's activation
-    // noise scatters a band of near-transparent texels over the surface — a
-    // thick 0.03-0.25 band (2-4% of the atlas) plus a shallower 0.25-0.5 tail
-    // on GPU lineages (f16 activation rounding, deeper under q8); the exact
-    // f32 CPU bake bottoms out at ~0.55. Everything between the upstream floor
-    // (0.03) and 0.5 sits on solid surface and is decoder noise, not material:
-    // snap it to fully opaque. Snapping to 0 would punch BLEND holes through to
-    // the unlit interior, which renders as dark erosion blotches in unsorted
-    // viewers (ParaView). Only texels already below the upstream floor (<0.03)
-    // keep their near-transparent value.
+    // Alpha cleanup (default on): the decoder's activation noise scatters a
+    // band of near-transparent texels over the surface — a thick 0.03-0.25
+    // band (2-4% of the atlas), a shallower 0.25-0.5 tail, and on GPU
+    // lineages a sparse 0.5-0.9 mid band (f16 activation rounding, deeper
+    // under q8; the exact f32 CPU bake bottoms out at ~0.55). Everything
+    // between the upstream floor (0.03) and 0.95 sits on solid surface and is
+    // decoder noise, not material: snap it to fully opaque. The mid band
+    // matters most: enough texels above 0.25 flips the exported material to
+    // alphaMode BLEND, where those half-alpha texels mix with the unsorted
+    // background as dark speckle in every depth-unaware viewer (ParaView,
+    // naive GL viewers). Snapping to 0 instead would punch BLEND holes
+    // through to the unlit interior (dark erosion blotches). Only texels
+    // already below the upstream floor (<0.03) keep their near-transparent
+    // value. Upstream's nvdiffrast bake likewise exports ordinary surfaces
+    // as opaque.
     const bool alpha_clean = opt.alpha_clean;
     auto to8 = [](float f) {
         int v = (int)std::lround(f * 255.0f);
@@ -1914,7 +2001,7 @@ bool bake_atlas_locked(const PreparedMesh &mesh,
     int covered = 0, translucent = 0;
     for (int i = 0; i < NP; ++i) {
         float a = alp[i];
-        if (alpha_clean && a > 0.03f && a < 0.5f) a = 1.0f;
+        if (alpha_clean && a > 0.03f && a < 0.95f) a = 1.0f;
         bc8[4 * i + 0] = to8(bc[3 * i + 0]);
         bc8[4 * i + 1] = to8(bc[3 * i + 1]);
         bc8[4 * i + 2] = to8(bc[3 * i + 2]);
@@ -1952,6 +2039,15 @@ bool bake_atlas_locked(const PreparedMesh &mesh,
         guv[2 * i + 0] = ouv[2 * i + 0] / (float)AW;
         guv[2 * i + 1] = ouv[2 * i + 1] / (float)AH;
     }
+    // Realign normals onto the winding hemisphere (majority vote per vertex)
+    // before the glTF transform: the decoder mesh is already consistently
+    // oriented, so only the normals may move — re-winding faces tears
+    // shared-edge orientation and makes winding-based double-sided viewers
+    // shade per-face speckle on metals.
+    const uint32_t residual_frust =
+            realign_normals_to_winding(opos, onrm, oidx);
+    GLBLOG("normals realigned to winding: residual frustration %u of %u faces",
+           residual_frust, ntri);
     write_glb(gpos, gnrm, guv, oidx, bc_png, mr_png, transparent, out);
     GLBLOG("GLB %zu bytes (%u verts, %u tris; %s PBR atlas)", out.size(), onv,
            ntri, projected_pbr ? "projected" : "vertex");
@@ -2422,6 +2518,8 @@ bool mesh_to_glb(const float *verts,
 
     // Legacy vertex-colour export (debug / regression). Default is UV atlas.
     if (bake_opt.vertex_pbr) {
+        realign_normals_to_winding(prepared.verts, prepared.normals,
+                                   prepared.tris);
         write_vertex_glb(prepared, out);
         GLBLOG("GLB %zu bytes (%d verts, %d tris; vertex PBR)", out.size(), dnv,
                dnt);

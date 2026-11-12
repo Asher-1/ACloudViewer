@@ -47,6 +47,14 @@
 #include <vtkTextActor.h>
 #include <vtkVersion.h>
 
+// vtkShaderProperty lives in Rendering/Core since VTK 9.0; system-VTK builds
+// may still opt into 8.x, where the unoriented-normal shading below is
+// compiled out entirely.
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 0, 0)
+#include <vtkOpenGLShaderProperty.h>
+#include <vtkShaderProperty.h>
+#endif
+
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -1731,6 +1739,56 @@ bool CompositeMeshEligible(ccGenericMesh* mesh, size_t containerLeafCount) {
     return containerLeafCount >= kMinLeavesForComposite;
 }
 
+// Camera-facing normal shading for meshes flagged with
+// kUnorientedNormalsMetaData. VTK's fragment shader flips the interpolated
+// normal when the fragment is back-facing, and back-facing is decided by the
+// triangle's SCREEN-SPACE WINDING — on a winding-mixed mesh that flip is
+// uncorrelated with the attribute normal's own hemisphere, so adjacent
+// patches shade inconsistently (inverted-shading cracks). The replacement
+// keys the flip on the view vector instead: the normal flips only where it
+// crosses the view plane, where lighting vanishes anyway — the same seam-free
+// semantics the trellis-ggml viewer applies to its unoriented meshes.
+// Depends on lights being present (LastLightComplexity > 0), which is what
+// declares vertexVCVSOutput in the fragment shader; this viewer always
+// carries a light kit. Idempotent; the disable path removes the replacement.
+// VTK compatibility: the whole mechanism needs vtkShaderProperty +
+// vtkActor::GetShaderProperty (VTK >= 9.0); on 8.x (possible through
+// USE_SYSTEM_VTK) the helper compiles to a no-op and flagged meshes keep the
+// stock two-sided flip. The anchor string was verified character-identical
+// against the stock vtkOpenGLPolyDataMapper::ReplaceShaderNormal
+// point-normal flip in 9.1.0 (source build), 9.2.6 (conda via pcl), 9.3.1
+// (prebuilt archive) and 9.4.0; BuildShaders applies post replacements
+// (replaceFirst=false) after the built-in replacements in all of them.
+// Re-verify with `grep "gl_FrontFacing == false" vtkOpenGLPolyDataMapper.cxx`
+// when adopting a new VTK release.
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 0, 0)
+void ApplyUnorientedNormalsShading(vtkActor* actor, bool enable) {
+    if (!actor) return;
+    auto* sp =
+            vtkOpenGLShaderProperty::SafeDownCast(actor->GetShaderProperty());
+    if (!sp) return;
+    // Exact string vtkOpenGLPolyDataMapper::ReplaceShaderNormal inserts for
+    // point-normal meshes (all three occurrences share it; our meshes hit
+    // the point-normal path).
+    static const std::string kWindingFlip =
+            "if (gl_FrontFacing == false) { normalVCVSOutput = "
+            "-normalVCVSOutput; }";
+    static const std::string kCameraFacingFlip =
+            "if (dot(normalVCVSOutput, -normalize(vertexVCVSOutput.xyz)) < 0.0)"
+            " { normalVCVSOutput = -normalVCVSOutput; }";
+    if (enable) {
+        sp->AddFragmentShaderReplacement(kWindingFlip, /*replaceFirst=*/false,
+                                         kCameraFacingFlip,
+                                         /*replaceAll=*/true);
+    } else {
+        sp->ClearFragmentShaderReplacement(kWindingFlip,
+                                           /*replaceFirst=*/false);
+    }
+}
+#else  // VTK < 9.0: no vtkShaderProperty on the actor; keep the stock flip.
+void ApplyUnorientedNormalsShading(vtkActor*, bool) {}
+#endif
+
 }  // namespace
 
 void VtkVis::drawMesh(const CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
@@ -1794,10 +1852,12 @@ void VtkVis::drawMesh(const CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
     // Per-entity appearance states WITHOUT a per-block equivalent in VTK
     // composite attributes require a DEDICATED actor: representation
     // (wireframe/points), normals-driven interpolation (normals off = flat),
-    // the gaussian-splat mapper swap, and stippling. Evaluating them HERE in
-    // the gate — which re-runs on stable state every pass — keeps styled
-    // leaves dedicated and un-styled ones aggregated, without any
-    // evict/re-aggregate oscillation.
+    // the gaussian-splat mapper swap, stippling, and the camera-facing
+    // shading for unoriented-normal meshes (a shader-property swap lives on
+    // the actor — a composite group actor is shared by every block).
+    // Evaluating them HERE in the gate — which re-runs on stable state every
+    // pass — keeps styled leaves dedicated and un-styled ones aggregated,
+    // without any evict/re-aggregate oscillation.
     // Per-view normals resolution: the gate must agree with the shading the
     // draw pass applies. ecvMesh::draw resolves showNorms through the
     // per-view ecvViewRepresentation override (context.display); consulting
@@ -1812,11 +1872,13 @@ void VtkVis::drawMesh(const CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
             normalsShownForView = viewRep->effectiveShowNormals();
         }
     }
+    const bool unorientedNormals =
+            mesh->hasMetaData(kUnorientedNormalsMetaData);
     const bool needsDedicatedActor =
             context.meshRenderingMode !=
                     MESH_RENDERING_MODE::ECV_SURFACE_MODE ||
             mesh->pointGaussianEnabled() || mesh->stipplingEnabled() ||
-            (mesh->hasNormals() && !normalsShownForView) ||
+            (mesh->hasNormals() && !normalsShownForView) || unorientedNormals ||
             // GL-trans meshes have no per-block transform equivalent: the
             // actor's SetUserTransform (idempotent per-leaf) is the only
             // correct carrier — an aggregated block would need an
@@ -2032,6 +2094,14 @@ void VtkVis::drawMesh(const CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
 
     if (contains(viewID)) {
         setMeshOpacity(context.opacity, viewID, viewport);
+        // Unoriented-normal meshes shade with per-fragment camera-facing
+        // normals (see ApplyUnorientedNormalsShading); the metadata flag
+        // routes them through the dedicated path above. The disable branch
+        // clears the replacement so an actor re-drawn from a mesh whose flag
+        // is gone returns to the stock VTK shading.
+        if (vtkActor* actor = getActorById(viewID)) {
+            ApplyUnorientedNormalsShading(actor, unorientedNormals);
+        }
     }
 
     updateShadingMode(context, pc);

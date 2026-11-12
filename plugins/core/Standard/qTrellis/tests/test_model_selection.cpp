@@ -17,7 +17,12 @@
 #include <cstdio>
 
 #include "TrellisDialog.h"
+#include "TrellisWorker.h"
 #include "ecvAssetIntegrity.h"
+
+#ifdef AICore_ENABLED
+#include <aicore/trellis_capi.h>
+#endif
 
 #define REQUIRE(condition)                                               \
     do {                                                                 \
@@ -145,8 +150,57 @@ int main(int argc, char** argv) {
     REQUIRE(cancellations == 1);
     dialog.setRunning(false);
     REQUIRE(!cancel->isEnabled() && quant->isEnabled());
-    std::puts(
-            "TRELLIS geometry-only dependency and cached Run workflow passed "
-            "(UI fixtures only)");
+
+    // ── T2IMG01 preprocess preview: decode round-trip ──────────────────────
+    // The AICore preprocess stage streams the RMBG-matted RGBA image as a
+    // T2IMG01 blob; the worker must decode it to a full-resolution QImage
+    // with intact alpha (the chip's checker backdrop needs it) and reject
+    // damaged payload lengths.
+    {
+        const int w = 4, h = 3;
+        QByteArray payload;
+        payload.append("T2IMG01", 8);
+        const quint32 dims[2] = {(quint32)w, (quint32)h};
+        payload.append((const char*)dims, 8);
+        QByteArray px(w * h * 4, 0);
+        for (int i = 0; i < w * h; ++i) {
+            px[i * 4 + 0] = (quint8)(10 + i);
+            px[i * 4 + 1] = 20;
+            px[i * 4 + 2] = 30;
+            px[i * 4 + 3] = (i % 2) ? 255 : 0;  // mixed alpha on purpose
+        }
+        payload.append(px);
+
+        TrellisWorker worker(TrellisWorker::Settings{});
+        const QImage img = worker.renderPreviewBlob(payload.constData(),
+                                                    payload.size(), 256);
+        REQUIRE(img.width() == w && img.height() == h);
+        REQUIRE(img.format() == QImage::Format_RGBA8888);
+        REQUIRE(img.pixelColor(0, 0).alpha() == 0);
+        REQUIRE(img.pixelColor(1, 0).alpha() == 255);
+        REQUIRE(img.pixelColor(1, 0).red() == 11);
+        // A payload length inconsistent with the header must be rejected.
+        REQUIRE(worker.renderPreviewBlob(payload.constData(),
+                                         payload.size() - 1, 256)
+                        .isNull());
+        REQUIRE(worker.renderPreviewBlob(payload.constData(),
+                                         payload.size() + 1, 256)
+                        .isNull());
+    }
+
+    // The live PREPROCESS stage maps onto the Preprocess chip (slot 1) and
+    // must not disturb the voxel/mesh slot mapping.
+    {
+        QImage chip(6, 5, QImage::Format_RGBA8888);
+        chip.fill(0);
+        chip.setPixel(0, 0, qRgba(1, 2, 3, 0));
+        TrellisStagePreview preview;
+        preview.stage = AICORE_TRELLIS_STAGE_PREPROCESS;
+        preview.image = chip;
+        preview.label = QStringLiteral("preprocess");
+        dialog.resetStageStrip(QImage(8, 8, QImage::Format_RGB32));
+        dialog.setStagePreview(preview);
+        std::puts("TRELLIS T2IMG01 preprocess preview round-trip passed");
+    }
     return 0;
 }

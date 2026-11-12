@@ -76,8 +76,10 @@ struct MeshExportOptions {
     // Sliver filter for sloppy decimation: drop triangles whose max edge is
     // more than `sliver_aspect` times the altitude (was T2GLB_SLIVER_ASPECT).
     float sliver_aspect = 100.0f;
-    // Snap the decoder's near-transparent activation noise (alpha 0.03-0.5
-    // on solid surface) to fully opaque (was T2GLB_ALPHA_CLEAN, default on).
+    // Snap the decoder's near-transparent activation noise (alpha 0.03-0.95
+    // on solid surface) to fully opaque, which also keeps the exported
+    // material opaque instead of alphaMode BLEND (was T2GLB_ALPHA_CLEAN,
+    // default on).
     bool alpha_clean = true;
     // Regularise the geometry with a Taubin smooth before export (opt-in;
     // off by default). Was the T2GLB_XATLAS/T2GLB_NOSMOOTH env pair upstream.

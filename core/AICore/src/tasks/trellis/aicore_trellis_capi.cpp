@@ -497,6 +497,26 @@ void emit_voxels(aicore_trellis_preview_fn fn,
     fn(user, stage, step, total, blob.data(), (int)blob.size());
 }
 
+// Pack an RGBA image into a T2IMG01 blob and hand it to the host callback.
+// Carries the preprocess stage's background-removal result so the UI can
+// show the matted image while the (minutes-long) generation continues.
+// Best-effort: never fatal.
+void emit_image(aicore_trellis_preview_fn fn,
+                void *user,
+                int stage,
+                int w,
+                int h,
+                const std::vector<uint8_t> &rgba) {
+    if (!fn || w <= 0 || h <= 0 || rgba.size() != (size_t)w * h * 4) return;
+    const uint32_t iw = (uint32_t)w, ih = (uint32_t)h;
+    std::vector<uint8_t> blob(16 + rgba.size());
+    std::memcpy(blob.data(), "T2IMG01", 8);  // 7 chars + NUL
+    std::memcpy(blob.data() + 8, &iw, 4);
+    std::memcpy(blob.data() + 12, &ih, 4);
+    std::memcpy(blob.data() + 16, rgba.data(), rgba.size());
+    fn(user, stage, 0, 0, blob.data(), (int)blob.size());
+}
+
 // One shape-flow stage's captured intermediate x_0 latents (denormalized)
 // plus the scaffold they sit on, awaiting post-decode replay.
 struct kf_capture {
@@ -1412,6 +1432,10 @@ aicore_trellis_mesh *generate_impl(aicore_trellis_ctx *p,
         trellis2_rmbg_free_buffer(rmbg_out);
         rmbg_rgba = src_rgba;
         background_mode = AICORE_TRELLIS_BG_KEEP;
+        // Stream the matted image before the long generation continues: the
+        // host preprocess chip can light up live (best-effort preview).
+        emit_image(preview, user, AICORE_TRELLIS_STAGE_PREPROCESS, iw, ih,
+                   rmbg_rgba);
     }
 #endif
 

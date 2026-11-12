@@ -8,6 +8,7 @@
 #include "qTrellis.h"
 
 #include <FileIOFilter.h>
+#include <ecvGLMatrix.h>
 #include <ecvGenericMesh.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
@@ -627,13 +628,49 @@ ccMesh* qTrellis::buildVertexColorMesh(const QVector<float>& verts,
     // overlay. Keep it in the DB tree for inspection, hidden by default.
     cloud->setVisible(false);
     const int nt = tris.size() / 3;
+    // The dual-grid mesher emits every quad with a fixed vertex order
+    // regardless of which way the surface crosses the edge, so many faces are
+    // wound opposite to the structure-tensor vertex normals. VTK's shading
+    // flips the interpolated normal on back-facing fragments
+    // (gl_FrontFacing = screen-space winding), which on winding-mixed faces
+    // is uncorrelated with the attribute normal — adjacent patches then
+    // shade inconsistently (the "inside-out" speckle). Aligning each
+    // triangle's winding to its vertex normals restores the upstream viewer
+    // semantics, where the normal is flipped per-fragment to face the camera
+    // on this unoriented mesh. No-op on the Alpha-Wrap print mesh (already
+    // consistently wound) and when the normals are all-zero (dot == 0).
+    const bool alignWinding =
+            nt > 0 && !verts.isEmpty() && normals.size() == verts.size();
+    const float* vp = verts.constData();
+    const float* np = normals.constData();
     if (!mesh->reserve(nt)) {
         // The cloud is a child of the mesh: freed with it.
         delete mesh;
         return nullptr;
     }
     for (int i = 0; i < nt; ++i) {
-        mesh->addTriangle(tris[i * 3], tris[i * 3 + 1], tris[i * 3 + 2]);
+        int a = tris[i * 3], b = tris[i * 3 + 1], c = tris[i * 3 + 2];
+        if (alignWinding) {
+            // dot(cross(e1, e2), sum of the triangle's vertex normals):
+            // negative = wound against the normal hemisphere.
+            const float e1x = vp[3 * b] - vp[3 * a],
+                        e1y = vp[3 * b + 1] - vp[3 * a + 1],
+                        e1z = vp[3 * b + 2] - vp[3 * a + 2];
+            const float e2x = vp[3 * c] - vp[3 * a],
+                        e2y = vp[3 * c + 1] - vp[3 * a + 1],
+                        e2z = vp[3 * c + 2] - vp[3 * a + 2];
+            const float nx = np[3 * a] + np[3 * b] + np[3 * c],
+                        ny = np[3 * a + 1] + np[3 * b + 1] + np[3 * c + 1],
+                        nz = np[3 * a + 2] + np[3 * b + 2] + np[3 * c + 2];
+            if ((e1y * e2z - e1z * e2y) * nx + (e1z * e2x - e1x * e2z) * ny +
+                        (e1x * e2y - e1y * e2x) * nz <
+                0.f) {
+                const int t = b;
+                b = c;
+                c = t;
+            }
+        }
+        mesh->addTriangle(a, b, c);
     }
     // Keep the robust structure-tensor normals produced by fdg::vertex_normals
     // (aicore_trellis_capi): ccMesh::computePerVertexNormals would overwrite
@@ -649,6 +686,12 @@ ccMesh* qTrellis::buildVertexColorMesh(const QVector<float>& verts,
     // the entity's default display colour (green), regardless of the
     // colours set on the vertices cloud.
     mesh->showColors(true);
+    // The dual-grid mesh is unoriented (its tensor normals carry sign
+    // frustration no winding or sign repair can remove — the frustrated
+    // cycles are intrinsic to the dual-grid extraction). Flag it so the VTK
+    // engine shades it with per-fragment camera-facing normals, the same
+    // seam-free semantics the trellis-ggml viewer uses.
+    mesh->setMetaData(kUnorientedNormalsMetaData, true);
     return mesh;
 }
 
@@ -786,6 +829,18 @@ ccHObject* qTrellis::importGlbEntity(const QByteArray& glb,
                         .arg(static_cast<int>(err)));
         return nullptr;
     }
+    // The AICore bake writes a spec-compliant glTF asset (+Y up), but the DB
+    // tree — and the same run's vertex-colour fallback — live in the
+    // application's +Z-up world (TRELLIS-native space is also Z-up). assimp
+    // keeps glTF axes as-is, so without this the imported mesh lands rotated
+    // -90 deg about X next to its vertex-colour sibling. Bake a +90 deg
+    // rotation about X into the imported geometry (points, vertex and
+    // triangle normals) to restore the shared pose. GLB files written to
+    // disk stay untouched: external glTF consumers expect +Y up.
+    static const float kRotX90[16] = {1.f, 0.f,  0.f, 0.f, 0.f, 0.f, 1.f, 0.f,
+                                      0.f, -1.f, 0.f, 0.f, 0.f, 0.f, 0.f, 1.f};
+    const ccGLMatrix yUpToZUp(kRotX90);
+    imported->applyGLTransformation_recursive(&yUpToZUp);
     imported->setName(entityName);
     imported->setMetaData(QStringLiteral("Source"), result.sourceImage);
     imported->setMetaData(QStringLiteral("Preset"), result.presetName);

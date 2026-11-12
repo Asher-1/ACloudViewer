@@ -35,6 +35,23 @@ image ──► (RMBG-2.0 background removal, optional) ──► preprocess
   solid-color heuristic when absent).
 - **GLB export** — UV-atlas-textured glTF 2.0 binary via `aicore_trellis_bake_glb`
   (xatlas + meshoptimizer, all CPU).
+- **Consistent pose and shading in the DB tree** — TRELLIS-native space and the
+  application world are both +Z-up while glTF assets are +Y-up: imported GLB
+  entities are rotated +90 deg about X on entry (points and normals) so a run's
+  textured GLB and its vertex-colour fallback share one pose; saved GLB files
+  keep the glTF +Y-up convention for external viewers. The dual-grid mesh is
+  emitted unoriented (mixed triangle winding by design), so triangles are
+  aligned to their structure-tensor vertex normals on import for uniform
+  two-sided shading in the viewer; meshes whose tensor normals carry residual
+  sign frustration are shaded with per-fragment camera-facing normals
+  (`mesh.unoriented_normals` metadata) so the screen-space-winding flip in the
+  stock VTK shader cannot render as inverted-shading cracks.
+- **Self-consistent baked GLB geometry** — the bake re-orients the winding
+  (topological parity + outward vote) before UV unwrapping and derives the
+  exported NORMAL attribute from the exported indices themselves, so decimation
+  (sloppy pass / sliver filter) and xatlas colocal-vertex merging cannot leave
+  normals disagreeing with their triangles (which shaded as blotchy, rough
+  patches on the baked model).
 - **Model auto-download** — TRELLIS pipeline models are fetched from the unified
   [Asher-1/Trellis2-models](https://huggingface.co/Asher-1/Trellis2-models)
   Hugging Face mirror into `~/cloudViewer_data/extract/trellis_models/` (see

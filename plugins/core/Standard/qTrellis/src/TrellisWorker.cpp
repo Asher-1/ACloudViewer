@@ -408,6 +408,19 @@ QImage TrellisWorker::renderPreviewBlob(const char* data, int len, int size) {
     if (std::memcmp(data, "T2MESH01", 8) == 0) {
         return renderMeshBlob(data, len, size);
     }
+    if (std::memcmp(data, "T2IMG01", 7) == 0) {
+        // Preprocess image (matted RGBA, little-endian header). Kept at the
+        // source resolution: the chip scales it for display, the zoom dialog
+        // reads the full image, and the checker backdrop needs the alpha.
+        quint32 w = 0, h = 0;
+        std::memcpy(&w, data + 8, 4);
+        std::memcpy(&h, data + 12, 4);
+        if (w == 0 || h == 0 || (quint64)w * h * 4 + 16 != (quint64)len)
+            return QImage();
+        QImage img((const uchar*)data + 16, (int)w, (int)h, (int)w * 4,
+                   QImage::Format_RGBA8888);
+        return img.copy();
+    }
     return QImage();
 }
 
