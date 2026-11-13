@@ -10,8 +10,8 @@
 #include <QtCore>
 #include <QtWidgets>
 
-#include "base/reconstruction.h"
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
+#include "scene/reconstruction.h"
 
 namespace colmap {
 

@@ -17,6 +17,7 @@
 #include <QDialog>
 #include <QInputDialog>
 #include <QMainWindow>
+#include <QThread>
 #include <QtConcurrentRun>
 #include <QtCore>
 #include <QtGui>
@@ -31,14 +32,7 @@
 #include <ecvScalarField.h>
 
 // System
-#if defined(CV_WINDOWS)
-#include "Windows.h"
-#else
-#include <time.h>
-#include <unistd.h>
-
 #include <algorithm>
-#endif
 
 template <typename Real>
 class PointCloudWrapper : public PoissonReconLib::ICloud<Real> {
@@ -445,11 +439,7 @@ void qPoissonRecon::doAction() {
 
         // wait until process is finished!
         while (!future.isFinished()) {
-#if defined(CV_WINDOWS)
-            ::Sleep(500);
-#else
-            usleep(500 * 1000);
-#endif
+            QThread::msleep(500);
 
             pDlg.setValue(pDlg.value() + 1);
             QApplication::processEvents();

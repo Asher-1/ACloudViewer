@@ -8,6 +8,7 @@
 #include "core/assets/Resources.hpp"
 
 #include <algorithm>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -66,7 +67,16 @@ Resources::Resources() {
                     currentEnv.append(ss.str());
 
             line = name + "=" + currentEnv + value;
-            putenv(const_cast<char*>(line.c_str()));
+#ifdef SIBR_OS_WINDOWS
+            // MSVC's _putenv_s copies both strings and accepts the temporary
+            // std::string buffers safely.  putenv(const_cast<char*>) would
+            // leave the CRT environment pointing at a destroyed buffer.
+            _putenv_s(name.c_str(), (currentEnv + value).c_str());
+#else
+            // setenv copies the value and avoids the lifetime requirement of
+            // POSIX putenv, whose pointer must remain allocated forever.
+            setenv(name.c_str(), (currentEnv + value).c_str(), 1);
+#endif
 
             std::cout << "[Resources] env: " << name << "="
                       << getenv(name.c_str()) << std::endl;

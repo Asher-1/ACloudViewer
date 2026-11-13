@@ -8,7 +8,8 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "model_loader.hpp"
+#include "tasks/depth/model_loader.hpp"
+
 int main() {
     const char* gguf = std::getenv("AICORE_TEST_DEPTH_GGUF");
     if (!gguf) {

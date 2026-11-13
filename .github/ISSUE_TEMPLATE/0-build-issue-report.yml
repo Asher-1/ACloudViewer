@@ -81,7 +81,7 @@ body:
     value: >
       - Operating system: Ubuntu 20.04 / macOS 10.15 / Windows 10 64-bit
 
-      - Python version: Python 3.8 / output from `import sys; print(sys.version)`
+      - Python version: Python 3.10 / output from `import sys; print(sys.version)`
 
       - ACloudViewer version: output from python: `print(cloudViewer.__version__)`
 

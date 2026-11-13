@@ -11,6 +11,8 @@
 #include <NormalDistribution.h>
 #include <iostream>
 
+#include "wrappers.h"
+
 namespace py = pybind11;
 using namespace pybind11::literals;
 
@@ -34,8 +36,14 @@ void define_NormalDistribution(py::module &cccorelib)
              (bool(cloudViewer::NormalDistribution::*)(const cloudViewer::GenericCloud *))(
                  &cloudViewer::NormalDistribution::computeParameters),
              "cloud"_a)
-        .def("computeRobustParameters",
-             &cloudViewer::NormalDistribution::computeRobustParameters,
-             "values"_a,
-             "nSigma"_a);
+        .def(
+            "computeRobustParameters",
+            [](cloudViewer::NormalDistribution &self, py::handle values, double nSigma)
+            {
+                return PyCC::WithContainer<cloudViewer::GenericDistribution::ScalarContainer>(
+                    values,
+                    [&](const auto &samples) { return self.computeRobustParameters(samples, nSigma); });
+            },
+            "values"_a,
+            "nSigma"_a);
 }

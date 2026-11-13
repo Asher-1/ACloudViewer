@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/CC/plugin/qInstantMesh">
+        <file>info.json</file>
+        <file>images/qInstantMesh.svg</file>
+    </qresource>
+</RCC>

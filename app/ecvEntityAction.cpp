@@ -1702,7 +1702,7 @@ bool computeNormals(const ccHObject::Container& selectedEntities,
 							continue;
 						}
 						ccGLMatrixd toSensor = scanGrid->sensorPosition.inverse();
-						
+
 						const int* _indexGrid = scanGrid->indexes.data();
 						for (int j = 0; j < static_cast<int>(scanGrid->h); ++j)
 						{
@@ -1717,7 +1717,7 @@ bool computeNormals(const ccHObject::Container& selectedEntities,
 								}
 							}
 						}
-						
+
 						addToDB(newCloud);
 					}
 #endif

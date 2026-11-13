@@ -24,6 +24,17 @@ class ccGenericPointCloud;
 class ccPointCloud;
 class ccMaterialSet;
 
+//! Entity metadata key (ccHObject::setMetaData) marking a mesh whose
+//! per-vertex normals do not agree with its triangle winding — e.g. unoriented
+//! dual-grid extractions (TRELLIS) or other winding-mixed generated meshes.
+//! The VTK engine routes such meshes to a dedicated actor and shades them with
+//! per-fragment camera-facing normals (the flip fires only where the normal
+//! crosses the view plane, where lighting vanishes anyway), instead of the
+//! winding-keyed two-sided flip whose uncorrelated flips render as inverted
+//! shading cracks on winding-mixed faces.
+constexpr const char* const kUnorientedNormalsMetaData =
+        "mesh.unoriented_normals";
+
 //! Generic mesh interface
 class CV_DB_LIB_API ccGenericMesh : public cloudViewer::GenericIndexedMesh,
                                     public ccShiftedObject {

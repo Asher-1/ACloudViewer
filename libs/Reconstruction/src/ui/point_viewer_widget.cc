@@ -29,6 +29,7 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
+#include <filesystem>
 #include "ui/point_viewer_widget.h"
 
 #include "ui/model_viewer_widget.h"
@@ -184,7 +185,7 @@ void PointViewerWidget::Show(const point3D_t point3D_id) {
     const double reproj_error = (point2D.XY() - proj_point2D).norm();
 
     Bitmap bitmap;
-    const std::string path = JoinPaths(*options_->image_path, image.Name());
+    const auto path = *options_->image_path / image.Name();
     if (!bitmap.Read(path, true)) {
       std::cerr << "ERROR: Cannot read image at path " << path << std::endl;
       continue;

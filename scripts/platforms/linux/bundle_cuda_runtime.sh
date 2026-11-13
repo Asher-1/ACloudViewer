@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Bundle NVIDIA CUDA runtime libraries required by libggml-cuda for driver-only
+# Bundle NVIDIA CUDA runtime libraries required by a CUDA module for driver-only
 # deployment. libcuda.so.* is never copied (provided by the NVIDIA driver).
 #
-# Usage: bundle_cuda_runtime.sh <libggml-cuda.so> <dest_dir> [extra_lib_dirs_colon_separated]
+# Usage: bundle_cuda_runtime.sh <module.so> <dest_dir> [extra_lib_dirs_colon_separated]
 
 set -euo pipefail
 
@@ -18,6 +18,7 @@ fi
 mkdir -p "$DEST_DIR"
 
 declare -A COPIED=()
+BUNDLE_FAILED=0
 
 should_bundle_name() {
     local base="$1"
@@ -72,10 +73,25 @@ copy_real_file() {
         return 0
     fi
 
+    # Reinstalling into the same prefix can resolve a dependency from there.
+    if [ "$src_path" -ef "$dest_dir/$dest_name" ]; then
+        COPIED[$dest_name]=1
+        return 0
+    fi
+
     echo "Bundling CUDA runtime: $src_path -> $dest_dir/$dest_name" >&2
-    cp -f "$src_path" "$dest_dir/$dest_name"
+    cp -f "$src_path" "$dest_dir/$dest_name" || return 1
     COPIED[$dest_name]=1
     return 0
+}
+
+library_refs() {
+    # ldd appends a load address to resolved paths. Strip only that suffix,
+    # retaining spaces in paths and unresolved sonames for the search fallback.
+    ldd "$1" 2>/dev/null | sed -n -E \
+        -e 's/[[:space:]]+\(0x[[:xdigit:]]+\)[[:space:]]*$//' \
+        -e 's/^[[:space:]]*([A-Za-z0-9._+-]+\.so[^ ]*)[[:space:]]*=>[[:space:]]*(\/.*)$/\2/p' \
+        -e 's/^[[:space:]]*([A-Za-z0-9._+-]+\.so[^ ]*)[[:space:]]*=>[[:space:]]*not found[[:space:]]*$/\1/p'
 }
 
 resolve_and_copy() {
@@ -87,6 +103,9 @@ resolve_and_copy() {
         return 0
     fi
     if ! should_bundle_name "$base_name"; then
+        return 0
+    fi
+    if [ "${COPIED[$base_name]:-}" = "1" ]; then
         return 0
     fi
 
@@ -110,17 +129,34 @@ resolve_and_copy() {
     while IFS= read -r dep; do
         dep_base="$(basename "$dep")"
         if should_bundle_name "$dep_base" && [ "${COPIED[$dep_base]:-}" != "1" ]; then
-            resolve_and_copy "$dep"
+            resolve_and_copy "$dep" || return 1
         fi
-    done < <(ldd "$copied_path" 2>/dev/null | awk '/=>/ {print $3}' | grep -E '^/')
+    done < <(library_refs "$copied_path")
+    return 0
 }
 
-echo "Scanning ggml CUDA module: $GGML_CUDA_MODULE"
+echo "Scanning CUDA module: $GGML_CUDA_MODULE"
+# Retain resolved RUNPATH directories before flattening files into the bundle,
+# so recursive checks can still locate their transitive dependencies.
+mapfile -t MODULE_REFS < <(library_refs "$GGML_CUDA_MODULE")
+for lib_ref in "${MODULE_REFS[@]}"; do
+    if [ -f "$lib_ref" ]; then
+        EXTRA_LIB_DIRS="${EXTRA_LIB_DIRS:+$EXTRA_LIB_DIRS:}$(dirname "$lib_ref")"
+    fi
+done
+# Feed BOTH resolved paths and "not found" bare sonames into resolve_and_copy:
+# when the CUDA toolkit lib dir is not registered in ldconfig, ldd reports
+# "not found" for libcudart/libcublas even though EXTRA_LIB_DIRS can locate
+# them. The old loop dropped those lines, so nothing was ever bundled.
 while IFS= read -r lib_ref; do
     [ -n "$lib_ref" ] || continue
-    resolve_and_copy "$lib_ref"
-done < <(ldd "$GGML_CUDA_MODULE" 2>/dev/null | awk '/=>/ {print $3}' | grep -E '^/')
+    resolve_and_copy "$lib_ref" || BUNDLE_FAILED=1
+done < <(printf '%s\n' "${MODULE_REFS[@]}")
 
+if [ "$BUNDLE_FAILED" -ne 0 ]; then
+    echo "Error: CUDA runtime dependency closure is incomplete" >&2
+    exit 1
+fi
 if [ "${#COPIED[@]}" -eq 0 ]; then
     echo "Error: no CUDA runtime libraries were bundled (check build CUDA toolkit paths)" >&2
     exit 1

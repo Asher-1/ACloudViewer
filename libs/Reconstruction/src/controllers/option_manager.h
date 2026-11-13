@@ -1,0 +1,142 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
+
+#include <filesystem>
+#include <memory>
+#include <string>
+
+#include "controllers/base_option_manager.h"
+
+namespace colmap {
+
+struct ImageReaderOptions;
+struct SingleViewCalibrationOptions;
+struct FeatureExtractionOptions;
+struct FeatureMatchingOptions;
+struct TwoViewGeometryOptions;
+struct ExhaustivePairingOptions;
+struct SequentialPairingOptions;
+struct VocabTreePairingOptions;
+struct SpatialPairingOptions;
+struct TransitivePairingOptions;
+struct ImportedPairingOptions;
+struct BundleAdjustmentOptions;
+struct IncrementalPipelineOptions;
+struct GlobalPipelineOptions;
+struct HierarchicalPipelineOptions;
+struct ReconstructionClusteringOptions;
+struct GravityRefinerOptions;
+struct TexturingOptions;
+struct RenderOptions;
+
+namespace mvs {
+struct PatchMatchOptions;
+struct StereoFusionOptions;
+struct PoissonMeshingOptions;
+struct DelaunayMeshingOptions;
+struct AdvancingFrontMeshingOptions;
+struct MeshTextureMappingOptions;
+struct MeshSimplificationOptions;
+struct MeshPostProcessingOptions;
+}  // namespace mvs
+
+class OptionManager : public BaseOptionManager {
+public:
+    explicit OptionManager(bool add_project_options = true);
+
+    // Create "optimal" set of options for different reconstruction scenarios.
+    void ModifyForIndividualData();
+    void ModifyForVideoData();
+    void ModifyForInternetData();
+
+    // Create "optimal" set of options for different quality settings.
+    // Note that the existing options are modified, so if your parameters are
+    // already low quality, they will be further degraded.
+    void ModifyForLowQuality();
+    void ModifyForMediumQuality();
+    void ModifyForHighQuality();
+    void ModifyForExtremeQuality();
+
+    void AddAllOptions() override;
+    void AddSingleViewCalibrationOptions();
+    void AddFeatureExtractionOptions();
+    void AddFeatureMatchingOptions();
+    void AddTwoViewGeometryOptions();
+    void AddExhaustivePairingOptions();
+    void AddSequentialPairingOptions();
+    void AddVocabTreePairingOptions();
+    void AddSpatialPairingOptions();
+    void AddTransitivePairingOptions();
+    void AddImportedPairingOptions();
+    void AddBundleAdjustmentOptions();
+    void AddMapperOptions();
+    void AddGlobalMapperOptions();
+    void AddHierarchicalMapperOptions();
+    void AddGravityRefinerOptions();
+    void AddReconstructionClustererOptions();
+    void AddPatchMatchStereoOptions();
+    void AddStereoFusionOptions();
+    void AddPoissonMeshingOptions();
+    void AddDelaunayMeshingOptions();
+    void AddAdvancingFrontMeshingOptions();
+    void AddMeshTextureMappingOptions();
+    void AddMeshSimplificationOptions();
+    // Fork-only MVS post-processing / texturing groups.
+    void AddMeshPostProcessingOptions();
+    void AddTexturingOptions();
+    void AddRenderOptions();
+
+    void Reset(bool reset_logging = true) override;
+    void ResetOptions(bool reset_paths) override;
+    bool Check() override;
+    bool Read(const std::filesystem::path& path,
+              bool allow_unregistered = true) override;
+
+    std::shared_ptr<ImageReaderOptions> image_reader;
+    std::shared_ptr<SingleViewCalibrationOptions> single_view_calibration;
+    std::shared_ptr<FeatureExtractionOptions> feature_extraction;
+    std::shared_ptr<FeatureMatchingOptions> feature_matching;
+    std::shared_ptr<TwoViewGeometryOptions> two_view_geometry;
+    std::shared_ptr<ExhaustivePairingOptions> exhaustive_pairing;
+    std::shared_ptr<SequentialPairingOptions> sequential_pairing;
+    std::shared_ptr<VocabTreePairingOptions> vocab_tree_pairing;
+    std::shared_ptr<SpatialPairingOptions> spatial_pairing;
+    std::shared_ptr<TransitivePairingOptions> transitive_pairing;
+    std::shared_ptr<ImportedPairingOptions> imported_pairing;
+
+    std::shared_ptr<BundleAdjustmentOptions> bundle_adjustment;
+    std::shared_ptr<IncrementalPipelineOptions> mapper;
+    std::shared_ptr<GlobalPipelineOptions> global_mapper;
+    std::shared_ptr<HierarchicalPipelineOptions> hierarchical_mapper;
+    std::shared_ptr<ReconstructionClusteringOptions> reconstruction_clusterer;
+    std::shared_ptr<GravityRefinerOptions> gravity_refiner;
+
+    std::shared_ptr<mvs::PatchMatchOptions> patch_match_stereo;
+    std::shared_ptr<mvs::StereoFusionOptions> stereo_fusion;
+    std::shared_ptr<mvs::PoissonMeshingOptions> poisson_meshing;
+    std::shared_ptr<mvs::DelaunayMeshingOptions> delaunay_meshing;
+    std::shared_ptr<mvs::AdvancingFrontMeshingOptions> advancing_front_meshing;
+    std::shared_ptr<mvs::MeshTextureMappingOptions> mesh_texture_mapping;
+    std::shared_ptr<mvs::MeshSimplificationOptions> mesh_simplification;
+    std::shared_ptr<mvs::MeshPostProcessingOptions> mesh_post_processing;
+    std::shared_ptr<TexturingOptions> texturing;
+
+    std::shared_ptr<RenderOptions> render;
+
+protected:
+    void PostParse() override;
+    void PrintHelp() const override;
+
+    std::filesystem::path mapper_image_list_path_;
+    std::filesystem::path mapper_constant_rig_list_path_;
+    std::filesystem::path mapper_constant_camera_list_path_;
+    std::filesystem::path global_mapper_image_list_path_;
+};
+
+}  // namespace colmap

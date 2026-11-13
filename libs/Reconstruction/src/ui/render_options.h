@@ -33,7 +33,19 @@ struct RenderOptions {
     // Whether to visualize image connections.
     bool image_connections = false;
 
+    // Whether to show the camera orientation axes (upstream parity).
+    bool show_camera_orientation = false;
+
+    // Whether to render the textured surface mesh as wireframe
+    // (upstream parity).
+    bool mesh_wireframe = false;
+
+    // Whether to use the mesh vertex colors when no texture is available
+    // (upstream parity).
+    bool mesh_color = true;
+
     // The projection type of the renderer.
+    // Fork keeps the ORTHOGRAPHIC default (upstream uses PERSPECTIVE).
     int projection_type = ProjectionType::ORTHOGRAPHIC;
 
     bool Check() const;

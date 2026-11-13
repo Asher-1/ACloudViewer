@@ -21,13 +21,12 @@
 // Conventions: f64 throughout; a similarity acts as x -> s*(R@x)+t; gaussian
 // channel layout (scene, 23ch) is xyz[0:3] SH[3:15] opacity[15] scale[16:19]
 // rotation[19:23], opacity already activated (sigmoid) in [0,1].
-#ifndef FREE_SPLATTER_POSE_H
-#define FREE_SPLATTER_POSE_H
+#pragma once
 
 #include <string>
 #include <vector>
 
-#include "linalg.h"
+#include "tasks/gaussian/linalg.h"
 
 namespace aicore {
 namespace gaussian {
@@ -380,5 +379,3 @@ std::vector<Vec3> distribute_drift(const Mat4 &D,
 }  // namespace pose
 }  // namespace gaussian
 }  // namespace aicore
-
-#endif  // FREE_SPLATTER_POSE_H

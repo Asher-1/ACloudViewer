@@ -4,12 +4,22 @@ Bibliography
 .. [schoenberger_thesis] Johannes L. Schönberger. "Robust Methods for Accurate
    and Efficient 3D Modeling from Unstructured Imagery." ETH Zürich, 2018.
 
-.. [ceres] Agarwal, Sameer and Mierle, Keir and Others. "Ceres Solver".
-    http://ceres-solver.org
-
 .. [furukawa10] Furukawa, Yasutaka, and Jean Ponce.
     "Accurate, dense, and robust multiview stereopsis."
     Transactions on Pattern Analysis and Machine Intelligence, 2010.
+
+.. [caspar] Martens, Emil and Miller, Aaron and Varnum, Matias and Stahl,
+    Annette. "Caspar: CUDA Accelerator for Symbolic Programming with Adaptive
+    Reordering." International Conference on Robotics and Automation (ICRA),
+    2026.
+
+.. [cohen-steiner2004] Cohen-Steiner, David, and Da, Franck.
+    "A greedy Delaunay-based surface reconstruction algorithm."
+    The Visual Computer, 2004.
+
+.. [garland1997] Garland, Michael, and Heckbert, Paul S.
+    "Surface simplification using quadric error metrics."
+    Proceedings of SIGGRAPH, 1997.
 
 .. [hofer16] Hofer, M., Maurer, M., and Bischof, H.
     Efficient 3D Scene Abstraction Using Line Segments,
@@ -40,9 +50,9 @@ Bibliography
 .. [lowe04] Lowe, David G. "Distinctive image features from scale-invariant
     keypoints". International journal of computer vision 60.2 (2004): 91-110.
 
-.. [wu11] Wu, Changchang, Sameer Agarwal, Brian Curless,
-    and Steven M. Seitz. "Multicore bundle adjustment."
-    Conference on Computer Vision and Pattern Recognition, 2011.
+.. [waechter2014] Waechter, Michael and Moehrle, Nils and Goesele, Michael.
+    "Let there be color! Large-scale texturing of 3D reconstructions."
+    European Conference on Computer Vision, 2014.
 
 .. [wu13] Wu, Changchang. "Towards linear-time incremental structure from
     motion." International Conference 3D Vision, 2013.

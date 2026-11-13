@@ -58,7 +58,9 @@ ExternalProject_Add(ext_filament
     UPDATE_COMMAND ""
     BUILD_ALWAYS 0
     # Patch for filament/libs/image/src/ImageSampler.cpp:41:17: error: expected unqualified-id replace M_PIf with M_PI_f
-    COMMAND sed -i $<$<PLATFORM_ID:Darwin>:""> "s/M_PIf/M_PI_f/g" <SOURCE_DIR>/libs/image/src/ImageSampler.cpp
+    PATCH_COMMAND ${CMAKE_COMMAND}
+        -DSOURCE_DIR=<SOURCE_DIR>
+        -P "${CMAKE_CURRENT_LIST_DIR}/apply_filament_patch.cmake"
     CMAKE_ARGS
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         # ${ExternalProject_CMAKE_ARGS}
@@ -79,3 +81,7 @@ ExternalProject_Add(ext_filament
         -DFILAMENT_OPENGL_HANDLE_ARENA_SIZE_IN_MB=20 # to support many small entities
         -DSPIRV_WERROR=OFF
     BUILD_BYPRODUCTS ${lib_byproducts})
+
+# Reapply changed fixes in reused build trees before configuring or compiling.
+ExternalProject_Add_StepDependencies(ext_filament patch
+    "${CMAKE_CURRENT_LIST_DIR}/apply_filament_patch.cmake")

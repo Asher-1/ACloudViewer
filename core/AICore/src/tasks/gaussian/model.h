@@ -13,8 +13,8 @@
 #include <string>
 #include <vector>
 
-#include "backend.hpp"
-#include "gguf_loader.h"
+#include "tasks/gaussian/backend.hpp"
+#include "tasks/gaussian/gguf_loader.h"
 
 namespace aicore {
 namespace gaussian {

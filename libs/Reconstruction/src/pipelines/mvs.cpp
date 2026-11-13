@@ -16,7 +16,8 @@ int MeshDelaunay(
         const std::string& input_path,
         const std::string& output_path,
         const std::string& input_type /*= "dense"*/,
-        const colmap::mvs::DelaunayMeshingOptions& delaunay_meshing_options) {
+        const colmap::mvs::DelaunayMeshingOptions& delaunay_meshing_options,
+        const colmap::mvs::MeshPostProcessingOptions& mesh_post_processing) {
     OptionsParser parser;
     // Path to either the dense workspace folder or the sparse reconstruction
     parser.registerOption("input_path", &input_path);
@@ -24,6 +25,7 @@ int MeshDelaunay(
     // supported {dense, sparse}
     parser.registerOption("input_type", &input_type);
     parser.addDelaunayMeshingOptions(delaunay_meshing_options);
+    parser.addMeshPostProcessingOptions(mesh_post_processing);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunDelaunayMesher(parser.getArgc(), parser.getArgv());
@@ -51,11 +53,13 @@ int StereoPatchMatch(
 int MeshPoisson(
         const std::string& input_path,
         const std::string& output_path,
-        const colmap::mvs::PoissonMeshingOptions& poisson_meshing_options) {
+        const colmap::mvs::PoissonMeshingOptions& poisson_meshing_options,
+        const colmap::mvs::MeshPostProcessingOptions& mesh_post_processing) {
     OptionsParser parser;
     parser.registerOption("input_path", &input_path);
     parser.registerOption("output_path", &output_path);
     parser.addPoissonMeshingOptions(poisson_meshing_options);
+    parser.addMeshPostProcessingOptions(mesh_post_processing);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunPoissonMesher(parser.getArgc(), parser.getArgv());

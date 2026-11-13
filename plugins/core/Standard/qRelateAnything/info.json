@@ -1,0 +1,28 @@
+{
+  "type": "Standard",
+  "core": true,
+  "group": "aicore",
+  "name": "RelateAnything Scene Relations",
+  "icon": ":/CC/plugin/qRelateAnything/images/qRelateAnything.svg",
+  "description": "Scene relations for images, batches, videos and cameras through AICore.",
+  "authors": [
+    {
+      "name": "ACloudViewer Contributors"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "ACloudViewer Team"
+    }
+  ],
+  "references": [
+    {
+      "text": "RelateAnything-GGML",
+      "url": "https://github.com/Asher-1/RelateAnything-GGML"
+    },
+    {
+      "text": "relateanything-ggml-full",
+      "url": "https://huggingface.co/Asher-1/relateanything-ggml-full"
+    }
+  ]
+}

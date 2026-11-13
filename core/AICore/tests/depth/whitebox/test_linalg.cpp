@@ -11,7 +11,7 @@
 #include <cstdio>
 #include <vector>
 
-#include "linalg.hpp"
+#include "tasks/depth/linalg.hpp"
 
 using namespace aicore::depth::linalg;
 

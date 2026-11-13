@@ -72,32 +72,79 @@ def _sync_plugin_docs(app):
             if os.path.isdir(img_dst):
                 shutil.rmtree(img_dst)
             shutil.copytree(img_src, img_dst)
+
+        # Some plugin READMEs embed images from a plugin-local docs/images
+        # directory (e.g. qAnyLabeling); copy it alongside so the relative
+        # paths resolve inside the Sphinx srcdir too.
+        doc_img_src = os.path.join(pdir, "docs", "images")
+        doc_img_dst = os.path.join(dst, "docs", "images")
+        if os.path.isdir(doc_img_src):
+            if os.path.isdir(doc_img_dst):
+                shutil.rmtree(doc_img_dst)
+            shutil.copytree(doc_img_src, doc_img_dst)
         copied += 1
 
     print(f"[conf.py] Synced {copied} plugin READMEs → {dest_root}")
 
 
 def _sync_plugin_showcase_assets(app):
-    """Stage plugin-owned showcase images for the standalone Sphinx site."""
+    """Stage plugin-owned showcase images for the standalone Sphinx site.
+
+    Each asset path is relative to the plugin directory (``images/...`` or,
+    for plugins that keep demos elsewhere such as qAnyLabeling, e.g.
+    ``docs/images/...``). Files land flat in
+    ``_static/plugin-assets/<plugin>/`` under their basename. Missing files
+    are skipped with a warning instead of breaking the doc build.
+    """
     srcdir = app.srcdir if app else current_file_dir
     repo_root = os.path.abspath(os.path.join(srcdir, "..", ".."))
     asset_root = os.path.join(srcdir, "_static", "plugin-assets")
     assets = {
-        "qDA3": ("qDA3.png",),
-        "qDeepLSD": ("qDeepLSD.png",),
-        "qFaceDetect": ("qFaceDetect.png", "qFaceDetect_video.png"),
-        "qFreeSplatter": ("qFreeSplatter.png", "qFreeSplatter_video.png"),
-        "qLightGlue": ("qLightGlue.png",),
-        "qSIBR": ("SIBR_viewer.png",),
+        "qDA3": ("images/qDA3.png",),
+        "qDeepLSD": ("images/qDeepLSD.png",),
+        "qFaceDetect": ("images/qFaceDetect.png", "images/qFaceDetect_video.png"),
+        "qFreeSplatter": ("images/qFreeSplatter.png", "images/qFreeSplatter_video.png"),
+        "qLightGlue": ("images/qLightGlue.png",),
+        "qSIBR": ("images/SIBR_viewer.png",),
+        "qYOLO": ("images/yolo-seg.jpg", "images/yolo-pose.jpg"),
+        "qSAM3": ("images/qSam3_full.jpg", "images/qSam3_visual.jpg"),
+        "qTrellis": ("images/qTrellis_f16_1024_pbr.png", "images/qTrellis_q8_512_pbr.png"),
+        "qRFDetr": ("images/qRFDetr.jpg", "images/qRFDetr_video.jpg"),
+        "qRMBG": ("images/qRMBG.jpg", "images/qRMBG_video.jpg"),
+        "qGKD": ("images/text_prompts_with_chair_skeleton.jpg",
+                 "images/multi-objects.jpg"),
+        "qOCR": ("images/ocr_test1.jpg", "images/table_test1.jpg"),
+        "qInstantMesh": ("images/instantmesh_test.jpg",),
+        "qSAM3D": ("images/sam3_seg_with_prompt.jpg",),
+        "qQuerySplat": ("images/querysplat_test.jpg",),
+        "qMapAnything": ("images/courtyard_reconstruction.png",
+                         "images/relief_reconstruction.png"),
+        "qLingbotMap": ("images/courthouse_reconstruction.png",
+                        "images/loop_reconstruction.png"),
+        "qOpenPCDet": ("images/pointpillar_test.jpg",),
+        "qRAM": ("images/ram_test.jpg",),
+        "qRelateAnything": ("images/relate_anything_test.jpg",
+                            "images/relate_anything_video_test.jpg"),
+        "qVLXSeek": ("images/detection.jpg", "images/region_ocr.jpg"),
+        "qAnyLabeling": ("docs/images/overview.png",),
+        "qSpirula": ("images/spirula_indoor_reconstruction.jpg",
+                     "images/spirula_outdoor_scene.jpg",
+                     "images/spirula_object_scan.jpg",
+                     "images/spirula_360_reconstruction.jpg"),
     }
-    for plugin, names in assets.items():
-        source_dir = os.path.join(repo_root, "plugins", "core", "Standard",
-                                  plugin, "images")
+    staged = 0
+    for plugin, names in sorted(assets.items()):
+        plugin_dir = os.path.join(repo_root, "plugins", "core", "Standard", plugin)
         target_dir = os.path.join(asset_root, plugin)
         os.makedirs(target_dir, exist_ok=True)
         for name in names:
-            shutil.copy2(os.path.join(source_dir, name),
-                         os.path.join(target_dir, name))
+            source = os.path.join(plugin_dir, name)
+            if not os.path.isfile(source):
+                print(f"[conf.py] WARNING: showcase asset missing: {source}")
+                continue
+            shutil.copy2(source, os.path.join(target_dir, os.path.basename(name)))
+            staged += 1
+    print(f"[conf.py] Staged {staged} showcase assets → {asset_root}")
 
 
 def _sync_guides_plugins(app):

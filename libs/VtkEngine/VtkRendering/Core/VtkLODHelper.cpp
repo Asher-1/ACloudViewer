@@ -28,6 +28,7 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <vtkScalarsToColors.h>
+#include <vtkWeakPointer.h>
 
 #include <QCoreApplication>
 #include <QtConcurrent/QtConcurrentRun>

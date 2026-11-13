@@ -1,0 +1,453 @@
+{
+  "date": "2026-10-21",
+  "scope": "Source-owner resource relocation, unique llama candidate targets, fresh CPU/CUDA/Vulkan entry builds and selected OCR migration regressions; full application/backend/model performance acceptance remains open",
+  "production_switched": false,
+  "legacy_entry_deleted": false,
+  "candidate_targets": [
+    "ext_llama",
+    "3rdparty_llama"
+  ],
+  "standalone_candidate_ggml_targets": [],
+  "input_files": [
+    {
+      "path": "3rdparty/llama/experimental/CMakeLists.txt",
+      "bytes": 1913,
+      "sha256": "40e77d9c589d8f80ecabca1f1250bc1f242a1601e277c6021d4c614c9cd606d5"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/0001-acv-cpu-operators.patch",
+      "bytes": 73588,
+      "sha256": "424749c1453556fd6c64ae8aa2999e42c1abb0464bfc96e7562ae3ddf43d5ed8"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/0002-acv-cuda-operators.patch",
+      "bytes": 525142,
+      "sha256": "a7fa3ef20e12b0eeb93927a130d8c7a365e806deacf5e9e3de9cb723793b81a1"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/0003-acv-cuda-dispatch-api.patch",
+      "bytes": 5700,
+      "sha256": "59c0cb4657ff39668555502dea0a2e59c3857a9c8acd1bebfac01a2c5436593d"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/0004-acv-cuda-attention-linkage.patch",
+      "bytes": 2920,
+      "sha256": "15ffbccf77e187c4327e04441d571fe219f9594d9dd625b83dced74485cfd2da"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/cuda-manifest.yaml",
+      "bytes": 255,
+      "sha256": "943c0104a3241a385a7269583629e362d5a07257f153de45f347fdf21e1fab76"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/manifest.yaml",
+      "bytes": 117,
+      "sha256": "39a0d249ed6bf80a7df09cc415430f3509685b273182367f5a150ad7a8d01126"
+    },
+    {
+      "path": "3rdparty/llama/experimental/runtime_smoke.cpp",
+      "bytes": 2865,
+      "sha256": "208362dc2474a5e7ccddff8c17bf54185e90fb89ad6a78b4db3c630374e8aab4"
+    },
+    {
+      "path": "3rdparty/llama/ggml_runtime.cmake",
+      "bytes": 57314,
+      "sha256": "094efe6e460661aa2be753529d18d3a604475c72170d9f916b8554efca10b0c8"
+    },
+    {
+      "path": "3rdparty/llama/llama_cpp.cmake",
+      "bytes": 4525,
+      "sha256": "0dd3d9f5400c0487b89486ce72f7b44883ba59cf82a215fc5e7022c13d86e671"
+    },
+    {
+      "path": "3rdparty/llama/migration-source.json",
+      "bytes": 519,
+      "sha256": "0a00d415f70c594ae655ab1b77afceccd74eb54efc670845d99155c15362f6c2"
+    }
+  ],
+  "resources": {
+    "patches": {
+      "count": 46,
+      "unchanged": 43,
+      "changed": [
+        {
+          "path": "3rdparty/llama/ggml-patches/README.md",
+          "before": "8215e3ca042910113ca816e77f758d4288af813d5d159634551f21bbfb35cd90",
+          "after": "cc88775ade0e50b2ce4e8b7d647d36227cc46a667b3239dba4645fc8013db318"
+        },
+        {
+          "path": "3rdparty/llama/ggml-patches/export_merged_aliked_patches.sh",
+          "before": "b28c38569830b2a54a90d7015952d0d6e6b3593ba45ef3931e0b2cdfb42469a5",
+          "after": "60619ca1ce9fe61aebd8acd8bae95e24e4da98c5479b156edbae316678fa2e4f"
+        },
+        {
+          "path": "3rdparty/llama/ggml-patches/manifest.yaml",
+          "before": "b11e9cd98ef9eab6bbe477500e47cbcc7e0ffe09f1cf3e26a0c44104b457be1b",
+          "after": "b0a41f6196194f3e72f6ba8d477ced391df9dd398d195bb97c7f9502b27305b5"
+        }
+      ]
+    },
+    "sam3d": {
+      "count": 201,
+      "unchanged": 201,
+      "changed": []
+    }
+  },
+  "resource_change_explanation": "README and manifest note paths updated; exporter now requires an explicit patched source directory. All patch bytes, patch runner and SAM3D files preserved. Runtime helper refactored to export owner target/build paths.",
+  "legacy_replay": {
+    "path": "3rdparty/llama/relocated-patch-replay-evidence.json",
+    "bytes": 1360,
+    "sha256": "c8dbaa908aa528dd2a3fa6e8115d77e760d977885322d8e0177ddae810c6782e"
+  },
+  "ctests": [
+    {
+      "build": "build_llama_relocated_2ih2wtj2",
+      "report": {
+        "path": "build_llama_relocated_2ih2wtj2/contracts-shape-corrected.xml",
+        "bytes": 942,
+        "sha256": "897b50f0a5945cb398f85ecacd1ff52849b9bc1f62a9d608a43a1ca35d83d012"
+      },
+      "attributes": {
+        "name": "Linux-c++",
+        "tests": "2",
+        "failures": "0",
+        "disabled": "0",
+        "skipped": "0",
+        "hostname": "DRL-DZ001367",
+        "time": "15",
+        "timestamp": "2026-10-21T11:40:49"
+      },
+      "testcases": [
+        [
+          "llama_runtime_smoke",
+          true
+        ],
+        [
+          "llama_source_owner_contract",
+          true
+        ]
+      ]
+    },
+    {
+      "build": "build_llama_cuda_entry_615yx65j",
+      "report": {
+        "path": "build_llama_cuda_entry_615yx65j/contracts-shape-corrected.xml",
+        "bytes": 2197,
+        "sha256": "d275a9f8479facc339a883bbcec69fa818a134ce236622de0791d62ba1d660d1"
+      },
+      "attributes": {
+        "name": "Linux-c++",
+        "tests": "3",
+        "failures": "0",
+        "disabled": "0",
+        "skipped": "0",
+        "hostname": "DRL-DZ001367",
+        "time": "16",
+        "timestamp": "2026-10-21T11:41:05"
+      },
+      "testcases": [
+        [
+          "llama_runtime_smoke",
+          true
+        ],
+        [
+          "llama_cuda_runtime_smoke",
+          true
+        ],
+        [
+          "llama_source_owner_contract",
+          true
+        ]
+      ]
+    }
+  ],
+  "installed_cuda_libraries": [
+    {
+      "path": "build_llama_cuda_entry_615yx65j/install/lib/libggml-base.so.0.27.0",
+      "bytes": 923792,
+      "sha256": "a5123ad6cc5dbe2f6f1e05aaa9229f08ad914e88530df8569ded88716e542874"
+    },
+    {
+      "path": "build_llama_cuda_entry_615yx65j/install/lib/libggml.so.0.27.0",
+      "bytes": 51968,
+      "sha256": "c78d9c33af4cdb0dc2a247c3011127a16ac365c6e87c55cb1dc27fac5f7a103b"
+    },
+    {
+      "path": "build_llama_cuda_entry_615yx65j/install/lib/libllama.so.0.7.0",
+      "bytes": 5077976,
+      "sha256": "f46e2785ada273a65378be8c631a9a7c672720c96d602e6953fd2737e97b8c16"
+    },
+    {
+      "path": "build_llama_cuda_entry_615yx65j/install/lib/libmtmd.so.0.7.0",
+      "bytes": 1868040,
+      "sha256": "770c6d2579061ee1eb3f18739232dac8d969115a925af4eddcfd19c5f3ffc50d"
+    },
+    {
+      "path": "build_llama_cuda_entry_615yx65j/install/bin/libggml-cpu.so",
+      "bytes": 1454296,
+      "sha256": "21ebff6d98b9aa77fc2ed1c5664dfc9a42143eaaa042d5691f9623aae59c9e8b"
+    },
+    {
+      "path": "build_llama_cuda_entry_615yx65j/install/bin/libggml-cuda.so",
+      "bytes": 240328064,
+      "sha256": "324598ea57c98e5d784419aba9b045caf19186db2485a2523204993d99e24e27"
+    }
+  ],
+  "loader_resolution": {
+    "path": "build_llama_ocr_cuda_2m6kcjxu/loader-resolution.json",
+    "bytes": 1949,
+    "sha256": "3315947c3ef138a98df98569a47ad852600a552783869f313d824e2d90ebc0ea"
+  },
+  "ocr_regression": {
+    "build": "build_llama_ocr_cuda_2m6kcjxu",
+    "unique_model_shas": 53,
+    "input_checks": 158,
+    "bitwise_baseline_equal_checks": 158,
+    "paddle": {
+      "path": "build_llama_ocr_cuda_2m6kcjxu/paddle-regression.json",
+      "bytes": 53236,
+      "sha256": "6d6df023aec441dbcc303fcb01bc324c99dc571305b0dadfc300b9fc2af04bd2"
+    },
+    "onnx": {
+      "path": "build_llama_ocr_cuda_2m6kcjxu/onnx-regression.json",
+      "bytes": 355727,
+      "sha256": "ac8f167b59a952a2d5a52dffd68b617177b034ca9f07219b13382aa2a3a1ca0d"
+    },
+    "table": {
+      "path": "build_llama_ocr_cuda_2m6kcjxu/table-regression.json",
+      "bytes": 34933,
+      "sha256": "e2eec0372e5753706e1170d9c604f625bf089c065e1a0020928216cc684b543d"
+    },
+    "paddle_original_cuda_failures": [
+      "ocr-paddle-layout-f16",
+      "ocr-paddle-layout-q8_0"
+    ],
+    "note": "Baseline equality preserves existing upstream failures. ONNX family has retained original CUDA tensors for 36 of 135 input checks; others compare prior native outputs. No fresh independent source or controlled performance claim."
+  },
+  "initial_smoke_failure": "Invalid 2-column strict L2 fixture; kernel requires 512 columns, byte-identical to production. Corrected fixture passed; first failure logs retained.",
+  "initial_ocr_skip": "The ad hoc standalone probe staged link libraries but initially omitted modules from install/bin. Initial skip receipt retained; modules staged before 158 executed checks.",
+  "open_requirements": [
+    "Metal operator rebase/platform validation and complete all-task backend accuracy/stability/performance regression",
+    "Complete 22-task catalog-derived real-model accuracy/stability/backend and controlled baseline performance regression",
+    "Layout F16/Q8 exact original-CUDA all-head argmax; calibration and independent held-out validation",
+    "OCR original-source CUDA/Vulkan controlled performance and VRAM gates",
+    "Release files SHA/catalog/cache and clean download verification before publication"
+  ],
+  "release_qualified_files": [],
+  "uploads": 0,
+  "final_current_input_files": [
+    {
+      "path": "3rdparty/llama/experimental/CMakeLists.txt",
+      "bytes": 1913,
+      "sha256": "40e77d9c589d8f80ecabca1f1250bc1f242a1601e277c6021d4c614c9cd606d5"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/0001-acv-cpu-operators.patch",
+      "bytes": 73588,
+      "sha256": "424749c1453556fd6c64ae8aa2999e42c1abb0464bfc96e7562ae3ddf43d5ed8"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/0002-acv-cuda-operators.patch",
+      "bytes": 525142,
+      "sha256": "a7fa3ef20e12b0eeb93927a130d8c7a365e806deacf5e9e3de9cb723793b81a1"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/0003-acv-cuda-dispatch-api.patch",
+      "bytes": 5700,
+      "sha256": "59c0cb4657ff39668555502dea0a2e59c3857a9c8acd1bebfac01a2c5436593d"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/0004-acv-cuda-attention-linkage.patch",
+      "bytes": 2920,
+      "sha256": "15ffbccf77e187c4327e04441d571fe219f9594d9dd625b83dced74485cfd2da"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/cuda-manifest.yaml",
+      "bytes": 255,
+      "sha256": "943c0104a3241a385a7269583629e362d5a07257f153de45f347fdf21e1fab76"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/manifest.yaml",
+      "bytes": 117,
+      "sha256": "39a0d249ed6bf80a7df09cc415430f3509685b273182367f5a150ad7a8d01126"
+    },
+    {
+      "path": "3rdparty/llama/experimental/runtime_smoke.cpp",
+      "bytes": 2865,
+      "sha256": "208362dc2474a5e7ccddff8c17bf54185e90fb89ad6a78b4db3c630374e8aab4"
+    },
+    {
+      "path": "3rdparty/llama/experimental/test_cmake_contract.py",
+      "bytes": 11527,
+      "sha256": "f4132265f54211c17fcba87b223aa44881da847b9ca4e1f3184d134bf60aa05f"
+    },
+    {
+      "path": "3rdparty/llama/ggml_runtime.cmake",
+      "bytes": 57320,
+      "sha256": "08e59d72bfc062ae8e0b34313edb1b3816096fe8ebccfc0d3e4f3a361db0a7c2"
+    },
+    {
+      "path": "3rdparty/llama/llama_cpp.cmake",
+      "bytes": 4525,
+      "sha256": "0dd3d9f5400c0487b89486ce72f7b44883ba59cf82a215fc5e7022c13d86e671"
+    },
+    {
+      "path": "3rdparty/llama/migration-source.json",
+      "bytes": 519,
+      "sha256": "0a00d415f70c594ae655ab1b77afceccd74eb54efc670845d99155c15362f6c2"
+    }
+  ],
+  "post_build_change": "Historical CPU/CUDA input identities above remain unchanged. The later Vulkan entry/manifest/test changes and their fresh build/replay/loader/numeric evidence are recorded separately in vulkan_migration and vulkan_current_input_files.",
+  "native_loader_trace": {
+    "log": {
+      "path": "build_llama_ocr_cuda_2m6kcjxu/ocr-paddle-graph-det-ch-f32-modules-staged/native.log",
+      "bytes": 26053,
+      "sha256": "50e263b60f0df879b91eb1daf9900d98c33f33f85685b6c85ed2fd93ae8e0c2f"
+    },
+    "libraries": [
+      {
+        "loaded_as": "build_llama_ocr_cuda_2m6kcjxu/libggml-base.so.0",
+        "resolved": {
+          "path": "build_llama_cuda_entry_615yx65j/install/lib/libggml-base.so.0.27.0",
+          "bytes": 923792,
+          "sha256": "a5123ad6cc5dbe2f6f1e05aaa9229f08ad914e88530df8569ded88716e542874"
+        }
+      },
+      {
+        "loaded_as": "build_llama_ocr_cuda_2m6kcjxu/libggml.so.0",
+        "resolved": {
+          "path": "build_llama_cuda_entry_615yx65j/install/lib/libggml.so.0.27.0",
+          "bytes": 51968,
+          "sha256": "c78d9c33af4cdb0dc2a247c3011127a16ac365c6e87c55cb1dc27fac5f7a103b"
+        }
+      },
+      {
+        "loaded_as": "build_llama_ocr_cuda_2m6kcjxu/libggml-cuda.so",
+        "resolved": {
+          "path": "build_llama_cuda_entry_615yx65j/install/bin/libggml-cuda.so",
+          "bytes": 240328064,
+          "sha256": "324598ea57c98e5d784419aba9b045caf19186db2485a2523204993d99e24e27"
+        }
+      },
+      {
+        "loaded_as": "build_llama_ocr_cuda_2m6kcjxu/libggml-cpu.so",
+        "resolved": {
+          "path": "build_llama_cuda_entry_615yx65j/install/bin/libggml-cpu.so",
+          "bytes": 1454296,
+          "sha256": "21ebff6d98b9aa77fc2ed1c5664dfc9a42143eaaa042d5691f9623aae59c9e8b"
+        }
+      }
+    ],
+    "requested_device": "cuda",
+    "resolved_device": "CUDA0"
+  },
+  "reproduction_scripts": [
+    {
+      "path": "build_llama_ocr_cuda_2m6kcjxu/run_paddle_regression.py",
+      "bytes": 4894,
+      "sha256": "7bb676939b384ff4ba591eaeb5dc53f56064d766b2764fd1e709505a2eebfc81"
+    },
+    {
+      "path": "build_llama_ocr_cuda_2m6kcjxu/run_onnx_regression.py",
+      "bytes": 4622,
+      "sha256": "a6511db15827f3a5de7e8c3553aa95376b1bbe7fa7d6e2632d1bbc901a0d2564"
+    },
+    {
+      "path": "build_llama_ocr_cuda_2m6kcjxu/run_table_regression.py",
+      "bytes": 3156,
+      "sha256": "060f6561368f402065a43dc46fdba01c1f4e9688f451982e3539ba46bb739ab1"
+    }
+  ],
+  "vulkan_migration": {
+    "path": "3rdparty/llama/vulkan-rebase-evidence.json",
+    "bytes": 12497,
+    "sha256": "c8409d9a4808ba254c6346b47c8fa54c95766d8321e7e5fe651c1d9de6196eb7"
+  },
+  "vulkan_current_input_files": [
+    {
+      "path": "3rdparty/llama/llama_cpp.cmake",
+      "bytes": 4869,
+      "sha256": "21acd494dd580994a54e09bcc3ed32039c886269f0118a448f03ce248a2b86cc"
+    },
+    {
+      "path": "3rdparty/llama/ggml_runtime.cmake",
+      "bytes": 57320,
+      "sha256": "08e59d72bfc062ae8e0b34313edb1b3816096fe8ebccfc0d3e4f3a361db0a7c2"
+    },
+    {
+      "path": "3rdparty/llama/migration-source.json",
+      "bytes": 519,
+      "sha256": "0a00d415f70c594ae655ab1b77afceccd74eb54efc670845d99155c15362f6c2"
+    },
+    {
+      "path": "3rdparty/llama/experimental/CMakeLists.txt",
+      "bytes": 2120,
+      "sha256": "3c64ea563d7587f28eb20999eccafb37262d68f2ae8b5ed6dd6ec69dafd58862"
+    },
+    {
+      "path": "3rdparty/llama/experimental/runner-quantization-fix.patch",
+      "bytes": 1339,
+      "sha256": "4cb7b2d2246aa28d1c6d8b1732ef3aa134353f1793cf6aef343c48a7245dff56"
+    },
+    {
+      "path": "3rdparty/llama/experimental/runtime_smoke.cpp",
+      "bytes": 3031,
+      "sha256": "dcaa16786f718871f94972a9950cb038bdbc134b022e253b9fe2c6244d5dc491"
+    },
+    {
+      "path": "3rdparty/llama/experimental/test_cmake_contract.py",
+      "bytes": 12702,
+      "sha256": "80ee7b4c0e3b8835f040361413e185b111e20f9a41acee939688665127ded09a"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/0001-acv-cpu-operators.patch",
+      "bytes": 73588,
+      "sha256": "424749c1453556fd6c64ae8aa2999e42c1abb0464bfc96e7562ae3ddf43d5ed8"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/0002-acv-cuda-operators.patch",
+      "bytes": 525142,
+      "sha256": "a7fa3ef20e12b0eeb93927a130d8c7a365e806deacf5e9e3de9cb723793b81a1"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/0003-acv-cuda-dispatch-api.patch",
+      "bytes": 5700,
+      "sha256": "59c0cb4657ff39668555502dea0a2e59c3857a9c8acd1bebfac01a2c5436593d"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/0004-acv-cuda-attention-linkage.patch",
+      "bytes": 2920,
+      "sha256": "15ffbccf77e187c4327e04441d571fe219f9594d9dd625b83dced74485cfd2da"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/0005-acv-vulkan-operators.patch",
+      "bytes": 215376,
+      "sha256": "5645f0e00eb901b32a7a5c34119dcab19f1dbf34512bcb5cee1bfc065ebad283"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/cuda-manifest.yaml",
+      "bytes": 255,
+      "sha256": "943c0104a3241a385a7269583629e362d5a07257f153de45f347fdf21e1fab76"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/cuda-vulkan-manifest.yaml",
+      "bytes": 293,
+      "sha256": "09566dd1d437776bd1b5b4851608471dd45b1351713738b5deabbae8c91fdca7"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/manifest.yaml",
+      "bytes": 117,
+      "sha256": "39a0d249ed6bf80a7df09cc415430f3509685b273182367f5a150ad7a8d01126"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/vulkan-manifest.yaml",
+      "bytes": 166,
+      "sha256": "22ece76456b7f7b6a2ecb9286e9f03234ac3961204c28a1dddcecf9feb9b2493"
+    }
+  ],
+  "dual_gpu_migration": {
+    "path": "3rdparty/llama/dual-gpu-evidence.json",
+    "bytes": 14493,
+    "sha256": "bc249f885bb9f35f16924cf2b51db913d61a20c07bcd5f1bc9be524a3f90dc2d"
+  }
+}

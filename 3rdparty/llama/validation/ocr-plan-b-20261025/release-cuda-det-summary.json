@@ -1,0 +1,12 @@
+[
+  {
+    "dtype": "f16",
+    "returncode": 0,
+    "report": "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/release-cuda-det-f16.json"
+  },
+  {
+    "dtype": "q8_0",
+    "returncode": 0,
+    "report": "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/release-cuda-det-q8_0.json"
+  }
+]

@@ -32,8 +32,12 @@
 #include <QFontMetrics>
 #include <QKeyEvent>
 #include <QMessageBox>
+#include <QPainter>
 #include <QSize>
 #include <QStandardPaths>
+#include <QStyle>
+#include <QStyleOptionViewItem>
+#include <QStyledItemDelegate>
 #include <QThread>
 #include <QTime>
 
@@ -61,11 +65,169 @@ bool ecvConsole::s_redirectToStdOut = false;
 bool ecvConsole::s_showQtMessagesInConsole = false;
 
 // ecvCustomQListWidget
+
+namespace {
+
+// Codepoints that render as emoji when a color emoji font serves them:
+// Misc Symbols + Dingbats (U+2600-27BF: ⚠ ☑ ❌ ✅), Symbols And Pictographs
+// (U+2B00-2BFF: ⭐) and the supplementary pictograph planes (U+1F000-1FAFF).
+// Everything else stays in the console font. Variation selectors and joiners
+// are handled as run modifiers, not as standalone codepoints.
+bool isEmojiCodepoint(uint cp) {
+    return (cp >= 0x1F000 && cp <= 0x1FAFF) || (cp >= 0x2600 && cp <= 0x27BF) ||
+           (cp >= 0x2B00 && cp <= 0x2BFF);
+}
+
+bool isEmojiModifier(uint cp) {
+    return cp == 0xFE0F || cp == 0x200D || cp == 0x20E3;
+}
+
+}  // namespace
+
+// Model answers (VLX-Seek reasoning steps, OCR transcriptions, ...) are
+// arbitrary Unicode and regularly carry emoji presentation sequences
+// (U+26A0+FE0F, U+274C, U+2705, ...). The per-glyph fontconfig fallback
+// behind the console font resolves those to whatever monochrome symbol font
+// sorts first (DejaVu / FreeSerif), which renders them as unrecognizable
+// geometry glyphs. This delegate paints emoji runs with a color emoji font
+// and keeps every other run in the console font, so the console matches the
+// UTF-8 log file. Runs are painted in logical order (the console's base
+// direction is LTR) while drawText keeps intra-run shaping intact. When no
+// color emoji font is installed, the stock painting path is used unchanged.
+class ecvConsoleItemDelegate : public QStyledItemDelegate {
+public:
+    explicit ecvConsoleItemDelegate(QObject* parent)
+        : QStyledItemDelegate(parent) {
+        const QStringList families = qtCompatFontFamilies();
+        for (const QString& candidate : {QStringLiteral("Noto Color Emoji"),
+                                         QStringLiteral("Segoe UI Emoji"),
+                                         QStringLiteral("Apple Color Emoji")}) {
+            if (!families.contains(candidate)) continue;
+            m_emojiFont.setFamily(candidate);
+            m_hasEmojiFont = true;
+            break;
+        }
+    }
+
+protected:
+    void paint(QPainter* painter,
+               const QStyleOptionViewItem& option,
+               const QModelIndex& index) const override {
+        QStyleOptionViewItem opt = option;
+        initStyleOption(&opt, index);
+        if (!m_hasEmojiFont || !containsEmoji(opt.text)) {
+            QStyledItemDelegate::paint(painter, option, index);
+            return;
+        }
+        // Background, selection and focus through the style; the text is
+        // painted run-by-run below (initStyleOption mapped the item's
+        // ForegroundRole into opt.palette).
+        QStyleOptionViewItem background = opt;
+        background.text.clear();
+        QStyle* style =
+                opt.widget ? opt.widget->style() : QApplication::style();
+        style->drawControl(QStyle::CE_ItemViewItem, &background, painter,
+                           opt.widget);
+        // Split the line into emoji vs plain-text runs. Consecutive same-kind
+        // characters share one run; modifiers extend the run they follow.
+        struct Run {
+            QString text;
+            bool emoji;
+        };
+        QVector<Run> runs;
+        for (int i = 0; i < opt.text.size();) {
+            const QChar c = opt.text.at(i);
+            uint cp = c.unicode();
+            int advance = 1;
+            if (c.isHighSurrogate() && i + 1 < opt.text.size() &&
+                opt.text.at(i + 1).isLowSurrogate()) {
+                cp = QChar::surrogateToUcs4(c, opt.text.at(i + 1));
+                advance = 2;
+            }
+            if (isEmojiModifier(cp)) {
+                if (!runs.isEmpty())
+                    runs.last().text += opt.text.mid(i, advance);
+                else
+                    runs.push_back({opt.text.mid(i, advance), false});
+            } else {
+                const bool emoji = isEmojiCodepoint(cp);
+                if (!runs.isEmpty() && runs.last().emoji == emoji)
+                    runs.last().text += opt.text.mid(i, advance);
+                else
+                    runs.push_back({opt.text.mid(i, advance), emoji});
+            }
+            i += advance;
+        }
+        QPalette::ColorGroup group = (opt.state & QStyle::State_Enabled)
+                                             ? QPalette::Normal
+                                             : QPalette::Disabled;
+        if (group == QPalette::Normal && !(opt.state & QStyle::State_Active))
+            group = QPalette::Inactive;
+        painter->save();
+        painter->setPen(
+                opt.palette.color(group, (opt.state & QStyle::State_Selected)
+                                                 ? QPalette::HighlightedText
+                                                 : QPalette::Text));
+        QFont textFont = opt.font;
+        // The color emoji fonts are bitmap strikes: request the text line
+        // height in pixels so the glyph boxes align with the console text.
+        QFont emojiFont = m_emojiFont;
+        emojiFont.setPixelSize(qMax(8, QFontMetrics(textFont).height()));
+        const QRect textRect = style->subElementRect(
+                QStyle::SE_ItemViewItemText, &opt, opt.widget);
+        painter->setClipRect(textRect);
+        int x = textRect.left();
+        const int baseline = textRect.top() + QFontMetrics(textFont).ascent();
+        for (const Run& run : runs) {
+            painter->setFont(run.emoji ? emojiFont : textFont);
+            painter->drawText(x, baseline, run.text);
+            x += qRound(
+                    QFontMetricsF(painter->font()).horizontalAdvance(run.text));
+        }
+        painter->restore();
+    }
+
+    QSize sizeHint(const QStyleOptionViewItem& option,
+                   const QModelIndex& index) const override {
+        const QSize base = QStyledItemDelegate::sizeHint(option, index);
+        if (!m_hasEmojiFont) return base;
+        QStyleOptionViewItem opt = option;
+        initStyleOption(&opt, index);
+        if (!containsEmoji(opt.text)) return base;
+        QFont emojiFont = m_emojiFont;
+        emojiFont.setPixelSize(qMax(8, QFontMetrics(opt.font).height()));
+        return QSize(base.width(),
+                     qMax(base.height(), QFontMetrics(emojiFont).height() + 2));
+    }
+
+private:
+    static bool containsEmoji(const QString& text) {
+        for (int i = 0; i < text.size();) {
+            const QChar c = text.at(i);
+            uint cp = c.unicode();
+            int advance = 1;
+            if (c.isHighSurrogate() && i + 1 < text.size() &&
+                text.at(i + 1).isLowSurrogate()) {
+                cp = QChar::surrogateToUcs4(c, text.at(i + 1));
+                advance = 2;
+            }
+            if (isEmojiCodepoint(cp) || isEmojiModifier(cp)) return true;
+            i += advance;
+        }
+        return false;
+    }
+
+    QFont m_emojiFont;
+    bool m_hasEmojiFont = false;
+};
+
 ecvCustomQListWidget::ecvCustomQListWidget(QWidget* parent)
     : QListWidget(parent) {
     QFont mono = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     mono.setPointSize(qMax(font().pointSize(), 9));
     setFont(mono);
+    // Emoji-aware line painting for model answers (see the delegate comment).
+    setItemDelegate(new ecvConsoleItemDelegate(this));
 }
 
 void ecvCustomQListWidget::keyPressEvent(QKeyEvent* event) {

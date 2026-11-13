@@ -1,7 +1,8 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "image_io.hpp"
+#include "tasks/facedetect/image_io.hpp"
+
 
 struct ggml_context;
 struct ggml_tensor;
@@ -89,5 +90,9 @@ float antispoof_real_prob(const Model& m, const Image& img, const Detection& d);
 // argmax of the averaged softmax is the "real" class (index 1), else 0.0. A face
 // is judged live when this is >= 0.5 (the reference threshold).
 float antispoof_score(const Model& m, const Image& img, const Detection& d);
+
+// Model-scoped invalidation for the folded Conv+BN constants used by the ONNX
+// graph interpreter.
+void invalidate_antispoof_fold_cache(const ModelLoader& ml);
 
 } // namespace fd

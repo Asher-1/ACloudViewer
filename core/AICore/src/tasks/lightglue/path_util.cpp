@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "path_util.hpp"
+#include "tasks/lightglue/path_util.hpp"
 
-#include "model_cache.hpp"
+#include "common/model_cache.hpp"
 
 namespace aicore {
 namespace lightglue {

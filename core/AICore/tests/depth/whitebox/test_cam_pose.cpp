@@ -9,9 +9,10 @@
 #include <cstdlib>
 #include <vector>
 
-#include "cam_pose.hpp"
-#include "model_loader.hpp"
-#include "parity.hpp"
+#include "tasks/depth/cam_pose.hpp"
+#include "tasks/depth/model_loader.hpp"
+#include "tests/depth/whitebox/parity.hpp"
+
 int main() {
     const char* gguf = std::getenv("AICORE_TEST_DEPTH_GGUF");
     const char* base = std::getenv("AICORE_TEST_DEPTH_BASELINE");

@@ -31,6 +31,9 @@
 
 #include "optim/support_measurement.h"
 
+#include "util/hash_containers.h"
+#include "util/logging.h"
+
 namespace colmap {
 
 InlierSupportMeasurer::Support InlierSupportMeasurer::Evaluate(
@@ -57,6 +60,45 @@ bool InlierSupportMeasurer::Compare(const Support& support1,
     return support1.num_inliers == support2.num_inliers &&
            support1.residual_sum < support2.residual_sum;
   }
+}
+
+UniqueInlierSupportMeasurer::UniqueInlierSupportMeasurer(
+    std::vector<size_t> unique_sample_ids)
+    : unique_sample_ids_(std::move(unique_sample_ids)) {}
+
+UniqueInlierSupportMeasurer::Support UniqueInlierSupportMeasurer::Evaluate(
+    const std::vector<double>& residuals, const double max_residual) {
+  THROW_CHECK_EQ(residuals.size(), unique_sample_ids_.size());
+  Support support;
+  support.num_inliers = 0;
+  support.num_unique_inliers = 0;
+  support.residual_sum = 0;
+
+  FlatHashSet<size_t> inlier_point_ids;
+  for (size_t idx = 0; idx < residuals.size(); ++idx) {
+    if (residuals[idx] <= max_residual) {
+      support.num_inliers += 1;
+      inlier_point_ids.insert(unique_sample_ids_[idx]);
+      support.residual_sum += residuals[idx];
+    }
+  }
+  support.num_unique_inliers = inlier_point_ids.size();
+  return support;
+}
+
+bool UniqueInlierSupportMeasurer::Compare(const Support& support1,
+                                          const Support& support2) {
+  if (support1.num_unique_inliers > support2.num_unique_inliers) {
+    return true;
+  } else if (support1.num_unique_inliers == support2.num_unique_inliers) {
+    if (support1.num_inliers > support2.num_inliers) {
+      return true;
+    } else {
+      return support1.num_inliers == support2.num_inliers &&
+             support1.residual_sum < support2.residual_sum;
+    }
+  }
+  return false;
 }
 
 MEstimatorSupportMeasurer::Support MEstimatorSupportMeasurer::Evaluate(

@@ -7,6 +7,12 @@
 # libggml-cuda.so always needs libcublas.so.* at runtime (ggml hardwires
 # non-quantized matmul to cuBLAS), so keep AICore_BUNDLE_CUDA_RUNTIME=ON
 # for CUDA-enabled installers.
+# libsystemd MUST stay out of lib/: its symbol version (LIBSYSTEMD_254...)
+# drifts per distro, and ACloudViewer.sh exports LD_LIBRARY_PATH before
+# calling coreutils (basename/dirname/uname) — a focal/jammy-built
+# libsystemd in lib/ crashes those on a noble host (run 40099941829:
+# agent-integration 121 tests failed with exit 126, "LIBSYSTEMD_254 not
+# found"), while noble-built ones break on older hosts the same way.
 
 should_exclude_lib() {
     local base_name="$1"
@@ -15,7 +21,8 @@ should_exclude_lib() {
     case "$base_name" in
         libc.so.*|libdl.so.*|libselinux.so.*|libpthread.so.*|librt.so.*|\
         ld-linux-*.so.*|libdrm.so.*|libdrm_*.so.*|libm.so.*|libstdc++.so.*|\
-        libgcc_s.so.*|libutil.so.*|libresolv.so.*|libnss_*.so.*|libnsl.so.*)
+        libgcc_s.so.*|libutil.so.*|libresolv.so.*|libnss_*.so.*|libnsl.so.*|\
+        libsystemd.so.*)
             return 0
             ;;
     esac
@@ -24,8 +31,9 @@ should_exclude_lib() {
     # cu*, npp*, nvrtc*, cudnn*, cublas*, cufft*, curand*, cusolver*, cusparse*
     case "$base_name" in
         libcuda.so*|libcudart.so*|libcublas*.so*|libcufft.so*|libcurand.so*|\
-        libcusolver.so*|libcusparse.so*|libnpp*.so*|libnvrtc.so*|libcudnn.so*|\
-        libculibos.so*|libnvjpeg.so*|libnvToolsExt.so*)
+        libcusolver*.so*|libcusparse*.so*|libnpp*.so*|libnvrtc.so*|libcudnn.so*|\
+        libculibos.so*|libnvjpeg.so*|libnvToolsExt.so*|libnvJitLink.so*|\
+        libnccl.so*|libcufile.so*|libcupti.so*)
             return 0
             ;;
     esac
@@ -33,13 +41,15 @@ should_exclude_lib() {
     return 1
 }
 
-# ggml dynamic backends (libggml-cpu*.so, libggml-vulkan.so, …) are copied by
-# CopyGgmlBackends / InstallGgmlBackends, not linked via DT_NEEDED. Running ldd
-# on them only flattens symlink chains and never discovers dlopen modules.
+# ggml dynamic backends (libggml-cpu*.so, libggml-vulkan.so, …) and the shared
+# core (libggml, libggml-base, libllama, libmtmd) are copied by
+# CopyGgmlBackends / InstallGgmlBackends with their soname symlink chains.
+# Running ldd on them only flattens those chains and never discovers dlopen
+# modules.
 should_skip_pack_target() {
     local base_name="$1"
     case "$base_name" in
-        libggml.so*|libggml-base.so*|libggml-cpu*.so|libggml-*.so)
+        libggml.so*|libggml-base.so*|libggml-cpu*.so|libggml-*.so|libllama.so*|libmtmd.so*)
             return 0
             ;;
     esac
@@ -138,11 +148,15 @@ process_target() {
 
     echo "Processing dependencies for: $Target"
 
-    not_found_libs=($(ldd "$Target" 2>/dev/null | grep "not found" | awk '{print $1}'))
-    found_libs=($(ldd "$Target" 2>/dev/null | grep -o "/.*" | grep -o "/.*/[^[:space:]]*"))
-    lib_array=("${not_found_libs[@]}" "${found_libs[@]}")
+    # Keep one dependency per line: whitespace is valid in toolkit, Torch,
+    # build and install paths. Strip only ldd's trailing load address.
+    local -a lib_array
+    mapfile -t lib_array < <(ldd "$Target" 2>/dev/null | sed -n -E \
+        -e 's/[[:space:]]+\(0x[[:xdigit:]]+\)[[:space:]]*$//' \
+        -e 's/^[[:space:]]*([A-Za-z0-9._+-]+\.so[^ ]*)[[:space:]]*=>[[:space:]]*(\/.*)$/\2/p' \
+        -e 's/^[[:space:]]*([A-Za-z0-9._+-]+\.so[^ ]*)[[:space:]]*=>[[:space:]]*not found[[:space:]]*$/\1/p')
 
-    for Variable in ${lib_array[@]}
+    for Variable in "${lib_array[@]}"
     do
         base_name=$(basename "$Variable")
         
@@ -192,7 +206,7 @@ process_target() {
 }
 
 
-if [ -d $1 ]; then
+if [ -d "$1" ]; then
     LibDir=$2
     # Add the target directory to extra library paths
     target_dir=$(readlink -f "$1")
@@ -204,11 +218,10 @@ if [ -d $1 ]; then
     
     echo "Using library search paths: $EXTRA_LIB_PATHS"
     
-    for element in $(ls $1)
+    for Target in "$1"/*
     do
-        Target=$1"/"$element
-        if [ -f $Target ]; then
-            process_target $Target $LibDir
+        if [ -f "$Target" ]; then
+            process_target "$Target" "$LibDir"
         fi
     done
 else
@@ -225,5 +238,5 @@ else
     
     echo "Using library search paths: $EXTRA_LIB_PATHS"
     
-    process_target $Target $LibDir
+    process_target "$Target" "$LibDir"
 fi

@@ -89,6 +89,13 @@ SparseBundleCU::SparseBundleCU(int device)
   __selected_device = device;
 }
 
+SparseBundleCU::~SparseBundleCU() {
+  // Texture objects are cached outside CuTexImage. Destroy them before the
+  // member destructors release their device allocations, otherwise a later BA
+  // run can reuse a texture object bound to freed memory.
+  ProgramCU::ClearTextureObjectCache();
+}
+
 size_t SparseBundleCU::GetMemCapacity() {
   if (__selected_device != __current_device) SetCudaDevice(__selected_device);
   size_t sz = ProgramCU::GetCudaMemoryCap();

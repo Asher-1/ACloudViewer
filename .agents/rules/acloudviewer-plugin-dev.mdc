@@ -16,6 +16,44 @@ alwaysApply: false
 - Use `AddPlugin(NAME ...)` from `plugins/cmake/Plugins.cmake`
 - Plugins link: `CVCoreLib`, `CVPluginAPI`, `CVPluginStub`
 
+## AICore-Based Plugins (mandatory)
+
+Read `.agents/skills/acloudviewer-aicore-plugin/SKILL.md` for the complete
+integration workflow and acceptance gates, especially its `references/`
+documents for reuse ownership and executable accuracy/performance profiles.
+
+- First decide whether the plugin consumes an existing task, extends a model
+  family, or requires a genuinely new input/output/lifecycle contract. A new UI
+  or product name alone does not justify a new AICore task.
+- The plugin is a thin Qt/application adapter: input/source selection, worker
+  invocation, annotations/DB entities, rendering, and export. Model graphs,
+  preprocessing, backend policy, cache ownership, and numeric postprocessing
+  stay in AICore.
+- Link `AICore` and include only public `aicore/*` headers. Never include ggml or
+  task-private headers from a plugin.
+- Register the plugin option/target in the central plugin CMake entry, ship
+  `info.json`/resources/README, and add incremental `BUILD.md` and plugin-index
+  rows. When automation is in scope, extend the existing JSON-RPC and
+  `cli-anything-acloudviewer` mapping/tests rather than adding private CLI flags.
+- Reuse `ecvAICoreRuntimeHelpers.h`, `ecvAICoreUiHelper.h`, shared video
+  components, `ecvTestDataRepository`, and the AICore-exported model catalog.
+  Never add plugin-private device locks, model URL/digest tables, downloader
+  implementations, cache roots, or decoded-image preprocessing pipelines.
+  Plugins may feed exported catalog metadata to the shared
+  `ecvModelDownloader` / `ecvAssetIntegrity` services.
+- Worker results carry source identity and generation. Contexts stay on the
+  worker thread; pending teardown follows the shared helper. Live pipelines
+  keep one running frame plus at most one latest pending frame and call
+  `completeFrameProcessing()` on every completion path.
+- Use borrowed `aicore_image_view` with the real `bytesPerLine()` and format;
+  use typed results with their documented release function. File, encoded-image,
+  and JSON round-trips are compatibility/export paths, not frame inference.
+- Plugin helper tests do not replace the headless task gate. Verify the actual
+  still/live/cancel/stale/error/teardown workflow after AICore truth, parity,
+  repeated-forward, and validation-manifest coverage pass.
+- Run `python3 core/AICore/tests/check_plugin_aicore_boundaries.py --root .
+  --strict`; it must pass repository-wide, not only for new plugins.
+
 ## Key Interfaces
 
 - `ccStdPluginInterface` — base class for standard plugins

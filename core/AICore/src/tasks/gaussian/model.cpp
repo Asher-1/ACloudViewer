@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "model.h"
+#include "tasks/gaussian/model.h"
 
 #include <ggml.h>
 
@@ -19,9 +19,8 @@
 #include <thread>
 #include <vector>
 
-#ifdef AICore_HAS_CVLOG
-#include <CVLog.h>
-#endif
+#include "common/ggml_backend_utils.hpp"
+#include "tasks/gaussian/common.hpp"
 
 // Parallel-for over [0,n): splits into contiguous chunks, one per hardware
 // thread, and joins. body(begin,end) must own disjoint output ranges (the
@@ -164,6 +163,10 @@ bool model::realize_weights() {
         error = "device weight alloc failed (out of device memory?)";
         return false;
     }
+    // WEIGHTS usage tag: without it the sched keeps every op on the CPU
+    // secondary even when the CUDA/Vulkan backend is active.
+    ggml_backend_buffer_set_usage(weights_buf,
+                                  GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
     for (ggml_tensor *s = ggml_get_first_tensor(file.ctx); s;
          s = ggml_get_next_tensor(file.ctx, s)) {
         ggml_tensor *d = ggml_get_tensor(device_ctx, ggml_get_name(s));
@@ -211,14 +214,11 @@ bool model::forward(const float *images,
     const float scale = 1.0f / std::sqrt((float)dh);  // 1/8
     const float eps = h.ln_eps;
 
-    // Vulkan FA kernel asserts ne01 < 65536.  Metal is patched (see
-    // 3rdparty/ggml/patches/manifest.yaml: metal_merged) to remove the
-    // assert and auto-tune command-buffer splitting, so only non-Apple GPU
-    // backends need capping.
-#ifndef __APPLE__
-    static constexpr int64_t kMaxFASeq = 65535;
+    // Keep the attention kernel's limit with shared backend capabilities.
+    const int64_t kMaxFASeq =
+            ggml_common::flash_attention_sequence_limit(be.be);
     std::vector<float> subsampled_buf;
-    if (!be.is_cpu()) {
+    if (S > kMaxFASeq) {
         const int64_t limit_N = kMaxFASeq / TPV;
         if (N > limit_N) {
             const int64_t vf = C * IMG * IMG;
@@ -228,39 +228,17 @@ bool model::forward(const float *images,
                 std::memcpy(subsampled_buf.data() + i * vf, images + src * vf,
                             vf * sizeof(float));
             }
-#ifdef AICore_HAS_CVLOG
-            CVLog::Warning(
-                    "[FS] Subsampled %lld -> %lld views "
+            FS_WARN("Subsampled %lld -> %lld views "
                     "(GPU FA sequence limit)",
                     (long long)N, (long long)limit_N);
-#else
-            std::fprintf(stderr,
-                         "[FS] Subsampled %lld -> %lld views "
-                         "(GPU FA sequence limit)\n",
-                         (long long)N, (long long)limit_N);
-#endif
             images = subsampled_buf.data();
             N = limit_N;
             S = N * TPV;
         }
     }
-#endif
 
-    // Optional host-phase timing (FREE_SPLATTER_PROFILE=1) to stderr.
-    const bool prof = std::getenv("FREE_SPLATTER_PROFILE") != nullptr;
-    auto t_clk = std::chrono::steady_clock::now();
-    auto lap = [&](const char *name) {
-        if (!prof) return;
-        const auto now = std::chrono::steady_clock::now();
-        const double ms =
-                std::chrono::duration<double, std::milli>(now - t_clk).count();
-#ifdef AICore_HAS_CVLOG
-        CVLog::PrintDebug("[FS profile] %-12s %7.2f ms", name, ms);
-#else
-        std::fprintf(stderr, "[profile] %-12s %7.2f ms\n", name, ms);
-#endif
-        t_clk = now;
-    };
+    // The historical FREE_SPLATTER_PROFILE timing hook was development
+    // scaffolding and is removed.
 
     const size_t graph_nodes = 8192;
     ggml_init_params gp = {
@@ -320,13 +298,9 @@ bool model::forward(const float *images,
     ggml_tensor *x = tap(ggml_reshape_2d(ctx, toks, D, S), "tokens_in");
 
     // --- Piece 2: transformer blocks ---
-    // FREE_SPLATTER_MAX_BLOCKS caps the block count (debug/parity iteration;
-    // e.g. 1 to validate just block 0 against an M1 fixture). 0/unset = all
-    // blocks.
-    size_t n_blocks = layers.size();
-    if (const char *env = std::getenv("FREE_SPLATTER_MAX_BLOCKS")) {
-        if (int v = std::atoi(env)) n_blocks = std::min(n_blocks, (size_t)v);
-    }
+    // All blocks run; the historical FREE_SPLATTER_MAX_BLOCKS cap was a
+    // debug/parity iteration override and is removed.
+    const size_t n_blocks = layers.size();
     for (size_t il = 0; il < n_blocks; il++) {
         const layer_weights &l = layers[il];
         const std::string L = "l" + std::to_string(il);
@@ -394,30 +368,25 @@ bool model::forward(const float *images,
     ggml_cgraph *gf = ggml_new_graph_custom(ctx, graph_nodes, false);
     ggml_build_forward_expand(gf, logits);
     for (ggml_tensor *t : tap_list) ggml_build_forward_expand(gf, t);
-    lap("graph_build");
 
     if (!be.alloc_graph(gf, graph_nodes)) {
         error = "graph alloc failed";
         ggml_free(ctx);
         return false;
     }
-    lap("alloc");
 
     ggml_backend_tensor_set(img, images, 0,
                             (size_t)N * C * IMG * IMG * sizeof(float));
-    lap("upload");
 
     if (be.compute_graph(gf) != GGML_STATUS_SUCCESS) {
         error = "graph compute failed";
         ggml_free(ctx);
         return false;
     }
-    lap("compute");
 
     // Read head logits [U,S] (memory j + U*s) and unshuffle on the host.
     std::vector<float> hl((size_t)U * S);
     ggml_backend_tensor_get(logits, hl.data(), 0, hl.size() * sizeof(float));
-    lap("readback");
 
     // out: render-ready gaussians, row-major [N*IMG*IMG, Gc], row =
     // ((n*IMG + hh)*IMG + ww). gaussians_raw is the same but pre-activation.
@@ -442,7 +411,6 @@ bool model::forward(const float *images,
             }
         }
     });
-    lap("unshuffle");
 
     // gaussians_raw tap (pre-activation), emitted before we mutate `raw`; then
     // activate in place and move into `out` (no 48 MB copy).
@@ -465,7 +433,6 @@ bool model::forward(const float *images,
             for (int c = rot_start; c < rot_end; c++) g[c] /= nrm;
         }
     });
-    lap("activation");
     if (sink) sink("gaussians", raw.data(), PIX, Gc);
     out = std::move(raw);
 

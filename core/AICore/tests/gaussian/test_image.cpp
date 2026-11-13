@@ -13,8 +13,8 @@
 #include <string>
 #include <vector>
 
-#include "gguf_loader.h"
-#include "image.h"
+#include "tasks/gaussian/gguf_loader.h"
+#include "tasks/gaussian/image.h"
 
 static int failures = 0;
 #define CHECK(cond)                                                      \

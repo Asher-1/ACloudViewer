@@ -31,7 +31,7 @@
 
 #include "mvs/normal_map.h"
 
-#include "base/warp.h"
+#include "image/warp.h"
 
 namespace colmap {
 namespace mvs {

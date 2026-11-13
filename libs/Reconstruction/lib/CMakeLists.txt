@@ -46,7 +46,6 @@ else()
     message(STATUS "Skipping PBA - disabled by parent CMakeLists.txt")
 endif()
 
-add_subdirectory(PoissonRecon)
 add_subdirectory(SiftGPU)
 add_subdirectory(SQLite)
 add_subdirectory(VLFeat)

@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "reconstruct.hpp"
+#include "tasks/depth/reconstruct.hpp"
 
 #include <algorithm>
 #include <cmath>

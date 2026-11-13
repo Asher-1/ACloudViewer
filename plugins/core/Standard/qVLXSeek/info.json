@@ -1,0 +1,32 @@
+{
+  "type": "Standard",
+  "core": true,
+  "group": "aicore",
+  "name": "VLX-Seek Grounding",
+  "icon": ":/CC/plugin/qVLXSeek/images/qVLXSeek.svg",
+  "description": "VLX-Seek 1.5-10B fine-grained open-vocabulary grounding: detection, referring, counting, region caption and region OCR via region-reference retrieval over WeDetect-Uni proposals (native GGML inference).",
+  "authors": [
+    {
+      "name": "ACloudViewer Contributors"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "ACloudViewer Team"
+    }
+  ],
+  "references": [
+    {
+      "text": "VLX-Seek",
+      "url": "https://github.com/om-ai-lab/VLX-Seek"
+    },
+    {
+      "text": "C++/GGML port",
+      "url": "https://github.com/Asher-1/VLX-Seek-GGML"
+    },
+    {
+      "text": "Models",
+      "url": "https://huggingface.co/Asher-1/VLX-Seek-1.5-10B-GGUF"
+    }
+  ]
+}

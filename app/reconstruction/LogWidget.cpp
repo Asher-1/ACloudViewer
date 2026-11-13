@@ -7,7 +7,7 @@
 
 #include "LogWidget.h"
 
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
 
 // CV_CORE_LIB
 #include <CVLog.h>

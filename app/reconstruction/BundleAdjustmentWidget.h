@@ -10,9 +10,9 @@
 #include <QtCore>
 #include <QtWidgets>
 
-#include "base/reconstruction.h"
+#include "controllers/option_manager.h"
+#include "scene/reconstruction.h"
 #include "ui/options_widget.h"
-#include "util/option_manager.h"
 
 namespace cloudViewer {
 

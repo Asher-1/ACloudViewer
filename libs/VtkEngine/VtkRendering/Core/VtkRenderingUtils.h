@@ -110,7 +110,8 @@ QVTK_ENGINE_LIB_API vtkSmartPointer<vtkPolyData> CreateGBLSensor(
 QVTK_ENGINE_LIB_API vtkSmartPointer<vtkPolyData> CreateCameraSensor(
         const ccCameraSensor* cameraSensor,
         const ecvColor::Rgb& lineColor,
-        const ecvColor::Rgb& planeColor);
+        const ecvColor::Rgb& planeColor,
+        vtkSmartPointer<vtkPolyData>* planeFaceOut = nullptr);
 
 // =====================================================================
 // Line Set Conversion

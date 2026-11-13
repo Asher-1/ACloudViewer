@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/CC/plugin/qRMBG">
+        <file>info.json</file>
+        <file>images/qRMBG.svg</file>
+    </qresource>
+</RCC>

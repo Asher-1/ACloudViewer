@@ -2,12 +2,12 @@
 
 InsightFace-style face detection and recognition for ACloudViewer — **native C++ GGML**.
 
-**User guide:** [docs/guides/plugins/qFaceDetect.md](../../../docs/guides/plugins/qFaceDetect.md)
+**User guide:** [docs/guides/plugins/qFaceDetect.md](../../../../docs/guides/plugins/qFaceDetect.md)
 
 ![qFaceDetect registry and recognition workflow](images/qFaceDetect.png)
 
 ```
-Image → AICore FaceDetect GGML → detect / analyze / verify → annotated ccImage → DB tree
+Image → borrowed image view → AICore FaceDetect GGML → typed detect / analyze / landmarks / verify result → ccImage / registry
 ```
 
 ## Build
@@ -22,11 +22,15 @@ make -j4 QFACEDETECT_PLUGIN
 
 Face-detect GGML sources live in `core/AICore/src/tasks/facedetect/` (in-tree port of [face-detect.cpp](https://github.com/mudler/face-detect.cpp)).
 
-Requires system **libjpeg** (e.g. `libjpeg-dev` on Ubuntu).
+Image decode uses Qt's built-in codecs (JPEG/PNG via the Qt image plugins); no direct system libjpeg dependency.
+The worker passes Qt image storage through `aicore_image_view`, preserving row
+stride and avoiding a mandatory tightly packed RGB scratch allocation. JSON
+and path APIs are compatibility surfaces, not the interactive hot path.
 
 ### Unit tests (helpers + registry store)
 
-Pure JSON/box/label helpers and SQLite registry matching (no GGUF model required):
+Typed-result, image-stride, box/label helpers and SQLite registry matching (no
+GGUF model required; legacy JSON parser compatibility is tested separately):
 
 ```bash
 cmake -DBUILD_GUI=ON -DAICore_ENABLED=ON -DPLUGIN_STANDARD_QFACEDETECT=ON \
@@ -117,3 +121,24 @@ The same clip is symlinked for **qFreeSplatter** Face Capture tests at
 - [mudler/face-detect-gguf](https://huggingface.co/mudler/face-detect-gguf) (upstream HF mirror)
 - [Asher-1/Face_AI](https://github.com/Asher-1/Face_AI) (related InsightFace REST API — ONNX/TensorRT)
 - [insightface](https://github.com/deepinsight/insightface) (original model weights)
+
+## GPU acceleration (measured)
+
+Sessions resolved to a GPU backend run the detection graph on that device
+with the weights buffer tagged `GGML_BACKEND_BUFFER_USAGE_WEIGHTS` (the
+sched's weight-following routing requires the tag). Measured on the
+shared RTX 4090 (friends1.jpg, detect-only, 3+ runs):
+
+| model | CPU p50 | CUDA p50 | speedup |
+|-------|---------|----------|---------|
+| yunet-sface | 42.3 ms | 15.9 ms | 2.7x |
+| antelopev2 | 222.7 ms | 18.8 ms | 11.8x |
+| buffalo_l | 56.4 ms | 99.2 ms | 0.6x (regression) |
+
+Detection outputs are identical across backends (same face count and
+scores to float precision). The buffalo_l regression is a host-side
+overhead issue, not a GPU-throughput one: nsys shows only 3.1 ms of
+kernel + 12.7 ms of copy against a ~99 ms wall, i.e. ~83 ms of host
+dispatch/sync per detect (all models run the plain `graph_compute`
+path; the graph is far larger for buffalo_l and the per-op host
+dispatch dominates). Tracked as a follow-up.

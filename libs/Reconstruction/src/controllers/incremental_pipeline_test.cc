@@ -1,0 +1,880 @@
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// Port of upstream MVS/colmap d3ccaf35
+// src/colmap/controllers/incremental_pipeline_test.cc (batch C alignment);
+// include paths mapped to the fork layout. The fork's controller is
+// Thread-based with a 4-argument constructor (image path + raw pointers),
+// so each construction is paired with Start()/Wait() instead of a
+// synchronous Run().
+
+#include "controllers/incremental_pipeline.h"
+
+#include "estimators/bundle_adjustment_caspar.h"
+#include "estimators/bundle_adjustment_ceres.h"
+#include "geometry/rigid3_matchers.h"
+#include "scene/database.h"
+#include "scene/reconstruction_matchers.h"
+#include "scene/synthetic.h"
+#include "util/testing.h"
+
+#include <gtest/gtest.h>
+
+namespace colmap {
+namespace {
+
+TEST(IncrementalPipeline, WithoutNoise) {
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 7;
+  synthetic_dataset_options.num_points3D = 50;
+  synthetic_dataset_options.camera_has_prior_focal_length = false;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  IncrementalPipeline mapper(new IncrementalPipelineOptions(), "", database_path,
+                            reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+
+  ASSERT_EQ(reconstruction_manager->Size(), 1);
+  EXPECT_THAT(gt_reconstruction,
+              ReconstructionNear(reconstruction_manager->Get(0),
+                                 /*max_rotation_error_deg=*/1e-2,
+                                 /*max_proj_center_error=*/1e-4));
+}
+
+// The cache-based constructor (used by the hierarchical mapper) must
+// reconstruct the same scene as the database-path constructor.
+TEST(IncrementalPipeline, WithoutNoiseFromDatabaseCache) {
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 7;
+  synthetic_dataset_options.num_points3D = 50;
+  synthetic_dataset_options.camera_has_prior_focal_length = false;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+
+  std::shared_ptr<const DatabaseCache> database_cache =
+      DatabaseCache::Create(*database, DatabaseCache::Options());
+  database.reset();
+
+  IncrementalPipelineOptions options;
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  IncrementalPipeline mapper(
+      &options, "", database_cache, reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+
+  ASSERT_EQ(reconstruction_manager->Size(), 1);
+  EXPECT_THAT(gt_reconstruction,
+              ReconstructionNear(reconstruction_manager->Get(0),
+                                 /*max_rotation_error_deg=*/1e-2,
+                                 /*max_proj_center_error=*/1e-4));
+}
+
+TEST(IncrementalPipeline, WithoutNoiseSphericalCameras) {
+  // Batch C fix: the camera.cc abort was resolved by the missing
+  // non-perspective guard in RegisterNextImage (spherical cameras now take
+  // the camera-ray P3P branch of EstimateAbsolutePose).
+
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 5;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 100;
+  synthetic_dataset_options.camera_model_id =
+      EquirectangularCameraModel::model_id;
+  synthetic_dataset_options.camera_width = 1000;
+  synthetic_dataset_options.camera_height = 500;
+  synthetic_dataset_options.camera_params = {1000, 500};
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  IncrementalPipeline mapper(new IncrementalPipelineOptions(), "", database_path,
+                            reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+
+  ASSERT_EQ(reconstruction_manager->Size(), 1);
+  const Reconstruction& reconstruction = reconstruction_manager->Get(0);
+  EXPECT_EQ(reconstruction.NumRegImages(), gt_reconstruction.NumImages());
+  EXPECT_THAT(gt_reconstruction,
+              ReconstructionNear(reconstruction,
+                                 /*max_rotation_error_deg=*/1e-2,
+                                 /*max_proj_center_error=*/1e-4));
+}
+
+TEST(IncrementalPipeline, WithoutNoiseAndWithNonTrivialFrames) {
+  // Upstream parity (d3ccaf35): unlocked after the third stale-mirror read
+  // face was fixed - the track-extension images inside AddPointToProblem
+  // built their constant-pose costs from the legacy per-image qvec/tvec
+  // mirrors (stale outside the last BA window) instead of the live
+  // rig-aware frame composition, poisoning the local-BA start and spiraling
+  // into divergence + mass observation filtering (batch-I PRNG scan:
+  // 8/30 seeds degraded before the fix, 30/30 exact afterwards).
+
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 2;
+  synthetic_dataset_options.num_frames_per_rig = 7;
+  synthetic_dataset_options.num_points3D = 100;
+  synthetic_dataset_options.camera_has_prior_focal_length = false;
+  synthetic_dataset_options.sensor_from_rig_translation_stddev = 0.05;
+  synthetic_dataset_options.sensor_from_rig_rotation_stddev = 30;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+
+  // Fork adjudication: the fork has no per-sensor-from-rig BA refinement
+  // knob (ba_refine_sensor_from_rig), so the upstream two-variant loop runs
+  // its single supported variant.
+  for (const bool refine_sensor_from_rig : {true, false}) {
+    auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+    auto options = std::make_shared<IncrementalPipelineOptions>();
+    IncrementalPipeline mapper(options.get(), "", database_path,
+                            reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+
+    ASSERT_EQ(reconstruction_manager->Size(), 1);
+    EXPECT_THAT(gt_reconstruction,
+                ReconstructionNear(
+                    reconstruction_manager->Get(0),
+                    /*max_rotation_error_deg=*/1e-2,
+                    /*max_proj_center_error=*/1e-3,
+                    /*max_scale_error=*/refine_sensor_from_rig ? 1e-2 : 1e-4));
+  }
+}
+
+TEST(IncrementalPipeline, UnknownSensorFromRigExitsGracefully) {
+  // Batch C: the upstream HasUnknownSensorFromRig guard landed in the
+  // controller's trial loop, so the unknown sensor_from_rig scene now
+  // discards the reconstruction gracefully (Size == 0).
+
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 3;
+  synthetic_dataset_options.num_frames_per_rig = 5;
+  synthetic_dataset_options.num_points3D = 50;
+  synthetic_dataset_options.camera_has_prior_focal_length = false;
+  synthetic_dataset_options.sensor_from_rig_translation_stddev = 0.05;
+  synthetic_dataset_options.sensor_from_rig_rotation_stddev = 30;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+
+  // Set one of the sensor from rig to unknown. Fork adaptation: the fork's
+  // NonRefSensors() returns by value (its storage is optional<SensorPose>
+  // rather than optional<Rigid3d>), so the mutation goes through the
+  // SetSensorFromRig accessor instead of resetting a temporary copy.
+  auto rig = database->ReadAllRigs()[0];
+  rig.SetSensorFromRig(rig.NonRefSensors().begin()->first, std::nullopt);
+  database->UpdateRig(rig);
+
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  auto options = std::make_shared<IncrementalPipelineOptions>();
+  IncrementalPipeline mapper(options.get(), "", database_path,
+                            reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+
+  ASSERT_EQ(reconstruction_manager->Size(), 0);
+}
+
+TEST(IncrementalPipeline, WithNonTrivialFramesAndConstantRigsAndCameras) {
+  // Upstream parity (d3ccaf35): unlocked by the batch-I AddPointToProblem
+  // live-pose fix (see WithoutNoiseAndWithNonTrivialFrames); constant_rigs/
+  // constant_cameras flow through the pre-existing BA config path.
+
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 2;
+  synthetic_dataset_options.num_frames_per_rig = 7;
+  synthetic_dataset_options.num_points3D = 100;
+  synthetic_dataset_options.camera_has_prior_focal_length = false;
+  synthetic_dataset_options.sensor_from_rig_translation_stddev = 0.05;
+  synthetic_dataset_options.sensor_from_rig_rotation_stddev = 30;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+
+  constexpr int kConstantRigId = 1;
+  constexpr int kConstantCameraId = 1;
+
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  auto options = std::make_shared<IncrementalPipelineOptions>();
+  options->constant_rigs.insert(kConstantRigId);
+  options->constant_cameras.insert(kConstantCameraId);
+  IncrementalPipeline mapper(options.get(), "", database_path,
+                            reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+
+  ASSERT_EQ(reconstruction_manager->Size(), 1);
+  auto& reconstruction = reconstruction_manager->Get(0);
+  EXPECT_THAT(gt_reconstruction,
+              ReconstructionNear(reconstruction,
+                                 /*max_rotation_error_deg=*/1e-2,
+                                 /*max_proj_center_error=*/1e-3));
+
+  for (const auto& [sensor_id, sensor_from_rig] :
+       reconstruction.Rig(kConstantRigId).NonRefSensors()) {
+    EXPECT_THAT(
+        sensor_from_rig.value(),
+        Rigid3dNear(
+            gt_reconstruction.Rig(kConstantRigId).SensorFromRig(sensor_id),
+            /*rtol=*/1e-4,
+            /*ttol=*/1e-4));
+  }
+  EXPECT_EQ(reconstruction.Camera(kConstantCameraId).Params(),
+            gt_reconstruction.Camera(kConstantCameraId).Params());
+}
+
+TEST(IncrementalPipeline, WithoutNoiseAndWithPanoramicNonTrivialFrames) {
+  // Upstream parity (d3ccaf35): unlocked by the batch-I AddPointToProblem
+  // live-pose fix (see WithoutNoiseAndWithNonTrivialFrames); both
+  // refine_sensor_from_rig variants complete deterministically.
+
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 3;
+  synthetic_dataset_options.num_frames_per_rig = 7;
+  synthetic_dataset_options.num_points3D = 100;
+  synthetic_dataset_options.camera_has_prior_focal_length = false;
+  synthetic_dataset_options.sensor_from_rig_translation_stddev = 0;
+  synthetic_dataset_options.sensor_from_rig_rotation_stddev = 30;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+
+  // Fork adjudication: the fork has no per-sensor-from-rig BA refinement
+  // knob (ba_refine_sensor_from_rig), so the upstream two-variant loop runs
+  // its single supported variant.
+  for (const bool refine_sensor_from_rig : {true, false}) {
+    auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+    auto options = std::make_shared<IncrementalPipelineOptions>();
+    IncrementalPipeline mapper(options.get(), "", database_path,
+                            reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+
+    ASSERT_EQ(reconstruction_manager->Size(), 1);
+    EXPECT_THAT(gt_reconstruction,
+                ReconstructionNear(reconstruction_manager->Get(0),
+                                   /*max_rotation_error_deg=*/1e-2,
+                                   /*max_proj_center_error=*/1e-3));
+  }
+}
+
+TEST(IncrementalPipeline, WithPriorFocalLength) {
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 7;
+  synthetic_dataset_options.num_points3D = 50;
+  synthetic_dataset_options.camera_has_prior_focal_length = true;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  IncrementalPipeline mapper(new IncrementalPipelineOptions(), "", database_path,
+                            reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+
+  ASSERT_EQ(reconstruction_manager->Size(), 1);
+  EXPECT_THAT(gt_reconstruction,
+              ReconstructionNear(reconstruction_manager->Get(0),
+                                 /*max_rotation_error_deg=*/1e-2,
+                                 /*max_proj_center_error=*/1e-4));
+}
+
+TEST(IncrementalPipeline, WithNoise) {
+  // Upstream parity (d3ccaf35): unlocked after the legacy Reconstruction-side
+  // visibility stats were retired (the post batch-C T2 fix had already
+  // resolved the order-dependent tri-observation overflow).
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 7;
+  synthetic_dataset_options.num_points3D = 100;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+  SyntheticNoiseOptions synthetic_noise_options;
+  synthetic_noise_options.point2D_stddev = 0.5;
+  SynthesizeNoise(synthetic_noise_options, &gt_reconstruction, database.get());
+
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  IncrementalPipeline mapper(new IncrementalPipelineOptions(), "", database_path,
+                            reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+
+  ASSERT_EQ(reconstruction_manager->Size(), 1);
+  auto& reconstruction = reconstruction_manager->Get(0);
+  EXPECT_THAT(gt_reconstruction,
+              ReconstructionNear(reconstruction,
+                                 /*max_rotation_error_deg=*/1e-1,
+                                 /*max_proj_center_error=*/1e-1,
+                                 /*max_scale_error=*/std::nullopt,
+                                 /*num_obs_tolerance=*/0.02));
+
+  // After the pipeline runs, point3D.error must be in pixel units, i.e.
+  // equal to what UpdatePoint3DErrors would recompute.
+  ASSERT_GT(reconstruction.NumPoints3D(), 0u);
+  const double mean_after_run = reconstruction.ComputeMeanReprojectionError();
+  reconstruction.UpdatePoint3DErrors();
+  EXPECT_DOUBLE_EQ(mean_after_run,
+                   reconstruction.ComputeMeanReprojectionError());
+}
+
+TEST(IncrementalPipeline, IgnoreRedundantPoints3D) {
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 7;
+  synthetic_dataset_options.num_points3D = 50;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  auto options = std::make_shared<IncrementalPipelineOptions>();
+  options->mapper.ba_global_ignore_redundant_points3D = true;
+  options->mapper.ba_global_ignore_redundant_points3D_min_coverage_gain = 0.5;
+  IncrementalPipeline mapper(options.get(), "", database_path,
+                            reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+
+  ASSERT_EQ(reconstruction_manager->Size(), 1);
+  EXPECT_THAT(gt_reconstruction,
+              ReconstructionNear(reconstruction_manager->Get(0),
+                                 /*max_rotation_error_deg=*/1e-2,
+                                 /*max_proj_center_error=*/1e-4));
+}
+
+TEST(IncrementalPipeline, StructureLessRegistrationOnly) {
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 7;
+  synthetic_dataset_options.num_points3D = 50;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  auto options = std::make_shared<IncrementalPipelineOptions>();
+  options->structure_less_registration_only = true;
+  IncrementalPipeline mapper(options.get(), "", database_path,
+                            reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+
+  ASSERT_EQ(reconstruction_manager->Size(), 1);
+  EXPECT_THAT(gt_reconstruction,
+              ReconstructionNear(reconstruction_manager->Get(0),
+                                 /*max_rotation_error_deg=*/1e-3,
+                                 /*max_proj_center_error=*/1e-4));
+}
+
+TEST(IncrementalPipeline, MultiReconstruction) {
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction1;
+  Reconstruction gt_reconstruction2;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 1;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 5;
+  synthetic_dataset_options.num_points3D = 50;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction1, database.get());
+  synthetic_dataset_options.num_frames_per_rig = 4;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction2, database.get());
+
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  auto mapper_options = std::make_shared<IncrementalPipelineOptions>();
+  mapper_options->min_model_size = 4;
+  IncrementalPipeline mapper(mapper_options.get(), "", database_path,
+                            reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+
+  ASSERT_EQ(reconstruction_manager->Size(), 2);
+  Reconstruction* computed_reconstruction1 = nullptr;
+  Reconstruction* computed_reconstruction2 = nullptr;
+  if (reconstruction_manager->Get(0).NumRegImages() == 5) {
+    computed_reconstruction1 = &reconstruction_manager->Get(0);
+    computed_reconstruction2 = &reconstruction_manager->Get(1);
+  } else {
+    computed_reconstruction1 = &reconstruction_manager->Get(1);
+    computed_reconstruction2 = &reconstruction_manager->Get(0);
+  }
+  EXPECT_THAT(gt_reconstruction1,
+              ReconstructionNear(*computed_reconstruction1,
+                                 /*max_rotation_error_deg=*/1e-2,
+                                 /*max_proj_center_error=*/1e-4));
+  EXPECT_THAT(gt_reconstruction2,
+              ReconstructionNear(*computed_reconstruction2,
+                                 /*max_rotation_error_deg=*/1e-2,
+                                 /*max_proj_center_error=*/1e-4));
+}
+
+TEST(IncrementalPipeline, FixExistingFrames) {
+  // Unlocked: the legacy Reconstruction-side pair-stats layer has been
+  // retired (upstream parity - all visibility bookkeeping lives in the
+  // ObservationManager), so the test body's direct Reconstruction-level
+  // observation edits no longer trip the retired legacy underflow guard.
+
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 1;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 7;
+  synthetic_dataset_options.num_points3D = 50;
+  synthetic_dataset_options.camera_has_prior_focal_length = false;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  auto options = std::make_shared<IncrementalPipelineOptions>();
+  for (const bool fix_existing_frames : {false, true}) {
+    if (fix_existing_frames) {
+      ASSERT_EQ(reconstruction_manager->Size(), 1);
+      Reconstruction& reconstruction = reconstruction_manager->Get(0);
+      // De-register a frame that expect to be re-registered in the second run.
+      reconstruction.DeRegisterFrame(1);
+      // Clear all the observations of one image but keep it registered. We do
+      // not expect fixed images to be filtered (due to insufficient
+      // observations).
+      Image& image2 = reconstruction.Image(2);
+      for (point2D_t point2D_idx = 0; point2D_idx < image2.NumPoints2D();
+           ++point2D_idx) {
+        if (image2.Point2D(point2D_idx).HasPoint3D()) {
+          reconstruction.DeleteObservation(image2.ImageId(), point2D_idx);
+        }
+      }
+    }
+    options->fix_existing_frames = fix_existing_frames;
+    IncrementalPipeline mapper(options.get(), "", database_path,
+                            reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+
+    ASSERT_EQ(reconstruction_manager->Size(), 1);
+    EXPECT_THAT(gt_reconstruction,
+                ReconstructionNear(reconstruction_manager->Get(0),
+                                   /*max_rotation_error_deg=*/1e-2,
+                                   /*max_proj_center_error=*/1e-4));
+  }
+}
+
+TEST(IncrementalPipeline, ChainedMatches) {
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.match_config =
+      SyntheticDatasetOptions::MatchConfig::CHAINED;
+  synthetic_dataset_options.num_rigs = 1;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 4;
+  synthetic_dataset_options.num_points3D = 100;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  auto options = std::make_shared<IncrementalPipelineOptions>();
+  options->num_threads = 1;
+  IncrementalPipeline mapper(options.get(), "", database_path,
+                            reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+
+  ASSERT_EQ(reconstruction_manager->Size(), 1);
+  EXPECT_THAT(gt_reconstruction,
+              ReconstructionNear(reconstruction_manager->Get(0),
+                                 /*max_rotation_error_deg=*/1e-2,
+                                 /*max_proj_center_error=*/1e-4));
+}
+
+TEST(IncrementalPipeline, PriorBasedSfMWithoutNoise) {
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 10;
+  synthetic_dataset_options.num_points3D = 100;
+  synthetic_dataset_options.prior_position = true;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+  SyntheticNoiseOptions synthetic_noise_options;
+  synthetic_noise_options.point2D_stddev = 0.5;
+  synthetic_noise_options.prior_position_stddev = 0.0;
+  SynthesizeNoise(synthetic_noise_options, &gt_reconstruction, database.get());
+
+  std::shared_ptr<IncrementalPipelineOptions> mapper_options =
+      std::make_shared<IncrementalPipelineOptions>();
+  mapper_options->use_prior_position = true;
+
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  IncrementalPipeline mapper(mapper_options.get(), "", database_path,
+                            reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+
+  ASSERT_EQ(reconstruction_manager->Size(), 1);
+
+  // No noise on prior so do not align gt & computed (expected to be aligned
+  // from PositionPriorBundleAdjustment)
+  EXPECT_THAT(gt_reconstruction,
+              ReconstructionNear(reconstruction_manager->Get(0),
+                                 /*max_rotation_error_deg=*/1e-1,
+                                 /*max_proj_center_error=*/1e-1,
+                                 /*max_scale_error=*/std::nullopt,
+                                 /*num_obs_tolerance=*/0.02,
+                                 /*align=*/false));
+}
+
+TEST(IncrementalPipeline, PriorBasedSfMWithoutNoiseAndWithNonTrivialFrames) {
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 2;
+  synthetic_dataset_options.num_frames_per_rig = 7;
+  synthetic_dataset_options.num_points3D = 100;
+  synthetic_dataset_options.camera_has_prior_focal_length = false;
+
+  synthetic_dataset_options.prior_position = true;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+
+  // Match the common rig setup where only the reference sensor has absolute
+  // positions. Registering two frames then yields many images but only two
+  // usable pose priors.
+  FlatHashSet<sensor_t> ref_sensor_ids;
+  for (const auto& [_, rig] : gt_reconstruction.Rigs()) {
+    ref_sensor_ids.insert(rig.RefSensorId());
+  }
+  const std::vector<PosePrior> pose_priors = database->ReadAllPosePriors();
+  database->ClearPosePriors();
+  for (const PosePrior& pose_prior : pose_priors) {
+    if (ref_sensor_ids.count(pose_prior.corr_data_id.sensor_id)) {
+      database->WritePosePrior(pose_prior);
+    }
+  }
+
+  std::shared_ptr<IncrementalPipelineOptions> mapper_options =
+      std::make_shared<IncrementalPipelineOptions>();
+
+  mapper_options->use_prior_position = true;
+  mapper_options->use_robust_loss_on_prior_position = true;
+
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  IncrementalPipeline mapper(mapper_options.get(), "", database_path,
+                            reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+
+  ASSERT_EQ(reconstruction_manager->Size(), 1);
+  EXPECT_THAT(gt_reconstruction,
+              ReconstructionNear(reconstruction_manager->Get(0),
+                                 /*max_rotation_error_deg=*/1e-1,
+                                 /*max_proj_center_error=*/1e-1,
+                                 /*max_scale_error=*/std::nullopt,
+                                 /*num_obs_tolerance=*/0.02,
+                                 /*align=*/false));
+}
+
+TEST(IncrementalPipeline, PriorBasedSfMWithNoise) {
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 7;
+  synthetic_dataset_options.num_points3D = 100;
+  synthetic_dataset_options.prior_position = true;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+  SyntheticNoiseOptions synthetic_noise_options;
+  synthetic_noise_options.point2D_stddev = 0.5;
+  synthetic_noise_options.prior_position_stddev = 1.5;
+  SynthesizeNoise(synthetic_noise_options, &gt_reconstruction, database.get());
+
+  std::shared_ptr<IncrementalPipelineOptions> mapper_options =
+      std::make_shared<IncrementalPipelineOptions>();
+
+  mapper_options->use_prior_position = true;
+  mapper_options->use_robust_loss_on_prior_position = true;
+
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  IncrementalPipeline mapper(mapper_options.get(), "", database_path,
+                            reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+
+  ASSERT_EQ(reconstruction_manager->Size(), 1);
+  EXPECT_THAT(gt_reconstruction,
+              ReconstructionNear(reconstruction_manager->Get(0),
+                                 /*max_rotation_error_deg=*/1e-1,
+                                 /*max_proj_center_error=*/1e-1,
+                                 /*max_scale_error=*/std::nullopt,
+                                 /*num_obs_tolerance=*/0.02));
+}
+
+TEST(IncrementalPipeline, GPSPriorBasedSfMWithNoise) {
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 10;
+  synthetic_dataset_options.num_points3D = 100;
+
+  synthetic_dataset_options.prior_position = true;
+  synthetic_dataset_options.prior_position_coordinate_system =
+      PosePrior::CoordinateSystem::WGS84;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+  SyntheticNoiseOptions synthetic_noise_options;
+  synthetic_noise_options.point2D_stddev = 0.5;
+  synthetic_noise_options.prior_position_stddev = 1.5;
+  SynthesizeNoise(synthetic_noise_options, &gt_reconstruction, database.get());
+
+  std::shared_ptr<IncrementalPipelineOptions> mapper_options =
+      std::make_shared<IncrementalPipelineOptions>();
+
+  mapper_options->use_prior_position = true;
+  mapper_options->use_robust_loss_on_prior_position = true;
+
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  IncrementalPipeline mapper(mapper_options.get(), "", database_path,
+                            reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+
+  ASSERT_EQ(reconstruction_manager->Size(), 1);
+  EXPECT_THAT(gt_reconstruction,
+              ReconstructionNear(reconstruction_manager->Get(0),
+                                 /*max_rotation_error_deg=*/1e-1,
+                                 /*max_proj_center_error=*/1e-1,
+                                 /*max_scale_error=*/std::nullopt,
+                                 /*num_obs_tolerance=*/0.02));
+}
+
+TEST(IncrementalPipeline, SfMWithRandomSeedStability) {
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 3;
+  synthetic_dataset_options.num_points3D = 50;
+  synthetic_dataset_options.prior_position = false;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+  SyntheticNoiseOptions synthetic_noise_options;
+  synthetic_noise_options.point2D_stddev = 0.1;
+  SynthesizeNoise(synthetic_noise_options, &gt_reconstruction, database.get());
+
+  auto run_mapper = [&](int num_threads, int random_seed) {
+    auto mapper_options = std::make_shared<IncrementalPipelineOptions>();
+    mapper_options->use_prior_position = false;
+    mapper_options->num_threads = num_threads;
+    // Fork parity: the seed lives in the global PRNG (math/random.h).
+    kDefaultPRNGSeed = random_seed;
+    auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+    IncrementalPipeline mapper(mapper_options.get(), "", database_path,
+                            reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+    EXPECT_EQ(reconstruction_manager->Size(), 1);
+    return reconstruction_manager;
+  };
+
+  constexpr int kRandomSeed = 42;
+
+  auto reconstruction_manager0 =
+      run_mapper(/*num_threads=*/1, /*random_seed=*/kRandomSeed);
+  auto reconstruction_manager1 =
+      run_mapper(/*num_threads=*/1, /*random_seed=*/kRandomSeed);
+  EXPECT_THAT(reconstruction_manager0->Get(0),
+              ReconstructionEq(reconstruction_manager1->Get(0)));
+}
+
+TEST(IncrementalPipeline, PriorBasedSfMWithRandomSeedStability) {
+  // Upstream parity (d3ccaf35): unlocked after the legacy Reconstruction-side
+  // visibility stats were retired.
+
+  const auto database_path = CreateTestDir() / "database.db";
+
+  auto database = Database::Open(database_path);
+  Reconstruction gt_reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 5;
+  synthetic_dataset_options.num_points3D = 50;
+  synthetic_dataset_options.prior_position = true;
+  SynthesizeDataset(
+      synthetic_dataset_options, &gt_reconstruction, database.get());
+  SyntheticNoiseOptions synthetic_noise_options;
+  synthetic_noise_options.point2D_stddev = 0.1;
+  synthetic_noise_options.prior_position_stddev = 0.1;
+  SynthesizeNoise(synthetic_noise_options, &gt_reconstruction, database.get());
+
+  auto run_mapper = [&](int num_threads, int random_seed) {
+    auto mapper_options = std::make_shared<IncrementalPipelineOptions>();
+    mapper_options->use_prior_position = true;
+    mapper_options->num_threads = num_threads;
+    // Fork parity: the seed lives in the global PRNG (math/random.h).
+    kDefaultPRNGSeed = random_seed;
+    auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+    IncrementalPipeline mapper(mapper_options.get(), "", database_path,
+                            reconstruction_manager.get());
+  mapper.Start();
+  mapper.Wait();
+    EXPECT_EQ(reconstruction_manager->Size(), 1);
+    return reconstruction_manager;
+  };
+
+  constexpr int kRandomSeed = 42;
+
+  auto reconstruction_manager0 =
+      run_mapper(/*num_threads=*/1, /*random_seed=*/kRandomSeed);
+  auto reconstruction_manager1 =
+      run_mapper(/*num_threads=*/1, /*random_seed=*/kRandomSeed);
+  EXPECT_THAT(reconstruction_manager0->Get(0),
+              ReconstructionEq(reconstruction_manager1->Get(0)));
+}
+
+TEST(IncrementalPipelineOptions, PropagatesExplicitMaxNumIterations) {
+  // Explicitly set iteration bounds must be forwarded to both backends,
+  // including values that coincide with the previous compiled-in defaults.
+  IncrementalPipelineOptions options;
+  options.ba_local_max_num_iterations = 25;
+  options.ba_global_max_num_iterations = 50;
+
+  const BundleAdjustmentOptions local_options = options.LocalBundleAdjustment();
+  ASSERT_TRUE(local_options.ceres);
+  EXPECT_EQ(local_options.ceres->solver_options.max_num_iterations, 25);
+  ASSERT_TRUE(local_options.caspar);
+  EXPECT_EQ(local_options.caspar->solver_iter_max, 25);
+
+  const BundleAdjustmentOptions global_options =
+      options.GlobalBundleAdjustment();
+  ASSERT_TRUE(global_options.ceres);
+  EXPECT_EQ(global_options.ceres->solver_options.max_num_iterations, 50);
+  ASSERT_TRUE(global_options.caspar);
+  EXPECT_EQ(global_options.caspar->solver_iter_max, 50);
+}
+
+TEST(IncrementalPipelineOptions, DefaultMaxNumIterationsUsesBackendDefaults) {
+  // With the -1 sentinel default, each backend must keep its own default:
+  // Ceres the previous 25/50 mapper defaults, Caspar its own tuned
+  // solver_iter_max (see review discussion on #4382/PR #4527).
+  const IncrementalPipelineOptions options;
+  ASSERT_EQ(options.ba_local_max_num_iterations, -1);
+  ASSERT_EQ(options.ba_global_max_num_iterations, -1);
+  const int caspar_default = CasparBundleAdjustmentOptions().solver_iter_max;
+
+  const BundleAdjustmentOptions local_options = options.LocalBundleAdjustment();
+  ASSERT_TRUE(local_options.ceres);
+  EXPECT_EQ(local_options.ceres->solver_options.max_num_iterations, 25);
+  ASSERT_TRUE(local_options.caspar);
+  EXPECT_EQ(local_options.caspar->solver_iter_max, caspar_default);
+
+  const BundleAdjustmentOptions global_options =
+      options.GlobalBundleAdjustment();
+  ASSERT_TRUE(global_options.ceres);
+  EXPECT_EQ(global_options.ceres->solver_options.max_num_iterations, 50);
+  ASSERT_TRUE(global_options.caspar);
+  EXPECT_EQ(global_options.caspar->solver_iter_max, caspar_default);
+}
+
+TEST(IncrementalPipelineOptions, EffBaMaxNumIterations) {
+  // Batch C: the Eff* resolvers landed (upstream d3ccaf35 parity); the fork
+  // asserts them on the merged options surface (no per-backend slots).
+  IncrementalPipelineOptions options;
+  const int caspar_default = CasparBundleAdjustmentOptions().solver_iter_max;
+
+  // Sentinel resolves to the configured backend's default.
+  EXPECT_EQ(options.EffBaLocalMaxNumIterations(), 25);
+  EXPECT_EQ(options.EffBaGlobalMaxNumIterations(), 50);
+  options.ba_local_backend = BundleAdjustmentBackend::CASPAR;
+  options.ba_global_backend = BundleAdjustmentBackend::CASPAR;
+  EXPECT_EQ(options.EffBaLocalMaxNumIterations(), caspar_default);
+  EXPECT_EQ(options.EffBaGlobalMaxNumIterations(), caspar_default);
+
+  // Explicit values win regardless of backend.
+  options.ba_local_max_num_iterations = 7;
+  options.ba_global_max_num_iterations = 13;
+  EXPECT_EQ(options.EffBaLocalMaxNumIterations(), 7);
+  EXPECT_EQ(options.EffBaGlobalMaxNumIterations(), 13);
+}
+
+}  // namespace
+}  // namespace colmap

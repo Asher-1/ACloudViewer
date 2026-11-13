@@ -7,16 +7,24 @@
 
 #pragma once
 
+#include <atomic>
 #include <cfloat>
+#include <mutex>
+#include <optional>
 #include <random>
 #include <stdexcept>
 #include <vector>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #include "optim/random_sampler.h"
 #include "optim/ransac.h"
 #include "optim/support_measurement.h"
 #include "util/alignment.h"
 #include "util/logging.h"
+#include "util/threading.h"
 
 namespace colmap {
 
@@ -31,7 +39,11 @@ class LORANSAC : public RANSAC<Estimator, SupportMeasurer, Sampler> {
 public:
     using typename RANSAC<Estimator, SupportMeasurer, Sampler>::Report;
 
-    explicit LORANSAC(const RANSACOptions& options);
+    explicit LORANSAC(const RANSACOptions& options,
+                      Estimator estimator = Estimator(),
+                      LocalEstimator local_estimator = LocalEstimator(),
+                      SupportMeasurer support_measurer = SupportMeasurer(),
+                      Sampler sampler = Sampler(Estimator::kMinNumSamples));
 
     // Robustly estimate model with RANSAC (RANdom SAmple Consensus).
     //
@@ -61,8 +73,16 @@ template <typename Estimator,
           typename SupportMeasurer,
           typename Sampler>
 LORANSAC<Estimator, LocalEstimator, SupportMeasurer, Sampler>::LORANSAC(
-        const RANSACOptions& options)
-    : RANSAC<Estimator, SupportMeasurer, Sampler>(options) {}
+        const RANSACOptions& options,
+        Estimator estimator,
+        LocalEstimator local_estimator,
+        SupportMeasurer support_measurer,
+        Sampler sampler)
+    : RANSAC<Estimator, SupportMeasurer, Sampler>(options,
+                                                  std::move(estimator),
+                                                  std::move(support_measurer),
+                                                  std::move(sampler)),
+      local_estimator(std::move(local_estimator)) {}
 
 template <typename Estimator,
           typename LocalEstimator,
@@ -84,133 +104,253 @@ LORANSAC<Estimator, LocalEstimator, SupportMeasurer, Sampler>::Estimate(
         return report;
     }
 
-    typename SupportMeasurer::Support best_support;
-    typename Estimator::M_t best_model;
-    bool best_model_is_local = false;
-
-    bool abort = false;
-
     const double max_residual = options_.max_error * options_.max_error;
-
-    std::vector<double> residuals;
-    std::vector<double> best_local_residuals;
-
-    std::vector<typename LocalEstimator::X_t> X_inlier;
-    std::vector<typename LocalEstimator::Y_t> Y_inlier;
-
-    std::vector<typename Estimator::X_t> X_rand(Estimator::kMinNumSamples);
-    std::vector<typename Estimator::Y_t> Y_rand(Estimator::kMinNumSamples);
+    const size_t min_num_trials = options_.min_num_trials;
 
     sampler.Initialize(num_samples);
+    const size_t max_num_trials =
+            std::min<size_t>(options_.max_num_trials, sampler.MaxNumSamples());
 
-    size_t max_num_trials = options_.max_num_trials;
-    max_num_trials = std::min<size_t>(max_num_trials, sampler.MaxNumSamples());
-    size_t dyn_max_num_trials = max_num_trials;
+    typename SupportMeasurer::Support best_support;
+    std::optional<typename Estimator::M_t> best_model;
+    bool best_model_is_local = false;
 
-    for (report.num_trials = 0; report.num_trials < max_num_trials;
-         ++report.num_trials) {
-        if (abort) {
-            report.num_trials += 1;
-            break;
+    [[maybe_unused]] const int num_threads =
+            GetEffectiveNumThreads(options_.num_threads);
+    if constexpr (!is_parallel_safe_sampler<Sampler>::value) {
+        CHECK_EQ(num_threads, 1)
+                << "Parallel LORANSAC only supports parallel-safe samplers";
+    }
+
+    std::atomic<size_t> trial_counter(0);
+    std::atomic<size_t> dyn_max_num_trials(max_num_trials);
+    std::atomic<bool> abort_flag(false);
+    // Per-call lock: only this call's own workers contend for it, and it is
+    // not taken at all in the serial case.
+    std::mutex best_mutex;
+
+#ifdef _OPENMP
+#pragma omp parallel num_threads(num_threads) if (num_threads > 1)
+#endif
+    {
+        // Mutable estimation state is local to a worker.
+        Sampler thread_sampler = sampler;
+        thread_sampler.Initialize(num_samples);
+        Estimator thread_estimator = estimator;
+        LocalEstimator thread_local_estimator = local_estimator;
+        SupportMeasurer thread_support_measurer = support_measurer;
+
+        // LORANSAC overrides RANSAC::Estimate, so it must seed the PRNG
+        // itself for `random_seed` to make results reproducible.
+        if constexpr (is_randomized_sampler<Sampler>::value) {
+            if (options_.random_seed != -1) {
+#ifdef _OPENMP
+                SetPRNGSeed(options_.random_seed + omp_get_thread_num());
+#else
+                SetPRNGSeed(options_.random_seed);
+#endif
+            }
         }
 
-        sampler.SampleXY(X, Y, &X_rand, &Y_rand);
+        std::vector<double> residuals;
+        std::vector<double> best_local_residuals;
 
-        // Estimate model for current subset.
-        const std::vector<typename Estimator::M_t> sample_models =
-                estimator.Estimate(X_rand, Y_rand);
+        std::vector<typename LocalEstimator::X_t> X_inlier;
+        std::vector<typename LocalEstimator::Y_t> Y_inlier;
 
-        // Iterate through all estimated models
-        for (const auto& sample_model : sample_models) {
-            estimator.Residuals(X, Y, sample_model, &residuals);
-            CHECK_EQ(residuals.size(), num_samples);
+        std::vector<typename Estimator::X_t> X_rand(Estimator::kMinNumSamples);
+        std::vector<typename Estimator::Y_t> Y_rand(Estimator::kMinNumSamples);
+        std::vector<typename Estimator::M_t> sample_models;
+        std::vector<typename LocalEstimator::M_t> local_models;
 
-            const auto support =
-                    support_measurer.Evaluate(residuals, max_residual);
+        while (true) {
+            const size_t curr_thread_trial =
+                    trial_counter.fetch_add(1, std::memory_order_relaxed);
+            if (curr_thread_trial >= max_num_trials ||
+                abort_flag.load(std::memory_order_relaxed)) {
+                break;
+            }
 
-            // Do local optimization if better than all previous subsets.
-            if (support_measurer.Compare(support, best_support)) {
-                best_support = support;
-                best_model = sample_model;
-                best_model_is_local = false;
+            thread_sampler.SampleXY(X, Y, &X_rand, &Y_rand);
 
-                // Estimate locally optimized model from inliers.
-                if (support.num_inliers > Estimator::kMinNumSamples &&
-                    support.num_inliers >= LocalEstimator::kMinNumSamples) {
-                    // Recursive local optimization to expand inlier set.
-                    const size_t kMaxNumLocalTrials = 10;
-                    for (size_t local_num_trials = 0;
-                         local_num_trials < kMaxNumLocalTrials;
-                         ++local_num_trials) {
-                        X_inlier.clear();
-                        Y_inlier.clear();
-                        X_inlier.reserve(num_samples);
-                        Y_inlier.reserve(num_samples);
-                        for (size_t i = 0; i < residuals.size(); ++i) {
-                            if (residuals[i] <= max_residual) {
-                                X_inlier.push_back(X[i]);
-                                Y_inlier.push_back(Y[i]);
+            // Estimate model for current subset (dual-form, see
+            // HasReturnValueEstimate).
+            sample_models.clear();
+            if constexpr (HasReturnValueEstimate<
+                                  Estimator, typename Estimator::X_t,
+                                  typename Estimator::Y_t>::value) {
+                sample_models = thread_estimator.Estimate(X_rand, Y_rand);
+            } else {
+                thread_estimator.Estimate(X_rand, Y_rand, &sample_models);
+            }
+
+            for (const auto& sample_model : sample_models) {
+                thread_estimator.Residuals(X, Y, sample_model, &residuals);
+                CHECK_EQ(residuals.size(), num_samples);
+
+                const auto support = thread_support_measurer.Evaluate(
+                        residuals, max_residual);
+
+                // Speculative check; the commit below re-checks under lock.
+                bool is_better = false;
+                {
+                    std::unique_lock<std::mutex> lock(best_mutex,
+                                                      std::defer_lock);
+                    if (num_threads > 1) {
+                        lock.lock();
+                    }
+                    is_better = thread_support_measurer.Compare(support,
+                                                                best_support);
+                }
+
+                if (is_better) {
+                    typename SupportMeasurer::Support local_best_support =
+                            support;
+                    std::optional<typename Estimator::M_t> local_best_model =
+                            sample_model;
+                    bool local_best_is_local = false;
+
+                    // Estimate locally optimized model from inliers.
+                    if (support.num_inliers > Estimator::kMinNumSamples &&
+                        support.num_inliers >= LocalEstimator::kMinNumSamples) {
+                        // Recursive local optimization to expand inlier set.
+                        const size_t kMaxNumLocalTrials = 10;
+                        for (size_t local_num_trials = 0;
+                             local_num_trials < kMaxNumLocalTrials;
+                             ++local_num_trials) {
+                            X_inlier.clear();
+                            Y_inlier.clear();
+                            X_inlier.reserve(num_samples);
+                            Y_inlier.reserve(num_samples);
+                            for (size_t i = 0; i < residuals.size(); ++i) {
+                                if (residuals[i] <= max_residual) {
+                                    X_inlier.push_back(X[i]);
+                                    Y_inlier.push_back(Y[i]);
+                                }
                             }
-                        }
 
-                        const std::vector<typename LocalEstimator::M_t>
-                                local_models = local_estimator.Estimate(
+                            // With support measures such as MSAC, a better
+                            // model can have fewer inliers. Stop if the inlier
+                            // set is too small for the local estimator.
+                            if (X_inlier.size() <
+                                LocalEstimator::kMinNumSamples) {
+                                break;
+                            }
+
+                            local_models.clear();
+                            // Upstream parity (a2bd15c2 optim/loransac.h):
+                            // a local estimator that can refine is always
+                            // initialized with the current best model and
+                            // refined in place, even when it also offers a
+                            // (fork adapter) value-returning Estimate.
+                            if constexpr (HasRefineMember<
+                                                  LocalEstimator,
+                                                  typename LocalEstimator::X_t,
+                                                  typename LocalEstimator::
+                                                          Y_t>::value) {
+                                typename LocalEstimator::M_t refined_model =
+                                        *local_best_model;
+                                if (thread_local_estimator.Refine(
+                                            X_inlier, Y_inlier,
+                                            &refined_model)) {
+                                    local_models.push_back(refined_model);
+                                }
+                            } else if constexpr (
+                                    HasReturnValueEstimate<
+                                            LocalEstimator,
+                                            typename LocalEstimator::X_t,
+                                            typename LocalEstimator::Y_t>::
+                                            value) {
+                                local_models = thread_local_estimator.Estimate(
                                         X_inlier, Y_inlier);
-
-                        const size_t prev_best_num_inliers =
-                                best_support.num_inliers;
-
-                        for (const auto& local_model : local_models) {
-                            local_estimator.Residuals(X, Y, local_model,
-                                                      &residuals);
-                            CHECK_EQ(residuals.size(), num_samples);
-
-                            const auto local_support =
-                                    support_measurer.Evaluate(residuals,
-                                                              max_residual);
-
-                            // Check if locally optimized model is better.
-                            if (support_measurer.Compare(local_support,
-                                                         best_support)) {
-                                best_support = local_support;
-                                best_model = local_model;
-                                best_model_is_local = true;
-                                std::swap(residuals, best_local_residuals);
+                            } else {
+                                thread_local_estimator.Estimate(
+                                        X_inlier, Y_inlier, &local_models);
                             }
-                        }
 
-                        // Only continue recursive local optimization, if the
-                        // inlier set size increased and we thus have a chance
-                        // to further improve.
-                        if (best_support.num_inliers <= prev_best_num_inliers) {
-                            break;
-                        }
+                            bool improved_support = false;
+                            for (const auto& local_model : local_models) {
+                                thread_local_estimator.Residuals(
+                                        X, Y, local_model, &residuals);
+                                CHECK_EQ(residuals.size(), num_samples);
 
-                        // Swap back the residuals, so we can extract the best
-                        // inlier set in the next recursion of local
-                        // optimization.
-                        std::swap(residuals, best_local_residuals);
+                                const auto local_support =
+                                        thread_support_measurer.Evaluate(
+                                                residuals, max_residual);
+
+                                // Check if locally optimized model is better.
+                                if (thread_support_measurer.Compare(
+                                            local_support,
+                                            local_best_support)) {
+                                    local_best_support = local_support;
+                                    local_best_model = local_model;
+                                    local_best_is_local = true;
+                                    improved_support = true;
+                                    std::swap(residuals, best_local_residuals);
+                                }
+                            }
+
+                            // Keep expanding only while the refit improves
+                            // the support (score), not the raw inlier count.
+                            if (!improved_support) {
+                                break;
+                            }
+
+                            // Swap back the residuals, so we can extract the
+                            // best inlier set in the next recursion.
+                            std::swap(residuals, best_local_residuals);
+                        }
+                    }
+
+                    // Commit the local optimization result under lock.
+                    {
+                        std::unique_lock<std::mutex> lock(best_mutex,
+                                                          std::defer_lock);
+                        if (num_threads > 1) {
+                            lock.lock();
+                        }
+                        if (thread_support_measurer.Compare(local_best_support,
+                                                            best_support)) {
+                            best_support = local_best_support;
+                            best_model = local_best_model;
+                            best_model_is_local = local_best_is_local;
+                            dyn_max_num_trials.store(
+                                    RANSAC<Estimator, SupportMeasurer,
+                                           Sampler>::
+                                            ComputeNumTrials(
+                                                    best_support.num_inliers,
+                                                    num_samples,
+                                                    options_.confidence,
+                                                    options_.dyn_num_trials_multiplier),
+                                    std::memory_order_relaxed);
+                        }
                     }
                 }
 
-                dyn_max_num_trials =
-                        RANSAC<Estimator, SupportMeasurer, Sampler>::
-                                ComputeNumTrials(
-                                        best_support.num_inliers, num_samples,
-                                        options_.confidence,
-                                        options_.dyn_num_trials_multiplier);
+                if (curr_thread_trial >= dyn_max_num_trials.load(
+                                                 std::memory_order_relaxed) &&
+                    curr_thread_trial >= min_num_trials) {
+                    abort_flag.store(true, std::memory_order_relaxed);
+                    break;
+                }
             }
 
-            if (report.num_trials >= dyn_max_num_trials &&
-                report.num_trials >= options_.min_num_trials) {
-                abort = true;
+            if (abort_flag.load(std::memory_order_relaxed)) {
                 break;
             }
         }
     }
 
+    // The counter also includes the aborting trial (fetch_add before check),
+    // matching upstream's reported num_trials.
+    report.num_trials = trial_counter.load();
+
+    if (!best_model.has_value()) {
+        return report;
+    }
+
     report.support = best_support;
-    report.model = best_model;
+    report.model = best_model.value();
 
     // No valid model was found
     if (report.support.num_inliers < estimator.kMinNumSamples) {
@@ -222,7 +362,7 @@ LORANSAC<Estimator, LocalEstimator, SupportMeasurer, Sampler>::Estimate(
     // Determine inlier mask. Note that this calculates the residuals for the
     // best model twice, but saves to copy and fill the inlier mask for each
     // evaluated model. Some benchmarking revealed that this approach is faster.
-
+    std::vector<double> residuals(num_samples);
     if (best_model_is_local) {
         local_estimator.Residuals(X, Y, report.model, &residuals);
     } else {

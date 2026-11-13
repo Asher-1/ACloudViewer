@@ -40,7 +40,6 @@ public:
 
     struct Result {
         FaceDetectRunResult snapshot;
-        QImage displayImage;
         QVector<QString>
                 labels;  // recognize-mode labels (parallel to snapshot.faces)
         int identifiedCount = 0;

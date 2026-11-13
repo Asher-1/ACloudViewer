@@ -11,6 +11,8 @@
 #include <QComboBox>
 #include <QDialog>
 #include <QFile>
+#include <QGroupBox>
+#include <QImage>
 #include <QLabel>
 #include <QLineEdit>
 #include <QProgressBar>
@@ -30,6 +32,12 @@ struct DA3BuiltinModel {
     QString displayName;
     QString filename;
     QString downloadUrl;
+    QString sha256;
+};
+
+struct DA3DbImageEntry {
+    QString name;
+    QImage preview;  // full-resolution image for the enlarged preview
 };
 
 class DA3Dialog : public QDialog {
@@ -52,6 +60,8 @@ public:
         QString modelPath;
         QString metricModelPath;
         QStringList inputPaths;
+        QImage inputImage;
+        QString inputImageName;
         QString outputDir;
         int threads = 0;
         QString device = "auto";  // auto | cpu | sycl | vulkan | cuda | metal
@@ -74,7 +84,7 @@ public:
     void setRunning(bool running);
     void enableExportButtons(bool hasResults);
 
-    void setDbImages(const QStringList& imageNames);
+    void setDbImages(const QList<DA3DbImageEntry>& images);
     // Select the first matching entry in the DB combo (single-image
     // dialog) from a DB tree selection.
     void applyDbTreeSelection(const QStringList& imageNames);
@@ -91,6 +101,8 @@ signals:
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+    /** Esc intercept: confirm before closing when a task is running. */
+    void keyPressEvent(QKeyEvent* event) override;
 
 private slots:
     void onBrowseFile();
@@ -153,7 +165,7 @@ private:
     QWidget* m_dbContentWidget = nullptr;
     QComboBox* m_dbImageCombo = nullptr;
 
-    QWidget* m_quantGroup = nullptr;
+    QGroupBox* m_quantGroup = nullptr;
     QLineEdit* m_quantInput = nullptr;
     QLineEdit* m_quantOutput = nullptr;
     QComboBox* m_quantType = nullptr;
@@ -172,6 +184,7 @@ private:
     QVector<DA3BuiltinModel> m_downloadQueue;
     bool m_autoRunAfterDownload = false;
     bool m_downloadInProgress = false;
+    bool m_taskRunning = false;
     bool m_testDataInProgress = false;
     QString m_downloadTargetFilename;
 };

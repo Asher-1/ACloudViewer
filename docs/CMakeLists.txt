@@ -19,7 +19,7 @@
 #
 # Reference: util/ci_utils.sh::build_docs() for the canonical implementation
 #
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.24)
 
 # Documentation options (for compatibility, but make_docs.py decides what to build)
 option(BUILD_DOCUMENTATION "Build documentation" ON)

@@ -1,0 +1,58 @@
+--- a/src/ggml-cuda/im2col.cu
++++ b/src/ggml-cuda/im2col.cu
+@@ -44,6 +44,37 @@
+     }
+ }
+ 
++
++// Dense image stems and pointwise convolutions with few input channels have
++// too little work per spatial block. Flatten the identical gather so adjacent
++// output elements share a block, without changing any floating-point math.
++// The existing channel-parallel kernel remains preferable for large channels.
++template <typename T>
++static __global__ void im2col_flat_kernel(
++        const float * x, T * dst, int size, int IW, int IH, int OW, int OH,
++        int KW, int KH, int channels, int64_t channel_stride, int64_t batch_stride,
++        int s0, int s1, int p0, int p1, int d0, int d1) {
++    const int channel_window = channels * KH * KW;
++    for (int64_t linear = int64_t(blockIdx.x) * blockDim.x + threadIdx.x;
++         linear < size; linear += int64_t(gridDim.x) * blockDim.x) {
++        int rest = int(linear);
++        const int channel_kernel = rest % channel_window;
++        rest /= channel_window;
++        const int ow = rest % OW;
++        rest /= OW;
++        const int oh = rest % OH;
++        const int batch = rest / OH;
++        const int channel = channel_kernel / (KH * KW);
++        const int kh = (channel_kernel / KW) % KH;
++        const int kw = channel_kernel % KW;
++        const int64_t ih = int64_t(oh) * s1 + int64_t(kh) * d1 - p1;
++        const int64_t iw = int64_t(ow) * s0 + int64_t(kw) * d0 - p0;
++        dst[linear] = ih < 0 || ih >= IH || iw < 0 || iw >= IW
++                ? 0.0f
++                : x[channel * channel_stride + batch * batch_stride + int64_t(ih) * IW + iw];
++    }
++}
++
+ // im2col: [N, IC, IH, IW] => [N, OH, OW, IC*KH*KW]
+ template <typename T>
+ static void im2col_cuda(const float * x, T* dst,
+@@ -53,6 +84,17 @@
+     const int64_t IC_KH_KW = IC * KH * KW;
+     const int64_t N_OH = N * OH;
+     const int64_t KH_KW = KW*KH;
++    const int64_t elements = N_OH * OW * IC_KH_KW;
++    // Keep division in 32 bits only when all flattened coordinates fit.
++    if (IC <= 32 && OW * OH >= 16384 && elements <= INT32_MAX &&
++            IW <= INT32_MAX && IH <= INT32_MAX) {
++        const int blocks = MIN(int64_t(65535), (elements + 255) / 256);
++        im2col_flat_kernel<<<blocks, 256, 0, stream>>>(
++            x, dst, int(elements), int(IW), int(IH), int(OW), int(OH),
++            int(KW), int(KH), int(IC), IC_IH_IW, IH_IW,
++            s0, s1, p0, p1, d0, d1);
++        return;
++    }
+     const int threads_per_block = MIN((int)IC_KH_KW, CUDA_IM2COL_BLOCK_SIZE);
+     dim3 block_nums(MIN(OW, MAX_GRIDDIM_Y), MIN(N_OH, MAX_GRIDDIM_Z));
+ 

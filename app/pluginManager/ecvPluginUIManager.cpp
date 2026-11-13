@@ -20,6 +20,39 @@
 #include "ecvPluginManager.h"
 #include "ecvStdPluginInterface.h"
 
+namespace {
+// QWidget::addAction dereferences its argument inside insertAction without a
+// null check, so an empty list or a null entry from a plugin crashes the
+// application at startup. Drop those entries, and name the plugin and the
+// registration target so the faulty plugin can be identified from the log.
+QList<QAction *> filterValidActions(const QString &owner,
+                                    const char *target,
+                                    const QList<QAction *> &actions) {
+    QList<QAction *> valid;
+    valid.reserve(actions.size());
+    for (int i = 0; i < actions.size(); ++i) {
+        if (actions.at(i) != nullptr) {
+            valid.append(actions.at(i));
+        } else {
+            CVLog::Warning(
+                    QString("[PluginUI] Plugin '%1' returned a null action at "
+                            "index %2 of %3 (skipped for the %4)")
+                            .arg(owner)
+                            .arg(i)
+                            .arg(actions.size())
+                            .arg(target));
+        }
+    }
+    if (actions.isEmpty()) {
+        CVLog::Warning(QString("[PluginUI] Plugin '%1' returned no actions "
+                               "(nothing added to the %2)")
+                               .arg(owner)
+                               .arg(target));
+    }
+    return valid;
+}
+}  // namespace
+
 ccPluginUIManager::ccPluginUIManager(ecvMainAppInterface *appInterface,
                                      QWidget *parent)
     : QObject(parent),
@@ -32,7 +65,9 @@ ccPluginUIManager::ccPluginUIManager(ecvMainAppInterface *appInterface,
       m_mainPluginToolbar(nullptr),
       m_showPluginToolbar(nullptr),
       m_pclAlgorithmsToolbar(nullptr),
-      m_showPCLAlgorithmToolbar(nullptr) {
+      m_showPCLAlgorithmToolbar(nullptr),
+      m_aiCoreToolbar(nullptr),
+      m_showAICoreToolbar(nullptr) {
     setupActions();
     setupMenus();
     setupToolbars();
@@ -47,6 +82,7 @@ void ccPluginUIManager::init() {
     m_pclAlgorithmMenu->setEnabled(false);
 
     m_mainPluginToolbar->setVisible(false);
+    m_aiCoreToolbar->setVisible(false);
 
     QVector<ccStdPluginInterface *> coreStdPlugins;
     QVector<ccStdPluginInterface *> thirdPartyStdPlugins;
@@ -142,14 +178,37 @@ void ccPluginUIManager::init() {
         }
     }
 
-    // add core standard plugins to menu & tool bar
+    // add core standard plugins to menu & tool bar. Grouped plugins (e.g.
+    // the "AI Core" family, self-declared via info.json "group") cluster
+    // behind their own menu section and their own toolbar so they read as
+    // one family and stay draggable as a unit; the rest keep the historical
+    // order.
+    QVector<ccStdPluginInterface *> aiCoreStdPlugins;
     for (ccStdPluginInterface *plugin : coreStdPlugins) {
+        if (plugin->pluginGroup() == QStringLiteral("aicore")) {
+            aiCoreStdPlugins.append(plugin);
+            continue;
+        }
+
         QList<QAction *> actions = plugin->getActions();
 
         addActionsToMenu(plugin, actions);
         addActionsToToolBar(plugin, actions);
 
         plugin->onNewSelection(m_appInterface->getSelectedEntities());
+    }
+
+    if (!aiCoreStdPlugins.isEmpty()) {
+        m_pluginMenu->addSection(tr("AI Core"));
+
+        for (ccStdPluginInterface *plugin : aiCoreStdPlugins) {
+            QList<QAction *> actions = plugin->getActions();
+
+            addActionsToMenu(plugin, actions);
+            addAIActionsToToolBar(plugin, actions);
+
+            plugin->onNewSelection(m_appInterface->getSelectedEntities());
+        }
     }
 
     // add 3rd standard party plugins to menu & tool bar (if any )
@@ -201,7 +260,8 @@ void ccPluginUIManager::init() {
         }
     }
 
-    m_pluginMenu->setEnabled(!m_pluginMenu->isEmpty());
+    m_pluginMenu->setEnabled(!m_pluginMenu->isEmpty() ||
+                             !m_pclAlgorithmMenu->isEmpty());
 
     if (m_mainPluginToolbar->isEnabled()) {
         m_showPluginToolbar->setEnabled(true);
@@ -218,7 +278,28 @@ void ccPluginUIManager::init() {
         m_showPCLAlgorithmToolbar->setEnabled(true);
     }
 
+#ifdef QPCL_PLUGIN_TOOLBAR
     m_showPCLAlgorithmToolbar->setChecked(m_pclAlgorithmsToolbar->isEnabled());
+
+    if (m_aiCoreToolbar->isEnabled()) {
+        m_showAICoreToolbar->setEnabled(true);
+    }
+
+    m_showAICoreToolbar->setChecked(m_aiCoreToolbar->isEnabled());
+#else
+    // Opt-out build: the PCL toolbar is never mounted, but a QMainWindow
+    // auto-manages child toolbars the moment one becomes visible — keep it
+    // explicitly hidden and its toggle dead, or it pops up at the top.
+    m_pclAlgorithmsToolbar->setVisible(false);
+    m_showPCLAlgorithmToolbar->setEnabled(false);
+    m_showPCLAlgorithmToolbar->setChecked(false);
+
+    if (m_aiCoreToolbar->isEnabled()) {
+        m_showAICoreToolbar->setEnabled(true);
+    }
+
+    m_showAICoreToolbar->setChecked(m_aiCoreToolbar->isEnabled());
+#endif
 }
 
 QMenu *ccPluginUIManager::pluginMenu() const { return m_pluginMenu; }
@@ -238,6 +319,12 @@ QAction *ccPluginUIManager::actionShowMainPluginToolbar() {
 }
 
 QToolBar *ccPluginUIManager::glPclToolbar() { return m_pclAlgorithmsToolbar; }
+
+QToolBar *ccPluginUIManager::aiCoreToolbar() { return m_aiCoreToolbar; }
+
+QAction *ccPluginUIManager::actionShowAICoreToolbar() {
+    return m_showAICoreToolbar;
+}
 
 QAction *ccPluginUIManager::actionShowPCLAlgorithmToolbar() {
     return m_showPCLAlgorithmToolbar;
@@ -304,6 +391,10 @@ void ccPluginUIManager::setupActions() {
     m_showPCLAlgorithmToolbar = new QAction(tr("PCL Algorithm"), this);
     m_showPCLAlgorithmToolbar->setCheckable(true);
     m_showPCLAlgorithmToolbar->setEnabled(false);
+
+    m_showAICoreToolbar = new QAction(tr("AI Core"), this);
+    m_showAICoreToolbar->setCheckable(true);
+    m_showAICoreToolbar->setEnabled(false);
 }
 
 void ccPluginUIManager::setupMenus() {
@@ -313,87 +404,106 @@ void ccPluginUIManager::setupMenus() {
 
 void ccPluginUIManager::addActionsToMenu(ccStdPluginInterface *stdPlugin,
                                          const QList<QAction *> &actions) {
+    const QList<QAction *> valid =
+            filterValidActions(stdPlugin->getName(), "plugin menu", actions);
+    if (valid.isEmpty()) return;
+
     // If the plugin has more than one action we create its own menu
-    if (actions.size() > 1) {
+    if (valid.size() > 1) {
         QMenu *menu = new QMenu(stdPlugin->getName(), m_parentWidget);
 
         menu->setIcon(stdPlugin->getIcon());
         menu->setEnabled(true);
 
-        for (QAction *action : actions) {
+        for (QAction *action : valid) {
             menu->addAction(action);
         }
 
         m_pluginMenu->addMenu(menu);
     } else  // otherwise we just add it to the main menu
     {
-        Q_ASSERT(actions.count() == 1);
-
-        m_pluginMenu->addAction(actions.at(0));
+        m_pluginMenu->addAction(valid.at(0));
     }
 }
 
 void ccPluginUIManager::addActionsToToolBar(ccStdPluginInterface *stdPlugin,
                                             const QList<QAction *> &actions) {
     const QString pluginName = stdPlugin->getName();
+    const QList<QAction *> valid =
+            filterValidActions(pluginName, "plugin toolbar", actions);
+    if (valid.isEmpty()) return;
 
     // If the plugin has more than one action we create its own tool bar
-    if (actions.size() > 1) {
+    if (valid.size() > 1) {
         QToolBar *toolBar = new QToolBar(
                 pluginName + QStringLiteral(" toolbar"), m_parentWidget);
 
-        if (toolBar != nullptr) {
-            m_additionalPluginToolbars.push_back(toolBar);
+        m_additionalPluginToolbars.push_back(toolBar);
 
-            toolBar->setObjectName(pluginName);
-            toolBar->setEnabled(true);
+        toolBar->setObjectName(pluginName);
+        toolBar->setEnabled(true);
 
-            for (QAction *action : actions) {
-                toolBar->addAction(action);
-            }
+        for (QAction *action : valid) {
+            toolBar->addAction(action);
         }
     } else  // otherwise we just add it to the main tool bar
     {
-        Q_ASSERT(actions.count() == 1);
-
-        m_mainPluginToolbar->addAction(actions.at(0));
+        m_mainPluginToolbar->addAction(valid.at(0));
     }
 }
 
 void ccPluginUIManager::addActionsToMenu(const QString &moduleName,
                                          const QList<QAction *> &actions) {
+    const QList<QAction *> valid =
+            filterValidActions(moduleName, "PCL algorithm menu", actions);
+    if (valid.isEmpty()) return;
+
     // If the plugin has more than one action we create its own menu
-    if (actions.size() > 1) {
+    if (valid.size() > 1) {
         QMenu *menu = new QMenu(moduleName, m_parentWidget);
         menu->setEnabled(true);
 
-        for (QAction *action : actions) {
+        for (QAction *action : valid) {
             menu->addAction(action);
         }
 
         m_pclAlgorithmMenu->addMenu(menu);
     } else  // otherwise we just add it to the main menu
     {
-        Q_ASSERT(actions.count() == 1);
-
-        m_pclAlgorithmMenu->addAction(actions.at(0));
+        m_pclAlgorithmMenu->addAction(valid.at(0));
     }
 }
 
 void ccPluginUIManager::addActionsToToolBar(const QString &moduleName,
                                             const QList<QAction *> &actions) {
+    const QList<QAction *> valid =
+            filterValidActions(moduleName, "PCL algorithm toolbar", actions);
+    if (valid.isEmpty()) return;
+
     // If the plugin has more than one action we create its own tool bar
-    if (actions.size() > 1) {
+    if (valid.size() > 1) {
         if (m_pclAlgorithmsToolbar != nullptr) {
-            for (QAction *action : actions) {
+            for (QAction *action : valid) {
                 m_pclAlgorithmsToolbar->addAction(action);
             }
         }
     } else  // otherwise we just add it to the main tool bar
     {
-        Q_ASSERT(actions.count() == 1);
+        m_pclAlgorithmsToolbar->addAction(valid.at(0));
+    }
+}
 
-        m_pclAlgorithmsToolbar->addAction(actions.at(0));
+// Grouped ("aicore") plugin actions land on the dedicated AI Core toolbar
+// so the whole family can be dragged, floated and docked as one unit;
+// multi-action plugins contribute all their actions instead of spawning
+// per-plugin toolbars that the unified toolbar would merge again.
+void ccPluginUIManager::addAIActionsToToolBar(ccStdPluginInterface *stdPlugin,
+                                              const QList<QAction *> &actions) {
+    if (m_aiCoreToolbar == nullptr) return;
+
+    for (QAction *action :
+         filterValidActions(stdPlugin->getName(), "AI Core toolbar", actions)) {
+        m_aiCoreToolbar->addAction(action);
     }
 }
 
@@ -411,6 +521,13 @@ void ccPluginUIManager::setupToolbars() {
 
     connect(m_showPCLAlgorithmToolbar, &QAction::toggled,
             m_pclAlgorithmsToolbar, &QToolBar::setVisible);
+
+    m_aiCoreToolbar = new QToolBar(tr("AI Core"), m_parentWidget);
+
+    m_aiCoreToolbar->setObjectName(QStringLiteral("AI Core Toolbar"));
+
+    connect(m_showAICoreToolbar, &QAction::toggled, m_aiCoreToolbar,
+            &QToolBar::setVisible);
 }
 
 void ccPluginUIManager::enablePCLAlgorithm() {

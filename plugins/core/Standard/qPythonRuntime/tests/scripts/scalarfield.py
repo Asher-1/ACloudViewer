@@ -1,11 +1,16 @@
 import cccorelib
 import pycc
+import numpy as np
 
 cc = pycc.GetInstance()
 cloud = cc.clouds()[0].pc
 
-assert cccorelib.ScalarFieldTools.computeMeanScalarValue(cloud) == 8204.2490234375
-assert cccorelib.ScalarFieldTools.computeMeanSquareScalarValue(cloud) == 93043936.0
+# Independent a_cloud.bin Intensity totals: 10683 values, sum 87645995,
+# squared sum 993988375593. Round using ScalarType, not the tested mean.
+expected_mean = float(np.asarray(87645995 / 10683, dtype=pycc.ScalarType))
+expected_mean_square = float(np.asarray(993988375593 / 10683, dtype=pycc.ScalarType))
+assert cccorelib.ScalarFieldTools.computeMeanScalarValue(cloud) == expected_mean
+assert cccorelib.ScalarFieldTools.computeMeanSquareScalarValue(cloud) == expected_mean_square
 assert cccorelib.ScalarFieldTools.computeScalarFieldGradient(cloud, 0, False) == 0
 
 assert cccorelib.ScalarFieldTools.computeScalarFieldExtremas(cloud) == (0, 37522.00)

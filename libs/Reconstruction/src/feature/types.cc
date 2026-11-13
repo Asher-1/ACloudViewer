@@ -33,6 +33,10 @@
 
 #include "util/logging.h"
 
+#include <cstring>
+#include <stdexcept>
+#include <string>
+
 namespace colmap {
 
 FeatureKeypoint::FeatureKeypoint() : FeatureKeypoint(0, 0) {}
@@ -81,6 +85,49 @@ void FeatureKeypoint::Rescale(const float scale_x, const float scale_y) {
   a22 *= scale_y;
 }
 
+void FeatureKeypoint::Rot90(int k, const int width, const int height) {
+    k = k % 4;
+    if (k < 0) {
+        k += 4;
+    }
+    if (k == 0) {
+        return;
+    }
+    float new_x = x, new_y = y;
+    float new_a11 = a11, new_a12 = a12, new_a21 = a21, new_a22 = a22;
+    const float w = static_cast<float>(width);
+    const float h = static_cast<float>(height);
+
+    if (k == 1) {  // 90 CCW
+        new_x = y;
+        new_y = w - x;
+        new_a11 = a21;
+        new_a12 = a22;
+        new_a21 = -a11;
+        new_a22 = -a12;
+    } else if (k == 2) {  // 180 CCW
+        new_x = w - x;
+        new_y = h - y;
+        new_a11 = -a11;
+        new_a12 = -a12;
+        new_a21 = -a21;
+        new_a22 = -a22;
+    } else if (k == 3) {  // 270 CCW
+        new_x = h - y;
+        new_y = x;
+        new_a11 = -a21;
+        new_a12 = -a22;
+        new_a21 = a11;
+        new_a22 = a12;
+    }
+    x = new_x;
+    y = new_y;
+    a11 = new_a11;
+    a12 = new_a12;
+    a21 = new_a21;
+    a22 = new_a22;
+}
+
 float FeatureKeypoint::ComputeScale() const {
   return (ComputeScaleX() + ComputeScaleY()) / 2.0f;
 }
@@ -99,6 +146,71 @@ float FeatureKeypoint::ComputeOrientation() const {
 
 float FeatureKeypoint::ComputeShear() const {
   return std::atan2(-a12, a22) - ComputeOrientation();
+}
+
+FeatureDescriptors FeatureDescriptors::FromFloat(
+        const FeatureDescriptorsFloat& float_descriptors) {
+    FeatureDescriptors descriptors;
+    descriptors.type = float_descriptors.type;
+    const Eigen::Index rows = float_descriptors.data.rows();
+    const Eigen::Index float_cols = float_descriptors.data.cols();
+
+    switch (float_descriptors.type) {
+        case FeatureExtractorType::SIFT:
+            descriptors.data = float_descriptors.data.cast<uint8_t>();
+            break;
+        case FeatureExtractorType::ALIKED_N16ROT:
+        case FeatureExtractorType::ALIKED_N32:
+        case FeatureExtractorType::LOMA_B:
+        case FeatureExtractorType::LOMA_B128:
+            descriptors.data.resize(
+                    rows, float_cols * static_cast<Eigen::Index>(sizeof(float)));
+            std::memcpy(descriptors.data.data(), float_descriptors.data.data(),
+                        static_cast<size_t>(rows * float_cols) * sizeof(float));
+            break;
+        default:
+            throw std::invalid_argument(
+                    std::string("Unsupported feature type: ") + std::string(
+                            FeatureExtractorTypeToString(float_descriptors.type)));
+    }
+    return descriptors;
+}
+
+FeatureDescriptorsFloat FeatureDescriptors::ToFloat() const {
+    return FeatureDescriptorsFloat::FromBytes(*this);
+}
+
+FeatureDescriptorsFloat FeatureDescriptorsFloat::FromBytes(
+        const FeatureDescriptors& byte_descriptors) {
+    FeatureDescriptorsFloat descriptors;
+    descriptors.type = byte_descriptors.type;
+    const Eigen::Index rows = byte_descriptors.data.rows();
+    const Eigen::Index byte_cols = byte_descriptors.data.cols();
+
+    switch (byte_descriptors.type) {
+        case FeatureExtractorType::SIFT:
+            descriptors.data = byte_descriptors.data.cast<float>();
+            break;
+        case FeatureExtractorType::ALIKED_N16ROT:
+        case FeatureExtractorType::ALIKED_N32:
+        case FeatureExtractorType::LOMA_B:
+        case FeatureExtractorType::LOMA_B128:
+            CHECK_EQ(byte_cols % static_cast<Eigen::Index>(sizeof(float)), 0);
+            descriptors.data.resize(
+                    rows, byte_cols / static_cast<Eigen::Index>(sizeof(float)));
+            std::memcpy(descriptors.data.data(), byte_descriptors.data.data(),
+                        static_cast<size_t>(rows * byte_cols));
+            break;
+        default:
+            throw std::invalid_argument(
+                    std::string("Unsupported feature type: ") + std::string(
+                            FeatureExtractorTypeToString(byte_descriptors.type)));
+    }
+    return descriptors;
+}
+
+FeatureDescriptors FeatureDescriptorsFloat::ToBytes() const {
+    return FeatureDescriptors::FromFloat(*this);
 }
 
 }  // namespace colmap

@@ -29,6 +29,7 @@
 #include <QApplication>
 #include <QMainWindow>
 #include <QProgressDialog>
+#include <QThread>
 #include <QtConcurrentRun>
 #include <QtGui>
 
@@ -49,11 +50,6 @@
 // System
 #include <algorithm>
 #include <cmath>
-#if defined(CV_WINDOWS)
-#include "windows.h"
-#else
-#include <time.h>
-#endif
 
 static ecvMainAppInterface* s_app = nullptr;
 
@@ -380,11 +376,7 @@ ccHObject* qRansacSD::executeRANSAC(ccPointCloud* ccPC,
         QFuture<void> future = QtConcurrent::run(doDetection);
 
         while (!future.isFinished()) {
-#if defined(CV_WINDOWS)
-            ::Sleep(500);
-#else
-            usleep(500 * 1000);
-#endif
+            QThread::msleep(500);
             if (!silent && pDlg) {
                 pDlg->setValue(pDlg->value() + 1);
             }

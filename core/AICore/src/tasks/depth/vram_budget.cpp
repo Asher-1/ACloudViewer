@@ -5,15 +5,15 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "vram_budget.hpp"
+#include "tasks/depth/vram_budget.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <string>
 
-#include "backend.hpp"
-#include "common.hpp"
 #include "ggml-backend.h"
+#include "tasks/depth/backend.hpp"
+#include "tasks/depth/common.hpp"
 
 namespace aicore {
 namespace depth {

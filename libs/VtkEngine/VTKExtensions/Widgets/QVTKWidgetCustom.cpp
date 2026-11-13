@@ -300,14 +300,18 @@ void VtkWidgetPrivate::layoutRenderers() {
 void VtkWidgetPrivate::init() { layoutRenderers(); }
 
 // Max click duration for enabling picking mode (in ms)
-// static const int CC_MAX_PICKING_CLICK_DURATION_MS = 200;
-static const int CC_MAX_PICKING_CLICK_DURATION_MS = 350;
 
 // Max pixel distance between press and release to treat the gesture as
 // a click (entity picking) rather than a drag (rotation / pan).
 // Anything beyond this threshold is considered a drag and will NOT
 // trigger entity selection in the DB tree.
 static const int CLICK_DRAG_THRESHOLD_PX = 3;
+// Upstream-parity (ccGLWindowInterface): a left RELEASE only counts as a
+// pick if the press lasted under this wall-clock limit — a longer held
+// press is an aborted interaction, not a click. Kept at the upstream value
+// (200 ms); the VTK timer starts only AFTER the release, so the deferred
+// pick hop does not affect this measurement.
+static const int CC_MAX_PICKING_CLICK_DURATION_MS = 200;
 
 static QMap<QString, VtkShortcutDef> s_vtkShortcutMap;
 static bool s_vtkMapInitialized = false;
@@ -2233,14 +2237,16 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
             event->accept();
         } else {
             // True click — proceed with entity picking.
-            // picking?
             // CRITICAL: Don't start deferred picking if a VTK widget was
             // clicked This prevents doPicking() from overriding the widget
-            // selection
+            // selection.
+            // Upstream-parity guard (ccGLWindowInterface): only a short
+            // press-and-release counts as a pick — a long held press is
+            // treated as an aborted interaction, not a click.
             auto* pickDt = displayTarget();
             qint64 elapsed = pickDt ? pickDt->elapsedMs() : 0;
             qint64 clickTime = curLastClickTime();
-            bool timeOk =
+            const bool timeOk =
                     elapsed < clickTime + CC_MAX_PICKING_CLICK_DURATION_MS;
             if (!curWidgetClicked() && timeOk) {
                 int x = curLastMousePos().x();

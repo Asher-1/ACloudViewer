@@ -7,7 +7,7 @@
 
 #include <cstdio>
 
-#include "compute_mode.hpp"
+#include "tasks/depth/compute_mode.hpp"
 
 int main() {
     if (aicore::depth::gpu_mode()) {

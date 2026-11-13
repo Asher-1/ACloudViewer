@@ -80,12 +80,12 @@ public:
      *
      * Number of bits used to encode cell position: 3 * MAX_OCTREE_LEVEL.
      * Value depends on 32-bit vs 64-bit architecture.
-     * @warning Never pass as reference (constant initializer)
+     * C++17 constexpr members provide storage even when passed by reference.
      */
 #ifdef OCTREE_CODES_64_BITS
-    static const int MAX_OCTREE_LEVEL = 21;  ///< 64-bit: max 21 levels
+    static constexpr int MAX_OCTREE_LEVEL = 21;  ///< 64-bit: max 21 levels
 #else
-    static const int MAX_OCTREE_LEVEL = 10;  ///< 32-bit: max 10 levels
+    static constexpr int MAX_OCTREE_LEVEL = 10;  ///< 32-bit: max 10 levels
 #endif
 
     /**
@@ -105,15 +105,13 @@ public:
      * @brief Maximum octree length at deepest level
      *
      * Number of cells along one axis at maximum subdivision.
-     * @warning Never pass as reference (constant initializer)
      */
-    static const int MAX_OCTREE_LENGTH = (1 << MAX_OCTREE_LEVEL);
+    static constexpr int MAX_OCTREE_LENGTH = (1 << MAX_OCTREE_LEVEL);
 
     /**
      * @brief Invalid cell code sentinel value
-     * @warning Never pass as reference (constant initializer)
      */
-    static const CellCode INVALID_CELL_CODE = (~static_cast<CellCode>(0));
+    static constexpr CellCode INVALID_CELL_CODE = (~static_cast<CellCode>(0));
 
     /**
      * @brief Container for cell codes

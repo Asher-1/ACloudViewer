@@ -9,8 +9,9 @@
 #include <string>
 #include <vector>
 
-#include "facedetect/backend.hpp"
-#include "ggml_backend_registry.hpp"
+#include "common/ggml_backend_registry.hpp"
+#include "common/ggml_backend_utils.hpp"
+#include "tasks/facedetect/backend.hpp"
 
 namespace {
 
@@ -27,6 +28,11 @@ int main() {
             aicore::runtime::acquire_backend_lease("cpu", 1, &error);
     if (!first)
         return Fail(error.empty() ? "first lease failed" : error.c_str());
+
+    if (ggml_common::flash_attention_sequence_limit(first.handle()) !=
+        INT64_MAX) {
+        return Fail("CPU backend incorrectly inherits the GPU attention limit");
+    }
 
     aicore::runtime::BackendLease second =
             aicore::runtime::acquire_backend_lease("cpu", 1, &error);
@@ -57,6 +63,19 @@ int main() {
     }
     if (second.handle() == different_threads.handle()) {
         return Fail("CPU thread configurations shared one backend");
+    }
+
+    aicore::runtime::BackendLease parallel_first =
+            aicore::runtime::acquire_parallel_backend_lease("cpu", 1, &error);
+    aicore::runtime::BackendLease parallel_second =
+            aicore::runtime::acquire_parallel_backend_lease("cpu", 1, &error);
+    if (!parallel_first || !parallel_second) {
+        return Fail(error.empty() ? "parallel CPU lease failed"
+                                  : error.c_str());
+    }
+    if (parallel_first.handle() == parallel_second.handle() ||
+        parallel_first.handle() == second.handle()) {
+        return Fail("parallel CPU workers shared a serialized backend");
     }
     const std::vector<aicore::runtime::BackendLease> group = {
             second, different_threads, second};

@@ -21,16 +21,13 @@
 
 #include <string>
 
-#ifdef _WIN32
-#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
-#endif
-#ifdef __APPLE__
+// Upstream-parity note (COLMAP fork): the project builds with C++17
+// (CMAKE_CXX_STANDARD=17), so the historical experimental-filesystem shim
+// was replaced with std::filesystem. This restores the str/PathLike caster
+// for std::filesystem::path members everywhere (vocab_tree_path,
+// match_list_path, and the pairing-driven matching surface).
 #include <filesystem>
-namespace fs = std::__fs::filesystem;
-#else
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#endif
+namespace fs = std::filesystem;
 
 namespace pybind11 {
 namespace detail {

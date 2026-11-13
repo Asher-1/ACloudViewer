@@ -1,0 +1,353 @@
+{
+  "date": "2026-10-21",
+  "scope": "Fresh combined CPU/CUDA/Vulkan ExternalProject build, installed execution, retained-object monolithic public contract linkage, and selected OCR numerical migration regression. Not complete all-task or controlled performance/release acceptance.",
+  "build": "build_llama_dual_gpu_3nl01j4j",
+  "configure": {
+    "path": "build_llama_dual_gpu_3nl01j4j/configure-command.json",
+    "bytes": 834,
+    "sha256": "b2aa1f0d6f953d9ae5de6ea154a63487d93dbf5a0624c337f22a8951230d4b4e"
+  },
+  "build_command": {
+    "path": "build_llama_dual_gpu_3nl01j4j/build-command.json",
+    "bytes": 120,
+    "sha256": "84bad68640ed6ed2deca90573730ec96a261b8f2784bc31868ee885cb63dbd3a"
+  },
+  "build_log": {
+    "path": "build_llama_dual_gpu_3nl01j4j/build.log",
+    "bytes": 106628,
+    "sha256": "4a41b557fde875737d197858de8b8e4196ef42558522a801e0eff26d3e7d39ae"
+  },
+  "input_identities": {
+    "path": "build_llama_dual_gpu_3nl01j4j/source-owner-inputs.json",
+    "bytes": 2244,
+    "sha256": "87ff8b4fb9a5ddbbecafa91c70b7f5bc933461f2562ba1e60bea03bff084dff2"
+  },
+  "source_comparison": {
+    "path": "build_llama_dual_gpu_3nl01j4j/backend-source-comparison.json",
+    "bytes": 137,
+    "sha256": "12d92f34fb61c4d70301d066e6af3ad62d78054bede76828f4395aeceebcb7e6"
+  },
+  "idempotence": {
+    "path": "build_llama_dual_gpu_3nl01j4j/replay-idempotence.log",
+    "bytes": 312,
+    "sha256": "236695a86b470b9b6190131c5d7723a391b47def779de845bc394c877f74c82a"
+  },
+  "ctest": {
+    "report": {
+      "path": "build_llama_dual_gpu_3nl01j4j/contracts.xml",
+      "bytes": 4260,
+      "sha256": "9e3f681d5512898de7f55a50921c35048f521293be36d54752b5dfd5d3a88893"
+    },
+    "tests": 4,
+    "passed": 4,
+    "skipped": 0
+  },
+  "public_contracts": {
+    "report": {
+      "path": "build_llama_dual_gpu_3nl01j4j/aicore-contract-tests/contracts.xml",
+      "bytes": 22418,
+      "sha256": "f9316df7e3a7fd7792d331250c6916bdbccd8c525b40cf56d9d09c968e0c1fe8"
+    },
+    "tests": 36,
+    "passed": 36,
+    "skipped": 0
+  },
+  "public_contract_scope": {
+    "path": "build_llama_dual_gpu_3nl01j4j/contract-linkage-scope.json",
+    "bytes": 366,
+    "sha256": "d416df8666c990afa9c8baaf668f375d3304887ee005bda46d094b38864e7d5e"
+  },
+  "public_contract_objects": {
+    "path": "build_llama_dual_gpu_3nl01j4j/contract-object-identities.json",
+    "bytes": 64827,
+    "sha256": "9228d79968248df5c3ad513e0f88a56cacc9aa8bb5353a4a7424f9bb8b2cf316"
+  },
+  "public_contract_link_command": {
+    "path": "build_llama_dual_gpu_3nl01j4j/aicore-link-command.json",
+    "bytes": 48036,
+    "sha256": "d934ad2694f29256cb0705a6c423eeaad0759a3557d3bbf968618d58a8b6943c"
+  },
+  "public_contract_relocations": {
+    "path": "build_llama_dual_gpu_3nl01j4j/aicore-relocations.log",
+    "bytes": 12648,
+    "sha256": "deabe519eaa558774b628c979aab505ad10c67f1c8a7c1fc23f5bed7dc3a63ee"
+  },
+  "installed_libraries": [
+    {
+      "path": "build_llama_dual_gpu_3nl01j4j/install/bin/libggml-cpu.so",
+      "bytes": 1454296,
+      "sha256": "a2c9857d7d29c1882a81ae6366488423f6fd572ead5b053912b760ccd1fc9012"
+    },
+    {
+      "path": "build_llama_dual_gpu_3nl01j4j/install/bin/libggml-cuda.so",
+      "bytes": 240323968,
+      "sha256": "65143b7743ce66151465c2b990e9aec722847e98657286ce7a58e93bb28cdf24"
+    },
+    {
+      "path": "build_llama_dual_gpu_3nl01j4j/install/bin/libggml-vulkan.so",
+      "bytes": 42706672,
+      "sha256": "8d26f950edbe1f711cad060a384d5a1ec9a24faca3830504d7789ab759acee07"
+    },
+    {
+      "path": "build_llama_dual_gpu_3nl01j4j/install/lib/libggml-base.so.0.27.0",
+      "bytes": 923792,
+      "sha256": "e71564cf67a50d28aa97b6ceb027b0344f24eefd6ab1c102c9180abfb3471bfc"
+    },
+    {
+      "path": "build_llama_dual_gpu_3nl01j4j/install/lib/libggml.so.0.27.0",
+      "bytes": 51968,
+      "sha256": "4ae2a630fea8a10deb5ec23f176a5ef9af87d568fec9d7e6aea78bb3de72d573"
+    },
+    {
+      "path": "build_llama_dual_gpu_3nl01j4j/install/lib/libllama.so.0.7.0",
+      "bytes": 5073880,
+      "sha256": "507edec9ac291f2cdb4603ba4f897e87b89615d1993b683a3e6a8a4bb7c652ab"
+    },
+    {
+      "path": "build_llama_dual_gpu_3nl01j4j/install/lib/libmtmd.so.0.7.0",
+      "bytes": 1868040,
+      "sha256": "9694c962b8777a44993d2bbeb226619591f038cbbb3abc498fe922edfa32cbc0"
+    }
+  ],
+  "ocr": {
+    "cuda": {
+      "checks": 158,
+      "unique_model_shas": 53,
+      "all_native_returncodes_zero": true,
+      "new_argmax_flips_relative_to_retained_baseline": 0,
+      "reports": {
+        "paddle": {
+          "path": "build_llama_dual_gpu_3nl01j4j/ocr-cuda/paddle-regression.json",
+          "bytes": 52399,
+          "sha256": "8ea8135405d9b1ec902d27daa4f908ed1370e87cff5b459d4602d59e81b8e245"
+        },
+        "onnx": {
+          "path": "build_llama_dual_gpu_3nl01j4j/ocr-cuda/onnx-regression.json",
+          "bytes": 360596,
+          "sha256": "04f40f996bc61b6cc8918b323cfb5184865906fed18fa617cefafa6888eafc89"
+        },
+        "table": {
+          "path": "build_llama_dual_gpu_3nl01j4j/ocr-cuda/table-regression.json",
+          "bytes": 35185,
+          "sha256": "ff10783c09166da8196d2b7f6abad511526e2f0f549441c5328f99f7036965ed"
+        }
+      },
+      "scripts": [
+        {
+          "path": "build_llama_dual_gpu_3nl01j4j/ocr-cuda/run_paddle_regression.py",
+          "bytes": 4887,
+          "sha256": "d6bd6fa91fe93699a7837b9d6715ed46a66660f4a1a0c14967fb62f3670c5b30"
+        },
+        {
+          "path": "build_llama_dual_gpu_3nl01j4j/ocr-cuda/run_onnx_regression.py",
+          "bytes": 4616,
+          "sha256": "0ee38edf9e8f021c98841ad55403c52b7b85bd49845314e42da632d3ffe372da"
+        },
+        {
+          "path": "build_llama_dual_gpu_3nl01j4j/ocr-cuda/run_table_regression.py",
+          "bytes": 3150,
+          "sha256": "df98a66b7a36aeabd2898497d45530f1f8a2c4d4b0bd85fa398c9850c2fff7a9"
+        }
+      ],
+      "max_baseline_probability_diff": {
+        "paddle": 0.0,
+        "onnx": 0.0,
+        "slanet": 0.0
+      },
+      "max_slanet_baseline_location_diff": 0.0,
+      "layout_original_source_failures": [
+        {
+          "scenario": "ocr-paddle-layout-f16",
+          "model_sha256": "fda1343642abc04475271438f29b58036528be5f3f6a422c10ffdde3d7bcda1a",
+          "class_flips": 22,
+          "dfl_edge_flips": 40
+        },
+        {
+          "scenario": "ocr-paddle-layout-q8_0",
+          "model_sha256": "18056b5559f3da420ab6cb5e3dd14a5c9f18f5fb8da91837ba8fa24288b07e42",
+          "class_flips": 253,
+          "dfl_edge_flips": 419
+        }
+      ],
+      "loader": {
+        "trace": {
+          "path": "build_llama_dual_gpu_3nl01j4j/ocr-cuda/ocr-paddle-graph-det-ch-f32-fully-rebased/native.log",
+          "bytes": 156940,
+          "sha256": "8f4edf0312cc8885f8e432ea1ea5d389da24ab0bc3e54e7ba11ce44ff4f069ef"
+        },
+        "loaded_libraries": [
+          {
+            "loaded_as": "build_llama_dual_gpu_3nl01j4j/ocr-cuda/libggml-base.so.0",
+            "resolved": {
+              "path": "build_llama_dual_gpu_3nl01j4j/install/lib/libggml-base.so.0.27.0",
+              "bytes": 923792,
+              "sha256": "e71564cf67a50d28aa97b6ceb027b0344f24eefd6ab1c102c9180abfb3471bfc"
+            }
+          },
+          {
+            "loaded_as": "build_llama_dual_gpu_3nl01j4j/ocr-cuda/libggml.so.0",
+            "resolved": {
+              "path": "build_llama_dual_gpu_3nl01j4j/install/lib/libggml.so.0.27.0",
+              "bytes": 51968,
+              "sha256": "4ae2a630fea8a10deb5ec23f176a5ef9af87d568fec9d7e6aea78bb3de72d573"
+            }
+          },
+          {
+            "loaded_as": "build_llama_dual_gpu_3nl01j4j/ocr-cuda/libggml-cuda.so",
+            "resolved": {
+              "path": "build_llama_dual_gpu_3nl01j4j/install/bin/libggml-cuda.so",
+              "bytes": 240323968,
+              "sha256": "65143b7743ce66151465c2b990e9aec722847e98657286ce7a58e93bb28cdf24"
+            }
+          },
+          {
+            "loaded_as": "build_llama_dual_gpu_3nl01j4j/ocr-cuda/libggml-vulkan.so",
+            "resolved": {
+              "path": "build_llama_dual_gpu_3nl01j4j/install/bin/libggml-vulkan.so",
+              "bytes": 42706672,
+              "sha256": "8d26f950edbe1f711cad060a384d5a1ec9a24faca3830504d7789ab759acee07"
+            }
+          },
+          {
+            "loaded_as": "build_llama_dual_gpu_3nl01j4j/ocr-cuda/libggml-cpu.so",
+            "resolved": {
+              "path": "build_llama_dual_gpu_3nl01j4j/install/bin/libggml-cpu.so",
+              "bytes": 1454296,
+              "sha256": "a2c9857d7d29c1882a81ae6366488423f6fd572ead5b053912b760ccd1fc9012"
+            }
+          }
+        ],
+        "actual_device": "CUDA0"
+      }
+    },
+    "vulkan": {
+      "checks": 158,
+      "unique_model_shas": 53,
+      "all_native_returncodes_zero": true,
+      "new_argmax_flips_relative_to_retained_baseline": 0,
+      "reports": {
+        "paddle": {
+          "path": "build_llama_dual_gpu_3nl01j4j/ocr-vulkan/paddle-regression.json",
+          "bytes": 53914,
+          "sha256": "271a722de7ff452e6b6467750162e15c5baf7f2b931eafc8e2ef6c07abf69e03"
+        },
+        "onnx": {
+          "path": "build_llama_dual_gpu_3nl01j4j/ocr-vulkan/onnx-regression.json",
+          "bytes": 367428,
+          "sha256": "9a7c6e584db6d878ae30dc87fe20d4ebdae423c62565087f28bc59ba901aee6e"
+        },
+        "table": {
+          "path": "build_llama_dual_gpu_3nl01j4j/ocr-vulkan/table-regression.json",
+          "bytes": 36038,
+          "sha256": "fbec5313e64d6f94f914897fbb1144e0c9bb848bf02a1088e6ebc6fe07485fea"
+        }
+      },
+      "scripts": [
+        {
+          "path": "build_llama_dual_gpu_3nl01j4j/ocr-vulkan/run_paddle_regression.py",
+          "bytes": 4895,
+          "sha256": "7ec7e0804a46830b7b4656dcfa544fd6eb4b48db34ee14a188eab88595d83edb"
+        },
+        {
+          "path": "build_llama_dual_gpu_3nl01j4j/ocr-vulkan/run_onnx_regression.py",
+          "bytes": 4622,
+          "sha256": "aa9f1cac8cfd0353e80adb0d3080c0490ff0cfcbbba506ce63cc989eaa992606"
+        },
+        {
+          "path": "build_llama_dual_gpu_3nl01j4j/ocr-vulkan/run_table_regression.py",
+          "bytes": 3156,
+          "sha256": "ada7134fca80a5cebc8aabda7440b2ecddc57a15cae8399609810e7cd43dc5ea"
+        }
+      ],
+      "max_baseline_probability_diff": {
+        "paddle": 1.4781951904296875e-05,
+        "onnx": 1.4960765838623047e-05,
+        "slanet": 0.0002295374870300293
+      },
+      "max_slanet_baseline_location_diff": 0.000284731388092041,
+      "layout_original_source_failures": [
+        {
+          "scenario": "ocr-paddle-layout-f16",
+          "model_sha256": "fda1343642abc04475271438f29b58036528be5f3f6a422c10ffdde3d7bcda1a",
+          "class_flips": 22,
+          "dfl_edge_flips": 40
+        },
+        {
+          "scenario": "ocr-paddle-layout-q8_0",
+          "model_sha256": "18056b5559f3da420ab6cb5e3dd14a5c9f18f5fb8da91837ba8fa24288b07e42",
+          "class_flips": 253,
+          "dfl_edge_flips": 419
+        }
+      ],
+      "loader": {
+        "trace": {
+          "path": "build_llama_dual_gpu_3nl01j4j/ocr-vulkan/ocr-paddle-graph-det-ch-f32-fully-rebased/native.log",
+          "bytes": 158300,
+          "sha256": "43ede5fa9e1bde5abf1c5029f0a4a94b061897d0a685fcc40854b5b1e4fa7a9c"
+        },
+        "loaded_libraries": [
+          {
+            "loaded_as": "build_llama_dual_gpu_3nl01j4j/ocr-vulkan/libggml-base.so.0",
+            "resolved": {
+              "path": "build_llama_dual_gpu_3nl01j4j/install/lib/libggml-base.so.0.27.0",
+              "bytes": 923792,
+              "sha256": "e71564cf67a50d28aa97b6ceb027b0344f24eefd6ab1c102c9180abfb3471bfc"
+            }
+          },
+          {
+            "loaded_as": "build_llama_dual_gpu_3nl01j4j/ocr-vulkan/libggml.so.0",
+            "resolved": {
+              "path": "build_llama_dual_gpu_3nl01j4j/install/lib/libggml.so.0.27.0",
+              "bytes": 51968,
+              "sha256": "4ae2a630fea8a10deb5ec23f176a5ef9af87d568fec9d7e6aea78bb3de72d573"
+            }
+          },
+          {
+            "loaded_as": "build_llama_dual_gpu_3nl01j4j/ocr-vulkan/libggml-cuda.so",
+            "resolved": {
+              "path": "build_llama_dual_gpu_3nl01j4j/install/bin/libggml-cuda.so",
+              "bytes": 240323968,
+              "sha256": "65143b7743ce66151465c2b990e9aec722847e98657286ce7a58e93bb28cdf24"
+            }
+          },
+          {
+            "loaded_as": "build_llama_dual_gpu_3nl01j4j/ocr-vulkan/libggml-vulkan.so",
+            "resolved": {
+              "path": "build_llama_dual_gpu_3nl01j4j/install/bin/libggml-vulkan.so",
+              "bytes": 42706672,
+              "sha256": "8d26f950edbe1f711cad060a384d5a1ec9a24faca3830504d7789ab759acee07"
+            }
+          },
+          {
+            "loaded_as": "build_llama_dual_gpu_3nl01j4j/ocr-vulkan/libggml-cpu.so",
+            "resolved": {
+              "path": "build_llama_dual_gpu_3nl01j4j/install/bin/libggml-cpu.so",
+              "bytes": 1454296,
+              "sha256": "a2c9857d7d29c1882a81ae6366488423f6fd572ead5b053912b760ccd1fc9012"
+            }
+          }
+        ],
+        "actual_device": "Vulkan0"
+      }
+    }
+  },
+  "production_switched": false,
+  "legacy_entry_deleted": false,
+  "release_qualified_files": [],
+  "uploads": 0,
+  "public_contract_loader_trace": {
+    "path": "build_llama_dual_gpu_3nl01j4j/contract-loader.log",
+    "bytes": 274954,
+    "sha256": "9e5fb7afc3fa933920e02a502240caa5a32f544bdf121c337f2d55e70b69fa0a"
+  },
+  "initial_numeric_failure": {
+    "directory": "build_llama_dual_gpu_3nl01j4j/ocr-cuda-initial-runtime-rejection",
+    "reason": "Unqualified first harness loaded ldconfig CUDA 11.1 libcudart while new CUDA module requires CUDA 11.8 symbol cudaLaunchKernelExC. No native CUDA execution. Retry explicitly selects toolkit runtime; every native return code is checked. Initial reports and logs retained; no production modification."
+  },
+  "limits": [
+    "Monolithic AICore was relinked from 240 retained candidate-compiled objects; 36 public contracts use retained candidate-compiled executables, not a fresh whole-tree rebuild.",
+    "Retained independent original CUDA tensors cover Paddle 14 inputs, SLANet 9 and ONNX 36 of 135. Remaining 99 ONNX inputs use old native output. No live source-framework rerun or new page metrics.",
+    "No controlled performance or VRAM acceptance, complete 22-task catalog regression, Metal platform validation or clean package qualification.",
+    "Layout F16/Q8 all-original-head argmax remains FAIL. No qualified uploads."
+  ]
+}

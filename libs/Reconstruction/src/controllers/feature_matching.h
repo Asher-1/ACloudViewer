@@ -1,0 +1,156 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
+
+#include <memory>
+
+#include "controllers/pairing.h"
+#include "estimators/two_view_geometry.h"
+#include "feature/matcher.h"
+#include "util/threading.h"
+
+namespace colmap {
+
+// Exhaustively match images by processing each block in the exhaustive match
+// matrix in one batch:
+//
+// +----+----+-----------------> images[i]
+// |#000|0000|
+// |1#00|1000| <- Above the main diagonal, the block diagonal is not matched
+// |11#0|1100|                                                             ^
+// |111#|1110|                                                             |
+// +----+----+                                                             |
+// |1000|#000|\                                                            |
+// |1100|1#00| \ One block                                                 |
+// |1110|11#0| / of image pairs                                            |
+// |1111|111#|/                                                            |
+// +----+----+                                                             |
+// |  ^                                                                    |
+// |  |                                                                    |
+// | Below the main diagonal, the block diagonal is matched <--------------+
+// |
+// v
+// images[i]
+//
+// Pairs will only be matched if 1, to avoid duplicate pairs. Pairs with #
+// are on the main diagonal and denote pairs of the same image.
+std::unique_ptr<Thread> CreateExhaustiveFeatureMatcher(
+        const ExhaustivePairingOptions& pairing_options,
+        const FeatureMatchingOptions& matching_options,
+        const TwoViewGeometryOptions& geometry_options,
+        const std::filesystem::path& database_path);
+
+// Match each image against its nearest neighbors using a vocabulary tree.
+std::unique_ptr<Thread> CreateVocabTreeFeatureMatcher(
+        const VocabTreePairingOptions& pairing_options,
+        const FeatureMatchingOptions& matching_options,
+        const TwoViewGeometryOptions& geometry_options,
+        const std::filesystem::path& database_path);
+
+// Sequentially match images within neighborhood:
+//
+// +-------------------------------+-----------------------> images[i]
+//                      ^          |           ^
+//                      |   Current image[i]   |
+//                      |          |           |
+//                      +----------+-----------+
+//                                 |
+//                        Match image_i against
+//
+//                    image_[i - o, i + o]        with o = [1 .. overlap]
+//                    image_[i - 2^o, i + 2^o]    (for quadratic overlap)
+//
+// Sequential order is determined based on the image names in ascending order.
+//
+// Invoke loop detection if `(i mod loop_detection_period) == 0`, retrieve
+// most similar `loop_detection_num_images` images from vocabulary tree that
+// are at least `loop_detection_min_index_distance` away in the sequential
+// order, and perform matching and verification.
+std::unique_ptr<Thread> CreateSequentialFeatureMatcher(
+        const SequentialPairingOptions& pairing_options,
+        const FeatureMatchingOptions& matching_options,
+        const TwoViewGeometryOptions& geometry_options,
+        const std::filesystem::path& database_path);
+
+// Match images against spatial nearest neighbors using prior location
+// information, e.g. provided manually or extracted from EXIF.
+std::unique_ptr<Thread> CreateSpatialFeatureMatcher(
+        const SpatialPairingOptions& pairing_options,
+        const FeatureMatchingOptions& matching_options,
+        const TwoViewGeometryOptions& geometry_options,
+        const std::filesystem::path& database_path);
+
+// Match transitive image pairs in a database with existing feature matches.
+// This matcher transitively closes loops/triplets. For example, if image pairs
+// A-B and B-C match but A-C has not been matched, then this matcher attempts to
+// match A-C. This procedure is performed for multiple iterations.
+std::unique_ptr<Thread> CreateTransitiveFeatureMatcher(
+        const TransitivePairingOptions& pairing_options,
+        const FeatureMatchingOptions& matching_options,
+        const TwoViewGeometryOptions& geometry_options,
+        const std::filesystem::path& database_path);
+
+// Match images manually specified in a list of image pairs.
+//
+// Read matches file with the following format:
+//
+//    image_name1 image_name2
+//    image_name1 image_name3
+//    image_name2 image_name3
+//    ...
+//
+std::unique_ptr<Thread> CreateImagePairsFeatureMatcher(
+        const ImportedPairingOptions& pairing_options,
+        const FeatureMatchingOptions& matching_options,
+        const TwoViewGeometryOptions& geometry_options,
+        const std::filesystem::path& database_path);
+
+// Import feature matches from a text file.
+//
+// Read matches file with the following format:
+//
+//      image_name1 image_name2
+//      0 1
+//      1 2
+//      2 3
+//      <empty line>
+//      image_name1 image_name3
+//      0 1
+//      1 2
+//      2 3
+//      ...
+//
+std::unique_ptr<Thread> CreateFeaturePairsFeatureMatcher(
+        const FeaturePairsMatchingOptions& pairing_options,
+        const FeatureMatchingOptions& matching_options,
+        const TwoViewGeometryOptions& geometry_options,
+        const std::filesystem::path& database_path);
+
+// Options for CreateGeometricVerifier
+struct GeometricVerifierOptions {
+    // Number of threads for geometric verification.
+    int num_threads = -1;
+
+    // Whether to perform rig verification at the end. Unnecessary when we have
+    // existing relative poses for each matched pair.
+    bool rig_verification = false;
+
+    // Whether to use the existing relative pose stored in TwoViewGeometry in
+    // the database. If no TwoViewGeometry is found we will fall back to
+    // geometric verification with RANSAC.
+    bool use_existing_relative_pose = false;
+};
+
+// Perform geometric verification of existing matched image pairs.
+std::unique_ptr<Thread> CreateGeometricVerifier(
+        const GeometricVerifierOptions& verifier_options,
+        const ExistingMatchedPairingOptions& pairing_options,
+        const TwoViewGeometryOptions& geometry_options,
+        const std::filesystem::path& database_path);
+
+}  // namespace colmap

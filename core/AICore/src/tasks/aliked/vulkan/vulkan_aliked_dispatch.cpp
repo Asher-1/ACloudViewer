@@ -5,19 +5,17 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "vulkan_aliked_dispatch.hpp"
+#include "tasks/aliked/vulkan/vulkan_aliked_dispatch.hpp"
 
 #include <ggml-backend.h>
 
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <exception>
 #include <mutex>
 
-#if defined(AICORE_VULKAN_ALIKED) && (defined(__linux__) || defined(__APPLE__))
-#include <dlfcn.h>
-#endif
+#include "common/ggml_backend_utils.hpp"
+#include "tasks/aliked/aliked_common.hpp"
 
 namespace lightglue::aliked_internal {
 namespace {
@@ -126,12 +124,9 @@ bool CallVulkanNoThrow(const char *operation, Call &&call) {
     try {
         return call();
     } catch (const std::exception &e) {
-        std::fprintf(stderr, "[vk-aliked] %s failed: %s\n", operation,
-                     e.what());
+        ALIKED_LOG_ERR("%s failed: %s", operation, e.what());
     } catch (...) {
-        std::fprintf(stderr,
-                     "[vk-aliked] %s failed with an unknown exception\n",
-                     operation);
+        ALIKED_LOG_ERR("%s failed with an unknown exception", operation);
     }
     return false;
 }
@@ -143,17 +138,9 @@ Fn ResolveFn(ggml_backend_reg_t reg, const char *name) {
             return reinterpret_cast<Fn>(p);
         }
     }
-#if defined(AICORE_VULKAN_ALIKED) && (defined(__linux__) || defined(__APPLE__))
-    if (void *p = dlsym(RTLD_DEFAULT, name)) {
+#if defined(AICORE_VULKAN_ALIKED)
+    if (void *p = ggml_common::vulkan_extension_symbol(name)) {
         return reinterpret_cast<Fn>(p);
-    }
-    static void *vk_module = []() -> void * {
-        return dlopen("libggml-vulkan.so", RTLD_LAZY | RTLD_GLOBAL);
-    }();
-    if (vk_module != nullptr) {
-        if (void *p = dlsym(vk_module, name)) {
-            return reinterpret_cast<Fn>(p);
-        }
     }
 #endif
     return nullptr;
@@ -196,28 +183,9 @@ void EnsureResolved(ggml_backend_t backend) {
 }
 
 void LogVkAlikedProbe(ggml_backend_t backend) {
-    if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_TRACE") == nullptr) {
-        return;
-    }
-    static bool logged = false;
-    if (logged) {
-        return;
-    }
-    logged = true;
-    EnsureResolved(backend);
-    std::fprintf(stderr,
-                 "[vk-aliked] available=%d dkd=%d sddh=%d upsample=%d "
-                 "dense_copy=%d deform=%d\n",
-                 g_api.available != nullptr, g_api.run_dkd != nullptr,
-                 g_api.run_sddh != nullptr, g_api.upsample != nullptr,
-                 g_api.dense_copy != nullptr, g_api.deform_conv != nullptr);
-    if (g_api.available != nullptr && backend != nullptr) {
-        std::fprintf(stderr, "[vk-aliked] runtime=%d\n",
-                     CallVulkanNoThrow("availability probe",
-                                       [&] { return g_api.available(backend); })
-                             ? 1
-                             : 0);
-    }
+    // The historical LIGHTGLUE_ALIKED_VULKAN_TRACE gate was development
+    // scaffolding and is removed; the probe dump is dormant.
+    (void)backend;
 }
 
 }  // namespace

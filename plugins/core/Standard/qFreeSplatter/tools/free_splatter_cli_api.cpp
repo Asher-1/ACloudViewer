@@ -112,9 +112,7 @@ int free_splatter_run(free_splatter_ctx* ctx,
                                n_out);
 }
 
-void free_splatter_buf_free(void* p) {
-    aicore_gaussian_free_floats(static_cast<float*>(p));
-}
+void free_splatter_buf_free(void* p) { aicore_gaussian_free_buffer(p); }
 
 int free_splatter_pair_parallax(const float* gaussians,
                                 int32_t n_views,
@@ -124,8 +122,12 @@ int free_splatter_pair_parallax(const float* gaussians,
                                 float opacity_threshold,
                                 free_splatter_parallax* out) {
     if (!out) return -1;
+    aicore_gaussian_geometry geom{};
+    geom.image_height = height;
+    geom.image_width = width;
+    geom.gaussian_channels = gc;
     aicore_gaussian_parallax px{};
-    if (aicore_gaussian_pair_parallax(gaussians, n_views, height, width, gc,
+    if (aicore_gaussian_pair_parallax(&geom, gaussians, n_views,
                                       opacity_threshold, &px) != 0) {
         return -1;
     }
@@ -143,8 +145,10 @@ free_splatter_accumulator* free_splatter_accumulator_new(
         int height, int width, float opacity_threshold) {
     auto* acc = new (std::nothrow) free_splatter_accumulator();
     if (!acc) return nullptr;
-    acc->inner =
-            aicore_gaussian_accumulator_new(height, width, opacity_threshold);
+    aicore_gaussian_geometry geom{};
+    geom.image_height = height;
+    geom.image_width = width;
+    acc->inner = aicore_gaussian_accumulator_new(&geom, opacity_threshold);
     if (!acc->inner) {
         delete acc;
         return nullptr;
@@ -219,11 +223,20 @@ int free_splatter_tree_overlap(const float** pairs,
                                free_splatter_point** out,
                                size_t* n_out,
                                int* n_nodes_out) {
+    aicore_gaussian_geometry geom{};
+    geom.image_height = height;
+    geom.image_width = width;
+    geom.gaussian_channels = gc;
+    aicore_gaussian_merge_options merge{};
+    merge.block = block;
+    merge.overlap = overlap;
+    merge.max_levels = max_levels;
+    merge.layout_spacing = layout_spacing;
+    merge.per_node_cap = per_node_cap;
     aicore_gaussian_point* pts = nullptr;
-    const int rc = aicore_gaussian_tree_overlap(
-            pairs, n_pairs, gc, height, width, opacity_threshold, block,
-            overlap, max_levels, layout_spacing, per_node_cap, &pts, n_out,
-            n_nodes_out);
+    const int rc = aicore_gaussian_tree_overlap(pairs, n_pairs, &geom,
+                                                opacity_threshold, &merge, &pts,
+                                                n_out, n_nodes_out);
     *out = reinterpret_cast<free_splatter_point*>(pts);
     return rc;
 }

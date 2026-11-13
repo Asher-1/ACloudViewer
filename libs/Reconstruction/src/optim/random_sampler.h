@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 #include "optim/sampler.h"
 
 namespace colmap {
@@ -28,5 +30,11 @@ private:
     const size_t num_samples_;
     std::vector<size_t> sample_idxs_;
 };
+
+template <>
+struct is_randomized_sampler<RandomSampler> : std::true_type {};
+
+template <>
+struct is_parallel_safe_sampler<RandomSampler> : std::true_type {};
 
 }  // namespace colmap

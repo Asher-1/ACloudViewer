@@ -9,8 +9,9 @@
 #include <cstdio>
 #include <vector>
 
-#include "backend.hpp"
-#include "ggml_extend.hpp"
+#include "common/ggml_extend.hpp"
+#include "tasks/depth/backend.hpp"
+
 int main() {
     aicore::depth::Backend be;
     aicore::depth::GraphInputPool pool;

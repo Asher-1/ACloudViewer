@@ -1,5 +1,6 @@
 #pragma once
-#include "gs_adapter.hpp"
+#include "tasks/depth/gs_adapter.hpp"
+
 #include <string>
 
 namespace aicore {

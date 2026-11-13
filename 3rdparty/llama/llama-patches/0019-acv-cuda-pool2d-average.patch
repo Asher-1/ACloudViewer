@@ -1,0 +1,52 @@
+diff --git a/src/ggml-cuda/pool2d.cu b/src/ggml-cuda/pool2d.cu
+--- a/src/ggml-cuda/pool2d.cu
++++ b/src/ggml-cuda/pool2d.cu
+@@ -25,8 +25,7 @@
+     const int start_w = cur_ow * sw - pw;
+     const int bw = max(0, start_w);
+     const int ew = min(iw, start_w + kw);
+-    const float scale = 1.0f / (kh * kw);
+     float res = 0.0f;
+ 
+     switch (op) {
+         case GGML_OP_POOL_AVG: res = 0; break;
+@@ -43,9 +42,12 @@
+ #endif
+             switch (op) {
+-                case GGML_OP_POOL_AVG: res += ggml_cuda_cast<float>(cur) * scale; break;
++                case GGML_OP_POOL_AVG: res += ggml_cuda_cast<float>(cur); break;
+                 case GGML_OP_POOL_MAX: res = fmaxf(res, ggml_cuda_cast<float>(cur)); break;
+                 default: assert(false);
+             }
+         }
+     }
++    // Sum before normalization; per-element scaling can leave residuals in exactly cancelling windows.
++    // Explicit RNE division adds only one final rounding even in fast-math builds.
++    if (op == GGML_OP_POOL_AVG) res = __fdiv_rn(res, float(kh * kw));
+     o_ptr[cur_oh * ow + cur_ow] = ggml_cuda_cast<To>(res);
+@@ -79,8 +81,7 @@
+ 
+     const int win_w     = ew - bw;
+     const int win_elems = (eh - bh) * win_w;
+-    const To scale = 1. / (kh * kw);
+ 
+     To res;
+     switch (op) {
+         case GGML_OP_POOL_AVG: res = 0; break;
+@@ -93,7 +94,7 @@
+         const int j = bw + t % win_w;
+         const Ti cur = i_ptr[i * iw + j];
+         switch (op) {
+-            case GGML_OP_POOL_AVG: res += cur * scale; break;
++            case GGML_OP_POOL_AVG: res += cur; break;
+             case GGML_OP_POOL_MAX: res = max(res, (To)cur); break;
+             default: break;
+         }
+@@ -105,6 +106,7 @@
+         res = (op == GGML_OP_POOL_MAX) ? max(res, other) : res + other;
+     }
+ 
+     if (lane == 0) {
++        if (op == GGML_OP_POOL_AVG) res = __fdiv_rn(res, float(kh * kw));
+         dst[nc * O_HW + cur_oh * ow + cur_ow] = res;
+     }

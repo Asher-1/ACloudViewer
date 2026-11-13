@@ -56,6 +56,7 @@ static constexpr unsigned kDefaultMaxChartPoints = 10000;
 #include <vtkTable.h>
 #include <vtkTextProperty.h>
 #include <vtkTooltipItem.h>
+#include <vtkVersion.h>
 #include <vtkWindowToImageFilter.h>
 
 #include <QCheckBox>
@@ -2683,7 +2684,10 @@ void vtkChartView::rebuildPlotMatrix(const QList<int>& selectedFields,
     spm->SetTitle("Plot Matrix");
     spm->GetTitleProperties()->SetColor(0.0, 0.0, 0.0);
     spm->SetGutter(vtkVector2f(20.0f, 20.0f));
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 2, 0)
+    // VTK 9.1 has no padding API; keep its default internal chart layout.
     spm->SetPadding(0.02f);
+#endif
     spm->SetBorders(60, 50, 60, 50);
 
     spm->SetPlotMarkerStyle(vtkScatterPlotMatrix::SCATTERPLOT,

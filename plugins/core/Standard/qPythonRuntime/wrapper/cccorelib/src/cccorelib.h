@@ -10,11 +10,13 @@
 #include <pybind11/pybind11.h>
 
 #include <AutoSegmentationTools.h>
+#include <CVGeom.h>
 #include <DgmOctree.h>
 #include <GenericDistribution.h>
 #include <TrueKdTree.h>
 
 PYBIND11_MAKE_OPAQUE(std::vector<unsigned>)
+PYBIND11_MAKE_OPAQUE(std::vector<CCVector2>)
 PYBIND11_MAKE_OPAQUE(cloudViewer::ReferenceCloudContainer)
 
 PYBIND11_MAKE_OPAQUE(cloudViewer::DgmOctree::NeighbourCellsSet)

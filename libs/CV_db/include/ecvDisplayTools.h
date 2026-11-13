@@ -260,7 +260,7 @@ public:
 
     int getUniqueID() const override { return m_uniqueID; }
     QString getTitle() const override { return QStringLiteral("RenderView1"); }
-    void redraw(bool only2D = false, bool forceRedraw = true) override;
+    void redraw(bool only2D = false, bool forceRedraw = false) override;
     void refresh(bool only2D = false) override;
     void toBeRefreshed() override;
     const ecvViewportParameters& getViewportParameters() const override;

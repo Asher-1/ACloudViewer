@@ -7,23 +7,34 @@
 
 #pragma once
 
-#include <iostream>
-#include <memory>
+#include <filesystem>
+#include <limits>
+#include <sstream>
 #include <string>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
-#include "base/image_reader.h"
-#include "controllers/incremental_mapper.h"
-#include "feature/extraction.h"
-#include "feature/matching.h"
-#include "feature/sift.h"
+#include "controllers/image_reader.h"
+#include "controllers/incremental_pipeline.h"
+#include "controllers/pairing.h"
+#include "estimators/bundle_adjustment.h"
+#include "estimators/bundle_adjustment_caspar.h"
+#include "estimators/bundle_adjustment_ceres.h"
+#include "estimators/two_view_geometry.h"
+#include "feature/extractor.h"
+#include "feature/matcher.h"
+#include "mvs/delaunay_meshing.h"
 #include "mvs/fusion.h"
-#include "mvs/meshing.h"
+#include "mvs/mesh_postprocessing.h"
 #include "mvs/patch_match.h"
-#include "optim/bundle_adjustment.h"
+#include "mvs/poisson_meshing.h"
 
 namespace cloudViewer {
 
+// Serializes option structs into an argv vector consumed by the colmap exe
+// entry points (exe/*.h). Option names must match the names registered by
+// colmap::OptionManager exactly.
 class OptionsParser {
 public:
     OptionsParser();
@@ -39,66 +50,85 @@ public:
     inline int getArgc() const { return this->argc_; }
     inline char** getArgv() { return this->argv_; }
 
-    template <typename T>
-    void registerOption(const std::string& name, const T* option) {
-        if (std::is_same<T, bool>::value) {
-            options_bool_.emplace_back(name,
-                                       reinterpret_cast<const bool*>(option));
-        } else if (std::is_same<T, int>::value) {
-            options_int_.emplace_back(name,
-                                      reinterpret_cast<const int*>(option));
-        } else if (std::is_same<T, double>::value) {
-            options_double_.emplace_back(
-                    name, reinterpret_cast<const double*>(option));
-        } else if (std::is_same<T, std::string>::value) {
-            if (!reinterpret_cast<const std::string*>(option)->empty()) {
-                options_string_.emplace_back(
-                        name, reinterpret_cast<const std::string*>(option));
-            }
-        } else {
-            std::cerr << "Unsupported option type" << std::endl;
+    void registerOption(const std::string& name, const bool* option) {
+        options_.emplace_back(name, *option ? "true" : "false");
+    }
+    void registerOption(const std::string& name, const int* option) {
+        options_.emplace_back(name, std::to_string(*option));
+    }
+    void registerOption(const std::string& name, const std::size_t* option) {
+        options_.emplace_back(name, std::to_string(*option));
+    }
+    void registerOption(const std::string& name, const double* option) {
+        std::ostringstream os;
+        os.precision(std::numeric_limits<double>::max_digits10);
+        os << *option;
+        options_.emplace_back(name, os.str());
+    }
+    // Empty strings/paths are not forwarded so that the exe defaults apply.
+    void registerOption(const std::string& name, const std::string* option) {
+        if (!option->empty()) {
+            options_.emplace_back(name, *option);
         }
+    }
+    void registerOption(const std::string& name,
+                        const std::filesystem::path* option) {
+        if (!option->empty()) {
+            options_.emplace_back(name, option->string());
+        }
+    }
+    // Enum classes with a MAKE_ENUM_CLASS_OVERLOAD_STREAM operator<<.
+    template <typename Enum,
+              typename = std::enable_if_t<std::is_enum<Enum>::value>>
+    void registerOption(const std::string& name, const Enum* option) {
+        std::ostringstream os;
+        os << *option;
+        options_.emplace_back(name, os.str());
     }
 
     // colmap
-    void addExtractionOptions(
+    void addFeatureExtractionOptions(
             const colmap::ImageReaderOptions& image_reader_options,
-            const colmap::SiftExtractionOptions& sift_extraction_options);
+            const colmap::FeatureExtractionOptions& extraction_options);
 
-    void addMatchingOptions(
-            const colmap::SiftMatchingOptions& sift_matching_options);
+    void addFeatureMatchingOptions(
+            const colmap::FeatureMatchingOptions& matching_options);
 
-    void addExhaustiveMatchingOptions(
-            const colmap::SiftMatchingOptions& sift_matching_options,
-            const colmap::ExhaustiveMatchingOptions&
-                    exhaustive_matching_options);
+    void addTwoViewGeometryOptions(
+            const colmap::TwoViewGeometryOptions& geometry_options);
 
-    void addSequentialMatchingOptions(
-            const colmap::SiftMatchingOptions& sift_matching_options,
-            const colmap::SequentialMatchingOptions&
-                    sequential_matching_options);
+    void addExhaustivePairingOptions(
+            const colmap::FeatureMatchingOptions& matching_options,
+            const colmap::TwoViewGeometryOptions& geometry_options,
+            const colmap::ExhaustivePairingOptions& pairing_options);
 
-    void addSpatialMatchingOptions(
-            const colmap::SiftMatchingOptions& sift_matching_options,
-            const colmap::SpatialMatchingOptions& spatial_matching_options);
+    void addSequentialPairingOptions(
+            const colmap::FeatureMatchingOptions& matching_options,
+            const colmap::TwoViewGeometryOptions& geometry_options,
+            const colmap::SequentialPairingOptions& pairing_options);
 
-    void addTransitiveMatchingOptions(
-            const colmap::SiftMatchingOptions& sift_matching_options,
-            const colmap::TransitiveMatchingOptions&
-                    transitive_matching_options);
+    void addSpatialPairingOptions(
+            const colmap::FeatureMatchingOptions& matching_options,
+            const colmap::TwoViewGeometryOptions& geometry_options,
+            const colmap::SpatialPairingOptions& pairing_options);
 
-    void addVocabTreeMatchingOptions(
-            const colmap::SiftMatchingOptions& sift_matching_options,
-            const colmap::VocabTreeMatchingOptions&
-                    vocab_tree_matching_options);
+    void addTransitivePairingOptions(
+            const colmap::FeatureMatchingOptions& matching_options,
+            const colmap::TwoViewGeometryOptions& geometry_options,
+            const colmap::TransitivePairingOptions& pairing_options);
 
-    void addImagePairsMatchingOptions(
-            const colmap::SiftMatchingOptions& sift_matching_options,
-            const colmap::ImagePairsMatchingOptions&
-                    image_pairs_matching_options);
+    void addVocabTreePairingOptions(
+            const colmap::FeatureMatchingOptions& matching_options,
+            const colmap::TwoViewGeometryOptions& geometry_options,
+            const colmap::VocabTreePairingOptions& pairing_options);
 
-    void addMapperOptions(
-            const colmap::IncrementalMapperOptions& incremental_mapper_options);
+    void addImportedPairingOptions(
+            const colmap::FeatureMatchingOptions& matching_options,
+            const colmap::TwoViewGeometryOptions& geometry_options,
+            const colmap::ImportedPairingOptions& pairing_options);
+
+    void addMapperOptions(const colmap::IncrementalPipelineOptions&
+                                  incremental_mapper_options);
 
     void addBundleAdjustmentOptions(
             const colmap::BundleAdjustmentOptions& bundle_adjustment_options);
@@ -112,6 +142,8 @@ public:
             const colmap::mvs::PoissonMeshingOptions& poisson_meshing_options);
     void addDelaunayMeshingOptions(const colmap::mvs::DelaunayMeshingOptions&
                                            delaunay_meshing_options);
+    void addMeshPostProcessingOptions(
+            const colmap::mvs::MeshPostProcessingOptions& options);
 
 public:
     static void ReleaseOptions(int argc, char** argv) {
@@ -139,19 +171,11 @@ private:
         this->argc_ = 0;
     }
 
-    inline unsigned long getParametersCount() {
-        return static_cast<unsigned long>(
-                options_int_.size() + options_bool_.size() +
-                options_double_.size() + options_string_.size());
-    }
-
 private:
     int argc_;
     char** argv_;
-    std::vector<std::pair<std::string, const bool*>> options_bool_;
-    std::vector<std::pair<std::string, const int*>> options_int_;
-    std::vector<std::pair<std::string, const double*>> options_double_;
-    std::vector<std::pair<std::string, const std::string*>> options_string_;
+    // Serialized (name, value) pairs in registration order.
+    std::vector<std::pair<std::string, std::string>> options_;
 };
 
 }  // namespace cloudViewer

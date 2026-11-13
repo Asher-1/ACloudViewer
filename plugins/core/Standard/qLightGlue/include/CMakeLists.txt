@@ -3,4 +3,5 @@ target_sources( ${PROJECT_NAME}
         ${CMAKE_CURRENT_LIST_DIR}/qLightGlue.h
         ${CMAKE_CURRENT_LIST_DIR}/LightGlueDialog.h
         ${CMAKE_CURRENT_LIST_DIR}/LightGlueWorker.h
+        ${CMAKE_CURRENT_LIST_DIR}/LightGlueBatchCommand.h
 )

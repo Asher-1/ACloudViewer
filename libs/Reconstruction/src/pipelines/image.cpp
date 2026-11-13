@@ -72,7 +72,7 @@ int RegisterImage(
         const std::string& database_path,
         const std::string& input_path,
         const std::string& output_path,
-        const colmap::IncrementalMapperOptions& incremental_mapper_options) {
+        const colmap::IncrementalPipelineOptions& incremental_mapper_options) {
     OptionsParser parser;
     parser.registerOption("database_path", &database_path);
     parser.registerOption("input_path", &input_path);

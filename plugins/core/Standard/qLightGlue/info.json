@@ -1,6 +1,7 @@
 {
   "type": "Standard",
   "core": true,
+  "group": "aicore",
   "name": "LightGlue Feature Matching",
   "icon": ":/CC/plugin/qLightGlue/images/qLightGlue.svg",
   "description": "LightGlue sparse feature matcher using ggml inference. Matches ALIKED/SIFT keypoint descriptors from LGINP01 fixtures with COLMAP-compatible output semantics.",
@@ -16,10 +17,12 @@
   ],
   "references": [
     {
-      "text": "LightGlue: https://github.com/cvg/LightGlue"
+      "text": "LightGlue",
+      "url": "https://github.com/cvg/LightGlue"
     },
     {
-      "text": "LightGlue-GGML: https://github.com/Asher-1/LightGlue-GGML"
+      "text": "LightGlue-GGML models",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/tag/LightGlue"
     }
   ]
 }

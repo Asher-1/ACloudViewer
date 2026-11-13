@@ -102,7 +102,7 @@ OrientedBoundingBox ComputeMinimumOBBJylanki(const core::Tensor& points_,
         Eigen::Vector3d ext = extent;
         double best_score = -1e9;
         Eigen::Matrix3d best_R = Eigen::Matrix3d::Identity();
-        Eigen::Vector3d best_extent{{-1, -1, -1}};
+        Eigen::Vector3d best_extent(-1.0, -1.0, -1.0);
         // Hard-coded permutations of indices [0,1,2]
         static const std::array<std::array<int, 3>, 6> permutations = {
                 {{{0, 1, 2}},

@@ -10,6 +10,9 @@
 // CV_CORE_lib
 #include <CVPlatform.h>
 
+// Qt
+#include <QtGlobal>
+
 // System
 #include <algorithm>
 #include <cassert>
@@ -18,6 +21,14 @@
 #if !defined(CV_WINDOWS)
 #define _vsnprintf vsnprintf
 #endif
+
+bool CVLog::diagnosticsEnabled() {
+    // Developer-probe gate (pick/selection/performance tracing). Disabled by
+    // default: the per-interaction log I/O stalls the very flows being
+    // measured. Enable with ACV_DIAGNOSTICS=1 when hunting a regression.
+    static const bool enabled = qEnvironmentVariableIsSet("ACV_DIAGNOSTICS");
+    return enabled;
+}
 
 /***************
  *** Globals ***

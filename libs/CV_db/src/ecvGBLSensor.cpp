@@ -734,8 +734,14 @@ void ccGBLSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
         return;
     }
 
-    bool transformChanged = std::memcmp(m_cachedTransformData, sensorPos.data(),
-                                        16 * sizeof(double)) != 0;
+    // ccIndexedTransformation is a float ccGLMatrix plus an 8-byte index: its
+    // data() region is only 72 bytes, so compare against the double 4x4 view,
+    // which matches the 16-double cache layout exactly.
+    const Eigen::Matrix4d transformation =
+            ccGLMatrixd::ToEigenMatrix4(sensorPos);
+    const bool transformChanged =
+            std::memcmp(m_cachedTransformData, transformation.data(),
+                        16 * sizeof(double)) != 0;
 
     if (m_geometryDirty || transformChanged) {
         const double halfHeadSize = 0.3;
@@ -781,12 +787,11 @@ void ccGBLSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
             m_leg.colors_.push_back(ecvColor::Rgb::ToEigen(m_color));
         }
 
-        Eigen::Matrix4d transformation = ccGLMatrixd::ToEigenMatrix4(sensorPos);
         m_obbHead.Transform(transformation);
         m_leg.Transform(transformation);
         m_axis.Transform(transformation);
 
-        std::memcpy(m_cachedTransformData, sensorPos.data(),
+        std::memcpy(m_cachedTransformData, transformation.data(),
                     16 * sizeof(double));
         m_geometryDirty = false;
     }

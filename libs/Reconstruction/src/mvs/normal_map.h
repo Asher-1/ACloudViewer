@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "mvs/mat.h"
-#include "util/bitmap.h"
+#include "sensor/bitmap.h"
 
 namespace colmap {
 namespace mvs {

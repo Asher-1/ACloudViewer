@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/CC/plugin/qSpirula">
+        <file>info.json</file>
+        <file>images/icon_128.png</file>
+    </qresource>
+</RCC>

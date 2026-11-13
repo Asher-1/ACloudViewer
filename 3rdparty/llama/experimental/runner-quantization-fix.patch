@@ -1,0 +1,34 @@
+--- a/core/AICore/scripts/validate_all.py
++++ b/core/AICore/scripts/validate_all.py
+@@ -1001,7 +1001,7 @@
+ 
+ 
+ def model_quant(path: Path) -> str:
+-    match = re.search(r"-(f32|f16|q8_0|q8|q4_0|q4_k)\.gguf$", path.name,
++    match = re.search(r"(?:^|[-_.])(f32|f16|q8_0|q8|q4_0|q4_k)\.gguf$", path.name,
+                       re.IGNORECASE)
+     return match.group(1).lower() if match else "f16"
+ 
+--- a/core/AICore/scripts/test_validate_all.py
++++ b/core/AICore/scripts/test_validate_all.py
+@@ -26,6 +26,20 @@
+ 
+ 
+ class ValidateAllTests(unittest.TestCase):
++    def test_quantization_suffix_accepts_loma_anycalib_dot_separator(self):
++        cases = {
++            "loma_matcher_B.q8_0.gguf": "q8_0",
++            "anycalib_gen_v1.0.0_322x322.f32.gguf": "f32",
++            "loma_detector.f16.gguf": "f16",
++            "model-q8.gguf": "q8",
++            "model-q4_K.gguf": "q4_k",
++            "model-f32.gguf": "f32",
++            "model.gguf": "f16",
++        }
++        for filename, expected in cases.items():
++            with self.subTest(filename=filename):
++                self.assertEqual(VALIDATE_ALL.model_quant(Path(filename)), expected)
++
+     def test_execution_artifacts_identify_commands_runtime_and_build_options(self):
+         with tempfile.TemporaryDirectory() as directory:
+             root = Path(directory)

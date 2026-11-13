@@ -1,0 +1,71 @@
+diff --git a/include/ggml.h b/include/ggml.h
+--- a/include/ggml.h
++++ b/include/ggml.h
+@@ -2314,6 +2314,13 @@
+             int                  d0,  // dilation dimension 0
+             int                  d1); // dilation dimension 1
+ 
++
++    // bias: contiguous F32 [C]; preserve direct DW write-out rounding followed by separate ADD.
++    GGML_API struct ggml_tensor * ggml_conv_2d_dw_direct_bias(
++            struct ggml_context * ctx,
++            struct ggml_tensor * a, struct ggml_tensor * b, struct ggml_tensor * bias,
++            int stride0, int stride1, int pad0, int pad1, int dilation0, int dilation1);
++
+     // Depthwise 2D convolution
+     // may be faster than ggml_conv_2d_dw, but not available in all backends
+     // a:   KW    KH    1    C    convolution kernel
+diff --git a/src/ggml.c b/src/ggml.c
+--- a/src/ggml.c
++++ b/src/ggml.c
+@@ -5100,6 +5100,18 @@
+     return result;
+ }
+ 
++struct ggml_tensor * ggml_conv_2d_dw_direct_bias(
++        struct ggml_context * ctx,
++        struct ggml_tensor * a, struct ggml_tensor * b, struct ggml_tensor * bias,
++        int stride0, int stride1, int pad0, int pad1, int dilation0, int dilation1) {
++    GGML_ASSERT(bias && bias->type == GGML_TYPE_F32 && ggml_is_contiguous(bias));
++    GGML_ASSERT(bias->ne[0] == b->ne[2] && bias->ne[1] == 1 && bias->ne[2] == 1 && bias->ne[3] == 1);
++    struct ggml_tensor * result = ggml_conv_2d_dw_direct(
++        ctx, a, b, stride0, stride1, pad0, pad1, dilation0, dilation1);
++    result->src[2] = bias;
++    return result;
++}
++
+ // ggml_conv_2d_direct
+ 
+ struct ggml_tensor * ggml_conv_2d_direct(
+diff --git a/src/ggml-cpu/ops.cpp b/src/ggml-cpu/ops.cpp
+--- a/src/ggml-cpu/ops.cpp
++++ b/src/ggml-cpu/ops.cpp
+@@ -8003,6 +8003,10 @@
+                         sum = GGML_F32_VEC_FMA(sum, k, s);
+                     }
+                 }
++                if (dst->src[2]) {
++                    const float * bias = (const float *)dst->src[2]->data;
++                    sum = GGML_F32_VEC_ADD(sum, GGML_F32_VEC_LOAD(bias + c_i));
++                }
+                 GGML_F32_VEC_STORE(dst_data + c_i, sum);
+             }
+ #endif
+@@ -8022,7 +8026,7 @@
+                              * src_data[(src_y * p.src_w + src_x) * c + c_i];
+                     }
+                 }
+-                dst_data[c_i] = sum;
++                dst_data[c_i] = dst->src[2] ? sum + ((const float *)dst->src[2]->data)[c_i] : sum;
+             }
+         }
+     }
+@@ -8065,7 +8069,7 @@
+                              * src_data[src_y * p.src_w + src_x];
+                     }
+                 }
+-                dst_data[dst_y * p.dst_w + dst_x] = sum;
++                dst_data[dst_y * p.dst_w + dst_x] = dst->src[2] ? sum + ((const float *)dst->src[2]->data)[i % p.channels] : sum;
+             }
+         }
+     }

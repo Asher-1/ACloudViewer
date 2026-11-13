@@ -21,16 +21,25 @@ static bool finite_all(const float* p, int n) {
 
 // DualDPT: depth+conf present, sky NULL, plausible pose; points return N>0.
 static bool test_dualdpt(const char* gguf, const char* png) {
-    aicore_depth_ctx* c = aicore_depth_load(gguf, 1);
+    aicore_depth_options* opts = aicore_depth_options_new();
+    if (!opts) return false;
+    aicore_depth_options_set_threads(opts, 1);
+    aicore_depth_ctx* c = aicore_depth_load_opts(gguf, opts);
+    aicore_depth_options_free(opts);
     if (!c) {
         std::fprintf(stderr, "dualdpt: load failed\n");
         return false;
     }
-    int H = 0, W = 0, is_metric = -1;
-    float *depth = nullptr, *conf = nullptr, *sky = nullptr;
-    float ext[12], intr[9];
-    int r = aicore_depth_depth_dense(c, png, &H, &W, &depth, &conf, &sky, ext,
-                                     intr, &is_metric);
+    aicore_depth_dense_result dense{};
+    int r = aicore_depth_depth_dense(c, png, &dense);
+    const int H = dense.height;
+    const int W = dense.width;
+    const int is_metric = dense.is_metric;
+    float* depth = dense.depth;
+    float* conf = dense.conf;
+    float* sky = dense.sky;
+    const float* ext = dense.ext;
+    const float* intr = dense.intr;
     bool ok = (r == 0) && H > 0 && W > 0 && depth && conf && !sky;
     if (ok) ok = finite_all(depth, H * W) && finite_all(conf, H * W);
     // Plausible pose: intrinsics fx,fy > 0; extrinsics finite.
@@ -43,9 +52,7 @@ static bool test_dualdpt(const char* gguf, const char* png) {
                  "fy=%.3f is_metric=%d -> %s\n",
                  r, W, H, (void*)depth, (void*)conf, (void*)sky, intr[0],
                  intr[4], is_metric, ok ? "OK" : "FAIL");
-    aicore_depth_free_floats(depth);
-    aicore_depth_free_floats(conf);
-    aicore_depth_free_floats(sky);
+    aicore_depth_dense_result_free(&dense);
 
     int N = 0;
     float* xyz = nullptr;
@@ -54,24 +61,31 @@ static bool test_dualdpt(const char* gguf, const char* png) {
     bool okp = (rp == 0) && N > 0 && xyz && rgb && finite_all(xyz, 3 * N);
     std::fprintf(stderr, "dualdpt points: r=%d N=%d xyz=%p rgb=%p -> %s\n", rp,
                  N, (void*)xyz, (void*)rgb, okp ? "OK" : "FAIL");
-    aicore_depth_free_floats(xyz);
-    aicore_depth_free_bytes(rgb);
+    aicore_depth_free_buffer(xyz);
+    aicore_depth_free_buffer(rgb);
     aicore_depth_free(c);
     return ok && okp;
 }
 
 // mono: depth+sky present, conf NULL; points return -1.
 static bool test_mono(const char* gguf, const char* png) {
-    aicore_depth_ctx* c = aicore_depth_load(gguf, 1);
+    aicore_depth_options* opts = aicore_depth_options_new();
+    if (!opts) return false;
+    aicore_depth_options_set_threads(opts, 1);
+    aicore_depth_ctx* c = aicore_depth_load_opts(gguf, opts);
+    aicore_depth_options_free(opts);
     if (!c) {
         std::fprintf(stderr, "mono: load failed\n");
         return false;
     }
-    int H = 0, W = 0, is_metric = -1;
-    float *depth = nullptr, *conf = nullptr, *sky = nullptr;
-    float ext[12], intr[9];
-    int r = aicore_depth_depth_dense(c, png, &H, &W, &depth, &conf, &sky, ext,
-                                     intr, &is_metric);
+    aicore_depth_dense_result dense{};
+    int r = aicore_depth_depth_dense(c, png, &dense);
+    const int H = dense.height;
+    const int W = dense.width;
+    const int is_metric = dense.is_metric;
+    float* depth = dense.depth;
+    float* conf = dense.conf;
+    float* sky = dense.sky;
     bool ok = (r == 0) && H > 0 && W > 0 && depth && sky && !conf;
     if (ok) ok = finite_all(depth, H * W) && finite_all(sky, H * W);
     if (ok) ok = (is_metric == 1);  // DA3MONO is metric
@@ -80,9 +94,7 @@ static bool test_mono(const char* gguf, const char* png) {
                  "-> %s\n",
                  r, W, H, (void*)depth, (void*)conf, (void*)sky, is_metric,
                  ok ? "OK" : "FAIL");
-    aicore_depth_free_floats(depth);
-    aicore_depth_free_floats(conf);
-    aicore_depth_free_floats(sky);
+    aicore_depth_dense_result_free(&dense);
 
     int N = 0;
     float* xyz = nullptr;
@@ -91,27 +103,36 @@ static bool test_mono(const char* gguf, const char* png) {
     bool okp = (rp == -1) && !xyz && !rgb;  // mono has no pose
     std::fprintf(stderr, "mono points: r=%d (expect -1) err=\"%s\" -> %s\n", rp,
                  aicore_depth_last_error(c), okp ? "OK" : "FAIL");
-    aicore_depth_free_floats(xyz);
-    aicore_depth_free_bytes(rgb);
+    aicore_depth_free_buffer(xyz);
+    aicore_depth_free_buffer(rgb);
     aicore_depth_free(c);
     return ok && okp;
 }
 
-// nested: two-branch metric model via aicore_depth_load_nested. depth present,
-// conf and sky NULL, is_metric==1, plausible pose.
+// nested: two-branch metric model via aicore_depth_load_nested_opts. depth
+// present, conf and sky NULL, is_metric==1, plausible pose.
 static bool test_nested(const char* anyview,
                         const char* metric,
                         const char* png) {
-    aicore_depth_ctx* c = aicore_depth_load_nested(anyview, metric, 1);
+    aicore_depth_options* opts = aicore_depth_options_new();
+    if (!opts) return false;
+    aicore_depth_options_set_threads(opts, 1);
+    aicore_depth_ctx* c = aicore_depth_load_nested_opts(anyview, metric, opts);
+    aicore_depth_options_free(opts);
     if (!c) {
         std::fprintf(stderr, "nested: load failed\n");
         return false;
     }
-    int H = 0, W = 0, is_metric = -1;
-    float *depth = nullptr, *conf = nullptr, *sky = nullptr;
-    float ext[12], intr[9];
-    int r = aicore_depth_depth_dense(c, png, &H, &W, &depth, &conf, &sky, ext,
-                                     intr, &is_metric);
+    aicore_depth_dense_result dense{};
+    int r = aicore_depth_depth_dense(c, png, &dense);
+    const int H = dense.height;
+    const int W = dense.width;
+    const int is_metric = dense.is_metric;
+    float* depth = dense.depth;
+    float* conf = dense.conf;
+    float* sky = dense.sky;
+    const float* ext = dense.ext;
+    const float* intr = dense.intr;
     bool ok = (r == 0) && H > 0 && W > 0 && depth && !conf && !sky;
     if (ok) ok = finite_all(depth, H * W);
     if (ok)
@@ -123,9 +144,7 @@ static bool test_nested(const char* anyview,
                  "is_metric=%d -> %s\n",
                  r, W, H, (void*)depth, (void*)conf, (void*)sky, intr[0],
                  is_metric, ok ? "OK" : "FAIL");
-    aicore_depth_free_floats(depth);
-    aicore_depth_free_floats(conf);
-    aicore_depth_free_floats(sky);
+    aicore_depth_dense_result_free(&dense);
     aicore_depth_free(c);
     return ok;
 }

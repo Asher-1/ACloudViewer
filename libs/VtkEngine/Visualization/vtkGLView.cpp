@@ -382,10 +382,11 @@ void vtkGLView::initVtkPipeline(QMainWindow* parent,
     m_deferredPickingTimer.setSingleShot(true);
     m_deferredPickingTimer.setInterval(100);
     connect(&m_deferredPickingTimer, &QTimer::timeout, this, [this]() {
-        if (auto rw = m_visualizer3D ? m_visualizer3D->getRenderWindow()
-                                     : nullptr) {
-            rw->Render();
-        }
+        // No forced Render() here: the interaction render loop already keeps
+        // the on-screen frame current, and the selection passes re-render
+        // with their own buffer capture. A full scene render per click on a
+        // 286-camera / multi-million-point scene stalled every pick by
+        // hundreds of milliseconds.
         syncVtkCameraToContext();
 
         m_displayTools->setPickingTargetView(this);
@@ -427,6 +428,10 @@ void vtkGLView::initVtkPipeline(QMainWindow* parent,
 // ================================================================
 
 void vtkGLView::redraw(bool only2D, bool forceRedraw) {
+    // Bottleneck probe: interactive redraws (rotate/zoom) must stay within
+    // the frame budget; stalls show up here first. Threshold-gated.
+    QElapsedTimer redrawTimer;
+    redrawTimer.start();
     if (m_shutdownDone || !m_visualizer3D || !m_vtkWidget) return;
 
     // Prevent re-entrant redraws.  VTK's vtkRenderWindow::Render() is
@@ -463,6 +468,11 @@ void vtkGLView::redraw(bool only2D, bool forceRedraw) {
     CC_DRAW_CONTEXT context;
     getContext(context);
     context.forceRedraw = forceRedraw;
+    const auto tDrawTree = std::chrono::steady_clock::now();
+    auto* probeDt =
+            dynamic_cast<Visualization::VtkDisplayTools*>(m_displayTools);
+    if (probeDt) probeDt->resetDrawProbe();
+    ccHObject::resetDrawSelfProbe();
 
     // --- Background ---
     context.drawingFlags = CC_DRAW_2D;
@@ -505,7 +515,14 @@ void vtkGLView::redraw(bool only2D, bool forceRedraw) {
         context.drawingFlags =
                 CC_DRAW_3D | CC_DRAW_FOREGROUND | CC_LIGHT_ENABLED;
         context.visible = true;
+        QElapsedTimer globalTreeTimer;
+        globalTreeTimer.start();
         m_globalDBRoot->draw(context);
+        const qint64 gMs = globalTreeTimer.elapsed();
+        if (gMs > 50 && CVLog::diagnosticsEnabled()) {
+            CVLog::Print("[redraw] global-tree pass took %lld ms",
+                         static_cast<long long>(gMs));
+        }
     }
     if (!only2D && m_winDBRoot) {
         context.drawingFlags =
@@ -513,6 +530,16 @@ void vtkGLView::redraw(bool only2D, bool forceRedraw) {
         context.visible = true;
         context.skipDisplayCheck = true;
         m_winDBRoot->draw(context);
+        const double drawMs =
+                std::chrono::duration<double, std::milli>(
+                        std::chrono::steady_clock::now() - tDrawTree)
+                        .count();
+        if (drawMs > 50.0 && CVLog::diagnosticsEnabled()) {
+            CVLog::Print("[redraw] draw-tree pass took %.1f ms", drawMs);
+        }
+        if (probeDt) probeDt->logDrawProbe(forceRedraw ? "force" : "plain");
+        ccHObject::logDrawSelfProbe();
+
         context.skipDisplayCheck = false;
     }
 
@@ -613,12 +640,28 @@ void vtkGLView::redraw(bool only2D, bool forceRedraw) {
     if (m_vtkWidget) {
         m_vtkWidget->makeCurrent();
         if (auto* rw = m_vtkWidget->GetRenderWindow()) {
+            const auto tRender = std::chrono::steady_clock::now();
             rw->Render();
+            const double renderMs =
+                    std::chrono::duration<double, std::milli>(
+                            std::chrono::steady_clock::now() - tRender)
+                            .count();
+            if (renderMs > 100.0 && CVLog::diagnosticsEnabled()) {
+                CVLog::Print("[redraw] GPU Render took %.1f ms", renderMs);
+            }
         }
         m_vtkWidget->update();
     }
 
     m_insideRedraw = false;
+
+    // Interactive-redraw probe (threshold-gated): stalls in rotate/zoom show
+    // up here first.
+    const qint64 redrawMs = redrawTimer.elapsed();
+    if (redrawMs > 100 && CVLog::diagnosticsEnabled()) {
+        CVLog::Print("[redraw] full redraw took %lld ms",
+                     static_cast<long long>(redrawMs));
+    }
 
     // If a redraw was requested while we were inside this redraw (e.g.
     // from representationChanged or ecvRedrawScope during the draw pipeline),
@@ -1359,6 +1402,7 @@ void vtkGLView::syncVtkCameraToContext() {
                 0, 0,
                 ecvDisplayCoordinates::toPhysical(m_vtkWidget->width(), dpr),
                 ecvDisplayCoordinates::toPhysical(m_vtkWidget->height(), dpr));
+        m_ctx.dpr = dpr;
     } else {
         const int* sz = ren->GetSize();
         m_ctx.glViewport = QRect(0, 0, sz[0], sz[1]);
@@ -1709,6 +1753,15 @@ void vtkGLView::removeWidgets(const WIDGETS_PARAMETER& param) {
     if (m_displayTools) m_displayTools->removeWidgets(param);
 }
 
+void vtkGLView::setCameraAggregationSuspended(bool suspended) {
+    // The active view IS a vtkGLView (ecvViewManager::getActiveView): the
+    // replay channel switch must land on THIS view's visualizer, or it
+    // silently hits the base no-op and the suspension never happens.
+    if (m_visualizer3D) {
+        m_visualizer3D->setSensorAggregationSuspended(suspended);
+    }
+}
+
 bool vtkGLView::hideShowEntities(const ccGLDrawContext& context) {
     if (m_displayTools) return m_displayTools->hideShowEntities(context);
     return true;
@@ -1778,12 +1831,29 @@ QString vtkGLView::pickObject(double x, double y) {
         if (m_vtkWidget) {
             int h = m_vtkWidget->height();
             double dpr = getDevicePixelRatio();
+            // params.centerX/centerY arrive ALREADY in PHYSICAL pixels
+            // (StartPicking converts once at the entry). vtkRenderWindow
+            // pixel space is physical too, so only the y-FLIP applies
+            // here — multiplying by dpr AGAIN double-scaled every pick
+            // on HiDPI (x shifted half a viewport right, y half up).
             vtkY = h * dpr - 1.0 - y;
+            // Coordinate probe (ACV_DIAGNOSTICS=1): exposes DPR/flip
+            // mismatches between the Qt click position and the VTK pixel
+            // space the selector samples. Off by default — per-pick I/O
+            // stalls the interaction it measures.
+            if (CVLog::diagnosticsEnabled()) {
+                CVLog::Print(
+                        "[pick-coord] in=(%.0f, %.0f) vtk=(%.0f, %.0f) "
+                        "widget=%dx%d dpr=%.2f",
+                        x, y, x, vtkY, m_vtkWidget->width(),
+                        static_cast<int>(m_vtkWidget->height() * dpr), dpr);
+            }
         }
-        vtkActor* pickedActor = m_visualizer3D->pickActor(x, vtkY);
-        if (pickedActor) {
-            return m_visualizer3D->getIdByActor(pickedActor).c_str();
-        }
+        // Pixel-accurate hardware resolution directly; no propPicker gate.
+        // The gate ran a tolerance-based pick whose world-space radius hit
+        // the composite group actor from background pixels, so the accurate
+        // pass below was either fed wrong pixels or skipped entirely.
+        return m_visualizer3D->pickLeafViewId(x, vtkY).c_str();
     }
     return QStringLiteral("-1");
 }
@@ -2165,6 +2235,14 @@ void vtkGLView::setObjectLightIntensity(const QString& viewID,
         m_displayTools->setObjectLightIntensity(viewID, intensity,
                                                 triggerRender);
     }
+}
+
+bool vtkGLView::hasCompositeGroup(const QString& viewID) {
+    return m_displayTools && m_displayTools->hasCompositeGroup(viewID);
+}
+
+bool vtkGLView::isCompositeLeafEntity(const QString& viewID) {
+    return m_displayTools && m_displayTools->isCompositeLeafEntity(viewID);
 }
 
 double vtkGLView::getLightIntensity() const {

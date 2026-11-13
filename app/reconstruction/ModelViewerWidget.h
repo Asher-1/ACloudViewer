@@ -16,11 +16,11 @@
 #include "ImageViewerWidget.h"
 #include "MovieGrabberWidget.h"
 #include "PointViewerWidget.h"
-#include "base/database.h"
-#include "base/reconstruction.h"
+#include "controllers/option_manager.h"
+#include "scene/database.h"
+#include "scene/reconstruction.h"
 #include "ui/colormaps.h"
 #include "ui/render_options.h"
-#include "util/option_manager.h"
 
 class ccPointCloud;
 class ccCameraSensor;
@@ -113,9 +113,11 @@ public:
 
     // Copy of current scene data that is displayed
     colmap::Reconstruction* reconstruction = nullptr;
-    std::unordered_map<colmap::camera_t, colmap::Camera> cameras;
-    std::unordered_map<colmap::image_t, colmap::Image> images;
-    std::unordered_map<colmap::point3D_t, colmap::Point3D> points3D;
+    // The colormap Prepare() API takes these as COLMAP NodeHashMaps, so they
+    // must use the alias rather than a concrete std container.
+    colmap::NodeHashMap<colmap::camera_t, colmap::Camera> cameras;
+    colmap::NodeHashMap<colmap::image_t, colmap::Image> images;
+    colmap::NodeHashMap<colmap::point3D_t, colmap::Point3D> points3D;
     std::vector<colmap::image_t> reg_image_ids;
 
     QLabel* statusbar_status_label;

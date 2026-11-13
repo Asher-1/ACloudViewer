@@ -1,6 +1,7 @@
 #pragma once
 #include "aicore/export.h"
-#include "ggml_backend_registry.hpp"
+#include "common/ggml_backend_registry.hpp"
+
 #include "ggml.h"
 #include "ggml-backend.h"
 #include <functional>
@@ -30,7 +31,9 @@ class Backend {
 public:
     // auto priority: macOS Metal -> CPU; elsewhere Vulkan -> CPU. Optional
     // developer devices remain available only when explicitly requested.
-    explicit Backend(const std::string& device = "auto", int n_threads = 1);
+    explicit Backend(const std::string& device = "auto",
+                     int n_threads = 1,
+                     bool keep_graph_buffers = false);
     ~Backend();
     Backend(const Backend&) = delete;
     Backend& operator=(const Backend&) = delete;
@@ -93,6 +96,9 @@ private:
     std::string error_;
     bool        offloading_  = false;  // true iff `backend` is a non-CPU device
     int         n_threads_   = 1;
+    // Keep the persistent gallocr/sched high-water between compute() calls
+    // (see EngineOptions::keep_graph_buffers).
+    bool keep_graph_buffers_ = false;
 };
 
 } // namespace depth

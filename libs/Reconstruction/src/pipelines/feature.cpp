@@ -12,40 +12,39 @@
 
 namespace cloudViewer {
 
-int ExtractFeature(
-        const std::string& database_path,
-        const std::string& image_path,
-        const std::string& image_list_path,
-        int camera_mode,
-        const colmap::ImageReaderOptions& image_reader_options,
-        const colmap::SiftExtractionOptions& sift_extraction_options) {
+int ExtractFeature(const std::string& database_path,
+                   const std::string& image_path,
+                   const std::string& image_list_path,
+                   int camera_mode,
+                   const colmap::ImageReaderOptions& image_reader_options,
+                   const colmap::FeatureExtractionOptions& extraction_options) {
     OptionsParser parser;
     parser.registerOption("database_path", &database_path);
     parser.registerOption("image_path", &image_path);
     parser.registerOption("image_list_path", &image_list_path);
-    // supported camera model { AUTO=0, SINGLE=1, PER_FOLDER=2, PER_IMAGE=3 }
     parser.registerOption("camera_mode", &camera_mode);
-    parser.addExtractionOptions(image_reader_options, sift_extraction_options);
+    parser.addFeatureExtractionOptions(image_reader_options,
+                                       extraction_options);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunFeatureExtractor(parser.getArgc(), parser.getArgv());
 }
 
-int ImportFeature(
-        const std::string& database_path,
-        const std::string& image_path,
-        const std::string& import_path,
-        const std::string& image_list_path,
-        int camera_mode,
-        const colmap::ImageReaderOptions& image_reader_options,
-        const colmap::SiftExtractionOptions& sift_extraction_options) {
+int ImportFeature(const std::string& database_path,
+                  const std::string& image_path,
+                  const std::string& import_path,
+                  const std::string& image_list_path,
+                  int camera_mode,
+                  const colmap::ImageReaderOptions& image_reader_options,
+                  const colmap::FeatureExtractionOptions& extraction_options) {
     OptionsParser parser;
     parser.registerOption("database_path", &database_path);
     parser.registerOption("image_path", &image_path);
     parser.registerOption("import_path", &import_path);
     parser.registerOption("image_list_path", &image_list_path);
     parser.registerOption("camera_mode", &camera_mode);
-    parser.addExtractionOptions(image_reader_options, sift_extraction_options);
+    parser.addFeatureExtractionOptions(image_reader_options,
+                                       extraction_options);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunFeatureImporter(parser.getArgc(), parser.getArgv());
@@ -54,81 +53,115 @@ int ImportFeature(
 int ImportMatches(const std::string& database_path,
                   const std::string& match_list_path,
                   const std::string& match_type,
-                  const colmap::SiftMatchingOptions& sift_matching_options) {
+                  const colmap::FeatureMatchingOptions& matching_options,
+                  const colmap::TwoViewGeometryOptions& geometry_options) {
     OptionsParser parser;
     parser.registerOption("database_path", &database_path);
     parser.registerOption("match_list_path", &match_list_path);
-    // supported match_type {'pairs', 'raw', 'inliers'}
     parser.registerOption("match_type", &match_type);
-    parser.addMatchingOptions(sift_matching_options);
+    parser.addFeatureMatchingOptions(matching_options);
+    parser.addTwoViewGeometryOptions(geometry_options);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunMatchesImporter(parser.getArgc(), parser.getArgv());
 }
 
-int ExhaustiveMatch(
-        const std::string& database_path,
-        const colmap::SiftMatchingOptions& sift_matching_options,
-        const colmap::ExhaustiveMatchingOptions& exhaustive_matching_options) {
+int ExhaustiveMatch(const std::string& database_path,
+                    const colmap::FeatureMatchingOptions& matching_options,
+                    const colmap::TwoViewGeometryOptions& geometry_options,
+                    const colmap::ExhaustivePairingOptions& pairing_options) {
     OptionsParser parser;
     parser.registerOption("database_path", &database_path);
-    parser.addExhaustiveMatchingOptions(sift_matching_options,
-                                        exhaustive_matching_options);
+    parser.addExhaustivePairingOptions(matching_options, geometry_options,
+                                       pairing_options);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunExhaustiveMatcher(parser.getArgc(), parser.getArgv());
 }
 
-int SequentialMatch(
-        const std::string& database_path,
-        const colmap::SiftMatchingOptions& sift_matching_options,
-        const colmap::SequentialMatchingOptions& sequential_matching_options) {
+int SequentialMatch(const std::string& database_path,
+                    const colmap::FeatureMatchingOptions& matching_options,
+                    const colmap::TwoViewGeometryOptions& geometry_options,
+                    const colmap::SequentialPairingOptions& pairing_options) {
     OptionsParser parser;
     parser.registerOption("database_path", &database_path);
-    parser.addSequentialMatchingOptions(sift_matching_options,
-                                        sequential_matching_options);
+    parser.addSequentialPairingOptions(matching_options, geometry_options,
+                                       pairing_options);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunSequentialMatcher(parser.getArgc(), parser.getArgv());
 }
 
-int SpatialMatch(
-        const std::string& database_path,
-        const colmap::SiftMatchingOptions& sift_matching_options,
-        const colmap::SpatialMatchingOptions& spatial_matching_options) {
+int SpatialMatch(const std::string& database_path,
+                 const colmap::FeatureMatchingOptions& matching_options,
+                 const colmap::TwoViewGeometryOptions& geometry_options,
+                 const colmap::SpatialPairingOptions& pairing_options) {
     OptionsParser parser;
     parser.registerOption("database_path", &database_path);
-    parser.addSpatialMatchingOptions(sift_matching_options,
-                                     spatial_matching_options);
+    parser.addSpatialPairingOptions(matching_options, geometry_options,
+                                    pairing_options);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunSpatialMatcher(parser.getArgc(), parser.getArgv());
 }
 
-int TransitiveMatch(
-        const std::string& database_path,
-        const colmap::SiftMatchingOptions& sift_matching_options,
-        const colmap::TransitiveMatchingOptions& transitive_matching_options) {
+int TransitiveMatch(const std::string& database_path,
+                    const colmap::FeatureMatchingOptions& matching_options,
+                    const colmap::TwoViewGeometryOptions& geometry_options,
+                    const colmap::TransitivePairingOptions& pairing_options) {
     OptionsParser parser;
     parser.registerOption("database_path", &database_path);
-    parser.addTransitiveMatchingOptions(sift_matching_options,
-                                        transitive_matching_options);
+    parser.addTransitivePairingOptions(matching_options, geometry_options,
+                                       pairing_options);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunTransitiveMatcher(parser.getArgc(), parser.getArgv());
 }
 
-int VocabTreeMatch(
-        const std::string& database_path,
-        const colmap::SiftMatchingOptions& sift_matching_options,
-        const colmap::VocabTreeMatchingOptions& vocab_tree_matching_options) {
+int VocabTreeMatch(const std::string& database_path,
+                   const colmap::FeatureMatchingOptions& matching_options,
+                   const colmap::TwoViewGeometryOptions& geometry_options,
+                   const colmap::VocabTreePairingOptions& pairing_options) {
     OptionsParser parser;
     parser.registerOption("database_path", &database_path);
-    parser.addVocabTreeMatchingOptions(sift_matching_options,
-                                       vocab_tree_matching_options);
+    parser.addVocabTreePairingOptions(matching_options, geometry_options,
+                                      pairing_options);
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunVocabTreeMatcher(parser.getArgc(), parser.getArgv());
+}
+
+int VerifyGeometry(const std::string& database_path,
+                   const colmap::TwoViewGeometryOptions& geometry_options,
+                   int batch_size,
+                   int num_threads,
+                   bool rig_verification) {
+    OptionsParser parser;
+    parser.registerOption("database_path", &database_path);
+    parser.registerOption("batch_size", &batch_size);
+    parser.registerOption("num_threads", &num_threads);
+    parser.registerOption("rig_verification", &rig_verification);
+    parser.addTwoViewGeometryOptions(geometry_options);
+    if (!parser.parseOptions()) return EXIT_FAILURE;
+
+    return colmap::RunGeometricVerifier(parser.getArgc(), parser.getArgv());
+}
+
+int VerifyGuidedGeometry(const std::string& database_path,
+                         const std::string& input_path,
+                         const colmap::TwoViewGeometryOptions& geometry_options,
+                         int batch_size,
+                         int num_threads) {
+    OptionsParser parser;
+    parser.registerOption("database_path", &database_path);
+    parser.registerOption("input_path", &input_path);
+    parser.registerOption("batch_size", &batch_size);
+    parser.registerOption("num_threads", &num_threads);
+    parser.addTwoViewGeometryOptions(geometry_options);
+    if (!parser.parseOptions()) return EXIT_FAILURE;
+
+    return colmap::RunGuidedGeometricVerifier(parser.getArgc(),
+                                              parser.getArgv());
 }
 
 }  // namespace cloudViewer

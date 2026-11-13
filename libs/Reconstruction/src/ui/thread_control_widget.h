@@ -21,6 +21,11 @@ public:
     void StartThread(const QString& progress_text,
                      const bool stoppable,
                      Thread* thread);
+    void StartThread(const QString& progress_text,
+                     const bool stoppable,
+                     std::unique_ptr<Thread> thread) {
+        StartThread(progress_text, stoppable, thread.release());
+    }
     void StartFunction(const QString& progress_text,
                        const std::function<void()>& func);
 
