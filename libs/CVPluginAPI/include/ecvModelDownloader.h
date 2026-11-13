@@ -8,6 +8,7 @@
 #pragma once
 
 #include <QByteArray>
+#include <QElapsedTimer>
 #include <QObject>
 #include <QString>
 #include <QStringList>
@@ -131,6 +132,13 @@ private:
     // artifact. Consecutive failed attempts rotate through the URL
     // candidates (primary + mirrors): resume stays valid across mirrors
     // because the candidates serve identical, digest-pinned content.
+    // Resume itself is licensed by a pinned digest: a no-pin .part prefix
+    // is size-plausible but never content-proven, so it is discarded
+    // instead of resumed. A productive attempt (>= kProgressRefreshMin
+    // fresh bytes) does not consume the hard attempt budget — the budget
+    // measures dead endpoints, not interruptions — and the refresh loop is
+    // bounded by kMaxTotalMs of wall clock, after which failure keeps the
+    // .part for a later retry.
     ecvModelDownloader::Request m_request;
     QStringList m_candidates;
     int m_candidateIndex = 0;
@@ -142,11 +150,23 @@ private:
     int m_stallTicks = 0;
     QTimer* m_stallTimer = nullptr; /**< no-progress watchdog */
     QTimer* m_retryTimer = nullptr; /**< backoff between attempts */
+    QElapsedTimer m_totalTimer; /**< wall-clock ceiling for refreshed retries */
     bool m_rangeNegotiated = false; /**< 206 verified for this attempt */
+    bool m_diskChecked = false;     /**< capacity checked for this attempt */
 
     double progressPercent() const;
 
     static constexpr int kMaxAttempts = 6;
+    // A retry after an attempt that delivered at least this many fresh
+    // bytes does not burn the kMaxAttempts budget: the transfer makes real
+    // progress, and only dead endpoints should exhaust it.
+    static constexpr qint64 kProgressRefreshMin = 1024 * 1024;
+    // Wall-clock ceiling for progress-refreshed retries; past it the
+    // downloader fails while keeping the .part resume state.
+    static constexpr int kMaxTotalMs = 30 * 60 * 1000;
+    // Slack required beyond the remaining transfer size when the volume
+    // capacity is checked against the declared Content-Length.
+    static constexpr qint64 kDiskSpaceHeadroomBytes = 256 * 1024 * 1024;
     static constexpr int kStallCheckMs = 5000;
     static constexpr int kStallTimeoutMs = 30000;
     static constexpr int kRetryDelayBaseMs = 2000;

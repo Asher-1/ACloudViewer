@@ -1,7 +1,7 @@
 {
   "name": "acloudviewer",
   "display_name": "ACloudViewer",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "Comprehensive 3D point cloud and mesh processing toolkit with 187 MCP tools — file I/O, processing, distance computation, ICP registration, mesh reconstruction, Colmap SfM/MVS reconstruction, SIBR pipelines, PCL/plugin processing, scene management, and viewport control. Supports both headless CLI and GUI modes via JSON-RPC.",
   "author": "ACloudViewer Contributors",
   "homepage": "https://asher-1.github.io/ACloudViewer",

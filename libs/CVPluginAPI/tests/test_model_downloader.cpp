@@ -9,6 +9,7 @@
 #include <QDir>
 #include <QEventLoop>
 #include <QFile>
+#include <QFileInfo>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTemporaryDir>
@@ -39,6 +40,9 @@ int main(int argc, char** argv) {
     int requests = 0;
     int resumed = 0;
     bool serviceUnavailable = false;
+    bool ignoreRange = false;
+    bool oversizeLength = false;
+    qint64 dropAfter = -1;
     QTcpServer server;
     REQUIRE(server.listen(QHostAddress::LocalHost));
     QObject::connect(&server, &QTcpServer::newConnection, &app, [&]() {
@@ -59,16 +63,44 @@ int main(int argc, char** argv) {
                             return;
                         }
                         qint64 offset = 0;
-                        for (const auto& line : header->split('\n')) {
+                        // QByteArray::split() is Qt 5.14+; scan with
+                        // indexOf to stay on the project's Qt 5.12 floor.
+                        int from = 0;
+                        while (true) {
+                            const int nl = header->indexOf('\n', from);
+                            if (nl < 0) break;
+                            const QByteArray line =
+                                    header->mid(from, nl - from);
+                            from = nl + 1;
                             if (line.toLower().startsWith("range: bytes=")) {
-                                offset = line.mid(13)
-                                                 .split('-')
-                                                 .first()
+                                const QByteArray range = line.mid(13);
+                                const int dash = range.indexOf('-');
+                                offset = (dash >= 0 ? range.left(dash) : range)
                                                  .toLongLong();
                                 ++resumed;
                             }
                         }
+                        // Range-blind server mode: a 200-with-full-body
+                        // answer must restart the transfer from scratch
+                        // instead of appending onto the stale prefix.
+                        if (ignoreRange) offset = 0;
+                        if (offset >= served.size()) {
+                            socket->write(
+                                    "HTTP/1.1 416 Range Not Satisfiable\r\n"
+                                    "Content-Length: 0\r\n"
+                                    "Connection: close\r\n\r\n");
+                            socket->disconnectFromHost();
+                            return;
+                        }
                         const QByteArray body = served.mid(offset);
+                        // Weak-link mode: claim the full remaining length
+                        // but deliver only dropAfter bytes, then close —
+                        // the client sees a truncated transport it must
+                        // resume from the bytes already on disk.
+                        const QByteArray delivered =
+                                (dropAfter >= 0 && body.size() > dropAfter)
+                                        ? body.left(dropAfter)
+                                        : body;
                         QByteArray response =
                                 offset > 0 ? "HTTP/1.1 206 Partial Content\r\n"
                                            : "HTTP/1.1 200 OK\r\n";
@@ -80,10 +112,18 @@ int main(int argc, char** argv) {
                                         QByteArray::number(served.size()) +
                                         "\r\n";
                         }
+                        // Oversize mode: claim a terabyte so the client's
+                        // volume-capacity check must fail the attempt fast
+                        // instead of streaming into a full disk.
+                        const qint64 declared =
+                                oversizeLength
+                                        ? 1024LL * 1024 * 1024 * 1024
+                                        : static_cast<qint64>(body.size());
                         response += "Content-Length: " +
-                                    QByteArray::number(body.size()) +
-                                    "\r\nConnection: close\r\n\r\n" + body;
+                                    QByteArray::number(declared) +
+                                    "\r\nConnection: close\r\n\r\n";
                         socket->write(response);
+                        socket->write(delivered);
                         socket->disconnectFromHost();
                     });
             QObject::connect(socket, &QTcpSocket::disconnected, socket,
@@ -91,7 +131,8 @@ int main(int argc, char** argv) {
         }
     });
     ecvModelDownloader downloader;
-    auto transfer = [&](const ecvModelDownloader::Request& request) {
+    auto transfer = [&](const ecvModelDownloader::Request& request,
+                        int timeoutMs = 5000) {
         QEventLoop loop;
         QTimer timer;
         timer.setSingleShot(true);
@@ -106,7 +147,7 @@ int main(int argc, char** argv) {
                                      loop.quit();
                                  });
         QObject::connect(&timer, &QTimer::timeout, &loop, &QEventLoop::quit);
-        timer.start(5000);
+        timer.start(timeoutMs);
         downloader.download(request);
         if (!completed) loop.exec();
         QObject::disconnect(connection);
@@ -173,6 +214,154 @@ int main(int argc, char** argv) {
     request.url.clear();  // offline cache hit
     REQUIRE(transfer(request));
     REQUIRE(requests == afterSized);
+    request.url = QString("http://127.0.0.1:%1/model").arg(server.serverPort());
+    // [G2] A no-pin .part prefix is never content-proven: the digest is
+    // the resume license, so the partial file is discarded and the
+    // transfer restarts without a Range request.
+    request.destPath = QDir(root).filePath("unpinned.gguf");
+    request.contentAnchor = {};
+    request.ingestExactSize = model.size();
+    {
+        QFile part(request.destPath + ".part");
+        REQUIRE(part.open(QIODevice::WriteOnly));
+        REQUIRE(part.write(model.left(32768)) == 32768);
+    }
+    const int resumesBeforeUnpinned = resumed;
+    REQUIRE(transfer(request));
+    REQUIRE(resumed == resumesBeforeUnpinned);
+    {
+        QFile done(request.destPath);
+        REQUIRE(done.open(QIODevice::ReadOnly));
+        REQUIRE(done.readAll() == model);
+    }
+    // [G3] A .part that already holds the complete pinned artifact
+    // finalizes locally with zero transport.
+    request.destPath = QDir(root).filePath("prefinalized.gguf");
+    request.contentAnchor = {
+            QCryptographicHash::Sha256,
+            QCryptographicHash::hash(model, QCryptographicHash::Sha256)
+                    .toHex()};
+    request.ingestExactSize = 0;
+    {
+        QFile part(request.destPath + ".part");
+        REQUIRE(part.open(QIODevice::WriteOnly));
+        REQUIRE(part.write(model) == model.size());
+    }
+    const int requestsBeforePrefinalized = requests;
+    REQUIRE(transfer(request));
+    REQUIRE(requests == requestsBeforePrefinalized);
+    REQUIRE(QFileInfo(request.destPath).size() == model.size());
+    REQUIRE(!QFile::exists(request.destPath + ".part"));
+    // [G3] An oversized .part draws 416; the part is dropped and the next
+    // attempt restarts cleanly.
+    request.destPath = QDir(root).filePath("oversized.gguf");
+    {
+        QFile part(request.destPath + ".part");
+        REQUIRE(part.open(QIODevice::WriteOnly));
+        REQUIRE(part.write(model) == model.size());
+        REQUIRE(part.write(QByteArray(4096, 'j')) == 4096);
+    }
+    REQUIRE(transfer(request));
+    REQUIRE(QFileInfo(request.destPath).size() == model.size());
+    REQUIRE(!QFile::exists(request.destPath + ".part"));
+    // [G3] A rename failure retries the local finalize without destroying
+    // the digest-proven part: a blocking directory at the destination
+    // fails finalize once, then the retry completes after it is removed.
+    request.destPath = QDir(root).filePath("blocked-finalize.gguf");
+    REQUIRE(QDir(root).mkdir(QStringLiteral("blocked-finalize.gguf")));
+    {
+        QFile part(request.destPath + ".part");
+        REQUIRE(part.open(QIODevice::WriteOnly));
+        REQUIRE(part.write(model) == model.size());
+    }
+    {
+        QEventLoop blockedLoop;
+        const auto blockedConnection = QObject::connect(
+                &downloader, &ecvModelDownloader::logMessage, &blockedLoop,
+                [&](const QString& message) {
+                    if (message.contains("Failed to finalize")) {
+                        QDir(root).rmdir(
+                                QStringLiteral("blocked-finalize.gguf"));
+                    }
+                });
+        REQUIRE(transfer(request, 30000));
+        QObject::disconnect(blockedConnection);
+    }
+    REQUIRE(QFileInfo(request.destPath).isFile());
+    REQUIRE(QFileInfo(request.destPath).size() == model.size());
+    // [G4] A server that ignores the resume range answers 200 with the
+    // full body; the downloader must restart from scratch instead of
+    // appending the body onto the stale prefix.
+    request.destPath = QDir(root).filePath("range-blind.gguf");
+    {
+        QFile part(request.destPath + ".part");
+        REQUIRE(part.open(QIODevice::WriteOnly));
+        REQUIRE(part.write(model.left(32768)) == 32768);
+    }
+    ignoreRange = true;
+    const int resumesBeforeBlind = resumed;
+    REQUIRE(transfer(request));
+    REQUIRE(resumed == resumesBeforeBlind + 1);
+    {
+        QFile done(request.destPath);
+        REQUIRE(done.open(QIODevice::ReadOnly));
+        REQUIRE(done.readAll() == model);
+    }
+    ignoreRange = false;
+    // [G1] Weak-network budget: every interrupted attempt delivers fresh
+    // bytes, so the attempt budget must refresh on progress. Without the
+    // refresh, 6 attempts x 4 MiB = 24 MiB < 32 MiB would hard-fail.
+    served = QByteArray("GGUF") + QByteArray(32 * 1024 * 1024, 'y');
+    request.destPath = QDir(root).filePath("weaknet.gguf");
+    request.contentAnchor = {
+            QCryptographicHash::Sha256,
+            QCryptographicHash::hash(served, QCryptographicHash::Sha256)
+                    .toHex()};
+    dropAfter = 4 * 1024 * 1024;
+    {
+        bool refreshed = false;
+        const auto weakConnection = QObject::connect(
+                &downloader, &ecvModelDownloader::logMessage, &app,
+                [&](const QString& message) {
+                    if (message.contains("attempt budget refreshed"))
+                        refreshed = true;
+                });
+        REQUIRE(transfer(request, 120000));
+        QObject::disconnect(weakConnection);
+        REQUIRE(refreshed);
+    }
+    dropAfter = -1;
+    REQUIRE(QFileInfo(request.destPath).size() == served.size());
+    served = model;
+    // [Disk] A declared transfer larger than the volume must fail fast
+    // with a clear message instead of streaming into a full disk.
+    oversizeLength = true;
+    request.destPath = QDir(root).filePath("diskfull.gguf");
+    request.contentAnchor = {
+            QCryptographicHash::Sha256,
+            QCryptographicHash::hash(model, QCryptographicHash::Sha256)
+                    .toHex()};
+    {
+        QEventLoop diskLoop;
+        bool diskFail = false;
+        const auto diskConnection = QObject::connect(
+                &downloader, &ecvModelDownloader::logMessage, &diskLoop,
+                [&](const QString& message) {
+                    if (message.contains("Insufficient disk space")) {
+                        diskFail = true;
+                        diskLoop.quit();
+                    }
+                });
+        QTimer::singleShot(30000, &diskLoop, &QEventLoop::quit);
+        downloader.download(request);
+        diskLoop.exec();
+        QObject::disconnect(diskConnection);
+        REQUIRE(diskFail);
+    }
+    downloader.cancel();
+    REQUIRE(!downloader.isBusy());
+    REQUIRE(!QFile::exists(request.destPath));
+    oversizeLength = false;
     // A ZIP uses the same real HTTP transport and digest ledger. Extraction
     // is the repository service's responsibility; no plugin unzip code.
     served = QByteArray::fromHex(
@@ -258,6 +447,7 @@ int main(int argc, char** argv) {
     REQUIRE(requests == beforeCancel + 1);
     std::puts(
             "model downloader: cache hits, selection isolation, corruption, "
-            "retry cancellation, resume, ZIP reuse and UTF-8 paths passed");
+            "retry cancellation, resume, resume license, fast finalize, "
+            "weak-network budget, ZIP reuse and UTF-8 paths passed");
     return 0;
 }

@@ -40,7 +40,7 @@ as JSON, CSV, or text, or add the current labeled image to the database.
 ## Build and accuracy checks
 
 Enable `AICore_ENABLED` and `PLUGIN_STANDARD_QRAM`; see the
-[plugin developer README](../../../plugins/core/Standard/qRAM/README.md) for
+[plugin developer README](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qRAM/README.md) for
 the build command and the CUDA/Vulkan validation commands. The automatic light
 validation runs all three Q8_0 families on the official demo image. The full
 validation covers all nine models, full-class logits for the exact dequantized

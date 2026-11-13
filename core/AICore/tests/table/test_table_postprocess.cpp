@@ -7,7 +7,8 @@
 
 // Unit test of the `table` reconstruction post-process (no model, no
 // backend): structure decode, span grid, OCR reading order and cell
-// assignment, HTML (PaddleX get_html_result) and RFC 4180 CSV.
+// assignment, HTML (PaddleX get_html_result, plus the optional
+// stacked-line-aware cell join) and RFC 4180 CSV.
 
 #include <cmath>
 #include <cstdio>
@@ -98,6 +99,51 @@ void testMatching() {
     AICORE_CHECK(tie[0].size() == 1 && tie[1].empty());
 }
 
+void testStackedJoin() {
+    // zh_val_22.jpg case: a wrapped email is two det boxes in one cell
+    // ('gftiec@gftiec.c' over 'om'); the bilingual City label is two tight
+    // stacked lines; unrelated rows keep a clear vertical gap.
+    const std::vector<std::array<float, 4>> boxes = {
+            {1410, 1812, 1723, 1864},  // 'gftiec@gftiec.c'
+            {1410, 1871, 1487, 1915},  // 'om' (7 px below, x overlap)
+            {229, 892, 314, 946},      // 'City'
+            {232, 943, 321, 998},      // '城市' (overlaps City's bottom)
+            {232, 1038, 432, 1089},    // 'Postal Code' (40 px below)
+    };
+    AICORE_CHECK(stackedLineJoin(boxes[0], boxes[1]));
+    AICORE_CHECK(stackedLineJoin(boxes[2], boxes[3]));
+    AICORE_CHECK(!stackedLineJoin(boxes[3], boxes[4]));
+    // Same-line neighbours are not "stacked".
+    AICORE_CHECK(!stackedLineJoin({0, 0, 100, 50}, {110, 2, 200, 48}));
+    // Degenerate boxes never glue.
+    AICORE_CHECK(!stackedLineJoin({0, 0, 0, 0}, {0, 0, 10, 10}));
+
+    const std::vector<std::vector<int>> matched = {{0, 1}, {2, 3, 4}};
+    const std::vector<std::string> texts = {"gftiec@gftiec.c", "om", "City",
+                                            "城市", "Postal Code"};
+    std::vector<std::string> cellTexts;
+    // Mode 0 (upstream get_html_result): always space-joined.
+    buildHtml({"<tr>", "<td></td>", "<td></td>", "</tr>"}, matched, texts,
+              &cellTexts, &boxes, false);
+    AICORE_CHECK(cellTexts.size() == 2);
+    if (cellTexts.size() == 2) {
+        AICORE_CHECK(cellTexts[0] == "gftiec@gftiec.c om");
+        AICORE_CHECK(cellTexts[1] == "City 城市 Postal Code");
+    }
+    // Mode 1 (stacked-line-aware): wrapped lines lose the separator.
+    buildHtml({"<tr>", "<td></td>", "<td></td>", "</tr>"}, matched, texts,
+              &cellTexts, &boxes, true);
+    AICORE_CHECK(cellTexts.size() == 2);
+    if (cellTexts.size() == 2) {
+        AICORE_CHECK(cellTexts[0] == "gftiec@gftiec.com");
+        AICORE_CHECK(cellTexts[1] == "City城市 Postal Code");
+    }
+    // Without box geometry the stacked mode degrades to the upstream join.
+    buildHtml({"<tr>", "<td></td>", "</tr>"}, {{0, 1}}, texts, &cellTexts,
+              nullptr, true);
+    AICORE_CHECK(cellTexts.size() == 1 && cellTexts[0] == "gftiec@gftiec.c om");
+}
+
 void testReadingOrder() {
     // (100, 10) and (0, 12) share a 10 px line -> x order; (0, 30) is the
     // next line.
@@ -134,6 +180,7 @@ int main() {
     testGrid();
     testCsv();
     testHtml();
+    testStackedJoin();
     testMatching();
     testReadingOrder();
     testDecode();

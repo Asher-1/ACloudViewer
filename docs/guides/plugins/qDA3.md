@@ -1,6 +1,6 @@
 # qDA3 — Depth Anything V3 Plugin
 
-Run [Depth Anything 3](https://github.com/DepthAnything/Depth-Anything-V3) **GGUF models** in ACloudViewer (C++ / [ggml](https://github.com/ggml-org/ggml), derived from [depth-anything.cpp](https://github.com/mudler/depth-anything.cpp)) for depth estimation, camera pose, and 3D export.
+Run [Depth Anything 3](https://github.com/DepthAnything/Depth-Anything-V3) **GGUF models** in ACloudViewer (C++ / [ggml](https://github.com/ggml-org/llama.cpp), derived from [depth-anything.cpp](https://github.com/mudler/depth-anything.cpp)) for depth estimation, camera pose, and 3D export.
 
 ## Architecture
 

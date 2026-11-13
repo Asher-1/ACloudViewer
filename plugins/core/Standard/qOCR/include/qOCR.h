@@ -16,12 +16,14 @@
 #include <ecvStdPluginInterface.h>
 
 #include <QAction>
+#include <QHash>
 #include <QList>
 #include <QTimer>
 
 #include "OCRDialog.h"
 
 class OCRWorker;
+class ccHObject;
 class ecvMainAppInterface;
 
 class qOCR final : public QObject, public ccStdPluginInterface {
@@ -43,10 +45,16 @@ private slots:
     void cancelTask();
     void onResultReady(const OCRRunResult& result);
     void onTaskFinished(bool success);
+    /** The dialog's result selector moved to \p imagePath: select the
+     *  matching exported overlay in the DB tree (no-op when nothing was
+     *  exported for that source or the entity was deleted). */
+    void selectDbResultImage(const QString& imagePath);
 
 private:
     void addResultToDb(const OCRRunResult& result,
                        const OCRRunSettings& settings);
+    /** Depth-first DB tree lookup of the uniquely named overlay entity. */
+    ccHObject* findDbEntity(const QString& name) const;
 
     QAction* m_workspaceAction = nullptr;
     OCRDialog* m_dialog = nullptr;
@@ -54,4 +62,10 @@ private:
     OCRRunSettings m_currentSettings;
     QTimer* m_inferenceHeartbeat = nullptr;
     int m_inferenceElapsedSeconds = 0;
+    /** DB names of this session's exported overlays keyed by source image
+     *  path (the last overlay per path); the owner of the DB identity the
+     *  dialog's result selector syncs with. Names (not pointers): the
+     *  entity is resolved in the DB tree at selection time, so a deleted
+     *  entity simply drops out of the sync. */
+    QHash<QString, QString> m_dbResultImages;
 };

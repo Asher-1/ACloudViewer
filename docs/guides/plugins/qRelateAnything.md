@@ -39,5 +39,5 @@ Editing those input files at the same path reloads their contents on the next
 run when their size or modification time changes.
 
 Build, cache layout, model/data provenance and validation commands are documented
-in [qRelateAnything README](../../../plugins/core/Standard/qRelateAnything/README.md)
-and its [model card](../../../plugins/core/Standard/qRelateAnything/models/MODEL_CARD.md).
+in [qRelateAnything README](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qRelateAnything/README.md)
+and its [model card](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qRelateAnything/models/MODEL_CARD.md).

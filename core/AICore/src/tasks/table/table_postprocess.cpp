@@ -217,10 +217,32 @@ std::vector<std::vector<int>> matchOcrToCells(
     return matched;
 }
 
+bool stackedLineJoin(const std::array<float, 4>& prev,
+                     const std::array<float, 4>& next) {
+    const double prevH = prev[3] - prev[1];
+    const double nextH = next[3] - next[1];
+    const double minH = std::min(prevH, nextH);
+    const double maxH = std::max(prevH, nextH);
+    const double minWidth = std::min(prev[2] - prev[0], next[2] - next[0]);
+    if (prevH <= 0.0 || nextH <= 0.0 || minWidth <= 0.0) return false;
+    // The next box must be a lower line, not a same-line neighbour.
+    if (next[1] - prev[1] < 0.5 * minH) return false;
+    // ...and it must follow within a fraction of a line height of the
+    // previous bottom (wrapped lines touch; unrelated rows keep a gap).
+    if (next[1] - prev[3] > 0.35 * maxH) return false;
+    // The x ranges must overlap, so a right-column value does not glue
+    // onto the previous line.
+    const double overlap =
+            std::min(prev[2], next[2]) - std::max(prev[0], next[0]);
+    return overlap >= 0.2 * minWidth;
+}
+
 std::string buildHtml(const std::vector<std::string>& tokens,
                       const std::vector<std::vector<int>>& matched,
                       const std::vector<std::string>& ocrTexts,
-                      std::vector<std::string>* cellTexts) {
+                      std::vector<std::string>* cellTexts,
+                      const std::vector<std::array<float, 4>>* ocrBoxes,
+                      bool stackedJoin) {
     std::string html = "<html><body><table>";
     if (cellTexts) cellTexts->clear();
     size_t td = 0;
@@ -239,7 +261,10 @@ std::string buildHtml(const std::vector<std::string>& tokens,
         if (boxes) {
             // get_html_result: several boxes in one cell are stripped of a
             // leading space and <b> markers, then space-joined; a leading
-            // <b> on the first box makes the whole cell bold.
+            // <b> on the first box makes the whole cell bold. The
+            // stacked-line-aware mode (cell_join_mode 1) replaces the space
+            // with no separator when two consecutive boxes are vertically
+            // stacked continuation lines of one string.
             const size_t n = boxes->size();
             bold = n > 1 && ocrTexts[static_cast<size_t>((*boxes)[0])].find(
                                     "<b>") != std::string::npos;
@@ -255,7 +280,17 @@ std::string buildHtml(const std::vector<std::string>& tokens,
                         content.resize(content.size() >= 4 ? content.size() - 4
                                                            : 0);
                     if (content.empty()) continue;
-                    if (k != n - 1 && content.back() != ' ') content += ' ';
+                    if (k != n - 1 && content.back() != ' ') {
+                        bool stacked = false;
+                        if (stackedJoin && ocrBoxes && k + 1 < boxes->size()) {
+                            stacked = stackedLineJoin(
+                                    (*ocrBoxes)[static_cast<size_t>(
+                                            (*boxes)[k])],
+                                    (*ocrBoxes)[static_cast<size_t>(
+                                            (*boxes)[k + 1])]);
+                        }
+                        if (!stacked) content += ' ';
+                    }
                 }
                 text += content;
             }

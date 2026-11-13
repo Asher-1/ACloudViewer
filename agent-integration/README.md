@@ -41,6 +41,24 @@ cd /path/to/CLI-Anything/acloudviewer/agent-harness
 pip install -e ".[mcp,dev]"
 ```
 
+One-line script (Linux / macOS): installs the harness, runs `check`, and
+registers the MCP server with detected AI clients:
+
+```bash
+curl -LsSf https://raw.githubusercontent.com/Asher-1/CLI-Anything/main/acloudviewer/agent-harness/install.sh | sh
+```
+
+More deployment & health commands:
+
+```bash
+cli-anything-acloudviewer install source --dry-run   # one-command source build
+                                                     # (Linux apt+pyenv script;
+                                                     #  macOS/Windows conda)
+cli-anything-acloudviewer --json doctor              # installation + RPC + registry
+cli-anything-acloudviewer --json install models --list  # headless prefetch matrix
+cli-anything-acloudviewer install clients --all --remove    # unregister
+```
+
 ### 3. Use from the Command Line
 
 > **Windows users:** For file conversion and batch operations, **always use `--mode headless`**:
@@ -112,6 +130,12 @@ cli-anything-acloudviewer sibr texture-mesh ./workspace/
 ```
 
 ### 4. Use as an MCP Server (OpenClaw / Cursor / Claude Code)
+
+One-command registration with detected AI clients (writes `.bak` backups):
+
+```bash
+cli-anything-acloudviewer install clients --all
+```
 
 ```bash
 cli-anything-acloudviewer-mcp

@@ -16,6 +16,7 @@
 //                    [--layout <layout.gguf> --layout-regions]]
 //                    [--device auto|cpu|cuda|vulkan] [--threads n]
 //                    [--det-limit-type 0|1] [--det-max-side n]
+//                    [--cell-join-mode 0|1] [--region-fallback-mask mask]
 //                    [--warmups n] [--list <file>] [images...]
 //
 // Without --det/--rec the tables carry structure only (TEDS-S). The image
@@ -86,6 +87,7 @@ int main(int argc, char** argv) {
     int threads = 0, warmups = 1, runs = 1, auditHoldMs = 0;
     int detLimitType = 0, detMaxSide = 0;
     unsigned long regionFallbackMask = 0;
+    int cellJoinMode = 0;
     bool layoutRegions = false;
     std::vector<std::string> images;
     for (int i = 1; i < argc; ++i) {
@@ -124,6 +126,8 @@ int main(int argc, char** argv) {
             detMaxSide = std::atoi(next());
         else if (a == "--region-fallback-mask")
             regionFallbackMask = std::strtoul(next(), nullptr, 0);
+        else if (a == "--cell-join-mode")
+            cellJoinMode = std::atoi(next());
         else if (a == "--list") {
             std::ifstream list(next());
             for (std::string line; std::getline(list, line);)
@@ -187,6 +191,7 @@ int main(int argc, char** argv) {
     ropt.abi_version = AICORE_TABLE_ABI_VERSION;
     ropt.use_layout_regions = layoutRegions ? 1 : 0;
     ropt.fallback_region_mask = static_cast<uint32_t>(regionFallbackMask);
+    ropt.cell_join_mode = cellJoinMode;
 
     std::vector<double> tableMs, ocrMs, totalMs;
     int failures = 0;

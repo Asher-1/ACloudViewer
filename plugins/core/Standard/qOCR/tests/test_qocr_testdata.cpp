@@ -7,8 +7,8 @@
 // Cold-start evidence for the qOCR tables-mode "Try sample data" action: a
 // previously absent cache must go through the shared repository's
 // download -> digest verification -> extraction chain and expose the pinned
-// demo members (one Chinese and one Japanese real-document table page) that
-// OCRDialog::recommendedTestImages(true, ...) fills. Warm reuse
+// demo members (the measured zh/ja real-document table pages) that
+// OCRDialog::recommendedTestImages(true, ..., family) fills. Warm reuse
 // (already-extracted / verified-zip) is a separate, cheaper check.
 
 #include <gtest/gtest.h>
@@ -73,16 +73,22 @@ TEST(QOCRTablesTestData, MetadataAndPinnedDigest) {
     // The archive digest must be pinned in source (64 hex characters) — an
     // empty digest would mean an unpinned asset.
     EXPECT_EQ(info.anchor.digestHex.size(), 64);
-    // Tables mode maps to this dataset; every other mode keeps the demo
-    // bundle.
-    EXPECT_EQ(OCRDialog::datasetForMode(true), kDataset);
-    EXPECT_EQ(OCRDialog::datasetForMode(false),
+    // Tables mode routes by recognition family: the zh/ja recommendations
+    // read this dataset, the en family demos from the PaddleOCR bundle
+    // (its dictionaries cannot read the zh/ja pages); every non-table mode
+    // keeps the demo bundle.
+    EXPECT_EQ(OCRDialog::datasetForMode(true, QStringLiteral("zh")), kDataset);
+    EXPECT_EQ(OCRDialog::datasetForMode(true, QStringLiteral("ja")), kDataset);
+    EXPECT_EQ(OCRDialog::datasetForMode(true, QStringLiteral("en")),
               ecvTestDataRepository::Dataset::Ppocr);
-    // The deterministic first-fill recommendations are exactly the pinned
-    // demo members checked below.
-    const QStringList rec = OCRDialog::recommendedTestImages(true, false, true);
-    EXPECT_EQ(rec, (QStringList{QStringLiteral("zh_val_0.jpg"),
-                                QStringLiteral("ja_val_0.jpg")}));
+    EXPECT_EQ(OCRDialog::datasetForMode(false, QStringLiteral("zh")),
+              ecvTestDataRepository::Dataset::Ppocr);
+    // The measured zh recommendations (README "Sample data") are exactly
+    // the pinned demo members checked below.
+    const QStringList rec =
+            OCRDialog::recommendedTestImages(true, false, QStringLiteral("zh"));
+    EXPECT_EQ(rec, (QStringList{QStringLiteral("zh_val_10.jpg"),
+                                QStringLiteral("zh_val_22.jpg")}));
 }
 
 TEST(QOCRTablesTestData, ColdDownloadExtractAndDemoFill) {
@@ -100,21 +106,23 @@ TEST(QOCRTablesTestData, ColdDownloadExtractAndDemoFill) {
     // Exactly one datasetReady(ok) emission for the accepted call.
     ASSERT_EQ(readyCalls, 1);
 
-    // The pinned demo members the dialog's tables mode checks (one Chinese,
-    // one Japanese real-document table page).
+    // The pinned demo members the dialog's tables mode checks (the
+    // measured zh pages plus the measured ja pages of this bundle).
     for (const QString& demo :
-         {QStringLiteral("zh_val_0.jpg"), QStringLiteral("ja_val_0.jpg")}) {
+         {QStringLiteral("zh_val_10.jpg"), QStringLiteral("zh_val_22.jpg"),
+          QStringLiteral("ja_val_10.jpg"), QStringLiteral("ja_val_0.jpg")}) {
         const QString path =
                 ecvTestDataRepository::findDatasetFile(kDataset, demo);
         EXPECT_FALSE(path.isEmpty()) << demo.toUtf8().constData();
         EXPECT_TRUE(QFileInfo::exists(path));
     }
     // The full validation bundle: 100 real-document table pages.
-    const QStringList images =
-            OCRDialog::testDataImages(extractPath(), true, false, true);
+    const QStringList images = OCRDialog::testDataImages(
+            extractPath(), true, false, QStringLiteral("zh"));
     EXPECT_EQ(images.size(), 100);
     // The recommendations are listed first, in recommendation order.
-    const QStringList rec = OCRDialog::recommendedTestImages(true, false, true);
+    const QStringList rec =
+            OCRDialog::recommendedTestImages(true, false, QStringLiteral("zh"));
     for (int i = 0; i < rec.size(); ++i)
         EXPECT_EQ(images.value(i),
                   QDir(extractPath()).absoluteFilePath(rec[i]));

@@ -1137,7 +1137,12 @@ function Run-QPythonRuntimeNativeTests {
 function Run-CppUnitTests {
     param (
         [Parameter(Mandatory=$false)]
-        [string]$Config = "Release"
+        [string]$Config = "Release",
+        # gtest exclude filter appended to --gtest_shuffle when LOW_MEM_USAGE
+        # is not set (the Windows CI lane passes the ReduceSum64bit2D cases;
+        # LOW_MEM_USAGE keeps its broader -*Reduce*Sum* rule and wins).
+        [Parameter(Mandatory=$false)]
+        [string]$GtestExclude = ""
     )
 
     Write-Host "======================================================================"
@@ -1177,11 +1182,21 @@ function Run-CppUnitTests {
         throw "Run-CppUnitTests: tests executable not found for config '$Config'"
     }
     Write-Host "Tests executable: $testExe"
-    
+
+    # tests.exe lives under bin\cloudviewer_test\ (or bin\<Config>\) but the
+    # shared DLLs are centralized in bin\<CONFIG>\; Windows has no RPATH, so
+    # prepend the DLL directory before launching.
+    $dllDir = Join-Path $buildDir "bin\$Config"
+    if (Test-Path $dllDir) {
+        $env:PATH = "$dllDir;$env:PATH"
+    }
+
     # Set test flags
     $unitTestFlags = @("--gtest_shuffle")
     if ($env:LOW_MEM_USAGE -eq "ON") {
         $unitTestFlags += "--gtest_filter=-*Reduce*Sum*"
+    } elseif ($GtestExclude) {
+        $unitTestFlags += "--gtest_filter=-$GtestExclude"
     }
     
     $flagsString = $unitTestFlags -join " "
@@ -1204,6 +1219,24 @@ function Run-CppUnitTests {
         Write-Host "======================================================================"
     }
     
+    # Standalone foundation portability executables (test_filesystem /
+    # test_parallel / test_host_parallel — Unicode I/O and host loop
+    # fallbacks, outside tests.exe and the AICore C ABI selection). Part of
+    # this entry unconditionally: core/tests registers them under
+    # BUILD_UNIT_TESTS, which every caller of this function enables. Same
+    # ordering and stop-on-failure semantics as the consolidated workflow
+    # step: a failure here skips the qPythonRuntime chain below.
+    if ($testResult -eq 0) {
+        Write-Host "Running foundation portability tests (test_filesystem / test_parallel / test_host_parallel)..."
+        & ctest --test-dir $buildDir -C $Config -R '^test_(filesystem|parallel|host_parallel)$' --no-tests=error --output-on-failure -j1
+        $testResult = $LASTEXITCODE
+        if ($testResult -eq 0) {
+            Write-Host "Foundation portability tests: PASSED"
+        } else {
+            Write-Host "Foundation portability tests: FAILED (exit code: $testResult)"
+        }
+    }
+
     Pop-Location
     if ($testResult -eq 0) {
         Run-QPythonRuntimeNativeTests -BuildDir $buildDir -Config $Config

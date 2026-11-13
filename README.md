@@ -45,7 +45,7 @@ More on ACloudViewer [here](https://asher-1.github.io/ACloudViewer/)
 * 3D data processing algorithms
 * Scene reconstruction (based on colmap)
 * **AICore AI plugins** — depth, feature matching, detection / segmentation, background removal, and 3D Gaussian splats & meshes via GGUF (no Python runtime)
-* **3D Gaussian Splatting** real-time rendering and novel view synthesis (SIBR plugin)
+* **3D Gaussian Splatting** real-time rendering and novel view synthesis (SIBR plugin), plus training from photos / video (Spirula Studio integration)
 * Surface alignment
 * 3D visualization
 * Physically based rendering (PBR)
@@ -60,7 +60,7 @@ together to enable full end to end pipelines:
 
 For more, please visit the [ACloudViewer documentation](https://asher-1.github.io/ACloudViewer/documentation/).
 
-A code-level architecture overview — module map, CMake-verified dependency graph, and key data flows — is in [ARCHITECTURE.md](ARCHITECTURE.md).
+A code-level architecture overview — module map, CMake-verified dependency graph, and key data flows — is in [ARCHITECTURE.md](https://github.com/Asher-1/ACloudViewer/blob/main/ARCHITECTURE.md).
 
 ---
 
@@ -141,25 +141,82 @@ Key features:
 Enable with `-DPLUGIN_STANDARD_QSIBR=ON -DBUILD_CUDA_MODULE=ON` (CUDA optional for non-3DGS viewers).
 See [qSIBR plugin documentation](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qSIBR/README.md) for details.
 
+### Spirula Studio — train 3DGS from photos & video
+
+<p align="center">
+  <img width="49%" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSpirula/images/spirula_indoor_reconstruction.jpg">
+  <img width="49%" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSpirula/images/spirula_outdoor_scene.jpg">
+</p>
+<p align="center">
+  <img width="49%" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSpirula/images/spirula_object_scan.jpg">
+  <img width="49%" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSpirula/images/spirula_360_reconstruction.jpg">
+</p>
+<p align="center">
+<sub>Reconstruction examples from the <a href="https://superspl.at/explore/software/spirula-studio">SuperSplat Spirula Studio Gallery</a> — <b>Ceramic Studio</b> (~50 photos, 1M splats) · <b>Parish Church of Saint Maurice</b> (746 photos, 9.97M splats) · <b>Infinity Octo Art MK</b> (1.99M splats) · <b>Panorama Torunia</b> (533 MB scene, 14.9M splats, native 360° support)</sub>
+</p>
+
+The **qSpirula** plugin bundles the upstream
+[Spirula Studio](https://github.com/harry7557558/spirula-studio) trainer
+(photos / 360° video → splat → textured mesh, GPLv3) as a separate
+`spirula` executable next to the application:
+
+* **Launch Spirula Studio** — the official upstream GUI, detached; training, editing, rendering, meshing and device selection run in the official UI
+* **Run Headless Training…** — `spirula train <dataset>` with live stdout logs, graceful cancel (SIGTERM → upstream checkpoints) and device selection
+* **Import Result to DB Tree…** — `splat.ply` → colored `ccPointCloud` with `Opacity`/`Scale` scalar fields (SH0 → RGB, low-opacity gaussians pruned); `mesh.ply` → `ccMesh`
+
+Enable with `-DBUILD_SPIRULA=ON -DPLUGIN_STANDARD_QSPIRULA=ON`.
+See the [qSpirula plugin documentation](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qSpirula/README.md)
+and the [qSpirula user guide](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qSpirula.md) for details.
+
 ---
 
 ## AICore AI Plugins — Depth, Detection, Matching & 3D Generation
 
-Ten GUI plugins share one native inference library — **`libAICore.so`** ([ggml](https://github.com/ggml-org/ggml)). Run quantized **GGUF** models on **CUDA / Vulkan (Linux/Windows) / Metal (macOS) / CPU** with **no Python or PyTorch** at runtime. Results land directly in the DB tree and plug into reconstruction, COLMAP, and SIBR workflows.
+Twenty-two GUI plugins share one native inference library — **`libAICore.so`**, whose ggml runtime is vendored from [llama.cpp](https://github.com/ggml-org/llama.cpp). Run quantized **GGUF** models on **CUDA / Vulkan (Linux/Windows) / Metal (macOS) / CPU** with **no Python or PyTorch** at runtime. Results land directly in the DB tree and plug into reconstruction, COLMAP, and SIBR workflows.
 
-| | **qDA3** | **qDeepLSD** | **qFaceDetect** | **qLightGlue** | **qFreeSplatter** |
-|---|----------|--------------|-----------------|----------------|-------------------|
-| **Task** | Monocular & multi-view depth, camera pose | Line-segment / wireframe extraction | Face detect / analyze / verify | Sparse feature matching | Uncalibrated photos → 3D Gaussian splats |
-| **Model** | Depth Anything V3 GGUF | DeepLSD wireframe GGUF | face-detect.cpp GGUF packs | SIFT/ALIKED LightGlue GGUF | FreeSplatter GGUF |
-| **Standout** | Single-image depth cloud in one click | AFM + LSD lines on photos | SCRFD + ArcFace in one dialog | 300+ matches in **< 1 s** on GPU | **2 photos** → 3D scene + SIBR PLY |
-| **CMake** | `PLUGIN_STANDARD_QDA3` | `PLUGIN_STANDARD_QDEEPLSD` | `PLUGIN_STANDARD_QFACEDETECT` | `PLUGIN_STANDARD_QLIGHTGLUE` | `PLUGIN_STANDARD_QFREESPLATTER` |
+**Perception — depth · lines · matching · faces · text**
 
-| | **qYOLO** | **qSAM3** | **qTrellis** | **qRFDetr** | **qRMBG** |
-|---|----------|-----------|--------------|-------------|-----------|
-| **Task** | Detect / seg / depth / pose / OBB / classify + open-vocab | Promptable segmentation + video tracking | Single image → 3D mesh with PBR | RF-DETR detection & instance masks | Background removal |
-| **Model** | YOLOv8 / YOLO26 GGUF (63 models) | SAM2 / 2.1 / 3 GGUF (39 models) | TRELLIS.2 GGUF (DINOv3 + flow DiTs) | RF-DETR GGUF (44 models) | RMBG-2.0 (BiRefNet-Swin-L) GGUF |
-| **Standout** | 9 task families incl. World / YOLOE prompts | Text / box / point prompts, video tracking | PBR-textured GLB in one click | 13 ms GPU latency + class allowlist | Transparent RGBA + raw alpha matte |
-| **CMake** | `PLUGIN_STANDARD_QYOLO` | `PLUGIN_STANDARD_QSAM3` | `PLUGIN_STANDARD_QTRELLIS` | `PLUGIN_STANDARD_QRFDETR` | `PLUGIN_STANDARD_QRMBG` |
+| Plugin | Task | Model | Standout | CMake |
+|--------|------|-------|----------|-------|
+| **[qDA3](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qDA3.md)** | Monocular & multi-view depth, camera pose | Depth Anything V3 GGUF | Single-image depth cloud in one click; automatic-reconstruction integration | `PLUGIN_STANDARD_QDA3` |
+| **[qDeepLSD](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qDeepLSD.md)** | Line-segment / wireframe extraction | DeepLSD wireframe GGUF | AFM + LSD lines on photos | `PLUGIN_STANDARD_QDEEPLSD` |
+| **[qLightGlue](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qLightGlue.md)** | Sparse feature matching | SIFT/ALIKED LightGlue GGUF | 300+ matches in **< 1 s** on GPU | `PLUGIN_STANDARD_QLIGHTGLUE` |
+| **[qFaceDetect](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qFaceDetect.md)** | Face detect / analyze / verify | face-detect.cpp GGUF packs | SCRFD + ArcFace in one dialog; live multi-face video | `PLUGIN_STANDARD_QFACEDETECT` |
+| **[qOCR](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qOCR.md)** | Text / layout / table recognition | PP-OCRv4 GGUF (EN / JA / CH+EN recipes) | SLANet layout + table grids overlaid PP-Structure style | `PLUGIN_STANDARD_QOCR` |
+
+**Detection, segmentation & open-vocabulary understanding**
+
+| Plugin | Task | Model | Standout | CMake |
+|--------|------|-------|----------|-------|
+| **[qYOLO](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qYOLO.md)** | Detect / seg / depth / pose / OBB / classify + open-vocab | YOLOv8 / YOLO26 GGUF (63 models) | 9 task families incl. World / YOLOE prompts | `PLUGIN_STANDARD_QYOLO` |
+| **[qSAM3](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qSAM3.md)** | Promptable segmentation + video tracking | SAM2 / 2.1 / 3 GGUF (39 models) | Text / box / point prompts, video tracking | `PLUGIN_STANDARD_QSAM3` |
+| **[qRFDetr](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qRFDetr.md)** | Detection & instance masks | RF-DETR GGUF (44 models) | 13 ms GPU latency + class allowlist | `PLUGIN_STANDARD_QRFDETR` |
+| **[qRMBG](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qRMBG.md)** | Background removal | RMBG-2.0 (BiRefNet-Swin-L) GGUF | Transparent RGBA + raw alpha matte | `PLUGIN_STANDARD_QRMBG` |
+| **[qRAM](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qRAM.md)** | Image tagging & captioning | RAM / RAM++ / Tag2Text GGUF | All logits + thresholds, JSON/CSV/text export | `PLUGIN_STANDARD_QRAM` |
+| **[qRelateAnything](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qRelateAnything.md)** | Scene relation graphs | RelSGG ViT / ConvNeXt GGUF (24 models) | Subject–predicate–object edges over tracked objects (image & video) | `PLUGIN_STANDARD_QRELATEANYTHING` |
+| **[qGKD](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qGKD.md)** | Open-world keypoint detection | GKDT-L GGUF (ECCV 2026) | Text / visual 1-shot / multimodal / multi-object prompts | `PLUGIN_STANDARD_QGKD` |
+| **[qVLXSeek](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qVLXSeek.md)** | Open-vocab grounding & region QA | VLX-Seek 1.5-10B GGUF | Detection, counting, VQA, region OCR via region retrieval | `PLUGIN_STANDARD_QVLXSEEK` |
+
+**3D generation & reconstruction**
+
+| Plugin | Task | Model | Standout | CMake |
+|--------|------|-------|----------|-------|
+| **[qFreeSplatter](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qFreeSplatter.md)** | Uncalibrated photos → 3D Gaussian splats | FreeSplatter GGUF | **2 photos** → 3D scene + SIBR PLY; guided Face Capture | `PLUGIN_STANDARD_QFREESPLATTER` |
+| **[qTrellis](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qTrellis.md)** | Single image → 3D mesh with PBR | TRELLIS.2 GGUF (DINOv3 + flow DiTs) | PBR-textured GLB in one click | `PLUGIN_STANDARD_QTRELLIS` |
+| **[qInstantMesh](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qInstantMesh.md)** | Single image → textured 3D mesh | InstantMesh GGUF (14 files) | Zero123++ 6-view diffusion → FlexiCubes mesh + UV atlas | `PLUGIN_STANDARD_QINSTANTMESH` |
+| **[qSAM3D](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qSAM3D.md)** | Single image → 3D object | SAM 3D Objects GGUF | Gaussian splat PLY + FlexiCubes mesh | `PLUGIN_STANDARD_QSAM3D` |
+| **[qQuerySplat](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qQuerySplat.md)** | 2–16 unposed photos → 3DGS scene | QuerySplat + VGGT-Omega GGUF | 524 288 gaussians feed-forward, optional TTO | `PLUGIN_STANDARD_QQUERYSPLAT` |
+| **[qMapAnything](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qMapAnything.md)** | Multi-view metric reconstruction | VGGT-Omega / MapAnything / Pi3 / VGGT-1B / DUSt3R GGUF | 6 model variants, ETH3D benchmark anchoring | `PLUGIN_STANDARD_QMAPANYTHING` |
+| **[qLingbotMap](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qLingbotMap.md)** | Streaming RGB-D reconstruction | LingBot-Map GCT GGUF | Live per-frame map + camera frustums, native sky masking | `PLUGIN_STANDARD_QLINGBOTMAP` |
+| **[qOpenPCDet](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qOpenPCDet.md)** | LiDAR 3D object detection | OpenPCDet GGUF (54 models) | PointPillars / SECOND / PV-RCNN on KITTI + nuScenes | `PLUGIN_STANDARD_QOPENPCDET` |
+
+**Annotation workbench**
+
+| Plugin | Task | Model | Standout | CMake |
+|--------|------|-------|----------|-------|
+| **[qAnyLabeling](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qAnyLabeling.md)** | AI-assisted image & 3D annotation | AICore catalogs (YOLO, SAM3, RF-DETR, …) | X-AnyLabeling-style workbench, video tracking + 3D cuboids, fully local | `PLUGIN_STANDARD_QANYLABELING` |
+
+### Gallery
 
 <table>
 <tr>
@@ -209,6 +266,62 @@ Ten GUI plugins share one native inference library — **`libAICore.so`** ([ggml
 <div style="display:flex;gap:6px;"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qTrellis/images/qTrellis_f16_1024_pbr.png" width="49%"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qTrellis/images/qTrellis_q8_512_pbr.png" width="49%"></div>
 <br><sub><b>qTrellis</b> — single image → PBR-textured 3D mesh &amp; GLB (TRELLIS.2)</sub>
 </td>
+<td width="33%" align="center">
+<div style="display:flex;gap:6px;"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qGKD/images/text_prompts_with_chair_skeleton.jpg" width="49%"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qGKD/images/multi-objects.jpg" width="49%"></div>
+<br><sub><b>qGKD</b> — open-world keypoint detection: text, visual 1-shot, multimodal and multi-object prompts (GKDT-L)</sub>
+</td>
+<td width="33%" align="center">
+<div style="display:flex;gap:6px;"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qOCR/images/ocr_test1.jpg" width="49%"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qOCR/images/table_test1.jpg" width="49%"></div>
+<br><sub><b>qOCR</b> — PP-OCRv4 text recognition with SLANet layout &amp; table reconstruction</sub>
+</td>
+</tr>
+<tr>
+<td width="33%" align="center">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qInstantMesh/images/instantmesh_test.jpg" width="100%">
+<br><sub><b>qInstantMesh</b> — single image → textured 3D mesh (Zero123++ diffusion + FlexiCubes)</sub>
+</td>
+<td width="33%" align="center">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSAM3D/images/sam3_seg_with_prompt.jpg" width="100%">
+<br><sub><b>qSAM3D</b> — SAM 3D Objects: one photo → Gaussian splat PLY + FlexiCubes mesh</sub>
+</td>
+<td width="33%" align="center">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qQuerySplat/images/querysplat_test.jpg" width="100%">
+<br><sub><b>qQuerySplat</b> — 2–16 unposed photos → a 3D Gaussian Splatting scene (524 288 gaussians)</sub>
+</td>
+</tr>
+<tr>
+<td width="33%" align="center">
+<div style="display:flex;gap:6px;"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qMapAnything/images/courtyard_reconstruction.png" width="49%"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qMapAnything/images/relief_reconstruction.png" width="49%"></div>
+<br><sub><b>qMapAnything</b> — multi-view feed-forward metric reconstruction (VGGT-Omega &amp; five more families)</sub>
+</td>
+<td width="33%" align="center">
+<div style="display:flex;gap:6px;"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qLingbotMap/images/courthouse_reconstruction.png" width="49%"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qLingbotMap/images/loop_reconstruction.png" width="49%"></div>
+<br><sub><b>qLingbotMap</b> — streaming RGB-D 3D reconstruction from image folders / video</sub>
+</td>
+<td width="33%" align="center">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qOpenPCDet/images/pointpillar_test.jpg" width="100%">
+<br><sub><b>qOpenPCDet</b> — LiDAR 3D detection: PointPillars / SECOND / PV-RCNN on KITTI + nuScenes</sub>
+</td>
+</tr>
+<tr>
+<td width="33%" align="center">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRAM/images/ram_test.jpg" width="100%">
+<br><sub><b>qRAM</b> — Recognize Anything / RAM++ / Tag2Text image tagging &amp; captioning</sub>
+</td>
+<td width="33%" align="center">
+<div style="display:flex;gap:6px;"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRelateAnything/images/relate_anything_test.jpg" width="49%"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRelateAnything/images/relate_anything_video_test.jpg" width="49%"></div>
+<br><sub><b>qRelateAnything</b> — scene relation graphs: subject–predicate–object edges (image &amp; video)</sub>
+</td>
+<td width="33%" align="center">
+<div style="display:flex;gap:6px;"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qVLXSeek/images/detection.jpg" width="49%"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qVLXSeek/images/region_ocr.jpg" width="49%"></div>
+<br><sub><b>qVLXSeek</b> — open-vocabulary grounding: detection, counting, VQA, region OCR (VLX-Seek 1.5-10B)</sub>
+</td>
+</tr>
+<tr>
+<td width="33%" align="center">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qAnyLabeling/docs/images/overview.png" width="100%">
+<br><sub><b>qAnyLabeling</b> — X-AnyLabeling-style annotation workbench with fully local AI assist</sub>
+</td>
 </tr>
 </table>
 
@@ -252,7 +365,7 @@ cmake -B build_app \
 cmake --build build_app --target ACloudViewer -j$(nproc)
 ```
 
-User guides: [AICore plugins overview](docs/guides/plugins/README.md) · [qDA3](docs/guides/plugins/qDA3.md) · [qDeepLSD](docs/guides/plugins/qDeepLSD.md) · [qFaceDetect](docs/guides/plugins/qFaceDetect.md) · [qLightGlue](docs/guides/plugins/qLightGlue.md) · [qFreeSplatter](docs/guides/plugins/qFreeSplatter.md) · [qYOLO](docs/guides/plugins/qYOLO.md) · [qSAM3](docs/guides/plugins/qSAM3.md) · [qTrellis](docs/guides/plugins/qTrellis.md) · [qRFDetr](docs/guides/plugins/qRFDetr.md) · [qRMBG](docs/guides/plugins/qRMBG.md)
+User guides: [AICore plugins overview](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/README.md) · [qDA3](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qDA3.md) · [qDeepLSD](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qDeepLSD.md) · [qFaceDetect](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qFaceDetect.md) · [qLightGlue](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qLightGlue.md) · [qFreeSplatter](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qFreeSplatter.md) · [qYOLO](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qYOLO.md) · [qSAM3](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qSAM3.md) · [qTrellis](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qTrellis.md) · [qRFDetr](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qRFDetr.md) · [qRMBG](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qRMBG.md) · [qGKD](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qGKD.md) · [qInstantMesh](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qInstantMesh.md) · [qLingbotMap](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qLingbotMap.md) · [qMapAnything](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qMapAnything.md) · [qOCR](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qOCR.md) · [qOpenPCDet](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qOpenPCDet.md) · [qQuerySplat](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qQuerySplat.md) · [qRAM](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qRAM.md) · [qRelateAnything](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qRelateAnything.md) · [qSAM3D](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qSAM3D.md) · [qVLXSeek](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qVLXSeek.md) · [qAnyLabeling](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qAnyLabeling.md) · [qSpirula](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qSpirula.md)
 
 ---
 

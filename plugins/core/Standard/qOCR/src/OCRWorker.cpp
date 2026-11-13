@@ -13,9 +13,11 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QFont>
+#include <QFontMetrics>
 #include <QImageReader>
 #include <QPainter>
 #include <QPolygonF>
+#include <algorithm>
 #include <cstring>
 #include <memory>
 
@@ -311,6 +313,7 @@ bool OCRWorker::recognizeImage(aicore_ocr_ctx* ctx,
     tableRun.struct_size = sizeof(tableRun);
     tableRun.abi_version = AICORE_TABLE_ABI_VERSION;
     tableRun.use_layout_regions = settings.layoutPath.isEmpty() ? 0 : 1;
+    tableRun.cell_join_mode = settings.tableCellJoinMode;
     aicore_cancel_scope_begin(cancel);
     aicore_table_result* tables =
             aicore_table_run(tableCtx, &view, ctx, result, &tableRun);
@@ -401,13 +404,14 @@ QImage OCRRender::overlayVisualization(const OCRRunResult& result) {
 
     // The in-app/DB overlay preserves source geometry. Stable indices join
     // quads to the scrollable result table without an unbounded text panel.
+    // Layering follows the PP-Structure visualization: translucent per-class
+    // layout regions underneath, blue reconstructed table cells above them,
+    // red numbered OCR boxes on top.
     QImage annotated = result.sourceImage.convertToFormat(QImage::Format_RGB32);
     QPainter painter(&annotated);
     QPen boxPen(QColor(220, 38, 38),
                 qMax(2, qMax(annotated.width(), annotated.height()) / 1200));
     boxPen.setJoinStyle(Qt::RoundJoin);
-    painter.setPen(boxPen);
-    painter.setBrush(Qt::NoBrush);
 
     const int fontPx =
             qBound(12, qMax(annotated.width(), annotated.height()) / 90, 28);
@@ -415,8 +419,71 @@ QImage OCRRender::overlayVisualization(const OCRRunResult& result) {
     labelFont.setBold(true);
     labelFont.setPixelSize(fontPx);
     qtCompatSetFontFamilies(labelFont, officialFontFamilies());
-    painter.setFont(labelFont);
 
+    // ---- layout regions (under everything): a translucent per-class fill,
+    // a solid border and a class tag at the top-left, the way PaddleOCR
+    // renders its layout detection visualization.
+    if (!result.regions.isEmpty()) {
+        // One stable pastel per class id; red stays reserved for OCR boxes
+        // and blue for reconstructed table cells.
+        constexpr int kLayoutPalette[] = {
+                0x10b981, 0xf59e0b, 0x8b5cf6, 0x06b6d4, 0xec4899,
+                0x84cc16, 0xf97316, 0x6366f1, 0x14b8a6, 0xa16207};
+        const int regionPx = qBound(
+                10, qMax(annotated.width(), annotated.height()) / 110, 22);
+        QFont regionFont;
+        regionFont.setBold(true);
+        regionFont.setPixelSize(regionPx);
+        qtCompatSetFontFamilies(regionFont, officialFontFamilies());
+        painter.setFont(regionFont);
+        QPen regionPen(Qt::white, qMax(1, boxPen.width() / 2));
+        regionPen.setJoinStyle(Qt::RoundJoin);
+        for (const OCRRegionResult& region : result.regions) {
+            float minX = region.quad[0][0], maxX = minX;
+            float minY = region.quad[0][1], maxY = minY;
+            for (int c = 1; c < 4; ++c) {
+                minX = std::min(minX, region.quad[c][0]);
+                maxX = std::max(maxX, region.quad[c][0]);
+                minY = std::min(minY, region.quad[c][1]);
+                maxY = std::max(maxY, region.quad[c][1]);
+            }
+            const QColor base = QColor(kLayoutPalette[region.classId % 10]);
+            const QRectF rect(QPointF(minX, minY), QPointF(maxX, maxY));
+            painter.fillRect(rect,
+                             QColor(base.red(), base.green(), base.blue(), 56));
+            painter.setPen(regionPen);
+            painter.setBrush(Qt::NoBrush);
+            painter.drawRect(rect);
+            const QString label = region.readingOrder >= 0
+                                          ? QStringLiteral("%1 %2")
+                                                    .arg(region.readingOrder)
+                                                    .arg(region.className)
+                                          : region.className;
+            const int labelWidth =
+                    QFontMetrics(regionFont).horizontalAdvance(label) + 6;
+            const QRectF tagRect(minX, minY, qMax(labelWidth, regionPx * 2),
+                                 regionPx + 4);
+            painter.fillRect(tagRect, QColor(base.red(), base.green(),
+                                             base.blue(), 210));
+            painter.setPen(Qt::white);
+            painter.drawText(tagRect, Qt::AlignCenter, label);
+        }
+    }
+
+    painter.setFont(labelFont);
+    QPen cellPen(QColor(37, 99, 235), qMax(1, boxPen.width() / 2));
+    painter.setPen(cellPen);
+    painter.setBrush(Qt::NoBrush);
+    for (const OCRTableResult& table : result.tables) {
+        for (const OCRTableCell& cell : table.cells) {
+            QPolygonF polygon;
+            for (int c = 0; c < 4; ++c)
+                polygon << QPointF(cell.quad[c][0], cell.quad[c][1]);
+            painter.drawPolygon(polygon);
+        }
+    }
+
+    painter.setPen(boxPen);
     int index = 0;
     for (const OCRBoxResult& box : result.boxes) {
         if (box.score < kOfficialDropScore) continue;
@@ -433,17 +500,6 @@ QImage OCRRender::overlayVisualization(const OCRRunResult& result) {
         painter.setPen(Qt::white);
         painter.drawText(labelRect, Qt::AlignCenter, QString::number(index));
         painter.setPen(boxPen);
-    }
-
-    QPen cellPen(QColor(37, 99, 235), qMax(1, boxPen.width() / 2));
-    painter.setPen(cellPen);
-    for (const OCRTableResult& table : result.tables) {
-        for (const OCRTableCell& cell : table.cells) {
-            QPolygonF polygon;
-            for (int c = 0; c < 4; ++c)
-                polygon << QPointF(cell.quad[c][0], cell.quad[c][1]);
-            painter.drawPolygon(polygon);
-        }
     }
     painter.end();
     return annotated;

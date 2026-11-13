@@ -245,12 +245,19 @@ aicore_table_result* aicore_table_run(aicore_table_ctx* ctx,
         setLastError("table: invalid run options (struct_size/abi_version)");
         return nullptr;
     }
-    // Callers compiled against the pre-fallback header pass the old struct
-    // size; the trailing field reads as 0 (upstream behavior).
-    const uint32_t fallbackMask =
-            options && options->struct_size >= sizeof(aicore_table_run_options)
-                    ? options->fallback_region_mask
-                    : 0u;
+    // Callers compiled against older headers pass smaller struct sizes;
+    // every optional trailing field reads as 0 (upstream behavior) unless
+    // the caller's struct actually covers it.
+    const size_t fallbackEnd =
+            offsetof(aicore_table_run_options, fallback_region_mask) +
+            sizeof(uint32_t);
+    const uint32_t fallbackMask = options && options->struct_size >= fallbackEnd
+                                          ? options->fallback_region_mask
+                                          : 0u;
+    const size_t joinEnd = offsetof(aicore_table_run_options, cell_join_mode) +
+                           sizeof(int32_t);
+    const bool stackedJoin = options && options->struct_size >= joinEnd &&
+                             options->cell_join_mode == 1;
     aicore::img::Image src;
     if (!aicore::img::image_from_view(*image, src)) {
         setLastError("table: unsupported or empty image view");
@@ -454,7 +461,8 @@ aicore_table_result* aicore_table_run(aicore_table_ctx* ctx,
                 aicore::table::matchOcrToCells(cellBoxes, tableOcrBoxes);
         std::vector<std::string> cellTexts;
         const std::string html = aicore::table::buildHtml(
-                decoded.tokens, matched, tableOcrTexts, &cellTexts);
+                decoded.tokens, matched, tableOcrTexts, &cellTexts,
+                &tableOcrBoxes, stackedJoin);
         const std::string csv = aicore::table::buildCsv(grid, cellTexts);
 
         aicore_table table{};

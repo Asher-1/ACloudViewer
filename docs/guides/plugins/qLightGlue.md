@@ -1,6 +1,6 @@
 # qLightGlue — LightGlue Feature Matching Plugin
 
-Sparse feature matching in ACloudViewer via **SIFT / ALIKED LightGlue** on shared **`libAICore.so`** ([ggml](https://github.com/ggml-org/ggml)) — no Python or PyTorch at runtime.
+Sparse feature matching in ACloudViewer via **SIFT / ALIKED LightGlue** on shared **`libAICore.so`** ([ggml](https://github.com/ggml-org/llama.cpp)) — no Python or PyTorch at runtime.
 
 ## Model families
 

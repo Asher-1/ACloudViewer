@@ -71,6 +71,8 @@ void qOCR::showDialog() {
         m_dialog = new OCRDialog(static_cast<QWidget*>(m_app->getMainWindow()));
         connect(m_dialog, &OCRDialog::runRequested, this, &qOCR::executeTask);
         connect(m_dialog, &OCRDialog::cancelRequested, this, &qOCR::cancelTask);
+        connect(m_dialog, &OCRDialog::resultImageSelected, this,
+                &qOCR::selectDbResultImage);
     }
     m_dialog->show();
     m_dialog->raise();
@@ -165,8 +167,16 @@ void qOCR::addResultToDb(const OCRRunResult& result,
                                             : result.resolvedDevice);
     const QString modelTag =
             ecvPluginDbNaming::modelTagFromFilename(settings.recPath);
+    // The source file is the primary identity of an OCR result: the DB name
+    // leads with its (sanitized) stem, followed by the recognizer, its
+    // quantization tier (part of the model tag) and the resolved device.
     const QString name = ecvPluginDbNaming::makeUnique(
-            QStringLiteral("OCR_%1_%2").arg(modelTag, deviceTag), m_app);
+            QStringLiteral("%1_OCR_%2_%3")
+                    .arg(ecvPluginDbNaming::sanitizeSegment(
+                                 QFileInfo(result.imagePath).completeBaseName(),
+                                 40),
+                         modelTag, deviceTag),
+            m_app);
 
     auto* img = new ccImage(annotated, name);
     img->setMetaData(QStringLiteral("OCR"), true);
@@ -223,8 +233,33 @@ void qOCR::addResultToDb(const OCRRunResult& result,
 
     m_app->addToDB(img, true, true, false, true);
     m_app->setSelectedInDB(img, true);
+    // Remember the DB name of this source so the dialog's result selector
+    // can re-select it (resultImageSelected).
+    m_dbResultImages.insert(result.imagePath, name);
     m_dialog->appendLog(
             tr("[qOCR] Added numbered result '%1' to the DB tree.").arg(name));
+}
+
+ccHObject* qOCR::findDbEntity(const QString& name) const {
+    // Depth-first name search over the DB tree (makeUnique guarantees the
+    // name is unique); a deleted entity resolves to null and the sync
+    // becomes a no-op.
+    if (!m_app || name.isEmpty()) return nullptr;
+    QList<ccHObject*> stack{m_app->dbRootObject()};
+    while (!stack.isEmpty()) {
+        ccHObject* node = stack.takeLast();
+        if (!node) continue;
+        if (node->getName() == name) return node;
+        for (unsigned i = 0; i < node->getChildrenNumber(); ++i)
+            stack << node->getChild(i);
+    }
+    return nullptr;
+}
+
+void qOCR::selectDbResultImage(const QString& imagePath) {
+    const QString name = m_dbResultImages.value(imagePath);
+    ccHObject* entity = findDbEntity(name);
+    if (entity) m_app->setSelectedInDB(entity, true);
 }
 
 void qOCR::onTaskFinished(bool success) {

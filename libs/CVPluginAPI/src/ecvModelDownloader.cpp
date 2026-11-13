@@ -18,6 +18,7 @@
 #include <QSslConfiguration>
 #include <QSslError>
 #include <QSslSocket>
+#include <QStorageInfo>
 #include <QVariant>
 
 ecvModelDownloader::ecvModelDownloader(QObject* parent) : QObject(parent) {
@@ -171,6 +172,7 @@ void ecvModelDownloader::download(const Request& request) {
     }
     m_attempt = 0;
     m_candidateIndex = 0;
+    m_totalTimer.start();
     startAttempt();
 }
 
@@ -201,8 +203,20 @@ void ecvModelDownloader::startAttempt() {
     // with a corrupted prefix.
     m_resumeOffset = 0;
     m_rangeNegotiated = false;
-    const qint64 partBytes =
+    qint64 partBytes =
             QFileInfo(m_tmpPath).exists() ? QFileInfo(m_tmpPath).size() : 0;
+    // A pinned digest is the resume license. Without it the prefix on disk
+    // is size-plausible but never content-proven — the exact-size finalize
+    // gate sees the total alone — so a resumed artifact could pair a stale
+    // or hostile prefix with a fresh suffix and still pass finalize.
+    // Discard the part and start clean; bandwidth is cheaper than silence.
+    if (partBytes > 0 && m_contentAnchor.digestHex.isEmpty()) {
+        emit logMessage(tr("[Download] Partial file has no pinned digest — "
+                           "discarding %1 and restarting from scratch")
+                                .arg(formatFileSize(partBytes)));
+        QFile::remove(m_tmpPath);
+        partBytes = 0;
+    }
     m_hash = m_contentAnchor.digestHex.isEmpty()
                      ? nullptr
                      : new QCryptographicHash(m_contentAnchor.algo);
@@ -220,6 +234,42 @@ void ecvModelDownloader::startAttempt() {
     }
 
     QDir().mkpath(QFileInfo(m_destPath).absolutePath());
+
+    // The replay hash above covered the whole part for free. When the part
+    // already IS the complete artifact (a previous attempt finished the
+    // transfer but died before finalize), finalize locally with zero
+    // transport instead of asking the server for bytes=total (416).
+    if (m_resumeOffset > 0 && m_hash &&
+        m_hash->result().toHex().compare(m_contentAnchor.digestHex,
+                                         Qt::CaseInsensitive) == 0) {
+        emit logMessage(
+                tr("[Download] Partial file is already complete — finalizing "
+                   "%1 without transport")
+                        .arg(QFileInfo(m_destPath).fileName()));
+        QFile::remove(m_destPath);
+        if (QFile::rename(m_tmpPath, m_destPath)) {
+            ecvAssetIntegrity::markVerified(m_destPath, m_contentAnchor);
+            delete m_hash;
+            m_hash = nullptr;
+            emit finished(true, m_destPath);
+            return;
+        }
+        emit logMessage(tr("[Download] Failed to finalize %1").arg(m_destPath));
+        ecvAssetIntegrity::invalidate(m_destPath);
+        // Never fall through to the transport path: its bytes=total range
+        // draws 416 and would destroy this digest-proven part. Retry the
+        // local finalize through the standard retry ladder instead; the
+        // attempt transfers nothing, so it counts as unproductive.
+        delete m_hash;
+        m_hash = nullptr;
+        m_lastProgressBytes = 0;
+        if (m_attempt + 1 < kMaxAttempts) {
+            scheduleRetry(tr("failed to finalize %1").arg(m_destPath));
+        } else {
+            emit finished(false, m_destPath);
+        }
+        return;
+    }
 
     // Full provenance line (ALWAYS, not only on retries): where the file
     // comes from and where it lands — users can mirror the download
@@ -255,6 +305,7 @@ void ecvModelDownloader::startAttempt() {
     m_lastWatchdogBytes = -1;
     m_stallTicks = 0;
     m_fullTotal = 0;
+    m_diskChecked = false;
     m_stallTimer->start();
 
     connect(m_reply, &QNetworkReply::sslErrors, this,
@@ -315,7 +366,27 @@ void ecvModelDownloader::startAttempt() {
         if (m_outFile && m_reply) {
             const QByteArray chunk = m_reply->readAll();
             if (chunk.isEmpty()) return;
-            m_outFile->write(chunk);
+            const qint64 written = m_outFile->write(chunk);
+            if (written != chunk.size()) {
+                // Short write: the disk refused bytes (full volume, quota,
+                // I/O error). Keep the digest equal to the bytes actually
+                // on disk and abort — losing chunks silently would only
+                // surface as a misleading content-digest mismatch at
+                // finalize.
+                emit logMessage(
+                        tr("[Download] Write failed at %1 (%2 of %3 bytes "
+                           "written): %4 — is the disk full?")
+                                .arg(formatFileSize(m_lastProgressBytes))
+                                .arg(written)
+                                .arg(chunk.size())
+                                .arg(m_outFile->errorString()));
+                if (written > 0) {
+                    if (m_hash) m_hash->addData(chunk.left(written));
+                    m_lastProgressBytes += written;
+                }
+                m_reply->abort();  // finished → transport-failed retry path
+                return;
+            }
             if (m_hash) {
                 m_hash->addData(chunk);
             }
@@ -327,6 +398,29 @@ void ecvModelDownloader::startAttempt() {
                 // 206 replies report only the remaining range as total;
                 // fold the resumed prefix back in for the UI.
                 m_fullTotal = m_resumeOffset + total;
+                // Once the transfer size is known, fail fast when the
+                // volume cannot hold the remainder (the hub client checks
+                // the metadata size before the GET; the first progress
+                // signal is the earliest equivalent without a HEAD round
+                // trip).
+                if (!m_diskChecked && total > 0) {
+                    m_diskChecked = true;
+                    const QStorageInfo info(m_tmpPath);
+                    const qint64 need =
+                            total - received + kDiskSpaceHeadroomBytes;
+                    if (info.isValid() && info.bytesAvailable() >= 0 &&
+                        info.bytesAvailable() < need) {
+                        emit logMessage(
+                                tr("[Download] Insufficient disk space on "
+                                   "%1: need %2, only %3 available")
+                                        .arg(info.rootPath())
+                                        .arg(formatFileSize(need))
+                                        .arg(formatFileSize(
+                                                info.bytesAvailable())));
+                        m_reply->abort();
+                        return;
+                    }
+                }
                 emit progress(m_resumeOffset + received, m_fullTotal);
             });
     connect(m_reply, &QNetworkReply::finished, this, [this]() {
@@ -335,6 +429,25 @@ void ecvModelDownloader::startAttempt() {
 }
 
 void ecvModelDownloader::scheduleRetry(const QString& reason) {
+    // A productive attempt (>= kProgressRefreshMin fresh bytes) does not
+    // burn the hard attempt budget: weak links stall mid-transfer routinely
+    // and resume keeps every delivered byte, so the budget must measure
+    // dead endpoints, not interruptions. The refresh loop stays bounded by
+    // kMaxTotalMs of wall clock, and the productive endpoint is kept —
+    // rotating away risks a Range-blind mirror and a full restart.
+    if (m_lastProgressBytes >= kProgressRefreshMin &&
+        m_totalTimer.elapsed() < kMaxTotalMs) {
+        m_retryTimer->start(kRetryDelayBaseMs / 2);
+        // Substitute the reason last so a %N inside the transport error
+        // text can never capture the numeric placeholders.
+        emit logMessage(
+                tr("[Download] kept %1 of fresh progress — attempt budget "
+                   "refreshed, resuming in %2 s: %3")
+                        .arg(formatFileSize(m_lastProgressBytes))
+                        .arg(kRetryDelayBaseMs / 2000)
+                        .arg(reason));
+        return;
+    }
     ++m_attempt;
     const int delay = qMin(kRetryDelayBaseMs << qMin(m_attempt, 4), 15000);
     // Publish the waiting state before callbacks can cancel or submit work.
@@ -370,6 +483,16 @@ void ecvModelDownloader::finishAttempt(bool transportOk) {
     if (!transportOk) {
         failureReason = m_reply ? m_reply->errorString()
                                 : tr("unknown transport error");
+        if (m_reply &&
+            m_reply->attribute(QNetworkRequest::HttpStatusCodeAttribute)
+                            .toInt() == 416) {
+            // Range not satisfiable: the .part is oversized or the endpoint
+            // refuses ranges. Drop it so the next attempt starts clean.
+            emit logMessage(
+                    tr("[Download] Range not satisfiable — discarding "
+                       "the partial file"));
+            QFile::remove(m_tmpPath);
+        }
     }
 
     if (ok) {
@@ -453,6 +576,16 @@ void ecvModelDownloader::finishAttempt(bool transportOk) {
         return;
     }
     if (!ok) {
+        // Permanent failures deleted the .part above; point at the kept
+        // resume state so users can act. Only pinned transfers may claim
+        // that a retry resumes: a no-pin part is discarded (resume needs
+        // the license of a pinned digest).
+        if (!permanent && !m_contentAnchor.digestHex.isEmpty() &&
+            QFile::exists(m_tmpPath)) {
+            failureReason += tr(" — partial download kept at %1; a retry "
+                                "resumes it")
+                                     .arg(m_tmpPath);
+        }
         emit logMessage(tr("[Download] Failed: %1").arg(failureReason));
     }
     emit finished(ok, dest);

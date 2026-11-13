@@ -1,22 +1,71 @@
 # qOCR — PP-OCR Text Recognition
 
+![Plugin icon](images/qOCR.svg)
+
 PP-OCRv4 text detection and recognition over the AICore `ocr` task, built on
 the first-party Paddle inference → GGUF conversion
 (`core/AICore/tools/convert_paddle_ocr_gguf.py`).
+
+![OCR text mode — boarding pass](images/ocr_test1.jpg)
+
+*Text mode — the PP-OCRv4 (ch) recipe reads the official boarding-pass sample
+(`00006737.jpg`): 32 text regions are drawn as red numbered boxes over the
+render view, each mapped to its `# / Text / Score / Language / Box / Layout`
+row in the workspace table.*
+
+![OCR text mode — storefront sign](images/ocr_test2.jpg)
+
+*Text mode — a single decorative storefront region (`word_1.jpg`) is
+recognized as 韩国小馆 with score 1.000; the numbered overlay and the result
+row stay in sync.*
+
+![OCR tables mode — Japanese document](images/table_test1.jpg)
+
+*Tables mode — a real-document Japanese validation page (`ja_val_0.jpg`):
+100 text regions, one layout `Table` region decoded as a 15x4 grid (24 cells,
+decode confidence 0.99). The PP-Structure style overlay layers translucent
+per-class layout regions (green `Text`, pink `Table`, purple `Figure`) under
+the blue reconstructed cell polygons and the red numbered text boxes.*
+
+![OCR tables mode — Chinese document](images/table_test2.jpg)
+
+*Tables mode — a Chinese document page: 73 text regions, one layout `Table`
+region decoded as a 14x7 grid (71 cells, decode confidence 1.00).*
+
+![OCR tables mode — dense mindmap page](images/table_test3.jpg)
+
+*Tables mode — the PaddleOCR `ppocrv4` mindmap page: 109 text regions over
+two layout regions, one `Table` region decoded as a 19x7 grid (23 cells,
+decode confidence 0.92).*
 
 ## Workspace
 
 The **OCR Workspace** action opens the plugin dialog (a pure view in the
 shared AICore plugin shape, same split as qRMBG):
 
-- **Recognition language / Quantization** — picks the det/rec GGUF pair from
-  the published catalog (det is shared and script-agnostic). One tier applies
-  to every enabled stage (det/rec/layout/table), the same uniform tier the
-  table GT gate measures.
+- **Recognition model / Quantization** — one model combo over the published
+  catalog recipes (det is shared and script-agnostic), each entry labeled
+  with its script family derived from the rec stem (`English`, `Japanese`,
+  or `Chinese + English (auto)`); one quantization tier applies to every
+  enabled stage (det/rec/layout/table), the same uniform tier the table GT
+  gate measures. The former separate language combo is retired: it encoded
+  the same decision a second time and only ever filtered the sample-data
+  fill, so a UI claiming one script while the run used another model could
+  be expressed — impossible with a single control. Per-image script
+  auto-switching is deliberately absent: the ch/v5/v6 dictionaries already
+  cover Chinese + English, so the auto family IS the superset model; real
+  per-image routing would require a script-classifier model contract or
+  double rec loads for a marginal gain.
 - **Layout regions / Tables (SLANet_plus)** — opt-in stages. Tables runs the
   AICore `table` task after OCR: with layout enabled, one table per layout
   `table` region; without it, the whole image is one table. Table mode uses
   the official table-recognition text detection (`limit_type=max`, 960).
+  When both are enabled the stages compose (tables consume the layout
+  regions), they do not conflict; if layout finds no `table` region the
+  table stage produces no tables. The DB overlay layers the three results
+  PP-Structure style: translucent per-class layout regions with class tags
+  underneath, blue reconstructed cell polygons, red numbered text boxes on
+  top.
 - **Device / Threads** — the shared runtime row. Device entries come from
   `aicore_device_count()` ("auto" follows the platform order: CUDA → Vulkan →
   CPU on Linux/Windows, Metal → CPU on macOS); the request is passed through
@@ -28,21 +77,57 @@ shared AICore plugin shape, same split as qRMBG):
   Cancel stops between images. **Add images…** appends any files (duplicates
   are skipped), **Remove** drops the selected rows, **Check all / Uncheck
   all** toggle the whole list. The list and its check state persist.
+  Clicking a row (or keyboard navigation) previews its image in the shared
+  `ecvClickableImageLabel` beside the list; clicking the preview opens the
+  full-resolution wheel-zoom / drag-pan view — the same widget the other
+  AICore dialogs embed. Images can also be **dragged and dropped** anywhere
+  onto the workspace (appended checked; image suffixes only), and **Delete**
+  removes the selected rows like the Remove button.
 - **Try sample data** — lists every image of the current mode's official
   test bundle (shared `ecvTestDataRepository`: tables mode fills from the
-  dedicated real-document table pages bundle Dataset::PpocrTables, every
-  other mode from the PaddleOCR demo bundle Dataset::Ppocr; downloaded and
+  dedicated real-document table pages bundle Dataset::PpocrTables for the
+  zh/ja families and from the PaddleOCR demo bundle Dataset::Ppocr for the
+  en family — its dictionaries cannot read the zh/ja pages; downloaded and
   digest-verified through `ensureDatasetReady` when a recommended file is
-  missing) and checks only the ones recommended for the current mode;
-  clicking again after a mode change re-applies the checks. Your own images
-  stay at the top with their state.
+  missing) and checks only the ones recommended for the current
+  **mode + recognition family**; clicking again after a mode or model
+  change re-applies the checks and **retires the previous
+  recommendations** (unchecked) so stale suggestions never accumulate.
+  Your own images and your own checks stay untouched.
 
-  | Mode | Bundle | Checked by default |
-  |---|---|---|
-  | Tables (with or without layout) | `ocr_tables_data` | `zh_val_0.jpg`, `ja_val_0.jpg` (official real-document zh/ja table pages) |
-  | Layout | `ppocr_testdata` | `layout/table_page_layout.jpg`, `layout/table_page_1.png` |
-  | Chinese | `ppocr_testdata` | `scenes/ppocrv4.png`, `imgs/00006737.jpg`, `imgs_words_ch/word_1.jpg` |
-  | English | `ppocr_testdata` | `test_files/textline.png`, `words_en/word_1.png` |
+  | Mode | Family | Bundle | Checked by default (all measured, see below) |
+  |---|---|---|---|
+  | Tables | zh | `ocr_tables_data` | `zh_val_10.jpg`, `zh_val_22.jpg` |
+  | Tables | en | `ppocr_testdata` | `test_files/medal_table.png`, `tables/ppstructure_table.jpg` |
+  | Tables | ja | `ocr_tables_data` | `ja_val_10.jpg`, `ja_val_0.jpg` |
+  | Layout | all | `ppocr_testdata` | `layout/table_page_layout.jpg`, `layout/table_page_1.png` |
+  | Text | zh | `ppocr_testdata` | `scenes/ppocrv4.png`, `imgs/00006737.jpg`, `imgs_words_ch/word_1.jpg` |
+  | Text | en | `ppocr_testdata` | `scenes/ppocrv4_en.jpg`, `scenes/en_1.png`, `words_en/word_1.png` |
+  | Text | ja | `ppocr_testdata` | `scenes/japan_2.jpg`, `imgs/japan_2.jpg`, `imgs/japan_1.jpg` |
+
+  **Why these (measured, not guessed)** — benchmarked with the product
+  pipeline (`bench_ocr`, `bench_table --layout-regions`, cuda): f16 across
+  **every published recipe** (v4-ch, v4-en, v5, v6-small, v6-tiny,
+  v4-source, and the japan recognizer over its product source-det pairing),
+  plus f32/q8_0 spot checks. Every recommendation above reproduces on every
+  recipe of its family (v5 table rows: `zh_val_10` 13x6 s=0.99/57 filled,
+  `medal_table` 16x6 s=1.00/96 filled).
+
+  - The former defaults fail measurably: `zh_val_0.jpg` decodes a
+    degenerate **25x2** grid on every recipe; `imgs_words_ch/word_4.jpg`
+    detects **zero boxes** on v4-ch f16 (word images sit on the det
+    drop-score edge); `test_files/textline.png` scores **0.00** with the en
+    recognizer (Chinese content); `scenes/ppocrv4.png` averages **0.70**
+    under the en recognizer — good for zh, wrong for en.
+  - `zh_val_10.jpg` is the strongest real-document page (13x6, structure
+    score 0.99, 57/70 cells filled); `zh_val_22.jpg` 11x5 0.99.
+  - `medal_table.png` is near-perfect for every family (16x6, score 1.00,
+    95/96 cells filled; 92/96 under the en recognizer).
+  - `scenes/japan_2.jpg` jumps from 0.62 (ch recognizer) to **0.98** with
+    the japan recipe's own dictionary — the recipe-specific measurement is
+    exactly why per-family recommendations exist.
+  - Full raw numbers: `bench_ocr <image> <det.gguf> <rec.gguf> cuda 0 0 1`
+    and the `bench_table` JSON line per image.
 
   The tables bundle is the official PP-OCR table-recognition validation set:
   100 whole-page real-document tables (50 Chinese + 50 Japanese) that
@@ -70,7 +155,10 @@ shared AICore plugin shape, same split as qRMBG):
   `# / Text / Score / Language / Box / Layout` result row, avoiding the former
   unbounded horizontal text panel. DB metadata retains the transcription list,
   det/rec models, device, stage timings and source path; names go through
-  `ecvPluginDbNaming` so repeated runs stay separable.
+  `ecvPluginDbNaming` so repeated runs stay separable and lead with the
+  sanitized source-file stem (`<file>_OCR_<rec-model>_<device>[_n]`): the
+  source file is the primary identity, the recognizer (with its
+  quantization tier) and the resolved device follow.
 
 All log output goes through the shared application console
 (`aicore_inference_log` → `CVLog`); the plugin embeds no private log widget.
@@ -82,14 +170,37 @@ The **Result** selector lists the processed images of the last run
 regions, stage timings) for the selected image; **Save all tables…** writes
 `<stem>_table<i>.html` / `.csv` for every table of every image into one
 folder (the batch naming below; a repeated stem gets `_2`, `_3`).
+Switching the selector also selects the matching exported overlay in the
+DB tree (the plugin resolves the entity by its unique DB name; an
+un-exported or deleted result is a silent no-op).
 The results area has **Text** and **Tables** tabs. Tables shows one entry
-per reconstructed table (`rows x cols`, cell count); the
+per reconstructed table (`rows x cols`, cell count, plus the decode
+confidence — the mean max structure-token probability, which is not a
+structural sanity check); the
 grid places every cell at its top-left slot with `setSpan`, so rowspan /
-colspan render as merged cells. **Save HTML** writes the task's
+colspan render as merged cells. A full-page table crop is resized to the
+model's 488 px input, so page-scale structures decode coarse grids;
+reconstructing a cropped table image gives the most faithful grid.
+The Text tab carries the clipboard-first interaction of commercial OCR
+tools: a substring filter over the recognized rows, **Copy all** /
+**Save text…** (`<image>_ocr.txt`, one line per box, same shape as the
+batch command), a context menu (copy selected / copy all / save), and rows
+below the 0.5 overlay drop score greyed out so the table and the DB
+overlay agree on what is probably noise.
+**Save HTML** writes the task's
 `<table>` document; **Save CSV** writes RFC 4180 CSV with a UTF-8 BOM (a
 spanned cell's text sits in its top-left slot). The overlay draws cell
 polygons in blue over the red text boxes, and DB metadata carries
 `OCR/TableModel`, `TableCount`, `TableHTML`, `TableCSV` and `Table (ms)`.
+
+Cell texts of multi-box cells join stacked-line-aware
+(`aicore_table_run_options::cell_join_mode = 1`, the plugin's default via
+`OCRWorker::Settings::tableCellJoinMode`): vertically stacked continuation
+lines of one string join without a separator, so a wrapped fragment pair
+reconstructs as `gftiec@gftiec.com` instead of the upstream space join's
+`gftiec@gftiec.c om` (measured A/B and the upstream rule:
+[`core/AICore/src/tasks/table/README.md`](../../../../core/AICore/src/tasks/table/README.md)).
+Labels that stack two unrelated lines keep their separator.
 
 Headless batch (`-OCR_RECOGNIZE`) exposes the same chain:
 

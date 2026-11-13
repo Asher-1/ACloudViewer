@@ -162,6 +162,8 @@ def _run_bench_images(args, backend: str, quant: str, environment: dict[str, str
         command += ["--layout", str(models[3]), "--layout-regions"]
     if args.bench_region_fallback_mask:
         command += ["--region-fallback-mask", str(args.bench_region_fallback_mask)]
+    if args.bench_cell_join_mode:
+        command += ["--cell-join-mode", str(args.bench_cell_join_mode)]
     completed = subprocess.run(command, text=True, stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, env=environment, check=False)
     raw_path.write_text(completed.stdout, encoding="utf-8")
@@ -335,6 +337,10 @@ def main() -> int:
                              "bit i = layout class id i accepted as a table crop "
                              "when the page has no \"table\" region (CDLA labels "
                              "some synthetic-border tables figure; Figure bit = 4)")
+    parser.add_argument("--bench-cell-join-mode", type=int, default=0,
+                        help="pass --cell-join-mode <mode> to bench_table: "
+                             "1 = stacked-line-aware cell text join (0 keeps "
+                             "the upstream space join)")
     parser.add_argument("--threads", type=int, default=8)
     parser.add_argument("--warmups", type=int, default=1)
     parser.add_argument("--paddle-predictions", type=Path,

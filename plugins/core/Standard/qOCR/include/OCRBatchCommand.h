@@ -10,9 +10,10 @@
 // draw_ocr preview) each, plus the shared ecvAICoreBatch RESULT_JSON
 // manifest. TABLE=1 adds the SLANet_plus table stage (layout "table"
 // regions with LAYOUT=1, else the whole image) and writes
-// <stem>_table<i>.html/.csv. The per-image body is OCRWorker::recognizeImage
-// and the preview is OCRRender::officialVisualization, the dialog/DB-export
-// code paths.
+// <stem>_table<i>.html/.csv with the plugin's stacked-line-aware cell text
+// join (OCRWorker::Settings::tableCellJoinMode). The per-image body is
+// OCRWorker::recognizeImage and the preview is
+// OCRRender::officialVisualization, the dialog/DB-export code paths.
 
 #pragma once
 

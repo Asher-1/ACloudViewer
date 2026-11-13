@@ -5,7 +5,7 @@
   <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qYOLO/images/yolo-depth.jpg" width="49%" alt="YOLO metric depth">
 </p>
 
-Run **Ultralytics YOLO GGUF models** (YOLOv8 + YOLO26) in ACloudViewer (C++ / [ggml](https://github.com/ggml-org/ggml)) for real-time COCO-80 object detection, instance segmentation and metric (absolute) depth estimation.
+Run **Ultralytics YOLO GGUF models** (YOLOv8 + YOLO26) in ACloudViewer (C++ / [ggml](https://github.com/ggml-org/llama.cpp)) for real-time COCO-80 object detection, instance segmentation and metric (absolute) depth estimation.
 
 ## Architecture
 
@@ -131,7 +131,7 @@ runtime — no hardcoded class table in the plugin.
 **Note:** The Metric Depth model (`yolo26n-depth`) does not produce detection
 classes — it outputs a per-pixel absolute depth map only.
 
-See [MODEL_CARD.md](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qYOLO/models/MODEL_CARD.md) for download links and licensing.
+See [MODEL_CARD.md](https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qYOLO/models/MODEL_CARD.md) for download links and licensing.
 
 ## Backends
 
@@ -142,7 +142,7 @@ macOS). Thread count is configurable.
 ## Performance
 
 Full benchmark charts (latency by backend, speed by dtype/model, segment
-latency) are in [MODEL_CARD.md](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qYOLO/models/MODEL_CARD.md).
+latency) are in [MODEL_CARD.md](https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qYOLO/models/MODEL_CARD.md).
 
 Qualitatively:
 
@@ -156,7 +156,7 @@ The integrated parity and performance harness lives in
 quantization and backend coverage, and treat skipped asset rows as incomplete
 coverage rather than a pass. Current acceptance rules and controlled CUDA
 build comparison are documented in
-[`core/AICore/tests/TESTING.md`](../../../core/AICore/tests/TESTING.md).
+[`core/AICore/tests/TESTING.md`](https://github.com/Asher-1/ACloudViewer/blob/main/core/AICore/tests/TESTING.md).
 
 ### Live video latency — how to read the status line
 
@@ -223,7 +223,7 @@ TRACKS_JSON out.jsonl` (jsonl rows mirror the upstream `write_track_json_entry`
 schema, including the TRACKTRACK loose-NMS `detections_del` recovery rows);
 agents reach the same command through the `yolo.track` JSON-RPC method.
 
-![qYOLO tracked output: stable ids across detection gaps and occlusion](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qYOLO/images/yolo-track.jpg?raw=1)
+![qYOLO tracked output: stable ids across detection gaps and occlusion](https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qYOLO/images/yolo-track.jpg)
 
 Tracked output on a moving-target sequence (official detector detections fed
 through the ported tracker): identities survive the detection gap and the
@@ -274,7 +274,7 @@ trackers never read it). Two encoder paths exist, mirroring the official
   ReID models.) Conversion:
   `cpp_ggml/scripts/convert_reid_onnx_to_gguf.py` in ultralytics-ggml.
 
-![ReID embedding similarity: same identity stays at 1.0 across the occlusion gap, cross identity at ~0.68](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qYOLO/images/yolo-reid.jpg?raw=1)
+![ReID embedding similarity: same identity stays at 1.0 across the occlusion gap, cross identity at ~0.68](https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qYOLO/images/yolo-reid.jpg)
 
 Validation: `core/AICore/tools/reid_validate.py` compares the C++ probe
 (`core/AICore/tools/reid_probe.cpp`, built as the `reid_probe` target into

@@ -1,8 +1,8 @@
 # qFaceDetect — Face Detection & Recognition Plugin
 
-Run [face-detect.cpp](https://github.com/mudler/face-detect.cpp) **GGUF model packs** in ACloudViewer (C++ / [ggml](https://github.com/ggml-org/ggml)) for SCRFD/YuNet face detection, ArcFace/SFace recognition, age/gender analysis, and identity verification.
+Run [face-detect.cpp](https://github.com/mudler/face-detect.cpp) **GGUF model packs** in ACloudViewer (C++ / [ggml](https://github.com/ggml-org/llama.cpp)) for SCRFD/YuNet face detection, ArcFace/SFace recognition, age/gender analysis, and identity verification.
 
-![qFaceDetect registry and recognition workflow](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFaceDetect/images/qFaceDetect.png?raw=1)
+![qFaceDetect registry and recognition workflow](https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFaceDetect/images/qFaceDetect.png)
 
 ## Architecture
 
@@ -63,7 +63,7 @@ compatibility entry points.
 | **Analyze** | Detect + predicted age and gender (M/F) per face |
 | **Verify** | Cosine distance between primary faces in two images; optional MiniFASNet anti-spoof veto |
 
-![qFaceDetect live multi-face recognition](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFaceDetect/images/qFaceDetect_video.png?raw=1)
+![qFaceDetect live multi-face recognition](https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFaceDetect/images/qFaceDetect_video.png)
 
 Default verify threshold: **0.35** (insightface buffalo convention).
 
@@ -80,7 +80,7 @@ Official weights: [cloudViewer_downloads qFaceDetect release](https://github.com
 | **yunet-sface** | **Apache-2.0** commercial use |
 | **landmarks-2d106-1k3d68** | Dense landmarks only (not for this dialog — see MODEL_CARD) |
 
-See [MODEL_CARD.md](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFaceDetect/models/MODEL_CARD.md) for download links and licensing.
+See [MODEL_CARD.md](https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFaceDetect/models/MODEL_CARD.md) for download links and licensing.
 
 ### DB export options
 
@@ -148,7 +148,7 @@ typed-result ownership rules. See the header for their accessors and
 
 ## Further reading
 
-- Developer README (build targets): [`plugins/core/Standard/qFaceDetect/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFaceDetect/README.md)
+- Developer README (build targets): [`plugins/core/Standard/qFaceDetect/README.md`](https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFaceDetect/README.md)
 - [face-detect.cpp](https://github.com/mudler/face-detect.cpp)
 - [Asher-1/Face_AI](https://github.com/Asher-1/Face_AI) — related InsightFace REST API (ONNX/TensorRT)
 - [insightface](https://github.com/deepinsight/insightface) (original models)

@@ -91,6 +91,16 @@ typedef struct aicore_table_run_options {
      *  not extend their struct to this field get 0; class ids index
      *  aicore_ocr_label_at of the OCR context's layout labels. */
     uint32_t fallback_region_mask;
+    /** How the texts of several OCR boxes assigned to one cell are joined.
+     *  0 = upstream PaddleX get_html_result: leading spaces and <b> markers
+     *  are stripped, then the boxes are space-joined (a wrapped line pair
+     *  such as "gftiec@gftiec.c" + "om" becomes "gftiec@gftiec.c om").
+     *  1 = stacked-line-aware join: the boxes of one cell are joined with
+     *  no separator when they are vertically stacked continuation lines
+     *  (the next box starts below the previous one within a fraction of a
+     *  line height and their x ranges overlap) and with a space otherwise.
+     *  Callers that do not extend their struct to this field get 0. */
+    int32_t cell_join_mode;
 } aicore_table_run_options;
 
 typedef struct aicore_table_cell {

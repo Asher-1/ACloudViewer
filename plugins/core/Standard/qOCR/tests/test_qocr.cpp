@@ -25,6 +25,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QLabel>
+#include <QLineEdit>
 #include <QListWidget>
 #include <QPlainTextEdit>
 #include <QProgressBar>
@@ -279,8 +280,7 @@ int main(int argc, char** argv) {
     }
 
     OCRDialog dialog;
-    auto* language =
-            dialog.findChild<QComboBox*>(QStringLiteral("qOCRLanguage"));
+    auto* model = dialog.findChild<QComboBox*>(QStringLiteral("qOCRModel"));
     auto* quant = dialog.findChild<QComboBox*>(QStringLiteral("qOCRQuant"));
     auto* device = dialog.findChild<QComboBox*>(QStringLiteral("qOCRDevice"));
     auto* threads = dialog.findChild<QSpinBox*>(QStringLiteral("qOCRThreads"));
@@ -295,10 +295,17 @@ int main(int argc, char** argv) {
     auto* addDb = dialog.findChild<QCheckBox*>(QStringLiteral("qOCRAddToDb"));
     auto* results =
             dialog.findChild<QTableWidget*>(QStringLiteral("qOCRResults"));
+    auto* textFilter =
+            dialog.findChild<QLineEdit*>(QStringLiteral("qOCRTextFilter"));
+    auto* copyText =
+            dialog.findChild<QPushButton*>(QStringLiteral("qOCRTextCopy"));
+    auto* saveText =
+            dialog.findChild<QPushButton*>(QStringLiteral("qOCRTextSave"));
     auto* progress =
             dialog.findChild<QProgressBar*>(QStringLiteral("qOCRProgress"));
-    if (!language || !quant || !device || !threads || !imageList || !testData ||
-        !download || !run || !cancel || !addDb || !results || !progress) {
+    if (!model || !quant || !device || !threads || !imageList || !testData ||
+        !download || !run || !cancel || !addDb || !results || !textFilter ||
+        !copyText || !saveText || !progress) {
         std::fprintf(stderr, "qOCR workspace is missing a core widget\n");
         return 1;
     }
@@ -312,12 +319,22 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    // Bilingual catalog: Chinese and English rec models over the shared
-    // script-agnostic detector.
-    if (language->count() != 2 ||
-        language->itemData(0).toString() != QStringLiteral("ch") ||
-        language->itemData(1).toString() != QStringLiteral("en")) {
-        std::fprintf(stderr, "qOCR language selection must offer ch and en\n");
+    // One recognition-model combo over the catalog recipes: the script
+    // family is part of the entry, so a contradictory language-vs-model
+    // choice can no longer be expressed (the retired language combo must
+    // not linger either).
+    if (dialog.findChild<QComboBox*>(QStringLiteral("qOCRLanguage"))) {
+        std::fprintf(stderr,
+                     "qOCR must own one recognition-model selection, not a "
+                     "separate language combo\n");
+        return 1;
+    }
+    if (model->count() < 2 ||
+        model->itemData(0).toString() != QStringLiteral("ppocr-v4-ch") ||
+        model->itemData(1).toString() != QStringLiteral("ppocr-v4-en")) {
+        std::fprintf(stderr,
+                     "qOCR model combo must expose the catalog recipes in "
+                     "order\n");
         return 1;
     }
     if (quant->count() != 3) {
@@ -330,6 +347,14 @@ int main(int argc, char** argv) {
         std::fprintf(
                 stderr,
                 "qOCR results table must expose index and layout columns\n");
+        return 1;
+    }
+    // Clipboard-first results: filter + copy/save with a context menu.
+    if (results->contextMenuPolicy() != Qt::CustomContextMenu ||
+        copyText->isEnabled() || saveText->isEnabled()) {
+        std::fprintf(stderr,
+                     "qOCR text tab must ship filter/copy/save but keep "
+                     "them disabled until a result\n");
         return 1;
     }
     if (dialog.findChild<QCheckBox*>(QStringLiteral("qOCRShowInWindow"))) {
@@ -363,15 +388,17 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    // Switching the language retargets the rec model and keeps the state
-    // line informative (the det file is shared and language-agnostic).
-    language->setCurrentIndex(1);
+    // Switching the recognition model retargets the rec model (the recipe
+    // owns the script family; the det file is shared and script-agnostic)
+    // and keeps the state line informative.
+    model->setCurrentIndex(1);
     auto* status = dialog.findChild<QLabel*>(QStringLiteral("qOCRStatus"));
     if (!status || !status->text().contains(QStringLiteral("det:")) ||
         !status->text().contains(QStringLiteral("rec:"))) {
         std::fprintf(stderr, "qOCR status line missing model state\n");
         return 1;
     }
+    model->setCurrentIndex(0);  // the fill tests below assume the default
 
     // The input is a checkable list: duplicates are skipped and only checked
     // rows run.
@@ -385,29 +412,36 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "qOCR image list must dedupe and track checks\n");
         return 1;
     }
-    // Every mode recommends official images, and the recommendations of
-    // every mode exist in its mode's published bundle once extracted
-    // (tables mode -> the dedicated real-document table pages bundle, the
-    // other modes -> the PaddleOCR demo bundle).
+    // Every mode and recognition family recommends official images, and
+    // the recommendations exist in their owning bundle once extracted
+    // (en table mode demos from the PaddleOCR bundle — its dictionaries
+    // cannot read the zh/ja real-document pages — every other table fill
+    // from the dedicated real-document table pages bundle). No
+    // recommendation may be a synthetic image.
     const QString root = ecvTestDataRepository::extractPath(
             ecvTestDataRepository::Dataset::Ppocr);
     const QString tablesRoot = ecvTestDataRepository::extractPath(
             ecvTestDataRepository::Dataset::PpocrTables);
+    const QStringList families = {QStringLiteral("zh"), QStringLiteral("en"),
+                                  QStringLiteral("ja")};
     for (const bool t : {false, true}) {
         for (const bool l : {false, true}) {
-            for (const bool c : {false, true}) {
+            for (const QString& fam : families) {
                 const QStringList rec =
-                        OCRDialog::recommendedTestImages(t, l, c);
+                        OCRDialog::recommendedTestImages(t, l, fam);
                 if (rec.isEmpty()) {
                     std::fprintf(stderr, "qOCR mode without test images\n");
                     return 1;
                 }
-                if (OCRDialog::datasetForMode(t) !=
-                    (t ? ecvTestDataRepository::Dataset::PpocrTables
-                       : ecvTestDataRepository::Dataset::Ppocr)) {
+                const auto expectedKind =
+                        (t && fam != QStringLiteral("en"))
+                                ? ecvTestDataRepository::Dataset::PpocrTables
+                                : ecvTestDataRepository::Dataset::Ppocr;
+                if (OCRDialog::datasetForMode(t, fam) != expectedKind) {
                     std::fprintf(stderr,
-                                 "qOCR tables mode must fill from the "
-                                 "real-document table pages bundle\n");
+                                 "qOCR datasetForMode must route the %s "
+                                 "table fill to the owning bundle\n",
+                                 fam.toUtf8().constData());
                     return 1;
                 }
                 for (const QString& rel : rec) {
@@ -418,10 +452,13 @@ int main(int argc, char** argv) {
                         return 1;
                     }
                 }
-                const QString& modeRoot = t ? tablesRoot : root;
+                const QString& modeRoot =
+                        expectedKind == ecvTestDataRepository::Dataset::Ppocr
+                                ? root
+                                : tablesRoot;
                 if (!QDir(modeRoot).exists()) continue;
                 const QStringList all =
-                        OCRDialog::testDataImages(modeRoot, t, l, c);
+                        OCRDialog::testDataImages(modeRoot, t, l, fam);
                 for (int i = 0; i < rec.size(); ++i) {
                     if (all.value(i) !=
                         QDir(modeRoot).absoluteFilePath(rec[i])) {
@@ -472,56 +509,79 @@ int main(int argc, char** argv) {
     }
 
     // Use test data (bundles extracted): every test image of the current
-    // mode's bundle listed after the user's rows, the mode's recommendation
-    // checked; tables mode fills from the real-document table pages bundle,
-    // the other modes from the PaddleOCR demo bundle; pressing again after
-    // a mode switch re-targets the checks and keeps the user's rows/state
-    // (foreign bundle rows degrade to user rows with their state kept).
+    // mode+family's bundle listed after the user's rows, the measured
+    // recommendation checked; tables mode fills from the real-document
+    // table pages bundle (zh/ja) or the PaddleOCR bundle (en), the other
+    // modes from the PaddleOCR demo bundle. Re-pressing after a mode or
+    // model switch re-targets the checks and RETIRES the previous
+    // recommendations (they were the plugin's suggestion, not user data),
+    // while genuinely user-checked rows keep their state.
     auto* layoutCheck =
             dialog.findChild<QCheckBox*>(QStringLiteral("qOCRLayout"));
     if (layoutCheck && QDir(tablesRoot).exists() && QDir(root).exists()) {
+        const QStringList zhTableRecs = OCRDialog::recommendedTestImages(
+                true, false, QStringLiteral("zh"));
         const int tablesCount =
-                OCRDialog::testDataImages(tablesRoot, true, false, true).size();
-        const int demoCount =
-                OCRDialog::testDataImages(root, false, false, true).size();
+                OCRDialog::testDataImages(tablesRoot, true, false,
+                                          QStringLiteral("zh"))
+                        .size();
+        const int demoCount = OCRDialog::testDataImages(root, false, false,
+                                                        QStringLiteral("zh"))
+                                      .size();
         table->setChecked(true);
         layoutCheck->setChecked(false);
         testData->click();
         QStringList checked = dialog.checkedImages();
-        // own(2) + the tables bundle; the zh/ja demo pages checked after
+        // own(2) + the tables bundle; the measured zh pages checked after
         // the user's checked row.
         if (imageList->count() != tablesCount + 2 ||
-            checked.size() !=
-                    1 + OCRDialog::recommendedTestImages(true, false, true)
-                                    .size() ||
-            checked.first() != QFileInfo(own).absoluteFilePath() ||
-            !checked.contains(
-                    QDir(tablesRoot)
-                            .filePath(QStringLiteral("zh_val_0.jpg"))) ||
-            !checked.contains(
-                    QDir(tablesRoot)
-                            .filePath(QStringLiteral("ja_val_0.jpg")))) {
+            checked.size() != 1 + zhTableRecs.size() ||
+            checked.first() != QFileInfo(own).absoluteFilePath()) {
             std::fprintf(stderr,
                          "qOCR test data (table pages): %d rows, %d checked\n",
                          imageList->count(), static_cast<int>(checked.size()));
             return 1;
         }
-        // Layout-only mode re-fills from the PaddleOCR demo bundle; the
-        // tables-bundle rows stay listed as user rows WITH their state —
-        // the two demo pages the tables fill checked remain checked, and
-        // the new mode's recommendations are checked too (positions vary
-        // with the carried rows, so assert on membership).
+        for (const QString& rel : zhTableRecs) {
+            if (!checked.contains(QDir(tablesRoot).absoluteFilePath(rel))) {
+                std::fprintf(stderr,
+                             "qOCR table fill must check the measured page: "
+                             "%s\n",
+                             rel.toUtf8().constData());
+                return 1;
+            }
+        }
+        // A user check on a carried tables row is user data, not a
+        // recommendation.
+        QListWidgetItem* userRow = nullptr;
+        for (int i = 0; i < imageList->count() && !userRow; ++i) {
+            QListWidgetItem* it = imageList->item(i);
+            if (it->data(Qt::UserRole)
+                        .toString()
+                        .endsWith(QStringLiteral("zh_val_30.jpg")))
+                userRow = it;
+        }
+        if (!userRow) {
+            std::fprintf(stderr, "qOCR table fill must list zh_val_30.jpg\n");
+            return 1;
+        }
+        userRow->setCheckState(Qt::Checked);
+        // Layout-only mode re-fills from the PaddleOCR demo bundle: the
+        // previous tables-mode recommendations are retired (unchecked),
+        // the user's own check survives, and the new mode's measured
+        // recommendations are checked (membership assertions only, the
+        // carried rows shift positions).
         table->setChecked(false);
         layoutCheck->setChecked(true);
         testData->click();
         checked = dialog.checkedImages();
-        const int carriedChecks =
-                OCRDialog::recommendedTestImages(true, false, true).size();
-        const QStringList layoutRecs =
-                OCRDialog::recommendedTestImages(false, true, true);
+        const QStringList layoutRecs = OCRDialog::recommendedTestImages(
+                false, true, QStringLiteral("zh"));
         if (imageList->count() != tablesCount + demoCount + 2 ||
-            checked.size() != 1 + carriedChecks + layoutRecs.size()) {
-            std::fprintf(stderr, "qOCR test data must follow the mode\n");
+            checked.size() != 1 + 1 + layoutRecs.size()) {
+            std::fprintf(stderr,
+                         "qOCR test data must follow the mode and retire "
+                         "stale recommendations\n");
             return 1;
         }
         for (const QString& rel : layoutRecs) {
@@ -533,9 +593,49 @@ int main(int argc, char** argv) {
                 return 1;
             }
         }
+        for (const QString& rel : zhTableRecs) {
+            if (checked.contains(QDir(tablesRoot).absoluteFilePath(rel))) {
+                std::fprintf(stderr,
+                             "qOCR test data must retire the previous "
+                             "recommendation: %s\n",
+                             rel.toUtf8().constData());
+                return 1;
+            }
+        }
+        if (!checked.contains(QDir(tablesRoot)
+                                      .absoluteFilePath(QStringLiteral(
+                                              "zh_val_30.jpg")))) {
+            std::fprintf(stderr,
+                         "qOCR test data must keep user-checked rows\n");
+            return 1;
+        }
+        // Switching the recognition model to the en recipe re-targets the
+        // plain fill to the measured English showcases (the zh recs retire).
+        model->setCurrentIndex(1);
+        layoutCheck->setChecked(false);
+        testData->click();
+        checked = dialog.checkedImages();
+        const QStringList enRecs = OCRDialog::recommendedTestImages(
+                false, false, QStringLiteral("en"));
+        if (checked.size() != 1 + 1 + enRecs.size()) {
+            std::fprintf(stderr,
+                         "qOCR test data must follow the recognition "
+                         "family\n");
+            return 1;
+        }
+        for (const QString& rel : enRecs) {
+            if (!checked.contains(QDir(root).absoluteFilePath(rel))) {
+                std::fprintf(stderr,
+                             "qOCR en-family fill must check its measured "
+                             "showcase: %s\n",
+                             rel.toUtf8().constData());
+                return 1;
+            }
+        }
+        model->setCurrentIndex(0);
         std::printf(
-                "qOCR test data: %d tables + %d demo images, mode checks "
-                "OK\n",
+                "qOCR test data: %d tables + %d demo images, mode/family "
+                "checks OK\n",
                 tablesCount, demoCount);
         table->setChecked(false);
         layoutCheck->setChecked(false);

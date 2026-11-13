@@ -20,6 +20,7 @@
 // OCRWorker through the plugin (runRequested / cancelRequested).
 
 #include <QDialog>
+#include <QSet>
 #include <QVector>
 
 #include "OCRWorker.h"
@@ -28,13 +29,18 @@
 class QCheckBox;
 class QComboBox;
 class QLabel;
+class QLineEdit;
 class QListWidget;
 class QProgressBar;
 class QPushButton;
 class QSpinBox;
 class QTabWidget;
 class QTableWidget;
+class ecvClickableImageLabel;
 class ecvModelDownloader;
+class QDragEnterEvent;
+class QDragMoveEvent;
+class QDropEvent;
 
 /** Everything the worker needs for one run; resolved by the dialog view. */
 struct OCRRunSettings {
@@ -57,6 +63,20 @@ struct aicore_ocr_preset_entry;
 class OCRDialog final : public QDialog {
     Q_OBJECT
 public:
+    /** Measured per-stage sample recommendations for a recognition family
+     *  ("zh", "en", "ja"): every entry was benchmarked with the product
+     *  pipeline (bench_ocr / bench_table with layout regions, cuda) across
+     *  the published recipes and quantizations; see README "Sample data".
+     *  Relative to the owning bundle's extraction root. */
+    static QStringList recommendedTestImages(bool table,
+                                             bool layout,
+                                             const QString& family);
+    /** The bundle a mode+family fill lists: table mode reads the dedicated
+     *  real-document pages for the zh/ja families, while the en family
+     *  demos from the PaddleOCR bundle (its dictionaries cannot read the
+     *  zh/ja pages; the English synthetic table-rec set lives there). */
+    static ecvTestDataRepository::Dataset datasetForMode(bool table,
+                                                         const QString& family);
     explicit OCRDialog(QWidget* parent = nullptr);
     ~OCRDialog() override;
 
@@ -75,17 +95,6 @@ public:
     /// at its top-left slot, row/column spans applied (GUI thread only).
     static void fillTableGrid(QTableWidget* grid, const OCRTableResult& table);
 
-    /// The test-data bundle a mode consumes: tables mode fills from the
-    /// dedicated real-document table pages (Dataset::PpocrTables), every
-    /// other mode from the shared PaddleOCR demo bundle (Dataset::Ppocr).
-    static ecvTestDataRepository::Dataset datasetForMode(bool table);
-    /// Recommended PaddleOCR test images for a mode, as paths relative to
-    /// datasetForMode(table)'s extraction root: the real-document zh/ja
-    /// table pages (table + layout), document pages (layout), else the
-    /// language demos. Never a synthetic image (see isSyntheticTestImage).
-    static QStringList recommendedTestImages(bool table,
-                                             bool layout,
-                                             bool chinese);
     /// True for bundle images whose content is generated rather than a real
     /// document: the PaddleOCR test_files/table.jpg demo, the PaddleX
     /// table_rec/ GT crops (labelled synthetic tables behind the TEDS gate)
@@ -97,7 +106,7 @@ public:
     static QStringList testDataImages(const QString& root,
                                       bool table,
                                       bool layout,
-                                      bool chinese);
+                                      const QString& family);
     /// Append images to the input list (duplicates skipped); returns the
     /// number added.
     int addImages(const QStringList& paths, bool checked);
@@ -107,6 +116,10 @@ public:
 signals:
     void runRequested(const OCRRunSettings& settings);
     void cancelRequested();
+    /** The per-image result selector moved to \p imagePath (GUI thread).
+     *  The plugin owns the DB identity of the exported overlays and syncs
+     *  the DB tree selection with it. */
+    void resultImageSelected(const QString& imagePath);
 
 private slots:
     void onDownloadMissing();
@@ -118,10 +131,17 @@ private slots:
     /// ensureDatasetReady chain settlement (success or failure): exactly
     /// one call per accepted preparation request.
     void onTestDataReady(bool success, ecvTestDataRepository::Dataset kind);
+    /// Load the image behind the current input-list row into the shared
+    /// click-to-enlarge preview label.
+    void updateInputPreview();
 
 private:
     QString cacheDir() const;
     const aicore_ocr_preset_entry* currentPreset() const;
+    /** Script family of the selected recipe, derived from its rec stem:
+     *  "en", "ja", or "zh" (the ch/v5/v6 dicts cover Chinese + English, so
+     *  "zh" is the auto-capable superset, not a restriction to Chinese). */
+    QString recipeFamily() const;
     QString detFileName() const;
     QString recFileName() const;
     QString layoutFileName() const;
@@ -137,6 +157,11 @@ private:
     /// Display label: the path relative to the Ppocr dataset root for
     /// test images, else the file name.
     QString imageLabel(const QString& path) const;
+    /// Text-tab helpers of the commercial interaction pack: substring
+    /// filter over the recognized rows, clipboard export, plain-text save.
+    void applyTextFilter();
+    void copyResults(bool selectedOnly);
+    void saveTexts();
     void loadSettings();
     void saveSettings() const;
     void showRunResult(int index);
@@ -147,11 +172,18 @@ private:
 protected:
     void closeEvent(QCloseEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
+    void dragEnterEvent(QDragEnterEvent* event) override;
+    void dragMoveEvent(QDragMoveEvent* event) override;
+    void dropEvent(QDropEvent* event) override;
 
     // ---- model selection -------------------------------------------------
-    QComboBox* m_preset = nullptr;    // catalog recipe (det/rec/cls pairing)
-    QComboBox* m_language = nullptr;  // Chinese / English
-    QComboBox* m_quant = nullptr;     // F32 / F16 / Q8_0
+    /** The recognition model: one combo over the catalog recipes with
+     *  script-family labels. The former language combo is gone — its only
+     *  other effect was filtering the sample-data fill, which now derives
+     *  from the recipe family, so the contradictory state (language says X,
+     *  model does Y) cannot be expressed. */
+    QComboBox* m_preset = nullptr;  // catalog recipe (det/rec/cls pairing)
+    QComboBox* m_quant = nullptr;   // F32 / F16 / Q8_0
 
     // ---- runtime row -------------------------------------------------------
     QComboBox* m_deviceCombo = nullptr;
@@ -164,12 +196,22 @@ protected:
     QPushButton* m_checkAllButton = nullptr;
     QPushButton* m_checkNoneButton = nullptr;
     QPushButton* m_testDataButton = nullptr;
+    /** Shared click-to-enlarge preview of the current input row
+     *  (ecvClickableImageLabel, the same widget the other AICore dialogs
+     *  embed). */
+    ecvClickableImageLabel* m_inputPreview = nullptr;
     bool m_testDataInProgress = false;
     /** Dataset kind of the in-flight test-data preparation (captured at
      *  request time, so a mode toggle during a download cannot detach the
      *  datasetReady settlement from its flow). */
     ecvTestDataRepository::Dataset m_testDataKind =
             ecvTestDataRepository::Dataset::Ppocr;
+    /** Absolute paths the last Use-test-data fill checked as its
+     *  recommendations. A later fill retires them (unchecks) when they are
+     *  no longer recommended, so stale suggestions from another mode or
+     *  recognition family never accumulate into the checked set; genuine
+     *  user checks are never touched. */
+    QSet<QString> m_activeRecommendations;
 
     // ---- output ------------------------------------------------------------
     QCheckBox* m_layoutCheck = nullptr;
@@ -183,6 +225,10 @@ protected:
     QVector<OCRRunResult> m_runResults;
     QTabWidget* m_resultTabs = nullptr;
     QTableWidget* m_results = nullptr;
+    QLineEdit* m_textFilter = nullptr;  // substring filter over the rows
+    QPushButton* m_copyTextButton = nullptr;
+    QPushButton* m_saveTextButton = nullptr;
+    QString m_textSource;  // image path of the shown rows
     QComboBox* m_tableSelect = nullptr;
     QTableWidget* m_tableGrid = nullptr;
     QPushButton* m_saveHtmlButton = nullptr;

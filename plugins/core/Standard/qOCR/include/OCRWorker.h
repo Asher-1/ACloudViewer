@@ -108,6 +108,11 @@ public:
         QStringList imagePaths;
         QString device = QStringLiteral("auto");
         int threads = 0;  // 0 = backend default
+        /** aicore_table_run_options::cell_join_mode. 1 (default) joins the
+         *  OCR boxes of one cell stacked-line-aware, so a wrapped fragment
+         *  pair ("gftiec@gftiec.c" + "om") reconstructs as one token
+         *  ("gftiec@gftiec.com"); 0 keeps the upstream space join. */
+        int tableCellJoinMode = 1;
     };
 
     explicit OCRWorker(const Settings& settings, QObject* parent = nullptr);

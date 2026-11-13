@@ -7,12 +7,17 @@
 
 #include "OCRDialog.h"
 
+#include <QApplication>
 #include <QCheckBox>
+#include <QClipboard>
 #include <QCloseEvent>
 #include <QComboBox>
 #include <QCryptographicHash>
 #include <QDir>
 #include <QDirIterator>
+#include <QDragEnterEvent>
+#include <QDragMoveEvent>
+#include <QDropEvent>
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -21,17 +26,23 @@
 #include <QHeaderView>
 #include <QKeyEvent>
 #include <QLabel>
+#include <QLineEdit>
 #include <QListWidget>
+#include <QMenu>
 #include <QMessageBox>
+#include <QMimeData>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QSet>
 #include <QSettings>
+#include <QShortcut>
 #include <QSizePolicy>
 #include <QSpinBox>
 #include <QTabWidget>
 #include <QTableWidget>
+#include <QUrl>
 #include <QVBoxLayout>
+#include <algorithm>
 #include <initializer_list>
 
 #include "OCRWorker.h"
@@ -41,6 +52,7 @@
 #include "aicore/table_capi.h"
 #include "ecvAICoreUiHelper.h"
 #include "ecvAssetIntegrity.h"
+#include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 #include "ecvPersistentSettings.h"
 
@@ -51,6 +63,11 @@ namespace {
 const QStringList kImageFilters = {
         QStringLiteral("*.png"), QStringLiteral("*.jpg"),
         QStringLiteral("*.jpeg"), QStringLiteral("*.bmp")};
+
+// Below this score the official visualization (and the DB overlay) drops
+// the box; the result rows are greyed to the same threshold so the table
+// and the overlay agree on what is "probably noise".
+constexpr double kOverlayDropScore = 0.5;
 
 QString datasetRoot(ecvTestDataRepository::Dataset kind) {
     return QFileInfo(ecvTestDataRepository::extractPath(kind))
@@ -95,6 +112,9 @@ OCRDialog::OCRDialog(QWidget* parent) : QDialog(parent) {
     setObjectName(QStringLiteral("qOCRWorkspace"));
     setWindowTitle(tr("OCR Text Recognition (PP-OCRv4)"));
     setMinimumSize(ecvAICoreUi::dpiScaled(680), ecvAICoreUi::dpiScaled(520));
+    // Drop images anywhere on the workspace to append them (checked), the
+    // fastest import path of commercial OCR tools.
+    setAcceptDrops(true);
 
     auto* layout = new QVBoxLayout(this);
     ecvAICoreUi::setupTabLayout(layout);
@@ -106,22 +126,30 @@ OCRDialog::OCRDialog(QWidget* parent) : QDialog(parent) {
     form->setVerticalSpacing(ecvAICoreUi::tightVSpacing());
     layout->addLayout(form);
 
-    m_language = new QComboBox(this);
-    m_language->setObjectName(QStringLiteral("qOCRLanguage"));
-    m_language->addItem(tr("Chinese"), QStringLiteral("ch"));
-    m_language->addItem(tr("English"), QStringLiteral("en"));
-    form->addRow(ecvAICoreUi::makeLabel(tr("Recognition language:")),
-                 m_language);
-
+    // One recognition-model combo over the catalog recipes. The script
+    // family shown next to each entry derives from the rec stem; the
+    // ch/v5/v6 dicts cover Chinese + English, so that family IS the
+    // auto-capable default and the en recipe is the pure-Latin optimization.
+    // The former separate language combo encoded the same decision a second
+    // time (and only ever filtered the sample-data fill), which allowed the
+    // UI to claim one script while the run used another model.
     m_preset = new QComboBox(this);
-    m_preset->setObjectName(QStringLiteral("qOCRPreset"));
+    m_preset->setObjectName(QStringLiteral("qOCRModel"));
+    const auto familyLabel = [](const char* recStem) -> QString {
+        const QString stem = QString::fromUtf8(recStem);
+        if (stem.contains(QStringLiteral("-en"))) return tr("English");
+        if (stem.contains(QStringLiteral("japan"))) return tr("Japanese");
+        return tr("Chinese + English (auto)");
+    };
     for (int i = 0; i < aicore_ocr_preset_count(); ++i) {
         const aicore_ocr_preset_entry* p = aicore_ocr_preset_at(i);
         if (p && p->display_name && p->id)
-            m_preset->addItem(QString::fromUtf8(p->display_name),
+            m_preset->addItem(QStringLiteral("%1 · %2").arg(
+                                      QString::fromUtf8(p->display_name),
+                                      familyLabel(p->rec_stem)),
                               QString::fromUtf8(p->id));
     }
-    form->addRow(ecvAICoreUi::makeLabel(tr("Model recipe:")), m_preset);
+    form->addRow(ecvAICoreUi::makeLabel(tr("Recognition model:")), m_preset);
 
     m_quant = new QComboBox(this);
     m_quant->setObjectName(QStringLiteral("qOCRQuant"));
@@ -152,7 +180,10 @@ OCRDialog::OCRDialog(QWidget* parent) : QDialog(parent) {
     layout->addWidget(
             ecvAICoreUi::makeRuntimeRow(m_deviceCombo, m_threads, this));
 
-    // ---- input: checkable image list (run = every checked image) ----------
+    // ---- input: checkable image list (run = every checked image) with the
+    // shared click-to-enlarge preview beside it ------------------------------
+    auto* inputRow = new QHBoxLayout;
+    inputRow->setSpacing(ecvAICoreUi::hSpacing());
     m_imageList = new QListWidget(this);
     m_imageList->setObjectName(QStringLiteral("qOCRImageList"));
     m_imageList->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -160,8 +191,19 @@ OCRDialog::OCRDialog(QWidget* parent) : QDialog(parent) {
     m_imageList->setMaximumHeight(ecvAICoreUi::dpiScaled(150));
     m_imageList->setToolTip(
             tr("Checked images are recognized in list order with one model "
-               "load. Add any files, or list the official test data."));
-    layout->addWidget(m_imageList);
+               "load. Add any files, or list the official test data. Click "
+               "a row to preview the image; click the preview to enlarge "
+               "it (wheel zoom, drag pan)."));
+    inputRow->addWidget(m_imageList, 1);
+    m_inputPreview = new ecvClickableImageLabel(this);
+    m_inputPreview->setObjectName(QStringLiteral("qOCRInputPreview"));
+    m_inputPreview->setFixedSize(ecvAICoreUi::previewSize(),
+                                 ecvAICoreUi::previewSize());
+    m_inputPreview->setStyleSheet(
+            "border: 1px solid palette(mid); background: palette(base);");
+    m_inputPreview->setText(tr("Preview"));
+    inputRow->addWidget(m_inputPreview, 0, Qt::AlignTop);
+    layout->addLayout(inputRow);
     auto* imageRow = new QHBoxLayout;
     imageRow->setSpacing(ecvAICoreUi::hSpacing());
     m_testDataButton = ecvAICoreUi::makeSampleDataBtn(this);
@@ -291,7 +333,51 @@ OCRDialog::OCRDialog(QWidget* parent) : QDialog(parent) {
                                           tr("Layout")});
     m_results->horizontalHeader()->setStretchLastSection(true);
     m_results->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    m_resultTabs->addTab(m_results, tr("Text"));
+    m_results->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_results, &QTableWidget::customContextMenuRequested, this,
+            [this](const QPoint& pos) {
+                QMenu menu(m_results);
+                QAction* copySel =
+                        menu.addAction(tr("Copy selected"), this,
+                                       [this]() { copyResults(true); });
+                copySel->setEnabled(!m_results->selectedItems().isEmpty());
+                QAction* copyAll = menu.addAction(
+                        tr("Copy all"), this, [this]() { copyResults(false); });
+                copyAll->setEnabled(m_results->rowCount() > 0);
+                QAction* save = menu.addAction(tr("Save text…"), this,
+                                               [this]() { saveTexts(); });
+                save->setEnabled(m_results->rowCount() > 0);
+                menu.exec(m_results->mapToGlobal(pos));
+            });
+
+    // Text page: filter + clipboard/save actions above the rows (the
+    // clipboard-first interaction of commercial OCR tools).
+    auto* textPage = new QWidget(this);
+    auto* textLayout = new QVBoxLayout(textPage);
+    textLayout->setContentsMargins(0, 0, 0, 0);
+    textLayout->setSpacing(ecvAICoreUi::tightVSpacing());
+    auto* textBar = new QHBoxLayout;
+    textBar->setSpacing(ecvAICoreUi::hSpacing());
+    m_textFilter = new QLineEdit(textPage);
+    m_textFilter->setObjectName(QStringLiteral("qOCRTextFilter"));
+    m_textFilter->setPlaceholderText(tr("Filter results…"));
+    m_textFilter->setClearButtonEnabled(true);
+    m_copyTextButton = new QPushButton(tr("Copy all"), textPage);
+    m_copyTextButton->setObjectName(QStringLiteral("qOCRTextCopy"));
+    m_copyTextButton->setToolTip(
+            tr("Copy every recognized line to the clipboard"));
+    m_saveTextButton = new QPushButton(tr("Save text…"), textPage);
+    m_saveTextButton->setObjectName(QStringLiteral("qOCRTextSave"));
+    m_saveTextButton->setToolTip(
+            tr("Write the recognized lines as UTF-8 text (<image>_ocr.txt)"));
+    textBar->addWidget(m_textFilter, 1);
+    textBar->addWidget(m_copyTextButton);
+    textBar->addWidget(m_saveTextButton);
+    textLayout->addLayout(textBar);
+    textLayout->addWidget(m_results, 1);
+    m_copyTextButton->setEnabled(false);
+    m_saveTextButton->setEnabled(false);
+    m_resultTabs->addTab(textPage, tr("Text"));
 
     auto* tablePage = new QWidget(this);
     auto* tableLayout = new QVBoxLayout(tablePage);
@@ -312,6 +398,12 @@ OCRDialog::OCRDialog(QWidget* parent) : QDialog(parent) {
     m_tableGrid->setObjectName(QStringLiteral("qOCRTableGrid"));
     m_tableGrid->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_tableGrid->setWordWrap(true);
+    m_tableGrid->setToolTip(
+            tr("SLANet_plus reconstruction of the table crop with row and "
+               "column spans applied. A full-page crop is resized to the "
+               "model's 488 px input, so page-scale structures decode "
+               "coarse grids; reconstructing a cropped table image gives "
+               "the most faithful grid."));
     tableLayout->addWidget(m_tableGrid, 1);
     m_resultTabs->addTab(tablePage, tr("Tables"));
     m_tableSelect->setEnabled(false);
@@ -380,10 +472,17 @@ OCRDialog::OCRDialog(QWidget* parent) : QDialog(parent) {
     connect(m_cancelButton, &QPushButton::clicked, this, &OCRDialog::onCancel);
     connect(m_browseButton, &QPushButton::clicked, this,
             &OCRDialog::onAddImages);
-    connect(m_removeImagesButton, &QPushButton::clicked, this, [this]() {
+    // Remove drops the selected rows (button + Delete key share the same
+    // path; blocked while a run holds the list).
+    auto removeSelected = [this]() {
+        if (m_runInProgress) return;
         for (QListWidgetItem* item : m_imageList->selectedItems()) delete item;
+        updateInputPreview();
         updateRunState();
-    });
+    };
+    connect(m_removeImagesButton, &QPushButton::clicked, this, removeSelected);
+    auto* removeShortcut = new QShortcut(QKeySequence::Delete, m_imageList);
+    connect(removeShortcut, &QShortcut::activated, this, removeSelected);
     auto checkAll = [this](Qt::CheckState state) {
         for (int i = 0; i < m_imageList->count(); ++i)
             m_imageList->item(i)->setCheckState(state);
@@ -395,24 +494,18 @@ OCRDialog::OCRDialog(QWidget* parent) : QDialog(parent) {
             [checkAll]() { checkAll(Qt::Unchecked); });
     connect(m_imageList, &QListWidget::itemChanged, this,
             [this](QListWidgetItem*) { updateRunState(); });
+    // Click / keyboard navigation previews the row's image; clicking the
+    // preview itself opens the shared enlarged view (ecvClickableImageLabel).
+    connect(m_imageList, &QListWidget::itemClicked, this,
+            &OCRDialog::updateInputPreview);
+    connect(m_imageList, &QListWidget::currentItemChanged, this,
+            &OCRDialog::updateInputPreview);
     connect(m_resultImage, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &OCRDialog::showRunResult);
     connect(m_saveAllButton, &QPushButton::clicked, this,
             &OCRDialog::exportAllTables);
     connect(m_preset, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            [this](int index) {
-                // Keep the language combo (test-data chooser) consistent with
-                // the selected recipe's recognition family.
-                const aicore_ocr_preset_entry* p = aicore_ocr_preset_at(index);
-                if (!p || !p->rec_stem) return;
-                const QString stem = QString::fromUtf8(p->rec_stem);
-                const int lang = stem.contains("-en") ? 1 : 0;
-                if (m_language->currentIndex() != lang)
-                    m_language->setCurrentIndex(lang);
-                updateRunState();
-            });
-    connect(m_language, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, [this](int) { updateRunState(); });
+            [this](int) { updateRunState(); });
     connect(m_quant, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             [this](int) { updateRunState(); });
     connect(m_layoutCheck, &QCheckBox::toggled, this,
@@ -421,6 +514,12 @@ OCRDialog::OCRDialog(QWidget* parent) : QDialog(parent) {
             [this](bool) { updateRunState(); });
     connect(m_tableSelect, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &OCRDialog::showTable);
+    connect(m_textFilter, &QLineEdit::textChanged, this,
+            [this]() { applyTextFilter(); });
+    connect(m_copyTextButton, &QPushButton::clicked, this,
+            [this]() { copyResults(false); });
+    connect(m_saveTextButton, &QPushButton::clicked, this,
+            [this]() { saveTexts(); });
     connect(m_saveHtmlButton, &QPushButton::clicked, this,
             [this]() { exportTable(true); });
     connect(m_saveCsvButton, &QPushButton::clicked, this,
@@ -449,6 +548,19 @@ const aicore_ocr_preset_entry* OCRDialog::currentPreset() const {
         if (p && p->id && id == QString::fromUtf8(p->id)) return p;
     }
     return aicore_ocr_preset_at(0);
+}
+
+QString OCRDialog::recipeFamily() const {
+    // Family from the rec stem (the catalog owns the pairing; the DB
+    // detector is script-agnostic). Everything that is not the dedicated
+    // English or Japanese recognizer reads Chinese-style documents, so the
+    // ch/v5/v6 families are the auto-capable supersets.
+    const aicore_ocr_preset_entry* p = currentPreset();
+    if (!p || !p->rec_stem) return QStringLiteral("zh");
+    const QString stem = QString::fromUtf8(p->rec_stem);
+    if (stem.contains(QStringLiteral("-en"))) return QStringLiteral("en");
+    if (stem.contains(QStringLiteral("japan"))) return QStringLiteral("ja");
+    return QStringLiteral("zh");
 }
 
 QString OCRDialog::detFileName() const {
@@ -572,38 +684,69 @@ void OCRDialog::onDownloadFinished(bool ok, const QString& destPath) {
     updateRunState();
 }
 
-ecvTestDataRepository::Dataset OCRDialog::datasetForMode(bool table) {
-    // Tables mode consumes the dedicated real-document table pages; every
-    // other mode keeps the shared PaddleOCR demo bundle (layout pages,
-    // language demos).
-    return table ? ecvTestDataRepository::Dataset::PpocrTables
-                 : ecvTestDataRepository::Dataset::Ppocr;
+ecvTestDataRepository::Dataset OCRDialog::datasetForMode(
+        bool table, const QString& family) {
+    // Tables mode consumes the dedicated real-document table pages for the
+    // zh/ja families. The en family demos from the PaddleOCR bundle
+    // instead: its dictionaries cannot read the zh/ja pages, and the
+    // English-content table showcases (test_files/medal_table.png, the
+    // synthetic table_rec/ set) live in the PaddleOCR bundle (measured:
+    // medal 16x6 score 1.00, 95/96 cells filled with the en recognizer).
+    if (!table) return ecvTestDataRepository::Dataset::Ppocr;
+    return family == QStringLiteral("en")
+                   ? ecvTestDataRepository::Dataset::Ppocr
+                   : ecvTestDataRepository::Dataset::PpocrTables;
 }
 
 QStringList OCRDialog::recommendedTestImages(bool table,
                                              bool layout,
-                                             bool chinese) {
+                                             const QString& family) {
+    // Every entry below was measured with the product pipeline (bench_ocr
+    // for the text stages, bench_table --layout-regions for the table
+    // stage; cuda f16 across every published recipe — v4-ch / v4-en /
+    // v5 / v6-small / v6-tiny / v4-source and the japan recognizer over
+    // its product source-det pairing — plus f32/q8_0 spot checks; raw
+    // numbers in README "Sample data"). The rejected former defaults are
+    // documented where they fail: zh_val_0 decodes a degenerate 25x2 grid
+    // on every recipe, imgs_words_ch/word_4.jpg detects zero boxes on
+    // v4-ch f16, and test_files/textline.png scores 0.00 with the en
+    // recognizer (Chinese content).
     if (table) {
-        // The deterministic first-fill members of the official
-        // table-recognition validation bundle (relative to its extraction
-        // root): one Chinese and one Japanese real-document page. The page
-        // works in both table stages — whole image = one table, and with
-        // layout enabled the layout regions segment the tables first. All
-        // 100 zh/ja pages stay listed unchecked.
-        return {QStringLiteral("zh_val_0.jpg"), QStringLiteral("ja_val_0.jpg")};
+        if (family == QStringLiteral("en"))
+            // Real-photo English tables (the synthetic table_rec/ set is
+            // listed but never checked): medal 16x6 score 1.00 with 92/96
+            // cells filled under the en recognizer, ppstructure 10x5 0.98.
+            return {QStringLiteral("test_files/medal_table.png"),
+                    QStringLiteral("tables/ppstructure_table.jpg")};
+        if (family == QStringLiteral("ja"))
+            return {QStringLiteral("ja_val_10.jpg"),
+                    QStringLiteral("ja_val_0.jpg")};
+        return {QStringLiteral("zh_val_10.jpg"),
+                QStringLiteral("zh_val_22.jpg")};
     }
     if (layout) {
-        // PP-Structure pages: layout finds the tables, SLANet rebuilds them.
+        // PP-Structure pages: layout finds the tables, SLANet rebuilds them
+        // (9x4 and 16x5, structure score 1.00 on every measured recipe).
         return {QStringLiteral("layout/table_page_layout.jpg"),
                 QStringLiteral("layout/table_page_1.png")};
     }
-    if (chinese) {
-        return {QStringLiteral("scenes/ppocrv4.png"),
-                QStringLiteral("imgs/00006737.jpg"),
-                QStringLiteral("imgs_words_ch/word_1.jpg")};
-    }
-    return {QStringLiteral("test_files/textline.png"),
-            QStringLiteral("words_en/word_1.png")};
+    if (family == QStringLiteral("en"))
+        return {QStringLiteral("scenes/ppocrv4_en.jpg"),
+                QStringLiteral("scenes/en_1.png"),
+                QStringLiteral("words_en/word_1.png")};
+    if (family == QStringLiteral("ja"))
+        // Measured with the japan recognizer over its product source-det
+        // pairing (f16, cuda): japan_2 scene 114 boxes at 0.98,
+        // imgs/japan_2 55 boxes at 0.99, japan_1 word 0.89 (the ch
+        // recognizer only reaches 0.62 on japan_2 — the recipe-specific
+        // dictionary is the difference). Banner_ja measured 0.82 and stays
+        // listed unchecked.
+        return {QStringLiteral("scenes/japan_2.jpg"),
+                QStringLiteral("imgs/japan_2.jpg"),
+                QStringLiteral("imgs/japan_1.jpg")};
+    return {QStringLiteral("scenes/ppocrv4.png"),
+            QStringLiteral("imgs/00006737.jpg"),
+            QStringLiteral("imgs_words_ch/word_1.jpg")};
 }
 
 bool OCRDialog::isSyntheticTestImage(const QString& relativePath) {
@@ -615,7 +758,7 @@ bool OCRDialog::isSyntheticTestImage(const QString& relativePath) {
 QStringList OCRDialog::testDataImages(const QString& root,
                                       bool table,
                                       bool layout,
-                                      bool chinese) {
+                                      const QString& family) {
     const QDir dir(root);
     if (root.isEmpty() || !dir.exists()) return {};
     QStringList rest;
@@ -625,7 +768,7 @@ QStringList OCRDialog::testDataImages(const QString& root,
     while (it.hasNext()) rest << dir.relativeFilePath(it.next());
     rest.sort();
     QStringList out;
-    for (const QString& rel : recommendedTestImages(table, layout, chinese)) {
+    for (const QString& rel : recommendedTestImages(table, layout, family)) {
         if (rest.removeOne(rel)) out << dir.absoluteFilePath(rel);
     }
     for (const QString& rel : rest) out << dir.absoluteFilePath(rel);
@@ -675,6 +818,91 @@ QStringList OCRDialog::checkedImages() const {
     return out;
 }
 
+void OCRDialog::updateInputPreview() {
+    if (!m_inputPreview) return;
+    const QListWidgetItem* item = m_imageList->currentItem();
+    if (!item && m_imageList->count()) item = m_imageList->item(0);
+    const QString path = item ? item->data(Qt::UserRole).toString() : QString();
+    QImage image;
+    if (!path.isEmpty()) image = QImage(path);
+    if (image.isNull()) {
+        m_inputPreview->clearPreview();
+        m_inputPreview->setText(tr("Preview"));
+        return;
+    }
+    // ecvClickableImageLabel keeps the full-resolution copy internally, so
+    // clicking the preview opens the original image (shared UI spec).
+    m_inputPreview->setPreviewImage(image, ecvAICoreUi::previewSize());
+}
+
+void OCRDialog::applyTextFilter() {
+    // O(rows) per keystroke: a result table holds at most a few hundred
+    // rows and QString::contains dominates the cost either way.
+    const QString needle =
+            m_textFilter ? m_textFilter->text().trimmed() : QString();
+    for (int row = 0; row < m_results->rowCount(); ++row) {
+        const QTableWidgetItem* text = m_results->item(row, 1);
+        const bool match =
+                needle.isEmpty() ||
+                (text && text->text().contains(needle, Qt::CaseInsensitive));
+        m_results->setRowHidden(row, !match);
+    }
+}
+
+void OCRDialog::copyResults(bool selectedOnly) {
+    QStringList texts;
+    if (selectedOnly) {
+        // Selection order of a row-wise table follows the row indices.
+        QList<QTableWidgetItem*> picked = m_results->selectedItems();
+        std::sort(picked.begin(), picked.end(),
+                  [](const QTableWidgetItem* a, const QTableWidgetItem* b) {
+                      return a->row() < b->row();
+                  });
+        int lastRow = -1;
+        for (QTableWidgetItem* it : picked) {
+            if (!it || it->column() != 1 || it->row() == lastRow) continue;
+            lastRow = it->row();
+            texts << it->text();
+        }
+    } else {
+        for (int row = 0; row < m_results->rowCount(); ++row) {
+            if (m_results->isRowHidden(row)) continue;
+            if (const QTableWidgetItem* text = m_results->item(row, 1))
+                texts << text->text();
+        }
+    }
+    if (texts.isEmpty()) return;
+    QApplication::clipboard()->setText(texts.join(QLatin1Char('\n')));
+    appendLog(
+            tr("[qOCR] %1 line(s) copied to the clipboard.").arg(texts.size()));
+}
+
+void OCRDialog::saveTexts() {
+    if (m_results->rowCount() == 0) return;
+    QStringList texts;
+    for (int row = 0; row < m_results->rowCount(); ++row) {
+        if (const QTableWidgetItem* text = m_results->item(row, 1))
+            texts << text->text();
+    }
+    const QFileInfo source(m_textSource);
+    const QString suggested =
+            QDir(source.absolutePath())
+                    .filePath(QStringLiteral("%1_ocr.txt")
+                                      .arg(source.completeBaseName()));
+    const QString path = QFileDialog::getSaveFileName(
+            this, tr("Save recognized text"), suggested,
+            tr("Text (*.txt);;All files (*)"));
+    if (path.isEmpty()) return;
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        appendLog(tr("[Error] Cannot write %1").arg(path));
+        return;
+    }
+    // Same content shape as the batch command's _ocr.txt (one line per box).
+    file.write((texts.join(QLatin1Char('\n')) + QLatin1Char('\n')).toUtf8());
+    appendLog(tr("[qOCR] %1 line(s) saved to %2").arg(texts.size()).arg(path));
+}
+
 void OCRDialog::fillTestData() {
     m_testDataInProgress = false;
     m_testDataButton->setEnabled(true);
@@ -682,11 +910,12 @@ void OCRDialog::fillTestData() {
     m_downloadLabel->setVisible(false);
     const bool table = m_tableCheck->isChecked();
     const bool layout = m_layoutCheck->isChecked();
-    const bool chinese =
-            m_language->currentData().toString() == QStringLiteral("ch");
-    const auto kind = datasetForMode(table);
+    // The sample-data recommendation follows the recognition model's script
+    // family (one source of truth: the recipe combo).
+    const QString family = recipeFamily();
+    const auto kind = datasetForMode(table, family);
     const QString root = datasetRoot(kind);
-    const QStringList images = testDataImages(root, table, layout, chinese);
+    const QStringList images = testDataImages(root, table, layout, family);
     if (images.isEmpty()) {
         appendLog(tr("[Test data] %1 unavailable.")
                           .arg(ecvTestDataRepository::getDatasetInfo(kind)
@@ -694,9 +923,15 @@ void OCRDialog::fillTestData() {
         updateRunState();
         return;
     }
+    QSet<QString> recommended;
+    for (const QString& rel : recommendedTestImages(table, layout, family))
+        recommended.insert(QDir(root).absoluteFilePath(rel));
     // Rebuild the order: the user's own images keep their rows and state on
     // top, then every test image with the current mode's recommendation
-    // checked (re-pressing after a mode switch re-targets the checks).
+    // checked. Recommendations of earlier fills are retired (unchecked)
+    // when they are not part of the current mode+family set — stale
+    // suggestions from another mode or model must not keep running; the
+    // user's own checks are never touched.
     QStringList own;
     QVector<Qt::CheckState> ownState;
     for (int i = 0; i < m_imageList->count(); ++i) {
@@ -704,15 +939,14 @@ void OCRDialog::fillTestData() {
         const QString path = item->data(Qt::UserRole).toString();
         if (path.startsWith(root + QLatin1Char('/'))) continue;
         own << path;
-        ownState << item->checkState();
+        const bool stale = m_activeRecommendations.contains(path) &&
+                           !recommended.contains(path);
+        ownState << (stale ? Qt::Unchecked : item->checkState());
     }
     m_imageList->clear();
     addImages(own, false);
     for (int i = 0; i < ownState.size(); ++i)
         m_imageList->item(i)->setCheckState(ownState[i]);
-    QSet<QString> recommended;
-    for (const QString& rel : recommendedTestImages(table, layout, chinese))
-        recommended.insert(QDir(root).absoluteFilePath(rel));
     addImages(images, false);
     int checked = 0;
     for (int i = own.size(); i < m_imageList->count(); ++i) {
@@ -722,18 +956,21 @@ void OCRDialog::fillTestData() {
         item->setCheckState(Qt::Checked);
         ++checked;
     }
+    m_activeRecommendations = recommended;
     if (QListWidgetItem* first = m_imageList->item(own.size()))
         m_imageList->scrollToItem(first);
+    updateInputPreview();
     appendLog(tr("[Test data] %1 image(s) listed from %2, %3 recommended "
                  "checked (%4).")
                       .arg(images.size())
                       .arg(ecvTestDataRepository::getDatasetInfo(kind)
                                    .displayName)
                       .arg(checked)
-                      .arg(table     ? tr("table pages")
-                           : layout  ? tr("layout pages")
-                           : chinese ? tr("Chinese")
-                                     : tr("English")));
+                      .arg(table                            ? tr("table pages")
+                           : layout                         ? tr("layout pages")
+                           : family == QStringLiteral("en") ? tr("English")
+                           : family == QStringLiteral("ja") ? tr("Japanese")
+                                                            : tr("Chinese")));
     updateRunState();
 }
 
@@ -744,24 +981,33 @@ void OCRDialog::onUseTestData() {
     }
     auto& repo = ecvTestDataRepository::instance();
     const bool table = m_tableCheck->isChecked();
-    const auto kind = datasetForMode(table);
-    const QString root = datasetRoot(kind);
     // An extraction from an older bundle lacks the newer images: every
-    // recommended file of the active mode's bundle must be on disk, else
-    // prepare the pinned bundle through the shared repository chain
-    // (download -> digest verification -> extraction).
-    bool complete = QDir(root).exists();
-    if (table) {
-        for (const QString& rel : recommendedTestImages(true, false, false))
+    // recommended file of every mode and family must be on disk (the user
+    // switches models freely), else prepare the pinned bundle through the
+    // shared repository chain (download -> digest verification ->
+    // extraction). The en table recommendations live in the PaddleOCR
+    // bundle, the zh/ja table pages in the real-document bundle.
+    const QStringList families = {QStringLiteral("zh"), QStringLiteral("en"),
+                                  QStringLiteral("ja")};
+    bool complete = true;
+    ecvTestDataRepository::Dataset prepKind =
+            datasetForMode(table, recipeFamily());
+    for (const QString& fam : families) {
+        const auto kind = datasetForMode(true, fam);
+        const QString root = datasetRoot(kind);
+        complete = complete && QDir(root).exists();
+        for (const QString& rel : recommendedTestImages(true, false, fam))
             complete = complete && QFileInfo(QDir(root).filePath(rel)).isFile();
-    } else {
+    }
+    const QString plainRoot =
+            datasetRoot(ecvTestDataRepository::Dataset::Ppocr);
+    complete = complete && QDir(plainRoot).exists();
+    for (const QString& fam : families) {
         for (const bool layout : {false, true}) {
-            for (const bool chinese : {false, true}) {
-                for (const QString& rel :
-                     recommendedTestImages(false, layout, chinese)) {
-                    complete = complete &&
-                               QFileInfo(QDir(root).filePath(rel)).isFile();
-                }
+            for (const QString& rel :
+                 recommendedTestImages(false, layout, fam)) {
+                complete = complete &&
+                           QFileInfo(QDir(plainRoot).filePath(rel)).isFile();
             }
         }
     }
@@ -770,24 +1016,24 @@ void OCRDialog::onUseTestData() {
         return;
     }
     m_testDataInProgress = true;
-    m_testDataKind = kind;
+    m_testDataKind = prepKind;
     m_testDataButton->setEnabled(false);
     m_progress->setVisible(true);
     m_downloadLabel->setVisible(true);
     m_downloadLabel->setText(
             tr("Preparing %1...")
-                    .arg(ecvTestDataRepository::getDatasetInfo(kind)
+                    .arg(ecvTestDataRepository::getDatasetInfo(prepKind)
                                  .displayName));
     m_progress->setRange(0, 100);
     m_progress->setValue(0);
     appendLog(tr("[Test data] Preparing %1 (shared download, digest-"
                  "verified)...")
-                      .arg(ecvTestDataRepository::getDatasetInfo(kind)
+                      .arg(ecvTestDataRepository::getDatasetInfo(prepKind)
                                    .displayName));
     // The repository owns the full download->extract ordering and converges
     // through exactly one datasetReady(ok, kind) — synchronous when the
     // verified zip or the extraction is already cached.
-    repo.ensureDatasetReady(kind);
+    repo.ensureDatasetReady(prepKind);
 }
 
 void OCRDialog::onTestDataReady(bool success,
@@ -983,6 +1229,10 @@ void OCRDialog::showRunResult(int index) {
         m_saveHtmlButton->setEnabled(false);
         m_saveCsvButton->setEnabled(false);
         m_resultSummary->clear();
+        m_textFilter->clear();
+        m_copyTextButton->setEnabled(false);
+        m_saveTextButton->setEnabled(false);
+        m_textSource.clear();
         showTable(-1);
         return;
     }
@@ -1022,6 +1272,14 @@ void OCRDialog::showRunResult(int index) {
         m_results->setItem(i, 3, new QTableWidgetItem(box.language));
         m_results->setItem(i, 4, new QTableWidgetItem(extents));
         m_results->setItem(i, 5, new QTableWidgetItem(layoutName));
+        if (box.score < kOverlayDropScore) {
+            // Same threshold the overlay drops boxes at: keep the row for
+            // transparency but mark it as probably noise.
+            for (int col = 0; col < 6; ++col) {
+                if (QTableWidgetItem* it = m_results->item(i, col))
+                    it->setForeground(QColor(150, 150, 150));
+            }
+        }
     }
     const int layoutCount = result.regions.size();
     QString summary =
@@ -1038,11 +1296,19 @@ void OCRDialog::showRunResult(int index) {
     m_tableSelect->clear();
     for (int t = 0; t < m_tables.size(); ++t) {
         const OCRTableResult& table = m_tables[t];
-        m_tableSelect->addItem(tr("Table %1: %2 x %3, %4 cell(s)")
+        // The structure score (mean max token probability) is the decode
+        // confidence of the reconstruction, not a structural sanity check:
+        // a coarse page-scale grid can decode confidently.
+        const QString scoreText =
+                table.structureScore > 0.0f
+                        ? tr(", decode %1").arg(table.structureScore, 0, 'f', 2)
+                        : QString();
+        m_tableSelect->addItem(tr("Table %1: %2 x %3, %4 cell(s)%5")
                                        .arg(t + 1)
                                        .arg(table.rows)
                                        .arg(table.cols)
-                                       .arg(table.cells.size()));
+                                       .arg(table.cells.size())
+                                       .arg(scoreText));
     }
     m_tableSelect->blockSignals(false);
     const bool haveTables = !m_tables.isEmpty();
@@ -1057,6 +1323,13 @@ void OCRDialog::showRunResult(int index) {
         if (haveTables) m_resultTabs->setCurrentIndex(1);
     }
     m_resultSummary->setText(summary);
+    m_textSource = result.imagePath;
+    m_copyTextButton->setEnabled(count > 0);
+    m_saveTextButton->setEnabled(count > 0);
+    applyTextFilter();
+    // One source of truth: the result selector drives the DB tree selection
+    // as well (the plugin resolves the exported ccImage for this source).
+    emit resultImageSelected(result.imagePath);
 }
 
 void OCRDialog::fillTableGrid(QTableWidget* grid, const OCRTableResult& table) {
@@ -1155,10 +1428,11 @@ void OCRDialog::exportAllTables() {
 void OCRDialog::loadSettings() {
     QSettings settings;
     settings.beginGroup(QStringLiteral("qOCR"));
-    const int language = settings.value(QStringLiteral("language"), 0).toInt();
-    if (language >= 0 && language < m_language->count()) {
-        m_language->setCurrentIndex(language);
-    }
+    // The recognition model combo replaced the language combo; persisted by
+    // recipe id (stable across catalog growth) with a first-entry fallback.
+    const QString recipe = settings.value(QStringLiteral("recipe")).toString();
+    const int recipeIdx = m_preset->findData(recipe);
+    if (recipeIdx >= 0) m_preset->setCurrentIndex(recipeIdx);
     const int quant = settings.value(QStringLiteral("quantization"), 1).toInt();
     if (quant >= 0 && quant < m_quant->count()) m_quant->setCurrentIndex(quant);
     const QString device =
@@ -1187,7 +1461,8 @@ void OCRDialog::loadSettings() {
 void OCRDialog::saveSettings() const {
     QSettings settings;
     settings.beginGroup(QStringLiteral("qOCR"));
-    settings.setValue(QStringLiteral("language"), m_language->currentIndex());
+    settings.setValue(QStringLiteral("recipe"), m_preset->currentData());
+    settings.remove(QStringLiteral("language"));  // retired control
     settings.setValue(QStringLiteral("quantization"), m_quant->currentIndex());
     settings.setValue(QStringLiteral("device"),
                       m_deviceCombo->currentData().toString());
@@ -1260,4 +1535,52 @@ void OCRDialog::keyPressEvent(QKeyEvent* event) {
         }
     }
     QDialog::keyPressEvent(event);
+}
+
+namespace {
+
+// Local files among the dropped URLs (image suffixes only, matching the
+// Add-images dialog filter).
+QStringList dropImagePaths(const QMimeData* mime) {
+    QStringList paths;
+    if (!mime || !mime->hasUrls()) return paths;
+    for (const QUrl& url : mime->urls()) {
+        const QString path = url.toLocalFile();
+        if (path.isEmpty()) continue;
+        const QString suffix = QFileInfo(path).suffix().toLower();
+        if (QFileInfo(path).isFile() && (suffix == QStringLiteral("png") ||
+                                         suffix == QStringLiteral("jpg") ||
+                                         suffix == QStringLiteral("jpeg") ||
+                                         suffix == QStringLiteral("bmp") ||
+                                         suffix == QStringLiteral("tif") ||
+                                         suffix == QStringLiteral("tiff") ||
+                                         suffix == QStringLiteral("webp"))) {
+            paths << path;
+        }
+    }
+    return paths;
+}
+
+}  // namespace
+
+void OCRDialog::dragEnterEvent(QDragEnterEvent* event) {
+    if (dropImagePaths(event->mimeData()).isEmpty()) return;
+    event->acceptProposedAction();
+}
+
+void OCRDialog::dragMoveEvent(QDragMoveEvent* event) {
+    if (dropImagePaths(event->mimeData()).isEmpty()) return;
+    event->acceptProposedAction();
+}
+
+void OCRDialog::dropEvent(QDropEvent* event) {
+    const QStringList paths = dropImagePaths(event->mimeData());
+    if (paths.isEmpty()) return;
+    event->acceptProposedAction();
+    const int added = addImages(paths, true);
+    if (added <= 0) {
+        appendLog(tr("[qOCR] Dropped images are already in the list."));
+        return;
+    }
+    appendLog(tr("[qOCR] %1 dropped image(s) added and checked.").arg(added));
 }

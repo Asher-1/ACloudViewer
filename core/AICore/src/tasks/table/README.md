@@ -176,6 +176,43 @@ F1 = 1; f16/q8_0 exempt one threshold-boundary region whose upstream score is
 0.50031 (Paddle's own f16-rounded weights give it 0.4998) and find all the rest;
 q8_0 recall = 1, F1 0.964 (gate 0.95), mean IoU >= 0.99.
 
+### Cell text join: upstream space join vs stacked-line-aware join (2026-11-12)
+
+`get_html_result` in PaddleX's `table_recognition` pipeline
+(`paddlex/inference/pipelines/table_recognition/table_recognition_post_processing.py`)
+strips a leading space and `<b>` markers from every box of a multi-box cell
+and space-joins them; the port reproduces that byte for byte. On real
+documents the rule corrupts wrapped strings: det splits a two-line email
+into `gftiec@gftiec.c` + `om` (7 px vertical gap, x ranges overlap) and the
+space join produces `gftiec@gftiec.c om` (zh_val_22.jpg, reproducible with
+`bench_table` on the `ocr_tables_data` page). The GT annotation convention
+itself joins a cell's characters with no separator.
+
+`aicore_table_run_options` therefore gains `cell_join_mode`
+(0 = upstream space join, the default; 1 = stacked-line-aware): consecutive
+boxes of one cell join with no separator when they are vertically stacked
+continuation lines (the next box starts clearly below the previous one,
+within 0.35 of a line height of its bottom, with >= 0.2 x-overlap) and with
+a space otherwise. `bench_table --cell-join-mode` and
+`run_table_gt_matrix.py --bench-cell-join-mode` expose it for measurement;
+qOCR opts in through `OCRWorker::Settings::tableCellJoinMode = 1` (GUI and
+`-OCR_RECOGNIZE` share the settings struct). Measured cropped-table gate
+(f16, cuda, 100 pages, same protocol as the table above):
+
+| cell_join_mode | TEDS | TEDS-S | structure_exact | paddle gate |
+|---|---|---|---|---|
+| 0 (upstream) | 0.9642297 | 0.9959180 | 0.94 | pass |
+| 1 (stacked) | 0.9642346 | 0.9959180 | 0.94 | pass |
+
+The mode is TEDS-neutral-to-positive on the GT set and fixes the wrapped
+token. What it cannot repair is a row split that the structure model itself
+predicted: on the same page, SLANet_plus draws the row-3/row-4 label-cell
+polygons overlapping (`[226,909,763,1080]` vs `[218,1055,820,1218]`), so the
+official (1 - IoU, distance) matching binds the straddling `Postal Code`
+line to the upper row and `邮政编码` stays in the lower one — upstream
+model behavior, faithfully ported, visible in the blue cell polygons of the
+DB overlay.
+
 ## Reproduction
 
 ```bash

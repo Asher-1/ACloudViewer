@@ -81,13 +81,27 @@ std::vector<std::vector<int>> matchOcrToCells(
         const std::vector<std::array<float, 4>>& cellBoxes,
         const std::vector<std::array<float, 4>>& ocrBoxes);
 
+/** True when \p prev and \p next are vertically stacked continuation lines
+ *  of one logical string: the next box starts clearly below the previous
+ *  one, its top is within a fraction of a line height of the previous
+ *  bottom, and the x ranges overlap. Decides the no-space separator of the
+ *  stacked-line-aware cell join (cell_join_mode 1). O(1). */
+bool stackedLineJoin(const std::array<float, 4>& prev,
+                     const std::array<float, 4>& next);
+
 /** Compose the table HTML from the tokens and the matched OCR texts, and
  *  return each cell's assembled text in `cellTexts` (td order). Text is
- *  HTML-escaped in the markup and raw in `cellTexts`. */
+ *  HTML-escaped in the markup and raw in `cellTexts`. With \p stackedJoin
+ *  the multi-box cells are joined stacked-line-aware (upstream get_html_result
+ *  always space-joins; the boxes' geometry comes from \p ocrBoxes in the
+ *  same order as \p ocrTexts). */
 std::string buildHtml(const std::vector<std::string>& tokens,
                       const std::vector<std::vector<int>>& matched,
                       const std::vector<std::string>& ocrTexts,
-                      std::vector<std::string>* cellTexts);
+                      std::vector<std::string>* cellTexts,
+                      const std::vector<std::array<float, 4>>* ocrBoxes =
+                              nullptr,
+                      bool stackedJoin = false);
 
 /** RFC 4180 CSV (CRLF rows) of the grid; a spanned cell's text sits in
  *  its top-left slot and the covered slots are empty. */

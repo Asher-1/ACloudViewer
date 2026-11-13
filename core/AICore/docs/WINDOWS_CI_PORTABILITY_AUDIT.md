@@ -1,5 +1,18 @@
 # Windows CI portability audit
 
+> **Verification status (2026-11-13).** The open items in this audit have
+> since been verified on hosted Windows runners: runs
+> [43236693360](https://github.com/Asher-1/ACloudViewer/actions/runs/43236693360)
+> (2026-11-12), 42969394002 and 42932350517 (2026-11-11) are fully green,
+> including the `BUILD_CUDA_MODULE=ON` Release/Debug app cells that execute
+> the CuMesh standalone smoke (configure → build → restricted-PATH run in
+> both the build and deployed layouts) and the foundation/qPythonRuntime
+> CTest steps. The CuMesh smoke remains the only place CuMesh is compiled
+> and loaded on Windows: `build_win_app.ps1` keeps `with_aicore_cuda`
+> disabled in CI, so no in-tree lane covers this branch. The analysis below
+> is kept as the rationale for those steps; per-item review decisions
+> reflect the state at the time of writing (run 42493688868).
+
 This audit separates reproduced portability defects from preventive changes.
 The failed app build in run [42493688868](https://github.com/Asher-1/ACloudViewer/actions/runs/42493688868)
 does not establish a failure in the later test-launch helpers. Its compiler
