@@ -90,6 +90,9 @@ AICORE_BATCH_COMMANDS = (
     ("vlx-seek", "VLXSEEK_RUN", "qVLXSeek/include/VLXSeekBatchCommand.h"),
     ("sam3d", "SAM3D_GENERATE", "qSAM3D/include/Sam3dGenerateCommand.h"),
     ("openpcdet", "OPENPCDET_DETECT", "qOpenPCDet/include/OpenPCDetBatchCommand.h"),
+    ("ram", "RAM_TAG", "qRAM/include/RamTagCommand.h"),
+    ("relate-anything", "RELATE_ANYTHING_INFER",
+     "qRelateAnything/include/RelateAnythingInferCommand.h"),
 )
 
 

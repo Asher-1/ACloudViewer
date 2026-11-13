@@ -64,10 +64,11 @@ cli-anything-acloudviewer --mode headless plugin run ANIMATION \
 typed `KEY=VALUE` pairs through repeated `--option`. A shortcut is valid only
 when `ai schema TASK` lists the same uppercase key (for example `yolo-track`
 takes `--option VIDEO=...`, not `--image`); native parsers reject unknown
-keys. JSON literals preserve booleans, numbers, and arrays. The current-source 19
+keys. JSON literals preserve booleans, numbers, and arrays. The current-source 24
 registered tasks cover RMBG, DeepLSD, RF-DETR, YOLO prediction/tracking, DA3,
 FaceDetect, GKD, OCR, SAM3, LightGlue, FreeSplatter, TRELLIS, LingbotMap,
-AnyLabeling, LLM/VLM generation, MapAnything, SAM3D, and OpenPCDet.
+AnyLabeling, LLM/VLM generation, MapAnything, SAM3D, and OpenPCDet, plus
+QuerySplat, VLX-Seek, RAM/RAM++ tagging, and RelateAnything scene relations.
 
 `llm` maps to the separate `LLM_GENERATE` command in qAnyLabeling, not an
 `ANYLABEL_INFER TASK`. Query `ai schema llm` to check that the chosen binary

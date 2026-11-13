@@ -62,7 +62,9 @@ JsonRPCResult JsonRPCPlugin::rpcAICoreBatch(
                                             "VLXSEEK_RUN",
                                             "SAM3D_GENERATE",
                                             "OPENPCDET_DETECT",
-                                            "LLM_GENERATE"};
+                                            "LLM_GENERATE",
+                                            "RAM_TAG",
+                                            "RELATE_ANYTHING_INFER"};
     if (!kCommands.contains(command)) {
         QJsonArray allowed;
         QStringList sorted = kCommands.values();

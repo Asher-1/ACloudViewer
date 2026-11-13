@@ -21,6 +21,7 @@ public:
     ~qRelateAnything() override;
     QList<QAction*> getActions() override;
     void onNewSelection(const ccHObject::Container&) override;
+    void registerCommands(ccCommandLineInterface* cmd) override;
 
 private:
     void showDialog();

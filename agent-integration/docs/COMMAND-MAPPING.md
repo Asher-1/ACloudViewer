@@ -108,6 +108,8 @@ When the **MCP server** runs in **`--mode headless`**, tools invoke the **ACloud
 | `anylabel` | `ANYLABEL_INFER` | images |
 | `map-anything` | `MAP_ANYTHING_RECONSTRUCT` | image-sets |
 | `sam3d` | `SAM3D_GENERATE` | images |
+| `ram` | `RAM_TAG` | images |
+| `relate-anything` | `RELATE_ANYTHING_INFER` | images + REGIONS boxes |
 
 Every native command must return `acloudviewer.aicore.batch/1` from
 `HELP RESULT_JSON <path>`. `ai schema` exposes that installed-binary contract;

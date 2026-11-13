@@ -21,6 +21,7 @@
 #include <QSet>
 
 #include "RelateAnythingDialog.h"
+#include "RelateAnythingInferCommand.h"
 qRelateAnything::qRelateAnything(QObject* parent)
     : QObject(parent),
       ccStdPluginInterface(":/CC/plugin/qRelateAnything/info.json") {
@@ -39,6 +40,14 @@ qRelateAnything::qRelateAnything(QObject* parent)
 }
 qRelateAnything::~qRelateAnything() { delete m_dialog; }
 QList<QAction*> qRelateAnything::getActions() { return {m_action}; }
+
+void qRelateAnything::registerCommands(ccCommandLineInterface* cmd) {
+    if (cmd == nullptr) {
+        return;
+    }
+    cmd->registerCommand(ccCommandLineInterface::Command::Shared(
+            new CommandRelateAnythingInfer));
+}
 void qRelateAnything::onNewSelection(const ccHObject::Container& selected) {
     m_selection = selected;
     refreshSelection();

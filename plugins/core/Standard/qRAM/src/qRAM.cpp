@@ -20,6 +20,7 @@
 #include <QSet>
 
 #include "RAMDialog.h"
+#include "RamTagCommand.h"
 qRAM::qRAM(QObject* parent)
     : QObject(parent), ccStdPluginInterface(":/CC/plugin/qRAM/info.json") {
     m_action = new QAction(QIcon(":/CC/plugin/qRAM/images/qRAM.svg"),
@@ -35,6 +36,14 @@ qRAM::qRAM(QObject* parent)
 }
 qRAM::~qRAM() { delete m_dialog; }
 QList<QAction*> qRAM::getActions() { return {m_action}; }
+
+void qRAM::registerCommands(ccCommandLineInterface* cmd) {
+    if (cmd == nullptr) {
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandRamTag));
+}
 void qRAM::onNewSelection(const ccHObject::Container& selected) {
     m_selection = selected;
     refreshSelection();

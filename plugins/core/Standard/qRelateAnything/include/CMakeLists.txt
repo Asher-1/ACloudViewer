@@ -7,4 +7,5 @@ target_sources(${PROJECT_NAME}
         ${CMAKE_CURRENT_LIST_DIR}/RelateAnythingPresets.h
         ${CMAKE_CURRENT_LIST_DIR}/RelateAnythingTemporal.h
         ${CMAKE_CURRENT_LIST_DIR}/RelateAnythingDecode.h
+        ${CMAKE_CURRENT_LIST_DIR}/RelateAnythingInferCommand.h
 )
