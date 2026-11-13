@@ -277,4 +277,4 @@ pytest cli_anything/acloudviewer/tests/ -q
 
 ## Version
 
-3.2.0 (aligns with `acloudviewer/agent-harness/setup.py`)
+3.9.5 (aligns with `acloudviewer/agent-harness/setup.py`)
