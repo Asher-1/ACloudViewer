@@ -81,11 +81,19 @@ path. On npmjs.com → avatar → **Access Tokens** → **Generate New Token**:
    and must be renewed (see *Token renewal* below). Copy the token
    immediately (shown once, starts with `npm_`).
 
-> A long-term no-token alternative is npm **Trusted Publishing** (OIDC), but
-> it cannot bootstrap a first release (its configuration lives on the
-> package's settings page, which does not exist until the package is
-> published) and scoped-package OIDC publishing has an open E404 bug
-> (npm/cli#8976). Re-evaluate after the package is stable on the registry.
+> A long-term no-token alternative is npm **Trusted Publishing** (OIDC). Now
+> that the package exists, it can be configured: package page → **Settings →
+> Trusted publishing → Add trusted publisher** → GitHub Actions →
+> Organization/user `Asher-1`, repository `ACloudViewer`, workflow filename
+> `npm-publish.yml`, and **allow `npm publish`** (post-Sep-2026 configs default
+> to stage-only). The workflow already carries `id-token: write` and runs npm
+> >= 11.5.1 (Node 24), so the npmjs step then authenticates via short-lived
+> OIDC and falls back to `NPM_TOKEN` automatically. Caveats (as of
+> 2026-11): the configuration must complete its first successful publish
+> within 2 days, and scoped-package OIDC publishing has a history of E404
+> bugs (npm/cli#8976) — if the OIDC path misbehaves the token fallback keeps
+> the channel alive, so keep renewing `NPM_TOKEN` until an OIDC publish is
+> observed in the logs ("Signed provenance statement" proves OIDC).
 
 ### Step 3 — Add the secret to GitHub
 

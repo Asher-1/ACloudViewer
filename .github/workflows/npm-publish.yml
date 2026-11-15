@@ -22,6 +22,10 @@ name: npm publish
 permissions:
   contents: read
   packages: write  # GitHub Packages mirror publish
+  id-token: write  # npm trusted publishing (OIDC): when a trusted publisher
+                   # is configured on npmjs for this workflow, npm >= 11.5.1
+                   # authenticates the npmjs publish via short-lived OIDC and
+                   # only falls back to NPM_TOKEN if that is unavailable.
 
 on:
   push:
@@ -62,7 +66,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # Node 24 ships npm >= 11.5.1, the minimum for OIDC trusted
+          # publishing (Node 22's bundled npm is too old for scoped OIDC).
+          node-version: 24
 
       # ── Version resolution: one step decides IF and WHAT to publish ──────
       - name: Resolve version and publish mode

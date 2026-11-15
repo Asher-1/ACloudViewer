@@ -107,10 +107,15 @@ function closestUbuntuTag(glibcVersion) {
 
 async function fetchReleaseAssets(tag) {
   // 30s hard timeout: a hung api.github.com call must not wedge the CLI.
+  // GITHUB_TOKEN (optional) raises the anonymous 60/h per-IP limit to the
+  // authenticated 5000/h — needed on shared CI runners and for agents doing
+  // many release queries. Token is never logged.
+  const headers = { "User-Agent": USER_AGENT, Accept: "application/vnd.github+json" };
+  if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
   let res;
   try {
     res = await fetch(RELEASE_API + tag, {
-      headers: { "User-Agent": USER_AGENT, Accept: "application/vnd.github+json" },
+      headers,
       signal: AbortSignal.timeout(30000),
     });
   } catch (e) {
@@ -118,7 +123,7 @@ async function fetchReleaseAssets(tag) {
   }
   if (res.status === 403) {
     throw new Error(`GitHub API refused the request for release "${tag}" (HTTP 403). ` +
-      "Anonymous API calls are limited to 60/hour per IP — wait and retry, or check that the release exists at " +
+      "Anonymous API calls are limited to 60/hour per IP — wait and retry, or set GITHUB_TOKEN to raise the limit, or check that the release exists at " +
       `https://github.com/${GITHUB_REPO}/releases`);
   }
   if (!res.ok) {

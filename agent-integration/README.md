@@ -11,6 +11,31 @@ automation scripts, and external tools via three complementary interfaces:
 
 ## Quick Start
 
+### 0. Install ACloudViewer (one command, any platform)
+
+The harness drives an actual ACloudViewer installation. If you don't have one
+yet, install the app itself via npm (Windows / macOS / Linux):
+
+```bash
+# Bootstrap CLI downloads and launches the matching installer
+npm install -g @asher-1/acloudviewer
+acloudviewer install                        # auto-detects CPU/CUDA flavor
+
+# Headless / agent-friendly unattended install (no GUI wizard, no sudo)
+acloudviewer install --silent --prefix ~/.local/share/ACloudViewer
+
+# GITHUB_TOKEN (optional) raises the GitHub API rate limit for many installs,
+# e.g. on shared CI runners:
+GITHUB_TOKEN=ghp_... acloudviewer install --silent
+
+# Remove the app again (wraps the QtIFW maintenancetool)
+acloudviewer uninstall --prefix ~/.local/share/ACloudViewer --yes
+```
+
+After a silent install the binary sits at `<prefix>/ACloudViewer`
+(`ACloudViewer.exe` on Windows) with `ACloudViewer.sh` as launcher — point the
+JSON-RPC / CLI harness at it, or launch it directly.
+
 ### 1. Enable the JSON-RPC Plugin (GUI Mode)
 
 Build ACloudViewer with the plugin enabled:

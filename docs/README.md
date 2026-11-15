@@ -71,6 +71,24 @@ docs/
     └── html/             # Final HTML output
 ```
 
+## 📦 Install ACloudViewer
+
+Before building the docs you may want the app itself. npm provides a
+cross-platform installer bootstrap (Windows / macOS / Linux):
+
+```bash
+npm install -g @asher-1/acloudviewer
+
+acloudviewer install             # download + launch the official installer (auto CPU/CUDA)
+acloudviewer install --silent    # unattended: lands in ~/.local/share/ACloudViewer (no sudo)
+acloudviewer list                # inspect available installers on the release
+acloudviewer uninstall --yes     # remove the app (QtIFW maintenancetool purge)
+```
+
+The Python wheel (`pip install cloudViewer`) remains the choice for API-only
+use — see the [Python quick start](../README.md#python-quick-start) and
+[getting started guide](source/getting_started/quickstart.rst).
+
 ## 🚀 Quick Start
 
 ### 📖 Build Documentation Locally
