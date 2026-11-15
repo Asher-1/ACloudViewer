@@ -5,19 +5,18 @@ name: npm publish
 #   2. GitHub Packages  — mirror, appears under
 #                         https://github.com/Asher-1/ACloudViewer/packages
 #
-# Four triggers, four version strategies (see the "Resolve version" step):
-#   A. workflow_run  — a platform build finished (same 5 uploaders that feed
-#                      main-devel, like update-release.yml). Align the npm
-#                      version with the app version carried by the release
-#                      assets; skip when already aligned (idempotent: the 5
-#                      completion events converge to one publish).
-#   B. push (main) touching npm/** — the bootstrap source changed; force a
-#                      new patch version above the registry's latest.
-#   C. tag npm-v*   — explicit release; tag must equal package.json version.
-#   D. workflow_dispatch — publish an explicitly given version.
-#
-# The npm version is metadata only — the bootstrap always installs whatever
-# assets are current on the main-devel release.
+# Version invariant (see the "Resolve version" step): npm latest always
+# equals the app version carried by the main-devel release assets.
+#   - workflow_run (a platform build finished — same 5 uploaders that feed
+#     main-devel, like update-release.yml) and push (main) touching npm/**
+#     both run the same RECONCILE: publish the app version when the
+#     registry is behind, re-point `latest` when it drifted ahead, skip
+#     when aligned. The bootstrap is version-agnostic (it fetches current
+#     release assets at runtime), so bootstrap source changes never create
+#     npm versions on their own — the next app release ships them.
+#   - tag npm-v* / workflow_dispatch are emergency paths for explicit
+#     versions; reconcile automatically re-points `latest` back to the app
+#     version on the next run.
 
 permissions:
   contents: read
@@ -61,6 +60,7 @@ jobs:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       SKIP: 'false'
       MODE: 'init'
+      ACTION: 'none'
     steps:
       - uses: actions/checkout@v4
 
@@ -95,80 +95,93 @@ jobs:
           }
 
           if [ "${GITHUB_REF_TYPE:-branch}" = "tag" ]; then
-            # ── Mode C: explicit tag — tag must equal package.json ──────────
+            # ── Emergency mode: explicit tag. The tag must equal the app
+            # version from main-devel — the same invariant reconcile enforces;
+            # the tag merely forces a publish even when the registry looks
+            # aligned (metadata cache delay, forced re-ship, ...).
             tag="${GITHUB_REF#refs/tags/npm-v}"
-            if [ "$tag" != "$pkg" ]; then
-              echo "::error::tag npm-v$tag does not match npm/package.json version $pkg"
-              exit 1
-            fi
-            echo "MODE=tag" >> "$GITHUB_ENV"
-            echo "VERSION=$tag" >> "$GITHUB_ENV"
-
-          elif [ -n "${DISPATCH_VERSION:-}" ]; then
-            # ── Mode D: manual dispatch — force the given version ───────────
-            (cd npm && npm version "$DISPATCH_VERSION" --no-git-tag-version >/dev/null)
-            echo "MODE=dispatch" >> "$GITHUB_ENV"
-            echo "VERSION=$DISPATCH_VERSION" >> "$GITHUB_ENV"
-
-          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
-            # ── Mode A: platform build finished — align with the app version
-            # carried by the current main-devel assets ──────────────────────
             app_ver=$(curl -sSf -H "Authorization: token $GH_TOKEN" \
               https://api.github.com/repos/Asher-1/ACloudViewer/releases/tags/main-devel \
               | grep -oE '"name": *"ACloudViewer-[0-9]+\.[0-9]+\.[0-9]+' \
               | head -n1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)
+            if [ -z "${app_ver:-}" ] || [ "$tag" != "$app_ver" ]; then
+              echo "::error::tag npm-v$tag does not match the main-devel app version ${app_ver:-<none>}"
+              exit 1
+            fi
+            (cd npm && npm version "$tag" --no-git-tag-version >/dev/null)
+            echo "MODE=tag" >> "$GITHUB_ENV"
+            echo "ACTION=publish" >> "$GITHUB_ENV"
+            echo "SKIP=false" >> "$GITHUB_ENV"
+            echo "VERSION=$tag" >> "$GITHUB_ENV"
+
+          elif [ -n "${DISPATCH_VERSION:-}" ]; then
+            # ── Emergency mode: manual dispatch — force the given version ──
+            (cd npm && npm version "$DISPATCH_VERSION" --no-git-tag-version >/dev/null)
+            echo "MODE=dispatch" >> "$GITHUB_ENV"
+            echo "ACTION=publish" >> "$GITHUB_ENV"
+            echo "SKIP=false" >> "$GITHUB_ENV"
+            echo "VERSION=$DISPATCH_VERSION" >> "$GITHUB_ENV"
+
+          elif [ "${{ github.event_name }}" = "workflow_run" ] || [ "${{ github.event_name }}" = "push" ]; then
+            # ── Mode: reconcile — one invariant drives both triggers:
+            # npm latest must equal the app version carried by the
+            # main-devel assets. The npm bootstrap is version-agnostic
+            # (it fetches current release assets at runtime), so its own
+            # source changes NEVER create new npm versions; the next
+            # reconcile ships them with the next app version.
+            app_ver=$(curl -sSf -H "Authorization: token $GH_TOKEN" \
+              https://api.github.com/repos/Asher-1/ACloudViewer/releases/tags/main-devel \
+              | grep -oE '"name": *"ACloudViewer-[0-9]+\.[0-9]+\.[0-9]+' \
+              | head -n1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)
+            echo "MODE=reconcile" >> "$GITHUB_ENV"
             if [ -z "${app_ver:-}" ]; then
-              echo "::warning::main-devel has no installer assets; nothing to align with. Skipping."
-              echo "MODE=align" >> "$GITHUB_ENV"
+              echo "::warning::main-devel has no installer assets; nothing to reconcile with. Skipping."
               echo "SKIP=true" >> "$GITHUB_ENV"
+              echo "ACTION=none" >> "$GITHUB_ENV"
               exit 0
             fi
             reg=$(registry_latest)
             if [ "$app_ver" = "$reg" ]; then
-              echo "npm@$reg already matches app version $app_ver; skipping publish."
-              echo "MODE=align" >> "$GITHUB_ENV"
+              echo "npm@$reg matches app version $app_ver; nothing to do."
               echo "SKIP=true" >> "$GITHUB_ENV"
+              echo "ACTION=none" >> "$GITHUB_ENV"
               echo "VERSION=$app_ver" >> "$GITHUB_ENV"
             elif [ "$(printf '%s\n%s\n' "$reg" "$app_ver" | sort -V | head -n1)" != "$reg" ]; then
-              # registry is AHEAD of the app release (a patch-bump published a
-              # newer bootstrap than the current main-devel assets). Aligning
-              # here would drag `latest` back to the older app version — skip
-              # instead; align resumes when the app catches up.
-              echo "npm@$reg is ahead of app release $app_ver; nothing to align. Skipping."
-              echo "MODE=align" >> "$GITHUB_ENV"
-              echo "SKIP=true" >> "$GITHUB_ENV"
-              echo "VERSION=$reg" >> "$GITHUB_ENV"
-            else
-              echo "MODE=align" >> "$GITHUB_ENV"
+              # app_ver > reg: registry is behind the app release — publish
+              # the aligned version (this also carries the latest bootstrap
+              # source to users).
+              echo "npm@$reg is behind app release $app_ver; publishing aligned version."
+              (cd npm && npm version "$app_ver" --no-git-tag-version >/dev/null)
+              echo "SKIP=false" >> "$GITHUB_ENV"
+              echo "ACTION=publish" >> "$GITHUB_ENV"
               echo "VERSION=$app_ver" >> "$GITHUB_ENV"
-              echo "npm@$reg -> aligning with app release $app_ver"
+            else
+              # app_ver < reg: registry latest drifted ahead of the app
+              # release (historical patch-bump runs, or a manual tag). The
+              # latest dist-tag must point at the app version again; the
+              # extra versions stay in the registry (npm versions are
+              # immutable) but stop being the default install target.
+              echo "npm@$reg is ahead of app release $app_ver; retagging latest -> $app_ver."
+              echo "SKIP=false" >> "$GITHUB_ENV"
+              echo "ACTION=tagback" >> "$GITHUB_ENV"
+              echo "VERSION=$app_ver" >> "$GITHUB_ENV"
             fi
-
-          else
-            # ── Mode B: npm/ source changed on main — force a fresh patch
-            # strictly above the registry's latest ─────────────────────────
-            echo "MODE=patch-bump" >> "$GITHUB_ENV"
-            reg=$(registry_latest)
-            while [ "$pkg" = "$reg" ] || [ "$(printf '%s\n%s\n' "$pkg" "$reg" | sort -V | head -n1)" = "$pkg" ]; do
-              (cd npm && npm version patch --no-git-tag-version >/dev/null)
-              pkg=$(node -p "require('./npm/package.json').version")
-            done
-            echo "VERSION=$pkg" >> "$GITHUB_ENV"
-            echo "npm source changed: bumping above registry latest $reg -> $pkg"
           fi
 
       # ── Fail fast on packaging mistakes before touching any registry ────
       - name: Package sanity check
-        if: env.SKIP != 'true'
+        if: env.SKIP != 'true' && env.ACTION != 'tagback'
         working-directory: npm
         run: npm pack --dry-run
 
       # ── Primary channel ──────────────────────────────────────────────────
-      # Requires NPM_TOKEN (npmjs automation/granular token with publish
-      # rights for the @asher-1 scope). Skipped when the secret is absent so
-      # the GitHub Packages mirror can still ship on its own. Trusted
-      # Publishing (OIDC) is a drop-in alternative once the package is bound
-      # on npmjs.com (see docs.npmjs.com/trusted-publishers).
+      # Requires NPM_TOKEN (npmjs granular token with publish rights for the
+      # @asher-1 scope). Skipped when the secret is absent so the GitHub
+      # Packages mirror can still ship on its own. Trusted Publishing (OIDC)
+      # is a drop-in alternative once the trusted publisher is bound on
+      # npmjs.com (see docs.npmjs.com/trusted-publishers).
+      # ACTION=tagback instead re-points the `latest` dist-tag at the app
+      # version when the registry drifted ahead (no tarball is published).
       - name: Publish to npmjs.org (primary)
         id: npmjs
         if: env.SKIP != 'true' && env.NPM_TOKEN != ''
@@ -176,15 +189,22 @@ jobs:
         run: |
           set -o pipefail
           echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
+          if [ "$ACTION" = "tagback" ]; then
+            if ! npm dist-tag add "@asher-1/acloudviewer@$VERSION" latest 2>&1 | tee /tmp/npmjs-tagback.log; then
+              echo "::error::dist-tag retag to $VERSION failed (registry auth or network)."
+              exit 1
+            fi
+            exit 0
+          fi
           if ! npm publish --access public 2>&1 | tee /tmp/npmjs-publish.log; then
-            # A concurrent align run (workflow_run events converge; reruns
+            # A concurrent reconcile run (workflow_run events converge; reruns
             # race within npmjs' metadata-cache window) may publish the same
             # version between our resolve and our PUT — that is success by
-            # definition for align. Verified 2026-11-15 (E409 "previously
-            # staged"). Other modes must fail: a 409 there means the version
-            # contract was violated and a human must look.
-            if [ "$MODE" = "align" ] && grep -qE "E409|previously published|previously staged" /tmp/npmjs-publish.log; then
-              echo "::warning::npm@$VERSION already published by a concurrent run; align is idempotent, treating as success."
+            # definition for reconcile. Verified 2026-11-15 (E409 "previously
+            # staged"). Explicit tag/dispatch modes must fail: a 409 there
+            # means the version contract was violated and a human must look.
+            if [ "$MODE" = "reconcile" ] && grep -qE "E409|previously published|previously staged" /tmp/npmjs-publish.log; then
+              echo "::warning::npm@$VERSION already published by a concurrent run; reconcile is idempotent, treating as success."
             else
               exit 1
             fi
@@ -205,6 +225,14 @@ jobs:
         run: |
           set -o pipefail
           echo "//npm.pkg.github.com/:_authToken=$NODE_AUTH_TOKEN" > ~/.npmrc
+          if [ "$ACTION" = "tagback" ]; then
+            if ! npm dist-tag add --registry https://npm.pkg.github.com "@asher-1/acloudviewer@$VERSION" latest 2>&1 | tee /tmp/ghp-tagback.log; then
+              echo "::error::mirror dist-tag retag to $VERSION failed."
+              exit 1
+            fi
+            echo "MIRROR_RESULT=retagged latest -> $VERSION" >> "$GITHUB_ENV"
+            exit 0
+          fi
           if ! npm publish --registry https://npm.pkg.github.com --access public 2>&1 | tee /tmp/ghp-publish.log; then
             if grep -qE "EPUBLISHCONFLICT|cannot publish over|previously published|409" /tmp/ghp-publish.log; then
               echo "::warning::GitHub Packages already has version ${VERSION:-unknown}; mirror skipped."
@@ -225,12 +253,15 @@ jobs:
           version=$(node -p "require('./npm/package.json').version")
           skip="${SKIP:-false}"
           mode="${MODE:-unknown}"
+          action="${ACTION:-unknown}"
           npmjs_outcome="${{ steps.npmjs.outcome }}"
           mirror_outcome="${{ steps.mirror.outcome }}"
           case "$npmjs_outcome" in
-            success) npmjs_status="published" ;;
+            success)
+              if [ "$action" = "tagback" ]; then npmjs_status="retagged latest -> $version"
+              else npmjs_status="published"; fi ;;
             skipped)
-              if [ "$skip" = "true" ]; then npmjs_status="skipped (version aligned)"
+              if [ "$skip" = "true" ]; then npmjs_status="skipped (already aligned)"
               else npmjs_status="skipped (NPM_TOKEN secret missing)"; fi ;;
             *) npmjs_status="FAILED ($npmjs_outcome)" ;;
           esac
@@ -241,7 +272,7 @@ jobs:
               else
                 mirror_status="published"
               fi ;;
-            skipped) mirror_status="skipped (version aligned)" ;;
+            skipped) mirror_status="skipped (already aligned)" ;;
             *) mirror_status="FAILED ($mirror_outcome)" ;;
           esac
           {
@@ -250,9 +281,10 @@ jobs:
             echo "| Item | Value |"
             echo "|---|---|"
             echo "| Mode | \`$mode\` |"
+            echo "| Action | \`$action\` |"
             echo "| Skipped | \`$skip\` |"
             echo "| npmjs.org | $npmjs_status |"
             echo "| GitHub Packages | $mirror_status |"
             echo ""
-            echo "_Summary runs even for failed jobs; FAILED rows point at the failing step._"
+            echo "_Invariant: npm latest == app version from main-devel assets. Summary runs even for failed jobs; FAILED rows point at the failing step._"
           } >> "$GITHUB_STEP_SUMMARY"

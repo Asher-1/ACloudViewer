@@ -23,6 +23,45 @@ MUST go through this toolchain; never guess ACloudViewer binary flags.
 | Harness package (canonical) | `CLI-Anything/acloudviewer/agent-harness/` |
 | MCP tool reference (187 tools) | `agent-integration/mcp/README.md` |
 
+## Install Mode Routing (pick before Phase A)
+
+Ask one question: does the user want to *use* ACloudViewer or *build* it?
+
+| User profile | Path | Why |
+|---|---|---|
+| **Consumer** — just install and run the app | **npm bootstrap** (below) | Zero prerequisites beyond Node/npm; one command downloads and launches the official installer on Windows/macOS/Linux |
+| **Agent / automation** — drive the app programmatically | **CLI harness** (Phase A) | Adds the MCP/CLI toolchain, health checks, and headless batch ops |
+| **Developer** — clean machine, needs the app *and* a source build | **CLI harness + `install source`** | `install source` runs the full from-scratch pipeline (system deps via `utils/install_deps_ubuntu.sh` or conda, clone, CMake configure, build) in one command |
+
+### Consumer path: npm bootstrap (no harness needed)
+
+```bash
+npm install -g @asher-1/acloudviewer   # tiny installer bootstrap, Node >= 18
+acloudviewer install                    # downloads + launches the matching installer (auto CPU/CUDA)
+acloudviewer install --silent           # unattended: lands in ~/.local/share/ACloudViewer (no sudo)
+acloudviewer uninstall --yes            # remove the app (QtIFW maintenancetool purge)
+acloudviewer list                       # inspect release assets
+```
+
+Notes: `GITHUB_TOKEN=<pat>` raises the GitHub API limit for many installs on
+shared CI runners; downloads use parallel Range segments with resume. If the
+rolling `main-devel` release is being refreshed mid-download the CLI fails
+fast with an `asset is no longer downloadable` message — just re-run.
+
+### Developer path: from-scratch source build
+
+`cli-anything-acloudviewer install source` wraps the platform build guides
+(docs/guides/compiling_doc): dependency install + clone + configure + build.
+Always `--dry-run` first — a full build takes hours:
+
+```bash
+cli-anything-acloudviewer install source --dry-run      # preview every step
+cli-anything-acloudviewer install source --jobs 8 -y    # run it
+```
+
+The npm package does **not** provide source builds; route users who say
+"compile from source" here, and users who say "just install" to the npm path.
+
 ## Phase A — One-Click Deployment
 
 Run `check` first; it tells you exactly which step you still need.
