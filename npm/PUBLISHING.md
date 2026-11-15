@@ -127,15 +127,26 @@ keeps working — it uses `GITHUB_TOKEN`). Symptoms and the renewal routine:
 
 ## Automated release (default path, no manual action)
 
-Once `NPM_TOKEN` is in place, publishing happens on its own. One workflow,
-four triggers — each with its own version strategy:
+Once `NPM_TOKEN` is in place, publishing happens on its own. The workflow
+enforces one **version invariant**: `npm latest == app version` (the version
+carried by the `main-devel` release assets). Every automatic trigger runs the
+same RECONCILE against that invariant:
 
-| Trigger | Mode | Version behaviour |
-|---------|------|-------------------|
-| A platform build finishes (`workflow_run` on Windows/MacOS/Ubuntu/Ubuntu CUDA/Ubuntu Wheel — the same uploaders that feed `main-devel`) | **align** | Read the app version from the current `main-devel` assets (e.g. `3.9.5`). If npmjs `latest` already equals it → **skip** (idempotent: the five completion events converge to one publish). Otherwise publish `@asher-1/acloudviewer@<app version>` — npm versions track app releases automatically. |
-| A push to `main` touching `npm/**` or the workflow itself | **patch-bump** | The bootstrap source changed; bump a fresh patch strictly above npmjs `latest` and publish. |
-| Tag `npm-vX.Y.Z` pushed | **tag** | Strict check: tag must equal `npm/package.json` version; publish that exact version. |
-| Manual **Run workflow** with a version input | **dispatch** | Force the given version and publish. |
+| Registry state | Reconcile action |
+|----------------|------------------|
+| `latest == app version` | skip (nothing to do) |
+| `latest < app version` | publish `@<app version>` — this is how npm versions track app releases, and how bootstrap source fixes reach users (they ride the next app release) |
+| `latest > app version` | re-point the `latest` dist-tag back to `<app version>` on both registries (drift repair; extra versions stay but stop being the default) |
+
+| Trigger | Behaviour |
+|---------|-----------|
+| A platform build finishes (`workflow_run` on Windows/MacOS/Ubuntu/Ubuntu CUDA/Ubuntu Wheel — the same uploaders that feed `main-devel`) | reconcile (idempotent: the five completion events converge to one action) |
+| A push to `main` touching `npm/**` or the workflow itself | reconcile (bootstrap source changes **never** create npm versions on their own — the next app release ships them) |
+| Tag `npm-vX.Y.Z` pushed | **emergency path only**: strict check that the tag equals the app version; reconcile pulls `latest` back on the next run |
+| Manual **Run workflow** with a version input | **emergency path only**: force the given version |
+
+Consequence: `npm/package.json` version is metadata, reconciled in CI — do
+not hand-edit it to release.
 
 What you actually do in the steady state:
 
