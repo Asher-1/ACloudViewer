@@ -159,8 +159,21 @@ jobs:
         if: env.SKIP != 'true' && env.NPM_TOKEN != ''
         working-directory: npm
         run: |
+          set -o pipefail
           echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
-          npm publish --access public
+          if ! npm publish --access public 2>&1 | tee /tmp/npmjs-publish.log; then
+            # A concurrent align run (workflow_run events converge; reruns
+            # race within npmjs' metadata-cache window) may publish the same
+            # version between our resolve and our PUT — that is success by
+            # definition for align. Verified 2026-11-15 (E409 "previously
+            # staged"). Other modes must fail: a 409 there means the version
+            # contract was violated and a human must look.
+            if [ "$MODE" = "align" ] && grep -qE "E409|previously published|previously staged" /tmp/npmjs-publish.log; then
+              echo "::warning::npm@$VERSION already published by a concurrent run; align is idempotent, treating as success."
+            else
+              exit 1
+            fi
+          fi
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 

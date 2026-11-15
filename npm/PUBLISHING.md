@@ -61,13 +61,31 @@ skips itself when `NPM_TOKEN` is absent). Users can install from the mirror
 via the PAT instructions in README "Channel 2"; switch them to
 `npm install -g @asher-1/acloudviewer` once npmjs goes live.
 
-### Step 2 — Create the publish token
+### Step 2 — Create the publish token (granular, bypass 2FA)
 
-1. npmjs.com → avatar → **Access Tokens** → **Generate New Token**:
-   - *Classic* → type **Automation** (safe for CI, cannot be used to log in
-     interactively), or *Granular* → permissions `Read and write` limited to
-     packages in scope `@asher-1`.
-2. Copy the token immediately (shown once, starts with `npm_`).
+npm removed classic-token creation under the 2025 security policy (classic
+tokens are fully revoked on 2026-12-09), so the **granular** page is the only
+path. On npmjs.com → avatar → **Access Tokens** → **Generate New Token**:
+
+1. **Bypass two-factor authentication** — **CHECK THIS BOX** (unchecked by
+   default). Without it every `npm publish` demands an OTP no CI can enter —
+   this exact mistake produced the first run's `EOTP` failure.
+2. **Packages and scopes → Permissions**: select
+   **Read and write (publish and stage)**.
+   Do NOT pick `Read-only` (publish is a write) or
+   `Read and write (stage only)` — staged versions wait for a human
+   maintainer to promote them, so unattended CI can never publish.
+3. **Select Packages**: `All Packages` (a fresh account holds only this
+   package; restrict to the `@asher-1` scope later once it exists).
+4. **Expiration**: the policy maximum is 90 days — tokens now always expire
+   and must be renewed (see *Token renewal* below). Copy the token
+   immediately (shown once, starts with `npm_`).
+
+> A long-term no-token alternative is npm **Trusted Publishing** (OIDC), but
+> it cannot bootstrap a first release (its configuration lives on the
+> package's settings page, which does not exist until the package is
+> published) and scoped-package OIDC publishing has an open E404 bug
+> (npm/cli#8976). Re-evaluate after the package is stable on the registry.
 
 ### Step 3 — Add the secret to GitHub
 
@@ -79,6 +97,23 @@ via the PAT instructions in README "Channel 2"; switch them to
 
 Without `NPM_TOKEN` the workflow still succeeds and publishes only the
 mirror; the npmjs step is skipped and marked as such in the run summary.
+
+### Token renewal (granular tokens expire every 90 days)
+
+npm's security policy caps token lifetime; the publish token **will** expire
+and the npmjs channel stops until it is renewed (the GitHub Packages mirror
+keeps working — it uses `GITHUB_TOKEN`). Symptoms and the renewal routine:
+
+- **Symptom in the run**: the *Publish to npmjs.org* step fails with
+  `ENEEDAUTH`, `401 Unauthorized`, or (on partially-scoped tokens) `EOTP`.
+  The version resolution step still passes — `npm view` runs anonymously.
+- **Renewal** (about once per 90 days): generate a fresh granular token
+  (same four settings as Step 2) → update the `NPM_TOKEN` secret value →
+  **Re-run failed jobs** on the failed run, or push/dispatch any trigger.
+  The align/patch-bump modes re-resolve against the registry, so re-running
+  after any gap is always safe and never re-publishes an existing version.
+- **Renewal rhythm**: set a recurring calendar reminder; aligning renewal
+  with the start of each odd month works well for a 90-day token.
 
 ---
 
@@ -256,6 +291,7 @@ npm config delete //npm.pkg.github.com/:_authToken
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | npmjs signup: `Too many requests` / 操作频繁 | Shared exit IP (VPN/office network) throttled by npmjs | See Step 1 "If signup shows Too many requests": switch exit IP, reset browser context, wait out the window; meanwhile the mirror publishes on its own |
+| npmjs step: `EOTP` / "requires a one-time password" | Token is a classic **Publish** token — 2FA-protected tokens demand an OTP on publish, which CI cannot provide (verified first run) | Regenerate the token as classic **Automation** type (or a granular token with `@asher-1` package write) and update the `NPM_TOKEN` secret; then re-run the failed job |
 | npmjs step: `403 Forbidden` | Token lacks write on the scope, or scope owned by someone else | Recreate token with package write for `@asher-1`; verify scope ownership on npmjs |
 | npmjs step: `409 Cannot publish over previously published version` | Explicit tag/dispatch reused a version that exists | Bump the version; align/patch-bump modes never hit this (they resolve against the registry first) |
 | GitHub step: `422 Unprocessable Entity` | Package scope does not match the repo owner | Scope must be `@asher-1` and the repo owner `Asher-1` — do not rename the package |
