@@ -15,12 +15,13 @@
 #include <string>
 #include <vector>
 
-#include "dino_backbone.hpp"
-#include "dpt_head.hpp"
-#include "engine.hpp"
-#include "image_io.hpp"
-#include "model_loader.hpp"
-#include "parity.hpp"
+#include "tasks/depth/dino_backbone.hpp"
+#include "tasks/depth/dpt_head.hpp"
+#include "tasks/depth/engine.hpp"
+#include "tasks/depth/image_io.hpp"
+#include "tasks/depth/model_loader.hpp"
+#include "tests/depth/whitebox/parity.hpp"
+
 int main() {
     const char* gguf = std::getenv("AICORE_TEST_DEPTH_GGUF_DA2");
     const char* base = std::getenv("AICORE_TEST_DEPTH_BASELINE_DA2");

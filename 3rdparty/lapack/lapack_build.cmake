@@ -1,5 +1,19 @@
 include(ExternalProject)
 
+# Consumers link the installed lapack/blas (and faiss the cblas wrapper) by
+# absolute path, which Ninja only accepts for files a rule generates.
+if (UNIX AND NOT APPLE)
+    set(LAPACK_LIB_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
+    set(LAPACK_LIB_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
+else ()
+    set(LAPACK_LIB_PREFIX ${CMAKE_STATIC_LIBRARY_PREFIX})
+    set(LAPACK_LIB_SUFFIX ${CMAKE_STATIC_LIBRARY_SUFFIX})
+endif ()
+set(LAPACK_BUILD_BYPRODUCTS)
+foreach (item lapack blas cblas)
+    list(APPEND LAPACK_BUILD_BYPRODUCTS <INSTALL_DIR>/lib/${LAPACK_LIB_PREFIX}${item}${LAPACK_LIB_SUFFIX})
+endforeach ()
+
 ExternalProject_Add(ext_lapack
         PREFIX lapack
         #   http://www.netlib.org/lapack/lapack-3.9.0.tar.gz
@@ -14,26 +28,31 @@ ExternalProject_Add(ext_lapack
         CMAKE_ARGS
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5
             -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux>:ON:OFF>
+            # Installed shared lapack must resolve its own NEEDED libblas:
+            # consumer RUNPATHs are non-transitive on Linux.
+            -DCMAKE_INSTALL_RPATH=$ORIGIN
             -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
             -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
             -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
             -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
             -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
             -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+            # The netlib CBLAS wrapper (libcblas.so.3) exposes cblas_sgemm and
+            # friends over the Fortran BLAS. faiss needs this C interface; the
+            # plain libblas.so.3 above only exports the Fortran symbols, and
+            # any same-soname system BLAS loses to this bundled copy at wheel
+            # load time (undefined symbol: cblas_sgemm).
+            -DCBLAS=ON
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
         DEPENDS 3rdparty_glog
+        BUILD_BYPRODUCTS ${LAPACK_BUILD_BYPRODUCTS}
 )
 
 ExternalProject_Get_Property(ext_lapack INSTALL_DIR)
 set(LAPACK_LIB_DIR ${INSTALL_DIR}/lib)
 set(LAPACKBLAS_LIBRARIES lapack blas)
 
-if (WIN32 OR APPLE)
-    set(BLAS_LIBRARIES ${INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}blas${CMAKE_STATIC_LIBRARY_SUFFIX})
-    set(LAPACK_LIBRARIES ${INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}lapack${CMAKE_STATIC_LIBRARY_SUFFIX})
-else()
-    set(BLAS_LIBRARIES ${INSTALL_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}blas${CMAKE_SHARED_LIBRARY_SUFFIX})
-    set(LAPACK_LIBRARIES ${INSTALL_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}lapack${CMAKE_SHARED_LIBRARY_SUFFIX})
-endif()
+set(BLAS_LIBRARIES ${INSTALL_DIR}/lib/${LAPACK_LIB_PREFIX}blas${LAPACK_LIB_SUFFIX})
+set(LAPACK_LIBRARIES ${INSTALL_DIR}/lib/${LAPACK_LIB_PREFIX}lapack${LAPACK_LIB_SUFFIX})
 
 set(LAPACK_CMAKE_FLAGS -DBLAS=${BLAS_LIBRARIES} -DLAPACK=${LAPACK_LIBRARIES} -DBLAS_LIBRARIES=${BLAS_LIBRARIES} -DLAPACK_LIBRARIES=${LAPACK_LIBRARIES})

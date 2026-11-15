@@ -17,6 +17,7 @@
 #include <QMessageBox>
 #include <QUuid>
 
+#include "FaceDetectBatchCommand.h"
 #include "ecvPersistentSettings.h"
 
 #ifdef AICore_ENABLED
@@ -46,6 +47,14 @@ qFaceDetect::qFaceDetect(QObject* parent)
 }
 
 QList<QAction*> qFaceDetect::getActions() { return {m_action}; }
+
+void qFaceDetect::registerCommands(ccCommandLineInterface* cmd) {
+    if (cmd == nullptr) {
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandFaceDetect));
+}
 
 void qFaceDetect::onNewSelection(const ccHObject::Container& selectedEntities) {
     m_selectedEntities = selectedEntities;
@@ -340,9 +349,13 @@ void qFaceDetect::addResultToDb(const FaceDetectRunResult& result,
     const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
             result.resolvedDevice.isEmpty() ? settings.device
                                             : result.resolvedDevice);
+    // Model tag keeps runs from different checkpoint variants separable
+    // in the DB tree (source + device alone collide across variants).
+    const QString modelTag =
+            ecvPluginDbNaming::modelTagFromFilename(settings.modelPath);
     const QString name = ecvPluginDbNaming::makeUnique(
-            QStringLiteral("FaceDetect_%1_%2_%3")
-                    .arg(suffix, sourceLabel, deviceTag),
+            QStringLiteral("FaceDetect_%1_%2_%3_%4")
+                    .arg(suffix, modelTag, sourceLabel, deviceTag),
             m_app);
     auto* img = new ccImage(result.annotatedImage, name);
     img->setMetaData(QStringLiteral("FaceDetect"), true);
@@ -418,8 +431,11 @@ void qFaceDetect::onAuthVisualizationReady(const QImage& annotated,
     if (!m_app || annotated.isNull()) return;
     const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
             m_dialog ? m_dialog->getSettings().device : QStringLiteral("auto"));
+    const QString modelTag = ecvPluginDbNaming::modelTagFromFilename(
+            m_dialog ? m_dialog->getSettings().modelPath : QString());
     const QString name = ecvPluginDbNaming::makeUnique(
-            QStringLiteral("FaceDetect_auth_%1").arg(deviceTag), m_app);
+            QStringLiteral("FaceDetect_auth_%1_%2").arg(modelTag, deviceTag),
+            m_app);
     auto* img = new ccImage(annotated, name);
     img->setMetaData(QStringLiteral("FaceDetect"), true);
     img->setMetaData(QStringLiteral("FaceDetectMode"), QStringLiteral("auth"));

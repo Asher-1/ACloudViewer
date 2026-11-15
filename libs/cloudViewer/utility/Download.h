@@ -32,7 +32,8 @@ std::string DownloadFromURL(const std::string& url,
 
 /// \brief Download a file from list of mirror URLs. If a file already exists
 /// and the MD5 hash matches, the download will be skipped. All file names must
-/// be the same in mirrors.
+/// be the same in mirrors. Each mirror is attempted a few times before
+/// falling back to the next mirror.
 ///
 /// \param mirrors List of file mirror URLs for the same file. The saved
 /// file name will be the last part of the URL.

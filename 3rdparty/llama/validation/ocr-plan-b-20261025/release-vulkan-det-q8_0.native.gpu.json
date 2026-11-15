@@ -1,0 +1,856 @@
+{
+  "schema": 2,
+  "audit_id": "d45ce03120dd4af89181dec417207f85",
+  "strict": true,
+  "preflight_rule": "three samples without foreign C or C+G contexts; graphics-only activity and total utilization are informational",
+  "memory_scope": "sampled driver process/device memory; not exact allocator peak",
+  "waiting_samples": [
+    {
+      "devices": [
+        {
+          "uuid": "GPU-a0f86a5b-afe7-bee6-18b3-5d04ff919186",
+          "name": "NVIDIA GeForce RTX 3060",
+          "driver": "550.144.03",
+          "utilization_pct": 16.0,
+          "used_mib": 1493.0,
+          "sm_clock_mhz": 1807.0,
+          "memory_clock_mhz": 7500.0,
+          "temperature_c": 47.0,
+          "power_w": null,
+          "processes": [
+            {
+              "pid": 1297,
+              "type": "G",
+              "used_mib": 96.0
+            },
+            {
+              "pid": 3986,
+              "type": "G",
+              "used_mib": 762.0
+            },
+            {
+              "pid": 4162,
+              "type": "G",
+              "used_mib": 162.0
+            },
+            {
+              "pid": 6694,
+              "type": "G",
+              "used_mib": 186.0
+            },
+            {
+              "pid": 161190,
+              "type": "G",
+              "used_mib": 260.0
+            }
+          ]
+        }
+      ],
+      "activity": [
+        {
+          "pid": 1297,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 3986,
+          "type": "G",
+          "sm_pct": 2.0
+        },
+        {
+          "pid": 4162,
+          "type": "G",
+          "sm_pct": 2.0
+        },
+        {
+          "pid": 6694,
+          "type": "G",
+          "sm_pct": 13.0
+        },
+        {
+          "pid": 161190,
+          "type": "G",
+          "sm_pct": null
+        }
+      ]
+    },
+    {
+      "devices": [
+        {
+          "uuid": "GPU-a0f86a5b-afe7-bee6-18b3-5d04ff919186",
+          "name": "NVIDIA GeForce RTX 3060",
+          "driver": "550.144.03",
+          "utilization_pct": 16.0,
+          "used_mib": 1493.0,
+          "sm_clock_mhz": 1807.0,
+          "memory_clock_mhz": 7500.0,
+          "temperature_c": 47.0,
+          "power_w": null,
+          "processes": [
+            {
+              "pid": 1297,
+              "type": "G",
+              "used_mib": 96.0
+            },
+            {
+              "pid": 3986,
+              "type": "G",
+              "used_mib": 762.0
+            },
+            {
+              "pid": 4162,
+              "type": "G",
+              "used_mib": 162.0
+            },
+            {
+              "pid": 6694,
+              "type": "G",
+              "used_mib": 186.0
+            },
+            {
+              "pid": 161190,
+              "type": "G",
+              "used_mib": 261.0
+            }
+          ]
+        }
+      ],
+      "activity": [
+        {
+          "pid": 1297,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 3986,
+          "type": "G",
+          "sm_pct": 3.0
+        },
+        {
+          "pid": 4162,
+          "type": "G",
+          "sm_pct": 3.0
+        },
+        {
+          "pid": 6694,
+          "type": "G",
+          "sm_pct": 10.0
+        },
+        {
+          "pid": 161190,
+          "type": "G",
+          "sm_pct": null
+        }
+      ]
+    },
+    {
+      "devices": [
+        {
+          "uuid": "GPU-a0f86a5b-afe7-bee6-18b3-5d04ff919186",
+          "name": "NVIDIA GeForce RTX 3060",
+          "driver": "550.144.03",
+          "utilization_pct": 18.0,
+          "used_mib": 1493.0,
+          "sm_clock_mhz": 1807.0,
+          "memory_clock_mhz": 7500.0,
+          "temperature_c": 47.0,
+          "power_w": null,
+          "processes": [
+            {
+              "pid": 1297,
+              "type": "G",
+              "used_mib": 96.0
+            },
+            {
+              "pid": 3986,
+              "type": "G",
+              "used_mib": 762.0
+            },
+            {
+              "pid": 4162,
+              "type": "G",
+              "used_mib": 162.0
+            },
+            {
+              "pid": 6694,
+              "type": "G",
+              "used_mib": 186.0
+            },
+            {
+              "pid": 161190,
+              "type": "G",
+              "used_mib": 261.0
+            }
+          ]
+        }
+      ],
+      "activity": [
+        {
+          "pid": 1297,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 3986,
+          "type": "G",
+          "sm_pct": 2.0
+        },
+        {
+          "pid": 4162,
+          "type": "G",
+          "sm_pct": 4.0
+        },
+        {
+          "pid": 6694,
+          "type": "G",
+          "sm_pct": 9.0
+        },
+        {
+          "pid": 161190,
+          "type": "G",
+          "sm_pct": null
+        }
+      ]
+    }
+  ],
+  "samples": [
+    {
+      "devices": [
+        {
+          "uuid": "GPU-a0f86a5b-afe7-bee6-18b3-5d04ff919186",
+          "name": "NVIDIA GeForce RTX 3060",
+          "driver": "550.144.03",
+          "utilization_pct": 19.0,
+          "used_mib": 1493.0,
+          "sm_clock_mhz": 1807.0,
+          "memory_clock_mhz": 7500.0,
+          "temperature_c": 47.0,
+          "power_w": null,
+          "processes": [
+            {
+              "pid": 1297,
+              "type": "G",
+              "used_mib": 96.0
+            },
+            {
+              "pid": 3986,
+              "type": "G",
+              "used_mib": 762.0
+            },
+            {
+              "pid": 4162,
+              "type": "G",
+              "used_mib": 162.0
+            },
+            {
+              "pid": 6694,
+              "type": "G",
+              "used_mib": 186.0
+            },
+            {
+              "pid": 161190,
+              "type": "G",
+              "used_mib": 260.0
+            }
+          ]
+        }
+      ],
+      "activity": [
+        {
+          "pid": 1297,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 3986,
+          "type": "G",
+          "sm_pct": 1.0
+        },
+        {
+          "pid": 4162,
+          "type": "G",
+          "sm_pct": 3.0
+        },
+        {
+          "pid": 6694,
+          "type": "G",
+          "sm_pct": 11.0
+        },
+        {
+          "pid": 161190,
+          "type": "G",
+          "sm_pct": null
+        }
+      ],
+      "seconds": 0.2528375369729474
+    },
+    {
+      "devices": [
+        {
+          "uuid": "GPU-a0f86a5b-afe7-bee6-18b3-5d04ff919186",
+          "name": "NVIDIA GeForce RTX 3060",
+          "driver": "550.144.03",
+          "utilization_pct": 23.0,
+          "used_mib": 1499.0,
+          "sm_clock_mhz": 1807.0,
+          "memory_clock_mhz": 7500.0,
+          "temperature_c": 47.0,
+          "power_w": null,
+          "processes": [
+            {
+              "pid": 1297,
+              "type": "G",
+              "used_mib": 96.0
+            },
+            {
+              "pid": 3986,
+              "type": "G",
+              "used_mib": 762.0
+            },
+            {
+              "pid": 4162,
+              "type": "G",
+              "used_mib": 162.0
+            },
+            {
+              "pid": 6694,
+              "type": "G",
+              "used_mib": 186.0
+            },
+            {
+              "pid": 161190,
+              "type": "G",
+              "used_mib": 260.0
+            },
+            {
+              "pid": 3206163,
+              "type": "C+G",
+              "used_mib": 4.0
+            }
+          ]
+        }
+      ],
+      "activity": [
+        {
+          "pid": 1297,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 3986,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 4162,
+          "type": "G",
+          "sm_pct": 6.0
+        },
+        {
+          "pid": 6694,
+          "type": "G",
+          "sm_pct": 12.0
+        },
+        {
+          "pid": 161190,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 3206163,
+          "type": "C+G",
+          "sm_pct": null
+        }
+      ],
+      "seconds": 0.5747706120600924
+    },
+    {
+      "devices": [
+        {
+          "uuid": "GPU-a0f86a5b-afe7-bee6-18b3-5d04ff919186",
+          "name": "NVIDIA GeForce RTX 3060",
+          "driver": "550.144.03",
+          "utilization_pct": 66.0,
+          "used_mib": 1669.0,
+          "sm_clock_mhz": 1950.0,
+          "memory_clock_mhz": 7500.0,
+          "temperature_c": 48.0,
+          "power_w": null,
+          "processes": [
+            {
+              "pid": 1297,
+              "type": "G",
+              "used_mib": 96.0
+            },
+            {
+              "pid": 3986,
+              "type": "G",
+              "used_mib": 762.0
+            },
+            {
+              "pid": 4162,
+              "type": "G",
+              "used_mib": 162.0
+            },
+            {
+              "pid": 6694,
+              "type": "G",
+              "used_mib": 186.0
+            },
+            {
+              "pid": 161190,
+              "type": "G",
+              "used_mib": 260.0
+            },
+            {
+              "pid": 3206163,
+              "type": "C+G",
+              "used_mib": 166.0
+            }
+          ]
+        }
+      ],
+      "activity": [
+        {
+          "pid": 1297,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 3986,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 4162,
+          "type": "G",
+          "sm_pct": 4.0
+        },
+        {
+          "pid": 6694,
+          "type": "G",
+          "sm_pct": 17.0
+        },
+        {
+          "pid": 161190,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 3206163,
+          "type": "C+G",
+          "sm_pct": 3.0
+        }
+      ],
+      "seconds": 0.8838959820568562
+    },
+    {
+      "devices": [
+        {
+          "uuid": "GPU-a0f86a5b-afe7-bee6-18b3-5d04ff919186",
+          "name": "NVIDIA GeForce RTX 3060",
+          "driver": "550.144.03",
+          "utilization_pct": 18.0,
+          "used_mib": 1669.0,
+          "sm_clock_mhz": 1950.0,
+          "memory_clock_mhz": 7500.0,
+          "temperature_c": 48.0,
+          "power_w": null,
+          "processes": [
+            {
+              "pid": 1297,
+              "type": "G",
+              "used_mib": 96.0
+            },
+            {
+              "pid": 3986,
+              "type": "G",
+              "used_mib": 762.0
+            },
+            {
+              "pid": 4162,
+              "type": "G",
+              "used_mib": 162.0
+            },
+            {
+              "pid": 6694,
+              "type": "G",
+              "used_mib": 186.0
+            },
+            {
+              "pid": 161190,
+              "type": "G",
+              "used_mib": 260.0
+            },
+            {
+              "pid": 3206163,
+              "type": "C+G",
+              "used_mib": 166.0
+            }
+          ]
+        }
+      ],
+      "activity": [
+        {
+          "pid": 1297,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 3986,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 4162,
+          "type": "G",
+          "sm_pct": 6.0
+        },
+        {
+          "pid": 6694,
+          "type": "G",
+          "sm_pct": 15.0
+        },
+        {
+          "pid": 161190,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 3206163,
+          "type": "C+G",
+          "sm_pct": 3.0
+        }
+      ],
+      "seconds": 1.2301808029878885
+    },
+    {
+      "devices": [
+        {
+          "uuid": "GPU-a0f86a5b-afe7-bee6-18b3-5d04ff919186",
+          "name": "NVIDIA GeForce RTX 3060",
+          "driver": "550.144.03",
+          "utilization_pct": 19.0,
+          "used_mib": 1669.0,
+          "sm_clock_mhz": 1950.0,
+          "memory_clock_mhz": 7500.0,
+          "temperature_c": 48.0,
+          "power_w": null,
+          "processes": [
+            {
+              "pid": 1297,
+              "type": "G",
+              "used_mib": 96.0
+            },
+            {
+              "pid": 3986,
+              "type": "G",
+              "used_mib": 762.0
+            },
+            {
+              "pid": 4162,
+              "type": "G",
+              "used_mib": 162.0
+            },
+            {
+              "pid": 6694,
+              "type": "G",
+              "used_mib": 186.0
+            },
+            {
+              "pid": 161190,
+              "type": "G",
+              "used_mib": 260.0
+            },
+            {
+              "pid": 3206163,
+              "type": "C+G",
+              "used_mib": 166.0
+            }
+          ]
+        }
+      ],
+      "activity": [
+        {
+          "pid": 1297,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 3986,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 4162,
+          "type": "G",
+          "sm_pct": 6.0
+        },
+        {
+          "pid": 6694,
+          "type": "G",
+          "sm_pct": 17.0
+        },
+        {
+          "pid": 161190,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 3206163,
+          "type": "C+G",
+          "sm_pct": 5.0
+        }
+      ],
+      "seconds": 1.5448951369617134
+    },
+    {
+      "devices": [
+        {
+          "uuid": "GPU-a0f86a5b-afe7-bee6-18b3-5d04ff919186",
+          "name": "NVIDIA GeForce RTX 3060",
+          "driver": "550.144.03",
+          "utilization_pct": 16.0,
+          "used_mib": 1669.0,
+          "sm_clock_mhz": 1950.0,
+          "memory_clock_mhz": 7500.0,
+          "temperature_c": 48.0,
+          "power_w": null,
+          "processes": [
+            {
+              "pid": 1297,
+              "type": "G",
+              "used_mib": 96.0
+            },
+            {
+              "pid": 3986,
+              "type": "G",
+              "used_mib": 762.0
+            },
+            {
+              "pid": 4162,
+              "type": "G",
+              "used_mib": 162.0
+            },
+            {
+              "pid": 6694,
+              "type": "G",
+              "used_mib": 186.0
+            },
+            {
+              "pid": 161190,
+              "type": "G",
+              "used_mib": 260.0
+            },
+            {
+              "pid": 3206163,
+              "type": "C+G",
+              "used_mib": 166.0
+            }
+          ]
+        }
+      ],
+      "activity": [
+        {
+          "pid": 1297,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 3986,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 4162,
+          "type": "G",
+          "sm_pct": 5.0
+        },
+        {
+          "pid": 6694,
+          "type": "G",
+          "sm_pct": 16.0
+        },
+        {
+          "pid": 161190,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 3206163,
+          "type": "C+G",
+          "sm_pct": 4.0
+        }
+      ],
+      "seconds": 1.8137333820341155
+    },
+    {
+      "devices": [
+        {
+          "uuid": "GPU-a0f86a5b-afe7-bee6-18b3-5d04ff919186",
+          "name": "NVIDIA GeForce RTX 3060",
+          "driver": "550.144.03",
+          "utilization_pct": 17.0,
+          "used_mib": 1669.0,
+          "sm_clock_mhz": 1950.0,
+          "memory_clock_mhz": 7500.0,
+          "temperature_c": 48.0,
+          "power_w": null,
+          "processes": [
+            {
+              "pid": 1297,
+              "type": "G",
+              "used_mib": 96.0
+            },
+            {
+              "pid": 3986,
+              "type": "G",
+              "used_mib": 762.0
+            },
+            {
+              "pid": 4162,
+              "type": "G",
+              "used_mib": 162.0
+            },
+            {
+              "pid": 6694,
+              "type": "G",
+              "used_mib": 186.0
+            },
+            {
+              "pid": 161190,
+              "type": "G",
+              "used_mib": 260.0
+            },
+            {
+              "pid": 3206163,
+              "type": "C+G",
+              "used_mib": 166.0
+            }
+          ]
+        }
+      ],
+      "activity": [
+        {
+          "pid": 1297,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 3986,
+          "type": "G",
+          "sm_pct": 1.0
+        },
+        {
+          "pid": 4162,
+          "type": "G",
+          "sm_pct": 4.0
+        },
+        {
+          "pid": 6694,
+          "type": "G",
+          "sm_pct": 15.0
+        },
+        {
+          "pid": 161190,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 3206163,
+          "type": "C+G",
+          "sm_pct": 3.0
+        }
+      ],
+      "seconds": 2.1012043959926814
+    },
+    {
+      "devices": [
+        {
+          "uuid": "GPU-a0f86a5b-afe7-bee6-18b3-5d04ff919186",
+          "name": "NVIDIA GeForce RTX 3060",
+          "driver": "550.144.03",
+          "utilization_pct": 17.0,
+          "used_mib": 1492.0,
+          "sm_clock_mhz": 1950.0,
+          "memory_clock_mhz": 7500.0,
+          "temperature_c": 48.0,
+          "power_w": null,
+          "processes": [
+            {
+              "pid": 1297,
+              "type": "G",
+              "used_mib": 96.0
+            },
+            {
+              "pid": 3986,
+              "type": "G",
+              "used_mib": 762.0
+            },
+            {
+              "pid": 4162,
+              "type": "G",
+              "used_mib": 162.0
+            },
+            {
+              "pid": 6694,
+              "type": "G",
+              "used_mib": 186.0
+            },
+            {
+              "pid": 161190,
+              "type": "G",
+              "used_mib": 260.0
+            }
+          ]
+        }
+      ],
+      "activity": [
+        {
+          "pid": 1297,
+          "type": "G",
+          "sm_pct": null
+        },
+        {
+          "pid": 3986,
+          "type": "G",
+          "sm_pct": 2.0
+        },
+        {
+          "pid": 4162,
+          "type": "G",
+          "sm_pct": 3.0
+        },
+        {
+          "pid": 6694,
+          "type": "G",
+          "sm_pct": 10.0
+        },
+        {
+          "pid": 161190,
+          "type": "G",
+          "sm_pct": null
+        }
+      ],
+      "seconds": 2.4393555159913376
+    }
+  ],
+  "owner_pid": 3206163,
+  "passed": true,
+  "external_active_pids": [],
+  "external_compute_pids": [],
+  "normal_graphics_pids": [
+    1297,
+    3986,
+    4162,
+    6694,
+    161190
+  ],
+  "errors": [],
+  "sample_count": 8,
+  "owner_memory_sample_count": 6,
+  "sampled_process_peak_mib": 166.0,
+  "sampled_device_peak_mib": 1669.0,
+  "preflight_passed": true,
+  "archive_path": "/home/ludahai/develop/code/github/ACloudViewer/build_llama_production_20261023/Testing/ocr-im2col-85e55y1b/release-vulkan-det-q8_0.native.gpu.d/d45ce03120dd4af89181dec417207f85.json"
+}

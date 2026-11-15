@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/CC/plugin/qQuerySplat">
+        <file>info.json</file>
+        <file>images/qQuerySplat.svg</file>
+    </qresource>
+</RCC>

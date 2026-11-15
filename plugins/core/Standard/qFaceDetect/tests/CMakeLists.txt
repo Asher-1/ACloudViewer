@@ -33,3 +33,4 @@ endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_qfacedetect_embed_helpers)
 add_test(NAME test_qfacedetect_embed_helpers COMMAND test_qfacedetect_embed_helpers)
+cloudviewer_set_plugin_test_env(test_qfacedetect_embed_helpers)

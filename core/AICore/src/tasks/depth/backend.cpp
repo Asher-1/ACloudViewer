@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "backend.hpp"
+#include "tasks/depth/backend.hpp"
 
 #include <cctype>
 #include <cstdlib>
@@ -14,11 +14,12 @@
 #include <vector>
 
 #include "aicore/runtime_capi.h"
-#include "common.hpp"
+#include "common/ggml_backend_utils.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
-#include "ggml_backend_utils.hpp"
+#include "tasks/depth/common.hpp"
+
 #if !defined(AICORE_BACKEND_DL)
 #include "ggml-cpu.h"
 #endif
@@ -81,8 +82,12 @@ struct Backend::Impl {
     std::vector<ggml_tensor*> roots;
 };
 
-Backend::Backend(const std::string& device, int n_threads) : impl_(new Impl()) {
+Backend::Backend(const std::string& device,
+                 int n_threads,
+                 bool keep_graph_buffers)
+    : impl_(new Impl()) {
     n_threads_ = n_threads > 0 ? n_threads : 1;
+    keep_graph_buffers_ = keep_graph_buffers;
     ggml_common::load_backends_once();
     clear_sticky_cuda_errors();
 
@@ -531,7 +536,9 @@ bool Backend::compute(const std::function<ggml_tensor*(ggml_context*)>& build,
     ggml_free(ctx);
     // GPU: do not keep the persistent gallocr high-water across separate
     // backbone / head / pose graphs — each subgraph only pays its own peak.
-    if (impl_->use_sched || impl_->galloc) {
+    // keep_graph_buffers_ opts out: repeated same-shape graphs (video frames)
+    // skip the per-call allocator rebuild at the cost of the high-water mark.
+    if (!keep_graph_buffers_ && (impl_->use_sched || impl_->galloc)) {
         drop_transient_allocators();
     }
     return true;

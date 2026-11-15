@@ -4,7 +4,7 @@
       "command": "cli-anything-acloudviewer-mcp",
       "args": ["--mode", "auto"],
       "env": {
-        "ACV_RPC_URL": "ws://localhost:6001"
+        "ACV_RPC_URL": "ws://127.0.0.1:6001"
       }
     },
     "acloudviewer-headless": {
@@ -13,7 +13,7 @@
     },
     "acloudviewer-gui": {
       "command": "cli-anything-acloudviewer-mcp",
-      "args": ["--mode", "gui", "--rpc-url", "ws://localhost:6001"]
+      "args": ["--mode", "gui", "--rpc-url", "ws://127.0.0.1:6001"]
     }
   }
 }

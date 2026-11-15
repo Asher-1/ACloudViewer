@@ -12,8 +12,11 @@ fresh venv must additionally run:
     pip uninstall -y torchvision   # if a mismatched torchvision is present
 The stub assumes torchvision is never genuinely needed on the backbone path
 (true here: fixed_input normalizes in numpy, so T.Normalize is never exercised)."""
-import sys, numpy as np, torch
-sys.path.insert(0, "/tmp/da3-src/src")
+import os, sys, numpy as np, torch
+DA3_SRC = os.environ.get("DA3_SRC", "")
+if not DA3_SRC:
+    raise RuntimeError("DA3_SRC must point to the upstream depth-anything-3/src directory")
+sys.path.insert(0, DA3_SRC)
 
 PATCH = 14
 # Fixed small resolution: multiple of patch, fast on CPU. k=16 -> 224x224 -> 16x16 patches.

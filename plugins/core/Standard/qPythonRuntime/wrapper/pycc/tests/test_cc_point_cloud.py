@@ -27,7 +27,8 @@ def test_cc_point_cloud_from_sequences():
 
     sfArray = pc.getScalarField(idx).asArray()
     sfArray[:] = np.ones(pc.size()) * 2
-    assert np.all(sfArray == 2)
+    assert np.all(sfArray == 2.0)
+    np.testing.assert_array_equal(pc.getScalarField(idx).toArray(), np.full(5, 2.0))
 
     # test our helper function
     pc.addScalarField("something", np.array([1.0, 2.0, 3.0, 4.0, 5.0], pycc.ScalarType))
@@ -38,6 +39,17 @@ def test_cc_point_cloud_from_sequences():
 
     with pytest.raises(ValueError):
         pc.addScalarField("wrong_size", np.array([1.0], pycc.ScalarType))
+
+
+def test_scalar_field_numpy_view_retains_deleted_cloud_field():
+    pc = pycc.ccPointCloud("owner")
+    pc.resize(4)
+    index = pc.addScalarField("values")
+    view = pc.getScalarField(index).asArray()
+    assert view.dtype == np.dtype(pycc.ScalarType)
+    pc.deleteScalarField(index)
+    view[:] = [1.0, 2.0, 3.0, 4.0]
+    np.testing.assert_array_equal(np.add(view, 1.0), [2.0, 3.0, 4.0, 5.0])
 
 
 def test_add_remove_scalar_field():

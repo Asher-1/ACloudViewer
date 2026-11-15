@@ -164,6 +164,14 @@ void ecvRepresentationManager::removeRepresentationsForEntity(
         }
         emit representationRemoved(entity, view);
     }
+    // Multi-window sweep: representations only exist for views where the
+    // entity was property-edited, while a removed entity may be RENDERED in
+    // every view (composite groups included). A null view tells the engine
+    // callback to sweep ALL windows; the per-entity teardown is idempotent,
+    // so overlapping with removedViews above is safe.
+    if (m_actorCleanup) {
+        m_actorCleanup(entity, nullptr);
+    }
 }
 
 void ecvRepresentationManager::removeRepresentationsForView(

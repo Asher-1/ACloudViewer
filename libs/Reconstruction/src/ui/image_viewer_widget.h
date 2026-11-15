@@ -9,12 +9,13 @@
 
 #include <QtCore>
 #include <QtWidgets>
+#include <filesystem>
 
-#include "base/database.h"
-#include "base/projection.h"
-#include "base/reconstruction.h"
+#include "controllers/option_manager.h"
+#include "scene/database.h"
+#include "scene/projection.h"
+#include "scene/reconstruction.h"
 #include "ui/qt_utils.h"
-#include "util/option_manager.h"
 
 namespace colmap {
 
@@ -36,7 +37,7 @@ public:
 
     void ShowBitmap(const Bitmap& bitmap);
     void ShowPixmap(const QPixmap& pixmap);
-    void ReadAndShow(const std::string& path);
+    void ReadAndShow(const std::filesystem::path& path);
 
 private:
     static const double kZoomFactor;
@@ -59,12 +60,12 @@ class FeatureImageViewerWidget : public ImageViewerWidget {
 public:
     FeatureImageViewerWidget(QWidget* parent, const std::string& switch_text);
 
-    void ReadAndShowWithKeypoints(const std::string& path,
+    void ReadAndShowWithKeypoints(const std::filesystem::path& path,
                                   const FeatureKeypoints& keypoints,
                                   const std::vector<char>& tri_mask);
 
-    void ReadAndShowWithMatches(const std::string& path1,
-                                const std::string& path2,
+    void ReadAndShowWithMatches(const std::filesystem::path& path1,
+                                const std::filesystem::path& path2,
                                 const FeatureKeypoints& keypoints1,
                                 const FeatureKeypoints& keypoints2,
                                 const FeatureMatches& matches);

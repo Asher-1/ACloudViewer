@@ -51,7 +51,8 @@ def main():
 
     cloud.setPointScalarValue(17, 42.1337)
     print(cloud.getPointScalarValue(17))
-    assert cloud.getPointScalarValue(17) == float(np.float32(42.1337))
+    # Convert the input literal using the public core dtype, not the tested getter.
+    assert cloud.getPointScalarValue(17) == float(np.asarray(42.1337, dtype=pycc.ScalarType))
 
     p = cloud.getNextPoint()
     assert p.x == point1.x

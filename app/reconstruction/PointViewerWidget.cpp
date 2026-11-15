@@ -12,10 +12,11 @@
 #include <cmath>
 
 #include "ModelViewerWidget.h"
+#include "controllers/option_manager.h"
+#include "scene/projection.h"
+#include "sensor/bitmap.h"
 #include "ui/qt_utils.h"
-#include "util/bitmap.h"
 #include "util/misc.h"
-#include "util/option_manager.h"
 
 namespace cloudViewer {
 
@@ -171,7 +172,7 @@ void PointViewerWidget::Show(const point3D_t point3D_id) {
         const double reproj_error = (point2D.XY() - proj_point2D).norm();
 
         colmap::Bitmap bitmap;
-        const std::string path = JoinPaths(*options_->image_path, image.Name());
+        const std::filesystem::path path = *options_->image_path / image.Name();
         if (!bitmap.Read(path, true)) {
             std::cerr << "ERROR: Cannot read image at path " << path
                       << std::endl;

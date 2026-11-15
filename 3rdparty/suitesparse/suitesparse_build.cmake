@@ -1,5 +1,16 @@
 include(ExternalProject)
 
+# Vendored metis/GKlib (suitesparse-metis-for-windows @ 7bc503b) consumes
+# OpenMP through metis/GKlib/GKlibSystem.cmake, which predates FindOpenMP's
+# separate include-dir reporting: on a successful probe it appends only
+# "${OpenMP_C_FLAGS}" next to -D__OPENMP__. On AppleClang with CMake >= 3.27,
+# OpenMP_C_FLAGS never carries -I<dir>, so OPENMP_EXTERNAL_STEER_ARGS pins
+# the subproject's probe to this build's libomp and the block our
+# CMakeLists.txt appends to libmetis/CMakeLists.txt attaches the include dirs
+# and runtime library to the metis target (see find_dependencies.cmake).
+# Without a steerable libomp the probe fails and metis degrades to the
+# historical no-OpenMP build.
+
 ExternalProject_Add(ext_suitesparse
        PREFIX suitesparse
        URL https://codeload.github.com/jlblancoc/suitesparse-metis-for-windows/zip/7bc503bfa2c4f1be9176147d36daf9e18340780a
@@ -14,6 +25,7 @@ ExternalProject_Add(ext_suitesparse
        CMAKE_ARGS
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5
             -DOPENMP=${WITH_OPENMP}
+            ${OPENMP_EXTERNAL_STEER_ARGS}
             -DBUILD_SHARED_LIBS=OFF
             -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
             -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}

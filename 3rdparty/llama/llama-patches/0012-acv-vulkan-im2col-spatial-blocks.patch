@@ -1,0 +1,69 @@
+--- a/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -9892,6 +9892,12 @@
+             const uint32_t batch = src1->ne[is_2D ? 3 : 2];
+ 
+             const uint32_t CHW = IC * KH * KW;
++            const uint64_t count = uint64_t(CHW) * OW * OH * batch;
++            if (IC <= 32 && uint64_t(OW) * OH >= 16384 && count <= INT32_MAX) {
++                const uint64_t cap = uint64_t(ctx->device->properties.limits.maxComputeWorkGroupCount[0]) * 512;
++                elements = { uint32_t(std::min(count, cap)), 1, 1 };
++                break;
++            }
+             // Cap X workgroups to limit concurrent IC channel reads.
+             // The shader loops over X to cover the full CHW dimension.
+             // AMD prefers a lower limit
+--- a/src/ggml-vulkan/vulkan-shaders/im2col.comp
++++ b/src/ggml-vulkan/vulkan-shaders/im2col.comp
+@@ -125,7 +125,51 @@
+     } while (wg_x * 512 < p.CHW);
+ }
+ 
++// Low-channel image stems otherwise launch a mostly idle workgroup for
++// every spatial position. Gather consecutive output elements instead, retaining
++// the original input addressing, zero padding and destination conversion.
++void im2col_spatial() {
++    const uint count = p.CHW * p.OW * p.OH_batch;
++    const uint stride = gl_NumWorkGroups.x * 512;
++    for (uint base = gl_WorkGroupID.x * 512; base < count; base += stride) {
++        for (uint lane = gl_LocalInvocationID.x; lane < 512; lane += BLOCK_SIZE) {
++            const uint index = base + lane;
++            if (index >= count) {
++                break;
++            }
++            uint window = index % p.CHW;
++            uint spatial = index / p.CHW;
++            const uint ow = spatial % p.OW;
++            spatial /= p.OW;
++            const uint oh = spatial % p.OH;
++            const uint batch = spatial / p.OH;
++            const uint kx = window % p.KW;
++            window /= p.KW;
++            const uint ky = window % p.KH;
++            const uint channel = window / p.KH;
++            const int iw = int(ow * p.s0 + kx * p.d0) - p.p0;
++            const int ih = int(oh * p.s1 + ky * p.d1) - p.p1;
++            A_TYPE val = A_TYPE(0);
++            if (uint(iw) < p.IW && uint(ih) < p.IH) {
++                val = data_a[batch * p.batch_offset + channel * p.offset_delta +
++                             uint(ih) * p.IW + uint(iw)];
++            }
++#if BDA
++            D_ptr(p.dst_addr + D_SIZE * BDA_OFFSET_T(index)).d = D_TYPE(val);
++#else
++            data_d[index] = D_TYPE(val);
++#endif
++        }
++    }
++}
++
+ void main() {
++    // Match the host guard without overflowing the 32-bit shader index space.
++    if (p.IC <= 32 && p.OW <= 2147483647u / p.OH_batch / p.CHW &&
++        p.OW * p.OH >= 16384) {
++        im2col_spatial();
++        return;
++    }
+     uint ow = gl_GlobalInvocationID.y;
+     while (ow < p.OW) {
+         uint z = gl_GlobalInvocationID.z;

@@ -7,12 +7,16 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "aicore/depth_capi.h"
-#include "common/test_macros.hpp"
+#include "tests/common/test_macros.hpp"
+#include "tests/common/validation_probe.hpp"
 
 namespace {
 
@@ -27,28 +31,33 @@ struct DenseResult {
 };
 
 bool RunDense(aicore_depth_ctx* ctx, const char* image, DenseResult& result) {
-    float* depth = nullptr;
-    float* confidence = nullptr;
-    float* sky = nullptr;
-    if (aicore_depth_depth_dense(ctx, image, &result.height, &result.width,
-                                 &depth, &confidence, &sky, result.ext,
-                                 result.intr, &result.metric) != 0 ||
-        !depth || result.height <= 0 || result.width <= 0) {
-        aicore_depth_free_floats(depth);
-        aicore_depth_free_floats(confidence);
-        aicore_depth_free_floats(sky);
+    aicore_depth_dense_result dense{};
+    if (aicore_depth_depth_dense(ctx, image, &dense) != 0 || !dense.depth ||
+        dense.height <= 0 || dense.width <= 0) {
+        aicore_depth_dense_result_free(&dense);
         return false;
     }
+    result.height = dense.height;
+    result.width = dense.width;
+    result.metric = dense.is_metric;
+    std::copy(dense.ext, dense.ext + 12, result.ext);
+    std::copy(dense.intr, dense.intr + 9, result.intr);
     const size_t count = static_cast<size_t>(result.height) * result.width;
-    result.depth.assign(depth, depth + count);
-    if (confidence) result.confidence.assign(confidence, confidence + count);
-    aicore_depth_free_floats(depth);
-    aicore_depth_free_floats(confidence);
-    aicore_depth_free_floats(sky);
+    result.depth.assign(dense.depth, dense.depth + count);
+    if (dense.conf) {
+        result.confidence.assign(dense.conf, dense.conf + count);
+    }
+    aicore_depth_dense_result_free(&dense);
     return true;
 }
 
-bool Compare(const std::vector<float>& reference,
+// Relative MAE per compared tensor, emitted as one JSON line so the
+// validation runner can gate the numbers structurally (validation_manifest
+// depth-backend-parity row) instead of trusting only the exit code.
+std::vector<std::pair<std::string, double>> g_metrics;
+
+bool Compare(const char* name,
+             const std::vector<float>& reference,
              const std::vector<float>& got,
              float relative_mae_limit) {
     if (reference.size() != got.size() || reference.empty()) return false;
@@ -62,18 +71,50 @@ bool Compare(const std::vector<float>& reference,
     }
     const double relative_mae =
             absolute_error / std::max(reference_magnitude, 1.0e-6);
-    std::fprintf(stderr, "relative MAE %.6f (limit %.6f)\n", relative_mae,
-                 relative_mae_limit);
+    std::fprintf(stderr, "%s relative MAE %.6f (limit %.6f)\n", name,
+                 relative_mae, relative_mae_limit);
+    g_metrics.emplace_back(std::string(name) + "_relative_mae", relative_mae);
     return relative_mae <= relative_mae_limit;
+}
+
+// Byte hash of every typed output the parity compares. The runner's exact
+// fingerprint policy requires both sides to be byte-identical across probe
+// processes (and against the baseline), on top of the MAE thresholds.
+uint64_t HashDense(const DenseResult& r) {
+    uint64_t h =
+            aicore::test::fnv1a(r.depth.data(), r.depth.size() * sizeof(float));
+    h = aicore::test::fnv1aAppend(h, r.confidence.data(),
+                                  r.confidence.size() * sizeof(float));
+    h = aicore::test::fnv1aAppend(h, r.ext, sizeof(r.ext));
+    return aicore::test::fnv1aAppend(h, r.intr, sizeof(r.intr));
+}
+
+void PrintMetricsJson(const DenseResult& reference, const DenseResult& got) {
+    std::printf(
+            "{\"cpu_output_hash\":\"%016llx\","
+            "\"device_output_hash\":\"%016llx\"",
+            static_cast<unsigned long long>(HashDense(reference)),
+            static_cast<unsigned long long>(HashDense(got)));
+    for (const auto& metric : g_metrics) {
+        std::printf(",\"%s\":%.9g", metric.first.c_str(), metric.second);
+    }
+    std::printf("}\n");
+    std::fflush(stdout);
 }
 
 aicore_depth_ctx* Load(const char* anyview_or_model,
                        const char* metric,
                        const char* device) {
-    return metric && metric[0]
-                   ? aicore_depth_load_nested_device(anyview_or_model, metric,
-                                                     0, device)
-                   : aicore_depth_load_device(anyview_or_model, 0, device);
+    aicore_depth_options* opts = aicore_depth_options_new();
+    if (!opts) return nullptr;
+    aicore_depth_options_set_device(opts, device);
+    aicore_depth_ctx* ctx =
+            metric && metric[0]
+                    ? aicore_depth_load_nested_opts(anyview_or_model, metric,
+                                                    opts)
+                    : aicore_depth_load_opts(anyview_or_model, opts);
+    aicore_depth_options_free(opts);
+    return ctx;
 }
 
 }  // namespace
@@ -119,17 +160,19 @@ int main() {
     AICORE_CHECK(reference.height == got.height &&
                  reference.width == got.width);
     AICORE_CHECK(reference.metric == got.metric);
-    AICORE_CHECK(Compare(reference.depth, got.depth, 0.015f));
+    AICORE_CHECK(Compare("depth", reference.depth, got.depth, 0.015f));
     if (!reference.confidence.empty() || !got.confidence.empty()) {
-        AICORE_CHECK(Compare(reference.confidence, got.confidence, 0.02f));
+        AICORE_CHECK(Compare("confidence", reference.confidence, got.confidence,
+                             0.02f));
     }
 
     std::vector<float> ref_pose(reference.ext, reference.ext + 12);
     std::vector<float> got_pose(got.ext, got.ext + 12);
     std::vector<float> ref_intr(reference.intr, reference.intr + 9);
     std::vector<float> got_intr(got.intr, got.intr + 9);
-    AICORE_CHECK(Compare(ref_pose, got_pose, 0.02f));
-    AICORE_CHECK(Compare(ref_intr, got_intr, 0.02f));
+    AICORE_CHECK(Compare("pose", ref_pose, got_pose, 0.02f));
+    AICORE_CHECK(Compare("intrinsics", ref_intr, got_intr, 0.02f));
+    PrintMetricsJson(reference, got);
 
     aicore_depth_free(cpu);
     aicore_depth_free(accelerator);

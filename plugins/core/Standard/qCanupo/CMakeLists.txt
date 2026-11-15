@@ -18,6 +18,7 @@ if (PLUGIN_STANDARD_QCANUPO)
             LIB_DIR ${DLIB_LIB_DIR}
             LIBRARIES ${DLIB_LIBRARIES}
             DEPENDS ext_dlib
+            PRODUCED_BY ext_dlib
             )
 
     add_dependencies(${PROJECT_NAME} 3rdparty_dlib)

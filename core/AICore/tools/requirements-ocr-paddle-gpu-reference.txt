@@ -1,0 +1,30 @@
+# Original graph reference: CPython 3.11, Linux x86_64, CUDA 11.8.
+# Use a fresh venv without system site packages or inherited PYTHONPATH.
+# This environment runs bench_paddle_ocr_graph.py, not the PaddleOCR page UI.
+# The graph runner supplies library paths and isolates host logging settings.
+paddlepaddle-gpu @ https://paddle-whl.cdn.bcebos.com/stable/cu118/paddlepaddle-gpu/paddlepaddle_gpu-3.0.0-cp311-cp311-manylinux1_x86_64.whl#sha256=3447c7f27ef9fe52c60708182d75563ffca8296dc85895413c34e71855a5b8fe
+numpy==1.24.4
+protobuf==7.36.2
+pillow==13.0.0
+decorator==5.3.1
+astor==0.8.1
+opt-einsum==3.3.0
+networkx==3.6.1
+typing_extensions==4.16.0
+httpx==0.28.1
+httpcore==1.0.9
+anyio==4.15.1
+certifi==2026.10.18
+idna==3.20
+h11==0.16.0
+nvidia-cuda-runtime-cu11==11.8.89
+nvidia-cuda-cupti-cu11==11.8.87
+nvidia-cudnn-cu11==8.9.6.50
+nvidia-cublas-cu11==11.11.3.6
+nvidia-cufft-cu11==10.9.0.58
+nvidia-curand-cu11==10.3.0.86
+nvidia-cusolver-cu11==11.4.1.48
+nvidia-cusparse-cu11==11.7.5.86
+nvidia-nccl-cu11==2.19.3
+nvidia-nvtx-cu11==11.8.86
+nvidia-cuda-nvrtc-cu11==11.8.89

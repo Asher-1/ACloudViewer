@@ -1,6 +1,8 @@
 #pragma once
-#include "model_loader.hpp"
-#include "backend.hpp"
+#include "tasks/depth/model_loader.hpp"
+
+#include "tasks/depth/backend.hpp"
+
 #include <array>
 #include <vector>
 namespace aicore {

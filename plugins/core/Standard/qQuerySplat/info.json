@@ -1,0 +1,40 @@
+{
+  "type": "Standard",
+  "core": true,
+  "group": "aicore",
+  "name": "QuerySplat Gaussian Prediction",
+  "icon": ":/CC/plugin/qQuerySplat/images/qQuerySplat.svg",
+  "description": "Multi-view image-to-3DGS prediction (VGGT-Omega encoder + QuerySplat decoder) with gsplat-semantics rendering, optional test-time optimization and PLY export, via native GGML inference.",
+  "authors": [
+    {
+      "name": "ACloudViewer Contributors"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "ACloudViewer Team"
+    }
+  ],
+  "references": [
+    {
+      "text": "QuerySplat",
+      "url": "https://github.com/inspatio/QuerySplat"
+    },
+    {
+      "text": "querysplat-ggml cpp chain",
+      "url": "https://github.com/Asher-1/querysplat-ggml"
+    },
+    {
+      "text": "Models",
+      "url": "https://huggingface.co/Asher-1/querysplat_vggto"
+    },
+    {
+      "text": "Encoder models",
+      "url": "https://huggingface.co/Asher-1/map_anything_vggt"
+    },
+    {
+      "text": "Shared test data (the same multi-view scene bundles the MapAnything plugin consumes; courtyard's first four frames are byte-identical to the official QuerySplat eval inputs)",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/tag/map_anything_vggt_test_data"
+    }
+  ]
+}

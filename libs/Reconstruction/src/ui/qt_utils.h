@@ -12,7 +12,7 @@
 #include <QtOpenGL>
 
 #include "feature/types.h"
-#include "util/bitmap.h"
+#include "sensor/bitmap.h"
 #include "util/types.h"
 
 namespace colmap {

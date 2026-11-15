@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "image.h"
+#include "tasks/gaussian/image.h"
 
 #include <cmath>
 #include <cstdint>

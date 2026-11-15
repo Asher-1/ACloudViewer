@@ -1,0 +1,313 @@
+{
+  "date": "2026-10-21",
+  "scope": "Rebased llama embedded ggml Vulkan build/replay/loader and retained-output OCR numeric migration evidence; not release or full task acceptance",
+  "source_pin": {
+    "purpose": "Migration candidate; not the active production dependency",
+    "repository": "https://github.com/ggml-org/llama.cpp",
+    "revision": "707616feb5f379e99ff7442680a55b4a1704c7c9",
+    "url": "https://github.com/ggml-org/llama.cpp/archive/707616feb5f379e99ff7442680a55b4a1704c7c9.tar.gz",
+    "sha256": "a532d0601f65cee41446cfbdc6872b98e689aa727eb366c6b6a61a70e9965759",
+    "llama_version": "0.7.0-dev",
+    "embedded_ggml_version": "0.27.0",
+    "observed_stable_release": "v0.7.0",
+    "observed_date": "2026-10-20"
+  },
+  "current_input_files": [
+    {
+      "path": "3rdparty/llama/llama_cpp.cmake",
+      "bytes": 4869,
+      "sha256": "21acd494dd580994a54e09bcc3ed32039c886269f0118a448f03ce248a2b86cc"
+    },
+    {
+      "path": "3rdparty/llama/ggml_runtime.cmake",
+      "bytes": 57320,
+      "sha256": "08e59d72bfc062ae8e0b34313edb1b3816096fe8ebccfc0d3e4f3a361db0a7c2"
+    },
+    {
+      "path": "3rdparty/llama/migration-source.json",
+      "bytes": 519,
+      "sha256": "0a00d415f70c594ae655ab1b77afceccd74eb54efc670845d99155c15362f6c2"
+    },
+    {
+      "path": "3rdparty/llama/experimental/CMakeLists.txt",
+      "bytes": 2120,
+      "sha256": "3c64ea563d7587f28eb20999eccafb37262d68f2ae8b5ed6dd6ec69dafd58862"
+    },
+    {
+      "path": "3rdparty/llama/experimental/runner-quantization-fix.patch",
+      "bytes": 1339,
+      "sha256": "4cb7b2d2246aa28d1c6d8b1732ef3aa134353f1793cf6aef343c48a7245dff56"
+    },
+    {
+      "path": "3rdparty/llama/experimental/runtime_smoke.cpp",
+      "bytes": 3031,
+      "sha256": "dcaa16786f718871f94972a9950cb038bdbc134b022e253b9fe2c6244d5dc491"
+    },
+    {
+      "path": "3rdparty/llama/experimental/test_cmake_contract.py",
+      "bytes": 12702,
+      "sha256": "80ee7b4c0e3b8835f040361413e185b111e20f9a41acee939688665127ded09a"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/0001-acv-cpu-operators.patch",
+      "bytes": 73588,
+      "sha256": "424749c1453556fd6c64ae8aa2999e42c1abb0464bfc96e7562ae3ddf43d5ed8"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/0002-acv-cuda-operators.patch",
+      "bytes": 525142,
+      "sha256": "a7fa3ef20e12b0eeb93927a130d8c7a365e806deacf5e9e3de9cb723793b81a1"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/0003-acv-cuda-dispatch-api.patch",
+      "bytes": 5700,
+      "sha256": "59c0cb4657ff39668555502dea0a2e59c3857a9c8acd1bebfac01a2c5436593d"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/0004-acv-cuda-attention-linkage.patch",
+      "bytes": 2920,
+      "sha256": "15ffbccf77e187c4327e04441d571fe219f9594d9dd625b83dced74485cfd2da"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/0005-acv-vulkan-operators.patch",
+      "bytes": 215376,
+      "sha256": "5645f0e00eb901b32a7a5c34119dcab19f1dbf34512bcb5cee1bfc065ebad283"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/cuda-manifest.yaml",
+      "bytes": 255,
+      "sha256": "943c0104a3241a385a7269583629e362d5a07257f153de45f347fdf21e1fab76"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/cuda-vulkan-manifest.yaml",
+      "bytes": 293,
+      "sha256": "09566dd1d437776bd1b5b4851608471dd45b1351713738b5deabbae8c91fdca7"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/manifest.yaml",
+      "bytes": 117,
+      "sha256": "39a0d249ed6bf80a7df09cc415430f3509685b273182367f5a150ad7a8d01126"
+    },
+    {
+      "path": "3rdparty/llama/experimental/patches/vulkan-manifest.yaml",
+      "bytes": 166,
+      "sha256": "22ece76456b7f7b6a2ecb9286e9f03234ac3961204c28a1dddcecf9feb9b2493"
+    }
+  ],
+  "build": "build_llama_vulkan_entry_7x9eh0qf",
+  "configure": {
+    "path": "build_llama_vulkan_entry_7x9eh0qf/configure-command.json",
+    "bytes": 705,
+    "sha256": "dfa28ffbc2048222d68c3f7f891bee6b5756e85cffc31632da2a14920f72fea2"
+  },
+  "build_log": {
+    "path": "build_llama_vulkan_entry_7x9eh0qf/build-patch-format-corrected.log",
+    "bytes": 66367,
+    "sha256": "50db07fc9c3fc42b1718830462547d4c8b30a4de79ccb4e0290983c051a40d1a"
+  },
+  "patch": {
+    "path": "3rdparty/llama/experimental/patches/0005-acv-vulkan-operators.patch",
+    "bytes": 215376,
+    "sha256": "5645f0e00eb901b32a7a5c34119dcab19f1dbf34512bcb5cee1bfc065ebad283"
+  },
+  "vulkan_changed_files": 33,
+  "patch_replay": {
+    "registered_manifest": {
+      "path": "3rdparty/llama/experimental/patches/vulkan-manifest.yaml",
+      "bytes": 166,
+      "sha256": "22ece76456b7f7b6a2ecb9286e9f03234ac3961204c28a1dddcecf9feb9b2493"
+    },
+    "idempotence_log": {
+      "path": "build_llama_vulkan_entry_7x9eh0qf/replay-idempotence.log",
+      "bytes": 121,
+      "sha256": "09f8f8ea5691122c5f9a31603a4f3dfa00919b411a324917b6cba8046bc8f431"
+    },
+    "source_comparison": {
+      "path": "build_llama_vulkan_entry_7x9eh0qf/replay-source-comparison.json",
+      "bytes": 49,
+      "sha256": "9491a1aafbd1834f5cc7926b67733b1feb8f7695014d798c0a688c4d9e151313"
+    },
+    "compared_vulkan_files": 225,
+    "differences": 0
+  },
+  "ctest": {
+    "receipt": {
+      "path": "build_llama_vulkan_entry_7x9eh0qf/contracts.xml",
+      "bytes": 2304,
+      "sha256": "8fdf4a89f0c9074ff0591a4b5619972dbd6144b9d1823c86b0aead41bd798728"
+    },
+    "tests": 3,
+    "passed": 3,
+    "skipped": 0,
+    "configure_contract_tests": 11
+  },
+  "installed_libraries": [
+    {
+      "path": "build_llama_vulkan_entry_7x9eh0qf/install/bin/libggml-cpu.so",
+      "bytes": 1454296,
+      "sha256": "2299c6968aae5f01df215abcf8bf44a71c37f9005da239cacd63071363fa4559"
+    },
+    {
+      "path": "build_llama_vulkan_entry_7x9eh0qf/install/bin/libggml-vulkan.so",
+      "bytes": 42706672,
+      "sha256": "18d0b390ededf7ad88f1448674c835a97ff331e1486e333f2b017ac27ad8cf03"
+    },
+    {
+      "path": "build_llama_vulkan_entry_7x9eh0qf/install/lib/libggml-base.so.0.27.0",
+      "bytes": 923792,
+      "sha256": "4f56bdfef24898ed7773ba39fd09f71eed88c2841e331f48ed7ed1870b6ef9f1"
+    },
+    {
+      "path": "build_llama_vulkan_entry_7x9eh0qf/install/lib/libggml.so.0.27.0",
+      "bytes": 51968,
+      "sha256": "6517537bb75191e6d636e22b87f836e6419c2b8aac13e7a45f3fb0757cf74ea9"
+    },
+    {
+      "path": "build_llama_vulkan_entry_7x9eh0qf/install/lib/libllama.so.0.7.0",
+      "bytes": 5077976,
+      "sha256": "ceb237515ea3f4f20b582c53e95e6221d2fbd0f98adf1d8e082c46d03e4ae78d"
+    },
+    {
+      "path": "build_llama_vulkan_entry_7x9eh0qf/install/lib/libmtmd.so.0.7.0",
+      "bytes": 1868040,
+      "sha256": "a235e28cd4ff4e6a65c11538fcd8153546359ee09ef49b88a08096d63ce69014"
+    }
+  ],
+  "dynamic_relocation_checks": [
+    {
+      "path": "build_llama_vulkan_entry_7x9eh0qf/ocr/test_ocr_runtime-ldd.log",
+      "bytes": 877,
+      "sha256": "5505aae86f38ca9ef3de2ea0f645e25c478af3095f229efd57bceaad7057e646"
+    },
+    {
+      "path": "build_llama_vulkan_entry_7x9eh0qf/ocr/test_table_runtime-ldd.log",
+      "bytes": 877,
+      "sha256": "2e49d1381185038747c639d3514c0c7cddaba0b092a4b8d3ab632839a4654b7c"
+    }
+  ],
+  "loader": {
+    "trace": {
+      "path": "build_llama_vulkan_entry_7x9eh0qf/ocr/ocr-paddle-graph-det-ch-f32-fully-rebased/native.log",
+      "bytes": 137509,
+      "sha256": "b7ec2743085239a0e885fe1cfc42e1c54e3bbdbe7b82864b561fe647886e4e51"
+    },
+    "requested_device": "vulkan",
+    "resolved_device": "Vulkan0",
+    "libraries": [
+      {
+        "loaded_as": "build_llama_vulkan_entry_7x9eh0qf/ocr/libggml-base.so.0",
+        "resolved": {
+          "path": "build_llama_vulkan_entry_7x9eh0qf/install/lib/libggml-base.so.0.27.0",
+          "bytes": 923792,
+          "sha256": "4f56bdfef24898ed7773ba39fd09f71eed88c2841e331f48ed7ed1870b6ef9f1"
+        }
+      },
+      {
+        "loaded_as": "build_llama_vulkan_entry_7x9eh0qf/ocr/libggml.so.0",
+        "resolved": {
+          "path": "build_llama_vulkan_entry_7x9eh0qf/install/lib/libggml.so.0.27.0",
+          "bytes": 51968,
+          "sha256": "6517537bb75191e6d636e22b87f836e6419c2b8aac13e7a45f3fb0757cf74ea9"
+        }
+      },
+      {
+        "loaded_as": "build_llama_vulkan_entry_7x9eh0qf/ocr/libggml-vulkan.so",
+        "resolved": {
+          "path": "build_llama_vulkan_entry_7x9eh0qf/install/bin/libggml-vulkan.so",
+          "bytes": 42706672,
+          "sha256": "18d0b390ededf7ad88f1448674c835a97ff331e1486e333f2b017ac27ad8cf03"
+        }
+      },
+      {
+        "loaded_as": "build_llama_vulkan_entry_7x9eh0qf/ocr/libggml-cpu.so",
+        "resolved": {
+          "path": "build_llama_vulkan_entry_7x9eh0qf/install/bin/libggml-cpu.so",
+          "bytes": 1454296,
+          "sha256": "2299c6968aae5f01df215abcf8bf44a71c37f9005da239cacd63071363fa4559"
+        }
+      }
+    ]
+  },
+  "ocr_regression": {
+    "unique_model_shas": 53,
+    "input_checks": 158,
+    "all_native_returncodes_zero": true,
+    "new_argmax_flips_relative_to_retained_baseline": 0,
+    "paddle": {
+      "report": {
+        "path": "build_llama_vulkan_entry_7x9eh0qf/ocr/paddle-regression.json",
+        "bytes": 53789,
+        "sha256": "ad7c0a5765eeb0af7e520de86b2bb50bdc8b98d2d9a61244146a0ac84f6a6a6c"
+      },
+      "model_shas": 14,
+      "input_checks": 14,
+      "max_baseline_probability_diff": 1.4781951904296875e-05
+    },
+    "onnx": {
+      "report": {
+        "path": "build_llama_vulkan_entry_7x9eh0qf/ocr/onnx-regression.json",
+        "bytes": 365805,
+        "sha256": "5ab5821459047746cbec55a6a68940869c530029aa71ffefdea1d76214f5ce30"
+      },
+      "model_shas": 36,
+      "input_checks": 135,
+      "retained_original_cuda_references": 36,
+      "max_baseline_probability_diff": 1.4960765838623047e-05
+    },
+    "slanet": {
+      "report": {
+        "path": "build_llama_vulkan_entry_7x9eh0qf/ocr/table-regression.json",
+        "bytes": 35954,
+        "sha256": "8007e307568e404829a66e20bdaa5e7c35586e2b74bd168d2f8a50574cd31e37"
+      },
+      "model_shas": 3,
+      "input_checks": 9,
+      "max_baseline_probability_diff": 0.0002295374870300293,
+      "max_baseline_location_diff": 0.000284731388092041
+    },
+    "layout_original_source_failures": [
+      {
+        "scenario": "ocr-paddle-layout-f16",
+        "class_flips": 22,
+        "dfl_edge_flips": 40,
+        "model_sha256": "fda1343642abc04475271438f29b58036528be5f3f6a422c10ffdde3d7bcda1a"
+      },
+      {
+        "scenario": "ocr-paddle-layout-q8_0",
+        "class_flips": 253,
+        "dfl_edge_flips": 419,
+        "model_sha256": "18056b5559f3da420ab6cb5e3dd14a5c9f18f5fb8da91837ba8fa24288b07e42"
+      }
+    ]
+  },
+  "reproduction_scripts": [
+    {
+      "path": "build_llama_vulkan_entry_7x9eh0qf/ocr/run_paddle_regression.py",
+      "bytes": 4865,
+      "sha256": "5b2929fe42d4afa36396c4ec776945dfd6b735b9553f827e6515de7e95046bb5"
+    },
+    {
+      "path": "build_llama_vulkan_entry_7x9eh0qf/ocr/run_onnx_regression.py",
+      "bytes": 4592,
+      "sha256": "f953e740092856ba218aa76ff943f4a326400571a25dccee3333a94024403558"
+    },
+    {
+      "path": "build_llama_vulkan_entry_7x9eh0qf/ocr/run_table_regression.py",
+      "bytes": 3126,
+      "sha256": "f1d09ce8aeff40b44f5fe7943c82d9befc36fcb828106af5262d4ef31fb4cdb3"
+    }
+  ],
+  "initial_failures_retained": [
+    "Scratch port syntax/link errors and missing SONAME staging were corrected before final replay/build/numeric runs; scratch logs remain under build_llama_vulkan_port_7gdjy8vx.",
+    "First fresh ExternalProject replay rejected added-file patch headers without new-file mode. Initial build.log retained; registered patch headers corrected, generated owner sources invalidated and final build/CTest/numeric runs pass."
+  ],
+  "limits": [
+    "Original independent CUDA tensors are retained, not regenerated live: Paddle 14 inputs, SLANet 9, ONNX 36 of 135; other 99 ONNX inputs compare retained native output only.",
+    "OCR probes reuse units compiled against the candidate headers in build_llama_ocr_cuda_2m6kcjxu; dynamic libraries and backend modules resolve to this new Vulkan install.",
+    "No fresh page Hmean/CER/WER/TEDS, controlled performance/VRAM or complete all-task regression acceptance.",
+    "Combined CUDA+Vulkan manifest has configure-contract coverage only; separate CUDA and Vulkan builds do not prove a combined build.",
+    "Metal remains unported/unvalidated. Production still uses the old isolated ggml owner; no production source switch or old-entry deletion."
+  ],
+  "release_qualified_files": [],
+  "uploads": 0
+}

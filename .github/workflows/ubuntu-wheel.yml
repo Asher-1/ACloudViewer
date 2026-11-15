@@ -78,19 +78,39 @@ jobs:
           else
             echo "DEVELOPER_BUILD=${{ github.event.inputs.developer_build || 'ON' }}" >> $GITHUB_ENV
           fi
-      - name: Maximize build space
-        uses: easimon/maximize-build-space@master
+      - name: Checkout source code
+        uses: actions/checkout@v4
         with:
-          root-reserve-mb: 10240
-          swap-size-mb: 4096
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-          remove-docker-images: 'true'
-          build-mount-path: '/var/lib/docker'
-          build-mount-path-ownership: 'root:root'
-      - name: Clean runner logs and cache before checkout
+          submodules: 'false'
+      # Local composite actions (./.github/actions/...) only resolve after
+      # checkout. Install the fixed CMake BEFORE the disk reshaping below:
+      # lukka/get-cmake
+      # extracts into /home/runner/work/_temp on the root filesystem, and
+      # maximize-build-space leaves the root with only its ~10 GB reserve —
+      # tight enough that the tar extraction failed with "Wrote only N of M
+      # bytes" (ENOSPC). On the pre-maximize root there is ample space.
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
+      # Plain rm instead of easimon/maximize-build-space: that action's
+      # root-reserve-mb did not materialize on the 145GB ubuntu-24.04 image
+      # (20261012.334) - root was left at ~100MB and checkout/ENOSPC races
+      # followed (run 39434156547 cuda-focal died in the runner itself).
+      # Removing the preinstalled toolchains below frees ~45GB on /, enough
+      # for both the docker build (~47GB image) and the checkout, with the
+      # default /var/lib/docker directory on the root fs. Inline rm (not
+      # util/ci_utils.sh): this step runs before checkout.
+      - name: Maximize build space
+        run: |
+          echo "=== Disk space before cleanup ==="
+          df -h /
+          sudo rm -rf /usr/share/dotnet           # ~17GB
+          sudo rm -rf /usr/local/lib/android      # ~11GB
+          sudo rm -rf /opt/ghc                    # ~2.7GB
+          sudo rm -rf /opt/hostedtoolcache/CodeQL # ~5.4GB
+          sudo docker image prune --all --force   # ~4.5GB
+          echo "=== Disk space after cleanup ==="
+          df -h /
+      - name: Clean runner logs and cache
         run: |
           echo "=== Disk space before cleanup ==="
           df -h
@@ -122,14 +142,33 @@ jobs:
           echo ""
           echo "=== Largest directories on root filesystem ==="
           sudo du -h --max-depth=1 / 2>/dev/null | sort -hr | head -20 || true
-      - name: Checkout source code
-        uses: actions/checkout@v4
-        with:
-          submodules: 'false'
       - name: Additional space optimization
         run: |
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
+      - name: Restore compiler cache from release assets
+        # Cross-run ccache for the container build. Hosted runners boot a
+        # fresh VM every run, so the Docker layer cache is always empty and
+        # the compiler cache inside .ccache/ is the only thing that survives:
+        # restored here, COPY'd into the image with the repo, and exported
+        # back by docker_build.sh after the build for the save step below.
+        # Storage: release assets on the public cloudViewer_downloads repo
+        # (free, no total quota, 2 GB per-asset limit; persistent per-python
+        # names overwritten in place with --clobber). The GitHub 10 GB
+        # actions cache cannot hold every cell's tarball on a main push
+        # (~14 GB per cycle), which LRU-evicted the freshly saved pools and
+        # turned runs cold. Downloads are plain HTTPS from the public repo
+        # (fork PRs work); uploads use the repo's ACCESS_TOKEN. Cache never
+        # gates CI: every failure path degrades to a cold build.
+        continue-on-error: true
+        run: |
+          ASSET="ccache-ubuntu-wheel-py${{ matrix.python_version }}.tar.gz"
+          mkdir -p .ccache
+          curl -fsSL --retry 3 -o /tmp/ccache-restore.tar.gz \
+            "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ci-ccache/${ASSET}" \
+            && tar -xzf /tmp/ccache-restore.tar.gz -C .ccache \
+            || echo "[cache] no remote pool yet for wheel py${{ matrix.python_version }} (first run)"
+          rm -f /tmp/ccache-restore.tar.gz
       # Be verbose and explicit here such that a developer can directly copy the
       # `docker/docker_build.sh xxx` command to execute locally.
       - name: Docker build
@@ -170,6 +209,52 @@ jobs:
           df -h
           docker system df
 
+      - name: Save compiler cache to release assets
+        # Overwrite the cell's persistent asset in place (--clobber). Runs
+        # regardless of the build outcome: on failure .ccache/ holds the
+        # restored copy (the in-container export is skipped), which is a
+        # no-op re-upload. Pool tarballs stay well under the 2 GB asset
+        # limit (measured ~1.1 GB per cell; CCACHE_MAXSIZE caps at 1.5 G).
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        run: |
+          if [ -d .ccache ]; then
+            ASSET="ccache-ubuntu-wheel-py${{ matrix.python_version }}.tar.gz"
+            tar -C .ccache -czf "/tmp/${ASSET}" .
+            # Cancelled/aborted runs clobber the pool with near-empty tarballs;
+            # a real pool is >=500 MB. Branch policy and cleanup rationale:
+            # see ubuntu.yml's save step.
+            SIZE=$(stat -c%s "/tmp/${ASSET}" 2>/dev/null || echo 0)
+            if [ "${SIZE}" -lt 52428800 ]; then
+              echo "[cache] ${ASSET} is only ${SIZE} bytes (cancelled/aborted run); skip upload to keep the previous pool"
+            else
+              gh release upload ci-ccache "/tmp/${ASSET}" -R Asher-1/cloudViewer_downloads --clobber \
+                || gh release upload ci-ccache "/tmp/${ASSET}" -R Asher-1/cloudViewer_downloads --clobber \
+                || echo "[cache] upload failed (non-fatal; next run restores the previous pool)"
+            fi
+            rm -f "/tmp/${ASSET}"
+          fi
+
+      - name: Report ccache stats
+        # Render the container's ccache counters into the job summary, so
+        # cache effectiveness is visible without digging through logs. MUST
+        # run after "Docker build": .ccache-stats.txt is written by
+        # docker_build.sh inside that step's docker run (next to the exported
+        # .ccache/ tree).
+        if: always()
+        continue-on-error: true
+        run: |
+          if [ -f .ccache-stats.txt ]; then
+            {
+              echo "### ccache stats (wheel py${{ matrix.python_version }})"
+              echo '```'
+              cat .ccache-stats.txt
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Upload Docker build log
         # Persist the full build log (GitHub truncates very long step logs in
         # the UI). if: always() + continue-on-error: upload even when the build
@@ -181,6 +266,15 @@ jobs:
           name: ubuntu-wheel-build-log-py${{ matrix.python_version }}
           path: /tmp/ubuntu-wheel-build.log
           if-no-files-found: ignore
+
+      - name: Validate produced wheels
+        # basename(1) leaves a literal glob pattern when nothing matched, so a
+        # silently missing wheel would otherwise only surface later in the
+        # test job. Fail here with a clear message instead.
+        run: |
+          echo "CUDA wheel: ${PIP_PKG_NAME}"
+          echo "CPU wheel:  ${PIP_CPU_PKG_NAME}"
+          ls -l ${PIP_PKG_NAME} ${PIP_CPU_PKG_NAME}
 
       - name: Upload Wheel to GitHub artifacts
         uses: actions/upload-artifact@v4

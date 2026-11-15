@@ -118,6 +118,10 @@ ccPluginInterface::ContactList ccDefaultPluginInterface::getAuthors() const {
     return m_data->contacts("authors");
 }
 
+QString ccDefaultPluginInterface::pluginGroup() const {
+    return m_data->field("group");
+}
+
 ccPluginInterface::ContactList ccDefaultPluginInterface::getMaintainers()
         const {
     return m_data->contacts("maintainers");

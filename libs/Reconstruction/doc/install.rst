@@ -4,16 +4,23 @@ Installation
 ============
 
 You can either download one of the pre-built binaries or build the source code
-manually. Executables for Windows and Mac and other resources can be downloaded
-from https://demuc.de/colmap/. Executables for Linux/Unix/BSD are available at
+manually. Pre-built binaries and other resources can be downloaded from
+https://demuc.de/colmap/.
+
+An overview of system packages for Linux/Unix/BSD distributions are available at
 https://repology.org/metapackage/colmap/versions. Note that the COLMAP packages
-in the default repositories for Linux/Unix/BSD do not come with CUDA support,
-which requires manual compilation but is relatively easy on these platforms.
+in the default repositories for Linux/Unix/BSD do not come with CUDA or HIP/ROCm
+support, which requires a manual build from source, as explained further below.
+
+For Mac users, `Homebrew <https://brew.sh>`__ provides a formula for COLMAP with
+pre-compiled binaries or the option to build from source. After installing
+homebrew, installing COLMAP is as easy as running ``brew install colmap``.
 
 COLMAP can be used as an independent application through the command-line or
 graphical user interface. Alternatively, COLMAP is also built as a reusable
-library, i.e., you can include and link COLMAP against your own source code,
-as described further below.
+library, i.e., you can include and link COLMAP against your own C++ source code,
+as described further below. Furthermore, you can use most of COLMAP's
+functionality with :ref:`PyCOLMAP <pycolmap/index>` in Python.
 
 ------------------
 Pre-built Binaries
@@ -28,20 +35,18 @@ double-click  the ``COLMAP.bat`` batch script or alternatively run it from the
 Windows command shell or Powershell. The command-line interface is also
 accessible through this batch script, which automatically sets the necessary
 library paths. To list the available COLMAP commands, run ``COLMAP.bat -h`` in
-the command shell ``cmd.exe`` or in Powershell.
+the command shell ``cmd.exe`` or in Powershell. The first time you run COLMAP,
+Windows defender may prompt you with a security warning, because the binaries
+are not officially signed. The provided COLMAP binaries are automatically built
+from GitHub Actions CI machines. If you do not trust them, you can build from
+source as described below.
 
-Mac
----
+Docker
+------
 
-The pre-built application package for Mac contains both the GUI and command-line
-version of COLMAP. To open the GUI, simply open the application and note that
-COLMAP is shipped as an unsigned application, i.e., when your first open the
-application, you have to right-click the application and select *Open* and then
-accept to trust the application. In the future, you can then simply double-click
-the application to open COLMAP. The command-line interface is accessible by
-running the packaged binary ``COLMAP.app/Contents/MacOS/colmap``. To list the
-available COLMAP commands, run ``COLMAP.app/Contents/MacOS/colmap -h``.
-
+COLMAP provides a pre-built Docker image with CUDA support. For detailed
+instructions on how to build and run COLMAP using Docker, please refer to the
+`Docker documentation <https://github.com/colmap/colmap/tree/main/docker>`__.
 
 -----------------
 Build from Source
@@ -52,114 +57,252 @@ First, checkout the latest source code::
 
     git clone https://github.com/colmap/colmap
 
-The latest stable version lives in the ``master`` branch and the latest
-development version lives in the ``dev`` branch.
-
-On Linux and Mac it is generally recommended to follow the installation
-instructions below, which use the system package managers to install the
-required dependencies. Alternatively, there is a Python build script that builds
-COLMAP and its dependencies locally. This script is useful under Windows and on
-a (cluster) system if you do not have root access under Linux or Mac.
+Under Linux and Mac, it is generally recommended to follow the installation
+instructions below, which use the respective system package managers to install
+the required dependencies. Alternatively, the instructions for VCPKG can be used
+to compile the required dependencies from scratch on more exotic systems with
+limited system packages. The VCPKG approach is also the method of choice under
+Windows, compute clusters, or if you do not have root access under Linux or Mac.
 
 
-Linux
------
+Debian/Ubuntu
+-------------
 
-*Recommended dependencies:* CUDA (at least version 7.X)
+*Recommended dependencies:* CUDA (at least version 11.X)
 
 Dependencies from the default Ubuntu repositories::
 
     sudo apt-get install \
         git \
         cmake \
+        ninja-build \
         build-essential \
         libboost-program-options-dev \
-        libboost-filesystem-dev \
         libboost-graph-dev \
         libboost-system-dev \
-        libboost-test-dev \
         libeigen3-dev \
-        libsuitesparse-dev \
-        libfreeimage-dev \
+        libopenimageio-dev \
+        openimageio-tools \
+        libmetis-dev \
         libgoogle-glog-dev \
-        libgflags-dev \
+        libgtest-dev \
+        libgmock-dev \
+        libsqlite3-dev \
         libglew-dev \
-        qtbase5-dev \
-        libqt5opengl5-dev \
-        libcgal-dev
+        qt6-base-dev \
+        libqt6opengl6-dev \
+        libqt6openglwidgets6 \
+        qt6-svg-dev \
+        libcgal-dev \
+        libceres-dev \
+        libsuitesparse-dev \
+        libcurl4-openssl-dev \
+        libssl-dev \
+        libmkl-full-dev
+    # Fix issue in Ubuntu's openimageio CMake config.
+    # We don't depend on any of openimageio's OpenCV functionality,
+    # but it still requires the OpenCV include directory to exist.
+    sudo mkdir -p /usr/include/opencv4
 
-Under Ubuntu 20.04+ the CMake configuration scripts of CGAL are broken and
-you must also install the CGAL Qt5 package::
+Alternatively, you can also build against Qt 5 instead of Qt 6 using::
 
-    sudo apt-get install libcgal-qt5-dev
+    qtbase5-dev libqt5opengl5-dev libqt5svg5-dev
 
-Install `Ceres Solver <http://ceres-solver.org/>`_::
+To compile with **CUDA support**, also install Ubuntu's default CUDA package::
 
-    sudo apt-get install libatlas-base-dev libsuitesparse-dev
-    git clone https://ceres-solver.googlesource.com/ceres-solver
-    cd ceres-solver
-    git checkout $(git describe --tags) # Checkout the latest release
-    mkdir build
-    cd build
-    cmake .. -DBUILD_TESTING=OFF -DBUILD_EXAMPLES=OFF
-    make -j
-    sudo make install
+    sudo apt-get install -y \
+        nvidia-cuda-toolkit \
+        nvidia-cuda-toolkit-gcc
+
+Or, manually install the latest CUDA from NVIDIA's homepage. During CMake
+configuration, specify ``-DCMAKE_CUDA_ARCHITECTURES=native``, if you want to run
+COLMAP only on your current machine (default), "all"/"all-major" to be able to
+distribute to other machines, or a specific CUDA architecture like "75", etc.
+
+To compile with **HIP / ROCm support** instead of CUDA (for AMD GPUs), install
+ROCm following the `AMD ROCm installation guide
+<https://rocm.docs.amd.com/projects/install-on-linux/en/latest/>`__ and ensure
+the ``hip``, ``hiprand``, and ``rocrand`` packages are present (default
+location ``/opt/rocm``). Then pass the following flags at configure time::
+
+    cmake .. -GNinja \
+        -DCUDA_ENABLED=OFF \
+        -DHIP_ENABLED=ON \
+        -DCMAKE_HIP_ARCHITECTURES=gfx90a \
+        -DCMAKE_HIP_COMPILER=/opt/rocm/llvm/bin/clang++
+
+Set ``CMAKE_HIP_ARCHITECTURES`` to match the target AMD GPU
+(``gfx90a`` for MI200/MI250, ``gfx942`` for MI300, ``gfx1030`` for RDNA2,
+``gfx1100`` for RDNA3, etc.; multiple values can be passed as a
+semicolon-separated list). ``CUDA_ENABLED`` and ``HIP_ENABLED`` are mutually
+exclusive. CMake 3.21 or newer is required for the HIP backend. On RDNA3
+consumer parts where ROCm only officially supports a subset of architectures,
+you may also need ``HSA_OVERRIDE_GFX_VERSION=11.0.0`` in the runtime
+environment. The HIP backend currently accelerates dense reconstruction
+(``patch_match_stereo``); see the changelog for ongoing coverage.
+
+If ROCm is installed through a Python wheel / virtualenv (for example AMD's
+TheRock packaging, which puts a ``rocm-sdk`` command on the ``PATH``), the
+install root and target architectures are detected automatically from
+``rocm-sdk path --root`` and ``rocm-sdk targets``, so ``ROCM_PATH`` and
+``CMAKE_HIP_ARCHITECTURES`` need not be set by hand. An explicit
+``-DROCM_PATH`` or a ``ROCM_PATH`` environment variable still takes
+precedence, and CMake's own architecture autodetection sets
+``CMAKE_HIP_ARCHITECTURES`` when a target GPU is visible at configure time.
 
 Configure and compile COLMAP::
 
     git clone https://github.com/colmap/colmap.git
     cd colmap
-    git checkout dev
     mkdir build
     cd build
-    cmake ..
-    make -j
-    sudo make install
+    cmake .. -GNinja -DBLA_VENDOR=Intel10_64lp
+    ninja
+    sudo ninja install
+
+.. note::
+
+    COLMAP uses ``boost::unordered`` flat/node hash maps for the
+    performance-critical scene and SfM containers. These are data members of
+    classes in public headers, so their layout is part of COLMAP's ABI, and a
+    mismatch between two COLMAP builds loaded into one process produces no link
+    error, only memory corruption. There is therefore no build option to swap
+    them for ``std::unordered_*``.
+
+    ``boost::unordered_node_map`` requires **Boost >= 1.84**, which is newer than
+    the apt Boost on Ubuntu 24.04 (1.83) and earlier. Where the available Boost
+    is new enough it is used as it is and nothing is downloaded. Only where it
+    is too old does the build download a pinned Boost release (about 100 MB) and
+    build the libraries COLMAP uses from source, installing them alongside
+    COLMAP. Only Boost is taken from that copy, so its headers and compiled
+    libraries always match. Pass ``-DFETCH_BOOST=OFF`` to require a new enough
+    system Boost instead and fail at configure time if there is none.
 
 Run COLMAP::
 
     colmap -h
     colmap gui
 
+Under **Ubuntu 22.04**, there is a problem when compiling with Ubuntu's default
+CUDA package and GCC, and you must compile against GCC 10::
 
-Mac
----
+    sudo apt-get install gcc-10 g++-10
+    export CC=/usr/bin/gcc-10
+    export CXX=/usr/bin/g++-10
+    export CUDAHOSTCXX=/usr/bin/g++-10
+    # ... and then run CMake against COLMAP's sources.
 
-*Recommended dependencies:* CUDA (at least version 7.X)
+Notice that the ``BLA_VENDOR=Intel10_64lp`` option tells CMake to find Intel's MKL
+implementation of BLAS. If you decide to compile against OpenBLAS instead of
+MKL, you must install and select the OpenMP version under Debian/Ubuntu because
+of `this issue <https://github.com/facebookresearch/faiss/wiki/Troubleshooting#surprising-faiss-openmp-and-openblas-interaction>`__.
 
-Dependencies from `Homebrew <http://brew.sh/>`_::
+Fedora
+------
 
-    brew install \
+*Recommended dependencies:* CUDA (at least version 11.X)
+
+Dependencies from the default Fedora repositories::
+
+    sudo dnf install -y \
         git \
         cmake \
-        boost \
-        eigen \
-        freeimage \
-        glog \
-        gflags \
-        suite-sparse \
-        ceres-solver \
-        qt5 \
-        glew \
-        cgal
+        ninja-build \
+        gcc-c++ \
+        boost-devel \
+        eigen3-devel \
+        OpenImageIO-devel \
+        OpenImageIO-utils \
+        metis-devel \
+        glog-devel \
+        gtest-devel \
+        gmock-devel \
+        sqlite-devel \
+        glew-devel \
+        qt6-qtbase-devel \
+        qt6-qtsvg-devel \
+        CGAL-devel \
+        ceres-solver-devel \
+        suitesparse-devel \
+        suitesparse-static \
+        libcurl-devel \
+        openssl-devel \
+        openblas-devel
+    # suitesparse-static is required even for a dynamic build, because Fedora's
+    # SuiteSparse CMake config references the static targets file regardless of
+    # link type. This can be dropped once Fedora ships SuiteSparse >= 7.11.0 with
+    # its separated static config.
+
+Alternatively, you can also build against Qt 5 instead of Qt 6 using::
+
+    qt5-qtbase-devel qt5-qtsvg-devel
+
+To compile with **CUDA support**, install the CUDA toolkit from NVIDIA's official
+Fedora repository, which (unlike the plain ``cuda`` meta-package) preserves an
+existing NVIDIA driver. Replace ``<VERSION>`` with your Fedora release, e.g.
+``43``::
+
+    sudo dnf config-manager addrepo --from-repofile=https://developer.download.nvidia.com/compute/cuda/repos/fedora<VERSION>/x86_64/cuda-fedora<VERSION>.repo
+    sudo dnf install -y cuda-toolkit
+
+During CMake configuration, specify ``-DCMAKE_CUDA_ARCHITECTURES=native``, if you
+want to run COLMAP only on your current machine (default), "all"/"all-major" to be
+able to distribute to other machines, or a specific CUDA architecture like "89", etc.
 
 Configure and compile COLMAP::
 
     git clone https://github.com/colmap/colmap.git
     cd colmap
-    git checkout dev
     mkdir build
     cd build
-    cmake .. -DQt5_DIR=/usr/local/opt/qt/lib/cmake/Qt5
-    make
-    sudo make install
+    cmake .. -GNinja -DCMAKE_CUDA_ARCHITECTURES=native
+    ninja
+    sudo ninja install
 
-If you have Qt 6 installed on your system as well, you might have to temporarily
-link your Qt 5 installation while configuring CMake:
+Run COLMAP::
 
-    brew link qt5
-    ... cmake configuration
-    brew unlink qt5
+    colmap -h
+    colmap gui
+
+Mac
+---
+
+Dependencies from `Homebrew <https://brew.sh/>`__::
+
+    brew install \
+        cmake \
+        ninja \
+        boost \
+        eigen \
+        openimageio \
+        curl \
+        libomp \
+        metis \
+        glog \
+        googletest \
+        ceres-solver \
+        suitesparse \
+        qt \
+        glew \
+        cgal \
+        sqlite3
+    brew link --force libomp
+
+Configure and compile COLMAP::
+
+    git clone https://github.com/colmap/colmap.git
+    cd colmap
+    mkdir build
+    cd build
+    cmake .. -GNinja
+    ninja
+    sudo ninja install
+
+If you have Qt 5 installed on your system as well, you might have to temporarily
+link your Qt 5 installation while configuring CMake::
+
+    brew unlink qt && brew link --force qt
+    cmake ...
 
 Run COLMAP::
 
@@ -170,9 +313,9 @@ Run COLMAP::
 Windows
 -------
 
-*Recommended dependencies:* CUDA (at least version 7.X), Visual Studio 2019
+*Recommended dependencies:* CUDA (at least version 11.X), Visual Studio 2019 or newer
 
-On Windows, the recommended way is to build COLMAP using vcpkg::
+On Windows, the recommended way is to build COLMAP using VCPKG::
 
     git clone https://github.com/microsoft/vcpkg
     cd vcpkg
@@ -189,7 +332,7 @@ Please refer to the next section for more details.
 VCPKG
 -----
 
-COLMAP ships as part of the vcpkg distribution. This enables to conveniently
+COLMAP ships as part of the VCPKG distribution. This enables to conveniently
 build COLMAP and all of its dependencies from scratch under different platforms.
 Note that VCPKG requires you to install CUDA manually in the standard way on
 your platform. To compile COLMAP using VCPKG, you run::
@@ -211,54 +354,53 @@ the latest commit in the dev branch, you can use the following options::
 
 To modify the source code, you can further add ``--editable --no-downloads``.
 Or, if you want to build from another folder and use the dependencies from
-vcpkg, first run `./vcpkg integrate install` and then configure COLMAP as::
+vcpkg, first run ``./vcpkg integrate install`` (under Windows use pwsh and
+``./scripts/shell/enter_vs_dev_shell.ps1``) and then configure COLMAP as::
 
     cd path/to/colmap
     mkdir build
     cd build
-    cmake .. -DCMAKE_TOOLCHAIN_FILE=path/to/vcpkg/scripts/buildsystems/vcpkg.cmake
-    cmake --build . --config release --target colmap_exe --parallel 24
+    cmake .. -DCMAKE_TOOLCHAIN_FILE=path/to/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release
+    cmake --build . --config release --target colmap --parallel 24
 
-Alternatively, you can also use the Python build script. Please follow the
-instructions in the next section, but VCPKG is now the recommended approach.
+Anaconda/Mamba
+--------------
 
+Install miniconda and run the following commands. You can replace ``conda`` with ``mamba`` for faster package installation::
 
-Build Script
-------------
+    conda create -n colmap python=3.12
+    conda config --add channels conda-forge
+    conda config --set channel_priority strict
+    conda install \
+        cmake \
+        ninja \
+        boost \
+        ccache \
+        eigen \
+        openimageio \
+        curl \
+        metis \
+        glog \
+        gtest \
+        ceres-solver \
+        suitesparse \
+        qt \
+        glew \
+        sqlite \
+        cgal-cpp \
+        mesa-libgl-devel-cos7-x86_64 \
+        cuda-compiler==12.6.2 \
+        cuda-cudart-dev \
+        cuda-nvrtc-dev \
+        libcurand-dev
 
-Alternative to the above solutions, COLMAP also ships with an automated Python
-build script. Note that VCPKG is the preferred way to achieve the same now.
-The build script installs COLMAP and its dependencies locally
-under Windows, Mac, and Linux. Note that under Mac and Linux, it is usually
-easier and faster to use the available package managers for the dependencies
-(see above). However, if you are on a (cluster) system without root access,
-this script might be useful. This script downloads the necessary dependencies
-automatically from the Internet. It assumes that CMake, Boost, Qt5, CUDA
-(optional), and CGAL (optional) are already installed on the system.
-E.g., under Windows you must specify the location of
-these libraries similar to this::
+    git clone https://github.com/colmap/colmap.git
+    cd colmap
+    mkdir build
+    cd build
+    cmake .. -GNinja
+    ninja
 
-    python scripts/python/build.py \
-        --build_path path/to/colmap/build \
-        --colmap_path path/to/colmap \
-        --boost_path "C:/local/boost_1_64_0/lib64-msvc-14.0" \
-        --qt_path "C:/Qt/5.9.3/msvc2015_64" \
-        --cuda_path "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v8.0" \
-        --cgal_path "C:/dev/CGAL-4.11.2/build"
-
-Note that under Windows you must use forward slashes for specifying the paths
-here. If you want to compile COLMAP using a specific Visual Studio version, you
-can for example specify ``--cmake_generator "Visual Studio 14"`` for Visual
-Studio 2015. If you want to open the COLMAP source code in Visual Studio, you
-can open the solution file in ``path/to/colmap/build/colmap/build``.
-If you use Homebrew under Mac, you can use the following command::
-
-    python scripts/python/build.py \
-        --build_path path/to/colmap/build \
-        --colmap_path path/to/colmap \
-        --qt_path /usr/local/opt/qt
-
-To see the full list of command-line options, pass the ``--help`` argument.
 
 
 .. _installation-library:
@@ -267,9 +409,10 @@ To see the full list of command-line options, pass the ``--help`` argument.
 Library
 -------
 
-If you want to include and link COLMAP against your own library, the easiest
-way is to use CMake as a build configuration tool. COLMAP automatically installs
-all headers to ``${CMAKE_INSTALL_PREFIX}/include/colmap``, all libraries to
+If you want to include and link COLMAP against your own library, the easiest way
+is to use CMake as a build configuration tool. After configuring the COLMAP
+build and running ``ninja/make install``, COLMAP automatically installs all
+headers to ``${CMAKE_INSTALL_PREFIX}/include/colmap``, all libraries to
 ``${CMAKE_INSTALL_PREFIX}/lib/colmap``, and the CMake configuration to
 ``${CMAKE_INSTALL_PREFIX}/share/colmap``.
 
@@ -278,55 +421,116 @@ using the following ``CMakeLists.txt``::
 
     cmake_minimum_required(VERSION 3.10)
 
-    project(TestProject)
+    project(SampleProject)
 
-    find_package(COLMAP REQUIRED)
-    # or to require a specific version: find_package(COLMAP 3.4 REQUIRED)
-
-    include_directories(${COLMAP_INCLUDE_DIRS})
-    link_directories(${COLMAP_LINK_DIRS})
+    find_package(colmap REQUIRED)
+    # or to require a specific version: find_package(colmap 3.4 REQUIRED)
 
     add_executable(hello_world hello_world.cc)
-    target_link_libraries(hello_world ${COLMAP_LIBRARIES})
+    target_link_libraries(hello_world colmap::colmap)
 
 with the source code ``hello_world.cc``::
 
     #include <cstdlib>
     #include <iostream>
 
-    #include <colmap/util/option_manager.h>
+    #include <colmap/controllers/option_manager.h>
     #include <colmap/util/string.h>
 
     int main(int argc, char** argv) {
         colmap::InitializeGlog(argv);
 
-        std::string input_path;
-        std::string output_path;
-
+        std::string message;
         colmap::OptionManager options;
-        options.AddRequiredOption("input_path", &input_path);
-        options.AddRequiredOption("output_path", &output_path);
-        options.Parse(argc, argv);
+        options.AddRequiredOption("message", &message);
+        if (!options.Parse(argc, argv)) {
+            return EXIT_FAILURE;
+        }
 
-        std::cout << colmap::StringPrintf("Hello %s!", "COLMAP") << std::endl;
+        std::cout << colmap::StringPrintf("Hello %s!\n", message.c_str());
 
         return EXIT_SUCCESS;
     }
 
+Then compile and run your code as::
+
+    mkdir build
+    cd build
+    export colmap_DIR=${CMAKE_INSTALL_PREFIX}/share/colmap
+    cmake .. -GNinja
+    ninja
+    ./hello_world --message "world"
+
+The sources of this example are stored under ``doc/sample-project``.
+
+----------------
+Shared Libraries
+----------------
+
+By default, COLMAP builds static libraries. To build shared/dynamic libraries
+instead, enable the ``BUILD_SHARED_LIBS`` option::
+
+    cmake .. -GNinja -DBUILD_SHARED_LIBS=ON
+
+Trade-offs compared to static libraries:
+
+- **Faster incremental linking**: Only the changed shared library needs to be
+  re-linked during development, rather than all executables.
+- **Reduced disk usage**: Multiple executables share the same library files on
+  disk and in memory.
+- **No cross-library optimization**: The compiler cannot inline or apply
+  link-time optimization (LTO/IPO) across shared library boundaries, which
+  reduces runtime performance.
+- **Symbol resolution overhead**: The dynamic linker resolves symbols at load
+  time, adding minor startup cost and indirect call overhead.
+
+For development workflows, shared libraries can significantly speed up
+edit-compile-test cycles. For production or benchmarking, static libraries are
+recommended.
+
+----------------
+AddressSanitizer
+----------------
+
+If you want to build COLMAP with address sanitizer flags enabled, you need to
+use a recent compiler with ASan support. For example, you can manually install
+a recent clang version on your Ubuntu machine and invoke CMake as follows::
+
+    CC=/usr/bin/clang CXX=/usr/bin/clang++ cmake .. \
+        -DASAN_ENABLED=ON \
+        -DTESTS_ENABLED=ON \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo
+
+Note that it is generally useful to combine ASan with debug symbols to get
+meaningful traces for reported issues.
 
 -------------
 Documentation
 -------------
 
-You need Python and Sphinx to build the HTML documentation::
+1. Install latest pycolmap for up-to-date pycolmap API documentation.
+2. Build the documentation::
 
-    cd path/to/colmap/doc
-    sudo apt-get install python
-    pip install sphinx
-    make html
-    open _build/html/index.html
+        cd path/to/colmap/doc
+        pip install -r requirements.txt
+        make html
+        open _build/html/index.html # preview results
 
-Alternatively, you can build the documentation as PDF, EPUB, etc.::
+   Alternatively, you can build the documentation as PDF, EPUB, etc.::
 
-    make latexpdf
-    open _build/pdf/COLMAP.pdf
+        make latexpdf
+        open _build/pdf/COLMAP.pdf
+
+Publishing to the website (`colmap.github.io <https://colmap.github.io/>`__) is
+automated: whenever documentation-relevant files change on ``main``, the CI
+pipeline builds these docs and pushes the result to the ``master`` branch of the
+`colmap/colmap.github.io <https://github.com/colmap/colmap.github.io>`__
+repository. Pull requests that touch the docs build them too and upload the
+generated HTML as a downloadable ``docs-preview`` artifact for review, without
+publishing. The manual steps above are therefore only needed to preview the docs
+locally.
+
+For a main release, still copy the previous release as legacy to the "legacy"
+folder in the website repository, under a folder with the release number
+(`see here <https://github.com/colmap/colmap.github.io/tree/master/legacy>`__).
+The automated deploy preserves the existing ``legacy`` folder.

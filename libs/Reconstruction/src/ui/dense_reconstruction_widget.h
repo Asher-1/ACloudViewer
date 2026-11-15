@@ -9,12 +9,13 @@
 
 #include <QtCore>
 #include <QtWidgets>
+#include <filesystem>
 
+#include "controllers/option_manager.h"
 #include "mvs/fusion.h"
 #include "ui/image_viewer_widget.h"
 #include "ui/options_widget.h"
 #include "ui/thread_control_widget.h"
-#include "util/option_manager.h"
 
 namespace colmap {
 
@@ -39,10 +40,11 @@ private:
     void Fusion();
     void PoissonMeshing();
     void DelaunayMeshing();
+    void AdvancingFrontMeshing();
     void Texturing();
 
     void SelectWorkspacePath();
-    std::string GetWorkspacePath();
+    std::filesystem::path GetWorkspacePath();
     void RefreshWorkspace();
 
     void WriteFusedPoints();
@@ -64,6 +66,7 @@ private:
     QPushButton* fusion_button_;
     QPushButton* poisson_meshing_button_;
     QPushButton* delaunay_meshing_button_;
+    QPushButton* advancing_front_meshing_button_;
     QPushButton* texturing_button_;
     QAction* refresh_workspace_action_;
     QAction* write_fused_points_action_;
@@ -72,9 +75,9 @@ private:
     bool photometric_done_;
     bool geometric_done_;
 
-    std::string images_path_;
-    std::string depth_maps_path_;
-    std::string normal_maps_path_;
+    std::filesystem::path images_path_;
+    std::filesystem::path depth_maps_path_;
+    std::filesystem::path normal_maps_path_;
 
     std::vector<PlyPoint> fused_points_;
     std::vector<std::vector<int>> fused_points_visibility_;

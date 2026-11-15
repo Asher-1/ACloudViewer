@@ -1,0 +1,17 @@
+{
+  "layout": {
+    "name": "picodet_lcnet_x1_0_fgd_layout_cdla_infer",
+    "program": {
+      "relative_path": "picodet_lcnet_x1_0_fgd_layout_cdla_infer/model.pdmodel",
+      "sha256": "9f542db747466ee2e1767384285cea4e068b777e8b63651805e543285c125ef7"
+    },
+    "parameters": {
+      "relative_path": "picodet_lcnet_x1_0_fgd_layout_cdla_infer/model.pdiparams",
+      "sha256": "f8b201421e2d1b990570366fcad2fc08c336e8ab297558e683b695da7c5aa709"
+    },
+    "config": {
+      "relative_path": "picodet_lcnet_x1_0_fgd_layout_cdla_infer/infer_cfg.yml",
+      "sha256": "2ad66ed1fdfd187ff20819b7a294c6afcb3cf0c6af547578e6b30191aaf9b42f"
+    }
+  }
+}

@@ -36,13 +36,15 @@ jobs:
           
       - name: Set up Python version
         run: |
-          sed -i "s/3.8/${{ env.PYTHON_VERSION }}/g" ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+          sed -i "s/3.10/${{ env.PYTHON_VERSION }}/g" ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
       - name: Set up Python version
         uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: qt_env
           auto-activate-base: false
           environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
 
       - name: CMake configure
         shell: bash -l {0}
@@ -97,7 +99,7 @@ jobs:
 
       - name: Set up python version
         run: |
-          (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.8", "${{ env.PYTHON_VERSION }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+          (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.10", "${{ env.PYTHON_VERSION }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
       # DGM: without caching, using conda on Windows takes a long time...
       - name: Set up Python environment
         uses: conda-incubator/setup-miniconda@v3
@@ -106,6 +108,8 @@ jobs:
           activate-environment: qt_env
           auto-activate-base: false
           environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
 
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
@@ -157,13 +161,15 @@ jobs:
 
       - name: Set up Python version
         run: |
-          sed -i "" "s/3.8/${{ env.PYTHON_VERSION }}/g" ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+          sed -i "" "s/3.10/${{ env.PYTHON_VERSION }}/g" ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
       - name: Set up Python version
         uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: qt_env
           auto-activate-base: false
           environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
 
       - name: CMake configure
         shell: bash -l {0}

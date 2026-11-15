@@ -101,7 +101,7 @@ void BuildImageModel(ccCameraSensor* sensor,
     const float camera_extent =
             static_cast<float>(std::max(camera.Width(), camera.Height()));
     const float camera_extent_world =
-            static_cast<float>(camera.ImageToWorldThreshold(camera_extent));
+            static_cast<float>(camera.CamFromImgThreshold(camera_extent));
     const float display_focal_mm =
             ecvCameraSensorDisplay::ComputeFrustumDisplayFocalMmFromExtent(
                     image_size, array_width, array_height, camera_extent_world);

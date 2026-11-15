@@ -31,6 +31,13 @@ ExternalProject_Add(
     PATCH_COMMAND ${CMAKE_COMMAND} -E copy_if_different 
         ${CloudViewer_3RDPARTY_DIR}/librealsense/unix_config.cmake 
         <SOURCE_DIR>/CMake/unix_config.cmake
+    # Preserve required firmware/TM2 support across transient probe failures.
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_LIST_DIR}/connectivity_check.cmake
+        <SOURCE_DIR>/CMake/connectivity_check.cmake
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_LIST_DIR}/check_connectivity.cmake
+        <SOURCE_DIR>/CMake/cloudviewer_check_connectivity.cmake
     # Patch for libusb static build failure on Linux
     COMMAND ${CMAKE_COMMAND} -E copy
         ${CloudViewer_3RDPARTY_DIR}/librealsense/libusb-CMakeLists.txt

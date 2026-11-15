@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="#1e3a5f"/>
+  <!-- perspective ground point grid (LiDAR returns) -->
+  <g fill="#4fc3f7">
+    <circle cx="14" cy="44" r="1.4"/>
+    <circle cx="20" cy="48" r="1.4"/>
+    <circle cx="12" cy="51" r="1.2"/>
+    <circle cx="18" cy="55" r="1.2"/>
+    <circle cx="26" cy="52" r="1.4"/>
+    <circle cx="33" cy="56" r="1.2"/>
+    <circle cx="40" cy="52" r="1.4"/>
+    <circle cx="47" cy="56" r="1.2"/>
+    <circle cx="53" cy="51" r="1.2"/>
+    <circle cx="50" cy="45" r="1.4"/>
+    <circle cx="55" cy="41" r="1.0"/>
+    <circle cx="9" cy="42" r="1.0"/>
+  </g>
+  <g fill="#e8f4ff">
+    <circle cx="24" cy="45" r="1.0"/>
+    <circle cx="44" cy="42" r="1.0"/>
+    <circle cx="30" cy="57" r="1.0"/>
+    <circle cx="15" cy="57" r="1.0"/>
+  </g>
+  <!-- wireframe 3D detection box (isometric cube) -->
+  <g fill="none" stroke="#ffcc00" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+    <!-- front face -->
+    <rect x="22" y="34" width="16" height="16" rx="1"/>
+    <!-- back face -->
+    <path d="M30 28 L46 28 L46 44 L30 44 Z"/>
+    <!-- connectors -->
+    <line x1="22" y1="34" x2="30" y2="28"/>
+    <line x1="38" y1="34" x2="46" y2="28"/>
+    <line x1="38" y1="50" x2="46" y2="44"/>
+    <line x1="22" y1="50" x2="30" y2="44"/>
+  </g>
+  <!-- label tag -->
+  <rect x="5" y="9" width="54" height="12" rx="2" fill="#ffcc00"/>
+  <text x="32" y="18" font-family="sans-serif" font-size="7" font-weight="bold" fill="#1e3a5f" text-anchor="middle">OpenPCDet</text>
+</svg>

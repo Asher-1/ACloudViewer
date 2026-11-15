@@ -31,11 +31,13 @@
 #include <FileSystem.h>
 #include <Logging.h>
 
+#include <chrono>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <unordered_set>
 
 #include "cloudViewer/data/Dataset.h"
@@ -137,8 +139,17 @@ std::string DownloadFromURL(const std::string& url,
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteDataCb);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
     res = curl_easy_perform(curl);
+    // Query the final response code (after redirects) before cleanup: an
+    // error page body is not the requested file, so fail fast with a clear
+    // status instead of reporting a confusing MD5 mismatch later.
+    long http_code = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
     curl_easy_cleanup(curl);
     fclose(fp);
+
+    if (res == CURLE_OK && http_code >= 400) {
+        utility::LogError("Download failed with HTTP status {}.", http_code);
+    }
 
     if (res == CURLE_OK) {
         const std::string actual_md5 = GetMD5(file_path);
@@ -173,12 +184,24 @@ std::string DownloadFromMirrors(const std::vector<std::string>& mirrors,
         }
     }
 
+    // CI runners occasionally receive transient bad responses (HTTP error
+    // pages, connection resets) that surface as download failures; retry
+    // each mirror a few times before moving on to the next one.
+    constexpr int kMaxAttemptsPerMirror = 3;
+
     for (const std::string& url : mirrors) {
-        try {
-            return DownloadFromURL(url, md5, download_dir);
-        } catch (const std::exception& ex) {
-            utility::LogWarning("Failed to download from {}. Exception {}.",
-                                url, ex.what());
+        for (int attempt = 1; attempt <= kMaxAttemptsPerMirror; ++attempt) {
+            try {
+                return DownloadFromURL(url, md5, download_dir);
+            } catch (const std::exception& ex) {
+                utility::LogWarning(
+                        "Failed to download from {}. Exception {}. (attempt "
+                        "{}/{})",
+                        url, ex.what(), attempt, kMaxAttemptsPerMirror);
+                if (attempt < kMaxAttemptsPerMirror) {
+                    std::this_thread::sleep_for(std::chrono::seconds(attempt));
+                }
+            }
         }
     }
 

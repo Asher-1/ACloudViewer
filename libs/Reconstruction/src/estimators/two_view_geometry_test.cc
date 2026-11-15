@@ -1,85 +1,1861 @@
-// Copyright (c) 2018, ETH Zurich and UNC Chapel Hill.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//
-//     * Neither the name of ETH Zurich and UNC Chapel Hill nor the names of
-//       its contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-// Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
+// SPDX-License-Identifier: BSD-3-Clause
 
-#define TEST_NAME "estimators/two_view_geometry"
-#include "util/testing.h"
-
-#include "base/pose.h"
 #include "estimators/two_view_geometry.h"
 
-using namespace colmap;
+#include "estimators/solvers/relpose_shared_focal.h"
+#include "geometry/essential_matrix.h"
+#include "geometry/homography_matrix.h"
+#include "geometry/rigid3_matchers.h"
+#include "geometry/triangulation.h"
+#include "math/math.h"
+#include "math/random.h"
+#include "math/random_eigen.h"
+#include "scene/database_cache.h"
+#include "scene/database_sqlite.h"
+#include "scene/reconstruction.h"
+#include "scene/synthetic.h"
+#include "util/eigen_alignment.h"
 
-BOOST_AUTO_TEST_CASE(TestDefault) {
-  TwoViewGeometry two_view_geometry;
-  BOOST_CHECK_EQUAL(two_view_geometry.config, TwoViewGeometry::UNDEFINED);
-  BOOST_CHECK_EQUAL(two_view_geometry.F, Eigen::Matrix3d::Zero());
-  BOOST_CHECK_EQUAL(two_view_geometry.E, Eigen::Matrix3d::Zero());
-  BOOST_CHECK_EQUAL(two_view_geometry.H, Eigen::Matrix3d::Zero());
-  BOOST_CHECK_EQUAL(two_view_geometry.qvec, Eigen::Vector4d::Zero());
-  BOOST_CHECK_EQUAL(two_view_geometry.tvec, Eigen::Vector3d::Zero());
-  BOOST_CHECK(two_view_geometry.inlier_matches.empty());
+#include <Eigen/Core>
+#include <gtest/gtest.h>
+
+namespace colmap {
+namespace {
+
+void ExtractPointsAndMatches(const Reconstruction& reconstruction,
+                             const Image& image1,
+                             const Image& image2,
+                             std::vector<Eigen::Vector2d>& points1,
+                             std::vector<Eigen::Vector2d>& points2,
+                             std::vector<Eigen::Vector3d>& points3D,
+                             FeatureMatches& matches) {
+  points1.clear();
+  points2.clear();
+  matches.clear();
+
+  for (const Point2D& point2D : image1.Points2D()) {
+    points1.emplace_back(point2D.XY());
+  }
+
+  for (const Point2D& point2D : image2.Points2D()) {
+    points2.emplace_back(point2D.XY());
+  }
+
+  for (const auto& [_, point3D] : reconstruction.Points3D()) {
+    const Track& track = point3D.Track();
+    CHECK_EQ(track.Length(), 2);
+
+    points3D.emplace_back(point3D.XYZ());
+
+    const auto& elem1 = track.Element(0);
+    const auto& elem2 = track.Element(1);
+
+    int idx1 = -1, idx2 = -1;
+    if (elem1.image_id == image1.ImageId() &&
+        elem2.image_id == image2.ImageId()) {
+      idx1 = elem1.point2D_idx;
+      idx2 = elem2.point2D_idx;
+    } else if (elem1.image_id == image2.ImageId() &&
+               elem2.image_id == image1.ImageId()) {
+      idx1 = elem2.point2D_idx;
+      idx2 = elem1.point2D_idx;
+    } else {
+      LOG(FATAL) << "Invalid track element.";
+    }
+
+    matches.emplace_back(idx1, idx2);
+  }
 }
 
-BOOST_AUTO_TEST_CASE(TestInvert) {
-  TwoViewGeometry two_view_geometry;
-  two_view_geometry.config = TwoViewGeometry::CALIBRATED;
-  two_view_geometry.F = two_view_geometry.E = two_view_geometry.H =
-      Eigen::Matrix3d::Identity();
-  two_view_geometry.qvec = ComposeIdentityQuaternion();
-  two_view_geometry.tvec = Eigen::Vector3d(0, 1, 2);
-  two_view_geometry.inlier_matches.resize(2);
-  two_view_geometry.inlier_matches[0] = FeatureMatch(0, 1);
-  two_view_geometry.inlier_matches[1] = FeatureMatch(2, 3);
+struct TwoViewGeometryPoseTestData {
+  Camera camera1;
+  Camera camera2;
+  std::vector<Eigen::Vector2d> points1;
+  std::vector<Eigen::Vector2d> points2;
+  TwoViewGeometry geometry;
+};
 
-  two_view_geometry.Invert();
-  BOOST_CHECK_EQUAL(two_view_geometry.config, TwoViewGeometry::CALIBRATED);
-  BOOST_CHECK(two_view_geometry.F.isApprox(Eigen::Matrix3d::Identity()));
-  BOOST_CHECK(two_view_geometry.E.isApprox(Eigen::Matrix3d::Identity()));
-  BOOST_CHECK(two_view_geometry.H.isApprox(Eigen::Matrix3d::Identity()));
-  BOOST_CHECK(two_view_geometry.qvec.isApprox(ComposeIdentityQuaternion()));
-  BOOST_CHECK(two_view_geometry.tvec.isApprox(Eigen::Vector3d(-0, -1, -2)));
-  BOOST_CHECK_EQUAL(two_view_geometry.inlier_matches[0].point2D_idx1, 1);
-  BOOST_CHECK_EQUAL(two_view_geometry.inlier_matches[0].point2D_idx2, 0);
-  BOOST_CHECK_EQUAL(two_view_geometry.inlier_matches[1].point2D_idx1, 3);
-  BOOST_CHECK_EQUAL(two_view_geometry.inlier_matches[1].point2D_idx2, 2);
+TwoViewGeometryPoseTestData CreateTwoViewGeometryPoseTestData(
+    TwoViewGeometry::ConfigurationType config) {
+  Reconstruction reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 50;
+  synthetic_dataset_options.camera_has_prior_focal_length = true;
+  SynthesizeDataset(synthetic_dataset_options, &reconstruction);
 
-  two_view_geometry.Invert();
-  BOOST_CHECK_EQUAL(two_view_geometry.config, TwoViewGeometry::CALIBRATED);
-  BOOST_CHECK(two_view_geometry.F.isApprox(Eigen::Matrix3d::Identity()));
-  BOOST_CHECK(two_view_geometry.E.isApprox(Eigen::Matrix3d::Identity()));
-  BOOST_CHECK(two_view_geometry.H.isApprox(Eigen::Matrix3d::Identity()));
-  BOOST_CHECK(two_view_geometry.qvec.isApprox(ComposeIdentityQuaternion()));
-  BOOST_CHECK(two_view_geometry.tvec.isApprox(Eigen::Vector3d(0, 1, 2)));
-  BOOST_CHECK_EQUAL(two_view_geometry.inlier_matches[0].point2D_idx1, 0);
-  BOOST_CHECK_EQUAL(two_view_geometry.inlier_matches[0].point2D_idx2, 1);
-  BOOST_CHECK_EQUAL(two_view_geometry.inlier_matches[1].point2D_idx1, 2);
-  BOOST_CHECK_EQUAL(two_view_geometry.inlier_matches[1].point2D_idx2, 3);
+  const Image& image1 = reconstruction.Image(1);
+  const Image& image2 = reconstruction.Image(2);
+
+  TwoViewGeometryPoseTestData data;
+  data.camera1 = reconstruction.Camera(image1.CameraId());
+  data.camera2 = reconstruction.Camera(image2.CameraId());
+  data.geometry.config = config;
+  data.geometry.cam2_from_cam1 =
+      image2.CamFromWorld() * Inverse(image1.CamFromWorld());
+
+  if (config == TwoViewGeometry::ConfigurationType::CALIBRATED) {
+    data.geometry.E = EssentialMatrixFromPose(*data.geometry.cam2_from_cam1);
+  } else if (config == TwoViewGeometry::ConfigurationType::UNCALIBRATED) {
+    data.geometry.F = FundamentalFromEssentialMatrix(
+        data.camera2.CalibrationMatrix(),
+        EssentialMatrixFromPose(*data.geometry.cam2_from_cam1),
+        data.camera1.CalibrationMatrix());
+  } else if (config == TwoViewGeometry::ConfigurationType::PLANAR) {
+    const Eigen::Vector3d homography_plane_normal =
+        image1.CamFromWorld().rotation() *
+        -(image1.ViewingDirection() + image2.ViewingDirection()).normalized();
+    constexpr double kHomographyPlaneDistance = 1;
+    data.geometry.H = HomographyMatrixFromPose(
+        data.camera1.CalibrationMatrix(),
+        data.camera2.CalibrationMatrix(),
+        data.geometry.cam2_from_cam1->rotation().matrix(),
+        data.geometry.cam2_from_cam1->translation(),
+        homography_plane_normal,
+        kHomographyPlaneDistance);
+  } else if (config == TwoViewGeometry::ConfigurationType::PANORAMIC) {
+    data.geometry.cam2_from_cam1->translation() = Eigen::Vector3d::Zero();
+    data.geometry.H = HomographyMatrixFromPose(
+        data.camera1.CalibrationMatrix(),
+        data.camera2.CalibrationMatrix(),
+        data.geometry.cam2_from_cam1->rotation().matrix(),
+        data.geometry.cam2_from_cam1->translation(),
+        Eigen::Vector3d::UnitZ(),
+        1);
+  } else {
+    LOG(FATAL) << "Invalid configuration.";
+  }
+
+  std::vector<Eigen::Vector3d> points3D;
+  ExtractPointsAndMatches(reconstruction,
+                          image1,
+                          image2,
+                          data.points1,
+                          data.points2,
+                          points3D,
+                          data.geometry.inlier_matches);
+
+  if (config == TwoViewGeometry::ConfigurationType::PANORAMIC) {
+    data.geometry.tri_angle = 0;
+  } else {
+    data.geometry.tri_angle = Median(CalculateTriangulationAngles(
+        image1.ProjectionCenter(), image2.ProjectionCenter(), points3D));
+  }
+
+  return data;
 }
+
+bool CheckEqualTwoViewGeometry(const TwoViewGeometry& geometry,
+                               const TwoViewGeometry& expected_geometry,
+                               double tri_angle_tol,
+                               double rotation_tol,
+                               double translation_tol,
+                               bool normalized_translation) {
+  THROW_CHECK(geometry.cam2_from_cam1.has_value());
+  THROW_CHECK(expected_geometry.cam2_from_cam1.has_value());
+  const double tri_angle_error =
+      std::abs(geometry.tri_angle - expected_geometry.tri_angle);
+  const double rotation_error =
+      geometry.cam2_from_cam1->rotation().angularDistance(
+          expected_geometry.cam2_from_cam1->rotation());
+  const double translation_error =
+      (geometry.cam2_from_cam1->translation() -
+       (normalized_translation
+            ? expected_geometry.cam2_from_cam1->translation().normalized()
+            : expected_geometry.cam2_from_cam1->translation()))
+          .norm();
+  if (tri_angle_error > tri_angle_tol || rotation_error > rotation_tol ||
+      translation_error > translation_tol) {
+    LOG(ERROR) << "Two view geometries do not match with errors: tri_angle="
+               << tri_angle_error << ", rotation=" << rotation_error
+               << ", translation=" << translation_error;
+    return false;
+  }
+  return true;
+}
+
+TEST(EstimateTwoViewGeometryPose, Calibrated) {
+  constexpr int kNumTests = 100;
+  int num_failures = 0;
+  for (int seed = 0; seed < kNumTests; ++seed) {
+    SetPRNGSeed(seed);
+    const TwoViewGeometryPoseTestData test_data =
+        CreateTwoViewGeometryPoseTestData(
+            TwoViewGeometry::ConfigurationType::CALIBRATED);
+
+    TwoViewGeometry geometry;
+    geometry.config = test_data.geometry.config;
+    geometry.E = test_data.geometry.E;
+    geometry.inlier_matches = test_data.geometry.inlier_matches;
+    EXPECT_TRUE(EstimateTwoViewGeometryPose(test_data.camera1,
+                                            test_data.points1,
+                                            test_data.camera2,
+                                            test_data.points2,
+                                            &geometry));
+    if (!CheckEqualTwoViewGeometry(geometry,
+                                   test_data.geometry,
+                                   /*tri_angle_tol=*/1e-6,
+                                   /*rotation_tol=*/1e-6,
+                                   /*translation_tol=*/1e-6,
+                                   /*normalized_translation=*/true)) {
+      num_failures++;
+    }
+  }
+  EXPECT_EQ(num_failures, 0);
+}
+
+TEST(EstimateTwoViewGeometryPose, FailureDueToInsufficientMatches) {
+  for (const auto config : {TwoViewGeometry::ConfigurationType::CALIBRATED,
+                            TwoViewGeometry::ConfigurationType::UNCALIBRATED,
+                            TwoViewGeometry::ConfigurationType::PLANAR,
+                            TwoViewGeometry::ConfigurationType::PANORAMIC}) {
+    TwoViewGeometryPoseTestData test_data =
+        CreateTwoViewGeometryPoseTestData(config);
+    test_data.geometry.inlier_matches.clear();
+
+    TwoViewGeometry geometry;
+    geometry.config = test_data.geometry.config;
+    geometry.E = test_data.geometry.E;
+    geometry.inlier_matches = test_data.geometry.inlier_matches;
+    EXPECT_FALSE(EstimateTwoViewGeometryPose(test_data.camera1,
+                                             test_data.points1,
+                                             test_data.camera2,
+                                             test_data.points2,
+                                             &geometry))
+        << config;
+  }
+}
+
+TEST(EstimateTwoViewGeometryPose, Uncalibrated) {
+  constexpr int kNumTests = 100;
+  int num_failures = 0;
+  for (int seed = 0; seed < kNumTests; ++seed) {
+    SetPRNGSeed(seed);
+    const TwoViewGeometryPoseTestData test_data =
+        CreateTwoViewGeometryPoseTestData(
+            TwoViewGeometry::ConfigurationType::UNCALIBRATED);
+
+    TwoViewGeometry geometry;
+    geometry.config = test_data.geometry.config;
+    geometry.F = test_data.geometry.F;
+    geometry.inlier_matches = test_data.geometry.inlier_matches;
+    EXPECT_TRUE(EstimateTwoViewGeometryPose(test_data.camera1,
+                                            test_data.points1,
+                                            test_data.camera2,
+                                            test_data.points2,
+                                            &geometry));
+    if (!CheckEqualTwoViewGeometry(geometry,
+                                   test_data.geometry,
+                                   /*tri_angle_tol=*/1e-6,
+                                   /*rotation_tol=*/1e-6,
+                                   /*translation_tol=*/1e-6,
+                                   /*normalized_translation=*/true)) {
+      num_failures++;
+    }
+  }
+  EXPECT_EQ(num_failures, 0);
+}
+
+TEST(EstimateTwoViewGeometryPose, Planar) {
+  constexpr int kNumTests = 100;
+  int num_failures = 0;
+  for (int seed = 0; seed < kNumTests; ++seed) {
+    SetPRNGSeed(seed);
+    const TwoViewGeometryPoseTestData test_data =
+        CreateTwoViewGeometryPoseTestData(
+            TwoViewGeometry::ConfigurationType::PLANAR);
+
+    TwoViewGeometry geometry;
+    geometry.config = test_data.geometry.config;
+    geometry.H = test_data.geometry.H;
+    geometry.inlier_matches = test_data.geometry.inlier_matches;
+    EXPECT_TRUE(EstimateTwoViewGeometryPose(test_data.camera1,
+                                            test_data.points1,
+                                            test_data.camera2,
+                                            test_data.points2,
+                                            &geometry));
+    if (!CheckEqualTwoViewGeometry(geometry,
+                                   test_data.geometry,
+                                   /*tri_angle_tol=*/1e-3,
+                                   /*rotation_tol=*/1e-6,
+                                   /*translation_tol=*/1e-5,
+                                   /*normalized_translation=*/false)) {
+      num_failures++;
+    }
+  }
+  EXPECT_EQ(num_failures, 0);
+}
+
+TEST(EstimateTwoViewGeometryPose, PlanarOrPanoramic) {
+  constexpr int kNumTests = 100;
+  int num_failures = 0;
+  for (int seed = 0; seed < kNumTests; ++seed) {
+    SetPRNGSeed(seed);
+    for (const auto config : {TwoViewGeometry::ConfigurationType::PLANAR,
+                              TwoViewGeometry::ConfigurationType::PANORAMIC}) {
+      const TwoViewGeometryPoseTestData test_data =
+          CreateTwoViewGeometryPoseTestData(config);
+
+      TwoViewGeometry geometry;
+      geometry.config = TwoViewGeometry::ConfigurationType::PLANAR_OR_PANORAMIC;
+      geometry.H = test_data.geometry.H;
+      geometry.inlier_matches = test_data.geometry.inlier_matches;
+      EXPECT_TRUE(EstimateTwoViewGeometryPose(test_data.camera1,
+                                              test_data.points1,
+                                              test_data.camera2,
+                                              test_data.points2,
+                                              &geometry));
+      EXPECT_EQ(geometry.config, config);
+      if (!CheckEqualTwoViewGeometry(geometry,
+                                     test_data.geometry,
+                                     /*tri_angle_tol=*/1e-3,
+                                     /*rotation_tol=*/1e-6,
+                                     /*translation_tol=*/1e-6,
+                                     /*normalized_translation=*/false)) {
+        num_failures++;
+      }
+    }
+  }
+  EXPECT_EQ(num_failures, 0);
+}
+
+struct TwoViewGeometryTestData {
+  Camera camera1;
+  Camera camera2;
+  std::vector<Eigen::Vector2d> points1;
+  std::vector<Eigen::Vector2d> points2;
+  FeatureMatches matches;
+  // Ground-truth relative pose (cam2_from_cam1) of the synthetic dataset.
+  Rigid3d cam2_from_cam1;
+};
+
+TwoViewGeometryTestData CreateTwoViewGeometryTestData(
+    const SyntheticDatasetOptions& synthetic_dataset_options,
+    const SyntheticNoiseOptions& synthetic_noise_options = {}) {
+  Reconstruction reconstruction;
+  SynthesizeDataset(synthetic_dataset_options, &reconstruction);
+  SynthesizeNoise(synthetic_noise_options, &reconstruction);
+
+  CHECK_EQ(reconstruction.NumImages(), 2);
+  const Image& image1 = reconstruction.Image(1);
+  const Image& image2 = reconstruction.Image(2);
+
+  std::vector<Eigen::Vector2d> points1;
+  std::vector<Eigen::Vector2d> points2;
+  std::vector<Eigen::Vector3d> points3D;
+  FeatureMatches matches;
+
+  TwoViewGeometryTestData data;
+  data.camera1 = reconstruction.Camera(image1.CameraId());
+  data.camera2 = reconstruction.Camera(image2.CameraId());
+  data.cam2_from_cam1 = image2.CamFromWorld() * Inverse(image1.CamFromWorld());
+
+  ExtractPointsAndMatches(reconstruction,
+                          image1,
+                          image2,
+                          data.points1,
+                          data.points2,
+                          points3D,
+                          data.matches);
+
+  return data;
+}
+
+TEST(TwoViewGeometryOptions, CheckMinInlierRatioBounds) {
+  TwoViewGeometryOptions options;
+  EXPECT_TRUE(options.Check());
+  options.min_inlier_ratio = -0.1;
+  EXPECT_FALSE(options.Check());
+  options.min_inlier_ratio = 1.1;
+  EXPECT_FALSE(options.Check());
+  options.min_inlier_ratio = 1.0;
+  EXPECT_TRUE(options.Check());
+}
+
+TEST(EstimateTwoViewGeometry, Spherical) {
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 200;
+  synthetic_dataset_options.camera_model_id =
+      EquirectangularCameraModel::model_id;
+  synthetic_dataset_options.camera_width = 1000;
+  synthetic_dataset_options.camera_height = 500;
+  synthetic_dataset_options.camera_params = {1000, 500};
+  const TwoViewGeometryTestData test_data =
+      CreateTwoViewGeometryTestData(synthetic_dataset_options);
+  ASSERT_FALSE(test_data.camera1.IsPerspective());
+  ASSERT_FALSE(test_data.camera2.IsPerspective());
+
+  TwoViewGeometryOptions two_view_geometry_options;
+  two_view_geometry_options.compute_relative_pose = true;
+
+  // Spherical cameras have no pinhole image plane, so the fundamental matrix is
+  // not estimated; the pair is classified from the bearing-based essential
+  // matrix and a ray-space homography.
+  const TwoViewGeometry geometry =
+      EstimateTwoViewGeometry(test_data.camera1,
+                              test_data.points1,
+                              test_data.camera2,
+                              test_data.points2,
+                              test_data.matches,
+                              two_view_geometry_options);
+  EXPECT_EQ(geometry.config, TwoViewGeometry::ConfigurationType::CALIBRATED);
+  EXPECT_TRUE(geometry.E.has_value());
+  EXPECT_FALSE(geometry.F.has_value());
+  EXPECT_TRUE(geometry.H.has_value());
+  EXPECT_GE(geometry.inlier_matches.size(), test_data.matches.size() / 2);
+
+  // The recovered relative pose should match the ground truth: rotation
+  // exactly, translation up to scale (the essential matrix fixes only the
+  // translation direction), so compare with normalized translations.
+  ASSERT_TRUE(geometry.cam2_from_cam1.has_value());
+  EXPECT_THAT(
+      Rigid3d(geometry.cam2_from_cam1->rotation(),
+              geometry.cam2_from_cam1->translation().normalized()),
+      Rigid3dNear(Rigid3d(test_data.cam2_from_cam1.rotation(),
+                          test_data.cam2_from_cam1.translation().normalized()),
+                  /*rtol=*/1e-3,
+                  /*ttol=*/1e-2));
+
+  // EstimateCalibratedTwoViewGeometry delegates to the spherical path rather
+  // than estimating a meaningless fundamental matrix.
+  const TwoViewGeometry calibrated_geometry =
+      EstimateCalibratedTwoViewGeometry(test_data.camera1,
+                                        test_data.points1,
+                                        test_data.camera2,
+                                        test_data.points2,
+                                        test_data.matches,
+                                        two_view_geometry_options);
+  EXPECT_EQ(calibrated_geometry.config,
+            TwoViewGeometry::ConfigurationType::CALIBRATED);
+  EXPECT_TRUE(calibrated_geometry.E.has_value());
+  EXPECT_FALSE(calibrated_geometry.F.has_value());
+  EXPECT_TRUE(calibrated_geometry.H.has_value());
+}
+
+TEST(EstimateTwoViewGeometry, UncalibratedFisheyeIsDegenerate) {
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 200;
+  synthetic_dataset_options.camera_model_id =
+      OpenCVFisheyeCameraModel::model_id;
+  synthetic_dataset_options.camera_params = {1280, 1280, 512, 384, 0, 0, 0, 0};
+  synthetic_dataset_options.camera_has_prior_focal_length = false;
+  const TwoViewGeometryTestData test_data =
+      CreateTwoViewGeometryTestData(synthetic_dataset_options);
+  ASSERT_TRUE(test_data.camera1.IsPerspectiveFisheye());
+  ASSERT_FALSE(test_data.camera1.HasPriorFocalLength());
+
+  // Without a focal length prior the only remaining model is the fundamental
+  // matrix, which assumes a pinhole projection that a fisheye camera does not
+  // have. The pair is therefore rejected rather than fit with a meaningless
+  // fundamental matrix.
+  TwoViewGeometryOptions two_view_geometry_options;
+  const TwoViewGeometry geometry =
+      EstimateTwoViewGeometry(test_data.camera1,
+                              test_data.points1,
+                              test_data.camera2,
+                              test_data.points2,
+                              test_data.matches,
+                              two_view_geometry_options);
+  EXPECT_EQ(geometry.config, TwoViewGeometry::ConfigurationType::DEGENERATE);
+  EXPECT_FALSE(geometry.F.has_value());
+  EXPECT_FALSE(geometry.H.has_value());
+}
+
+TEST(EstimateTwoViewGeometry, CalibratedFisheyeIsEstimated) {
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 200;
+  synthetic_dataset_options.camera_model_id =
+      OpenCVFisheyeCameraModel::model_id;
+  synthetic_dataset_options.camera_params = {1280, 1280, 512, 384, 0, 0, 0, 0};
+  synthetic_dataset_options.camera_has_prior_focal_length = true;
+  const TwoViewGeometryTestData test_data =
+      CreateTwoViewGeometryTestData(synthetic_dataset_options);
+  ASSERT_TRUE(test_data.camera1.IsPerspectiveFisheye());
+  ASSERT_TRUE(test_data.camera1.HasPriorFocalLength());
+
+  // With a known focal length the calibrated path applies, which works on
+  // bearing vectors and is therefore valid for fisheye cameras.
+  TwoViewGeometryOptions two_view_geometry_options;
+  const TwoViewGeometry geometry =
+      EstimateTwoViewGeometry(test_data.camera1,
+                              test_data.points1,
+                              test_data.camera2,
+                              test_data.points2,
+                              test_data.matches,
+                              two_view_geometry_options);
+  EXPECT_EQ(geometry.config, TwoViewGeometry::ConfigurationType::CALIBRATED);
+  EXPECT_TRUE(geometry.E.has_value());
+  EXPECT_GE(geometry.inlier_matches.size(), test_data.matches.size() / 2);
+}
+
+TEST(EstimateTwoViewGeometry, ForceHUseWithFisheyeIsDegenerate) {
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 200;
+  synthetic_dataset_options.camera_model_id =
+      OpenCVFisheyeCameraModel::model_id;
+  synthetic_dataset_options.camera_params = {1280, 1280, 512, 384, 0, 0, 0, 0};
+  synthetic_dataset_options.camera_has_prior_focal_length = true;
+  const TwoViewGeometryTestData test_data =
+      CreateTwoViewGeometryTestData(synthetic_dataset_options);
+  ASSERT_TRUE(test_data.camera1.IsPerspectiveFisheye());
+
+  // A homography only relates two images of a plane under a pinhole
+  // projection, so it is not estimated for fisheye cameras even when the
+  // caller explicitly asks for it.
+  TwoViewGeometryOptions two_view_geometry_options;
+  two_view_geometry_options.force_H_use = true;
+  const TwoViewGeometry geometry =
+      EstimateTwoViewGeometry(test_data.camera1,
+                              test_data.points1,
+                              test_data.camera2,
+                              test_data.points2,
+                              test_data.matches,
+                              two_view_geometry_options);
+  EXPECT_EQ(geometry.config, TwoViewGeometry::ConfigurationType::DEGENERATE);
+  EXPECT_FALSE(geometry.H.has_value());
+}
+
+// A pure-rotation pair is the configuration a homography must catch, since the
+// essential matrix degenerates there. With a strongly distorted camera the
+// pixel-space homography cannot fit the correspondences at all, so it loses the
+// inliers that drive the classification. Estimating it on bearing rays restores
+// the fit and with it the PLANAR_OR_PANORAMIC label.
+// A rotating 360 degree camera is the usual capture mode, and the essential
+// matrix degenerates there, so the spherical path must catch it.
+TEST(EstimateTwoViewGeometry, PanoramicWithSphericalCameraIsDetected) {
+  SetPRNGSeed(42);
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 1;
+  synthetic_dataset_options.num_cameras_per_rig = 2;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 500;
+  synthetic_dataset_options.camera_model_id =
+      EquirectangularCameraModel::model_id;
+  synthetic_dataset_options.camera_width = 1000;
+  synthetic_dataset_options.camera_height = 500;
+  synthetic_dataset_options.camera_params = {1000, 500};
+  synthetic_dataset_options.sensor_from_rig_translation_stddev = 0;
+  const TwoViewGeometryTestData test_data =
+      CreateTwoViewGeometryTestData(synthetic_dataset_options);
+  ASSERT_TRUE(test_data.camera1.IsSpherical());
+
+  TwoViewGeometryOptions two_view_geometry_options;
+  two_view_geometry_options.ransac_options.random_seed = 42;
+  two_view_geometry_options.compute_relative_pose = true;
+  const TwoViewGeometry geometry =
+      EstimateTwoViewGeometry(test_data.camera1,
+                              test_data.points1,
+                              test_data.camera2,
+                              test_data.points2,
+                              test_data.matches,
+                              two_view_geometry_options);
+  EXPECT_EQ(geometry.config, TwoViewGeometry::ConfigurationType::PANORAMIC);
+  EXPECT_TRUE(geometry.E.has_value());
+  EXPECT_TRUE(geometry.H.has_value());
+  EXPECT_FALSE(geometry.F.has_value());
+  EXPECT_GE(geometry.inlier_matches.size(), test_data.matches.size() / 2);
+}
+
+TEST(EstimateTwoViewGeometry, PanoramicWithDistortedCameraIsDetected) {
+  SetPRNGSeed(42);
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 1;
+  synthetic_dataset_options.num_cameras_per_rig = 2;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 500;
+  synthetic_dataset_options.camera_model_id = OpenCVCameraModel::model_id;
+  synthetic_dataset_options.camera_params = {
+      1280, 1280, 512, 384, 0.15, -0.03, 0.001, 0.001};
+  synthetic_dataset_options.camera_has_prior_focal_length = true;
+  synthetic_dataset_options.sensor_from_rig_translation_stddev = 0;
+  const TwoViewGeometryTestData test_data =
+      CreateTwoViewGeometryTestData(synthetic_dataset_options);
+  ASSERT_TRUE(test_data.camera1.IsPerspectivePinhole());
+  ASSERT_FALSE(test_data.camera1.IsUndistorted());
+
+  TwoViewGeometryOptions two_view_geometry_options;
+  two_view_geometry_options.ransac_options.random_seed = 42;
+  two_view_geometry_options.compute_relative_pose = true;
+  const TwoViewGeometry geometry =
+      EstimateTwoViewGeometry(test_data.camera1,
+                              test_data.points1,
+                              test_data.camera2,
+                              test_data.points2,
+                              test_data.matches,
+                              two_view_geometry_options);
+  EXPECT_EQ(geometry.config, TwoViewGeometry::ConfigurationType::PANORAMIC);
+  EXPECT_TRUE(geometry.H.has_value());
+  EXPECT_GE(geometry.inlier_matches.size(), test_data.matches.size() / 2);
+}
+
+// As above for a fisheye camera, which reaches the calibrated path today
+// because it short-circuits only spherical models. No gate change is involved.
+TEST(EstimateTwoViewGeometry, PanoramicWithFisheyeCameraIsDetected) {
+  SetPRNGSeed(42);
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 1;
+  synthetic_dataset_options.num_cameras_per_rig = 2;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 500;
+  synthetic_dataset_options.camera_model_id =
+      OpenCVFisheyeCameraModel::model_id;
+  synthetic_dataset_options.camera_params = {
+      1280, 1280, 512, 384, 0.05, -0.01, 0, 0};
+  synthetic_dataset_options.camera_has_prior_focal_length = true;
+  synthetic_dataset_options.sensor_from_rig_translation_stddev = 0;
+  const TwoViewGeometryTestData test_data =
+      CreateTwoViewGeometryTestData(synthetic_dataset_options);
+  ASSERT_TRUE(test_data.camera1.IsPerspectiveFisheye());
+
+  TwoViewGeometryOptions two_view_geometry_options;
+  two_view_geometry_options.ransac_options.random_seed = 42;
+  two_view_geometry_options.compute_relative_pose = true;
+  const TwoViewGeometry geometry =
+      EstimateTwoViewGeometry(test_data.camera1,
+                              test_data.points1,
+                              test_data.camera2,
+                              test_data.points2,
+                              test_data.matches,
+                              two_view_geometry_options);
+  EXPECT_EQ(geometry.config, TwoViewGeometry::ConfigurationType::PANORAMIC);
+  EXPECT_TRUE(geometry.H.has_value());
+  EXPECT_GE(geometry.inlier_matches.size(), test_data.matches.size() / 2);
+}
+
+// A pure-rotation pair seen by a zero-distortion fisheye camera. The fisheye
+// projection is non-linear even with zero coefficients, so the homography must
+// be estimated on bearing rays; routing by IsUndistorted alone would send this
+// pair to the pixel estimator, where no homography fits. A dedicated wide
+// field-of-view scene is built here rather than using SynthesizeDataset, whose
+// points sit near the optical axis where fisheye and pinhole projections
+// nearly agree.
+TEST(EstimateTwoViewGeometry, PanoramicWithUndistortedFisheyeCameraIsDetected) {
+  SetPRNGSeed(42);
+  Camera camera = Camera::CreateFromModelId(
+      /*camera_id=*/1,
+      OpenCVFisheyeCameraModel::model_id,
+      /*focal_length=*/500.0,
+      /*width=*/2048,
+      /*height=*/2048);
+  camera.SetSource(CameraSource::USER);
+  ASSERT_TRUE(camera.IsPerspectiveFisheye());
+  ASSERT_TRUE(camera.IsUndistorted());
+
+  const Rigid3d cam2_from_cam1(Eigen::Quaterniond(Eigen::AngleAxisd(
+                                   DegToRad(20.0), Eigen::Vector3d::UnitY())),
+                               Eigen::Vector3d::Zero());
+
+  std::vector<Eigen::Vector2d> points1;
+  std::vector<Eigen::Vector2d> points2;
+  FeatureMatches matches;
+  while (points1.size() < 200) {
+    // Bearing within ~60 degrees of the optical axis.
+    Eigen::Vector3d dir = RandomEigenVectord<3>();
+    dir.z() = std::abs(dir.z()) + 0.5;
+    const Eigen::Vector3d point_in_cam1 = 5.0 * dir.normalized();
+    const Eigen::Vector3d point_in_cam2 = cam2_from_cam1 * point_in_cam1;
+    if (point_in_cam2.z() < 0.5) {
+      continue;
+    }
+    const std::optional<Eigen::Vector2d> xy1 = camera.ImgFromCam(point_in_cam1);
+    const std::optional<Eigen::Vector2d> xy2 = camera.ImgFromCam(point_in_cam2);
+    if (!xy1.has_value() || !xy2.has_value()) {
+      continue;
+    }
+    const point2D_t idx = static_cast<point2D_t>(points1.size());
+    points1.push_back(*xy1);
+    points2.push_back(*xy2);
+    matches.emplace_back(idx, idx);
+  }
+
+  TwoViewGeometryOptions two_view_geometry_options;
+  two_view_geometry_options.ransac_options.random_seed = 42;
+  two_view_geometry_options.compute_relative_pose = true;
+  const TwoViewGeometry geometry = EstimateTwoViewGeometry(
+      camera, points1, camera, points2, matches, two_view_geometry_options);
+  EXPECT_EQ(geometry.config, TwoViewGeometry::ConfigurationType::PANORAMIC);
+  EXPECT_TRUE(geometry.H.has_value());
+  EXPECT_GE(geometry.inlier_matches.size(), matches.size() / 2);
+}
+
+TEST(EstimateTwoViewGeometry, SharedFocal) {
+  // A single shared, uncalibrated, pinhole-projection camera observed from two
+  // frames routes to the shared-focal solver, which jointly recovers the
+  // relative pose and the unknown focal length. Both a single-focal model
+  // (SIMPLE_PINHOLE) and a (here isotropic) two-focal model (PINHOLE, seeded
+  // fx = fy = f) are supported.
+  //
+  // Note: we build a dedicated scene here rather than using SynthesizeDataset,
+  // whose cameras sit far from a unit-sphere point cloud (points subtend only
+  // ~11 deg). Focal-from-two-views needs points spread well off the optical
+  // axis to be well-constrained, so we generate wide-baseline, wide
+  // field-of-view correspondences in front of both cameras.
+  const double kFocal = 1280.0;
+  for (const CameraModelId model_id :
+       {SimplePinholeCameraModel::model_id, PinholeCameraModel::model_id}) {
+    Camera camera = Camera::CreateFromModelId(
+        /*camera_id=*/1, model_id, kFocal, /*width=*/2048, /*height=*/2048);
+    camera.SetSource(CameraSource::GUESS);
+    ASSERT_FALSE(camera.HasPriorFocalLength());
+    ASSERT_TRUE(camera.IsPerspective());
+
+    // Ground-truth relative pose with a unit baseline and a bounded rotation so
+    // the point cloud is visible in both views. The focal is unidentifiable for
+    // singular optical axis configurations, where the estimator downgrades the
+    // pair to UNCALIBRATED, so resample until the pose is clear of that
+    // degeneracy, using the same test as the estimator.
+    Rigid3d cam2_from_cam1;
+    do {
+      const Eigen::Vector3d axis = RandomEigenVectord<3>().normalized();
+      cam2_from_cam1 =
+          Rigid3d(Eigen::Quaterniond(Eigen::AngleAxisd(
+                      DegToRad(RandomUniformReal<double>(20.0, 60.0)), axis)),
+                  RandomEigenVectord<3>().normalized());
+    } while (
+        !RelativePoseSharedFocalEstimator::IsFocalIdentifiable(cam2_from_cam1));
+
+    std::vector<Eigen::Vector2d> points1;
+    std::vector<Eigen::Vector2d> points2;
+    FeatureMatches matches;
+    while (points1.size() < 200) {
+      // Point in front of cam1 with a moderate field of view (|x/z|, |y/z| <=
+      // ~0.5).
+      Eigen::Vector3d dir = RandomEigenVectord<3>();
+      dir.z() = std::abs(dir.z()) + 2.0;
+      const Eigen::Vector3d point_in_cam1 =
+          RandomUniformReal<double>(2.0, 5.0) * dir.normalized();
+      const Eigen::Vector3d point_in_cam2 = cam2_from_cam1 * point_in_cam1;
+      if (point_in_cam2.z() < 0.5) {
+        continue;  // Require cheirality in cam2 (cam1 holds by construction).
+      }
+      const std::optional<Eigen::Vector2d> xy1 =
+          camera.ImgFromCam(point_in_cam1);
+      const std::optional<Eigen::Vector2d> xy2 =
+          camera.ImgFromCam(point_in_cam2);
+      if (!xy1.has_value() || !xy2.has_value()) {
+        continue;
+      }
+      const point2D_t idx = static_cast<point2D_t>(points1.size());
+      points1.push_back(*xy1);
+      points2.push_back(*xy2);
+      matches.emplace_back(idx, idx);
+    }
+
+    TwoViewGeometryOptions two_view_geometry_options;
+    two_view_geometry_options.compute_relative_pose = true;
+
+    const TwoViewGeometry geometry = EstimateTwoViewGeometry(
+        camera, points1, camera, points2, matches, two_view_geometry_options);
+
+    // The shared-focal solver reports an UNCALIBRATED pair carrying an
+    // essential matrix and the estimated intrinsics in camera1/camera2.
+    EXPECT_EQ(geometry.config,
+              TwoViewGeometry::ConfigurationType::UNCALIBRATED);
+    EXPECT_TRUE(geometry.E.has_value());
+    ASSERT_TRUE(geometry.camera1.has_value());
+    ASSERT_TRUE(geometry.camera2.has_value());
+    // Both views share a single camera in this configuration.
+    EXPECT_EQ(*geometry.camera1, *geometry.camera2);
+    EXPECT_GE(geometry.inlier_matches.size(), matches.size() / 2);
+
+    // The estimated shared focal length should match the ground truth. Use
+    // FocalLengthX() so both the single-focal (SIMPLE_PINHOLE) and two-focal
+    // (PINHOLE, fx == fy) models are handled; FocalLength() rejects the latter.
+    EXPECT_NEAR(geometry.camera1->FocalLengthX(), kFocal, 0.05 * kFocal);
+
+    // The recovered relative pose should match the ground truth: rotation
+    // exactly, translation up to scale (the essential matrix fixes only the
+    // translation direction), so compare with normalized translations.
+    ASSERT_TRUE(geometry.cam2_from_cam1.has_value());
+    EXPECT_THAT(Rigid3d(geometry.cam2_from_cam1->rotation(),
+                        geometry.cam2_from_cam1->translation().normalized()),
+                Rigid3dNear(Rigid3d(cam2_from_cam1.rotation(),
+                                    cam2_from_cam1.translation().normalized()),
+                            /*rtol=*/1e-2,
+                            /*ttol=*/1e-1));
+  }
+}
+
+TEST(EstimateTwoViewGeometry, OneSidedFocal) {
+  // Two distinct cameras where exactly one has a known focal length route to
+  // the one-sided focal solver, which recovers the relative pose jointly with
+  // the unknown focal of the other. The pair is run in both orders, so that the
+  // internal canonicalization (which requires the uncalibrated view first, and
+  // inverts the result otherwise) is covered in both directions.
+  //
+  // As in the shared-focal test, a dedicated wide-baseline, wide field-of-view
+  // scene is built rather than using SynthesizeDataset, whose points subtend
+  // only ~11 deg and leave the focal poorly constrained.
+  const double kUncalibFocal = 1280.0;
+  const double kCalibFocal = 900.0;
+  for (const CameraModelId model_id :
+       {SimplePinholeCameraModel::model_id, PinholeCameraModel::model_id}) {
+    Camera uncalib_camera = Camera::CreateFromModelId(
+        /*camera_id=*/1,
+        model_id,
+        kUncalibFocal,
+        /*width=*/2048,
+        /*height=*/2048);
+    uncalib_camera.SetSource(CameraSource::GUESS);
+    Camera calib_camera = Camera::CreateFromModelId(
+        /*camera_id=*/2,
+        model_id,
+        kCalibFocal,
+        /*width=*/2048,
+        /*height=*/2048);
+    calib_camera.SetSource(CameraSource::USER);
+
+    // Ground-truth relative pose with a unit baseline and a bounded rotation so
+    // the point cloud is visible in both views. Unlike the shared-focal case no
+    // rejection sampling is needed: the known focal removes the coplanar-axes
+    // singularity.
+    const Eigen::Vector3d axis = RandomEigenVectord<3>().normalized();
+    const Rigid3d calib_from_uncalib(
+        Eigen::Quaterniond(Eigen::AngleAxisd(
+            DegToRad(RandomUniformReal<double>(20.0, 60.0)), axis)),
+        RandomEigenVectord<3>().normalized());
+
+    std::vector<Eigen::Vector2d> uncalib_points;
+    std::vector<Eigen::Vector2d> calib_points;
+    FeatureMatches matches;
+    while (uncalib_points.size() < 200) {
+      // Point in front of the uncalibrated view with a moderate field of view
+      // (|x/z|, |y/z| <= ~0.5).
+      Eigen::Vector3d dir = RandomEigenVectord<3>();
+      dir.z() = std::abs(dir.z()) + 2.0;
+      const Eigen::Vector3d point_in_uncalib =
+          RandomUniformReal<double>(2.0, 5.0) * dir.normalized();
+      const Eigen::Vector3d point_in_calib =
+          calib_from_uncalib * point_in_uncalib;
+      if (point_in_calib.z() < 0.5) {
+        continue;  // Cheirality in the second view; the first holds by
+                   // construction.
+      }
+      const std::optional<Eigen::Vector2d> xy_uncalib =
+          uncalib_camera.ImgFromCam(point_in_uncalib);
+      const std::optional<Eigen::Vector2d> xy_calib =
+          calib_camera.ImgFromCam(point_in_calib);
+      if (!xy_uncalib.has_value() || !xy_calib.has_value()) {
+        continue;
+      }
+      const point2D_t idx = static_cast<point2D_t>(uncalib_points.size());
+      uncalib_points.push_back(*xy_uncalib);
+      calib_points.push_back(*xy_calib);
+      matches.emplace_back(idx, idx);
+    }
+
+    // Asserts that F satisfies x2^T F x1 = 0 on the exact correspondences, in
+    // raw image coordinates and in the given order. F is built as
+    // K2^-T E K1^-1 and the swap path transposes it again, so a flipped
+    // transpose or a K1/K2 swap would survive every other assertion here.
+    const auto expect_valid_F =
+        [&](const Eigen::Matrix3d& F,
+            const std::vector<Eigen::Vector2d>& points_first,
+            const std::vector<Eigen::Vector2d>& points_second) {
+          for (size_t i = 0; i < points_first.size(); ++i) {
+            const Eigen::Vector3d x1 = points_first[i].homogeneous();
+            const Eigen::Vector3d x2 = points_second[i].homogeneous();
+            const Eigen::Vector3d line = F * x1;
+            ASSERT_GT(line.head<2>().norm(), 0);
+            // Distance from x2 to its epipolar line, in pixels.
+            EXPECT_NEAR(
+                std::abs(x2.dot(line)) / line.head<2>().norm(), 0, 1e-6);
+          }
+        };
+
+    TwoViewGeometryOptions two_view_geometry_options;
+    two_view_geometry_options.compute_relative_pose = true;
+
+    // Order 1: the uncalibrated view first, the solver's native orientation.
+    {
+      const TwoViewGeometry geometry =
+          EstimateTwoViewGeometry(uncalib_camera,
+                                  uncalib_points,
+                                  calib_camera,
+                                  calib_points,
+                                  matches,
+                                  two_view_geometry_options);
+
+      EXPECT_EQ(geometry.config,
+                TwoViewGeometry::ConfigurationType::UNCALIBRATED);
+      EXPECT_TRUE(geometry.E.has_value());
+      // Only the uncalibrated side carries estimated intrinsics; the calibrated
+      // side's were an input, not an estimate.
+      ASSERT_TRUE(geometry.camera1.has_value());
+      EXPECT_FALSE(geometry.camera2.has_value());
+      EXPECT_GE(geometry.inlier_matches.size(), matches.size() / 2);
+      EXPECT_NEAR(geometry.camera1->FocalLengthX(),
+                  kUncalibFocal,
+                  0.05 * kUncalibFocal);
+      ASSERT_TRUE(geometry.F.has_value());
+      expect_valid_F(*geometry.F, uncalib_points, calib_points);
+
+      ASSERT_TRUE(geometry.cam2_from_cam1.has_value());
+      EXPECT_THAT(
+          Rigid3d(geometry.cam2_from_cam1->rotation(),
+                  geometry.cam2_from_cam1->translation().normalized()),
+          Rigid3dNear(Rigid3d(calib_from_uncalib.rotation(),
+                              calib_from_uncalib.translation().normalized()),
+                      /*rtol=*/1e-2,
+                      /*ttol=*/1e-1));
+    }
+
+    // Order 2: the calibrated view first, exercising the swap-and-invert path.
+    {
+      const TwoViewGeometry geometry =
+          EstimateTwoViewGeometry(calib_camera,
+                                  calib_points,
+                                  uncalib_camera,
+                                  uncalib_points,
+                                  matches,
+                                  two_view_geometry_options);
+
+      EXPECT_EQ(geometry.config,
+                TwoViewGeometry::ConfigurationType::UNCALIBRATED);
+      EXPECT_TRUE(geometry.E.has_value());
+      // The estimated intrinsics must follow the uncalibrated view, which is
+      // now the second one.
+      EXPECT_FALSE(geometry.camera1.has_value());
+      ASSERT_TRUE(geometry.camera2.has_value());
+      EXPECT_GE(geometry.inlier_matches.size(), matches.size() / 2);
+      EXPECT_NEAR(geometry.camera2->FocalLengthX(),
+                  kUncalibFocal,
+                  0.05 * kUncalibFocal);
+      ASSERT_TRUE(geometry.F.has_value());
+      expect_valid_F(*geometry.F, calib_points, uncalib_points);
+
+      const Rigid3d uncalib_from_calib = Inverse(calib_from_uncalib);
+      ASSERT_TRUE(geometry.cam2_from_cam1.has_value());
+      EXPECT_THAT(
+          Rigid3d(geometry.cam2_from_cam1->rotation(),
+                  geometry.cam2_from_cam1->translation().normalized()),
+          Rigid3dNear(Rigid3d(uncalib_from_calib.rotation(),
+                              uncalib_from_calib.translation().normalized()),
+                      /*rtol=*/1e-2,
+                      /*ttol=*/1e-1));
+    }
+  }
+}
+
+TEST(EstimateTwoViewGeometry, SphericalAndCalibratedPerspective) {
+  // Synthesize a perspective two-view dataset to obtain consistent poses and 3D
+  // points, then re-project the first image through a EQUIRECTANGULAR camera to
+  // form a mixed spherical/perspective pair. Both sides are calibrated here;
+  // see SphericalAndUncalibratedPerspective for the case where they are not.
+  Reconstruction reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 200;
+  synthetic_dataset_options.camera_has_prior_focal_length = true;
+  SynthesizeDataset(synthetic_dataset_options, &reconstruction);
+
+  const Image& image1 = reconstruction.Image(1);
+  const Image& image2 = reconstruction.Image(2);
+  const Camera perspective_camera = reconstruction.Camera(image2.CameraId());
+
+  const Camera spherical_camera =
+      Camera::CreateFromModelId(100,
+                                EquirectangularCameraModel::model_id,
+                                /*focal_length=*/0.0,
+                                1000,
+                                500);
+  ASSERT_TRUE(spherical_camera.IsSpherical());
+  ASSERT_TRUE(perspective_camera.IsPerspective());
+
+  // Re-project shared 3D points: image1 via the spherical camera, image2 via
+  // the perspective camera.
+  std::vector<Eigen::Vector2d> points1;
+  std::vector<Eigen::Vector2d> points2;
+  FeatureMatches matches;
+  for (const auto& [_, point3D] : reconstruction.Points3D()) {
+    const std::optional<Eigen::Vector2d> xy1 =
+        spherical_camera.ImgFromCam(image1.CamFromWorld() * point3D.XYZ());
+    const std::optional<Eigen::Vector2d> xy2 =
+        perspective_camera.ImgFromCam(image2.CamFromWorld() * point3D.XYZ());
+    if (!xy1.has_value() || !xy2.has_value()) {
+      continue;
+    }
+    matches.emplace_back(static_cast<point2D_t>(points1.size()),
+                         static_cast<point2D_t>(points2.size()));
+    points1.push_back(*xy1);
+    points2.push_back(*xy2);
+  }
+  ASSERT_GE(matches.size(), 50u);
+
+  // A spherical pair whose other camera is also calibrated routes to the
+  // bearing-based essential matrix path, committing to CALIBRATED without
+  // estimating a fundamental matrix or homography.
+  const TwoViewGeometryOptions two_view_geometry_options;
+  const TwoViewGeometry geometry =
+      EstimateTwoViewGeometry(spherical_camera,
+                              points1,
+                              perspective_camera,
+                              points2,
+                              matches,
+                              two_view_geometry_options);
+  EXPECT_EQ(geometry.config, TwoViewGeometry::ConfigurationType::CALIBRATED);
+  EXPECT_TRUE(geometry.E.has_value());
+  EXPECT_FALSE(geometry.F.has_value());
+  EXPECT_TRUE(geometry.H.has_value());
+  EXPECT_GE(geometry.inlier_matches.size(), matches.size() / 2);
+}
+
+TEST(EstimateTwoViewGeometry, SphericalAndUncalibratedPerspective) {
+  // A spherical camera paired with a perspective camera whose focal is unknown.
+  // The spherical side is calibrated by construction, so the pair routes to the
+  // one-sided focal solver instead of the bearing-only spherical path, and the
+  // perspective camera's focal is recovered rather than guessed.
+  Reconstruction reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 200;
+  synthetic_dataset_options.camera_has_prior_focal_length = true;
+  SynthesizeDataset(synthetic_dataset_options, &reconstruction);
+
+  const Image& image1 = reconstruction.Image(1);
+  const Image& image2 = reconstruction.Image(2);
+  const Camera true_camera = reconstruction.Camera(image2.CameraId());
+  const double kTrueFocal = true_camera.FocalLengthX();
+
+  // Points are projected through the true camera, but the estimator is handed a
+  // camera carrying a deliberately wrong focal and no prior, as an uncalibrated
+  // camera would carry COLMAP's default guess. The recovered focal therefore
+  // cannot merely echo its input.
+  Camera uncalib_camera = true_camera;
+  uncalib_camera.SetSource(CameraSource::GUESS);
+  uncalib_camera.SetFocalLength(0.5 * kTrueFocal);
+
+  const Camera spherical_camera =
+      Camera::CreateFromModelId(100,
+                                EquirectangularCameraModel::model_id,
+                                /*focal_length=*/0.0,
+                                1000,
+                                500);
+  ASSERT_TRUE(spherical_camera.IsSpherical());
+
+  std::vector<Eigen::Vector2d> spherical_points;
+  std::vector<Eigen::Vector2d> perspective_points;
+  FeatureMatches matches;
+  for (const auto& [_, point3D] : reconstruction.Points3D()) {
+    const std::optional<Eigen::Vector2d> xy1 =
+        spherical_camera.ImgFromCam(image1.CamFromWorld() * point3D.XYZ());
+    const std::optional<Eigen::Vector2d> xy2 =
+        true_camera.ImgFromCam(image2.CamFromWorld() * point3D.XYZ());
+    if (!xy1.has_value() || !xy2.has_value()) {
+      continue;
+    }
+    matches.emplace_back(static_cast<point2D_t>(spherical_points.size()),
+                         static_cast<point2D_t>(perspective_points.size()));
+    spherical_points.push_back(*xy1);
+    perspective_points.push_back(*xy2);
+  }
+  ASSERT_GE(matches.size(), 50u);
+
+  const Rigid3d perspective_from_spherical =
+      image2.CamFromWorld() * Inverse(image1.CamFromWorld());
+
+  TwoViewGeometryOptions two_view_geometry_options;
+  two_view_geometry_options.compute_relative_pose = true;
+
+  // A spherical view has no image plane, so there is no F or H to publish; the
+  // pair is UNCALIBRATED as for any solver-estimated focal. Both orders are
+  // run: the uncalibrated view must reach the solver first, so the
+  // spherical-first case exercises the internal swap.
+  {
+    const TwoViewGeometry geometry =
+        EstimateTwoViewGeometry(spherical_camera,
+                                spherical_points,
+                                uncalib_camera,
+                                perspective_points,
+                                matches,
+                                two_view_geometry_options);
+
+    EXPECT_EQ(geometry.config,
+              TwoViewGeometry::ConfigurationType::UNCALIBRATED);
+    EXPECT_TRUE(geometry.E.has_value());
+    EXPECT_FALSE(geometry.F.has_value());
+    EXPECT_FALSE(geometry.H.has_value());
+    // The estimated intrinsics follow the uncalibrated view, here the second.
+    EXPECT_FALSE(geometry.camera1.has_value());
+    ASSERT_TRUE(geometry.camera2.has_value());
+    EXPECT_NEAR(
+        geometry.camera2->FocalLengthX(), kTrueFocal, 0.05 * kTrueFocal);
+    EXPECT_GE(geometry.inlier_matches.size(), matches.size() / 2);
+
+    ASSERT_TRUE(geometry.cam2_from_cam1.has_value());
+    EXPECT_THAT(
+        Rigid3d(geometry.cam2_from_cam1->rotation(),
+                geometry.cam2_from_cam1->translation().normalized()),
+        Rigid3dNear(
+            Rigid3d(perspective_from_spherical.rotation(),
+                    perspective_from_spherical.translation().normalized()),
+            /*rtol=*/1e-2,
+            /*ttol=*/1e-1));
+  }
+
+  {
+    FeatureMatches swapped_matches = matches;
+    for (FeatureMatch& match : swapped_matches) {
+      std::swap(match.point2D_idx1, match.point2D_idx2);
+    }
+    const TwoViewGeometry geometry =
+        EstimateTwoViewGeometry(uncalib_camera,
+                                perspective_points,
+                                spherical_camera,
+                                spherical_points,
+                                swapped_matches,
+                                two_view_geometry_options);
+
+    EXPECT_EQ(geometry.config,
+              TwoViewGeometry::ConfigurationType::UNCALIBRATED);
+    EXPECT_TRUE(geometry.E.has_value());
+    EXPECT_FALSE(geometry.F.has_value());
+    EXPECT_FALSE(geometry.H.has_value());
+    ASSERT_TRUE(geometry.camera1.has_value());
+    EXPECT_FALSE(geometry.camera2.has_value());
+    EXPECT_NEAR(
+        geometry.camera1->FocalLengthX(), kTrueFocal, 0.05 * kTrueFocal);
+
+    const Rigid3d spherical_from_perspective =
+        Inverse(perspective_from_spherical);
+    ASSERT_TRUE(geometry.cam2_from_cam1.has_value());
+    EXPECT_THAT(
+        Rigid3d(geometry.cam2_from_cam1->rotation(),
+                geometry.cam2_from_cam1->translation().normalized()),
+        Rigid3dNear(
+            Rigid3d(spherical_from_perspective.rotation(),
+                    spherical_from_perspective.translation().normalized()),
+            /*rtol=*/1e-2,
+            /*ttol=*/1e-1));
+  }
+}
+
+TEST(EstimateTwoViewGeometry, DetectWatermark) {
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 100;
+  synthetic_dataset_options.camera_has_prior_focal_length = true;
+  TwoViewGeometryTestData test_data =
+      CreateTwoViewGeometryTestData(synthetic_dataset_options);
+
+  TwoViewGeometryOptions two_view_geometry_options;
+  two_view_geometry_options.detect_watermark = true;
+  EXPECT_NE(EstimateTwoViewGeometry(test_data.camera1,
+                                    test_data.points1,
+                                    test_data.camera2,
+                                    test_data.points2,
+                                    test_data.matches,
+                                    two_view_geometry_options)
+                .config,
+            TwoViewGeometry::ConfigurationType::WATERMARK);
+
+  // Place the points on the left and right side of the images.
+  for (size_t i = 0; i < test_data.matches.size(); ++i) {
+    const double y = static_cast<double>(i) / test_data.matches.size() *
+                     test_data.camera1.Height();
+    test_data.points1[test_data.matches[i].point2D_idx1] =
+        Eigen::Vector2d(0, y);
+    test_data.points2[test_data.matches[i].point2D_idx2] =
+        Eigen::Vector2d(test_data.camera2.Width() - 1, y);
+  }
+  EXPECT_EQ(EstimateTwoViewGeometry(test_data.camera1,
+                                    test_data.points1,
+                                    test_data.camera2,
+                                    test_data.points2,
+                                    test_data.matches,
+                                    two_view_geometry_options)
+                .config,
+            TwoViewGeometry::ConfigurationType::WATERMARK);
+
+  // Place the points on the top and bottom side of the images.
+  for (size_t i = 0; i < test_data.matches.size(); ++i) {
+    const double x = static_cast<double>(i) / test_data.matches.size() *
+                     test_data.camera1.Width();
+    test_data.points1[test_data.matches[i].point2D_idx1] =
+        Eigen::Vector2d(x, 0);
+    test_data.points2[test_data.matches[i].point2D_idx2] =
+        Eigen::Vector2d(x, test_data.camera2.Height() - 1);
+  }
+  EXPECT_EQ(EstimateTwoViewGeometry(test_data.camera1,
+                                    test_data.points1,
+                                    test_data.camera2,
+                                    test_data.points2,
+                                    test_data.matches,
+                                    two_view_geometry_options)
+                .config,
+            TwoViewGeometry::ConfigurationType::WATERMARK);
+
+  // With disabled detection, expect a normal config.
+  two_view_geometry_options.detect_watermark = false;
+  EXPECT_NE(EstimateTwoViewGeometry(test_data.camera1,
+                                    test_data.points1,
+                                    test_data.camera2,
+                                    test_data.points2,
+                                    test_data.matches,
+                                    two_view_geometry_options)
+                .config,
+            TwoViewGeometry::ConfigurationType::WATERMARK);
+}
+
+TEST(EstimateTwoViewGeometry, IgnoreStationaryMatches) {
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 500;
+  synthetic_dataset_options.camera_has_prior_focal_length = true;
+  TwoViewGeometryTestData test_data =
+      CreateTwoViewGeometryTestData(synthetic_dataset_options);
+
+  for (auto& match : test_data.matches) {
+    test_data.points1[match.point2D_idx1] =
+        test_data.points2[match.point2D_idx2];
+  }
+
+  TwoViewGeometryOptions two_view_geometry_options;
+  TwoViewGeometry geometry1 =
+      EstimateTwoViewGeometry(test_data.camera1,
+                              test_data.points1,
+                              test_data.camera2,
+                              test_data.points2,
+                              test_data.matches,
+                              two_view_geometry_options);
+  EXPECT_EQ(geometry1.config,
+            TwoViewGeometry::ConfigurationType::PLANAR_OR_PANORAMIC);
+  EXPECT_EQ(geometry1.inlier_matches.size(),
+            synthetic_dataset_options.num_points3D);
+
+  two_view_geometry_options.filter_stationary_matches = true;
+  TwoViewGeometry geometry2 =
+      EstimateTwoViewGeometry(test_data.camera1,
+                              test_data.points1,
+                              test_data.camera2,
+                              test_data.points2,
+                              test_data.matches,
+                              two_view_geometry_options);
+  EXPECT_EQ(geometry2.config, TwoViewGeometry::ConfigurationType::DEGENERATE);
+  EXPECT_EQ(geometry2.inlier_matches.size(), 0);
+}
+
+TEST(EstimateTwoViewGeometry, CalibratedDeterministic) {
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 500;
+  synthetic_dataset_options.inlier_match_ratio = 0.6;
+  synthetic_dataset_options.camera_has_prior_focal_length = true;
+  SyntheticNoiseOptions synthetic_noise_options;
+  // Keep the noise moderate: low enough that the essential and fundamental
+  // matrix support similar numbers of inliers so the scene is unambiguously
+  // classified as CALIBRATED across platforms, yet high enough that different
+  // RANSAC seeds select different inlier sets and thus yield different E.
+  synthetic_noise_options.point2D_stddev = 3;
+  const TwoViewGeometryTestData test_data = CreateTwoViewGeometryTestData(
+      synthetic_dataset_options, synthetic_noise_options);
+
+  TwoViewGeometryOptions two_view_geometry_options;
+  // This test verifies RANSAC seed reproducibility, not the default calibration
+  // verification boundary. Leave margin for platform-dependent inlier counts.
+  two_view_geometry_options.min_E_F_inlier_ratio = 0.8;
+  two_view_geometry_options.ransac_options.random_seed = 42;
+  const TwoViewGeometry geometry1 =
+      EstimateTwoViewGeometry(test_data.camera1,
+                              test_data.points1,
+                              test_data.camera2,
+                              test_data.points2,
+                              test_data.matches,
+                              two_view_geometry_options);
+  EXPECT_EQ(geometry1.config, TwoViewGeometry::ConfigurationType::CALIBRATED);
+
+  two_view_geometry_options.ransac_options.random_seed = 42;
+  const TwoViewGeometry geometry2 =
+      EstimateTwoViewGeometry(test_data.camera1,
+                              test_data.points1,
+                              test_data.camera2,
+                              test_data.points2,
+                              test_data.matches,
+                              two_view_geometry_options);
+  EXPECT_EQ(geometry2.config, TwoViewGeometry::ConfigurationType::CALIBRATED);
+
+  // Using the same random seed should produce identical results.
+  EXPECT_EQ(geometry1.E, geometry2.E);
+
+  two_view_geometry_options.ransac_options.random_seed = 123;
+  const TwoViewGeometry geometry3 =
+      EstimateTwoViewGeometry(test_data.camera1,
+                              test_data.points1,
+                              test_data.camera2,
+                              test_data.points2,
+                              test_data.matches,
+                              two_view_geometry_options);
+  EXPECT_EQ(geometry3.config, TwoViewGeometry::ConfigurationType::CALIBRATED);
+
+  // Using a different random seed may produce different results.
+  EXPECT_NE(geometry1.E, geometry3.E);
+}
+
+TEST(EstimateTwoViewGeometry, UncalibratedDeterministic) {
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 500;
+  synthetic_dataset_options.inlier_match_ratio = 0.6;
+  synthetic_dataset_options.camera_has_prior_focal_length = false;
+  SyntheticNoiseOptions synthetic_noise_options;
+  synthetic_noise_options.point2D_stddev = 5;
+  const TwoViewGeometryTestData test_data = CreateTwoViewGeometryTestData(
+      synthetic_dataset_options, synthetic_noise_options);
+
+  TwoViewGeometryOptions two_view_geometry_options;
+  two_view_geometry_options.ransac_options.random_seed = 42;
+  const TwoViewGeometry geometry1 =
+      EstimateTwoViewGeometry(test_data.camera1,
+                              test_data.points1,
+                              test_data.camera2,
+                              test_data.points2,
+                              test_data.matches,
+                              two_view_geometry_options);
+  EXPECT_EQ(geometry1.config, TwoViewGeometry::ConfigurationType::UNCALIBRATED);
+
+  two_view_geometry_options.ransac_options.random_seed = 42;
+  const TwoViewGeometry geometry2 =
+      EstimateTwoViewGeometry(test_data.camera1,
+                              test_data.points1,
+                              test_data.camera2,
+                              test_data.points2,
+                              test_data.matches,
+                              two_view_geometry_options);
+  EXPECT_EQ(geometry2.config, TwoViewGeometry::ConfigurationType::UNCALIBRATED);
+
+  // Using the same random seed should produce identical results.
+  EXPECT_EQ(geometry1.F, geometry2.F);
+
+  two_view_geometry_options.ransac_options.random_seed = 123;
+  const TwoViewGeometry geometry3 =
+      EstimateTwoViewGeometry(test_data.camera1,
+                              test_data.points1,
+                              test_data.camera2,
+                              test_data.points2,
+                              test_data.matches,
+                              two_view_geometry_options);
+  EXPECT_EQ(geometry3.config, TwoViewGeometry::ConfigurationType::UNCALIBRATED);
+
+  // Using a different random seed may produce different results.
+  EXPECT_NE(geometry1.F, geometry3.F);
+}
+
+TEST(EstimateTwoViewGeometry, UncalibratedDegensac) {
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 500;
+  synthetic_dataset_options.inlier_match_ratio = 0.6;
+  synthetic_dataset_options.camera_has_prior_focal_length = false;
+  SyntheticNoiseOptions synthetic_noise_options;
+  synthetic_noise_options.point2D_stddev = 5;
+  const TwoViewGeometryTestData test_data = CreateTwoViewGeometryTestData(
+      synthetic_dataset_options, synthetic_noise_options);
+
+  // The DEGENSAC-based fundamental matrix estimation is a drop-in replacement
+  // that recovers a valid uncalibrated geometry on a general (non-planar)
+  // scene.
+  TwoViewGeometryOptions two_view_geometry_options;
+  two_view_geometry_options.ransac_options.random_seed = 42;
+  two_view_geometry_options.use_degensac = true;
+  const TwoViewGeometry geometry =
+      EstimateTwoViewGeometry(test_data.camera1,
+                              test_data.points1,
+                              test_data.camera2,
+                              test_data.points2,
+                              test_data.matches,
+                              two_view_geometry_options);
+  EXPECT_EQ(geometry.config, TwoViewGeometry::ConfigurationType::UNCALIBRATED);
+  EXPECT_GE(geometry.inlier_matches.size(),
+            static_cast<size_t>(synthetic_dataset_options.inlier_match_ratio *
+                                synthetic_dataset_options.num_points3D * 0.8));
+}
+
+TEST(EstimateTwoViewGeometry, PlanarOrPanoramicDeterministic) {
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 1;
+  synthetic_dataset_options.num_cameras_per_rig = 2;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 500;
+  synthetic_dataset_options.inlier_match_ratio = 0.6;
+  synthetic_dataset_options.camera_has_prior_focal_length = true;
+  synthetic_dataset_options.sensor_from_rig_translation_stddev = 0;
+  SyntheticNoiseOptions synthetic_noise_options;
+  synthetic_noise_options.point2D_stddev = 5;
+  const TwoViewGeometryTestData test_data = CreateTwoViewGeometryTestData(
+      synthetic_dataset_options, synthetic_noise_options);
+
+  TwoViewGeometryOptions two_view_geometry_options;
+  two_view_geometry_options.force_H_use = true;
+  two_view_geometry_options.ransac_options.random_seed = 42;
+  const TwoViewGeometry geometry1 =
+      EstimateTwoViewGeometry(test_data.camera1,
+                              test_data.points1,
+                              test_data.camera2,
+                              test_data.points2,
+                              test_data.matches,
+                              two_view_geometry_options);
+  EXPECT_EQ(geometry1.config,
+            TwoViewGeometry::ConfigurationType::PLANAR_OR_PANORAMIC);
+
+  two_view_geometry_options.ransac_options.random_seed = 42;
+  const TwoViewGeometry geometry2 =
+      EstimateTwoViewGeometry(test_data.camera1,
+                              test_data.points1,
+                              test_data.camera2,
+                              test_data.points2,
+                              test_data.matches,
+                              two_view_geometry_options);
+  EXPECT_EQ(geometry2.config,
+            TwoViewGeometry::ConfigurationType::PLANAR_OR_PANORAMIC);
+
+  // Using the same random seed should produce identical results.
+  EXPECT_EQ(geometry1.H, geometry2.H);
+
+  two_view_geometry_options.ransac_options.random_seed = 123;
+  const TwoViewGeometry geometry3 =
+      EstimateTwoViewGeometry(test_data.camera1,
+                              test_data.points1,
+                              test_data.camera2,
+                              test_data.points2,
+                              test_data.matches,
+                              two_view_geometry_options);
+  EXPECT_EQ(geometry2.config,
+            TwoViewGeometry::ConfigurationType::PLANAR_OR_PANORAMIC);
+
+  // Using a different random seed may produce different results.
+  EXPECT_NE(geometry1.H, geometry3.H);
+}
+
+TEST(TwoViewGeometryFromKnownRelativePose, Nominal) {
+  constexpr int kNumTests = 100;
+  for (int seed = 0; seed < kNumTests; ++seed) {
+    SetPRNGSeed(seed);
+    const TwoViewGeometryPoseTestData test_data =
+        CreateTwoViewGeometryPoseTestData(
+            TwoViewGeometry::ConfigurationType::CALIBRATED);
+
+    TwoViewGeometry geometry =
+        TwoViewGeometryFromKnownRelativePose(test_data.camera1,
+                                             test_data.points1,
+                                             test_data.camera2,
+                                             test_data.points2,
+                                             *test_data.geometry.cam2_from_cam1,
+                                             test_data.geometry.inlier_matches,
+                                             /*min_num_inliers=*/15,
+                                             /*max_error=*/4.0);
+
+    EXPECT_EQ(geometry.cam2_from_cam1, test_data.geometry.cam2_from_cam1);
+    EXPECT_EQ(geometry.E, test_data.geometry.E);
+    EXPECT_EQ(geometry.inlier_matches, test_data.geometry.inlier_matches);
+  }
+}
+
+struct RigTwoViewGeometryTestData {
+  Rig rig1;
+  Rig rig2;
+  std::vector<std::pair<std::pair<image_t, image_t>, FeatureMatches>> matches;
+  Reconstruction reconstruction;
+};
+
+RigTwoViewGeometryTestData CreateRigTwoViewGeometryTestData(
+    const SyntheticDatasetOptions& synthetic_dataset_options) {
+  RigTwoViewGeometryTestData data;
+  auto database = Database::Open(kInMemorySqliteDatabasePath);
+  SynthesizeDataset(
+      synthetic_dataset_options, &data.reconstruction, database.get());
+
+  CHECK_EQ(data.reconstruction.NumRigs(), 2);
+
+  data.rig1 = data.reconstruction.Rig(1);
+  data.rig2 = data.reconstruction.Rig(2);
+  for (auto& [pair_id, matches] : database->ReadAllMatches()) {
+    const auto [image_id1, image_id2] = PairIdToImagePair(pair_id);
+    const auto& camera1 = data.reconstruction.Camera(
+        data.reconstruction.Image(image_id1).CameraId());
+    const auto& camera2 = data.reconstruction.Camera(
+        data.reconstruction.Image(image_id2).CameraId());
+    if (data.rig1.HasSensor(camera1.SensorId()) &&
+        data.rig2.HasSensor(camera2.SensorId())) {
+      data.matches.emplace_back(std::make_pair(image_id1, image_id2), matches);
+    } else if (data.rig1.HasSensor(camera2.SensorId()) &&
+               data.rig2.HasSensor(camera1.SensorId())) {
+      data.matches.emplace_back(std::make_pair(image_id2, image_id1), matches);
+    }
+    // else: Ignore matches between sensors in the same rig.
+  }
+
+  return data;
+}
+
+TEST(EstimateRigTwoViewGeometries, Nominal) {
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 3;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 200;
+  // Use only inlier matches so that pose recovery is exact and thus
+  // numerically stable across platforms and build configurations. Outlier
+  // robustness of two-view geometry estimation is covered by the
+  // EstimateTwoViewGeometry.*Deterministic tests above.
+  synthetic_dataset_options.inlier_match_ratio = 1.0;
+  synthetic_dataset_options.camera_has_prior_focal_length = true;
+  const RigTwoViewGeometryTestData test_data =
+      CreateRigTwoViewGeometryTestData(synthetic_dataset_options);
+
+  TwoViewGeometryOptions two_view_geometry_options;
+  two_view_geometry_options.ransac_options.random_seed = 42;
+  const auto geometries =
+      EstimateRigTwoViewGeometries(test_data.rig1,
+                                   test_data.rig2,
+                                   test_data.reconstruction.Images(),
+                                   test_data.reconstruction.Cameras(),
+                                   test_data.matches,
+                                   two_view_geometry_options);
+  EXPECT_EQ(geometries.size(), test_data.matches.size());
+  for (const auto& [image_pair, geometry] : geometries) {
+    EXPECT_EQ(geometry.config,
+              TwoViewGeometry::ConfigurationType::CALIBRATED_RIG);
+    ASSERT_TRUE(geometry.cam2_from_cam1.has_value());
+    EXPECT_THAT(
+        *geometry.cam2_from_cam1,
+        Rigid3dNear(
+            test_data.reconstruction.Image(image_pair.second).CamFromWorld() *
+                Inverse(test_data.reconstruction.Image(image_pair.first)
+                            .CamFromWorld()),
+            /*rtol=*/1e-2,
+            /*ttol=*/1e-3));
+    EXPECT_GT(geometry.inlier_matches.size(), 0);
+  }
+}
+
+TEST(EstimateMultipleTwoViewGeometries, SingleGeometry) {
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 100;
+  synthetic_dataset_options.camera_has_prior_focal_length = true;
+  const TwoViewGeometryTestData test_data =
+      CreateTwoViewGeometryTestData(synthetic_dataset_options);
+
+  TwoViewGeometryOptions options;
+  options.multiple_models = true;
+  options.ransac_options.random_seed = 42;
+
+  const TwoViewGeometry geometry = EstimateTwoViewGeometry(test_data.camera1,
+                                                           test_data.points1,
+                                                           test_data.camera2,
+                                                           test_data.points2,
+                                                           test_data.matches,
+                                                           options);
+
+  EXPECT_EQ(geometry.config, TwoViewGeometry::ConfigurationType::CALIBRATED);
+  EXPECT_GT(geometry.inlier_matches.size(), 0);
+}
+
+TEST(EstimateMultipleTwoViewGeometries, NoGeometry) {
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 5;  // Too few points
+  synthetic_dataset_options.camera_has_prior_focal_length = true;
+  const TwoViewGeometryTestData test_data =
+      CreateTwoViewGeometryTestData(synthetic_dataset_options);
+
+  TwoViewGeometryOptions options;
+  options.multiple_models = true;
+  options.min_num_inliers = 100;  // Require too many inliers
+  options.ransac_options.random_seed = 42;
+
+  const TwoViewGeometry geometry = EstimateTwoViewGeometry(test_data.camera1,
+                                                           test_data.points1,
+                                                           test_data.camera2,
+                                                           test_data.points2,
+                                                           test_data.matches,
+                                                           options);
+
+  EXPECT_EQ(geometry.config, TwoViewGeometry::ConfigurationType::DEGENERATE);
+  EXPECT_EQ(geometry.inlier_matches.size(), 0);
+}
+
+TEST(EstimateMultipleTwoViewGeometries, MultipleGeometries) {
+  // Create two separate synthetic datasets with different poses.
+
+  Reconstruction reconstruction1;
+  SyntheticDatasetOptions options1;
+  options1.num_rigs = 2;
+  options1.num_cameras_per_rig = 1;
+  options1.num_frames_per_rig = 1;
+  options1.num_points3D = 100;
+  options1.camera_has_prior_focal_length = true;
+  SynthesizeDataset(options1, &reconstruction1);
+
+  Reconstruction reconstruction2;
+  SyntheticDatasetOptions options2;
+  options2.num_rigs = 2;
+  options2.num_cameras_per_rig = 1;
+  options2.num_frames_per_rig = 1;
+  options2.num_points3D = 100;
+  options2.camera_has_prior_focal_length = true;
+  SynthesizeDataset(options2, &reconstruction2);
+
+  const Image& image1 = reconstruction1.Image(1);
+  const Image& image2 = reconstruction1.Image(2);
+  const Image& image3 = reconstruction2.Image(1);
+  const Image& image4 = reconstruction2.Image(2);
+
+  const Camera camera1 = reconstruction1.Camera(image1.CameraId());
+  const Camera camera2 = reconstruction1.Camera(image2.CameraId());
+  EXPECT_EQ(camera1, reconstruction2.Camera(image3.CameraId()));
+  EXPECT_EQ(camera2, reconstruction2.Camera(image4.CameraId()));
+
+  std::vector<Eigen::Vector2d> points1;
+  std::vector<Eigen::Vector2d> points2;
+  std::vector<Eigen::Vector3d> points3D1;
+  FeatureMatches matches1;
+  ExtractPointsAndMatches(
+      reconstruction1, image1, image2, points1, points2, points3D1, matches1);
+
+  std::vector<Eigen::Vector2d> points3;
+  std::vector<Eigen::Vector2d> points4;
+  std::vector<Eigen::Vector3d> points3D2;
+  FeatureMatches matches2;
+  ExtractPointsAndMatches(
+      reconstruction2, image3, image4, points3, points4, points3D2, matches2);
+
+  std::vector<Eigen::Vector2d> all_points1;
+  std::vector<Eigen::Vector2d> all_points2;
+  const size_t matches_offset = points1.size();
+  all_points1.insert(all_points1.end(), points1.begin(), points1.end());
+  all_points1.insert(all_points1.end(), points3.begin(), points3.end());
+  all_points2.insert(all_points2.end(), points2.begin(), points2.end());
+  all_points2.insert(all_points2.end(), points4.begin(), points4.end());
+
+  FeatureMatches all_matches = matches1;
+  for (const auto& match : matches2) {
+    all_matches.emplace_back(match.point2D_idx1 + matches_offset,
+                             match.point2D_idx2 + matches_offset);
+  }
+
+  TwoViewGeometryOptions two_view_options;
+  two_view_options.multiple_models = true;
+  two_view_options.ransac_options.random_seed = 42;
+
+  const TwoViewGeometry geometry = EstimateTwoViewGeometry(camera1,
+                                                           all_points1,
+                                                           camera2,
+                                                           all_points2,
+                                                           all_matches,
+                                                           two_view_options);
+
+  EXPECT_EQ(geometry.config, TwoViewGeometry::ConfigurationType::MULTIPLE);
+  EXPECT_EQ(geometry.inlier_matches.size(), matches1.size() + matches2.size());
+}
+
+TEST(MaybeDecomposeRelativePoses, Nominal) {
+  auto database = Database::Open(kInMemorySqliteDatabasePath);
+
+  Reconstruction reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 50;
+  synthetic_dataset_options.camera_has_prior_focal_length = true;
+  SynthesizeDataset(synthetic_dataset_options, &reconstruction, database.get());
+
+  // Load the database into a cache.
+  DatabaseCache::Options cache_options;
+  auto cache = DatabaseCache::Create(*database, cache_options);
+
+  // Verify the two-view geometry exists but has no decomposed pose yet.
+  const auto corr_graph = cache->CorrespondenceGraph();
+  TwoViewGeometry geometry_before = corr_graph->ExtractTwoViewGeometry(
+      1, 2, /*extract_inlier_matches=*/false);
+  EXPECT_FALSE(geometry_before.cam2_from_cam1.has_value());
+
+  // Decompose poses - should update cache without throwing.
+  MaybeDecomposeRelativePoses(cache.get());
+
+  // Verify the geometry was updated with a decomposed pose.
+  TwoViewGeometry geometry_after = corr_graph->ExtractTwoViewGeometry(
+      1, 2, /*extract_inlier_matches=*/false);
+  EXPECT_TRUE(geometry_after.cam2_from_cam1.has_value());
+
+  // Calling again should skip already decomposed geometries.
+  MaybeDecomposeRelativePoses(cache.get());
+
+  TwoViewGeometry geometry_second = corr_graph->ExtractTwoViewGeometry(
+      1, 2, /*extract_inlier_matches=*/false);
+  EXPECT_EQ(geometry_after.cam2_from_cam1->rotation().coeffs(),
+            geometry_second.cam2_from_cam1->rotation().coeffs());
+  EXPECT_EQ(geometry_after.cam2_from_cam1->translation(),
+            geometry_second.cam2_from_cam1->translation());
+}
+
+// A pair whose focal a two-view solver recovered is UNCALIBRATED but carries
+// the estimated intrinsics in camera1/camera2. MaybeDecomposeRelativePoses
+// must calibrate the rays with those, not the camera's stale default focal.
+// The pose survives a wrong focal (it comes from E alone); tri_angle, measured
+// between the rays, does not.
+TEST(MaybeDecomposeRelativePoses, UsesSolverEstimatedIntrinsics) {
+  auto database = Database::Open(kInMemorySqliteDatabasePath);
+
+  Reconstruction reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 1;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 2;
+  synthetic_dataset_options.num_points3D = 100;
+  synthetic_dataset_options.camera_has_prior_focal_length = false;
+  // A focal well away from the no-prior default of 1.2 * max(width, height),
+  // so that using the wrong one is actually observable.
+  synthetic_dataset_options.camera_params = {1000, 512, 384, 0.05};
+  SynthesizeDataset(synthetic_dataset_options, &reconstruction, database.get());
+
+  const Image& image1 = reconstruction.Image(1);
+  const Image& image2 = reconstruction.Image(2);
+  ASSERT_EQ(image1.CameraId(), image2.CameraId());
+  const Rigid3d gt_cam2_from_cam1 =
+      image2.CamFromWorld() * Inverse(image1.CamFromWorld());
+
+  // Emulate an intrinsics-estimating solver: the true focal is surfaced via
+  // camera1/camera2, while the camera stored in the database still carries the
+  // default focal that must not be used to calibrate the rays.
+  const Camera true_camera = *image1.CameraPtr();
+
+  TwoViewGeometry geometry = database->ReadTwoViewGeometry(1, 2);
+  ASSERT_EQ(geometry.config, TwoViewGeometry::ConfigurationType::UNCALIBRATED);
+  ASSERT_TRUE(geometry.E.has_value());
+  geometry.camera1 = true_camera;
+  geometry.camera2 = true_camera;
+  database->UpdateTwoViewGeometry(1, 2, geometry);
+
+  // Reference run: the database camera happens to carry the correct focal, so
+  // the estimated intrinsics and the database camera agree.
+  DatabaseCache::Options cache_options;
+  auto reference_cache = DatabaseCache::Create(*database, cache_options);
+  MaybeDecomposeRelativePoses(reference_cache.get());
+  const TwoViewGeometry reference_geometry =
+      reference_cache->CorrespondenceGraph()->ExtractTwoViewGeometry(
+          1, 2, /*extract_inlier_matches=*/false);
+  ASSERT_TRUE(reference_geometry.cam2_from_cam1.has_value());
+  ASSERT_GT(reference_geometry.tri_angle, 0);
+
+  // Now give the database camera the focal it would actually carry without a
+  // prior, i.e. ImageReaderOptions::default_focal_length_factor times the
+  // larger image dimension. The result must be unchanged: the decomposition
+  // has to key off the estimated intrinsics, not the database camera.
+  Camera default_camera = true_camera;
+  default_camera.SetFocalLength(
+      1.2 * std::max(true_camera.Width(), true_camera.Height()));
+  default_camera.SetSource(CameraSource::GUESS);
+  ASSERT_GT(
+      std::abs(default_camera.FocalLength() / true_camera.FocalLength() - 1.0),
+      0.1);
+  database->UpdateCamera(default_camera);
+
+  auto cache = DatabaseCache::Create(*database, cache_options);
+  const TwoViewGeometry geometry_before =
+      cache->CorrespondenceGraph()->ExtractTwoViewGeometry(
+          1, 2, /*extract_inlier_matches=*/false);
+  ASSERT_FALSE(geometry_before.cam2_from_cam1.has_value());
+  ASSERT_TRUE(geometry_before.camera1.has_value());
+
+  MaybeDecomposeRelativePoses(cache.get());
+
+  const TwoViewGeometry geometry_after =
+      cache->CorrespondenceGraph()->ExtractTwoViewGeometry(
+          1, 2, /*extract_inlier_matches=*/false);
+  ASSERT_TRUE(geometry_after.cam2_from_cam1.has_value());
+
+  // The pose is recovered from E alone, so it is insensitive to the focal used
+  // to calibrate the rays; the triangulation angle is measured between those
+  // rays and is not.
+  EXPECT_THAT(*geometry_after.cam2_from_cam1,
+              Rigid3dNear(*reference_geometry.cam2_from_cam1,
+                          /*rtol=*/1e-6,
+                          /*ttol=*/1e-6));
+  EXPECT_NEAR(geometry_after.tri_angle, reference_geometry.tri_angle, 1e-6);
+
+  // Sanity check that the reference itself is meaningful.
+  EXPECT_THAT(
+      Rigid3d(reference_geometry.cam2_from_cam1->rotation(),
+              reference_geometry.cam2_from_cam1->translation().normalized()),
+      Rigid3dNear(Rigid3d(gt_cam2_from_cam1.rotation(),
+                          gt_cam2_from_cam1.translation().normalized()),
+                  /*rtol=*/1e-3,
+                  /*ttol=*/1e-2));
+}
+
+// Regression test for https://github.com/colmap/colmap/issues/4387: older
+// COLMAP databases stored the two-view geometry config without persisting
+// the E/F/H matrices. MaybeDecomposeRelativePoses must refit the missing
+// matrix from the inlier matches instead of crashing in
+// EstimateTwoViewGeometryPose's THROW_CHECK on geometry->E/F/H.
+TEST(MaybeDecomposeRelativePoses, MissingMatrixFromOldDatabase) {
+  auto database = Database::Open(kInMemorySqliteDatabasePath);
+
+  Reconstruction reconstruction;
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 2;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 1;
+  synthetic_dataset_options.num_points3D = 50;
+  synthetic_dataset_options.camera_has_prior_focal_length = true;
+  SynthesizeDataset(synthetic_dataset_options, &reconstruction, database.get());
+
+  // Simulate an older database that has the configuration but no E matrix.
+  TwoViewGeometry geometry_legacy = database->ReadTwoViewGeometry(1, 2);
+  ASSERT_EQ(geometry_legacy.config,
+            TwoViewGeometry::ConfigurationType::CALIBRATED);
+  ASSERT_TRUE(geometry_legacy.E.has_value());
+  geometry_legacy.E.reset();
+  database->UpdateTwoViewGeometry(1, 2, geometry_legacy);
+
+  DatabaseCache::Options cache_options;
+  auto cache = DatabaseCache::Create(*database, cache_options);
+
+  const auto corr_graph = cache->CorrespondenceGraph();
+  TwoViewGeometry geometry_before = corr_graph->ExtractTwoViewGeometry(
+      1, 2, /*extract_inlier_matches=*/false);
+  EXPECT_FALSE(geometry_before.cam2_from_cam1.has_value());
+
+  MaybeDecomposeRelativePoses(cache.get());
+
+  TwoViewGeometry geometry_after = corr_graph->ExtractTwoViewGeometry(
+      1, 2, /*extract_inlier_matches=*/false);
+  EXPECT_TRUE(geometry_after.cam2_from_cam1.has_value());
+}
+
+}  // namespace
+}  // namespace colmap

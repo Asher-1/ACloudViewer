@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  qVLXSeek plugin icon. Fine-grained region grounding: a magnifier over a
+  highlighted candidate region box with the model's region-reference answer
+  (<objN>) and the "VLX-Seek" text mandated by the plugin guidelines.
+-->
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f2740"/>
+      <stop offset="1" stop-color="#123a5c"/>
+    </linearGradient>
+    <linearGradient id="lens" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7fe3ff" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#2a9df4" stop-opacity="0.10"/>
+    </linearGradient>
+  </defs>
+
+  <!-- rounded background -->
+  <rect x="4" y="4" width="120" height="120" rx="20" fill="url(#bg)"/>
+  <rect x="4" y="4" width="120" height="120" rx="20" fill="none"
+        stroke="#3ec6ff" stroke-opacity="0.55" stroke-width="2"/>
+
+  <!-- candidate regions (dashed proposal boxes) -->
+  <rect x="18" y="22" width="26" height="20" rx="3" fill="none"
+        stroke="#5fd3f3" stroke-opacity="0.55" stroke-width="2"
+        stroke-dasharray="5 4"/>
+  <rect x="84" y="18" width="24" height="26" rx="3" fill="none"
+        stroke="#5fd3f3" stroke-opacity="0.45" stroke-width="2"
+        stroke-dasharray="5 4"/>
+  <rect x="22" y="70" width="22" height="18" rx="3" fill="none"
+        stroke="#5fd3f3" stroke-opacity="0.40" stroke-width="2"
+        stroke-dasharray="5 4"/>
+
+  <!-- highlighted matched region -->
+  <rect x="52" y="46" width="44" height="34" rx="4" fill="#ffb020"
+        fill-opacity="0.18" stroke="#ffb020" stroke-width="3"/>
+  <text x="56" y="66" font-family="DejaVu Sans, Arial, sans-serif"
+        font-size="15" font-weight="bold" fill="#ffd27a">&lt;objN&gt;</text>
+
+  <!-- magnifier over the matched region -->
+  <circle cx="60" cy="52" r="26" fill="url(#lens)" stroke="#e8f6ff"
+          stroke-width="5"/>
+  <line x1="79" y1="72" x2="102" y2="96" stroke="#e8f6ff" stroke-width="9"
+        stroke-linecap="round"/>
+
+  <!-- plugin name -->
+  <text x="64" y="115" text-anchor="middle"
+        font-family="DejaVu Sans, Arial, sans-serif" font-size="17"
+        font-weight="bold" fill="#ffffff">VLX-Seek</text>
+</svg>

@@ -1,0 +1,343 @@
+AICore port of the upstream OpenPCDet-GGML fused BN-fold+ReLU op:
+- ggml_bn_fold_relu: dst = relu(x * scale + bias), per-channel [1,1,C,1]
+  scale/bias; CUDA float4 fast path + scalar stride fallback + CPU impl.
+Replaces the mul+add+relu triple after every detector conv (~13ms/frame
+on nuScenes CenterPoint). Only the OpenPCDet CUDA-ext graphs emit the node
+(bev_backbone g_bn_fuse_relu); every other task graph is unchanged.
+---
+--- a/include/ggml.h
++++ b/include/ggml.h
+@@ -627,6 +627,7 @@
+         // of the op enum so every existing op id is unchanged.
+         GGML_OP_SPARSE_GATHER,
+         GGML_OP_SPARSE_SCATTER_ADD,
++        GGML_OP_BN_FOLD_RELU,
+ 
+         GGML_OP_COUNT,
+     };
+@@ -1854,6 +1855,16 @@
+             struct ggml_tensor  * b,        // scatter table
+             struct ggml_tensor  * bias);    // optional per-channel bias or NULL
+ 
++    // Fused BN-fold + ReLU (OpenPCDet-GGML AICore port): dst = relu(x * scale
++    // + bias) with per-channel scale/bias ([1, 1, C, 1] reshapes). Replaces
++    // the mul + add + relu triple after every detector conv.
++    // x is [W, H, C, N] f32; scale/bias f32; result f32 with x's shape.
++    GGML_API struct ggml_tensor * ggml_bn_fold_relu(
++            struct ggml_context * ctx,
++            struct ggml_tensor  * x,
++            struct ggml_tensor  * scale,
++            struct ggml_tensor  * bias);
++
+     GGML_API struct ggml_tensor * ggml_get_rows_back(
+             struct ggml_context * ctx,
+             struct ggml_tensor  * a,  // gradients of ggml_get_rows result
+--- a/src/ggml.c
++++ b/src/ggml.c
+@@ -1117,9 +1117,10 @@
+     "GRID_SAMPLE",
+     "SPARSE_GATHER",
+     "SPARSE_SCATTER_ADD",
++    "BN_FOLD_RELU",
+ };
+ 
+-static_assert(GGML_OP_COUNT == 108, "GGML_OP_COUNT != 108");
++static_assert(GGML_OP_COUNT == 109, "GGML_OP_COUNT != 109");
+ 
+ static const char * GGML_OP_SYMBOL[GGML_OP_COUNT] = {
+     "none",
+@@ -1239,9 +1240,10 @@
+     "grid_sample(x,g)",
+     "sparse_gather(x)",
+     "sparse_scatter_add(x)",
++    "bn_fold_relu(x, scale, bias)",
+ };
+ 
+-static_assert(GGML_OP_COUNT == 108, "GGML_OP_COUNT != 108");
++static_assert(GGML_OP_COUNT == 109, "GGML_OP_COUNT != 109");
+ 
+ static_assert(GGML_OP_POOL_COUNT == 2, "GGML_OP_POOL_COUNT != 2");
+ 
+@@ -4159,6 +4161,31 @@
+     return result;
+ }
+ 
++// ggml_bn_fold_relu (OpenPCDet-GGML AICore port)
++
++struct ggml_tensor * ggml_bn_fold_relu(
++        struct ggml_context * ctx,
++        struct ggml_tensor  * x,
++        struct ggml_tensor  * scale,
++        struct ggml_tensor  * bias) {
++    GGML_ASSERT(x->type == GGML_TYPE_F32);
++    GGML_ASSERT(scale->type == GGML_TYPE_F32);
++    GGML_ASSERT(bias->type == GGML_TYPE_F32);
++
++    // scale/bias are [1, 1, C, 1] reshapes; match x's channel count.
++    GGML_ASSERT(scale->ne[0] == 1 && scale->ne[1] == 1 && scale->ne[2] == x->ne[2]);
++    GGML_ASSERT(bias->ne[0] == 1 && bias->ne[1] == 1 && bias->ne[2] == x->ne[2]);
++    GGML_ASSERT(x->ne[3] == scale->ne[3] && x->ne[3] == bias->ne[3]);
++
++    struct ggml_tensor * result = ggml_new_tensor_4d(ctx, GGML_TYPE_F32,
++            x->ne[0], x->ne[1], x->ne[2], x->ne[3]);
++    result->op     = GGML_OP_BN_FOLD_RELU;
++    result->src[0] = x;
++    result->src[1] = scale;
++    result->src[2] = bias;
++    return result;
++}
++
+ // ggml_get_rows_back
+ 
+ struct ggml_tensor * ggml_get_rows_back(
+--- a/src/ggml-cpu/ops.h
++++ b/src/ggml-cpu/ops.h
+@@ -56,6 +56,7 @@
+ 
+ void ggml_compute_forward_sparse_gather(const struct ggml_compute_params * params, struct ggml_tensor * dst);
+ void ggml_compute_forward_sparse_scatter_add(const struct ggml_compute_params * params, struct ggml_tensor * dst);
++void ggml_compute_forward_bn_fold_relu(const struct ggml_compute_params * params, struct ggml_tensor * dst);
+ void ggml_compute_forward_get_rows_back(const struct ggml_compute_params * params, struct ggml_tensor * dst);
+ void ggml_compute_forward_set_rows(const struct ggml_compute_params * params, struct ggml_tensor * dst);
+ void ggml_compute_forward_sam3d_sparse_scatter_mean(const struct ggml_compute_params * params, struct ggml_tensor * dst);
+--- a/src/ggml-cpu/ops.cpp
++++ b/src/ggml-cpu/ops.cpp
+@@ -5671,6 +5671,53 @@
+     }
+ }
+ 
++
++// ggml_compute_forward_bn_fold_relu (OpenPCDet-GGML AICore port)
++
++void ggml_compute_forward_bn_fold_relu(
++        const ggml_compute_params * params,
++        ggml_tensor * dst) {
++    const ggml_tensor * x     = dst->src[0];
++    const ggml_tensor * scale = dst->src[1];
++    const ggml_tensor * bias  = dst->src[2];
++
++    GGML_ASSERT(x->type == GGML_TYPE_F32);
++    GGML_ASSERT(scale->type == GGML_TYPE_F32);
++    GGML_ASSERT(bias->type == GGML_TYPE_F32);
++    GGML_ASSERT(dst->type == GGML_TYPE_F32);
++
++    const int64_t ne00 = x->ne[0];
++    const int64_t ne01 = x->ne[1];
++    const int64_t ne02 = x->ne[2];
++    const int64_t ne03 = x->ne[3];
++
++    GGML_TENSOR_LOCALS(size_t, nbx, x,     nb);
++    GGML_TENSOR_LOCALS(size_t, nbs, scale, nb);
++    GGML_TENSOR_LOCALS(size_t, nbb, bias,  nb);
++    GGML_TENSOR_LOCALS(size_t, nbd, dst,   nb);
++
++    const int ith = params->ith;
++    const int nth = params->nth;
++
++    const int64_t nr  = ne00 * ne01 * ne02 * ne03;
++    const int64_t dr  = (nr + nth - 1) / nth;
++    const int64_t ir0 = dr * ith;
++    const int64_t ir1 = MIN(ir0 + dr, nr);
++
++    for (int64_t ir = ir0; ir < ir1; ++ir) {
++        const int64_t i0 = ir % ne00;
++        const int64_t i1 = (ir / ne00) % ne01;
++        const int64_t i2 = (ir / (ne00 * ne01)) % ne02;
++        const int64_t i3 = ir / (ne00 * ne01 * ne02);
++
++        const float s = *(const float *) ((const char *) scale->data + i2*nbs0);
++        const float b = *(const float *) ((const char *) bias->data  + i2*nbb0);
++
++        const float v = *(const float *) ((const char *) x->data + i0*nbx0 + i1*nbx1 + i2*nbx2 + i3*nbx3);
++        *(float *) ((char *) dst->data + i0*nbd0 + i1*nbd1 + i2*nbd2 + i3*nbd3) = fmaxf(v * s + b, 0.0f);
++    }
++}
++
+ void ggml_compute_forward_sam3d_sparse_scatter_mean(
+         const ggml_compute_params * params,
+         ggml_tensor * dst) {
+--- a/src/ggml-cpu/ggml-cpu.c
++++ b/src/ggml-cpu/ggml-cpu.c
+@@ -2024,6 +2024,10 @@
+             {
+                 ggml_compute_forward_sparse_scatter_add(params, tensor);
+             } break;
++        case GGML_OP_BN_FOLD_RELU:
++            {
++                ggml_compute_forward_bn_fold_relu(params, tensor);
++            } break;
+         case GGML_OP_GET_ROWS_BACK:
+             {
+                 ggml_compute_forward_get_rows_back(params, tensor);
+@@ -2510,6 +2514,7 @@
+         case GGML_OP_SET_ROWS:
+         case GGML_OP_SPARSE_GATHER:
+         case GGML_OP_SPARSE_SCATTER_ADD:
++        case GGML_OP_BN_FOLD_RELU:
+             {
+                 n_tasks = n_threads;
+             } break;
+--- a/src/ggml-cuda/ggml-cuda.cu
++++ b/src/ggml-cuda/ggml-cuda.cu
+@@ -9,6 +9,7 @@
+ #include "ggml-cuda/arange.cuh"
+ #include "ggml-cuda/argmax.cuh"
+ #include "ggml-cuda/argsort.cuh"
++#include "ggml-cuda/bn-fold-relu.cuh"
+ #include "ggml-cuda/sparse-gather.cuh"
+ #include "ggml-cuda/binbcast.cuh"
+ #include "ggml-cuda/clamp.cuh"
+@@ -2669,6 +2670,9 @@
+         case GGML_OP_SPARSE_SCATTER_ADD:
+             ggml_cuda_op_sparse_scatter_add(ctx, dst);
+             break;
++        case GGML_OP_BN_FOLD_RELU:
++            ggml_cuda_op_bn_fold_relu(ctx, dst);
++            break;
+         case GGML_OP_GET_ROWS_BACK:
+             ggml_cuda_op_get_rows_back(ctx, dst);
+             break;
+--- /dev/null
++++ b/src/ggml-cuda/bn-fold-relu.cu
+@@ -0,0 +1,134 @@
++#include "bn-fold-relu.cuh"
++
++// ---------------------------------------------------------------------------
++// Fused BN-fold + ReLU: dst = relu(x * scale + bias).
++//
++// x is [W, H, C, N] (ggml f32); scale/bias are per-channel [1, 1, C, 1].
++// Replaces the mul + add + relu triple of elementwise kernels that OpenPCDet
++// runs after every conv (the bn_fold scale/bias tensors), collapsing three
++// passes over the activations into one. On nuScenes CenterPoint voxel these
++// triples measured ~13ms/frame (mostly tiny 90-thread blocks under-utilizing
++// the SMs); a single pass over the same data runs at memory bandwidth.
++//
++// The kernel uses a float4 vector path when the innermost dim is contiguous
++// and a multiple of 4 (all OpenPCDet conv outputs are [W,H,C,N] contiguous
++// with W % 4 == 0), otherwise a scalar fallback honoring arbitrary strides.
++// ---------------------------------------------------------------------------
++
++static __global__ void bn_fold_relu_f32_vec4(
++        const float4 * __restrict__ x,
++        const float * __restrict__ scale,
++        const float * __restrict__ bias,
++        float4 * __restrict__ dst,
++        int n_vec,          // ne00 / 4
++        int ne01,           // H
++        int64_t sx1, int64_t sx2, int64_t sx3,   // x strides in float4 units
++        int64_t sd1, int64_t sd2, int64_t sd3) { // dst strides in float4 units
++    // Grid: (ceil(n_vec*ne01 / block), ne02, ne03). Each thread handles one
++    // float4; only one 32-bit div/mod pair per thread (n_vec is a runtime
++    // value, so a 64-bit index chain would cost 5 slow software divisions).
++    const int i0i1 = blockIdx.x * blockDim.x + threadIdx.x;
++    if (i0i1 >= n_vec * ne01) {
++        return;
++    }
++    const int i0 = i0i1 % n_vec;
++    const int i1 = i0i1 / n_vec;
++    const int i2 = blockIdx.y;
++    const int i3 = blockIdx.z;
++
++    const float s = scale[i2];
++    const float b = bias[i2];
++
++    const float4 v = x[i0 + i1 * sx1 + i2 * sx2 + i3 * sx3];
++    float4 r;
++    r.x = fmaxf(v.x * s + b, 0.0f);
++    r.y = fmaxf(v.y * s + b, 0.0f);
++    r.z = fmaxf(v.z * s + b, 0.0f);
++    r.w = fmaxf(v.w * s + b, 0.0f);
++    dst[i0 + i1 * sd1 + i2 * sd2 + i3 * sd3] = r;
++}
++
++static __global__ void bn_fold_relu_f32(
++        const float * __restrict__ x,
++        const float * __restrict__ scale,
++        const float * __restrict__ bias,
++        float * __restrict__ dst,
++        int ne00, int ne01,
++        int64_t sx0, int64_t sx1, int64_t sx2, int64_t sx3,
++        int64_t sd0, int64_t sd1, int64_t sd2, int64_t sd3) {
++    // Grid: (ceil(ne00*ne01 / block), ne02, ne03); one 32-bit div/mod pair per
++    // thread (same scheme as the vec4 path).
++    const int i0i1 = blockIdx.x * blockDim.x + threadIdx.x;
++    if (i0i1 >= ne00 * ne01) {
++        return;
++    }
++    const int i0 = i0i1 % ne00;
++    const int i1 = i0i1 / ne00;
++    const int i2 = blockIdx.y;
++    const int i3 = blockIdx.z;
++
++    const float s = scale[i2];
++    const float b = bias[i2];
++
++    const float v = x[i0 * sx0 + i1 * sx1 + i2 * sx2 + i3 * sx3];
++    dst[i0 * sd0 + i1 * sd1 + i2 * sd2 + i3 * sd3] = fmaxf(v * s + b, 0.0f);
++}
++
++void ggml_cuda_op_bn_fold_relu(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    const ggml_tensor * x     = dst->src[0];
++    const ggml_tensor * scale = dst->src[1];
++    const ggml_tensor * bias  = dst->src[2];
++
++    GGML_ASSERT(x->type == GGML_TYPE_F32);
++    GGML_ASSERT(scale->type == GGML_TYPE_F32);
++    GGML_ASSERT(bias->type == GGML_TYPE_F32);
++    GGML_ASSERT(dst->type == GGML_TYPE_F32);
++
++    GGML_TENSOR_LOCALS(size_t, nbx, x,     nb);
++    GGML_TENSOR_LOCALS(size_t, nbd, dst,   nb);
++
++    const int64_t ne00 = x->ne[0];
++    const int64_t ne01 = x->ne[1];
++    const int64_t ne02 = x->ne[2];
++    const int64_t ne03 = x->ne[3];
++
++    const int block_size = 256;
++    ggml_cuda_kernel_launch_params launch_params = ggml_cuda_kernel_launch_params(
++            dim3(1, 1, 1), dim3(block_size, 1, 1), 0, ctx.stream());
++
++    const bool vec_ok = nbx0 == sizeof(float) && nbd0 == sizeof(float) &&
++                        nbx1 == nbx0 * ne00 && nbd1 == nbd0 * ne00 &&
++                        (ne00 % 4) == 0;
++    if (vec_ok) {
++        const int n_vec = (int) (ne00 / 4);
++        const int n01   = (int) ne01;
++        GGML_ASSERT((int64_t) n_vec * n01 < INT32_MAX / 4);
++        const dim3 grid_dims((n_vec * n01 + block_size - 1) / block_size,
++                             (unsigned) ne02, (unsigned) ne03);
++        launch_params.block_nums = grid_dims;
++        ggml_cuda_kernel_launch(bn_fold_relu_f32_vec4, launch_params,
++                (const float4 *) x->data, (const float *) scale->data,
++                (const float *) bias->data, (float4 *) dst->data,
++                n_vec, n01,
++                nbx1 / (sizeof(float) * 4), nbx2 / (sizeof(float) * 4),
++                nbx3 / (sizeof(float) * 4),
++                nbd1 / (sizeof(float) * 4), nbd2 / (sizeof(float) * 4),
++                nbd3 / (sizeof(float) * 4));
++        return;
++    }
++
++    const int n00 = (int) ne00;
++    const int n01 = (int) ne01;
++    GGML_ASSERT((int64_t) n00 * n01 < INT32_MAX / 4);
++    const dim3 grid_dims((n00 * n01 + block_size - 1) / block_size,
++                         (unsigned) ne02, (unsigned) ne03);
++    launch_params.block_nums = grid_dims;
++    ggml_cuda_kernel_launch(bn_fold_relu_f32, launch_params,
++            (const float *) x->data, (const float *) scale->data,
++            (const float *) bias->data, (float *) dst->data,
++            n00, n01,
++            nbx0 / sizeof(float), nbx1 / sizeof(float),
++            nbx2 / sizeof(float), nbx3 / sizeof(float),
++            nbd0 / sizeof(float), nbd1 / sizeof(float),
++            nbd2 / sizeof(float), nbd3 / sizeof(float));
++}
+--- /dev/null
++++ b/src/ggml-cuda/bn-fold-relu.cuh
+@@ -0,0 +1,4 @@
++#include "common.cuh"
++#include "ggml.h"
++
++void ggml_cuda_op_bn_fold_relu(ggml_backend_cuda_context & ctx, ggml_tensor * dst);

@@ -1,0 +1,130 @@
+diff --git a/src/ggml-cuda/common.cuh b/src/ggml-cuda/common.cuh
+--- a/src/ggml-cuda/common.cuh
++++ b/src/ggml-cuda/common.cuh
+@@ -200,6 +200,11 @@
+ // pristine kernel selection; every other task keeps the downstream defaults.
+ static inline bool ggml_cuda_mapany_pristine_node(const char * name) {
+     return name != nullptr && strncmp(name, "mapany_", 7) == 0;
++}
++
++// Match pinned llama FFN output naming; other AICore nodes retain existing strict SiLU.
++static inline bool ggml_cuda_llama_swiglu_node(const char * name) {
++    return name && strncmp(name, "ffn_swiglu-", 11) == 0 && name[11] >= '0' && name[11] <= '9';
+ }
+ 
+ [[noreturn]]
+@@ -1665,6 +1670,7 @@
+     const void * shared_gate = nullptr;
+     float * shared_dst = nullptr;
+     uint32_t shared_stride_col_dst = 0;
++    bool llama_pristine_silu = false;
+ };
+ 
+ struct ggml_cuda_kernel_launch_params {
+diff --git a/src/ggml-cuda/ggml-cuda.cu b/src/ggml-cuda/ggml-cuda.cu
+--- a/src/ggml-cuda/ggml-cuda.cu
++++ b/src/ggml-cuda/ggml-cuda.cu
+@@ -1628,9 +1628,20 @@
+         // the upstream numerics; every other task keeps the RMBG optimization.
+         // mapany_* nodes likewise keep the pristine F16-output path (see
+         // ggml_cuda_mapany_pristine_node in common.cuh).
++        // Identify anonymous projectors from v./mm. input weights, not only output names.
++        const bool llama_model_gemm =
++            strncmp(src0->name, "blk.", 4) == 0 ||
++            strncmp(src0->name, "v.", 2) == 0 ||
++            strncmp(src0->name, "mm.", 3) == 0 ||
++            strncmp(src1->name, "v.", 2) == 0 ||
++            strncmp(src1->name, "mm.", 3) == 0 ||
++            strncmp(src0->name, "token_embd.", 11) == 0 ||
++            strncmp(src0->name, "output.", 7) == 0 ||
++            strncmp(dst->name, "kq-", 3) == 0 ||
++            strncmp(dst->name, "kqv-", 4) == 0;
+         prefer_f32_output = (strncmp(dst->name, "ram_tags_", 9) == 0 && dst->op_params[0] == GGML_PREC_F32) ||
+                             cc == GGML_CUDA_CC_VOLTA ||
+-                            (cc >= GGML_CUDA_CC_AMPERE &&
++                            (cc >= GGML_CUDA_CC_AMPERE && !llama_model_gemm &&
+                              !(dst->name && (strncmp(dst->name, "sam3d_", 6) == 0 ||
+                                              strncmp(dst->name, "relateanything_", 15) == 0)) &&
+                              !ggml_cuda_mapany_pristine_node(dst->name)) ||
+@@ -3301,6 +3312,8 @@
+         mix(node->nb, sizeof(node->nb));
+         mix(node->op_params, sizeof(node->op_params));
+         mix(&node->flags, sizeof(node->flags));
++        // Names determine owner-scoped numeric routes; identical shapes must not reuse another task's capture.
++        mix(node->name, strlen(node->name) + 1);
+         for (int j = 0; j < GGML_MAX_SRC; ++j) {
+             const bool present = node->src[j] != nullptr;
+             mix(&present, sizeof(present));
+@@ -3308,6 +3321,7 @@
+                 mix(&node->src[j]->type, sizeof(node->src[j]->type));
+                 mix(node->src[j]->ne, sizeof(node->src[j]->ne));
+                 mix(node->src[j]->nb, sizeof(node->src[j]->nb));
++                mix(node->src[j]->name, strlen(node->src[j]->name) + 1);
+             }
+         }
+     }
+diff --git a/src/ggml-cuda/unary.cu b/src/ggml-cuda/unary.cu
+--- a/src/ggml-cuda/unary.cu
++++ b/src/ggml-cuda/unary.cu
+@@ -412,6 +412,10 @@
+ }
+ 
+ void ggml_cuda_op_swiglu(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    if (ggml_cuda_llama_swiglu_node(dst->name)) {
++        ggml_cuda_op_unary_gated<op_silu_pristine>(ctx, dst);
++        return;
++    }
+     ggml_cuda_op_unary_gated<op_silu>(ctx, dst);
+ }
+ 
+diff --git a/src/ggml-cuda/mmvq.cu b/src/ggml-cuda/mmvq.cu
+--- a/src/ggml-cuda/mmvq.cu
++++ b/src/ggml-cuda/mmvq.cu
+@@ -843,7 +843,7 @@
+                         gate_value += gate_biases[j];
+                         switch (active_glu) {
+                             case GGML_GLU_OP_SWIGLU:
+-                                result *= ggml_cuda_op_silu_single(gate_value);
++                                result *= (fusion.llama_pristine_silu ? gate_value / (1.0f + expf(-gate_value)) : ggml_cuda_op_silu_single(gate_value));
+                                 break;
+                             case GGML_GLU_OP_GEGLU:
+                                 result *= ggml_cuda_op_gelu_single(gate_value);
+@@ -1004,7 +1004,7 @@
+                 }
+                 switch (active_glu) {
+                     case GGML_GLU_OP_SWIGLU:
+-                        result *= ggml_cuda_op_silu_single(gate_value);
++                        result *= (fusion.llama_pristine_silu ? gate_value / (1.0f + expf(-gate_value)) : ggml_cuda_op_silu_single(gate_value));
+                         break;
+                     case GGML_GLU_OP_GEGLU:
+                         result *= ggml_cuda_op_gelu_single(gate_value);
+@@ -1479,6 +1479,8 @@
+     float         *  dst_d =       (float         *)  dst->data;
+ 
+     ggml_cuda_mm_fusion_args_device fusion_local{};
++    // Fused final outputs retain llama ffn_swiglu naming; pass the arithmetic choice explicitly to the device.
++    fusion_local.llama_pristine_silu = ggml_cuda_llama_swiglu_node(dst->name);
+ 
+     if (fusion) {
+         const int cc = ggml_cuda_info().devices[ggml_cuda_get_device()].cc;
+diff --git a/src/ggml-cuda/mmvf.cu b/src/ggml-cuda/mmvf.cu
+--- a/src/ggml-cuda/mmvf.cu
++++ b/src/ggml-cuda/mmvf.cu
+@@ -359,7 +359,7 @@
+             }
+             switch (glu_op) {
+                 case GGML_GLU_OP_SWIGLU:
+-                    value *= ggml_cuda_op_silu_single(gate_value);
++                    value *= (fusion.llama_pristine_silu ? gate_value / (1.0f + expf(-gate_value)) : ggml_cuda_op_silu_single(gate_value));
+                     break;
+                 case GGML_GLU_OP_GEGLU:
+                     value *= ggml_cuda_op_gelu_single(gate_value);
+@@ -658,6 +658,8 @@
+     float         *  dst_d =       (float         *)  dst->data;
+ 
+     ggml_cuda_mm_fusion_args_device fusion_local{};
++    // Fused final outputs retain llama ffn_swiglu naming; pass the arithmetic choice explicitly to the device.
++    fusion_local.llama_pristine_silu = ggml_cuda_llama_swiglu_node(dst->name);
+ 
+     if (fusion) {
+         GGML_ASSERT( !ids || dst->ne[2] == 1);

@@ -22,6 +22,7 @@
 #include <QTabWidget>
 #include <QToolButton>
 #include <QWidget>
+#include <functional>
 
 #include "FaceDetectTestData.h"
 #include "FaceDetectWorker.h"
@@ -109,6 +110,13 @@ private slots:
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+    /** Esc intercept: confirm before closing when a task is running. */
+    void keyPressEvent(QKeyEvent* event) override;
+    // Measure the non-tab chrome (window decorations + fixed UI) on the
+    // first show, once the initial layout has settled.  Every later tab
+    // switch resizes to baseChrome + the incoming tab's content, so the
+    // dialog never inflates (see updateActiveTabViewportHeight).
+    void showEvent(QShowEvent* event) override;
     // Re-measure tab viewport heights when the dialog moves to a screen
     // with a different DPI (Windows per-monitor scaling) — the cached
     // minimumSizeHint values and hardcoded clamps must be recomputed.
@@ -162,11 +170,11 @@ private:
      *  when catalog has an entry (used to trigger auto-download). */
     QString resolveLandmarkModelFilename() const;
     QString defaultLandmarkModelFilename() const;
-    bool ensureModelAvailable();
+    bool ensureModelAvailable(std::function<void()> resume);
     /** Check only the face detector model is downloaded and ready.
      *  Skips the Dense-Landmarks landmark-model check — used by the Live tab
      *  which only supports Detect / Recognize, never DenseLandmarks. */
-    bool ensureDetectorAvailable();
+    bool ensureDetectorAvailable(std::function<void()> resume);
     void startDownload(const aicore_facedetect_model_entry* model);
     void cancelDownload();
     void updateImagePreview();
@@ -220,11 +228,22 @@ private:
     QToolButton* m_dbToggleBtn = nullptr;
     QWidget* m_dbContentWidget = nullptr;
     QListWidget* m_dbImageList = nullptr;
+    // True while the Image B input (Verify mode) holds focus — DB double-
+    // clicks then assign to Image B instead of Image A.  Any focus change
+    // that leaves Image B (except a direct hand-off into the DB list)
+    // resets this to false, so a stale "B" state can never hijack every
+    // DB double-click.
+    bool m_dbAssignToSecondImage = false;
+    // Verify-mode hint above the DB image list showing which slot a
+    // double-click will fill; makes the focus-driven assignment visible.
+    QLabel* m_dbAssignHintLabel = nullptr;
+    void updateDbAssignHint();
 
     ecvModelDownloader* m_downloader = nullptr;
     ecvModelDownloader* m_testDataDownloader = nullptr;
     FaceDetectTestDataWorker* m_testDataWorker = nullptr;
     bool m_downloadInProgress = false;
+    bool m_taskRunning = false;
     bool m_testDataDownloadInProgress = false;
     bool m_testDataProcessing = false;
     bool m_testFillRegistry = false;
@@ -234,8 +253,13 @@ private:
     bool m_testPostFillLiveVideo = false;
     bool m_testPostFillBatchImage = false;
     bool m_testClearExistingEntries = true;
-    bool m_autoRunAfterDownload = false;
+    std::function<void()> m_resumeAfterDownload;
     int m_activeTabHeight = -1;
+    // Dialog height minus the tab widget height, measured once on the
+    // first show (layout settled, no user resize yet).  A measured
+    // invariant: unlike minimumSizeHint deltas or fixed pixel estimates
+    // it stays correct across platforms, window decorations and DPI.
+    int m_baseChrome = -1;
     QHash<const QWidget*, int> m_tabViewportHeights;
 
     static constexpr int kTestDataOverallMax = 1000;

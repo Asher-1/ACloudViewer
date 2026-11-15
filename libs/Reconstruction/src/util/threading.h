@@ -14,11 +14,47 @@
 #include <list>
 #include <queue>
 #include <unordered_map>
+#include <utility>
 
 #include "util/alignment.h"
 #include "util/timer.h"
 
 namespace colmap {
+
+// Upstream parity (d3ccaf35 util/threading.h): exception that aggregates
+// multiple exceptions from parallel tasks; thrown by ThreadPool::Wait()
+// when one or more tasks threw exceptions.
+class AggregateException : public std::exception {
+public:
+    explicit AggregateException(std::vector<std::exception_ptr> excs)
+        // NOLINTNEXTLINE(bugprone-throw-keyword-missing)
+        : exceptions_(std::move(excs)) {
+        message_ = std::to_string(exceptions_.size()) +
+                   " task(s) threw exception(s):\n";
+        for (size_t i = 0; i < exceptions_.size(); ++i) {
+            try {
+                std::rethrow_exception(exceptions_[i]);
+            } catch (const std::exception& e) {
+                message_ += e.what();
+            } catch (...) {
+                message_ += "Unknown exception";
+            }
+            if (i + 1 < exceptions_.size()) {
+                message_ += "\n";
+            }
+        }
+    }
+
+    const char* what() const noexcept override { return message_.c_str(); }
+
+    const std::vector<std::exception_ptr>& exceptions() const {
+        return exceptions_;
+    }
+
+private:
+    std::vector<std::exception_ptr> exceptions_;
+    std::string message_;
+};
 
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -180,7 +216,8 @@ public:
     // Add new task to the thread pool.
     template <class func_t, class... args_t>
     auto AddTask(func_t&& f, args_t&&... args)
-            -> std::future<typename std::result_of<func_t(args_t...)>::type>;
+            -> std::shared_future<
+                    typename std::result_of<func_t(args_t...)>::type>;
 
     // Stop the execution of all workers.
     void Stop();
@@ -199,8 +236,11 @@ public:
 private:
     void WorkerFunc(const int index);
 
+    void CheckFinishedTasks();
+
     std::vector<std::thread> workers_;
-    std::queue<std::function<void()>> tasks_;
+    std::queue<std::function<std::function<void()>()>> tasks_;
+    std::vector<std::function<void()>> finished_task_checkers_;
 
     std::mutex mutex_;
     std::condition_variable task_condition_;
@@ -238,8 +278,8 @@ class JobQueue {
 public:
     class Job {
     public:
-        Job() : valid_(false) {}
-        explicit Job(const T& data) : data_(data), valid_(true) {}
+        Job() : data_{}, valid_(false) {}
+        explicit Job(T data) : data_(std::move(data)), valid_(true) {}
 
         // Check whether the data is valid.
         bool IsValid() const { return valid_; }
@@ -261,7 +301,7 @@ public:
     size_t Size();
 
     // Push a new job to the queue. Waits if the number of jobs is exceeded.
-    bool Push(const T& data);
+    bool Push(T data);
 
     // Pop a job from the queue. Waits if there is no job in the queue.
     Job Pop();
@@ -297,20 +337,27 @@ size_t ThreadPool::NumThreads() const { return workers_.size(); }
 
 template <class func_t, class... args_t>
 auto ThreadPool::AddTask(func_t&& f, args_t&&... args)
-        -> std::future<typename std::result_of<func_t(args_t...)>::type> {
+        -> std::shared_future<
+                typename std::result_of<func_t(args_t...)>::type> {
     typedef typename std::result_of<func_t(args_t...)>::type return_t;
 
     auto task = std::make_shared<std::packaged_task<return_t()>>(
             std::bind(std::forward<func_t>(f), std::forward<args_t>(args)...));
 
-    std::future<return_t> result = task->get_future();
+    std::shared_future<return_t> result = task->get_future().share();
 
     {
         std::unique_lock<std::mutex> lock(mutex_);
         if (stopped_) {
             throw std::runtime_error("Cannot add task to stopped thread pool.");
         }
-        tasks_.emplace([task]() { (*task)(); });
+        // Upstream parity (d3ccaf35): the task returns a "checker" closure
+        // that re-reads the future on the main thread; Wait() replays all
+        // checkers and aggregates their exceptions into AggregateException.
+        tasks_.emplace([task = std::move(task), result]() {
+            (*task)();
+            return [result = std::move(result)]() { result.get(); };
+        });
     }
 
     task_condition_.notify_one();
@@ -337,7 +384,7 @@ size_t JobQueue<T>::Size() {
 }
 
 template <typename T>
-bool JobQueue<T>::Push(const T& data) {
+bool JobQueue<T>::Push(T data) {
     std::unique_lock<std::mutex> lock(mutex_);
     while (jobs_.size() >= max_num_jobs_ && !stop_) {
         pop_condition_.wait(lock);
@@ -345,7 +392,7 @@ bool JobQueue<T>::Push(const T& data) {
     if (stop_) {
         return false;
     } else {
-        jobs_.push(data);
+        jobs_.push(std::move(data));
         push_condition_.notify_one();
         return true;
     }
@@ -360,13 +407,13 @@ typename JobQueue<T>::Job JobQueue<T>::Pop() {
     if (stop_) {
         return Job();
     } else {
-        const T data = jobs_.front();
+        Job job(std::move(jobs_.front()));
         jobs_.pop();
         pop_condition_.notify_one();
         if (jobs_.empty()) {
             empty_condition_.notify_all();
         }
-        return Job(data);
+        return job;
     }
 }
 
@@ -380,7 +427,13 @@ void JobQueue<T>::Wait() {
 
 template <typename T>
 void JobQueue<T>::Stop() {
-    stop_ = true;
+    // Upstream parity: set the flag under the mutex. Otherwise a Pop()/Push()
+    // that already saw !stop_ but has not entered wait() misses the notify
+    // and blocks forever (controllers_feature_extraction_test hung 4 h).
+    {
+        std::unique_lock<std::mutex> lock(mutex_);
+        stop_ = true;
+    }
     push_condition_.notify_all();
     pop_condition_.notify_all();
 }

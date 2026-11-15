@@ -2,7 +2,9 @@
 # Invoked as a POST_BUILD / packaging script so globs run after ExternalProject.
 #
 # Modes (pass via -D):
-#   COPY_CORE_SHARED=ON — copy libggml + libggml-base without duplicating symlink
+#   COPY_CORE_SHARED=ON — copy libggml + libggml-base + libllama + libmtmd
+#                         (the llama.cpp source owner's shared core, all
+#                         DT_NEEDED by libAICore) without duplicating symlink
 #                         targets (configure_file/wheel/archive flattening fix)
 #   COPY_BACKEND_MODULES=ON — copy CPU module(s) + optional GPU modules
 #   REQUESTED_FILES_PIPE — legacy explicit backend module list (| separated)
@@ -20,6 +22,17 @@
 
 cmake_minimum_required(VERSION 3.16)
 
+# A successful install must mean every runtime file and alias was produced.
+# Use RESULT_VARIABLE instead of COMMAND_ERROR_IS_FATAL for CMake 3.16 support.
+function(ggml_run_file_command)
+    execute_process(COMMAND "${CMAKE_COMMAND}" -E ${ARGN}
+        RESULT_VARIABLE _result ERROR_VARIABLE _error)
+    if(NOT "${_result}" STREQUAL "0")
+        message(FATAL_ERROR
+            "CopyGgmlBackends: file operation failed (${_result}): ${ARGN}\n${_error}")
+    endif()
+endfunction()
+
 function(_ggml_list_contains list value out_var)
     set(_found FALSE)
     foreach(_item IN LISTS ${list})
@@ -35,50 +48,51 @@ function(ggml_copy_core_shared_libs src_dir dest_dir lib_prefix lib_suffix)
     file(MAKE_DIRECTORY "${dest_dir}")
     string(REPLACE "." "\\." _lib_suffix_regex "${lib_suffix}")
 
-    file(GLOB _stale
-        "${dest_dir}/${lib_prefix}ggml${lib_suffix}*"
-        "${dest_dir}/${lib_prefix}ggml-base${lib_suffix}*"
-        "${dest_dir}/${lib_prefix}ggml.*${lib_suffix}"
-        "${dest_dir}/${lib_prefix}ggml-base.*${lib_suffix}")
+    set(_core_bases ggml ggml-base llama mtmd)
+    set(_stale "")
+    foreach(_base IN LISTS _core_bases)
+        file(GLOB _base_stale
+            "${dest_dir}/${lib_prefix}${_base}${lib_suffix}*"
+            "${dest_dir}/${lib_prefix}${_base}.*${lib_suffix}")
+        list(APPEND _stale ${_base_stale})
+    endforeach()
     if(_stale)
         file(REMOVE ${_stale})
     endif()
 
     set(_versioned_files "")
-    foreach(_base IN ITEMS ggml ggml-base)
-        file(GLOB _matches
-            "${src_dir}/${lib_prefix}${_base}${lib_suffix}*"
-            "${src_dir}/${lib_prefix}${_base}.*${lib_suffix}")
-        foreach(_path IN LISTS _matches)
-            if(NOT EXISTS "${_path}")
-                continue()
-            endif()
-            get_filename_component(_name "${_path}" NAME)
-            # Match both Linux (libggml.so.0.18.1) and macOS (libggml.0.18.1.dylib)
-            if(_name MATCHES "${_lib_suffix_regex}\\.[0-9]+\\.[0-9]+\\.[0-9]+$"
-               OR _name MATCHES "\\.[0-9]+\\.[0-9]+\\.[0-9]+${_lib_suffix_regex}$")
-                if(IS_SYMLINK "${_path}")
-                    get_filename_component(_path "${_path}" REALPATH)
-                    get_filename_component(_name "${_path}" NAME)
-                endif()
-                _ggml_list_contains(_versioned_files "${_path}" _already)
-                if(_already)
-                    continue()
+    foreach(_base IN LISTS _core_bases)
+        # The ExternalProject install directory can retain physical libraries from
+        # older ggml versions.  The unversioned linker name is the authoritative
+        # current version; following it avoids packaging every stale glob match.
+        set(_link_path "${src_dir}/${lib_prefix}${_base}${lib_suffix}")
+        if(EXISTS "${_link_path}")
+            if(IS_SYMLINK "${_link_path}")
+                get_filename_component(_path "${_link_path}" REALPATH)
+                get_filename_component(_name "${_path}" NAME)
+                # Match both Linux (libggml.so.0.21.0) and macOS
+                # (libggml.0.21.0.dylib).
+                if(NOT (_name MATCHES "${_lib_suffix_regex}\\.[0-9]+\\.[0-9]+\\.[0-9]+$"
+                        OR _name MATCHES "\\.[0-9]+\\.[0-9]+\\.[0-9]+${_lib_suffix_regex}$"))
+                    message(FATAL_ERROR
+                        "CopyGgmlBackends: ${_link_path} resolves to an "
+                        "unexpected filename: ${_name}")
                 endif()
                 list(APPEND _versioned_files "${_path}")
+            elseif(lib_suffix STREQUAL ".dll")
+                # Windows ggml libraries are not versioned or symlinked.
+                list(APPEND _versioned_files "${_link_path}")
+            else()
+                message(FATAL_ERROR
+                    "CopyGgmlBackends: expected ${_link_path} to be a symlink "
+                    "to the current versioned library")
             endif()
-        endforeach()
+        else()
+            message(FATAL_ERROR
+                "CopyGgmlBackends: current ggml linker name is missing: "
+                "${_link_path}")
+        endif()
     endforeach()
-
-    # Windows: ggml ships plain DLLs without version numbers.
-    if(NOT _versioned_files AND lib_suffix STREQUAL ".dll")
-        foreach(_base IN ITEMS ggml ggml-base)
-            set(_plain "${src_dir}/${lib_prefix}${_base}${lib_suffix}")
-            if(EXISTS "${_plain}" AND NOT IS_SYMLINK "${_plain}")
-                list(APPEND _versioned_files "${_plain}")
-            endif()
-        endforeach()
-    endif()
 
     if(NOT _versioned_files)
         message(FATAL_ERROR
@@ -87,18 +101,18 @@ function(ggml_copy_core_shared_libs src_dir dest_dir lib_prefix lib_suffix)
 
     foreach(_path IN LISTS _versioned_files)
         get_filename_component(_name "${_path}" NAME)
-        execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ggml_run_file_command(copy_if_different
             "${_path}" "${dest_dir}/${_name}")
         message(STATUS "CopyGgmlBackends: ${_name}")
 
-        # Linux: libggml.so.0.18.1 → soname libggml.so.0 → link libggml.so
-        if(_name MATCHES "^${lib_prefix}(ggml-base|ggml)${_lib_suffix_regex}\\.([0-9]+)\\.[0-9]+\\.[0-9]+$")
+        # Linux: libggml.so.<full-version> → soname libggml.so.<major> → link libggml.so
+        if(_name MATCHES "^${lib_prefix}(ggml-base|ggml|llama|mtmd)${_lib_suffix_regex}\\.([0-9]+)\\.[0-9]+\\.[0-9]+$")
             set(_soname_major "${CMAKE_MATCH_2}")
             set(_base_name "${CMAKE_MATCH_1}")
             set(_soname "${lib_prefix}${_base_name}${lib_suffix}.${_soname_major}")
             set(_link_name "${lib_prefix}${_base_name}${lib_suffix}")
-        # macOS: libggml.0.18.1.dylib → soname libggml.0.dylib → link libggml.dylib
-        elseif(_name MATCHES "^${lib_prefix}(ggml-base|ggml)\\.([0-9]+)\\.[0-9]+\\.[0-9]+${_lib_suffix_regex}$")
+        # macOS: libggml.<full-version>.dylib → soname libggml.<major>.dylib → link libggml.dylib
+        elseif(_name MATCHES "^${lib_prefix}(ggml-base|ggml|llama|mtmd)\\.([0-9]+)\\.[0-9]+\\.[0-9]+${_lib_suffix_regex}$")
             set(_soname_major "${CMAKE_MATCH_2}")
             set(_base_name "${CMAKE_MATCH_1}")
             set(_soname "${lib_prefix}${_base_name}.${_soname_major}${lib_suffix}")
@@ -112,9 +126,9 @@ function(ggml_copy_core_shared_libs src_dir dest_dir lib_prefix lib_suffix)
                 file(REMOVE "${dest_dir}/${_alias}")
             endif()
         endforeach()
-        execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
+        ggml_run_file_command(create_symlink
             "${_name}" "${dest_dir}/${_soname}")
-        execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
+        ggml_run_file_command(create_symlink
             "${_soname}" "${dest_dir}/${_link_name}")
         message(STATUS "CopyGgmlBackends: ${_soname} -> ${_name}")
         message(STATUS "CopyGgmlBackends: ${_link_name} -> ${_soname}")
@@ -153,7 +167,7 @@ function(ggml_copy_backend_modules src_dir dest_dir lib_prefix lib_suffix
                 continue()
             endif()
             get_filename_component(_name "${_path}" NAME)
-            execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ggml_run_file_command(copy_if_different
                 "${_path}" "${dest_dir}/${_name}")
             message(STATUS "CopyGgmlBackends: ${_name}")
         endforeach()
@@ -176,7 +190,7 @@ function(ggml_copy_backend_modules src_dir dest_dir lib_prefix lib_suffix
                         continue()
                     endif()
                     get_filename_component(_name "${_path}" NAME)
-                    execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    ggml_run_file_command(copy_if_different
                         "${_path}" "${dest_dir}/${_name}")
                     message(STATUS "CopyGgmlBackends: ${_name}")
                 endforeach()
@@ -185,7 +199,7 @@ function(ggml_copy_backend_modules src_dir dest_dir lib_prefix lib_suffix
                     "CopyGgmlBackends: required CPU backend missing: ${_cpu_path}")
             endif()
         else()
-            execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ggml_run_file_command(copy_if_different
                 "${_cpu_path}" "${dest_dir}/${_cpu_name}")
             message(STATUS "CopyGgmlBackends: ${_cpu_name}")
         endif()
@@ -203,7 +217,7 @@ function(ggml_copy_backend_modules src_dir dest_dir lib_prefix lib_suffix
                 message(FATAL_ERROR
                     "CopyGgmlBackends: configured GPU backend is missing: ${_source}")
             endif()
-            execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ggml_run_file_command(copy_if_different
                 "${_source}" "${dest_dir}/${_name}")
             message(STATUS "CopyGgmlBackends: ${_name}")
         endforeach()
@@ -256,7 +270,7 @@ if(REQUESTED_FILES_PIPE)
             message(FATAL_ERROR
                 "CopyGgmlBackends: configured backend is missing: ${_source}")
         endif()
-        execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ggml_run_file_command(copy_if_different
                         "${_source}" "${DEST_DIR}/${_name}")
         message(STATUS "CopyGgmlBackends: ${_name}")
     endforeach()
@@ -283,8 +297,6 @@ foreach(_lib ${_ggml_libs})
     endif()
     list(APPEND _seen_realpaths "${_real}")
     get_filename_component(_name "${_lib}" NAME)
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${_lib}" "${DEST_DIR}/${_name}"
-    )
+    ggml_run_file_command(copy_if_different "${_lib}" "${DEST_DIR}/${_name}")
     message(STATUS "CopyGgmlBackends: ${_name}")
 endforeach()

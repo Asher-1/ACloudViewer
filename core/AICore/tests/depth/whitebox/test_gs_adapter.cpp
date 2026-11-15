@@ -15,8 +15,8 @@
 #include <string>
 #include <vector>
 
-#include "gs_adapter.hpp"
-#include "parity.hpp"
+#include "tasks/depth/gs_adapter.hpp"
+#include "tests/depth/whitebox/parity.hpp"
 
 int main() {
     const char* base = std::getenv("AICORE_TEST_DEPTH_BASELINE_GIANT");

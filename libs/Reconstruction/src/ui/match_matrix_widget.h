@@ -7,8 +7,8 @@
 
 #pragma once
 
+#include "controllers/option_manager.h"
 #include "ui/image_viewer_widget.h"
-#include "util/option_manager.h"
 
 namespace colmap {
 

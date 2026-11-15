@@ -14,8 +14,11 @@ function(cloudViewer_enable_strip target)
     # macOS: -x: strip local symbols
     # Linux: defaults
     if(NOT DEVELOPER_BUILD AND UNIX AND CMAKE_STRIP)
+        get_target_property(skip_post_build_strip ${target}
+                            CLOUDVIEWER_SKIP_POST_BUILD_STRIP)
         get_target_property(target_type ${target} TYPE)
-        if(target_type MATCHES MODULE_LIBRARY|SHARED_LIBRARY|EXECUTABLE)
+        if(target_type MATCHES MODULE_LIBRARY|SHARED_LIBRARY|EXECUTABLE AND
+           NOT skip_post_build_strip)
             add_custom_command(TARGET ${target} POST_BUILD
                     COMMAND $<IF:$<CONFIG:Release>,${CMAKE_STRIP},true>
                     $<$<PLATFORM_ID:Darwin>:-x> $<TARGET_FILE:${target}>

@@ -10,10 +10,10 @@
 #include <QtCore>
 #include <QtWidgets>
 
-#include "base/reconstruction.h"
+#include "controllers/option_manager.h"
+#include "scene/reconstruction.h"
 #include "ui/options_widget.h"
 #include "ui/thread_control_widget.h"
-#include "util/option_manager.h"
 
 namespace colmap {
 
@@ -23,6 +23,8 @@ class BundleAdjustmentWidget : public OptionsWidget {
 public:
     BundleAdjustmentWidget(MainWindow* main_window, OptionManager* options);
 
+    // Fork: ReconstructionManager owns reconstructions by unique_ptr; the
+    // caller guarantees the pointer outlives the dialog.
     void Show(Reconstruction* reconstruction);
 
 private:

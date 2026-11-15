@@ -1,9 +1,12 @@
 #pragma once
 
-#include "gpu_pipeline_cache.hpp"
+#include "tasks/aliked/gpu_pipeline_cache.hpp"
 
-#include "gpu_postprocess.hpp"
-#include "model_weights.hpp"
+
+#include "tasks/aliked/gpu_postprocess.hpp"
+
+#include "tasks/aliked/model_weights.hpp"
+
 
 #include <string>
 #include <vector>

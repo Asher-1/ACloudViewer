@@ -57,6 +57,10 @@ struct CV_DB_LIB_API ecvViewContext {
     ecvViewportParameters viewportParams;
     /// GL viewport in PHYSICAL pixels (synced from widget * DPR).
     QRect glViewport;
+    /// Device pixel ratio of the bound widget (1.0 on standard displays).
+    /// Picking coordinates arrive in Qt-LOGICAL pixels and MUST be
+    /// converted with this before touching glViewport-space math.
+    double dpr = 1.0;
     ccGLMatrixd viewMatd;
     ccGLMatrixd projMatd;
     bool validModelviewMatrix = false;

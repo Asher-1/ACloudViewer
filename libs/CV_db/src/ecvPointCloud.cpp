@@ -3567,7 +3567,7 @@ ccPointCloud* ccPointCloud::unrollOnCylinder(PointCoordinateType radius,
 		}
 	}
 
-	
+
 	std::vector<CCVector3> unrolledNormals;
 	std::vector<ScalarType> deviationValues;
 
@@ -3587,7 +3587,7 @@ ccPointCloud* ccPointCloud::unrollOnCylinder(PointCoordinateType radius,
 			return nullptr;
 		}
 	}
-	
+
 	//compute cylinder center (if none was provided)
 	CCVector3 C;
 	if (!center)
@@ -3602,7 +3602,7 @@ ccPointCloud* ccPointCloud::unrollOnCylinder(PointCoordinateType radius,
 	for (unsigned i = 0; i < numberOfPoints; i++)
 	{
 		const CCVector3* Pin = getPoint(i);
-		
+
 		CCVector3 CP = *Pin - *center;
 
 		PointCoordinateType u = sqrt(CP.u[dim.x] * CP.u[dim.x] + CP.u[dim.y] * CP.u[dim.y]);
@@ -4204,7 +4204,7 @@ ccPointCloud* ccPointCloud::unrollOnCone(	double coneAngle_deg,
 		clone->setCurrentDisplayedScalarField(sfIdx);
 		clone->showSF(true);
 	}
-	
+
 	PointCoordinateType alpha_rad = cloudViewer::DegreesToRadians(coneAngle_deg);
 	PointCoordinateType sin_alpha = static_cast<PointCoordinateType>( sin(alpha_rad) );
 
@@ -5194,7 +5194,7 @@ int ccPointCloud::VBO::init(int count,
 			//no message as it will probably happen on a lot on (old) graphic cards
 			return -1;
 		}
-		
+
 		setUsagePattern(QGLBuffer::DynamicDraw);	//"StaticDraw: The data will be set once and used many times for drawing operations."
 													//"DynamicDraw: The data will be modified repeatedly and used many times for drawing operations.
 	}

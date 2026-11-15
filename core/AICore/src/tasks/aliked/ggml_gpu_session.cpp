@@ -5,17 +5,19 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "ggml_gpu_session.hpp"
+#include "tasks/aliked/ggml_gpu_session.hpp"
 
-#include "ggml_gpu_ops.hpp"
-#include "gpu_sync.hpp"
-#include "gpu_tensor.hpp"
+#include "tasks/aliked/ggml_gpu_ops.hpp"
+#include "tasks/aliked/gpu_sync.hpp"
+#include "tasks/aliked/gpu_tensor.hpp"
 
 #if defined(AICORE_VULKAN_ALIKED)
-#include "vulkan/vulkan_aliked_dispatch.hpp"
+#include "tasks/aliked/vulkan/vulkan_aliked_dispatch.hpp"
+
 #endif
 #if defined(AICORE_CUDA_ALIKED)
-#include "cuda/aliked_cuda.hpp"
+#include "tasks/aliked/cuda/aliked_cuda.hpp"
+
 #endif
 
 #include <ggml-alloc.h>

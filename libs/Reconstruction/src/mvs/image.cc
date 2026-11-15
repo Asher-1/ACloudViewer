@@ -33,17 +33,27 @@
 
 #include <Eigen/Core>
 
-#include "base/projection.h"
+#include "scene/projection.h"
 #include "util/logging.h"
 
 namespace colmap {
 namespace mvs {
 
-Image::Image() {}
+Image::Image() {
+  // Zero-initialize the size and camera/pose buffers so a
+  // default-constructed Image is deterministic (surfaced by
+  // mvs/image_test.cc, batch 24).
+  width_ = 0;
+  height_ = 0;
+  memset(K_, 0, sizeof(K_));
+  memset(R_, 0, sizeof(R_));
+  memset(T_, 0, sizeof(T_));
+}
 
-Image::Image(const std::string& path, const size_t width, const size_t height,
-             const float* K, const float* R, const float* T)
-    : path_(path), width_(width), height_(height) {
+Image::Image(const std::filesystem::path& path, const size_t width,
+             const size_t height, const float* K, const float* R,
+             const float* T)
+    : path_(path.string()), width_(width), height_(height) {
   memcpy(K_, K, 9 * sizeof(float));
   memcpy(R_, R, 9 * sizeof(float));
   memcpy(T_, T, 3 * sizeof(float));

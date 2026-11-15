@@ -33,18 +33,23 @@
 
 #include <Eigen/Geometry>
 
-#include "base/projection.h"
-#include "base/triangulation.h"
-#include "estimators/essential_matrix.h"
+#include "geometry/triangulation.h"
 #include "optim/combination_sampler.h"
 #include "optim/loransac.h"
+#include "scene/projection.h"
 #include "util/logging.h"
-#include "util/math.h"
+#include "math/math.h"
 
 namespace colmap {
 
+TriangulationEstimator::TriangulationEstimator(double min_tri_angle,
+                                               ResidualType residual_type)
+    : min_tri_angle_(min_tri_angle), residual_type_(residual_type) {
+  THROW_CHECK_GE(min_tri_angle, 0);
+}
+
 void TriangulationEstimator::SetMinTriAngle(const double min_tri_angle) {
-  CHECK_GE(min_tri_angle, 0);
+  THROW_CHECK_GE(min_tri_angle, 0);
   min_tri_angle_ = min_tri_angle;
 }
 
@@ -55,52 +60,68 @@ void TriangulationEstimator::SetResidualType(const ResidualType residual_type) {
 std::vector<TriangulationEstimator::M_t> TriangulationEstimator::Estimate(
     const std::vector<X_t>& point_data,
     const std::vector<Y_t>& pose_data) const {
-  CHECK_GE(point_data.size(), 2);
-  CHECK_EQ(point_data.size(), pose_data.size());
+  THROW_CHECK_GE(point_data.size(), 2);
+  THROW_CHECK_EQ(point_data.size(), pose_data.size());
 
+  M_t xyz;
   if (point_data.size() == 2) {
-    // Two-view triangulation.
-
-    const M_t xyz = TriangulatePoint(
-        pose_data[0].proj_matrix, pose_data[1].proj_matrix,
-        point_data[0].point_normalized, point_data[1].point_normalized);
-
-    if (HasPointPositiveDepth(pose_data[0].proj_matrix, xyz) &&
-        HasPointPositiveDepth(pose_data[1].proj_matrix, xyz) &&
-        CalculateTriangulationAngle(pose_data[0].proj_center,
-                                    pose_data[1].proj_center,
-                                    xyz) >= min_tri_angle_) {
-      return std::vector<M_t>{xyz};
-    }
-  } else {
-    // Multi-view triangulation.
-
-    std::vector<Eigen::Matrix3x4d> proj_matrices;
-    proj_matrices.reserve(point_data.size());
-    std::vector<Eigen::Vector2d> points;
-    points.reserve(point_data.size());
-    for (size_t i = 0; i < point_data.size(); ++i) {
-      proj_matrices.push_back(pose_data[i].proj_matrix);
-      points.push_back(point_data[i].point_normalized);
-    }
-
-    const M_t xyz = TriangulateMultiViewPoint(proj_matrices, points);
-
-    // Check for cheirality constraint.
-    for (const auto& pose : pose_data) {
-      if (!HasPointPositiveDepth(pose.proj_matrix, xyz)) {
+    // More efficient closed-form solution for the two-view case.
+    const bool all_cams_perspective =
+        std::all_of(pose_data.begin(), pose_data.end(), [](const Y_t& pose) {
+          return THROW_CHECK_NOTNULL(pose.camera)->IsPerspective();
+        });
+    if (all_cams_perspective) {
+      if (!TriangulatePoint(
+              pose_data[0].cam_from_world,
+              pose_data[1].cam_from_world,
+              Eigen::Vector2d(point_data[0].cam_ray.hnormalized()),
+              Eigen::Vector2d(point_data[1].cam_ray.hnormalized()),
+              &xyz)) {
+        return std::vector<M_t>();
+      }
+    } else {
+      if (!TriangulatePoint(pose_data[0].cam_from_world,
+                            pose_data[1].cam_from_world,
+                            point_data[0].cam_ray,
+                            point_data[1].cam_ray,
+                            &xyz)) {
         return std::vector<M_t>();
       }
     }
+  } else {
+    std::vector<Eigen::Matrix3x4d> cams_from_world(point_data.size());
+    std::vector<Eigen::Vector3d> cam_rays(point_data.size());
+    for (size_t i = 0; i < point_data.size(); ++i) {
+      cams_from_world[i] = pose_data[i].cam_from_world;
+      cam_rays[i] = point_data[i].cam_ray;
+    }
+    if (!TriangulateMultiViewPoint(cams_from_world, cam_rays, &xyz)) {
+      return std::vector<M_t>();
+    }
+  }
 
-    // Check for sufficient triangulation angle.
-    for (size_t i = 0; i < pose_data.size(); ++i) {
-      for (size_t j = 0; j < i; ++j) {
-        const double tri_angle = CalculateTriangulationAngle(
-            pose_data[i].proj_center, pose_data[j].proj_center, xyz);
-        if (tri_angle >= min_tri_angle_) {
-          return std::vector<M_t>{xyz};
-        }
+  // Cheirality. Perspective cameras require positive depth (the point in front
+  // of the local +Z axis). Omnidirectional cameras (e.g. EQUIRECTANGULAR) have
+  // no single front, but the point must still lie in the half-space the
+  // observed bearing points toward. (Upstream parity, d3ccaf35.)
+  for (size_t i = 0; i < pose_data.size(); ++i) {
+    if (pose_data[i].camera->IsPerspective()) {
+      if (!HasPointPositiveDepth(pose_data[i].cam_from_world, xyz)) {
+        return std::vector<M_t>();
+      }
+    } else if ((pose_data[i].cam_from_world * xyz.homogeneous())
+                   .dot(point_data[i].cam_ray) <= 0.0) {
+      return std::vector<M_t>();
+    }
+  }
+
+  // Require a sufficient triangulation angle for at least one pair of views.
+  for (size_t i = 0; i < pose_data.size(); ++i) {
+    for (size_t j = 0; j < i; ++j) {
+      if (CalculateTriangulationAngle(pose_data[i].proj_center,
+                                      pose_data[j].proj_center,
+                                      xyz) >= min_tri_angle_) {
+        return std::vector<M_t>{xyz};
       }
     }
   }
@@ -112,33 +133,56 @@ void TriangulationEstimator::Residuals(const std::vector<X_t>& point_data,
                                        const std::vector<Y_t>& pose_data,
                                        const M_t& xyz,
                                        std::vector<double>* residuals) const {
-  CHECK_EQ(point_data.size(), pose_data.size());
+  THROW_CHECK_EQ(point_data.size(), pose_data.size());
 
   residuals->resize(point_data.size());
 
   for (size_t i = 0; i < point_data.size(); ++i) {
     if (residual_type_ == ResidualType::REPROJECTION_ERROR) {
-      (*residuals)[i] = CalculateSquaredReprojectionError(
-          point_data[i].point, xyz, pose_data[i].proj_matrix,
-          *pose_data[i].camera);
+      (*residuals)[i] =
+          CalculateSquaredReprojectionError(point_data[i].img_point,
+                                            xyz,
+                                            pose_data[i].cam_from_world,
+                                            *pose_data[i].camera);
     } else if (residual_type_ == ResidualType::ANGULAR_ERROR) {
-      const double angular_error = CalculateNormalizedAngularError(
-          point_data[i].point_normalized, xyz, pose_data[i].proj_matrix);
+      const double angular_error = CalculateAngularReprojectionError(
+          point_data[i].cam_ray, xyz, pose_data[i].cam_from_world);
       (*residuals)[i] = angular_error * angular_error;
     }
   }
 }
 
-bool EstimateTriangulation(
-    const EstimateTriangulationOptions& options,
-    const std::vector<TriangulationEstimator::PointData>& point_data,
-    const std::vector<TriangulationEstimator::PoseData>& pose_data,
-    std::vector<char>* inlier_mask, Eigen::Vector3d* xyz) {
-  CHECK_NOTNULL(inlier_mask);
-  CHECK_NOTNULL(xyz);
-  CHECK_GE(point_data.size(), 2);
-  CHECK_EQ(point_data.size(), pose_data.size());
+bool EstimateTriangulation(const EstimateTriangulationOptions& options,
+                           const std::vector<Eigen::Vector2d>& points,
+                           const std::vector<Rigid3d>& cams_from_world,
+                           const std::vector<Camera const*>& cameras,
+                           std::vector<char>* inlier_mask,
+                           Eigen::Vector3d* xyz) {
+  THROW_CHECK_NOTNULL(inlier_mask);
+  THROW_CHECK_NOTNULL(xyz);
+  THROW_CHECK_GE(points.size(), 2);
+  THROW_CHECK_EQ(points.size(), cams_from_world.size());
+  THROW_CHECK_EQ(points.size(), cameras.size());
   options.Check();
+
+  std::vector<TriangulationEstimator::PointData> point_data;
+  point_data.resize(points.size());
+  std::vector<TriangulationEstimator::PoseData> pose_data;
+  pose_data.resize(points.size());
+  for (size_t i = 0; i < points.size(); ++i) {
+    point_data[i].img_point = points[i];
+    // Unit bearing in the camera frame. CamRayFromImg yields a valid ray for
+    // any camera model, including omnidirectional (EQUIRECTANGULAR)
+    // back-hemisphere observations that CamFromImg cannot represent. Fall back
+    // to a defined forward bearing (+Z) if unprojection fails, so downstream
+    // normalize() in the DLT never sees a zero vector (which would produce
+    // NaNs).
+    point_data[i].cam_ray =
+        cameras[i]->CamRayFromImg(points[i]).value_or(Eigen::Vector3d::UnitZ());
+    pose_data[i].cam_from_world = cams_from_world[i].ToMatrix();
+    pose_data[i].proj_center = cams_from_world[i].TgtOriginInSrc();
+    pose_data[i].camera = cameras[i];
+  }
 
   // Robustly estimate track using LORANSAC.
   LORANSAC<TriangulationEstimator, TriangulationEstimator,

@@ -9,6 +9,11 @@ ExternalProject_Add(ext_lasLibzip
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
+    # The plugin links these archives by absolute path; Ninja needs a rule
+    # that generates them.
+    BUILD_BYPRODUCTS
+        <SOURCE_DIR>/LASlib/lib/Release/LASlib.lib
+        <SOURCE_DIR>/LASlib/lib/Debug/LASlib.lib
 )
 
 ExternalProject_Get_Property(ext_lasLibzip SOURCE_DIR)

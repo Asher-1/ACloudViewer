@@ -43,6 +43,7 @@ COLMAP_ADD_SOURCES(
     image_viewer_widget.h image_viewer_widget.cc
     license_widget.h license_widget.cc
     line_painter.h line_painter.cc
+    mesh_painter.h mesh_painter.cc
     log_widget.h log_widget.cc
     main_window.h main_window.cc
     match_matrix_widget.h match_matrix_widget.cc

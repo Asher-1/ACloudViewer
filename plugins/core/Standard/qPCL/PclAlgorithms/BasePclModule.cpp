@@ -26,14 +26,9 @@
 #include <QApplication>
 #include <QFuture>
 #include <QProgressDialog>
+#include <QThread>
 
 // system
-#if defined(CV_WINDOWS)
-#include "windows.h"
-#else
-#include <time.h>
-#include <unistd.h>
-#endif
 
 BasePclModule::BasePclModule(PclModuleDescription desc,
                              ccPluginInterface* parent_plugin)
@@ -190,11 +185,7 @@ int BasePclModule::start() {
 
     QFuture<void> future = QtConcurrent::run(doCompute);
     while (!future.isFinished()) {
-#if defined(CV_WINDOWS)
-        ::Sleep(500);
-#else
-        usleep(500 * 1000);
-#endif
+        QThread::msleep(500);
         if (m_show_progress) progressCb.setValue(++progress);
     }
 

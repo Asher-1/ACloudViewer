@@ -2,12 +2,13 @@ name: qt_env
 channels:
   - conda-forge
 dependencies:
+  - cmake=3.31.8
   - python=3.13
   - pip
   - ninja
   - eigen=3.4.*
   - boost=1.88.*
   - qt6-main>=6.4.*
-  - zlib=1.3.*
+  - zlib
   - ffmpeg=7.1.*
   - laszip

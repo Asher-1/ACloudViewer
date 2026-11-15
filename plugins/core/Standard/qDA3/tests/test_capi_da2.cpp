@@ -33,17 +33,24 @@ int main() {
     }
     std::fclose(f);
 
-    aicore_depth_ctx* c = aicore_depth_load(gguf, 1);
+    aicore_depth_options* opts = aicore_depth_options_new();
+    if (!opts) return 1;
+    aicore_depth_options_set_threads(opts, 1);
+    aicore_depth_ctx* c = aicore_depth_load_opts(gguf, opts);
+    aicore_depth_options_free(opts);
     if (!c) {
         std::fprintf(stderr, "da2: load failed\n");
         return 1;
     }
 
-    int H = 0, W = 0, is_metric = -1;
-    float *depth = nullptr, *conf = nullptr, *sky = nullptr;
-    float ext[12], intr[9];
-    int r = aicore_depth_depth_dense(c, png, &H, &W, &depth, &conf, &sky, ext,
-                                     intr, &is_metric);
+    aicore_depth_dense_result dense{};
+    int r = aicore_depth_depth_dense(c, png, &dense);
+    const int H = dense.height;
+    const int W = dense.width;
+    const int is_metric = dense.is_metric;
+    float* depth = dense.depth;
+    float* conf = dense.conf;
+    float* sky = dense.sky;
     bool ok = (r == 0) && H > 0 && W > 0 && depth && !conf && !sky;
     if (ok) ok = (H * W > 0) && finite_all(depth, H * W);
     if (ok) ok = (is_metric == 0);  // relative DA2 -> non-metric
@@ -52,9 +59,8 @@ int main() {
                  "-> %s\n",
                  r, W, H, (void*)depth, (void*)conf, (void*)sky, is_metric,
                  ok ? "OK" : "FAIL");
-    aicore_depth_free_floats(depth);
-    aicore_depth_free_floats(conf);
-    aicore_depth_free_floats(sky);
+    aicore_depth_dense_result_free(&dense);
+    aicore_depth_free_buffer(sky);
 
     // DA2 has no camera pose: pose_path must fail.
     int rp = aicore_depth_pose_path(c, png, ext, intr);

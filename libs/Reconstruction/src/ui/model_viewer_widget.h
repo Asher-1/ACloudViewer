@@ -11,22 +11,27 @@
 #include <QtCore>
 #include <QtGlobal>
 #include <QtOpenGL>
+
+#include "util/hash_containers.h"
 // QOpenGLWidget: In Qt5 it's in QtOpenGL module, in Qt6 it's in QtOpenGLWidgets
 // module Use direct include which works for both when the appropriate module is
 // linked
 #include <QOpenGLWidget>
+#include <optional>
 
-#include "base/database.h"
-#include "base/reconstruction.h"
+#include "controllers/option_manager.h"
+#include "scene/database.h"
+#include "scene/reconstruction.h"
 #include "ui/colormaps.h"
 #include "ui/image_viewer_widget.h"
 #include "ui/line_painter.h"
+#include "ui/mesh_painter.h"
 #include "ui/movie_grabber_widget.h"
 #include "ui/point_painter.h"
 #include "ui/point_viewer_widget.h"
 #include "ui/render_options.h"
 #include "ui/triangle_painter.h"
-#include "util/option_manager.h"
+#include "util/ply.h"
 
 namespace colmap {
 
@@ -106,9 +111,9 @@ public:
 
     // Copy of current scene data that is displayed
     Reconstruction* reconstruction = nullptr;
-    std::unordered_map<camera_t, Camera> cameras;
-    std::unordered_map<image_t, Image> images;
-    std::unordered_map<point3D_t, Point3D> points3D;
+    NodeHashMap<camera_t, Camera> cameras;
+    NodeHashMap<image_t, Image> images;
+    NodeHashMap<point3D_t, Point3D> points3D;
     std::vector<image_t> reg_image_ids;
 
     QLabel* statusbar_status_label;
@@ -141,6 +146,9 @@ private:
     void UploadImageData(const bool selection_mode = false);
     void UploadImageConnectionData();
     void UploadMovieGrabberData();
+    // Upstream parity (dbb41680): uploads the optional textured surface mesh
+    // (surface_mesh member) to the mesh_painter_.
+    void UploadSurfaceMeshData();
 
     void ComposeProjectionMatrix();
 
@@ -168,6 +176,15 @@ private:
     LinePainter movie_grabber_path_painter_;
     LinePainter movie_grabber_line_painter_;
     TrianglePainter movie_grabber_triangle_painter_;
+
+    // Optional textured surface mesh display (upstream parity). Populated by
+    // the dense-reconstruction flow via ReadPlyMesh; empty until then.
+    std::optional<PlyTexturedMesh> surface_mesh;
+    std::vector<uint8_t> surface_texture_data;
+    int surface_texture_width = 0;
+    int surface_texture_height = 0;
+
+    MeshPainter mesh_painter_;
 
     PointViewerWidget* point_viewer_widget_;
     DatabaseImageViewerWidget* image_viewer_widget_;

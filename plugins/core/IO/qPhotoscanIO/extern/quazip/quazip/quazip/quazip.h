@@ -36,17 +36,17 @@ quazip/(un)zip.h files for details, basically it's zlib license.
 class QTextCodec {
 private:
     QtCompatTextCodec* m_codec;
-    
+
     // Private constructor - use static factory methods
     QTextCodec(QtCompatTextCodec* codec) : m_codec(codec) {}
-    
+
 public:
     static QTextCodec* codecForLocale() {
         // QtCompat returns static instances, so we can safely wrap them
         static QTextCodec* instance = new QTextCodec(qtCompatCodecForLocale());
         return instance;
     }
-    
+
     static QTextCodec* codecForName(const char* name) {
         // QtCompat returns static instances, so we can safely wrap them
         // Use QtCompat's codecForName to get the appropriate codec
@@ -57,15 +57,15 @@ public:
         }
         return codecCache[key];
     }
-    
+
     QByteArray fromUnicode(const QString& str) const {
         return m_codec->fromUnicode(str);
     }
-    
+
     QString toUnicode(const QByteArray& ba) const {
         return m_codec->toUnicode(ba);
     }
-    
+
     QString toUnicode(const char* chars, int len = -1) const {
         return m_codec->toUnicode(chars, len);
     }

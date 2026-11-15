@@ -9,9 +9,9 @@
 
 #include <algorithm>
 
-#include "base/camera_models.h"
+#include "controllers/option_manager.h"
+#include "sensor/models.h"
 #include "util/misc.h"
-#include "util/option_manager.h"
 
 namespace cloudViewer {
 
@@ -75,9 +75,9 @@ void TwoViewInfoTab::ShowMatches() {
     const size_t idx =
             sorted_matches_idxs_[select->selectedRows().begin()->row()];
     const auto& selection = matches_[idx];
-    const std::string path1 = JoinPaths(*options_->image_path, image_->Name());
-    const std::string path2 =
-            JoinPaths(*options_->image_path, selection.first->Name());
+    const std::filesystem::path path1 = *options_->image_path / image_->Name();
+    const std::filesystem::path path2 =
+            *options_->image_path / selection.first->Name();
     const auto keypoints1 = database_->ReadKeypoints(image_->ImageId());
     const auto keypoints2 =
             database_->ReadKeypoints(selection.first->ImageId());
@@ -647,8 +647,7 @@ void ImageTab::ShowImage() {
     const std::vector<char> tri_mask(keypoints.size(), false);
 
     image_viewer_widget_->ReadAndShowWithKeypoints(
-            JoinPaths(*options_->image_path, image.Name()), keypoints,
-            tri_mask);
+            *options_->image_path / image.Name(), keypoints, tri_mask);
     image_viewer_widget_->setWindowTitle(
             QString::fromStdString("Image " + std::to_string(image.ImageId())));
 }
@@ -758,8 +757,8 @@ DatabaseManagementWidget::DatabaseManagementWidget(QWidget* parent,
 
     tab_widget_ = new QTabWidget(this);
 
-    camera_tab_ = new CameraTab(this, &database_);
-    image_tab_ = new ImageTab(this, camera_tab_, options_, &database_);
+    camera_tab_ = new CameraTab(this, database_.get());
+    image_tab_ = new ImageTab(this, camera_tab_, options_, database_.get());
 
     tab_widget_->addTab(image_tab_, tr("Images"));
     tab_widget_->addTab(camera_tab_, tr("Cameras"));
@@ -784,7 +783,7 @@ DatabaseManagementWidget::DatabaseManagementWidget(QWidget* parent,
 void DatabaseManagementWidget::showEvent(QShowEvent*) {
     parent_->setDisabled(true);
 
-    database_.Open(*options_->database_path);
+    database_ = colmap::Database::Open(*options_->database_path);
 
     image_tab_->Reload();
     camera_tab_->Reload();
@@ -796,7 +795,7 @@ void DatabaseManagementWidget::hideEvent(QHideEvent*) {
     image_tab_->Clear();
     camera_tab_->Clear();
 
-    database_.Close();
+    database_->Close();
 }
 
 void DatabaseManagementWidget::ClearMatches() {
@@ -806,7 +805,7 @@ void DatabaseManagementWidget::ClearMatches() {
     if (reply == QMessageBox::No) {
         return;
     }
-    database_.ClearMatches();
+    database_->ClearMatches();
 }
 
 void DatabaseManagementWidget::ClearTwoViewGeometries() {
@@ -817,7 +816,7 @@ void DatabaseManagementWidget::ClearTwoViewGeometries() {
     if (reply == QMessageBox::No) {
         return;
     }
-    database_.ClearTwoViewGeometries();
+    database_->ClearTwoViewGeometries();
 }
 
 }  // namespace cloudViewer

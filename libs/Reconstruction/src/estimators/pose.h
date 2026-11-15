@@ -12,9 +12,9 @@
 #include <Eigen/Core>
 #include <vector>
 
-#include "base/camera.h"
-#include "base/camera_models.h"
 #include "optim/loransac.h"
+#include "scene/camera.h"
+#include "sensor/models.h"
 #include "util/alignment.h"
 #include "util/logging.h"
 #include "util/threading.h"
@@ -43,8 +43,20 @@ struct AbsolutePoseEstimationOptions {
     // Options used for P3P RANSAC.
     RANSACOptions ransac_options;
 
+    // Upstream parity (d3ccaf35 estimators/pose.h): constructor defaults for
+    // the P3P RANSAC (the aggregated defaults above leave max_error at 0,
+    // which aborts in RANSACOptions::Check).
+    AbsolutePoseEstimationOptions() {
+        ransac_options.max_error = 12.0;
+        // Use high confidence to avoid preemptive termination of P3P RANSAC
+        // - too early termination may lead to bad registration.
+        ransac_options.min_num_trials = 100;
+        ransac_options.max_num_trials = 10000;
+        ransac_options.confidence = 0.99999;
+    }
+
     void Check() const {
-        CHECK_GT(num_focal_length_samples, 0);
+        CHECK_GT(num_focal_length_samples, static_cast<size_t>(0));
         CHECK_GT(min_focal_length_ratio, 0);
         CHECK_GT(max_focal_length_ratio, 0);
         CHECK_LT(min_focal_length_ratio, max_focal_length_ratio);
@@ -53,6 +65,12 @@ struct AbsolutePoseEstimationOptions {
 };
 
 struct AbsolutePoseRefinementOptions {
+    bool use_position_prior = false;
+
+    // The covariance of the position prior and the prior position in the
+    // world coordinate frame (upstream parity, d3ccaf35).
+    Eigen::Matrix3d position_prior_covariance = Eigen::Matrix3d::Identity();
+    Eigen::Vector3d position_prior_in_world = Eigen::Vector3d::Zero();
     // Convergence criterion.
     double gradient_tolerance = 1.0;
 
@@ -63,13 +81,15 @@ struct AbsolutePoseRefinementOptions {
     double loss_function_scale = 1.0;
 
     // Whether to refine the focal length parameter group.
-    bool refine_focal_length = true;
+    // Upstream parity (6b59bb74 estimators/pose.h): the estimator defaults
+    // are conservative; the incremental mapper sets all three explicitly.
+    bool refine_focal_length = false;
 
     // Whether to refine the extra parameter group.
-    bool refine_extra_params = true;
+    bool refine_extra_params = false;
 
     // Whether to print final summary.
-    bool print_summary = true;
+    bool print_summary = false;
 
     void Check() const {
         CHECK_GE(gradient_tolerance, 0.0);
@@ -105,52 +125,66 @@ bool EstimateAbsolutePose(const AbsolutePoseEstimationOptions& options,
                           size_t* num_inliers,
                           std::vector<char>* inlier_mask);
 
-// Estimate relative from 2D-2D correspondences.
+// Estimate relative pose from 2D-2D correspondences.
 //
-// Pose of first camera is assumed to be at the origin without rotation. Pose
-// of second camera is given as world-to-image transformation,
-// i.e. `x2 = [R | t] * X2`.
+// RETIRED (flat estimators retirement, 2026-09-15): this fork-side legacy
+// helper had no remaining consumers - the two-view geometry path decomposes
+// relative pose through EstimateTwoViewGeometryPoseFromCamRays, and the
+// upstream d3ccaf35 form (bearing-vector input +
+// EssentialMatrixTangentSampsonEstimator) lands with the W3-2b pose batch.
+
+// Estimate the relative pose between two central cameras from corresponding
+// ray pairs, robustly via LO-RANSAC over the pixel-unit tangent Sampson error
+// of the essential matrix (upstream parity, d3ccaf35 estimators/pose.cc).
 //
-// @param ransac_options       RANSAC options.
-// @param points1              Corresponding 2D points.
-// @param points2              Corresponding 2D points.
-// @param qvec                 Estimated rotation component as
-//                             unit Quaternion coefficients (w, x, y, z).
-// @param tvec                 Estimated translation component.
+// @param ransac_options       RANSAC options (threshold in pixels).
+// @param cam_rays1_with_jac   Rays (and unprojection Jacobians) in camera 1.
+// @param cam_rays2_with_jac   Rays (and unprojection Jacobians) in camera 2.
+// @param cam2_from_cam1       Estimated relative pose.
+// @param num_inliers          Number of RANSAC inliers.
+// @param inlier_mask          Inlier mask for the correspondences.
 //
-// @return                     Number of RANSAC inliers.
-size_t EstimateRelativePose(const RANSACOptions& ransac_options,
-                            const std::vector<Eigen::Vector2d>& points1,
-                            const std::vector<Eigen::Vector2d>& points2,
-                            Eigen::Vector4d* qvec,
-                            Eigen::Vector3d* tvec);
+// @return                     Whether a usable pose was estimated.
+bool EstimateRelativePose(const RANSACOptions& ransac_options,
+                          const std::vector<CamRayWithJac>& cam_rays1_with_jac,
+                          const std::vector<CamRayWithJac>& cam_rays2_with_jac,
+                          Rigid3d* cam2_from_cam1,
+                          size_t* num_inliers,
+                          std::vector<char>* inlier_mask);
 
 // Refine absolute pose (optionally focal length) from 2D-3D correspondences.
+//
+// Upstream parity (d3ccaf35 estimators/pose.h): the pose is refined as a
+// single Rigid3d parameter block with a product (EigenQuaternion + Euclidean)
+// manifold, and the camera intrinsics as a subset manifold.
 //
 // @param options              Refinement options.
 // @param inlier_mask          Inlier mask for 2D-3D correspondences.
 // @param points2D             Corresponding 2D points.
 // @param points3D             Corresponding 3D points.
-// @param qvec                 Estimated rotation component as
-//                             unit Quaternion coefficients (w, x, y, z).
-// @param tvec                 Estimated translation component.
+// @param cam_from_world       Refined absolute camera pose.
 // @param camera               Camera for which to estimate pose. Modified
 //                             in-place to store the estimated focal length.
+// @param cam_from_world_cov   Optional 6x6 tangent-space covariance of the
+//                             refined pose ([rotation, translation] order,
+//                             rows/columns of constant dimensions omitted).
 //
 // @return                     Whether the solution is usable.
 bool RefineAbsolutePose(const AbsolutePoseRefinementOptions& options,
                         const std::vector<char>& inlier_mask,
                         const std::vector<Eigen::Vector2d>& points2D,
                         const std::vector<Eigen::Vector3d>& points3D,
-                        Eigen::Vector4d* qvec,
-                        Eigen::Vector3d* tvec,
-                        Camera* camera);
+                        Rigid3d* cam_from_world,
+                        Camera* camera,
+                        Eigen::Matrix6d* cam_from_world_cov = nullptr);
 
+// Upstream parity (a2bd15c2): tangent-Sampson refinement over calibrated
+// rays with their unprojection Jacobians.
 // Refine relative pose of two cameras.
 //
-// Minimizes the Sampson error between corresponding normalized points using
-// a robust cost function, i.e. the corresponding points need not necessarily
-// be inliers given a sufficient initial guess for the relative pose.
+// Minimizes the pixel-unit tangent Sampson error over the masked-in
+// correspondences as plain least squares (no robust loss): the inlier_mask must
+// already exclude outliers.
 //
 // Assumes that first camera pose has projection matrix P = [I | 0], and
 // pose of second camera is given as transformation from world to camera system.
@@ -159,17 +193,35 @@ bool RefineAbsolutePose(const AbsolutePoseRefinementOptions& options,
 // the translation up to an unknown scale (i.e. refined translation vector
 // is a unit vector again).
 //
-// @param options          Solver options.
-// @param points1          First set of corresponding points.
-// @param points2          Second set of corresponding points.
-// @param qvec             Unit Quaternion rotation coefficients (w, x, y, z).
-// @param tvec             3x1 translation vector.
+// @param options              Solver options.
+// @param inlier_mask          Inlier mask for 2D-2D correspondences.
+// @param cam_rays1_with_jac   First rays with their unprojection Jacobians.
+// @param cam_rays2_with_jac   Second rays with their unprojection Jacobians.
+// @param cam2_from_cam1       Refined relative pose between cameras.
 //
-// @return                 Flag indicating if solution is usable.
+// @return                     Flag indicating if solution is usable.
 bool RefineRelativePose(const ceres::Solver::Options& options,
-                        const std::vector<Eigen::Vector2d>& points1,
-                        const std::vector<Eigen::Vector2d>& points2,
-                        Eigen::Vector4d* qvec,
-                        Eigen::Vector3d* tvec);
+                        const std::vector<char>& inlier_mask,
+                        const std::vector<CamRayWithJac>& cam_rays1_with_jac,
+                        const std::vector<CamRayWithJac>& cam_rays2_with_jac,
+                        Rigid3d* cam2_from_cam1);
+
+// Refine essential matrix.
+//
+// Decomposes the essential matrix into rotation and translation components
+// and refines the relative pose using the function `RefineRelativePose`.
+//
+// @param options              Solver options.
+// @param cam_rays1_with_jac   First rays with their unprojection Jacobians.
+// @param cam_rays2_with_jac   Second rays with their unprojection Jacobians.
+// @param inlier_mask          Inlier mask for corresponding rays.
+// @param E                    3x3 essential matrix (refined in-place).
+//
+// @return                     Flag indicating if solution is usable.
+bool RefineEssentialMatrix(const ceres::Solver::Options& options,
+                           const std::vector<CamRayWithJac>& cam_rays1_with_jac,
+                           const std::vector<CamRayWithJac>& cam_rays2_with_jac,
+                           const std::vector<char>& inlier_mask,
+                           Eigen::Matrix3d* E);
 
 }  // namespace colmap

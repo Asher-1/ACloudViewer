@@ -67,8 +67,14 @@ public:
     ~ecvRedrawScope() {
         if (!m_dismissed && !ecvViewManager::instance().isShuttingDown() &&
             ecvViewManager::instance().hasAnyView()) {
-            if (auto* view = ecvViewManager::instance().getEffectiveView()) {
-                view->redraw(m_only2D, m_forceRedraw);
+            // Multi-window: the mutations inside a scope (visibility,
+            // representation, per-entity properties) are entity-state, so
+            // EVERY view showing them must re-evaluate its draw gate —
+            // redrawing only the effective view left the others rendering
+            // stale state until an unrelated repaint.
+            const auto views = ecvViewManager::instance().getAllViews();
+            for (auto* view : views) {
+                if (view) view->redraw(m_only2D, m_forceRedraw);
             }
         }
     }

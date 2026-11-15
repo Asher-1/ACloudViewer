@@ -22,7 +22,9 @@ import os, sys, subprocess, numpy as np
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
-DA3_SRC = "/tmp/da3-src/src"
+DA3_SRC = os.environ.get("DA3_SRC", "")
+if not DA3_SRC:
+    raise RuntimeError("DA3_SRC must point to the upstream depth-anything-3/src directory")
 
 from e2e_verify_native import (make_structured_image, install_torchvision_stub,
                                read_pfm, W0, H0, PROCESS_RES, METHOD)

@@ -1,5 +1,7 @@
 # qLightGlue
 
+![Plugin icon](images/qLightGlue.svg)
+
 Sparse feature matching for ACloudViewer — **SIFT / ALIKED LightGlue** on shared **`libAICore.so`**:
 
 ```
@@ -8,6 +10,10 @@ Image pair ──► SIFT LightGlue   : OpenCV RootSIFT → sift-lightglue-*.ggu
 ```
 
 Same architectural split as [COLMAP](https://github.com/colmap/colmap) and [LightGlue-GGML](https://github.com/Asher-1/LightGlue-GGML): **feature extraction** and **matching** are separate stages.
+
+![LightGlue two-image matching](images/qLightGlue.png)
+
+*SIFT LightGlue (F16) matching two views of the same scene: 368 mutual matches in ~0.6 s, drawn as green keypoint lines and stored as a match-visualization entity in the DB tree.*
 
 ## Features
 

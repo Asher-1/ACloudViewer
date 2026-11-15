@@ -1,0 +1,211 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
+
+#include <Eigen/Core>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "geometry/pose_prior.h"
+#include "scene/correspondence_graph.h"
+#include "scene/database.h"
+#include "util/hash_containers.h"
+
+namespace colmap {
+
+// A class that caches the contents of the database in memory, used to quickly
+// create new reconstruction instances when multiple models are reconstructed.
+// Upstream COLMAP dbb41680 (scene/database_cache.h) parity: the cache owns the
+// full frame-aware object graph (rigs, cameras, frames, images, pose priors)
+// plus a shared correspondence graph, so `Reconstruction::Load` can wire the
+// rig/frame/camera back pointers of every loaded image.
+class DatabaseCache {
+public:
+    struct Options {
+        // The minimum number of matches for an image pair to be loaded.
+        size_t min_num_matches = 0;
+
+        // Whether to ignore watermark image pairs.
+        bool ignore_watermarks = false;
+
+        // Whether to use only load the data for a subset of the images.
+        // Notice that if one image of a frame is included, all other images
+        // in the same frame will also be included. All images are used if
+        // empty.
+        FlatHashSet<std::string> image_names;
+
+        // Whether to load all candidate images regardless of whether they
+        // have correspondences. If false (default), only images that
+        // participate in at least one valid match pair are loaded.
+        bool load_all_images = false;
+
+        // Whether to convert pose priors to ENU coordinate system.
+        bool convert_pose_priors_to_enu = false;
+    };
+
+    DatabaseCache();
+
+    // Load cameras, images, features, and matches from database.
+    void Load(const Database& database, const Options& options);
+
+    static std::shared_ptr<DatabaseCache> Create(const Database& database,
+                                                 const Options& options);
+
+    // Create a filtered database cache from an existing cache containing only
+    // the specified images and their associated data.
+    static std::shared_ptr<DatabaseCache> CreateFromCache(
+            const DatabaseCache& database_cache, const Options& options);
+
+    // Get number of objects.
+    inline size_t NumRigs() const;
+    inline size_t NumCameras() const;
+    inline size_t NumFrames() const;
+    inline size_t NumImages() const;
+    inline size_t NumPosePriors() const;
+
+    // Add objects.
+    void AddRig(class Rig rig);
+    void AddCamera(class Camera camera);
+    void AddFrame(class Frame frame);
+    void AddImage(class Image image);
+    void AddPosePrior(struct PosePrior pose_prior);
+
+    // Get specific objects.
+    inline class Rig& Rig(rig_t rig_id);
+    inline const class Rig& Rig(rig_t rig_id) const;
+    inline class Camera& Camera(camera_t camera_id);
+    inline const class Camera& Camera(camera_t camera_id) const;
+    inline class Frame& Frame(frame_t frame_id);
+    inline const class Frame& Frame(frame_t frame_id) const;
+    inline class Image& Image(image_t image_id);
+    inline const class Image& Image(image_t image_id) const;
+
+    // Get all objects.
+    inline const NodeHashMap<rig_t, class Rig>& Rigs() const;
+    inline const NodeHashMap<camera_t, class Camera>& Cameras() const;
+    inline const NodeHashMap<frame_t, class Frame>& Frames() const;
+    inline const NodeHashMap<image_t, class Image>& Images() const;
+    inline const std::vector<struct PosePrior>& PosePriors() const;
+
+    // Check whether specific object exists.
+    inline bool ExistsRig(rig_t rig_id) const;
+    inline bool ExistsCamera(camera_t camera_id) const;
+    inline bool ExistsFrame(frame_t frame_id) const;
+    inline bool ExistsImage(image_t image_id) const;
+
+    // Get reference to const correspondence graph.
+    inline std::shared_ptr<const class CorrespondenceGraph>
+    CorrespondenceGraph() const;
+    inline std::shared_ptr<class CorrespondenceGraph> CorrespondenceGraph();
+
+    // Find specific image by name. Note that this uses linear search.
+    const class Image* FindImageWithName(const std::string& name) const;
+
+private:
+    void ConvertPosePriorsToENU();
+
+    NodeHashMap<rig_t, class Rig> rigs_;
+    NodeHashMap<camera_t, class Camera> cameras_;
+    NodeHashMap<frame_t, class Frame> frames_;
+    NodeHashMap<image_t, class Image> images_;
+    std::vector<struct PosePrior> pose_priors_;
+    std::shared_ptr<class CorrespondenceGraph> correspondence_graph_;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+// Implementation
+////////////////////////////////////////////////////////////////////////////////
+
+size_t DatabaseCache::NumRigs() const { return rigs_.size(); }
+
+size_t DatabaseCache::NumCameras() const { return cameras_.size(); }
+
+size_t DatabaseCache::NumFrames() const { return frames_.size(); }
+
+size_t DatabaseCache::NumImages() const { return images_.size(); }
+
+size_t DatabaseCache::NumPosePriors() const { return pose_priors_.size(); }
+
+class Rig& DatabaseCache::Rig(const rig_t rig_id) { return rigs_.at(rig_id); }
+
+const class Rig& DatabaseCache::Rig(const rig_t rig_id) const {
+    return rigs_.at(rig_id);
+}
+
+class Camera& DatabaseCache::Camera(const camera_t camera_id) {
+    return cameras_.at(camera_id);
+}
+
+const class Camera& DatabaseCache::Camera(const camera_t camera_id) const {
+    return cameras_.at(camera_id);
+}
+
+class Frame& DatabaseCache::Frame(const frame_t frame_id) {
+    return frames_.at(frame_id);
+}
+
+const class Frame& DatabaseCache::Frame(const frame_t frame_id) const {
+    return frames_.at(frame_id);
+}
+
+class Image& DatabaseCache::Image(const image_t image_id) {
+    return images_.at(image_id);
+}
+
+const class Image& DatabaseCache::Image(const image_t image_id) const {
+    return images_.at(image_id);
+}
+
+const NodeHashMap<rig_t, class Rig>& DatabaseCache::Rigs() const {
+    return rigs_;
+}
+
+const NodeHashMap<camera_t, class Camera>& DatabaseCache::Cameras() const {
+    return cameras_;
+}
+
+const NodeHashMap<frame_t, class Frame>& DatabaseCache::Frames() const {
+    return frames_;
+}
+
+const NodeHashMap<image_t, class Image>& DatabaseCache::Images() const {
+    return images_;
+}
+
+const std::vector<struct PosePrior>& DatabaseCache::PosePriors() const {
+    return pose_priors_;
+}
+
+bool DatabaseCache::ExistsRig(const rig_t rig_id) const {
+    return rigs_.find(rig_id) != rigs_.end();
+}
+
+bool DatabaseCache::ExistsCamera(const camera_t camera_id) const {
+    return cameras_.find(camera_id) != cameras_.end();
+}
+
+bool DatabaseCache::ExistsFrame(const frame_t frame_id) const {
+    return frames_.find(frame_id) != frames_.end();
+}
+
+bool DatabaseCache::ExistsImage(const image_t image_id) const {
+    return images_.find(image_id) != images_.end();
+}
+
+std::shared_ptr<const class CorrespondenceGraph>
+DatabaseCache::CorrespondenceGraph() const {
+    return correspondence_graph_;
+}
+
+std::shared_ptr<class CorrespondenceGraph>
+DatabaseCache::CorrespondenceGraph() {
+    return correspondence_graph_;
+}
+
+}  // namespace colmap

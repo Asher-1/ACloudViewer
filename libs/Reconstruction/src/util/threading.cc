@@ -31,6 +31,8 @@
 
 #include "util/threading.h"
 
+#include "util/cancellation.h"
+
 #include "util/logging.h"
 
 namespace colmap {
@@ -96,7 +98,10 @@ bool Thread::IsStarted() {
 
 bool Thread::IsStopped() {
   std::unique_lock<std::mutex> lock(mutex_);
-  return stopped_;
+  // Cooperative graceful-shutdown: a first SIGINT/SIGTERM recorded by the
+  // ScopedSignalHandler stops every running thread at its next checkpoint
+  // (upstream dbb41680 parity).
+  return stopped_ || ScopedSignalHandler::IsInterruptRequested();
 }
 
 bool Thread::IsPaused() {
@@ -203,10 +208,15 @@ void ThreadPool::Stop() {
       return;
     }
 
+    // Upstream parity (d3ccaf35): Stop replays the checkers first, so a
+    // pending task exception surfaces here as AggregateException.
+    CheckFinishedTasks();
+
     stopped_ = true;
 
-    std::queue<std::function<void()>> empty_tasks;
-    std::swap(tasks_, empty_tasks);
+    // Clear the queues.
+    tasks_ = {};
+    finished_task_checkers_ = {};
   }
 
   task_condition_.notify_all();
@@ -224,6 +234,26 @@ void ThreadPool::Wait() {
     finished_condition_.wait(
         lock, [this]() { return tasks_.empty() && num_active_workers_ == 0; });
   }
+
+  CheckFinishedTasks();
+}
+
+// Upstream parity (d3ccaf35 util/threading.cc): replay the finished-task
+// checkers on the calling thread and aggregate their exceptions.
+void ThreadPool::CheckFinishedTasks() {
+  std::vector<std::exception_ptr> exceptions;
+  while (!finished_task_checkers_.empty()) {
+    auto checker = std::move(finished_task_checkers_.back());
+    finished_task_checkers_.pop_back();
+    try {
+      checker();
+    } catch (...) {
+      exceptions.push_back(std::current_exception());
+    }
+  }
+  if (!exceptions.empty()) {
+    throw AggregateException(std::move(exceptions));
+  }
 }
 
 void ThreadPool::WorkerFunc(const int index) {
@@ -233,7 +263,7 @@ void ThreadPool::WorkerFunc(const int index) {
   }
 
   while (true) {
-    std::function<void()> task;
+    std::function<std::function<void()>()> task;
     {
       std::unique_lock<std::mutex> lock(mutex_);
       task_condition_.wait(lock,
@@ -246,11 +276,15 @@ void ThreadPool::WorkerFunc(const int index) {
       num_active_workers_ += 1;
     }
 
-    task();
+    // Upstream parity (d3ccaf35): the task runs and hands back its
+    // finished-task checker, which Wait() later replays on the calling
+    // thread to aggregate any task exceptions.
+    std::function<void()> finished_task_checker = task();
 
     {
       std::unique_lock<std::mutex> lock(mutex_);
       num_active_workers_ -= 1;
+      finished_task_checkers_.push_back(std::move(finished_task_checker));
     }
 
     finished_condition_.notify_all();

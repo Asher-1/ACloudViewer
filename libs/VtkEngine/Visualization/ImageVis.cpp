@@ -41,11 +41,14 @@
 #include <vtkContextScene.h>
 #include <vtkImageData.h>
 #include <vtkImageProperty.h>
+#include <vtkImageResliceMapper.h>
+#include <vtkImageSincInterpolator.h>
 #include <vtkImageSlice.h>
 #include <vtkImageSliceMapper.h>
 #include <vtkInteractorObserver.h>
 #include <vtkInteractorStyleImage.h>
 #include <vtkOpenGLRenderWindow.h>
+#include <vtkPropCollection.h>
 #include <vtkQImageToImageSource.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
@@ -269,6 +272,41 @@ void ImageVis::changeOpacity(double opacity, const std::string& viewID) {
     }
 }
 
+bool ImageVis::raiseLayer(const std::string& layer_id) {
+    auto it = m_imageInfoMap.find(layer_id);
+    if (it == m_imageInfoMap.end() || !it->second.imageSlice || !ren_) {
+        return false;
+    }
+
+    // Remember the raised layer so addRGBImage can re-raise it after a
+    // full redraw rebuilds every image slice.
+    m_topMostLayer = layer_id;
+
+    vtkImageSlice* imageSlice = it->second.imageSlice;
+    // vtkRenderer draws ViewProps in insertion order.  Only re-order when
+    // the slice is not already the last (topmost) prop, so repeatedly
+    // selecting the same image costs nothing.
+    if (ren_->GetViewProps()->GetLastProp() != imageSlice) {
+        ren_->RemoveViewProp(imageSlice);
+        ren_->AddViewProp(imageSlice);
+        imageSlice->Modified();
+    }
+    return true;
+}
+
+bool ImageVis::fitLayerToWindow(const std::string& layer_id) {
+    auto it = m_imageInfoMap.find(layer_id);
+    if (it == m_imageInfoMap.end() || !it->second.imageSlice || !ren_) {
+        return false;
+    }
+
+    // Same pixel-space zoom-fit as the full refresh, but pinned to the
+    // selected image so the camera matches the entity picked in the DB tree.
+    updateImageSliceTransform(it->second.imageSlice, it->second.originalWidth,
+                              it->second.originalHeight);
+    return true;
+}
+
 void ImageVis::removeAllLayers() {
     std::vector<std::string> ids;
     for (const auto& kv : m_imageInfoMap) ids.push_back(kv.first);
@@ -305,6 +343,10 @@ void ImageVis::removeLayer(const std::string& layer_id) {
     }
 
     m_imageInfoMap.erase(layer_id);
+
+    if (m_topMostLayer == layer_id) {
+        m_topMostLayer.clear();
+    }
 
     if (isImageLayer && m_imageInfoMap.empty() && interactor_ &&
         m_originalInteractorStyle) {
@@ -391,11 +433,32 @@ void ImageVis::addRGBImage(const QImage& qimage,
         ren_->RemoveViewProp(it->second.imageSlice);
     }
 
-    vtkSmartPointer<vtkImageSliceMapper> mapper =
-            vtkSmartPointer<vtkImageSliceMapper>::New();
+    // vtkImageResliceMapper resamples the image to the viewport pixels at
+    // render time (ResampleToScreenPixels is on by default), so a source
+    // image much larger than the view keeps its full detail instead of
+    // aliasing away through the single-level GL_LINEAR texture scaling of a
+    // plain vtkImageSliceMapper. Interactive frames fall back to the cheap
+    // texture path automatically (AutoAdjustImageQuality). The window/level
+    // stage stays off so RGBA color data passes through untouched.
+    vtkSmartPointer<vtkImageResliceMapper> mapper =
+            vtkSmartPointer<vtkImageResliceMapper>::New();
     mapper->SetInputData(imageData);
-    mapper->SetSliceNumber(0);
-    mapper->Update();
+    mapper->SeparateWindowLevelOperationOff();
+    // Linear resampling point-samples a 2x2 neighborhood, so a large image
+    // shown well below its native size still loses detail (same class of
+    // aliasing as the GPU path). The sinc interpolator's antialiasing mode
+    // widens its kernel while shrinking to aggregate the source pixels per
+    // screen pixel — the VTK equivalent of the SmoothTransformation the
+    // plugin previews use — and reverts to sharp sinc when magnified. It
+    // also overrides the per-frame SetInterpolationMode default (a custom
+    // interpolator takes precedence in vtkImageReslice::GetInterpolator).
+    vtkSmartPointer<vtkImageSincInterpolator> interpolator =
+            vtkSmartPointer<vtkImageSincInterpolator>::New();
+    interpolator->SetWindowFunctionToLanczos();
+    interpolator->AntialiasingOn();
+    mapper->SetInterpolator(interpolator);
+    // Pipeline update happens automatically at render time
+    // (Update() is protected on the reslice mapper).
 
     vtkSmartPointer<vtkImageSlice> imageSlice =
             vtkSmartPointer<vtkImageSlice>::New();
@@ -434,6 +497,19 @@ void ImageVis::addRGBImage(const QImage& qimage,
     info.imageSlice = imageSlice;
     info.imageMapper = mapper;
     m_imageInfoMap[layer_id] = info;
+
+    // A full redraw rebuilds every image slice (drawImage runs for each
+    // entity in DB order), which would otherwise stack the last rebuilt
+    // image on top.  Keep the user-selected topmost layer at the end of
+    // the render order after every rebuild.
+    if (!m_topMostLayer.empty() && m_topMostLayer != layer_id) {
+        auto topIt = m_imageInfoMap.find(m_topMostLayer);
+        if (topIt != m_imageInfoMap.end() && topIt->second.imageSlice &&
+            ren_->GetViewProps()->GetLastProp() != topIt->second.imageSlice) {
+            ren_->RemoveViewProp(topIt->second.imageSlice);
+            ren_->AddViewProp(topIt->second.imageSlice);
+        }
+    }
 }
 
 void ImageVis::addQImage(const QImage& qimage,
@@ -729,6 +805,8 @@ void ImageVis::updateImageSliceTransform(vtkImageSlice* imageSlice,
         return;
     }
 
+    // Only vtkImageSliceMapper carries a display extent; the reslice-based
+    // mapper manages its extent (viewport-sized when resampling) itself.
     vtkImageSliceMapper* mapper =
             vtkImageSliceMapper::SafeDownCast(imageSlice->GetMapper());
     if (mapper) {

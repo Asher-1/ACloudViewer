@@ -46,6 +46,9 @@ std::vector<FaceDetectBox> parseAnalyzeJson(const QByteArray& json);
 std::vector<FaceDetectBox> parseDenseJson(const QByteArray& json);
 void filterFacesByScore(std::vector<FaceDetectBox>* faces, float minScore);
 void scaleFaceBoxes(std::vector<FaceDetectBox>* faces, float scale);
+/** Translate all boxes (and their 5 landmarks) by (dx, dy) — used to undo a
+ * padded-crop offset after detection. */
+void offsetFaceBoxes(std::vector<FaceDetectBox>* faces, float dx, float dy);
 
 QString formatMatchLabel(const QString& name, float distance);
 QString formatNoMatchLabel(float nearestDistance,
@@ -55,8 +58,9 @@ QString labelForEmbedding(const FaceRegistryStore* registry,
                           float matchThreshold);
 
 #ifdef AICore_ENABLED
-/** Load RGB via AICore (libjpeg/stb, cv2.imread parity). Use for detect+embed
- * on the same buffer — avoids Qt JPEG decode / EXIF drift vs detect_path_json.
+/** Load RGB via AICore (Qt image decode, same path as detect_rgb_json). Use
+ * for detect+embed on the same buffer — avoids a second decode / EXIF drift
+ * between the detect and embed calls.
  */
 QImage loadRgbForInference(const QString& path);
 std::vector<FaceDetectBox> detectBoxesFromRgb(aicore_facedetect_ctx* ctx,

@@ -36,6 +36,7 @@ public:
     };
 
     explicit FaceDetectTestDataWorker(QObject* parent = nullptr);
+    ~FaceDetectTestDataWorker() override;
     void setJob(Job job);
 
 signals:

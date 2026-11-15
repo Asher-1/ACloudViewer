@@ -1,0 +1,160 @@
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// Ported from upstream MVS/colmap d3ccaf35 (batch 24 test alignment);
+// include paths mapped to the fork layout.
+
+#include "mvs/fusion.h"
+
+#include "scene/synthetic.h"
+#include "sensor/bitmap.h"
+#include "util/file.h"
+#include "util/testing.h"
+
+#include <fstream>
+
+#include <gtest/gtest.h>
+
+namespace colmap {
+namespace mvs {
+namespace {
+
+TEST(StereoFusion, Integration) {
+  const auto temp_dir = CreateTestDir();
+  CreateDirIfNotExists(temp_dir / "sparse");
+  CreateDirIfNotExists(temp_dir / "images");
+  CreateDirIfNotExists(temp_dir / "stereo");
+  CreateDirIfNotExists(temp_dir / "stereo" / "depth_maps");
+  CreateDirIfNotExists(temp_dir / "stereo" / "normal_maps");
+
+  // Create synthetic reconstruction with 2 overlapping images.
+  SyntheticDatasetOptions synthetic_dataset_options;
+  synthetic_dataset_options.num_rigs = 1;
+  synthetic_dataset_options.num_cameras_per_rig = 1;
+  synthetic_dataset_options.num_frames_per_rig = 2;
+  synthetic_dataset_options.camera_width = 30;
+  synthetic_dataset_options.camera_height = 20;
+  Reconstruction reconstruction;
+  SynthesizeDataset(synthetic_dataset_options, &reconstruction);
+  reconstruction.Write(temp_dir / "sparse");
+
+  // Create depth maps, normal maps, and consistency graphs for both images.
+  std::vector<std::string> image_names;
+  for (const auto& [image_id, image] : reconstruction.Images()) {
+    image_names.push_back(image.Name());
+
+    // Create depth map with constant depth.
+    Mat<float> depth_map(synthetic_dataset_options.camera_width,
+                         synthetic_dataset_options.camera_height,
+                         1);
+    depth_map.Fill(5.0f);
+    depth_map.Write(temp_dir / "stereo" / "depth_maps" /
+                    (image.Name() + ".geometric.bin"));
+
+    // Create normal map pointing in z direction.
+    Mat<float> normal_map(synthetic_dataset_options.camera_width,
+                          synthetic_dataset_options.camera_height,
+                          3);
+    const size_t num_pixels = normal_map.GetHeight() * normal_map.GetWidth();
+    for (size_t i = 0; i < num_pixels; ++i) {
+      normal_map.GetPtr()[3 * i + 0] = 0.0f;  // nx
+      normal_map.GetPtr()[3 * i + 1] = 0.0f;  // ny
+      normal_map.GetPtr()[3 * i + 2] = 1.0f;  // nz
+    }
+    normal_map.Write(temp_dir / "stereo" / "normal_maps" /
+                     (image.Name() + ".geometric.bin"));
+
+    // Create bitmap.
+    Bitmap bitmap(synthetic_dataset_options.camera_width,
+                  synthetic_dataset_options.camera_height,
+                  true);
+    bitmap.Fill(BitmapColor<uint8_t>(0, 64, 128));
+    bitmap.Write(temp_dir / "images" / image.Name());
+  }
+
+  // Write fusion config
+  std::ofstream fusion_cfg(temp_dir / "stereo" / "fusion.cfg");
+  for (const auto& name : image_names) {
+    fusion_cfg << name << "\n";
+  }
+  fusion_cfg.close();
+
+  // Run fusion. The fork's StereoFusion derives from Thread with a private
+  // Run(); drive it through Start()/Wait() like the production callers.
+  StereoFusionOptions options;
+  options.min_num_pixels = 1;
+  options.max_num_pixels = 100;
+  options.max_traversal_depth = 10;
+  options.check_num_images = 10;
+  options.use_cache = false;
+
+  StereoFusion fusion(options, temp_dir, "COLMAP", "", "geometric");
+  fusion.Start();
+  fusion.Wait();
+
+  // Verify that some points were fused
+  const auto& fused_points = fusion.GetFusedPoints();
+  const auto& visibility = fusion.GetFusedPointsVisibility();
+
+  EXPECT_GT(fused_points.size(), 0);
+  EXPECT_EQ(fused_points.size(), visibility.size());
+
+  for (const auto& point : fused_points) {
+    EXPECT_GT(point.x, -10.0f);
+    EXPECT_LT(point.x, 10.0f);
+    EXPECT_GT(point.y, -10.0f);
+    EXPECT_LT(point.y, 10.0f);
+    EXPECT_GT(point.z, -10.0f);
+    EXPECT_LT(point.z, 10.0f);
+    EXPECT_EQ(point.r, 0);
+    EXPECT_EQ(point.g, 64);
+    EXPECT_EQ(point.b, 128);
+    EXPECT_FLOAT_EQ(
+        point.nx * point.nx + point.ny * point.ny + point.nz * point.nz, 1.0f);
+  }
+
+  for (const auto& vis : visibility) {
+    EXPECT_GT(vis.size(), 0);
+  }
+
+  // Fork adjudication: upstream's SetCheckIfStoppedFunc stop-callback hook
+  // does not exist in the fork's StereoFusion; the cancellation-path coverage
+  // is deferred until the fork exposes an equivalent hook.
+  EXPECT_FALSE(fusion.GetFusedPoints().empty());
+}
+
+TEST(ReadPointsVisibility, RoundTrip) {
+  const auto test_dir = CreateTestDir();
+  const auto vis_path = test_dir / "test.vis";
+
+  std::vector<std::vector<int>> expected = {
+      {0, 1, 2},
+      {1, 3},
+      {},
+      {0, 2, 3, 4},
+  };
+  WritePointsVisibility(vis_path, expected);
+
+  const auto actual = ReadPointsVisibility(vis_path, expected.size());
+
+  ASSERT_EQ(actual.size(), expected.size());
+  for (size_t i = 0; i < expected.size(); ++i) {
+    ASSERT_EQ(actual[i].size(), expected[i].size());
+    for (size_t j = 0; j < expected[i].size(); ++j) {
+      EXPECT_EQ(actual[i][j], expected[i][j]);
+    }
+  }
+}
+
+TEST(ReadPointsVisibility, SizeMismatch) {
+  const auto test_dir = CreateTestDir();
+  const auto vis_path = test_dir / "test.vis";
+
+  std::vector<std::vector<int>> data = {{0, 1}, {2}};
+  WritePointsVisibility(vis_path, data);
+
+  EXPECT_THROW(ReadPointsVisibility(vis_path, 5), std::invalid_argument);
+}
+
+}  // namespace
+}  // namespace mvs
+}  // namespace colmap

@@ -14,6 +14,7 @@
 #include <vector>
 
 struct aicore_cancel_token;
+struct aicore_deeplsd_ctx;
 
 struct DeepLSDLineSegment {
     float x1 = 0.0f;
@@ -63,6 +64,17 @@ public:
     ~DeepLSDWorker() override;
     void releaseContextOnMainThread();
     void requestTaskCancel();
+
+#ifdef AICore_ENABLED
+    /** One image through a loaded context: decode (auto-oriented gray,
+     *  long side <= 1024), extract, rescale to source pixels, score filter
+     *  and visualizations. Shared by run() and the -DEEPLSD_LINES batch
+     *  command so both produce identical segments. */
+    static bool extractImage(aicore_deeplsd_ctx* ctx,
+                             const Settings& settings,
+                             DeepLSDRunResult* result,
+                             QString* error);
+#endif
 
 signals:
     void logMessage(const QString& msg);

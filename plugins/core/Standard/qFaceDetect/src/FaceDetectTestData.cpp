@@ -186,26 +186,14 @@ void fillHeuristics(const QString& root, FaceDetectFriendsBundle* out) {
 }
 
 QString locateBundleRoot() {
-    // Use ecvTestDataRepository for the expected extract path
+    // Only return the exact FriendsFaces extract path.
+    // Do NOT fall back to scanning other directories under extract/,
+    // as that could incorrectly match objects_detection_data (which
+    // also contains video+images) and fill the bundle with wrong paths.
     const QString primary = ecvTestDataRepository::extractPath(
             ecvTestDataRepository::Dataset::FriendsFaces);
     if (QDir(primary).exists()) return primary;
 
-    // Fallback: search for any bundle with manifest or video+images
-    const QString base = ecvTestDataRepository::extractDir();
-    QDirIterator it(base, QDir::Dirs | QDir::NoDotAndDotDot,
-                    QDirIterator::Subdirectories);
-    while (it.hasNext()) {
-        const QString dir = it.next();
-        if (QFileInfo::exists(
-                    QDir(dir).filePath(QStringLiteral("manifest.json")))) {
-            return dir;
-        }
-        if (findFirstVideo(dir).isEmpty() == false &&
-            !listImages(dir).isEmpty()) {
-            return dir;
-        }
-    }
     return {};
 }
 
@@ -213,19 +201,6 @@ QString locateBundleRoot() {
 
 // Path and verification functions are now inline in the header,
 // delegating to ecvTestDataRepository for cross-plugin consistency.
-
-// zipEntryCount and extractZip delegate to ecvTestDataRepository
-// to avoid duplicating minizip extraction logic.
-int zipEntryCount(const QString& zipPath) {
-    return ecvTestDataRepository::zipEntryCount(zipPath);
-}
-
-bool extractZip(const QString& zipPath,
-                const QString& extractParentDir,
-                const ExtractProgressFn& onProgress) {
-    return ecvTestDataRepository::extractZip(zipPath, extractParentDir,
-                                             onProgress);
-}
 
 QVector<FaceDetectGalleryEntry> loadGalleryEntries(const QString& bundleRoot) {
     QVector<FaceDetectGalleryEntry> out;

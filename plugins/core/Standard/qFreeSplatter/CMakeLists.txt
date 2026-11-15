@@ -25,6 +25,12 @@ if( PLUGIN_STANDARD_QFREESPLATTER )
 
     # Link to libAICore.so — ggml is PRIVATE inside AICore, not needed here
     target_link_libraries(${PROJECT_NAME} AICore)
+
+    # Shared camera / video-file playback (VideoPlaybackWidget + VideoFrameReader)
+    if(TARGET video_base)
+        target_link_libraries(${PROJECT_NAME} video_base)
+    endif()
+
     # Qt::Sql is guaranteed by root find_package (CMakeExternalLibs.cmake)
     target_link_libraries(${PROJECT_NAME} Qt::Sql)
     target_compile_definitions(${PROJECT_NAME} PRIVATE HAS_QT_SQL)
@@ -35,10 +41,11 @@ if( PLUGIN_STANDARD_QFREESPLATTER )
         target_link_libraries(${PROJECT_NAME} CVAppCommon)
     endif()
 
-    # Face capture: enabled when OpenCV provides videoio + objdetect
+    # Face capture: enabled when OpenCV provides videoio + objdetect.
+    # HAS_OPENCV_FACE_CAPTURE is propagated PUBLIC by video_base; OpenCV is
+    # still linked explicitly because FreeSplatterWorker uses imgcodecs/imgproc.
     if(TARGET 3rdparty_opencv)
         target_link_libraries(${PROJECT_NAME} 3rdparty_opencv)
-        target_compile_definitions(${PROJECT_NAME} PRIVATE HAS_OPENCV_FACE_CAPTURE)
         message(STATUS "qFreeSplatter: Face capture enabled (HAS_OPENCV_FACE_CAPTURE)")
     else()
         message(STATUS "qFreeSplatter: Face capture disabled (no 3rdparty_opencv)")

@@ -270,3 +270,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DCV_DEBUG")
 # AICore: unified AI inference core (DA3 + FreeSplatter, ggml linked once)
 # Single shared library — all downstream modules link to AICore directly.
 add_subdirectory(AICore)
+
+if(BUILD_UNIT_TESTS OR AICore_BUILD_TESTS)
+    add_subdirectory(tests)
+endif()

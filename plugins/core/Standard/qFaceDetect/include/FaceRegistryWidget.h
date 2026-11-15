@@ -53,6 +53,10 @@ public:
     void setRegistryPath(const QString& path, bool userChosen = false);
     bool isRegistryPathUserChosen() const { return m_registryPathUserChosen; }
     void releaseStoreConnection();
+    /** Drop the resident embedding model context (GPU memory). Called when
+     *  the owning dialog closes for good; the context reloads lazily on the
+     *  next registry operation. */
+    void releaseEmbedContext();
     void fillFriendsTestBundleFields(const FaceDetectFriendsBundle& bundle);
     int registerGalleryEntries(const QVector<FaceDetectGalleryEntry>& entries);
     void refreshList();

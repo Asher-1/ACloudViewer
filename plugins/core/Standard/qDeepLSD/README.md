@@ -1,10 +1,14 @@
 # qDeepLSD
 
+![Plugin icon](images/qDeepLSD.svg)
+
 DeepLSD wireframe line extraction for ACloudViewer — **native C++ GGML**.
 
 **User guide:** [docs/guides/plugins/qDeepLSD.md](../../../docs/guides/plugins/qDeepLSD.md)
 
 ![qDeepLSD line extraction](images/qDeepLSD.png)
+
+*DeepLSD extracts structured wireframe line segments from a single image: the DF (distance field) and angle maps from the GGML inference feed the AFM (Accurate Flowline Mapping) and LSD line detector, producing clean vector line overlays on the source image.*
 
 ```
 Image → AICore DeepLSD GGML → df + angle → AFM + LSD → line segments → DB tree
@@ -40,4 +44,5 @@ F32 and Q8_0 variants are also listed in the model combo.
 ## References
 
 - [DeepLSD](https://github.com/cvg/DeepLSD) (upstream PyTorch)
+- [DeepLSD-GGML](https://github.com/Asher-1/DeepLSD-GGLM) (upstream ggml)
 - GGML parity: `DeepLSD/cpp/BENCHMARK.md`

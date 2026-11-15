@@ -1,9 +1,8 @@
 ---
 description: Rules for ggml ExternalProject, AICore build, and backend loading on all platforms
 globs:
-  - 3rdparty/ggml/**
-  - build/ggml/**
-  - build_app/ggml/**
+  - 3rdparty/llama/**
+  - build*/llama/**
   - core/AICore/**
   - docker/docker_test.sh
   - docker/test_wheel_runtime.sh
@@ -15,40 +14,82 @@ alwaysApply: false
 
 # ACloudViewer ggml / AICore Build Rules
 
-## ⚠️ ggml 源码修改规则（强制）
+## AICore Integration Ownership (mandatory)
 
-**绝对禁止直接修改构建目录中的 ggml 源码文件**（`build/ggml/`、`build_app/ggml/` 等）。
-所有对 ggml 源码的修改必须通过 patch 文件管理，流程如下：
+For any new task, model, pipeline, or AICore-dependent plugin, read
+`.agents/skills/acloudviewer-aicore-plugin/SKILL.md` before implementation. It
+is the integration router; its `references/validation-gates.md` and
+`references/reuse-contract.md` own the executable accuracy/profile and reuse
+rules. This rule only provides fail-fast guards.
 
-1. **本地修改**：在 `build/` 或 `build_app/` 的 ggml 源码副本中进行修改和验证
-2. **生成 patch**：用 `diff -ruN` 或 `git diff` 对比原始 ggml 源码与修改后的版本，生成 unified diff
-3. **存放 patch**：将 patch 文件放入 `3rdparty/ggml/patches/<子目录>/0001-描述.patch`
-4. **注册 patch**：在 `3rdparty/ggml/patches/manifest.yaml` 中添加条目（顺序重要）
-5. **构建验证**：清理构建目录后重新构建，确认 `apply_ggml_patches.py` 正确应用补丁
+- Classify the change first: existing-task consumer, model variant, genuinely
+  new task contract, UI-specific composition, or reusable headless pipeline.
+- Keep one `libAICore`; consumers include only public `aicore/*` headers and
+  must not link or expose ggml.
+- Keep process services in `src/common/`, model execution/state in
+  `src/tasks/<task>/`, and Qt/application behavior in the plugin. Do not create
+  a second backend registry, device queue, cancellation mechanism, cache root,
+  model source of truth, private downloader implementation, or validation
+  runner. A plugin may orchestrate the shared `ecvModelDownloader` using only
+  URL/digest metadata exported by an AICore catalog.
+- A new published model is incomplete until its runtime catalog entry, stable
+  URL/cache folder/SHA-256, catalog-dump exposure, probe, manifest consumer, and
+  light/full tier policy land together.
+- A new task contract is incomplete until headless ABI/lifecycle tests, two
+  forwards, context recreation, real-model truth/parity, and timing ownership
+  pass without depending on a plugin.
+- Promote code to `src/common/` only when at least two real consumers share the
+  same semantics, ownership, errors, and lifecycle. Model-specific similarity
+  is not sufficient.
+- New manifest rows use structured `accuracy.reference`, `checks`, and
+  `require_metrics`; `accuracy_gate` is display text only. Release claims use
+  `validate_all.py --profile release` with a same-host baseline and stronger
+  sampling, never the developer profile defaults.
+- Run `python3 core/AICore/tests/check_plugin_aicore_boundaries.py --root .
+  --strict`; the repository-wide strict gate is mandatory.
+
+## ⚠️ ggml Source Modification Rules (mandatory)
+
+**Directly modifying ggml source files in build directories is absolutely forbidden** (`build/ggml/`, `build_app/ggml/`, etc.).
+All ggml source modifications MUST go through patch files. The flow is:
+
+1. **最小复现**：先用真实失败测试确认根因，不修改 extracted build 源码。
+2. **编写补丁**：以 pinned llama.cpp 的 `ggml/` 子树为锚点编写 unified diff。
+3. **唯一目录**：存入 `3rdparty/llama/llama-patches/NNNN-description.patch`；
+   旧 `ggml-patches/` 和 `experimental/patches/` 均已退役。
+4. **注册重放**：更新所有受影响 backend manifests，用同一 runner 验证
+   pristine forward、reverse 和幂等重放。
+5. **构建验收**：signature 变更触发该 owner 重建；逐项运行算子、真实模型、
+   独立真值及受控 A/B 门。冻结目录、二进制和失败收据保持不变。
 
 ```
-3rdparty/ggml/patches/
-├── manifest.yaml                        # 注册所有 patch（顺序重要）
-├── apply_ggml_patches.py                # 构建时自动应用
-├── aliked_merged/0001-vulkan-aliked.patch
-├── cpu_all_variants/0001-*.patch
-├── metal_merged/0001-metal-optimizations.patch
-└── msvc_vulkan/0001-*.patch
+3rdparty/llama/llama-patches/
+├── manifest.yaml
+├── cuda-manifest.yaml
+├── vulkan-manifest.yaml
+├── cuda-vulkan-manifest.yaml
+├── metal-manifest.yaml
+├── apply_ggml_patches.py
+└── NNNN-description.patch
 ```
 
-**原因**：ggml 是 ExternalProject，每次干净构建都从 tarball 重新提取。直接修改构建目录的文件在 CI 或他人构建时不会生效——只有 patch 文件才会被应用。
+**Why**: ggml is an ExternalProject — every clean build re-extracts it from a tarball. Files modified directly in build directories will not take effect in CI or on other machines; only patch files get applied.
 
 ## ggml ExternalProject Architecture
 
-- ggml is built via CMake `ExternalProject_Add(ext_ggml ...)` in `3rdparty/ggml/ggml.cmake`
-- Config changes to `ggml.cmake` require `cmake ..` reconfigure AND deleting the ext_ggml stamp:
-  ```bash
-  rm -f build_app/ggml/src/ext_ggml-stamp/ext_ggml-{install,done}
-  cmake --build build_app --target ext_ggml -j4
-  ```
+- The shared ExternalProject implementation is `3rdparty/llama/llama_runtime.cmake`.
+  正式入口 `3rdparty/llama/llama_cpp.cmake` 选择唯一 owner `ext_llama`，
+  同一 pinned archive 提供 llama/mtmd 及嵌入式 ggml；`ext_ggml` 入口已删除。
+  A build/install prefix must have exactly one source owner. Use exported
+  `GGML_DEPENDENCY_TARGET`, `GGML_EXTERNAL_TARGET`, and `GGML_BUILD_DIR` in
+  consumers; do not introduce new hardcoded baseline target/path dependencies.
+- Reconfigure after dependency option changes. Patch-content changes invalidate
+  the selected owner's generated source/build/stamp directories automatically.
+  Use a fresh build/install prefix for source-owner changes and regression A/B;
+  do not delete stamps or replace binaries belonging to frozen validation runs.
 - ggml backends (cpu, metal, vulkan, cuda) are MODULE libraries (`.so` even on macOS)
 - `GGML_BACKEND_DL=ON` (shared mode): backends are `dlopen`'d at runtime, NOT linked into AICore
-- `libAICore.{so,dylib}` only links `libggml.{so,dylib}` + `libggml-base.{so,dylib}`
+- `libAICore.{so,dylib}` links the shared core only: `libggml` + `libggml-base` + `libllama` + `libmtmd` (all staged beside it by `CopyGgmlBackends.cmake COPY_CORE_SHARED`)
 - `PATCH_COMMAND` uses a generated Python runner script to avoid shell quoting issues on Windows
 
 ## Platform Backend Support
@@ -94,7 +135,7 @@ alwaysApply: false
 ## CopyGgmlBackends.cmake
 
 - Copies backend `.so` files from ExternalProject install dir to `build_app/bin/`
-- Handles versioned symlinks for core libs (libggml.so.0 → libggml.so.0.17.0)
+- Handles versioned symlinks for core libs (当前 pin：libggml.so.0 → libggml.so.0.27.0)
 - Uses `COPY_CORE_SHARED` / `COPY_BACKEND_MODULES` / `REQUESTED_FILES_PIPE` modes
 - Stale backends are cleaned before copy (prevents old `.so` files lingering)
 
@@ -113,3 +154,26 @@ python3 -c "import ctypes; ctypes.CDLL('./libggml-metal.so')"
 # Check OpenMP linkage (macOS, should show nothing):
 otool -L libggml-cpu.so | grep omp
 ```
+
+## Metal Performance Optimization Reference
+
+See `docs/guides/metal-inference-optimization.md`, which covers:
+1. **Profiling methodology**: per-op profile to identify fragmented threadgroups / scalar paths / bandwidth saturation
+2. **Six reusable kernel patterns**: flat-grid flattening, multi-element-per-thread + float4, broadcast-special-case division elimination, K<64 F16 matrix threshold, small-K f16 weight conversion, graph-level op fusion
+3. **Graph construction decisions**: MTL0 detection, f16 conditional gating, three-quantization verification
+4. **Pitfall checklist**: MSL/C struct consistency, ExternalProject mtime, ggml_view_4d strides, profile branch
+5. **New-model acceleration checklist
+
+## ggml Version Upgrade (mandatory pipeline)
+
+升级 `3rdparty/llama/llama_cpp.cmake` 中的 llama revision/archive SHA 时，
+遵循 `.agents/skills/ggml-upgrade/SKILL.md` 与
+`docs/guides/ggml_upgrade_pipeline.md`：源码调查 → 补丁重放 → 契约 →
+独立真值/后端验证 → 受控性能 A/B。版本标签随同一 archive 重新派生。
+
+- One-click verification: `scripts/ggml_upgrade_verify.py --baseline <dir> --candidate <dir>`
+  (regression threshold +5%, noise floor 3%, prints coverage of (task, backend) pairs).
+- AI reference skill: `.agents/skills/ggml-upgrade/SKILL.md`.
+- Known pre-existing defects (never classify as upgrade regression):
+  0.18.1-only Vulkan DeviceLost (fixed upstream >= 0.19, FLOP-based submit policy),
+  RMBG Vulkan conv2d descriptor-count assert (present on 0.18.1 and 0.21).

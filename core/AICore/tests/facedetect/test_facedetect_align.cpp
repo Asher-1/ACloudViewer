@@ -11,7 +11,7 @@
 #include <cstdio>
 #include <vector>
 
-#include "align.hpp"
+#include "tasks/facedetect/align.hpp"
 
 namespace {
 

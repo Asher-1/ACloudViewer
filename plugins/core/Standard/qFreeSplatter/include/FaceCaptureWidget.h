@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <QAtomicInt>
 #include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QFutureWatcher>
@@ -19,23 +18,17 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QScrollArea>
-#include <QSlider>
 #include <QSpinBox>
-#include <QThread>
-#include <QTimer>
-#include <QVBoxLayout>
-#include <QWidget>
-#include <QtConcurrent>
+#include <QStringList>
 
+#include "VideoPlaybackWidget.h"
 #include "aicore/facedetect_capi.h"
 #include "aicore/runtime_capi.h"
-#include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
 #include <opencv2/imgproc.hpp>
 #include <opencv2/objdetect.hpp>
-#include <opencv2/videoio.hpp>
 #endif
 
 #include <memory>
@@ -43,7 +36,7 @@
 
 class QResizeEvent;
 
-class FaceCaptureWidget : public QWidget {
+class FaceCaptureWidget : public VideoPlaybackWidget {
     Q_OBJECT
 public:
     enum class CaptureAngle {
@@ -73,19 +66,14 @@ public:
     explicit FaceCaptureWidget(QWidget* parent = nullptr);
     ~FaceCaptureWidget() override;
 
-    bool startCamera(int deviceIndex = 0);
-    bool startVideoFile(const QString& path);
-    void restartVideoFile();
-    void stopCamera();
+    // Camera / video control is inherited from VideoPlaybackWidget
+    // (startCamera / startVideoFile / restartVideoFile / stopStream /
+    //  resumePlayback / inputSource / videoFilePath / setInputSource ...).
+    // Compatibility aliases used by FreeSplatterDialog:
+    void stopCamera() { stopStream(); }
     void stopCapture();
-    bool isCameraActive() const;
-    bool isCaptureActive() const;
-
-    enum class InputSource { Camera, VideoFile };
-    InputSource inputSource() const { return m_inputSource; }
-    int selectedCameraIndex() const;
-    QString videoFilePath() const;
-    void setVideoFilePath(const QString& path);
+    bool isCameraActive() const { return isActive(); }
+    bool isCaptureActive() const { return isActive(); }
 
     void startGuidedCapture(const std::vector<CaptureAngle>& angles);
     void resumeCapture();
@@ -116,7 +104,6 @@ public:
     /** The capture detector follows the parent reconstruction device choice. */
     void setInferenceDevice(const QString& device);
     QString inferenceDevice() const { return m_inferenceDevice; }
-    void setInputSource(InputSource source);
     void requestInferenceCancel();
 
     void refreshDetectorList();
@@ -124,30 +111,36 @@ public:
     static bool isAvailable();
 
 signals:
+    // Compatibility forwards for FreeSplatterDialog (video_base signals).
     void cameraStarted();
     void cameraStopped();
+    void cameraError(const QString& error);
+
     void faceDetected(const QRect& bbox);
     void faceNotDetected();
     void frameCaptured(int index, int total);
     void captureComplete();
-    void cameraError(const QString& error);
-    void logMessage(const QString& message);
 
 private slots:
-    void processFrame();
     void onDetectorComboChanged(int index);
-    void onSourceChanged(int index);
-    void onBrowseVideoFile();
     void onBrowseRegistry();
     void reloadRegistry();
     void filterRegistry(const QString& text);
-    void onVideoSeekSliderChanged(int value);
-    void onPlaybackSpeedChanged(int index);
+
+    // Async GGML detection result arrived on the GUI thread.
+    void onAsyncDetectFinished();
+
+protected:
+    // ---- video_base hooks -------------------------------------------------
+    void onFrameDecoded(cv::Mat& frame, int frameIndex) override;
+    void onDisplayFrame(QImage& display, int frameIndex) override;
+    void onVideoLooped() override;
+    void onStreamReset() override;
+    void onStreamResumed() override;
+    void onStreamStopping() override;
+    bool onPrepareStream() override;
 
 private:
-    void resizeEvent(QResizeEvent* event) override;
-    void showEvent(QShowEvent* event) override;
-
     enum class DetectorKind { None, OpenCV, Ggml };
 
     void setupUi();
@@ -168,15 +161,6 @@ private:
     void loadFaceCaptureSettings();
     void saveFaceCaptureSettings();
     bool configureDetectorForRegistrySelection();
-    void updateVideoTimeLabel(int frameIndex);
-    void showSeekPreview(int frameIndex);
-    // Async seek-preview decode: Windows MSMF/DirectShow seek+read can
-    // block for 100ms+ — running it on the UI thread would freeze both the
-    // slider and the playing video.  Decode runs on the global thread pool
-    // (serialized by m_previewMutex, latest request wins).
-    void onSeekPreviewReady();
-    void closePreviewCapture();
-    bool eventFilter(QObject* obj, QEvent* event) override;
     static std::vector<float> normalizeEmbedding(
             const std::vector<float>& embedding);
 
@@ -204,7 +188,6 @@ private:
         int cooldown = 0;
     };
 
-    QImage cvMatToQImage(const cv::Mat& mat);
     std::vector<ScoredFace> detectFacesOpenCv(const cv::Mat& frame);
     std::vector<ScoredFace> detectFacesGgml(const cv::Mat& frame);
     std::vector<ScoredFace> detectFaces(const cv::Mat& frame);
@@ -217,8 +200,7 @@ private:
                          const ScoredFace& face,
                          std::vector<float>* embedding);
     bool processRegistryIdentities(const cv::Mat& frame,
-                                   const std::vector<ScoredFace>& faces,
-                                   QImage* preview);
+                                   const std::vector<ScoredFace>& faces);
     bool captureIdentityFrame(IdentityTrack* track,
                               const cv::Mat& frame,
                               const cv::Rect& rect);
@@ -234,47 +216,28 @@ private:
     void drawOverlay(QImage& image, const cv::Rect& faceRect);
     void drawAngleGuide(QImage& image, CaptureAngle angle);
 
-    cv::VideoCapture m_previewCapture;  // independent decode path for
-                                        // scrub/hover preview (worker thread
-                                        // only, guarded by m_previewMutex)
-    QMutex m_previewMutex;
-    // Async decode result carries the decoded frame index so the cache key
-    // matches the actual frame (not the latest slider position).
-    QFutureWatcher<QPair<int, QPixmap>>* m_seekPreviewWatcher = nullptr;
-    // Latest frame the slider asked for; a stale async result is ignored.
-    int m_pendingPreviewFrame = -1;
-    // Bumped every time the video changes; async preview results from an
-    // older video are discarded (frame numbers can collide across videos).
-    // Atomic: read from the decode worker thread, written on the UI thread.
-    QAtomicInt m_previewGeneration{0};
+    // Process detection result (face rect, consecutive counter, auto-capture
+    // logic); shared by sync (OpenCV) and async (GGML watcher) paths.
+    void processDetectResult(const cv::Rect& faceRect,
+                             const cv::Mat& sourceFrame,
+                             int frameIndex,
+                             bool freshDetection);
+
     cv::CascadeClassifier m_faceCascade;
     cv::Rect m_lastFaceRect;
     cv::Mat m_lastDetectedFrame;
     float m_lastFaceScore = 0.f;
+    cv::Size m_lastFrameSize;  // original frame size of the last decode
 #endif
 
-    ecvClickableImageLabel* m_previewLabel = nullptr;
-    QLabel* m_statusLabel = nullptr;
+    QLabel* m_angleLabel = nullptr;
+    QLabel* m_statusLabel = nullptr;  // owned by video_base, cached here
     QProgressBar* m_captureProgress = nullptr;
     QScrollArea* m_capturedGalleryScroll = nullptr;
     QWidget* m_capturedGalleryRow = nullptr;
-    QLabel* m_angleLabel = nullptr;
     QLabel* m_downloadLabel = nullptr;
     QProgressBar* m_downloadProgress = nullptr;
     QPushButton* m_captureBtn = nullptr;
-    QLabel* m_cameraDeviceLabel = nullptr;
-    QComboBox* m_cameraCombo = nullptr;
-    QComboBox* m_sourceCombo = nullptr;
-    QWidget* m_cameraControlsRow = nullptr;
-    QWidget* m_videoFileRow = nullptr;
-    QLineEdit* m_videoPathEdit = nullptr;
-    QPushButton* m_browseVideoBtn = nullptr;
-    QSlider* m_videoSeekSlider = nullptr;
-    QComboBox* m_playbackSpeedCombo = nullptr;
-    QWidget* m_videoControlsRow = nullptr;
-    QLabel* m_videoTimeLabel = nullptr;
-    QLabel* m_seekPreviewLabel =
-            nullptr;  // thumbnail above slider during scrub/hover
     QComboBox* m_detectorCombo = nullptr;
     QDoubleSpinBox* m_minScoreSpin = nullptr;
     QSpinBox* m_minCapturesSpin = nullptr;
@@ -292,19 +255,13 @@ private:
     std::vector<RegistryIdentity> m_registryIdentities;
 #ifdef HAS_OPENCV_FACE_CAPTURE
     std::vector<IdentityTrack> m_identityTracks;
-#endif
 
-    // VideoFrameReader: reads cv::VideoCapture frames on a background thread
-    // so that OpenCV's MSMF/DirectShow backend (Windows) does not block the
-    // Qt main thread, which would cause stuttering / UI freezes.
-#ifdef HAS_OPENCV_FACE_CAPTURE
-    QThread* m_frameReaderThread = nullptr;
-    QObject* m_frameReader = nullptr;
-    cv::Mat m_latestFrame;  // most recently decoded frame (GUI thread)
-    QMutex m_frameMutex;    // guards m_latestFrame
-    bool m_frameReaderReady = false;  // background reader has opened source
-    QAtomicInt m_frameReaderRunning{0};
-    QAtomicInt m_frameReaderSeekTo{-1};
+    // Async GGML detection: inference runs on a thread pool so the GUI
+    // thread (and display timer) is never blocked.
+    QFutureWatcher<std::vector<ScoredFace>>* m_detectWatcher = nullptr;
+    QAtomicInt m_detectPendingFrame{-1};  // frame index, -1 = idle
+    int m_pendingDetectFrameNum = -1;     // frame index for the pending job
+    cv::Mat m_asyncPendingFrame;          // frame copy for the pending job
 #endif
 
     ecvModelDownloader* m_downloader = nullptr;
@@ -314,20 +271,7 @@ private:
     QString m_loadedGgmlPath;
     QString m_pendingGgmlPath;
 
-    QTimer* m_frameTimer = nullptr;
-    QTimer* m_frameReadTimer = nullptr;  // drives background frame reader
-    bool m_cameraActive = false;
-    bool m_videoPaused = false;  // video paused (not released) for resume
-    InputSource m_inputSource = InputSource::Camera;
-    QString m_videoFilePath;
-    int m_totalVideoFrames = 0;
-    double m_videoFps = 0.0;  // cached FPS from CAP_PROP_FPS
-    double m_playbackSpeed = 1.0;
-    int m_baseTimerInterval = 30;
-    bool m_userSeeking = false;
-    qint64 m_lastPreviewTimeMs = 0;  // throttle hover preview updates
     bool m_cascadeLoaded = false;
-    bool m_camerasEnumerated = false;
     bool m_downloadInProgress = false;
     bool m_autoStartAfterDownload = false;
     int m_pendingCameraIndex = 0;
@@ -352,7 +296,4 @@ private:
     static constexpr int kPostCaptureCooldown = 45;
     static constexpr int kNoCascadeAutoInterval = 90;
     static constexpr int kGgmlDetectInterval = 2;
-
-    /// Compute timer interval from video FPS and playback speed.
-    int computeTimerInterval() const;
 };

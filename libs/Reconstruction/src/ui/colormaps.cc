@@ -29,9 +29,10 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
+#include "util/hash_containers.h"
 #include "ui/colormaps.h"
 
-#include "util/bitmap.h"
+#include "sensor/bitmap.h"
 
 namespace colmap {
 
@@ -66,10 +67,10 @@ float PointColormapBase::AdjustScale(const float gray) {
   }
 }
 
-void PointColormapPhotometric::Prepare(std::unordered_map<camera_t, Camera> &
+void PointColormapPhotometric::Prepare(NodeHashMap<camera_t, Camera> &
                                            cameras,
-                                       std::unordered_map<image_t, Image> & images,
-                                       std::unordered_map<point3D_t, Point3D> &
+                                       NodeHashMap<image_t, Image> & images,
+                                       NodeHashMap<point3D_t, Point3D> &
                                            points3D,
                                        std::vector<image_t>& reg_image_ids) {}
 
@@ -79,9 +80,9 @@ Eigen::Vector4f PointColormapPhotometric::ComputeColor(
                          point3D.Color(2) / 255.0f, 1.0f);
 }
 
-void PointColormapError::Prepare(std::unordered_map<camera_t, Camera> & cameras,
-                                 std::unordered_map<image_t, Image> & images,
-                                 std::unordered_map<point3D_t, Point3D> & points3D,
+void PointColormapError::Prepare(NodeHashMap<camera_t, Camera> & cameras,
+                                 NodeHashMap<image_t, Image> & images,
+                                 NodeHashMap<point3D_t, Point3D> & points3D,
                                  std::vector<image_t>& reg_image_ids) {
   std::vector<float> errors;
   errors.reserve(points3D.size());
@@ -100,9 +101,9 @@ Eigen::Vector4f PointColormapError::ComputeColor(const point3D_t point3D_id,
                          JetColormap::Blue(gray), 1.0f);
 }
 
-void PointColormapTrackLen::Prepare(std::unordered_map<camera_t, Camera> & cameras,
-                                    std::unordered_map<image_t, Image> & images,
-                                    std::unordered_map<point3D_t, Point3D> &
+void PointColormapTrackLen::Prepare(NodeHashMap<camera_t, Camera> & cameras,
+                                    NodeHashMap<image_t, Image> & images,
+                                    NodeHashMap<point3D_t, Point3D> &
                                         points3D,
                                     std::vector<image_t>& reg_image_ids) {
   std::vector<float> track_lengths;
@@ -123,15 +124,15 @@ Eigen::Vector4f PointColormapTrackLen::ComputeColor(const point3D_t point3D_id,
 }
 
 void PointColormapGroundResolution::Prepare(
-    std::unordered_map<camera_t, Camera> & cameras,
-    std::unordered_map<image_t, Image> & images,
-    std::unordered_map<point3D_t, Point3D> & points3D,
+    NodeHashMap<camera_t, Camera> & cameras,
+    NodeHashMap<image_t, Image> & images,
+    NodeHashMap<point3D_t, Point3D> & points3D,
     std::vector<image_t>& reg_image_ids) {
   std::vector<float> resolutions;
   resolutions.reserve(points3D.size());
 
-  std::unordered_map<camera_t, float> focal_lengths;
-  std::unordered_map<camera_t, Eigen::Vector2f> principal_points;
+  NodeHashMap<camera_t, float> focal_lengths;
+  NodeHashMap<camera_t, Eigen::Vector2f> principal_points;
   for (const auto& camera : cameras) {
     focal_lengths[camera.first] =
         static_cast<float>(camera.second.MeanFocalLength());
@@ -140,7 +141,7 @@ void PointColormapGroundResolution::Prepare(
                         static_cast<float>(camera.second.PrincipalPointY()));
   }
 
-  std::unordered_map<image_t, Eigen::Vector3f> proj_centers;
+  NodeHashMap<image_t, Eigen::Vector3f> proj_centers;
   for (const auto& image : images) {
     proj_centers[image.first] = image.second.ProjectionCenter().cast<float>();
   }
@@ -210,9 +211,9 @@ const Eigen::Vector4f ImageColormapBase::kDefaultFrameColor = {0.8f, 0.1f, 0.0f,
 
 ImageColormapBase::ImageColormapBase() {}
 
-void ImageColormapUniform::Prepare(std::unordered_map<camera_t, Camera> & cameras,
-                                   std::unordered_map<image_t, Image> & images,
-                                   std::unordered_map<point3D_t, Point3D> &
+void ImageColormapUniform::Prepare(NodeHashMap<camera_t, Camera> & cameras,
+                                   NodeHashMap<image_t, Image> & images,
+                                   NodeHashMap<point3D_t, Point3D> &
                                        points3D,
                                    std::vector<image_t>& reg_image_ids) {}
 
@@ -223,10 +224,10 @@ void ImageColormapUniform::ComputeColor(const Image& image,
   *frame_color = uniform_frame_color;
 }
 
-void ImageColormapNameFilter::Prepare(std::unordered_map<camera_t, Camera> &
+void ImageColormapNameFilter::Prepare(NodeHashMap<camera_t, Camera> &
                                           cameras,
-                                      std::unordered_map<image_t, Image> & images,
-                                      std::unordered_map<point3D_t, Point3D> &
+                                      NodeHashMap<image_t, Image> & images,
+                                      NodeHashMap<point3D_t, Point3D> &
                                           points3D,
                                       std::vector<image_t>& reg_image_ids) {}
 

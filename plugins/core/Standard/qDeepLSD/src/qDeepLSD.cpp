@@ -19,6 +19,7 @@
 #include <QMessageBox>
 #include <QUuid>
 
+#include "DeepLSDBatchCommand.h"
 #include "ecvPersistentSettings.h"
 
 #ifdef AICore_ENABLED
@@ -67,6 +68,14 @@ qDeepLSD::qDeepLSD(QObject* parent)
 }
 
 QList<QAction*> qDeepLSD::getActions() { return {m_action}; }
+
+void qDeepLSD::registerCommands(ccCommandLineInterface* cmd) {
+    if (cmd == nullptr) {
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandDeepLsdLines));
+}
 
 void qDeepLSD::onNewSelection(const ccHObject::Container& selectedEntities) {
     m_selectedEntities = selectedEntities;
@@ -284,9 +293,11 @@ void qDeepLSD::onResultReady(const DeepLSDRunResult& result) {
         const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
                 result.resolvedDevice.isEmpty() ? m_currentSettings.device
                                                 : result.resolvedDevice);
+        const QString modelTag = ecvPluginDbNaming::modelTagFromFilename(
+                m_currentSettings.modelPath);
         const QString name = ecvPluginDbNaming::makeUnique(
-                QStringLiteral("DeepLSD_%1_%2")
-                        .arg(result.imageName, deviceTag),
+                QStringLiteral("DeepLSD_%1_%2_%3")
+                        .arg(modelTag, result.imageName, deviceTag),
                 m_app);
         auto* img = new ccImage(result.lineVisualization, name);
         img->setMetaData(QStringLiteral("DeepLSD"), true);
@@ -309,9 +320,11 @@ void qDeepLSD::onResultReady(const DeepLSDRunResult& result) {
         const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
                 result.resolvedDevice.isEmpty() ? m_currentSettings.device
                                                 : result.resolvedDevice);
+        const QString modelTag = ecvPluginDbNaming::modelTagFromFilename(
+                m_currentSettings.modelPath);
         const QString name = ecvPluginDbNaming::makeUnique(
-                QStringLiteral("DeepLSD_df_%1_%2")
-                        .arg(result.imageName, deviceTag),
+                QStringLiteral("DeepLSD_df_%1_%2_%3")
+                        .arg(modelTag, result.imageName, deviceTag),
                 m_app);
         auto* img = new ccImage(result.distanceOverlay, name);
         img->setMetaData(QStringLiteral("DeepLSD"), true);
@@ -331,9 +344,11 @@ void qDeepLSD::onResultReady(const DeepLSDRunResult& result) {
         const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
                 result.resolvedDevice.isEmpty() ? m_currentSettings.device
                                                 : result.resolvedDevice);
+        const QString modelTag = ecvPluginDbNaming::modelTagFromFilename(
+                m_currentSettings.modelPath);
         const QString entityName = ecvPluginDbNaming::makeUnique(
-                QStringLiteral("DeepLSD_lines_%1_%2")
-                        .arg(result.imageName, deviceTag),
+                QStringLiteral("DeepLSD_lines_%1_%2_%3")
+                        .arg(modelTag, result.imageName, deviceTag),
                 m_app);
         auto* lines = new cloudViewer::geometry::LineSet(
                 entityName.toUtf8().constData());

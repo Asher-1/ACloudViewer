@@ -20,9 +20,9 @@
 #include <string>
 #include <vector>
 
-#include "engine.hpp"
-#include "image_io.hpp"
-#include "parity.hpp"
+#include "tasks/depth/engine.hpp"
+#include "tasks/depth/image_io.hpp"
+#include "tests/depth/whitebox/parity.hpp"
 
 int main() {
     const char* gguf = std::getenv("AICORE_TEST_DEPTH_GGUF_MONO");
@@ -56,7 +56,7 @@ int main() {
         return 77;
     }
 
-    auto eng = aicore::depth::Engine::load(gguf, 0);
+    auto eng = aicore::depth::Engine::load(gguf, {});
     if (!eng) {
         std::fprintf(stderr, "[engine_mono] engine load failed\n");
         return 1;

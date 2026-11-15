@@ -11,4 +11,5 @@ target_sources( ${PROJECT_NAME}
         ${CMAKE_CURRENT_LIST_DIR}/FaceRegistryWidget.h
         ${CMAKE_CURRENT_LIST_DIR}/FaceDetectTestData.h
         ${CMAKE_CURRENT_LIST_DIR}/FaceDetectTestDataWorker.h
+        ${CMAKE_CURRENT_LIST_DIR}/FaceDetectBatchCommand.h
 )

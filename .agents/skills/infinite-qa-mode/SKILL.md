@@ -1,82 +1,82 @@
 ---
 name: infinite-qa-mode
-description: 让 Cursor Agent 进入持续问答循环，每次回复末尾必须调用 AskQuestion 提供上下文选项。当用户提到"无限问答"、"循环问答"、"持续对话"时使用。
+description: Puts the agent into a continuous Q&A loop where every reply must end with AskQuestion offering context-aware options. Use when the user mentions "infinite Q&A", "looping Q&A", or "continuous dialogue".
 ---
 
-# 无限问答模式
+# Infinite Q&A Mode
 
-每次回复末尾自动提供上下文相关的快捷选项，形成持续对话循环。
+Automatically appends context-aware quick options at the end of every reply to form a continuous dialogue loop.
 
-## 功能介绍
+## Features
 
-- 每次回复末尾自动附带 AskQuestion，提供 3-5 个上下文选项
-- 固定提供"退出问答"和"其他问题"选项
-- 问答过程中可以正常执行代码修改、分析、搜索等操作
-- 仅当用户主动选择"退出问答"时才结束循环
-- 整个问答循环共用一次 request，持续到对话结束，节省 request 配额
+- Every reply ends with an AskQuestion offering 3-5 context-aware options
+- Always includes the fixed options `Exit Q&A` and `Other question`
+- Normal operations (code edits, analysis, search) remain available during the loop
+- The loop ends only when the user actively selects "Exit Q&A"
+- The whole loop shares a single request budget until the dialogue ends, saving request quota
 
-## 快速开始
+## Quick Start
 
-在 Cursor 中对 Agent 说：
+Tell the agent in Cursor:
 
 ```
-开始无限问答模式
+Start infinite Q&A mode
 ```
 
-Agent 每次回复后会弹出选项面板，选择后继续对话，直到你主动退出。
+After each reply the agent shows an option panel; pick one to continue the dialogue until you exit.
 
-## Agent 行为规则
+## Agent Behavior Rules
 
-1. **每次回复末尾必须调用 AskQuestion**，提供：
-   - 3-5 个基于当前讨论的上下文相关选项（具体、可操作）
-   - 固定选项：`退出问答`
-   - 固定选项：`其他问题`
-2. 问答过程中**可以正常执行操作**（修改代码、搜索、分析等），根据问答结果决定执行内容
-3. **绝不主动退出问答循环**，只有用户选择"退出问答"才结束
-4. 用户选择"其他问题"时，等待自由输入
+1. **Every reply must end with AskQuestion**, offering:
+   - 3-5 context-aware options based on the current discussion (specific, actionable)
+   - The fixed option `Exit Q&A`
+   - The fixed option `Other question`
+2. Normal operations (code edits, search, analysis) remain available during the loop; what gets executed is driven by the Q&A outcome
+3. **Never exit the loop on your own** — only end when the user picks "Exit Q&A"
+4. When the user picks "Other question", wait for free-form input
 
-## AskQuestion 模板
+## AskQuestion Template
 
 ```
 AskQuestion:
-  title: "下一步"
+  title: "Next step"
   questions:
     - id: "next-step"
-      prompt: "<基于当前讨论的提示>"
+      prompt: "<prompt based on current discussion>"
       options:
-        - { id: "opt1", label: "<上下文选项1>" }
-        - { id: "opt2", label: "<上下文选项2>" }
-        - { id: "opt3", label: "<上下文选项3>" }
-        - { id: "exit-qa", label: "退出问答" }
-        - { id: "other", label: "其他问题" }
+        - { id: "opt1", label: "<option 1>" }
+        - { id: "opt2", label: "<option 2>" }
+        - { id: "opt3", label: "<option 3>" }
+        - { id: "exit-qa", label: "Exit Q&A" }
+        - { id: "other", label: "Other question" }
 ```
 
-选项数量和内容根据当前讨论动态调整，应具体可操作，不要泛泛描述。
+Adjust the number and content of options dynamically to the discussion; keep them specific and actionable rather than generic.
 
-## 使用场景
+## Use Cases
 
-### 场景1：代码调试
+### Use case 1: Debugging
 
-Agent 分析问题、修改代码、查看日志，全程保持问答循环，每步确认后继续。
+The agent analyzes the problem, edits code, and checks logs while keeping the Q&A loop; each step continues after confirmation.
 
-### 场景2：方案讨论
+### Use case 2: Design discussion
 
-逐步讨论实现方案，确认后 Agent 直接执行修改，完成后继续问答。
+Discuss the implementation plan step by step; once confirmed the agent executes the change directly, then the loop continues.
 
-### 场景3：代码学习
+### Use case 3: Code learning
 
-逐层梳理模块逻辑，通过选项引导深入探索。
+Walk through module logic layer by layer, using options to guide deeper exploration.
 
-## 常见问题
+## FAQ
 
-**Q: 问答模式下能修改代码吗？**
-A: 可以。问答模式不限制执行操作，Agent 根据问答内容正常工作，只是每次回复后必须提供选项继续对话。
+**Q: Can code be modified during Q&A mode?**
+A: Yes. Q&A mode does not restrict operations; the agent works normally, it just must offer options to continue after each reply.
 
-**Q: 如何退出？**
-A: 点击"退出问答"选项，或直接说"退出问答"。
+**Q: How do I exit?**
+A: Click the "Exit Q&A" option, or just say "Exit Q&A".
 
-**Q: Agent 会自己退出问答吗？**
-A: 不会。除非你主动选择退出，Agent 始终保持问答循环。
+**Q: Will the agent exit by itself?**
+A: No. The agent keeps the loop going unless you actively exit.
 
-**Q: 无限问答模式消耗多少 request？**
-A: 整个问答循环只消耗一次 request，无论你问了多少轮。因为 AskQuestion 的回复不算新的 request，它只是当前对话的延续。这比每次单独提问更省 request 配额。
+**Q: How many requests does infinite Q&A mode consume?**
+A: The whole loop consumes a single request no matter how many rounds you ask. AskQuestion replies are not new requests — they continue the current dialogue. This saves request quota compared to asking separate questions.

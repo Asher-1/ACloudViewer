@@ -5,16 +5,18 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "ggml_cnn.hpp"
+#include "tasks/aliked/ggml_cnn.hpp"
 
 #include <ggml-alloc.h>
 #include <ggml-backend.h>
 
-#include "gpu_sync.hpp"
-#include "gpu_tensor.hpp"
-#include "tensor_ops.hpp"
+#include "tasks/aliked/gpu_sync.hpp"
+#include "tasks/aliked/gpu_tensor.hpp"
+#include "tasks/aliked/tensor_ops.hpp"
+
 #if defined(AICORE_VULKAN_ALIKED)
-#include "vulkan/vulkan_aliked_dispatch.hpp"
+#include "tasks/aliked/vulkan/vulkan_aliked_dispatch.hpp"
+
 #endif
 #if defined(AICORE_CUDA_ALIKED)
 #include <cuda_runtime.h>

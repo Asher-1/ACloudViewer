@@ -1,12 +1,22 @@
 # ACloudViewer JSON-RPC API Reference
 
-The `qJSonRPCPlugin` exposes a JSON-RPC 2.0 API over WebSocket on port 6001.
+The `qJSonRPCPlugin` exposes a JSON-RPC 2.0 API over WebSocket on port 6001
+(`ACV_RPC_PORT` overrides it).
 
 ## Connection
 
 ```
-ws://localhost:6001
+ws://127.0.0.1:6001
 ```
+
+The server listens on loopback only and refuses handshakes carrying an
+`Origin` header (browsers); see the plugin README. Methods that run a child
+process (`aicore.batch`, `process.*`, `colmap.*`, `yolo.track`,
+`sam3d.generate`, `mapanything.reconstruct`) answer when the child ends,
+bounded by `timeout_ms` in (0, 86400000]; meanwhile the server keeps serving
+other requests, including concurrent children. Malformed JSON is answered
+with `-32700` and a request without `method`/`jsonrpc` with `-32600`, both
+with `"id": null` when no id could be read; batch arrays are not supported.
 
 ## Protocol
 
@@ -753,6 +763,40 @@ Convert normals to dip/dip-direction scalar fields.
 
 **Params:** `{entity_id}`
 
+### aicore.batch
+
+Run one whitelisted AICore plugin batch command in an isolated headless child.
+The child uses the same native command as `cli-anything-acloudviewer ai run`;
+models, preprocessing, inference, and export remain owned by AICore/the plugin.
+
+**Params:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `command` | string | yes | Stable native command such as `OCR_RECOGNIZE` |
+| `options` | object | yes | Uppercase command options; scalar arrays repeat a key |
+| `result_json` | string | no | Manifest path; a temporary path is created when omitted |
+| `timeout_ms` | int | no | Child timeout, maximum 86,400,000 ms |
+
+`HELP: true` is encoded as the valueless native `HELP` token. The returned
+object contains `command`, `exit_code`, `result_json`, `manifest`, `stdout`,
+and `stderr`. The manifest/schema identifier is
+`acloudviewer.aicore.batch/1`. Arbitrary commands are rejected; use the
+headless CLI/MCP `run_plugin_command` passthrough for ordinary plugins.
+
+Example:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 40,
+  "method": "aicore.batch",
+  "params": {
+    "command": "OCR_RECOGNIZE",
+    "options": {"HELP": true}
+  }
+}
+```
+
 ### process.run_cli
 
 Run any CLI processing command via the binary subprocess.
@@ -776,6 +820,78 @@ M3C2 multiscale cloud-to-cloud distance computation.
 RANSAC shape detection (planes, spheres, cylinders, etc.).
 
 **Params:** `{input_path, output_path, ?epsilon, ?bitmap_epsilon, ?support_points, ?max_normal_dev, ?probability, ?primitives[]}`
+
+### sam3d.generate
+
+Batch SAM 3D Objects image-to-3D via a headless `-SILENT -SAM3D_GENERATE`
+child process (same offscreen pattern as `yolo.track` / `process.run_cli`).
+One child process loads the model set once and runs the full AICore sam3d
+pipeline over N input images, exporting one Gaussian PLY per image plus a
+RESULT_JSON manifest (also embedded in the RPC response).
+
+**Params:** `{images[], ?masks[], output_dir, ?device: auto|cpu|cuda|vulkan, ?dtype: f16|q8_0|q4_k, ?steps, ?seed, ?mesh: 0|1, ?rmbg: 0|1, ?moge_cache: 0|1, ?threads, ?models_dir, ?result_json, ?timeout_ms}`
+
+- `images[]`: absolute input image paths; the object mask is either embedded
+  as the alpha channel or supplied as an ordered `masks[]` companion
+  (GRAY8/alpha mask, `mask > 0` keeps the pixel).
+- `dtype` selects the quantized model set (`q4_k` default; see the qSAM3D
+  plugin README for VRAM figures).
+- `moge_cache` default 0: the MoGe point-map cache is disabled for
+  bit-for-bit parity with the acceptance probe / upstream reference; set 1
+  to reuse cached point maps for repeat runs (tiny numeric drift).
+- `timeout_ms` default 3600000 (sam3d is a multi-minute diffusion pipeline).
+
+**Returns:** `{exit_code, stdout, stderr, result_json, elapsed_ms, items[], ok_count, failed_count, backend}` where each item is
+`{image, mask, ply, gaussians, mesh_vertices, mesh_triangles, e2e_ms, status}`.
+
+**Example:**
+
+```json
+{"jsonrpc": "2.0", "id": 1, "method": "sam3d.generate",
+ "params": {"images": ["/data/sacre_coeur1.jpg"],
+            "output_dir": "/tmp/sam3d_out", "dtype": "q4_k", "steps": 25,
+            "seed": 42, "device": "cuda"}}
+```
+
+### mapanything.reconstruct
+
+Multi-view metric 3D reconstruction (MapAnything family: VGGT-Omega / VGGT /
+Pi3 / Pi3X / MapAnything / DUSt3R) via a headless
+`-SILENT -MAP_ANYTHING_RECONSTRUCT` child process (same offscreen pattern
+as `sam3d.generate`). One child process loads the model once and runs the
+AICore map_anything pipeline over >= 2 input images, exporting the merged
+world-frame colored point cloud (binary PLY) plus a RESULT_JSON manifest
+(also embedded in the RPC response). Batch inference on GPU-less machines:
+pass `?device=cpu`. Chunking is the shared GUI/headless driver: up to
+`max_frames_per_pass` views run as one forward; larger sets stream
+overlap-2 windows aligned by a dense Sim3. When the device cannot hold a
+pass (AICore `run_images` returns -3 before running), the driver halves the
+pass size and re-plans; `frames_per_pass` and `memory_downshifts` in the
+manifest record what actually ran.
+
+**Params:** `{images[>=2], output_dir, ?model: path|catalog filename (default vggt-omega-1b-512-q8_0), ?device: auto|cpu|cuda|vulkan, ?image_size, ?resize_mode: balanced|max_size|square, ?min_conf, ?max_frames_per_pass, ?threads, ?cloud_ply, ?per_view, ?raw_output_dir, ?stage_dump_dir, ?gt_meta, ?ref_images_path: COLMAP model_aligner text "<image_name> X Y Z" per line, ?ref_is_gps: 0|1 (required with ref_images_path), ?result_json, ?timeout_ms}`
+
+- `images[]`: absolute input image paths (the child decodes them through
+  Qt and feeds borrowed `aicore_image_view`s).
+- `resize_mode` / `min_conf` default to the catalog entry of the model
+  (`square` + normalized 0.5 for `vggt-1b`; unknown modes fail the load).
+- `model` may be a GGUF path or a published catalog filename
+  (https://huggingface.co/Asher-1/map_anything_vggt); missing checkpoints
+  must be pre-downloaded through the qMapAnything dialog (headless runs
+  never trigger downloads).
+- `min_conf`: per-architecture official rule (percentile per view for
+  mapanything, sigmoid for the pi3 family raw logits, floor max(2, p20) +
+  normalized (c-1)/c for the 1+exp families).
+
+**Returns:** `{exit_code, stdout, stderr, result_json, elapsed_ms, architecture, points, views, e2e_ms, ply, frames_per_pass}`.
+
+**Example:**
+
+```json
+{"jsonrpc": "2.0", "id": 1, "method": "mapanything.reconstruct",
+ "params": {"images": ["/data/sacre_coeur1.jpg", "/data/sacre_coeur2.jpg"],
+            "output_dir": "/tmp/mapanything_out", "device": "cuda"}}
+```
 
 ### methods.list
 

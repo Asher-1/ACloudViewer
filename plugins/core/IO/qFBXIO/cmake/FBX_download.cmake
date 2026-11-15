@@ -9,6 +9,15 @@ ExternalProject_Add(ext_fbx
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
+    # The plugin links these SDK archives by absolute path; Ninja needs a rule
+    # that generates them.
+    BUILD_BYPRODUCTS
+        <SOURCE_DIR>/lib/X64/release/libfbxsdk.lib
+        <SOURCE_DIR>/lib/X64/release/libxml2-md.lib
+        <SOURCE_DIR>/lib/X64/release/zlib-md.lib
+        <SOURCE_DIR>/lib/X64/debug/libfbxsdk.lib
+        <SOURCE_DIR>/lib/X64/debug/libxml2-md.lib
+        <SOURCE_DIR>/lib/X64/debug/zlib-md.lib
 )
 
 ExternalProject_Get_Property(ext_fbx SOURCE_DIR)

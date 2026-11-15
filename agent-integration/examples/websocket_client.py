@@ -15,7 +15,7 @@ import sys
 
 from websockets.sync.client import connect
 
-URL = "ws://localhost:6001"
+URL = "ws://127.0.0.1:6001"
 _id = 0
 
 

@@ -35,6 +35,8 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
 
       - name: Set up Python version
         uses: actions/setup-python@v5
@@ -99,8 +101,8 @@ jobs:
         with:
           arch: x64
       
-      - name: Install CMake and Ninja
-        uses: lukka/get-cmake@latest
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
 
       - name: Download WebRTC sources
         shell: pwsh

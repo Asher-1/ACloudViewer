@@ -1,0 +1,46 @@
+{
+  "registered_images_relative_difference": 0.0,
+  "sparse_points_relative_difference": 0.0,
+  "track_observations_relative_difference": 0.0,
+  "mean_track_length_relative_difference": 0.0,
+  "point_reprojection_rms_px_relative_difference": 3e-7,
+  "camera_center_p95": 5e-9,
+  "camera_rotation_p95_deg": 0.0001,
+  "point_nn_p95": 5e-7,
+  "configuration": {
+    "input_manifest_sha256": "4bcb9b883f732a50d60b9e8c52f617645fe26f2273a688f32c0e9dadd2a17f8c",
+    "pipeline": "global",
+    "max_features": 2048,
+    "camera_model": "SIMPLE_RADIAL",
+    "single_camera": true,
+    "sift_gpu": false,
+    "seed": 20261009,
+    "mapper_options": [
+      "GlobalMapper.min_num_matches=20",
+      "GlobalMapper.num_threads=1"
+    ],
+    "candidate_mapper_options": []
+  },
+  "provenance": {
+    "fixture": "dataset_monstree/mini6 (configuration above, enforced by the runner). The global mapper stage invokes each COLMAP binary's `global_mapper` command directly; extraction and matching are the same seeded SIFT stages as the incremental gate.",
+    "upstream_revision": "3e5c915ca426e9661041d0696aff088dfc49fd90",
+    "rule": "Count metrics are discrete, so any difference is algorithmic and the threshold is 0. Each continuous threshold is the log-space midpoint sqrt(lower_input * upper_input), rounded to one significant digit. It is never fitted to the candidate.",
+    "lower_input": {
+      "method": "The measured cross-binary divergence is the effective noise floor of this comparison: three repeated runs of both binaries were bit-identical per side (candidate model sha bd86dc20ff4d9edf, baseline 2f9a3624c1557c3c over images.txt+points3D.txt), so the fork/upstream delta below is stable and reproducible, not run noise",
+      "point_reprojection_rms_px_relative_difference": 1.0121e-11,
+      "camera_center_p95": 7.17e-14,
+      "camera_rotation_p95_deg": 9.06e-07,
+      "point_nn_p95": 8.46e-12,
+      "notes": "The rotation delta was measured as exactly 0, so the acos resolution near identity (acos(1 - 2^-53) = 8.5e-7 deg) is used as the lower input."
+    },
+    "smallest_algorithmic_divergence": {
+      "method": "Upper input = smallest real algorithmic perturbation measured on this fixture (incremental pipeline, std::unordered hash containers versus upstream boost::unordered 1.92, i.e. SfM gauge and BA residual-order divergence). A real global-pipeline regression is expected at or above this scale; the observed global-pipeline fork/upstream deltas sit 4-7 decades below it",
+      "track_observations_relative_difference": 0.00323,
+      "point_reprojection_rms_px_relative_difference": 0.00715,
+      "camera_center_p95": 0.000414,
+      "camera_rotation_p95_deg": 0.0131,
+      "point_nn_p95": 0.0274
+    },
+    "scope": "Same-host gate only. A different CPU, compiler, or BLAS can move the floating-point floor and requires re-measuring both inputs of the rule."
+  }
+}

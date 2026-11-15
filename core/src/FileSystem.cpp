@@ -9,25 +9,31 @@
 
 #include <fcntl.h>
 
+#include <QDir>
 #include <algorithm>
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
+#include <limits>
 #include <sstream>
 
 #include "CVPlatform.h"
+#include "CVTools.h"
 #include "Logging.h"
 #ifdef CV_WINDOWS
 #include <direct.h>
-#include <dirent/dirent.h>
 #include <io.h>
 #include <windows.h>
+// Keep the C++ API name independent of the Win32 CopyFileA/CopyFileW macro.
+#undef CopyFile
 #ifndef PATH_MAX
 #define PATH_MAX MAX_PATH
 #endif
 #else
-#include <dirent.h>
 #include <limits.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -38,7 +44,6 @@
 #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
 #endif
 #ifdef CV_MAC_OS
-#include <filesystem>
 namespace fs = std::__fs::filesystem;
 #else
 #include <experimental/filesystem>
@@ -51,56 +56,51 @@ namespace filesystem {
 
 std::string JoinPath(const std::string &path_component1,
                      const std::string &path_component2) {
-    fs::path path(path_component1);
-    return (path / path_component2).string();
+    fs::path path = fs::u8path(path_component1);
+    return (path / fs::u8path(path_component2)).u8string();
 }
 
 std::string JoinPath(const std::vector<std::string> &path_components) {
     fs::path path;
     for (const auto &pc : path_components) {
-        path /= pc;
+        path /= fs::u8path(pc);
     }
-    return path.string();
+    return path.u8string();
 }
 
 std::string GetEnvVar(const std::string &env_var) {
+#ifdef CV_WINDOWS
+    const std::wstring name = CVTools::Char2Wchar(env_var.c_str());
+    const wchar_t *value = _wgetenv(name.c_str());
+    return value ? CVTools::Wchar2Char(value) : std::string();
+#else
     if (const char *env_p = std::getenv(env_var.c_str())) {
         return {env_p};
     } else {
         return "";
     }
+#endif
+}
+
+bool SetEnvVar(const std::string &env_var, const std::string &value) {
+#ifdef CV_WINDOWS
+    const std::wstring name = CVTools::Char2Wchar(env_var.c_str());
+    const std::wstring wideValue = CVTools::Char2Wchar(value.c_str());
+    return _wputenv_s(name.c_str(), wideValue.c_str()) == 0;
+#else
+    return (value.empty() ? unsetenv(env_var.c_str())
+                          : setenv(env_var.c_str(), value.c_str(), 1)) == 0;
+#endif
 }
 
 std::string GetHomeDirectory() {
-    std::string home_dir = "";
-#ifdef CV_WINDOWS
-    // %USERPROFILE%
-    // %HOMEDRIVE%
-    // %HOMEPATH%
-    // %HOME%
-    // C:/
-    home_dir = GetEnvVar("USERPROFILE");
-    if (home_dir.empty() || !DirectoryExists(home_dir)) {
-        home_dir = GetEnvVar("HOMEDRIVE");
-        if (home_dir.empty() || !DirectoryExists(home_dir)) {
-            home_dir = GetEnvVar("HOMEPATH");
-            if (home_dir.empty() || !DirectoryExists(home_dir)) {
-                home_dir = GetEnvVar("HOME");
-                if (home_dir.empty() || !DirectoryExists(home_dir)) {
-                    home_dir = "C:/";
-                }
-            }
-        }
-    }
-#else
-    // $HOME
-    // /
-    home_dir = GetEnvVar("HOME");
-    if (home_dir.empty() || !DirectoryExists(home_dir)) {
-        home_dir = "/";
-    }
-#endif
-    return home_dir;
+    return QDir::homePath().toUtf8().toStdString();
+}
+
+std::string LocateDataRoot() {
+    const std::string configured = GetEnvVar("CLOUDVIEWER_DATA_ROOT");
+    return configured.empty() ? GetHomeDirectory() + "/cloudViewer_data"
+                              : configured;
 }
 
 std::string EnsureTrailingSlash(const std::string &str) {
@@ -169,7 +169,7 @@ bool CopyFile(const std::string &from, const std::string &to) {
     }
 
     // Try standard file copy first
-    std::ifstream src(from, std::ios::binary);
+    std::ifstream src = OpenInputStream(from, std::ios::binary);
     if (!src) {
         utility::LogWarning("Source file could not be opened: {}", from);
         return false;
@@ -182,7 +182,7 @@ bool CopyFile(const std::string &from, const std::string &to) {
         return CopyA(from, to);
     }
 
-    std::ofstream dst(to, std::ios::binary);
+    std::ofstream dst = OpenOutputStream(to, std::ios::binary);
     if (!dst) {
         utility::LogError("Target path is not writable: {}", to);
         return false;
@@ -200,23 +200,24 @@ bool CopyFile(const std::string &from, const std::string &to) {
 }
 
 bool CopyDir(const std::string &from, const std::string &to) {
-    DIR *directory = opendir(from.c_str());
-    if (directory == nullptr) {
+    std::error_code error;
+    fs::directory_iterator directory(fs::u8path(from), error), end;
+    if (error) {
         utility::LogError("Cannot open directory: {}", from);
         return false;
     }
 
     bool ret = true;
     if (EnsureDirectory(to)) {
-        struct dirent *entry;
-        while ((entry = readdir(directory)) != nullptr) {
-            // skip directory_path/. and directory_path/..
-            if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..")) {
-                continue;
-            }
-            const std::string sub_path_from = from + "/" + entry->d_name;
-            const std::string sub_path_to = to + "/" + entry->d_name;
-            if (entry->d_type == DT_DIR) {
+        for (; directory != end; directory.increment(error)) {
+            if (error) break;
+            const auto &entry = *directory;
+            const std::string sub_path_from = entry.path().u8string();
+            const std::string sub_path_to =
+                    (fs::u8path(to) / entry.path().filename()).u8string();
+            const auto status = entry.symlink_status(error);
+            if (error) return false;
+            if (fs::is_directory(status)) {
                 ret &= CopyDir(sub_path_from, sub_path_to);
             } else {
                 ret &= CopyFile(sub_path_from, sub_path_to);
@@ -226,16 +227,13 @@ bool CopyDir(const std::string &from, const std::string &to) {
         utility::LogError("Cannot create target directory: {}", to);
         ret = false;
     }
-    closedir(directory);
-    return ret;
+    return ret && !error;
 }
 
-// TODO: this is not a good name. Currently FileSystem.cpp includes windows.h
-// and "CopyFile" will be expanded to "CopyFileA" on Windows. This will be
-// resolved when we switch to C++17's std::filesystem.
+// Legacy recursive-copy entrypoint; preserve its public name for callers.
 bool CopyA(const std::string &src_path, const std::string &dst_path) {
     try {
-        fs::copy(src_path, dst_path,
+        fs::copy(fs::u8path(src_path), fs::u8path(dst_path),
                  fs::copy_options::recursive |
                          fs::copy_options::overwrite_existing);
     } catch (std::exception &e) {
@@ -331,18 +329,19 @@ std::string GetRegularizedDirectoryName(const std::string &directory) {
 }
 
 std::string GetWorkingDirectory() {
-    char buff[PATH_MAX + 1];
-    char *flag = nullptr;
 #ifdef CV_WINDOWS
-    flag = _getcwd(buff, PATH_MAX + 1);
+    wchar_t buff[PATH_MAX + 1];
+    return _wgetcwd(buff, PATH_MAX + 1) ? CVTools::Wchar2Char(buff)
+                                        : std::string();
 #else
-    flag = getcwd(buff, PATH_MAX + 1);
-#endif
+    char buff[PATH_MAX + 1];
+    char *flag = getcwd(buff, PATH_MAX + 1);
     if (flag) {
         return std::string(buff);
     } else {
         return std::string("");
     }
+#endif
 }
 
 std::vector<std::string> GetPathComponents(const std::string &path) {
@@ -421,12 +420,12 @@ std::vector<std::string> GetPathComponents(const std::string &path) {
 }
 
 std::string GetTempDirectoryPath() {
-    return fs::temp_directory_path().string();
+    return fs::temp_directory_path().u8string();
 }
 
 bool ChangeWorkingDirectory(const std::string &directory) {
 #ifdef CV_WINDOWS
-    return (_chdir(directory.c_str()) == 0);
+    return (_wchdir(CVTools::Char2Wchar(directory.c_str()).c_str()) == 0);
 #else
     return (chdir(directory.c_str()) == 0);
 #endif
@@ -434,7 +433,8 @@ bool ChangeWorkingDirectory(const std::string &directory) {
 
 bool IsFile(const std::string &filename) {
 #ifdef CV_WINDOWS
-    DWORD attributes = GetFileAttributes(filename.c_str());
+    DWORD attributes =
+            GetFileAttributesW(CVTools::Char2Wchar(filename.c_str()).c_str());
     if (attributes == INVALID_FILE_ATTRIBUTES) return false;
     return !(attributes & FILE_ATTRIBUTE_DIRECTORY);
 #else
@@ -453,7 +453,8 @@ bool IsFile(const std::string &filename) {
 
 bool IsDirectory(const std::string &directory) {
 #ifdef CV_WINDOWS
-    DWORD attributes = GetFileAttributes(directory.c_str());
+    DWORD attributes =
+            GetFileAttributesW(CVTools::Char2Wchar(directory.c_str()).c_str());
     if (attributes == INVALID_FILE_ATTRIBUTES) return false;
     return (attributes & FILE_ATTRIBUTE_DIRECTORY);
 #else
@@ -471,14 +472,14 @@ bool IsDirectory(const std::string &directory) {
 }
 
 bool DirectoryExists(const std::string &directory) {
-    return fs::is_directory(directory);
+    return fs::is_directory(fs::u8path(directory));
 }
 
 bool DirectoryIsEmpty(const std::string &directory) {
     if (!DirectoryExists(directory)) {
         utility::LogError("Directory {} does not exist.", directory);
     }
-    return fs::is_empty(directory);
+    return fs::is_empty(fs::u8path(directory));
 }
 
 bool EnsureDirectory(const std::string &directory_path) {
@@ -490,7 +491,7 @@ bool EnsureDirectory(const std::string &directory_path) {
 
 bool MakeDirectory(const std::string &directory) {
 #ifdef CV_WINDOWS
-    return (_mkdir(directory.c_str()) == 0);
+    return (_wmkdir(CVTools::Char2Wchar(directory.c_str()).c_str()) == 0);
 #else
     return (mkdir(directory.c_str(), S_IRWXU) == 0);
 #endif
@@ -513,7 +514,8 @@ bool MakeDirectoryHierarchy(const std::string &directory) {
 
 bool DeleteDirectory(const std::string &directory) {
     std::error_code error;
-    if (fs::remove_all(directory, error) == static_cast<std::uintmax_t>(-1)) {
+    if (fs::remove_all(fs::u8path(directory), error) ==
+        static_cast<std::uintmax_t>(-1)) {
         utility::LogWarning("Failed to remove directory {}: {}.", directory,
                             error.message());
         return false;
@@ -522,11 +524,16 @@ bool DeleteDirectory(const std::string &directory) {
 }
 
 bool FileExists(const std::string &filename) {
-    return fs::exists(filename) && fs::is_regular_file(filename);
+    const auto path = fs::u8path(filename);
+    return fs::exists(path) && fs::is_regular_file(path);
 }
 
 bool RemoveFile(const std::string &filename) {
+#ifdef CV_WINDOWS
+    return (_wremove(CVTools::Char2Wchar(filename.c_str()).c_str()) == 0);
+#else
     return (std::remove(filename.c_str()) == 0);
+#endif
 }
 
 bool ListDirectory(const std::string &directory,
@@ -535,27 +542,28 @@ bool ListDirectory(const std::string &directory,
     if (directory.empty()) {
         return false;
     }
-    DIR *dir;
-    struct dirent *ent;
-    struct stat st;
-    dir = opendir(directory.c_str());
-    if (!dir) {
+    std::error_code error;
+    fs::directory_iterator entries(fs::u8path(directory), error), end;
+    if (error) {
         return false;
     }
     filenames.clear();
-    while ((ent = readdir(dir)) != NULL) {
-        const std::string file_name = ent->d_name;
+    for (; entries != end; entries.increment(error)) {
+        if (error) break;
+        const auto &entry = *entries;
+        const std::string file_name = entry.path().filename().u8string();
         if (file_name[0] == '.') continue;
         std::string full_file_name =
                 GetRegularizedDirectoryName(directory) + file_name;
-        if (stat(full_file_name.c_str(), &st) == -1) continue;
-        if (S_ISDIR(st.st_mode))
+        std::error_code status_error;
+        const auto status = entry.status(status_error);
+        if (status_error) continue;
+        if (fs::is_directory(status))
             subdirs.push_back(full_file_name);
-        else if (S_ISREG(st.st_mode))
+        else if (fs::is_regular_file(status))
             filenames.push_back(full_file_name);
     }
-    closedir(dir);
-    return true;
+    return !error;
 }
 
 bool ListFilesInDirectory(const std::string &directory,
@@ -606,37 +614,136 @@ std::vector<std::string> FindFilesRecursively(
     return matches;
 }
 
+std::ifstream OpenInputStream(const std::string &filename,
+                              std::ios::openmode mode) {
+    return std::ifstream(std::filesystem::u8path(filename), mode);
+}
+
+std::ofstream OpenOutputStream(const std::string &filename,
+                               std::ios::openmode mode) {
+    return std::ofstream(std::filesystem::u8path(filename), mode);
+}
+
 FILE *FOpen(const std::string &filename, const std::string &mode) {
     FILE *fp;
 #ifndef _WIN32
     fp = fopen(filename.c_str(), mode.c_str());
 #else
-    // Convert UTF-8 filename to UTF-16
-    int filename_wlen = MultiByteToWideChar(CP_UTF8, 0, filename.c_str(),
-                                            static_cast<int>(filename.length()),
-                                            nullptr, 0);
-    if (filename_wlen == 0) {
-        return nullptr;
-    }
-    std::wstring filename_w(filename_wlen, L'\0');
-    MultiByteToWideChar(CP_UTF8, 0, filename.c_str(),
-                        static_cast<int>(filename.length()), &filename_w[0],
-                        filename_wlen);
-
-    // Convert UTF-8 mode to UTF-16
-    int mode_wlen =
-            MultiByteToWideChar(CP_UTF8, 0, mode.c_str(),
-                                static_cast<int>(mode.length()), nullptr, 0);
-    if (mode_wlen == 0) {
-        return nullptr;
-    }
-    std::wstring mode_w(mode_wlen, L'\0');
-    MultiByteToWideChar(CP_UTF8, 0, mode.c_str(),
-                        static_cast<int>(mode.length()), &mode_w[0], mode_wlen);
-
+    if (filename.empty() || mode.empty()) return nullptr;
+    const std::wstring filename_w = CVTools::Char2Wchar(filename.c_str());
+    const std::wstring mode_w = CVTools::Char2Wchar(mode.c_str());
     fp = _wfopen(filename_w.c_str(), mode_w.c_str());
 #endif
     return fp;
+}
+
+FILE *FOpenForWrite(const std::string &filename, int create_permissions) {
+    if (filename.empty()) return nullptr;
+#ifndef _WIN32
+    const int fd = ::open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC,
+                          static_cast<mode_t>(create_permissions));
+    if (fd < 0) return nullptr;
+    FILE *file = ::fdopen(fd, "wb");
+    if (!file) {
+        const int saved_errno = errno;
+        ::close(fd);
+        errno = saved_errno;
+    }
+    return file;
+#else
+    return FOpen(filename, "wb");
+#endif
+}
+
+bool FSeek(FILE *file, int64_t offset, int origin) {
+    if (!file) {
+        errno = EINVAL;
+        return false;
+    }
+#if defined(_WIN32)
+    return _fseeki64(file, offset, origin) == 0;
+#else
+    const auto native_offset = static_cast<off_t>(offset);
+    if (static_cast<int64_t>(native_offset) != offset) {
+        errno = EOVERFLOW;
+        return false;
+    }
+    return fseeko(file, native_offset, origin) == 0;
+#endif
+}
+
+int64_t FTell(FILE *file) {
+    if (!file) {
+        errno = EINVAL;
+        return -1;
+    }
+#if defined(_WIN32)
+    return _ftelli64(file);
+#else
+    return ftello(file);
+#endif
+}
+
+bool FSize(FILE *file, size_t &size) {
+    const int64_t position = FTell(file);
+    if (position < 0 || !FSeek(file, 0, SEEK_END)) return false;
+    const int64_t length = FTell(file);
+    const int size_error = errno;
+    const bool restored = FSeek(file, position);
+    if (!restored) return false;
+    if (length < 0) {
+        errno = size_error;
+        return false;
+    }
+    if (static_cast<uint64_t>(length) > std::numeric_limits<size_t>::max()) {
+        errno = EOVERFLOW;
+        return false;
+    }
+    size = static_cast<size_t>(length);
+    return true;
+}
+
+ReadOnlyMappedFile::~ReadOnlyMappedFile() { Close(); }
+
+bool ReadOnlyMappedFile::IsSupported() {
+#if defined(__unix__) || defined(__APPLE__)
+    return true;
+#else
+    return false;
+#endif
+}
+
+bool ReadOnlyMappedFile::Open(const std::string &path) {
+    Close();
+#if defined(__unix__) || defined(__APPLE__)
+    const int fd = ::open(path.c_str(), O_RDONLY);
+    if (fd < 0) return false;
+    struct stat st {};
+    if (fstat(fd, &st) != 0 || st.st_size <= 0 ||
+        static_cast<uint64_t>(st.st_size) >
+                std::numeric_limits<size_t>::max()) {
+        ::close(fd);
+        return false;
+    }
+    const size_t size = static_cast<size_t>(st.st_size);
+    void *mapped = mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0);
+    ::close(fd);
+    if (mapped == MAP_FAILED) return false;
+    data_ = static_cast<const uint8_t *>(mapped);
+    size_ = size;
+    return true;
+#else
+    (void)path;
+    return false;
+#endif
+}
+
+void ReadOnlyMappedFile::Close() {
+#if defined(__unix__) || defined(__APPLE__)
+    if (data_) munmap(const_cast<uint8_t *>(data_), size_);
+#endif
+    data_ = nullptr;
+    size_ = 0;
 }
 
 std::string GetIOErrorString(const int errnoVal) {
@@ -707,20 +814,12 @@ bool FReadToBuffer(const std::string &path,
         return false;
     }
 
-    if (fseek(file, 0, SEEK_END) != 0) {
-        // We ignore that fseek will block our process
-        if (errno && errno != EWOULDBLOCK) {
-            if (errorStr) {
-                *errorStr = GetIOErrorString(errno);
-            }
-
-            fclose(file);
-            return false;
-        }
+    size_t filesize = 0;
+    if (!FSize(file, filesize)) {
+        if (errorStr) *errorStr = GetIOErrorString(errno);
+        fclose(file);
+        return false;
     }
-
-    const std::size_t filesize = static_cast<std::size_t>(ftell(file));
-    rewind(file);  // reset file pointer back to beginning
 
     bytes.resize(filesize);
     const std::size_t result = fread(bytes.data(), 1, filesize, file);
@@ -776,7 +875,7 @@ int64_t CFile::CurPos() {
     if (!file_) {
         utility::LogError("CFile::CurPos() called on a closed file");
     }
-    int64_t pos = ftell(file_);
+    int64_t pos = FTell(file_);
     if (pos < 0) {
         error_code_ = errno;
         utility::LogError("ftell failed: {}", GetError());
@@ -793,7 +892,7 @@ int64_t CFile::GetFileSize() {
         error_code_ = errno;
         utility::LogError("fgetpos failed: {}", GetError());
     }
-    if (fseek(file_, 0, SEEK_END)) {
+    if (!FSeek(file_, 0, SEEK_END)) {
         error_code_ = errno;
         utility::LogError("fseek failed: {}", GetError());
     }
@@ -814,7 +913,7 @@ int64_t CFile::GetNumLines() {
         error_code_ = errno;
         utility::LogError("fgetpos failed: {}", GetError());
     }
-    if (fseek(file_, 0, SEEK_SET)) {
+    if (!FSeek(file_, 0, SEEK_SET)) {
         error_code_ = errno;
         utility::LogError("fseek failed: {}", GetError());
     }

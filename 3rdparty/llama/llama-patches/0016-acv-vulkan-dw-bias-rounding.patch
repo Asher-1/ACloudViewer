@@ -1,0 +1,63 @@
+diff --git a/src/ggml-vulkan/vulkan-shaders/conv2d_dw.comp b/src/ggml-vulkan/vulkan-shaders/conv2d_dw.comp
+--- a/src/ggml-vulkan/vulkan-shaders/conv2d_dw.comp
++++ b/src/ggml-vulkan/vulkan-shaders/conv2d_dw.comp
+@@ -91,6 +91,31 @@
+     return sum;
+ }
+ 
++#ifdef DW_F16
++// Implement IEEE F16 round-to-nearest-even with integers to preserve intermediate precision boundaries.
++float dw_round_f16(float value) {
++    uint bits = floatBitsToUint(value);
++    uint sign = (bits >> 16) & 0x8000u;
++    uint magnitude = bits & 0x7fffffffu;
++    uint exponent = magnitude >> 23;
++    uint half_bits;
++    if (exponent >= 143u) {
++        half_bits = 0x7c00u | (magnitude > 0x7f800000u ? 0x0200u : 0u);
++    } else if (exponent >= 113u) {
++        uint rounded = magnitude + 0xfffu + ((magnitude >> 13) & 1u);
++        half_bits = (rounded - 0x38000000u) >> 13;
++    } else if (exponent >= 102u) {
++        uint shift = 126u - exponent;
++        uint significand = (magnitude & 0x7fffffu) | 0x800000u;
++        half_bits = (significand + ((1u << (shift - 1u)) - 1u) +
++                     ((significand >> shift) & 1u)) >> shift;
++    } else {
++        half_bits = 0u;
++    }
++    return unpackHalf2x16(sign | half_bits).x;
++}
++#endif
++
+ void main() {
+     uint idx = gl_GlobalInvocationID.z * 262144 + gl_GlobalInvocationID.y * 512 + gl_GlobalInvocationID.x;
+     if (idx >= p.ne) {
+@@ -104,7 +129,12 @@
+         conv_2d_dw_cwhn(idx);
+ #endif
+     // Preserve F16/F32 convolution write-out rounding; bias is a separate subsequent addition.
+-    precise FLOAT_TYPE rounded = FLOAT_TYPE(D_TYPE(result));
++#ifdef DW_F16
++    // Integer RNE preserves the precision boundary between separate F16 write-out and ADD.
++    precise FLOAT_TYPE rounded = p.has_bias != 0 ? dw_round_f16(result) : result;
++#else
++    precise FLOAT_TYPE rounded = result;
++#endif
+ #ifdef WHCN
+     uint c = (idx / (p.dst_w * p.dst_h)) % p.channels;
+ #else
+diff --git a/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp b/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+--- a/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
++++ b/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+@@ -1259,8 +1259,8 @@
+     string_to_spv("conv2d_dw_cwhn_f32", "conv2d_dw.comp", merge_maps(base_dict, {{"A_TYPE", "float"}, {"B_TYPE", "float"}, {"D_TYPE", "float"}, {"CWHN", "1"}}));
+     string_to_spv("conv2d_dw_whcn_f16_f32", "conv2d_dw.comp", merge_maps(base_dict, {{"A_TYPE", "float16_t"}, {"B_TYPE", "float"}, {"D_TYPE", "float"}, {"WHCN", "1"}}));
+     string_to_spv("conv2d_dw_cwhn_f16_f32", "conv2d_dw.comp", merge_maps(base_dict, {{"A_TYPE", "float16_t"}, {"B_TYPE", "float"}, {"D_TYPE", "float"}, {"CWHN", "1"}}));
+-    string_to_spv("conv2d_dw_whcn_f16", "conv2d_dw.comp", merge_maps(base_dict, {{"A_TYPE", "float16_t"}, {"B_TYPE", "float16_t"}, {"D_TYPE", "float16_t"}, {"WHCN", "1"}}));
+-    string_to_spv("conv2d_dw_cwhn_f16", "conv2d_dw.comp", merge_maps(base_dict, {{"A_TYPE", "float16_t"}, {"B_TYPE", "float16_t"}, {"D_TYPE", "float16_t"}, {"CWHN", "1"}}));
++    string_to_spv("conv2d_dw_whcn_f16", "conv2d_dw.comp", merge_maps(base_dict, {{"A_TYPE", "float16_t"}, {"B_TYPE", "float16_t"}, {"D_TYPE", "float16_t"}, {"DW_F16", "1"}, {"WHCN", "1"}}));
++    string_to_spv("conv2d_dw_cwhn_f16", "conv2d_dw.comp", merge_maps(base_dict, {{"A_TYPE", "float16_t"}, {"B_TYPE", "float16_t"}, {"D_TYPE", "float16_t"}, {"DW_F16", "1"}, {"CWHN", "1"}}));
+ 
+     string_to_spv("roll_f32", "roll.comp", merge_maps(base_dict, {{"A_TYPE", "float"}, {"D_TYPE", "float"}}));
+ 

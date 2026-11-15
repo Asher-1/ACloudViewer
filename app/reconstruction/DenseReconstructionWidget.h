@@ -9,6 +9,7 @@
 
 #include <QtCore>
 #include <QtWidgets>
+#include <filesystem>
 
 #include "ImageViewerWidget.h"
 #include "ui/options_widget.h"
@@ -18,7 +19,7 @@ namespace colmap {
 class Reconstruction;
 }
 
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
 
 namespace cloudViewer {
 
@@ -45,10 +46,11 @@ private:
     void Fusion();
     void PoissonMeshing();
     void DelaunayMeshing();
+    void AdvancingFrontMeshing();
     void Texturing();
 
     void SelectWorkspacePath();
-    std::string GetWorkspacePath();
+    std::filesystem::path GetWorkspacePath();
     void RefreshWorkspace();
 
     void WriteFusedPoints();
@@ -70,6 +72,7 @@ private:
     QPushButton* fusion_button_;
     QPushButton* poisson_meshing_button_;
     QPushButton* delaunay_meshing_button_;
+    QPushButton* advancing_front_meshing_button_;
     QPushButton* texturing_button_;
     QAction* refresh_workspace_action_;
     QAction* write_fused_points_action_;
@@ -78,11 +81,11 @@ private:
     bool photometric_done_;
     bool geometric_done_;
 
-    std::string images_path_;
-    std::string depth_maps_path_;
-    std::string normal_maps_path_;
+    std::filesystem::path images_path_;
+    std::filesystem::path depth_maps_path_;
+    std::filesystem::path normal_maps_path_;
 
-    std::string out_mesh_path_;
+    std::filesystem::path out_mesh_path_;
 
     std::vector<colmap::PlyPoint> fused_points_;
     std::vector<std::vector<int>> fused_points_visibility_;

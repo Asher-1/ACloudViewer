@@ -5,8 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "simple_gguf_io.hpp"
+#include "common/simple_gguf_io.hpp"
 
+#include <FileSystem.h>
 #include <ggml.h>
 
 #include <algorithm>
@@ -169,7 +170,8 @@ bool load_simple_gguf_f32(const std::string& path,
         return false;
     }
     tensors->clear();
-    std::ifstream in(path, std::ios::binary);
+    std::ifstream in = cloudViewer::utility::filesystem::OpenInputStream(
+            path, std::ios::binary);
     if (!in) {
         SetError(error, "failed to open GGUF: " + path);
         return false;
@@ -278,7 +280,8 @@ bool quantize_simple_gguf_weights(const std::string& input_gguf,
         return false;
     }
 
-    std::ifstream in(input_gguf, std::ios::binary);
+    std::ifstream in = cloudViewer::utility::filesystem::OpenInputStream(
+            input_gguf, std::ios::binary);
     if (!in) {
         SetError(error, "failed to open input");
         return false;
@@ -385,7 +388,8 @@ bool quantize_simple_gguf_weights(const std::string& input_gguf,
 
     ggml_quantize_init(ggml_target);
     int quantized = 0;
-    std::ofstream out(output_gguf, std::ios::binary);
+    std::ofstream out = cloudViewer::utility::filesystem::OpenOutputStream(
+            output_gguf, std::ios::binary);
     if (!out) {
         SetError(error, "failed to open output");
         return false;

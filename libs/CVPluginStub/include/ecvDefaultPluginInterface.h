@@ -28,6 +28,8 @@ public:
     virtual ContactList getAuthors() const override;
     virtual ContactList getMaintainers() const override;
 
+    virtual QString pluginGroup() const override;
+
 protected:
     ccDefaultPluginInterface(const QString& resourcePath = QString());
 

@@ -712,6 +712,8 @@ def main():
         'plugins/core/Standard/qSIBR/3rdparty/',
         # Other external libraries
         'libs/CV_io/extern/',
+        # nvdiffrast
+        'core/AICore/src/tasks/sam3d/pbr',
     ]
     cpp_files = _glob_files(CPP_FORMAT_DIRS,
                             ["h", "cpp", "cuh", "cu", "isph", "ispc", "h.in"])

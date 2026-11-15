@@ -8,6 +8,7 @@
 #include "FaceRegistryWidget.h"
 
 #include <cvFileDialog.h>
+#include <ecvAICoreUiHelper.h>
 
 #include <QCoreApplication>
 #include <QDir>
@@ -191,7 +192,7 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
 
     m_exportAuthToDbCheck =
             new QCheckBox(tr("Export auth viz to DB tree"), authGroup);
-    m_exportAuthToDbCheck->setChecked(false);
+    m_exportAuthToDbCheck->setChecked(true);
     m_exportAuthToDbCheck->setToolTip(
             tr("When enabled, annotated probe image with match labels is added "
                "to the DB tree after authentication."));
@@ -605,6 +606,13 @@ void FaceRegistryWidget::releaseStoreConnection() {
     }
 }
 
+void FaceRegistryWidget::releaseEmbedContext() {
+#ifdef AICore_ENABLED
+    // Idempotent; ensureLoaded() reloads it on the next embed operation.
+    m_embedContext.release();
+#endif
+}
+
 void FaceRegistryWidget::setRegistryPath(const QString& path, bool userChosen) {
     m_registryPathUserChosen = userChosen;
     if (m_registryPathEdit) m_registryPathEdit->setText(path);
@@ -658,7 +666,7 @@ void FaceRegistryWidget::loadSettings() {
         m_exportAuthToDbCheck->setChecked(
                 settings.value(QStringLiteral(
                                        "qFaceDetect/exportAuthResultToDb"),
-                               false)
+                               true)
                         .toBool());
     }
     if (m_registryPathUserChosen && !dbPath.isEmpty()) {
@@ -732,9 +740,11 @@ void FaceRegistryWidget::onBrowseRegisterImage() {
     const QString lastDir = ecvPS::browseDir(
             settings, QStringLiteral("qFaceDetect"),
             QStringLiteral("lastImageFileDir"), QDir::homePath());
-    const QString path = cvFileDialog::getOpenFileName(
-            this, tr("Select registration image"), lastDir,
-            tr("Images (*.png *.jpg *.jpeg *.bmp *.webp)"));
+    // A filled input (sample fill or a previous pick) takes precedence
+    // over the remembered directory.
+    const QString path = ecvAICoreUi::browseInputImage(
+            this, m_registerImagePath ? m_registerImagePath->text() : QString(),
+            tr("Select registration image"), lastDir);
     if (path.isEmpty()) return;
     ecvPS::saveBrowseDir(settings, QStringLiteral("qFaceDetect"),
                          QStringLiteral("lastImageFileDir"), path);

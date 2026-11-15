@@ -1,0 +1,1610 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 35252a83a5eaa585d36b1adc4ec16833ab8b9a31..f32ee553020b1ff1d09f96cb050ecea3fda18600 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -11,7 +11,7 @@ set(GGML_VERSION_BASE "${GGML_VERSION_MAJOR}.${GGML_VERSION_MINOR}.${GGML_VERSIO
+ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+ 
+ find_program(GIT_EXE NAMES git git.exe NO_CMAKE_FIND_ROOT_PATH)
+-if(GIT_EXE)
++if(GIT_EXE AND NOT GGML_BUILD_COMMIT)
+     # Get current git commit hash
+     execute_process(COMMAND ${GIT_EXE} rev-parse --short HEAD
+         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+@@ -198,6 +198,10 @@ option(GGML_LLAMAFILE                       "ggml: use LLAMAFILE"
+ 
+ option(GGML_CUDA                            "ggml: use CUDA"                                  OFF)
+ set   (GGML_CUDA_CCCL_VERSION "" CACHE STRING "ggml: CCCL git tag to fetch, empty to use the version bundled with the installed CUDA Toolkit")
++# Strict CUDA arithmetic is the default because SAM 3D's native parity gate
++# compares real decoder intermediates against the official PyTorch result.
++# Performance experiments can explicitly opt into fast math.
++option(GGML_CUDA_FAST_MATH                  "ggml: compile CUDA kernels with fast math"       OFF)
+ option(GGML_MUSA                            "ggml: use MUSA"                                  OFF)
+ option(GGML_CUDA_FORCE_MMQ                  "ggml: use mmq kernels instead of cuBLAS"         OFF)
+ option(GGML_CUDA_FORCE_CUBLAS               "ggml: always use cuBLAS instead of mmq kernels"  OFF)
+@@ -339,6 +343,7 @@ set(GGML_PUBLIC_HEADERS
+     include/ggml-virtgpu.h
+     include/ggml-sycl.h
+     include/ggml-vulkan.h
++    include/ggml-vulkan-aliked.h
+     include/ggml-webgpu.h
+     include/ggml-zendnn.h
+     include/ggml-openvino.h
+diff --git a/include/ggml-vulkan-aliked.h b/include/ggml-vulkan-aliked.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..3d47f9f47a4dabb8ec464490c35a830eebfcfc48
+--- /dev/null
++++ b/include/ggml-vulkan-aliked.h
+@@ -0,0 +1,70 @@
++#pragma once
++
++#include "ggml-backend.h"
++#include "ggml.h"
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++// Returns true when ALIKED Vulkan compute pipelines are available on this backend.
++GGML_BACKEND_API bool ggml_vulkan_aliked_available(ggml_backend_t backend);
++
++// Drain VkAliked + ggml compute queues; reset open compute_ctx / descriptor idx.
++// Call at extract boundaries to avoid stale command buffers across custom ops.
++GGML_BACKEND_API bool ggml_vulkan_aliked_queue_idle(ggml_backend_t backend);
++
++GGML_BACKEND_API bool ggml_vulkan_aliked_whcn_to_nchw(ggml_backend_t backend,
++                                                      const ggml_tensor *whcn,
++                                                      ggml_tensor *nchw, int32_t c,
++                                                      int32_t h, int32_t w);
++
++GGML_BACKEND_API bool ggml_vulkan_aliked_nchw_to_whcn(ggml_backend_t backend,
++                                                      const ggml_tensor *nchw,
++                                                      ggml_tensor *whcn, int32_t c,
++                                                      int32_t h, int32_t w);
++
++// Copy WHCN tensor to dense WHCN (handles gallocr padded strides on src).
++GGML_BACKEND_API bool ggml_vulkan_aliked_dense_copy_whcn(ggml_backend_t backend,
++                                                         const ggml_tensor *src,
++                                                         ggml_tensor *dst, int32_t w,
++                                                         int32_t h, int32_t c);
++
++GGML_BACKEND_API bool ggml_vulkan_aliked_clamp_inplace(ggml_backend_t backend,
++                                                       ggml_tensor *data, size_t count,
++                                                       float min_value, float max_value);
++
++GGML_BACKEND_API bool ggml_vulkan_aliked_l2norm_inplace(
++    ggml_backend_t backend, ggml_tensor *data, int32_t channels, int32_t h,
++    int32_t w);
++
++GGML_BACKEND_API bool ggml_vulkan_aliked_deform_conv2d(
++    ggml_backend_t backend, const ggml_tensor *input, const ggml_tensor *offset,
++    const ggml_tensor *weight, const ggml_tensor *bias, ggml_tensor *output,
++    int32_t ic, int32_t ih, int32_t iw, int32_t oc, int32_t kh, int32_t kw,
++    int32_t pad, int32_t layout);
++
++// Scratch tensors (nms/tmp_a/tmp_b/tmp_c/block_keys/block_indices) must be pre-allocated
++// GpuTensors on the same backend. indices_dev is optional host-side index buffer upload target.
++GGML_BACKEND_API bool ggml_vulkan_aliked_run_dkd(
++    ggml_backend_t backend, const ggml_tensor *score_map, int32_t h, int32_t w,
++    int32_t radius, int32_t top_k, float scores_th, int32_t n_limit,
++    ggml_tensor *keypoints_norm, ggml_tensor *scores, int32_t *out_count,
++    ggml_tensor *nms, ggml_tensor *tmp_a, ggml_tensor *tmp_b, ggml_tensor *tmp_c,
++    ggml_tensor *block_keys, ggml_tensor *block_indices, ggml_tensor *indices_dev);
++
++GGML_BACKEND_API bool ggml_vulkan_aliked_run_sddh(
++    ggml_backend_t backend, const ggml_tensor *feature_map, int32_t dim, int32_t h,
++    int32_t w, const ggml_tensor *keypoints_norm, int32_t count, int32_t kernel_size,
++    int32_t n_pos, const ggml_tensor *offset_0_w, const ggml_tensor *offset_0_b,
++    const ggml_tensor *offset_2_w, const ggml_tensor *offset_2_b,
++    const ggml_tensor *sf_conv_w, const ggml_tensor *agg_weights,
++    ggml_tensor *workspace, ggml_tensor *descriptors);
++
++GGML_BACKEND_API bool ggml_vulkan_aliked_upsample_bilinear(
++    ggml_backend_t backend, const ggml_tensor *input, ggml_tensor *output, int32_t ic,
++    int32_t ih, int32_t iw, int32_t out_h, int32_t out_w);
++
++#ifdef __cplusplus
++}
++#endif
+diff --git a/include/ggml.h b/include/ggml.h
+index c37ba947140e1b84c67440632691323b05e96329..75fc1605f0b6414acc4092bbec9893620f84918e 100644
+--- a/include/ggml.h
++++ b/include/ggml.h
+@@ -226,7 +226,7 @@
+ #define GGML_MAX_OP_PARAMS      64
+ 
+ #ifndef GGML_MAX_NAME
+-#   define GGML_MAX_NAME        64
++#   define GGML_MAX_NAME        128
+ #endif
+ 
+ #define GGML_DEFAULT_N_THREADS  4
+@@ -252,6 +252,8 @@
+ #define GGML_ROPE_TYPE_MROPE  8
+ #define GGML_ROPE_TYPE_VISION 24
+ #define GGML_ROPE_TYPE_IMROPE 40 // binary: 101000
++#define GGML_ROPE_TYPE_CUSTOM_FREQS 64
++#define GGML_ROPE_TYPE_CUSTOM_QKV 65
+ 
+ #define GGML_MROPE_SECTIONS   4
+ 
+@@ -454,6 +456,11 @@ extern "C" {
+     enum ggml_op_hint {
+         GGML_HINT_NONE             = 0,
+         GGML_HINT_SRC0_IS_HADAMARD = 1,
++        // Preserve F32 activations for quantized weights instead of Q8 dot products.
++        GGML_HINT_QUANT_F32_INPUT  = 2,
++        GGML_HINT_STRICT_F32       = 3,
++        // CUDA dot product in increasing K order, one rounded FMA per term.
++        GGML_HINT_SERIAL_F32       = 4,
+     };
+ 
+     // model file types
+@@ -569,6 +576,17 @@ extern "C" {
+         GGML_OP_FILL,
+ 
+         GGML_OP_FLASH_ATTN_EXT,
++        // CUDA-only SAM 3D compatibility operator. It reproduces the F16
++        // aligned memory-efficient attention layout selected by PyTorch 2.5.
++        GGML_OP_SAM3D_F16_MASKED_ATTN,
++        // SparseTensor downsample used by SAM 3D. The source rows are
++        // accumulated into their owning destination rows before the mean is
++        // applied; replacing this with a fixed gather/add tree changes F16
++        // rounding semantics.
++        GGML_OP_SAM3D_SPARSE_SCATTER_MEAN,
++        // CUDA-only F16 submanifold convolution. The indices are offset-major
++        // [27, tokens], mask/argsort mirror spconv's sparse kernel inputs.
++        GGML_OP_SAM3D_SPARSE_CONV_F16,
+         GGML_OP_FLASH_ATTN_BACK,
+         GGML_OP_SSM_CONV,
+         GGML_OP_SSM_SCAN,
+@@ -601,6 +619,9 @@ extern "C" {
+ 
+         GGML_OP_GLU,
+ 
++        GGML_OP_POW,
++        GGML_OP_GRID_SAMPLE,
++
+         GGML_OP_COUNT,
+     };
+ 
+@@ -994,6 +1015,13 @@ extern "C" {
+             struct ggml_tensor  * a,
+             struct ggml_tensor  * b);
+ 
++    // elementwise powf(a, b) over same-shape F32 tensors (CUDA: precise
++    // libdevice powf, as PyTorch's pow kernel)
++    GGML_API struct ggml_tensor * ggml_pow(
++            struct ggml_context * ctx,
++            struct ggml_tensor  * a,
++            struct ggml_tensor  * b);
++
+     GGML_API struct ggml_tensor * ggml_sqr(
+             struct ggml_context * ctx,
+             struct ggml_tensor  * a);
+@@ -1050,6 +1078,16 @@ extern "C" {
+             struct ggml_context * ctx,
+             struct ggml_tensor  * a);
+ 
++    // Select arithmetic policy explicitly for SIN, COS, LOG and the SILU/TANH
++    // unary ops. STRICT_F32 makes CUDA evaluate contiguous F32 data with the
++    // precise libdevice functions and IEEE division PyTorch's kernels use
++    // (sinf, cosf, logf, tanhf, x / (1 + expf(-x))), unfused; other
++    // shapes/backends are not claimed. A strict GELU (tanh form) is defined
++    // only as the cublasLt GELU_BIAS epilogue of a strict MUL_MAT + bias ADD
++    // that directly feeds it (PyTorch _addmm_activation); CUDA aborts on a
++    // strict GELU it cannot fuse.
++    GGML_API void ggml_elementwise_set_hint(struct ggml_tensor * a, enum ggml_op_hint hint);
++
+     // return scalar
+     GGML_API struct ggml_tensor * ggml_sum(
+             struct ggml_context * ctx,
+@@ -1060,6 +1098,9 @@ extern "C" {
+             struct ggml_context * ctx,
+             struct ggml_tensor  * a);
+ 
++    // STRICT_F32 reproduces PyTorch 2.6's contiguous CUDA sum reduction.
++GGML_API void ggml_sum_rows_set_hint(struct ggml_tensor * a, enum ggml_op_hint hint);
++
+     GGML_API struct ggml_tensor * ggml_cumsum(
+         struct ggml_context * ctx,
+         struct ggml_tensor  * a);
+@@ -1396,6 +1437,10 @@ extern "C" {
+             struct ggml_tensor  * a,
+             float                 eps);
+ 
++    // STRICT_F32 uses the PyTorch vectorized Welford LayerNorm on CUDA and
++    // fuses a directly following MUL/ADD affine; other cases are unchanged.
++    GGML_API void ggml_norm_set_hint(struct ggml_tensor * a, enum ggml_op_hint hint);
++
+     GGML_API struct ggml_tensor * ggml_rms_norm(
+             struct ggml_context * ctx,
+             struct ggml_tensor  * a,
+@@ -1432,6 +1477,9 @@ extern "C" {
+             struct ggml_tensor  * a,
+             float                 eps);
+ 
++    // STRICT_F32 reproduces PyTorch 2.6 F.normalize CUDA reduction and division.
++GGML_API void ggml_l2_norm_set_hint(struct ggml_tensor * a, enum ggml_op_hint hint);
++
+     // a - x
+     // b - dy
+     GGML_API struct ggml_tensor * ggml_rms_norm_back(
+@@ -1484,6 +1532,16 @@ extern "C" {
+             struct ggml_tensor  * a,
+             struct ggml_tensor  * b);
+ 
++    // Matrix multiplication with an explicit output type. Backends may support
++    // fewer output types than ggml_mul_mat; callers must query supports_op.
++    // CUDA supports F16 output for F16-weight GEMMs, avoiding the otherwise
++    // mandatory F16 -> F32 conversion when the following ops stay in F16.
++    GGML_API struct ggml_tensor * ggml_mul_mat_cast(
++            struct ggml_context * ctx,
++            struct ggml_tensor  * a,
++            struct ggml_tensor  * b,
++            enum ggml_type        type);
++
+     // change the precision of a matrix multiplication
+     // set to GGML_PREC_F32 for higher precision (useful for phi-2)
+     GGML_DEPRECATED(GGML_API void ggml_mul_mat_set_prec(
+@@ -1491,10 +1549,13 @@ extern "C" {
+             enum ggml_prec       prec),
+         "use ggml_prec_set_acc() instead");
+ 
+-    // change the hint of a matrix multiplication
++    // change the hint of a matrix multiplication; also accepts GGML_OP_OUT_PROD,
++    // where STRICT_F32 makes CUDA issue the one cublasSgemmStridedBatched call
++    // PyTorch's F32 bmm issues, in CUBLAS_DEFAULT_MATH
+     GGML_API void ggml_mul_mat_set_hint(
+             struct ggml_tensor * a,
+             enum ggml_op_hint    hint);
++    GGML_API enum ggml_op_hint ggml_mul_mat_get_hint(const struct ggml_tensor * a);
+ 
+     // indirect matrix multiplication
+     //
+@@ -1833,6 +1894,11 @@ extern "C" {
+             struct ggml_tensor * a,
+             struct ggml_tensor * sinks);
+ 
++    // Select arithmetic policy explicitly. Currently STRICT_F32 uses the
++    // precise persistent-warp CUDA kernel for unmasked rows up to 1024 columns;
++    // other shapes/backends retain the general implementation.
++    GGML_API void ggml_soft_max_set_hint(struct ggml_tensor * a, enum ggml_op_hint hint);
++
+     GGML_API struct ggml_tensor * ggml_soft_max_ext_back(
+             struct ggml_context * ctx,
+             struct ggml_tensor  * a,
+@@ -1860,6 +1926,27 @@ extern "C" {
+             int                   n_dims,
+             int                   mode);
+ 
++    // Apply interleaved complex RoPE using precomputed [2, head_dim/2, n_token]
++    // F32 (cos, sin) pairs. This avoids decomposing a complex multiply into
++    // multiple elementwise graph nodes when frequencies are model tensors.
++    GGML_API struct ggml_tensor * ggml_rope_custom_freqs(
++            struct ggml_context * ctx,
++            struct ggml_tensor  * a,
++            struct ggml_tensor  * freqs);
++
++    GGML_API struct ggml_tensor * ggml_rope_custom_freqs_cast(
++            struct ggml_context * ctx,
++            struct ggml_tensor  * a,
++            struct ggml_tensor  * freqs,
++            enum ggml_type        type);
++
++    GGML_API struct ggml_tensor * ggml_rope_custom_qkv(
++            struct ggml_context * ctx,
++            struct ggml_tensor  * qkv,
++            struct ggml_tensor  * freqs,
++            int                   head_dim,
++            int                   n_heads);
++
+     // in-place, returns view(a)
+     GGML_API struct ggml_tensor * ggml_rope_inplace(
+             struct ggml_context * ctx,
+@@ -2249,6 +2336,11 @@ extern "C" {
+             struct ggml_tensor  * b,
+             int                   stride);
+ 
++    // set to GGML_PREC_F32 to forbid reduced-precision (TF32) GEMM paths
++    GGML_API void ggml_conv_transpose_2d_p0_set_prec(
++            struct ggml_tensor * a,
++            enum ggml_prec       prec);
++
+     GGML_API struct ggml_tensor * ggml_conv_2d_direct(
+             struct ggml_context * ctx,
+             struct ggml_tensor  * a,   // convolution kernel [KW, KH, IC, OC]
+@@ -2260,6 +2352,18 @@ extern "C" {
+             int                   d0,  // dilation dimension 0
+             int                   d1); // dilation dimension 1
+ 
++    GGML_API struct ggml_tensor * ggml_conv_2d_direct_bias_silu(
++            struct ggml_context * ctx,
++            struct ggml_tensor  * a,
++            struct ggml_tensor  * b,
++            struct ggml_tensor  * bias,
++            int                   s0,
++            int                   s1,
++            int                   p0,
++            int                   p1,
++            int                   d0,
++            int                   d1);
++
+     GGML_API struct ggml_tensor * ggml_conv_3d_direct(
+             struct ggml_context * ctx,
+             struct ggml_tensor  * a,   // kernel [KW, KH, KD, IC * OC]
+@@ -2411,6 +2515,15 @@ extern "C" {
+             int                   p0,
+             int                   p1);
+ 
++    // F.grid_sample(a, grid, mode="bilinear", padding_mode="zeros",
++    // align_corners=False). a: [W, H, C, N] F32, grid: [2, W_out, H_out, N]
++    // F32 normalized (x, y), result: [W_out, H_out, C, N]. CUDA evaluates
++    // PyTorch's grid_sampler_2d_kernel expression with precise arithmetic.
++    GGML_API struct ggml_tensor * ggml_grid_sample(
++            struct ggml_context * ctx,
++            struct ggml_tensor  * a,
++            struct ggml_tensor  * grid);
++
+     // Move tensor elements by an offset given for each dimension. Elements that
+     // are shifted beyond the last position are wrapped around to the beginning.
+     GGML_API struct ggml_tensor * ggml_roll(
+@@ -2517,6 +2630,42 @@ extern "C" {
+             struct ggml_tensor * a,
+             struct ggml_tensor * sinks);
+ 
++    // q, k and v are contiguous F16 tensors with shape
++    // [head_dim, heads, tokens, batch]. sequence_lengths is contiguous I32
++    // and describes consecutive independent attention windows. The operator
++    // is CUDA-only; portable callers use their normal graph decomposition.
++    GGML_API struct ggml_tensor * ggml_sam3d_f16_masked_attn(
++            struct ggml_context * ctx,
++            struct ggml_tensor  * q,
++            struct ggml_tensor  * k,
++            struct ggml_tensor  * v,
++            struct ggml_tensor  * sequence_lengths,
++            float                 scale);
++
++    // Sparse F16 scatter-reduce(mean). features is [channels, fine_rows],
++    // row_indices is I32 [fine_rows], and counts is F32 [1, coarse_rows].
++    // Each source row is accumulated with PyTorch's fastAtomicAdd half2
++    // semantics before an F32-opmath division by the supplied divisor
++    // (|children| + 1, including the initial zero row).
++    GGML_API struct ggml_tensor * ggml_sam3d_sparse_scatter_mean(
++            struct ggml_context * ctx,
++            struct ggml_tensor  * features,
++            struct ggml_tensor  * row_indices,
++            struct ggml_tensor  * inverse_counts);
++
++    // CUDA-only F16 submanifold convolution. input is [channels, tokens],
++    // weight is [27 * channels, output_channels], bias is [output_channels],
++    // indices is I32 [27, tokens] in offset-major layout, mask and argsort
++    // are I32 [tokens] carrying spconv's uint32 mask and row order.
++    GGML_API struct ggml_tensor * ggml_sam3d_sparse_conv_f16(
++            struct ggml_context * ctx,
++            struct ggml_tensor  * input,
++            struct ggml_tensor  * weight,
++            struct ggml_tensor  * bias,
++            struct ggml_tensor  * indices,
++            struct ggml_tensor  * mask,
++            struct ggml_tensor  * mask_argsort);
++
+     // TODO: needs to be adapted to ggml_flash_attn_ext
+     GGML_API struct ggml_tensor * ggml_flash_attn_back(
+            struct ggml_context * ctx,
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index fe001a042a6a811b570e46f304a5585558fbea1b..60da180f301adeab87b95a3882c826a04d2913df 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -510,13 +510,36 @@ if (GGML_CPU_ALL_VARIANTS)
+             # MSVC 2022 doesn't support BF16 intrinsics without `/arch:AVX10.1` ?!
+             # https://learn.microsoft.com/en-us/cpp/intrinsics/x64-amd64-intrinsics-list?view=msvc-170
+             # https://learn.microsoft.com/en-us/cpp/build/reference/arch-x64?view=msvc-170
+-            ggml_add_cpu_backend_variant(cooperlake     SSE42 AVX F16C FMA AVX2 BMI2 AVX512 AVX512_VNNI AVX512_BF16)
+-            ggml_add_cpu_backend_variant(zen4           SSE42 AVX F16C FMA AVX2 BMI2 AVX512 AVX512_VBMI AVX512_VNNI AVX512_BF16)
++            check_cxx_compiler_flag("-mavx512bf16" GGML_CXX_SUPPORTS_AVX512_BF16)
++            if (GGML_CXX_SUPPORTS_AVX512_BF16)
++                ggml_add_cpu_backend_variant(cooperlake     SSE42 AVX F16C FMA AVX2 BMI2 AVX512 AVX512_VNNI AVX512_BF16)
++                ggml_add_cpu_backend_variant(zen4           SSE42 AVX F16C FMA AVX2 BMI2 AVX512 AVX512_VBMI AVX512_VNNI AVX512_BF16)
++            else()
++                message(STATUS "Skipping cooperlake/zen4 CPU backends: compiler lacks -mavx512bf16")
++            endif()
++        endif()
++        if (NOT MSVC)
++            check_cxx_compiler_flag("-mavxvnni" GGML_CXX_SUPPORTS_AVX_VNNI)
++            if (GGML_CXX_SUPPORTS_AVX_VNNI)
++                ggml_add_cpu_backend_variant(alderlake          SSE42 AVX F16C FMA AVX2 BMI2 AVX_VNNI)
++            else()
++                message(STATUS "Skipping alderlake CPU backend: compiler lacks -mavxvnni")
++            endif()
++        else()
++            ggml_add_cpu_backend_variant(alderlake          SSE42 AVX F16C FMA AVX2 BMI2 AVX_VNNI)
+         endif()
+-        ggml_add_cpu_backend_variant(alderlake          SSE42 AVX F16C FMA AVX2 BMI2 AVX_VNNI)
+         if (NOT MSVC)
+             # MSVC doesn't support AMX
+-            ggml_add_cpu_backend_variant(sapphirerapids SSE42 AVX F16C FMA AVX2 BMI2 AVX512 AVX512_VBMI AVX512_VNNI AVX512_BF16 AMX_TILE AMX_INT8)
++            if (NOT DEFINED GGML_CXX_SUPPORTS_AVX512_BF16)
++                check_cxx_compiler_flag("-mavx512bf16" GGML_CXX_SUPPORTS_AVX512_BF16)
++            endif()
++            check_cxx_compiler_flag("-mamx-tile" GGML_CXX_SUPPORTS_AMX_TILE)
++            check_cxx_compiler_flag("-mamx-int8" GGML_CXX_SUPPORTS_AMX_INT8)
++            if (GGML_CXX_SUPPORTS_AVX512_BF16 AND GGML_CXX_SUPPORTS_AMX_TILE AND GGML_CXX_SUPPORTS_AMX_INT8)
++                ggml_add_cpu_backend_variant(sapphirerapids SSE42 AVX F16C FMA AVX2 BMI2 AVX512 AVX512_VBMI AVX512_VNNI AVX512_BF16 AMX_TILE AMX_INT8)
++            else()
++                message(STATUS "Skipping sapphirerapids CPU backend: compiler lacks AMX/BF16 flags")
++            endif()
+         endif()
+     elseif(GGML_SYSTEM_ARCH STREQUAL "ARM")
+         if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+@@ -543,7 +566,16 @@ if (GGML_CPU_ALL_VARIANTS)
+         elseif (APPLE)
+             ggml_add_cpu_backend_variant(apple_m1             DOTPROD)
+             ggml_add_cpu_backend_variant(apple_m2_m3          DOTPROD MATMUL_INT8)
+-            ggml_add_cpu_backend_variant(apple_m4             DOTPROD MATMUL_INT8 NOSVE SME)
++            # NOTE: apple_m4 variant (+nosve+sme) removed.
++            # Apple Clang's handling of +nosve+sme is unreliable across versions:
++            # some versions define __ARM_FEATURE_SVE via streaming SVE (+sme) but
++            # +nosve forbids the non-streaming SVE intrinsics (svexpa_f32 etc.)
++            # that vec.h uses.  This cannot be detected reliably at CMake time
++            # (check_cxx_source_compiles may pass while actual ggml build fails).
++            # M4 Macs fall back to apple_m2_m3 (DOTPROD + MATMUL_INT8) with
++            # negligible performance difference.
++            # See: GitHub CI macOS-14 runner (M1, Xcode 15.4/16.x) fails with
++            # "'svexpa_f32' needs target feature sve" when apple_m4 is enabled.
+         else()
+             message(FATAL_ERROR "Unsupported ARM target OS: ${CMAKE_SYSTEM_NAME}")
+         endif()
+diff --git a/src/ggml-cpu/CMakeLists.txt b/src/ggml-cpu/CMakeLists.txt
+index d347757e18548af890c485a54cd7159a4586c54e..52d89a79ecbeeef61d153ccb1906ba7083c4ddea 100644
+--- a/src/ggml-cpu/CMakeLists.txt
++++ b/src/ggml-cpu/CMakeLists.txt
+@@ -369,6 +369,13 @@ function(ggml_add_cpu_backend_variant_impl tag_name)
+                 if (GGML_AVX2)
+                     list(APPEND ARCH_FLAGS -mavx2)
+                     list(APPEND ARCH_DEFINITIONS GGML_AVX2)
++                    if (CMAKE_C_COMPILER_ID STREQUAL "GNU" AND
++                        CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
++                        # Keep native-width memory operations in portable AVX2
++                        # builds without changing ISA or floating-point math.
++                        list(APPEND ARCH_FLAGS -mno-avx256-split-unaligned-load
++                                               -mno-avx256-split-unaligned-store)
++                    endif()
+                 endif()
+                 if (GGML_AVX_VNNI)
+                     list(APPEND ARCH_FLAGS -mavxvnni)
+diff --git a/src/ggml-cpu/binary-ops.cpp b/src/ggml-cpu/binary-ops.cpp
+index 75e38290015a6fd6137fa09142585051cf27179b..933770518514c6c5e1613ddbc0197d43e8dba511 100644
+--- a/src/ggml-cpu/binary-ops.cpp
++++ b/src/ggml-cpu/binary-ops.cpp
+@@ -22,6 +22,10 @@ static inline float op_div(float a, float b) {
+     return a / b;
+ }
+ 
++static inline float op_pow(float a, float b) {
++    return powf(a, b);
++}
++
+ template <float (*op)(float, float), typename src0_t, typename src1_t, typename dst_t>
+ static inline void vec_binary_op_contiguous(const int64_t n, dst_t * z, const src0_t * x, const src1_t * y) {
+     constexpr auto src0_to_f32 = type_conversion_table<src0_t>::to_f32;
+@@ -152,3 +156,7 @@ void ggml_compute_forward_mul(const ggml_compute_params * params, ggml_tensor *
+ void ggml_compute_forward_div(const ggml_compute_params * params, ggml_tensor * dst) {
+     binary_op<op_div>(params, dst);
+ }
++
++void ggml_compute_forward_pow(const ggml_compute_params * params, ggml_tensor * dst) {
++    binary_op<op_pow>(params, dst);
++}
+diff --git a/src/ggml-cpu/binary-ops.h b/src/ggml-cpu/binary-ops.h
+index aca1d89be7e538239598610bd8a809ccb3dcdcf5..c0e5a0c5bc8a7409a14a4c48a57449d0e05150d1 100644
+--- a/src/ggml-cpu/binary-ops.h
++++ b/src/ggml-cpu/binary-ops.h
+@@ -10,6 +10,7 @@ void ggml_compute_forward_add_non_quantized(const struct ggml_compute_params * p
+ void ggml_compute_forward_sub(const struct ggml_compute_params * params, struct ggml_tensor * dst);
+ void ggml_compute_forward_mul(const struct ggml_compute_params * params, struct ggml_tensor * dst);
+ void ggml_compute_forward_div(const struct ggml_compute_params * params, struct ggml_tensor * dst);
++void ggml_compute_forward_pow(const struct ggml_compute_params * params, struct ggml_tensor * dst);
+ 
+ #ifdef __cplusplus
+ }
+diff --git a/src/ggml-cpu/ggml-cpu.c b/src/ggml-cpu/ggml-cpu.c
+index ab82e3d6c04395b702ccbf3a9ac3e954d8d8cfcf..0036693baf3218fdfa4c8f1a29f0faa38f8065be 100644
+--- a/src/ggml-cpu/ggml-cpu.c
++++ b/src/ggml-cpu/ggml-cpu.c
+@@ -1305,17 +1305,88 @@ void ggml_compute_forward_mul_mat(
+ 
+     const bool src1_cont = ggml_is_contiguous(src1);
+ 
+-    if (!params->use_ref && src1_cont) {
++    /* rfdetr.cpp patch: merge per-broadcast llamafile_sgemm calls when src0
++     * is unbroadcasted along a dim and src1/dst pack that dim contiguously.
++     *
++     * Why: ggml's mul_mat broadcasts over ne12/ne13 by issuing one sgemm per
++     * (i12,i13) pair. For e.g. windowed attention (ne12=16 windows, ne11=101
++     * tokens) that's 16 sgemm calls of N=101 instead of one call of N=1616.
++     * Per-call overhead (ggml_barrier, chunk setup, kernel prelude) and poor
++     * thread utilization on small N strictly dominate the actual FMA work.
++     * Folding the 16 windows into a single N=1616 call gives 4-5x speedup on
++     * those shapes (see git log for measurements). */
++    if (!params->use_ref && src1_cont && strcmp(dst->name, "relateanything_matmul") != 0 &&
++        strncmp(dst->name, "instantmesh_cpu_matmul_", sizeof("instantmesh_cpu_matmul_") - 1) != 0) {
++        const size_t ts_src0 = ggml_type_size(src0->type);
++        const size_t ts_src1 = ggml_type_size(src1->type);
++        const size_t ts_dst  = ggml_type_size(dst->type);
++
++        /* dst must be row-contiguous along the dims we want to fold. */
++        const bool dst_pack_2 = (nb1 == ts_dst * ne0)  && (nb2 == nb1 * ne1);
++        const bool dst_pack_3 = dst_pack_2             && (nb3 == nb2 * ne2);
++
++        /* src1 must pack the dim we're folding. For src1_cont, nb12 =
++         * nb11*ne11 and nb13 = nb12*ne12, so:
++         *   - dim 2 always packs (stride = ne11 rows)
++         *   - dim 3 packs across BOTH 12 and 13 only if ne12==1 OR we fold
++         *     both 12 and 13 together. */
++        const bool src1_pack_2 = (nb12 == nb11 * ne11);
++
++        /* src0 must NOT change as we step through the dim, i.e. ne0X == 1
++         * (purely broadcasted), so all (i12, i13) read the same weight page. */
++        const bool src0_share_2 = (ne02 == 1);
++        const bool src0_share_3 = (ne03 == 1);
++
++        /* fold_2_3: collapse both ne12 and ne13 into a flat N. Requires src0
++         * to be broadcast on BOTH dims; src1 to be fully packed (it is, when
++         * src1_cont). */
++        const bool fold_2_3 = src0_share_2 && src0_share_3 && src1_pack_2 &&
++                              dst_pack_3 && (ne12 * ne13 > 1);
++
++        /* fold_2: per-i13 sgemm collapsing ne12 into N. Used when ne03 > 1
++         * but ne02 == 1. */
++        const bool fold_2_only = !fold_2_3 && src0_share_2 && src1_pack_2 &&
++                                 dst_pack_2 && ne12 > 1;
++
++        if (fold_2_3) {
++            /* Single sgemm: collapse both broadcast dims into a flat N. */
++            if (!llamafile_sgemm(params,
++                                 ne01, ne11 * ne12 * ne13, ne00/ggml_blck_size(src0->type),
++                                 (const char *)src0->data,
++                                 nb01/ts_src0,
++                                 (const char *)src1->data,
++                                 nb11/ts_src1,
++                                 (char *)dst->data,
++                                 nb1/ts_dst,
++                                 src0->type, src1->type, dst->type))
++                goto UseGgmlGemm1;
++            return;
++        }
++        if (fold_2_only) {
++            for (int64_t i13 = 0; i13 < ne13; i13++)
++                if (!llamafile_sgemm(params,
++                                     ne01, ne11 * ne12, ne00/ggml_blck_size(src0->type),
++                                     (const char *)src0->data + i13/r3*nb03,
++                                     nb01/ts_src0,
++                                     (const char *)src1->data + i13*nb13,
++                                     nb11/ts_src1,
++                                     (char *)dst->data + i13*nb3,
++                                     nb1/ts_dst,
++                                     src0->type, src1->type, dst->type))
++                    goto UseGgmlGemm1;
++            return;
++        }
++
+         for (int64_t i13 = 0; i13 < ne13; i13++)
+             for (int64_t i12 = 0; i12 < ne12; i12++)
+                 if (!llamafile_sgemm(params,
+                                      ne01, ne11, ne00/ggml_blck_size(src0->type),
+                                      (const char *)src0->data + i12/r2*nb02 + i13/r3*nb03,
+-                                     nb01/ggml_type_size(src0->type),
++                                     nb01/ts_src0,
+                                      (const char *)src1->data + i12*nb12 + i13*nb13,
+-                                     nb11/ggml_type_size(src1->type),
++                                     nb11/ts_src1,
+                                      (char *)dst->data + i12*nb2 + i13*nb3,
+-                                     nb1/ggml_type_size(dst->type),
++                                     nb1/ts_dst,
+                                      src0->type,
+                                      src1->type,
+                                      dst->type))
+@@ -1384,20 +1455,69 @@ UseGgmlGemm1:;
+     ggml_barrier(params->threadpool);
+ 
+ #if GGML_USE_LLAMAFILE
+-    if (!params->use_ref && src1->type != vec_dot_type) {
++    if (!params->use_ref && src1->type != vec_dot_type && strcmp(dst->name, "relateanything_matmul") != 0 &&
++        strncmp(dst->name, "instantmesh_cpu_matmul_", sizeof("instantmesh_cpu_matmul_") - 1) != 0) {
+         const void* wdata = (src1->type == vec_dot_type) ? src1->data : params->wdata;
+         const size_t row_size = ggml_row_size(vec_dot_type, ne10);
++        const size_t ts_src0 = ggml_type_size(src0->type);
++        const size_t ts_vdt  = ggml_type_size(vec_dot_type);
++        const size_t ts_dst  = ggml_type_size(dst->type);
++
++        /* Same broadcast-fold as the F32 path above. wdata layout from
++         * the from_float loop iterates (i13, i12, i11) outer→inner, so the
++         * memory order is i13-outermost: offset(i12, i13) =
++         *   (i12*ne11 + i13*ne12*ne11)*row_size
++         * Stride between consecutive i12 (i13 fixed): ne11*row_size  -> packs dim 2
++         * Stride between consecutive i13 (i12 fixed): ne12*ne11*row_size -> NOT packed
++         *   (those rows are interleaved with other heads). fold_3 is therefore
++         *   only safe in the no-wdata path above. */
++        const bool dst_pack_2  = (nb1 == ts_dst * ne0)  && (nb2 == nb1 * ne1);
++        const bool dst_pack_3  = dst_pack_2             && (nb3 == nb2 * ne2);
++        const bool src0_share_2 = (ne02 == 1);
++        const bool src0_share_3 = (ne03 == 1);
++
++        const bool fold_2_3 = src0_share_2 && src0_share_3 && dst_pack_3 &&
++                              (ne12 * ne13 > 1);
++        const bool fold_2   = src0_share_2 && dst_pack_2 && ne12 > 1;
++
++        if (fold_2_3) {
++            if (!llamafile_sgemm(params,
++                                 ne01, ne11 * ne12 * ne13, ne00/ggml_blck_size(src0->type),
++                                 (const char *)src0->data,
++                                 nb01/ts_src0,
++                                 (const char *)wdata,
++                                 row_size/ts_vdt,
++                                 (char *)dst->data,
++                                 nb1/ts_dst,
++                                 src0->type, vec_dot_type, dst->type))
++                goto UseGgmlGemm2;
++            return;
++        }
++        if (fold_2) {
++            for (int64_t i13 = 0; i13 < ne13; i13++)
++                if (!llamafile_sgemm(params,
++                                     ne01, ne11 * ne12, ne00/ggml_blck_size(src0->type),
++                                     (const char *)src0->data + i13/r3*nb03,
++                                     nb01/ts_src0,
++                                     (const char *)wdata + i13*ne12*ne11*row_size,
++                                     row_size/ts_vdt,
++                                     (char *)dst->data + i13*nb3,
++                                     nb1/ts_dst,
++                                     src0->type, vec_dot_type, dst->type))
++                    goto UseGgmlGemm2;
++            return;
++        }
+ 
+         for (int64_t i13 = 0; i13 < ne13; i13++)
+             for (int64_t i12 = 0; i12 < ne12; i12++)
+                 if (!llamafile_sgemm(params,
+                                      ne01, ne11, ne00/ggml_blck_size(src0->type),
+                                      (const char *)src0->data + i12/r2*nb02 + i13/r3*nb03,
+-                                     nb01/ggml_type_size(src0->type),
++                                     nb01/ts_src0,
+                                      (const char *)wdata + (i12*ne11 + i13*ne12*ne11)*row_size,
+-                                     row_size/ggml_type_size(vec_dot_type),
++                                     row_size/ts_vdt,
+                                      (char *)dst->data + i12*nb2 + i13*nb3,
+-                                     nb1/ggml_type_size(dst->type),
++                                     nb1/ts_dst,
+                                      src0->type,
+                                      vec_dot_type,
+                                      dst->type))
+@@ -1782,6 +1900,10 @@ static void ggml_compute_forward(struct ggml_compute_params * params, struct ggm
+             {
+                 ggml_compute_forward_div(params, tensor);
+             } break;
++        case GGML_OP_POW:
++            {
++                ggml_compute_forward_pow(params, tensor);
++            } break;
+         case GGML_OP_SQR:
+             {
+                 ggml_compute_forward_sqr(params, tensor);
+@@ -1902,6 +2024,14 @@ static void ggml_compute_forward(struct ggml_compute_params * params, struct ggm
+             {
+                 ggml_compute_forward_set_rows(params, tensor);
+             } break;
++        case GGML_OP_SAM3D_SPARSE_SCATTER_MEAN:
++            {
++                ggml_compute_forward_sam3d_sparse_scatter_mean(params, tensor);
++            } break;
++        case GGML_OP_SAM3D_SPARSE_CONV_F16:
++            {
++                ggml_compute_forward_sam3d_sparse_conv_f16(params, tensor);
++            } break;
+         case GGML_OP_DIAG:
+             {
+                 ggml_compute_forward_diag(params, tensor);
+@@ -1998,6 +2128,10 @@ static void ggml_compute_forward(struct ggml_compute_params * params, struct ggm
+             {
+                 ggml_compute_forward_roll(params, tensor);
+             } break;
++        case GGML_OP_GRID_SAMPLE:
++            {
++                ggml_compute_forward_grid_sample(params, tensor);
++            } break;
+         case GGML_OP_ARANGE:
+             {
+                 ggml_compute_forward_arange(params, tensor);
+@@ -2030,6 +2164,10 @@ static void ggml_compute_forward(struct ggml_compute_params * params, struct ggm
+             {
+                 ggml_compute_forward_flash_attn_ext(params, tensor);
+             } break;
++        case GGML_OP_SAM3D_F16_MASKED_ATTN:
++            {
++                GGML_ABORT("SAM3D F16 masked attention requires the CUDA backend");
++            } break;
+         case GGML_OP_FLASH_ATTN_BACK:
+             {
+                 int32_t t = ggml_get_op_params_i32(tensor, 0);
+@@ -2351,6 +2489,7 @@ static int ggml_get_n_tasks(struct ggml_tensor * node, int n_threads) {
+         case GGML_OP_SILU_BACK:
+         case GGML_OP_MUL:
+         case GGML_OP_DIV:
++        case GGML_OP_POW:
+         case GGML_OP_NORM:
+         case GGML_OP_RMS_NORM:
+         case GGML_OP_RMS_NORM_BACK:
+@@ -2365,6 +2504,8 @@ static int ggml_get_n_tasks(struct ggml_tensor * node, int n_threads) {
+                 n_tasks = n_threads;
+             } break;
+         case GGML_OP_GET_ROWS:
++        case GGML_OP_SAM3D_SPARSE_SCATTER_MEAN:
++        case GGML_OP_SAM3D_SPARSE_CONV_F16:
+             {
+                 // FIXME: get_rows can use additional threads, but the cost of launching additional threads
+                 // decreases performance with GPU offloading
+@@ -2402,6 +2543,7 @@ static int ggml_get_n_tasks(struct ggml_tensor * node, int n_threads) {
+         case GGML_OP_IM2COL:
+         case GGML_OP_IM2COL_BACK:
+         case GGML_OP_IM2COL_3D:
++        case GGML_OP_GRID_SAMPLE:
+         case GGML_OP_CONV_2D:
+         case GGML_OP_CONV_3D:
+         case GGML_OP_CONV_2D_DW:
+@@ -2926,6 +3068,14 @@ struct ggml_cplan ggml_graph_plan(
+                         }
+                     } break;
+                 case GGML_OP_SOFT_MAX:
++                    {
++                        // the soft_max kernel uses a per-thread scratch row of
++                        // (ne00 + CACHE_LINE_SIZE_F32) floats; the old estimate
++                        // (ne00 * n_tasks) under-reserved the cache-line slack
++                        // and wrote past the work buffer with n_threads > 1.
++                        cur = ggml_type_size(GGML_TYPE_F32) *
++                              (node->ne[0] + 16) * n_tasks;
++                    } break;
+                 case GGML_OP_ROPE:
+                 case GGML_OP_ROPE_BACK:
+                     {
+@@ -3904,22 +4054,7 @@ void ggml_cpu_init(void) {
+ 
+             GGML_PRINT_DEBUG("%s: GELU, Quick GELU, SILU and EXP tables initialized in %f ms\n", __func__, (t_end - t_start)/1000.0);
+ 
+-#ifdef GGML_USE_OPENMP
+-            //if (!getenv("OMP_WAIT_POLICY")) {
+-            //    // set the wait policy to active, so that OpenMP threads don't sleep
+-            //    setenv("OMP_WAIT_POLICY", "active", 0)
+-            //}
+-
+-            if (!getenv("KMP_BLOCKTIME")) {
+-                // set the time to wait before sleeping a thread
+-                // this is less aggressive than setting the wait policy to active, but should achieve similar results in most cases
+-#ifdef _WIN32
+-                _putenv_s("KMP_BLOCKTIME", "200"); // 200ms
+-#else
+-                setenv("KMP_BLOCKTIME", "200", 0); // 200ms
+-#endif
+-            }
+-#endif
++            // OpenMP runtime policy belongs to its host; never mutate process environment.
+         }
+ 
+ #if defined(__ARM_ARCH)
+diff --git a/src/ggml-cpu/ops.cpp b/src/ggml-cpu/ops.cpp
+index 7dff1d11b1b950629013f339a58bff948a70037b..4ba4f20a77faae16abd846393f86369b89512c00 100644
+--- a/src/ggml-cpu/ops.cpp
++++ b/src/ggml-cpu/ops.cpp
+@@ -10,6 +10,8 @@
+ 
+ #include <algorithm>
+ #include <cfloat>
++#include <cstring>
++#include <climits>
+ #include <cmath>
+ 
+ // ggml_compute_forward_dup
+@@ -5526,6 +5528,122 @@ void ggml_compute_forward_get_rows(
+     //}
+ }
+ 
++void ggml_compute_forward_sam3d_sparse_scatter_mean(
++        const ggml_compute_params * params,
++        ggml_tensor * dst) {
++    const ggml_tensor * features = dst->src[0];
++    const ggml_tensor * row_indices = dst->src[1];
++    const ggml_tensor * counts = dst->src[2];
++
++    // Threaded over coarse rows: each thread owns a disjoint coarse-row range,
++    // scans all fine rows but only accumulates into its own range. Within one
++    // coarse row the fine-row accumulation order is identical to the
++    // single-thread path, so results are bit-equal regardless of nth.
++    GGML_ASSERT(features != nullptr && row_indices != nullptr && counts != nullptr);
++    GGML_ASSERT(features->type == GGML_TYPE_F16);
++    GGML_ASSERT(row_indices->type == GGML_TYPE_I32);
++    GGML_ASSERT(counts->type == GGML_TYPE_F32);
++    GGML_ASSERT(dst->type == GGML_TYPE_F16);
++    GGML_ASSERT(ggml_is_contiguous(features));
++    GGML_ASSERT(ggml_is_contiguous(row_indices));
++    GGML_ASSERT(ggml_is_contiguous(counts));
++    GGML_ASSERT(ggml_is_contiguous(dst));
++
++    const int64_t channels = features->ne[0];
++    const int64_t fine_rows = features->ne[1];
++    const int64_t coarse_rows = dst->ne[1];
++    GGML_ASSERT(row_indices->ne[0] == fine_rows);
++    GGML_ASSERT(counts->ne[0] == 1);
++    GGML_ASSERT(counts->ne[1] == coarse_rows);
++    GGML_ASSERT(dst->ne[0] == channels);
++
++    const auto * source = static_cast<const ggml_fp16_t *>(features->data);
++    const auto * rows = static_cast<const int32_t *>(row_indices->data);
++    const auto * counts_f = static_cast<const float *>(counts->data);
++    auto * result = static_cast<ggml_fp16_t *>(dst->data);
++
++    const int nth = params->nth > 0 ? params->nth : 1;
++    const int ith = params->ith;
++    const int64_t rows_per = (coarse_rows + nth - 1) / nth;
++    const int64_t cr_begin = std::min(coarse_rows, (int64_t)ith * rows_per);
++    const int64_t cr_end = std::min(coarse_rows, cr_begin + rows_per);
++    for (int64_t coarse_row = cr_begin; coarse_row < cr_end; ++coarse_row) {
++        std::memset(result + coarse_row * channels, 0, channels * sizeof(ggml_fp16_t));
++    }
++
++    // Keep every partial sum in F16 so the fallback follows the CUDA atomic path.
++    for (int64_t fine_row = 0; fine_row < fine_rows; ++fine_row) {
++        const int32_t coarse_row = rows[fine_row];
++        if (coarse_row < cr_begin || coarse_row >= cr_end) {
++            continue;
++        }
++        for (int64_t channel = 0; channel < channels; ++channel) {
++            const int64_t source_index = fine_row * channels + channel;
++            const int64_t result_index = static_cast<int64_t>(coarse_row) * channels + channel;
++            result[result_index] = ggml_fp32_to_fp16(
++                ggml_fp16_to_fp32(result[result_index]) + ggml_fp16_to_fp32(source[source_index]));
++        }
++    }
++
++    for (int64_t coarse_row = cr_begin; coarse_row < cr_end; ++coarse_row) {
++        for (int64_t channel = 0; channel < channels; ++channel) {
++            const int64_t result_index = coarse_row * channels + channel;
++            result[result_index] = ggml_fp32_to_fp16(
++                ggml_fp16_to_fp32(result[result_index]) / counts_f[coarse_row]);
++        }
++    }
++}
++
++void ggml_compute_forward_sam3d_sparse_conv_f16(
++        const ggml_compute_params * params,
++        ggml_tensor * dst) {
++    const ggml_tensor * input = dst->src[0];
++    const ggml_tensor * weight = dst->src[1];
++    const ggml_tensor * bias = dst->src[2];
++    const ggml_tensor * indices = dst->src[3];
++    GGML_ASSERT(input->type == GGML_TYPE_F16 && weight->type == GGML_TYPE_F16);
++    GGML_ASSERT(bias->type == GGML_TYPE_F16 && indices->type == GGML_TYPE_I32);
++    GGML_ASSERT(dst->type == GGML_TYPE_F16);
++    GGML_ASSERT(ggml_is_contiguous(input) && ggml_is_contiguous(weight));
++    GGML_ASSERT(ggml_is_contiguous(bias) && ggml_is_contiguous(indices));
++
++    const int64_t channels = input->ne[0];
++    const int64_t tokens = input->ne[1];
++    const int64_t output_channels = dst->ne[0];
++    const auto * x = static_cast<const ggml_fp16_t *>(input->data);
++    const auto * w = static_cast<const ggml_fp16_t *>(weight->data);
++    const auto * b = static_cast<const ggml_fp16_t *>(bias->data);
++    const auto * pair = static_cast<const int32_t *>(indices->data);
++    auto * y = static_cast<ggml_fp16_t *>(dst->data);
++
++    // Portable fallback. The official spconv implicit GEMM accumulates in
++    // F32; matching that (instead of an F16 accumulator) is required for the
++    // out-stage modulated convolutions, whose inputs reach the F16 overflow
++    // boundary - an F16 accumulator would saturate to -inf and poison the
++    // rest of the graph. Missing neighbours are encoded as -1. Each output
++    // token is independent, so the token loop partitions over threads.
++    const int nth = params->nth > 0 ? params->nth : 1;
++    const int ith = params->ith;
++    const int64_t tokens_per = (tokens + nth - 1) / nth;
++    const int64_t tok_begin = std::min(tokens, (int64_t)ith * tokens_per);
++    const int64_t tok_end = std::min(tokens, tok_begin + tokens_per);
++    for (int64_t token = tok_begin; token < tok_end; ++token) {
++        for (int64_t out = 0; out < output_channels; ++out) {
++            float acc = ggml_fp16_to_fp32(b[out]);
++            for (int64_t offset = 0; offset < 27; ++offset) {
++                const int32_t source_token = pair[offset * tokens + token];
++                if (source_token < 0 || source_token >= tokens) continue;
++                for (int64_t channel = 0; channel < channels; ++channel) {
++                    const int64_t wi = (out * 27 + offset) * channels + channel;
++                    const int64_t xi = source_token * channels + channel;
++                    acc += ggml_fp16_to_fp32(w[wi]) * ggml_fp16_to_fp32(x[xi]);
++                }
++            }
++            y[token * output_channels + out] = ggml_fp32_to_fp16(acc);
++        }
++    }
++}
++
+ template<typename src_t, typename idx_t>
+ static void ggml_compute_forward_set_rows_impl(
+         const ggml_compute_params * params,
+@@ -5556,8 +5674,6 @@ static void ggml_compute_forward_set_rows_impl(
+     const int64_t ir0 = dr*ith;
+     const int64_t ir1 = std::min(ir0 + dr, nr);
+ 
+-    const size_t rs = ggml_row_size(src0->type, nc);
+-
+     ggml_from_float_t const from_float = ggml_get_type_traits_cpu(dst->type)->from_float;
+ 
+     for (int64_t i03 = 0; i03 < ne03; ++i03) {
+@@ -5577,6 +5693,7 @@ static void ggml_compute_forward_set_rows_impl(
+                                             ((char *)  dst->data + i1*nb1  + i02*nb2  + i03*nb3), nc);
+                 } else if constexpr (std::is_same_v<src_t, ggml_fp16_t>) {
+                     if (dst->type == GGML_TYPE_F16) {
++                        const size_t rs = ggml_row_size(src0->type, nc);
+                         memcpy(
+                                             ((char *)  dst->data + i1*nb1  + i02*nb2  + i03*nb3),
+                                             ((char *) src0->data +  i*nb01 + i02*nb02 + i03*nb03),
+@@ -6842,25 +6959,28 @@ static void ggml_compute_forward_im2col_f32(
+     {
+         float * const wdata = (float *) dst->data;
+ 
+-        for (int64_t in = 0; in < N; in++) {
+-            for (int64_t ioh = 0; ioh < OH; ioh++) { // 1
+-                for (int64_t iow = 0; iow < OW; iow++) {
+-                    for (int64_t iic = ith; iic < IC; iic += nth) {
+-
+-                        // micro kernel
+-                        float * dst_data = wdata + (in*OH*OW + ioh*OW + iow)*(IC*KH*KW); // [IC, KH, KW]
+-                        const float * const src_data = (float *)((char *) src1->data + in*ofs0 + iic*ofs1); // [IH, IW]
+-
+-                        for (int64_t ikh = 0; ikh < KH; ikh++) {  // 1
+-                            for (int64_t ikw = 0; ikw < KW; ikw++) {
+-                                const int64_t iiw = iow*s0 + ikw*d0 - p0;
+-                                const int64_t iih = ioh*s1 + ikh*d1 - p1;
+-
+-                                if (iih < 0 || iih >= IH || iiw < 0 || iiw >= IW) {
+-                                    dst_data[iic*(KH*KW) + ikh*KW + ikw] = 0;
+-                                } else {
+-                                    dst_data[iic*(KH*KW) + ikh*KW + ikw] = (src_data[iih*IW + iiw]);
+-                                }
++        // Parallelise over output rows (N*OH): the spatial dimension is far
++        // larger than IC, and slicing on IC both starves threads (IC can be 3)
++        // and makes every thread write the same (oh,ow) slot of dst.
++        for (int64_t row = ith; row < N*OH; row += nth) {
++            const int64_t in  = row / OH;
++            const int64_t ioh = row % OH;
++            for (int64_t iow = 0; iow < OW; iow++) {
++                for (int64_t iic = 0; iic < IC; iic++) {
++
++                    // micro kernel
++                    float * dst_data = wdata + (in*OH*OW + ioh*OW + iow)*(IC*KH*KW); // [IC, KH, KW]
++                    const float * const src_data = (float *)((char *) src1->data + in*ofs0 + iic*ofs1); // [IH, IW]
++
++                    for (int64_t ikh = 0; ikh < KH; ikh++) {  // 1
++                        for (int64_t ikw = 0; ikw < KW; ikw++) {
++                            const int64_t iiw = iow*s0 + ikw*d0 - p0;
++                            const int64_t iih = ioh*s1 + ikh*d1 - p1;
++
++                            if (iih < 0 || iih >= IH || iiw < 0 || iiw >= IW) {
++                                dst_data[iic*(KH*KW) + ikh*KW + ikw] = 0;
++                            } else {
++                                dst_data[iic*(KH*KW) + ikh*KW + ikw] = (src_data[iih*IW + iiw]);
+                             }
+                         }
+                     }
+@@ -6870,11 +6990,6 @@ static void ggml_compute_forward_im2col_f32(
+     }
+ }
+ 
+-
+-// ggml_compute_forward_im2col_f16
+-// src0: kernel [OC, IC, KH, KW]
+-// src1: image [N, IC, IH, IW]
+-// dst:  result [N, OH, OW, IC*KH*KW]
+ static void ggml_compute_forward_im2col_f16(
+         const ggml_compute_params * params,
+               ggml_tensor * dst) {
+@@ -6918,33 +7033,34 @@ static void ggml_compute_forward_im2col_f16(
+     {
+         ggml_fp16_t * const wdata = (ggml_fp16_t *) dst->data;
+ 
+-        for (int64_t in = 0; in < N; in++) {
+-            for (int64_t ioh = 0; ioh < OH; ioh++) { // 1
+-                for (int64_t iow = 0; iow < OW; iow++) {
+-                    for (int64_t iic = ith; iic < IC; iic += nth) {
+-
+-                        // micro kernel
+-                        ggml_fp16_t * dst_data = wdata + (in*OH*OW + ioh*OW + iow)*(IC*KH*KW); // [IC, KH, KW]
+-                        const float * const src_data_f32 = src1->type == GGML_TYPE_F32
+-                            ? (const float *)((const char *) src1->data + in*ofs0 + iic*ofs1)
+-                            : nullptr; // [IH, IW]
+-                        const ggml_fp16_t * const src_data_f16 = src1->type == GGML_TYPE_F16
+-                            ? (const ggml_fp16_t *)((const char *) src1->data + in*ofs0 + iic*ofs1)
+-                            : nullptr; // [IH, IW]
+-
+-                        for (int64_t ikh = 0; ikh < KH; ikh++) {  // 1
+-                            for (int64_t ikw = 0; ikw < KW; ikw++) {
+-                                const int64_t iiw = iow*s0 + ikw*d0 - p0;
+-                                const int64_t iih = ioh*s1 + ikh*d1 - p1;
+-
+-                                if (iih < 0 || iih >= IH || iiw < 0 || iiw >= IW) {
+-                                    dst_data[iic*(KH*KW) + ikh*KW + ikw] = 0;
++        // Parallelise over output rows (N*OH): see im2col_f32 above.
++        for (int64_t row = ith; row < N*OH; row += nth) {
++            const int64_t in  = row / OH;
++            const int64_t ioh = row % OH;
++            for (int64_t iow = 0; iow < OW; iow++) {
++                for (int64_t iic = 0; iic < IC; iic++) {
++
++                    // micro kernel
++                    ggml_fp16_t * const dst_data = wdata + (in*OH*OW + ioh*OW + iow)*(IC*KH*KW); // [IC, KH, KW]
++                    const float * const src_data_f32 = src1->type == GGML_TYPE_F32
++                        ? (const float *)((const char *) src1->data + in*ofs0 + iic*ofs1)
++                        : nullptr; // [IH, IW]
++                    const ggml_fp16_t * const src_data_f16 = src1->type == GGML_TYPE_F16
++                        ? (const ggml_fp16_t *)((const char *) src1->data + in*ofs0 + iic*ofs1)
++                        : nullptr; // [IH, IW]
++
++                    for (int64_t ikh = 0; ikh < KH; ikh++) {  // 1
++                        for (int64_t ikw = 0; ikw < KW; ikw++) {
++                            const int64_t iiw = iow*s0 + ikw*d0 - p0;
++                            const int64_t iih = ioh*s1 + ikh*d1 - p1;
++
++                            if (iih < 0 || iih >= IH || iiw < 0 || iiw >= IW) {
++                                dst_data[iic*(KH*KW) + ikh*KW + ikw] = 0;
++                            } else {
++                                if (src_data_f32 != nullptr) {
++                                    dst_data[iic*(KH*KW) + ikh*KW + ikw] = GGML_CPU_FP32_TO_FP16(src_data_f32[iih*IW + iiw]);
+                                 } else {
+-                                    if (src_data_f32 != nullptr) {
+-                                        dst_data[iic*(KH*KW) + ikh*KW + ikw] = GGML_CPU_FP32_TO_FP16(src_data_f32[iih*IW + iiw]);
+-                                    } else {
+-                                        dst_data[iic*(KH*KW) + ikh*KW + ikw] = src_data_f16[iih*IW + iiw];
+-                                    }
++                                    dst_data[iic*(KH*KW) + ikh*KW + ikw] = src_data_f16[iih*IW + iiw];
+                                 }
+                             }
+                         }
+@@ -8700,6 +8816,57 @@ void ggml_compute_forward_roll(
+     }
+ }
+ 
++// ggml_compute_forward_grid_sample
++
++static float ggml_grid_sample_source(float coord, int64_t size) {
++    // grid_sampler_compute_source_index, zeros padding, align_corners=False
++    const float x = ((coord + 1.f) * size - 1) / 2;
++    if (x > INT_MAX - 1 || x < INT_MIN || !std::isfinite(x)) {
++        return -100.0f;
++    }
++    return x;
++}
++
++void ggml_compute_forward_grid_sample(
++        const ggml_compute_params * params,
++        ggml_tensor * dst) {
++
++    const ggml_tensor * src0 = dst->src[0];
++    const ggml_tensor * grid = dst->src[1];
++    GGML_ASSERT(ggml_is_contiguous(src0) && ggml_is_contiguous(grid) && ggml_is_contiguous(dst));
++
++    const int64_t W = src0->ne[0], H = src0->ne[1], C = src0->ne[2];
++    const int64_t out_W = dst->ne[0], out_H = dst->ne[1];
++    const int64_t total = out_W * out_H * dst->ne[3];
++    const float * x = (const float *) src0->data;
++    const float * g = (const float *) grid->data;
++    float * y = (float *) dst->data;
++    const auto inside = [&](int64_t iy, int64_t ix) { return iy >= 0 && iy < H && ix >= 0 && ix < W; };
++
++    for (int64_t index = params->ith; index < total; index += params->nth) {
++        const int64_t n = index / (out_H * out_W);
++        const int64_t hw = index % (out_H * out_W);
++        const float ix = ggml_grid_sample_source(g[2 * index], W);
++        const float iy = ggml_grid_sample_source(g[2 * index + 1], H);
++        const int64_t ix_nw = (int64_t) std::floor(ix), iy_nw = (int64_t) std::floor(iy);
++        const int64_t ix_ne = ix_nw + 1, iy_ne = iy_nw, ix_sw = ix_nw, iy_sw = iy_nw + 1;
++        const int64_t ix_se = ix_nw + 1, iy_se = iy_nw + 1;
++        const float nw = (ix_se - ix) * (iy_se - iy);
++        const float ne = (ix - ix_sw) * (iy_sw - iy);
++        const float sw = (ix_ne - ix) * (iy - iy_ne);
++        const float se = (ix - ix_nw) * (iy - iy_nw);
++        for (int64_t c = 0; c < C; ++c) {
++            const float * plane = x + (n * C + c) * H * W;
++            float acc = 0;
++            if (inside(iy_nw, ix_nw)) acc += plane[iy_nw * W + ix_nw] * nw;
++            if (inside(iy_ne, ix_ne)) acc += plane[iy_ne * W + ix_ne] * ne;
++            if (inside(iy_sw, ix_sw)) acc += plane[iy_sw * W + ix_sw] * sw;
++            if (inside(iy_se, ix_se)) acc += plane[iy_se * W + ix_se] * se;
++            y[(n * C + c) * out_H * out_W + hw] = acc;
++        }
++    }
++}
++
+ // ggml_compute_forward_arange
+ 
+ static void ggml_compute_forward_arange_f32(
+diff --git a/src/ggml-cpu/ops.h b/src/ggml-cpu/ops.h
+index 2728b08b6c976ed864353f8eb84e2e10d309f287..d10f182540891149f3aa765f037aebf1f165b739 100644
+--- a/src/ggml-cpu/ops.h
++++ b/src/ggml-cpu/ops.h
+@@ -55,6 +55,8 @@ void ggml_compute_forward_cont(const struct ggml_compute_params * params, struct
+ void ggml_compute_forward_get_rows(const struct ggml_compute_params * params, struct ggml_tensor * dst);
+ void ggml_compute_forward_get_rows_back(const struct ggml_compute_params * params, struct ggml_tensor * dst);
+ void ggml_compute_forward_set_rows(const struct ggml_compute_params * params, struct ggml_tensor * dst);
++void ggml_compute_forward_sam3d_sparse_scatter_mean(const struct ggml_compute_params * params, struct ggml_tensor * dst);
++void ggml_compute_forward_sam3d_sparse_conv_f16(const struct ggml_compute_params * params, struct ggml_tensor * dst);
+ void ggml_compute_forward_diag(const struct ggml_compute_params * params, struct ggml_tensor * dst);
+ void ggml_compute_forward_diag_mask_inf(const struct ggml_compute_params * params, struct ggml_tensor * dst);
+ void ggml_compute_forward_diag_mask_zero(const struct ggml_compute_params * params, struct ggml_tensor * dst);
+@@ -79,6 +81,7 @@ void ggml_compute_forward_upscale(const struct ggml_compute_params * params, str
+ void ggml_compute_forward_pad(const struct ggml_compute_params * params, struct ggml_tensor * dst);
+ void ggml_compute_forward_pad_reflect_1d(const struct ggml_compute_params * params, struct ggml_tensor * dst);
+ void ggml_compute_forward_roll(const struct ggml_compute_params * params, struct ggml_tensor * dst);
++void ggml_compute_forward_grid_sample(const struct ggml_compute_params * params, struct ggml_tensor * dst);
+ void ggml_compute_forward_arange(const struct ggml_compute_params * params, struct ggml_tensor * dst);
+ void ggml_compute_forward_timestep_embedding(const struct ggml_compute_params * params, struct ggml_tensor * dst);
+ void ggml_compute_forward_argsort(const struct ggml_compute_params * params, struct ggml_tensor * dst);
+diff --git a/src/ggml.c b/src/ggml.c
+index 01dc8d05c3168ea9075f12687d95bee02a25e9c9..f19101cd95b3bc96136c47931e45d6b45b5101df 100644
+--- a/src/ggml.c
++++ b/src/ggml.c
+@@ -1079,6 +1079,9 @@ static const char * GGML_OP_NAME[GGML_OP_COUNT] = {
+     "FILL",
+ 
+     "FLASH_ATTN_EXT",
++    "SAM3D_F16_MASKED_ATTN",
++    "SAM3D_SPARSE_SCATTER_MEAN",
++    "SAM3D_SPARSE_CONV_F16",
+     "FLASH_ATTN_BACK",
+     "SSM_CONV",
+     "SSM_SCAN",
+@@ -1110,9 +1113,11 @@ static const char * GGML_OP_NAME[GGML_OP_COUNT] = {
+     "OPT_STEP_SGD",
+ 
+     "GLU",
++    "POW",
++    "GRID_SAMPLE",
+ };
+ 
+-static_assert(GGML_OP_COUNT == 101, "GGML_OP_COUNT != 101");
++static_assert(GGML_OP_COUNT == 106, "GGML_OP_COUNT != 106");
+ 
+ static const char * GGML_OP_SYMBOL[GGML_OP_COUNT] = {
+     "none",
+@@ -1194,6 +1199,9 @@ static const char * GGML_OP_SYMBOL[GGML_OP_COUNT] = {
+     "fill(x, c)",
+ 
+     "flash_attn_ext(x)",
++    "sam3d_f16_masked_attn(q, k, v, lengths)",
++    "sam3d_sparse_scatter_mean(features, rows, inverse_counts)",
++    "sam3d_sparse_conv_f16(input, weight, bias, indices, mask, argsort)",
+     "flash_attn_back(x)",
+     "ssm_conv(x)",
+     "ssm_scan(x)",
+@@ -1225,9 +1233,11 @@ static const char * GGML_OP_SYMBOL[GGML_OP_COUNT] = {
+     "sgd(x)",
+ 
+     "glu(x)",
++    "pow(x,y)",
++    "grid_sample(x,g)",
+ };
+ 
+-static_assert(GGML_OP_COUNT == 101, "GGML_OP_COUNT != 101");
++static_assert(GGML_OP_COUNT == 106, "GGML_OP_COUNT != 106");
+ 
+ static_assert(GGML_OP_POOL_COUNT == 2, "GGML_OP_POOL_COUNT != 2");
+ 
+@@ -2339,6 +2349,24 @@ struct ggml_tensor * ggml_div_inplace(
+     return ggml_div_impl(ctx, a, b, true);
+ }
+ 
++// ggml_pow
++
++struct ggml_tensor * ggml_pow(
++        struct ggml_context * ctx,
++        struct ggml_tensor  * a,
++        struct ggml_tensor  * b) {
++    GGML_ASSERT(a->type == GGML_TYPE_F32 && b->type == GGML_TYPE_F32);
++    GGML_ASSERT(ggml_are_same_shape(a, b));
++
++    struct ggml_tensor * result = ggml_dup_tensor(ctx, a);
++
++    result->op     = GGML_OP_POW;
++    result->src[0] = a;
++    result->src[1] = b;
++
++    return result;
++}
++
+ // ggml_sqr
+ 
+ static struct ggml_tensor * ggml_sqr_impl(
+@@ -2493,6 +2521,18 @@ struct ggml_tensor * ggml_cos_inplace(
+     return ggml_cos_impl(ctx, a, true);
+ }
+ 
++void ggml_elementwise_set_hint(struct ggml_tensor * a, enum ggml_op_hint hint) {
++    GGML_ASSERT(hint == GGML_HINT_NONE || hint == GGML_HINT_STRICT_F32);
++    if (a->op == GGML_OP_SIN || a->op == GGML_OP_COS || a->op == GGML_OP_LOG) {
++        ggml_set_op_params_i32(a, 0, (int32_t) hint);
++        return;
++    }
++    GGML_ASSERT(a->op == GGML_OP_UNARY &&
++        (ggml_get_unary_op(a) == GGML_UNARY_OP_SILU || ggml_get_unary_op(a) == GGML_UNARY_OP_TANH ||
++         ggml_get_unary_op(a) == GGML_UNARY_OP_EXP || ggml_get_unary_op(a) == GGML_UNARY_OP_GELU));
++    ggml_set_op_params_i32(a, 1, (int32_t) hint); // after the unary op id
++}
++
+ // ggml_sum
+ 
+ struct ggml_tensor * ggml_sum(
+@@ -2539,6 +2579,11 @@ struct ggml_tensor * ggml_cumsum(
+     return result;
+ }
+ 
++void ggml_sum_rows_set_hint(struct ggml_tensor * a, enum ggml_op_hint hint) {
++    GGML_ASSERT(a->op == GGML_OP_SUM_ROWS);
++    ggml_set_op_params_i32(a, 0, hint);
++}
++
+ // ggml_mean
+ 
+ struct ggml_tensor * ggml_mean(
+@@ -3183,6 +3228,12 @@ struct ggml_tensor * ggml_norm_inplace(
+     return ggml_norm_impl(ctx, a, eps, true);
+ }
+ 
++void ggml_norm_set_hint(struct ggml_tensor * a, enum ggml_op_hint hint) {
++    GGML_ASSERT(a->op == GGML_OP_NORM);
++    GGML_ASSERT(hint == GGML_HINT_NONE || hint == GGML_HINT_STRICT_F32);
++    ggml_set_op_params_i32(a, 1, (int32_t) hint);
++}
++
+ // ggml_rms_norm
+ 
+ static struct ggml_tensor * ggml_rms_norm_impl(
+@@ -3349,6 +3400,11 @@ bool ggml_prec_set_src(
+     return true;
+ }
+ 
++void ggml_l2_norm_set_hint(struct ggml_tensor * a, enum ggml_op_hint hint) {
++    GGML_ASSERT(a->op == GGML_OP_L2_NORM);
++    ggml_set_op_params_i32(a, 1, hint);
++}
++
+ // ggml_mul_mat
+ 
+ static inline bool ggml_can_mul_mat(const struct ggml_tensor * t0, const struct ggml_tensor * t1) {
+@@ -3359,15 +3415,17 @@ static inline bool ggml_can_mul_mat(const struct ggml_tensor * t0, const struct
+            (t1->ne[3]%t0->ne[3] == 0);
+ }
+ 
+-struct ggml_tensor * ggml_mul_mat(
++struct ggml_tensor * ggml_mul_mat_cast(
+         struct ggml_context * ctx,
+         struct ggml_tensor  * a,
+-        struct ggml_tensor  * b) {
++        struct ggml_tensor  * b,
++        enum ggml_type        type) {
+     GGML_ASSERT(ggml_can_mul_mat(a, b));
+     GGML_ASSERT(!ggml_is_transposed(a));
++    GGML_ASSERT(type == GGML_TYPE_F32 || type == GGML_TYPE_F16);
+ 
+     const int64_t ne[4] = { a->ne[1], b->ne[1], b->ne[2], b->ne[3] };
+-    struct ggml_tensor * result = ggml_new_tensor(ctx, GGML_TYPE_F32, 4, ne);
++    struct ggml_tensor * result = ggml_new_tensor(ctx, type, 4, ne);
+ 
+     result->op     = GGML_OP_MUL_MAT;
+     result->src[0] = a;
+@@ -3376,6 +3434,13 @@ struct ggml_tensor * ggml_mul_mat(
+     return result;
+ }
+ 
++struct ggml_tensor * ggml_mul_mat(
++        struct ggml_context * ctx,
++        struct ggml_tensor  * a,
++        struct ggml_tensor  * b) {
++    return ggml_mul_mat_cast(ctx, a, b, GGML_TYPE_F32);
++}
++
+ void ggml_mul_mat_set_prec(
+         struct ggml_tensor * a,
+         enum ggml_prec       prec) {
+@@ -3389,13 +3454,18 @@ void ggml_mul_mat_set_prec(
+ void ggml_mul_mat_set_hint(
+         struct ggml_tensor * a,
+         enum ggml_op_hint    hint) {
+-    GGML_ASSERT(a->op == GGML_OP_MUL_MAT);
++    GGML_ASSERT(a->op == GGML_OP_MUL_MAT || a->op == GGML_OP_OUT_PROD);
+ 
+     const int32_t hint_i32 = (int32_t) hint;
+ 
+     ggml_set_op_params_i32(a, 1, hint_i32);
+ }
+ 
++enum ggml_op_hint ggml_mul_mat_get_hint(const struct ggml_tensor * a) {
++    GGML_ASSERT(a->op == GGML_OP_MUL_MAT || a->op == GGML_OP_OUT_PROD);
++    return (enum ggml_op_hint) ggml_get_op_params_i32(a, 1);
++}
++
+ // ggml_mul_mat_id
+ 
+ /*
+@@ -4243,6 +4313,12 @@ void ggml_soft_max_add_sinks(
+     a->src[2] = sinks;
+ }
+ 
++void ggml_soft_max_set_hint(struct ggml_tensor * a, enum ggml_op_hint hint) {
++    GGML_ASSERT(a->op == GGML_OP_SOFT_MAX);
++    GGML_ASSERT(hint == GGML_HINT_NONE || hint == GGML_HINT_STRICT_F32);
++    ggml_set_op_params_i32(a, 2, (int32_t) hint);
++}
++
+ // ggml_soft_max_ext_back
+ 
+ static struct ggml_tensor * ggml_soft_max_ext_back_impl(
+@@ -4354,6 +4430,66 @@ struct ggml_tensor * ggml_rope(
+     );
+ }
+ 
++struct ggml_tensor * ggml_rope_custom_freqs_cast(
++        struct ggml_context * ctx,
++        struct ggml_tensor  * a,
++        struct ggml_tensor  * freqs,
++        enum ggml_type        type) {
++    GGML_ASSERT(a->ne[0] % 2 == 0);
++    GGML_ASSERT(freqs->type == GGML_TYPE_F32);
++    GGML_ASSERT(freqs->ne[0] == 2);
++    GGML_ASSERT(freqs->ne[1] == a->ne[0] / 2);
++    GGML_ASSERT(freqs->ne[2] == a->ne[1]);
++
++    struct ggml_tensor * result = ggml_new_tensor(ctx, type, GGML_MAX_DIMS, a->ne);
++    int32_t params[15] = { 0 };
++    params[1] = (int32_t) a->ne[0];
++    params[2] = GGML_ROPE_TYPE_CUSTOM_FREQS;
++    ggml_set_op_params(result, params, sizeof(params));
++
++    result->op     = GGML_OP_ROPE;
++    result->src[0] = a;
++    result->src[1] = freqs;
++
++    return result;
++}
++
++struct ggml_tensor * ggml_rope_custom_freqs(
++        struct ggml_context * ctx,
++        struct ggml_tensor  * a,
++        struct ggml_tensor  * freqs) {
++    return ggml_rope_custom_freqs_cast(ctx, a, freqs, a->type);
++}
++
++struct ggml_tensor * ggml_rope_custom_qkv(
++        struct ggml_context * ctx,
++        struct ggml_tensor  * qkv,
++        struct ggml_tensor  * freqs,
++        int                   head_dim,
++        int                   n_heads) {
++    GGML_ASSERT(qkv->type == GGML_TYPE_F16);
++    GGML_ASSERT(head_dim > 0 && head_dim % 2 == 0 && n_heads > 0);
++    GGML_ASSERT(qkv->ne[0] == 3LL * head_dim * n_heads);
++    GGML_ASSERT(freqs->type == GGML_TYPE_F32 && freqs->ne[0] == 2);
++
++    const int64_t n_tokens = qkv->ne[1] * qkv->ne[2];
++    GGML_ASSERT(freqs->ne[1] == head_dim / 2 && freqs->ne[2] == n_tokens);
++
++    struct ggml_tensor * result = ggml_new_tensor_4d(
++        ctx, GGML_TYPE_F16, head_dim, n_tokens, n_heads * qkv->ne[3], 3);
++    int32_t params[15] = { 0 };
++    params[1] = head_dim;
++    params[2] = GGML_ROPE_TYPE_CUSTOM_QKV;
++    params[3] = n_heads;
++    ggml_set_op_params(result, params, sizeof(params));
++
++    result->op     = GGML_OP_ROPE;
++    result->src[0] = qkv;
++    result->src[1] = freqs;
++
++    return result;
++}
++
+ struct ggml_tensor * ggml_rope_multi(
+         struct ggml_context * ctx,
+         struct ggml_tensor  * a,
+@@ -5002,6 +5138,24 @@ struct ggml_tensor * ggml_conv_2d_direct(
+     return result;
+ }
+ 
++struct ggml_tensor * ggml_conv_2d_direct_bias_silu(
++        struct ggml_context * ctx,
++        struct ggml_tensor  * a,
++        struct ggml_tensor  * b,
++        struct ggml_tensor  * bias,
++        int                   s0,
++        int                   s1,
++        int                   p0,
++        int                   p1,
++        int                   d0,
++        int                   d1) {
++    struct ggml_tensor * result = ggml_conv_2d_direct(ctx, a, b, s0, s1, p0, p1, d0, d1);
++    GGML_ASSERT(bias->ne[0] == result->ne[2] && ggml_nelements(bias) == result->ne[2]);
++    result->src[2] = bias;
++    ggml_set_op_params_i32(result, 7, 1);
++    return result;
++}
++
+ // ggml_conv_3d_direct
+ 
+ struct ggml_tensor * ggml_conv_3d_direct(
+@@ -5071,7 +5225,7 @@ struct ggml_tensor * ggml_conv_transpose_2d_p0(
+         a->ne[2], b->ne[3],
+     };
+ 
+-    struct ggml_tensor* result = ggml_new_tensor(ctx, GGML_TYPE_F32, 4, ne);
++    struct ggml_tensor* result = ggml_new_tensor(ctx, b->type, 4, ne);
+ 
+     ggml_set_op_params_i32(result, 0, stride);
+ 
+@@ -5082,6 +5236,14 @@ struct ggml_tensor * ggml_conv_transpose_2d_p0(
+     return result;
+ }
+ 
++void ggml_conv_transpose_2d_p0_set_prec(
++        struct ggml_tensor * a,
++        enum ggml_prec       prec) {
++    GGML_ASSERT(a->op == GGML_OP_CONV_TRANSPOSE_2D);
++
++    ggml_set_op_params_i32(a, 1, (int32_t) prec);
++}
++
+ // ggml_pool_*
+ 
+ static int64_t ggml_calc_pool_output_size(int64_t ins, int ks, int s, float p) {
+@@ -5138,7 +5300,7 @@ struct ggml_tensor * ggml_pool_2d(
+     GGML_ASSERT(ne[0] > 0);
+     GGML_ASSERT(ne[1] > 0);
+ 
+-    result = ggml_new_tensor(ctx, GGML_TYPE_F32, 4, ne);
++    result = ggml_new_tensor(ctx, a->type, 4, ne);
+ 
+     int32_t params[] = { op, k0, k1, s0, s1, p0, p1 };
+     ggml_set_op_params(result, params, sizeof(params));
+@@ -5186,7 +5348,7 @@ static struct ggml_tensor * ggml_interpolate_impl(
+     GGML_ASSERT((mode & 0xFF) < GGML_SCALE_MODE_COUNT);
+     // TODO: implement antialias for modes other than bilinear
+     GGML_ASSERT(!(mode & GGML_SCALE_FLAG_ANTIALIAS) || (mode & 0xFF) == GGML_SCALE_MODE_BILINEAR);
+-    GGML_ASSERT(a->type == GGML_TYPE_F32);
++    GGML_ASSERT(a->type == GGML_TYPE_F32 || a->type == GGML_TYPE_F16);
+ 
+     struct ggml_tensor * result = ggml_new_tensor_4d(ctx, a->type, ne0, ne1, ne2, ne3);
+ 
+@@ -5366,6 +5528,24 @@ struct ggml_tensor * ggml_roll(
+     return result;
+ }
+ 
++// ggml_grid_sample
++
++struct ggml_tensor * ggml_grid_sample(
++        struct ggml_context * ctx,
++        struct ggml_tensor  * a,
++        struct ggml_tensor  * grid) {
++    GGML_ASSERT(a->type == GGML_TYPE_F32 && grid->type == GGML_TYPE_F32);
++    GGML_ASSERT(grid->ne[0] == 2 && grid->ne[3] == a->ne[3]);
++
++    struct ggml_tensor * result = ggml_new_tensor_4d(ctx, GGML_TYPE_F32, grid->ne[1], grid->ne[2], a->ne[2], a->ne[3]);
++
++    result->op     = GGML_OP_GRID_SAMPLE;
++    result->src[0] = a;
++    result->src[1] = grid;
++
++    return result;
++}
++
+ // ggml_timestep_embedding
+ 
+ struct ggml_tensor * ggml_timestep_embedding(
+@@ -5605,6 +5785,105 @@ void ggml_flash_attn_ext_add_sinks(
+     a->src[4] = sinks;
+ }
+ 
++// ggml_sam3d_f16_masked_attn
++
++struct ggml_tensor * ggml_sam3d_f16_masked_attn(
++        struct ggml_context * ctx,
++        struct ggml_tensor  * q,
++        struct ggml_tensor  * k,
++        struct ggml_tensor  * v,
++        struct ggml_tensor  * sequence_lengths,
++        float                 scale) {
++    GGML_ASSERT(q->type == GGML_TYPE_F16);
++    GGML_ASSERT(k->type == GGML_TYPE_F16);
++    GGML_ASSERT(v->type == GGML_TYPE_F16);
++    GGML_ASSERT(sequence_lengths->type == GGML_TYPE_I32);
++    GGML_ASSERT(ggml_is_contiguous(q));
++    GGML_ASSERT(ggml_is_contiguous(k));
++    GGML_ASSERT(ggml_is_contiguous(v));
++    GGML_ASSERT(ggml_is_contiguous(sequence_lengths));
++    GGML_ASSERT(q->ne[0] == k->ne[0] && q->ne[0] == v->ne[0]);
++    GGML_ASSERT(q->ne[1] == k->ne[1] && q->ne[1] == v->ne[1]);
++    GGML_ASSERT(q->ne[2] == k->ne[2] && q->ne[2] == v->ne[2]);
++    GGML_ASSERT(q->ne[3] == k->ne[3] && q->ne[3] == v->ne[3]);
++
++    struct ggml_tensor * result = ggml_new_tensor_4d(
++        ctx, GGML_TYPE_F16, q->ne[0], q->ne[1], q->ne[2], q->ne[3]);
++    ggml_set_op_params_f32(result, 0, scale);
++    result->op = GGML_OP_SAM3D_F16_MASKED_ATTN;
++    result->src[0] = q;
++    result->src[1] = k;
++    result->src[2] = v;
++    result->src[3] = sequence_lengths;
++    return result;
++}
++
++// ggml_sam3d_sparse_scatter_mean
++
++struct ggml_tensor * ggml_sam3d_sparse_scatter_mean(
++        struct ggml_context * ctx,
++        struct ggml_tensor  * features,
++        struct ggml_tensor  * row_indices,
++        struct ggml_tensor  * inverse_counts) {
++    GGML_ASSERT(features->type == GGML_TYPE_F16);
++    GGML_ASSERT(row_indices->type == GGML_TYPE_I32);
++    GGML_ASSERT(inverse_counts->type == GGML_TYPE_F32);
++    GGML_ASSERT(ggml_is_contiguous(features));
++    GGML_ASSERT(ggml_is_contiguous(row_indices));
++    GGML_ASSERT(ggml_is_contiguous(inverse_counts));
++    GGML_ASSERT(features->ne[1] == row_indices->ne[0]);
++    GGML_ASSERT(inverse_counts->ne[0] == 1);
++
++    struct ggml_tensor * result = ggml_new_tensor_2d(
++        ctx, GGML_TYPE_F16, features->ne[0], inverse_counts->ne[1]);
++    result->op = GGML_OP_SAM3D_SPARSE_SCATTER_MEAN;
++    result->src[0] = features;
++    result->src[1] = row_indices;
++    result->src[2] = inverse_counts;
++    return result;
++}
++
++// ggml_sam3d_sparse_conv_f16
++
++struct ggml_tensor * ggml_sam3d_sparse_conv_f16(
++        struct ggml_context * ctx,
++        struct ggml_tensor  * input,
++        struct ggml_tensor  * weight,
++        struct ggml_tensor  * bias,
++        struct ggml_tensor  * indices,
++        struct ggml_tensor  * mask,
++        struct ggml_tensor  * mask_argsort) {
++    GGML_ASSERT(input->type == GGML_TYPE_F16);
++    GGML_ASSERT(weight->type == GGML_TYPE_F16);
++    GGML_ASSERT(bias->type == GGML_TYPE_F16);
++    GGML_ASSERT(indices->type == GGML_TYPE_I32);
++    GGML_ASSERT(mask->type == GGML_TYPE_I32);
++    GGML_ASSERT(mask_argsort->type == GGML_TYPE_I32);
++    GGML_ASSERT(ggml_is_contiguous(input));
++    GGML_ASSERT(ggml_is_contiguous(weight));
++    GGML_ASSERT(ggml_is_contiguous(bias));
++    GGML_ASSERT(ggml_is_contiguous(indices));
++    GGML_ASSERT(ggml_is_contiguous(mask));
++    GGML_ASSERT(ggml_is_contiguous(mask_argsort));
++    GGML_ASSERT(indices->ne[0] == 27);
++    GGML_ASSERT(indices->ne[1] == input->ne[1]);
++    GGML_ASSERT(mask->ne[0] == input->ne[1]);
++    GGML_ASSERT(mask_argsort->ne[0] == input->ne[1]);
++    GGML_ASSERT(weight->ne[0] == 27 * input->ne[0]);
++    GGML_ASSERT(weight->ne[1] == bias->ne[0]);
++
++    struct ggml_tensor * result = ggml_new_tensor_2d(
++        ctx, GGML_TYPE_F16, bias->ne[0], input->ne[1]);
++    result->op = GGML_OP_SAM3D_SPARSE_CONV_F16;
++    result->src[0] = input;
++    result->src[1] = weight;
++    result->src[2] = bias;
++    result->src[3] = indices;
++    result->src[4] = mask;
++    result->src[5] = mask_argsort;
++    return result;
++}
++
+ // ggml_flash_attn_back
+ 
+ struct ggml_tensor * ggml_flash_attn_back(

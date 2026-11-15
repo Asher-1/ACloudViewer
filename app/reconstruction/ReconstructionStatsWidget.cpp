@@ -7,7 +7,7 @@
 
 #include "ReconstructionStatsWidget.h"
 
-#include "base/reconstruction.h"
+#include "scene/reconstruction.h"
 
 namespace cloudViewer {
 

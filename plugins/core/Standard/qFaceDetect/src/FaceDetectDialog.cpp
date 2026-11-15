@@ -18,6 +18,7 @@
 #include <QGroupBox>
 #include <QGuiApplication>
 #include <QHBoxLayout>
+#include <QKeyEvent>
 #include <QMessageBox>
 #include <QScreen>
 #include <QSet>
@@ -36,13 +37,14 @@
 #include "aicore/backend_capi.h"
 #include "aicore/facedetect_capi.h"
 #include "aicore/inference_log.h"
+#include "ecvAICoreUiHelper.h"
 #include "ecvModelDownloader.h"
 
 namespace {
 
 constexpr auto kFriends = ecvTestDataRepository::Dataset::FriendsFaces;
 
-const int kThumbSize = FaceDetectUi::kCompactPreviewSize;
+const int kThumbSize = ecvAICoreUi::previewSize();
 constexpr int kTabViewportMinHeight = 280;
 // QListWidgetItem data role carrying the full-resolution ccImage for the
 // click-to-enlarge preview (the 24 px icon is only for list display).
@@ -53,11 +55,9 @@ constexpr int kDbFullImageRole = Qt::UserRole + 1;
 // is 144, so a 280 px minimum must become 420 px.  Scale every hardcoded
 // pixel so tab viewport math stays correct across resolutions and
 // per-monitor DPI (1080p@100%% vs 4K@150%%).
-static int dpiScaled(int px) {
-    const QScreen* screen = QGuiApplication::primaryScreen();
-    const qreal dpi = screen ? screen->logicalDotsPerInch() : 96.0;
-    return qMax(px, qRound(px * dpi / 96.0));
-}
+// Shared DPI-aware scaling from the AICore UI kit (same semantics as the
+// former local static function).
+using ecvAICoreUi::dpiScaled;
 
 bool isSupportedImageFile(const QString& filePath) {
     static const QStringList extensions = {
@@ -68,10 +68,6 @@ bool isSupportedImageFile(const QString& filePath) {
     };
     return extensions.contains(QFileInfo(filePath).suffix(),
                                Qt::CaseInsensitive);
-}
-
-bool isValidCachedGguf(const QFileInfo& fi) {
-    return ecvModelDownloader::isValidCachedFile(fi.absoluteFilePath());
 }
 
 }  // namespace
@@ -88,8 +84,8 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
     FaceDetectTestData::purgeFriendsPathsFromSettings();
 
     setWindowTitle(tr("Face Detect"));
-    setMinimumWidth(760);
-    setMinimumHeight(520);
+    setMinimumWidth(ecvAICoreUi::dpiScaled(760));
+    setMinimumHeight(ecvAICoreUi::dpiScaled(520));
     setSizeGripEnabled(false);
 
     QSettings settings;
@@ -110,8 +106,11 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
 
     auto* outer = new QVBoxLayout(this);
     m_tabWidget = new QTabWidget(this);
-    m_tabWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-    FaceDetectUi::applyTabWidgetPaneStyle(m_tabWidget);
+    // Expanding lets the active page (and its video preview) grow with the
+    // dialog; the per-tab minimum height is managed by
+    // updateActiveTabViewportHeight.
+    m_tabWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    ecvAICoreUi::styleTabWidget(m_tabWidget);
 
     m_batchTab = new QWidget;
     setupBatchTab(m_batchTab);
@@ -159,6 +158,17 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
             m_liveWidget->setVideoFilePath(savedVideo, true);
         }
         liveLayout->addWidget(m_liveWidget, 1);
+        // The playback controls row appears only once a video is loaded;
+        // re-measure the tab viewport so the new row is never squeezed into
+        // the preview area (the "controls overlapping the video" bug).
+        connect(m_liveWidget,
+                &FaceLiveDetectWidget::videoControlsVisibilityChanged, this,
+                [this](bool) {
+                    QTimer::singleShot(0, this, [this]() {
+                        cacheTabViewportHeights();
+                        updateActiveTabViewportHeight();
+                    });
+                });
         auto* liveBtnRow = new QHBoxLayout;
         m_liveStartBtn = new QPushButton(tr("Start"));
         m_liveStopBtn = new QPushButton(tr("Stop"));
@@ -255,23 +265,21 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
 
     connect(m_tabWidget, &QTabWidget::currentChanged, this, [this](int) {
         // The stacked page changes after this signal. Defer the measurement so
-        // a short tab never inherits the former page's height.
+        // a short tab never inherits the former page's height.  The deferred
+        // resize uses the minimumSizeHint-derived chrome, which is stable
+        // regardless of the current geometry.
         QTimer::singleShot(0, this,
                            [this]() { updateActiveTabViewportHeight(); });
     });
     outer->addWidget(m_tabWidget, 0);
 
-    m_downloadLabel = new QLabel(this);
-    m_downloadLabel->setVisible(false);
-    outer->addWidget(m_downloadLabel);
-
-    m_progress = new QProgressBar(this);
-    m_progress->setFixedHeight(16);
+    ecvAICoreUi::setupProgressSection(outer, m_downloadLabel, m_progress);
+    m_progress->setFixedHeight(ecvAICoreUi::dpiScaled(16));
     m_progress->setTextVisible(false);
-    m_progress->setMaximum(100);
-    m_progress->setValue(0);
+    // The progress bar stays visible as reserved space (the shared helper
+    // hides it by default); only the label toggles during transfers.
+    m_progress->setVisible(true);
     m_progress->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    outer->addWidget(m_progress);
 
     m_testDataWorker = new FaceDetectTestDataWorker(this);
     connect(m_testDataWorker, &FaceDetectTestDataWorker::phaseProgress, this,
@@ -372,6 +380,9 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
             });
 
     m_downloader = new ecvModelDownloader(this);
+
+    connect(this, &QDialog::finished, m_downloader,
+            &ecvModelDownloader::cancel);
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
             &FaceDetectDialog::appendLog);
     connect(m_downloader, &ecvModelDownloader::progress, this,
@@ -391,23 +402,24 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
             });
     connect(m_downloader, &ecvModelDownloader::finished, this,
             [this](bool ok, const QString& dest) {
-                const QString finishedFilename = QFileInfo(dest).fileName();
                 m_downloadInProgress = false;
                 m_downloadLabel->setVisible(false);
                 if (ok) {
                     appendLog(tr("[OK] Downloaded model: %1").arg(dest));
-                    populateModelCombo(finishedFilename);
+                    // A landmark download must preserve the detector choice.
+                    populateModelCombo();
                     populateLandmarkModelCombo();
-                    if (m_autoRunAfterDownload) {
-                        m_autoRunAfterDownload = false;
-                        onRun();
-                    }
+                    auto resume = std::move(m_resumeAfterDownload);
+                    m_resumeAfterDownload = {};
+                    if (resume) resume();
                 } else {
-                    populateModelCombo(finishedFilename);
-                    m_autoRunAfterDownload = false;
+                    populateModelCombo();
+                    m_resumeAfterDownload = {};
                 }
             });
     m_testDataDownloader = new ecvModelDownloader(this);
+    connect(this, &QDialog::finished, m_testDataDownloader,
+            &ecvModelDownloader::cancel);
     connect(m_testDataDownloader, &ecvModelDownloader::logMessage, this,
             &FaceDetectDialog::appendLog);
     connect(m_testDataDownloader, &ecvModelDownloader::progress, this,
@@ -446,18 +458,18 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                     appendLog(tr("[Test data] Download failed."));
                     return;
                 }
-                if (!ecvTestDataRepository::verifyZipIntegrity(
+                if (!ecvAssetIntegrity::isVerified(
                             dest,
                             ecvTestDataRepository::getDatasetInfo(kFriends)
-                                    .expectedMd5,
-                            ecvTestDataRepository::getDatasetInfo(kFriends)
-                                    .expectedSize)) {
+                                    .anchor,
+                            0, false, ecvAssetIntegrity::OnMiss::DeepVerify)) {
                     QFile::remove(dest);
+                    ecvAssetIntegrity::invalidate(dest);
                     setTestDataBusy(false);
                     if (m_downloadLabel) m_downloadLabel->setVisible(false);
                     appendLog(tr(
                             "[Test data] Download rejected: friends_faces.zip "
-                            "failed MD5 integrity check (incomplete or "
+                            "failed integrity check (incomplete or "
                             "corrupted)."));
                     QMessageBox::warning(this, tr("Test data download"),
                                          tr("The downloaded friends_faces.zip "
@@ -467,7 +479,8 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                                             "download."));
                     return;
                 }
-                appendLog(tr("[Test data] Downloaded %1 (MD5 OK)").arg(dest));
+                appendLog(tr("[Test data] Downloaded %1 (integrity OK)")
+                                  .arg(dest));
                 QDir().mkpath(ecvTestDataRepository::extractDir());
                 FaceDetectFriendsBundle bundle;
                 m_testDataPostProgressBase = kTestDataDownloadShare;
@@ -500,10 +513,13 @@ void FaceDetectDialog::cacheTabViewportHeights() {
     for (int i = 0; i < m_tabWidget->count(); ++i) {
         QWidget* content = m_tabWidget->widget(i);
         if (!content) continue;
-        // Capture the static layout before a live preview receives pixmaps.
-        // Later content growth belongs to the page's own scroll area.
-        m_tabViewportHeights.insert(content,
-                                    content->minimumSizeHint().height());
+        // Use sizeHint (not minimumSizeHint): a form tab's minimum is
+        // often far below what its content actually needs (e.g. the batch
+        // tab min 380 vs real 750), and sizing the viewport to the minimum
+        // inflated the dialog on every tab switch.  Captured before a live
+        // preview receives pixmaps; later content growth belongs to the
+        // page's own scroll area.
+        m_tabViewportHeights.insert(content, content->sizeHint().height());
     }
 }
 
@@ -517,19 +533,37 @@ void FaceDetectDialog::updateActiveTabViewportHeight() {
             2 * m_tabWidget->style()->pixelMetric(QStyle::PM_DefaultFrameWidth);
     const int cachedHeight = m_tabViewportHeights.value(
             content, content->minimumSizeHint().height());
-    // Use the construction-time layout minimum, not a live preview's
+    // Use the construction-time layout size, not a live preview's
     // pixmap-driven size hint. The active page owns its overflow.
     const int contentHeight =
             std::max(dpiScaled(kTabViewportMinHeight), cachedHeight);
     const int targetHeight = tabChrome + contentHeight;
 
-    m_tabWidget->setFixedHeight(targetHeight);
+    // Minimum (not fixed) height: the active page may grow taller when the
+    // user enlarges the dialog (video preview scales with the window);
+    // content is never compressed below its minimum, so controls cannot be
+    // pushed over the video area.
+    m_tabWidget->setMinimumHeight(targetHeight);
     m_tabWidget->updateGeometry();
-    if (isVisible() && m_activeTabHeight >= 0 &&
-        targetHeight != m_activeTabHeight) {
-        resize(width(), std::max(dpiScaled(420),
-                                 height() + targetHeight - m_activeTabHeight));
+    if (isVisible() && m_baseChrome >= 0 && targetHeight != m_activeTabHeight) {
+        // Dialog height = stable non-tab chrome + the incoming tab's
+        // content.  The chrome is derived from minimumSizeHint deltas (not
+        // the current geometry) so it stays constant no matter how the
+        // user resized the window — the old delta formula mixed
+        // minimum-based and sizeHint-based numbers, inflating the dialog
+        // by hundreds of pixels on every tab switch, and the video preview
+        // then absorbed the surplus as a huge empty area.
+        const QScreen* screen =
+                QGuiApplication::screenAt(frameGeometry().center());
+        const int available =
+                screen ? screen->availableGeometry().height() : 800;
+        resize(width(), qBound(dpiScaled(420), m_baseChrome + targetHeight,
+                               available - dpiScaled(20)));
     }
+    // Tab content is measured at construction and when the video controls row
+    // appears; after that, each tab's own scroll area handles overflow.  The
+    // dialog itself has no permanent minimum clamp so switching to a shorter
+    // tab works correctly (setMinimumHeight is updated per-tab below).
     m_activeTabHeight = targetHeight;
 }
 
@@ -543,6 +577,13 @@ void FaceDetectDialog::changeEvent(QEvent* event) {
     if (event->type() == QEvent::ScreenChangeInternal) {
         QTimer::singleShot(0, this, [this]() {
             cacheTabViewportHeights();
+            // Re-measure the chrome on the new monitor: Qt already
+            // resized the window to the new DPI before this deferred
+            // callback runs, so the height() - tab height delta reflects
+            // the fresh decorations and style metrics.
+            if (m_tabWidget) {
+                m_baseChrome = std::max(0, height() - m_tabWidget->height());
+            }
             updateActiveTabViewportHeight();
             update();
         });
@@ -553,8 +594,9 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     batchTab->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
     auto* main = new QVBoxLayout(batchTab);
     FaceDetectUi::setupCompactMainLayout(main);
+    ecvAICoreUi::setupTabLayout(main);
 
-    auto* testDataBtn = new QPushButton(tr("\U0001f9ea  Try sample data"));
+    auto* testDataBtn = ecvAICoreUi::makeSampleDataBtn(this);
     testDataBtn->setToolTip(tr(
             "Download FriendsFaces sample pack and fill batch image path "
             "(does not register identities — use Registry / Auth tab for "
@@ -562,14 +604,6 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
             "Downloads the FriendsFaces sample pack and fills the batch image "
             "path (group photo). Does not register identities — use "
             "Registry / Auth for enrollment and authentication."));
-    // Prominent teal accent button — same style as the FreeSplatter test data
-    // button — guides first-time users to try bundled sample data.
-    testDataBtn->setStyleSheet(
-            "QPushButton { background: #00897b; color: white; font-weight: "
-            "bold; border: none; border-radius: 4px; padding: 5px 12px; }"
-            "QPushButton:hover { background: #00796b; }"
-            "QPushButton:pressed { background: #00695c; }"
-            "QPushButton:disabled { background: #b2dfdb; color: #e0f2f1; }");
 
     connect(testDataBtn, &QPushButton::clicked, this,
             [this]() { ensureFriendsTestData(false, false, true); });
@@ -732,6 +766,11 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
             m_batchImagePathUserChosen = true;
         }
     });
+    // Focus tracking: DB double-click assigns to the slot the user is
+    // currently editing (Image A by default, Image B when its field has
+    // focus in Verify mode).  The tracking itself lives in the
+    // QApplication::focusChanged handler installed below, next to the DB
+    // image list.
     auto* browseImg = FaceDetectUi::makeBrowseButton(tr("Browse…"));
     connect(browseImg, &QPushButton::clicked, this,
             &FaceDetectDialog::onBrowseImage);
@@ -846,9 +885,49 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     // a full list scrolls instead of being squeezed.
     m_dbImageList->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
     m_dbImageList->setMinimumHeight(80);
-    m_dbImageList->setMaximumHeight(220);
+    m_dbImageList->setMaximumHeight(ecvAICoreUi::dbListMaxHeight());
     connect(m_dbImageList, &QListWidget::itemActivated, this,
             &FaceDetectDialog::onDbListActivated);
+    // Single-click also assigns and refreshes the preview thumbnail, so the
+    // shown image always follows the highlighted browser entry (same
+    // behaviour as qRFDetr/qRMBG/qYOLO).
+    connect(m_dbImageList, &QListWidget::itemClicked, this,
+            &FaceDetectDialog::onDbListActivated);
+
+    // DB-list double-click target follows the input slot the user is
+    // editing: focus in Image B (or moving straight from Image B into the
+    // list) targets B; any other focus change — including entering the
+    // list from anywhere else, clicking the mode combo, a button, another
+    // tab or the main window — falls back to the default Image A.  This
+    // replaces the old FocusIn-only tracking whose stale "B" state made
+    // every subsequent DB double-click overwrite Image B.
+    connect(qApp, &QApplication::focusChanged, this,
+            [this](QWidget* old, QWidget* now) {
+                if (now == m_secondImagePath) {
+                    m_dbAssignToSecondImage = true;
+                } else if (now == m_imagePath) {
+                    m_dbAssignToSecondImage = false;
+                } else if (now == m_dbImageList) {
+                    // Direct hand-off Image B → list: keep the B target
+                    // for the double-click the user is about to perform.
+                    if (old != m_secondImagePath) {
+                        m_dbAssignToSecondImage = false;
+                    }
+                } else {
+                    // Focus left both inputs (mode combo, buttons, other
+                    // tabs, main window…): default back to Image A.
+                    m_dbAssignToSecondImage = false;
+                }
+                updateDbAssignHint();
+            });
+
+    // Verify-mode hint making the focus-driven assignment discoverable
+    // instead of silently overwriting one of the two inputs.
+    m_dbAssignHintLabel = new QLabel;
+    m_dbAssignHintLabel->setStyleSheet("color: #6b7280; font-size: 11px;");
+    updateDbAssignHint();
+    m_dbAssignHintLabel->setVisible(false);
+    dbLayout->addWidget(m_dbAssignHintLabel);
     dbLayout->addWidget(m_dbImageList, 1);
     auto* refreshBtn = new QPushButton(tr("Refresh DB Images"));
     connect(refreshBtn, &QPushButton::clicked, this,
@@ -893,7 +972,7 @@ void FaceDetectDialog::populateModelCombo(const QString& keepFilename) {
         const QFileInfo fi(cache + QLatin1Char('/') +
                            QString::fromUtf8(m->filename));
         const QString suffix =
-                isValidCachedGguf(fi)
+                ecvAssetIntegrity::isModelVerified(fi.absoluteFilePath())
                         ? QString(" [%1] \u2713")
                                   .arg(ecvModelDownloader::formatFileSize(
                                           fi.size()))
@@ -953,7 +1032,7 @@ void FaceDetectDialog::populateLandmarkModelCombo(const QString& keepFilename) {
         added.insert(fn);
         const QFileInfo fi(cache + QLatin1Char('/') + fn);
         const QString suffix =
-                isValidCachedGguf(fi)
+                ecvAssetIntegrity::isModelVerified(fi.absoluteFilePath())
                         ? QString(" [%1] \u2713")
                                   .arg(ecvModelDownloader::formatFileSize(
                                           fi.size()))
@@ -1087,6 +1166,12 @@ QString FaceDetectDialog::defaultLandmarkModelPathOnDisk() const {
 
 void FaceDetectDialog::ensureLandmarkModelPathFilled() {
     if (!m_customLandmarkModelPath) return;
+    if (m_landmarkModelCombo &&
+        m_landmarkModelCombo->currentData().toString() !=
+                QStringLiteral("CUSTOM")) {
+        syncLandmarkPathFromCombo();
+        return;
+    }
     const QString current = m_customLandmarkModelPath->text().trimmed();
     if (!current.isEmpty() && QFileInfo::exists(current)) return;
 
@@ -1118,6 +1203,11 @@ QString FaceDetectDialog::resolveLandmarkModelFilename() const {
 }
 
 QString FaceDetectDialog::resolveLandmarkModelPath() const {
+    if (m_landmarkModelCombo &&
+        m_landmarkModelCombo->currentData().toString() !=
+                QStringLiteral("CUSTOM")) {
+        return QDir(modelCacheDir()).filePath(resolveLandmarkModelFilename());
+    }
     if (m_customLandmarkModelPath) {
         const QString typed = m_customLandmarkModelPath->text().trimmed();
         if (!typed.isEmpty()) return typed;
@@ -1143,6 +1233,7 @@ void FaceDetectDialog::setProgress(int current, int total) {
 }
 
 void FaceDetectDialog::setRunning(bool running) {
+    m_taskRunning = running;
     m_runBtn->setEnabled(!running);
     m_cancelBtn->setEnabled(running);
     if (m_progress) {
@@ -1260,12 +1351,28 @@ void FaceDetectDialog::updateSecondImagePreview() {
     if (!m_previewLabelB) return;
     const QString path =
             m_secondImagePath ? m_secondImagePath->text().trimmed() : QString();
-    if (path.isEmpty() || !isSupportedImageFile(path)) {
+    if (path.isEmpty()) {
         m_previewLabelB->clearPreview();
         m_previewLabelB->setText(tr("Image B"));
         return;
     }
-    QImage img(path);
+    QImage img;
+    if (path.startsWith(QStringLiteral("db://"))) {
+        // DB-tree entity: look up the stored full-resolution image
+        const QString name = path.mid(5);
+        for (int i = 0; i < m_dbImageList->count(); ++i) {
+            if (m_dbImageList->item(i)->text() == name) {
+                const QVariant full =
+                        m_dbImageList->item(i)->data(kDbFullImageRole);
+                if (full.canConvert<QImage>()) {
+                    img = full.value<QImage>();
+                }
+                break;
+            }
+        }
+    } else if (isSupportedImageFile(path)) {
+        img = QImage(path);
+    }
     if (img.isNull()) {
         m_previewLabelB->clearPreview();
         m_previewLabelB->setText(tr("?"));
@@ -1274,12 +1381,27 @@ void FaceDetectDialog::updateSecondImagePreview() {
     m_previewLabelB->setPreviewImage(img, kThumbSize);
 }
 
+void FaceDetectDialog::updateDbAssignHint() {
+    if (!m_dbAssignHintLabel) return;
+    m_dbAssignHintLabel->setText(
+            m_dbAssignToSecondImage
+                    ? tr("Double-click a DB image fills Image B (focus in "
+                         "Image B)")
+                    : tr("Double-click a DB image fills Image A"));
+}
+
 void FaceDetectDialog::updateModeUi() {
     const Mode mode = static_cast<Mode>(m_modeCombo->currentData().toInt());
     const bool verify = mode == Mode::Verify;
     const bool dense = mode == Mode::DenseLandmarks;
     m_secondImageRow->setVisible(verify);
     m_verifyOptionsRow->setVisible(verify);
+    if (m_dbAssignHintLabel) {
+        // The DB double-click target hint is only meaningful in Verify
+        // mode; elsewhere the DB list always fills Image A.
+        m_dbAssignHintLabel->setVisible(verify);
+        updateDbAssignHint();
+    }
     if (m_previewLabelB) {
         if (QWidget* wrap = m_previewLabelB->parentWidget()) {
             wrap->setVisible(verify);
@@ -1311,9 +1433,10 @@ void FaceDetectDialog::onBrowseImage() {
     const QString lastDir =
             settings.value("qFaceDetect/lastImageFileDir", QDir::homePath())
                     .toString();
-    const QString path = cvFileDialog::getOpenFileName(
-            this, tr("Select image"), lastDir,
-            tr("Images (*.png *.jpg *.jpeg *.bmp *.tif *.tiff *.webp)"));
+    // A filled input (sample fill or a previous pick) takes precedence
+    // over the remembered directory.
+    const QString path = ecvAICoreUi::browseInputImage(
+            this, m_imagePath->text(), tr("Select image"), lastDir);
     if (path.isEmpty()) return;
     settings.setValue("qFaceDetect/lastImageFileDir",
                       QFileInfo(path).absolutePath());
@@ -1326,9 +1449,11 @@ void FaceDetectDialog::onBrowseSecondImage() {
     const QString lastDir =
             settings.value("qFaceDetect/lastImageFileDir", QDir::homePath())
                     .toString();
-    const QString path = cvFileDialog::getOpenFileName(
-            this, tr("Select second image"), lastDir,
-            tr("Images (*.png *.jpg *.jpeg *.bmp *.tif *.tiff *.webp)"));
+    // A filled input (sample fill or a previous pick) takes precedence
+    // over the remembered directory.
+    const QString path =
+            ecvAICoreUi::browseInputImage(this, m_secondImagePath->text(),
+                                          tr("Select second image"), lastDir);
     if (path.isEmpty()) return;
     settings.setValue("qFaceDetect/lastImageFileDir",
                       QFileInfo(path).absolutePath());
@@ -1462,7 +1587,7 @@ void FaceDetectDialog::onLiveStart() {
     if (!m_liveWidget) return;
     // Live tab only supports Detect / Recognize — never DenseLandmarks — so
     // only verify the face detector model, not the landmark model.
-    if (!ensureDetectorAvailable()) return;
+    if (!ensureDetectorAvailable([this]() { onLiveStart(); })) return;
     syncLiveConfig();
 
     const FaceLiveDetectWidget::Config liveCfg = m_liveWidget->config();
@@ -1497,6 +1622,18 @@ void FaceDetectDialog::onLiveStart() {
             appendLog(tr("[Live] Failed to start video."));
         }
         return;
+    }
+    // Fallback: if the user set a video path via test data but the source
+    // combo hasn't caught up (async test-data download / race), use it.
+    {
+        const QString path = m_liveWidget->videoFilePath();
+        if (!path.isEmpty() && QFile::exists(path)) {
+            m_liveWidget->selectVideoFileSource();
+            if (!m_liveWidget->startVideoFile(path)) {
+                appendLog(tr("[Live] Failed to start video."));
+            }
+            return;
+        }
     }
     const int camIdx = m_liveWidget->selectedCameraIndex();
     if (camIdx < 0) {
@@ -1560,22 +1697,23 @@ void FaceDetectDialog::onModeChanged(int) {
     // measurement used for tab switching (see currentChanged handler).
     if (m_tabWidget && m_batchTab) {
         // Invalidate the cached height so updateActiveTabViewportHeight
-        // falls back to a fresh minimumSizeHint() if called before the
-        // deferred re-measurement completes.
+        // falls back to a fresh sizeHint() if called before the deferred
+        // re-measurement completes.
         m_tabViewportHeights.remove(m_batchTab);
         QTimer::singleShot(0, this, [this]() {
             if (!m_batchTab || !m_tabWidget) return;
-            const int freshHeight = m_batchTab->minimumSizeHint().height();
+            const int freshHeight = m_batchTab->sizeHint().height();
             m_tabViewportHeights.insert(m_batchTab, freshHeight);
             updateActiveTabViewportHeight();
         });
     }
 }
 
-bool FaceDetectDialog::ensureModelAvailable() {
+bool FaceDetectDialog::ensureModelAvailable(std::function<void()> resume) {
+    if (m_downloadInProgress) return false;
     const QString path = resolveModelPath();
     if (path.isEmpty()) return false;
-    if (!QFile::exists(path) || !isValidCachedGguf(QFileInfo(path))) {
+    if (!ecvAssetIntegrity::isModelVerified(path)) {
         const QString data = m_modelCombo->currentData().toString();
         if (data == "CUSTOM") {
             QMessageBox::warning(
@@ -1586,6 +1724,7 @@ bool FaceDetectDialog::ensureModelAvailable() {
         if (const aicore_facedetect_model_entry* m =
                     aicore_facedetect_model_by_filename(
                             data.toUtf8().constData())) {
+            m_resumeAfterDownload = resume;
             startDownload(m);
             return false;
         }
@@ -1597,7 +1736,7 @@ bool FaceDetectDialog::ensureModelAvailable() {
 
     const QString landmarkPath = resolveLandmarkModelPath();
     if (!landmarkPath.isEmpty() && QFile::exists(landmarkPath) &&
-        isValidCachedGguf(QFileInfo(landmarkPath))) {
+        ecvAssetIntegrity::isModelVerified(landmarkPath)) {
         return true;
     }
 
@@ -1620,14 +1759,16 @@ bool FaceDetectDialog::ensureModelAvailable() {
                "points.\n\n"
                "Downloading %1 now\u2026")
                     .arg(lmFilename));
+    m_resumeAfterDownload = resume;
     startDownload(m);
     return false;
 }
 
-bool FaceDetectDialog::ensureDetectorAvailable() {
+bool FaceDetectDialog::ensureDetectorAvailable(std::function<void()> resume) {
+    if (m_downloadInProgress) return false;
     const QString path = resolveModelPath();
     if (path.isEmpty()) return false;
-    if (!QFile::exists(path) || !isValidCachedGguf(QFileInfo(path))) {
+    if (!ecvAssetIntegrity::isModelVerified(path)) {
         const QString data = m_modelCombo->currentData().toString();
         if (data == "CUSTOM") {
             QMessageBox::warning(
@@ -1638,6 +1779,7 @@ bool FaceDetectDialog::ensureDetectorAvailable() {
         if (const aicore_facedetect_model_entry* m =
                     aicore_facedetect_model_by_filename(
                             data.toUtf8().constData())) {
+            m_resumeAfterDownload = resume;
             startDownload(m);
             return false;
         }
@@ -1653,7 +1795,6 @@ void FaceDetectDialog::startDownload(
     const QString dest = modelCacheDir() + QLatin1Char('/') +
                          QString::fromUtf8(model->filename);
     m_downloadInProgress = true;
-    m_autoRunAfterDownload = true;
     m_downloadLabel->setVisible(true);
     m_downloadLabel->setText(
             tr("Downloading %1 ...").arg(QString::fromUtf8(model->filename)));
@@ -1664,13 +1805,16 @@ void FaceDetectDialog::startDownload(
     ecvModelDownloader::Request req;
     req.url = QString::fromUtf8(model->download_url);
     req.destPath = dest;
+    req.contentAnchor = {QCryptographicHash::Sha256,
+                         ecvAssetIntegrity::PinnedDigest(
+                                 QString::fromUtf8(model->filename))};
     m_downloader->download(req);
 }
 
 void FaceDetectDialog::cancelDownload() {
     if (m_downloader) m_downloader->cancel();
     m_downloadInProgress = false;
-    m_autoRunAfterDownload = false;
+    m_resumeAfterDownload = {};
     m_downloadLabel->setVisible(false);
 }
 
@@ -1679,7 +1823,7 @@ void FaceDetectDialog::onRun() {
         appendLog(tr("[Error] Input image required."));
         return;
     }
-    if (!ensureModelAvailable()) return;
+    if (!ensureModelAvailable([this]() { onRun(); })) return;
 
     const Mode mode = static_cast<Mode>(m_modeCombo->currentData().toInt());
     if (mode == Mode::DenseLandmarks) {
@@ -1712,12 +1856,73 @@ void FaceDetectDialog::onCancel() {
 }
 
 void FaceDetectDialog::closeEvent(QCloseEvent* event) {
+    // Uniform plugin-close semantics: if a task, download, live stream,
+    // or test-data operation is active, ask for confirmation.
+    if (m_taskRunning || m_downloadInProgress || m_testDataDownloadInProgress ||
+        m_testDataProcessing || (m_liveWidget && m_liveWidget->isActive())) {
+        if (QMessageBox::question(
+                    this, tr("Task running"),
+                    tr("A FaceDetect task is running. Close anyway?"),
+                    QMessageBox::Yes | QMessageBox::No,
+                    QMessageBox::No) != QMessageBox::Yes) {
+            event->ignore();
+            return;
+        }
+    }
     onCancel();
     onLiveStop();
+    // Closed for good: drop the resident live model (GPU memory); it
+    // rebuilds lazily on the next live start.
+    if (m_liveWidget) m_liveWidget->releaseGpuResources();
     saveBatchSettings();
     if (m_liveWidget) m_liveWidget->saveSettings();
-    if (m_registryWidget) m_registryWidget->saveSettings();
+    if (m_registryWidget) {
+        m_registryWidget->saveSettings();
+        // Closed for good: drop the resident embedding context (GPU
+        // memory); it reloads lazily on the next registry operation.
+        m_registryWidget->releaseEmbedContext();
+    }
     QDialog::closeEvent(event);
+}
+
+void FaceDetectDialog::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_Escape &&
+        (m_taskRunning || m_downloadInProgress ||
+         m_testDataDownloadInProgress || m_testDataProcessing ||
+         (m_liveWidget && m_liveWidget->isActive()))) {
+        if (QMessageBox::question(
+                    this, tr("Task running"),
+                    tr("A FaceDetect task is running. Close anyway?"),
+                    QMessageBox::Yes | QMessageBox::No,
+                    QMessageBox::No) != QMessageBox::Yes) {
+            return;
+        }
+    }
+    QDialog::keyPressEvent(event);
+}
+
+void FaceDetectDialog::showEvent(QShowEvent* event) {
+    QDialog::showEvent(event);
+    if (m_baseChrome >= 0) {
+        return;  // measured once; DPI changes re-measure in changeEvent
+    }
+    // At show time the layout is already settled (Qt applies sizeHint
+    // geometry before sending Show), so the initial dialog height minus
+    // the tab height is pure chrome, never polluted by user resizing.
+    // Measuring and resizing synchronously here applies the geometry
+    // BEFORE the window is mapped — deferring it into the event loop
+    // loses the race against the platform's async window map and the
+    // sizeHint-sized initial frame is shown first.
+    if (!m_tabWidget) return;
+    m_baseChrome = std::max(0, height() - m_tabWidget->height());
+    // First display: snap the dialog to exactly chrome + active tab
+    // so the initial size never carries layout slack from sizeHint
+    // inflation.
+    updateActiveTabViewportHeight();
+    if (m_activeTabHeight >= 0) {
+        resize(width(),
+               std::max(dpiScaled(420), m_baseChrome + m_activeTabHeight));
+    }
 }
 
 void FaceDetectDialog::loadBatchSettings() {
@@ -1957,7 +2162,11 @@ void FaceDetectDialog::applyFriendsTestBundle(
         const bool needsGallery = !bundle.galleryEntries.isEmpty() ||
                                   !bundle.extractRoot.isEmpty();
         if (needsGallery) {
-            if (!ensureModelAvailable()) {
+            if (!ensureDetectorAvailable([this, bundle, fillRegistry,
+                                          fillLiveVideo, fillBatchImage]() {
+                    applyFriendsTestBundle(bundle, fillRegistry, fillLiveVideo,
+                                           fillBatchImage);
+                })) {
                 appendLog(
                         tr("[Test data] Face model required before gallery "
                            "registration."));
@@ -2041,7 +2250,13 @@ void FaceDetectDialog::startTestDataPostProcess(
     }
 
     if (fillRegistry) {
-        if (!ensureModelAvailable()) {
+        if (!ensureDetectorAvailable([this, bundle, fillRegistry, fillLiveVideo,
+                                      fillBatchImage, extractZipFirst, zipPath,
+                                      clearExistingEntries]() {
+                startTestDataPostProcess(bundle, fillRegistry, fillLiveVideo,
+                                         fillBatchImage, extractZipFirst,
+                                         zipPath, clearExistingEntries);
+            })) {
             appendLog(
                     tr("[Test data] Face model required before gallery "
                        "registration."));
@@ -2105,17 +2320,17 @@ void FaceDetectDialog::startFriendsTestDataDownload(bool fillRegistry,
     QDir().mkpath(ecvTestDataRepository::downloadDir());
     const QString zipPath = ecvTestDataRepository::zipPath(kFriends);
     if (QFileInfo::exists(zipPath) &&
-        !ecvTestDataRepository::verifyZipIntegrity(
-                zipPath,
-                ecvTestDataRepository::getDatasetInfo(kFriends).expectedMd5,
-                ecvTestDataRepository::getDatasetInfo(kFriends).expectedSize)) {
+        !ecvAssetIntegrity::isVerified(
+                zipPath, ecvTestDataRepository::getDatasetInfo(kFriends).anchor,
+                0, false, ecvAssetIntegrity::OnMiss::DeepVerify)) {
         QFile::remove(zipPath);
+        ecvAssetIntegrity::invalidate(zipPath);
         appendLog(
-                tr("[Test data] Removed cached friends_faces.zip (MD5 "
-                   "mismatch)."));
+                tr("[Test data] Removed cached friends_faces.zip (integrity "
+                   "check failed)."));
     }
-    ecvModelDownloader::removeInvalidCacheFile(
-            zipPath, 30 * 1024 * 1024,
+    ecvAssetIntegrity::removeIfNotVerified(
+            zipPath, {}, 30 * 1024 * 1024,
             false /* GGUF magic not relevant for zip */);
     m_testDataDownloadInProgress = true;
     setTestDataBusy(true);
@@ -2136,6 +2351,10 @@ void FaceDetectDialog::startFriendsTestDataDownload(bool fillRegistry,
     req.destPath = ecvTestDataRepository::zipPath(kFriends);
     req.minBytes = 30 * 1024 * 1024;
     req.requireGgufMagic = false; /* zip archive, not a GGUF */
+    // Streamed content check against the repository's pinned digest; the
+    // verified state is recorded at finalize so the post-download check
+    // is stat-only instead of a second full read pass.
+    req.contentAnchor = ecvTestDataRepository::getDatasetInfo(kFriends).anchor;
     m_testDataDownloader->download(req);
 }
 
@@ -2189,7 +2408,16 @@ void FaceDetectDialog::ensureFriendsTestData(bool fillRegistry,
 void FaceDetectDialog::onDbListActivated(QListWidgetItem* item) {
     if (!item) return;
     m_batchImagePathUserChosen = true;
-    m_imagePath->setText(QStringLiteral("db://") + item->text());
+    const QString dbPath = QStringLiteral("db://") + item->text();
+    const Mode mode =
+            m_modeCombo ? static_cast<Mode>(m_modeCombo->currentData().toInt())
+                        : Mode::Detect;
+    if (mode == Mode::Verify && m_secondImagePath && m_dbAssignToSecondImage) {
+        // Verify mode with the Image B field focused: assign there.
+        m_secondImagePath->setText(dbPath);
+    } else {
+        m_imagePath->setText(dbPath);
+    }
 }
 
 void FaceDetectDialog::tryAutoDiscoverRegistryDb() {

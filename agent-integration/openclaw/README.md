@@ -4,7 +4,7 @@
 > [CLI-Anything](https://github.com/Asher-1/CLI-Anything) under `acloudviewer/agent-harness/`,
 > following the same layout as `blender/agent-harness/` and other CLI-Anything projects.
 
-Use ACloudViewer from AI agents via MCP with **178 tools** for 3D point cloud and mesh processing.
+Use ACloudViewer from AI agents via MCP with **187 tools** for 3D point cloud and mesh processing.
 
 ## Canonical Sources (CLI-Anything)
 
@@ -52,7 +52,7 @@ pip install cli-anything-acloudviewer
       "command": "cli-anything-acloudviewer-mcp",
       "args": ["--mode", "auto"],
       "type": "mcp",
-      "description": "3D point cloud and mesh processing with ACloudViewer (178 tools)"
+      "description": "3D point cloud and mesh processing with ACloudViewer (187 tools)"
     }
   }
 }
@@ -88,7 +88,7 @@ Or copy `skills/cli-anything-acloudviewer/SKILL.md` into your project's skills d
 
 | Mode | Mechanism | When used |
 |------|-----------|-----------|
-| **GUI** | JSON-RPC WebSocket (`ws://localhost:6001`) | ACloudViewer running with qJSonRPC plugin |
+| **GUI** | JSON-RPC WebSocket (`ws://127.0.0.1:6001`) | ACloudViewer running with qJSonRPC plugin |
 | **Headless** | `ACloudViewer -SILENT -O …` subprocess | No GUI, or batch/CI |
 | **Auto** | Try GUI RPC, fall back to headless | Default for MCP and `--mode auto` |
 

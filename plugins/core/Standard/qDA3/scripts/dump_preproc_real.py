@@ -15,7 +15,9 @@ is the real upstream cv2 code.
 import os, sys, types
 import numpy as np
 
-DA3_SRC = "/tmp/da3-src/src"
+DA3_SRC = os.environ.get("DA3_SRC", "")
+if not DA3_SRC:
+    raise RuntimeError("DA3_SRC must point to the upstream depth-anything-3/src directory")
 OUT_GGUF = "dumps/reference_preproc_real.gguf"
 OUT_PNG  = "dumps/preproc_real_input.png"
 W0, H0   = 640, 427          # non-square, neither dim a multiple of 14

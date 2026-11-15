@@ -1,6 +1,6 @@
 # qLightGlue — LightGlue Feature Matching Plugin
 
-Sparse feature matching in ACloudViewer via **SIFT / ALIKED LightGlue** on shared **`libAICore.so`** ([ggml](https://github.com/ggml-org/ggml)) — no Python or PyTorch at runtime.
+Sparse feature matching in ACloudViewer via **SIFT / ALIKED LightGlue** on shared **`libAICore.so`** ([ggml](https://github.com/ggml-org/llama.cpp)) — no Python or PyTorch at runtime.
 
 ## Model families
 
@@ -104,6 +104,6 @@ Example outputs: `build_app/bin/libAICore.so`, `build_app/bin/plugins/libQLIGHTG
 
 ## Further reading
 
-- Plugin README: [`plugins/core/Standard/qLightGlue/README.md`](../../../plugins/core/Standard/qLightGlue/README.md)
-- LightGlue / ALIKED models: [`plugins/core/Standard/qLightGlue/models/MODEL_CARD.md`](../../../plugins/core/Standard/qLightGlue/models/MODEL_CARD.md)
+- Plugin README: [`plugins/core/Standard/qLightGlue/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qLightGlue/README.md)
+- LightGlue / ALIKED models: [`plugins/core/Standard/qLightGlue/models/MODEL_CARD.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qLightGlue/models/MODEL_CARD.md)
 - [LightGlue (ICCV 2023)](https://github.com/cvg/LightGlue) · [LightGlue-GGML](https://github.com/Asher-1/LightGlue-GGML)

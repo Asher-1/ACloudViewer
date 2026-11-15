@@ -4,7 +4,7 @@ import asyncio
 import websockets
 
 async def hello():
-    uri = "ws://localhost:6001"
+    uri = "ws://127.0.0.1:6001"
     async with websockets.connect(uri) as websocket:
         await websocket.send('{"jsonrpc": "2.0", "method": "open", "params": {"filename": "/home/adib/Dokumente/teapot.ply"}, "id": 4}')
         result = await websocket.recv()

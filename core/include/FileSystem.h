@@ -7,6 +7,10 @@
 
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <fstream>
 #include <functional>
 #include <string>
 #include <vector>
@@ -14,9 +18,16 @@
 #include "CVCoreLib.h"
 #include "Helper.h"
 
+// The Windows SDK's object-like macro must not rename this C++ API.
+#ifdef CopyFile
+#undef CopyFile
+#endif
+
 namespace cloudViewer {
 namespace utility {
 namespace filesystem {
+
+// String paths at this boundary use UTF-8 on every platform.
 
 // Join multiple paths into one path.
 template <typename... T>
@@ -61,25 +72,22 @@ JoinPath(const std::vector<std::string> &path_components);
 std::string CV_CORE_LIB_API JoinPath(const std::string &path_component1,
                                      const std::string &path_component2);
 
+/// Read an environment variable as UTF-8, including on Windows.
 std::string CV_CORE_LIB_API GetEnvVar(const std::string &env_var);
+
+/// Set a UTF-8 environment value. An empty value removes the variable.
+/// Call during process setup, before concurrent environment readers start.
+bool CV_CORE_LIB_API SetEnvVar(const std::string &env_var,
+                               const std::string &value);
 
 /// \brief Get the HOME directory for the user.
 ///
-/// The home directory is determined in the following order:
-/// - On Unix:
-///   - $HOME
-///   - /
-/// - On Windows:
-///   - %USERPROFILE%
-///   - %HOMEDRIVE%
-///   - %HOMEPATH%
-///   - %HOME%
-///   - C:/
-///
-/// This is the same logics as used in Qt.
-/// - src/corelib/io/qfilesystemengine_win.cpp
-/// - src/corelib/io/qfilesystemengine_unix.cpp
+/// Returns UTF-8 using Qt's native home-directory resolution.
 std::string CV_CORE_LIB_API GetHomeDirectory();
+
+/// Shared UTF-8 asset root: CLOUDVIEWER_DATA_ROOT, otherwise
+/// GetHomeDirectory() + "/cloudViewer_data". The override need not exist yet.
+std::string CV_CORE_LIB_API LocateDataRoot();
 
 // Append trailing slash to string if it does not yet end with a slash.
 std::string CV_CORE_LIB_API EnsureTrailingSlash(const std::string &str);
@@ -195,9 +203,47 @@ CV_CORE_LIB_API std::vector<std::string> FindFilesRecursively(
         const std::string &directory,
         std::function<bool(const std::string &)> is_match);
 
-// wrapper for fopen that enables unicode paths on Windows
+/// Open C++ streams from UTF-8 paths, preserving standard stream fail states.
+CV_CORE_LIB_API std::ifstream OpenInputStream(
+        const std::string &filename, std::ios::openmode mode = std::ios::in);
+CV_CORE_LIB_API std::ofstream OpenOutputStream(
+        const std::string &filename, std::ios::openmode mode = std::ios::out);
+
+// Wrapper for fopen that enables Unicode paths on Windows.
 CV_CORE_LIB_API FILE *FOpen(const std::string &filename,
                             const std::string &mode);
+/// Create or truncate a binary output file using a UTF-8 path. On POSIX,
+/// create_permissions applies only when a new file is created; on Windows,
+/// the CRT applies its normal ACL inheritance.
+CV_CORE_LIB_API FILE *FOpenForWrite(const std::string &filename,
+                                    int create_permissions = 0644);
+/// Position a stream without truncating offsets to Windows' 32-bit long.
+/// Return false / -1 on failure and report the native error through errno.
+CV_CORE_LIB_API bool FSeek(FILE *file, int64_t offset, int origin = SEEK_SET);
+CV_CORE_LIB_API int64_t FTell(FILE *file);
+/// Discover a stream's size while preserving its current position.
+CV_CORE_LIB_API bool FSize(FILE *file, size_t &size);
+
+/// Own a read-only mapping. Reopening first releases any previous mapping.
+/// Unsupported hosts return false; callers retain their buffered-read policy.
+class CV_CORE_LIB_API ReadOnlyMappedFile {
+public:
+    ReadOnlyMappedFile() = default;
+    ReadOnlyMappedFile(const ReadOnlyMappedFile &) = delete;
+    ReadOnlyMappedFile &operator=(const ReadOnlyMappedFile &) = delete;
+    ~ReadOnlyMappedFile();
+
+    static bool IsSupported();
+    bool Open(const std::string &path);
+    void Close();
+    const uint8_t *Data() const { return data_; }
+    size_t Size() const { return size_; }
+
+private:
+    const uint8_t *data_ = nullptr;
+    size_t size_ = 0;
+};
+
 std::string CV_CORE_LIB_API GetIOErrorString(const int errnoVal);
 bool CV_CORE_LIB_API FReadToBuffer(const std::string &path,
                                    std::vector<char> &bytes,

@@ -33,8 +33,8 @@
 
 #include <array>
 
-#include "base/polynomial.h"
-#include "base/projection.h"
+#include "math/polynomial.h"
+#include "scene/projection.h"
 #include "estimators/generalized_absolute_pose_coeffs.h"
 #include "util/logging.h"
 

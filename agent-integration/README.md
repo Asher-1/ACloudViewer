@@ -11,6 +11,31 @@ automation scripts, and external tools via three complementary interfaces:
 
 ## Quick Start
 
+### 0. Install ACloudViewer (one command, any platform)
+
+The harness drives an actual ACloudViewer installation. If you don't have one
+yet, install the app itself via npm (Windows / macOS / Linux):
+
+```bash
+# Bootstrap CLI downloads and launches the matching installer
+npm install -g @asher-1/acloudviewer
+acloudviewer install                        # auto-detects CPU/CUDA flavor
+
+# Headless / agent-friendly unattended install (no GUI wizard, no sudo)
+acloudviewer install --silent --prefix ~/.local/share/ACloudViewer
+
+# GITHUB_TOKEN (optional) raises the GitHub API rate limit for many installs,
+# e.g. on shared CI runners:
+GITHUB_TOKEN=ghp_... acloudviewer install --silent
+
+# Remove the app again (wraps the QtIFW maintenancetool)
+acloudviewer uninstall --prefix ~/.local/share/ACloudViewer --yes
+```
+
+After a silent install the binary sits at `<prefix>/ACloudViewer`
+(`ACloudViewer.exe` on Windows) with `ACloudViewer.sh` as launcher — point the
+JSON-RPC / CLI harness at it, or launch it directly.
+
 ### 1. Enable the JSON-RPC Plugin (GUI Mode)
 
 Build ACloudViewer with the plugin enabled:
@@ -39,6 +64,24 @@ Or for local development:
 ```bash
 cd /path/to/CLI-Anything/acloudviewer/agent-harness
 pip install -e ".[mcp,dev]"
+```
+
+One-line script (Linux / macOS): installs the harness, runs `check`, and
+registers the MCP server with detected AI clients:
+
+```bash
+curl -LsSf https://raw.githubusercontent.com/Asher-1/CLI-Anything/main/acloudviewer/agent-harness/install.sh | sh
+```
+
+More deployment & health commands:
+
+```bash
+cli-anything-acloudviewer install source --dry-run   # one-command source build
+                                                     # (Linux apt+pyenv script;
+                                                     #  macOS/Windows conda)
+cli-anything-acloudviewer --json doctor              # installation + RPC + registry
+cli-anything-acloudviewer --json install models --list  # headless prefetch matrix
+cli-anything-acloudviewer install clients --all --remove    # unregister
 ```
 
 ### 3. Use from the Command Line
@@ -85,6 +128,23 @@ cli-anything-acloudviewer reconstruct sparse ./workspace/
 cli-anything-acloudviewer reconstruct dense-stereo ./workspace/
 cli-anything-acloudviewer reconstruct poisson ./workspace/
 
+# Discover and run every registered AICore plugin batch command
+cli-anything-acloudviewer --json ai list
+cli-anything-acloudviewer --json --mode headless ai schema ocr
+cli-anything-acloudviewer --json --mode headless ai run ocr \
+  --image ./scan-1.png --image ./scan-2.png --out-dir ./ocr-out \
+  --option LANG=en --option SAVE_VIS=true
+
+# LLM_GENERATE requires a build with the qAnyLabeling generation command
+cli-anything-acloudviewer --json --mode headless ai schema llm
+cli-anything-acloudviewer --json --mode headless ai run llm \
+  --model qwen2.5-0.5b-instruct-q8_0.gguf --out-dir ./llm-out \
+  --option 'PROMPT=What is the capital of France?' --option MAX_TOKENS=32
+
+# Generic passthrough for ordinary/third-party plugin commands
+cli-anything-acloudviewer --mode headless plugin run ANIMATION \
+  --arg=-FPS --arg=24 --arg=-TOTAL_FRAMES --arg=10
+
 # Windows-specific: use safe wrapper scripts (force headless mode)
 # See agent-integration/scripts/ for acv-convert-safe.ps1 and acv-batch-convert-safe.ps1
 
@@ -95,6 +155,12 @@ cli-anything-acloudviewer sibr texture-mesh ./workspace/
 ```
 
 ### 4. Use as an MCP Server (OpenClaw / Cursor / Claude Code)
+
+One-command registration with detected AI clients (writes `.bak` backups):
+
+```bash
+cli-anything-acloudviewer install clients --all
+```
 
 ```bash
 cli-anything-acloudviewer-mcp
@@ -155,11 +221,11 @@ python -m pytest test_integration.py -v -k "level5"  # MCP server
 
 | Level | Tests | Dependencies |
 |-------|-------|-------------|
-| 1 | C++ plugin source, build, dispatch table, SIBR commands | cmake (optional) |
-| 2 | CLI commands, help, JSON output, session, reconstruct, SIBR, convert | `cli-anything-acloudviewer` |
-| 3 | Format conversion (incl. LAZ, SHP, PTX load, DXF export), round-trip checks, `process crop`, subsample, normals, batch, CLI surface | `ACloudViewer binary` |
+| 1 | C++ plugin source/build, AICore batch headers, RPC whitelist, ownership boundary | cmake (optional) |
+| 2 | CLI commands plus exact current-source 19-task AICore registry and generic plugin passthrough | `cli-anything-acloudviewer` |
+| 3 | Installed-binary processing plus machine-readable schema discovery for the current-source 19 AICore commands | `ACloudViewer binary` |
 | 4 | WebSocket ping, scene list, camera, methods, colmap.reconstruct | Running ACloudViewer |
-| 5 | MCP tools (178 tools, names, Colmap, SIBR, PCL, plugins), entry point | `mcp` Python package |
+| 5 | MCP tools, including `list_ai_tasks`, `get_ai_schema`, `run_ai_batch`, and `run_plugin_command` | `mcp` Python package |
 
 ## Architecture
 
@@ -235,7 +301,7 @@ agent-integration/
 
 ## JSON-RPC API Overview
 
-The `qJSonRPCPlugin` exposes **72 methods** over WebSocket JSON-RPC 2.0.
+The `qJSonRPCPlugin` exposes **89 methods** over WebSocket JSON-RPC 2.0.
 Methods are dynamically registered via a method registry — call `methods.list`
 for the live catalog.
 
@@ -333,7 +399,7 @@ for the live catalog.
 
 ## MCP Tools Overview
 
-The MCP server exposes **178 tools** (integration tests cover the full set) for AI agent use:
+The MCP server exposes **187 tools** (integration tests cover the full set) for AI agent use:
 
 | Category | Tools |
 |----------|-------|

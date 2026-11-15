@@ -353,7 +353,7 @@ typedef unsigned int	      int32;
 #else
 #  define CPL_UNUSED
 #endif
-#endif  
+#endif
 
 #if defined(CPL_LSB)
 #define bBigEndian FALSE
@@ -1979,7 +1979,7 @@ SHPWriteObject(SHPHandle psSHP, int nShapeId, SHPObject * psObject )
 
     if( bAppendToLastRecord )
     {
-        psSHP->nFileSize = psSHP->panRecOffset[nShapeId] + nRecordSize; 
+        psSHP->nFileSize = psSHP->panRecOffset[nShapeId] + nRecordSize;
     }
     else if( bAppendToFile )
     {

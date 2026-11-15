@@ -18,8 +18,7 @@
     ],
     "references" : [
         {
-            "text": "\"Deep Learning for Robust Normal Estimation in Unstructured Point Clouds\"<br/>
-                Talk by Alexandre Boulch &amp; Renaud Marlet at the Symposium of Geometry Processing, 2016",
+            "text": "\"Deep Learning for Robust Normal Estimation in Unstructured Point Clouds\"<br/>Talk by Alexandre Boulch &amp; Renaud Marlet at the Symposium of Geometry Processing, 2016",
             "url" : "http://imagine.enpc.fr/~marletr/publi/SGP-2016-Boulch-Marlet_slides.pdf"
         },
       {

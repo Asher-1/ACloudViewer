@@ -52,6 +52,16 @@ PointCoordinateType frustumOrientationSign(ccCameraSensor::PoseFrame frame,
                                                            : -axisSign;
 }
 
+/// Vertical sign of the image-plane "up" indicator. In the OpenCV /
+/// VtkColmap camera frame +Y points DOWN in the image, so the up arrow
+/// lives on -Y; in the OpenGL legacy frame +Y already points UP in the
+/// image, so the arrow stays on +Y. This keeps the up-indicator geometry
+/// correct for EVERY consumer of ccCameraSensor, regardless of which pose
+/// frame its module uses.
+double localUpSign(ccCameraSensor::PoseFrame frame) {
+    return (frame == ccCameraSensor::PoseFrame::VtkColmap) ? -1.0 : 1.0;
+}
+
 double localViewDepth(ccCameraSensor::PoseFrame frame, double localZ) {
     return (frame == ccCameraSensor::PoseFrame::VtkColmap) ? localZ : -localZ;
 }
@@ -1604,11 +1614,15 @@ void ccCameraSensor::updateData() {
     m_sideLines.lines_.push_back(Eigen::Vector2i(0, 3));
     m_sideLines.lines_.push_back(Eigen::Vector2i(0, 4));
 
-    // up arrow
-    const double arrowHeight = 3 * upperLeftPointd.y / 2;
-    const double baseHeight = 6 * upperLeftPointd.y / 5;
+    // up arrow: sits just OUTSIDE the near plane's top edge and points
+    // further up. "Up" is frame-dependent (see localUpSign): -Y in the
+    // OpenCV/VtkColmap frame, +Y in the OpenGL legacy frame.
+    const double up = localUpSign(m_poseFrame);
+    const double arrowHeight = up * 3 * upperLeftPointd.y / 2;
+    const double baseHeight = up * 6 * upperLeftPointd.y / 5;
     const double arrowHalfWidth = 2 * upperLeftPointd.x / 5;
     const double baseHalfWidth = 1 * upperLeftPointd.x / 5;
+    const double planeEdgeY = up * upperLeftPointd.y;
 
     // arrow
     m_arrow.clear();
@@ -1617,9 +1631,9 @@ void ccCameraSensor::updateData() {
     m_arrow.points_.push_back(
             Eigen::Vector3d(baseHalfWidth, baseHeight, planeZ));
     m_arrow.points_.push_back(
-            Eigen::Vector3d(baseHalfWidth, upperLeftPointd.y, planeZ));
+            Eigen::Vector3d(baseHalfWidth, planeEdgeY, planeZ));
     m_arrow.points_.push_back(
-            Eigen::Vector3d(-baseHalfWidth, upperLeftPointd.y, planeZ));
+            Eigen::Vector3d(-baseHalfWidth, planeEdgeY, planeZ));
     m_arrow.lines_.push_back(Eigen::Vector2i(0, 1));
     m_arrow.lines_.push_back(Eigen::Vector2i(1, 2));
     m_arrow.lines_.push_back(Eigen::Vector2i(2, 3));

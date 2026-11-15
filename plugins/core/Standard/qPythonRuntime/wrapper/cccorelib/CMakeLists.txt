@@ -10,7 +10,9 @@ add_subdirectory(src)
 if(NOT PLUGIN_PYTHON_USE_EMBEDDED_MODULES AND BUILD_PYTHON_MODULE)
   # ensure_pybind11_cmake_module_is_in_path()
   pybind11_add_module(cccorelib ${cvcorelib_sources})
-  target_link_libraries(cccorelib PRIVATE CVCoreLib)
+  # Qt converters in the shared header require database type declarations.
+  target_link_libraries(cccorelib PRIVATE CVCoreLib CV_DB_LIB)
+  qpythonruntime_configure_bindings(cccorelib)
 endif()
 
 function(embed_cvcorelib_in target)

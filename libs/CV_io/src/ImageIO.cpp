@@ -22,8 +22,6 @@
 #include <fstream>
 #include <unordered_map>
 
-#include "FileSystemUtils.h"
-
 namespace cloudViewer {
 
 namespace {
@@ -102,7 +100,8 @@ std::shared_ptr<geometry::Image> CreateImageFromMemory(
 
 bool ReadImage(const std::string &filename, geometry::Image &image) {
     std::string signature_buffer(MAX_SIGNATURE_LEN, 0);
-    std::ifstream file = io::IFStreamUTF8(filename.c_str(), std::ios::binary);
+    std::ifstream file =
+            utility::filesystem::OpenInputStream(filename, std::ios::binary);
     file.read(&signature_buffer[0], MAX_SIGNATURE_LEN);
     std::string err_msg;
     if (!file) {
@@ -255,7 +254,7 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
     FILE *file_in;
     JSAMPARRAY buffer;
 
-    if ((file_in = io::FOpenUTF8(filename.c_str(), "rb")) == NULL) {
+    if ((file_in = utility::filesystem::FOpen(filename, "rb")) == NULL) {
         utility::LogWarning("Read JPG failed: unable to open file: {}",
                             filename);
         image.Clear();
@@ -404,7 +403,7 @@ bool WriteImageToJPG(const std::string &filename,
     FILE *file_out;
     JSAMPROW row_pointer[1];
 
-    if ((file_out = io::FOpenUTF8(filename.c_str(), "wb")) == NULL) {
+    if ((file_out = utility::filesystem::FOpen(filename, "wb")) == NULL) {
         utility::LogWarning("Write JPG failed: unable to open file: {}",
                             filename);
         return false;

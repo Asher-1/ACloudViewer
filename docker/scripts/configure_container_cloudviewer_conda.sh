@@ -6,6 +6,9 @@
 # export DISPLAY=10.147.17.208:0
 export DISPLAY=:0
 
+# Host-side mount sources are derived from this script's location (repo root).
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
 docker run -dit --name=test_cloudviewer_dep_conda \
   --shm-size="16g" \
   --cap-add=SYS_PTRACE \
@@ -21,9 +24,9 @@ docker run -dit --name=test_cloudviewer_dep_conda \
   -e "QT_X11_NO_MITSHM=1" \
   -v /etc/localtime:/etc/localtime:ro \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer:/root/ACloudViewer \
-  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/install:/root/install \
-  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/build:/root/ACloudViewer/build \
+  -v "$REPO_ROOT":/root/ACloudViewer \
+  -v "$REPO_ROOT/docker_cache/install":/root/install \
+  -v "$REPO_ROOT/docker_cache/build":/root/ACloudViewer/build \
   cloudviewer-deps-conda:develop-ubuntu18.04-cuda11.8.0-cudnn8
 
 # attach into container instance
@@ -45,9 +48,9 @@ docker run -dit --name=test_cloudviewer_conda \
   -e "QT_X11_NO_MITSHM=1" \
   -v /etc/localtime:/etc/localtime:ro \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer:/root/ACloudViewer \
-  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/install:/root/install \
-  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/build:/root/ACloudViewer/build \
+  -v "$REPO_ROOT":/root/ACloudViewer \
+  -v "$REPO_ROOT/docker_cache/install":/root/install \
+  -v "$REPO_ROOT/docker_cache/build":/root/ACloudViewer/build \
   cloudviewer-conda:develop-ubuntu18.04-cuda11.8.0-cudnn8
 
 

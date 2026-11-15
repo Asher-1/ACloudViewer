@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "dino_backbone.hpp"
+#include "tasks/depth/dino_backbone.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -14,9 +14,10 @@
 #include <mutex>
 #include <tuple>
 
-#include "common.hpp"
-#include "ggml_extend.hpp"
-#include "vit_block.hpp"
+#include "common/ggml_extend.hpp"
+#include "tasks/depth/common.hpp"
+#include "tasks/depth/vit_block.hpp"
+
 namespace aicore {
 namespace depth {
 static float cubic(float x) {  // Catmull-Rom, a=-0.75 (PyTorch bicubic)

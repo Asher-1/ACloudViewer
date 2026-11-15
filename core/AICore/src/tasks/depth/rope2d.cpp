@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "rope2d.hpp"
+#include "tasks/depth/rope2d.hpp"
 
 #include <cmath>
 namespace aicore {

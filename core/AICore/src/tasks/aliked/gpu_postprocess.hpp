@@ -1,12 +1,16 @@
 #pragma once
 
-#include "backend.h"
+#include "tasks/aliked/backend.h"
 
-#include "gpu_tensor.hpp"
-#include "postprocess.hpp"
+
+#include "tasks/aliked/gpu_tensor.hpp"
+
+#include "tasks/aliked/postprocess.hpp"
+
 
 #if defined(AICORE_CUDA_ALIKED)
-#include "cuda/aliked_cuda.hpp"
+#include "tasks/aliked/cuda/aliked_cuda.hpp"
+
 #endif
 
 #include <string>

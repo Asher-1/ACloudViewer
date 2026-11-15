@@ -5,12 +5,10 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "winograd.hpp"
+#include "tasks/depth/winograd.hpp"
 
 #include <algorithm>
 #include <cstdint>
-#include <cstdlib>
-#include <cstring>
 #include <mutex>
 #include <unordered_map>
 #include <vector>
@@ -24,25 +22,13 @@ namespace depth {
 namespace {
 
 // ========================================================================
-// Mode selection (DA_WINO env): which Winograd algorithm + inner kernel.
-//   "f2"  : F(2x2,3x3), per-tile AVX-512 GEMV (the original CPU-opt #4 path)
-//   "f2b" : F(2x2,3x3), blocked GEMM over a block of tiles (parity-identical,
-//           pure-speed: reuses each U row across TB tiles)  <-- auto default
-//   "f4"  : F(4x4,3x3), blocked GEMM (4x fewer mults vs direct; less accurate)
-// Parity: f2/f2b are exact (halves+ints, max|d|~1e-5). f4 uses 1/6,1/24
-// fractions so it is less accurate (max|d|~1e-4..1e-3) — gated by the suite.
+// Winograd F(2x2,3x3) conv3x3: BLOCKED GEMM over a block of tiles
+// (parity-identical to the direct conv, pure-speed: reuses each U row across
+// TB tiles; ~193ms vs direct ~242ms @504 BASE/16t; ~490ms vs ~625ms on
+// GIANT). The historical DA_WINO variants (f2 per-tile GEMV / f4 F(4x4))
+// were A/B scaffolding and are removed; f2b is the variant that won. See
+// benchmarks/BENCHMARK.md. Parity is exact (halves+ints, max|d|~1e-5).
 // ========================================================================
-enum class Mode { F2, F2B, F4 };
-
-static Mode parse_mode() {
-    const char* m = std::getenv("DA_WINO");
-    if (m) {
-        if (!std::strcmp(m, "f2")) return Mode::F2;
-        if (!std::strcmp(m, "f2b")) return Mode::F2B;
-        if (!std::strcmp(m, "f4")) return Mode::F4;
-    }
-    return Mode::F2B;  // auto default (fastest parity-exact variant)
-}
 
 // Tile-block width for the blocked GEMM microkernel (number of tiles batched
 // per winograd-domain multiply). 8 keeps all accumulators in zmm registers
@@ -116,103 +102,11 @@ struct F2Policy {
 };
 
 // ------------------------------------------------------------------------
-// F(4x4,3x3) transforms (Lavin & Gray). Verified numerically against a direct
-// 3x3 conv (float64 max|d|~7e-14). Uses 1/6 and 1/24, so float32 accuracy is
-// lower than F(2x2). 6x6 input tile -> 4x4 output, 36 winograd positions.
-//   B^T row ops on a length-6 vector x:
-//     r0=4x0-5x2+x4; r1=-4x1-4x2+x3+x4; r2=4x1-4x2-x3+x4;
-//     r3=-2x1-x2+2x3+x4; r4=2x1-x2-2x3+x4; r5=4x1-5x3+x5
-//   G row ops on a length-3 vector y:
-//     u0=y0/4; u1=-(y0+y1+y2)/6; u2=(-y0+y1-y2)/6;
-//     u3=y0/24+y1/12+y2/6; u4=y0/24-y1/12+y2/6; u5=y2
-//   A^T row ops on a length-6 vector m:
-//     o0=m0+m1+m2+m3+m4; o1=m1-m2+2m3-2m4; o2=m1+m2+4m3+4m4;
-//     o3=m1-m2+8m3-8m4+m5
-// ------------------------------------------------------------------------
-struct F4Policy {
-    static constexpr int IT = 6, OT = 4, P = 36;
-
-    static inline void Brow(const float x[6], float r[6]) {
-        r[0] = 4.0f * x[0] - 5.0f * x[2] + x[4];
-        r[1] = -4.0f * x[1] - 4.0f * x[2] + x[3] + x[4];
-        r[2] = 4.0f * x[1] - 4.0f * x[2] - x[3] + x[4];
-        r[3] = -2.0f * x[1] - x[2] + 2.0f * x[3] + x[4];
-        r[4] = 2.0f * x[1] - x[2] - 2.0f * x[3] + x[4];
-        r[5] = 4.0f * x[1] - 5.0f * x[3] + x[5];
-    }
-    static inline void Grow(const float y[3], float u[6]) {
-        const float a = y[0], b = y[1], c = y[2];
-        u[0] = 0.25f * a;
-        u[1] = -(a + b + c) * (1.0f / 6.0f);
-        u[2] = (-a + b - c) * (1.0f / 6.0f);
-        u[3] = a * (1.0f / 24.0f) + b * (1.0f / 12.0f) + c * (1.0f / 6.0f);
-        u[4] = a * (1.0f / 24.0f) - b * (1.0f / 12.0f) + c * (1.0f / 6.0f);
-        u[5] = c;
-    }
-    static inline void Arow(const float m[6], float o[4]) {
-        o[0] = m[0] + m[1] + m[2] + m[3] + m[4];
-        o[1] = m[1] - m[2] + 2.0f * m[3] - 2.0f * m[4];
-        o[2] = m[1] + m[2] + 4.0f * m[3] + 4.0f * m[4];
-        o[3] = m[1] - m[2] + 8.0f * m[3] - 8.0f * m[4] + m[5];
-    }
-
-    // U = G g G^T, 3x3 -> 6x6 (u[36]).
-    static void filt(const float g[9], float u[36]) {
-        float Gg[6][3];  // apply G on the 3 columns of g
-        for (int j = 0; j < 3; ++j) {
-            float col[3] = {g[0 * 3 + j], g[1 * 3 + j], g[2 * 3 + j]};
-            float out[6];
-            Grow(col, out);
-            for (int i = 0; i < 6; ++i) Gg[i][j] = out[i];
-        }
-        for (int i = 0; i < 6;
-             ++i) {  // apply G on the 3 columns of each Gg row
-            float out[6];
-            Grow(Gg[i], out);
-            for (int k = 0; k < 6; ++k) u[i * 6 + k] = out[k];
-        }
-    }
-    // V = B^T d B, 6x6 -> 6x6 (v[36]).
-    static void inp(const float d[36], float v[36]) {
-        float m[36];
-        for (int j = 0; j < 6; ++j) {  // B^T on columns
-            float col[6] = {d[0 * 6 + j], d[1 * 6 + j], d[2 * 6 + j],
-                            d[3 * 6 + j], d[4 * 6 + j], d[5 * 6 + j]};
-            float out[6];
-            Brow(col, out);
-            for (int i = 0; i < 6; ++i) m[i * 6 + j] = out[i];
-        }
-        for (int i = 0; i < 6; ++i) {  // B^T on rows
-            float out[6];
-            Brow(m + i * 6, out);
-            for (int k = 0; k < 6; ++k) v[i * 6 + k] = out[k];
-        }
-    }
-    // Y = A^T m A, 6x6 -> 4x4 (y[16]).
-    static void outp(const float m[36], float y[16]) {
-        float p[24];  // 4x6 (A^T on columns)
-        for (int j = 0; j < 6; ++j) {
-            float col[6] = {m[0 * 6 + j], m[1 * 6 + j], m[2 * 6 + j],
-                            m[3 * 6 + j], m[4 * 6 + j], m[5 * 6 + j]};
-            float out[4];
-            Arow(col, out);
-            for (int i = 0; i < 4; ++i) p[i * 6 + j] = out[i];
-        }
-        for (int i = 0; i < 4; ++i) {  // A^T on rows
-            float out[4];
-            Arow(p + i * 6, out);
-            for (int k = 0; k < 4; ++k) y[i * 4 + k] = out[k];
-        }
-    }
-};
-
-// ------------------------------------------------------------------------
 // Persistent per-op state: caches the filter transform U (computed once from
 // w->data; reused across forwards). Scratch (V,M) is per-thread on the stack
 // / in small per-thread vectors.
 // ------------------------------------------------------------------------
 struct WinogradState {
-    Mode mode = Mode::F2B;
     int W = 0, H = 0, IC = 0, OC = 0, N = 0, pad = 0;
     int Wout = 0, Hout = 0, tilesX = 0, tilesY = 0;
     const void* wdata = nullptr;
@@ -235,58 +129,6 @@ static void build_U(WinogradState* st, const float* w) {
                 st->U[(size_t)pos * IC * OC + (size_t)ic * OC + oc] = u[pos];
         }
     }
-}
-
-// ------------------------------------------------------------------------
-// Per-tile GEMV (original F2 path): M[oc] = sum_ic U[ic,oc]*V[ic].
-// ------------------------------------------------------------------------
-static inline void wino_gemv(
-        const float* Upos, const float* Vpos, float* out, int IC, int OC) {
-#if defined(__AVX512F__)
-    int oc = 0;
-    for (; oc + 16 <= OC; oc += 16) {
-        __m512 acc = _mm512_setzero_ps();
-        const float* up = Upos + oc;
-        for (int ic = 0; ic < IC; ++ic)
-            acc = _mm512_fmadd_ps(_mm512_loadu_ps(up + (size_t)ic * OC),
-                                  _mm512_set1_ps(Vpos[ic]), acc);
-        _mm512_storeu_ps(out + oc, acc);
-    }
-    if (oc < OC) {
-        const int rem = OC - oc;
-        const __mmask16 mask = (__mmask16)((1u << rem) - 1u);
-        __m512 acc = _mm512_setzero_ps();
-        const float* up = Upos + oc;
-        for (int ic = 0; ic < IC; ++ic)
-            acc = _mm512_fmadd_ps(
-                    _mm512_maskz_loadu_ps(mask, up + (size_t)ic * OC),
-                    _mm512_set1_ps(Vpos[ic]), acc);
-        _mm512_mask_storeu_ps(out + oc, mask, acc);
-    }
-#elif defined(__AVX2__) && defined(__FMA__)
-    int oc = 0;
-    for (; oc + 8 <= OC; oc += 8) {
-        __m256 acc = _mm256_setzero_ps();
-        const float* up = Upos + oc;
-        for (int ic = 0; ic < IC; ++ic)
-            acc = _mm256_fmadd_ps(_mm256_loadu_ps(up + (size_t)ic * OC),
-                                  _mm256_set1_ps(Vpos[ic]), acc);
-        _mm256_storeu_ps(out + oc, acc);
-    }
-    for (; oc < OC; ++oc) {
-        float s = 0.0f;
-        for (int ic = 0; ic < IC; ++ic)
-            s += Upos[(size_t)ic * OC + oc] * Vpos[ic];
-        out[oc] = s;
-    }
-#else
-    for (int oc = 0; oc < OC; ++oc) out[oc] = 0.0f;
-    for (int ic = 0; ic < IC; ++ic) {
-        const float vv = Vpos[ic];
-        const float* up = Upos + (size_t)ic * OC;
-        for (int oc = 0; oc < OC; ++oc) out[oc] += up[oc] * vv;
-    }
-#endif
 }
 
 // ------------------------------------------------------------------------
@@ -367,79 +209,7 @@ static inline void wino_gemm_block(
 }
 
 // ------------------------------------------------------------------------
-// Original F(2x2) per-tile path (mode "f2").
-// ------------------------------------------------------------------------
-static void compute_f2_gemv(WinogradState* st,
-                            ggml_tensor* dst,
-                            int ith,
-                            int nth) {
-    const ggml_tensor* xt = dst->src[0];
-    const float* x = (const float*)xt->data;
-    float* y = (float*)dst->data;
-
-    const int W = st->W, H = st->H, IC = st->IC, OC = st->OC, pad = st->pad;
-    const int Wout = st->Wout, Hout = st->Hout;
-    const int tilesX = st->tilesX, tilesY = st->tilesY;
-    const float* U = st->U.data();
-
-    const int ntiles = tilesX * tilesY;
-    const int64_t total = (int64_t)st->N * ntiles;
-    const int64_t beg = total * ith / nth;
-    const int64_t end = total * (ith + 1) / nth;
-
-    std::vector<float> Vbuf((size_t)16 * IC);
-    std::vector<float> Mbuf((size_t)16 * OC);
-    float dpatch[16], vpatch[16], mpatch[16], ypatch[4];
-
-    for (int64_t idx = beg; idx < end; ++idx) {
-        const int n = (int)(idx / ntiles);
-        const int t = (int)(idx % ntiles);
-        const int ty = t / tilesX, tx = t % tilesX;
-        const int oy0 = ty * 2, ox0 = tx * 2;
-        const int iy0 = oy0 - pad, ix0 = ox0 - pad;
-        const float* xn = x + (size_t)n * IC * H * W;
-
-        for (int ic = 0; ic < IC; ++ic) {
-            const float* xc = xn + (size_t)ic * H * W;
-            for (int i = 0; i < 4; ++i) {
-                const int yy = iy0 + i;
-                const bool yok = (yy >= 0 && yy < H);
-                const float* row = yok ? (xc + (size_t)yy * W) : nullptr;
-                for (int j = 0; j < 4; ++j) {
-                    const int xx = ix0 + j;
-                    dpatch[i * 4 + j] =
-                            (yok && xx >= 0 && xx < W) ? row[xx] : 0.0f;
-                }
-            }
-            F2Policy::inp(dpatch, vpatch);
-            for (int pos = 0; pos < 16; ++pos)
-                Vbuf[(size_t)pos * IC + ic] = vpatch[pos];
-        }
-        for (int pos = 0; pos < 16; ++pos)
-            wino_gemv(U + (size_t)pos * IC * OC, Vbuf.data() + (size_t)pos * IC,
-                      Mbuf.data() + (size_t)pos * OC, IC, OC);
-
-        float* yn = y + (size_t)n * OC * Hout * Wout;
-        for (int oc = 0; oc < OC; ++oc) {
-            for (int pos = 0; pos < 16; ++pos)
-                mpatch[pos] = Mbuf[(size_t)pos * OC + oc];
-            F2Policy::outp(mpatch, ypatch);
-            float* yc = yn + (size_t)oc * Hout * Wout;
-            for (int i = 0; i < 2; ++i) {
-                const int oy = oy0 + i;
-                if (oy >= Hout) continue;
-                for (int j = 0; j < 2; ++j) {
-                    const int ox = ox0 + j;
-                    if (ox >= Wout) continue;
-                    yc[(size_t)oy * Wout + ox] = ypatch[i * 2 + j];
-                }
-            }
-        }
-    }
-}
-
-// ------------------------------------------------------------------------
-// Blocked path (modes "f2b" / "f4"): batch TB tiles per winograd-domain GEMM.
+// Blocked path: batch TB tiles per winograd-domain GEMM.
 // ------------------------------------------------------------------------
 template <class Pol>
 static void compute_blocked(WinogradState* st,
@@ -541,33 +311,19 @@ static void winograd_compute(ggml_tensor* dst,
     const ggml_tensor* wt = dst->src[1];
     const float* w = (const float*)wt->data;
 
-    switch (st->mode) {
-        case Mode::F4:
-            std::call_once(st->once, [&] { build_U<F4Policy>(st, w); });
-            compute_blocked<F4Policy>(st, dst, ith, nth);
-            break;
-        case Mode::F2B:
-            std::call_once(st->once, [&] { build_U<F2Policy>(st, w); });
-            compute_blocked<F2Policy>(st, dst, ith, nth);
-            break;
-        case Mode::F2:
-        default:
-            std::call_once(st->once, [&] { build_U<F2Policy>(st, w); });
-            compute_f2_gemv(st, dst, ith, nth);
-            break;
-    }
+    std::call_once(st->once, [&] { build_U<F2Policy>(st, w); });
+    compute_blocked<F2Policy>(st, dst, ith, nth);
 }
 
 // ------------------------------------------------------------------------
-// Keyed cache of op states (U transformed once per (filter,shape,mode)).
+// Keyed cache of op states (U transformed once per (filter,shape)).
 // ------------------------------------------------------------------------
 struct StateKey {
     const void* wdata;
     int W, H, IC, OC, N, pad;
-    int mode;
     bool operator==(const StateKey& o) const {
         return wdata == o.wdata && W == o.W && H == o.H && IC == o.IC &&
-               OC == o.OC && N == o.N && pad == o.pad && mode == o.mode;
+               OC == o.OC && N == o.N && pad == o.pad;
     }
 };
 struct StateKeyHash {
@@ -580,7 +336,6 @@ struct StateKeyHash {
         mix(k.OC);
         mix(k.N);
         mix(k.pad);
-        mix(k.mode);
         return h;
     }
 };
@@ -588,23 +343,15 @@ struct StateKeyHash {
 static std::mutex g_states_mtx;
 static std::unordered_map<StateKey, WinogradState*, StateKeyHash> g_states;
 
-// F(4x4) outputs in blocks of 4; the output region must cover Wout/Hout. tiles
-// step by OT (=2 for F2, =4 for F4).
-static int out_tile(Mode m) { return m == Mode::F4 ? 4 : 2; }
-
-static WinogradState* get_state(ggml_tensor* w,
-                                ggml_tensor* x,
-                                int pad,
-                                Mode mode) {
+static WinogradState* get_state(ggml_tensor* w, ggml_tensor* x, int pad) {
     const int W = (int)x->ne[0], H = (int)x->ne[1], IC = (int)x->ne[2],
               N = (int)x->ne[3];
     const int OC = (int)w->ne[3];
-    StateKey key{w->data, W, H, IC, OC, N, pad, (int)mode};
+    StateKey key{w->data, W, H, IC, OC, N, pad};
     std::lock_guard<std::mutex> lk(g_states_mtx);
     auto it = g_states.find(key);
     if (it != g_states.end()) return it->second;
     WinogradState* st = new WinogradState();
-    st->mode = mode;
     st->W = W;
     st->H = H;
     st->IC = IC;
@@ -613,7 +360,7 @@ static WinogradState* get_state(ggml_tensor* w,
     st->pad = pad;
     st->Wout = W + 2 * pad - 2;
     st->Hout = H + 2 * pad - 2;
-    const int OT = out_tile(mode);
+    constexpr int OT = 2;  // F(2x2) output tile
     st->tilesX = (st->Wout + OT - 1) / OT;
     st->tilesY = (st->Hout + OT - 1) / OT;
     st->wdata = w->data;
@@ -631,8 +378,7 @@ ggml_tensor* winograd_conv3x3(ggml_context* ctx,
     const int N = (int)x->ne[3];
     const int Wout = (int)x->ne[0] + 2 * pad - 2;
     const int Hout = (int)x->ne[1] + 2 * pad - 2;
-    const Mode mode = parse_mode();
-    WinogradState* st = get_state(w, x, pad, mode);
+    WinogradState* st = get_state(w, x, pad);
     ggml_tensor* args[2] = {x, w};
     return ggml_custom_4d(ctx, GGML_TYPE_F32, Wout, Hout, OC, N, args, 2,
                           winograd_compute, GGML_N_TASKS_MAX, st);

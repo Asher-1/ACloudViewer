@@ -5,13 +5,13 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "align.hpp"
+#include "tasks/facedetect/align.hpp"
 
 #include <array>
 #include <cmath>
 #include <vector>
 
-#include "common.hpp"
+#include "tasks/facedetect/common.hpp"
 
 namespace fd {
 
@@ -163,6 +163,9 @@ bool warp_affine(const Image& src,
 
     out.width = out_w;
     out.height = out_h;
+    out.borrowed_data = nullptr;
+    out.row_stride_bytes = static_cast<size_t>(out_w) * 3;
+    out.channels = 3;
     out.rgb.assign((size_t)out_w * out_h * 3, 0);
     std::vector<long> adelta(out_w), bdelta(out_w);
     for (int dxx = 0; dxx < out_w; ++dxx) {
@@ -172,7 +175,7 @@ bool warp_affine(const Image& src,
     auto S = [&](int xx, int yy, int ch) -> double {
         if (xx < 0 || yy < 0 || xx >= src.width || yy >= src.height)
             return 0.0;  // BORDER_CONSTANT 0
-        return src.rgb[((size_t)yy * src.width + xx) * 3 + ch];
+        return src.channel(xx, yy, ch);
     };
     for (int dyy = 0; dyy < out_h; ++dyy) {
         long X0 = cvRound((i01 * dyy + i02) * AB_SCALE) + ROUND_DELTA;

@@ -43,16 +43,6 @@ namespace FaceDetectTestData {
  */
 bool resolveBundle(FaceDetectFriendsBundle* out);
 
-/** Number of entries inside a zip (0 if unreadable). Used for extract progress.
- */
-int zipEntryCount(const QString& zipPath);
-
-/** Extract zip into extractParentDir (minizip logic from ExtractZIP.cpp). */
-using ExtractProgressFn = std::function<void(int current, int total)>;
-bool extractZip(const QString& zipPath,
-                const QString& extractParentDir,
-                const ExtractProgressFn& onProgress = {});
-
 /** All gallery/label.txt lines (multiple paths per name allowed). */
 QVector<FaceDetectGalleryEntry> loadGalleryEntries(const QString& bundleRoot);
 

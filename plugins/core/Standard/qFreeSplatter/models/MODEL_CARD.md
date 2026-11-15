@@ -9,7 +9,7 @@ All models are hosted on [cloudViewer_downloads](https://github.com/Asher-1/clou
 Base URL:
 
 ```
-https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/
+https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/
 ```
 
 The plugin dialog and automatic download use the same URLs. Each input image is center-cropped and resized to **512×512**; precision variants share the same Transformer backbone and differ only in quantization format, numeric precision, and embedded head config.
@@ -36,9 +36,9 @@ For **2** overlapping scene photos (indoor or outdoor). The plugin uniformly dow
 
 | Download | Quant | Size | Relative speed | Relative quality | Peak RAM (est.) | Notes |
 |------|------|------|----------|----------|----------------|------|
-| [`freesplatter-scene-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-scene-q8_0.gguf) | Q8_0 | **324.5 MB** | fastest | good (near-lossless quant) | ~0.8–1.2 GB | **default recommended**; smallest size, fastest load, suitable for CPU / integrated GPU |
-| [`freesplatter-scene-f16.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-scene-f16.gguf) | F16 | **595.8 MB** | moderate | very good | ~1.2–1.8 GB | upstream FreeSplatter recommended scene precision; balanced quality / speed |
-| [`freesplatter-scene-f32.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-scene-f32.gguf) | F32 | **1.15 GB** | slowest | best (reference precision) | ~2.0–3.0 GB | full-precision reference model; slower CPU inference, suitable for benchmarking / offline batch |
+| [`freesplatter-scene-q8_0.gguf`](https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-scene-q8_0.gguf) | Q8_0 | **324.5 MB** | fastest | good (near-lossless quant) | ~0.8–1.2 GB | **default recommended**; smallest size, fastest load, suitable for CPU / integrated GPU |
+| [`freesplatter-scene-f16.gguf`](https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-scene-f16.gguf) | F16 | **595.8 MB** | moderate | very good | ~1.2–1.8 GB | upstream FreeSplatter recommended scene precision; balanced quality / speed |
+| [`freesplatter-scene-f32.gguf`](https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-scene-f32.gguf) | F32 | **1.15 GB** | slowest | best (reference precision) | ~2.0–3.0 GB | full-precision reference model; slower CPU inference, suitable for benchmarking / offline batch |
 
 ### Object-2DGS models (recommended, multi-view object reconstruction)
 
@@ -46,9 +46,9 @@ For **3 or more** photos taken around a **single foreground object** with a clea
 
 | Download | Quant | Size | Relative speed | Relative quality | Peak RAM (est.) | Notes |
 |------|------|------|----------|----------|----------------|------|
-| [`freesplatter-object-2dgs-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-object-2dgs-q8_0.gguf) | Q8_0 | **324.5 MB** | fastest | good | ~0.8–1.2 GB × views | **default recommended** for objects; plugin Auto view cap = **24** (trained up to 32) |
-| [`freesplatter-object-2dgs-f16.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-object-2dgs-f16.gguf) | F16 | **595.8 MB** | moderate | very good | ~1.2–1.8 GB × views | best everyday object quality; use **8–24 views** for thin / detailed geometry |
-| [`freesplatter-object-2dgs-f32.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-object-2dgs-f32.gguf) | F32 | **1.15 GB** | slowest | best (reference precision) | ~2.0–3.0 GB × views | full-precision reference / benchmarking; slower CPU inference; plugin lists as **Object-2DGS F32** |
+| [`freesplatter-object-2dgs-q8_0.gguf`](https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-object-2dgs-q8_0.gguf) | Q8_0 | **324.5 MB** | fastest | good | ~0.8–1.2 GB × views | **default recommended** for objects; plugin Auto view cap = **24** (trained up to 32) |
+| [`freesplatter-object-2dgs-f16.gguf`](https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-object-2dgs-f16.gguf) | F16 | **595.8 MB** | moderate | very good | ~1.2–1.8 GB × views | best everyday object quality; use **8–24 views** for thin / detailed geometry |
+| [`freesplatter-object-2dgs-f32.gguf`](https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-object-2dgs-f32.gguf) | F32 | **1.15 GB** | slowest | best (reference precision) | ~2.0–3.0 GB × views | full-precision reference / benchmarking; slower CPU inference; plugin lists as **Object-2DGS F32** |
 
 **When to prefer Object-2DGS**
 
@@ -68,9 +68,9 @@ Legacy **full 3D ellipsoid** object head (`use_2dgs=false`, 23 channels). Kept f
 
 | Download | Quant | Size | Relative speed | Relative quality | Peak RAM (est.) | Notes |
 |------|------|------|----------|----------|----------------|------|
-| [`freesplatter-object-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-object-q8_0.gguf) | Q8_0 | **324.5 MB** | fastest | good | ~0.8–1.2 GB × views | quick tests only; plugin Auto view cap = **16** |
-| [`freesplatter-object-f16.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-object-f16.gguf) | F16 | **595.8 MB** | moderate | very good | ~1.2–1.8 GB × views | OK for **3–8 views** when 2DGS is unavailable |
-| [`freesplatter-object-f32.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-object-f32.gguf) | F32 | **1.15 GB** | slowest | best | ~2.0–3.0 GB × views | reference / benchmarking only |
+| [`freesplatter-object-q8_0.gguf`](https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-object-q8_0.gguf) | Q8_0 | **324.5 MB** | fastest | good | ~0.8–1.2 GB × views | quick tests only; plugin Auto view cap = **16** |
+| [`freesplatter-object-f16.gguf`](https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-object-f16.gguf) | F16 | **595.8 MB** | moderate | very good | ~1.2–1.8 GB × views | OK for **3–8 views** when 2DGS is unavailable |
+| [`freesplatter-object-f32.gguf`](https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-object-f32.gguf) | F32 | **1.15 GB** | slowest | best | ~2.0–3.0 GB × views | reference / benchmarking only |
 
 **When Object-3DGS might still be used**
 
@@ -105,22 +105,22 @@ Legacy **full 3D ellipsoid** object head (`use_2dgs=false`, 23 channels). Kept f
 
 | Scenario | Recommended model (click to download) |
 |------|---------------------|
-| Quick try / laptop CPU (scene) | [`freesplatter-scene-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-scene-q8_0.gguf) |
-| Quick try / laptop CPU (object) | [`freesplatter-object-2dgs-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-object-2dgs-q8_0.gguf) with **Remove BG** |
-| Everyday quality (Scene, 2 views) | [`freesplatter-scene-f16.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-scene-f16.gguf) |
-| Everyday quality (Object, multi-view) | [`freesplatter-object-2dgs-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-object-2dgs-q8_0.gguf) (≤16 views) or [`freesplatter-object-2dgs-f16.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-object-2dgs-f16.gguf) (8–24 views) |
-| Thin / detailed object (many views) | [`freesplatter-object-2dgs-f16.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-object-2dgs-f16.gguf), **16–24 views**, background removed |
-| Legacy 3DGS object / ≤8 views only | [`freesplatter-object-q8_0.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-object-q8_0.gguf) |
-| Best quality / benchmarking | [`freesplatter-scene-f32.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-scene-f32.gguf) / [`freesplatter-object-2dgs-f32.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-object-2dgs-f32.gguf) / [`freesplatter-object-f32.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-object-f32.gguf) (legacy 3DGS) + GPU backend |
+| Quick try / laptop CPU (scene) | [`freesplatter-scene-q8_0.gguf`](https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-scene-q8_0.gguf) |
+| Quick try / laptop CPU (object) | [`freesplatter-object-2dgs-q8_0.gguf`](https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-object-2dgs-q8_0.gguf) with **Remove BG** |
+| Everyday quality (Scene, 2 views) | [`freesplatter-scene-f16.gguf`](https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-scene-f16.gguf) |
+| Everyday quality (Object, multi-view) | [`freesplatter-object-2dgs-q8_0.gguf`](https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-object-2dgs-q8_0.gguf) (≤16 views) or [`freesplatter-object-2dgs-f16.gguf`](https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-object-2dgs-f16.gguf) (8–24 views) |
+| Thin / detailed object (many views) | [`freesplatter-object-2dgs-f16.gguf`](https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-object-2dgs-f16.gguf), **16–24 views**, background removed |
+| Legacy 3DGS object / ≤8 views only | [`freesplatter-object-q8_0.gguf`](https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-object-q8_0.gguf) |
+| Best quality / benchmarking | [`freesplatter-scene-f32.gguf`](https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-scene-f32.gguf) / [`freesplatter-object-2dgs-f32.gguf`](https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-object-2dgs-f32.gguf) / [`freesplatter-object-f32.gguf`](https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-object-f32.gguf) (legacy 3DGS) + GPU backend |
 
 Manual download example:
 
 ```bash
 # Object-2DGS (recommended)
-curl -L -O https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-object-2dgs-q8_0.gguf
+curl -L -O https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-object-2dgs-q8_0.gguf
 
 # Object-2DGS F32 (reference precision)
-curl -L -O https://github.com/Asher-1/cloudViewer_downloads/releases/download/3dgs/freesplatter-object-2dgs-f32.gguf
+curl -L -O https://huggingface.co/Asher-1/FreeSplatter_GGUF/resolve/main/freesplatter-object-2dgs-f32.gguf
 ```
 
 ### Convert from upstream (maintainers)

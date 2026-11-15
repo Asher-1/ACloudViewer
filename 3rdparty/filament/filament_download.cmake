@@ -55,6 +55,44 @@ else()
         endif()
     endif()
 
+    # GitHub release assets intermittently answer 500 while the redirect
+    # target is healthy (first seen on the cpu-noble docker lane);
+    # ExternalProject's download step has no retry, so one transient response
+    # killed the whole image build. Prefetch the tarball with bounded,
+    # hash-verified retries at configure time - a corrupt or partial cached
+    # file is removed and re-downloaded - and ExternalProject then finds a
+    # valid tarball in DOWNLOAD_DIR and skips its own download. The loop
+    # condition is the attempt counter, not a boolean literal: under CMP0130
+    # old semantics while(TRUE) evaluates TRUE as an undefined variable and
+    # silently runs the body zero times.
+    get_filename_component(FILAMENT_TARBALL_NAME "${FILAMENT_URL}" NAME)
+    set(FILAMENT_TARBALL "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/filament/${FILAMENT_TARBALL_NAME}")
+    set(FILAMENT_DOWNLOAD_ATTEMPTS 4)
+    set(FILAMENT_TARBALL_OK FALSE)
+    while(FILAMENT_DOWNLOAD_ATTEMPTS GREATER_EQUAL 0 AND NOT FILAMENT_TARBALL_OK)
+        if(EXISTS "${FILAMENT_TARBALL}")
+            file(SHA256 "${FILAMENT_TARBALL}" FILAMENT_TARBALL_SHA256)
+            if(FILAMENT_TARBALL_SHA256 STREQUAL FILAMENT_SHA256)
+                set(FILAMENT_TARBALL_OK TRUE)
+                break()
+            endif()
+            message(STATUS "Filament: cached tarball hash mismatch, re-downloading")
+            file(REMOVE "${FILAMENT_TARBALL}")
+        endif()
+        file(DOWNLOAD "${FILAMENT_URL}" "${FILAMENT_TARBALL}" STATUS FILAMENT_DOWNLOAD_STATUS)
+        list(GET FILAMENT_DOWNLOAD_STATUS 0 FILAMENT_DOWNLOAD_RC)
+        if(NOT FILAMENT_DOWNLOAD_RC EQUAL 0)
+            list(GET FILAMENT_DOWNLOAD_STATUS 1 FILAMENT_DOWNLOAD_MSG)
+            message(WARNING "Filament download attempt failed: ${FILAMENT_DOWNLOAD_MSG}")
+            file(REMOVE "${FILAMENT_TARBALL}")
+        endif()
+        math(EXPR FILAMENT_DOWNLOAD_ATTEMPTS "${FILAMENT_DOWNLOAD_ATTEMPTS} - 1")
+    endwhile()
+    if(NOT FILAMENT_TARBALL_OK)
+        message(FATAL_ERROR "Filament: could not download a hash-valid tarball "
+                "from ${FILAMENT_URL} (attempts exhausted)")
+    endif()
+
     set(lib_byproducts ${filament_LIBRARIES})
     list(TRANSFORM lib_byproducts PREPEND <SOURCE_DIR>/${lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX})
     list(TRANSFORM lib_byproducts APPEND ${CMAKE_STATIC_LIBRARY_SUFFIX})

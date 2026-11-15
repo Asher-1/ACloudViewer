@@ -40,7 +40,7 @@
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(TestOpenGLContextManager) {
+TEST(util_opengl_utils, TestOpenGLContextManager) {
   char app_name[] = "Test";
   int argc = 1;
   char* argv[] = {app_name};
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(TestOpenGLContextManager) {
   thread.join();
 }
 
-BOOST_AUTO_TEST_CASE(TestRunThreadWithOpenGLContext) {
+TEST(util_opengl_utils, TestRunThreadWithOpenGLContext) {
   char app_name[] = "Test";
   int argc = 1;
   char* argv[] = {app_name};

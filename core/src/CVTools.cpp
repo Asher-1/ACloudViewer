@@ -16,8 +16,6 @@
 #include <QFile>
 
 // SYSTEM
-#include <codecvt>
-#include <locale>
 #include <regex>
 #if defined(CV_WINDOWS)
 #include "stdio.h"
@@ -167,15 +165,11 @@ int CVTools::TranslateKeyCode(int key) {
 }
 
 std::wstring CVTools::Char2Wchar(const char* szStr) {
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
-    std::wstring wideStr = conv.from_bytes(szStr);
-    return wideStr;
+    return QString::fromUtf8(szStr).toStdWString();
 }
 
 std::string CVTools::Wchar2Char(const wchar_t* szStr) {
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
-    std::string wideStr = conv.to_bytes(szStr);
-    return wideStr;
+    return QString::fromWCharArray(szStr).toUtf8().toStdString();
 }
 
 bool CVTools::FileMappingReader(const std::string& filename,

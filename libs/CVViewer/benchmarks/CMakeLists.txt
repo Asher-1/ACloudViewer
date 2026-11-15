@@ -1,5 +1,10 @@
 add_executable(benchmarks)
 
+# Heavy verification binary (500MB+ linked against the full library): keep it
+# out of bin/ next to the grouped test runner in bin/cloudviewer_test/.
+set_target_properties(benchmarks PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/cloudviewer_test")
+
 include_directories(${CloudViewer_SOURCE_DIR})
 
 add_subdirectory(benchmark_utilities)

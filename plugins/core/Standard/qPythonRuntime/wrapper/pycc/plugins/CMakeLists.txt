@@ -84,6 +84,9 @@ function(AddPluginWrapper)
       CACHE INTERNAL "Internal plugin wrapper list"
   )
 
+  # Optional wrappers must use the same opaque/Qt converters and strict link contract.
+  qpythonruntime_configure_bindings(${PLUGIN_WRAPPER_NAME})
+
   # Place Python wrappers in a separate directory during build so they don't
   # get loaded by Qt's plugin scanner (they lack Q_PLUGIN_METADATA).
   # Path must match getPluginsWrappersPath() in load_plugins.cpp.

@@ -114,6 +114,12 @@ ccPluginInfoDlg::ccPluginInfoDlg(QWidget *parent)
     m_ProxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
     m_ProxyModel->setSourceModel(m_ItemModel);
 
+    // External links (web pages, mailto:) must open in the system browser/
+    // mail client; QTextBrowser ignores them by default.
+    m_UI->mReferencesTextBrowser->setOpenExternalLinks(true);
+    m_UI->mAuthorsTextBrowser->setOpenExternalLinks(true);
+    m_UI->mMaintainerTextBrowser->setOpenExternalLinks(true);
+
     m_UI->mPluginListView->setModel(m_ProxyModel);
     m_UI->mPluginListView->setFocus();
 

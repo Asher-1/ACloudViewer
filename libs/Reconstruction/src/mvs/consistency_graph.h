@@ -8,6 +8,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -39,8 +40,8 @@ public:
                       int* num_images,
                       const int** image_idxs) const;
 
-    void Read(const std::string& path);
-    void Write(const std::string& path) const;
+    void Read(const std::filesystem::path& path);
+    void Write(const std::filesystem::path& path) const;
 
 private:
     void InitializeMap(const size_t width, const size_t height);

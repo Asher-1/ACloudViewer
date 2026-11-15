@@ -111,7 +111,7 @@ void pybind_rpc(py::module& m_io) {
       time (int): The time associated with the data.
       layer (str): A layer name that can be used by receivers that support layers.
       connection (cv3d.io.rpc.Connection): A connection object that will be used for sending the data.
-  
+
   Returns:
       Returns True if the data was successfully received.
   )doc");

@@ -34,7 +34,7 @@
 #include <numeric>
 
 #include "util/misc.h"
-#include "util/random.h"
+#include "math/random.h"
 
 namespace colmap {
 
@@ -105,7 +105,9 @@ std::vector<size_t> ProgressiveSampler::Sample() {
 
   // In progressive sampling mode, the last element is mandatory.
   if (T_n_p_ >= t_) {
-    sampled_idxs.push_back(n_);
+    // Upstream parity (48af6d30 #4859): n_ is the sample count, so the
+    // active prefix ends at index n_ - 1; pushing n_ sampled out of range.
+    sampled_idxs.push_back(n_ - 1);
   }
 
   return sampled_idxs;

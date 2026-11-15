@@ -49,10 +49,6 @@ LicenseWidget::LicenseWidget(QWidget* parent) : QTextEdit(parent) {
   licenses += GetGraclusLicense();
   licenses += "<h3>LSD</h3>";
   licenses += GetLSDLicense();
-#ifdef PBA_ENABLED
-  licenses += "<h3>PBA</h3>";
-  licenses += GetPBALicense();
-#endif
   licenses += "<h3>PoissonRecon</h3>";
   licenses += GetPoissonReconLicense();
   licenses += "<h3>SiftGPU</h3>";
@@ -197,25 +193,6 @@ QString LicenseWidget::GetLSDLicense() const {
       "If not, see http://www.gnu.org/licenses/.";
   return license;
 }
-
-#ifdef PBA_ENABLED
-QString LicenseWidget::GetPBALicense() const {
-  const QString license =
-      "Copyright (c) 2011  Changchang Wu (ccwu@cs.washington.edu)<br>"
-      "and the University of Washington at Seattle<br>"
-      "<br>"
-      "This library is free software; you can redistribute it and/or<br>"
-      "modify it under the terms of the GNU General Public<br>"
-      "License as published by the Free Software Foundation; either<br>"
-      "Version 3 of the License, or (at your option) any later version.<br>"
-      "<br>"
-      "This library is distributed in the hope that it will be useful,<br>"
-      "but WITHOUT ANY WARRANTY; without even the implied warranty of<br>"
-      "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU<br>"
-      "General Public License for more details.";
-  return license;
-}
-#endif
 
 QString LicenseWidget::GetPoissonReconLicense() const {
   const QString license =

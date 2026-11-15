@@ -56,6 +56,7 @@ public:
     CV_CORE_LIB_API static bool QMappingWriter(const std::string& filename,
                                                const void* data,
                                                std::size_t length);
+    // UTF-8 <-> native wide strings (UTF-16 on Windows, UTF-32 on Unix).
     CV_CORE_LIB_API static std::wstring Char2Wchar(const char* szStr);
     CV_CORE_LIB_API static std::string Wchar2Char(const wchar_t* szStr);
 

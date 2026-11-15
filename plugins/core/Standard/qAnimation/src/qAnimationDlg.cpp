@@ -128,11 +128,6 @@ QImage animationRenderToImage(ecvGenericGLDisplay* view,
 
 // System
 #include <algorithm>
-#if defined(CV_WINDOWS)
-#include "windows.h"
-#else
-#include <unistd.h>
-#endif
 
 static const QString s_stepDurationKey("StepDurationSec");
 static const QString s_stepEnabledKey("StepEnabled");
@@ -1424,11 +1419,7 @@ void qAnimationDlg::textureAnimationPreview(const QStringList& texture_files,
         // remaining time
         if (dt_ms < delay_ms) {
             int wait_ms = static_cast<int>(delay_ms - dt_ms);
-#if defined(CV_WINDOWS)
-            ::Sleep(wait_ms);
-#else
-            usleep(wait_ms * 1000);
-#endif
+            QThread::msleep(static_cast<unsigned long>(wait_ms));
         }
 
         if (!openPoly && frameIndex == total_count) {

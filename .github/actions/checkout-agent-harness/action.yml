@@ -1,0 +1,20 @@
+name: Checkout paired agent harness
+description: Keep CLI, MCP, and native batch contracts paired with this source revision.
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        repository: Asher-1/CLI-Anything
+        # Track the harness main branch tip: this source revision is updated
+        # alongside the harness, and the pairing gates (registry "ai list",
+        # aicore.batch whitelist, installed schema, catalog dump) run against
+        # whatever is checked out here, so any drift fails CI immediately
+        # instead of hiding behind a stale pin.
+        ref: main
+        path: _cli-anything
+        sparse-checkout: |
+          acloudviewer/agent-harness
+    - name: Record harness revision
+      shell: bash
+      run: git -C _cli-anything rev-parse HEAD

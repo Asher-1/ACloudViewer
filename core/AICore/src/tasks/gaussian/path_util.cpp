@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "model_cache.hpp"
+#include "common/model_cache.hpp"
 
 namespace aicore {
 namespace gaussian {

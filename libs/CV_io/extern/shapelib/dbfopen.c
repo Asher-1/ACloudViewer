@@ -2105,7 +2105,7 @@ DBFReorderFields( DBFHandle psDBF, int* panMap )
     panFieldSizeNew = STATIC_CAST(int *, calloc(sizeof(int),  psDBF->nFields));
     panFieldDecimalsNew = STATIC_CAST(int *, calloc(sizeof(int), psDBF->nFields));
     pachFieldTypeNew = STATIC_CAST(char *, calloc(sizeof(char), psDBF->nFields));
-    pszHeaderNew = STATIC_CAST(char*, malloc(sizeof(char) * XBASE_FLDHDR_SZ * 
+    pszHeaderNew = STATIC_CAST(char*, malloc(sizeof(char) * XBASE_FLDHDR_SZ *
                                   psDBF->nFields));
 
     /* shuffle fields definitions */

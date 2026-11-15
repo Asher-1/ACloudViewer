@@ -5,29 +5,23 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "data_root_util.hpp"
+#include "common/data_root_util.hpp"
 
 #include <FileSystem.h>
 
-#include <cstdlib>
 #include <filesystem>
 
 namespace aicore {
 
 std::string locate_data_root() {
-    if (const char* env_p = std::getenv("CLOUDVIEWER_DATA_ROOT")) {
-        if (env_p[0] != '\0') {
-            return std::string(env_p);
-        }
-    }
-    return cloudViewer::utility::filesystem::GetHomeDirectory() +
-           "/cloudViewer_data";
+    return cloudViewer::utility::filesystem::LocateDataRoot();
 }
 
 std::string extract_model_dir(const char* sub_dir) {
-    return (std::filesystem::path(locate_data_root()) / "extract" / sub_dir)
+    return (std::filesystem::u8path(locate_data_root()) / "extract" /
+            std::filesystem::u8path(sub_dir))
             .lexically_normal()
-            .string();
+            .generic_u8string();
 }
 
 }  // namespace aicore
