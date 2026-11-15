@@ -129,6 +129,15 @@ jobs:
               echo "MODE=align" >> "$GITHUB_ENV"
               echo "SKIP=true" >> "$GITHUB_ENV"
               echo "VERSION=$app_ver" >> "$GITHUB_ENV"
+            elif [ "$(printf '%s\n%s\n' "$reg" "$app_ver" | sort -V | head -n1)" != "$reg" ]; then
+              # registry is AHEAD of the app release (a patch-bump published a
+              # newer bootstrap than the current main-devel assets). Aligning
+              # here would drag `latest` back to the older app version — skip
+              # instead; align resumes when the app catches up.
+              echo "npm@$reg is ahead of app release $app_ver; nothing to align. Skipping."
+              echo "MODE=align" >> "$GITHUB_ENV"
+              echo "SKIP=true" >> "$GITHUB_ENV"
+              echo "VERSION=$reg" >> "$GITHUB_ENV"
             else
               echo "MODE=align" >> "$GITHUB_ENV"
               echo "VERSION=$app_ver" >> "$GITHUB_ENV"
