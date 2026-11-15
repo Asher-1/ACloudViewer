@@ -289,6 +289,14 @@ class RangesUnsupportedError extends Error {
   constructor() { super("server does not honor range requests"); }
 }
 
+class AssetGoneError extends Error {
+  constructor(status) {
+    super(`asset is no longer downloadable (HTTP ${status}) — the main-devel ` +
+      "release is updated between builds and the asset was replaced or removed " +
+      "during this download; re-run to fetch the current assets");
+  }
+}
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Human-readable failure reason: fetch wraps low-level errors as
@@ -310,7 +318,10 @@ async function probeRange(url) {
     redirect: "follow",
     signal: AbortSignal.timeout(30000),
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status} while probing ${url}`);
+  if (!res.ok) {
+    if (res.status === 404 || res.status === 410) throw new AssetGoneError(res.status);
+    throw new Error(`HTTP ${res.status} while probing ${url}`);
+  }
   try {
     if (res.status !== 206) {
       return { ranges: false, total: Number(res.headers.get("content-length") || 0) };
@@ -353,6 +364,14 @@ async function downloadSegmented(url, dest, total, segments, progress) {
           signal: ctrl.signal,
         });
         if (res.status === 200) throw new RangesUnsupportedError();
+        if (res.status === 404 || res.status === 410) {
+          // main-devel is a rolling release: update-release deletes and
+          // re-uploads assets between builds, so an in-flight download can
+          // legitimately outlive its asset (verified 2026-11-15: segment 404
+          // after the release was refreshed mid-download). Retrying cannot
+          // help — fail fast with an actionable message.
+          throw new AssetGoneError(res.status);
+        }
         if (res.status !== 206) throw new Error(`HTTP ${res.status} for segment range`);
         if (res.headers.get("content-encoding")) throw new RangesUnsupportedError();
         for await (const chunk of Readable.fromWeb(res.body)) {
@@ -367,6 +386,7 @@ async function downloadSegmented(url, dest, total, segments, progress) {
       } catch (e) {
         clearTimeout(timer);
         if (e instanceof RangesUnsupportedError) { state.cancelled = true; throw e; }
+        if (e instanceof AssetGoneError) { state.cancelled = true; throw e; }
         if (attempt < SEGMENT_RETRIES) {
           const wait = Math.min(2 * 2 ** (attempt - 1), 60);
           console.log(`  segment ${idx + 1}/${segments}: retry ${attempt}/${SEGMENT_RETRIES - 1} in ${wait}s (${errorReason(e)})`);
@@ -380,6 +400,8 @@ async function downloadSegmented(url, dest, total, segments, progress) {
   fs.closeSync(fd);
   const unsupported = results.find((r) => r.status === "rejected" && r.reason instanceof RangesUnsupportedError);
   if (unsupported) throw unsupported.reason;
+  const gone = results.find((r) => r.status === "rejected" && r.reason instanceof AssetGoneError);
+  if (gone) throw gone.reason;
   const failed = results.filter((r) => r.status === "rejected").map((r) => r.reason && r.reason.message);
   if (failed.length) throw new Error(`${failed.length}/${segments} download segment(s) failed:\n  - ${failed.join("\n  - ")}`);
   const size = fs.statSync(dest).size;
@@ -402,6 +424,7 @@ async function downloadSingleStream(url, dest, info, progress, retries = 8) {
       const headers = { "User-Agent": USER_AGENT };
       if (written > 0 && info.ranges) headers.Range = `bytes=${written}-`;
       const res = await fetch(url, { headers, redirect: "follow", signal: ctrl.signal });
+      if (res.status === 404 || res.status === 410) throw new AssetGoneError(res.status);
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
       if (res.headers.get("content-encoding")) {
         throw new Error("unexpected content-encoding on asset download; refusing to write a corrupt file");
@@ -425,6 +448,7 @@ async function downloadSingleStream(url, dest, info, progress, retries = 8) {
       return;
     } catch (e) {
       clearTimeout(timer);
+      if (e instanceof AssetGoneError) throw e;
       if (attempt < retries) {
         const wait = Math.min(5 * 2 ** (attempt - 1), 60);
         console.log(`  retry ${attempt}/${retries - 1} in ${wait}s (${errorReason(e)})`);
