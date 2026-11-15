@@ -1,0 +1,32 @@
+{
+  "name": "@asher-1/acloudviewer",
+  "version": "3.9.5",
+  "description": "Cross-platform installer bootstrap for ACloudViewer — fetches and launches the official Windows/macOS/Linux installer (or Python wheel) from GitHub Releases.",
+  "license": "GPL-2.0-only",
+  "bin": {
+    "acloudviewer": "bin/acloudviewer.js"
+  },
+  "files": [
+    "bin",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Asher-1/ACloudViewer.git"
+  },
+  "homepage": "https://asher-1.github.io/ACloudViewer/",
+  "bugs": {
+    "url": "https://github.com/Asher-1/ACloudViewer/issues"
+  },
+  "keywords": [
+    "acloudviewer",
+    "cloudviewer",
+    "point-cloud",
+    "3d",
+    "installer",
+    "cli"
+  ]
+}
