@@ -37,6 +37,10 @@ on:
       version:
         description: 'Package version to publish (x.y.z, overrides package.json)'
         required: true
+      dist_tag:
+        description: 'npm dist-tag to publish under (default: latest)'
+        required: false
+        default: 'latest'
   workflow_run:
     # Same uploader list as update-release.yml: whoever finishes last yields
     # the final pass; the version alignment below is idempotent, so earlier
@@ -61,6 +65,7 @@ jobs:
       SKIP: 'false'
       MODE: 'init'
       ACTION: 'none'
+      DIST_TAG: 'latest'
     steps:
       - uses: actions/checkout@v4
 
@@ -75,8 +80,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           DISPATCH_VERSION: ${{ github.event.inputs.version }}
+          DISPATCH_TAG: ${{ github.event.inputs.dist_tag }}
         run: |
           set -euo pipefail
+          # OIDC trusted publishing needs npm >= 11.5.1 (Node 24 ships a
+          # newer one; this line keeps the evidence in the run log).
+          echo "toolchain: node $(node --version), npm $(npm --version)"
           pkg=$(node -p "require('./npm/package.json').version")
           registry_latest() {
             # Distinguish "package not published yet" (404 -> 0.0.0) from
@@ -116,11 +125,16 @@ jobs:
 
           elif [ -n "${DISPATCH_VERSION:-}" ]; then
             # ── Emergency mode: manual dispatch — force the given version ──
+            # DIST_TAG lets a one-off publish (e.g. a trusted-publishing
+            # validation carrier like 3.9.5-oidc.1) land on a dedicated
+            # dist-tag instead of clobbering `latest`; reconcile re-points
+            # latest at the app version on its next run regardless.
             (cd npm && npm version "$DISPATCH_VERSION" --no-git-tag-version >/dev/null)
             echo "MODE=dispatch" >> "$GITHUB_ENV"
             echo "ACTION=publish" >> "$GITHUB_ENV"
             echo "SKIP=false" >> "$GITHUB_ENV"
             echo "VERSION=$DISPATCH_VERSION" >> "$GITHUB_ENV"
+            echo "DIST_TAG=${DISPATCH_TAG:-latest}" >> "$GITHUB_ENV"
 
           elif [ "${{ github.event_name }}" = "workflow_run" ] || [ "${{ github.event_name }}" = "push" ]; then
             # ── Mode: reconcile — one invariant drives both triggers:
@@ -196,7 +210,7 @@ jobs:
             fi
             exit 0
           fi
-          if ! npm publish --access public 2>&1 | tee /tmp/npmjs-publish.log; then
+          if ! npm publish --access public --tag "$DIST_TAG" 2>&1 | tee /tmp/npmjs-publish.log; then
             # A concurrent reconcile run (workflow_run events converge; reruns
             # race within npmjs' metadata-cache window) may publish the same
             # version between our resolve and our PUT — that is success by
@@ -233,7 +247,7 @@ jobs:
             echo "MIRROR_RESULT=retagged latest -> $VERSION" >> "$GITHUB_ENV"
             exit 0
           fi
-          if ! npm publish --registry https://npm.pkg.github.com --access public 2>&1 | tee /tmp/ghp-publish.log; then
+          if ! npm publish --registry https://npm.pkg.github.com --access public --tag "$DIST_TAG" 2>&1 | tee /tmp/ghp-publish.log; then
             if grep -qE "EPUBLISHCONFLICT|cannot publish over|previously published|409" /tmp/ghp-publish.log; then
               echo "::warning::GitHub Packages already has version ${VERSION:-unknown}; mirror skipped."
               echo "MIRROR_RESULT=skipped (already present)" >> "$GITHUB_ENV"
@@ -282,6 +296,7 @@ jobs:
             echo "|---|---|"
             echo "| Mode | \`$mode\` |"
             echo "| Action | \`$action\` |"
+            echo "| Dist tag | \`$DIST_TAG\` |"
             echo "| Skipped | \`$skip\` |"
             echo "| npmjs.org | $npmjs_status |"
             echo "| GitHub Packages | $mirror_status |"
