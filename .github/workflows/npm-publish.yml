@@ -41,6 +41,10 @@ on:
         description: 'npm dist-tag to publish under (default: latest)'
         required: false
         default: 'latest'
+      unpublish_versions:
+        description: 'Comma-separated versions to unpublish from npmjs (emergency cleanup; with version as the surviving latest target)'
+        required: false
+        default: ''
   workflow_run:
     # Same uploader list as update-release.yml: whoever finishes last yields
     # the final pass; the version alignment below is idempotent, so earlier
@@ -66,6 +70,7 @@ jobs:
       MODE: 'init'
       ACTION: 'none'
       DIST_TAG: 'latest'
+      UNPUBLISH_LIST: ''
     steps:
       - uses: actions/checkout@v4
 
@@ -81,6 +86,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DISPATCH_VERSION: ${{ github.event.inputs.version }}
           DISPATCH_TAG: ${{ github.event.inputs.dist_tag }}
+          DISPATCH_UNPUBLISH: ${{ github.event.inputs.unpublish_versions }}
         run: |
           set -euo pipefail
           # OIDC trusted publishing needs npm >= 11.5.1 (Node 24 ships a
@@ -122,6 +128,21 @@ jobs:
             echo "ACTION=publish" >> "$GITHUB_ENV"
             echo "SKIP=false" >> "$GITHUB_ENV"
             echo "VERSION=$tag" >> "$GITHUB_ENV"
+
+          elif [ -n "${DISPATCH_UNPUBLISH:-}" ]; then
+            # ── Emergency cleanup: unpublish the listed versions, then point
+            # latest at $DISPATCH_VERSION on both registries. No publish
+            # happens here — npm versions are immutable even after
+            # unpublishing ("Once package@version has been used, you can
+            # never use it again"), so the surviving version keeps the
+            # tarball it already has. Never pass the surviving version in
+            # the list: unpublishing every version bars new publishes for
+            # 24h and drops the package (with its trusted-publisher config).
+            echo "MODE=cleanup" >> "$GITHUB_ENV"
+            echo "ACTION=unpublish" >> "$GITHUB_ENV"
+            echo "SKIP=false" >> "$GITHUB_ENV"
+            echo "VERSION=$DISPATCH_VERSION" >> "$GITHUB_ENV"
+            echo "UNPUBLISH_LIST=$DISPATCH_UNPUBLISH" >> "$GITHUB_ENV"
 
           elif [ -n "${DISPATCH_VERSION:-}" ]; then
             # ── Emergency mode: manual dispatch — force the given version ──
@@ -182,9 +203,30 @@ jobs:
             fi
           fi
 
+      # ── Emergency cleanup: remove stale versions before anything else ───
+      # Unpublishing is only legal within policy (no dependents; <72h for a
+      # fresh package) and is irreversible; the version numbers themselves
+      # stay burned. `version` names the surviving version that latest must
+      # point at — never include it in the list.
+      - name: Unpublish stale versions (npmjs.org)
+        if: env.UNPUBLISH_LIST != ''
+        working-directory: npm
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
+          for v in $(tr ',' ' ' <<< "$UNPUBLISH_LIST"); do
+            echo "::notice::unpublishing @asher-1/acloudviewer@$v"
+            npm unpublish "@asher-1/acloudviewer@$v"
+          done
+          # Removals can leave latest dangling or stale — re-point it at the
+          # surviving aligned version on both registries.
+          npm dist-tag add "@asher-1/acloudviewer@$VERSION" latest
+          echo "NPMJS_CLEANUP=unpublished: $UNPUBLISH_LIST; latest -> $VERSION" >> "$GITHUB_ENV"
+
       # ── Fail fast on packaging mistakes before touching any registry ────
       - name: Package sanity check
-        if: env.SKIP != 'true' && env.ACTION != 'tagback'
+        if: env.SKIP != 'true' && env.ACTION != 'tagback' && env.ACTION != 'unpublish'
         working-directory: npm
         run: npm pack --dry-run
 
@@ -208,6 +250,11 @@ jobs:
               echo "::error::dist-tag retag to $VERSION failed (registry auth or network)."
               exit 1
             fi
+            exit 0
+          fi
+          if [ "$ACTION" = "unpublish" ]; then
+            # Cleanup mode: removals and the latest re-point already happened
+            # in the unpublish step; there is nothing to publish here.
             exit 0
           fi
           if ! npm publish --access public --tag "$DIST_TAG" 2>&1 | tee /tmp/npmjs-publish.log; then
@@ -247,6 +294,17 @@ jobs:
             echo "MIRROR_RESULT=retagged latest -> $VERSION" >> "$GITHUB_ENV"
             exit 0
           fi
+          if [ "$ACTION" = "unpublish" ]; then
+            # Cleanup mode: the mirror keeps its tarballs (version deletion
+            # needs the GraphQL API), but latest must land on the surviving
+            # version just like on npmjs.
+            if ! npm dist-tag add --registry https://npm.pkg.github.com "@asher-1/acloudviewer@$VERSION" latest 2>&1 | tee /tmp/ghp-cleanup.log; then
+              echo "::error::mirror dist-tag retag to $VERSION failed."
+              exit 1
+            fi
+            echo "MIRROR_RESULT=latest -> $VERSION (cleanup)" >> "$GITHUB_ENV"
+            exit 0
+          fi
           if ! npm publish --registry https://npm.pkg.github.com --access public --tag "$DIST_TAG" 2>&1 | tee /tmp/ghp-publish.log; then
             if grep -qE "EPUBLISHCONFLICT|cannot publish over|previously published|409" /tmp/ghp-publish.log; then
               echo "::warning::GitHub Packages already has version ${VERSION:-unknown}; mirror skipped."
@@ -273,6 +331,7 @@ jobs:
           case "$npmjs_outcome" in
             success)
               if [ "$action" = "tagback" ]; then npmjs_status="retagged latest -> $version"
+              elif [ -n "${NPMJS_CLEANUP:-}" ]; then npmjs_status="$NPMJS_CLEANUP"
               else npmjs_status="published"; fi ;;
             skipped)
               if [ "$skip" = "true" ]; then npmjs_status="skipped (already aligned)"
@@ -281,11 +340,7 @@ jobs:
           esac
           case "$mirror_outcome" in
             success)
-              if [ "${MIRROR_RESULT:-published}" = "skipped (already present)" ]; then
-                mirror_status="skipped (already present)"
-              else
-                mirror_status="published"
-              fi ;;
+              mirror_status="${MIRROR_RESULT:-published}" ;;
             skipped) mirror_status="skipped (already aligned)" ;;
             *) mirror_status="FAILED ($mirror_outcome)" ;;
           esac
