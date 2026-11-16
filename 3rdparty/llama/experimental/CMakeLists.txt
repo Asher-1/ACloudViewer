@@ -108,7 +108,7 @@ if(BUILD_TESTING)
         add_test(NAME llama_cuda_elementwise_epilogue
             COMMAND llama_elementwise_epilogue_test "${GGML_MODULE_DIR}" CUDA0)
         set_tests_properties(llama_cuda_elementwise_epilogue PROPERTIES RESOURCE_LOCK gpu)
-        # 缺少 nsys 或真实 CUDA 路由证据即失败；不以数值相同冒充融合已执行。
+        # Missing nsys or real CUDA routing evidence fails; equal numerics never masquerade as executed fusion.
         add_test(NAME llama_cuda_add_gelu_routes
             COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/test_cuda_add_gelu_routes.py
                 --probe $<TARGET_FILE:llama_elementwise_epilogue_test>

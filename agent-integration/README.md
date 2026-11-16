@@ -19,7 +19,7 @@ yet, install the app itself via npm (Windows / macOS / Linux):
 ```bash
 # Bootstrap CLI downloads and launches the matching installer
 npm install -g @asher-1/acloudviewer
-acloudviewer install                        # auto-detects CPU/CUDA flavor
+acloudviewer install                        # CPU by default; --cuda opts in (driver checked)
 
 # Headless / agent-friendly unattended install (no GUI wizard, no sudo)
 acloudviewer install --silent --prefix ~/.local/share/ACloudViewer
@@ -31,6 +31,14 @@ GITHUB_TOKEN=ghp_... acloudviewer install --silent
 # Remove the app again (wraps the QtIFW maintenancetool)
 acloudviewer uninstall --prefix ~/.local/share/ACloudViewer --yes
 ```
+
+**Release channels:** `npm install -g @asher-1/acloudviewer` installs the latest
+**stable** release (`latest` dist-tag = app version, pins the matching
+`v<version>` release). For the newest development build use the **preview**
+channel: `npm install -g @asher-1/acloudviewer@next` (rolling `main-devel`
+assets, version `X.Y.Z-dev.<timestamp>`). `latest` never moves for development
+builds. This mirrors the harness `--channel stable|beta` selector (`beta` ≈
+`@next`, both track the `main-devel` prerelease).
 
 After a silent install the binary sits at `<prefix>/ACloudViewer`
 (`ACloudViewer.exe` on Windows) with `ACloudViewer.sh` as launcher — point the

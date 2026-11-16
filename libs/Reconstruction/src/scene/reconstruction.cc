@@ -973,6 +973,8 @@ bool Reconstruction::Merge(const Reconstruction& reconstruction,
     // cloud again changes the accepted merge result based on cluster-local
     // refinement noise; upstream MergeReconstructions returns the unfiltered
     // one-to-one track union here.
+    // TODO(upstream-parity): still open whether to adopt the upstream
+    // unfiltered union or keep the fork's filtered merge.
     return true;
 }
 
