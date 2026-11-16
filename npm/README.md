@@ -33,8 +33,8 @@ No Node.js on the target machine? Any user can also download installers directly
 ## Usage
 
 ```text
-acloudviewer install [--cuda|--cpu] [--silent] [--prefix <dir>] [--parallel <n>] [--dry-run] [--release <tag>]
-acloudviewer install --wheel [--cpu-only] [--python <path>] [--release <tag>]
+acloudviewer install [--cuda] [--force-cuda] [--silent] [--prefix <dir>] [--parallel <n>] [--dry-run] [--release <tag>]
+acloudviewer install --wheel [--cuda] [--force-cuda] [--python <path>] [--release <tag>]
 acloudviewer list [--release <tag>]
 acloudviewer uninstall [--prefix <dir>] [--yes]
 acloudviewer version | help
@@ -42,7 +42,9 @@ acloudviewer version | help
 
 | Option | Meaning |
 |--------|---------|
-| `--cuda` / `--cpu` | Force build flavor; default auto-detects an NVIDIA GPU (CUDA build falls back to CPU automatically). |
+| `--cuda` | Opt into the CUDA build (desktop or wheel). **Default: CPU** — GPU presence never auto-selects CUDA. Before any download the NVIDIA driver is checked: it must support CUDA **12.x** (minor versions within a major are compatible; only a lower major, e.g. an 11.x driver, is incompatible). An incompatible host is offered: re-check after a driver upgrade / abort / install the CPU build; on a **major mismatch** additionally: build from source via the CLI harness (`cli-anything-acloudviewer install source`, installed via pip automatically if missing). Non-interactive shells refuse with guidance instead of prompting. |
+| `--force-cuda` | Bypass the CUDA driver check (for setups where `nvidia-smi` misreports; the app may fail at runtime). |
+| `--cpu` / `--cpu-only` | Accepted for compatibility; CPU is already the default. |
 | `--silent` | Unattended install (QtIFW console mode; the app lands in `--prefix`, default `~/.local/share/ACloudViewer` — no sudo). |
 | `--prefix <dir>` | Install root for `--silent` / `--from`, and the target for `uninstall`. |
 | `--parallel <n>` | Concurrent download segments, 1–16 (see *Download behavior*). |
