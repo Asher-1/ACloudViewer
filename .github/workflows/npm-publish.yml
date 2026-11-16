@@ -80,6 +80,14 @@ jobs:
           # publishing (Node 22's bundled npm is too old for scoped OIDC).
           node-version: 24
 
+      # OIDC dist-tag management (the tagback path: `npm dist-tag add/rm`
+      # under trusted publishing) needs npm >= 11.21.0. Node 24 currently
+      # bundles 11.19.x, which can publish but fails dist-tag operations.
+      - name: Upgrade npm for OIDC dist-tag support
+        run: |
+          npm install -g npm@11
+          npm --version
+
       # ── Version resolution: one step decides IF and WHAT to publish ──────
       - name: Resolve version and publish mode
         env:
@@ -123,7 +131,7 @@ jobs:
               echo "::error::tag npm-v$tag does not match the main-devel app version ${app_ver:-<none>}"
               exit 1
             fi
-            (cd npm && npm version "$tag" --no-git-tag-version >/dev/null)
+            (cd npm && npm version "$tag" --no-git-tag-version --allow-same-version >/dev/null)
             echo "MODE=tag" >> "$GITHUB_ENV"
             echo "ACTION=publish" >> "$GITHUB_ENV"
             echo "SKIP=false" >> "$GITHUB_ENV"
@@ -150,7 +158,7 @@ jobs:
             # validation carrier like 3.9.5-oidc.1) land on a dedicated
             # dist-tag instead of clobbering `latest`; reconcile re-points
             # latest at the app version on its next run regardless.
-            (cd npm && npm version "$DISPATCH_VERSION" --no-git-tag-version >/dev/null)
+            (cd npm && npm version "$DISPATCH_VERSION" --no-git-tag-version --allow-same-version >/dev/null)
             echo "MODE=dispatch" >> "$GITHUB_ENV"
             echo "ACTION=publish" >> "$GITHUB_ENV"
             echo "SKIP=false" >> "$GITHUB_ENV"
@@ -181,12 +189,18 @@ jobs:
               echo "SKIP=true" >> "$GITHUB_ENV"
               echo "ACTION=none" >> "$GITHUB_ENV"
               echo "VERSION=$app_ver" >> "$GITHUB_ENV"
-            elif [ "$(printf '%s\n%s\n' "$reg" "$app_ver" | sort -V | head -n1)" != "$reg" ]; then
+            # sort -V | head -n1 yields the MINIMUM of (reg, app_ver).
+            # min == reg (with reg != app_ver) means reg < app_ver: the
+            # registry is BEHIND the app release -> publish. Using `!= reg`
+            # here inverts the branches (it selects reg > app_ver) and makes
+            # every drifted-ahead reconcile attempt a doomed same-version
+            # publish — verified 2026-11-16 (run 43765060589).
+            elif [ "$(printf '%s\n%s\n' "$reg" "$app_ver" | sort -V | head -n1)" = "$reg" ]; then
               # app_ver > reg: registry is behind the app release — publish
               # the aligned version (this also carries the latest bootstrap
               # source to users).
               echo "npm@$reg is behind app release $app_ver; publishing aligned version."
-              (cd npm && npm version "$app_ver" --no-git-tag-version >/dev/null)
+              (cd npm && npm version "$app_ver" --no-git-tag-version --allow-same-version >/dev/null)
               echo "SKIP=false" >> "$GITHUB_ENV"
               echo "ACTION=publish" >> "$GITHUB_ENV"
               echo "VERSION=$app_ver" >> "$GITHUB_ENV"

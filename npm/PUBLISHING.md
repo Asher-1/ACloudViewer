@@ -9,8 +9,8 @@ registries in one run:
    https://github.com/Asher-1/ACloudViewer/packages.
 
 **Publishing is fully automated** — no manual `npm publish`, no manual tag:
-platform builds trigger version alignment, `npm/**` source changes trigger a
-patch bump, and explicit tags/dispatches remain available. The npm package
+platform builds trigger version alignment (reconcile), `npm/**` source changes
+ride the next app release, and explicit tags/dispatches remain available. The npm package
 version is **metadata only** — the bootstrap always installs whatever assets
 are current on the `main-devel` release.
 
@@ -52,7 +52,8 @@ to least likely:
    repeated attempts while throttled extend it (up to ~24h). Do not retry
    every few minutes.
 4. **Complete the account fully on the first success**: verify the
-   confirmation email, enable 2FA (authenticator app), and confirm your
+   confirmation email, enable 2FA (security key / passkey — npm retired
+   authenticator-app TOTP; see *2FA and web-auth operations* below), and confirm your
    username — a half-created account still counts against the IP limit.
 
 Fallback while the npmjs account is blocked: the **GitHub Packages mirror
@@ -152,17 +153,42 @@ What you actually do in the steady state:
 
 - **App release → nothing.** The next platform build completion publishes
   `npm@<app-version>` automatically.
-- **Bootstrap change → nothing.** Pushing `npm/**` changes bumps and publishes
-  a patch automatically.
+- **Bootstrap change → nothing.** Pushing `npm/**` changes never creates an npm
+  version on its own; the fix ships with the next app release (reconcile publishes `@<app-version>`).
 - All outcomes are visible in the run's step summary (mode, skipped/published
   per channel).
 
-Note the git-side version drift: the **patch-bump** and **dispatch** modes
-apply `npm version` inside the CI workspace without committing back, so
+Note the git-side version drift: the **dispatch** mode
+applies `npm version` inside the CI workspace without committing back, so
 `npm/package.json` on `main` can lag the registry by a few patches. The
 align/tag modes treat `npm/package.json` as the contract; the resolve step
 reconciles against the registry (`sort -V` comparison), so drift never
 publishes a stale or duplicate version.
+
+### Version scheme: frequent commits, one npm version per app release
+
+- **Same-version commits never fail publishing.** Reconcile compares the
+  registry `latest` with the app version carried by `main-devel`; when they
+  are equal it SKIPs (exit 0, "nothing to do"). Committing code daily under
+  app version 3.9.5 produces zero npm errors — the npm package is a
+  *bootstrap/downloader*, so users always fetch the current `main-devel`
+  assets at install time; code fixes reach them without any npm publish.
+- **Releasing a new app version (e.g. 3.9.8):** edit the single source of
+  truth `libs/cloudViewer/version.txt` (MAJOR/MINOR/PATCH), merge to `main`;
+  platform builds upload new `main-devel` assets, `workflow_run` fires
+  reconcile, `latest < app` → publish `npm@3.9.8` automatically. No manual
+  npm step, no `npm/package.json` hand-edit.
+- **Burned versions:** npm version numbers are immutable once published —
+  even after unpublish, the same number can never be republished (409).
+  3.9.6 and 3.9.7 were consumed by early mistakes and deleted; they are
+  permanently skipped. The next release after 3.9.5 must be ≥ 3.9.8.
+  Never delete ALL versions of the package: that removes the package and
+  its Trusted Publisher configuration and triggers a 24 h publish ban.
+- **Test channel (optional, when pre-release npm builds are wanted):**
+  publish prerelease versions (`3.9.8-rc.1`) with `npm publish --tag next`
+  so `latest` stays on the stable version; testers install
+  `npm i -g @asher-1/acloudviewer@next`. OIDC dist-tag management requires
+  npm ≥ 11.21.0 — the workflow upgrades npm explicitly for this.
 
 ---
 
@@ -292,6 +318,18 @@ acloudviewer version
 # 4. Real install (Linux) — the download line should read "4 parallel segments"
 acloudviewer install --silent --prefix ~/.local/share/ACloudViewer
 ls ~/.local/share/ACloudViewer            # ACloudViewer binary sits at the target root (verified QtIFW layout)
+#    RUN via the LAUNCHER, not the bare binary: shared libs live in lib/, so the
+#    bare binary exits 127 (missing libCVAppCommon.so). ACloudViewer.sh sets
+#    LD_LIBRARY_PATH (Windows uses ACloudViewer.bat). Verified headless 2026-11-16:
+~/.local/share/ACloudViewer/ACloudViewer.sh --version   # -> "ACloudViewer 3.9.5", exit 0
+#    Offline / re-test without re-downloading: install --from <local .run> --silent --prefix <dir>
+#    The installer ships THREE apps; run each via its launcher:
+#      ACloudViewer.sh --version   -> prints version, exit 0 (headless-safe)
+#      Colmap.sh help              -> COLMAP CLI usage, exit 0 (headless-safe)
+#      CloudViewer.sh              -> Open3D-style GUI (Filament); it has NO
+#        headless --version exit and stays in the event loop. For automated
+#        probes wrap it in `timeout` and treat "FEngine created, no shared-lib
+#        errors, still alive at timeout (exit 124)" as healthy.
 
 # 5. Uninstall via the CLI (wraps QtIFW maintenancetool purge, verified working)
 acloudviewer uninstall --yes              # refuses without --yes in non-interactive shells
@@ -302,6 +340,100 @@ acloudviewer uninstall --yes              # refuses without --yes in non-interac
 npm config delete @asher-1:registry
 npm config delete //npm.pkg.github.com/:_authToken
 ```
+
+---
+
+## Coexistence with a manual .run install (verified 2026-11-16)
+
+Full dual-prefix lifecycle test (install t1 → run 3 apps → install t2 →
+same-dir reinstall t1 → uninstall t2 → uninstall t1), all exits 0:
+
+- **Different default directories, no file conflict.** The npm bootstrap
+  defaults to `~/.local/share/ACloudViewer`; the manual `.run` wizard
+  defaults to `~/ACloudViewer` (`config_linux.xml` `TargetDir`). Installing
+  one never touches the other's binaries (byte-identical baseline asserted).
+- **Desktop entries ARE shared and last-install-wins.** Both installers
+  write the same fixed file names (`ACloudViewer.desktop`,
+  `CloudViewer.desktop`, `Colmap.desktop`) into `~/Desktop` and
+  `~/.local/share/applications`. A second install into another prefix
+  re-points `Exec=` to the new prefix — it overwrites a manual install's
+  icons. Reinstalling into the original prefix re-points them back.
+- **Uninstall removes the entries it owns; it does not restore a previous
+  owner.** Observed: after a same-dir reinstall of t1 re-pointed the entries
+  at t1, purging t2 left those t1-pointing entries intact and t1 runnable;
+  purging the last owner (t1) removed all six entry files — zero desktop
+  residue. If you purge the install the entries currently point at while
+  another install survives, recreate the entries (re-run the surviving
+  installer) to fix `Exec=`.
+- **Same-directory reinstall = upgrade.** QtIFW detects the existing
+  installation and purges/refreshes it in place; the app stays runnable.
+- An interrupted install can leave `*.desktop.tmp.*` files on the Desktop
+  (QtIFW `CreateDesktopEntry` atomic-write temporaries); they are inert and
+  safe to delete manually.
+
+---
+
+## 2FA and web-auth operations (security keys, unpublish)
+
+**npm has retired authenticator-app TOTP.** Two-factor authentication is now
+**security-key / WebAuthn** only — a passkey backed by biometrics (Touch ID /
+Face ID / Windows Hello), a platform passkey on your phone, or a hardware key
+(YubiKey). There is **no 6-digit OTP** to type anymore. If the signup / 2FA
+settings page offers no "authenticator app" option, that is expected, not a
+bug. (Verified 2026-11-16: account `asher-1` enrolled a phone passkey.)
+
+How the CLI confirms a 2FA-protected operation without an OTP:
+
+- `npm login`, `npm unpublish`, and other sensitive operations print a web
+  link `https://www.npmjs.com/auth/cli/<id>` and poll while you confirm it in
+  a browser. **That link IS the OTP replacement** — open it, tap *Authorize*,
+  and approve with your security key / passkey.
+- **The link is single-use, bound to the live CLI process, and expires in
+  ~5 minutes.** Once it times out (CLI logs `E404 GET /-/v1/done?authId=`) or
+  the process is killed, the URL is **permanently 404** — re-clicking an old
+  link never revives it. Always generate a fresh link and confirm it inside
+  the window.
+- A **bypass-2FA granular token cannot do these operations**: since
+  2026-07-31 npm rejects account-management / unpublish actions from
+  bypass-2FA tokens with `403`. CI publishing still works via **Trusted
+  Publishing (OIDC)** or a publish-scoped token, but **unpublish requires
+  interactive web-auth** with a human confirming the link.
+- **Do not log in with a recovery code** to escape a missing key: recovery-code
+  login triggers a **72-hour security freeze** (no publish, no token creation,
+  no settings changes).
+
+### Controlled one-at-a-time unpublish (verified working)
+
+Removing legacy versions so `latest` converges to the app version. Delete the
+version `latest` points to **last** — npm then auto-repoints `latest` to the
+highest remaining version. **Never delete every version**: that removes the
+package entirely (24h publish ban + the Trusted Publisher config is lost).
+Keep the aligned version (e.g. `3.9.5`).
+
+```bash
+# One version per link. The link expires in ~5 min, so generate it, hand it to
+# the maintainer IMMEDIATELY, and watch the log for the result. A pseudo-terminal
+# (script) is required so npm emits the web-auth link instead of failing on a TTY.
+LOG=/tmp/unpub.log
+( printf '\n'; sleep 330 ) | script -q -c \
+  'npm unpublish @asher-1/acloudviewer@<VERSION>' "$LOG" >/dev/null 2>&1 &
+sleep 25
+grep -aoE 'https://www\.npmjs\.com/auth/cli/[a-f0-9-]+' "$LOG" | head -1
+# -> Open THAT fresh link on the phone/browser already logged into npmjs.com,
+#    tap Authorize, confirm with the passkey/biometric within the window.
+# Success marker in the log:  - @asher-1/acloudviewer@<VERSION>  and exit code 0.
+# Verify after each:  npm view @asher-1/acloudviewer versions dist-tags --json
+```
+
+If a link 404s on the phone **within seconds** of generation (not after
+5 min), the browser is not logged into npmjs.com or the session expired — log
+in on the phone first, then generate a fresh link. A 404 on an **old** link is
+just the expired-session case above; regenerate.
+
+> Worked example (2026-11-16): deleted `3.9.5-oidc.1`, `0.0.0-stage`, `3.9.6`,
+> `3.9.7` one at a time with four fresh links, each confirmed on a phone
+> passkey inside the window. Registry converged to `versions: ["3.9.5"]`,
+> `latest: 3.9.5` automatically — no tagback, no OTP, no CI token needed.
 
 ---
 
@@ -321,6 +453,9 @@ npm config delete //npm.pkg.github.com/:_authToken
 | `install` prints `server does not support range requests; single-stream download` | Mirror/proxy stripped Range support | Informational fallback, download still works (slower) |
 | Mirror install: `404 Not Found` | `.npmrc` missing scope mapping or PAT lacks `read:packages` | Follow README "Channel 2" steps; regenerate PAT with the scope |
 | Mirror install: `401 Unauthorized` | Stale/expired PAT in `//npm.pkg.github.com/:_authToken` | `npm config set //npm.pkg.github.com/:_authToken=<NEW_PAT>` |
+| `auth/cli/<id>` link shows **404 not found** | Web-auth session expired (~5 min) or its CLI process was killed; links are single-use and permanently dead once expired | Generate a FRESH link (re-run unpublish/login) and confirm it on the phone inside the window — see *2FA and web-auth operations* |
+| Installed app: bare `ACloudViewer` exits **127** (`libCVAppCommon.so` not found) | Shared libs live in `lib/`; the bare binary has no `LD_LIBRARY_PATH` | Run via the launcher `ACloudViewer.sh` (Linux) / `ACloudViewer.bat` (Windows) which sets the library path — not a packaging defect |
+| `unpublish` with a bypass-2FA token: **403** | Since 2026-07-31 bypass-2FA tokens cannot do account-management / unpublish actions | Use interactive web-auth (human confirms the `auth/cli` link); CI/OIDC tokens only publish, never unpublish |
 
 ## Sync contract
 
