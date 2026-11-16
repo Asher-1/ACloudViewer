@@ -129,8 +129,9 @@ struct E2eOptions {
     // A/B bisect: portable attention in the GS decoder even on CUDA
     bool gs_portable_attention = false;
     // Vulkan/CPU path: PyTorch CUDA Philox distribution-block contract
-    // obtained from `sam3d-cli rng-dump` (0 = derive from the legacy env,
-    // required to be set explicitly through --philox-blocks).
+    // (0 = CUDA builds derive it from the active CUDA device, non-CUDA
+    // builds use the pinned oracle kPytorchOracleDistributionBlocks;
+    // an explicit value overrides both).
     uint32_t philox_blocks = 0;
     // Session reuse: when set, every stage borrows this backend instead of
     // creating and destroying its own. The caller owns the backend and must

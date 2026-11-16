@@ -7,6 +7,14 @@
 
 namespace sam3d {
 
+// Pinned PyTorch CUDA oracle distribution-block count (the reference device
+// launch capacity recorded by scripts/regen_sam3d_golden.sh, BLOCKS=168).
+// It is part of the sampling contract, not a property of the running GGML
+// backend: builds without a CUDA device default to this value so the Philox
+// grid matches the golden noise, while an explicit philox_blocks option
+// still overrides it.
+inline constexpr uint32_t kPytorchOracleDistributionBlocks = 168;
+
 // Host implementation of the Philox4x32-10 state and scatter layout used by
 // the verified CUDA torch.randn compatibility kernel.  The number of
 // distribution blocks is part of the PyTorch CUDA execution contract: it is

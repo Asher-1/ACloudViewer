@@ -16,6 +16,7 @@
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QHBoxLayout>
+#include <QImageReader>
 #include <QLabel>
 #include <QLineEdit>
 #include <QProgressBar>
@@ -30,6 +31,7 @@
 #include "ecvAICoreUiHelper.h"
 #include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAssetIntegrity.h"
+#include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 #include "ecvTestDataRepository.h"
 
@@ -137,6 +139,18 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
     connect(m_testDataBtn, &QPushButton::clicked, this,
             &Sam3dDialog::onTestDataClicked);
     form->addRow(QString(), m_testDataBtn);
+
+    // Click-to-enlarge source preview (shared ecvClickableImageLabel, same
+    // wiring as qTrellis): one textChanged trigger covers Browse, the
+    // sample-data fill, and manual edits alike.
+    m_imagePreview = new ecvClickableImageLabel(this);
+    m_imagePreview->setMinimumSize(ecvAICoreUi::dpiScaled(200),
+                                   ecvAICoreUi::dpiScaled(150));
+    m_imagePreview->setAlignment(Qt::AlignCenter);
+    m_imagePreview->setStyleSheet("border: 1px dashed #999;");
+    form->addRow(QString(), m_imagePreview);
+    connect(m_imageEdit, &QLineEdit::textChanged, this,
+            &Sam3dDialog::updateImagePreview);
 
     // Output options (DB import by default; file export is opt-in) ----------
     m_deviceCombo = new QComboBox(this);
@@ -640,6 +654,21 @@ void Sam3dDialog::browseImage() {
     const QString path = ecvAICoreUi::browseInputImage(
             this, m_imageEdit->text(), tr("Select the source image"));
     if (!path.isEmpty()) m_imageEdit->setText(path);
+}
+
+void Sam3dDialog::updateImagePreview() {
+    const QString path = m_imageEdit->text().trimmed();
+    if (path.isEmpty()) {
+        m_imagePreview->setPreviewImage(QImage(), ecvAICoreUi::previewSize());
+        return;
+    }
+    QImageReader reader(path);
+    if (!reader.canRead()) return;
+    const QImage img = reader.read();
+    if (img.isNull()) return;
+    // The label keeps the full-resolution copy internally, so clicking the
+    // thumbnail opens the original source image.
+    m_imagePreview->setPreviewImage(img, ecvAICoreUi::previewSize());
 }
 
 void Sam3dDialog::browseOutputDir() {

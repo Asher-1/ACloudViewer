@@ -92,6 +92,8 @@ int main(int argc, char** argv) {
             e2e.ss_flow_only = true;
         else if (arg == "--slat-flow-only")
             e2e.slat_flow_only = true;
+        else if (arg == "--keep-quant-gemm")
+            e2e.keep_quant_gemm = true;
         else {
             std::fprintf(stderr, "unknown argument: %s\n", arg.c_str());
             return 1;

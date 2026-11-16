@@ -132,7 +132,7 @@ DistanceMapGenerationDlg::DistanceMapGenerationDlg(
         // create selector widget
         m_colorScaleSelector = new ccColorScaleSelector(
                 m_app->getColorScalesManager(), this,
-                QString::fromUtf8(":/CC/plugin/qSRA/gearIcon.png"));
+                QString::fromUtf8(":/CC/plugin/qSRA/images/gearIcon.svg"));
         m_colorScaleSelector->init();
         m_colorScaleSelector->setSelectedScale(
                 ccColorScalesManager::GetDefaultScale()->getUuid());

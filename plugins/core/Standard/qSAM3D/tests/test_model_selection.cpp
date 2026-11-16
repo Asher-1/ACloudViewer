@@ -12,6 +12,7 @@
 #include <QComboBox>
 #include <QDir>
 #include <QFile>
+#include <QImage>
 #include <QLineEdit>
 #include <QNetworkAccessManager>
 #include <QNetworkProxy>
@@ -22,6 +23,7 @@
 #include "Sam3dDialog.h"
 #include "aicore/sam3d_capi.h"
 #include "ecvAssetIntegrity.h"
+#include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 
 #define REQUIRE(condition)                                               \
@@ -50,6 +52,21 @@ int main(int argc, char** argv) {
     auto* image = dialog.findChild<QLineEdit*>("sourceImage");
     REQUIRE(quant && rmbgQuant && rmbg && mesh && scene && prompts && masks &&
             image);
+    // Source preview: filling the image field (the same path Browse and the
+    // sample-data action use) must populate the shared click-to-enlarge
+    // label with the full-resolution image; clearing it empties the label.
+    auto* preview = dialog.findChild<ecvClickableImageLabel*>();
+    REQUIRE(preview);
+    REQUIRE(preview->fullImage().isNull());
+    const QString previewPath = QDir(temporary.path()).filePath("preview.png");
+    QImage fixture(64, 48, QImage::Format_RGB32);
+    fixture.fill(Qt::red);
+    REQUIRE(fixture.save(previewPath));
+    image->setText(previewPath);
+    REQUIRE(!preview->fullImage().isNull());
+    REQUIRE(preview->fullImage().size() == QSize(64, 48));
+    image->clear();
+    REQUIRE(preview->fullImage().isNull());
     scene->setChecked(false);
     mesh->setChecked(false);
     rmbg->setChecked(false);
