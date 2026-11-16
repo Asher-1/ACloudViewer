@@ -404,6 +404,19 @@ cloudViewer example reconstruction/gui
 ACloudViewer is a standalone 3D viewer app based on QT5 available on Ubuntu and Windows.
 Please stay tuned for MacOS. Download ACloudViewer from the [release page](https://github.com/Asher-1/ACloudViewer/releases).
 
+Or install via npm (Windows / macOS / Linux), which downloads and launches the
+matching official installer for your platform automatically:
+
+```bash
+# Install the bootstrap CLI, then fetch and run the installer
+npm install -g @asher-1/acloudviewer
+acloudviewer install            # auto-detects CPU/CUDA; add --silent for unattended installs
+
+# Verify and remove
+acloudviewer list               # show available installers on the release
+acloudviewer uninstall --yes    # remove ACloudViewer (QtIFW maintenancetool purge)
+```
+
 ---
 
 ### Semantic Annotation
