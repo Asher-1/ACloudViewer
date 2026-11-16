@@ -631,8 +631,8 @@ larger). You may have to increase the points size beforehand.</source>
     </message>
     <message>
         <location filename="../ui_templates/annotationsDlg.ui" line="230"/>
-        <source>Edit Mode（this will change exist annotations）</source>
-        <translation>编辑 模式（this will change exist annotations）</translation>
+        <source>Edit Mode (this will change existing annotations)</source>
+        <translation>编辑模式（此操作将更改现有标注）</translation>
     </message>
     <message>
         <location filename="../ui_templates/annotationsDlg.ui" line="233"/>

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""真实 CUDA 路由测试；缺失融合或错误融合回退域都会失败，不是性能验收。"""
+"""Real CUDA routing test; missing fusion, or a wrong fusion/fallback domain, fails. Not a performance acceptance."""
 import argparse
 import csv
 import hashlib
@@ -32,7 +32,7 @@ def main():
     help_result = subprocess.run(["nsys", "stats", "--help-reports"],
                                  text=True, capture_output=True)
     reports = help_result.stdout + help_result.stderr
-    # 本机旧 nsys 打印有效 help 时退出 1；仍拒绝真正错误或缺失报告。
+    # Old local nsys exits 1 while printing a valid help; still reject true errors or missing reports.
     if help_result.returncode not in (0, 1) or "ERROR:" in reports:
         raise RuntimeError(f"nsys report discovery failed: {reports}")
     report = next((name for name in ("cuda_gpu_kern_sum", "gpukernsum")
@@ -40,7 +40,7 @@ def main():
     if report is None:
         raise RuntimeError("nsys has no supported CUDA kernel report")
     rows, failures = [], []
-    # 期望独立列明：只有完整的显式 F32 行 bias 域允许融合。
+    # Modes listed separately: only the complete explicit F32 row-bias domain may fuse.
     for mode, expected in (("plain", False), ("hint", True),
                            ("observable", False), ("users", False),
                            ("strided", False), ("equal-bias", False),
@@ -66,7 +66,7 @@ def main():
         (out / (mode + "-kernels.csv")).write_text(stats.stdout)
         if "ERROR:" in stats.stdout:
             raise RuntimeError(stats.stdout)
-        # 只统计 CSV 中实际执行次数为正的 kernel，nsys 说明文字不构成 GPU 执行证据。
+        # Count only kernels with positive Instances in the CSV; nsys prose is not GPU execution evidence.
         lines = stats.stdout.splitlines()
         header = next((i for i, line in enumerate(lines)
                        if "Name" in next(csv.reader([line]), []) and

@@ -34,8 +34,8 @@
 // observable behavior. The SfM gauge-point selection, track completion, and
 // filtering iterate these containers, and a std backend was measured to
 // diverge the reconstructed model from upstream for identical inputs, while
-// upstream compiled with std containers reproduced the fork's divergent model
-// (docs in libs/Reconstruction/TEST_ALIGNMENT_TODO.md). The aliases are also
+// upstream compiled with std containers reproduced the fork's divergent model.
+// The aliases are also
 // data members of classes in public headers, so every consumer must see the
 // same definition.
 

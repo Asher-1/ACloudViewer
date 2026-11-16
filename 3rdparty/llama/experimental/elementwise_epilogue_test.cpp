@@ -44,7 +44,7 @@ static Output run(ggml_backend_t backend, ggml_backend_t cpu, int width, int row
         if (observe_add) ggml_set_output(add);
         ggml_cgraph* graph = ggml_new_graph(ctx);
         if (nonadjacent) {
-            // 一个独立且可观察的节点隔开 ADD/GELU；路由必须保留原执行顺序。
+            // An independent observable node separates ADD/GELU; routing must keep the original execution order.
             ggml_build_forward_expand(graph, add);
             auto* intervening = ggml_sqr(ctx, bias);
             ggml_set_output(intervening);
@@ -124,7 +124,7 @@ int main(int argc, char** argv) {
     ggml_backend_t cpu = is_cpu ? backend : ggml_backend_init_by_name("CPU", nullptr);
     if (!cpu) { ggml_backend_free(backend); return 1; }
     if (mode) {
-        // 真实 trace 只执行选定图，不能把无 hint 和有 hint 的 kernel 混进同一收据。
+        // A real trace executes only the selected graph; hinted and unhinted kernels never share one receipt.
         const Output result = run(backend, cpu, 128, 17,
                 std::strcmp(mode, "plain") != 0,
                 std::strcmp(mode, "observable") == 0,

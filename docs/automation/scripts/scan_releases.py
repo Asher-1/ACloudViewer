@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
 GitHub Releases Scanner and Download Data Generator
-自动扫描GitHub Releases并生成下载选择器数据
 
 This script:
 1. Fetches all releases from GitHub API
