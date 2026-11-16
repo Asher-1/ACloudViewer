@@ -129,34 +129,48 @@ keeps working — it uses `GITHUB_TOKEN`). Symptoms and the renewal routine:
 ## Automated release (default path, no manual action)
 
 Once `NPM_TOKEN` is in place, publishing happens on its own. The workflow
-enforces one **version invariant**: `npm latest == app version` (the version
-carried by the `main-devel` release assets). Every automatic trigger runs the
-same RECONCILE against that invariant:
+enforces **two channel invariants** (the app version is the one carried by
+the `main-devel` release assets):
 
-| Registry state | Reconcile action |
+- **STABLE — `latest` == app version.** `npm i -g @asher-1/acloudviewer`
+  installs the stable bootstrap, which pins the GitHub release
+  `v<version>`. A stable publish is gated on that pinned release existing
+  (with assets); without it the publish is deferred, never faked.
+- **DEV — every complete `main-devel` asset wave → one
+  `X.Y.Z-dev.<stamp>` under the `next` dist-tag.** `npm i -g
+  @asher-1/acloudviewer@next` installs the prerelease bootstrap, which
+  tracks the rolling `main-devel` assets. A `next` publish NEVER moves
+  `latest`. The stamp derives from the release `updated_at`, so the five
+  uploader completion events converge to one publish (E409-idempotent);
+  an incomplete platform matrix skips the dev publish.
+
+| Stable registry state | Reconcile action |
 |----------------|------------------|
 | `latest == app version` | skip (nothing to do) |
-| `latest < app version` | publish `@<app version>` — this is how npm versions track app releases, and how bootstrap source fixes reach users (they ride the next app release) |
+| `latest < app version` | publish `@<app version>` under `latest` — only when the pinned release `v<app version>` exists |
 | `latest > app version` | re-point the `latest` dist-tag back to `<app version>` on both registries (drift repair; extra versions stay but stop being the default) |
 
 | Trigger | Behaviour |
 |---------|-----------|
-| A platform build finishes (`workflow_run` on Windows/MacOS/Ubuntu/Ubuntu CUDA/Ubuntu Wheel — the same uploaders that feed `main-devel`) | reconcile (idempotent: the five completion events converge to one action) |
-| A push to `main` touching `npm/**` or the workflow itself | reconcile (bootstrap source changes **never** create npm versions on their own — the next app release ships them) |
+| A platform build finishes (`workflow_run` on Windows/MacOS/Ubuntu/Ubuntu CUDA/Ubuntu Wheel — the same uploaders that feed `main-devel`) | reconcile both channels (idempotent: the five completion events converge to one action per channel) |
+| A push to `main` touching `npm/**` or the workflow itself | reconcile both channels (bootstrap source fixes ride the next dev publish, and the next stable release) |
 | Tag `npm-vX.Y.Z` pushed | **emergency path only**: strict check that the tag equals the app version; reconcile pulls `latest` back on the next run |
-| Manual **Run workflow** with a version input | **emergency path only**: force the given version |
+| Manual **Run workflow** with a version input | **emergency path only**: force the given version (optionally under a dedicated dist-tag) |
 
 Consequence: `npm/package.json` version is metadata, reconciled in CI — do
 not hand-edit it to release.
 
 What you actually do in the steady state:
 
-- **App release → nothing.** The next platform build completion publishes
-  `npm@<app-version>` automatically.
-- **Bootstrap change → nothing.** Pushing `npm/**` changes never creates an npm
-  version on its own; the fix ships with the next app release (reconcile publishes `@<app-version>`).
-- All outcomes are visible in the run's step summary (mode, skipped/published
-  per channel).
+- **App release → create the pinned release, then nothing.** Bump
+  `libs/cloudViewer/version.txt`, merge to `main`, publish the GitHub
+  release `v<new version>` with the platform installers; the next build
+  completion publishes `npm@<new version>` under `latest` automatically.
+- **Daily commits under the same app version → nothing.** Stable `latest`
+  stays aligned (skip); each complete rolling asset wave refreshes the
+  `next` channel automatically. Zero publish errors either way.
+- All outcomes are visible in the run's step summary (per-channel
+  stable/dev rows).
 
 Note the git-side version drift: the **dispatch** mode
 applies `npm version` inside the CI workspace without committing back, so
@@ -165,30 +179,35 @@ align/tag modes treat `npm/package.json` as the contract; the resolve step
 reconciles against the registry (`sort -V` comparison), so drift never
 publishes a stale or duplicate version.
 
-### Version scheme: frequent commits, one npm version per app release
+### Version scheme: two channels, burned numbers, transitional 3.9.5
 
-- **Same-version commits never fail publishing.** Reconcile compares the
-  registry `latest` with the app version carried by `main-devel`; when they
-  are equal it SKIPs (exit 0, "nothing to do"). Committing code daily under
-  app version 3.9.5 produces zero npm errors — the npm package is a
-  *bootstrap/downloader*, so users always fetch the current `main-devel`
-  assets at install time; code fixes reach them without any npm publish.
-- **Releasing a new app version (e.g. 3.9.8):** edit the single source of
-  truth `libs/cloudViewer/version.txt` (MAJOR/MINOR/PATCH), merge to `main`;
-  platform builds upload new `main-devel` assets, `workflow_run` fires
-  reconcile, `latest < app` → publish `npm@3.9.8` automatically. No manual
-  npm step, no `npm/package.json` hand-edit.
+- **Channel routing lives in the bootstrap's own version** (single source
+  of truth): a prerelease version (`X.Y.Z-dev.N`, contains `-`) fetches
+  `main-devel`; a stable version fetches `v<version>`. `--release <tag>`
+  still overrides. If a stable version's pinned release does not exist
+  yet, the bootstrap falls back to rolling assets with a printed note.
+- **Transitional 3.9.5 (current state):** the already-published `npm@3.9.5`
+  tarball is immutable (npm policy: a used version number can never be
+  republished, even after unpublish) and predates channel routing, so it
+  keeps fetching rolling `main-devel` assets. There is no pinned `v3.9.5`
+  release either. True stable semantics therefore begin with the **next**
+  app release: bump `version.txt` to ≥ 3.9.8 (3.9.6/3.9.7 are burned),
+  create the pinned `v3.9.8` release, and reconcile publishes
+  `npm@3.9.8` whose bootstrap pins it. Until then, `latest=3.9.5` is a
+  rolling carrier by necessity, and `@next` is the explicit test channel.
+- **Same-version commits never fail publishing.** Stable reconcile SKIPs
+  when aligned; the dev channel converges to one version per asset wave
+  and treats E409 as success. Daily commits produce zero npm errors.
 - **Burned versions:** npm version numbers are immutable once published —
   even after unpublish, the same number can never be republished (409).
   3.9.6 and 3.9.7 were consumed by early mistakes and deleted; they are
-  permanently skipped. The next release after 3.9.5 must be ≥ 3.9.8.
-  Never delete ALL versions of the package: that removes the package and
-  its Trusted Publisher configuration and triggers a 24 h publish ban.
-- **Test channel (optional, when pre-release npm builds are wanted):**
-  publish prerelease versions (`3.9.8-rc.1`) with `npm publish --tag next`
-  so `latest` stays on the stable version; testers install
-  `npm i -g @asher-1/acloudviewer@next`. OIDC dist-tag management requires
-  npm ≥ 11.21.0 — the workflow upgrades npm explicitly for this.
+  permanently skipped. Never delete ALL versions of the package: that
+  removes the package and its Trusted Publisher configuration and
+  triggers a 24 h publish ban.
+- **Testers:** `npm i -g @asher-1/acloudviewer@next` then
+  `acloudviewer install` — always the current rolling build. OIDC
+  dist-tag management requires npm ≥ 11.21.0; the workflow upgrades npm
+  explicitly for this.
 
 ---
 

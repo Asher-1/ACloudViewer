@@ -20,7 +20,13 @@ const { Readable } = require("stream");
 
 const GITHUB_REPO = "Asher-1/ACloudViewer";
 const RELEASE_API = `https://api.github.com/repos/${GITHUB_REPO}/releases/tags/`;
-const DEFAULT_RELEASE = "main-devel";
+// Channel routing derived from the package's own version (single source of
+// truth, no extra state): prerelease tarballs (X.Y.Z-dev.N, published under
+// the `next` dist-tag) track the rolling main-devel assets; stable tarballs
+// pin the matching v<version> release. `--release` still overrides.
+const PKG_VERSION = require("../package.json").version;
+const IS_PRERELEASE = PKG_VERSION.includes("-");
+const DEFAULT_RELEASE = IS_PRERELEASE ? "main-devel" : `v${PKG_VERSION}`;
 const USER_AGENT = "acloudviewer-npm-bootstrap";
 // Same default install root as installer.py DEFAULT_APP_DIR: user-writable,
 // no sudo needed for --silent installs.
@@ -125,6 +131,14 @@ async function fetchReleaseAssets(tag) {
     throw new Error(`GitHub API refused the request for release "${tag}" (HTTP 403). ` +
       "Anonymous API calls are limited to 60/hour per IP — wait and retry, or set GITHUB_TOKEN to raise the limit, or check that the release exists at " +
       `https://github.com/${GITHUB_REPO}/releases`);
+  }
+  if (res.status === 404 && !IS_PRERELEASE && tag === DEFAULT_RELEASE) {
+    // Transitional stable versions (e.g. 3.9.5) predate pinned releases:
+    // fall back to the rolling assets instead of dead-ending. Once the
+    // v<version> release exists the pinned path is used automatically.
+    // Recursion is bounded: the fallback tag never equals DEFAULT_RELEASE.
+    console.error(`note: release "${tag}" not found; falling back to rolling main-devel assets.`);
+    return fetchReleaseAssets("main-devel");
   }
   if (!res.ok) {
     throw new Error(`cannot read GitHub release "${tag}" (HTTP ${res.status}). Check https://github.com/${GITHUB_REPO}/releases`);
@@ -823,6 +837,8 @@ Options:
   --yes               For uninstall: skip the confirmation prompt.
   --dry-run           Print the matched asset and URL, then exit.
   --release <tag>     GitHub release tag (default: ${DEFAULT_RELEASE}).
+                      Stable packages pin v<version>; @next prereleases
+                      track the rolling main-devel assets.
 
 Downloads land in a temp dir and are removed after install. Segmented
 downloads write into one preallocated file and abort any stream that stalls
