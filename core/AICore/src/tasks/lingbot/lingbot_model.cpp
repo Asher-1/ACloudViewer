@@ -132,10 +132,26 @@ struct graph_builder {
         const std::vector<float> *src;
         bool f16;
     };
+    // Device-resident F32 copies of the GGUF weights that f32() requests,
+    // populated lazily on first use (Metal only; model::impl owns it).
+    // host_data keeps the pre-upload host pointers: the GGUF tensors are
+    // repointed at device memory after load, but the host weight buffer
+    // stays alive for the model lifetime.
+    struct f32_cache {
+        ggml_context *ctx = nullptr;
+        std::vector<ggml_backend_buffer_t> bufs;
+        std::unordered_map<const ggml_tensor *, ggml_tensor *> map;
+        std::unordered_map<const ggml_tensor *, const void *> host_data;
+    };
     ggml_context *ctx = nullptr;
     const gguf_loader *file = nullptr;
     const std::unordered_map<const ggml_tensor *, std::vector<float>>
             *f32_weights = nullptr;
+    // Device-resident F32 weight cache (model::impl, Metal only). f32()
+    // requests on GGUF weights resolve to persistent tensors instead of
+    // per-frame cast/copy nodes; activations keep the in-graph cast path.
+    struct f32_cache *f32_resident = nullptr;
+    ggml_backend_t resident_backend = nullptr;
     std::unordered_map<std::string, kv_state> *cache = nullptr;
     std::vector<cache_input> cache_inputs;
     std::vector<kv_capture> cache_captures;
@@ -537,6 +553,55 @@ struct graph_builder {
         if (auto it = f32_casts.find(x); it != f32_casts.end())
             return it->second;
         ggml_tensor *y = nullptr;
+        // Static GGUF weights requested as F32 (camera/depth heads, norms,
+        // convs) resolve to a device-resident cache on Metal: the in-graph
+        // ggml_cont(ggml_cast(w)) fallback re-executes the identical cast on
+        // every streamed frame. Each weight is dequantized and uploaded once
+        // on first request, using the same type-traits conversion the cast
+        // op uses, so matmul inputs and reduction order stay unchanged.
+        // Other backends keep the in-graph path untouched.
+        if (f32_resident && x->data) {
+            auto it = f32_resident->map.find(x);
+            if (it != f32_resident->map.end()) {
+                f32_casts.emplace(x, it->second);
+                return it->second;
+            }
+            const auto hit = f32_resident->host_data.find(x);
+            const auto *traits = ggml_get_type_traits(x->type);
+            if (hit != f32_resident->host_data.end() && traits->to_float) {
+                ggml_tensor *d = ggml_new_tensor_4d(
+                        f32_resident->ctx, GGML_TYPE_F32, x->ne[0], x->ne[1],
+                        x->ne[2], x->ne[3]);
+                ggml_backend_buffer_t dbuf =
+                        ggml_backend_alloc_ctx_tensors(f32_resident->ctx,
+                                                       resident_backend);
+                // alloc_ctx_tensors allocates every not-yet-backed tensor in
+                // the context; only d is new here, so the returned buffer
+                // owns exactly d.
+                if (dbuf) {
+                    const int64_t rows = x->ne[1] * x->ne[2] * x->ne[3];
+                    std::vector<float> values(static_cast<size_t>(x->ne[0]) *
+                                              rows);
+                    for (int64_t row = 0; row < rows; ++row) {
+                        traits->to_float(
+                                static_cast<const char *>(hit->second) +
+                                        static_cast<size_t>(row) * x->nb[1],
+                                values.data() +
+                                        static_cast<size_t>(row) * x->ne[0],
+                                x->ne[0]);
+                    }
+                    ggml_backend_tensor_set(d, values.data(), 0,
+                                            values.size() * sizeof(float));
+                    f32_resident->bufs.push_back(dbuf);
+                    f32_resident->map.emplace(x, d);
+                    f32_casts.emplace(x, d);
+                    return d;
+                }
+                // Allocation failed: fall through to the in-graph cast path
+                // (non-fatal). d stays unbacked in the cache context and is
+                // freed with it at release.
+            }
+        }
         if (f32_weights) {
             auto it = f32_weights->find(x);
             if (it != f32_weights->end()) {
@@ -1274,6 +1339,15 @@ struct model::impl {
     ggml_backend_buffer_t host_weights = nullptr;
     ggml_context *device_ctx = nullptr;
     std::unordered_map<const ggml_tensor *, std::vector<float>> f32_weights;
+    // Device-resident F32 copies of the GGUF weights that f32() requests
+    // (Metal only), populated lazily on first use. graph_builder::f32()
+    // references them as graph leaves instead of re-running
+    // ggml_cont(ggml_cast(w)) on every streamed frame (the camera and depth
+    // heads always request F32; the per-frame cast/copy of those static
+    // weights dominated the Metal streaming graph). Values use the same
+    // type-traits dequantization as the cast op, so matmul inputs and
+    // reduction order stay identical to the in-graph path.
+    graph_builder::f32_cache f32_resident;
     // Host f32 copy of aggregator.patch_embed.pos_embed, captured at load time
     // before tensor data pointers are repointed at device buffers. It is the
     // only graph constant that depends on the input resolution, so a
@@ -1693,6 +1767,32 @@ bool model::load(const std::string &path,
             p_->f32_weights.emplace(s, std::move(values));
         }
     }
+    // Metal-only lazy F32 weight cache (see graph_builder::f32()). Record
+    // the host pointers while the GGUF tensors still reference host data;
+    // the device upload below repoints them. Each weight is dequantized and
+    // uploaded on its first f32() request, so only the heads that actually
+    // run in F32 consume device memory (trunk linears keep their quantized
+    // matmul path). CUDA/Vulkan/CPU keep the in-graph cast path untouched.
+    // Runtime backend-name fact (no platform macros): the raw ggml Metal
+    // backend reports "Metal"; an AICore device lease reports "MTL<N>".
+    const std::string be_name = ggml_backend_name(p_->be.get());
+    const bool be_metal = be_name == "Metal" || be_name.rfind("MTL", 0) == 0;
+    if (be_metal) {
+        size_t n_tensors = 0;
+        for (ggml_tensor *s = ggml_get_first_tensor(p_->file.context()); s;
+             s = ggml_get_next_tensor(p_->file.context(), s))
+            ++n_tensors;
+        ggml_init_params fp = {ggml_tensor_overhead() * (n_tensors + 8),
+                               nullptr, true};
+        p_->f32_resident.ctx = ggml_init(fp);
+        if (p_->f32_resident.ctx) {
+            for (ggml_tensor *s = ggml_get_first_tensor(p_->file.context());
+                 s; s = ggml_get_next_tensor(p_->file.context(), s)) {
+                if (s->type == GGML_TYPE_F32 || !s->data) continue;
+                p_->f32_resident.host_data.emplace(s, s->data);
+            }
+        }
+    }
     if (backend_name == "cpu") {
         p_->weights = p_->host_weights;
         p_->host_weights = nullptr;
@@ -1747,6 +1847,12 @@ void model::release() {
     if (p_->weights) ggml_backend_buffer_free(p_->weights);
     if (p_->host_weights) ggml_backend_buffer_free(p_->host_weights);
     if (p_->device_ctx) ggml_free(p_->device_ctx);
+    for (auto *b : p_->f32_resident.bufs) ggml_backend_buffer_free(b);
+    if (p_->f32_resident.ctx) ggml_free(p_->f32_resident.ctx);
+    p_->f32_resident.bufs.clear();
+    p_->f32_resident.ctx = nullptr;
+    p_->f32_resident.map.clear();
+    p_->f32_resident.host_data.clear();
     p_->weights = nullptr;
     p_->host_weights = nullptr;
     p_->device_ctx = nullptr;
@@ -1970,6 +2076,8 @@ bool model::infer(const float *images,
     g.ctx = ctx;
     g.file = &p_->file;
     g.f32_weights = p_->f32_weights.empty() ? nullptr : &p_->f32_weights;
+    g.f32_resident = p_->f32_resident.ctx ? &p_->f32_resident : nullptr;
+    g.resident_backend = p_->be.get();
     g.cache = &p_->kv_cache;
     g.stream_token_row = !p_->kv_cache.empty();
     g.rope_special = 6;

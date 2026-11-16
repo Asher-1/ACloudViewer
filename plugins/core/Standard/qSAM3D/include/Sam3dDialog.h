@@ -21,6 +21,7 @@ class QLineEdit;
 class QPushButton;
 class QProgressBar;
 class QLabel;
+class ecvClickableImageLabel;
 
 //! Result envelope delivered from the worker thread to the GUI thread.
 struct Sam3dRunResult {
@@ -180,9 +181,12 @@ private:
     QWidget* m_optionsPanel = nullptr;
     void restoreDefaults();
     void populateTestImage();
+    //! Refresh the click-to-enlarge source preview from the image field.
+    void updateImagePreview();
 
     ecvMainAppInterface* m_app = nullptr;
     QLineEdit* m_imageEdit = nullptr;
+    ecvClickableImageLabel* m_imagePreview = nullptr;
     QLineEdit* m_outputDirEdit = nullptr;
     QComboBox* m_deviceCombo = nullptr;
     QComboBox* m_dtypeCombo = nullptr;

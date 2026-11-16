@@ -95,6 +95,15 @@ static bool be_is_cuda(const char* be) {
 #endif
 }
 
+// Metal-family match keyed off the resolved device name, not the request
+// string: the raw ggml Metal backend reports "Metal" and an AICore device
+// lease reports "MTL<N>" (same runtime fact as the lingbot trunk cache).
+static bool be_is_metal(const char* dev) {
+    if (dev == nullptr) return false;
+    const std::string d = ggml_common::to_lower(dev);
+    return d == "metal" || d.compare(0, 3, "mtl") == 0;
+}
+
 struct RawImg {  // HWC f32, ne = [C, W, H] (dino graph convention)
     std::vector<float> data;
     int64_t w = 0, h = 0, c = 0;
@@ -676,18 +685,10 @@ bool cond_inputs_from_native(const NativeConditionInputs& in, CondInputs& ci) {
 }
 
 // Cross-backend parity sampling requires the reference PyTorch CUDA
-// distribution-block count. The source runtime read it from an environment
-// variable; AICore tasks must not use environment control, so the caller
-// passes it through the explicit philox_blocks option instead.
-bool pytorch_philox_distribution_blocks_from_environment(uint32_t& blocks,
-                                                         std::string& error) {
-    (void)blocks;
-    error = "philox_blocks option required: CPU/Vulkan native-seed sampling "
-            "needs the reference PyTorch CUDA distribution-block count; set "
-            "aicore_sam3d_options_set_philox_blocks() explicitly";
-    return false;
-}
-
+// distribution-block count. Builds with a CUDA device derive it from the
+// active device; builds without one use the pinned oracle constant
+// (kPytorchOracleDistributionBlocks). The explicit philox_blocks option
+// overrides both. AICore tasks never read environment control.
 bool load_noise_opt(const std::string& dir,
                     const char* name,
                     std::vector<float>& v,
@@ -1289,12 +1290,9 @@ int cmd_e2e(const E2eOptions& opt) {
             return 1;
         }
 #else
-        std::string rng_contract_error;
-        if (!pytorch_philox_distribution_blocks_from_environment(
-                    distribution_blocks, rng_contract_error)) {
-            LOGE("e2e: %s", rng_contract_error.c_str());
-            return 1;
-        }
+        // No CUDA device in this build (e.g. macOS Metal): the sampling grid
+        // is the pinned PyTorch oracle contract, not a device property.
+        distribution_blocks = kPytorchOracleDistributionBlocks;
 #endif
     }
     // CUDA materializes normal samples with the verified device kernel, while
@@ -1385,7 +1383,15 @@ int cmd_e2e(const E2eOptions& opt) {
         // only an explicit "cuda" request enables the F16 autocast chain, so
         // the default "auto" keeps the SS flow in F32 and bit-exact with the
         // upstream production path (888224 gaussian count parity).
+        // F16 autocast is a measured net loss on Metal: the FA kernels already
+        // run F16 tensor-core math from the F32 query, the F32 GEMM saves only
+        // ~8%, and the extra per-step cast copies cost more than they save
+        // (per-op GPU profile on M2 Max). CUDA/Vulkan keep their existing
+        // gating untouched.
         sfg.f16_autocast = std::strcmp(be_name, "cuda") == 0;
+        // A/B bisect: consume quantized projection weights directly instead
+        // of replaying a full-model dequantize CPY on every flow step.
+        sfg.keep_quant_gemm = opt.keep_quant_gemm;
         // SS debug probe: ss_flow_graph's build() short-circuits and returns
         // the debug-stage tensor as the only output when debug_stage is set.
         if (!opt.debug_stage.empty()) sfg.debug_stage = opt.debug_stage;
@@ -1397,9 +1403,53 @@ int cmd_e2e(const E2eOptions& opt) {
             ggml_build_forward_expand(fgraph, o);
         }
         record_dtype_contract_graph("ss_flow", fgraph);
+        // ACV: hoist invariant weight dequantize/upcast CPY out of the per-step
+        // replay. A weight CPY (src is a leaf GGUF tensor) yields the same F32
+        // values on every Euler/CFG step; computing it once into a persistent
+        // buffer removes ~963M redundant elements per replay (bit-exact).
+        // Metal-only; CUDA/Vulkan keep their existing per-replay path.
+        std::vector<ggml_tensor*> weight_cpy;
+        std::vector<ggml_backend_buffer_t> weight_bufs;
+        bool hoist_weights = be_is_metal(ssf.backend->device_name()) &&
+                             sfg.debug_stage.empty();
+        if (hoist_weights) {
+            for (int i = 0; i < ggml_graph_n_nodes(fgraph); i++) {
+                ggml_tensor* n = ggml_graph_node(fgraph, i);
+                if (n->op == GGML_OP_CPY && n->src[0] &&
+                    n->src[0]->op == GGML_OP_NONE) {
+                    // Bind an external persistent buffer BEFORE alloc so the
+                    // gallocr treats the node as external (data != NULL) and
+                    // never reuses/overwrites it during per-step replay.
+                    ggml_backend_buffer_t buf = ggml_backend_buft_alloc_buffer(
+                            ssf.backend->weights_buffer_type(), ggml_nbytes(n));
+                    if (!buf) {
+                        LOGE("e2e: ss weight buffer alloc failed");
+                        return 1;
+                    }
+                    n->data = ggml_backend_buffer_get_base(buf);
+                    n->buffer = buf;
+                    weight_bufs.push_back(buf);
+                    ggml_set_output(n);
+                    weight_cpy.push_back(n);
+                }
+            }
+        }
         if (!ssf.backend->alloc(fgraph)) {
             LOGE("e2e: ss flow alloc failed");
             return 1;
+        }
+        if (hoist_weights && !weight_cpy.empty()) {
+            // Compute the weight prep once into the buffers the main graph
+            // already allocated, then skip those CPY nodes on every replay.
+            ggml_cgraph* prep = ggml_new_graph_custom(fg.ctx(), 32768, false);
+            for (auto* n : weight_cpy) ggml_build_forward_expand(prep, n);
+            if (!ssf.backend->run(prep)) {
+                LOGE("e2e: ss weight prep failed");
+                return 1;
+            }
+            for (auto* n : weight_cpy) n->flags &= ~GGML_TENSOR_FLAG_COMPUTE;
+            LOGI("e2e: ss flow hoisted %zu weight CPY nodes",
+                 weight_cpy.size());
         }
         if (opt.progress) opt.progress(kStageSsFlow, 0, 0);
         LOGI("e2e: ss flow graph built (%d nodes)", ggml_graph_n_nodes(fgraph));
@@ -1476,10 +1526,10 @@ int cmd_e2e(const E2eOptions& opt) {
             return 1;
         }
         const auto ss_schedule = make_euler_schedule(kSsSteps, kSsRescaleT);
-        if (!opt.debug_stage.empty() &&
-            strcmp(opt.debug_stage.c_str(), "im2col") != 0 &&
-            strcmp(opt.debug_stage.c_str(), "gemm") != 0 &&
-            strcmp(opt.debug_stage.c_str(), "convout") != 0) {
+        if (!sfg.debug_stage.empty() &&
+            strcmp(sfg.debug_stage.c_str(), "im2col") != 0 &&
+            strcmp(sfg.debug_stage.c_str(), "gemm") != 0 &&
+            strcmp(sfg.debug_stage.c_str(), "convout") != 0) {
             // SS debug probe: replay only the first Euler step (the same t the
             // main loop would use) and dump the debug-stage tensor. Used by
             // the sam3d parity ladder to bisect SS DiT internals block by
@@ -1488,7 +1538,7 @@ int cmd_e2e(const E2eOptions& opt) {
             // the SS decoder probe further down.
             if (outs.size() != 1) {
                 LOGE("e2e: ss debug stage '%s' did not short-circuit build",
-                     opt.debug_stage.c_str());
+                     sfg.debug_stage.c_str());
                 return 1;
             }
             const float t_v = ss_schedule[0].t * 1000.0f;
@@ -1503,14 +1553,14 @@ int cmd_e2e(const E2eOptions& opt) {
             }
             const std::string dbg_out =
                     dbg_dir.empty()
-                            ? "ss_dbg_" + opt.debug_stage + ".samt"
-                            : dbg_dir + "/ss_dbg_" + opt.debug_stage + ".samt";
+                            ? "ss_dbg_" + sfg.debug_stage + ".samt"
+                            : dbg_dir + "/ss_dbg_" + sfg.debug_stage + ".samt";
             save_raw_tensor_f32(
                     dbg_out,
                     std::vector<int64_t>{outs[0]->ne[0], outs[0]->ne[1]},
                     vals.data());
             LOGI("e2e: ss debug stage '%s' dumped (%zu elems) -> %s",
-                 opt.debug_stage.c_str(), vals.size(), dbg_out.c_str());
+                 sfg.debug_stage.c_str(), vals.size(), dbg_out.c_str());
             return 0;
         }
         for (int step = 0; step < ss_steps; ++step) {
@@ -1594,6 +1644,8 @@ int cmd_e2e(const E2eOptions& opt) {
             LOGI("e2e: ss step %d/%d done", step + 1, ss_steps);
         }
         LOGI("e2e: ss flow done in %.1fs", elapsed_seconds());
+        for (auto* b : weight_bufs) ggml_backend_buffer_free(b);
+        weight_bufs.clear();
         ssf.close();
         if (!dbg_dir.empty())
             save_raw_tensor_f32(dbg_dir + "/e2e_ss_shape_latent.samt",
@@ -1938,6 +1990,7 @@ int cmd_e2e(const E2eOptions& opt) {
     slg.tb = &tb;
     slg.n_cond_tokens = n_slat_cond;
     slg.use_cuda_spconv = be_is_cuda(be_name);
+    slg.keep_quant_gemm = opt.keep_quant_gemm;
     const bool split_slat_final =
             ggml_is_quantized(slat.model->get("dit.out_layer.weight")->type) &&
             slat.backend->has_gpu() && opt.debug_stage.empty();
