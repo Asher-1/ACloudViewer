@@ -61,7 +61,7 @@
         </property>
         <property name="icon">
          <iconset resource="../MainWindow.qrc">
-          <normaloff>:/Resources/images/smallCSVFile.png</normaloff>:/Resources/images/smallCSVFile.png</iconset>
+          <normaloff>:/Resources/images/svg/small/smallCSVFile.svg</normaloff>:/Resources/images/svg/small/smallCSVFile.svg</iconset>
         </property>
        </widget>
       </item>
@@ -72,7 +72,7 @@
         </property>
         <property name="icon">
          <iconset resource="../MainWindow.qrc">
-          <normaloff>:/Resources/images/dbImageSymbol.png</normaloff>:/Resources/images/dbImageSymbol.png</iconset>
+          <normaloff>:/Resources/images/svg/db/dbImageSymbol.svg</normaloff>:/Resources/images/svg/db/dbImageSymbol.svg</iconset>
         </property>
        </widget>
       </item>

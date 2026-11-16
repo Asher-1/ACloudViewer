@@ -54,7 +54,7 @@
       <widget class="QToolButton" name="swapCloudsToolButton">
        <property name="icon">
         <iconset resource="../qM3C2.qrc">
-         <normaloff>:/CC/plugin/qM3C2Plugin/images/iconSwap.png</normaloff>:/CC/plugin/qM3C2Plugin/images/iconSwap.png</iconset>
+         <normaloff>:/CC/plugin/qM3C2Plugin/images/iconSwap.svg</normaloff>:/CC/plugin/qM3C2Plugin/images/iconSwap.svg</iconset>
        </property>
       </widget>
      </item>
@@ -990,7 +990,7 @@ p, li { white-space: pre-wrap; }
        </property>
        <property name="icon">
         <iconset resource="../qM3C2.qrc">
-         <normaloff>:/CC/plugin/qM3C2Plugin/images/iconLoad.png</normaloff>:/CC/plugin/qM3C2Plugin/images/iconLoad.png</iconset>
+         <normaloff>:/CC/plugin/qM3C2Plugin/images/iconLoad.svg</normaloff>:/CC/plugin/qM3C2Plugin/images/iconLoad.svg</iconset>
        </property>
       </widget>
      </item>
@@ -1001,7 +1001,7 @@ p, li { white-space: pre-wrap; }
        </property>
        <property name="icon">
         <iconset resource="../qM3C2.qrc">
-         <normaloff>:/CC/plugin/qM3C2Plugin/images/iconSave.png</normaloff>:/CC/plugin/qM3C2Plugin/images/iconSave.png</iconset>
+         <normaloff>:/CC/plugin/qM3C2Plugin/images/iconSave.svg</normaloff>:/CC/plugin/qM3C2Plugin/images/iconSave.svg</iconset>
        </property>
       </widget>
      </item>

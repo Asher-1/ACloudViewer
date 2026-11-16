@@ -38,6 +38,7 @@
 #include "aicore/facedetect_capi.h"
 #include "aicore/inference_log.h"
 #include "ecvAICoreUiHelper.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvModelDownloader.h"
 
 namespace {
@@ -690,12 +691,7 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     modelLayout->addWidget(m_landmarkModelRow, 4, 0, 1, 4);
 
     m_deviceCombo = new QComboBox;
-    for (int i = 0; i < aicore_device_count(); ++i) {
-        if (const aicore_device_info* d = aicore_device_at(i)) {
-            m_deviceCombo->addItem(tr(d->label), QString::fromUtf8(d->id));
-            if (d->is_default) m_deviceCombo->setCurrentIndex(i);
-        }
-    }
+    ecvAICoreUi::populateDeviceCombo(m_deviceCombo);
     m_threads = new QSpinBox;
     m_threads->setRange(0, 128);
     m_threads->setSpecialValueText(tr("Auto"));

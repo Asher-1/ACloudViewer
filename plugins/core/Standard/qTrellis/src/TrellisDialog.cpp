@@ -32,6 +32,7 @@
 #include "aicore/trellis_capi.h"
 #endif
 #include "ecvAICoreUiHelper.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvPersistentSettings.h"
 
 // Build a shaded unit-cube mesh from a T2VOX01 preview payload (one 24-vert
@@ -216,19 +217,11 @@ void TrellisDialog::buildGeneratePage(QWidget* page) {
 
     // ── Runtime parameters (shared row) ─────────────────────────────────
     m_deviceCombo = new QComboBox(this);
-    // Device ids follow the runtime backend registry (aicore/backend_capi.h):
-    // the combo lists only the backends registered on this platform — Metal
-    // -> CPU on macOS, Vulkan/CUDA -> CPU on Linux/Windows — never a device
-    // the core cannot resolve. Item data carries the id passed to the C
-    // API; the label is display-only.
 #ifdef AICore_ENABLED
-    for (int i = 0; i < aicore_device_count(); ++i) {
-        const aicore_device_info* dev = aicore_device_at(i);
-        if (!dev || !dev->id) continue;
-        m_deviceCombo->addItem(QString::fromUtf8(dev->label),
-                               QString::fromUtf8(dev->id));
-        if (dev->is_default) m_deviceCombo->setCurrentIndex(i);
-    }
+    // Runtime backend registry projection — never a device the core cannot
+    // resolve; item data carries the id passed to the C API; the label is
+    // display-only.
+    ecvAICoreUi::populateDeviceCombo(m_deviceCombo);
     m_deviceCombo->setToolTip(
             tr("Inference backend. 'auto' picks the best device whose free "
                "VRAM fits this preset (%1); a low-VRAM card falls back "

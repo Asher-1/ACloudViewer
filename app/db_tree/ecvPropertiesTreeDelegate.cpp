@@ -2436,14 +2436,14 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
                     comboBox->setItemIcon(
                             comboBox->count() - 1,
                             QIcon(QString::fromUtf8(
-                                    ":/Resources/images/typeRgbCcolor.png")));
+                                    ":/Resources/images/svg/type/typeRgbCcolor.svg")));
                 }
                 if (m_currentObject->hasScalarFields()) {
                     comboBox->addItem(s_sfColor);
                     comboBox->setItemIcon(
                             comboBox->count() - 1,
                             QIcon(QString::fromUtf8(
-                                    ":/Resources/images/typeSF.png")));
+                                    ":/Resources/images/svg/type/typeSF.svg")));
                 }
                 connect(comboBox,
                         static_cast<void (QComboBox::*)(const QString&)>(

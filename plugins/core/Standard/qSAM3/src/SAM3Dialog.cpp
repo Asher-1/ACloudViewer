@@ -16,6 +16,7 @@
 #endif
 
 #include <ecvAICoreUiHelper.h>
+#include <ecvAICoreDeviceUiHelper.h>
 #include <ecvClickableImageLabel.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
@@ -602,18 +603,10 @@ void SAM3Dialog::setupUi() {
 
     auto* deviceLabel = new QLabel(tr("Device:"));
     m_deviceCombo = new QComboBox();
-    // Devices follow the runtime backend registry (aicore/backend_capi.h),
-    // which lists only the backends registered on this platform — Metal ->
-    // CPU on macOS, Vulkan/CUDA -> CPU on Linux/Windows — so the combo never
-    // offers a device the core cannot resolve. Item data carries the device
-    // id passed to the C API; labels are display-only.
-    for (int i = 0; i < aicore_device_count(); ++i) {
-        const aicore_device_info* dev = aicore_device_at(i);
-        if (!dev || !dev->id) continue;
-        m_deviceCombo->addItem(QString::fromUtf8(dev->label),
-                               QString::fromUtf8(dev->id));
-        if (dev->is_default) m_deviceCombo->setCurrentIndex(i);
-    }
+    // Devices follow the runtime backend registry (single projection in
+    // ecvAICoreUiHelper): never a device the core cannot resolve; item data
+    // carries the id passed to the C API; labels are display-only.
+    ecvAICoreUi::populateDeviceCombo(m_deviceCombo);
     connect(m_deviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &SAM3Dialog::onDeviceChanged);
 

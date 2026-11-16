@@ -79,7 +79,7 @@
        <widget class="QToolButton" name="swapToolButton">
         <property name="icon">
          <iconset resource="../qCork.qrc">
-          <normaloff>:/CC/plugin/qCork/images/iconSwap.png</normaloff>:/CC/plugin/qCork/images/iconSwap.png</iconset>
+          <normaloff>:/CC/plugin/qCork/images/iconSwap.svg</normaloff>:/CC/plugin/qCork/images/iconSwap.svg</iconset>
         </property>
        </widget>
       </item>

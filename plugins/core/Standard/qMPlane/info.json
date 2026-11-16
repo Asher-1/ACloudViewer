@@ -1,7 +1,7 @@
 {
 	"type" : "Standard",
 	"name" : "MPlane",
-	"icon" : ":/CC/plugin/qMPlane/images/icon.png",
+	"icon" : ":/CC/plugin/qMPlane/images/icon.svg",
 	"description": "Perform normal distance measurements against a plane",
 	"authors" : [
     {

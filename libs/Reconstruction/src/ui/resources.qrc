@@ -11,38 +11,38 @@
     <file>shaders/mesh.g.glsl</file>
     <file>shaders/mesh.f.glsl</file>
 
-    <file>media/project-new.png</file>
-    <file>media/project-open.png</file>
-    <file>media/project-edit.png</file>
-    <file>media/project-save.png</file>
-    <file>media/project-save-as.png</file>
-    <file>media/import.png</file>
-    <file>media/import-from.png</file>
-    <file>media/export.png</file>
-    <file>media/export-all.png</file>
-    <file>media/export-as.png</file>
-    <file>media/export-as-text.png</file>
-    <file>media/feature-extraction.png</file>
-    <file>media/feature-matching.png</file>
-    <file>media/database-management.png</file>
-    <file>media/automatic-reconstruction.png</file>
-    <file>media/reconstruction-start.png</file>
-    <file>media/reconstruction-pause.png</file>
-    <file>media/reconstruction-step.png</file>
-    <file>media/reconstruction-reset.png</file>
-    <file>media/reconstruction-normalize.png</file>
-    <file>media/reconstruction-options.png</file>
-    <file>media/reconstruction-stats.png</file>
-    <file>media/bundle-adjustment.png</file>
-    <file>media/dense-reconstruction.png</file>
-    <file>media/render-enabled.png</file>
-    <file>media/render-disabled.png</file>
-    <file>media/render-reset-view.png</file>
-    <file>media/render-options.png</file>
-    <file>media/match-matrix.png</file>
-    <file>media/log.png</file>
-    <file>media/grab-image.png</file>
-    <file>media/grab-movie.png</file>
-    <file>media/undistort.png</file>
+    <file alias="media/project-new.svg">../../../../app/reconstruction/media/project-new.svg</file>
+    <file alias="media/project-open.svg">../../../../app/reconstruction/media/project-open.svg</file>
+    <file alias="media/project-edit.svg">../../../../app/reconstruction/media/project-edit.svg</file>
+    <file alias="media/project-save.svg">../../../../app/reconstruction/media/project-save.svg</file>
+    <file alias="media/project-save-as.svg">../../../../app/reconstruction/media/project-save-as.svg</file>
+    <file alias="media/import.svg">../../../../app/reconstruction/media/import.svg</file>
+    <file alias="media/import-from.svg">../../../../app/reconstruction/media/import-from.svg</file>
+    <file alias="media/export.svg">../../../../app/reconstruction/media/export.svg</file>
+    <file alias="media/export-all.svg">../../../../app/reconstruction/media/export-all.svg</file>
+    <file alias="media/export-as.svg">../../../../app/reconstruction/media/export-as.svg</file>
+    <file alias="media/export-as-text.svg">../../../../app/reconstruction/media/export-as-text.svg</file>
+    <file alias="media/feature-extraction.svg">../../../../app/reconstruction/media/feature-extraction.svg</file>
+    <file alias="media/feature-matching.svg">../../../../app/reconstruction/media/feature-matching.svg</file>
+    <file alias="media/database-management.svg">../../../../app/reconstruction/media/database-management.svg</file>
+    <file alias="media/automatic-reconstruction.svg">../../../../app/reconstruction/media/automatic-reconstruction.svg</file>
+    <file alias="media/reconstruction-start.svg">../../../../app/reconstruction/media/reconstruction-start.svg</file>
+    <file alias="media/reconstruction-pause.svg">../../../../app/reconstruction/media/reconstruction-pause.svg</file>
+    <file alias="media/reconstruction-step.svg">../../../../app/reconstruction/media/reconstruction-step.svg</file>
+    <file alias="media/reconstruction-reset.svg">../../../../app/reconstruction/media/reconstruction-reset.svg</file>
+    <file alias="media/reconstruction-normalize.svg">../../../../app/reconstruction/media/reconstruction-normalize.svg</file>
+    <file alias="media/reconstruction-options.svg">../../../../app/reconstruction/media/reconstruction-options.svg</file>
+    <file alias="media/reconstruction-stats.svg">../../../../app/reconstruction/media/reconstruction-stats.svg</file>
+    <file alias="media/bundle-adjustment.svg">../../../../app/reconstruction/media/bundle-adjustment.svg</file>
+    <file alias="media/dense-reconstruction.svg">../../../../app/reconstruction/media/dense-reconstruction.svg</file>
+    <file alias="media/render-enabled.svg">../../../../app/reconstruction/media/render-enabled.svg</file>
+    <file alias="media/render-disabled.svg">../../../../app/reconstruction/media/render-disabled.svg</file>
+    <file alias="media/render-reset-view.svg">../../../../app/reconstruction/media/render-reset-view.svg</file>
+    <file alias="media/render-options.svg">../../../../app/reconstruction/media/render-options.svg</file>
+    <file alias="media/match-matrix.svg">../../../../app/reconstruction/media/match-matrix.svg</file>
+    <file alias="media/log.svg">../../../../app/reconstruction/media/log.svg</file>
+    <file alias="media/grab-image.svg">../../../../app/reconstruction/media/grab-image.svg</file>
+    <file alias="media/grab-movie.svg">../../../../app/reconstruction/media/grab-movie.svg</file>
+    <file alias="media/undistort.svg">../../../../app/reconstruction/media/undistort.svg</file>
 </qresource>
 </RCC>

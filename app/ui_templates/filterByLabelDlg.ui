@@ -61,7 +61,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/smallSegmentIn.png</normaloff>:/Resources/images/smallSegmentIn.png</iconset>
+         <normaloff>:/Resources/images/svg/small/smallSegmentIn.svg</normaloff>:/Resources/images/svg/small/smallSegmentIn.svg</iconset>
        </property>
       </widget>
      </item>
@@ -75,7 +75,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/smallSegmentOut.png</normaloff>:/Resources/images/smallSegmentOut.png</iconset>
+         <normaloff>:/Resources/images/svg/small/smallSegmentOut.svg</normaloff>:/Resources/images/svg/small/smallSegmentOut.svg</iconset>
        </property>
       </widget>
      </item>
@@ -89,7 +89,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/smallSplit.png</normaloff>:/Resources/images/smallSplit.png</iconset>
+         <normaloff>:/Resources/images/svg/small/smallSplit.svg</normaloff>:/Resources/images/svg/small/smallSplit.svg</iconset>
        </property>
       </widget>
      </item>
@@ -111,7 +111,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/smallCancel.png</normaloff>:/Resources/images/smallCancel.png</iconset>
+         <normaloff>:/Resources/images/svg/small/smallCancel.svg</normaloff>:/Resources/images/svg/small/smallCancel.svg</iconset>
        </property>
       </widget>
      </item>

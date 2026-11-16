@@ -33,7 +33,7 @@
       <widget class="QToolButton" name="unstackAlignToolButton">
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/ecvUnstack.png</normaloff>:/Resources/images/ecvUnstack.png</iconset>
+         <normaloff>:/Resources/images/svg/ecv/ecvUnstack.svg</normaloff>:/Resources/images/svg/ecv/ecvUnstack.svg</iconset>
        </property>
       </widget>
      </item>
@@ -41,7 +41,7 @@
       <widget class="QToolButton" name="typeAlignToolButton">
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/ecvPencil.png</normaloff>:/Resources/images/ecvPencil.png</iconset>
+         <normaloff>:/Resources/images/svg/ecv/ecvPencil.svg</normaloff>:/Resources/images/svg/ecv/ecvPencil.svg</iconset>
        </property>
       </widget>
      </item>
@@ -65,7 +65,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/smallSphere.png</normaloff>:/Resources/images/smallSphere.png</iconset>
+         <normaloff>:/Resources/images/svg/small/smallSphere.svg</normaloff>:/Resources/images/svg/small/smallSphere.svg</iconset>
        </property>
        <property name="checkable">
         <bool>true</bool>
@@ -210,7 +210,7 @@
       <widget class="QToolButton" name="unstackRefToolButton">
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/ecvUnstack.png</normaloff>:/Resources/images/ecvUnstack.png</iconset>
+         <normaloff>:/Resources/images/svg/ecv/ecvUnstack.svg</normaloff>:/Resources/images/svg/ecv/ecvUnstack.svg</iconset>
        </property>
       </widget>
      </item>
@@ -218,7 +218,7 @@
       <widget class="QToolButton" name="typeRefToolButton">
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/ecvPencil.png</normaloff>:/Resources/images/ecvPencil.png</iconset>
+         <normaloff>:/Resources/images/svg/ecv/ecvPencil.svg</normaloff>:/Resources/images/svg/ecv/ecvPencil.svg</iconset>
        </property>
       </widget>
      </item>
@@ -517,7 +517,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/smallValidate.png</normaloff>:/Resources/images/smallValidate.png</iconset>
+         <normaloff>:/Resources/images/svg/small/smallValidate.svg</normaloff>:/Resources/images/svg/small/smallValidate.svg</iconset>
        </property>
       </widget>
      </item>
@@ -534,7 +534,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/smallCancel.png</normaloff>:/Resources/images/smallCancel.png</iconset>
+         <normaloff>:/Resources/images/svg/small/smallCancel.svg</normaloff>:/Resources/images/svg/small/smallCancel.svg</iconset>
        </property>
       </widget>
      </item>

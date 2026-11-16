@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>:/CC/plugin/qAnimation/animation.png</normaloff>:/CC/plugin/qAnimation/animation.png</iconset>
+    <normaloff>:/CC/plugin/qAnimation/images/animation.svg</normaloff>:/CC/plugin/qAnimation/images/animation.svg</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_5">
    <item>

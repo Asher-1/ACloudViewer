@@ -10,6 +10,7 @@ caller is not an abstraction requirement.
 | Responsibility | Owner | Plugin may do |
 |---|---|---|
 | Device discovery, leases, queues, cancellation, shutdown | AICore runtime/common | Request a lease and release it through the public API |
+| Device-combo UI projection (fill, id extraction, persisted restore) | `ecvAICoreDeviceUiHelper.h` (`ecvAICoreUi`) | Call the three helpers; never hardcode a device list or branch on platform macros |
 | Image storage, stride, channel order | `aicore_image_view` and task adapter | Borrow caller-owned decoded storage |
 | Graph, preprocess, postprocess, model session/cache | `src/tasks/<task>` | Pass options and consume typed results |
 | Model URL, digest, cache folder, role | task catalog/cache API + digest header | Read exported catalog/cache entries |
@@ -22,7 +23,10 @@ caller is not an abstraction requirement.
 Do not create a plugin model source of truth, private downloader implementation,
 cache root, device lock, backend registry, JSON/file inference transport, or
 private validation runner. A thin Qt projection of public catalog rows and
-orchestration of `ecvModelDownloader` are allowed. Do not put model mathematics
+orchestration of `ecvModelDownloader` are allowed. A device combo must come
+from `ecvAICoreDeviceUiHelper.h` (the runtime registry projection); a hardcoded
+`auto/cpu/cuda/vulkan` list is the static-knowledge defect this contract exists
+to prevent. Do not put model mathematics
 into `src/common/` merely because two task files look similar.
 
 ## Static Boundary Check

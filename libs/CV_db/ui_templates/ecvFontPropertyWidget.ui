@@ -150,8 +150,8 @@
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>:/Resources/images/font/pqBold24.png</normaloff>
-       <normalon>:/Resources/images/font/pqBold24.png</normalon>
+       <normaloff>:/Resources/images/svg/font/pqBold24.svg</normaloff>
+       <normalon>:/Resources/images/svg/font/pqBold24.svg</normalon>
       </iconset>
      </property>
      <property name="checkable">
@@ -172,8 +172,8 @@
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>:/Resources/images/font/pqItalics24.png</normaloff>
-       <normalon>:/Resources/images/font/pqItalics24.png</normalon>
+       <normaloff>:/Resources/images/svg/font/pqItalics24.svg</normaloff>
+       <normalon>:/Resources/images/svg/font/pqItalics24.svg</normalon>
       </iconset>
      </property>
      <property name="checkable">
@@ -194,8 +194,8 @@
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>:/Resources/images/font/pqShadow24.png</normaloff>
-       <normalon>:/Resources/images/font/pqShadow24.png</normalon>
+       <normaloff>:/Resources/images/svg/font/pqShadow24.svg</normaloff>
+       <normalon>:/Resources/images/svg/font/pqShadow24.svg</normalon>
       </iconset>
      </property>
      <property name="checkable">

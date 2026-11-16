@@ -545,97 +545,97 @@ cvSelectionToolController::createActions(QWidget* parent) {
     SelectionActions a;
     a.selectSurfaceCells =
             make("actionSelectSurfaceCells",
-                 ":/Resources/images/svg/pqSurfaceSelectionCell.svg",
+                 ":/Resources/images/svg/pq/pqSurfaceSelectionCell.svg",
                  QObject::tr("Select Cells On (s)"),
                  QObject::tr("Select Cells On (s)"), true);
     a.selectSurfacePoints =
             make("actionSelectSurfacePoints",
-                 ":/Resources/images/svg/pqSurfaceSelectionPoint.svg",
+                 ":/Resources/images/svg/pq/pqSurfaceSelectionPoint.svg",
                  QObject::tr("Select Points On (d)"),
                  QObject::tr("Select Points On (d)"), true);
     a.selectFrustumCells =
             make("actionSelectFrustumCells",
-                 ":/Resources/images/svg/pqFrustumSelectionCell.svg",
+                 ":/Resources/images/svg/pq/pqFrustumSelectionCell.svg",
                  QObject::tr("Select Cells Through (f)"),
                  QObject::tr("Select Cells Through (f)"), true);
     a.selectFrustumPoints =
             make("actionSelectFrustumPoints",
-                 ":/Resources/images/svg/pqFrustumSelectionPoint.svg",
+                 ":/Resources/images/svg/pq/pqFrustumSelectionPoint.svg",
                  QObject::tr("Select Points Through (g)"),
                  QObject::tr("Select Points Through (g)"), true);
     a.selectPolygonCells =
             make("actionSelectPolygonCells",
-                 ":/Resources/images/svg/pqPolygonSelectSurfaceCell.svg",
+                 ":/Resources/images/svg/pq/pqPolygonSelectSurfaceCell.svg",
                  QObject::tr("Select Cells With Polygon"),
                  QObject::tr("Select Cells With Polygon"), true);
     a.selectPolygonPoints =
             make("actionSelectPolygonPoints",
-                 ":/Resources/images/svg/pqPolygonSelectSurfacePoint.svg",
+                 ":/Resources/images/svg/pq/pqPolygonSelectSurfacePoint.svg",
                  QObject::tr("Select Points With Polygon"),
                  QObject::tr("Select Points With Polygon"), true);
     a.selectBlocks = make("actionSelectBlocks",
-                          ":/Resources/images/svg/pqSelectBlock.svg",
+                          ":/Resources/images/svg/pq/pqSelectBlock.svg",
                           QObject::tr("Select Block (b)"),
                           QObject::tr("Select Block (b)"), true);
     a.selectFrustumBlocks =
             make("actionSelectFrustumBlocks",
-                 ":/Resources/images/svg/pqFrustumSelectionBlock.svg",
+                 ":/Resources/images/svg/pq/pqFrustumSelectionBlock.svg",
                  QObject::tr("Select Blocks Through (n)"),
                  QObject::tr("Select Blocks Through (n)"), true);
     a.interactiveSelectCells =
             make("actionInteractiveSelectCells",
-                 ":/Resources/images/svg/pqSurfaceSelectionCellInteractive.svg",
+                 ":/Resources/images/svg/pq/pqSurfaceSelectionCellInteractive.svg",
                  QObject::tr("Interactive Select Cells On"),
                  QObject::tr("Interactive Select Cells On"), true);
     a.interactiveSelectPoints = make(
             "actionInteractiveSelectPoints",
-            ":/Resources/images/svg/pqSurfaceSelectionPointInteractive.svg",
+            ":/Resources/images/svg/pq/pqSurfaceSelectionPointInteractive.svg",
             QObject::tr("Interactive Select Points On"),
             QObject::tr("Interactive Select Points On"), true);
     a.hoverCells =
             make("actionHoverCells",
-                 ":/Resources/images/svg/pqSurfaceHoveringCell.svg",
+                 ":/Resources/images/svg/pq/pqSurfaceHoveringCell.svg",
                  QObject::tr("Hover Cells On"),
                  QObject::tr("Hover Cells On. Use Ctrl-C/Cmd-C to copy the "
                              "content to clipboard."),
                  true);
     a.hoverPoints =
             make("actionHoverPoints",
-                 ":/Resources/images/svg/pqSurfaceHoveringPoint.svg",
+                 ":/Resources/images/svg/pq/pqSurfaceHoveringPoint.svg",
                  QObject::tr("Hover Points On"),
                  QObject::tr("Hover Points On. Use Ctrl-C/Cmd-C to copy the "
                              "content to clipboard."),
                  true);
 
     a.addSelection = make("actionAddSelection",
-                          ":/Resources/images/svg/pqSelectPlus.svg",
+                          ":/Resources/images/svg/pq/pqSelectPlus.svg",
                           QObject::tr("Add Selection"),
                           QObject::tr("Add selection (Ctrl)"), true);
     a.subtractSelection = make("actionSubtractSelection",
-                               ":/Resources/images/svg/pqSelectMinus.svg",
+                               ":/Resources/images/svg/pq/pqSelectMinus.svg",
                                QObject::tr("Subtract Selection"),
                                QObject::tr("Subtract selection (Shift)"), true);
     a.toggleSelection =
             make("actionToggleSelection",
-                 ":/Resources/images/svg/pqSelectToggle.svg",
+                 ":/Resources/images/svg/pq/pqSelectToggle.svg",
                  QObject::tr("Toggle Selection"),
                  QObject::tr("Toggle selection (Ctrl+Shift)"), true);
 
     a.growSelection =
-            make("actionGrowSelection", ":/Resources/images/svg/pqPlus.svg",
+            make("actionGrowSelection", ":/Resources/images/svg/pq/pqPlus.svg",
                  QObject::tr("Grow Selection"),
                  QObject::tr("Grow selection (+)"), false);
     a.shrinkSelection =
-            make("actionShrinkSelection", ":/Resources/images/svg/pqMinus.svg",
+            make("actionShrinkSelection", ":/Resources/images/svg/pq/pqMinus.svg",
                  QObject::tr("Shrink Selection"),
                  QObject::tr("Shrink selection (-)"), false);
     a.clearSelection = make("actionClearSelection",
-                            ":/Resources/images/svg/pqClearSort.svg",
+                            ":/Resources/images/svg/pq/pqClearSort.svg",
                             QObject::tr("Clear Selection"),
                             QObject::tr("Clear selection (Esc)"), false);
 
     a.zoomToBox = make("actionZoomToBox",
-                       ":/Resources/images/svg/pqZoomToSelection.svg",
+                       ":/Resources/images/svg/misc/zoom_to_selection.svg",
                        QObject::tr("Zoom to Box"),
                        QObject::tr("Zoom to selection"), false);
     return a;

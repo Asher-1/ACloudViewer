@@ -29,7 +29,7 @@ NormalEstimation::NormalEstimation()
               tr("Estimate Normals"),
               tr("Estimate Normals and Curvature"),
               tr("Estimate Normals and Curvature for the selected entity"),
-              ":/toolbar/PclAlgorithms/icons/normal_curvature.png")),
+              ":/toolbar/PclAlgorithms/icons/normal_curvature.svg")),
       m_dialog(nullptr),
       m_knn_radius(10),
       m_radius(0),

@@ -30,7 +30,7 @@
        </property>
        <property name="icon">
         <iconset resource="../qG3POINT.qrc">
-         <normaloff>:/CC/plugin/G3PointPlugin/images/smallCSVFile.png</normaloff>:/CC/plugin/G3PointPlugin/images/smallCSVFile.png</iconset>
+         <normaloff>:/CC/plugin/G3PointPlugin/images/smallCSVFile.svg</normaloff>:/CC/plugin/G3PointPlugin/images/smallCSVFile.svg</iconset>
        </property>
       </widget>
      </item>
@@ -41,7 +41,7 @@
        </property>
        <property name="icon">
         <iconset resource="../qG3POINT.qrc">
-         <normaloff>:/CC/plugin/G3PointPlugin/images/dbImageSymbol.png</normaloff>:/CC/plugin/G3PointPlugin/images/dbImageSymbol.png</iconset>
+         <normaloff>:/CC/plugin/G3PointPlugin/images/dbImageSymbol.svg</normaloff>:/CC/plugin/G3PointPlugin/images/dbImageSymbol.svg</iconset>
        </property>
       </widget>
      </item>

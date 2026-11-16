@@ -1490,7 +1490,7 @@ void MainWindow::connectActions() {
         linkCamerasAction->setToolTip(
                 tr("Link all render view cameras together "
                    "(ParaView-style Camera Link)"));
-        linkCamerasAction->setIcon(QIcon(":/Resources/images/svg/pqLock.svg"));
+        linkCamerasAction->setIcon(QIcon(":/Resources/images/svg/pq/pqLock.svg"));
         connect(linkCamerasAction, &QAction::toggled, this, [](bool checked) {
             Visualization::VtkCameraLink::instance().setEnabled(checked);
         });
@@ -1594,7 +1594,7 @@ void MainWindow::connectActions() {
         // Preview submenu (ParaView pqPreviewMenuManager)
         {
             auto* previewMenu = displayMenu->addMenu(
-                    QIcon(":/Resources/images/svg/pqCaptureScreenshot.svg"),
+                    QIcon(":/Resources/images/svg/pq/pqCaptureScreenshot.svg"),
                     tr("Preview"));
 
             struct PreviewPreset {
@@ -3344,7 +3344,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         };
 
         auto* camUndoAct =
-                new QAction(QIcon(":/Resources/images/svg/pqUndoCamera.svg"),
+                new QAction(QIcon(":/Resources/images/svg/pq/pqUndoCamera.svg"),
                             tr("Camera Undo"), viewToolBar);
         camUndoAct->setEnabled(false);
         connect(camUndoAct, &QAction::triggered, this,
@@ -3362,7 +3362,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         viewToolBar->addAction(camUndoAct);
 
         auto* camRedoAct =
-                new QAction(QIcon(":/Resources/images/svg/pqRedoCamera.svg"),
+                new QAction(QIcon(":/Resources/images/svg/pq/pqRedoCamera.svg"),
                             tr("Camera Redo"), viewToolBar);
         camRedoAct->setEnabled(false);
         connect(camRedoAct, &QAction::triggered, this,
@@ -3413,7 +3413,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
 
     // Capture screenshot — all view types (ParaView actionCaptureView)
     auto* captureAct =
-            new QAction(QIcon(":/Resources/images/svg/pqCaptureScreenshot.svg"),
+            new QAction(QIcon(":/Resources/images/svg/pq/pqCaptureScreenshot.svg"),
                         tr("Capture Screenshot"), viewToolBar);
     connect(captureAct, &QAction::triggered, this,
             activateViewAndDo(&MainWindow::doActionScreenShot));
@@ -3424,7 +3424,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         viewToolBar->addSeparator();
 
         auto* toggle3DAct = new QAction(
-                QIcon(":/Resources/images/svg/pqInteractionMode3D.svg"),
+                QIcon(":/Resources/images/svg/pq/pqInteractionMode3D.svg"),
                 tr("3D"), viewToolBar);
         toggle3DAct->setCheckable(true);
         toggle3DAct->setChecked(true);
@@ -3433,7 +3433,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         viewToolBar->addAction(toggle3DAct);
 
         auto* editCamAct =
-                new QAction(QIcon(":/Resources/images/svg/pqEditCamera.svg"),
+                new QAction(QIcon(":/Resources/images/svg/pq/pqEditCamera.svg"),
                             tr("Adjust Camera"), viewToolBar);
         connect(editCamAct, &QAction::triggered, this,
                 activateViewAndDo(&MainWindow::doActionEditCamera));
@@ -3442,14 +3442,14 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         viewToolBar->addSeparator();
 
         auto* resetCamAct =
-                new QAction(QIcon(":/Resources/images/svg/pqReset.svg"),
+                new QAction(QIcon(":/Resources/images/svg/pq/pqReset.svg"),
                             tr("Reset Camera"), viewToolBar);
         connect(resetCamAct, &QAction::triggered, orthoView,
                 &vtkOrthoSliceViewWidget::resetCameras);
         viewToolBar->addAction(resetCamAct);
 
         auto* zoomFitAct = new QAction(
-                QIcon(":/Resources/images/svg/pqZoomToSelectedData.svg"),
+                QIcon(":/Resources/images/svg/pq/pqZoomToSelectedData.svg"),
                 tr("Zoom to Fit"), viewToolBar);
         connect(zoomFitAct, &QAction::triggered, orthoView,
                 [orthoView]() { orthoView->zoomToFit(); });
@@ -3483,21 +3483,21 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         static constexpr int SEL_TOGGLE = 3;
 
         auto* addSelAct =
-                new QAction(QIcon(":/Resources/images/svg/pqSelectPlus.svg"),
+                new QAction(QIcon(":/Resources/images/svg/pq/pqSelectPlus.svg"),
                             tr("Add Selection (Ctrl)"), viewToolBar);
         addSelAct->setCheckable(true);
         addSelAct->setData(SEL_ADDITION);
         viewToolBar->addAction(addSelAct);
 
         auto* subSelAct =
-                new QAction(QIcon(":/Resources/images/svg/pqSelectMinus.svg"),
+                new QAction(QIcon(":/Resources/images/svg/pq/pqSelectMinus.svg"),
                             tr("Subtract Selection (Shift)"), viewToolBar);
         subSelAct->setCheckable(true);
         subSelAct->setData(SEL_SUBTRACTION);
         viewToolBar->addAction(subSelAct);
 
         auto* togSelAct =
-                new QAction(QIcon(":/Resources/images/svg/pqSelectToggle.svg"),
+                new QAction(QIcon(":/Resources/images/svg/pq/pqSelectToggle.svg"),
                             tr("Toggle Selection (Ctrl+Shift)"), viewToolBar);
         togSelAct->setCheckable(true);
         togSelAct->setData(SEL_TOGGLE);
@@ -3522,21 +3522,21 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         viewToolBar->addSeparator();
 
         auto* polySelAct = new QAction(
-                QIcon(":/Resources/images/svg/pqSelectChartPolygon.svg"),
+                QIcon(":/Resources/images/svg/pq/pqSelectChartPolygon.svg"),
                 tr("Polygon Selection (d)"), viewToolBar);
         polySelAct->setObjectName("actionChartSelectPolygon");
         polySelAct->setCheckable(true);
         viewToolBar->addAction(polySelAct);
 
         auto* rectSelAct =
-                new QAction(QIcon(":/Resources/images/svg/pqSelectChart.svg"),
+                new QAction(QIcon(":/Resources/images/svg/pq/pqSelectChart.svg"),
                             tr("Rectangle Selection (s)"), viewToolBar);
         rectSelAct->setObjectName("actionChartSelectRectangle");
         rectSelAct->setCheckable(true);
         viewToolBar->addAction(rectSelAct);
 
         auto* clearSelAct =
-                new QAction(QIcon(":/Resources/images/svg/pqCloseView.svg"),
+                new QAction(QIcon(":/Resources/images/svg/pq/pqCloseView.svg"),
                             tr("Clear Selection"), viewToolBar);
         clearSelAct->setObjectName("actionChartClearSelection");
         viewToolBar->addAction(clearSelAct);
@@ -3609,7 +3609,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         viewToolBar->addAction(view3DAct);
 
         auto* editCamAct =
-                new QAction(QIcon(":/Resources/images/svg/pqEditCamera.svg"),
+                new QAction(QIcon(":/Resources/images/svg/pq/pqEditCamera.svg"),
                             tr("Adjust Camera"), viewToolBar);
         connect(editCamAct, &QAction::triggered, this,
                 [this, innerWidget, compView]() {
@@ -3625,7 +3625,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         viewToolBar->addAction(editCamAct);
 
         auto* resetCamAct =
-                new QAction(QIcon(":/Resources/images/svg/pqReset.svg"),
+                new QAction(QIcon(":/Resources/images/svg/pq/pqReset.svg"),
                             tr("Reset Camera"), viewToolBar);
         connect(resetCamAct, &QAction::triggered, this,
                 [compView, innerWidget]() {
@@ -3644,7 +3644,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         viewToolBar->addAction(resetCamAct);
 
         auto* zoomFitAct = new QAction(
-                QIcon(":/Resources/images/svg/pqZoomToSelectedData.svg"),
+                QIcon(":/Resources/images/svg/pq/pqZoomToSelectedData.svg"),
                 tr("Zoom to Data"), viewToolBar);
         zoomFitAct->setToolTip(
                 tr("Adjust camera so that all visible data "
@@ -3716,7 +3716,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     };
 
     auto* splitLRBtn = makeSvgBtn(
-            QStringLiteral(":/Resources/images/svg/pqSplitHorizontal.svg"),
+            QStringLiteral(":/Resources/images/svg/pq/pqSplitHorizontal.svg"),
             tr("Split Left|Right"));
     splitLRBtn->setObjectName("btnSplitHorizontal");
     connect(splitLRBtn, &QToolButton::clicked, this, [this, frame]() {
@@ -3727,7 +3727,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     titleLayout->addWidget(splitLRBtn);
 
     auto* splitTBBtn = makeSvgBtn(
-            QStringLiteral(":/Resources/images/svg/pqSplitVertical.svg"),
+            QStringLiteral(":/Resources/images/svg/pq/pqSplitVertical.svg"),
             tr("Split Top|Bottom"));
     splitTBBtn->setObjectName("btnSplitVertical");
     connect(splitTBBtn, &QToolButton::clicked, this, [this, frame]() {
@@ -3747,7 +3747,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     titleLayout->addWidget(maxBtn);
 
     auto* closeBtn =
-            makeSvgBtn(QStringLiteral(":/Resources/images/svg/pqCloseView.svg"),
+            makeSvgBtn(QStringLiteral(":/Resources/images/svg/pq/pqCloseView.svg"),
                        tr("Close View"));
     connect(closeBtn, &QToolButton::clicked, this, [this, frame]() {
         auto* mvw = m_tabbedMultiView ? m_tabbedMultiView->currentMultiView()
@@ -3790,7 +3790,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
             [this, frame, titleLabel](const QPoint& pos) {
                 QMenu menu;
                 auto* splitH = menu.addAction(
-                        QIcon(":/Resources/images/svg/pqSplitHorizontal.svg"),
+                        QIcon(":/Resources/images/svg/pq/pqSplitHorizontal.svg"),
                         tr("Split Left|Right"), [this, frame]() {
                             auto* mvw = m_tabbedMultiView
                                                 ? m_tabbedMultiView
@@ -3799,7 +3799,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                             if (mvw) mvw->onSplitHorizontal(frame);
                         });
                 auto* splitV = menu.addAction(
-                        QIcon(":/Resources/images/svg/pqSplitVertical.svg"),
+                        QIcon(":/Resources/images/svg/pq/pqSplitVertical.svg"),
                         tr("Split Top|Bottom"), [this, frame]() {
                             auto* mvw = m_tabbedMultiView
                                                 ? m_tabbedMultiView

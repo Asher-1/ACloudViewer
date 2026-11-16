@@ -27,9 +27,9 @@
 #include <memory>
 
 #include "aicore/aliked_capi.h"
-#include "aicore/backend_capi.h"
 #include "aicore/loma_capi.h"
 #include "aicore/model_catalog_capi.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAssetIntegrity.h"
 #include "ecvModelDownloader.h"
 
@@ -390,14 +390,10 @@ LomaBridgeDialog::LomaBridgeDialog(bool lightglue, QWidget* parent)
     m_matcher->setObjectName(QStringLiteral("LomaMatcherModel"));
     m_device = new QComboBox(this);
     m_device->setObjectName(QStringLiteral("LomaBackend"));
-    for (int i = 0; i < aicore_device_count(); ++i) {
-        const auto* entry = aicore_device_at(i);
-        if (!entry || !entry->id) continue;
-        m_device->addItem(QString::fromUtf8(entry->id));
-        m_device->setItemData(m_device->count() - 1,
-                              QString::fromUtf8(entry->label), Qt::ToolTipRole);
-        if (entry->is_default) m_device->setCurrentIndex(m_device->count() - 1);
-    }
+    // Runtime registry projection (single point in ecvAICoreDeviceUiHelper):
+    // item data carries the id (the old text-only fill left currentData
+    // empty) and the runtime label replaces the manual ToolTipRole copy.
+    ecvAICoreUi::populateDeviceCombo(m_device);
     models->addWidget(new QLabel(tr("Detector"), this), 0, 0);
     models->addWidget(m_detector, 0, 1);
     auto* descriptorLabel = new QLabel(tr("Descriptor"), this);
@@ -560,7 +556,7 @@ void LomaBridgeDialog::runMatching() {
     thread->detector = modelPath(m_detector);
     thread->descriptor = modelPath(m_descriptor);
     thread->matcher = modelPath(m_matcher);
-    thread->device = m_device->currentText();
+    thread->device = ecvAICoreUi::currentDeviceId(m_device);
     thread->lightglue = m_lightglue;
     m_thread = thread;
     const auto generation = m_generation;

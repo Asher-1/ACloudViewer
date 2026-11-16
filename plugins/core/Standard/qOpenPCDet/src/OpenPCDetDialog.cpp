@@ -36,6 +36,7 @@
 
 #include "QtCompat.h"
 #include "ecvAICoreUiHelper.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvModelDownloader.h"
 #include "ecvPersistentSettings.h"
 
@@ -128,14 +129,7 @@ void OpenPCDetDialog::setupUi() {
     m_deviceCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_deviceCombo->setMaximumWidth(ecvAICoreUi::dpiScaled(220));
 #ifdef AICore_ENABLED
-    const int nDev = aicore_device_count();
-    for (int i = 0; i < nDev; ++i) {
-        const aicore_device_info* dev = aicore_device_at(i);
-        if (!dev || !dev->id) continue;
-        m_deviceCombo->addItem(QString::fromUtf8(dev->label),
-                               QString::fromUtf8(dev->id));
-        if (dev->is_default) m_deviceCombo->setCurrentIndex(i);
-    }
+    ecvAICoreUi::populateDeviceCombo(m_deviceCombo);
 #endif
     runtimeRow->addWidget(m_deviceCombo);
     runtimeRow->addWidget(ecvAICoreUi::makeLabel(tr("Threads:")));

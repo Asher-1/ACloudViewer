@@ -526,6 +526,7 @@ void qMapAnything::addResultToDb(const MapAnythingResult& result) {
             }
         }
 
+        int depthAdded = 0;
         for (int i = 0; i < result.views.size(); ++i) {
             const MapAnythingViewResult& view = result.views[i];
             if (view.depthImage.isNull()) continue;
@@ -547,8 +548,16 @@ void qMapAnything::addResultToDb(const MapAnythingResult& result) {
             // state, and the raster folders ship UNCHECKED below (one checkbox
             // hides the whole folder; ticking it shows every raster).
             depthFolder->addChild(img);
+            ++depthAdded;
+        }
+        // One summary line per run: per-raster names are already visible in
+        // the DB tree under 'MapAnythingDepth_<model>'.
+        if (depthAdded > 0) {
             m_dialog->appendLog(
-                    tr("[MapAnything] Added depth raster '%1'.").arg(name));
+                    tr("[MapAnything] Added %1 depth rasters to "
+                       "'MapAnythingDepth_%2'.")
+                            .arg(depthAdded)
+                            .arg(modelTag));
         }
 
         // Normalized-confidence rasters (same crop as the depth rasters).

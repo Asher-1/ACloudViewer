@@ -27,6 +27,7 @@ class QPushButton;
 class QLabel;
 class QSlider;
 class QSpinBox;
+class QShowEvent;
 
 class ecvModelDownloader;
 class ecvMainAppInterface;
@@ -57,6 +58,9 @@ protected:
     void closeEvent(QCloseEvent* event) override;
     /** Esc intercept: confirm before closing when a task is running. */
     void keyPressEvent(QKeyEvent* event) override;
+    /** First-show re-pin: polish-time font metrics can grow the layout
+     *  minimum; keep the window floor in step with the shown layout. */
+    void showEvent(QShowEvent* event) override;
 
 signals:
     void runRequested(const LingbotMapWorker::Settings& settings);
@@ -142,6 +146,7 @@ public slots:
 private:
     enum class PendingAction { None, Run };
 
+    QSize pinnedMinimumSize() const;
     void loadSettings();
     void saveSettings() const;
     void populateCatalogs();
@@ -241,6 +246,8 @@ private:
     ecvModelDownloader* m_downloader = nullptr;
     bool m_downloadInProgress = false;
     bool m_taskRunning = false;
+    /** First showEvent still pending (polish-time geometry re-pin). */
+    bool m_firstShow = true;
     PendingAction m_pendingActionAfterDownload = PendingAction::None;
     bool m_modelExplicit = false;
     /** Sky-source auto-switch bookkeeping: outdoor test scenes enable sky

@@ -1,7 +1,7 @@
 {
 	"type": "Standard",
 	"name": "Colorimetric Segmenter",
-	"icon": ":/CC/plugin/ColorimetricSegmenter/images/icon.png",
+	"icon": ":/CC/plugin/ColorimetricSegmenter/images/icon.svg",
   "description": "Plugin developed in the framework of a transversal project with Polytech Nantes, the Graduate School of Engineering of the University of Nantes, and the company Taglabs. The purpose of the plugin is to perform color segmentation. The available filters are RGB, HSV and scalar value filtering. Date : 2020",
   "authors": [
     {

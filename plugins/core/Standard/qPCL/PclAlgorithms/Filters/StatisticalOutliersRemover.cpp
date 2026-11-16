@@ -29,7 +29,7 @@ StatisticalOutliersRemover::StatisticalOutliersRemover()
               tr("Filter outlier data based on point neighborhood statistics"),
               tr("Filter the points that are farther of their neighbors than "
                  "the average (plus a number of times the standard deviation)"),
-              ":/toolbar/PclAlgorithms/icons/sor_outlier_remover.png")),
+              ":/toolbar/PclAlgorithms/icons/sor_outlier_remover.svg")),
       m_dialog(nullptr),
       m_k(0),
       m_std(0.0f) {}

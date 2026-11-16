@@ -10,7 +10,7 @@ Compass is a structural geology toolbox for the interpretation and analysis of v
 
 ### Compass mode: Extracting structural measurements
 
-The compass mode, activated by clicking the ![](images/icon.png) icon in the main dialog, contains three tools for measuring orientations: the **Plane Tool**, **Trace Tool** and **Lineation Tool**. A self-explanatory **Picking Tool** is also included for convenience.
+The compass mode, activated by clicking the ![](images/icon.svg) icon in the main dialog, contains three tools for measuring orientations: the **Plane Tool**, **Trace Tool** and **Lineation Tool**. A self-explanatory **Picking Tool** is also included for convenience.
 
 #### Plane tool: Measure surface orientations
 

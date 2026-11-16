@@ -1,6 +1,6 @@
 <RCC>
   <qresource prefix="/CC/plugin/qAutoSeg" >
-    <file>cyberbuildIcon.png</file>
+    <file>cyberbuildIcon.svg</file>
     <file>info.json</file>
   </qresource>
 </RCC>

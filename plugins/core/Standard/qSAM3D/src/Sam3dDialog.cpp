@@ -28,6 +28,7 @@
 #include "aicore/sam3_capi.h"
 #include "aicore/sam3d_capi.h"
 #include "ecvAICoreUiHelper.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAssetIntegrity.h"
 #include "ecvModelDownloader.h"
 #include "ecvTestDataRepository.h"
@@ -139,8 +140,7 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
 
     // Output options (DB import by default; file export is opt-in) ----------
     m_deviceCombo = new QComboBox(this);
-    m_deviceCombo->addItems({tr("auto"), QStringLiteral("cpu"),
-                             QStringLiteral("cuda"), QStringLiteral("vulkan")});
+    ecvAICoreUi::populateDeviceCombo(m_deviceCombo);
     form->addRow(tr("Device:"), m_deviceCombo);
 
     m_dtypeCombo = new QComboBox(this);
@@ -666,7 +666,7 @@ Sam3dDialog::Settings Sam3dDialog::settings() const {
     s.samScoreThreshold = static_cast<float>(m_samScoreSpin->value());
     s.samNmsThreshold = static_cast<float>(m_samNmsSpin->value());
     s.samDedupIouThreshold = static_cast<float>(m_samDedupSpin->value());
-    s.device = m_deviceCombo->currentText();
+    s.device = ecvAICoreUi::currentDeviceId(m_deviceCombo);
     s.dtypeIndex = m_dtypeCombo->currentIndex();
     s.rmbgDtypeIndex = m_rmbgDtypeCombo->currentIndex();
     s.steps = m_stepsSpin->value();

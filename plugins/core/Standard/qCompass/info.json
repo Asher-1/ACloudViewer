@@ -2,7 +2,7 @@
 	"type" : "Standard",
 	"core" : true,
 	"name" : "Compass",
-	"icon" : ":/CC/plugin/qCompass/images/icon.png",
+	"icon" : ":/CC/plugin/qCompass/images/icon.svg",
 	"description": "A virtual 'compass' for measuring outcrop orientations.",
 	"authors" : [
 		{

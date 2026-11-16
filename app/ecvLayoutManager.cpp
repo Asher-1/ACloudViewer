@@ -139,33 +139,14 @@ void ecvLayoutManager::setToolbarIconSize(QToolBar* toolbar, int screenWidth) {
                                    .arg(toolbar->objectName())
                                    .arg(buttonSize));
 
-    // Scale icons to match the toolbar icon size and ensure they fill the
-    // button
-    QList<QAction*> actions = toolbar->actions();
-    for (QAction* action : actions) {
-        if (!action->icon().isNull()) {
-            QIcon originalIcon = action->icon();
-            // Get the pixmap at the desired size
-            QPixmap pixmap = originalIcon.pixmap(iconSize);
-            if (pixmap.isNull()) {
-                // If pixmap is null, try to get any available size
-                QList<QSize> availableSizes = originalIcon.availableSizes();
-                if (!availableSizes.isEmpty()) {
-                    pixmap = originalIcon.pixmap(availableSizes.first());
-                }
-            }
-            if (!pixmap.isNull()) {
-                // Scale to exact size while keeping aspect ratio
-                if (pixmap.size() != iconSize) {
-                    pixmap = pixmap.scaled(iconSize, Qt::KeepAspectRatio,
-                                           Qt::SmoothTransformation);
-                }
-                // Create new icon with properly sized pixmap
-                QIcon scaledIcon(pixmap);
-                action->setIcon(scaledIcon);
-            }
-        }
-    }
+    // NOTE: Do NOT pre-rasterize the action icons here (e.g. replacing each
+    // action->icon() with a pixmap scaled to `iconSize`). Toolbars sample icons
+    // at iconSize * devicePixelRatio at paint time, so vector (SVG) icons and
+    // multi-resolution raster icons stay sharp on High-DPI displays (macOS
+    // Retina DPR=2/3) and adapt automatically to any resolution. Baking a
+    // single iconSize pixmap into the icon drops the DPR variant and forces
+    // the compositor to upscale the 1x raster, which visibly blurs the icons
+    // and compounds the loss every time the layout is restored.
 
     // Force toolbar to update
     toolbar->adjustSize();

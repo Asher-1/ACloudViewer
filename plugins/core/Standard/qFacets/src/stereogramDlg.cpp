@@ -618,7 +618,7 @@ StereogramDialog::StereogramDialog(ecvMainAppInterface* app /*=0*/)
         ccColorScalesManager* csManager = m_app->getColorScalesManager();
         m_colorScaleSelector = new ccColorScaleSelector(
                 csManager, this,
-                QString::fromUtf8(":/CC/plugin/qFacets/images/gearIcon.png"));
+                QString::fromUtf8(":/CC/plugin/qFacets/images/gearIcon.svg"));
         m_colorScaleSelector->init();
         ccColorScale::Shared scale =
                 csManager->getDefaultScale(ccColorScalesManager::BGYR);

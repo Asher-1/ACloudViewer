@@ -111,7 +111,7 @@ void ccMPlaneDlg::createMeasurementTab() {
     hLayout->setContentsMargins(0, 0, 0, 0);
 
     QPushButton *buttonSaving = new QPushButton("Save");
-    buttonSaving->setIcon(QIcon(":/CC/plugin/qMPlane/images/ccSave.png"));
+    buttonSaving->setIcon(QIcon(":/CC/plugin/qMPlane/images/ccSave.svg"));
     buttonSaving->setContentsMargins(0, 0, 0, 0);
 
     savingWidget->setLayout(hLayout);

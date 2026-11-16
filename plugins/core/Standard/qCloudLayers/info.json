@@ -1,7 +1,7 @@
 ﻿{
 	"type" : "Standard",
 	"name" : "Cloud layers",
-	"icon" : ":/CC/plugin/qCloudLayers/images/qCloudLayers.png",
+	"icon" : ":/CC/plugin/qCloudLayers/images/qCloudLayers.svg",
 	"description": "",
 	"authors" : [
 		{

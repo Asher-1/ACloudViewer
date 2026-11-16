@@ -158,7 +158,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/smallReset.png</normaloff>:/Resources/images/smallReset.png</iconset>
+       <normaloff>:/Resources/images/svg/small/smallReset.svg</normaloff>:/Resources/images/svg/small/smallReset.svg</iconset>
      </property>
     </widget>
    </item>
@@ -172,7 +172,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/ecvAddConstSF.png</normaloff>:/Resources/images/ecvAddConstSF.png</iconset>
+       <normaloff>:/Resources/images/svg/ecv/ecvAddConstSF.svg</normaloff>:/Resources/images/svg/ecv/ecvAddConstSF.svg</iconset>
      </property>
      <property name="shortcut">
       <string extracomment="Shortcut for continue">C</string>
@@ -198,7 +198,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/smallValidate.png</normaloff>:/Resources/images/smallValidate.png</iconset>
+       <normaloff>:/Resources/images/svg/small/smallValidate.svg</normaloff>:/Resources/images/svg/small/smallValidate.svg</iconset>
      </property>
     </widget>
    </item>
@@ -218,7 +218,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/smallCancel.png</normaloff>:/Resources/images/smallCancel.png</iconset>
+       <normaloff>:/Resources/images/svg/small/smallCancel.svg</normaloff>:/Resources/images/svg/small/smallCancel.svg</iconset>
      </property>
     </widget>
    </item>

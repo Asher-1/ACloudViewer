@@ -24,6 +24,7 @@
 
 #include "aicore/inference_log.h"
 #include "ecvAICoreUiHelper.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvPersistentSettings.h"
 
 namespace {
@@ -85,10 +86,7 @@ void MapAnythingDialog::setupUi() {
     auto* globalRow = new QHBoxLayout();
     globalRow->addWidget(new QLabel(tr("Device:"), this));
     m_deviceCombo = new QComboBox(this);
-    m_deviceCombo->addItem(QStringLiteral("auto"));
-    m_deviceCombo->addItem(QStringLiteral("cpu"));
-    m_deviceCombo->addItem(QStringLiteral("cuda"));
-    m_deviceCombo->addItem(QStringLiteral("vulkan"));
+    ecvAICoreUi::populateDeviceCombo(m_deviceCombo);
     globalRow->addWidget(m_deviceCombo);
     globalRow->addWidget(new QLabel(tr("Threads:"), this));
     m_threads = new QSpinBox(this);
@@ -586,7 +584,7 @@ void MapAnythingDialog::onRun() {
         return;
     }
     s.imagePaths = paths;
-    s.device = m_deviceCombo->currentText();
+    s.device = ecvAICoreUi::currentDeviceId(m_deviceCombo);
     s.threads = m_threads->value();
     s.imageSize = panel->imageSizeSpin->value();
     s.resizeMode = panel->resizeModeCombo->currentText();
@@ -961,7 +959,8 @@ void MapAnythingDialog::applyDbTreeSelection(const QStringList& imageNames) {
 void MapAnythingDialog::loadSettings() {
     QSettings settings;
     settings.beginGroup(QStringLiteral("qMapAnything"));
-    m_deviceCombo->setCurrentText(
+    ecvAICoreUi::restoreDeviceCombo(
+            m_deviceCombo,
             settings.value(QStringLiteral("device"), QStringLiteral("auto"))
                     .toString());
     m_threads->setValue(settings.value(QStringLiteral("threads"), 0).toInt());
@@ -994,7 +993,8 @@ void MapAnythingDialog::loadSettings() {
 void MapAnythingDialog::saveSettings() const {
     QSettings settings;
     settings.beginGroup(QStringLiteral("qMapAnything"));
-    settings.setValue(QStringLiteral("device"), m_deviceCombo->currentText());
+    settings.setValue(QStringLiteral("device"),
+                      ecvAICoreUi::currentDeviceId(m_deviceCombo));
     settings.setValue(QStringLiteral("threads"), m_threads->value());
     settings.setValue(QStringLiteral("anchorToReferenceFrame"),
                       m_referenceFrameCheck->isChecked());

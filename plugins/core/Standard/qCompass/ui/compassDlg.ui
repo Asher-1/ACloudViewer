@@ -46,7 +46,7 @@
      </property>
      <property name="icon">
       <iconset resource="../ccCompass.qrc">
-       <normaloff>:/CC/plugin/qCompass/images/icon.png</normaloff>:/CC/plugin/qCompass/images/icon.png</iconset>
+       <normaloff>:/CC/plugin/qCompass/images/icon.svg</normaloff>:/CC/plugin/qCompass/images/icon.svg</iconset>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -69,7 +69,7 @@
      </property>
      <property name="icon">
       <iconset resource="../ccCompass.qrc">
-       <normaloff>:/CC/plugin/qCompass/images/mapIcon.png</normaloff>:/CC/plugin/qCompass/images/mapIcon.png</iconset>
+       <normaloff>:/CC/plugin/qCompass/images/mapIcon.svg</normaloff>:/CC/plugin/qCompass/images/mapIcon.svg</iconset>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -106,7 +106,7 @@
      </property>
      <property name="icon">
       <iconset resource="../../../../app/MainWindow.qrc">
-       <normaloff>:/Resources/images/dbGBLSensorSymbol.png</normaloff>:/Resources/images/dbGBLSensorSymbol.png</iconset>
+       <normaloff>:/Resources/images/svg/db/dbGBLSensorSymbol.svg</normaloff>:/Resources/images/svg/db/dbGBLSensorSymbol.svg</iconset>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -123,7 +123,7 @@
      </property>
      <property name="icon">
       <iconset resource="../../../../app/MainWindow.qrc">
-       <normaloff>:/Resources/images/ecvSamplePoints.png</normaloff>:/Resources/images/ecvSamplePoints.png</iconset>
+       <normaloff>:/Resources/images/svg/ecv/ecvSamplePoints.svg</normaloff>:/Resources/images/svg/ecv/ecvSamplePoints.svg</iconset>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -149,7 +149,7 @@
      </property>
      <property name="icon">
       <iconset resource="../../../../app/MainWindow.qrc">
-       <normaloff>:/Resources/images/orthoSections.png</normaloff>:/Resources/images/orthoSections.png</iconset>
+       <normaloff>:/Resources/images/svg/misc/orthoSections.svg</normaloff>:/Resources/images/svg/misc/orthoSections.svg</iconset>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -169,7 +169,7 @@
      </property>
      <property name="icon">
       <iconset resource="../../../../app/MainWindow.qrc">
-       <normaloff>:/Resources/images/smallPointDistance.png</normaloff>:/Resources/images/smallPointDistance.png</iconset>
+       <normaloff>:/Resources/images/svg/small/smallPointDistance.svg</normaloff>:/Resources/images/svg/small/smallPointDistance.svg</iconset>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -186,7 +186,7 @@
      </property>
      <property name="icon">
       <iconset resource="../../../../app/MainWindow.qrc">
-       <normaloff>:/Resources/images/ecvAddConstSF.png</normaloff>:/Resources/images/ecvAddConstSF.png</iconset>
+       <normaloff>:/Resources/images/svg/ecv/ecvAddConstSF.svg</normaloff>:/Resources/images/svg/ecv/ecvAddConstSF.svg</iconset>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -236,7 +236,7 @@
      </property>
      <property name="icon">
       <iconset resource="../../../../app/MainWindow.qrc">
-       <normaloff>:/Resources/images/smallRevert.png</normaloff>:/Resources/images/smallRevert.png</iconset>
+       <normaloff>:/Resources/images/svg/small/smallRevert.svg</normaloff>:/Resources/images/svg/small/smallRevert.svg</iconset>
      </property>
      <property name="shortcut">
       <string>Ctrl+Z</string>
@@ -264,7 +264,7 @@
      </property>
      <property name="icon">
       <iconset resource="../../../../app/MainWindow.qrc">
-       <normaloff>:/Resources/images/ecvConsole.png</normaloff>:/Resources/images/ecvConsole.png</iconset>
+       <normaloff>:/Resources/images/svg/ecv/ecvConsole.svg</normaloff>:/Resources/images/svg/ecv/ecvConsole.svg</iconset>
      </property>
     </widget>
    </item>
@@ -275,7 +275,7 @@
      </property>
      <property name="icon">
       <iconset resource="../../../../app/MainWindow.qrc">
-       <normaloff>:/Resources/images/smallValidate.png</normaloff>:/Resources/images/smallValidate.png</iconset>
+       <normaloff>:/Resources/images/svg/small/smallValidate.svg</normaloff>:/Resources/images/svg/small/smallValidate.svg</iconset>
      </property>
      <property name="shortcut">
       <string>Return</string>
@@ -289,7 +289,7 @@
      </property>
      <property name="icon">
       <iconset resource="../../../../app/MainWindow.qrc">
-       <normaloff>:/Resources/images/smallCancel.png</normaloff>:/Resources/images/smallCancel.png</iconset>
+       <normaloff>:/Resources/images/svg/small/smallCancel.svg</normaloff>:/Resources/images/svg/small/smallCancel.svg</iconset>
      </property>
      <property name="shortcut">
       <string>Esc</string>

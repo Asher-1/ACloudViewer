@@ -146,6 +146,53 @@ be packaged as ground truth. At present there is only a recognition smoke test o
 two IIIT5K crops and the 100-image table TEDS GT, which cannot be extrapolated to
 complete OCR release accuracy.
 
+### Metal backend depthwise-conv defects and fix (2026-11-14)
+
+The OCR graphs had never been gated on Metal: the fixture matrix above covers
+CPU/CUDA/Vulkan only, and a Metal session runs a different execution route
+from all of them — `makeExecPlan` gives Metal the mixed `ggml_backend_sched`
+(the single-device path is CUDA/Vulkan only, and Vulkan sessions execute on
+the CPU secondary), so the first rec build binds host weight leaves while
+`realizeToDevice` repoints the weight map to device copies for every later
+build. The user-visible failure was the qOCR zh_val_22 page: det boxes
+identical on CPU and Metal, but rec text (and layout/table decode) turning
+to high-confidence garbage for every crop that landed in a build after the
+first.
+
+Two independent stock-ggml Metal defects surface through that route, both
+fixed as ordered patches in `3rdparty/llama/llama-patches/` (metal-manifest):
+
+- `0029-acv-metal-conv2d-dw-channel-batch.patch` — `ggml_metal_op_conv_2d_dw`
+  read C and N from the WEIGHT tensor (`ne12`/`ne13`). The
+  `ggml_conv_2d_dw_direct` weight layout is (KW, KH, 1, C): the channel axis
+  lives on ne[3], so the dispatch applied weight channel 0 to every output
+  channel and addressed batches 0..C-1 — out of range whenever C > 1 or
+  N != C, writing past the output tensor into neighboring Metal buffer
+  memory. The CPU kernel reads channels/batch from src1 and CUDA reads
+  `dst->ne[2]`/`dst->ne[3]`; the patch aligns C/N with the input/dst for both
+  the kernel arguments and the dispatch grid.
+- `0030-acv-metal-conv2d-dw-bias.patch` — the Metal `conv_2d_dw` kernels
+  never consumed `dst->src[2]`, while the `gpu_dw_direct_conv` route folds
+  the folded-batch-norm bias into the conv node and suppresses the separate
+  ADD (0014 depthwise-bias series: CPU/CUDA/Vulkan kernels consume the bias,
+  and the Metal manifest deliberately declared no kernel support). The patch
+  adds the optional F32 bias binding (dummy-bound when absent, `has_bias`
+  flag) to both kernel variants and the encoder, applied after the
+  convolution write-out rounding exactly like the CUDA patch.
+
+Evidence on an Apple M2 Max (F16 catalog models): the rec fixture gate
+against the Paddle reference (max_diff 6.4e-5, argmax identical), the
+det/layout fixture gates inside the manifest F16 tolerances (0.061/0.031),
+the zh_val_22 page decoded on CPU and Metal with 37/37 identical text rows
+and layout regions matching to sub-pixel noise, SLANet recovering the full
+16x5 table HTML on Metal, and the `test_ocr_dw_bias` contract extended to a
+Metal row (`test_ocr_dw_bias_metal`, F32-source path; the all-F16 variant is
+unsupported on Metal the same way it is on CPU). The two-build regression
+knob is `AICORE_OCR_PROBE_TWO_BUILDS=1` (test_ocr_runtime): it rebuilds the
+current shape after `realizeToDevice` so the probe covers the device-leaf
+build state the production session ships, which the single-build probe
+could never see.
+
 ## Official GT semantic evaluation
 
 `core/AICore/scripts/ocr_gt_eval.py` consumes the official PaddleOCR annotation

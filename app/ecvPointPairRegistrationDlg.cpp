@@ -644,7 +644,7 @@ void ccPointPairRegistrationDlg::onPointCountChanged() {
 
 static QToolButton* CreateDeleteButton() {
     QToolButton* delButton = new QToolButton();
-    delButton->setIcon(QIcon(":/Resources/images/smallCancel.png"));
+    delButton->setIcon(QIcon(":/Resources/images/svg/small/smallCancel.svg"));
     return delButton;
 }
 

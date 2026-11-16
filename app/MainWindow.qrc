@@ -7,33 +7,34 @@
         <file>Resources/images/about.png</file>
         <file>Resources/images/help.png</file>
         <file>Resources/images/bgcolor.png</file>
-        <file>Resources/images/pointcolor.png</file>
         <file>Resources/images/clear.png</file>
         <file>Resources/images/add.png</file>
         <file>Resources/images/sphere.png</file>
         <file>Resources/images/cylinder.png</file>
         <file>Resources/images/language.png</file>
         <file>Resources/images/theme.png</file>
+        <file>Resources/images/close.png</file>
+        <file>Resources/images/max.png</file>
+        <file>Resources/images/mini.png</file>
         <file>Resources/images/icon/logo.png</file>
-        <file>Resources/images/typeGrayColor.png</file>
-        <file>Resources/images/typeNormal.png</file>
-        <file>Resources/images/typePositiveSF.png</file>
-        <file>Resources/images/typeRgbCcolor.png</file>
-        <file>Resources/images/typeSF.png</file>
-        <file>Resources/images/typeXCoordinate.png</file>
-        <file>Resources/images/typeYCoordinate.png</file>
-        <file>Resources/images/typeZCoordinate.png</file>
+        <file>Resources/images/svg/type/typeGrayColor.svg</file>
+        <file>Resources/images/svg/type/typeNormal.svg</file>
+        <file>Resources/images/svg/type/typePositiveSF.svg</file>
+        <file>Resources/images/svg/type/typeRgbCcolor.svg</file>
+        <file>Resources/images/svg/type/typeSF.svg</file>
+        <file>Resources/images/svg/type/typeXCoordinate.svg</file>
+        <file>Resources/images/svg/type/typeYCoordinate.svg</file>
+        <file>Resources/images/svg/type/typeZCoordinate.svg</file>
         <file>Resources/images/dbCloudSymbol.png</file>
-        <file>Resources/images/dbFileSymbol.png</file>
+        <file>Resources/images/svg/db/dbFileSymbol.svg</file>
         <file>Resources/images/dbLabelSymbol.png</file>
         <file>Resources/images/FullScreen.png</file>
-        <file>Resources/images/box.png</file>
         <file>Resources/images/cone.png</file>
         <file>Resources/images/dish.png</file>
-        <file>Resources/images/ecvMinus.png</file>
-        <file>Resources/images/ecvPlus.png</file>
-        <file>Resources/images/Plane.png</file>
-        <file>Resources/images/torus.png</file>
+        <file>Resources/images/svg/ecv/ecvMinus.svg</file>
+        <file>Resources/images/svg/ecv/ecvPlus.svg</file>
+        <file>Resources/images/svg/misc/Plane.svg</file>
+        <file>Resources/images/svg/misc/torus.svg</file>
         <file>Resources/images/icon/logo_16.ico</file>
         <file>Resources/images/icon/logo_24.ico</file>
         <file>Resources/images/icon/logo_32.ico</file>
@@ -45,143 +46,127 @@
         <file>Resources/images/icon/logo_64.png</file>
         <file>Resources/images/icon/logo_128.png</file>
         <file>Resources/images/icon/ecv_icon.rc</file>
-        <file>Resources/images/QTreeView/branch-closed.png</file>
+        <file>Resources/images/svg/tree/branch-closed.svg</file>
         <file>Resources/images/QTreeView/branch-end.png</file>
-        <file>Resources/images/QTreeView/branch-more.png</file>
-        <file>Resources/images/QTreeView/branch-open.png</file>
+        <file>Resources/images/svg/tree/branch-more.svg</file>
+        <file>Resources/images/svg/tree/branch-open.svg</file>
         <file>Resources/images/QTreeView/vline.png</file>
-        <file>Resources/images/ecvdelete.png</file>
-        <file>Resources/images/ecvExit.png</file>
+        <file>Resources/images/svg/ecv/ecvdelete.svg</file>
+        <file>Resources/images/svg/ecv/ecvExit.svg</file>
         <file>Resources/images/cloud.png</file>
         <file>Resources/images/dbAreaLabelSymbol.png</file>
         <file>Resources/images/dbCalibratedImageSymbol.png</file>
-        <file>Resources/images/dbCamSensorSymbol.png</file>
+        <file>Resources/images/svg/db/dbCamSensorSymbol.svg</file>
         <file>Resources/images/dbCloudSymbolLocked.png</file>
         <file>Resources/images/dbContainerSymbol.png</file>
         <file>Resources/images/dbContainerSymbol3.png</file>
         <file>Resources/images/dbContainerSymbolLocked.png</file>
-        <file>Resources/images/dbContainerSymbolLocked3.png</file>
-        <file>Resources/images/dbGBLSensorSymbol.png</file>
+        <file>Resources/images/svg/db/dbGBLSensorSymbol.svg</file>
         <file>Resources/images/dbHObjectSymbol.png</file>
         <file>Resources/images/dbHObjectSymbolLocked.png</file>
-        <file>Resources/images/dbImageSymbol.png</file>
+        <file>Resources/images/svg/db/dbImageSymbol.svg</file>
         <file>Resources/images/dbLockSymbol.png</file>
-        <file>Resources/images/dbMaterialSymbol.png</file>
-        <file>Resources/images/dbMeshSymbol.png</file>
-        <file>Resources/images/dbMeshSymbolLocked.png</file>
+        <file>Resources/images/svg/db/dbMaterialSymbol.svg</file>
+        <file>Resources/images/svg/db/dbMeshSymbol.svg</file>
+        <file>Resources/images/svg/db/dbMeshSymbolLocked.svg</file>
         <file>Resources/images/dbMiscGeomSymbol.png</file>
-        <file>Resources/images/dbMiscGeomSymbolLocked.png</file>
-        <file>Resources/images/dbOctreeSymbolLocked.png</file>
+        <file>Resources/images/svg/db/dbMiscGeomSymbolLocked.svg</file>
+        <file>Resources/images/svg/db/dbOctreeSymbolLocked.svg</file>
         <file>Resources/images/dbPolylineSymbol.png</file>
-        <file>Resources/images/dbLineSetSymbol.png</file>
-        <file>Resources/images/dbCircle.png</file>
+        <file>Resources/images/dbPolylineSymbol.png</file>
+        <file>Resources/images/svg/db/dbCircle.svg</file>
         <file>Resources/images/primCylinder.gif</file>
-        <file>Resources/images/dbSubMeshSymbol.png</file>
-        <file>Resources/images/dbSubMeshSymbolLocked.png</file>
+        <file>Resources/images/svg/db/dbSubMeshSymbol.svg</file>
+        <file>Resources/images/svg/db/dbSubMeshSymbolLocked.svg</file>
         <file>Resources/images/dbViewportSymbol.png</file>
-        <file>Resources/images/folder.png</file>
-        <file>Resources/images/folder2.png</file>
-        <file>Resources/images/refresh.png</file>
         <file>Resources/images/zoom.png</file>
         <file>Resources/images/ecvGear.png</file>
         <file>Resources/images/color.png</file>
         <file>Resources/images/ecvBackgroundColor.png</file>
-        <file>Resources/images/ecvClose.png</file>
         <file>Resources/images/ecvColorMenu.png</file>
-        <file>Resources/images/ecvColorMenu1.png</file>
-        <file>Resources/images/ecvExit2.png</file>
+        <file>Resources/images/svg/ecv/ecvExit.svg</file>
         <file>Resources/images/ecvObjectColor.png</file>
-        <file>Resources/images/ecvTextColor.png</file>
         <file>Resources/images/ecvClearColor.png</file>
-        <file>Resources/images/ecvGlobalZoom.png</file>
+        <file>Resources/images/svg/ecv/ecvGlobalZoom.svg</file>
         <file>Resources/images/ecvDisplaySettings.png</file>
-        <file>Resources/images/ecvConsole.png</file>
-        <file>Resources/images/ecvSettings.png</file>
-        <file>Resources/images/ecvViewIso1.png</file>
-        <file>Resources/images/ecvViewIso2.png</file>
-        <file>Resources/images/ecvViewXneg.png</file>
-        <file>Resources/images/ecvViewXpos.png</file>
-        <file>Resources/images/ecvViewYneg.png</file>
-        <file>Resources/images/ecvViewYpos.png</file>
-        <file>Resources/images/ecvViewZneg.png</file>
-        <file>Resources/images/ecvViewZpos.png</file>
-        <file>Resources/images/ecvClone.png</file>
-        <file>Resources/images/ecvMerge.png</file>
-        <file>Resources/images/ecvClippingBox.png</file>
-        <file>Resources/images/ecvClippingBoxMultExport.png</file>
-        <file>Resources/images/ecvClippingBoxSingleExport.png</file>
-        <file>Resources/images/interactors.png</file>
-        <file>Resources/images/square.png</file>
-        <file>Resources/images/restore.png</file>
-        <file>Resources/images/smallBasket.png</file>
-        <file>Resources/images/smallCancel.png</file>
-        <file>Resources/images/smallCSVFile.png</file>
-        <file>Resources/images/smallPause.png</file>
-        <file>Resources/images/smallPointDistance.png</file>
-        <file>Resources/images/smallPointProperties.png</file>
-        <file>Resources/images/smallPointsAngle.png</file>
-        <file>Resources/images/smallPolygonSelect.png</file>
-        <file>Resources/images/smallRectangleSelect.png</file>
-        <file>Resources/images/smallReset.png</file>
-        <file>Resources/images/smallRevert.png</file>
-        <file>Resources/images/smallSegmentIn.png</file>
-        <file>Resources/images/smallSegmentOut.png</file>
-        <file>Resources/images/hashtag.png</file>
+        <file>Resources/images/svg/ecv/ecvConsole.svg</file>
+        <file>Resources/images/svg/view/ecvViewIso1.svg</file>
+        <file>Resources/images/svg/view/ecvViewIso2.svg</file>
+        <file>Resources/images/svg/view/ecvViewXneg.svg</file>
+        <file>Resources/images/svg/view/ecvViewXpos.svg</file>
+        <file>Resources/images/svg/view/ecvViewYneg.svg</file>
+        <file>Resources/images/svg/view/ecvViewYpos.svg</file>
+        <file>Resources/images/svg/view/ecvViewZneg.svg</file>
+        <file>Resources/images/svg/view/ecvViewZpos.svg</file>
+        <file>Resources/images/svg/ecv/ecvClone.svg</file>
+        <file>Resources/images/svg/ecv/ecvMerge.svg</file>
+        <file>Resources/images/svg/ecv/ecvClippingBox.svg</file>
+        <file>Resources/images/svg/ecv/ecvClippingBoxMultExport.svg</file>
+        <file>Resources/images/svg/ecv/ecvClippingBoxSingleExport.svg</file>
+        <file>Resources/images/svg/misc/interactors.svg</file>
+        <file>Resources/images/svg/misc/square.svg</file>
+        <file>Resources/images/svg/misc/restore.svg</file>
+        <file>Resources/images/svg/small/smallBasket.svg</file>
+        <file>Resources/images/svg/small/smallCancel.svg</file>
+        <file>Resources/images/svg/small/smallCSVFile.svg</file>
+        <file>Resources/images/svg/small/smallPause.svg</file>
+        <file>Resources/images/svg/small/smallPointDistance.svg</file>
+        <file>Resources/images/svg/small/smallPointProperties.svg</file>
+        <file>Resources/images/svg/small/smallPointsAngle.svg</file>
+        <file>Resources/images/svg/small/smallPolygonSelect.svg</file>
+        <file>Resources/images/svg/small/smallRectangleSelect.svg</file>
+        <file>Resources/images/svg/small/smallReset.svg</file>
+        <file>Resources/images/svg/small/smallRevert.svg</file>
+        <file>Resources/images/svg/small/smallSegmentIn.svg</file>
+        <file>Resources/images/svg/small/smallSegmentOut.svg</file>
+        <file>Resources/images/svg/misc/hashtag.svg</file>
         <file>Resources/images/exportIcon.png</file>
-        <file>Resources/images/ccGear.png</file>
-        <file>Resources/images/smallSphere.png</file>
-        <file>Resources/images/smallTrash.png</file>
-        <file>Resources/images/smallValidate.png</file>
+        <file>Resources/images/svg/misc/ccGear.svg</file>
+        <file>Resources/images/svg/small/smallSphere.svg</file>
+        <file>Resources/images/svg/small/smallTrash.svg</file>
+        <file>Resources/images/svg/small/smallValidate.svg</file>
         <file>Resources/images/ecvSegment.png</file>
-        <file>Resources/images/ecvPointListPicking.png</file>
-        <file>Resources/images/ecvPointPicking.png</file>
-        <file>Resources/images/store.png</file>
-        <file>Resources/images/ecvPencil.png</file>
-        <file>Resources/images/ecvUnstack.png</file>
-        <file>Resources/images/ecvGradient.png</file>
-        <file>Resources/images/ecvSamplePoints.png</file>
+        <file>Resources/images/svg/ecv/ecvPointListPicking.svg</file>
+        <file>Resources/images/svg/ecv/ecvPointPicking.svg</file>
+        <file>Resources/images/svg/misc/store.svg</file>
+        <file>Resources/images/svg/ecv/ecvPencil.svg</file>
+        <file>Resources/images/svg/ecv/ecvUnstack.svg</file>
+        <file>Resources/images/svg/ecv/ecvGradient.svg</file>
+        <file>Resources/images/svg/ecv/ecvSamplePoints.svg</file>
         <file>Resources/images/ecvTracePolyline.png</file>
-        <file>Resources/images/ecvAddConstSF.png</file>
-        <file>Resources/images/dbOctreeSymbol.png</file>
-        <file>Resources/images/ecvComputeStat.png</file>
-        <file>Resources/images/ecvHistogram.png</file>
-        <file>Resources/images/ecvSampleCloud.png</file>
-        <file>Resources/images/ecvCloudCloudDistance.png</file>
-        <file>Resources/images/ecvCloudMeshDistance.png</file>
-        <file>Resources/images/ecvDeleteSF.png</file>
+        <file>Resources/images/svg/ecv/ecvAddConstSF.svg</file>
+        <file>Resources/images/svg/db/dbOctreeSymbol.svg</file>
+        <file>Resources/images/svg/ecv/ecvComputeStat.svg</file>
+        <file>Resources/images/svg/ecv/ecvHistogram.svg</file>
+        <file>Resources/images/svg/ecv/ecvSampleCloud.svg</file>
+        <file>Resources/images/svg/ecv/ecvCloudCloudDistance.svg</file>
+        <file>Resources/images/svg/ecv/ecvCloudMeshDistance.svg</file>
+        <file>Resources/images/svg/ecv/ecvDeleteSF.svg</file>
         <file>Resources/images/ecvCCExtract.png</file>
-        <file>Resources/images/ecvSfArithmetic.png</file>
-        <file>Resources/images/ecvBilateralFilter.png</file>
-        <file>Resources/images/ecvFilterByValue.png</file>
-        <file>Resources/images/ecvGaussianFilter.png</file>
-        <file>Resources/images/orthoSections.png</file>
-        <file>Resources/images/ecvAlign.png</file>
-        <file>Resources/images/ecvRegister.png</file>
-        <file>Resources/images/ecvInteractiveTransformation.png</file>
-        <file>Resources/images/scale.png</file>
+        <file>Resources/images/svg/ecv/ecvSfArithmetic.svg</file>
+        <file>Resources/images/svg/ecv/ecvBilateralFilter.svg</file>
+        <file>Resources/images/svg/ecv/ecvFilterByValue.svg</file>
+        <file>Resources/images/svg/ecv/ecvGaussianFilter.svg</file>
+        <file>Resources/images/svg/misc/orthoSections.svg</file>
+        <file>Resources/images/svg/ecv/ecvAlign.svg</file>
+        <file>Resources/images/svg/ecv/ecvRegister.svg</file>
+        <file>Resources/images/svg/ecv/ecvInteractiveTransformation.svg</file>
+        <file>Resources/images/svg/misc/scale.svg</file>
         <file>Resources/images/transformScale.png</file>
-        <file>Resources/images/clean_72px.png</file>
         <file>Resources/images/clean_72px_27328.png</file>
-        <file>Resources/images/eraser_72px_4107.png</file>
         <file>Resources/images/filter.png</file>
-        <file>Resources/images/ecvSor.png</file>
-        <file>Resources/images/orientationMarker.png</file>
-        <file>Resources/images/Screenshot.png</file>
+        <file>Resources/images/svg/ecv/ecvSor.svg</file>
         <file>Resources/images/annotations.png</file>
         <file>Resources/images/ecvIntersection.png</file>
-        <file>Resources/images/ecvUnion.png</file>
+        <file>Resources/images/svg/ecv/ecvUnion.svg</file>
         <file>Resources/images/small_save.png</file>
-        <file>Resources/images/ecvOrthoProjection.png</file>
-        <file>Resources/images/ecvPerspectiveProjection.png</file>
-        <file>Resources/images/others/pqRamp24.png</file>
-        <file>Resources/images/cuda_logo.png</file>
+        <file>Resources/images/svg/ecv/ecvOrthoProjection.svg</file>
+        <file>Resources/images/svg/ecv/ecvPerspectiveProjection.svg</file>
+        <file>Resources/images/svg/pq/pqRamp24.svg</file>
         <file>Resources/images/ecvicp.png</file>
-        <file>Resources/images/gradient.png</file>
         <file>Resources/images/qt.png</file>
-        <file>Resources/images/vtk_logo.png</file>
-        <file>Resources/images/pqContours.png</file>
+        <file>Resources/images/svg/pq/pqContours.svg</file>
         <file>Resources/images/Components_72px.png</file>
-        <file>Resources/images/compression.png</file>
         <file>Resources/images/decimate.png</file>
         <file>Resources/images/export.png</file>
         <file>Resources/images/exportCloud.png</file>
@@ -190,8 +175,6 @@
         <file>Resources/images/surface.png</file>
         <file>Resources/images/meshSmooth.png</file>
         <file>Resources/images/vtkSmooth.png</file>
-        <file>Resources/images/mesh0.png</file>
-        <file>Resources/images/mesh3.png</file>
         <file>Resources/images/mesh4.png</file>
         <file>Resources/images/octree.png</file>
         <file>Resources/images/svg/pqCalculator.png</file>
@@ -201,101 +184,86 @@
         <file>Resources/images/svg/pqGlyph.png</file>
         <file>Resources/images/svg/pqIsosurface.png</file>
         <file>Resources/images/svg/pqProbeLocation.png</file>
-        <file>Resources/images/svg/pqRedoCamera.png</file>
-        <file>Resources/images/svg/pqUndoCamera.svg</file>
-        <file>Resources/images/svg/logManager.svg</file>
-        <file>Resources/images/svg/pqRedoCamera.svg</file>
-        <file>Resources/images/svg/pqSaveAnimation.png</file>
-        <file>Resources/images/svg/pqSaveState.png</file>
-        <file>Resources/images/svg/pqSaveWindow.png</file>
-        <file>Resources/images/svg/pqSlice.png</file>
+        <file>Resources/images/svg/pq/pqUndoCamera.svg</file>
+        <file>Resources/images/svg/misc/logManager.svg</file>
+        <file>Resources/images/svg/pq/pqRedoCamera.svg</file>
         <file>Resources/images/svg/pqStreamTracer.png</file>
         <file>Resources/images/svg/pqThreshold.png</file>
-        <file>Resources/images/svg/pqToggleLock.png</file>
-        <file>Resources/images/svg/pqProtractor.svg</file>
-        <file>Resources/images/svg/pqRuler.svg</file>
-        <file>Resources/images/svg/pqSettings.svg</file>
-        <file>Resources/images/svg/pqSplitHorizontal.svg</file>
-        <file>Resources/images/svg/pqSplitVertical.svg</file>
-        <file>Resources/images/svg/pqCaptureScreenshot.svg</file>
-        <file>Resources/images/svg/pqEditCamera.svg</file>
-        <file>Resources/images/svg/pqDelete.svg</file>
-        <file>Resources/images/svg/pqCloseView.svg</file>
+        <file>Resources/images/svg/pq/pqProtractor.svg</file>
+        <file>Resources/images/svg/pq/pqRuler.svg</file>
+        <file>Resources/images/svg/pq/pqSettings.svg</file>
+        <file>Resources/images/svg/pq/pqSplitHorizontal.svg</file>
+        <file>Resources/images/svg/pq/pqSplitVertical.svg</file>
+        <file>Resources/images/svg/pq/pqCaptureScreenshot.svg</file>
+        <file>Resources/images/svg/pq/pqEditCamera.svg</file>
+        <file>Resources/images/svg/pq/pqDelete.svg</file>
+        <file>Resources/images/svg/pq/pqCloseView.svg</file>
         <file>Resources/images/svg/slice.png</file>
-        <file>Resources/images/svg/pqElemMapData.png</file>
         <file>Resources/images/svg/pqFaceSetData.png</file>
-        <file>Resources/images/svg/pqSaveAs.png</file>
         <file>Resources/images/svg/pqSideSetData.png</file>
         <file>Resources/images/svg/pqClip.png</file>
         <file>Resources/images/svg/pqEyeball.png</file>
-        <file>Resources/images/svg/pqEyeballClosed.png</file>
-        <file>Resources/images/lockedAxis.png</file>
+        <file>Resources/images/svg/misc/lockedAxis.svg</file>
         <file>Resources/images/3D3.png</file>
-        <file>Resources/images/3D4.png</file>
-        <file>Resources/images/3DMaterial.png</file>
-        <file>Resources/images/3DTexture.png</file>
-        <file>Resources/images/3DView.png</file>
         <file>Resources/images/unroll.png</file>
         <file>Resources/images/svg/pqPreview.png</file>
         <file>Resources/images/svg/pqRecentFile.png</file>
         <file>Resources/images/pqPickCenter@2x.png</file>
         <file>Resources/images/pqResetCenter@2x.png</file>
-        <file>Resources/images/svg/pqShowOrientationAxes.svg</file>
-        <file>Resources/images/svg/pqAxes.png</file>
-        <file>Resources/images/svg/pqZoomToGlobalData.svg</file>
-        <file>Resources/images/svg/pqZoomToSelectedData.svg</file>
+        <file>Resources/images/svg/pq/pqShowOrientationAxes.svg</file>
+        <file>Resources/images/svg/pq/pqAxes.svg</file>
+        <file>Resources/images/svg/pq/pqZoomToGlobalData.svg</file>
+        <file>Resources/images/svg/pq/pqZoomToSelectedData.svg</file>
         <file>Resources/images/pqZoomToBox@2x.png</file>
-        <file>Resources/images/svg/pqSurfaceHoveringCell.svg</file>
-        <file>Resources/images/svg/pqSurfaceHoveringPoint.svg</file>
-        <file>Resources/images/svg/pqSurfaceSelectionCell.svg</file>
-        <file>Resources/images/svg/pqSurfaceSelectionPoint.svg</file>
-        <file>Resources/images/svg/pqFrustumSelectionCell.svg</file>
-        <file>Resources/images/svg/pqFrustumSelectionPoint.svg</file>
-        <file>Resources/images/svg/pqPolygonSelectSurfaceCell.svg</file>
-        <file>Resources/images/svg/pqPolygonSelectSurfacePoint.svg</file>
-        <file>Resources/images/svg/pqSurfaceSelectionCellInteractive.svg</file>
-        <file>Resources/images/svg/pqSurfaceSelectionPointInteractive.svg</file>
-        <file>Resources/images/svg/pqFrustumSelectionBlock.svg</file>
-        <file>Resources/images/svg/pqSelectBlock.svg</file>
-        <file>Resources/images/svg/pqSelectPlus.svg</file>
-        <file>Resources/images/svg/pqSelectMinus.svg</file>
-        <file>Resources/images/svg/pqSelectToggle.svg</file>
-        <file>Resources/images/svg/pqSelectChart.svg</file>
-        <file>Resources/images/svg/pqSelectChartPolygon.svg</file>
-        <file>Resources/images/svg/pqFixedRepr32.png</file>
-        <file>Resources/images/svg/pqSaveTable32.png</file>
-        <file>Resources/images/svg/pqRectilinearGrid16.png</file>
-        <file>Resources/images/svg/pqProgrammableFilter.svg</file>
-        <file>Resources/images/svg/pqGlobalData.svg</file>
-        <file>Resources/images/svg/pqSelect16.png</file>
-        <file>Resources/images/svg/pqPlus.svg</file>
-        <file>Resources/images/svg/pqMinus.svg</file>
-        <file>Resources/images/svg/pqClearSort.svg</file>
+        <file>Resources/images/svg/pq/pqSurfaceHoveringCell.svg</file>
+        <file>Resources/images/svg/pq/pqSurfaceHoveringPoint.svg</file>
+        <file>Resources/images/svg/pq/pqSurfaceSelectionCell.svg</file>
+        <file>Resources/images/svg/pq/pqSurfaceSelectionPoint.svg</file>
+        <file>Resources/images/svg/pq/pqFrustumSelectionCell.svg</file>
+        <file>Resources/images/svg/pq/pqFrustumSelectionPoint.svg</file>
+        <file>Resources/images/svg/pq/pqPolygonSelectSurfaceCell.svg</file>
+        <file>Resources/images/svg/pq/pqPolygonSelectSurfacePoint.svg</file>
+        <file>Resources/images/svg/pq/pqSurfaceSelectionCellInteractive.svg</file>
+        <file>Resources/images/svg/pq/pqSurfaceSelectionPointInteractive.svg</file>
+        <file>Resources/images/svg/pq/pqFrustumSelectionBlock.svg</file>
+        <file>Resources/images/svg/pq/pqSelectBlock.svg</file>
+        <file>Resources/images/svg/pq/pqSelectPlus.svg</file>
+        <file>Resources/images/svg/pq/pqSelectMinus.svg</file>
+        <file>Resources/images/svg/pq/pqSelectToggle.svg</file>
+        <file>Resources/images/svg/pq/pqSelectChart.svg</file>
+        <file>Resources/images/svg/pq/pqSelectChartPolygon.svg</file>
+        <file>Resources/images/svg/pq/pqFixedRepr32.svg</file>
+        <file>Resources/images/svg/pq/pqSaveTable32.svg</file>
+        <file>Resources/images/svg/pq/pqRectilinearGrid16.svg</file>
+        <file>Resources/images/svg/pq/pqProgrammableFilter.svg</file>
+        <file>Resources/images/svg/pq/pqGlobalData.svg</file>
+        <file>Resources/images/svg/pq/pqSelect16.svg</file>
+        <file>Resources/images/svg/pq/pqInteractionMode3D.svg</file>
+        <file>Resources/images/svg/pq/pqPlus.svg</file>
+        <file>Resources/images/svg/pq/pqMinus.svg</file>
+        <file>Resources/images/svg/pq/pqClearSort.svg</file>
         <file>Resources/images/pqShowCenterAxes@2x.png</file>
-        <file>Resources/images/others/pqXMinus.png</file>
-        <file>Resources/images/others/pqXPlus.png</file>
-        <file>Resources/images/others/pqYMinus.png</file>
-        <file>Resources/images/others/pqYPlus.png</file>
-        <file>Resources/images/others/pqZMinus.png</file>
-        <file>Resources/images/others/pqZPlus.png</file>
-        <file>Resources/images/svg/pqAdvanced.png</file>
-        <file>Resources/images/others/info.png</file>
-        <file>Resources/images/others/plus.png</file>
-        <file>Resources/images/others/pqArrowDown16.png</file>
-        <file>Resources/images/others/pqArrowUp16.png</file>
-        <file>Resources/images/svg/pqPlus.png</file>
+        <file>Resources/images/svg/pq/pqXMinus.svg</file>
+        <file>Resources/images/svg/pq/pqXPlus.svg</file>
+        <file>Resources/images/svg/pq/pqYMinus.svg</file>
+        <file>Resources/images/svg/pq/pqYPlus.svg</file>
+        <file>Resources/images/svg/pq/pqZMinus.svg</file>
+        <file>Resources/images/svg/pq/pqZPlus.svg</file>
+        <file>Resources/images/svg/pq/pqAdvanced.svg</file>
+        <file>Resources/images/svg/misc/info.svg</file>
+        <file>Resources/images/svg/misc/plus.svg</file>
+        <file>Resources/images/svg/pq/pqArrowDown16.svg</file>
+        <file>Resources/images/svg/pq/pqArrowUp16.svg</file>
         <file>Resources/images/svg/pqWrench.png</file>
-        <file>Resources/images/zoomIn_48px.png</file>
-        <file>Resources/images/zoomIn_128px.png</file>
-        <file>Resources/images/zoomOut_48px.png</file>
-        <file>Resources/images/zoomOut_128px.png</file>
-        <file>Resources/images/edit_48px.png</file>
+        <file>Resources/images/svg/misc/zoomIn_48px.svg</file>
+        <file>Resources/images/svg/misc/zoomOut_48px.svg</file>
+        <file>Resources/images/svg/misc/edit_48px.svg</file>
+        <file>Resources/images/svg/misc/zoom_to_selection.svg</file>
         <file>Resources/images/voxelSampling.jpg</file>
         <file>Resources/images/convex_concave_hull.png</file>
         <file>Resources/images/poisson.png</file>
         <file>Resources/images/ecvCloudPrimitiveDistance.png</file>
-        <file>Resources/images/smallSplit.png</file>
-        <file>Resources/images/electrical_sensor.png</file>
+        <file>Resources/images/svg/small/smallSplit.svg</file>
         <file>Resources/images/integrated_sensor.png</file>
         <file>Resources/images/Wavefrom.png</file>
         <file>Resources/images/icon/cloudviewer_16.ico</file>
@@ -308,41 +276,37 @@
         <file>Resources/images/icon/cloudviewer_128.png</file>
         <file>Resources/images/icon/logo_256.ico</file>
         <file>Resources/images/icon/logo_256.png</file>
-        <file>Resources/images/pcl/show_axes.png</file>
-        <file>Resources/images/pcl/rgb_depth.png</file>
         <file>Resources/images/pcl/normal_estimation.png</file>
-        <file>Resources/images/pcl/new_cloud_from_selection.png</file>
-        <file>Resources/images/pcl/insert_from_OpenNi.png</file>
-        <file>Resources/images/pcl/insert_from_file.png</file>
-        <file>Resources/images/pcl/frustum_selection.png</file>
-        <file>Resources/images/pcl/3dtree.png</file>
-        <file>Resources/images/svg/pqPointData.svg</file>
-        <file>Resources/images/svg/pqCellData.svg</file>
-        <file>Resources/images/svg/pqApply.svg</file>
-        <file>Resources/images/svg/pqCancel.svg</file>
-        <file>Resources/images/svg/pqReset.svg</file>
-        <file>Resources/images/svg/pqResetUI.svg</file>
-        <file>Resources/images/svg/pqResetSettings.svg</file>
+        <file>Resources/images/svg/pcl/new_cloud_from_selection.svg</file>
+        <file>Resources/images/svg/pcl/insert_from_OpenNi.svg</file>
+        <file>Resources/images/svg/pcl/insert_from_file.svg</file>
+        <file>Resources/images/svg/pcl/frustum_selection.svg</file>
+        <file>Resources/images/svg/pq/pqPointData.svg</file>
+        <file>Resources/images/svg/pq/pqCellData.svg</file>
+        <file>Resources/images/svg/pq/pqApply.svg</file>
+        <file>Resources/images/svg/pq/pqCancel.svg</file>
+        <file>Resources/images/svg/pq/pqReset.svg</file>
+        <file>Resources/images/svg/pq/pqResetUI.svg</file>
+        <file>Resources/images/svg/pq/pqResetSettings.svg</file>
         <file>Resources/images/svg/pqPaste.png</file>
-        <file>Resources/images/svg/pqNodeMapData.png</file>
-        <file>Resources/images/svg/pqInvert.png</file>
+        <file>Resources/images/svg/pq/pqInvert.svg</file>
         <file>Resources/images/svg/pqSolidColor.png</file>
-        <file>Resources/images/svg/pqAutoApply.svg</file>
-        <file>Resources/images/svg/pqExtractSelection.svg</file>
-        <file>Resources/images/svg/pqPlotSelectionOverTime.svg</file>
-        <file>Resources/images/svg/pqSurfaceSelectionCellDataInteractive.svg</file>
-        <file>Resources/images/svg/pqSurfaceSelectionPointDataInteractive.svg</file>
-        <file>Resources/images/svg/pqFindData.svg</file>
-        <file>Resources/images/svg/pqLock.svg</file>
-        <file>Resources/images/font/pqBold24.png</file>
-        <file>Resources/images/font/pqItalics24.png</file>
-        <file>Resources/images/font/pqShadow24.png</file>
-        <file>Resources/images/font/pqTextAlignLeft.svg</file>
-        <file>Resources/images/font/pqTextAlignCenter.svg</file>
-        <file>Resources/images/font/pqTextAlignRight.svg</file>
-        <file>Resources/images/font/pqTextVerticalAlignTop.svg</file>
-        <file>Resources/images/font/pqTextVerticalAlignCenter.svg</file>
-        <file>Resources/images/font/pqTextVerticalAlignBottom.svg</file>
+        <file>Resources/images/svg/pq/pqAutoApply.svg</file>
+        <file>Resources/images/svg/pq/pqExtractSelection.svg</file>
+        <file>Resources/images/svg/pq/pqPlotSelectionOverTime.svg</file>
+        <file>Resources/images/svg/pq/pqSurfaceSelectionCellDataInteractive.svg</file>
+        <file>Resources/images/svg/pq/pqSurfaceSelectionPointDataInteractive.svg</file>
+        <file>Resources/images/svg/pq/pqFindData.svg</file>
+        <file>Resources/images/svg/pq/pqLock.svg</file>
+        <file>Resources/images/svg/font/pqBold24.svg</file>
+        <file>Resources/images/svg/font/pqItalics24.svg</file>
+        <file>Resources/images/svg/font/pqShadow24.svg</file>
+        <file>Resources/images/svg/font/pqTextAlignLeft.svg</file>
+        <file>Resources/images/svg/font/pqTextAlignCenter.svg</file>
+        <file>Resources/images/svg/font/pqTextAlignRight.svg</file>
+        <file>Resources/images/svg/font/pqTextVerticalAlignTop.svg</file>
+        <file>Resources/images/svg/font/pqTextVerticalAlignCenter.svg</file>
+        <file>Resources/images/svg/font/pqTextVerticalAlignBottom.svg</file>
     </qresource>
     <qresource prefix="/qt">
         <file>etc/qt.conf</file>
