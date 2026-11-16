@@ -7,10 +7,10 @@
 
 // AnyCalib static ggml graph: DINOv2 ViT-L/14 backbone + light DPT decoder
 // + convex tangent head, translated from the pinned upstream ONNX export
-// (opset 18, node dump archived in TEST_ALIGNMENT_TODO.md batch AF). The
+// (opset 18). The
 // graph ends at the convex-combination accumulator {46, 46, 49, 2}; the
 // final output layout (322x322 tangent map) and the unit-ray normalization
-// are exact f32 host postprocess (TEST_ALIGNMENT_TODO.md batch AF spec).
+// are exact f32 host postprocess.
 #include "tasks/anycalib/anycalib_graph.hpp"
 
 #include <ggml-alloc.h>

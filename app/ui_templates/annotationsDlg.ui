@@ -227,7 +227,7 @@
         <item>
          <widget class="QToolButton" name="editToolButton">
           <property name="toolTip">
-           <string>Edit Mode（this will change exist annotations）</string>
+           <string>Edit Mode (this will change existing annotations)</string>
           </property>
           <property name="statusTip">
            <string>Edit Mode</string>
@@ -270,7 +270,7 @@
            <string>class sets</string>
           </property>
           <property name="styleSheet">
-           <string notr="true">font: 75 12pt &quot;微软雅黑&quot;;
+           <string notr="true">font: 75 12pt &quot;Microsoft YaHei&quot;;
 
 </string>
           </property>

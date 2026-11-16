@@ -6,7 +6,7 @@ diff --git a/src/ggml-cuda/ggml-cuda.cu b/src/ggml-cuda/ggml-cuda.cu
          return 0;
      }
  
-+    // 显式标记且相邻的单消费者 ADD/GELU 才可省略中间写出。
++    // Only an explicitly hinted adjacent single-consumer ADD/GELU may skip the intermediate write-out.
 +    if (cgraph->nodes[i]->op == GGML_OP_ADD &&
 +        ggml_elementwise_get_epilogue_hint(cgraph->nodes[i]) == GGML_EPILOGUE_GELU &&
 +        i + 1 < cgraph->n_nodes && cgraph->nodes[i + 1]->op == GGML_OP_UNARY &&
@@ -26,7 +26,7 @@ diff --git a/src/ggml-cuda/unary.cu b/src/ggml-cuda/unary.cu
      ggml_cuda_op_unary<op_gelu_erf>(ctx, dst);
  }
  
-+// O(n)：复用原 GELU 算术；不新增完整中间张量。
++// O(n): reuses the original GELU arithmetic; no extra full intermediate tensor.
 +static __global__ void add_gelu_erf_bias_kernel(const float * a, const float * b, float * dst,
 +                                              const int64_t ne0, const int64_t n) {
 +    ggml_cuda_pdl_lc();
@@ -50,8 +50,8 @@ diff --git a/src/ggml-cuda/unary.cu b/src/ggml-cuda/unary.cu
 +        return false;
 +    }
 +
-+    // 原分配器可能复用已结束生命周期的输入。逐元素同址覆盖 a 安全，
-+    // 但偏移重叠或覆盖广播 bias 会形成跨线程读写竞争，必须回退。
++    // The allocator may hand back storage of inputs whose lifetime ended. In-place overwrite
++    // of a is safe, but offset overlap or clobbering the broadcast bias must fall back.
 +    const uintptr_t dst_start = (uintptr_t) gelu->data;
 +    const uintptr_t dst_end = dst_start + ggml_nbytes(gelu);
 +    const auto overlaps = [dst_start, dst_end](const ggml_tensor * src) {
@@ -82,7 +82,7 @@ diff --git a/src/ggml-cuda/unary.cuh b/src/ggml-cuda/unary.cuh
  
  void ggml_cuda_op_gelu_erf(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
  
-+// 已验证域的显式 ADD/GELU 写出；不支持的类型、布局或别名保留分离路径。
++// Explicit ADD/GELU write-out for the verified domain; unsupported types, layouts, or aliases keep the separate path.
 +bool ggml_cuda_op_add_gelu_erf(ggml_backend_cuda_context & ctx, const ggml_tensor * add, ggml_tensor * gelu);
 +
  void ggml_cuda_op_gelu_quick(ggml_backend_cuda_context & ctx, ggml_tensor * dst);

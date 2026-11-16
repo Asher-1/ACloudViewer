@@ -11,7 +11,7 @@ $ZLIB_VERSION = "1.2.0"
 
 $env:VCPKG_MAX_CONCURRENCY = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
 Write-Host "VCPKG_MAX_CONCURRENCY: $env:VCPKG_MAX_CONCURRENCY"
-# cmake .. -DCMAKE_TOOLCHAIN_FILE=[vcpkg根目录]/scripts/buildsystems/vcpkg.cmake
+# cmake .. -DCMAKE_TOOLCHAIN_FILE=[vcpkg root]/scripts/buildsystems/vcpkg.cmake
 
 
 # Function: check and install vcpkg

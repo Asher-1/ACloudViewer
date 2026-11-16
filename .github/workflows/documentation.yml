@@ -608,14 +608,14 @@ jobs:
             echo "🎯 Release build detected - Deploying stable documentation"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             
-            # 1. Deploy documentation to version-specific directory (只保留一份)
+            # 1. Deploy documentation to version-specific directory (single copy)
             echo "📦 Deploying documentation to: /${DOC_VERSION_PATH}/"
             mkdir -p "unified-deploy/${DOC_VERSION_PATH}"
             cp -r docs-output/* "unified-deploy/${DOC_VERSION_PATH}/"
             echo "✅ Documentation deployed to ${DOC_VERSION_PATH}/"
             echo ""
             
-            # 2. Create redirect from /documentation/ to latest release (避免重复)
+            # 2. Create redirect from /documentation/ to latest release (avoid duplicates)
             echo "📦 Creating redirect: /documentation/ → /${DOC_VERSION_PATH}/"
             mkdir -p unified-deploy/documentation
             
