@@ -80,6 +80,14 @@ jobs:
           # publishing (Node 22's bundled npm is too old for scoped OIDC).
           node-version: 24
 
+      # OIDC dist-tag management (the tagback path: `npm dist-tag add/rm`
+      # under trusted publishing) needs npm >= 11.21.0. Node 24 currently
+      # bundles 11.19.x, which can publish but fails dist-tag operations.
+      - name: Upgrade npm for OIDC dist-tag support
+        run: |
+          npm install -g npm@11
+          npm --version
+
       # ── Version resolution: one step decides IF and WHAT to publish ──────
       - name: Resolve version and publish mode
         env:

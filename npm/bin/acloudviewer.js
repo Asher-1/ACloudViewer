@@ -845,6 +845,14 @@ async function main() {
       else args.set(argv[i].slice(2), true);
     }
   }
+  // Help is a request for usage, never for action: `install --help` must
+  // not start a real install/download (it once kicked off a 529 MB fetch).
+  // Gate at the dispatch layer so every action subcommand is covered.
+  if ((cmd === "install" || cmd === "list" || cmd === "uninstall") &&
+      (args.has("help") || args.has("h"))) {
+    usage();
+    return;
+  }
   switch (cmd) {
     case "install": await cmdInstall(args); break;
     case "list": await cmdList(args); break;
