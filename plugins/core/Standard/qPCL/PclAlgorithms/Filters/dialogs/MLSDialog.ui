@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../../../qPCL.qrc">
-    <normaloff>:/toolbar/PclAlgorithms/icons/mls_smoothing.png</normaloff>:/toolbar/PclAlgorithms/icons/mls_smoothing.png</iconset>
+    <normaloff>:/toolbar/PclAlgorithms/icons/mls_smoothing.svg</normaloff>:/toolbar/PclAlgorithms/icons/mls_smoothing.svg</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

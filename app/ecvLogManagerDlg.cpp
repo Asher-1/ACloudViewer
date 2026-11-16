@@ -124,7 +124,7 @@ void LogLevelHighlighter::highlightBlock(const QString& text) {
 
 ecvLogManagerDlg::ecvLogManagerDlg(QWidget* parent) : QDialog(parent) {
     setWindowTitle(tr("Log Manager"));
-    setWindowIcon(QIcon(":/Resources/images/svg/logManager.svg"));
+    setWindowIcon(QIcon(":/Resources/images/svg/misc/logManager.svg"));
     resize(1050, 680);
     setMinimumSize(700, 450);
     setupUI();

@@ -347,6 +347,12 @@ inline int selectModelRow(QComboBox* combo,
 // ---------------------------------------------------------------------------
 //  Runtime parameter row (Device / Threads)
 // ---------------------------------------------------------------------------
+//
+// NOTE: device-combo registry projection helpers (populateDeviceCombo,
+// currentDeviceId, restoreDeviceCombo) live in ecvAICoreDeviceUiHelper.h —
+// they consume the public aicore/backend_capi.h registry, so they must
+// stay out of this Qt-only header (optional consumers such as video_base
+// include it without an AICore include path).
 
 /// Create a compact device + threads row used in every AICore dialog.
 /// Returns the widget so callers can add spinboxes for other params.

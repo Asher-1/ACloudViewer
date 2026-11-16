@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../qPCV.qrc">
-    <normaloff>:/CC/plugin/qPCV/images/PCVIcon.png</normaloff>:/CC/plugin/qPCV/images/PCVIcon.png</iconset>
+    <normaloff>:/CC/plugin/qPCV/images/PCVIcon.svg</normaloff>:/CC/plugin/qPCV/images/PCVIcon.svg</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>

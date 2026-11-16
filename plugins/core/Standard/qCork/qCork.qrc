@@ -1,8 +1,8 @@
 <RCC>
     <qresource prefix="/CC/plugin/qCork">
         <file>info.json</file>
-        <file>images/cork_icon.png</file>
+        <file>images/cork_icon.svg</file>
         <file>images/csg_types.png</file>
-        <file>images/iconSwap.png</file>
+        <file>images/iconSwap.svg</file>
     </qresource>
 </RCC>

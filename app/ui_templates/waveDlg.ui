@@ -33,7 +33,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/ecvPointPicking.png</normaloff>:/Resources/images/ecvPointPicking.png</iconset>
+         <normaloff>:/Resources/images/svg/ecv/ecvPointPicking.svg</normaloff>:/Resources/images/svg/ecv/ecvPointPicking.svg</iconset>
        </property>
        <property name="checkable">
         <bool>true</bool>
@@ -77,7 +77,7 @@
        </property>
        <property name="icon">
         <iconset>
-         <normaloff>:/CC/images/smallCSVFile.png</normaloff>:/CC/images/smallCSVFile.png</iconset>
+         <normaloff>:/Resources/images/svg/small/smallCSVFile.svg</normaloff>:/Resources/images/svg/small/smallCSVFile.svg</iconset>
        </property>
       </widget>
      </item>

@@ -51,6 +51,7 @@
 #include "aicore/ocr_capi.h"
 #include "aicore/table_capi.h"
 #include "ecvAICoreUiHelper.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAssetIntegrity.h"
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
@@ -162,16 +163,7 @@ OCRDialog::OCRDialog(QWidget* parent) : QDialog(parent) {
     // ---- runtime row (device + threads; shared AICore layout) --------------
     m_deviceCombo = new QComboBox(this);
     m_deviceCombo->setObjectName(QStringLiteral("qOCRDevice"));
-    {
-        const int nDev = aicore_device_count();
-        for (int i = 0; i < nDev; ++i) {
-            const aicore_device_info* dev = aicore_device_at(i);
-            if (!dev || !dev->id) continue;
-            m_deviceCombo->addItem(QString::fromUtf8(dev->label),
-                                   QString::fromUtf8(dev->id));
-            if (dev->is_default) m_deviceCombo->setCurrentIndex(i);
-        }
-    }
+    ecvAICoreUi::populateDeviceCombo(m_deviceCombo);
     m_threads = new QSpinBox(this);
     m_threads->setObjectName(QStringLiteral("qOCRThreads"));
     m_threads->setRange(0, 64);
@@ -1119,8 +1111,7 @@ OCRRunSettings OCRDialog::runSettings() const {
     for (const QString& path : checkedImages()) {
         if (QFileInfo(path).isFile()) settings.imagePaths << path;
     }
-    settings.device = m_deviceCombo->currentData().toString();
-    if (settings.device.isEmpty()) settings.device = QStringLiteral("auto");
+    settings.device = ecvAICoreUi::currentDeviceId(m_deviceCombo);
     settings.threads = m_threads->value();
     settings.addToDb = m_addDbCheck->isChecked();
     return settings;
@@ -1435,11 +1426,10 @@ void OCRDialog::loadSettings() {
     if (recipeIdx >= 0) m_preset->setCurrentIndex(recipeIdx);
     const int quant = settings.value(QStringLiteral("quantization"), 1).toInt();
     if (quant >= 0 && quant < m_quant->count()) m_quant->setCurrentIndex(quant);
-    const QString device =
+    ecvAICoreUi::restoreDeviceCombo(
+            m_deviceCombo,
             settings.value(QStringLiteral("device"), QStringLiteral("auto"))
-                    .toString();
-    const int idx = m_deviceCombo->findData(device);
-    if (idx >= 0) m_deviceCombo->setCurrentIndex(idx);
+                    .toString());
     m_threads->setValue(settings.value(QStringLiteral("threads"), 0).toInt());
     // Restore the image list (files that vanished are dropped).
     const QStringList images =

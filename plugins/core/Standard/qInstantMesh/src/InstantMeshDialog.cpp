@@ -28,6 +28,7 @@
 #include "aicore/inference_log.h"
 #include "ecvAICoreMeshViewer.h"
 #include "ecvAICoreUiHelper.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAssetIntegrity.h"
 
 #ifdef AICore_ENABLED
@@ -223,13 +224,7 @@ void InstantMeshDialog::buildGeneratePage(QWidget* page) {
     // ── Runtime parameters (shared row) ─────────────────────────────────
     m_deviceCombo = new QComboBox(this);
 #ifdef AICore_ENABLED
-    for (int i = 0; i < aicore_device_count(); ++i) {
-        const aicore_device_info* dev = aicore_device_at(i);
-        if (!dev || !dev->id) continue;
-        m_deviceCombo->addItem(QString::fromUtf8(dev->label),
-                               QString::fromUtf8(dev->id));
-        if (dev->is_default) m_deviceCombo->setCurrentIndex(i);
-    }
+    ecvAICoreUi::populateDeviceCombo(m_deviceCombo);
     m_deviceCombo->setToolTip(
             tr("Inference backend. 'auto' picks the best registered device; "
                "a low-VRAM card falls back gracefully instead of failing."));

@@ -52,7 +52,7 @@
      </property>
      <property name="icon">
       <iconset resource="../../../../app/MainWindow.qrc">
-       <normaloff>:/Resources/images/ecvAddConstSF.png</normaloff>:/Resources/images/ecvAddConstSF.png</iconset>
+       <normaloff>:/Resources/images/svg/ecv/ecvAddConstSF.svg</normaloff>:/Resources/images/svg/ecv/ecvAddConstSF.svg</iconset>
      </property>
      <property name="popupMode">
       <enum>QToolButton::InstantPopup</enum>

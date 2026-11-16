@@ -974,7 +974,7 @@ ecvSpreadSheetView::ecvSpreadSheetView(QWidget* parent) : QWidget(parent) {
     decLayout->addWidget(m_precisionSpin);
 
     m_fixedRepBtn = new QToolButton(decoratorBar);
-    m_fixedRepBtn->setIcon(QIcon(":/Resources/images/svg/pqFixedRepr32.png"));
+    m_fixedRepBtn->setIcon(QIcon(":/Resources/images/svg/pq/pqFixedRepr32.svg"));
     m_fixedRepBtn->setToolTip(
             tr("Switches between scientific and fixed-point representation"));
     m_fixedRepBtn->setStatusTip(
@@ -984,7 +984,7 @@ ecvSpreadSheetView::ecvSpreadSheetView(QWidget* parent) : QWidget(parent) {
     decLayout->addWidget(m_fixedRepBtn);
 
     m_selectionOnlyBtn = new QToolButton(decoratorBar);
-    m_selectionOnlyBtn->setIcon(QIcon(":/Resources/images/svg/pqSelect16.png"));
+    m_selectionOnlyBtn->setIcon(QIcon(":/Resources/images/svg/pq/pqSelect16.svg"));
     m_selectionOnlyBtn->setToolTip(tr("Show only selected elements."));
     m_selectionOnlyBtn->setCheckable(true);
     m_selectionOnlyBtn->setToolButtonStyle(Qt::ToolButtonIconOnly);
@@ -993,7 +993,7 @@ ecvSpreadSheetView::ecvSpreadSheetView(QWidget* parent) : QWidget(parent) {
     m_columnVisMenu = new QMenu(this);
     m_columnVisBtn = new QToolButton(decoratorBar);
     m_columnVisBtn->setIcon(
-            QIcon(":/Resources/images/svg/pqRectilinearGrid16.png"));
+            QIcon(":/Resources/images/svg/pq/pqRectilinearGrid16.svg"));
     m_columnVisBtn->setToolTip(tr("Toggle column visibility"));
     m_columnVisBtn->setPopupMode(QToolButton::InstantPopup);
     m_columnVisBtn->setMenu(m_columnVisMenu);
@@ -1001,19 +1001,19 @@ ecvSpreadSheetView::ecvSpreadSheetView(QWidget* parent) : QWidget(parent) {
 
     m_cellConnBtn = new QToolButton(decoratorBar);
     m_cellConnBtn->setIcon(
-            QIcon(":/Resources/images/svg/pqProgrammableFilter.svg"));
+            QIcon(":/Resources/images/svg/pq/pqProgrammableFilter.svg"));
     m_cellConnBtn->setToolTip(tr("Toggle cell connectivity visibility"));
     m_cellConnBtn->setCheckable(true);
     decLayout->addWidget(m_cellConnBtn);
 
     m_fieldDataBtn = new QToolButton(decoratorBar);
-    m_fieldDataBtn->setIcon(QIcon(":/Resources/images/svg/pqGlobalData.svg"));
+    m_fieldDataBtn->setIcon(QIcon(":/Resources/images/svg/pq/pqGlobalData.svg"));
     m_fieldDataBtn->setToolTip(tr("Toggle field data visibility"));
     m_fieldDataBtn->setCheckable(true);
     decLayout->addWidget(m_fieldDataBtn);
 
     m_exportBtn = new QToolButton(decoratorBar);
-    m_exportBtn->setIcon(QIcon(":/Resources/images/svg/pqSaveTable32.png"));
+    m_exportBtn->setIcon(QIcon(":/Resources/images/svg/pq/pqSaveTable32.svg"));
     m_exportBtn->setToolTip(tr("Export Spreadsheet"));
     {
         auto* exportMenu = new QMenu(m_exportBtn);

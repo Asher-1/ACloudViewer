@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="12.5" height="12.5" viewBox="2.25 1.75 12.5 12.5">
+<!-- Commercial HD v10: straight-edge authored polygons sampled
+     from the original raster; pixel-faithful correction layer. -->
+<defs><linearGradient id="g0" gradientUnits="userSpaceOnUse" x1="1.970" y1="10.666" x2="7.162" y2="2.764"><stop offset="0" stop-color="#4675dc"/><stop offset="1" stop-color="#7aa7fd"/></linearGradient><linearGradient id="g1" gradientUnits="userSpaceOnUse" x1="6.959" y1="10.648" x2="12.174" y2="2.778"><stop offset="0" stop-color="#4675dc"/><stop offset="1" stop-color="#7aa7fd"/></linearGradient><linearGradient id="g2" gradientUnits="userSpaceOnUse" x1="5.199" y1="8.168" x2="6.801" y2="7.832"><stop offset="0" stop-color="#335aa6"/><stop offset="1" stop-color="#5485e7"/></linearGradient><linearGradient id="g3" gradientUnits="userSpaceOnUse" x1="9.731" y1="8.454" x2="12.269" y2="7.546"><stop offset="0" stop-color="#335caa"/><stop offset="1" stop-color="#5385e5"/></linearGradient></defs>
+<path d="M4 2 L7 2 L7 4 L6 4 L6 13 L4 13 Z" fill="url(#g0)" fill-rule="evenodd"/>
+<path d="M9 2 L12 2 L12 4 L11 4 L11 13 L9 13 Z" fill="url(#g1)" fill-rule="evenodd"/>
+<path d="M7 3 L8 3 L8 13 L7 13 Z" fill="#7999c3" fill-rule="evenodd"/>
+<path d="M12 3 L13 3 L13 13 L12 13 Z" fill="#7999c3" fill-rule="evenodd"/>
+<path d="M6 4 L7 4 L7 13 L6 13 Z" fill="url(#g2)" fill-rule="evenodd"/>
+<path d="M11 4 L12 4 L12 13 L11 13 Z" fill="url(#g3)" fill-rule="evenodd"/>
+<rect x="4" y="2" width="1" height="1" fill="#638ce7"/>
+<rect x="6" y="2" width="1" height="1" fill="#6b94ef"/>
+<rect x="7" y="2" width="1" height="1" fill="#94add6"/>
+<rect x="9" y="2" width="1" height="1" fill="#638ce7"/>
+<rect x="11" y="2" width="1" height="1" fill="#6b94ef"/>
+<rect x="12" y="2" width="1" height="1" fill="#94add6"/>
+<rect x="5" y="3" width="1" height="1" fill="#8cb5ff"/>
+<rect x="10" y="3" width="1" height="1" fill="#8cb5ff"/>
+<rect x="5" y="4" width="1" height="1" fill="#84adff"/>
+<rect x="6" y="4" width="1" height="1" fill="#5a84d6"/>
+<rect x="10" y="4" width="1" height="1" fill="#84adff"/>
+<rect x="5" y="5" width="1" height="1" fill="#7ba5ff"/>
+<rect x="6" y="5" width="1" height="1" fill="#5a84d6"/>
+<rect x="10" y="5" width="1" height="1" fill="#7ba5ff"/>
+<rect x="5" y="6" width="1" height="1" fill="#73a5f7"/>
+<rect x="10" y="6" width="1" height="1" fill="#73a5f7"/>
+<rect x="5" y="9" width="1" height="1" fill="#5a8cf7"/>
+<rect x="10" y="9" width="1" height="1" fill="#528cf7"/>
+<rect x="6" y="10" width="1" height="1" fill="#3163bd"/>
+<rect x="5" y="12" width="1" height="1" fill="#3163c6"/>
+<rect x="6" y="12" width="1" height="1" fill="#3152a5"/>
+<rect x="10" y="12" width="1" height="1" fill="#3163c6"/>
+<rect x="4" y="13" width="1" height="1" fill="#849cbd"/>
+<rect x="5" y="13" width="1" height="1" fill="#6b8cb5"/>
+<rect x="6" y="13" width="1" height="1" fill="#6b8cb5"/>
+<rect x="7" y="13" width="1" height="1" fill="#adb5c6"/>
+<rect x="9" y="13" width="1" height="1" fill="#849cbd"/>
+<rect x="10" y="13" width="1" height="1" fill="#6b8cb5"/>
+<rect x="11" y="13" width="1" height="1" fill="#6b8cb5"/>
+<rect x="12" y="13" width="1" height="1" fill="#adb5c6"/>
+</svg>

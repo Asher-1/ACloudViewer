@@ -25,6 +25,7 @@
 #include <QVBoxLayout>
 
 #include "ecvAICoreUiHelper.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 #include "ecvPersistentSettings.h"
@@ -101,14 +102,7 @@ void RMBGDialog::setupUi() {
 
     m_deviceCombo = new QComboBox(m_imageTab);
 #ifdef AICore_ENABLED
-    const int nDev = aicore_device_count();
-    for (int i = 0; i < nDev; ++i) {
-        const aicore_device_info* dev = aicore_device_at(i);
-        if (!dev || !dev->id) continue;
-        m_deviceCombo->addItem(QString::fromUtf8(dev->label),
-                               QString::fromUtf8(dev->id));
-        if (dev->is_default) m_deviceCombo->setCurrentIndex(i);
-    }
+    ecvAICoreUi::populateDeviceCombo(m_deviceCombo);
 #endif
     m_threads = new QSpinBox(m_imageTab);
     m_threads->setRange(0, 64);

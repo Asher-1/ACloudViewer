@@ -102,7 +102,7 @@ QList<QAction*> ColorimetricSegmenter::getActions() {
         m_action_filterRgb->setToolTip(
                 "Filter the points of the selected cloud by RGB color");
         m_action_filterRgb->setIcon(
-                QIcon(":/CC/plugin/ColorimetricSegmenter/images/icon_rgb.png"));
+                QIcon(":/CC/plugin/ColorimetricSegmenter/images/icon_rgb.svg"));
 
         // Connect appropriate signal
         connect(m_action_filterRgb, &QAction::triggered, this,
@@ -129,7 +129,7 @@ QList<QAction*> ColorimetricSegmenter::getActions() {
         m_action_filterHSV->setToolTip(
                 "Filter the points of the selected cloud by HSV color");
         m_action_filterHSV->setIcon(
-                QIcon(":/CC/plugin/ColorimetricSegmenter/images/icon_hsv.png"));
+                QIcon(":/CC/plugin/ColorimetricSegmenter/images/icon_hsv.svg"));
 
         // Connect appropriate signal
         connect(m_action_filterHSV, &QAction::triggered, this,
@@ -142,7 +142,7 @@ QList<QAction*> ColorimetricSegmenter::getActions() {
         m_action_filterScalar->setToolTip(
                 "Filter the points of the selected cloud using scalar field");
         m_action_filterScalar->setIcon(QIcon(
-                ":/CC/plugin/ColorimetricSegmenter/images/icon_scalar.png"));
+                ":/CC/plugin/ColorimetricSegmenter/images/icon_scalar.svg"));
 
         // Connect appropriate signal
         connect(m_action_filterScalar, &QAction::triggered, this,
@@ -155,7 +155,7 @@ QList<QAction*> ColorimetricSegmenter::getActions() {
         m_action_histogramClustering->setToolTip(
                 "Quantify the number of colors using Histogram Clustering");
         m_action_histogramClustering->setIcon(QIcon(
-                ":/CC/plugin/ColorimetricSegmenter/images/icon_quantif_h.png"));
+                ":/CC/plugin/ColorimetricSegmenter/images/icon_quantif_h.svg"));
 
         // Connect appropriate signal
         connect(m_action_histogramClustering, &QAction::triggered, this,
@@ -169,7 +169,7 @@ QList<QAction*> ColorimetricSegmenter::getActions() {
         m_action_kMeansClustering->setToolTip(
                 "Quantify the number of colors using Kmeans Clustering");
         m_action_kMeansClustering->setIcon(QIcon(
-                ":/CC/plugin/ColorimetricSegmenter/images/icon_quantif_k.png"));
+                ":/CC/plugin/ColorimetricSegmenter/images/icon_quantif_k.svg"));
 
         // Connect appropriate signal
         connect(m_action_kMeansClustering, &QAction::triggered, this,

@@ -24,7 +24,7 @@ After the flags: **`params.txt`**, then optional **`"PC1=1 PC2=2"`** style role 
 
 ## Screenshots
 
-![3DMASC](images/3dmasc_icon.png)
+![3DMASC](3DMASC.png)
 
 ## ACloudViewer CLI
 

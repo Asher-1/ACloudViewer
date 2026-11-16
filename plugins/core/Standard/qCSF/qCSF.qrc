@@ -1,10 +1,10 @@
 <RCC>
     <qresource prefix="/CC/plugin/qCSF" >
-        <file>images/icon.png</file>
-        <file>images/hun.png</file>
-        <file>images/gun.png</file>
-        <file>images/ft.png</file>
-        <file>images/pp.png</file>
+        <file>images/icon.svg</file>
+        <file>images/hun.svg</file>
+        <file>images/gun.svg</file>
+        <file>images/ft.svg</file>
+        <file>images/pp.svg</file>
         <file>info.json</file>
     </qresource>
 </RCC>

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/logo.png" alt="qAnyLabeling" width="180">
+  <img src="images/icon.png" alt="qAnyLabeling" width="180">
 </p>
 
 # qAnyLabeling

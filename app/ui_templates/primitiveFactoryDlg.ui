@@ -28,7 +28,7 @@
      <widget class="QWidget" name="planeTab">
       <attribute name="icon">
        <iconset resource="../MainWindow.qrc">
-        <normaloff>:/Resources/images/Plane.png</normaloff>:/Resources/images/Plane.png</iconset>
+        <normaloff>:/Resources/images/svg/misc/Plane.svg</normaloff>:/Resources/images/svg/misc/Plane.svg</iconset>
       </attribute>
       <attribute name="title">
        <string>Plane</string>
@@ -662,7 +662,7 @@
      <widget class="QWidget" name="torusTab">
       <attribute name="icon">
        <iconset resource="../MainWindow.qrc">
-        <normaloff>:/Resources/images/torus.png</normaloff>:/Resources/images/torus.png</iconset>
+        <normaloff>:/Resources/images/svg/misc/torus.svg</normaloff>:/Resources/images/svg/misc/torus.svg</iconset>
       </attribute>
       <attribute name="title">
        <string>Torus</string>
@@ -943,7 +943,7 @@
      <widget class="QWidget" name="coordinateSystemTab">
       <attribute name="icon">
        <iconset resource="../MainWindow.qrc">
-        <normaloff>:/Resources/images/svg/pqAxes.png</normaloff>:/Resources/images/svg/pqAxes.png</iconset>
+        <normaloff>:/Resources/images/svg/pq/pqAxes.svg</normaloff>:/Resources/images/svg/pq/pqAxes.svg</iconset>
       </attribute>
       <attribute name="title">
        <string>Coordinate System</string>
@@ -996,7 +996,7 @@
      <widget class="QWidget" name="discTab">
       <attribute name="icon">
        <iconset resource="../MainWindow.qrc">
-        <normaloff>:/Resources/images/dbCircle.png</normaloff>:/Resources/images/dbCircle.png</iconset>
+        <normaloff>:/Resources/images/svg/db/dbCircle.svg</normaloff>:/Resources/images/svg/db/dbCircle.svg</iconset>
       </attribute>
       <attribute name="title">
        <string>Disc</string>

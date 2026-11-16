@@ -1,0 +1,96 @@
+diff --git a/src/ggml-metal/ggml-metal-impl.h b/src/ggml-metal/ggml-metal-impl.h
+--- a/src/ggml-metal/ggml-metal-impl.h
++++ b/src/ggml-metal/ggml-metal-impl.h
+@@ -660,9 +660,12 @@
+     int64_t  ne00;
+     int64_t  ne01;
+     int64_t  ne02;
++    int64_t  ne03;
+     uint64_t nb00;
+     uint64_t nb01;
+     uint64_t nb02;
++    uint64_t nb03;
++    uint64_t nb3;
+     int32_t  ngrp;
+     float    eps;
+ } ggml_metal_kargs_group_norm;
+diff --git a/src/ggml-metal/ggml-metal-ops.cpp b/src/ggml-metal/ggml-metal-ops.cpp
+--- a/src/ggml-metal/ggml-metal-ops.cpp
++++ b/src/ggml-metal/ggml-metal-ops.cpp
+@@ -4492,9 +4492,12 @@
+         /*.ne00 =*/ ne00,
+         /*.ne01 =*/ ne01,
+         /*.ne02 =*/ ne02,
++        /*.ne03 =*/ ne03,
+         /*.nb00 =*/ nb00,
+         /*.nb01 =*/ nb01,
+         /*.nb02 =*/ nb02,
++        /*.nb03 =*/ nb03,
++        /*.nb3  =*/ nb3,
+         /*.ngrp =*/ ngrp,
+         /*.eps  =*/ eps,
+     };
+@@ -4518,7 +4521,12 @@
+ 
+     ggml_metal_encoder_set_threadgroup_memory_size(enc, smem, 0);
+ 
+-    ggml_metal_encoder_dispatch_threadgroups(enc, ngrp, 1, 1, nth, 1, 1);
++    // ACV: one grid segment of ngrp threadgroups per ne03 batch element so
++    // every batch is normalized independently (CPU/CUDA/Vulkan semantics).
++    // The stock dispatch only covered ne03 == 1; batched inputs (for example
++    // the Zero123++ CFG UNet with B = 2) silently left every batch but the
++    // first untouched.
++    ggml_metal_encoder_dispatch_threadgroups(enc, ngrp * ne03, 1, 1, nth, 1, 1);
+ 
+     return 1;
+ }
+diff --git a/src/ggml-metal/kernels/norm.metal b/src/ggml-metal/kernels/norm.metal
+--- a/src/ggml-metal/kernels/norm.metal
++++ b/src/ggml-metal/kernels/norm.metal
+@@ -249,7 +249,17 @@
+     const int64_t ne = args.ne00*args.ne01*args.ne02;
+     const int64_t gs = args.ne00*args.ne01*((args.ne02 + args.ngrp - 1) / args.ngrp);
+ 
+-    int start = tgpig * gs;
++    // ACV: one grid segment of ngrp threadgroups per ne03 batch element;
++    // normalize every batch independently (CPU/CUDA/Vulkan semantics). The
++    // stock kernel only visited the first batch, leaving the rest of a
++    // batched dst untouched (zeroed freshly allocated memory).
++    const int b   = tgpig / args.ngrp;
++    const int grp = tgpig % args.ngrp;
++
++    device const float * src_b = (device const float *)((device const char *)src0 + b*args.nb03);
++    device       float * dst_b = (device       float *)((device       char *)dst  + b*args.nb3);
++
++    int start = grp * gs;
+     int end   = start + gs;
+ 
+     start += tpitg;
+@@ -261,7 +271,7 @@
+     float tmp = 0.0f; // partial sum for thread in warp
+ 
+     for (int j = start; j < end; j += ntg) {
+-        tmp += src0[j];
++        tmp += src_b[j];
+     }
+ 
+     threadgroup_barrier(mem_flags::mem_threadgroup);
+@@ -287,8 +297,8 @@
+     tmp = 0.0f;
+ 
+     for (int j = start; j < end; j += ntg) {
+-        float xi = src0[j] - mean;
+-        dst[j] = xi;
++        float xi = src_b[j] - mean;
++        dst_b[j] = xi;
+         tmp += xi * xi;
+     }
+ 
+@@ -313,6 +323,6 @@
+     const float variance = tmp / gs;
+     const float scale = 1.0f/sqrt(variance + args.eps);
+     for (int j = start; j < end; j += ntg) {
+-        dst[j] *= scale;
++        dst_b[j] *= scale;
+     }
+ }

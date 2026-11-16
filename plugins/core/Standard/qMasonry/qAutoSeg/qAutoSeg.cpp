@@ -1321,7 +1321,7 @@ QList<QAction*> ccAutoSeg::getActions() {
         m_action = new QAction(getName(), this);
         m_action->setToolTip(getDescription());
         m_action->setIcon(QIcon(
-                QString::fromUtf8(":/CC/plugin/qAutoSeg/cyberbuildIcon.png")));
+                QString::fromUtf8(":/CC/plugin/qAutoSeg/cyberbuildIcon.svg")));
 
         // Connect appropriate signal
         connect(m_action, &QAction::triggered, this, &ccAutoSeg::doAction);

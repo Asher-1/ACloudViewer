@@ -57,18 +57,18 @@ namespace  // local helper
 
 void updateTable(RDBOpenDialog &openDlg, riegl::rdb::Pointcloud &rdb) {
     static const QIcon xIcon(
-            QString::fromUtf8(":/CC/images/typeXCoordinate.png"));
+            QString::fromUtf8(":/Resources/images/svg/type/typeXCoordinate.svg"));
     static const QIcon yIcon(
-            QString::fromUtf8(":/CC/images/typeYCoordinate.png"));
+            QString::fromUtf8(":/Resources/images/svg/type/typeYCoordinate.svg"));
     static const QIcon zIcon(
-            QString::fromUtf8(":/CC/images/typeZCoordinate.png"));
+            QString::fromUtf8(":/Resources/images/svg/type/typeZCoordinate.svg"));
     static const QIcon NormIcon(
-            QString::fromUtf8(":/CC/images/typeNormal.png"));
+            QString::fromUtf8(":/Resources/images/svg/type/typeNormal.svg"));
     static const QIcon RGBIcon(
-            QString::fromUtf8(":/CC/images/typeRgbCcolor.png"));
+            QString::fromUtf8(":/Resources/images/svg/type/typeRgbCcolor.svg"));
     static const QIcon GreyIcon(
-            QString::fromUtf8(":/CC/images/typeGrayColor.png"));
-    static const QIcon ScalarIcon(QString::fromUtf8(":/CC/images/typeSF.png"));
+            QString::fromUtf8(":/Resources/images/svg/type/typeGrayColor.svg"));
+    static const QIcon ScalarIcon(QString::fromUtf8(":/Resources/images/svg/type/typeSF.svg"));
 
     struct SpecialAttribute {
         const std::string name;

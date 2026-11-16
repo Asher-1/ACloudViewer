@@ -276,4 +276,6 @@ agent-integration/examples/test_data
 .qoder/
 core/AICore/models/
 .ccache/
+scripts/icon_hd/data/
+scripts/icon_hd/authored/
 .claude

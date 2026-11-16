@@ -40,7 +40,7 @@ FastGlobalRegistrationFilter::FastGlobalRegistrationFilter()
               tr("Fast Global Registration, by Zhou et al."),
               tr("Attempts to automatically register clouds (with normals) "
                  "without initial alignment"),
-              ":/toolbar/PclAlgorithms/icons/fastGlobalRegistration.png")),
+              ":/toolbar/PclAlgorithms/icons/fastGlobalRegistration.svg")),
       m_alignedClouds(),
       m_referenceCloud(nullptr),
       m_featureRadius(0) {}

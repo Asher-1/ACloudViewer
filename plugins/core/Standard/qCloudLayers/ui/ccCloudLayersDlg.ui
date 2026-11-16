@@ -75,7 +75,7 @@
        </property>
        <property name="icon">
         <iconset resource="../qCloudlayers.qrc">
-         <normaloff>:/CC/plugin/qCloudLayers/images/ccSmallValidate.png</normaloff>:/CC/plugin/qCloudLayers/images/ccSmallValidate.png</iconset>
+         <normaloff>:/CC/plugin/qCloudLayers/images/ccSmallValidate.svg</normaloff>:/CC/plugin/qCloudLayers/images/ccSmallValidate.svg</iconset>
        </property>
       </widget>
      </item>
@@ -89,7 +89,7 @@
        </property>
        <property name="icon">
         <iconset resource="../qCloudlayers.qrc">
-         <normaloff>:/CC/plugin/qCloudLayers/images/ccCancel.png</normaloff>:/CC/plugin/qCloudLayers/images/ccCancel.png</iconset>
+         <normaloff>:/CC/plugin/qCloudLayers/images/ccCancel.svg</normaloff>:/CC/plugin/qCloudLayers/images/ccCancel.svg</iconset>
        </property>
       </widget>
      </item>
@@ -112,7 +112,7 @@
          </property>
          <property name="icon">
           <iconset resource="../qCloudlayers.qrc">
-           <normaloff>:/CC/plugin/qCloudLayers/images/ccPlus.png</normaloff>:/CC/plugin/qCloudLayers/images/ccPlus.png</iconset>
+           <normaloff>:/CC/plugin/qCloudLayers/images/ccPlus.svg</normaloff>:/CC/plugin/qCloudLayers/images/ccPlus.svg</iconset>
          </property>
         </widget>
        </item>
@@ -129,7 +129,7 @@
          </property>
          <property name="icon">
           <iconset resource="../qCloudlayers.qrc">
-           <normaloff>:/CC/plugin/qCloudLayers/images/ccDelete.png</normaloff>:/CC/plugin/qCloudLayers/images/ccDelete.png</iconset>
+           <normaloff>:/CC/plugin/qCloudLayers/images/ccDelete.svg</normaloff>:/CC/plugin/qCloudLayers/images/ccDelete.svg</iconset>
          </property>
         </widget>
        </item>
@@ -143,7 +143,7 @@
          </property>
          <property name="icon">
           <iconset resource="../qCloudlayers.qrc">
-           <normaloff>:/CC/plugin/qCloudLayers/images/ccStart.png</normaloff>:/CC/plugin/qCloudLayers/images/ccStart.png</iconset>
+           <normaloff>:/CC/plugin/qCloudLayers/images/ccStart.svg</normaloff>:/CC/plugin/qCloudLayers/images/ccStart.svg</iconset>
          </property>
         </widget>
        </item>
@@ -157,7 +157,7 @@
          </property>
          <property name="icon">
           <iconset resource="../qCloudlayers.qrc">
-           <normaloff>:/CC/plugin/qCloudLayers/images/ccSmallPause.png</normaloff>:/CC/plugin/qCloudLayers/images/ccSmallPause.png</iconset>
+           <normaloff>:/CC/plugin/qCloudLayers/images/ccSmallPause.svg</normaloff>:/CC/plugin/qCloudLayers/images/ccSmallPause.svg</iconset>
          </property>
         </widget>
        </item>

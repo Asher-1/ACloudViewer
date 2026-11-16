@@ -103,7 +103,7 @@ public:
                 arow.DeleteButton = new QToolButton(this->Parent);
                 arow.DeleteButton->setObjectName(QString("delete%1").arg(cc));
                 arow.DeleteButton->setIcon(
-                        QIcon(":/Resources/images/ecvdelete.png"));
+                        QIcon(":/Resources/images/svg/ecv/ecvdelete.svg"));
                 arow.DeleteButton->setProperty(
                         "pqCustomViewpointButtonDialog_INDEX", cc);
                 this->gridLayout->addWidget(arow.DeleteButton, cc + 1, 3);

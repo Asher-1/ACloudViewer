@@ -23,6 +23,7 @@
 #include <QVBoxLayout>
 
 #include "ecvAICoreUiHelper.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAssetIntegrity.h"
 #include "ecvMainAppInterface.h"
 #include "ecvPersistentSettings.h"
@@ -106,19 +107,9 @@ void GKDDialog::setupUi() {
     m_deviceCombo = new QComboBox(this);
     m_deviceCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_deviceCombo->setMaximumWidth(ecvAICoreUi::dpiScaled(220));
-    const int deviceCount =
 #ifdef AICore_ENABLED
-            aicore_device_count();
-#else
-            0;
+    ecvAICoreUi::populateDeviceCombo(m_deviceCombo);
 #endif
-    for (int i = 0; i < deviceCount; ++i) {
-        const aicore_device_info* dev = aicore_device_at(i);
-        if (!dev) continue;
-        m_deviceCombo->addItem(QString::fromUtf8(dev->label),
-                               QString::fromUtf8(dev->id));
-        if (dev->is_default) m_deviceCombo->setCurrentIndex(i);
-    }
     m_threads = new QSpinBox(this);
     m_threads->setRange(0, 128);
     m_threads->setValue(0);

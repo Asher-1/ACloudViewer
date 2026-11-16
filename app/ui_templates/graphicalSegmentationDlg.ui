@@ -48,7 +48,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/smallPause.png</normaloff>:/Resources/images/smallPause.png</iconset>
+       <normaloff>:/Resources/images/svg/small/smallPause.svg</normaloff>:/Resources/images/svg/small/smallPause.svg</iconset>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -85,7 +85,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/smallPolygonSelect.png</normaloff>:/Resources/images/smallPolygonSelect.png</iconset>
+       <normaloff>:/Resources/images/svg/small/smallPolygonSelect.svg</normaloff>:/Resources/images/svg/small/smallPolygonSelect.svg</iconset>
      </property>
      <property name="popupMode">
       <enum>QToolButton::MenuButtonPopup</enum>
@@ -105,7 +105,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/smallSegmentIn.png</normaloff>:/Resources/images/smallSegmentIn.png</iconset>
+       <normaloff>:/Resources/images/svg/small/smallSegmentIn.svg</normaloff>:/Resources/images/svg/small/smallSegmentIn.svg</iconset>
      </property>
     </widget>
    </item>
@@ -122,7 +122,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/smallSegmentOut.png</normaloff>:/Resources/images/smallSegmentOut.png</iconset>
+       <normaloff>:/Resources/images/svg/small/smallSegmentOut.svg</normaloff>:/Resources/images/svg/small/smallSegmentOut.svg</iconset>
      </property>
     </widget>
    </item>
@@ -142,7 +142,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/smallReset.png</normaloff>:/Resources/images/smallReset.png</iconset>
+       <normaloff>:/Resources/images/svg/small/smallReset.svg</normaloff>:/Resources/images/svg/small/smallReset.svg</iconset>
      </property>
     </widget>
    </item>
@@ -159,7 +159,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/hashtag.png</normaloff>:/Resources/images/hashtag.png</iconset>
+       <normaloff>:/Resources/images/svg/misc/hashtag.svg</normaloff>:/Resources/images/svg/misc/hashtag.svg</iconset>
      </property>
     </widget>
    </item>
@@ -193,7 +193,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/ccGear.png</normaloff>:/Resources/images/ccGear.png</iconset>
+       <normaloff>:/Resources/images/svg/misc/ccGear.svg</normaloff>:/Resources/images/svg/misc/ccGear.svg</iconset>
      </property>
     </widget>
    </item>
@@ -210,7 +210,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/smallValidate.png</normaloff>:/Resources/images/smallValidate.png</iconset>
+       <normaloff>:/Resources/images/svg/small/smallValidate.svg</normaloff>:/Resources/images/svg/small/smallValidate.svg</iconset>
      </property>
     </widget>
    </item>
@@ -224,7 +224,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/smallTrash.png</normaloff>:/Resources/images/smallTrash.png</iconset>
+       <normaloff>:/Resources/images/svg/small/smallTrash.svg</normaloff>:/Resources/images/svg/small/smallTrash.svg</iconset>
      </property>
     </widget>
    </item>
@@ -241,7 +241,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/smallCancel.png</normaloff>:/Resources/images/smallCancel.png</iconset>
+       <normaloff>:/Resources/images/svg/small/smallCancel.svg</normaloff>:/Resources/images/svg/small/smallCancel.svg</iconset>
      </property>
     </widget>
    </item>
@@ -249,7 +249,7 @@
   <action name="actionSetRectangularSelection">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/smallRectangleSelect.png</normaloff>:/Resources/images/smallRectangleSelect.png</iconset>
+     <normaloff>:/Resources/images/svg/small/smallRectangleSelect.svg</normaloff>:/Resources/images/svg/small/smallRectangleSelect.svg</iconset>
    </property>
    <property name="text">
     <string>Rectangular selection</string>
@@ -261,7 +261,7 @@
   <action name="actionSetPolylineSelection">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/smallPolygonSelect.png</normaloff>:/Resources/images/smallPolygonSelect.png</iconset>
+     <normaloff>:/Resources/images/svg/small/smallPolygonSelect.svg</normaloff>:/Resources/images/svg/small/smallPolygonSelect.svg</iconset>
    </property>
    <property name="text">
     <string>Polygonal selection</string>

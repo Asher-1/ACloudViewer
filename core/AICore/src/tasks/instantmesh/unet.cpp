@@ -43,76 +43,6 @@ bool has_t(const UnetModel &m, const std::string &name) {
     return m.gguf.tensors.count(name) != 0;
 }
 
-// torch GroupNorm(G, eps) + affine on [W,H,C,B] contiguous, built from
-// explicit reductions. (The library ggml_group_norm computes this exact math
-// correctly in isolation but misbehaves inside the large UNet graph for
-// reasons that resisted five dump rounds — the primitive composition here is
-// verifiable end-to-end, so it replaces the op throughout this model.)
-//   sums = ones[WH]·[WH, C*B]  → per-channel spatial sums
-//   group sums via reshape [cpg, G, B] and ones[cpg]·  → mean/var per (g,b)
-//   expand per-group scalars back per-channel → normalize + affine.
-static std::vector<ggml_tensor *> g_u_fill_ones_wh;  // host-filled with 1.0f
-static std::vector<ggml_tensor *> g_u_fill_ones_cpg;
-static std::vector<ggml_tensor *> g_u_fill_eps;
-static std::vector<ggml_tensor *> g_u_fill_ones_gb;
-ggml_tensor *gn32(ggml_context *ctx,
-                  const UnetModel &m,
-                  ggml_tensor *x,
-                  const std::string &affine_prefix) {
-    const int64_t Wd = x->ne[0], Hd = x->ne[1], C = x->ne[2], B = x->ne[3];
-    const int64_t WH = Wd * Hd;
-    const int64_t G = m.hp.norm_num_groups;
-    const int64_t cpg = C / G;
-    ggml_tensor *ones_wh = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, WH, 1);
-    ggml_tensor *ones_cpg = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, cpg, 1);
-    ggml_set_input(ones_wh);
-    ggml_set_input(ones_cpg);
-    g_u_fill_ones_wh.push_back(ones_wh);
-    g_u_fill_ones_cpg.push_back(ones_cpg);
-
-    ggml_tensor *t = ggml_reshape_2d(ctx, x, WH, C * B);  // view
-    ggml_tensor *sums = mul_mat_exact(ctx, ones_wh, t);   // [1, C*B]
-    ggml_tensor *sq = ggml_mul(ctx, t, t);
-    ggml_tensor *sums2 = mul_mat_exact(ctx, ones_wh, sq);  // [1, C*B]
-    ggml_tensor *s3 = ggml_reshape_3d(ctx, sums, cpg, G, B);
-    ggml_tensor *s23 = ggml_reshape_3d(ctx, sums2, cpg, G, B);
-    ggml_tensor *gs = mul_mat_exact(ctx, ones_cpg, s3);    // [1, G, B]
-    ggml_tensor *gs2 = mul_mat_exact(ctx, ones_cpg, s23);  // [1, G, B]
-    const float inv_n = 1.0f / (float)(cpg * WH);
-    ggml_tensor *mean_g = ggml_scale(ctx, gs, inv_n);
-    ggml_tensor *ex_g = ggml_scale(ctx, gs2, inv_n);  // E[x^2]
-    ggml_tensor *var_g = ggml_sub(ctx, ex_g, ggml_mul(ctx, mean_g, mean_g));
-    ggml_tensor *eps_t = ggml_new_tensor_3d(ctx, GGML_TYPE_F32, 1, G, B);
-    ggml_set_input(eps_t);
-    g_u_fill_eps.push_back(eps_t);
-    ggml_tensor *ones_gb = ggml_new_tensor_3d(ctx, GGML_TYPE_F32, 1, G, B);
-    ggml_set_input(ones_gb);
-    g_u_fill_ones_gb.push_back(ones_gb);
-    ggml_tensor *scale_g =
-            ggml_div(ctx, ones_gb, ggml_sqrt(ctx, ggml_add(ctx, var_g, eps_t)));
-    // expand per-group [1,G,B] scalars to per-channel [C,B]
-    ggml_tensor *mean_c = ggml_repeat(
-            ctx, mean_g, ggml_new_tensor_3d(ctx, GGML_TYPE_F32, cpg, G, B));
-    ggml_tensor *scale_c = ggml_repeat(
-            ctx, scale_g, ggml_new_tensor_3d(ctx, GGML_TYPE_F32, cpg, G, B));
-    mean_c = ggml_reshape_2d(ctx, mean_c, C, B);
-    scale_c = ggml_reshape_2d(ctx, scale_c, C, B);
-    // normalize in [C, WH, B]
-    ggml_tensor *th = ggml_cont(
-            ctx,
-            ggml_permute(ctx, ggml_reshape_3d(ctx, x, WH, C, B), 1, 0, 2, 3));
-    ggml_tensor *y = ggml_sub(ctx, th, ggml_reshape_3d(ctx, mean_c, C, 1, B));
-    y = ggml_mul(ctx, y, ggml_reshape_3d(ctx, scale_c, C, 1, B));
-    if (!affine_prefix.empty()) {
-        ggml_tensor *gw = get_t(m, affine_prefix + ".weight");
-        ggml_tensor *gb = get_t(m, affine_prefix + ".bias");
-        y = ggml_add(ctx, ggml_mul(ctx, y, ggml_reshape_3d(ctx, gw, C, 1, 1)),
-                     ggml_reshape_3d(ctx, gb, C, 1, 1));
-    }
-    y = ggml_reshape_4d(ctx, y, C, Hd, Wd, B);
-    return ggml_cont(ctx, ggml_permute(ctx, y, 2, 1, 0, 3));
-}
-
 // ── convs (same contract as vae.cpp) ─────────────────────────────────────
 ggml_tensor *conv(ggml_context *ctx,
                   ggml_tensor *x,
@@ -597,24 +527,6 @@ float *unet_forward_refonly(const UnetModel &m,
             e[half + i] = std::sin(timestep * ev[i]);
         }
         ggml_backend_tensor_set(emb_in, e.data(), 0, e.size() * sizeof(float));
-    }
-    {
-        std::vector<float> one(65536, 1.0f);  // max WH; slice per tensor
-        for (auto *t : g_u_fill_ones_wh) {
-            ggml_backend_tensor_set(t, one.data(), 0, t->ne[0] * sizeof(float));
-        }
-        for (auto *t : g_u_fill_ones_cpg) {
-            ggml_backend_tensor_set(t, one.data(), 0, t->ne[0] * sizeof(float));
-        }
-        std::vector<float> epsv((size_t)m.hp.norm_num_groups * B,
-                                m.hp.norm_eps);
-        for (auto *t : g_u_fill_eps) {
-            ggml_backend_tensor_set(t, epsv.data(), 0,
-                                    epsv.size() * sizeof(float));
-        }
-        for (auto *t : g_u_fill_ones_gb) {
-            ggml_backend_tensor_set(t, one.data(), 0, t->ne[0] * sizeof(float));
-        }
     }
     ggml_backend_tensor_set(sample_t, sample, 0,
                             (size_t)B * hp.in_channels * H * W * sizeof(float));

@@ -991,6 +991,15 @@ if(TARGET aicore-fast-tests)
             SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
         cloudviewer_set_test_runtime_environment(test_ocr_dw_bias_vulkan)
     endif()
+    if(APPLE)
+        # Metal joins the same depthwise-bias contract (0030 patch): the
+        # device name is the ggml dev_name "MTL0" (registry family "metal").
+        add_test(NAME test_ocr_dw_bias_metal COMMAND test_ocr_runtime
+            --dw-bias-contract MTL0 "${GGML_MODULE_DIR}")
+        set_tests_properties(test_ocr_dw_bias_metal PROPERTIES LABELS "ocr;ggml;gpu"
+            SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
+        cloudviewer_set_test_runtime_environment(test_ocr_dw_bias_metal)
+    endif()
 endif()
 
 # Table-structure parity probe: the SLANet encoder runs on the OCR

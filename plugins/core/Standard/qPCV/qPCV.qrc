@@ -1,6 +1,6 @@
 <RCC>
     <qresource prefix="/CC/plugin/qPCV">
         <file>info.json</file>
-        <file>images/PCVIcon.png</file>
+        <file>images/PCVIcon.svg</file>
     </qresource>
 </RCC>

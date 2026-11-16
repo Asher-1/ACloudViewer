@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>:/CC/plugin/qCanupoPlugin/iconCreate.png</normaloff>:/CC/plugin/qCanupoPlugin/iconCreate.png</iconset>
+    <normaloff>:/CC/plugin/qCanupoPlugin/images/iconCreate.png</normaloff>:/CC/plugin/qCanupoPlugin/images/iconCreate.png</iconset>
   </property>
   <layout class="QGridLayout" name="gridLayout" rowstretch="1,0" columnstretch="1,0">
    <item row="0" column="0" colspan="2">

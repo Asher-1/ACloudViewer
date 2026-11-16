@@ -1,7 +1,7 @@
 {
 	"type" : "Standard",
 	"name" : "Json RPC (Standard Plugin)",
-	"icon" : ":/CC/plugin/JsonRPCPlugin/images/icon.png",
+	"icon" : ":/CC/plugin/JsonRPCPlugin/images/icon.svg",
     "description": "This is a Json RPC interface for ACloudViewer.",
 	"authors" : [
 		{

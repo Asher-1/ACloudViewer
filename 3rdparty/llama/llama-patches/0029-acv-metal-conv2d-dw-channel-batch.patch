@@ -1,0 +1,30 @@
+diff --git a/src/ggml-metal/ggml-metal-ops.cpp b/src/ggml-metal/ggml-metal-ops.cpp
+index 93081fb..e9b55ff 100644
+--- a/src/ggml-metal/ggml-metal-ops.cpp
++++ b/src/ggml-metal/ggml-metal-ops.cpp
+@@ -4962,6 +4962,12 @@ int ggml_metal_op_conv_2d_dw(ggml_metal_op_t ctx, int idx) {
+     GGML_ASSERT(op->src[1]->type == GGML_TYPE_F32);
+     GGML_ASSERT(op->type == GGML_TYPE_F32);
+     GGML_ASSERT(op->src[0]->type == GGML_TYPE_F16 || op->src[0]->type == GGML_TYPE_F32);
++    // The depthwise kernel layout is (KW, KH, 1, C): the channel axis lives
++    // on ne[3], not ne[2]. C and N must come from the input/dst (the CPU and
++    // CUDA encoders read them there); reading them from the weight dispatches
++    // weight channel 0 for every output channel and addresses batches 0..C-1,
++    // which is out of range whenever C > 1 or N != C.
++    GGML_ASSERT(op->src[0]->ne[3] == op->ne[2]);
+ 
+     const int32_t s0 = ((const int32_t *) op->op_params)[0];
+     const int32_t s1 = ((const int32_t *) op->op_params)[1];
+@@ -4986,10 +4992,10 @@ int ggml_metal_op_conv_2d_dw(ggml_metal_op_t ctx, int idx) {
+         /*.IH   =*/ ne11,
+         /*.KW   =*/ ne00,
+         /*.KH   =*/ ne01,
+-        /*.C    =*/ ne12,
++        /*.C    =*/ ne2,
+         /*.OW   =*/ ne0,
+         /*.OH   =*/ ne1,
+-        /*.N    =*/ ne13,
++        /*.N    =*/ ne3,
+         /*.s0   =*/ s0,
+         /*.s1   =*/ s1,
+         /*.p0   =*/ p0,

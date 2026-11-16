@@ -1,14 +1,14 @@
 <RCC>
   <qresource prefix="/CC/plugin/qFacets">
     <file>images/logoBRGM.png</file>
-    <file>images/extractFM.png</file>
-    <file>images/extractKD.png</file>
-    <file>images/stereogram.png</file>
-    <file>images/csvFile.png</file>
-    <file>images/shpFile.png</file>
-    <file>images/qFacets.png</file>
-    <file>images/gearIcon.png</file>
-    <file>images/classifIcon.png</file>
+    <file>images/extractFM.svg</file>
+    <file>images/extractKD.svg</file>
+    <file>images/stereogram.svg</file>
+    <file>images/csvFile.svg</file>
+    <file>images/shpFile.svg</file>
+    <file>images/qFacets.svg</file>
+    <file>images/gearIcon.svg</file>
+    <file>images/classifIcon.svg</file>
     <file>info.json</file>
   </qresource>
 </RCC>

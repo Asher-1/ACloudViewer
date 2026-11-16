@@ -54,7 +54,7 @@
       <widget class="QToolButton" name="swapMeshesToolButton">
        <property name="icon">
         <iconset resource="../qVoxFall.qrc">
-         <normaloff>:/CC/plugin/qVoxFall/images/iconSwap.png</normaloff>:/CC/plugin/qVoxFall/images/iconSwap.png</iconset>
+         <normaloff>:/CC/plugin/qVoxFall/images/iconSwap.svg</normaloff>:/CC/plugin/qVoxFall/images/iconSwap.svg</iconset>
        </property>
       </widget>
      </item>

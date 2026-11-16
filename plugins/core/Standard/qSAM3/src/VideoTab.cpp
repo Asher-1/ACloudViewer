@@ -11,6 +11,7 @@
 #include <aicore/backend_capi.h>
 #include <aicore/sam3_capi.h>
 #include <ecvAICoreUiHelper.h>
+#include <ecvAICoreDeviceUiHelper.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPluginDbNaming.h>
@@ -371,15 +372,7 @@ void VideoTab::setupUi() {
     m_deviceLabel->setObjectName(QStringLiteral("SAM3VideoDeviceLabel"));
     m_deviceCombo = new QComboBox(this);
     m_deviceCombo->setObjectName(QStringLiteral("SAM3VideoDevice"));
-    for (int i = 0; i < aicore_device_count(); ++i) {
-        const aicore_device_info* dev = aicore_device_at(i);
-        if (!dev || !dev->id) continue;
-        m_deviceCombo->addItem(
-                QString::fromUtf8(dev->label ? dev->label : dev->id),
-                QString::fromUtf8(dev->id));
-        if (dev->is_default)
-            m_deviceCombo->setCurrentIndex(m_deviceCombo->count() - 1);
-    }
+    ecvAICoreUi::populateDeviceCombo(m_deviceCombo);
     m_deviceCombo->hide();
     m_backendLabel = new QLabel(tr("Backend: none"), this);
     m_backendLabel->setObjectName(QStringLiteral("SAM3VideoBackend"));
