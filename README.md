@@ -410,12 +410,27 @@ matching official installer for your platform automatically:
 ```bash
 # Install the bootstrap CLI, then fetch and run the installer
 npm install -g @asher-1/acloudviewer
-acloudviewer install            # auto-detects CPU/CUDA; add --silent for unattended installs
+acloudviewer install            # CPU by default; --cuda opts in (driver checked); --silent for unattended
 
 # Verify and remove
 acloudviewer list               # show available installers on the release
 acloudviewer uninstall --yes    # remove ACloudViewer (QtIFW maintenancetool purge)
 ```
+
+**Release channels** — the npm package version mirrors the app version, and you
+can choose how far ahead of stable you want to be:
+
+| Channel | Install | What you get |
+|---------|---------|--------------|
+| **Stable** (default) | `npm install -g @asher-1/acloudviewer` | Latest official release (`latest` dist-tag = app version, e.g. `3.9.8`); installs the matching pinned `v<version>` release. |
+| **Preview / testing** | `npm install -g @asher-1/acloudviewer@next` | Newest complete `main-devel` build (`X.Y.Z-dev.<timestamp>`); always tracks the rolling development assets. |
+| **Exact version** | `npm install -g @asher-1/acloudviewer@3.9.5` | A specific published bootstrap version. |
+
+`latest` only ever points at a stable release — development builds are published
+under `next` and never move it. (The transitional `3.9.5` predates pinned
+releases, so its stable bootstrap falls back to the rolling assets until the
+next versioned release; see [npm/PUBLISHING.md](npm/PUBLISHING.md) for the full
+version scheme.)
 
 ---
 
