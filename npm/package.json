@@ -6,6 +6,9 @@
   "bin": {
     "acloudviewer": "bin/acloudviewer.js"
   },
+  "scripts": {
+    "test": "node test/test-cuda-gate.js && node test/test-bootstrap-match.js"
+  },
   "files": [
     "bin",
     "README.md"

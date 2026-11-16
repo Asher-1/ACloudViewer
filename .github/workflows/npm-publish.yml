@@ -14,10 +14,13 @@ name: npm publish
 #           under dist-tag `next` (prerelease tarballs track rolling assets).
 #           `next` publishes NEVER move `latest`.
 #   - workflow_run (a platform build finished — same 5 uploaders that feed
-#     main-devel) and push (main) touching npm/** both run the same
-#     RECONCILE over both channels; the dev stamp derives from the release
-#     updated_at, so the five completion events converge to one publish
-#     (E409-idempotent) and unchanged assets are a no-op.
+#     main-devel), push (main) touching npm/**, and release (published) all
+#     run the same RECONCILE over both channels; the dev stamp derives from
+#     the release updated_at, so the five completion events converge to one
+#     publish (E409-idempotent) and unchanged assets are a no-op. The
+#     release trigger covers a pinned v<version> release created AFTER the
+#     last build wave: publishing it (with assets) immediately enables the
+#     deferred stable publish instead of waiting for the next build.
 #   - tag npm-v* / workflow_dispatch are emergency paths for explicit
 #     versions; reconcile automatically re-points `latest` back to the app
 #     version on the next run.
@@ -55,6 +58,12 @@ on:
     # triggers are no-ops.
     workflows: [Windows, MacOS, Ubuntu, Ubuntu CUDA, Ubuntu Wheel]
     types: [completed]
+  release:
+    # A pinned v<version> release published with its installers is itself a
+    # reconcile trigger: when the release is created after the last uploader
+    # finished, stable no longer waits for the next build wave. Reconcile is
+    # idempotent, so releases that change nothing (e.g. main-devel) are no-ops.
+    types: [published]
 
 # Serialize publishes: near-simultaneous completions would otherwise race on
 # the same version in both registries (429/409 from the second publisher).
@@ -90,6 +99,14 @@ jobs:
           # Node 24 ships npm >= 11.5.1, the minimum for OIDC trusted
           # publishing (Node 22's bundled npm is too old for scoped OIDC).
           node-version: 24
+
+      # Regression sentinel for the bootstrap itself (asset matching, CUDA
+      # opt-in/driver-gate predicates, flavor mutual exclusion). Must pass
+      # BEFORE any publish activity; live nvidia-smi probes skip on the
+      # GPU-less runner. Zero dependencies — plain node, no npm install.
+      - name: Bootstrap unit tests
+        working-directory: npm
+        run: npm test
 
       # OIDC dist-tag management (the tagback path: `npm dist-tag add/rm`
       # under trusted publishing) needs npm >= 11.21.0. Node 24 currently
@@ -177,7 +194,7 @@ jobs:
             echo "VERSION=$DISPATCH_VERSION" >> "$GITHUB_ENV"
             echo "DIST_TAG=${DISPATCH_TAG:-latest}" >> "$GITHUB_ENV"
 
-          elif [ "${{ github.event_name }}" = "workflow_run" ] || [ "${{ github.event_name }}" = "push" ]; then
+          elif [ "${{ github.event_name }}" = "workflow_run" ] || [ "${{ github.event_name }}" = "push" ] || [ "${{ github.event_name }}" = "release" ]; then
             # ── Mode: reconcile — two independent channel invariants:
             # STABLE: latest == app version, published only when the pinned
             #         release v<version> exists (stable tarballs install
@@ -220,7 +237,7 @@ jobs:
                 echo "stable: npm@$reg is behind app release $app_ver; publishing aligned version."
                 stable_action=publish
               else
-                echo "::warning::stable: pinned release v$app_ver missing or asset-less; deferring stable publish (create the release to enable it)."
+                echo "::warning::stable: pinned release v$app_ver missing or asset-less; deferring stable publish (publishing that release with assets re-triggers this workflow via the release event)."
               fi
             else
               # app_ver < reg: latest drifted ahead (historical patch-bump

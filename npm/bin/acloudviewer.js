@@ -53,9 +53,33 @@ function macArchTag() {
   return process.arch === "arm64" ? "arm64" : "x86_64";
 }
 
-function detectNvidiaGpu() {
-  const r = spawnSync("nvidia-smi", ["-L"], { timeout: 5000 });
-  return r.status === 0;
+// CUDA runtime the published CUDA installers are built against: Linux
+// docker/docker_build.sh (nvidia/cuda:12.6.3) and Windows windows.yml
+// (CUDA_VERSION 12.6.0). Keep in sync when CI bumps the CUDA toolkit.
+const REQUIRED_CUDA = "12.6";
+
+function nvidiaDriverReport() {
+  // The plain nvidia-smi banner reports both the driver version and the
+  // highest CUDA runtime that driver supports ("CUDA Version: X.Y") — the
+  // exact quantity the compatibility decision needs, so no driver->CUDA
+  // mapping table has to be maintained here.
+  const r = spawnSync("nvidia-smi", [], { encoding: "utf8", timeout: 8000 });
+  if (r.status !== 0 || !r.stdout) return null;
+  const cuda = r.stdout.match(/CUDA Version:\s*(\d+\.\d+)/);
+  if (!cuda) return null;
+  const driver = r.stdout.match(/Driver Version:\s*([\d.]+)/);
+  return { driver: driver ? driver[1] : "unknown", cuda: cuda[1] };
+}
+
+function cudaSupported(report) {
+  // CUDA guarantees compatibility WITHIN a major version (minor-version
+  // compatibility: a 12.x build runs on any driver supporting CUDA 12.y);
+  // only a lower MAJOR (e.g. an 11.x driver vs a 12.x build) is a real
+  // incompatibility. A higher driver major runs older runtimes fine.
+  if (!report) return false;
+  const needMaj = Number(REQUIRED_CUDA.split(".")[0]);
+  const maj = Number(report.cuda.split(".")[0]);
+  return maj >= needMaj;
 }
 
 function detectGlibcVersion() {
@@ -97,16 +121,29 @@ function detectPythonInterpreter(explicit) {
   return null;
 }
 
-function closestUbuntuTag(glibcVersion) {
-  // Mirror installer.py _closest_ubuntu_tag.
-  const map = { "2.27": "ubuntu18.04", "2.31": "ubuntu20.04", "2.35": "ubuntu22.04", "2.39": "ubuntu24.04" };
-  if (map[glibcVersion]) return map[glibcVersion];
-  const ver = parseFloat(glibcVersion);
-  if (!Number.isFinite(ver)) return "ubuntu20.04";
-  if (ver < 2.31) return "ubuntu18.04";
-  if (ver < 2.35) return "ubuntu20.04";
-  if (ver < 2.39) return "ubuntu22.04";
-  return "ubuntu24.04";
+// Published Linux builds are tagged by their BUILD Ubuntu; each tag implies
+// a minimum glibc (the build host's). glibc is backward compatible: a host
+// can run any build whose floor <= its own glibc, never a newer one.
+// Selection is "closest compatible": exact distro tag first, then older tags
+// newest-first. Mirrors installer.py _UBUNTU_GLIBC_FLOORS / _linux_tag_candidates.
+const UBUNTU_GLIBC_FLOORS = [
+  ["ubuntu24.04", 2.39],
+  ["ubuntu22.04", 2.35],
+  ["ubuntu20.04", 2.31],
+  ["ubuntu18.04", 2.27],
+];
+
+function linuxTagCandidates(plat) {
+  const tags = [];
+  if (plat.distro.id === "ubuntu" && plat.distro.version) {
+    tags.push(`ubuntu${plat.distro.version}`);
+  }
+  const host = parseFloat(plat.glibc);
+  const floor = Number.isFinite(host) ? host : 2.31; // unknown glibc: conservative
+  for (const [tag, min] of UBUNTU_GLIBC_FLOORS) {
+    if (min <= floor && !tags.includes(tag)) tags.push(tag);
+  }
+  return tags;
 }
 
 // ── Release assets ───────────────────────────────────────────────────────
@@ -152,11 +189,114 @@ async function fetchReleaseAssets(tag) {
   return release.assets || [];
 }
 
-function pickFlavor(args, hasNvidia) {
-  // installer.py defaults to CUDA and falls back to CPU; --cpu/--cuda override.
-  if (args.has("cpu")) return "cpu";
-  if (args.has("cuda")) return "cuda";
-  return hasNvidia ? "cuda" : "cpu";
+function pickFlavor(args) {
+  // CUDA is explicit opt-in: the CUDA installer is hundreds of MB larger
+  // and only useful with a compatible NVIDIA driver. GPU presence answers
+  // "can the host", never "does the user want it" — default is CPU.
+  return args.has("cuda") ? "cuda" : "cpu";
+}
+
+// Pre-download CUDA gate: refuse to fetch a CUDA installer the host driver
+// cannot run, BEFORE any bytes are transferred. Returns "cuda" (proceed),
+// "cpu" (user chose the CPU build) or "source" (user chose a source build
+// through the CLI harness — only offered on a CUDA MAJOR mismatch, where
+// compiling against the host's own older toolkit is the one path that can
+// produce a compatible binary). Non-interactive shells fail fast with
+// actionable flags instead of hanging on a prompt.
+async function cudaGate(args) {
+  const needMaj = REQUIRED_CUDA.split(".")[0];
+  for (;;) {
+    const report = nvidiaDriverReport();
+    if (cudaSupported(report)) {
+      console.log(`CUDA driver check: OK (driver ${report.driver}, supports CUDA <= ${report.cuda}; build needs CUDA ${needMaj}.x).`);
+      return "cuda";
+    }
+    // Major mismatch = driver exists but its CUDA major is older than the
+    // build's; no driver at all is a different failure (a CUDA source build
+    // would still need a driver, so option 4 is not offered there).
+    const majorMismatch = !!report;
+    const reason = report
+      ? `driver ${report.driver} supports up to CUDA ${report.cuda}, but this build requires CUDA ${needMaj}.x (CUDA major versions are not cross-compatible)`
+      : "no working NVIDIA driver detected (nvidia-smi unavailable or failed)";
+    console.error(`CUDA compatibility check failed: ${reason}.`);
+    if (args.has("force-cuda")) {
+      console.error("note: --force-cuda given; bypassing the driver gate (the app may fail at runtime).");
+      return "cuda";
+    }
+    if (!process.stdin.isTTY) {
+      if (args.has("dry-run")) {
+        // Report-only: dry-run never blocks or prompts, but still reports
+        // what a real non-interactive install would do (refuse).
+        console.error("dry-run: a real non-interactive install would refuse here; re-run without --cuda for the CPU build, or with --force-cuda.");
+        return "cuda";
+      }
+      die("refusing to download the CUDA installer in a non-interactive shell. " +
+        "Options: install the CPU build (the default — re-run without --cuda); " +
+        "upgrade the NVIDIA driver and re-run with --cuda; " +
+        (majorMismatch ? "build from source against your own CUDA toolkit (pip install cli-anything-acloudviewer && cli-anything-acloudviewer install source); " : "") +
+        "or pass --force-cuda to bypass this check.");
+    }
+    console.error("  [1] I upgraded/switched the driver — re-check now");
+    console.error("  [2] Abort (install nothing)");
+    console.error("  [3] Install the CPU build instead");
+    if (majorMismatch) {
+      console.error(`  [4] Build from source via the CLI harness (uses your own CUDA toolkit; hours-long)`);
+    }
+    const rl = require("readline").createInterface({ input: process.stdin, output: process.stdout });
+    const answer = await new Promise((resolve) => {
+      rl.question(`Select [1/2/3${majorMismatch ? "/4" : ""}] (default 3): `, resolve);
+      // EOF (Ctrl+D / closed stdin): rl.question's callback never fires on
+      // close, which would wedge the process under a pty. Mirror
+      // installer.py's EOFError -> abort instead of hanging.
+      rl.on("close", () => resolve(undefined));
+    });
+    rl.close();
+    if (answer === undefined) { console.log("aborted."); process.exit(0); }
+    if (answer.trim() === "1") continue;
+    if (answer.trim() === "2") { console.log("aborted."); process.exit(0); }
+    if (answer.trim() === "4" && majorMismatch) {
+      if (args.has("dry-run")) {
+        console.log("dry-run: would ensure cli-anything-acloudviewer is installed (pip), then run: cli-anything-acloudviewer install source");
+        return "source";
+      }
+      return "source";
+    }
+    console.log("Falling back to the CPU build as chosen.");
+    return "cpu";
+  }
+}
+
+// Option-4 handoff: the source build lives in the CLI harness, not in this
+// zero-dependency bootstrap. Ensure the harness is installed (PyPI), then
+// hand the terminal over to its one-click `install source` (clone + env +
+// configure + build + install, with its own plan review/confirmation).
+async function sourceBuildViaCli() {
+  const CLI = "cli-anything-acloudviewer";
+  // --help exits 0 on a working install (the Click group has no --version).
+  const has = () => spawnSync(CLI, ["--help"], { timeout: 15000 }).status === 0;
+  if (!has()) {
+    const py = detectPythonInterpreter();
+    if (!py) die("source build needs the CLI harness, but no Python interpreter was found to install it; install Python 3.10+ first.");
+    console.log(`Installing the CLI harness (${CLI}) via pip ...`);
+    const r = spawnSync(py.exe, ["-m", "pip", "install", CLI], { stdio: "inherit" });
+    if (r.status !== 0) die(`pip install ${CLI} failed (exit ${r.status}); install it manually, then run: ${CLI} install source`);
+    if (!has()) {
+      die(`${CLI} was installed but is not on PATH (pip scripts dir); run it manually: ${CLI} install source`);
+    }
+  }
+  console.log(`Handing over to: ${CLI} install source`);
+  const r = spawnSync(CLI, ["install", "source"], { stdio: "inherit" });
+  if (r.status !== 0) die(`source build exited with code ${r.status}; re-run '${CLI} install source' to resume (the one-click script is idempotent).`);
+}
+
+// Shared by the desktop and wheel "source" decisions: dry-run must gate the
+// handoff in EVERY execution branch, never just the download path.
+async function sourceHandoffOrDryRun(args) {
+  if (args.has("dry-run")) {
+    console.log("dry-run: skipping the source-build handoff.");
+    return;
+  }
+  await sourceBuildViaCli();
 }
 
 function findInstallerApp(assets, plat, flavor) {
@@ -165,20 +305,23 @@ function findInstallerApp(assets, plat, flavor) {
   const isCuda = (n) => n.includes("-cuda-");
 
   if (isLinux()) {
-    const ubuntuTag = plat.distro.id === "ubuntu" && plat.distro.version
-      ? `ubuntu${plat.distro.version}`
-      : closestUbuntuTag(plat.glibc);
-    let candidates = assets.filter((a) =>
-      a.name.startsWith("ACloudViewer-") && a.name.endsWith(".run") &&
-      a.name.includes(ubuntuTag) &&
-      (flavor === "cpu" ? isCpu(a.name) : isCuda(a.name)));
-    if (!candidates.length && flavor !== "cpu") {
-      // CUDA missing -> CPU fallback (same as installer.py).
-      candidates = assets.filter((a) =>
+    // Closest-compatible: never a build whose glibc floor exceeds the host;
+    // a missing exact tag falls back to the newest older build (glibc is
+    // backward compatible). Flavor fallback (cuda->cpu) applies per tag.
+    for (const ubuntuTag of linuxTagCandidates(plat)) {
+      let candidates = assets.filter((a) =>
         a.name.startsWith("ACloudViewer-") && a.name.endsWith(".run") &&
-        a.name.includes(ubuntuTag) && isCpu(a.name));
+        a.name.includes(ubuntuTag) &&
+        (flavor === "cpu" ? isCpu(a.name) : isCuda(a.name)));
+      if (!candidates.length && flavor !== "cpu") {
+        // CUDA missing -> CPU fallback (same as installer.py).
+        candidates = assets.filter((a) =>
+          a.name.startsWith("ACloudViewer-") && a.name.endsWith(".run") &&
+          a.name.includes(ubuntuTag) && isCpu(a.name));
+      }
+      if (candidates.length) return candidates[0];
     }
-    return candidates[0] || null;
+    return null;
   }
   if (isMacOS()) {
     // macOS ships CPU-only builds; the arch tag is the discriminator.
@@ -641,7 +784,14 @@ async function cmdInstall(args) {
   const tag = args.get("release") || DEFAULT_RELEASE;
   const silent = args.has("silent");
   const wheel = args.has("wheel");
-  const cpuOnly = args.has("cpu") || args.has("cpu-only");
+  // Contradictory flavors are a user error, not a precedence puzzle
+  // (mirrors installer.py's mutual-exclusion refusal).
+  if (args.has("cuda") && (args.has("cpu") || args.has("cpu-only"))) {
+    throw new Error("--cuda and --cpu/--cpu-only are mutually exclusive.");
+  }
+  // Same explicit opt-in as the desktop flavor: the GPU wheel bundles the
+  // CUDA runtime and is much larger; default to the CPU wheel.
+  const cpuOnly = !args.has("cuda");
   const parallel = parseParallel(args);
 
   // Local-file install (mirrors installer.py install_app_from_file): skips
@@ -678,8 +828,28 @@ async function cmdInstall(args) {
     const py = detectPythonInterpreter(args.get("python"));
     if (!py) die("no Python interpreter found; install Python 3.10+ or pass --python <path>.");
     console.log(`Platform: ${process.platform}/${process.arch}  Python: ${py.version} (${py.exe})`);
-    const asset = findWheel(assets, platformInfo(args), py, cpuOnly);
-    if (!asset) die(`no matching wheel for ${py.version} on ${process.platform}/${process.arch}. Run 'acloudviewer list' to see available assets.`);
+    // Same pre-download gate as the desktop flavor: the GPU wheel bundles
+    // the CUDA runtime, so an incompatible driver wastes the same bandwidth
+    // for the same unusable result (mirrors install_wheel_cmd).
+    let wheelCpuOnly = cpuOnly;
+    if (!cpuOnly) {
+      if (isMacOS()) {
+        die("macOS has no CUDA wheel; install the CPU wheel (the default — re-run without --cuda).");
+      }
+      const decision = await cudaGate(args);
+      if (decision === "source") {
+        await sourceHandoffOrDryRun(args);
+        return;
+      }
+      wheelCpuOnly = decision === "cpu";
+    }
+    const asset = findWheel(assets, platformInfo(args), py, wheelCpuOnly);
+    if (!asset) {
+      if (!wheelCpuOnly) {
+        die(`--cuda requested but no matching CUDA wheel for ${py.version} on ${process.platform}/${process.arch}; re-run without --cuda for the CPU wheel.`);
+      }
+      die(`no matching wheel for ${py.version} on ${process.platform}/${process.arch}. Run 'acloudviewer list' to see available assets.`);
+    }
     console.log(`Matched wheel: ${asset.name} (${(asset.size / 1048576).toFixed(0)} MB)`);
     if (args.has("dry-run")) {
       console.log(`Download URL: ${asset.browser_download_url}`);
@@ -701,13 +871,27 @@ async function cmdInstall(args) {
   const plat = platformInfo(args);
   console.log(`Platform: ${process.platform}/${process.arch}` +
     (isLinux() ? `  distro: ${plat.distro.id} ${plat.distro.version}  glibc: ${plat.glibc}` : "") +
-    (plat.hasNvidia ? "  GPU: NVIDIA detected" : ""));
-  const flavor = pickFlavor(args, plat.hasNvidia);
+    (plat.nvidia ? `  GPU: NVIDIA (driver ${plat.nvidia.driver}, CUDA <= ${plat.nvidia.cuda})` : ""));
+  const flavor = pickFlavor(args);
   if (isMacOS() && flavor === "cuda") {
-    console.log("note: macOS has no CUDA build; using the CPU installer.");
+    die("macOS has no CUDA build; install the CPU build (the default — re-run without --cuda).");
   }
-  const asset = findInstallerApp(assets, plat, isMacOS() ? "cpu" : flavor);
-  if (!asset) die(`no matching installer on ${process.platform}/${process.arch} (flavor: ${flavor}). Run 'acloudviewer list' to see available assets.`);
+  // Driver compatibility is decided BEFORE the download: an incompatible
+  // host must never spend bandwidth on a CUDA installer it cannot run.
+  const effFlavor = flavor === "cuda" ? await cudaGate(args) : flavor;
+  if (effFlavor === "source") {
+    // User chose the source build (CUDA major mismatch): hand over to the
+    // CLI harness one-click build; no release download happens here.
+    await sourceHandoffOrDryRun(args);
+    return;
+  }
+  const asset = findInstallerApp(assets, plat, effFlavor);
+  if (!asset) die(`no matching installer on ${process.platform}/${process.arch} (flavor: ${effFlavor}). Run 'acloudviewer list' to see available assets.`);
+  if (flavor === "cuda" && effFlavor === "cuda" && asset.name.includes("-cpu-")) {
+    // Explicit --cuda must not be silently swapped for a CPU asset when the
+    // release lacks a CUDA build — that would violate the requested flavor.
+    die(`--cuda requested but this release has no CUDA installer for ${process.platform}/${process.arch}; re-run without --cuda for the CPU build.`);
+  }
   console.log(`Matched installer: ${asset.name} (${(asset.size / 1048576).toFixed(0)} MB)`);
   if (args.has("dry-run")) {
     console.log(`Download URL: ${asset.browser_download_url}`);
@@ -743,7 +927,8 @@ function platformInfo(args) {
     macArch: macArchTag(),
     glibc,
     distro,
-    hasNvidia: args.has("cuda") ? true : (args.has("cpu") ? false : detectNvidiaGpu()),
+    // Informational only — flavor selection is the user's explicit choice.
+    nvidia: nvidiaDriverReport(),
   };
 }
 
@@ -792,9 +977,15 @@ async function cmdUninstall(args) {
       throw new Error("refusing to uninstall without confirmation in a non-interactive shell; re-run with --yes.");
     }
     const rl = require("readline").createInterface({ input: process.stdin, output: process.stdout });
-    const answer = (await new Promise((resolve) => rl.question("Proceed with uninstall? [y/N] ", resolve))).trim().toLowerCase();
+    const answer = await new Promise((resolve) => {
+      rl.question("Proceed with uninstall? [y/N] ", resolve);
+      // EOF must abort, never hang (same readline close semantics as cudaGate).
+      rl.on("close", () => resolve(undefined));
+    });
     rl.close();
-    if (answer !== "y" && answer !== "yes") {
+    if (answer === undefined) { console.log("aborted."); return; }
+    const normalized = answer.trim().toLowerCase();
+    if (normalized !== "y" && normalized !== "yes") {
       console.log("aborted.");
       return;
     }
@@ -815,15 +1006,25 @@ function usage() {
   console.log(`ACloudViewer installer bootstrap (npm package @asher-1/acloudviewer)
 
 Usage:
-  acloudviewer install [--cuda|--cpu] [--silent] [--prefix <dir>] [--parallel <n>] [--release <tag>]
+  acloudviewer install [--cuda] [--force-cuda] [--silent] [--prefix <dir>] [--parallel <n>] [--release <tag>]
   acloudviewer install --from <installer-file> [--silent] [--prefix <dir>]
-  acloudviewer install --wheel [--cpu-only] [--python <path>] [--release <tag>]
+  acloudviewer install --wheel [--cuda] [--force-cuda] [--python <path>] [--release <tag>]
   acloudviewer list [--release <tag>]
   acloudviewer uninstall [--prefix <dir>] [--yes]
   acloudviewer version | help
 
 Options:
-  --cuda / --cpu      Force a build flavor (default: auto-detect NVIDIA GPU).
+  --cuda              Opt into the CUDA build, desktop or wheel (default:
+                      CPU). Before any download, the NVIDIA driver is checked: it must
+                      support CUDA ${REQUIRED_CUDA.split(".")[0]}.x (minor versions within a major are
+                      compatible). An incompatible host is offered:
+                      re-check after a driver upgrade / abort / install the
+                      CPU build; on a CUDA MAJOR mismatch, additionally:
+                      build from source via the CLI harness (installed
+                      automatically if missing).
+  --force-cuda        Bypass the CUDA driver check (for unusual setups where
+                      nvidia-smi misreports; the app may fail at runtime).
+  --cpu / --cpu-only  Accepted for compatibility; CPU is already the default.
   --silent            Unattended install (QtIFW console mode / dmg headless).
   --prefix <dir>      Install root for --silent (default:
                       ~/.local/share/ACloudViewer, same as the pip harness).
@@ -879,11 +1080,11 @@ async function main() {
   }
 }
 
-// Expose the download engine for tests when require()d as a module; run the
-// CLI only when executed directly.
+// Expose the download engine and asset matching for tests when require()d as
+// a module; run the CLI only when executed directly.
 if (require.main === module) {
-  module.exports = { downloadWithProgress };
+  module.exports = { downloadWithProgress, findInstallerApp, linuxTagCandidates, pickFlavor, cudaSupported, nvidiaDriverReport, REQUIRED_CUDA };
   main().catch((err) => die(err && err.message ? err.message : String(err)));
 } else {
-  module.exports = { downloadWithProgress };
+  module.exports = { downloadWithProgress, findInstallerApp, linuxTagCandidates, pickFlavor, cudaSupported, nvidiaDriverReport, REQUIRED_CUDA };
 }

@@ -74,13 +74,13 @@ cli-anything-acloudviewer check
 pip install cli-anything-acloudviewer            # PyPI
 pip install "git+https://github.com/Asher-1/CLI-Anything.git#subdirectory=acloudviewer/agent-harness"
 
-# 2. Install the ACloudViewer binary (auto-detects platform + NVIDIA GPU)
-cli-anything-acloudviewer install auto           # installs whatever is missing
-cli-anything-acloudviewer install app            # CUDA build when GPU present
-cli-anything-acloudviewer install app --cpu-only # smaller CPU-only build
+# 2. Install the ACloudViewer binary (auto-detects platform; CPU by default)
+cli-anything-acloudviewer install auto           # installs whatever is missing (CPU)
+cli-anything-acloudviewer install app            # CPU build (default)
+cli-anything-acloudviewer install app --cuda     # CUDA build; driver checked before download
 cli-anything-acloudviewer install app --channel beta
 cli-anything-acloudviewer install app --from-file /path/to/ACloudViewer-*.run   # .run/.dmg/.exe
-cli-anything-acloudviewer install wheel [--cpu-only]   # optional cloudViewer Python wheel
+cli-anything-acloudviewer install wheel [--cuda]        # optional cloudViewer Python wheel (CPU default; --cuda driver-checked)
 
 # One-line script alternative (Linux / macOS): harness install + check + MCP
 # client registration; ACV_SKIP_CLIENTS=1 skips registration
