@@ -142,7 +142,7 @@ python3 docs/automation/scripts/verify_docs_site.py
 python3 docs/automation/scripts/check_workflow_limits.py
 
 # Version copies agree with libs/cloudViewer/version.txt
-python3 scripts/sync_version.py --check
+python3 util/sync_version.py --check
 ```
 
 All four run in the `docs-guards` job before the documentation build starts,
@@ -306,7 +306,7 @@ stylesheet and script 404s.
 ## ✅ Pre-merge checklist
 
 - [ ] `python3 docs/automation/scripts/check_workflow_limits.py`
-- [ ] `python3 scripts/sync_version.py --check`
+- [ ] `python3 util/sync_version.py --check`
 - [ ] `bash docs/automation/scripts/test_deploy_unified_docs.sh`
 - [ ] `python3 docs/automation/scripts/verify_docs_site.py`
 - [ ] `cd docs && python make_docs.py --sphinx --strict` (0 warnings)

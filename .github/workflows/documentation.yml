@@ -48,7 +48,7 @@ jobs:
         run: python3 docs/automation/scripts/check_workflow_limits.py
 
       - name: Version derivation from version.txt
-        run: python3 scripts/sync_version.py --check
+        run: python3 util/sync_version.py --check
 
       - name: Deploy script contract tests
         run: bash docs/automation/scripts/test_deploy_unified_docs.sh

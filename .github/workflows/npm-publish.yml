@@ -72,7 +72,63 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # ===========================================================================
+  # Gate: decide whether THIS completion is the last one.
+  #
+  # `workflow_run.workflows` is an OR list on GitHub's side -- the run fires
+  # once for EVERY listed workflow that completes, and GitHub offers no native
+  # "all of these finished" trigger. Measured on commit 1cf1fa06: 20 `npm
+  # publish` runs and 20 `Clean release` runs for one commit, ~35s each, all
+  # but the last recomputing an answer that could not have changed yet.
+  #
+  # Splitting the condition into its own job keeps it in one place: the work
+  # job simply `needs` it. Runs that fire early stop here in seconds.
+  #
+  # `github.event.workflow_run.head_sha` is the triggering commit. Under
+  # `workflow_run`, `GITHUB_SHA` is the default-branch head and would query
+  # the wrong commit entirely.
+  # ===========================================================================
+  uploaders-complete:
+    if: github.event_name == 'workflow_run'
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    permissions:
+      actions: read   # list the other uploaders' runs for this commit
+      contents: read  # checkout util/
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: util
+          sparse-checkout-cone-mode: false
+
+      - name: All uploaders finished for this commit?
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          sha="${{ github.event.workflow_run.head_sha }}"
+          rc=0
+          python3 util/check_uploaders_complete.py --sha "$sha" || rc=$?
+          case "$rc" in
+            0) echo "ready=true"  >> "$GITHUB_OUTPUT" ;;
+            2) echo "ready=false" >> "$GITHUB_OUTPUT"
+               echo "Another uploader is still running; stopping early." ;;
+            *) echo "::error::uploader status query failed (exit $rc)"
+               exit "$rc" ;;
+          esac
+
   publish:
+    needs: [uploaders-complete]
+    # `always()` keeps non-workflow_run events working: for push/release/
+    # dispatch the gate is skipped, and `needs` would otherwise skip this job
+    # too. Cancellation still propagates.
+    if: |
+      always() && !cancelled() &&
+      (needs.uploaders-complete.result == 'skipped' ||
+       needs.uploaders-complete.outputs.ready == 'true')
+
     runs-on: ubuntu-latest
     # Job-level so step `if`s and the Summary can read them. SKIP/MODE get
     # overwritten by the resolve step via GITHUB_ENV; declaring them here
@@ -100,7 +156,7 @@ jobs:
       # never ship a package whose version disagrees with the release.
       - name: Derive package version from version.txt
         run: |
-          python3 scripts/sync_version.py
+          python3 util/sync_version.py
           echo "package version now: $(node -p "require('./npm/package.json').version")"
 
       - uses: actions/setup-node@v4

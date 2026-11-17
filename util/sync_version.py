@@ -30,8 +30,8 @@ the build. Three kinds of literal look like version numbers but must stay:
    describe what happened. Rewriting them would falsify history.
 
 Usage:
-    python3 scripts/sync_version.py            # apply derived values
-    python3 scripts/sync_version.py --check    # verify only; exit 1 on drift
+    python3 util/sync_version.py            # apply derived values
+    python3 util/sync_version.py --check    # verify only; exit 1 on drift
 """
 
 from __future__ import annotations
@@ -223,7 +223,7 @@ def main() -> int:
         print()
         if args.check:
             print(
-                "Version drift detected. Run 'python3 scripts/sync_version.py' "
+                "Version drift detected. Run 'python3 util/sync_version.py' "
                 "to derive these from version.txt.",
                 file=sys.stderr,
             )

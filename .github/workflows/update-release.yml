@@ -20,13 +20,43 @@ concurrency:
 jobs:
  clean-release:
     permissions:
-      contents: write  # Release upload
+      actions: read     # list the other uploaders' runs for this commit
+      contents: write   # Release upload
     env:
       GH_TOKEN: ${{ github.token }}
     runs-on: ubuntu-latest
     steps:
+      # ── Gate: only the LAST uploader's completion should clean up ───────
+      #
+      # `workflow_run.workflows` fires once per listed workflow that
+      # completes (OR semantics, not AND). Measured on commit 1cf1fa06: 20
+      # runs of this workflow for one commit. The cleanup below is idempotent,
+      # so this was never a correctness bug -- but 19 runs each paid for a
+      # runner to redo work that could not have changed yet.
+      #
+      # `github.event.workflow_run.head_sha` is the triggering commit;
+      # `GITHUB_SHA` here is the default-branch head and would be wrong.
       - uses: actions/checkout@v4
+
+      - name: All uploaders finished for this commit?
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          rc=0
+          python3 util/check_uploaders_complete.py \
+            --sha "${{ github.event.workflow_run.head_sha }}" || rc=$?
+          case "$rc" in
+            0) ;;                                   # all done: continue
+            2) echo "Another uploader is still running; stopping early."
+               echo "skip=true" >> "$GITHUB_OUTPUT" ;;
+            *) echo "::error::uploader status query failed (exit $rc)"
+               exit "$rc" ;;
+          esac
+
       - name: Clean old release assets
+        if: steps.gate.outputs.skip != 'true'
         run: |
           # Total assets from each main branch commmit:
           # Macos -> Ubuntu -> Windows
