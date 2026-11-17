@@ -334,6 +334,17 @@ jobs:
             fi
           fi
           
+          # Inject the latest stable version into 404.html so the 404
+          # fallback page can redirect legacy flat /documentation/ deep links
+          # (e.g. /documentation/getting_started/build_from_source.html) to
+          # the equivalent page under /documentation/<latest-stable>/.
+          # The page itself gates on a vX.Y.Z|dev pattern, so a failed
+          # injection degrades safely to the plain 404 view.
+          if [ -f "website-deploy/404.html" ]; then
+            sed -i "s/@LATEST_STABLE_VERSION@/$WEBSITE_VERSION/g" website-deploy/404.html
+            echo "  ✅ Injected latest stable version ($WEBSITE_VERSION) into 404.html"
+          fi
+          
           # ============================================================
           # Ensure downloads_data.json is included
           # ============================================================
@@ -929,6 +940,87 @@ jobs:
               echo "  - $VERSION_NAME:      https://asher-1.github.io/ACloudViewer/documentation/$VERSION_NAME/"
             fi
           done
+          
+          # ============================================================
+          # Calibrate 404.html redirect version + generate sitemap.xml
+          # from the single source of truth: the version directories
+          # actually present in THIS deployment.
+          #
+          # The build job pre-fills 404.html with WEBSITE_VERSION (derived
+          # from `gh release list`), which can drift from the archives that
+          # really got deployed (e.g. a release published without its docs
+          # archive). Here we overwrite that pre-fill with a
+          # verified-existing version, and regenerate sitemap.xml from the
+          # same set, so neither file ever carries hardcoded versions.
+          # ============================================================
+          echo ""
+          echo "🔧 Calibrating 404.html redirect + generating sitemap.xml"
+          
+          VERSION_DIRS=$(ls -d unified-deploy/documentation/v*/ 2>/dev/null | xargs -n1 basename 2>/dev/null | sort -V || true)
+          CALIBRATED_VERSION=""
+          if [ -n "$VERSION_DIRS" ]; then
+            CALIBRATED_VERSION=$(echo "$VERSION_DIRS" | tail -1)
+          elif [ -d "unified-deploy/documentation/dev" ]; then
+            CALIBRATED_VERSION="dev"
+          fi
+          
+          if [ -n "$CALIBRATED_VERSION" ]; then
+            echo "  Verified newest deployed version: $CALIBRATED_VERSION"
+            # Overwrite the pre-filled value regardless of what it was
+            # (placeholder or gh-release-list-derived). The JS gate in
+            # 404.html only redirects for vX.Y.Z|dev values, so this keeps
+            # the redirect pointed at a directory that really exists.
+            if [ -f "unified-deploy/404.html" ]; then
+              sed -i "s|var version = '[^']*';|var version = '$CALIBRATED_VERSION';|" unified-deploy/404.html
+              echo "  ✅ 404.html redirect version calibrated to $CALIBRATED_VERSION"
+            fi
+            # Keep the version-switcher metadata in sync with the same source.
+            echo "$CALIBRATED_VERSION" > unified-deploy/documentation/.latest_stable_version
+          else
+            echo "  ⚠️  No version directories found; leaving 404.html uncalibrated"
+          fi
+          
+          # Generate sitemap.xml from the deployment itself (self-adaptive,
+          # no hardcoded versions). Deep pages are listed for the latest
+          # stable version only, to avoid cross-version duplicate-content
+          # competition; older archives are listed at their version root.
+          TODAY=$(date +%F)
+          SITE="https://asher-1.github.io/ACloudViewer"
+          {
+            echo '<?xml version="1.0" encoding="UTF-8"?>'
+            echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            emit_url() {
+              echo "    <url>"
+              echo "        <loc>$1</loc>"
+              echo "        <lastmod>$TODAY</lastmod>"
+              echo "        <changefreq>$2</changefreq>"
+              echo "        <priority>$3</priority>"
+              echo "    </url>"
+            }
+            emit_url "$SITE/" weekly 1.0
+            if [ -n "$CALIBRATED_VERSION" ]; then
+              DOC_BASE="$SITE/documentation/$CALIBRATED_VERSION"
+              emit_url "$DOC_BASE/" weekly 0.9
+              for DOC_PAGE in getting_started/introduction.html getting_started/build_from_source.html getting_started/quickstart.html getting_started/installation.html python_api/index.html cpp_api/index.html tutorial/index.html; do
+                if [ -f "unified-deploy/documentation/$CALIBRATED_VERSION/$DOC_PAGE" ]; then
+                  emit_url "$DOC_BASE/$DOC_PAGE" weekly 0.7
+                fi
+              done
+            fi
+            for VERSION_DIR in unified-deploy/documentation/v*/; do
+              if [ -d "$VERSION_DIR" ]; then
+                VERSION_NAME=$(basename "$VERSION_DIR")
+                if [ "$VERSION_NAME" != "$CALIBRATED_VERSION" ]; then
+                  emit_url "$SITE/documentation/$VERSION_NAME/" monthly 0.4
+                fi
+              fi
+            done
+            if [ -d "unified-deploy/documentation/dev" ]; then
+              emit_url "$SITE/documentation/dev/" weekly 0.5
+            fi
+            echo '</urlset>'
+          } > unified-deploy/sitemap.xml
+          echo "  ✅ sitemap.xml generated with $(grep -c '<loc>' unified-deploy/sitemap.xml) URLs"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
       
       # ============================================================================

@@ -28,6 +28,7 @@
 #include "aicore/rmbg_capi.h"
 #include "aicore/sam3_capi.h"
 #include "aicore/sam3d_capi.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAICoreUiHelper.h"
 #include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAssetIntegrity.h"

@@ -31,6 +31,7 @@
 #include "aicore/inference_log.h"
 #include "aicore/trellis_capi.h"
 #endif
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAICoreUiHelper.h"
 #include "ecvAICoreDeviceUiHelper.h"
 #include "ecvPersistentSettings.h"

@@ -599,8 +599,9 @@ int main(int argc, char** argv) {
     // outputs CPU vs backend exactly as the shipped pipeline consumes them.
     ggml_tensor* argmaxIndex = nullptr;
     ggml_tensor* argmaxProb = nullptr;
-    const bool wantArgmaxHead = !det && !layout && !cls &&
-                                std::getenv("AICORE_OCR_PROBE_ARGMAX") != nullptr;
+    const bool wantArgmaxHead =
+            !det && !layout && !cls &&
+            std::getenv("AICORE_OCR_PROBE_ARGMAX") != nullptr;
     if (wantArgmaxHead) {
         ggml_tensor* out = output;
         if (!ggml_is_contiguous(out)) out = ggml_cont(ctx, out);
@@ -608,16 +609,14 @@ int main(int argc, char** argv) {
         const int64_t rows = ggml_nelements(out) / vocab;
         ggml_tensor* flat = ggml_reshape_2d(ctx, out, vocab, rows);
         argmaxIndex = ggml_argmax(ctx, flat);
-        argmaxProb = ggml_get_rows(
-                ctx,
-                ggml_reshape_3d(ctx, out, 1, vocab, rows),
-                ggml_reshape_2d(ctx, argmaxIndex, 1, rows));
+        argmaxProb =
+                ggml_get_rows(ctx, ggml_reshape_3d(ctx, out, 1, vocab, rows),
+                              ggml_reshape_2d(ctx, argmaxIndex, 1, rows));
         ggml_set_output(argmaxIndex);
         ggml_set_output(argmaxProb);
         outputs.push_back(argmaxIndex);
         outputs.push_back(argmaxProb);
-        std::fprintf(stderr,
-                     "[argmax-head] vocab=%lld rows=%lld\n",
+        std::fprintf(stderr, "[argmax-head] vocab=%lld rows=%lld\n",
                      (long long)vocab, (long long)rows);
     }
     aicore::ocr::OcrGraphExec exec;
@@ -872,8 +871,8 @@ int main(int argc, char** argv) {
             std::fwrite(prb.data(), sizeof(float), nProb, f);
             std::fclose(f);
         }
-        std::fprintf(stderr, "[argmax-head] dumped %zu idx / %zu prob\n",
-                     nIdx, nProb);
+        std::fprintf(stderr, "[argmax-head] dumped %zu idx / %zu prob\n", nIdx,
+                     nProb);
     }
     // Test-only reliable marked-tensor dump: OUTPUT-flagged tensors survive
     // until the exec is freed, so these sums are the trustworthy b1/b2
@@ -908,27 +907,26 @@ int main(int argc, char** argv) {
                 for (int si = 0; si < 3; ++si) {
                     ggml_tensor* src = t->src[si];
                     if (!src) continue;
-                    std::fprintf(stderr,
-                                 "[m%s-z%zu-src%d] op=%s ne=%lld,%lld,%lld,%lld "
-                                 "nb=%zu,%zu,%zu,%zu type=%d buf=%s host=%d "
-                                 "data=%p view_src=%p contiguous=%d "
-                                 "contig_channels=%d\n",
-                                 tag, mi, si, ggml_op_desc(src),
-                                 (long long)src->ne[0], (long long)src->ne[1],
-                                 (long long)src->ne[2], (long long)src->ne[3],
-                                 (size_t)src->nb[0], (size_t)src->nb[1],
-                                 (size_t)src->nb[2], (size_t)src->nb[3],
-                                 (int)src->type,
-                                 src->buffer
-                                         ? ggml_backend_buffer_name(src->buffer)
-                                         : "(null)",
-                                 src->buffer
-                                         ? (int)ggml_backend_buffer_is_host(
-                                                   src->buffer)
-                                         : -1,
-                                 (void*)src->data, (void*)src->view_src,
-                                 (int)ggml_is_contiguous(src),
-                                 (int)ggml_is_contiguous_channels(src));
+                    std::fprintf(
+                            stderr,
+                            "[m%s-z%zu-src%d] op=%s ne=%lld,%lld,%lld,%lld "
+                            "nb=%zu,%zu,%zu,%zu type=%d buf=%s host=%d "
+                            "data=%p view_src=%p contiguous=%d "
+                            "contig_channels=%d\n",
+                            tag, mi, si, ggml_op_desc(src),
+                            (long long)src->ne[0], (long long)src->ne[1],
+                            (long long)src->ne[2], (long long)src->ne[3],
+                            (size_t)src->nb[0], (size_t)src->nb[1],
+                            (size_t)src->nb[2], (size_t)src->nb[3],
+                            (int)src->type,
+                            src->buffer ? ggml_backend_buffer_name(src->buffer)
+                                        : "(null)",
+                            src->buffer ? (int)ggml_backend_buffer_is_host(
+                                                  src->buffer)
+                                        : -1,
+                            (void*)src->data, (void*)src->view_src,
+                            (int)ggml_is_contiguous(src),
+                            (int)ggml_is_contiguous_channels(src));
                 }
             }
         }
@@ -946,9 +944,9 @@ int main(int argc, char** argv) {
         ggml_context* ctx2 = ggml_init({tensorSize * 8, nullptr,
                                         /*no_alloc=*/true});
         std::vector<ggml_tensor*> marked2;
-        ggml_tensor* input2 = ggml_new_tensor_4d(ctx2, GGML_TYPE_F32,
-                                                 inputShape[3], inputShape[2],
-                                                 inputShape[1], inputShape[0]);
+        ggml_tensor* input2 =
+                ggml_new_tensor_4d(ctx2, GGML_TYPE_F32, inputShape[3],
+                                   inputShape[2], inputShape[1], inputShape[0]);
         ggml_set_input(input2);
         weights.resetFoldPool();
         ggml_tensor* output2 = aicore::ocr::buildGraph(
@@ -986,8 +984,7 @@ int main(int argc, char** argv) {
         aicore::ocr::computeGraph(plan, exec2, graph2);
         const size_t n2 = static_cast<size_t>(ggml_nelements(output2));
         std::vector<float> got2(n2);
-        ggml_backend_tensor_get(output2, got2.data(), 0,
-                                sizeof(float) * n2);
+        ggml_backend_tensor_get(output2, got2.data(), 0, sizeof(float) * n2);
         const std::string p2 = std::string(dumpPath) + ".build2";
         if (FILE* f = std::fopen(p2.c_str(), "wb")) {
             std::fwrite(got2.data(), sizeof(float), n2, f);

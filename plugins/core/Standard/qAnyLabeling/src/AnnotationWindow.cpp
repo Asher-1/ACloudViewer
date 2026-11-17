@@ -1355,7 +1355,8 @@ void AnnotationWindow::createUi() {
     m_objectsLockButton = new QToolButton(objectsHeader);
     m_objectsLockButton->setObjectName(
             QStringLiteral("AnnotationShapesLockToggle"));
-    m_objectsLockButton->setIcon(QIcon(QStringLiteral(":/CC/plugin/qAnyLabeling/images/lock.svg")));
+    m_objectsLockButton->setIcon(
+            QIcon(QStringLiteral(":/CC/plugin/qAnyLabeling/images/lock.svg")));
     m_objectsLockButton->setAutoRaise(true);
     m_objectsLockButton->setCheckable(true);
     m_objectsLockButton->setToolTip(tr("Lock/unlock all shapes"));

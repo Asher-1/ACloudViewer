@@ -43,6 +43,7 @@
 #include "CVLog.h"
 #include "RAMVideoWidget.h"
 #include "aicore/backend_capi.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAICoreUiHelper.h"
 #include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAssetIntegrity.h"

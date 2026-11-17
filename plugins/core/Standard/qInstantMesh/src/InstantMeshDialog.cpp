@@ -26,6 +26,7 @@
 #include <functional>
 
 #include "aicore/inference_log.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAICoreMeshViewer.h"
 #include "ecvAICoreUiHelper.h"
 #include "ecvAICoreDeviceUiHelper.h"

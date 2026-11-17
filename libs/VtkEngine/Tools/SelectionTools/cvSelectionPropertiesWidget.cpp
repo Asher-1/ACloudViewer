@@ -863,8 +863,8 @@ void cvSelectionPropertiesWidget::setupSelectedDataHeader() {
     // Action buttons (ParaView-style with icons)
 
     // Freeze button (ParaView: converts selection to a frozen representation)
-    m_freezeButton = new QPushButton(QIcon(":/Resources/images/svg/pq/pqLock.svg"),
-                                     tr("Freeze"));
+    m_freezeButton = new QPushButton(
+            QIcon(":/Resources/images/svg/pq/pqLock.svg"), tr("Freeze"));
     m_freezeButton->setToolTip(tr(
             "Freeze the current selection (convert to independent dataset)"));
     m_freezeButton->setFixedHeight(25);
@@ -1219,7 +1219,8 @@ void cvSelectionPropertiesWidget::setupSelectionDisplaySection() {
 
     // Cell Labels button with dropdown menu (ParaView: pqCellData.svg icon)
     m_cellLabelsButton = new QPushButton(tr("Cell Labels"));
-    m_cellLabelsButton->setIcon(QIcon(":/Resources/images/svg/pq/pqCellData.svg"));
+    m_cellLabelsButton->setIcon(
+            QIcon(":/Resources/images/svg/pq/pqCellData.svg"));
     m_cellLabelsButton->setToolTip(
             tr("Set the array to label selected cells with"));
     m_cellLabelsMenu = new QMenu(this);
@@ -1451,7 +1452,8 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
         addIcon = QIcon(":/Resources/images/svg/pq/pqPlus.svg");
     }
     if (addIcon.isNull()) {
-        addIcon = QIcon(":/Resources/images/svg/ecv/ecvPlus.svg");  // Final fallback
+        addIcon = QIcon(
+                ":/Resources/images/svg/ecv/ecvPlus.svg");  // Final fallback
     }
     m_addSelectionButton->setIcon(addIcon);
     m_addSelectionButton->setToolTip(tr("Add active selection"));
@@ -1466,7 +1468,8 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
     m_removeSelectionButton = new QToolButton();
     QIcon removeIcon(":/Resources/images/svg/pq/pqMinus.svg");
     if (removeIcon.isNull()) {
-        removeIcon = QIcon(":/Resources/images/svg/ecv/ecvMinus.svg");  // Fallback
+        removeIcon =
+                QIcon(":/Resources/images/svg/ecv/ecvMinus.svg");  // Fallback
     }
     m_removeSelectionButton->setIcon(removeIcon);
     m_removeSelectionButton->setToolTip(
@@ -1486,7 +1489,8 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
     m_removeAllSelectionsButton = new QToolButton();
     QIcon trashIcon(":/Resources/images/svg/small/smallTrash.svg");
     if (trashIcon.isNull()) {
-        trashIcon = QIcon(":/Resources/images/svg/ecv/ecvdelete.svg");  // Fallback
+        trashIcon =
+                QIcon(":/Resources/images/svg/ecv/ecvdelete.svg");  // Fallback
     }
     m_removeAllSelectionsButton->setIcon(trashIcon);
     m_removeAllSelectionsButton->setToolTip(tr("Remove all saved selections"));

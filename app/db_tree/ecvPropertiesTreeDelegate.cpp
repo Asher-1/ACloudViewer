@@ -2435,8 +2435,8 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
                     comboBox->addItem(s_rgbColor);
                     comboBox->setItemIcon(
                             comboBox->count() - 1,
-                            QIcon(QString::fromUtf8(
-                                    ":/Resources/images/svg/type/typeRgbCcolor.svg")));
+                            QIcon(QString::fromUtf8(":/Resources/images/svg/"
+                                                    "type/typeRgbCcolor.svg")));
                 }
                 if (m_currentObject->hasScalarFields()) {
                     comboBox->addItem(s_sfColor);

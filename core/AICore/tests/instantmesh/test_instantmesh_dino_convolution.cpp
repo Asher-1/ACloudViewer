@@ -112,7 +112,7 @@ bool linear_check(ggml_backend_t backend, ggml_type type) {
         }
     std::printf("DINO linear %s max_abs=%.9g\n", ggml_type_name(type), maximum);
     return maximum < aicore_test::oracle_max_abs_tolerance(
-                           backend, /*gemm_f32=*/type == GGML_TYPE_F32);
+                             backend, /*gemm_f32=*/type == GGML_TYPE_F32);
 }
 
 bool check(ggml_backend_t backend, ggml_type type) {
@@ -241,7 +241,7 @@ bool check(ggml_backend_t backend, ggml_type type) {
             }
     std::printf("DINO patch %s max_abs=%.9g\n", ggml_type_name(type), maximum);
     return maximum < aicore_test::oracle_max_abs_tolerance(
-                           backend, /*gemm_f32=*/type == GGML_TYPE_F32);
+                             backend, /*gemm_f32=*/type == GGML_TYPE_F32);
 }
 }  // namespace
 

@@ -41,6 +41,7 @@
 #include "aicore/gaussian_capi.h"
 #include "aicore/inference_log.h"
 #include "aicore/model_catalog_capi.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAICoreUiHelper.h"
 #include "ecvAICoreDeviceUiHelper.h"
 #include "ecvClickableImageLabel.h"
