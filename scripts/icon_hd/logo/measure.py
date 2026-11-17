@@ -2,16 +2,21 @@
 
 Why this exists
 ---------------
-The repo's ``logo_256.svg`` and ``cloudviewer_256.svg`` are not vector art: they
-are thin SVG wrappers around base64-encoded 1024x1024 PNGs (1.48 MB and 559 KB
-respectively).  Those embedded rasters are the only high-resolution record of
-the original design, so they are the ground truth this whole folder is derived
-from.
+The only high-resolution record of the original designs is a pair of 1024x1024
+rasters.  For ACloudViewer that raster is now stored directly as
+``masters/acloudviewer_1024_clean.png``; it was recovered from a thin SVG wrapper
+(``logo_256.svg``, 1.48 MB of base64 around the PNG) that has since been deleted,
+because it was 0 % vector, referenced by nothing, and shipped in the repository.
 
-This module pulls them back out of git, measures the geometry that ``geometry.py``
-states as constants, and extracts the 80-point particle field verbatim.  Running
-it is optional -- its output is committed as JSON -- but it makes every number
-in ``geometry.py`` reproducible instead of folklore.
+CloudViewer's master lives in ``masters/cloudviewer_1024.png``, likewise
+recovered from a 559 KB base64 wrapper (``cloudviewer_256.svg``) which has since
+been replaced by genuine vector art at that path.
+
+Those rasters are the ground truth this whole folder is derived from.  This
+module measures the geometry that ``geometry.py`` states as constants and
+extracts the 80-point particle field verbatim.  Running it is optional -- its
+output is committed as JSON -- but it makes every number in ``geometry.py``
+reproducible instead of folklore.
 
 Usage:
     python3 -m scripts.icon_hd.logo.measure            # print measurements
@@ -38,19 +43,30 @@ PARTICLES_JSON = HERE / "particles.json"
 
 # The two wrappers that still carry the original 1024 px artwork.
 MASTER_SOURCES = {
-    "acv": "app/Resources/images/icon/logo_256.svg",
-    "cv": "app/Resources/images/icon/cloudviewer_256.svg",
+    "acv": "scripts/icon_hd/logo/masters/acloudviewer_1024_clean.png",
+    "cv": "scripts/icon_hd/logo/masters/cloudviewer_1024.png",
 }
 
 
 def extract_master(kind: str) -> Image.Image:
-    """Pull the embedded 1024x1024 raster out of the legacy SVG wrapper."""
+    """Load the 1024x1024 master for one product mark.
+
+    ACloudViewer reads the recovered PNG directly.  CloudViewer still comes out
+    of a legacy SVG wrapper, because that is the only place its 1024 px artwork
+    survives in git -- the wrapper is base64 around a raster, so the payload has
+    to be decoded rather than read as SVG.
+    """
     rel = MASTER_SOURCES[kind]
+    path = ROOT / rel
+
+    if rel.endswith(".png"):
+        return Image.open(path).convert("RGBA")
+
     try:
         raw = subprocess.check_output(["git", "show", f"HEAD:{rel}"], cwd=ROOT)
     except subprocess.CalledProcessError:
         # Fall back to the working tree (already restored in this repo).
-        raw = (ROOT / rel).read_bytes()
+        raw = path.read_bytes()
     text = raw.decode("utf-8", "replace")
     blobs = re.findall(r"base64,([A-Za-z0-9+/=\s]+)", text)
     if not blobs:

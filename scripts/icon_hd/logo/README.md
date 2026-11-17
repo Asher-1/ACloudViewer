@@ -6,12 +6,14 @@ that back that statement.
 
 ## What was measured, not assumed
 
-Both high-resolution masters were recovered from the legacy `*.svg` wrappers in
-git (`logo_256.svg` was 1.48 MB of base64 around a 1024 px PNG; `cloudviewer_256.svg`
-was 559 KB of the same). They now live in `masters/` as the source of truth.
+Both high-resolution masters were recovered from legacy `*.svg` wrappers in git
+(ACloudViewer's was 1.48 MB of base64 around a 1024 px PNG; CloudViewer's was
+559 KB of the same). They now live in `masters/` as the source of truth, and the
+wrappers are gone: ACloudViewer's was 0 % vector and referenced by nothing, and
+CloudViewer's has been replaced at its own path by genuine vector art.
 
-`measure.py` reads them and prints the geometry that `geometry.py` states as
-constants, so every number below is reproducible:
+`measure.py` reads the masters and prints the geometry that `geometry.py` states
+as constants, so every number below is reproducible:
 
 | Mark | Property | Measured |
 |---|---|---|
@@ -79,12 +81,45 @@ python3 -m scripts.icon_hd.logo.measure --write             # refresh particles.
 ```
 
 Dependencies: `cairosvg`, `Pillow`, `numpy`, `scipy`, `scikit-image`, `opencv-python`.
+Check them with `python3 scripts/icon_hd/icons.py doctor`.
 
-## Dependencies on the repo's own toolchain
+## The toolchain entry point
 
-`scripts/icon_hd/lossless.py` and `redesign.py` need `PySide6`, `potrace` and
-the `potrace` binary. None are installed in this environment, so this folder does
-not call them; it uses cairosvg plus OpenCV/scikit-image instead.
+Everything in this folder is driven by one command:
+
+```bash
+python3 scripts/icon_hd/icons.py doctor   # what is installed, what is missing
+python3 scripts/icon_hd/icons.py build    # render all 272 tool icons into app/
+python3 scripts/icon_hd/icons.py audit    # before/after review page
+python3 scripts/icon_hd/icons.py verify   # qrc + XML + raster-in-svg + platforms
+python3 scripts/icon_hd/icons.py logo measure   # product-mark geometry
+```
+
+Tool icons are documented in [`../TOOLICONS.md`](../TOOLICONS.md); this file
+covers only the product marks, which are a different problem (painted artwork,
+refined rather than redrawn).
+
+## What was removed and why
+
+A previous pipeline (`lossless.py`, `redesign.py`, `fit.py`, `gallery.py`,
+`compare4k.py`, `icon_hd.py`) transcribed raster icons into SVG fixtures and
+needed `PySide6` and `potrace`. It was deleted for three independent reasons:
+
+* `icons.txt` listed 238 repo PNGs; **0 of them still exist**, because the icon
+  set is now SVG. The pipeline would have written new PNGs to dead paths.
+* Its dependencies were never installed here, so it could not run at all.
+* The tool icons are now drawn from a design system (`logo/iconset.py`), which
+  makes transcription the wrong method regardless of whether it ran.
+
+`orig/` held the 243 source fixtures for that pipeline. Every one of them is
+byte-identical to a blob that still exists in git history, so they were removed
+from tracking (kept on disk, listed in `.gitignore`) rather than kept in the
+repository. To restore any of them:
+
+```bash
+git log --all --format=%H -- app/Resources/images/Plane.png | head -1
+git show <that-commit>:app/Resources/images/Plane.png > /tmp/Plane.png
+```
 
 ## Files
 
