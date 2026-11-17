@@ -34,7 +34,7 @@
         <string/>
        </property>
        <property name="pixmap">
-        <pixmap resource="../MainWindow.qrc">:/Resources/images/icon/logo.png</pixmap>
+        <pixmap resource="../MainWindow.qrc">:/Resources/images/icon/logo_256.png</pixmap>
        </property>
        <property name="scaledContents">
         <bool>true</bool>

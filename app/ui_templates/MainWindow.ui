@@ -2670,7 +2670,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionLabelConnectedComponents">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/ecvCCExtract.png</normaloff>:/Resources/images/ecvCCExtract.png</iconset>
+     <normaloff>:/Resources/images/ecvCCExtract.svg</normaloff>:/Resources/images/ecvCCExtract.svg</iconset>
    </property>
    <property name="text">
     <string>Label Connected Comp.</string>
@@ -2775,7 +2775,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionExportPlaneInfo">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/export.png</normaloff>:/Resources/images/export.png</iconset>
+     <normaloff>:/Resources/images/export.svg</normaloff>:/Resources/images/export.svg</iconset>
    </property>
    <property name="text">
     <string>Export plane info</string>
@@ -2894,7 +2894,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionScalarFieldArithmetic">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/pqCalculator.png</normaloff>:/Resources/images/svg/pqCalculator.png</iconset>
+     <normaloff>:/Resources/images/svg/pqCalculator.svg</normaloff>:/Resources/images/svg/pqCalculator.svg</iconset>
    </property>
    <property name="text">
     <string>Arithmetic</string>
@@ -3276,7 +3276,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionSemanticAnnotation">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/pqFaceSetData.png</normaloff>:/Resources/images/svg/pqFaceSetData.png</iconset>
+     <normaloff>:/Resources/images/svg/pqFaceSetData.svg</normaloff>:/Resources/images/svg/pqFaceSetData.svg</iconset>
    </property>
    <property name="text">
     <string>Semantic Annotation</string>
@@ -3411,7 +3411,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionProbeFilter">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/pqProbeLocation.png</normaloff>:/Resources/images/svg/pqProbeLocation.png</iconset>
+     <normaloff>:/Resources/images/svg/pqProbeLocation.svg</normaloff>:/Resources/images/svg/pqProbeLocation.svg</iconset>
    </property>
    <property name="text">
     <string>Probe</string>
@@ -3891,7 +3891,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionCreateSinglePointCloud">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/pqSolidColor.png</normaloff>:/Resources/images/svg/pqSolidColor.png</iconset>
+     <normaloff>:/Resources/images/svg/pqSolidColor.svg</normaloff>:/Resources/images/svg/pqSolidColor.svg</iconset>
    </property>
    <property name="text">
     <string>Create single point cloud</string>

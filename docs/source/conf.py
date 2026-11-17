@@ -549,6 +549,26 @@ import warnings
 warnings.filterwarnings('ignore', category=UserWarning, module='nbsphinx')
 warnings.filterwarnings('ignore', category=FutureWarning)
 
+# -- linkcheck ---------------------------------------------------------------
+# Targets that only exist in a full deployment, not in a Sphinx-only build.
+# Verified live (all return 200):
+#   /documentation/v3.9.4/cpp_api/api/index.html   (Doxygen output, copied by
+#                                                   make_docs --doxygen)
+#   /documentation/v3.9.4/python_api/cloudViewer.io.html  (pybind-generated)
+#   /documentation/                                (the deployed root redirect)
+# Without these the linkcheck builder reports them as broken on any machine
+# that builds Sphinx without Doxygen or the Python bindings.
+linkcheck_ignore = [
+    r".*/cpp_api/api/.*",
+    r".*/python_api/.*",
+    r"^/documentation/?$",
+]
+
+# External hosts that rate-limit CI runners and would otherwise make the
+# linkcheck result depend on how many parallel requests we happen to send.
+linkcheck_anchors = False
+linkcheck_timeout = 20
+
 # Pygments (2.19) ships no lexer named "mermaid", but plugin READMEs use
 # ```mermaid fences for their flow diagrams. Sphinx warns "Pygments lexer
 # name 'mermaid' is not known" and falls back to plain text anyway. Registering

@@ -475,7 +475,7 @@
      <widget class="QWidget" name="coneTab">
       <attribute name="icon">
        <iconset resource="../MainWindow.qrc">
-        <normaloff>:/Resources/images/cone.png</normaloff>:/Resources/images/cone.png</iconset>
+        <normaloff>:/Resources/images/cone.svg</normaloff>:/Resources/images/cone.svg</iconset>
       </attribute>
       <attribute name="title">
        <string>Cone</string>

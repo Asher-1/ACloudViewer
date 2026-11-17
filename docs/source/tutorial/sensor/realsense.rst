@@ -230,9 +230,9 @@ Example Code
 ^^^^^^^^^^^^
 
 For complete examples, see:
-- `examples/Python/reconstruction_system/sensors/realsense_recorder.py <../../../examples/Python/reconstruction_system/sensors/realsense_recorder.py>`_
-- `examples/Python/reconstruction_system/sensors/realsense_pcd_visualizer.py <../../../examples/Python/reconstruction_system/sensors/realsense_pcd_visualizer.py>`_
-- `examples/Python/io/realsense_io.py <../../../examples/Python/io/realsense_io.py>`_
+- `examples/Python/reconstruction_system/sensors/realsense_recorder.py <https://github.com/Asher-1/ACloudViewer/blob/main/examples/Python/reconstruction_system/sensors/realsense_recorder.py>`_
+- `examples/Python/reconstruction_system/sensors/realsense_pcd_visualizer.py <https://github.com/Asher-1/ACloudViewer/blob/main/examples/Python/reconstruction_system/sensors/realsense_pcd_visualizer.py>`_
+- `examples/Python/io/realsense_io.py <https://github.com/Asher-1/ACloudViewer/blob/main/examples/Python/io/realsense_io.py>`_
 
 .. seealso::
 

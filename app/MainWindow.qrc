@@ -15,8 +15,7 @@
         <file>Resources/images/theme.png</file>
         <file>Resources/images/close.png</file>
         <file>Resources/images/max.png</file>
-        <file>Resources/images/mini.png</file>
-        <file>Resources/images/icon/logo.png</file>
+        <file>Resources/images/mini.svg</file>
         <file>Resources/images/svg/type/typeGrayColor.svg</file>
         <file>Resources/images/svg/type/typeNormal.svg</file>
         <file>Resources/images/svg/type/typePositiveSF.svg</file>
@@ -29,7 +28,7 @@
         <file>Resources/images/svg/db/dbFileSymbol.svg</file>
         <file>Resources/images/dbLabelSymbol.png</file>
         <file>Resources/images/FullScreen.png</file>
-        <file>Resources/images/cone.png</file>
+        <file>Resources/images/cone.svg</file>
         <file>Resources/images/dish.png</file>
         <file>Resources/images/svg/ecv/ecvMinus.svg</file>
         <file>Resources/images/svg/ecv/ecvPlus.svg</file>
@@ -53,12 +52,12 @@
         <file>Resources/images/QTreeView/vline.png</file>
         <file>Resources/images/svg/ecv/ecvdelete.svg</file>
         <file>Resources/images/svg/ecv/ecvExit.svg</file>
-        <file>Resources/images/cloud.png</file>
+        <file>Resources/images/cloud.svg</file>
         <file>Resources/images/dbAreaLabelSymbol.png</file>
         <file>Resources/images/dbCalibratedImageSymbol.png</file>
         <file>Resources/images/svg/db/dbCamSensorSymbol.svg</file>
         <file>Resources/images/dbCloudSymbolLocked.png</file>
-        <file>Resources/images/dbContainerSymbol.png</file>
+        <file>Resources/images/dbContainerSymbol.svg</file>
         <file>Resources/images/dbContainerSymbol3.png</file>
         <file>Resources/images/dbContainerSymbolLocked.png</file>
         <file>Resources/images/svg/db/dbGBLSensorSymbol.svg</file>
@@ -142,7 +141,7 @@
         <file>Resources/images/svg/ecv/ecvCloudCloudDistance.svg</file>
         <file>Resources/images/svg/ecv/ecvCloudMeshDistance.svg</file>
         <file>Resources/images/svg/ecv/ecvDeleteSF.svg</file>
-        <file>Resources/images/ecvCCExtract.png</file>
+        <file>Resources/images/ecvCCExtract.svg</file>
         <file>Resources/images/svg/ecv/ecvSfArithmetic.svg</file>
         <file>Resources/images/svg/ecv/ecvBilateralFilter.svg</file>
         <file>Resources/images/svg/ecv/ecvFilterByValue.svg</file>
@@ -157,7 +156,7 @@
         <file>Resources/images/filter.png</file>
         <file>Resources/images/svg/ecv/ecvSor.svg</file>
         <file>Resources/images/annotations.png</file>
-        <file>Resources/images/ecvIntersection.png</file>
+        <file>Resources/images/ecvIntersection.svg</file>
         <file>Resources/images/svg/ecv/ecvUnion.svg</file>
         <file>Resources/images/small_save.png</file>
         <file>Resources/images/svg/ecv/ecvOrthoProjection.svg</file>
@@ -168,7 +167,7 @@
         <file>Resources/images/svg/pq/pqContours.svg</file>
         <file>Resources/images/Components_72px.png</file>
         <file>Resources/images/decimate.png</file>
-        <file>Resources/images/export.png</file>
+        <file>Resources/images/export.svg</file>
         <file>Resources/images/exportCloud.png</file>
         <file>Resources/images/settings.png</file>
         <file>Resources/images/subdivide.png</file>
@@ -177,13 +176,13 @@
         <file>Resources/images/vtkSmooth.png</file>
         <file>Resources/images/mesh4.png</file>
         <file>Resources/images/octree.png</file>
-        <file>Resources/images/svg/pqCalculator.png</file>
+        <file>Resources/images/svg/pqCalculator.svg</file>
         <file>Resources/images/svg/pqCamera.png</file>
         <file>Resources/images/svg/pqExitApp.png</file>
         <file>Resources/images/svg/pqFullscreen.png</file>
         <file>Resources/images/svg/pqGlyph.png</file>
         <file>Resources/images/svg/pqIsosurface.png</file>
-        <file>Resources/images/svg/pqProbeLocation.png</file>
+        <file>Resources/images/svg/pqProbeLocation.svg</file>
         <file>Resources/images/svg/pq/pqUndoCamera.svg</file>
         <file>Resources/images/svg/misc/logManager.svg</file>
         <file>Resources/images/svg/pq/pqRedoCamera.svg</file>
@@ -199,7 +198,7 @@
         <file>Resources/images/svg/pq/pqDelete.svg</file>
         <file>Resources/images/svg/pq/pqCloseView.svg</file>
         <file>Resources/images/svg/slice.png</file>
-        <file>Resources/images/svg/pqFaceSetData.png</file>
+        <file>Resources/images/svg/pqFaceSetData.svg</file>
         <file>Resources/images/svg/pqSideSetData.png</file>
         <file>Resources/images/svg/pqClip.png</file>
         <file>Resources/images/svg/pqEyeball.png</file>
@@ -290,7 +289,7 @@
         <file>Resources/images/svg/pq/pqResetSettings.svg</file>
         <file>Resources/images/svg/pqPaste.png</file>
         <file>Resources/images/svg/pq/pqInvert.svg</file>
-        <file>Resources/images/svg/pqSolidColor.png</file>
+        <file>Resources/images/svg/pqSolidColor.svg</file>
         <file>Resources/images/svg/pq/pqAutoApply.svg</file>
         <file>Resources/images/svg/pq/pqExtractSelection.svg</file>
         <file>Resources/images/svg/pq/pqPlotSelectionOverTime.svg</file>

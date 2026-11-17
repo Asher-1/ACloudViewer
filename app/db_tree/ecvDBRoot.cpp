@@ -222,7 +222,7 @@ private:
         const int containerIndex = mIconList.count();
         mIconList.append(
                 {QIcon(QStringLiteral(
-                         ":/Resources/images/dbContainerSymbol.png")),
+                         ":/Resources/images/dbContainerSymbol.svg")),
                  QIcon(QStringLiteral(
                          ":/Resources/images/dbContainerSymbolLocked.png"))});
 

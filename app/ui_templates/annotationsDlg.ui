@@ -391,7 +391,7 @@
           </property>
           <property name="icon">
            <iconset resource="../MainWindow.qrc">
-            <normaloff>:/Resources/images/ecvIntersection.png</normaloff>:/Resources/images/ecvIntersection.png</iconset>
+            <normaloff>:/Resources/images/ecvIntersection.svg</normaloff>:/Resources/images/ecvIntersection.svg</iconset>
           </property>
           <property name="shortcut">
            <string/>
