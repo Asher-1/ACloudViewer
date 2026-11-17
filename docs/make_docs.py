@@ -774,11 +774,14 @@ class JupyterDocsBuilder:
 class SphinxDocsBuilder:
     """Build main documentation and Python API using Sphinx."""
 
-    def __init__(self, current_file_dir, html_output_dir, is_release, parallel):
+    def __init__(self, current_file_dir, html_output_dir, is_release, parallel,
+                 strict=False):
         self.current_file_dir = current_file_dir
         self.html_output_dir = html_output_dir
         self.is_release = is_release
         self.parallel = parallel
+        # -W: a warning (broken image, unresolved link) fails the build.
+        self.strict = strict
 
     def run(self):
         """Run Sphinx to build HTML documentation."""
@@ -832,6 +835,10 @@ class SphinxDocsBuilder:
         else:
             cmd_args_today = []
 
+        # -W turns warnings into errors so a broken image reference or an
+        # unresolved link fails the build rather than shipping a 404.
+        cmd_args_strict = ["-W"] if self.strict else []
+
         if self.is_release:
             version_list = [
                 line.rstrip("\n").split(" ")[1]
@@ -844,7 +851,7 @@ class SphinxDocsBuilder:
                 "-j",
                 str(nproc), "-b", "html", "-D", "version=" + release_version,
                 "-D", "release=" + release_version
-            ] + cmd_args_today + [
+            ] + cmd_args_today + cmd_args_strict + [
                 source_dir,
                 build_dir,
             ]
@@ -862,7 +869,7 @@ class SphinxDocsBuilder:
                 "html",
                 "-D", "version=" + main_version,
                 "-D", "release=" + main_version,
-            ] + cmd_args_today + [
+            ] + cmd_args_today + cmd_args_strict + [
                 source_dir,
                 build_dir,
             ]
@@ -877,10 +884,14 @@ class SphinxDocsBuilder:
 
 
 def get_cloudviewer_version(pwd):
-    """Read CloudViewer version from version.txt."""
+    """Read the CloudViewer version from ``libs/cloudViewer/version.txt``.
+
+    ``version.txt`` is the single source of truth. No hardcoded fallback: a
+    stale literal silently stamps the wrong version into the built docs and
+    the Doxyfile, which is worse than an obviously-invalid value.
+    """
     version_file = os.path.join(pwd, "..", "libs", "cloudViewer", "version.txt")
-    version = "3.9.4"  # Fallback
-    
+
     try:
         with open(version_file, 'r') as f:
             lines = f.readlines()
@@ -889,16 +900,18 @@ def get_cloudviewer_version(pwd):
             match = re.match(r'CLOUDVIEWER_VERSION_(MAJOR|MINOR|PATCH)\s+(\d+)', line.strip())
             if match:
                 version_dict[match.group(1).lower()] = match.group(2)
-        
+
         if 'major' in version_dict and 'minor' in version_dict and 'patch' in version_dict:
             version = f"{version_dict['major']}.{version_dict['minor']}.{version_dict['patch']}"
             print(f"[make_docs] Version read successfully: {version}")
             return version
+
+        print(f"[make_docs] ERROR: {version_file} lacks MAJOR/MINOR/PATCH entries")
     except (FileNotFoundError, IOError) as e:
-        print(f"[make_docs] Warning: Could not read version file: {e}")
-    
-    print(f"[make_docs] Using fallback version: {version}")
-    return version
+        print(f"[make_docs] ERROR: Could not read version file: {e}")
+
+    # Not a version. Anything consuming this value should notice immediately.
+    return "unversioned-source"
 
 
 def process_doxyfile_template(pwd, version):
@@ -942,45 +955,44 @@ def process_doxyfile_template(pwd, version):
 
 
 def update_index_html_version(pwd, version):
-    """Update version badges in index.html to match current version."""
+    """Verify that index.html still carries the ``@VERSION@`` placeholder.
+
+    This function used to rewrite ``docs/index.html`` in place, replacing
+    ``@VERSION@`` with the literal version. That file is tracked by git, so a
+    single local ``make_docs`` run permanently destroyed the placeholder and
+    the next commit froze a version literal into the source tree. From then
+    on the badge tracked nothing: it only looked correct because the number
+    happened to be current, and every later bump left it stale.
+
+    The substitution belongs to the deployment step, which renders the site
+    into ``website-deploy/`` and replaces the placeholder there. The source
+    tree must keep the placeholder so the value stays derived from
+    ``libs/cloudViewer/version.txt`` at deploy time.
+    """
     index_html = os.path.join(pwd, "index.html")
-    
+
     if not os.path.exists(index_html):
-        print("[make_docs] index.html not found, skipping version update")
+        print("[make_docs] index.html not found, skipping version check")
         return
-    
+
     print("=" * 70)
-    print("Updating version in index.html")
+    print("Checking version placeholder in index.html")
     print("=" * 70)
-    
+
     try:
         with open(index_html, 'r', encoding='utf-8') as f:
             content = f.read()
-        
-        # Update version badge placeholder
-        # Replace @VERSION@ placeholder with actual version
+
         if '@VERSION@' in content:
-            content = content.replace('@VERSION@', version)
-            print(f"[make_docs] Updated version badge placeholder to: {version}")
+            print(f"[make_docs] OK: @VERSION@ placeholder present "
+                  f"(renders to {version} at deploy time)")
         else:
-            # Fallback: try to update hardcoded version badge (for backward compatibility)
-            # Pattern: <img src="https://img.shields.io/badge/version-X.X.X-blue"
-            version_badge_pattern = r'(<img\s+id="version-badge"\s+src="https://img\.shields\.io/badge/version-)[^"]+(-blue")'
-            new_version_badge = rf'\g<1>{version}\g<2>'
-            
-            if re.search(version_badge_pattern, content):
-                content = re.sub(version_badge_pattern, new_version_badge, content)
-                print(f"[make_docs] Updated hardcoded version badge to: {version}")
-            else:
-                print("[make_docs] Version badge placeholder or pattern not found")
-        
-        with open(index_html, 'w', encoding='utf-8') as f:
-            f.write(content)
-        
-        print(f"[make_docs] index.html version updated successfully")
+            print("[make_docs] WARNING: @VERSION@ placeholder is missing from "
+                  "docs/index.html. The badge will not track version.txt. "
+                  "Restore the placeholder instead of hardcoding a version.")
     except Exception as e:
-        print(f"[make_docs] Error updating index.html: {e}")
-    
+        print(f"[make_docs] Error checking index.html: {e}")
+
     print("=" * 70)
     print()
 
@@ -1039,6 +1051,14 @@ def main():
         action="store_true",
         default=False,
         help="Build Sphinx documentation (HTML)",
+    )
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        default=False,
+        help="Turn Sphinx warnings into errors (-W). Used by CI so a broken "
+             "image reference or unresolved link fails the build instead of "
+             "shipping a 404; leave off for local drafts.",
     )
     parser.add_argument(
         "--doxygen",
@@ -1188,7 +1208,8 @@ def main():
 
     # Build Sphinx documentation AFTER Doxygen, PyAPI, and Jupyter copy
     if args.sphinx:
-        sdb = SphinxDocsBuilder(pwd, html_output_dir, args.is_release, args.parallel)
+        sdb = SphinxDocsBuilder(pwd, html_output_dir, args.is_release, args.parallel,
+                                strict=args.strict)
         sdb.run()
         copy_plugin_showcase_assets(pwd, os.path.join(html_output_dir, "html"))
     else:

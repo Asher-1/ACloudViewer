@@ -94,6 +94,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The npm package version is DERIVED, not hand-maintained: every
+      # functional copy comes from libs/cloudViewer/version.txt. Syncing here,
+      # before anything reads package.json, means a forgotten manual bump can
+      # never ship a package whose version disagrees with the release.
+      - name: Derive package version from version.txt
+        run: |
+          python3 scripts/sync_version.py
+          echo "package version now: $(node -p "require('./npm/package.json').version")"
+
       - uses: actions/setup-node@v4
         with:
           # Node 24 ships npm >= 11.5.1, the minimum for OIDC trusted

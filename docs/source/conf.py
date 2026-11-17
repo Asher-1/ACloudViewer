@@ -192,7 +192,16 @@ def get_git_short_hash():
 
 
 def get_cloudviewer_version():
-    """Read ACloudViewer version from version.txt file."""
+    """Read the ACloudViewer version from ``libs/cloudViewer/version.txt``.
+
+    ``version.txt`` is the single source of truth for the version number.
+    There is deliberately no hardcoded fallback: a stale literal (this file
+    previously said ``3.9.4`` while ``version.txt`` said ``3.9.5``) produces
+    documentation that *claims* a version it was not built from, and the
+    mistake is invisible in the rendered page. If the file is missing we
+    surface an obviously-invalid sentinel instead, so it is caught by eye and
+    by any check that expects a real version.
+    """
     # Path from docs/source/conf.py to libs/cloudViewer/version.txt
     version_file = os.path.join(current_file_dir, "..", "..", "libs", "cloudViewer", "version.txt")
     version_file = os.path.abspath(version_file)
@@ -211,12 +220,13 @@ def get_cloudviewer_version():
             version_str = f"{version_dict['major']}.{version_dict['minor']}.{version_dict['patch']}"
             print(f"[conf.py] Version read successfully: {version_str}")
             return version_str
-    except (FileNotFoundError, IOError) as e:
-        print(f"[conf.py] Warning: Could not read version file: {e}")
 
-    fallback_version = "3.9.4"
-    print(f"[conf.py] Using fallback version: {fallback_version}")
-    return fallback_version
+        print(f"[conf.py] ERROR: {version_file} lacks MAJOR/MINOR/PATCH entries")
+    except (FileNotFoundError, IOError) as e:
+        print(f"[conf.py] ERROR: Could not read version file: {e}")
+
+    # Not a version. Anything consuming this value should notice immediately.
+    return "unversioned-source"
 
 
 # Import cloudViewer raw python package with the highest priority
@@ -373,6 +383,14 @@ html_theme_options = {
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
+#
+# This is a *placeholder*. `make_docs.py` overrides `release` through
+# `-D release=<value>` (a git hash for development builds, the version number
+# for releases), and `-D` is applied AFTER this file is executed. Computing
+# the title here would therefore freeze the default version into every build:
+# a development build would ship a `<title>` claiming the release version
+# while the sidebar showed the commit hash. `_set_html_title` recomputes it
+# from the final config value.
 html_title = f"ACloudViewer {release} documentation"
 # A shorter title for the navigation bar.  Default is the same as html_title.
 # html_short_title = None
@@ -531,6 +549,24 @@ import warnings
 warnings.filterwarnings('ignore', category=UserWarning, module='nbsphinx')
 warnings.filterwarnings('ignore', category=FutureWarning)
 
+# Pygments (2.19) ships no lexer named "mermaid", but plugin READMEs use
+# ```mermaid fences for their flow diagrams. Sphinx warns "Pygments lexer
+# name 'mermaid' is not known" and falls back to plain text anyway. Registering
+# the alias makes that fallback explicit instead of suppressed: the block still
+# renders verbatim, and a build with -W stays clean.
+#
+# Sphinx's `lexers` mapping is returned as-is (`return lexers[lang]`), so it
+# must hold a *Lexer instance*, not a class: registering the class makes
+# pygments call an unbound get_tokens() and the build dies with
+# "missing 1 required positional argument: 'text'".
+try:
+    from pygments.lexers.special import TextLexer as _TextLexer
+    from sphinx.highlighting import lexers as _sphinx_lexers
+
+    _sphinx_lexers.setdefault("mermaid", _TextLexer())
+except ImportError:  # pragma: no cover - pygments is a hard docs dependency
+    pass
+
 
 def is_enum_class(func, func_name):
 
@@ -592,8 +628,21 @@ def process_docstring(app, what, name, obj, options, lines):
         lines[i] = fix_namespace(line)
 
 
+def _set_html_title(app, config):
+    """Recompute html_title from the final `release` value.
+
+    Runs on ``config-inited``, which fires after ``-D release=...`` has been
+    applied. Computing the title at import time instead would bake in the
+    value from version.txt even for development builds, where make_docs.py
+    substitutes a ``main-<hash>`` release string.
+    """
+    config.html_title = f"ACloudViewer {config.release} documentation"
+
+
 def setup(app):
     """Sphinx setup function to connect autodoc events and plugin doc sync."""
+    # Runs after -D overrides, so the title tracks the effective release.
+    app.connect("config-inited", _set_html_title)
     app.connect("builder-inited", _sync_plugin_docs)
     app.connect("builder-inited", _sync_guides_plugins)
     app.connect("builder-inited", _sync_plugin_showcase_assets)

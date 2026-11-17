@@ -302,6 +302,35 @@ jq '.version_metadata[] | select(.value == "v3.9.3")' docs/downloads_data.json
 
 ## Testing
 
+### Documentation deployment suites
+
+Three suites guard the documentation pipeline. All run locally and in the
+`docs-guards` CI job, and all are independent of a full Sphinx build:
+
+```bash
+# 1. Workflow files GitHub would reject before running any job
+#    (e.g. "Exceeded max expression length 21000" -> zero jobs, zero logs)
+python3 docs/automation/scripts/check_workflow_limits.py
+
+# 2. Deploy-script contracts: versions.json shape/ordering, latest resolution,
+#    root redirect, 404 calibration, switcher propagation, archive restore
+bash docs/automation/scripts/test_deploy_unified_docs.sh
+
+# 3. Browser end-to-end: dropdown population from versions.json,
+#    path-preserving version switch, missing-page fallback, 404 rewriting
+python3 docs/automation/scripts/verify_docs_site.py
+```
+
+The deploy script also accepts a manual dry run against any directory shaped
+like the CI workspace (`website-deploy/`, `docs-output/`,
+`preserved-versions/`):
+
+```bash
+cd /path/to/workspace
+IS_RELEASE=false RELEASE_VERSION= DOC_VERSION= \
+  bash /path/to/docs/automation/scripts/deploy_unified_docs.sh
+```
+
 ### Verify Output
 
 ```bash

@@ -100,7 +100,7 @@ version, and three release channels are available:
      - Newest complete ``main-devel`` build (``X.Y.Z-dev.<timestamp>``); tracks
        the rolling development assets.
    * - **Exact version**
-     - ``npm install -g @asher-1/acloudviewer@3.9.5``
+     - ``npm install -g @asher-1/acloudviewer@``\ @cv_version@
      - A specific published bootstrap version.
 
 .. code-block:: bash

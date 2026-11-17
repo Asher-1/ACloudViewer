@@ -10,7 +10,7 @@ A 'cylinder' or a 'cone' primitives can also be used in place of a 2D profile.
 
 ![SRA cylindrical map](images/QSRACylindricalMap.jpg)
 
-## Loading a 2D profile ![](images/loadProfileIcon.png)
+## Loading a 2D profile
 
 2D profiles can be loaded with the "Plugins > qSRA > Load profile" menu entry or the equivalent icon in the plugin's toolbar.
 
@@ -36,7 +36,7 @@ Notes:
 
 Eventually the user can specify the revolution axis in 3D (X, Y or Z) and whether the height values are expressed relatively to the profile origin (i.e. z3D = Zc + H) or if they are absolute (i.e. z3D = H).
 
-## Computing radial distances ![](images/distToProfileIcon.png)
+## Computing radial distances
 
 To compute the (radial) distances between a cloud and a 2D profile (i.e. the Surface of Revolution), the user must highlight both the cloud and the profile (or a cylinder/cone primitive) at the same time. Keep the **CTRL key** pressed while selecting both entities in the DB tree.
 
@@ -46,7 +46,7 @@ On completion, the tool will automatically suggest to launch the Map Generation 
 
 ![Profile and radial distances visualization](images/QSRAProfile.png) ![Radial distances computation](images/QSRARadialDistances.png)
 
-## Map Generation ![](images/createMapIcon.png)
+## Map Generation
 
 To launch the map generation tool, the user must select both the cloud and the profile at the same time (keep the CTRL key pressed while selecting both entities in the DB tree). The cloud must already have a scalar field with radial distances (see above).
 

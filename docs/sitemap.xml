@@ -3,7 +3,8 @@
   Root-entry fallback sitemap (repo-side static file).
 
   The FULL sitemap is regenerated at every documentation deployment by
-  .github/workflows/documentation.yml from the version directories actually
+  docs/automation/scripts/deploy_unified_docs.sh (invoked by
+  .github/workflows/documentation.yml) from the version directories actually
   present in the deployment (latest stable deep pages, all version roots,
   dev), and overwrites this file on the live site. Do not hardcode versioned
   URLs here — they go stale on every release.
