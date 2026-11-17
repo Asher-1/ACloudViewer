@@ -765,22 +765,36 @@ jobs:
           FAILED=0
 
           # probe <url> <expected-substring>: retries while Pages propagates.
+          # Bounded retry budget. Pages publishes an artifact asynchronously,
+          # so a short propagation window is legitimate; waiting minutes per
+          # probe is not. 6 attempts x (10s timeout + 5s wait) caps a failed
+          # probe at ~90s, keeping the whole check under the job timeout even
+          # when the deployment is genuinely broken.
+          PROBE_ATTEMPTS=6
+          PROBE_TIMEOUT=10
+          PROBE_WAIT=5
+
           probe() {
             local url="$1" needle="${2:-}"
             local code="" body="" attempt
-            for attempt in 1 2 3 4 5 6 7 8 9 10; do
-              body=$(curl -sS --max-time 30 -w '\n%{http_code}' "$url" 2>/dev/null) || body=""
+            for attempt in $(seq 1 "$PROBE_ATTEMPTS"); do
+              body=$(curl -sS --max-time "$PROBE_TIMEOUT" -w '\n%{http_code}' "$url" 2>/dev/null) || body=""
               code=$(printf '%s' "$body" | tail -n1)
               if [ "$code" = "200" ]; then
-                if [ -z "$needle" ] || printf '%s' "$body" | grep -q -- "$needle"; then
+                # Plain substring test, deliberately NOT `printf | grep -q`:
+                # grep -q exits at the first match and closes the pipe, so
+                # printf dies of SIGPIPE (141) and `set -o pipefail` turns a
+                # successful match into a failed pipeline. That bug reported
+                # a healthy 200 page as "missing".
+                if [ -z "$needle" ] || case "$body" in *"$needle"*) true ;; *) false ;; esac; then
                   echo "  OK   $url"
                   return 0
                 fi
-                echo "  ..   $url (200 but missing '$needle', attempt $attempt)"
+                echo "  ..   $url (200 but missing '$needle', attempt $attempt/$PROBE_ATTEMPTS)"
               else
-                echo "  ..   $url (HTTP ${code:-none}, attempt $attempt)"
+                echo "  ..   $url (HTTP ${code:-none}, attempt $attempt/$PROBE_ATTEMPTS)"
               fi
-              sleep 10
+              [ "$attempt" -lt "$PROBE_ATTEMPTS" ] && sleep "$PROBE_WAIT"
             done
             echo "  FAIL $url (last HTTP ${code:-none})"
             return 1
