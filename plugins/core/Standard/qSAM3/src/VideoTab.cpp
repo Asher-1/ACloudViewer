@@ -12,7 +12,6 @@
 #include <aicore/sam3_capi.h>
 #include <ecvAICoreDeviceUiHelper.h>
 #include <ecvAICoreUiHelper.h>
-#include <ecvAICoreDeviceUiHelper.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPluginDbNaming.h>

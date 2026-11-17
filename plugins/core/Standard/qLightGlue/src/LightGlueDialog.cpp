@@ -30,7 +30,6 @@
 #include "aicore/model_catalog_capi.h"
 #include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAICoreUiHelper.h"
-#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvModelDownloader.h"
 #include "ecvTestDataRepository.h"
 #include "feature_extractor.h"

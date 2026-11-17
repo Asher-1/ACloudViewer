@@ -73,8 +73,12 @@ void updateTable(RDBOpenDialog &openDlg, riegl::rdb::Pointcloud &rdb) {
 
     struct SpecialAttribute {
         const std::string name;
+        const std::string comboBoxEntry;
+        const QIcon &icon;
+        SpecialAttribute(const std::string &arg_name,
                          const std::string &arg_comboBoxEntry,
                          const QIcon &arg_icon)
+            : name(arg_name),
               comboBoxEntry(arg_comboBoxEntry),
               icon(arg_icon) {}
     };
