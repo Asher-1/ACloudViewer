@@ -487,19 +487,19 @@ void ecvFontPropertyWidget::setupHorizontalJustificationButton() {
     actionGroup->setExclusive(true);
 
     // Create actions with icons, matching ParaView's implementation
-    QAction* leftAlign =
-            new QAction(QIcon(":/Resources/images/svg/font/pqTextAlignLeft.svg"),
-                        tr("Left"), actionGroup);
+    QAction* leftAlign = new QAction(
+            QIcon(":/Resources/images/svg/font/pqTextAlignLeft.svg"),
+            tr("Left"), actionGroup);
     leftAlign->setIconVisibleInMenu(true);
 
-    QAction* centerAlign =
-            new QAction(QIcon(":/Resources/images/svg/font/pqTextAlignCenter.svg"),
-                        tr("Center"), actionGroup);
+    QAction* centerAlign = new QAction(
+            QIcon(":/Resources/images/svg/font/pqTextAlignCenter.svg"),
+            tr("Center"), actionGroup);
     centerAlign->setIconVisibleInMenu(true);
 
-    QAction* rightAlign =
-            new QAction(QIcon(":/Resources/images/svg/font/pqTextAlignRight.svg"),
-                        tr("Right"), actionGroup);
+    QAction* rightAlign = new QAction(
+            QIcon(":/Resources/images/svg/font/pqTextAlignRight.svg"),
+            tr("Right"), actionGroup);
     rightAlign->setIconVisibleInMenu(true);
 
     QMenu* popup = new QMenu(this);

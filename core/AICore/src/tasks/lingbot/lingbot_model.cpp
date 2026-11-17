@@ -572,9 +572,8 @@ struct graph_builder {
                 ggml_tensor *d = ggml_new_tensor_4d(
                         f32_resident->ctx, GGML_TYPE_F32, x->ne[0], x->ne[1],
                         x->ne[2], x->ne[3]);
-                ggml_backend_buffer_t dbuf =
-                        ggml_backend_alloc_ctx_tensors(f32_resident->ctx,
-                                                       resident_backend);
+                ggml_backend_buffer_t dbuf = ggml_backend_alloc_ctx_tensors(
+                        f32_resident->ctx, resident_backend);
                 // alloc_ctx_tensors allocates every not-yet-backed tensor in
                 // the context; only d is new here, so the returned buffer
                 // owns exactly d.
@@ -1786,8 +1785,8 @@ bool model::load(const std::string &path,
                                nullptr, true};
         p_->f32_resident.ctx = ggml_init(fp);
         if (p_->f32_resident.ctx) {
-            for (ggml_tensor *s = ggml_get_first_tensor(p_->file.context());
-                 s; s = ggml_get_next_tensor(p_->file.context(), s)) {
+            for (ggml_tensor *s = ggml_get_first_tensor(p_->file.context()); s;
+                 s = ggml_get_next_tensor(p_->file.context(), s)) {
                 if (s->type == GGML_TYPE_F32 || !s->data) continue;
                 p_->f32_resident.host_data.emplace(s, s->data);
             }

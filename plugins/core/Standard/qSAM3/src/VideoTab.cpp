@@ -10,8 +10,8 @@
 #include <CVLog.h>
 #include <aicore/backend_capi.h>
 #include <aicore/sam3_capi.h>
-#include <ecvAICoreUiHelper.h>
 #include <ecvAICoreDeviceUiHelper.h>
+#include <ecvAICoreUiHelper.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPluginDbNaming.h>

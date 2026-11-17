@@ -37,8 +37,8 @@
 #include "aicore/inference_log.h"
 #include "aicore/lingbot_capi.h"
 #include "cvFileDialog.h"
-#include "ecvAICoreUiHelper.h"
 #include "ecvAICoreDeviceUiHelper.h"
+#include "ecvAICoreUiHelper.h"
 #include "ecvModelDownloader.h"
 #include "ecvPersistentSettings.h"
 

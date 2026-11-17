@@ -27,8 +27,8 @@
 #include <QSizePolicy>
 #include <QVBoxLayout>
 
-#include "ecvAICoreUiHelper.h"
 #include "ecvAICoreDeviceUiHelper.h"
+#include "ecvAICoreUiHelper.h"
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 #include "ecvPersistentSettings.h"

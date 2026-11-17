@@ -974,7 +974,8 @@ ecvSpreadSheetView::ecvSpreadSheetView(QWidget* parent) : QWidget(parent) {
     decLayout->addWidget(m_precisionSpin);
 
     m_fixedRepBtn = new QToolButton(decoratorBar);
-    m_fixedRepBtn->setIcon(QIcon(":/Resources/images/svg/pq/pqFixedRepr32.svg"));
+    m_fixedRepBtn->setIcon(
+            QIcon(":/Resources/images/svg/pq/pqFixedRepr32.svg"));
     m_fixedRepBtn->setToolTip(
             tr("Switches between scientific and fixed-point representation"));
     m_fixedRepBtn->setStatusTip(
@@ -984,7 +985,8 @@ ecvSpreadSheetView::ecvSpreadSheetView(QWidget* parent) : QWidget(parent) {
     decLayout->addWidget(m_fixedRepBtn);
 
     m_selectionOnlyBtn = new QToolButton(decoratorBar);
-    m_selectionOnlyBtn->setIcon(QIcon(":/Resources/images/svg/pq/pqSelect16.svg"));
+    m_selectionOnlyBtn->setIcon(
+            QIcon(":/Resources/images/svg/pq/pqSelect16.svg"));
     m_selectionOnlyBtn->setToolTip(tr("Show only selected elements."));
     m_selectionOnlyBtn->setCheckable(true);
     m_selectionOnlyBtn->setToolButtonStyle(Qt::ToolButtonIconOnly);
@@ -1007,7 +1009,8 @@ ecvSpreadSheetView::ecvSpreadSheetView(QWidget* parent) : QWidget(parent) {
     decLayout->addWidget(m_cellConnBtn);
 
     m_fieldDataBtn = new QToolButton(decoratorBar);
-    m_fieldDataBtn->setIcon(QIcon(":/Resources/images/svg/pq/pqGlobalData.svg"));
+    m_fieldDataBtn->setIcon(
+            QIcon(":/Resources/images/svg/pq/pqGlobalData.svg"));
     m_fieldDataBtn->setToolTip(tr("Toggle field data visibility"));
     m_fieldDataBtn->setCheckable(true);
     decLayout->addWidget(m_fieldDataBtn);

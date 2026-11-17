@@ -8,8 +8,8 @@
 
 #include <aicore/inference_log.h>
 #include <aicore/map_anything_capi.h>
-#include <ecvAICoreUiHelper.h>
 #include <ecvAICoreDeviceUiHelper.h>
+#include <ecvAICoreUiHelper.h>
 #include <ecvAssetIntegrity.h>
 #include <ecvClickableImageLabel.h>
 #include <ecvMainAppInterface.h>

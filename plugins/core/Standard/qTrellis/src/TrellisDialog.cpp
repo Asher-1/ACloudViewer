@@ -31,8 +31,8 @@
 #include "aicore/inference_log.h"
 #include "aicore/trellis_capi.h"
 #endif
-#include "ecvAICoreUiHelper.h"
 #include "ecvAICoreDeviceUiHelper.h"
+#include "ecvAICoreUiHelper.h"
 #include "ecvPersistentSettings.h"
 
 // Build a shaded unit-cube mesh from a T2VOX01 preview payload (one 24-vert

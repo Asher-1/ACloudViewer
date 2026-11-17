@@ -22,8 +22,8 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
-#include "ecvAICoreUiHelper.h"
 #include "ecvAICoreDeviceUiHelper.h"
+#include "ecvAICoreUiHelper.h"
 #include "ecvAssetIntegrity.h"
 #include "ecvMainAppInterface.h"
 #include "ecvPersistentSettings.h"

@@ -553,11 +553,10 @@ void qMapAnything::addResultToDb(const MapAnythingResult& result) {
         // One summary line per run: per-raster names are already visible in
         // the DB tree under 'MapAnythingDepth_<model>'.
         if (depthAdded > 0) {
-            m_dialog->appendLog(
-                    tr("[MapAnything] Added %1 depth rasters to "
-                       "'MapAnythingDepth_%2'.")
-                            .arg(depthAdded)
-                            .arg(modelTag));
+            m_dialog->appendLog(tr("[MapAnything] Added %1 depth rasters to "
+                                   "'MapAnythingDepth_%2'.")
+                                        .arg(depthAdded)
+                                        .arg(modelTag));
         }
 
         // Normalized-confidence rasters (same crop as the depth rasters).

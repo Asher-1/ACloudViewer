@@ -1490,7 +1490,8 @@ void MainWindow::connectActions() {
         linkCamerasAction->setToolTip(
                 tr("Link all render view cameras together "
                    "(ParaView-style Camera Link)"));
-        linkCamerasAction->setIcon(QIcon(":/Resources/images/svg/pq/pqLock.svg"));
+        linkCamerasAction->setIcon(
+                QIcon(":/Resources/images/svg/pq/pqLock.svg"));
         connect(linkCamerasAction, &QAction::toggled, this, [](bool checked) {
             Visualization::VtkCameraLink::instance().setEnabled(checked);
         });
@@ -3412,9 +3413,9 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     }
 
     // Capture screenshot — all view types (ParaView actionCaptureView)
-    auto* captureAct =
-            new QAction(QIcon(":/Resources/images/svg/pq/pqCaptureScreenshot.svg"),
-                        tr("Capture Screenshot"), viewToolBar);
+    auto* captureAct = new QAction(
+            QIcon(":/Resources/images/svg/pq/pqCaptureScreenshot.svg"),
+            tr("Capture Screenshot"), viewToolBar);
     connect(captureAct, &QAction::triggered, this,
             activateViewAndDo(&MainWindow::doActionScreenShot));
     viewToolBar->addAction(captureAct);
@@ -3489,16 +3490,16 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         addSelAct->setData(SEL_ADDITION);
         viewToolBar->addAction(addSelAct);
 
-        auto* subSelAct =
-                new QAction(QIcon(":/Resources/images/svg/pq/pqSelectMinus.svg"),
-                            tr("Subtract Selection (Shift)"), viewToolBar);
+        auto* subSelAct = new QAction(
+                QIcon(":/Resources/images/svg/pq/pqSelectMinus.svg"),
+                tr("Subtract Selection (Shift)"), viewToolBar);
         subSelAct->setCheckable(true);
         subSelAct->setData(SEL_SUBTRACTION);
         viewToolBar->addAction(subSelAct);
 
-        auto* togSelAct =
-                new QAction(QIcon(":/Resources/images/svg/pq/pqSelectToggle.svg"),
-                            tr("Toggle Selection (Ctrl+Shift)"), viewToolBar);
+        auto* togSelAct = new QAction(
+                QIcon(":/Resources/images/svg/pq/pqSelectToggle.svg"),
+                tr("Toggle Selection (Ctrl+Shift)"), viewToolBar);
         togSelAct->setCheckable(true);
         togSelAct->setData(SEL_TOGGLE);
         viewToolBar->addAction(togSelAct);
@@ -3528,9 +3529,9 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         polySelAct->setCheckable(true);
         viewToolBar->addAction(polySelAct);
 
-        auto* rectSelAct =
-                new QAction(QIcon(":/Resources/images/svg/pq/pqSelectChart.svg"),
-                            tr("Rectangle Selection (s)"), viewToolBar);
+        auto* rectSelAct = new QAction(
+                QIcon(":/Resources/images/svg/pq/pqSelectChart.svg"),
+                tr("Rectangle Selection (s)"), viewToolBar);
         rectSelAct->setObjectName("actionChartSelectRectangle");
         rectSelAct->setCheckable(true);
         viewToolBar->addAction(rectSelAct);
@@ -3746,9 +3747,9 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     });
     titleLayout->addWidget(maxBtn);
 
-    auto* closeBtn =
-            makeSvgBtn(QStringLiteral(":/Resources/images/svg/pq/pqCloseView.svg"),
-                       tr("Close View"));
+    auto* closeBtn = makeSvgBtn(
+            QStringLiteral(":/Resources/images/svg/pq/pqCloseView.svg"),
+            tr("Close View"));
     connect(closeBtn, &QToolButton::clicked, this, [this, frame]() {
         auto* mvw = m_tabbedMultiView ? m_tabbedMultiView->currentMultiView()
                                       : nullptr;
@@ -3790,7 +3791,8 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
             [this, frame, titleLabel](const QPoint& pos) {
                 QMenu menu;
                 auto* splitH = menu.addAction(
-                        QIcon(":/Resources/images/svg/pq/pqSplitHorizontal.svg"),
+                        QIcon(":/Resources/images/svg/pq/"
+                              "pqSplitHorizontal.svg"),
                         tr("Split Left|Right"), [this, frame]() {
                             auto* mvw = m_tabbedMultiView
                                                 ? m_tabbedMultiView

@@ -37,8 +37,8 @@
 #include "aicore/backend_capi.h"
 #include "aicore/facedetect_capi.h"
 #include "aicore/inference_log.h"
-#include "ecvAICoreUiHelper.h"
 #include "ecvAICoreDeviceUiHelper.h"
+#include "ecvAICoreUiHelper.h"
 #include "ecvModelDownloader.h"
 
 namespace {

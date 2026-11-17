@@ -35,8 +35,8 @@
 #include <vector>
 
 #include "QtCompat.h"
-#include "ecvAICoreUiHelper.h"
 #include "ecvAICoreDeviceUiHelper.h"
+#include "ecvAICoreUiHelper.h"
 #include "ecvModelDownloader.h"
 #include "ecvPersistentSettings.h"
 

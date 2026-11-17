@@ -66,10 +66,10 @@ inline void populateDeviceCombo(QComboBox* combo, aicore_model_kind model) {
         info.struct_size = sizeof(info);
         info.abi_version = 1;
         if (aicore_model_device_info_query(model, dev->id, &info) != 0) {
-            const QString reason = QString::fromUtf8(
-                    aicore_backend_last_error());
-            if (auto* items = qobject_cast<QStandardItemModel*>(
-                        combo->model())) {
+            const QString reason =
+                    QString::fromUtf8(aicore_backend_last_error());
+            if (auto* items =
+                        qobject_cast<QStandardItemModel*>(combo->model())) {
                 if (auto* item = items->item(combo->count() - 1)) {
                     item->setEnabled(false);
                     if (!reason.isEmpty()) {

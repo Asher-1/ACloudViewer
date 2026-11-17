@@ -101,7 +101,7 @@ int main(int argc, char** argv) {
                 maximum,
                 ggml_backend_dev_name(ggml_backend_get_device(lease.handle())));
         if (!(maximum < aicore_test::oracle_max_abs_tolerance(
-                      lease.handle(), /*gemm_f32=*/f32)))
+                                lease.handle(), /*gemm_f32=*/f32)))
             ++failures;
     }
     return failures ? 1 : 0;

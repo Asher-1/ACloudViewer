@@ -582,11 +582,11 @@ cvSelectionToolController::createActions(QWidget* parent) {
                  ":/Resources/images/svg/pq/pqFrustumSelectionBlock.svg",
                  QObject::tr("Select Blocks Through (n)"),
                  QObject::tr("Select Blocks Through (n)"), true);
-    a.interactiveSelectCells =
-            make("actionInteractiveSelectCells",
-                 ":/Resources/images/svg/pq/pqSurfaceSelectionCellInteractive.svg",
-                 QObject::tr("Interactive Select Cells On"),
-                 QObject::tr("Interactive Select Cells On"), true);
+    a.interactiveSelectCells = make(
+            "actionInteractiveSelectCells",
+            ":/Resources/images/svg/pq/pqSurfaceSelectionCellInteractive.svg",
+            QObject::tr("Interactive Select Cells On"),
+            QObject::tr("Interactive Select Cells On"), true);
     a.interactiveSelectPoints = make(
             "actionInteractiveSelectPoints",
             ":/Resources/images/svg/pq/pqSurfaceSelectionPointInteractive.svg",
@@ -625,10 +625,10 @@ cvSelectionToolController::createActions(QWidget* parent) {
             make("actionGrowSelection", ":/Resources/images/svg/pq/pqPlus.svg",
                  QObject::tr("Grow Selection"),
                  QObject::tr("Grow selection (+)"), false);
-    a.shrinkSelection =
-            make("actionShrinkSelection", ":/Resources/images/svg/pq/pqMinus.svg",
-                 QObject::tr("Shrink Selection"),
-                 QObject::tr("Shrink selection (-)"), false);
+    a.shrinkSelection = make("actionShrinkSelection",
+                             ":/Resources/images/svg/pq/pqMinus.svg",
+                             QObject::tr("Shrink Selection"),
+                             QObject::tr("Shrink selection (-)"), false);
     a.clearSelection = make("actionClearSelection",
                             ":/Resources/images/svg/pq/pqClearSort.svg",
                             QObject::tr("Clear Selection"),
