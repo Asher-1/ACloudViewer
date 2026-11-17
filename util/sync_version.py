@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Keep every *functional* copy of the app version derived from version.txt.
 
 WHY THIS EXISTS
@@ -110,7 +117,8 @@ def read_version() -> str:
 
     parts: dict[str, str] = {}
     for line in VERSION_FILE.read_text(encoding="utf-8").splitlines():
-        match = re.match(r"CLOUDVIEWER_VERSION_(MAJOR|MINOR|PATCH)\s+(\d+)\s*$", line.strip())
+        match = re.match(r"CLOUDVIEWER_VERSION_(MAJOR|MINOR|PATCH)\s+(\d+)\s*$",
+                         line.strip())
         if match:
             parts[match.group(1).lower()] = match.group(2)
 
@@ -118,8 +126,7 @@ def read_version() -> str:
     if missing:
         sys.exit(
             f"error: {VERSION_FILE} is missing {', '.join(sorted(missing))}; "
-            f"expected three lines CLOUDVIEWER_VERSION_MAJOR/MINOR/PATCH"
-        )
+            f"expected three lines CLOUDVIEWER_VERSION_MAJOR/MINOR/PATCH")
     return f"{parts['major']}.{parts['minor']}.{parts['patch']}"
 
 
@@ -141,17 +148,14 @@ def apply_target(rel_path: str, pattern: re.Pattern[str], group: int,
         found = match.group(group)
         if found == version:
             return match.group(0)
-        drift.append(
-            f"{rel_path}:{line_of(original, match.start())}: "
-            f"has {found}, version.txt says {version}"
-        )
+        drift.append(f"{rel_path}:{line_of(original, match.start())}: "
+                     f"has {found}, version.txt says {version}")
         if check_only:
             return match.group(0)
         start, end = match.span(group)
         whole_start = match.start()
-        return (match.group(0)[: start - whole_start]
-                + version
-                + match.group(0)[end - whole_start:])
+        return (match.group(0)[:start - whole_start] + version +
+                match.group(0)[end - whole_start:])
 
     updated = pattern.sub(repl, original)
 
@@ -187,17 +191,19 @@ def check_placeholders() -> list[str]:
             problems.append(
                 f"{rel_path}: lost its {placeholder} placeholder ({purpose}). "
                 f"A build wrote a literal over it, so the value no longer "
-                f"tracks version.txt."
-            )
+                f"tracks version.txt.")
     return problems
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Derive functional version copies from libs/cloudViewer/version.txt")
+        description=
+        "Derive functional version copies from libs/cloudViewer/version.txt")
     parser.add_argument(
-        "--check", action="store_true",
-        help="verify only; exit 1 if any managed copy disagrees with version.txt")
+        "--check",
+        action="store_true",
+        help="verify only; exit 1 if any managed copy disagrees with version.txt"
+    )
     args = parser.parse_args()
 
     version = read_version()

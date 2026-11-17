@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# ----------------------------------------------------------------------------
+# -                        CloudViewer: www.cloudViewer.org                  -
+# ----------------------------------------------------------------------------
+# Copyright (c) 2018-2024 www.cloudViewer.org
+# SPDX-License-Identifier: MIT
+# ----------------------------------------------------------------------------
+
 """Report whether every asset-uploading workflow has finished for a commit.
 
 WHY THIS EXISTS
@@ -99,21 +106,27 @@ def uploader_states(repo: str, sha: str) -> dict[str, str]:
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(
-        description="Check whether all asset-uploading workflows finished for a commit")
+        description=
+        "Check whether all asset-uploading workflows finished for a commit")
     # $GITHUB_SHA is NOT the triggering commit under `workflow_run`: it points
     # at the head of the default branch. Callers pass the real SHA explicitly
     # (github.event.workflow_run.head_sha); this default only helps for local use.
-    parser.add_argument("--sha", default=os.environ.get("UPLOADER_SHA", ""),
+    parser.add_argument("--sha",
+                        default=os.environ.get("UPLOADER_SHA", ""),
                         help="full 40-char commit SHA (required)")
-    parser.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY", ""),
+    parser.add_argument("--repo",
+                        default=os.environ.get("GITHUB_REPOSITORY", ""),
                         help="owner/name (defaults to $GITHUB_REPOSITORY)")
-    parser.add_argument("--quiet", action="store_true",
+    parser.add_argument("--quiet",
+                        action="store_true",
                         help="print only the verdict, not per-workflow detail")
     args = parser.parse_args(argv[1:])
 
     if not args.sha or not args.repo:
-        print("error: --sha and --repo (or GITHUB_SHA/GITHUB_REPOSITORY) "
-              "are required", file=sys.stderr)
+        print(
+            "error: --sha and --repo (or GITHUB_SHA/GITHUB_REPOSITORY) "
+            "are required",
+            file=sys.stderr)
         return 1
 
     try:
@@ -125,8 +138,10 @@ def main(argv: list[str]) -> int:
         print(f"error: could not query workflow runs: {exc}", file=sys.stderr)
         return 1
 
-    pending = [name for name, state in states.items()
-               if state not in ("completed", "absent")]
+    pending = [
+        name for name, state in states.items()
+        if state not in ("completed", "absent")
+    ]
 
     if not args.quiet:
         for name in UPLOADERS:
