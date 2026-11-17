@@ -14,13 +14,14 @@ name: npm publish
 #           under dist-tag `next` (prerelease tarballs track rolling assets).
 #           `next` publishes NEVER move `latest`.
 #   - workflow_run (a platform build finished — same 5 uploaders that feed
-#     main-devel), push (main) touching npm/**, and release (published) all
-#     run the same RECONCILE over both channels; the dev stamp derives from
-#     the release updated_at, so the five completion events converge to one
-#     publish (E409-idempotent) and unchanged assets are a no-op. The
-#     release trigger covers a pinned v<version> release created AFTER the
-#     last build wave: publishing it (with assets) immediately enables the
-#     deferred stable publish instead of waiting for the next build.
+#     main-devel; main-branch completions only), push (main) touching npm/**,
+#     and release (published, targeting main) all run the same RECONCILE over
+#     both channels; the dev stamp derives from the release updated_at, so
+#     the five completion events converge to one publish (E409-idempotent)
+#     and unchanged assets are a no-op. The release trigger covers a pinned
+#     v<version> release created AFTER the last build wave: publishing it
+#     (with assets) immediately enables the deferred stable publish instead
+#     of waiting for the next build.
 #   - tag npm-v* / workflow_dispatch are emergency paths for explicit
 #     versions; reconcile automatically re-points `latest` back to the app
 #     version on the next run.
@@ -55,9 +56,12 @@ on:
   workflow_run:
     # Same uploader list as update-release.yml: whoever finishes last yields
     # the final pass; the version alignment below is idempotent, so earlier
-    # triggers are no-ops.
+    # triggers are no-ops. `branches` filters on the TRIGGERING run's head
+    # branch: only main-branch completions proceed (PR builds never feed
+    # main-devel, so firing on them was pure runner waste).
     workflows: [Windows, MacOS, Ubuntu, Ubuntu CUDA, Ubuntu Wheel]
     types: [completed]
+    branches: [main]
   release:
     # A pinned v<version> release published with its installers is itself a
     # reconcile trigger: when the release is created after the last uploader
@@ -81,8 +85,10 @@ jobs:
   # publish` runs and 20 `Clean release` runs for one commit, ~35s each, all
   # but the last recomputing an answer that could not have changed yet.
   #
-  # Splitting the condition into its own job keeps it in one place: the work
-  # job simply `needs` it. Runs that fire early stop here in seconds.
+  # The workflow_run `branches: [main]` filter already drops PR and non-main
+  # completions; what reaches this gate is one fire per finishing main-branch
+  # uploader. Splitting the condition into its own job keeps it in one place:
+  # the work job simply `needs` it. Runs that fire early stop here in seconds.
   #
   # `github.event.workflow_run.head_sha` is the triggering commit. Under
   # `workflow_run`, `GITHUB_SHA` is the default-branch head and would query
@@ -127,7 +133,9 @@ jobs:
     if: |
       always() && !cancelled() &&
       (needs.uploaders-complete.result == 'skipped' ||
-       needs.uploaders-complete.outputs.ready == 'true')
+       needs.uploaders-complete.outputs.ready == 'true') &&
+      (github.event_name != 'release' ||
+       github.event.release.target_commitish == 'main')
 
     runs-on: ubuntu-latest
     # Job-level so step `if`s and the Summary can read them. SKIP/MODE get

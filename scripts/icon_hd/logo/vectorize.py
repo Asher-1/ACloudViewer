@@ -253,6 +253,11 @@ def vectorise_smooth(path: Path, *, colours: int = MAX_COLOURS,
     layers.sort(reverse=True, key=lambda t: t[0])
 
     body = [
+        # `clipPathUnits` defaults to userSpaceOnUse, which is resolved in the
+        # coordinate system of the *referencing* element before that element's
+        # own transform.  So the silhouette must stay in supersampled
+        # coordinates: adding a scale() to it here shrinks the clip to a quarter
+        # and the render comes out empty (measured: 0 opaque pixels, IoU 0.000).
         f'  <defs><clipPath id="sil"><path d="{silhouette}" '
         f'fill-rule="evenodd"/></clipPath></defs>',
         f'  <g clip-path="url(#sil)" transform="scale({1.0 / k:.6f})">',

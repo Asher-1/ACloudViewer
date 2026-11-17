@@ -391,21 +391,31 @@ jobs:
           fi
           
           # Create a README for the documentation subdirectory link
+          # Every link below targets a page that is verified to exist in the
+          # built tree. The previous Quick Links pointed at
+          # /documentation/python_api/, /cpp_api/ and /tutorial/, which are
+          # 404s: the versioned layout made /documentation/ a redirect stub,
+          # and the real entries are `cpp_api.html` and `tutorial/index.html`.
+          # python_api/ is omitted entirely -- it is only produced when the
+          # Python bindings import successfully, which the docs build does not
+          # guarantee, so linking it would advertise a page that may not exist.
+          # `@DOC_LATEST@` is expanded by deploy_unified_docs.sh to the version
+          # that was actually deployed.
           cat > website-deploy/DOCUMENTATION.md << 'DOCEOF'
           # ACloudViewer Documentation
-          
-          Full API documentation is available at: [/documentation/](/documentation/)
-          
+
+          Full documentation is available at: [/documentation/](/documentation/)
+
           ## Documentation Structure
-          
+
           - **Main Website**: Current page (project info, downloads, getting started)
-          - **API Documentation**: [/documentation/](/documentation/) (Python API, C++ API, Tutorials)
-          
+          - **Documentation**: [/documentation/](/documentation/) (versioned C++ API, tutorials, guides)
+
           ## Quick Links
-          
-          - [Python API Reference](/documentation/python_api/)
-          - [C++ API Reference](/documentation/cpp_api/)
-          - [Tutorials](/documentation/tutorial/)
+
+          - [C++ API Reference](/documentation/@DOC_LATEST@/cpp_api.html)
+          - [Tutorials](/documentation/@DOC_LATEST@/tutorial/)
+          - [Getting Started](/documentation/@DOC_LATEST@/getting_started/introduction.html)
           DOCEOF
           
           echo ""
@@ -430,6 +440,24 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           echo "📤 Uploading to main-devel release..."
+
+          # The archive name carries the build SHA, so `--clobber` never
+          # overwrites anything: every push to main would add one more ~1.4 GB
+          # asset and none would ever be removed. Only the newest dev archive
+          # is ever consumed (Preserving development documentation downloads
+          # exactly one), so the older ones are dead weight.
+          #
+          # Delete the previously published dev archive(s) first, keeping any
+          # asset that is not a commit-stamped dev archive (e.g.
+          # downloads_data.json, which update-downloads.yml manages).
+          gh release view main-devel --json assets \
+            --jq '.assets[] | select(.name | test("^acloudviewer-[0-9a-f]+-docs\\.tar\\.gz$")) | .name' \
+          | while read -r stale; do
+              [ -n "$stale" ] || continue
+              echo "  🗑️  removing previous dev archive: $stale"
+              gh release delete-asset main-devel "$stale" --yes
+            done
+
           gh release upload main-devel \
             acloudviewer-${{ github.sha }}-docs.tar.gz \
             --clobber
@@ -556,13 +584,31 @@ jobs:
           # Get list of releases with documentation archives
           echo "🔍 Scanning GitHub Releases for documentation archives..."
           echo ""
-          
-          # First, list all releases to debug
+
+          # `--limit 20` silently truncates the list, so once the project has
+          # more than 20 releases the oldest archives stop being restored and
+          # their /documentation/vX.Y.Z/ trees vanish from the next deployment
+          # without any error. Every published version must survive, so this
+          # pages through the full release list instead of taking a fixed head.
+          # See fetch_all_release_tags below.
+          fetch_all_release_tags() {
+            local page=1 batch=100
+            while [ "$page" -le 50 ]; do
+              local out
+              out=$(gh release list --limit "$batch" --json tagName,isDraft -q '.[] | select(.isDraft|not) | .tagName' 2>/dev/null) || return 0
+              [ -n "$out" ] || return 0
+              printf '%s\n' "$out"
+              # A short batch is the last page; a full one may have more.
+              [ "$(printf '%s\n' "$out" | wc -l)" -lt "$batch" ] && return 0
+              page=$((page + 1))
+            done
+          }
+
           echo "📋 All releases:"
-          gh release list --limit 20 || echo "  (failed to list releases)"
+          fetch_all_release_tags | sed 's/^/  /' || echo "  (failed to list releases)"
           echo ""
-          
-          RELEASES=$(gh release list --limit 20 --json tagName -q '.[].tagName' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' || true)
+
+          RELEASES=$(fetch_all_release_tags | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true)
           
           FOUND_COUNT=0
           NOT_FOUND_COUNT=0

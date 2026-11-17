@@ -46,10 +46,10 @@
         <file>Resources/images/icon/logo_128.png</file>
         <file>Resources/images/icon/ecv_icon.rc</file>
         <file>Resources/images/svg/tree/branch-closed.svg</file>
-        <file>Resources/images/QTreeView/branch-end.png</file>
+        <file>Resources/images/QTreeView/branch-end.svg</file>
         <file>Resources/images/svg/tree/branch-more.svg</file>
         <file>Resources/images/svg/tree/branch-open.svg</file>
-        <file>Resources/images/QTreeView/vline.png</file>
+        <file>Resources/images/QTreeView/vline.svg</file>
         <file>Resources/images/svg/ecv/ecvdelete.svg</file>
         <file>Resources/images/svg/ecv/ecvExit.svg</file>
         <file>Resources/images/cloud.svg</file>
@@ -72,7 +72,6 @@
         <file>Resources/images/svg/db/dbMiscGeomSymbolLocked.svg</file>
         <file>Resources/images/svg/db/dbOctreeSymbolLocked.svg</file>
         <file>Resources/images/dbPolylineSymbol.png</file>
-        <file>Resources/images/dbPolylineSymbol.png</file>
         <file>Resources/images/svg/db/dbCircle.svg</file>
         <file>Resources/images/primCylinder.gif</file>
         <file>Resources/images/svg/db/dbSubMeshSymbol.svg</file>
@@ -83,7 +82,6 @@
         <file>Resources/images/color.png</file>
         <file>Resources/images/ecvBackgroundColor.png</file>
         <file>Resources/images/ecvColorMenu.png</file>
-        <file>Resources/images/svg/ecv/ecvExit.svg</file>
         <file>Resources/images/ecvObjectColor.png</file>
         <file>Resources/images/ecvClearColor.png</file>
         <file>Resources/images/svg/ecv/ecvGlobalZoom.svg</file>
@@ -171,7 +169,7 @@
         <file>Resources/images/exportCloud.png</file>
         <file>Resources/images/settings.png</file>
         <file>Resources/images/subdivide.png</file>
-        <file>Resources/images/surface.png</file>
+        <file>Resources/images/surface.svg</file>
         <file>Resources/images/meshSmooth.png</file>
         <file>Resources/images/vtkSmooth.png</file>
         <file>Resources/images/mesh4.png</file>
@@ -206,7 +204,7 @@
         <file>Resources/images/3D3.png</file>
         <file>Resources/images/unroll.png</file>
         <file>Resources/images/svg/pqPreview.png</file>
-        <file>Resources/images/svg/pqRecentFile.png</file>
+        <file>Resources/images/svg/pqRecentFile.svg</file>
         <file>Resources/images/pqPickCenter@2x.png</file>
         <file>Resources/images/pqResetCenter@2x.png</file>
         <file>Resources/images/svg/pq/pqShowOrientationAxes.svg</file>

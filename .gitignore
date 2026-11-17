@@ -276,6 +276,7 @@ agent-integration/examples/test_data
 .qoder/
 core/AICore/models/
 .ccache/
+scripts/icon_hd/orig/
 scripts/icon_hd/data/
 scripts/icon_hd/authored/
 scripts/icon_hd/logo/masters

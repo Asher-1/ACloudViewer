@@ -122,30 +122,39 @@ def _run_module(dotted: str, argv: list[str]) -> int:
 
 
 def build(argv: list[str]) -> int:
-    """Render every icon from logo/*.py and write the SVGs into the repository."""
-    print("=== build: 由设计系统渲染全部工具图标 ===")
-    from logo import (fonticons, miscicons, pqicons, pqvariants, rooticons,
-                      slicons, toolicons, treeicons)
+    """Report which icons are vector and which stay raster.
 
+    There is deliberately no longer a "redraw everything" build.  An earlier
+    version regenerated 272 icons from a hand-drawn design system, and 197 of
+    them were *already* valid vector art that users had learned to read; the
+    rewrite replaced familiar marks with invented ones and measurably destroyed
+    recognition.  Icons are now edited in place.
+
+    What remains useful is the inventory: how many assets exist, in which form,
+    and which raster files have no vector equivalent.
+    """
+    print("=== build: 图标清单（不再自动重绘） ===")
     images = ROOT / "app/Resources/images"
-    mods = (toolicons, treeicons, pqicons, pqvariants,
-            rooticons, miscicons, slicons, fonticons)
+    svgs = sorted(images.rglob("*.svg"))
+    pngs = sorted(images.rglob("*.png"))
 
-    written = skipped = 0
-    total = 0
-    for mod in mods:
-        for key, fn in mod.REGISTRY.items():
-            hits = list(images.rglob(f"{key.split('/')[-1]}.svg"))
-            if not hits:
-                skipped += 1
-                print(f"  SKIP  {key}  (仓库中无同名文件，不新建路径)")
-                continue
-            text = fn()
-            hits[0].write_text(text)
-            written += 1
-            total += len(text)
-    print(f"\n  写入 {written} 个，跳过 {skipped} 个，共 {total:,} B")
-    print("  SVG 已就地更新；调用方的 qrc/ui 路径无需改动。")
+    total_svg = sum(p.stat().st_size for p in svgs)
+    print(f"\n  矢量图标 {len(svgs):>4} 个   {total_svg:>9,} B")
+    print(f"  位图图标 {len(pngs):>4} 个   {sum(p.stat().st_size for p in pngs):>9,} B")
+
+    families = {}
+    for p in svgs:
+        key = p.parent.name if p.parent != images else "root"
+        families[key] = families.get(key, 0) + 1
+    print("\n  按目录:")
+    for k in sorted(families, key=lambda k: -families[k]):
+        print(f"    {k:<10} {families[k]:>4}")
+
+    print("\n  位图按大小（前 10）:")
+    for p in sorted(pngs, key=lambda p: -p.stat().st_size)[:10]:
+        print(f"    {p.stat().st_size:>9,} B  {p.relative_to(ROOT)}")
+
+    print("\n  图标就地编辑；改完跑 verify 确认引用未断。")
     return 0
 
 

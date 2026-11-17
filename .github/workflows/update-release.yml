@@ -6,10 +6,15 @@ on:
   # every uploader's completion: the cleanup below is idempotent, so early
   # runs are no-ops and the last finisher always yields a final pass after all
   # assets of the commit are uploaded.
+  #
+  # `branches` filters on the TRIGGERING run's head branch: only main-branch
+  # completions proceed. PR builds never upload to main-devel, so firing on
+  # them was pure runner waste (a full PR matrix used to cost 5 extra runs of
+  # this workflow plus 5 more in npm publish per push).
   workflow_run:
     workflows: [Windows, MacOS, Ubuntu, Ubuntu CUDA, Ubuntu Wheel]
     types: [completed]
-    # branches: [main]
+    branches: [main]
 
 # Serialize cleanups: near-simultaneous completions would otherwise race on
 # the same release assets (double delete-asset).

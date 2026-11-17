@@ -104,6 +104,32 @@ check "new release is latest" "grep -q '\"latest\": \"v3.9.5\"' '$d/unified-depl
 check "older archive still restored" "[ -f '$d/unified-deploy/documentation/v3.9.4/index.html' ]"
 check "still valid JSON" "python3 -m json.tool '$d/unified-deploy/documentation/versions.json' >/dev/null 2>&1"
 
+echo "═══ Case 7: website documentation links follow the deployed version ═══"
+# The website is static and ships an `@DOC_LATEST@` placeholder. Fixing the
+# version in the source would go stale on the next release; leaving it
+# unexpanded (or hardcoding a flat /documentation/ path) 404s as soon as
+# /documentation/ becomes a redirect stub. Both paths are asserted here.
+d=$(new_case c7)
+printf '%s\n' \
+  '<a href="https://example.test/documentation/@DOC_LATEST@/getting_started/build_from_source.html">b</a>' \
+  > "$d/website-deploy/index.html"
+run_deploy "$d" true v3.9.5 v3.9.5
+check "placeholder expanded to the new release" \
+  "grep -q '/documentation/v3\.9\.5/getting_started/build_from_source\.html' '$d/unified-deploy/index.html'"
+check "no placeholder survives into the artifact" \
+  "! grep -q '@DOC_LATEST@' '$d/unified-deploy/index.html'"
+
+echo "═══ Case 8: website links fall back to dev when nothing is released ═══"
+d=$(new_case c8)
+printf '%s\n' \
+  '<a href="https://example.test/documentation/@DOC_LATEST@/getting_started/build_from_source.html">b</a>' \
+  > "$d/website-deploy/index.html"
+run_deploy "$d" false "" ""
+check "placeholder expanded to dev" \
+  "grep -q '/documentation/dev/getting_started/build_from_source\.html' '$d/unified-deploy/index.html'"
+check "no placeholder survives into the artifact" \
+  "! grep -q '@DOC_LATEST@' '$d/unified-deploy/index.html'"
+
 echo
 echo "──────────────────────────────"
 printf 'PASS: %d   FAIL: %d\n' "$pass" "$fail"

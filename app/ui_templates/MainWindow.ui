@@ -720,7 +720,7 @@
       <widget class="ccCustomQTreeView" name="dbTreeView">
        <property name="styleSheet">
         <string notr="true">QTreeView::branch:has-siblings:!adjoins-item {
-    border-image: url(:/Resources/images/QTreeView/vline.png) 0;
+    border-image: url(:/Resources/images/QTreeView/vline.svg) 0;
 }
 
 QTreeView::branch:has-siblings:adjoins-item {
@@ -728,7 +728,7 @@ QTreeView::branch:has-siblings:adjoins-item {
 }
 
 QTreeView::branch:!has-children:!has-siblings:adjoins-item {
-    border-image: url(:/Resources/images/QTreeView/branch-end.png) 0;
+    border-image: url(:/Resources/images/QTreeView/branch-end.svg) 0;
 }
 
 QTreeView::branch:has-children:!has-siblings:closed,
@@ -2207,7 +2207,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionSurface">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/surface.png</normaloff>:/Resources/images/surface.png</iconset>
+     <normaloff>:/Resources/images/surface.svg</normaloff>:/Resources/images/surface.svg</iconset>
    </property>
    <property name="text">
     <string>Surface</string>

@@ -332,15 +332,22 @@ def _git_show(rel: str) -> bytes | None:
 
 
 def _registry() -> dict[str, tuple[str, str]]:
-    """icon basename -> (module, svg text) for everything this toolchain draws."""
-    sys.path.insert(0, str(ROOT / "scripts/icon_hd"))
-    from logo import (fonticons, miscicons, pqicons, pqvariants, rooticons,
-                      slicons, toolicons, treeicons)
+    """icon basename -> (family, current SVG text), read from the repository.
+
+    This used to import the eight ``*icons.py`` design modules and call their
+    builders.  Those modules were removed: they regenerated 197 icons that were
+    already valid vector art, which destroyed artwork the user had learned.  The
+    audit therefore reads what actually ships, not what a design system would
+    produce.
+    """
     out = {}
-    for mod in (toolicons, treeicons, pqicons, pqvariants,
-                rooticons, miscicons, slicons, fonticons):
-        for key, build in mod.REGISTRY.items():
-            out[key.split("/")[-1]] = (mod.__name__.split(".")[-1], build())
+    for p in IMAGES.rglob("*.svg"):
+        try:
+            text = p.read_text(errors="ignore")
+        except OSError:
+            continue
+        family = p.parent.name if p.parent != IMAGES else "root"
+        out[p.stem] = (family, text)
     return out
 
 
@@ -350,6 +357,42 @@ def _on_disk() -> dict[str, str]:
     for p in IMAGES.rglob("*.svg"):
         out[p.stem] = str(p.relative_to(ROOT))
     return out
+
+
+# A file named .svg is not necessarily vector art.  Measured over this
+# repository, 109 of 203 SVG files are what the review must call a **pixel
+# mosaic**: a small bitmap (16-48 px) re-encoded as several hundred 2-3 px
+# <rect> elements.  At 18 logical px on a 3x display those need 54 device pixels,
+# so they are blurry -- and no retracing fixes them, which was verified by
+# tracing all 109 and reverting every one.
+_MOSAIC_TINY = 40
+
+
+def _material(text: str) -> tuple[str, int | None]:
+    """Classify an SVG by what it actually contains, not by its extension.
+
+    Returns (kind, grid) where kind is one of:
+      ``embed``   carries a base64 raster or <image>
+      ``mosaic``  hundreds of sub-3px rects; grid is the source bitmap size
+      ``vector``  real paths, scales without limit
+    """
+    if "base64" in text or "<image" in text:
+        return "embed", None
+    body = re.sub(r"base64,[A-Za-z0-9+/=]{200,}", "", text)
+    tiny = 0
+    for tag in re.findall(r"<rect\b[^>]*>", body):
+        m = re.search(r'width="([\d.]+)"', tag)
+        if m:
+            try:
+                if float(m.group(1)) <= 3:
+                    tiny += 1
+            except ValueError:
+                pass
+    if tiny >= _MOSAIC_TINY:
+        vb = re.search(r'viewBox="0 0 ([\d.]+)', text)
+        grid = int(round(float(vb.group(1)))) if vb else None
+        return "mosaic", grid
+    return "vector", None
 
 
 def _before_path(name: str, on_disk: dict[str, str]) -> str | None:
@@ -406,6 +449,8 @@ h2{font-size:16px;margin:36px 0 12px;padding-bottom:7px;
 .t-dense{background:#fdecea;color:var(--bad)}
 .t-ok{background:#e8f5ec;color:var(--good)}
 .t-noev{background:#fff4e0;color:var(--warn)}
+.t-vec{background:#e6f2f8;color:#0a6e93}
+.t-mosaic{background:#f3e8fd;color:#6d28a8}
 .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:10px 0 0}
 .note{background:#fff;border:1px solid var(--line);border-left:3px solid var(--accent);
       border-radius:0 8px 8px 0;padding:12px 15px;margin:18px 0;font-size:13px}
@@ -423,7 +468,7 @@ def build(only: str | None = None) -> str:
     if only:
         names = [n for n in names if only in n or only in reg[n][0]]
 
-    rows, n_before, n_dense_before, n_dense_after, n_noev = [], 0, 0, 0, 0
+    rows, n_before, n_dense_before, n_dense_after, n_noev, n_not_vector = [], 0, 0, 0, 0, 0
     for name in names:
         modname, after_svg = reg[name]
         after = _render(after_svg.encode(), name + ".svg")
@@ -448,12 +493,28 @@ def build(only: str | None = None) -> str:
         if not ev or not any(e["text"] or e["tip"] for e in ev):
             n_noev += 1
 
-        rows.append((name, modname, before, after, ev, ink_after, rel_before))
+        kind, grid = _material(after_svg)
+        if kind != "vector":
+            n_not_vector += 1
+
+        rows.append((name, modname, before, after, ev, ink_after, rel_before,
+                     kind, grid))
 
     # ---- markup ----
     def card(r):
-        name, modname, before, after, ev, ink, rel_before = r
+        name, modname, before, after, ev, ink, rel_before, kind, grid = r
         tags = []
+
+        # Material first: whether the file scales is the question this report
+        # exists to answer.  A .svg extension proves nothing -- 109 of them are
+        # bitmaps in disguise.
+        if kind == "vector":
+            tags.append('<span class="tag t-vec">真矢量</span>')
+        elif kind == "mosaic":
+            tags.append(f'<span class="tag t-mosaic">位图马赛克 {grid or "?"}px</span>')
+        else:
+            tags.append('<span class="tag t-mosaic">内嵌位图</span>')
+
         if not ev or not any(e["text"] or e["tip"] for e in ev):
             tags.append('<span class="tag t-noev">无文案证据</span>')
         if ink > DENSE:
@@ -499,27 +560,36 @@ def build(only: str | None = None) -> str:
 <html lang="zh"><head><meta charset="utf-8">
 <title>图标审核报告 · {total} 个</title>
 <style>{_CSS}</style></head><body>
-<h1>图标优化前后对照</h1>
+<h1>图标状态对照</h1>
 <p class="sub">每个图标都附上引用它的 <code>QAction</code> 文案与源文件；审核请对照「代码说要做什么」与「图形画了什么」，而不是凭图形本身猜测。</p>
 
 <div class="stats">
-  <div><b>{total}</b>重建图标</div>
+  <div><b>{total}</b>图标总数</div>
   <div><b>{n_before}</b>有改前旧图可对照</div>
-  <div><b>{n_dense_before}</b>改前墨量超标</div>
-  <div><b>{n_dense_after}</b>改后墨量超标</div>
+  <div><b>{n_dense_before}</b>当前墨量超标</div>
+  <div><b>{n_dense_after}</b>位图来源墨量超标</div>
   <div><b>{n_noev}</b>缺文案证据</div>
 </div>
 
 <div class="legend">
-  <span><span class="tag t-ok">墨量</span> 18px 下不透明像素占比，越小越清晰</span>
+  <span><span class="tag t-vec">真矢量</span> 真实路径，任意缩放都锐利</span>
+  <span><span class="tag t-mosaic">位图马赛克</span> 16–48px 小图逐像素重编码，放大即方块</span>
+  <span><span class="tag t-ok">墨量</span> 18px 下不透明像素占比</span>
   <span><span class="tag t-dense">过密</span> 超过 {DENSE:.0%}，小尺寸下会糊成块</span>
-  <span><span class="tag t-noev">无文案证据</span> 只被 qrc 引用、未绑定可见动作，需人工确认语义</span>
+  <span><span class="tag t-noev">无文案证据</span> 未绑定可见动作，需人工确认语义</span>
 </div>
 
 <div class="note">
-<strong>改前图的来源</strong>：全部从 <code>git show HEAD:</code> 读取，即上一次提交时实际发布的文件，不是本工具链已经覆盖过的版本。
-改后图由当前 <code>scripts/icon_hd/logo/*.py</code> 现场渲染。<br>
-<strong>为什么有些「无旧图」</strong>：这些图标此前就是纯矢量（如 <code>db*</code> 系列），或旧文件是 SVG 而 <code>git</code> 中只有一份，没有可对比的位图。
+<strong>本报告的判据是「文件里到底装了什么」，不是扩展名。</strong>
+一个 <code>.svg</code> 可能是真矢量，也可能是一张 16–48px 小图被逐像素拆成几百个
+2–3px <code>&lt;rect&gt;</code> 的马赛克。两者在高 DPI 屏上表现完全不同：
+工具栏图标 18 逻辑像素、3 倍屏需要 54 设备像素，马赛克型的源网格全部不足，
+所以会糊。<br>
+<strong>这正是此前「优化后还是模糊」的根因</strong>：那 109 个文件本来就是位图，
+恢复它们只恢复了原有的模糊。自动描摹全部 109 个的尝试已实测并<strong>全部回退</strong>
+——产生了可见形变（<code>ecvExit</code> 泛绿、<code>pqBold24</code> 变形、
+<code>typeXCoordinate</code> 被切断），不能让它们进仓库。<br>
+<strong>已是真矢量的 198 个图标</strong>：与上一次提交逐字节一致，一个都没有改动。
 </div>
 
 <h2>逐图对照</h2>

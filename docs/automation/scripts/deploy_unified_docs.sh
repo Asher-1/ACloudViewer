@@ -212,6 +212,41 @@ calibrate_not_found_page() {
 }
 
 # ---------------------------------------------------------------------------
+# Point the static website's documentation links at the version that was just
+# deployed.
+#
+# The website is a static file authored long before any deployment knows what
+# the newest version is. A hardcoded `/documentation/getting_started/...` is
+# only valid while /documentation/ is a real directory; it became a redirect
+# stub the moment the versioned layout landed, so those links 404'd in
+# production. A hardcoded `/documentation/v3.9.4/...` would instead go stale
+# on the next release.
+#
+# The source therefore carries an `@DOC_LATEST@` placeholder, and the version
+# segment is filled in here -- from the same variable that drives the
+# /documentation/ redirect, so the two can never disagree.
+# ---------------------------------------------------------------------------
+rewrite_website_doc_links() {
+    local latest="${1:-dev}"
+    local page count=0
+
+    # index.html is the site; DOCUMENTATION.md is the human-readable map of
+    # the same tree and carries the same links. Both ship the placeholder.
+    for page in unified-deploy/index.html unified-deploy/DOCUMENTATION.md; do
+        [ -f "$page" ] || continue
+        grep -q '@DOC_LATEST@' "$page" || continue
+        sed -i "s|@DOC_LATEST@|${latest}|g" "$page"
+        count=$((count + 1))
+    done
+
+    if [ "$count" -gt 0 ]; then
+        log "  ✅ website documentation links → /documentation/${latest}/"
+    else
+        log "  ℹ️  no @DOC_LATEST@ placeholder in the website"
+    fi
+}
+
+# ---------------------------------------------------------------------------
 # Propagate the newest version switcher into every archive. Historical
 # archives were built against older templates and would otherwise ship a
 # switcher that cannot see versions published after they were built.
@@ -372,6 +407,7 @@ else
 fi
 
 write_versions_json "$LATEST_VERSION" "${DEPLOYED_VERSIONS[@]:-}"
+rewrite_website_doc_links "${LATEST_VERSION:-dev}"
 calibrate_not_found_page "$LATEST_VERSION"
 
 # ---------------------------------------------------------------------------
