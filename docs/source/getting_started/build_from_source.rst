@@ -20,12 +20,13 @@ Quick Start
    # Or with conda:
    ./docker/build-release-conda.sh
 
-**Linux (Manual):**
+**Linux (Local, one-click):**
 
 .. code-block:: bash
 
-   utils/install_deps_ubuntu.sh assume-yes
-   ./scripts/build_ubuntu.sh
+   # Apt deps, pyenv Python, Vulkan SDK, VTK/PCL deps, CMake configure and
+   # build in one shot; re-running only redoes what is missing (idempotent).
+   bash docs/guides/compiling_doc/setup_and_build_acloudviewer_linux.sh
 
 **macOS:**
 
@@ -49,7 +50,7 @@ Minimum Requirements
 - **CPU**: 8+ cores recommended
 - **RAM**: 16 GB+ recommended
 - **Disk**: 20 GB free space
-- **CMake**: 3.19 or higher
+- **CMake**: 3.24 or higher (the repository-pinned toolchain is 3.31.8; `util/install_deps_ubuntu.sh` auto-installs the pinned pip CMake when the apt one is older)
 
 Recommended
 ~~~~~~~~~~~
@@ -135,7 +136,7 @@ Install dependencies automatically:
 .. code-block:: bash
 
    # Install all dependencies
-   utils/install_deps_ubuntu.sh assume-yes
+   util/install_deps_ubuntu.sh assume-yes
 
 Or install manually:
 
@@ -773,7 +774,7 @@ Additional Resources
 
 **Build Scripts:**
 
-- Linux: ``scripts/build_ubuntu.sh``
+- Linux: ``docs/guides/compiling_doc/setup_and_build_acloudviewer_linux.sh``
 - macOS: ``scripts/build_macos.sh``
 - Windows: ``scripts/build_win.py``
 - Docker: ``docker/build-release.sh``

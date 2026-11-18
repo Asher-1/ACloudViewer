@@ -19,6 +19,7 @@ deps=(
     libxcb-shm0
     libglu1-mesa-dev
     python3-dev
+    python3-pip
     libssl-dev
     # Filament build-from-source
     clang
@@ -95,6 +96,42 @@ if ! $SUDO apt-get install ${APT_CONFIRM} --fix-missing ${deps[*]}; then
     echo "apt-get install failed, refreshing indexes and retrying once..." >&2
     apt_update_with_retry
     $SUDO apt-get install ${APT_CONFIRM} --fix-missing ${deps[*]}
+fi
+
+# ---------------------------------------------------------------------------
+# CMake >= 3.24 (cmake_minimum_required): Open3D parity, the pinned FAISS
+# dependency and CUDA native architecture selection all require it. Ubuntu
+# 20.04/22.04 only ship CMake 3.16/3.22 in the default apt repos, so fall
+# back to the pinned pip wheel when the system CMake is missing or too old
+# (same pattern as util/vulkan/install_vulkan_linux.sh). Docker images
+# preinstall a pinned CMake on PATH and skip this block.
+# ---------------------------------------------------------------------------
+cmake_version() {
+    command -v cmake >/dev/null 2>&1 || return 1
+    cmake --version | awk 'NR == 1 {print $3}'
+}
+cmake_too_old() {
+    local ver="$(cmake_version || true)"
+    [[ -z "${ver}" ]] && return 0
+    # sort -V: if 3.24 sorts to the front, the found version is older.
+    [[ "$(printf '%s\n%s\n' "${ver}" "3.24" | sort -V | head -n1)" != "3.24" ]]
+}
+if cmake_too_old; then
+    echo "System CMake $(cmake_version || echo '<missing>') is below the required 3.24; installing the pinned pip CMake 3.31.8."
+    if ! python3 -m pip install --user --upgrade cmake==3.31.8; then
+        # set -e would abort silently here; surface the manual-install paths.
+        echo "ERROR: pip install of the pinned CMake 3.31.8 failed." >&2
+        echo "Install CMake >= 3.24 manually: https://apt.kitware.com/ (Ubuntu) or https://cmake.org/download/" >&2
+        exit 1
+    fi
+    # The pip wheel lands in ~/.local/bin; make it win for this script and
+    # any shell sourcing this file afterwards.
+    export PATH="${HOME}/.local/bin:${PATH}"
+fi
+if cmake_too_old; then
+    echo "ERROR: CMake >= 3.24 still unavailable after the pip fallback." >&2
+    echo "Install it manually: https://apt.kitware.com/ (Ubuntu) or https://cmake.org/download/" >&2
+    exit 1
 fi
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

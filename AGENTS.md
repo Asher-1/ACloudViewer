@@ -146,7 +146,7 @@ CMake option reference: **[BUILD.md](BUILD.md)**.
 | **macOS** | **Conda only** (see guide) | Same as Linux Option B; env from `.ci/conda_macos_cloudViewer.yml` |
 | **Windows** | **Conda only** (see guide) | Same as Linux Option B; run `scripts/setup_conda_env.ps1`; env from `.ci/conda_windows_cloudViewer.yml` |
 
-Linux Option A also runs `utils/install_deps_ubuntu.sh assume-yes` and sets up **pyenv** Python 3.10–3.13 before configure. Conda paths on all platforms: create env → `conda activate cloudViewer` → export `PKG_CONFIG_PATH` / `LD_LIBRARY_PATH` (Linux) or `PATH` (macOS) as in the platform guide.
+Linux Option A also runs `util/install_deps_ubuntu.sh assume-yes` and sets up **pyenv** Python 3.10–3.13 before configure. Conda paths on all platforms: create env → `conda activate cloudViewer` → export `PKG_CONFIG_PATH` / `LD_LIBRARY_PATH` (Linux) or `PATH` (macOS) as in the platform guide.
 
 > **Qt note:** Qt 6 only on Ubuntu 24.04+; on 20.04/22.04 use `-DUSE_QT6=OFF`. **macOS:** `PLUGIN_STANDARD_QSIBR=OFF` in CI (OpenGL/Metal limits).
 
@@ -175,7 +175,7 @@ If linking fails with “Killed” or “c++: fatal error: Killed”, reduce `BU
 ### Linux — Option A (pyenv + system packages)
 
 ```bash
-utils/install_deps_ubuntu.sh assume-yes
+util/install_deps_ubuntu.sh assume-yes
 # pyenv: install Python 3.12, then resolve paths (see linux guide § A2–A3)
 
 mkdir -p build_app && cd build_app
