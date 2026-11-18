@@ -57,7 +57,7 @@
 | Item             | Requirement                                    |
 | ---------------- | ---------------------------------------------- |
 | **OS**           | Ubuntu 20.04 / 22.04 / 24.04                   |
-| **CMake**        | ≥ 3.24 — `util/install_deps_ubuntu.sh` auto-installs the pinned 3.31.8 pip wheel when the apt one is older (Ubuntu 20.04/22.04 ship 3.16/3.22) |
+| **CMake**        | ≥ 3.24 — `util/install_deps_ubuntu.sh` auto-installs the pinned 3.31.10 pip wheel when the apt one is older (Ubuntu 20.04/22.04 ship 3.16/3.22) |
 | **Python**       | 3.10 – 3.13                                    |
 | **Compiler**     | GCC ≥ 9 or Clang (provided by `install_deps`)  |
 | **AICore GPU (default)** | **Vulkan** — `AICore_USE_VULKAN=ON` on Linux (CMake default); run `util/vulkan/install_vulkan_env.sh` or `install_deps_ubuntu.sh` for build-time SDK/glslc |

@@ -50,7 +50,7 @@ Minimum Requirements
 - **CPU**: 8+ cores recommended
 - **RAM**: 16 GB+ recommended
 - **Disk**: 20 GB free space
-- **CMake**: 3.24 or higher (the repository-pinned toolchain is 3.31.8; `util/install_deps_ubuntu.sh` auto-installs the pinned pip CMake when the apt one is older)
+- **CMake**: 3.24 or higher (CI and Conda environments pin 3.31.8; `util/install_deps_ubuntu.sh` auto-installs the pinned pip CMake (3.31.10) when the apt one is older)
 
 Recommended
 ~~~~~~~~~~~
