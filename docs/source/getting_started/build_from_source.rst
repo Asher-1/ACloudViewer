@@ -149,6 +149,12 @@ Or install manually:
        qt5-default libqt5svg5-dev libqt5opengl5-dev qttools5-dev \
        libglu1-mesa-dev freeglut3-dev mesa-common-dev
 
+.. note::
+   The apt ``cmake`` package is below the required 3.24 on Ubuntu 20.04/22.04
+   (3.16/3.22). Install a newer CMake via the Kitware apt repository (see
+   :doc:`quickstart`) or ``python3 -m pip install --user --upgrade "cmake>=3.24,<4"``
+   — or simply use the one-click script above, which handles this automatically.
+
 Python Environment (pyenv)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
