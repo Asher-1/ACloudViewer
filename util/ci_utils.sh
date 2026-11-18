@@ -1382,7 +1382,17 @@ build_docs() {
     # Use --clean-notebooks to clean existing notebooks before copying
     # Use --execute-notebooks=always to ensure notebooks are executed in headless mode
     # Use --py-api-rst=never and --py-example-rst=never to skip Python API/example generation in first build
-    python make_docs.py $DOC_ARGS --clean --sphinx --strict --clean-notebooks --execute-notebooks=always --py-api-rst=never --py-example-rst=never
+    #
+    # The exit status MUST be checked. This function ships with `set +u`, not
+    # `set -e`, so a failing Sphinx run falls through to the "✅ complete"
+    # banner below and the Docker layer exits 0. That is how a broken build
+    # reached Pages as a plausible-looking but index-less tree: Doxygen still
+    # wrote cpp_api/, so the upload had 96k files and nothing complained.
+    if ! python make_docs.py $DOC_ARGS --clean --sphinx --strict --clean-notebooks --execute-notebooks=always --py-api-rst=never --py-example-rst=never; then
+        set +x
+        echo "❌ Notebook execution build failed (see the Sphinx output above)"
+        return 1
+    fi
     set +x
     
     echo ""
@@ -1446,7 +1456,11 @@ build_docs() {
     # - HTML outputs are combined via file system
     # Don't use --clean here to preserve executed notebook outputs from first build
     # Use --py-api-rst=always and --py-example-rst=always to generate Python API/example docs in second build
-    python make_docs.py $DOC_ARGS --sphinx --strict --doxygen --parallel --execute-notebooks=never --py-api-rst=always --py-example-rst=always
+    if ! python make_docs.py $DOC_ARGS --sphinx --strict --doxygen --parallel --execute-notebooks=never --py-api-rst=always --py-example-rst=always; then
+        set +x
+        echo "❌ Full documentation build failed (see the Sphinx/Doxygen output above)"
+        return 1
+    fi
     set +x
     
     echo ""

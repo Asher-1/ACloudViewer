@@ -319,6 +319,13 @@ rule
 [ -d website-deploy ] || die "website-deploy/ missing"
 [ -d docs-output ]    || die "docs-output/ missing"
 
+# A documentation tree with no entry page is not a degraded deployment, it is
+# a broken one. Doxygen output (cpp_api/) survives a failed Sphinx run, so the
+# directory can hold tens of thousands of files while /documentation/dev/
+# itself serves 404. Refuse it here rather than publishing it.
+[ -f docs-output/index.html ] || \
+    die "docs-output/index.html is missing: the documentation build produced no entry page"
+
 mkdir -p unified-deploy
 cp -r website-deploy/. unified-deploy/
 log "✅ Website copied to deploy root"

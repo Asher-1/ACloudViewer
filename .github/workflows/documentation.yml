@@ -259,9 +259,16 @@ jobs:
           mkdir -p docs-output
           tar -xzf "${ARCHIVE_NAME}" -C docs-output/
           
-          # Verify extraction
+          # Verify extraction. A tree without an entry page is not a degraded
+          # deployment, it is a broken one: the Doxygen cpp_api/ subdirectory
+          # alone still yields ~96k files, which passes every count-based
+          # sanity check while /documentation/dev/ itself serves 404. Fail
+          # here so the upload and deploy steps never see this artifact.
           if [ ! -f "docs-output/index.html" ]; then
-            echo "⚠️  Warning: index.html not found in extracted documentation"
+            echo "❌ index.html is missing from the extracted documentation."
+            echo "   The Sphinx step did not produce a usable tree; the"
+            echo "   artifact holds only Doxygen output. Refusing to deploy."
+            exit 1
           fi
           
           echo ""

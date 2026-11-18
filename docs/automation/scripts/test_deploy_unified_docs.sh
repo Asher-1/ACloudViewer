@@ -130,6 +130,21 @@ check "placeholder expanded to dev" \
 check "no placeholder survives into the artifact" \
   "! grep -q '@DOC_LATEST@' '$d/unified-deploy/index.html'"
 
+echo "═══ Case 9: an entry-page-less docs tree is rejected ═══"
+# Regression: a Sphinx run that produced nothing usable still leaves Doxygen's
+# cpp_api/ behind, so docs-output/ can hold ~96k files and no index.html. The
+# deploy used to accept that, publish it, and serve 404 at /documentation/dev/.
+# Such a tree must now be refused before anything is uploaded.
+d=$(new_case c9)
+rm -f "$d/docs-output/index.html"
+set +e
+run_deploy "$d" false "" ""
+rc=$?
+set -e
+check "deploy fails when docs-output has no index.html" "[ $rc -ne 0 ]"
+check "failure names the missing entry page" \
+  "grep -q 'index.html' '$d/deploy.log'"
+
 echo
 echo "──────────────────────────────"
 printf 'PASS: %d   FAIL: %d\n' "$pass" "$fail"

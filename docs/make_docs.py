@@ -882,6 +882,17 @@ class SphinxDocsBuilder:
             print(f"❌ Sphinx build failed: {e}")
             raise
 
+        # A Sphinx run can exit 0 and still leave nothing usable behind (e.g.
+        # when every source is skipped). Downstream steps treat _out/html as
+        # the whole documentation tree, so an index-less directory ships as a
+        # site whose entry page 404s. Fail here, where the cause is obvious.
+        index_html = os.path.join(build_dir, "index.html")
+        if not os.path.isfile(index_html):
+            raise RuntimeError(
+                f"Sphinx reported success but {index_html} is missing; "
+                "refusing to publish an entry-page-less documentation tree"
+            )
+
 
 def get_cloudviewer_version(pwd):
     """Read the CloudViewer version from ``libs/cloudViewer/version.txt``.
