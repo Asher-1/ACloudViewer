@@ -42,7 +42,15 @@ jobs:
           python-version: '3.11'
 
       - name: Install guard dependencies
-        run: pip install pyyaml
+        run: pip install pyyaml docutils
+
+      - name: Notebook section titles
+        # nbsphinx concatenates markdown cells and feeds them to docutils via
+        # pandoc. A cell ending in "---" whose successor starts with prose is
+        # read as a section-title overline, and sphinx-build -W then fails the
+        # whole build. Catch it here, in seconds, instead of after a 30-minute
+        # Docker build.
+        run: python3 docs/automation/scripts/check_notebook_headings.py
 
       - name: Workflow size limits
         run: python3 docs/automation/scripts/check_workflow_limits.py
