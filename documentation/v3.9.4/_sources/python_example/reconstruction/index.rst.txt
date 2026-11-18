@@ -1,0 +1,67 @@
+Reconstruction
+--------------
+
+database.py
+```````````
+
+.. literalinclude:: database.py
+   :language: python
+   :linenos:
+
+
+feature.py
+``````````
+
+.. literalinclude:: feature.py
+   :language: python
+   :linenos:
+
+
+gui.py
+``````
+
+.. literalinclude:: gui.py
+   :language: python
+   :linenos:
+
+
+image.py
+````````
+
+.. literalinclude:: image.py
+   :language: python
+   :linenos:
+
+
+model.py
+````````
+
+.. literalinclude:: model.py
+   :language: python
+   :linenos:
+
+
+mvs.py
+``````
+
+.. literalinclude:: mvs.py
+   :language: python
+   :linenos:
+
+
+sfm.py
+``````
+
+.. literalinclude:: sfm.py
+   :language: python
+   :linenos:
+
+
+vocab_tree.py
+`````````````
+
+.. literalinclude:: vocab_tree.py
+   :language: python
+   :linenos:
+
+

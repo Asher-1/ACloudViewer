@@ -1,0 +1,8 @@
+<map id="vtkPVTrackballMultiRotate" name="vtkPVTrackballMultiRotate">
+<area shape="rect" id="node1" title=" " alt="" coords="5,336,200,363"/>
+<area shape="rect" id="node2" href="$classvtkCameraManipulator.html" title=" " alt="" coords="59,171,231,197"/>
+<area shape="rect" id="node5" href="$classvtkPVTrackballRoll.html" title=" " alt="" coords="237,247,379,273"/>
+<area shape="rect" id="node6" href="$classvtkPVTrackballRotate.html" title=" " alt="" coords="403,247,565,273"/>
+<area shape="rect" id="node3" title=" " alt="" coords="97,5,183,32"/>
+<area shape="rect" id="node4" href="$classvtkCameraManipulatorGUIHelper.html" title=" " alt="" coords="162,81,401,108"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="SoiFilter" name="SoiFilter">
+<area shape="rect" id="node1" title="Mensi Soisic point cloud file I/O filter." alt="" coords="14,80,89,107"/>
+<area shape="rect" id="node2" href="$classFileIOFilter.html" title="Generic file I/O filter." alt="" coords="5,5,97,32"/>
+</map>

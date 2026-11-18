@@ -1,0 +1,9 @@
+<map id="ccMaterialSet" name="ccMaterialSet">
+<area shape="rect" id="node1" title="Mesh (triangle) material." alt="" coords="201,244,312,271"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,155,180,196"/>
+<area shape="rect" id="node3" href="$classCCShareable.html" title=" " alt="" coords="204,162,309,189"/>
+<area shape="rect" id="node4" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="334,162,422,189"/>
+<area shape="rect" id="node5" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="272,80,351,107"/>
+<area shape="rect" id="node6" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="234,5,389,32"/>
+<area shape="rect" id="node7" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="375,80,515,107"/>
+</map>

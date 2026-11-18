@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.modules.losses.FocalLoss
+---------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.modules.losses
+
+.. autoclass:: FocalLoss
+    :members:
+    :undoc-members:

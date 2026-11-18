@@ -1,0 +1,9 @@
+<map id="cloudViewer::visualization::gui::Layout1D" name="cloudViewer::visualization::gui::Layout1D">
+<area shape="rect" id="node1" title=" " alt="" coords="247,39,440,80"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1visualization_1_1gui_1_1Horiz.html" title="Lays out widgets horizontally." alt="" coords="488,5,681,47"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1visualization_1_1gui_1_1Vert.html" title="Lays out widgets vertically." alt="" coords="488,71,681,112"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1visualization_1_1gui_1_1Widget.html" title=" " alt="" coords="5,39,199,80"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1visualization_1_1GuiSettingsView.html" title=" " alt="" coords="729,5,923,47"/>
+<area shape="rect" id="node6" href="$classcloudViewer_1_1visualization_1_1gui_1_1CollapsableVert.html" title=" " alt="" coords="729,71,923,112"/>
+<area shape="rect" id="node7" href="$classcloudViewer_1_1visualization_1_1gui_1_1ScrollableVert.html" title="This a vertical layout that scrolls if it is smaller than its contents." alt="" coords="729,136,923,177"/>
+</map>

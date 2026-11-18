@@ -1,0 +1,11 @@
+<map id="EditCameraTool" name="EditCameraTool">
+<area shape="rect" id="node1" title=" " alt="" coords="82,499,206,525"/>
+<area shape="rect" id="node2" href="$classecvGenericCameraTool.html" title=" " alt="" coords="58,423,230,449"/>
+<area shape="rect" id="node3" title=" " alt="" coords="85,311,160,338"/>
+<area shape="rect" id="node4" href="$structecvGenericCameraTool_1_1CameraInfo.html" title=" " alt="" coords="185,304,357,345"/>
+<area shape="rect" id="node5" href="$classVector3Tpl.html" title=" " alt="" coords="81,171,247,197"/>
+<area shape="rect" id="node6" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="5,5,149,32"/>
+<area shape="rect" id="node7" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="99,81,250,108"/>
+<area shape="rect" id="node8" href="$classVector2Tpl.html" title=" " alt="" coords="271,171,436,197"/>
+<area shape="rect" id="node9" href="$classVector2Tpl.html" title="2D Vector" alt="" coords="278,81,429,108"/>
+</map>

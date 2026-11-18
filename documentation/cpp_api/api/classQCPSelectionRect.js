@@ -1,0 +1,28 @@
+var classQCPSelectionRect =
+[
+    [ "QCPSelectionRect", "classQCPSelectionRect.html#ade6ee59fabcc585a1e281eb527b01867", null ],
+    [ "~QCPSelectionRect", "classQCPSelectionRect.html#aded186aabcdc3ee51775b7c5063e199a", null ],
+    [ "accepted", "classQCPSelectionRect.html#a15a43542e1f7b953a44c260b419e6d2c", null ],
+    [ "applyDefaultAntialiasingHint", "classQCPSelectionRect.html#a7e64a95c3d65d0b86269ed1a31039300", null ],
+    [ "brush", "classQCPSelectionRect.html#a9669c77c5796dea9dc089a088d50ebfb", null ],
+    [ "cancel", "classQCPSelectionRect.html#af67bc58f4f5ce9a4dc420b9c42de235a", null ],
+    [ "canceled", "classQCPSelectionRect.html#aeb82009393c90130102dccf36477b906", null ],
+    [ "changed", "classQCPSelectionRect.html#a1bab11026bca52740c2e6682623e6964", null ],
+    [ "draw", "classQCPSelectionRect.html#afdc52566dceccb494c1ed2be33b147c9", null ],
+    [ "endSelection", "classQCPSelectionRect.html#a625bcffd73987f6de6c6559aaf29ab9d", null ],
+    [ "isActive", "classQCPSelectionRect.html#ad27c1569c6ea8fa48e24b81e2a302df3", null ],
+    [ "keyPressEvent", "classQCPSelectionRect.html#a1affe764316d6122a26fdb2e9583feb1", null ],
+    [ "moveSelection", "classQCPSelectionRect.html#a95c3f1700be2a6d7bba0fe56ece5fbb1", null ],
+    [ "pen", "classQCPSelectionRect.html#ab4229f8faeaffba9617d2e6c4779b765", null ],
+    [ "range", "classQCPSelectionRect.html#a23ab082ffa04be1dbf9afb9e633ab815", null ],
+    [ "rect", "classQCPSelectionRect.html#a3812115ae4dfe2855bf1e58331c14805", null ],
+    [ "setBrush", "classQCPSelectionRect.html#ab0c66f1484418782efa01f4153611080", null ],
+    [ "setPen", "classQCPSelectionRect.html#ada20b7fb1b2dcbe50523262636b06963", null ],
+    [ "started", "classQCPSelectionRect.html#a7b7162d19f4f2174d3644ff1a5d335aa", null ],
+    [ "startSelection", "classQCPSelectionRect.html#a271f24cfca8bc50a0e2b4310ff90e227", null ],
+    [ "QCustomPlot", "classQCPSelectionRect.html#a1cdf9df76adcfae45261690aa0ca2198", null ],
+    [ "mActive", "classQCPSelectionRect.html#a1c167356b0bc59e62691bff8c90f5851", null ],
+    [ "mBrush", "classQCPSelectionRect.html#a1bda3f02c2e4da58c856d19695028cbe", null ],
+    [ "mPen", "classQCPSelectionRect.html#ae255dec12cd531071115bd667f0fd815", null ],
+    [ "mRect", "classQCPSelectionRect.html#a45a2600ef19c8f7b5ec6134beab036cf", null ]
+];

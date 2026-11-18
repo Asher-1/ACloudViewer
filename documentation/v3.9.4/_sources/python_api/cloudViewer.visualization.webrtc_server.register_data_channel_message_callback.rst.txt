@@ -1,0 +1,6 @@
+cloudViewer.visualization.webrtc_server.register_data_channel_message_callback
+------------------------------------------------------------------------------
+
+.. currentmodule:: cloudViewer.visualization.webrtc_server
+
+.. autofunction:: register_data_channel_message_callback

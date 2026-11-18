@@ -1,0 +1,87 @@
+var classcloudViewer_1_1visualization_1_1RenderOption =
+[
+    [ "DepthFunc", "classcloudViewer_1_1visualization_1_1RenderOption.html#a1712c104c87ac88a307fb297b53fcfaa", [
+      [ "Never", "classcloudViewer_1_1visualization_1_1RenderOption.html#a1712c104c87ac88a307fb297b53fcfaaa6e7b34fa59e1bd229b207892956dc41c", null ],
+      [ "Less", "classcloudViewer_1_1visualization_1_1RenderOption.html#a1712c104c87ac88a307fb297b53fcfaaa1cfdf0e8d0c87a228c1f40d9bee7888b", null ],
+      [ "Equal", "classcloudViewer_1_1visualization_1_1RenderOption.html#a1712c104c87ac88a307fb297b53fcfaaaf5f286e73bda105e538310b3190f75c5", null ],
+      [ "LEqual", "classcloudViewer_1_1visualization_1_1RenderOption.html#a1712c104c87ac88a307fb297b53fcfaaa9f2def3dbc3357543556d765e234a550", null ],
+      [ "Greater", "classcloudViewer_1_1visualization_1_1RenderOption.html#a1712c104c87ac88a307fb297b53fcfaaa8768a6821cd735aea4f5b0df88c1fc6a", null ],
+      [ "NotEqual", "classcloudViewer_1_1visualization_1_1RenderOption.html#a1712c104c87ac88a307fb297b53fcfaaa19bb0af2c3c530538cb41aff7f235b96", null ],
+      [ "GEqual", "classcloudViewer_1_1visualization_1_1RenderOption.html#a1712c104c87ac88a307fb297b53fcfaaa6274a4f615e42c9894ded1bc221ceba6", null ],
+      [ "Always", "classcloudViewer_1_1visualization_1_1RenderOption.html#a1712c104c87ac88a307fb297b53fcfaaa68eec46437c384d8dad18d5464ebc35c", null ]
+    ] ],
+    [ "ImageStretchOption", "classcloudViewer_1_1visualization_1_1RenderOption.html#a33e4750a01b3cf23b0b084574c9e03c8", [
+      [ "OriginalSize", "classcloudViewer_1_1visualization_1_1RenderOption.html#a33e4750a01b3cf23b0b084574c9e03c8a74a3b1fc4b5d0383e6a3d23255f48589", null ],
+      [ "StretchKeepRatio", "classcloudViewer_1_1visualization_1_1RenderOption.html#a33e4750a01b3cf23b0b084574c9e03c8a8d8f8dc5a43690cece8e0d0daa7c9be9", null ],
+      [ "StretchWithWindow", "classcloudViewer_1_1visualization_1_1RenderOption.html#a33e4750a01b3cf23b0b084574c9e03c8ab45672217afac0bdbe60dad7406e3561", null ]
+    ] ],
+    [ "MeshColorOption", "classcloudViewer_1_1visualization_1_1RenderOption.html#a98c027bfab16b647b34bb0cea0870d3e", [
+      [ "Default", "classcloudViewer_1_1visualization_1_1RenderOption.html#a98c027bfab16b647b34bb0cea0870d3ea7a1920d61156abc05a60135aefe8bc67", null ],
+      [ "Color", "classcloudViewer_1_1visualization_1_1RenderOption.html#a98c027bfab16b647b34bb0cea0870d3eacb5feb1b7314637725a2e73bdc9f7295", null ],
+      [ "XCoordinate", "classcloudViewer_1_1visualization_1_1RenderOption.html#a98c027bfab16b647b34bb0cea0870d3eaba3e3b288b005bf644924d6b3ef0475f", null ],
+      [ "YCoordinate", "classcloudViewer_1_1visualization_1_1RenderOption.html#a98c027bfab16b647b34bb0cea0870d3ea9e68f9058b927ba1f3b7177e5ce8ef31", null ],
+      [ "ZCoordinate", "classcloudViewer_1_1visualization_1_1RenderOption.html#a98c027bfab16b647b34bb0cea0870d3ea9427669d5b1a69f184a0ddcba8090571", null ],
+      [ "Normal", "classcloudViewer_1_1visualization_1_1RenderOption.html#a98c027bfab16b647b34bb0cea0870d3ea960b44c579bc2f6818d2daaf9e4c16f0", null ]
+    ] ],
+    [ "MeshShadeOption", "classcloudViewer_1_1visualization_1_1RenderOption.html#a1ed20cdaf908d035742517539e93815a", [
+      [ "FlatShade", "classcloudViewer_1_1visualization_1_1RenderOption.html#a1ed20cdaf908d035742517539e93815aa00907e54416b1b54fccb313858347fe1", null ],
+      [ "SmoothShade", "classcloudViewer_1_1visualization_1_1RenderOption.html#a1ed20cdaf908d035742517539e93815aafcacdb57bd48899c2356fd265d0775c5", null ]
+    ] ],
+    [ "PointColorOption", "classcloudViewer_1_1visualization_1_1RenderOption.html#a585c306eb38bf5c20d54d3dba984ee98", [
+      [ "Default", "classcloudViewer_1_1visualization_1_1RenderOption.html#a585c306eb38bf5c20d54d3dba984ee98a7a1920d61156abc05a60135aefe8bc67", null ],
+      [ "Color", "classcloudViewer_1_1visualization_1_1RenderOption.html#a585c306eb38bf5c20d54d3dba984ee98acb5feb1b7314637725a2e73bdc9f7295", null ],
+      [ "XCoordinate", "classcloudViewer_1_1visualization_1_1RenderOption.html#a585c306eb38bf5c20d54d3dba984ee98aba3e3b288b005bf644924d6b3ef0475f", null ],
+      [ "YCoordinate", "classcloudViewer_1_1visualization_1_1RenderOption.html#a585c306eb38bf5c20d54d3dba984ee98a9e68f9058b927ba1f3b7177e5ce8ef31", null ],
+      [ "ZCoordinate", "classcloudViewer_1_1visualization_1_1RenderOption.html#a585c306eb38bf5c20d54d3dba984ee98a9427669d5b1a69f184a0ddcba8090571", null ],
+      [ "Normal", "classcloudViewer_1_1visualization_1_1RenderOption.html#a585c306eb38bf5c20d54d3dba984ee98a960b44c579bc2f6818d2daaf9e4c16f0", null ]
+    ] ],
+    [ "TextureInterpolationOption", "classcloudViewer_1_1visualization_1_1RenderOption.html#a58c20af3001f8166397882b92ad7701d", [
+      [ "Nearest", "classcloudViewer_1_1visualization_1_1RenderOption.html#a58c20af3001f8166397882b92ad7701da60494f02d440f316319dd0fad40ad007", null ],
+      [ "Linear", "classcloudViewer_1_1visualization_1_1RenderOption.html#a58c20af3001f8166397882b92ad7701da32a843da6ea40ab3b17a3421ccdf671b", null ]
+    ] ],
+    [ "RenderOption", "classcloudViewer_1_1visualization_1_1RenderOption.html#ad46557a9b9a5bf249606822d90ea077f", null ],
+    [ "~RenderOption", "classcloudViewer_1_1visualization_1_1RenderOption.html#add6d8d8adac58e15799c74172d0994c9", null ],
+    [ "ChangeLineWidth", "classcloudViewer_1_1visualization_1_1RenderOption.html#abdcaa4f5ba2e1f5161dfded79b21aa39", null ],
+    [ "ChangePointSize", "classcloudViewer_1_1visualization_1_1RenderOption.html#a27e025111058460b25269dc7a1cd3ac0", null ],
+    [ "ConvertFromJsonValue", "classcloudViewer_1_1visualization_1_1RenderOption.html#aa5e882dc844d14f7ff560cca9e26c04f", null ],
+    [ "ConvertToJsonValue", "classcloudViewer_1_1visualization_1_1RenderOption.html#a027e3154cde4489fd8bf326bf11bdf45", null ],
+    [ "GetGLDepthFunc", "classcloudViewer_1_1visualization_1_1RenderOption.html#a77064360037fc625d6e01618f1efc0be", null ],
+    [ "SetPointSize", "classcloudViewer_1_1visualization_1_1RenderOption.html#af96361df3fae3e108706265ca62e4646", null ],
+    [ "ToggleImageStretchOption", "classcloudViewer_1_1visualization_1_1RenderOption.html#a6428d07cfe5525a7fd782b089dcb298b", null ],
+    [ "ToggleInterpolationOption", "classcloudViewer_1_1visualization_1_1RenderOption.html#a0d2b5a519e9e5974a4044fb57d682eea", null ],
+    [ "ToggleLightOn", "classcloudViewer_1_1visualization_1_1RenderOption.html#aeb4967c55759620f856df452417c757e", null ],
+    [ "ToggleMeshShowBackFace", "classcloudViewer_1_1visualization_1_1RenderOption.html#a04af60b61cc40cbbf64a692862225329", null ],
+    [ "ToggleMeshShowWireframe", "classcloudViewer_1_1visualization_1_1RenderOption.html#a553ee07b52e53a7ce8e62f118984ff46", null ],
+    [ "TogglePointShowNormal", "classcloudViewer_1_1visualization_1_1RenderOption.html#ad94cfd7778d09efd403b1b9dbd483ce6", null ],
+    [ "ToggleShadingOption", "classcloudViewer_1_1visualization_1_1RenderOption.html#afbf19b8919cdcca2747fe7c84cbe6928", null ],
+    [ "background_color_", "classcloudViewer_1_1visualization_1_1RenderOption.html#a50f34dbd9611858d8181db6cc09897e6", null ],
+    [ "default_mesh_color_", "classcloudViewer_1_1visualization_1_1RenderOption.html#a0272da83a28386013bf23bcd113c5cf2", null ],
+    [ "depthFunc_", "classcloudViewer_1_1visualization_1_1RenderOption.html#acec535f5d968c818a47fee49ab64ae65", null ],
+    [ "image_max_depth_", "classcloudViewer_1_1visualization_1_1RenderOption.html#a2fb11d9a726ec4e55cfe0e64b80e494b", null ],
+    [ "image_stretch_option_", "classcloudViewer_1_1visualization_1_1RenderOption.html#ad734a679a23918912d9a3f8c603714fe", null ],
+    [ "interpolation_option_", "classcloudViewer_1_1visualization_1_1RenderOption.html#a44bcaf53d4d704c001516bbcf0901c96", null ],
+    [ "light_ambient_color_", "classcloudViewer_1_1visualization_1_1RenderOption.html#a842dcdbe142a9f4c8069cde625192b73", null ],
+    [ "light_color_", "classcloudViewer_1_1visualization_1_1RenderOption.html#a13149c3f1a75921a89a9cb9d56f9f007", null ],
+    [ "light_diffuse_power_", "classcloudViewer_1_1visualization_1_1RenderOption.html#a68fa481a896e32f87ac2181ed920fcc5", null ],
+    [ "light_on_", "classcloudViewer_1_1visualization_1_1RenderOption.html#aea357a8e22ea359fa49ab34ea6cda29b", null ],
+    [ "light_position_relative_", "classcloudViewer_1_1visualization_1_1RenderOption.html#a4f3b59ec68e9b4d5cd4d5f81d976c48c", null ],
+    [ "light_specular_power_", "classcloudViewer_1_1visualization_1_1RenderOption.html#a9958b785f8fe6b3ab450682e2bcd9bf7", null ],
+    [ "light_specular_shininess_", "classcloudViewer_1_1visualization_1_1RenderOption.html#ae31ed1c3ce5a6ef7c8bbb6f593f5db1a", null ],
+    [ "line_width_", "classcloudViewer_1_1visualization_1_1RenderOption.html#ac47ebf1de74472c48216fc9a8b2a6042", null ],
+    [ "LINE_WIDTH_DEFAULT", "classcloudViewer_1_1visualization_1_1RenderOption.html#a8c1acf3af4ceae6f161ead87afd505cc", null ],
+    [ "LINE_WIDTH_MAX", "classcloudViewer_1_1visualization_1_1RenderOption.html#a0ee5ea41e35ed530df24fa12d2632592", null ],
+    [ "LINE_WIDTH_MIN", "classcloudViewer_1_1visualization_1_1RenderOption.html#a33117741244eaa244bfcabe52100e08b", null ],
+    [ "LINE_WIDTH_STEP", "classcloudViewer_1_1visualization_1_1RenderOption.html#ae60163c809c5db1a58e319fe3c82fbf8", null ],
+    [ "mesh_color_option_", "classcloudViewer_1_1visualization_1_1RenderOption.html#a8beb7cf117491b1bf5c379517035ce22", null ],
+    [ "mesh_shade_option_", "classcloudViewer_1_1visualization_1_1RenderOption.html#ae29bb8b9f85f60444e3628ed685c2227", null ],
+    [ "mesh_show_back_face_", "classcloudViewer_1_1visualization_1_1RenderOption.html#a2f41917a219a227c956cbeac01b19f3a", null ],
+    [ "mesh_show_wireframe_", "classcloudViewer_1_1visualization_1_1RenderOption.html#af4204b068d1f1fdf5ba1ddbc101d7cde", null ],
+    [ "point_color_option_", "classcloudViewer_1_1visualization_1_1RenderOption.html#aeb252fcc22f9ded9fccecc2f3358314d", null ],
+    [ "point_show_normal_", "classcloudViewer_1_1visualization_1_1RenderOption.html#a97337c81a4e7c6d394edb0c31b1728ce", null ],
+    [ "point_size_", "classcloudViewer_1_1visualization_1_1RenderOption.html#ab9253869aa06826c3f7f972dbb3acd4c", null ],
+    [ "POINT_SIZE_DEFAULT", "classcloudViewer_1_1visualization_1_1RenderOption.html#a44b978e3fe9253385d3c1b51790f7d83", null ],
+    [ "POINT_SIZE_MAX", "classcloudViewer_1_1visualization_1_1RenderOption.html#a0058010fc2d9cca73950c7705dffd92b", null ],
+    [ "POINT_SIZE_MIN", "classcloudViewer_1_1visualization_1_1RenderOption.html#ab32c1315b9a1d74de70382c2ba78c166", null ],
+    [ "POINT_SIZE_STEP", "classcloudViewer_1_1visualization_1_1RenderOption.html#ac596980cc70869dddc141cde147e742a", null ],
+    [ "show_coordinate_frame_", "classcloudViewer_1_1visualization_1_1RenderOption.html#ae88fd7969cb2899bd2be80107c72ea4d", null ]
+];

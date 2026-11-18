@@ -1,0 +1,21 @@
+<map id="ccPolyline" name="ccPolyline">
+<area shape="rect" id="node1" title="Colored polyline." alt="" coords="225,408,313,435"/>
+<area shape="rect" id="node12" href="$classccCircle.html" title="Circle (as a polyline)" alt="" coords="125,483,198,509"/>
+<area shape="rect" id="node13" href="$classccPointPair.html" title=" " alt="" coords="223,483,316,509"/>
+<area shape="rect" id="node19" href="$classccTrace.html" title=" " alt="" coords="341,483,411,509"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1Polyline.html" title="A simple polyline class." alt="" coords="105,333,268,360"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1ReferenceCloud.html" title="A very simple point cloud (no point duplication)" alt="" coords="76,259,289,285"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1GenericIndexedCloudPersist.html" title="A generic 3D point cloud with index&#45;based and presistent access to points." alt="" coords="61,169,272,211"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1GenericIndexedCloud.html" title="A generic 3D point cloud with index&#45;based point access." alt="" coords="53,80,264,121"/>
+<area shape="rect" id="node6" href="$classcloudViewer_1_1GenericCloud.html" title=" " alt="" coords="60,5,257,32"/>
+<area shape="rect" id="node7" href="$classccShiftedObject.html" title="Shifted entity interface." alt="" coords="296,333,419,360"/>
+<area shape="rect" id="node8" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="317,259,405,285"/>
+<area shape="rect" id="node9" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="322,177,401,203"/>
+<area shape="rect" id="node10" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="288,87,443,114"/>
+<area shape="rect" id="node11" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="425,177,565,203"/>
+<area shape="rect" id="node14" href="$classccLineation.html" title=" " alt="" coords="5,557,101,584"/>
+<area shape="rect" id="node15" href="$classccNote.html" title=" " alt="" coords="125,557,192,584"/>
+<area shape="rect" id="node16" href="$classccPinchNode.html" title=" " alt="" coords="217,557,322,584"/>
+<area shape="rect" id="node17" href="$classccThickness.html" title=" " alt="" coords="347,557,448,584"/>
+<area shape="rect" id="node18" href="$classccTopologyRelation.html" title=" " alt="" coords="473,557,621,584"/>
+</map>

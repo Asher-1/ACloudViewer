@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.datasets.Argoverse
+---------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets
+
+.. autoclass:: Argoverse
+    :members:
+    :undoc-members:

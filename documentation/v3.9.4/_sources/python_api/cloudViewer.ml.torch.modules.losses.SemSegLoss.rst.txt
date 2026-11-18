@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.modules.losses.SemSegLoss
+----------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.modules.losses
+
+.. autoclass:: SemSegLoss
+    :members:
+    :undoc-members:

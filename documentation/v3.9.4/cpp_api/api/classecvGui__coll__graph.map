@@ -1,0 +1,4 @@
+<map id="ecvGui" name="ecvGui">
+<area shape="rect" id="node1" title="This class manages some persistent parameters (mostly for display)" alt="" coords="49,95,116,121"/>
+<area shape="rect" id="node2" href="$structecvGui_1_1ParamStruct.html" title="GUI parameters." alt="" coords="5,5,160,32"/>
+</map>

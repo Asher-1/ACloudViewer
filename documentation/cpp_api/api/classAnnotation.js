@@ -1,0 +1,26 @@
+var classAnnotation =
+[
+    [ "Annotation", "classAnnotation.html#a59ec6442f9e9d22c8cab90549da32a63", null ],
+    [ "Annotation", "classAnnotation.html#a3bd4f5548c5044606ed026841b21311b", null ],
+    [ "Annotation", "classAnnotation.html#aa4e4c25eb92e4c40b2978d0bc6b5173b", null ],
+    [ "~Annotation", "classAnnotation.html#a95144855eb445040d47951c668dc5764", null ],
+    [ "adjustToAnchor", "classAnnotation.html#aa30d5247799a737ac1bfdd3d1052e53f", null ],
+    [ "applyTransform", "classAnnotation.html#a093baf0d5a61d944a254c8779199f8f9", null ],
+    [ "colorAnnotation", "classAnnotation.html#a614b41c753590dbb1795f1b50bc988fc", null ],
+    [ "ComputeOBB", "classAnnotation.html#affb9e8cdbeec1749c26beeb987ab0b68", null ],
+    [ "computeScaleAndCenterShift", "classAnnotation.html#abf9bf508045b7e3cbb72f1093577c412", null ],
+    [ "getActor", "classAnnotation.html#a5f6c45ed62dafb833c463431ac25433b", null ],
+    [ "getBoxLabel", "classAnnotation.html#a006c59e9dfef380abcf314b6b5d4da84", null ],
+    [ "getSlice", "classAnnotation.html#ac7f60003ad05cb1dde002af0d6e8d50e", null ],
+    [ "getType", "classAnnotation.html#ab66ecf564d3d5743fc77cde05f4e725d", null ],
+    [ "GetTypeByIndex", "classAnnotation.html#afb5dc13976fff74d0308a4f9721f6237", null ],
+    [ "GetTypeIndex", "classAnnotation.html#a2942c367ce85bc0b22c690cd4b94f178", null ],
+    [ "GetTypes", "classAnnotation.html#a2d67f54a28cf99eba8c7a73d46e74ba3", null ],
+    [ "initial", "classAnnotation.html#a5c5533c316c51076bd1bdedeb3934f93", null ],
+    [ "picked", "classAnnotation.html#a12972be61b6bcb605b15011c6d77c306", null ],
+    [ "setAnchorPoint", "classAnnotation.html#a9cb73767176d405985a0a780232232d3", null ],
+    [ "setType", "classAnnotation.html#afb57d30cdbb01d8d3e3309ea8ddc8043", null ],
+    [ "unpicked", "classAnnotation.html#a8a78a02f6053b577747161d5e0e748b8", null ],
+    [ "Annotaions", "classAnnotation.html#a82af1e4d8790f1bcb1d92e96a6a75e19", null ],
+    [ "types", "classAnnotation.html#a2eb6f744231cc478d9346fcd84d1414f", null ]
+];

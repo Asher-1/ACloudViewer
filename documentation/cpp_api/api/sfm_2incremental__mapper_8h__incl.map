@@ -1,0 +1,52 @@
+<map id="/root/ACloudViewer/libs/Reconstruction/src/sfm/incremental_mapper.h" name="/root/ACloudViewer/libs/Reconstruction/src/sfm/incremental_mapper.h">
+<area shape="rect" id="node1" title=" " alt="" coords="1869,5,2025,76"/>
+<area shape="rect" id="node2" href="$base_2database_8h.html" title=" " alt="" coords="1093,445,1222,471"/>
+<area shape="rect" id="node10" href="$alignment_8h.html" title=" " alt="" coords="3759,765,3884,792"/>
+<area shape="rect" id="node32" href="$database__cache_8h.html" title=" " alt="" coords="1238,273,1413,300"/>
+<area shape="rect" id="node38" href="$reconstruction_8h.html" title=" " alt="" coords="2197,273,2360,300"/>
+<area shape="rect" id="node45" href="$optim_2bundle__adjustment_8h.html" title=" " alt="" coords="1662,124,1863,151"/>
+<area shape="rect" id="node50" href="$incremental__triangulator_8h.html" title=" " alt="" coords="2161,199,2383,225"/>
+<area shape="rect" id="node3" title=" " alt="" coords="987,915,1079,941"/>
+<area shape="rect" id="node4" title=" " alt="" coords="900,534,964,561"/>
+<area shape="rect" id="node5" title=" " alt="" coords="171,915,295,941"/>
+<area shape="rect" id="node6" title=" " alt="" coords="2366,915,2429,941"/>
+<area shape="rect" id="node7" title=" " alt="" coords="751,534,875,561"/>
+<area shape="rect" id="node8" href="$camera_8h.html" title=" " alt="" coords="1697,616,1815,643"/>
+<area shape="rect" id="node9" href="$util_2types_8h.html" title=" " alt="" coords="1983,691,2078,717"/>
+<area shape="rect" id="node17" href="$base_2image_8h.html" title=" " alt="" coords="1895,534,2006,561"/>
+<area shape="rect" id="node25" href="$two__view__geometry_8h.html" title=" " alt="" coords="2674,527,2833,568"/>
+<area shape="rect" id="node26" href="$feature_2types_8h.html" title=" " alt="" coords="1097,616,1218,643"/>
+<area shape="rect" id="node11" href="$Eigen_8h.html" title=" " alt="" coords="3670,840,3741,867"/>
+<area shape="rect" id="node12" href="$CVCoreLib_8h.html" title=" " alt="" coords="3585,915,3687,941"/>
+<area shape="rect" id="node13" title=" " alt="" coords="4363,915,4490,941"/>
+<area shape="rect" id="node14" title=" " alt="" coords="3711,915,3835,941"/>
+<area shape="rect" id="node15" title=" " alt="" coords="31,915,108,941"/>
+<area shape="rect" id="node16" title=" " alt="" coords="4634,915,4689,941"/>
+<area shape="rect" id="node18" title=" " alt="" coords="709,616,768,643"/>
+<area shape="rect" id="node19" href="$point2d_8h.html" title=" " alt="" coords="2574,616,2693,643"/>
+<area shape="rect" id="node20" href="$visibility__pyramid_8h.html" title=" " alt="" coords="1680,691,1867,717"/>
+<area shape="rect" id="node21" href="$logging_8h.html" title=" " alt="" coords="2979,691,3085,717"/>
+<area shape="rect" id="node22" href="$math_8h.html" title=" " alt="" coords="2997,616,3091,643"/>
+<area shape="rect" id="node23" title=" " alt="" coords="2435,691,2498,717"/>
+<area shape="rect" id="node24" title=" " alt="" coords="3507,691,3594,717"/>
+<area shape="rect" id="node27" href="$ransac_8h.html" title=" " alt="" coords="3673,616,3791,643"/>
+<area shape="rect" id="node28" title=" " alt="" coords="3720,691,3779,717"/>
+<area shape="rect" id="node29" title=" " alt="" coords="3803,691,3875,717"/>
+<area shape="rect" id="node30" href="$random__sampler_8h.html" title=" " alt="" coords="3950,691,4135,717"/>
+<area shape="rect" id="node31" href="$support__measurement_8h.html" title=" " alt="" coords="3210,691,3433,717"/>
+<area shape="rect" id="node33" title=" " alt="" coords="1705,355,1820,382"/>
+<area shape="rect" id="node34" href="$camera__models_8h.html" title=" " alt="" coords="401,534,575,561"/>
+<area shape="rect" id="node37" href="$correspondence__graph_8h.html" title=" " alt="" coords="1196,348,1356,389"/>
+<area shape="rect" id="node35" title=" " alt="" coords="577,616,685,643"/>
+<area shape="rect" id="node36" title=" " alt="" coords="347,616,450,643"/>
+<area shape="rect" id="node39" href="$point3d_8h.html" title=" " alt="" coords="3322,534,3441,561"/>
+<area shape="rect" id="node40" href="$track_8h.html" title=" " alt="" coords="2870,616,2973,643"/>
+<area shape="rect" id="node41" href="$base_2similarity__transform_8h.html" title=" " alt="" coords="2300,355,2503,382"/>
+<area shape="rect" id="node42" href="$estimators_2similarity__transform_8h.html" title=" " alt="" coords="2439,437,2598,479"/>
+<area shape="rect" id="node44" href="$loransac_8h.html" title=" " alt="" coords="3629,534,3760,561"/>
+<area shape="rect" id="node43" href="$projection_8h.html" title=" " alt="" coords="2413,534,2547,561"/>
+<area shape="rect" id="node46" href="$camera__rig_8h.html" title=" " alt="" coords="1887,199,2030,225"/>
+<area shape="rect" id="node48" href="$manifold_8h.html" title=" " alt="" coords="1431,534,1566,561"/>
+<area shape="rect" id="node47" href="$base_2pose_8h.html" title=" " alt="" coords="2246,616,2346,643"/>
+<area shape="rect" id="node49" title=" " alt="" coords="1497,616,1621,643"/>
+</map>

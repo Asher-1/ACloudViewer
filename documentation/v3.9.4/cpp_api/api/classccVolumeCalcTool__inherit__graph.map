@@ -1,0 +1,6 @@
+<map id="ccVolumeCalcTool" name="ccVolumeCalcTool">
+<area shape="rect" id="node1" title="Volume calculation tool (dialog)" alt="" coords="111,80,249,107"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,5,80,32"/>
+<area shape="rect" id="node3" href="$classcc2Point5DimEditor.html" title="2.5D data editor (generic interface)" alt="" coords="105,5,255,32"/>
+<area shape="rect" id="node4" title=" " alt="" coords="280,5,443,32"/>
+</map>

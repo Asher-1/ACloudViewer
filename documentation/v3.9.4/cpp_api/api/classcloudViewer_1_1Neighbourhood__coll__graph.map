@@ -1,0 +1,10 @@
+<map id="cloudViewer::Neighbourhood" name="cloudViewer::Neighbourhood">
+<area shape="rect" id="node1" title=" " alt="" coords="1195,87,1404,114"/>
+<area shape="rect" id="node2" href="$classTuple3Tpl.html" title=" " alt="" coords="616,5,775,47"/>
+<area shape="rect" id="node3" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="32,58,176,85"/>
+<area shape="rect" id="node7" href="$classVector3Tpl.html" title=" " alt="" coords="804,80,1015,121"/>
+<area shape="rect" id="node8" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="406,109,557,135"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1GenericIndexedCloudPersist.html" title="A generic 3D point cloud with index&#45;based and presistent access to points." alt="" coords="804,145,1015,187"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1GenericIndexedCloud.html" title="A generic 3D point cloud with index&#45;based point access." alt="" coords="376,160,587,201"/>
+<area shape="rect" id="node6" href="$classcloudViewer_1_1GenericCloud.html" title=" " alt="" coords="5,167,203,194"/>
+</map>

@@ -1,0 +1,27 @@
+var classWaitingSpinnerWidget =
+[
+    [ "WaitingSpinnerWidget", "classWaitingSpinnerWidget.html#ad83e1c6416f1dae85ba4e99637dec1c3", null ],
+    [ "WaitingSpinnerWidget", "classWaitingSpinnerWidget.html#a5ddd40d1b65cfcc32b09ddaaa201aab3", null ],
+    [ "color", "classWaitingSpinnerWidget.html#a35164a7ac60db4b199caf7624ab3acf2", null ],
+    [ "innerRadius", "classWaitingSpinnerWidget.html#a9db984232c785de31390485c30d7a596", null ],
+    [ "isSpinning", "classWaitingSpinnerWidget.html#ab02d5a79b1794c55b58b3cd417075a5a", null ],
+    [ "lineLength", "classWaitingSpinnerWidget.html#aa716528e1094789337adc5d291c69747", null ],
+    [ "lineWidth", "classWaitingSpinnerWidget.html#a6c42700d650379cffd704199c63c4f28", null ],
+    [ "minimumTrailOpacity", "classWaitingSpinnerWidget.html#a8a9ed21ff17ead12fcbf26b163940dbe", null ],
+    [ "numberOfLines", "classWaitingSpinnerWidget.html#af6a17bce3bc7081c1e0297e6249576e0", null ],
+    [ "paintEvent", "classWaitingSpinnerWidget.html#a0162604b36fa05915455739cd3331788", null ],
+    [ "revolutionsPersSecond", "classWaitingSpinnerWidget.html#a54f72cfcb508e8d4bea313891d87b766", null ],
+    [ "roundness", "classWaitingSpinnerWidget.html#a2ceb91dfdafcd41b99f04aa2b4b81786", null ],
+    [ "setColor", "classWaitingSpinnerWidget.html#a5bc33ab179119f510d556c214fe7ac9b", null ],
+    [ "setInnerRadius", "classWaitingSpinnerWidget.html#a4adc650895478217a5f28c72a9df1e53", null ],
+    [ "setLineLength", "classWaitingSpinnerWidget.html#a797995d006da2e96b72daa959ddd274e", null ],
+    [ "setLineWidth", "classWaitingSpinnerWidget.html#a987a9c7234f83ca2665dd05f8d039e64", null ],
+    [ "setMinimumTrailOpacity", "classWaitingSpinnerWidget.html#ad4ad8fab83b1a60cf1dff78d6ad716d7", null ],
+    [ "setNumberOfLines", "classWaitingSpinnerWidget.html#a29945c03eaf051081ea21f22dca6e97a", null ],
+    [ "setRevolutionsPerSecond", "classWaitingSpinnerWidget.html#addb2884587497961d78e24c50a2f1aba", null ],
+    [ "setRoundness", "classWaitingSpinnerWidget.html#a894f40b4623f9e7754c48e4478c23307", null ],
+    [ "setTrailFadePercentage", "classWaitingSpinnerWidget.html#af9ec791036d62a78b0f557346d1c0262", null ],
+    [ "start", "classWaitingSpinnerWidget.html#ad0a0f83cf6adcf03e7c86626bfdaad6d", null ],
+    [ "stop", "classWaitingSpinnerWidget.html#a5fece0a70d836cc01bcfdebaf7b43cc4", null ],
+    [ "trailFadePercentage", "classWaitingSpinnerWidget.html#aa0a76a4ea0666f843b8a4cf2cb5a7491", null ]
+];

@@ -1,0 +1,9 @@
+<map id="cloudViewer::io::AzureKinectRecorder" name="cloudViewer::io::AzureKinectRecorder">
+<area shape="rect" id="node1" title=" " alt="" coords="36,395,244,436"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1io_1_1RGBDRecorder.html" title=" " alt="" coords="5,298,232,325"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1io_1_1AzureKinectSensor.html" title=" " alt="" coords="256,291,464,332"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1io_1_1RGBDSensor.html" title=" " alt="" coords="185,194,397,221"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1io_1_1AzureKinectSensorConfig.html" title=" " alt="" coords="421,187,629,228"/>
+<area shape="rect" id="node6" href="$classcloudViewer_1_1io_1_1RGBDSensorConfig.html" title=" " alt="" coords="419,96,631,137"/>
+<area shape="rect" id="node7" href="$classcloudViewer_1_1utility_1_1IJsonConvertible.html" title=" " alt="" coords="451,5,599,47"/>
+</map>

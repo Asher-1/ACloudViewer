@@ -1,0 +1,9 @@
+<map id="cloudViewer::t::io::RGBDVideoMetadata" name="cloudViewer::t::io::RGBDVideoMetadata">
+<area shape="rect" id="node1" title="RGBD video metadata." alt="" coords="575,321,741,362"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1utility_1_1IJsonConvertible.html" title=" " alt="" coords="5,11,153,53"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1camera_1_1PinholeCameraIntrinsic.html" title="Contains the pinhole camera intrinsic parameters." alt="" coords="203,41,384,82"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1core_1_1Dtype.html" title=" " alt="" coords="220,291,367,333"/>
+<area shape="rect" id="node5" title=" " alt="" coords="256,357,331,384"/>
+<area shape="rect" id="node6" title=" " alt="" coords="260,408,327,435"/>
+<area shape="rect" id="node7" title=" " alt="" coords="264,495,323,521"/>
+</map>

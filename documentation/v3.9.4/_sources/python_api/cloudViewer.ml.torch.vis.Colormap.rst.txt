@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.vis.Colormap
+---------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.vis
+
+.. autoclass:: Colormap
+    :members:
+    :undoc-members:

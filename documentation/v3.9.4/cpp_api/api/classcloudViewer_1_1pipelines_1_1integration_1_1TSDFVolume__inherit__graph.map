@@ -1,0 +1,5 @@
+<map id="cloudViewer::pipelines::integration::TSDFVolume" name="cloudViewer::pipelines::integration::TSDFVolume">
+<area shape="rect" id="node1" title="Base class of the Truncated Signed Distance Function (TSDF) volume." alt="" coords="5,39,197,80"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1pipelines_1_1integration_1_1ScalableTSDFVolume.html" title=" " alt="" coords="245,5,492,47"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1pipelines_1_1integration_1_1UniformTSDFVolume.html" title="UniformTSDFVolume implements the classic TSDF volume with uniform voxel grid (Curless and Levoy 1996)..." alt="" coords="246,71,491,112"/>
+</map>

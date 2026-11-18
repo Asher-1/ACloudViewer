@@ -1,0 +1,8 @@
+<map id="colmap::FeatureMatcherThread" name="colmap::FeatureMatcherThread">
+<area shape="rect" id="node1" title=" " alt="" coords="176,107,401,134"/>
+<area shape="rect" id="node3" href="$classcolmap_1_1GuidedSiftCPUFeatureMatcher.html" title=" " alt="" coords="453,5,675,47"/>
+<area shape="rect" id="node4" href="$classcolmap_1_1GuidedSiftGPUFeatureMatcher.html" title=" " alt="" coords="453,71,675,112"/>
+<area shape="rect" id="node5" href="$classcolmap_1_1SiftCPUFeatureMatcher.html" title=" " alt="" coords="450,137,678,163"/>
+<area shape="rect" id="node6" href="$classcolmap_1_1SiftGPUFeatureMatcher.html" title=" " alt="" coords="449,187,679,214"/>
+<area shape="rect" id="node2" href="$classcolmap_1_1Thread.html" title=" " alt="" coords="5,107,128,134"/>
+</map>

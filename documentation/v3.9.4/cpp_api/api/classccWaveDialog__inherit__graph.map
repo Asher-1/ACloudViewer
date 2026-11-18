@@ -1,0 +1,5 @@
+<map id="ccWaveDialog" name="ccWaveDialog">
+<area shape="rect" id="node1" title="Waveform dialog." alt="" coords="49,80,164,107"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,5,80,32"/>
+<area shape="rect" id="node3" href="$classccPickingListener.html" title="Point/triangle picking listener interface." alt="" coords="105,5,239,32"/>
+</map>

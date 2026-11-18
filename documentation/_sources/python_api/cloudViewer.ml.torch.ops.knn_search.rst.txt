@@ -1,0 +1,6 @@
+cloudViewer.ml.torch.ops.knn_search
+-----------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.ops
+
+.. autofunction:: knn_search

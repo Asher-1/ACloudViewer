@@ -1,0 +1,5 @@
+<map id="cloudViewer::t::io::RealSenseSensorConfig" name="cloudViewer::t::io::RealSenseSensorConfig">
+<area shape="rect" id="node1" title=" " alt="" coords="20,184,203,225"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1io_1_1RGBDSensorConfig.html" title=" " alt="" coords="5,95,217,136"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1utility_1_1IJsonConvertible.html" title=" " alt="" coords="37,5,185,47"/>
+</map>

@@ -1,0 +1,8 @@
+<map id="cvSelectionPropertiesWidget" name="cvSelectionPropertiesWidget">
+<area shape="rect" id="node1" title="Comprehensive selection properties and management widget." alt="" coords="5,323,215,349"/>
+<area shape="rect" id="node2" title=" " alt="" coords="31,247,109,273"/>
+<area shape="rect" id="node3" href="$classcvSelectionBase.html" title="Lightweight base class for all selection&#45;related components." alt="" coords="133,247,263,273"/>
+<area shape="rect" id="node4" href="$classecvGenericVisualizer3D.html" title="Generic visualizer 3D interface." alt="" coords="109,157,287,184"/>
+<area shape="rect" id="node5" href="$classecvGenericVisualizer.html" title="Generic visualizer interface." alt="" coords="119,81,277,108"/>
+<area shape="rect" id="node6" title=" " alt="" coords="161,5,235,32"/>
+</map>

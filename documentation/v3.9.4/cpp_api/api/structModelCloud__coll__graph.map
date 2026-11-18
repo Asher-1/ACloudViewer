@@ -1,0 +1,9 @@
+<map id="ModelCloud" name="ModelCloud">
+<area shape="rect" id="node1" title=" " alt="" coords="313,276,411,303"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1ScalarField.html" title="A simple scalar field (to be associated to a point cloud)" alt="" coords="162,179,343,206"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,89,196,115"/>
+<area shape="rect" id="node4" href="$classCCShareable.html" title=" " alt="" coords="220,89,325,115"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1GenericIndexedCloudPersist.html" title="A generic 3D point cloud with index&#45;based and presistent access to points." alt="" coords="367,172,578,213"/>
+<area shape="rect" id="node6" href="$classcloudViewer_1_1GenericIndexedCloud.html" title="A generic 3D point cloud with index&#45;based point access." alt="" coords="367,81,578,123"/>
+<area shape="rect" id="node7" href="$classcloudViewer_1_1GenericCloud.html" title=" " alt="" coords="374,5,571,32"/>
+</map>

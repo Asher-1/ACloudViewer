@@ -1,0 +1,4 @@
+<map id="cloudViewer::io::rpc::DummyReceiver" name="cloudViewer::io::rpc::DummyReceiver">
+<area shape="rect" id="node1" title=" " alt="" coords="5,95,156,136"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1io_1_1rpc_1_1ZMQReceiver.html" title="Class for the server side receiving requests from a client." alt="" coords="5,5,156,47"/>
+</map>

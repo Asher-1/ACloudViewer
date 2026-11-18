@@ -1,0 +1,26 @@
+var structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState =
+[
+    [ "bg_color", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#a482334331444bc72ab246d030f292ddf", null ],
+    [ "current_time", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#abdc16d1d63eabdffb11fae9c61adebdb", null ],
+    [ "enabled_groups", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#a982a29472d906d0a744d424833057c3c", null ],
+    [ "frame_delay", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#a71791e8fa25204828f0c45336a91c116", null ],
+    [ "ground_plane", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#a4b39832de4205bfec61ba2912b70a2ab", null ],
+    [ "ibl_intensity", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#a7a088c475a690a1e31147f1c9bfb5bfb", null ],
+    [ "ibl_path", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#ae506e63a1bfe7222d322cb476ff5843e", null ],
+    [ "is_animating", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#a90490c6f311d4dce983bc06af4bf07e5", null ],
+    [ "line_width", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#a7436529defbebc49199b456c92643959", null ],
+    [ "mouse_mode", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#a3fb13fca4b21c9faacea45257e1c43aa", null ],
+    [ "point_size", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#ab527d69fdc477dd542630fbc56897359", null ],
+    [ "scene_shader", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#a8373b5549a6b0a25ff4a709af7302c2d", null ],
+    [ "show_axes", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#a3dab5c85faf1f116a583c40cc5a34744", null ],
+    [ "show_ground", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#ad7dc5deaf7ca6686df4ff1aae74c291c", null ],
+    [ "show_settings", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#abe5e8d044e99fd794df27c7f57c7ea7f", null ],
+    [ "show_skybox", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#a0517067e3330ab1d1ef8d4b8ccb6aa78", null ],
+    [ "sun_color", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#acf99779cf324e77434afdf249677adf3", null ],
+    [ "sun_dir", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#aaad07ec4b790401ed16d9024f6776a54", null ],
+    [ "sun_follows_camera", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#aee21463d98368af700064f0f87de5923", null ],
+    [ "sun_intensity", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#afa0eeb723b7fb934184deadedc4cba0c", null ],
+    [ "time_step", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#aaf22771dd43e0faa8a6c73b44fb185be", null ],
+    [ "use_ibl", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#aa7e7f59f75071bfef2e465264b6b833a", null ],
+    [ "use_sun", "structcloudViewer_1_1visualization_1_1visualizer_1_1O3DVisualizer_1_1UIState.html#a58738fabc3ed1d878f0436af9eb14f78", null ]
+];

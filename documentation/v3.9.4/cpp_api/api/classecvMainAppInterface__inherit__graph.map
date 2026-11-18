@@ -1,0 +1,4 @@
+<map id="ecvMainAppInterface" name="ecvMainAppInterface">
+<area shape="rect" id="node1" title="Main application interface (for plugins)" alt="" coords="5,5,165,32"/>
+<area shape="rect" id="node2" href="$classMainWindow.html" title=" " alt="" coords="32,80,139,107"/>
+</map>

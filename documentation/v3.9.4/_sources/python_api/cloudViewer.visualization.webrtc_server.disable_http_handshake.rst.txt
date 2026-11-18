@@ -1,0 +1,6 @@
+cloudViewer.visualization.webrtc_server.disable_http_handshake
+--------------------------------------------------------------
+
+.. currentmodule:: cloudViewer.visualization.webrtc_server
+
+.. autofunction:: disable_http_handshake

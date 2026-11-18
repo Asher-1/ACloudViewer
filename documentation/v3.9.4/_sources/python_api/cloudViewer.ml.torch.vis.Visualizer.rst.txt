@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.vis.Visualizer
+-----------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.vis
+
+.. autoclass:: Visualizer
+    :members:
+    :undoc-members:

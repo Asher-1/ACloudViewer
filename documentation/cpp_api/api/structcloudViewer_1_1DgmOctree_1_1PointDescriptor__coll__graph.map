@@ -1,0 +1,5 @@
+<map id="cloudViewer::DgmOctree::PointDescriptor" name="cloudViewer::DgmOctree::PointDescriptor">
+<area shape="rect" id="node1" title="Structure used during nearest neighbour search." alt="" coords="5,171,189,212"/>
+<area shape="rect" id="node2" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="22,81,173,108"/>
+<area shape="rect" id="node3" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="25,5,169,32"/>
+</map>

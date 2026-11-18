@@ -1,0 +1,25 @@
+var classPCL__Normal__Estimator =
+[
+    [ "PCL_Normal_Estimator", "classPCL__Normal__Estimator.html#aa942c321a6271d5f4ceabb5c4fb16a72", null ],
+    [ "accum_slices", "classPCL__Normal__Estimator.html#a63cc4aa0e10698368fb23eccb70f2705", null ],
+    [ "accum_slices", "classPCL__Normal__Estimator.html#a94662f4f4d5364684e1dcce3f3139cfc", null ],
+    [ "cluster_angle_rad", "classPCL__Normal__Estimator.html#a8e401027e9ad159b5820ceb0e935f0eb", null ],
+    [ "cluster_angle_rad", "classPCL__Normal__Estimator.html#ac86fc5dc835a92e7947c6a7173b11a83", null ],
+    [ "estimate", "classPCL__Normal__Estimator.html#a96c8f12c28737dfab73f9ab1bdce3cd2", null ],
+    [ "minimal_neighbor_number_for_range_search", "classPCL__Normal__Estimator.html#aa1cdcb68c0f5c5363ba7172e0f11fa7e", null ],
+    [ "minimal_neighbor_number_for_range_search", "classPCL__Normal__Estimator.html#ac2b66edb20dee186b19994dbaa8e61b3", null ],
+    [ "normal_cloud", "classPCL__Normal__Estimator.html#af2efe0564a3a352ec70ba8c1ff933200", null ],
+    [ "normal_cloud", "classPCL__Normal__Estimator.html#a57eb7564f83da6f3894b8d5778401023", null ],
+    [ "normal_selection_mode", "classPCL__Normal__Estimator.html#a7824526dd8ebca857236244856c56a2b", null ],
+    [ "normal_selection_mode", "classPCL__Normal__Estimator.html#a573fb775490c10c17e6aa2fec53720eb", null ],
+    [ "number_of_cubes", "classPCL__Normal__Estimator.html#a95bf659664b3d929fb2c455f01016794", null ],
+    [ "number_of_cubes", "classPCL__Normal__Estimator.html#ac8dda504b7b603145ad44b103c306b8c", null ],
+    [ "number_of_planes", "classPCL__Normal__Estimator.html#aaf1ddc915d8c7000a1e65ccea03928f3", null ],
+    [ "number_of_planes", "classPCL__Normal__Estimator.html#a87e8891ddb5fd8070ec9ba77508b491b", null ],
+    [ "point_cloud", "classPCL__Normal__Estimator.html#abea83ffa1234ae1db18e73234a8fcbe4", null ],
+    [ "point_cloud", "classPCL__Normal__Estimator.html#a7cf6a234c1c817adb49f44f95dca5fb1", null ],
+    [ "rotation_number", "classPCL__Normal__Estimator.html#ad39c615516dfb516b95a018a94761a74", null ],
+    [ "rotation_number", "classPCL__Normal__Estimator.html#aac3cfdebf80a96e626478ecf7895bbda", null ],
+    [ "small_radius_fact", "classPCL__Normal__Estimator.html#aee13b66f74040c3e423111011dbba167", null ],
+    [ "small_radius_fact", "classPCL__Normal__Estimator.html#ab06e278ba984f078324e9865e8353457", null ]
+];

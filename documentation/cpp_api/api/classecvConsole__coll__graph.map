@@ -1,0 +1,9 @@
+<map id="ecvConsole" name="ecvConsole">
+<area shape="rect" id="node1" title="Console." alt="" coords="87,171,185,197"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,81,80,108"/>
+<area shape="rect" id="node3" href="$classCVLog.html" title="Main log interface." alt="" coords="105,81,167,108"/>
+<area shape="rect" id="node4" href="$classMainWindow.html" title=" " alt="" coords="192,81,299,108"/>
+<area shape="rect" id="node5" title=" " alt="" coords="25,5,141,32"/>
+<area shape="rect" id="node6" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="165,5,325,32"/>
+<area shape="rect" id="node7" href="$classccPickingListener.html" title="Point/triangle picking listener interface." alt="" coords="350,5,485,32"/>
+</map>

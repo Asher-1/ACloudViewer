@@ -1,0 +1,6 @@
+cloudViewer.visualization.draw
+------------------------------
+
+.. currentmodule:: cloudViewer.visualization
+
+.. autofunction:: draw

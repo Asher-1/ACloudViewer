@@ -1,0 +1,11 @@
+Camera
+------
+
+camera_trajectory.py
+````````````````````
+
+.. literalinclude:: camera_trajectory.py
+   :language: python
+   :linenos:
+
+

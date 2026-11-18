@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.layers.SparseConvTranspose
+-----------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.layers
+
+.. autoclass:: SparseConvTranspose
+    :members:
+    :undoc-members:

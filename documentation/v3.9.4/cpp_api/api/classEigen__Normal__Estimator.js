@@ -1,0 +1,25 @@
+var classEigen__Normal__Estimator =
+[
+    [ "kd_tree", "classEigen__Normal__Estimator.html#ac340c13fd704d7d7155ebfc7d3d0fe3c", null ],
+    [ "Eigen_Normal_Estimator", "classEigen__Normal__Estimator.html#a0a66b150fdc72dff0f5560f27740b16c", null ],
+    [ "density_sensitive", "classEigen__Normal__Estimator.html#a226bb087b515dd022e54c6b97abf4a37", null ],
+    [ "density_sensitive", "classEigen__Normal__Estimator.html#a658a3dae80b83232dc836d8999755f5e", null ],
+    [ "estimate_normals", "classEigen__Normal__Estimator.html#a5f63e994f37c40c2b3d75e65a8f13734", null ],
+    [ "get_K", "classEigen__Normal__Estimator.html#a30a700425968c9b5d9a84f6b98d749ca", null ],
+    [ "get_K", "classEigen__Normal__Estimator.html#adfd25d10ebe32b54445eec1708e61b72", null ],
+    [ "get_K_density", "classEigen__Normal__Estimator.html#a73233af2e7dba5a6b624c839ac77a618", null ],
+    [ "get_K_density", "classEigen__Normal__Estimator.html#a805df39d7c77742040438dff1eba7d02", null ],
+    [ "get_n_phi", "classEigen__Normal__Estimator.html#a8222d8cc42e1aebaf23ca2a8f11d631f", null ],
+    [ "get_n_phi", "classEigen__Normal__Estimator.html#ac9e06776913e1fadd1340382f66aef28", null ],
+    [ "get_n_rot", "classEigen__Normal__Estimator.html#ac0572a819695d257d2616bc8b24640d3", null ],
+    [ "get_n_rot", "classEigen__Normal__Estimator.html#ac7f5d7b2b8a08fb1c3a9afa6693f1468", null ],
+    [ "get_normals", "classEigen__Normal__Estimator.html#a787c115431c878999a4cd107af4da1cc", null ],
+    [ "get_normals", "classEigen__Normal__Estimator.html#af15dc9dca227b99b9a0a6823f99a0d95", null ],
+    [ "get_points", "classEigen__Normal__Estimator.html#a2e1ce65a96f996a2884825843d495c7d", null ],
+    [ "get_T", "classEigen__Normal__Estimator.html#a4e7edd4d75a1f5d1d2ac007749eab647", null ],
+    [ "get_T", "classEigen__Normal__Estimator.html#a4c7d9da7931eb7599401432d672416d1", null ],
+    [ "get_tol_angle_rad", "classEigen__Normal__Estimator.html#ac6dd71a37d3ac888a9fa55d9a6e23614", null ],
+    [ "get_tol_angle_rad", "classEigen__Normal__Estimator.html#ac4894e46c12048d8254476dffd03dd72", null ],
+    [ "maxProgressCounter", "classEigen__Normal__Estimator.html#ae2299a93667d7471f32564fb2ad9d434", null ],
+    [ "setProgressCallback", "classEigen__Normal__Estimator.html#abbadba4b8b814a412ccec9614ebe1b1d", null ]
+];

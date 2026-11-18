@@ -1,0 +1,6 @@
+cloudViewer.visualization.webrtc_server.call_http_api
+-----------------------------------------------------
+
+.. currentmodule:: cloudViewer.visualization.webrtc_server
+
+.. autofunction:: call_http_api

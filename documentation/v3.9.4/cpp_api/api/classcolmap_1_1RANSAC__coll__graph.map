@@ -1,0 +1,7 @@
+<map id="colmap::RANSAC&lt; Estimator, SupportMeasurer, Sampler &gt;" name="colmap::RANSAC&lt; Estimator, SupportMeasurer, Sampler &gt;">
+<area shape="rect" id="node1" title=" " alt="" coords="216,171,431,212"/>
+<area shape="rect" id="node2" href="$structcolmap_1_1RANSACOptions.html" title=" " alt="" coords="5,81,188,108"/>
+<area shape="rect" id="node3" href="$structcolmap_1_1InlierSupportMeasurer.html" title=" " alt="" coords="212,81,435,108"/>
+<area shape="rect" id="node4" href="$classcolmap_1_1RandomSampler.html" title=" " alt="" coords="459,81,646,108"/>
+<area shape="rect" id="node5" href="$classcolmap_1_1Sampler.html" title=" " alt="" coords="487,5,619,32"/>
+</map>

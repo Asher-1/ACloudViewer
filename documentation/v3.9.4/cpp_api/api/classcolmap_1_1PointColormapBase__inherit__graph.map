@@ -1,0 +1,7 @@
+<map id="colmap::PointColormapBase" name="colmap::PointColormapBase">
+<area shape="rect" id="node1" title=" " alt="" coords="5,93,212,120"/>
+<area shape="rect" id="node2" href="$classcolmap_1_1PointColormapError.html" title=" " alt="" coords="284,5,489,32"/>
+<area shape="rect" id="node3" href="$classcolmap_1_1PointColormapGroundResolution.html" title=" " alt="" coords="276,57,497,98"/>
+<area shape="rect" id="node4" href="$classcolmap_1_1PointColormapPhotometric.html" title=" " alt="" coords="260,123,513,149"/>
+<area shape="rect" id="node5" href="$classcolmap_1_1PointColormapTrackLen.html" title=" " alt="" coords="271,173,502,200"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="PdmsTools::PdmsObjects::Dish" name="PdmsTools::PdmsObjects::Dish">
+<area shape="rect" id="node1" title="Dish." alt="" coords="5,184,189,225"/>
+<area shape="rect" id="node2" href="$classPdmsTools_1_1PdmsObjects_1_1DesignElement.html" title="Design element." alt="" coords="5,95,189,136"/>
+<area shape="rect" id="node3" href="$classPdmsTools_1_1PdmsObjects_1_1GenericItem.html" title="Generic item." alt="" coords="5,5,189,47"/>
+</map>

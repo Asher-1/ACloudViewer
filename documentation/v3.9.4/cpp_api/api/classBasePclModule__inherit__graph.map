@@ -1,0 +1,24 @@
+<map id="BasePclModule" name="BasePclModule">
+<area shape="rect" id="node1" title="Base abstract class for each implemented PCL filter." alt="" coords="128,487,249,513"/>
+<area shape="rect" id="node3" href="$classConvexConcaveHullReconstruction.html" title="Convex Concave Hull Reconstruction." alt="" coords="297,5,548,32"/>
+<area shape="rect" id="node4" href="$classCorrespondenceMatching.html" title="Correspondence Matching." alt="" coords="329,56,516,83"/>
+<area shape="rect" id="node5" href="$classDONSegmentation.html" title="SIFT keypoints extraction." alt="" coords="351,107,494,133"/>
+<area shape="rect" id="node6" href="$classEuclideanClusterSegmentation.html" title="SIFT keypoints extraction." alt="" coords="311,157,534,184"/>
+<area shape="rect" id="node7" href="$classExtractSIFT.html" title="SIFT keypoints extraction." alt="" coords="375,208,470,235"/>
+<area shape="rect" id="node8" href="$classFastGlobalRegistrationFilter.html" title=" " alt="" coords="321,259,524,285"/>
+<area shape="rect" id="node9" href="$classGeneralFilters.html" title="Projection Filter." alt="" coords="366,309,479,336"/>
+<area shape="rect" id="node10" href="$classGreedyTriangulation.html" title="Greedy Triangulation." alt="" coords="346,360,499,387"/>
+<area shape="rect" id="node11" href="$classMLSSmoothingUpsampling.html" title=" " alt="" coords="324,411,521,437"/>
+<area shape="rect" id="node12" href="$classMarchingCubeReconstruction.html" title="Pcl Grid Projection." alt="" coords="317,461,529,488"/>
+<area shape="rect" id="node13" href="$classMinimumCutSegmentation.html" title="Region Growing Segmentation." alt="" coords="324,512,521,539"/>
+<area shape="rect" id="node14" href="$classNormalEstimation.html" title=" " alt="" coords="353,563,493,589"/>
+<area shape="rect" id="node15" href="$classNurbsCurveFitting.html" title="Greedy Triangulation." alt="" coords="353,613,492,640"/>
+<area shape="rect" id="node16" href="$classNurbsSurfaceReconstruction.html" title="Greedy Triangulation." alt="" coords="319,664,526,691"/>
+<area shape="rect" id="node17" href="$classPoissonReconstruction.html" title="Poisson Reconstruction." alt="" coords="338,715,507,741"/>
+<area shape="rect" id="node18" href="$classProjectionFilter.html" title="Projection Filter." alt="" coords="363,765,483,792"/>
+<area shape="rect" id="node19" href="$classRegionGrowingSegmentation.html" title="Region Growing Segmentation." alt="" coords="317,816,529,843"/>
+<area shape="rect" id="node20" href="$classSACSegmentation.html" title="SIFT keypoints extraction." alt="" coords="353,867,493,893"/>
+<area shape="rect" id="node21" href="$classStatisticalOutliersRemover.html" title=" " alt="" coords="324,917,521,944"/>
+<area shape="rect" id="node22" href="$classTemplateAlignment.html" title="Template Alignment." alt="" coords="348,968,497,995"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,487,80,513"/>
+</map>

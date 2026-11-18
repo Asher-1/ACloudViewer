@@ -1,0 +1,28 @@
+var structcvSelectionLabelPropertiesDialog_1_1LabelProperties =
+[
+    [ "cellLabelBold", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#ac464c940ea42d05c0c56d717d819d32a", null ],
+    [ "cellLabelColor", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#ae59bc26e57d3d9ed8c0862d7b349a5f7", null ],
+    [ "cellLabelFontFamily", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#a6d6f7b3b743f9f3a49b15c3ae980589a", null ],
+    [ "cellLabelFontSize", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#aa47c7deaa176ce67dfb3d08152221128", null ],
+    [ "cellLabelFormat", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#a48037a9d07eea6c17998b54be247973a", null ],
+    [ "cellLabelHorizontalJustification", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#a0e61b9a321389474c7f40c9199a15e91", null ],
+    [ "cellLabelItalic", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#aafcee52f45513f8bf1c7dad2776fd79a", null ],
+    [ "cellLabelOpacity", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#a773a161e3249f73ca8f9b585938c0886", null ],
+    [ "cellLabelShadow", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#a80d4e689cd6d71bd3ceeca1f0d0f719c", null ],
+    [ "cellLabelVerticalJustification", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#aec5f483b87bb973e8ed33c73b7d7b22c", null ],
+    [ "lineWidth", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#a7d4a81636c2597c5922225a5b77dd8c5", null ],
+    [ "maxTooltipAttributes", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#ac930772580d27e28e71410016dea0808", null ],
+    [ "opacity", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#a509ef92c8f32031cce39a6dc5e0843dd", null ],
+    [ "pointLabelBold", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#a8f47f1c9adc596223fc5b70ba62245ed", null ],
+    [ "pointLabelColor", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#a9ce9ebd186617284e96c9d89b4bf5b54", null ],
+    [ "pointLabelFontFamily", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#a621eae00f3e5fa4538b6b966ac26f76d", null ],
+    [ "pointLabelFontSize", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#a4b793ff4ffee04dc64bafaf435087a9e", null ],
+    [ "pointLabelFormat", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#ab67b531f2befeeb8432550b5910231f6", null ],
+    [ "pointLabelHorizontalJustification", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#a6b9d246cfa4a7c3b523db19a65a3b7d6", null ],
+    [ "pointLabelItalic", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#ae4e645e88b671277f61518e400ce37ad", null ],
+    [ "pointLabelOpacity", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#abe1ef126feff2df530fa71de786a1f48", null ],
+    [ "pointLabelShadow", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#abcfa36695ddf4959a4ff7b00007fc54c", null ],
+    [ "pointLabelVerticalJustification", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#a65a1674ad2be33977d52274d5d54647b", null ],
+    [ "pointSize", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#accd7e3abfe9857319fc076af99008a29", null ],
+    [ "showTooltips", "structcvSelectionLabelPropertiesDialog_1_1LabelProperties.html#a7bdba42f13d93527d98141ea1231cd06", null ]
+];

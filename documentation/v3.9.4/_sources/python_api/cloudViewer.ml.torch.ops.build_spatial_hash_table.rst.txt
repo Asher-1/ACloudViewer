@@ -1,0 +1,6 @@
+cloudViewer.ml.torch.ops.build_spatial_hash_table
+-------------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.ops
+
+.. autofunction:: build_spatial_hash_table

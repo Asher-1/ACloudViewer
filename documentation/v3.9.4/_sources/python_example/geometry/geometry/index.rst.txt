@@ -1,0 +1,43 @@
+Geometry
+--------
+
+geometry_bounding_volume.py
+```````````````````````````
+
+.. literalinclude:: geometry_bounding_volume.py
+   :language: python
+   :linenos:
+
+
+geometry_facets.py
+``````````````````
+
+.. literalinclude:: geometry_facets.py
+   :language: python
+   :linenos:
+
+
+geometry_polyline.py
+````````````````````
+
+.. literalinclude:: geometry_polyline.py
+   :language: python
+   :linenos:
+
+
+geometry_primitives.py
+``````````````````````
+
+.. literalinclude:: geometry_primitives.py
+   :language: python
+   :linenos:
+
+
+geometry_transformation.py
+``````````````````````````
+
+.. literalinclude:: geometry_transformation.py
+   :language: python
+   :linenos:
+
+

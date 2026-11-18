@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.layers.FixedRadiusSearch
+---------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.layers
+
+.. autoclass:: FixedRadiusSearch
+    :members:
+    :undoc-members:

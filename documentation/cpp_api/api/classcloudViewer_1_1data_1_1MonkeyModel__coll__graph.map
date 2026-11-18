@@ -1,0 +1,6 @@
+<map id="cloudViewer::data::MonkeyModel" name="cloudViewer::data::MonkeyModel">
+<area shape="rect" id="node1" title="Data class for MonkeyModel contains a monkey model file, along with material and various other textur..." alt="" coords="5,291,152,332"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1data_1_1DownloadDataset.html" title="Dataset class with one or more downloaded file." alt="" coords="5,200,152,241"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1data_1_1Dataset.html" title="Base CloudViewer dataset class." alt="" coords="5,109,152,151"/>
+<area shape="rect" id="node4" title=" " alt="" coords="49,5,108,32"/>
+</map>

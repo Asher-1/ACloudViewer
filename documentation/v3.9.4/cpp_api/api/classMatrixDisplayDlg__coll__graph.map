@@ -1,0 +1,9 @@
+<map id="MatrixDisplayDlg" name="MatrixDisplayDlg">
+<area shape="rect" id="node1" title="Simple widget to display a 4x4 matrix in various formats." alt="" coords="120,336,255,363"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,247,84,273"/>
+<area shape="rect" id="node3" title=" " alt="" coords="109,247,266,273"/>
+<area shape="rect" id="node4" href="$classccGLMatrixd.html" title="Double version of ccGLMatrixTpl." alt="" coords="291,247,393,273"/>
+<area shape="rect" id="node5" href="$classccGLMatrixTpl.html" title=" " alt="" coords="247,171,437,197"/>
+<area shape="rect" id="node6" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="259,5,414,32"/>
+<area shape="rect" id="node7" href="$classccGLMatrixTpl.html" title="A 4x4 &#39;transformation&#39; matrix (column major order)" alt="" coords="359,81,512,108"/>
+</map>

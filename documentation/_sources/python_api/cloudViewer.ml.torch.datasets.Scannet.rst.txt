@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.datasets.Scannet
+-------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets
+
+.. autoclass:: Scannet
+    :members:
+    :undoc-members:

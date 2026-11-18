@@ -1,0 +1,5 @@
+<map id="cloudViewer::data::DemoCustomVisualization" name="cloudViewer::data::DemoCustomVisualization">
+<area shape="rect" id="node1" title="Data class for DemoCustomVisualization contains an example point&#45;cloud, camera trajectory (json file)..." alt="" coords="5,184,200,225"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1data_1_1DownloadDataset.html" title="Dataset class with one or more downloaded file." alt="" coords="29,95,176,136"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1data_1_1Dataset.html" title="Base CloudViewer dataset class." alt="" coords="29,5,176,47"/>
+</map>

@@ -1,0 +1,4 @@
+var plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2NormalDistribution_8cpp =
+[
+    [ "define_NormalDistribution", "plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2NormalDistribution_8cpp.html#acd2d15afe627791357b9f2e02c02a3d2", null ]
+];

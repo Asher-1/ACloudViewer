@@ -1,0 +1,6 @@
+<map id="PdmsTools::PdmsObjects::RTorus" name="PdmsTools::PdmsObjects::RTorus">
+<area shape="rect" id="node1" title=" " alt="" coords="5,273,189,315"/>
+<area shape="rect" id="node2" href="$classPdmsTools_1_1PdmsObjects_1_1CTorus.html" title="Torus (circular section)" alt="" coords="5,184,189,225"/>
+<area shape="rect" id="node3" href="$classPdmsTools_1_1PdmsObjects_1_1DesignElement.html" title="Design element." alt="" coords="5,95,189,136"/>
+<area shape="rect" id="node4" href="$classPdmsTools_1_1PdmsObjects_1_1GenericItem.html" title="Generic item." alt="" coords="5,5,189,47"/>
+</map>

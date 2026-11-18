@@ -1,0 +1,13 @@
+<map id="DLManagedTensorVersioned" name="DLManagedTensorVersioned">
+<area shape="rect" id="node1" title="A versioned and managed C Tensor object, manage memory of DLTensor." alt="" coords="163,303,368,329"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,109,80,136"/>
+<area shape="rect" id="node5" href="$structDLTensor.html" title="Plain C Tensor object, does not manage memory." alt="" coords="225,213,305,240"/>
+<area shape="rect" id="node3" href="$structDLPackVersion.html" title="The DLPack version." alt="" coords="427,213,544,240"/>
+<area shape="rect" id="node4" title=" " alt="" coords="547,109,621,136"/>
+<area shape="rect" id="node6" href="$structDLDevice.html" title="A Device for Tensor and operator." alt="" coords="223,109,307,136"/>
+<area shape="rect" id="node7" title=" " alt="" coords="165,5,232,32"/>
+<area shape="rect" id="node8" href="$structDLDataType.html" title="The data type the tensor can hold. The data type is assumed to follow the native endian&#45;ness...." alt="" coords="331,109,431,136"/>
+<area shape="rect" id="node9" title=" " alt="" coords="319,5,393,32"/>
+<area shape="rect" id="node10" title=" " alt="" coords="417,5,484,32"/>
+<area shape="rect" id="node11" title=" " alt="" coords="456,109,523,136"/>
+</map>

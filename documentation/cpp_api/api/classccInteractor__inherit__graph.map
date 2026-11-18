@@ -1,0 +1,5 @@
+<map id="ccInteractor" name="ccInteractor">
+<area shape="rect" id="node1" title="Interactor interface (entity that can be dragged or clicked in a 3D view)" alt="" coords="57,5,155,32"/>
+<area shape="rect" id="node2" href="$classcc2DLabel.html" title="2D label (typically attached to points)" alt="" coords="5,80,95,107"/>
+<area shape="rect" id="node3" href="$classccClipBox.html" title="Clipping box." alt="" coords="119,80,205,107"/>
+</map>

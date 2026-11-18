@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.datasets.utils.ObjdetAugmentation
+------------------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets.utils
+
+.. autoclass:: ObjdetAugmentation
+    :members:
+    :undoc-members:

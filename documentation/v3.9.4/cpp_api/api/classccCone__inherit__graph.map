@@ -1,0 +1,14 @@
+<map id="ccCone" name="ccCone">
+<area shape="rect" id="node1" title="Cone (primitive)" alt="" coords="198,528,267,555"/>
+<area shape="rect" id="node12" href="$classccCylinder.html" title="Cylinder (primitive)" alt="" coords="187,603,278,629"/>
+<area shape="rect" id="node2" href="$classccGenericPrimitive.html" title="Generic primitive interface." alt="" coords="160,453,305,480"/>
+<area shape="rect" id="node3" href="$classccMesh.html" title="Triangular mesh." alt="" coords="197,379,268,405"/>
+<area shape="rect" id="node4" href="$classccGenericMesh.html" title="Generic mesh interface." alt="" coords="172,304,293,331"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1GenericIndexedMesh.html" title="A generic mesh with index&#45;based vertex access." alt="" coords="5,229,252,256"/>
+<area shape="rect" id="node6" href="$classcloudViewer_1_1GenericMesh.html" title=" " alt="" coords="31,155,226,181"/>
+<area shape="rect" id="node7" href="$classccShiftedObject.html" title="Shifted entity interface." alt="" coords="277,229,399,256"/>
+<area shape="rect" id="node8" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="294,155,382,181"/>
+<area shape="rect" id="node9" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="232,80,311,107"/>
+<area shape="rect" id="node10" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="194,5,349,32"/>
+<area shape="rect" id="node11" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="335,80,475,107"/>
+</map>

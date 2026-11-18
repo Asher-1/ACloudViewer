@@ -1,0 +1,4 @@
+var structcloudViewer_1_1core_1_1nns_1_1NanoFlannIndexHolder_1_1SelectNanoflannAdaptor_3_01L1_00_01fake_01_4 =
+[
+    [ "adaptor_t", "structcloudViewer_1_1core_1_1nns_1_1NanoFlannIndexHolder_1_1SelectNanoflannAdaptor_3_01L1_00_01fake_01_4.html#a74453feab14e1aa35150e36cafbb00a4", null ]
+];

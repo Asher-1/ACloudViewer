@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.datasets.Waymo
+-----------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets
+
+.. autoclass:: Waymo
+    :members:
+    :undoc-members:

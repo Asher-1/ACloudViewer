@@ -1,0 +1,26 @@
+var dir_50f8496c947415eedd96ada30c013367 =
+[
+    [ "q3DMASC", "dir_8fc0e9bd0e3a6480a50ccff577fdfd12.html", "dir_8fc0e9bd0e3a6480a50ccff577fdfd12" ],
+    [ "qAnimation", "dir_8e0e1ff7f24769e85414f2ebafbc6cf9.html", "dir_8e0e1ff7f24769e85414f2ebafbc6cf9" ],
+    [ "qCanupo", "dir_039c29ee5c0bf40195ae620976ff5812.html", "dir_039c29ee5c0bf40195ae620976ff5812" ],
+    [ "qCloudLayers", "dir_0ddd015bacd93a2b1d2bac93db97fdae.html", "dir_0ddd015bacd93a2b1d2bac93db97fdae" ],
+    [ "qColorimetricSegmenter", "dir_861f8ab3a75efd6c1a4bc468dceb871c.html", "dir_861f8ab3a75efd6c1a4bc468dceb871c" ],
+    [ "qCompass", "dir_5eee8d93df27060c9d6c81f134bce6d3.html", "dir_5eee8d93df27060c9d6c81f134bce6d3" ],
+    [ "qCork", "dir_836044b15b031acf4c356af25a20212e.html", "dir_836044b15b031acf4c356af25a20212e" ],
+    [ "qCSF", "dir_9e27b3f5a1bab728bec5c33cfadfbfeb.html", "dir_9e27b3f5a1bab728bec5c33cfadfbfeb" ],
+    [ "qFacets", "dir_6994d40ac48259704d364a4904bc47b0.html", "dir_6994d40ac48259704d364a4904bc47b0" ],
+    [ "qG3Point", "dir_b07c9c898a41c3da2da9db5ccc16b042.html", "dir_b07c9c898a41c3da2da9db5ccc16b042" ],
+    [ "qHoughNormals", "dir_8b7a7f55f1426123c9983afa7170d0cf.html", "dir_8b7a7f55f1426123c9983afa7170d0cf" ],
+    [ "qJSonRPCPlugin", "dir_2468591e7a20a8e343ef1344f6116ced.html", "dir_2468591e7a20a8e343ef1344f6116ced" ],
+    [ "qM3C2", "dir_496720c7e7870a9ab5c24efb39eb21c7.html", "dir_496720c7e7870a9ab5c24efb39eb21c7" ],
+    [ "qMasonry", "dir_af048503611be71168fe74219807cf1b.html", "dir_af048503611be71168fe74219807cf1b" ],
+    [ "qMPlane", "dir_ce629cbf5f85d13a133a531751423446.html", "dir_ce629cbf5f85d13a133a531751423446" ],
+    [ "qPCL", "dir_3ff8539b2123aaaa25c315baf6aaefac.html", "dir_3ff8539b2123aaaa25c315baf6aaefac" ],
+    [ "qPCV", "dir_6e622d7ee0f251e945e771685b64ba9d.html", "dir_6e622d7ee0f251e945e771685b64ba9d" ],
+    [ "qPoissonRecon", "dir_19089571bc2ab1d7d44a3f9423b3b0eb.html", "dir_19089571bc2ab1d7d44a3f9423b3b0eb" ],
+    [ "qPythonRuntime", "dir_701772a774aacc2bc527555af9796a24.html", "dir_701772a774aacc2bc527555af9796a24" ],
+    [ "qRANSAC_SD", "dir_b63d785a9b8f5adc38b5a828fbc08a5c.html", "dir_b63d785a9b8f5adc38b5a828fbc08a5c" ],
+    [ "qSRA", "dir_6825a0132d045bbc984f455ea40d2f9f.html", "dir_6825a0132d045bbc984f455ea40d2f9f" ],
+    [ "qTreeIso", "dir_4b928928a8ba753e3642cd3e99306298.html", "dir_4b928928a8ba753e3642cd3e99306298" ],
+    [ "qVoxFall", "dir_4bac82d6d66125057afc5b6a16ccbd7c.html", "dir_4bac82d6d66125057afc5b6a16ccbd7c" ]
+];

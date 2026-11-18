@@ -1,0 +1,9 @@
+<map id="cloudViewer::t::geometry::PointCloud" name="cloudViewer::t::geometry::PointCloud">
+<area shape="rect" id="node1" title="A point cloud contains a list of 3D points." alt="" coords="516,104,703,145"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1t_1_1geometry_1_1Geometry.html" title="The base geometry class." alt="" coords="207,5,393,47"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1core_1_1IsDevice.html" title=" " alt="" coords="8,5,155,47"/>
+<area shape="rect" id="node4" href="$classcloudViewer_1_1t_1_1geometry_1_1DrawableGeometry.html" title="Mix&#45;in class for geometry types that can be visualized." alt="" coords="207,71,393,112"/>
+<area shape="rect" id="node5" href="$classcloudViewer_1_1core_1_1Device.html" title=" " alt="" coords="227,136,373,177"/>
+<area shape="rect" id="node6" href="$classcloudViewer_1_1t_1_1geometry_1_1TensorMap.html" title=" " alt="" coords="207,201,393,243"/>
+<area shape="rect" id="node7" title=" " alt="" coords="5,194,157,250"/>
+</map>

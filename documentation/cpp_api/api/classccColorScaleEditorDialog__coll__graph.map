@@ -1,0 +1,20 @@
+<map id="ccColorScaleEditorDialog" name="ccColorScaleEditorDialog">
+<area shape="rect" id="node1" title="Dialog to edit/create color scales." alt="" coords="1117,229,1303,256"/>
+<area shape="rect" id="node2" title=" " alt="" coords="827,77,901,104"/>
+<area shape="rect" id="node3" href="$classccColorScaleEditorWidget.html" title="Color scale editor dialog." alt="" coords="769,128,959,155"/>
+<area shape="rect" id="node4" href="$classColorScaleEditorBaseWidget.html" title="Base color scale editor (sub)Widget." alt="" coords="133,80,340,107"/>
+<area shape="rect" id="node6" href="$classSlidersWidget.html" title="All sliders widget." alt="" coords="425,55,537,81"/>
+<area shape="rect" id="node7" href="$classColorBarWidget.html" title="Color bar widget." alt="" coords="419,105,543,132"/>
+<area shape="rect" id="node8" href="$classSliderLabelWidget.html" title="All sliders labels widget." alt="" coords="411,156,551,183"/>
+<area shape="rect" id="node5" title=" " alt="" coords="5,80,84,107"/>
+<area shape="rect" id="node9" href="$classccScalarField.html" title="A scalar field associated to display&#45;related parameters." alt="" coords="811,229,917,256"/>
+<area shape="rect" id="node10" href="$classcloudViewer_1_1ScalarField.html" title="A simple scalar field (to be associated to a point cloud)" alt="" coords="390,207,571,233"/>
+<area shape="rect" id="node11" title=" " alt="" coords="141,181,332,208"/>
+<area shape="rect" id="node12" href="$classCCShareable.html" title=" " alt="" coords="184,232,289,259"/>
+<area shape="rect" id="node13" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="403,257,558,284"/>
+<area shape="rect" id="node14" href="$structccScalarField_1_1Histogram.html" title="Simple histogram structure." alt="" coords="389,308,572,335"/>
+<area shape="rect" id="node15" title=" " alt="" coords="147,308,327,335"/>
+<area shape="rect" id="node16" href="$classccScalarField_1_1Range.html" title="Scalar field range structure." alt="" coords="403,363,559,389"/>
+<area shape="rect" id="node17" href="$classccColorScalesManager.html" title="Color scales manager/container." alt="" coords="779,280,949,307"/>
+<area shape="rect" id="node18" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="784,331,944,357"/>
+</map>

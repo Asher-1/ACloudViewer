@@ -1,0 +1,20 @@
+<map id="e57::Data3D" name="e57::Data3D">
+<area shape="rect" id="node1" title="Stores the top&#45;level information for a single lidar scan." alt="" coords="1031,304,1133,331"/>
+<area shape="rect" id="node2" href="$structe57_1_1DateTime.html" title="Encodes date and time." alt="" coords="662,32,781,59"/>
+<area shape="rect" id="node3" title=" " alt="" coords="284,32,351,59"/>
+<area shape="rect" id="node4" href="$structe57_1_1SphericalBounds.html" title="Stores the bounds of some data in spherical coordinates." alt="" coords="640,84,803,111"/>
+<area shape="rect" id="node5" href="$structe57_1_1PointStandardizedFieldsAvailable.html" title="Used to interrogate if standardized fields are available." alt="" coords="616,135,827,177"/>
+<area shape="rect" id="node6" title=" " alt="" coords="280,92,355,119"/>
+<area shape="rect" id="node7" title=" " alt="" coords="284,143,351,169"/>
+<area shape="rect" id="node8" href="$structe57_1_1ColorLimits.html" title="Specifies the limits for the value of red, green, and blue color that a sensor is capable of producin..." alt="" coords="657,203,785,229"/>
+<area shape="rect" id="node9" href="$structe57_1_1CartesianBounds.html" title="Specifies an axis&#45;aligned box in local cartesian coordinates." alt="" coords="639,253,803,280"/>
+<area shape="rect" id="node10" title=" " alt="" coords="9,293,68,320"/>
+<area shape="rect" id="node12" href="$structe57_1_1GroupingByLine.html" title="Stores a set of point groups organized by the rowIndex or columnIndex attribute of the PointRecord." alt="" coords="239,355,396,381"/>
+<area shape="rect" id="node11" href="$structe57_1_1PointGroupingSchemes.html" title="Supports the division of points within an Data3D into logical groupings." alt="" coords="619,355,824,381"/>
+<area shape="rect" id="node13" title=" " alt="" coords="5,415,72,441"/>
+<area shape="rect" id="node14" href="$structe57_1_1IndexBounds.html" title="Stores the minimum and maximum of rowIndex, columnIndex, and returnIndex fields for a set of points." alt="" coords="437,495,575,521"/>
+<area shape="rect" id="node15" href="$structe57_1_1IntensityLimits.html" title="Specifies the limits for the value of signal intensity that a sensor is capable of producing." alt="" coords="646,528,797,555"/>
+<area shape="rect" id="node16" href="$structe57_1_1RigidBodyTransform.html" title="Defines a rigid body transform in cartesian coordinates." alt="" coords="629,579,814,605"/>
+<area shape="rect" id="node17" href="$structe57_1_1Quaternion.html" title="Represents a rigid body rotation." alt="" coords="254,576,381,603"/>
+<area shape="rect" id="node18" href="$structe57_1_1Translation.html" title="Defines a rigid body translation in Cartesian coordinates." alt="" coords="255,627,380,653"/>
+</map>

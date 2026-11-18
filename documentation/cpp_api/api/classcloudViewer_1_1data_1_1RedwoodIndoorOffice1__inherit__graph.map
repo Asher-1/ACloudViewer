@@ -1,0 +1,5 @@
+<map id="cloudViewer::data::RedwoodIndoorOffice1" name="cloudViewer::data::RedwoodIndoorOffice1">
+<area shape="rect" id="node1" title="Data class for RedwoodIndoorOffice1, containing dense point cloud, rgb sequence, clean depth sequence..." alt="" coords="5,184,175,225"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1data_1_1DownloadDataset.html" title="Dataset class with one or more downloaded file." alt="" coords="17,95,163,136"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1data_1_1Dataset.html" title="Base CloudViewer dataset class." alt="" coords="17,5,163,47"/>
+</map>

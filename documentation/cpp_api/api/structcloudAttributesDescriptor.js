@@ -1,0 +1,28 @@
+var structcloudAttributesDescriptor =
+[
+    [ "cloudAttributesDescriptor", "structcloudAttributesDescriptor.html#a871e0d00e1bc9a99d0df6b314be5c202", null ],
+    [ "reset", "structcloudAttributesDescriptor.html#a4c5d42626d2efcda204eee24045c1ab9", null ],
+    [ "updateMaxIndex", "structcloudAttributesDescriptor.html#a4baa22feb03a5b24480c1c88ceb6de16", null ],
+    [ "alphaIndex", "structcloudAttributesDescriptor.html#a363c8c892d005b430000b33d191eee4d", null ],
+    [ "blueIndex", "structcloudAttributesDescriptor.html#a8efa1d82b758d689b33e95fa6bb74914", null ],
+    [ "c_attribCount", "structcloudAttributesDescriptor.html#ab5e5f70917a72596ca0a542d39032c0d", null ],
+    [ "cloud", "structcloudAttributesDescriptor.html#a9531244e0776eecb1c5bfc91c28b66d0", null ],
+    [ "fRgbaIndex", "structcloudAttributesDescriptor.html#aad4593efe1ba38933c6d4396c3c44744", null ],
+    [ "greenIndex", "structcloudAttributesDescriptor.html#abbd2233d429e032aee56b2719669b6c3", null ],
+    [ "greyIndex", "structcloudAttributesDescriptor.html#a8a77902e34dc4ae96b27cd63a892bc22", null ],
+    [ "hasFloatRGBColors", "structcloudAttributesDescriptor.html#aa11b3f40cc2e6b871daab8a14240d1de", null ],
+    [ "hasNorms", "structcloudAttributesDescriptor.html#aca08f3c5036aa5755ab0fe950abc1e32", null ],
+    [ "hasRGBColors", "structcloudAttributesDescriptor.html#a23a7b6812b899bb46c76dfedefb0edce", null ],
+    [ "indexes", "structcloudAttributesDescriptor.html#a8341b8de3f675f82107d72189e85a1d3", null ],
+    [ "iRgbaIndex", "structcloudAttributesDescriptor.html#ae27105f0748407048785815694562c1a", null ],
+    [ "labelIndex", "structcloudAttributesDescriptor.html#a2aeb9d8c9ad6e6be65cd61c9469acb72", null ],
+    [ "redIndex", "structcloudAttributesDescriptor.html#ae6eff265112fc8b4bf0fdf1e054bdeaf", null ],
+    [ "scalarFields", "structcloudAttributesDescriptor.html#a93b7606167c0b4a3cf2763c1cc6d44f5", null ],
+    [ "scalarIndexes", "structcloudAttributesDescriptor.html#a2c9270f5bd0c9e24b78a83abe1007adb", null ],
+    [ "xCoordIndex", "structcloudAttributesDescriptor.html#a1b3d540367d2497128ffd157c41cae08", null ],
+    [ "xNormIndex", "structcloudAttributesDescriptor.html#a2507fdaa4a923a4f37d42b08647637ff", null ],
+    [ "yCoordIndex", "structcloudAttributesDescriptor.html#acf44cb4ad5e67fd006f636cdf09a3327", null ],
+    [ "yNormIndex", "structcloudAttributesDescriptor.html#ad44e60b2bb7f54c9703a11af7c18cf74", null ],
+    [ "zCoordIndex", "structcloudAttributesDescriptor.html#a69f08852c69f9f3f5a78bc2ddaf60ed6", null ],
+    [ "zNormIndex", "structcloudAttributesDescriptor.html#a9087f1ddfeaa0bcd1d93f2e699cc5cf3", null ]
+];

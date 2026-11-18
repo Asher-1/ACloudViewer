@@ -1,0 +1,8 @@
+<map id="ccColorScaleEditorWidget" name="ccColorScaleEditorWidget">
+<area shape="rect" id="node1" title="Color scale editor dialog." alt="" coords="55,247,244,273"/>
+<area shape="rect" id="node2" href="$classColorScaleEditorBaseWidget.html" title="Base color scale editor (sub)Widget." alt="" coords="60,81,266,108"/>
+<area shape="rect" id="node4" href="$classSlidersWidget.html" title="All sliders widget." alt="" coords="24,157,136,184"/>
+<area shape="rect" id="node5" href="$classColorBarWidget.html" title="Color bar widget." alt="" coords="160,157,284,184"/>
+<area shape="rect" id="node6" href="$classSliderLabelWidget.html" title="All sliders labels widget." alt="" coords="308,157,448,184"/>
+<area shape="rect" id="node3" title=" " alt="" coords="124,5,202,32"/>
+</map>

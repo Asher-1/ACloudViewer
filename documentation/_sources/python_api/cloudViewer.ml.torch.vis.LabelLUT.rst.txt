@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.vis.LabelLUT
+---------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.vis
+
+.. autoclass:: LabelLUT
+    :members:
+    :undoc-members:

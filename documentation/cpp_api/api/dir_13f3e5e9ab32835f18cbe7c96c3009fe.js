@@ -1,0 +1,47 @@
+var dir_13f3e5e9ab32835f18cbe7c96c3009fe =
+[
+    [ "extraction.cc", "extraction_8cc.html", null ],
+    [ "extraction.h", "extraction_8h.html", [
+      [ "SiftFeatureExtractor", "classcolmap_1_1SiftFeatureExtractor.html", "classcolmap_1_1SiftFeatureExtractor" ],
+      [ "FeatureImporter", "classcolmap_1_1FeatureImporter.html", "classcolmap_1_1FeatureImporter" ],
+      [ "ImageData", "structcolmap_1_1internal_1_1ImageData.html", "structcolmap_1_1internal_1_1ImageData" ],
+      [ "ImageResizerThread", "classcolmap_1_1internal_1_1ImageResizerThread.html", "classcolmap_1_1internal_1_1ImageResizerThread" ],
+      [ "SiftFeatureExtractorThread", "classcolmap_1_1internal_1_1SiftFeatureExtractorThread.html", "classcolmap_1_1internal_1_1SiftFeatureExtractorThread" ],
+      [ "FeatureWriterThread", "classcolmap_1_1internal_1_1FeatureWriterThread.html", "classcolmap_1_1internal_1_1FeatureWriterThread" ]
+    ] ],
+    [ "matching.cc", "matching_8cc.html", null ],
+    [ "matching.h", "matching_8h.html", [
+      [ "ExhaustiveMatchingOptions", "structcolmap_1_1ExhaustiveMatchingOptions.html", "structcolmap_1_1ExhaustiveMatchingOptions" ],
+      [ "SequentialMatchingOptions", "structcolmap_1_1SequentialMatchingOptions.html", "structcolmap_1_1SequentialMatchingOptions" ],
+      [ "VocabTreeMatchingOptions", "structcolmap_1_1VocabTreeMatchingOptions.html", "structcolmap_1_1VocabTreeMatchingOptions" ],
+      [ "SpatialMatchingOptions", "structcolmap_1_1SpatialMatchingOptions.html", "structcolmap_1_1SpatialMatchingOptions" ],
+      [ "TransitiveMatchingOptions", "structcolmap_1_1TransitiveMatchingOptions.html", "structcolmap_1_1TransitiveMatchingOptions" ],
+      [ "ImagePairsMatchingOptions", "structcolmap_1_1ImagePairsMatchingOptions.html", "structcolmap_1_1ImagePairsMatchingOptions" ],
+      [ "FeaturePairsMatchingOptions", "structcolmap_1_1FeaturePairsMatchingOptions.html", "structcolmap_1_1FeaturePairsMatchingOptions" ],
+      [ "FeatureMatcherData", "structcolmap_1_1internal_1_1FeatureMatcherData.html", "structcolmap_1_1internal_1_1FeatureMatcherData" ],
+      [ "FeatureMatcherCache", "classcolmap_1_1FeatureMatcherCache.html", "classcolmap_1_1FeatureMatcherCache" ],
+      [ "FeatureMatcherThread", "classcolmap_1_1FeatureMatcherThread.html", "classcolmap_1_1FeatureMatcherThread" ],
+      [ "SiftCPUFeatureMatcher", "classcolmap_1_1SiftCPUFeatureMatcher.html", "classcolmap_1_1SiftCPUFeatureMatcher" ],
+      [ "SiftGPUFeatureMatcher", "classcolmap_1_1SiftGPUFeatureMatcher.html", "classcolmap_1_1SiftGPUFeatureMatcher" ],
+      [ "GuidedSiftCPUFeatureMatcher", "classcolmap_1_1GuidedSiftCPUFeatureMatcher.html", "classcolmap_1_1GuidedSiftCPUFeatureMatcher" ],
+      [ "GuidedSiftGPUFeatureMatcher", "classcolmap_1_1GuidedSiftGPUFeatureMatcher.html", "classcolmap_1_1GuidedSiftGPUFeatureMatcher" ],
+      [ "TwoViewGeometryVerifier", "classcolmap_1_1TwoViewGeometryVerifier.html", "classcolmap_1_1TwoViewGeometryVerifier" ],
+      [ "SiftFeatureMatcher", "classcolmap_1_1SiftFeatureMatcher.html", "classcolmap_1_1SiftFeatureMatcher" ],
+      [ "ExhaustiveFeatureMatcher", "classcolmap_1_1ExhaustiveFeatureMatcher.html", "classcolmap_1_1ExhaustiveFeatureMatcher" ],
+      [ "SequentialFeatureMatcher", "classcolmap_1_1SequentialFeatureMatcher.html", "classcolmap_1_1SequentialFeatureMatcher" ],
+      [ "VocabTreeFeatureMatcher", "classcolmap_1_1VocabTreeFeatureMatcher.html", "classcolmap_1_1VocabTreeFeatureMatcher" ],
+      [ "SpatialFeatureMatcher", "classcolmap_1_1SpatialFeatureMatcher.html", "classcolmap_1_1SpatialFeatureMatcher" ],
+      [ "TransitiveFeatureMatcher", "classcolmap_1_1TransitiveFeatureMatcher.html", "classcolmap_1_1TransitiveFeatureMatcher" ],
+      [ "ImagePairsFeatureMatcher", "classcolmap_1_1ImagePairsFeatureMatcher.html", "classcolmap_1_1ImagePairsFeatureMatcher" ],
+      [ "FeaturePairsFeatureMatcher", "classcolmap_1_1FeaturePairsFeatureMatcher.html", "classcolmap_1_1FeaturePairsFeatureMatcher" ]
+    ] ],
+    [ "sift.cc", "sift_8cc.html", "sift_8cc" ],
+    [ "sift.h", "sift_8h.html", "sift_8h" ],
+    [ "sift_test.cc", "sift__test_8cc.html", "sift__test_8cc" ],
+    [ "types.cc", "types_8cc.html", null ],
+    [ "types.h", "feature_2types_8h.html", "feature_2types_8h" ],
+    [ "types_test.cc", "types__test_8cc.html", "types__test_8cc" ],
+    [ "utils.cc", "feature_2utils_8cc.html", "feature_2utils_8cc" ],
+    [ "utils.h", "Reconstruction_2src_2feature_2utils_8h.html", "Reconstruction_2src_2feature_2utils_8h" ],
+    [ "utils_test.cc", "feature_2utils__test_8cc.html", "feature_2utils__test_8cc" ]
+];

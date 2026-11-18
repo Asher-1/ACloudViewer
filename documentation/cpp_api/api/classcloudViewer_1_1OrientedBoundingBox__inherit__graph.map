@@ -1,0 +1,4 @@
+<map id="cloudViewer::OrientedBoundingBox" name="cloudViewer::OrientedBoundingBox">
+<area shape="rect" id="node1" title="A bounding box oriented along an arbitrary frame of reference." alt="" coords="5,5,257,32"/>
+<area shape="rect" id="node2" href="$classecvOrientedBBox.html" title=" " alt="" coords="64,80,199,107"/>
+</map>

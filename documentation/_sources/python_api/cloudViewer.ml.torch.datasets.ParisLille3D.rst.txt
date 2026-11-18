@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.datasets.ParisLille3D
+------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets
+
+.. autoclass:: ParisLille3D
+    :members:
+    :undoc-members:

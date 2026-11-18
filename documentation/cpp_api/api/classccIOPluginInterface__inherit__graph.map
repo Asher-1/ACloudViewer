@@ -1,0 +1,19 @@
+<map id="ccIOPluginInterface" name="ccIOPluginInterface">
+<area shape="rect" id="node1" title="I/O filter plugin interface." alt="" coords="419,335,567,361"/>
+<area shape="rect" id="node4" href="$classLasPlugin.html" title=" " alt="" coords="638,5,722,32"/>
+<area shape="rect" id="node5" href="$classqAdditionalIO.html" title="Additional I/O Formats." alt="" coords="625,56,735,83"/>
+<area shape="rect" id="node6" href="$classqCSVMatrixIO.html" title="CSV Matrix file (2.5D cloud)" alt="" coords="624,107,736,133"/>
+<area shape="rect" id="node7" href="$classqCoreIO.html" title=" " alt="" coords="643,157,717,184"/>
+<area shape="rect" id="node8" href="$classqDracoIO.html" title=" " alt="" coords="639,208,721,235"/>
+<area shape="rect" id="node9" href="$classqE57IO.html" title=" " alt="" coords="646,259,714,285"/>
+<area shape="rect" id="node10" href="$classqFBXIO.html" title=" " alt="" coords="645,309,715,336"/>
+<area shape="rect" id="node11" href="$classqLASFWFIO.html" title=" " alt="" coords="631,360,729,387"/>
+<area shape="rect" id="node12" href="$classqMeshIO.html" title=" " alt="" coords="641,411,719,437"/>
+<area shape="rect" id="node13" href="$classqPDALIO.html" title=" " alt="" coords="641,461,719,488"/>
+<area shape="rect" id="node14" href="$classqPclIO.html" title="PCL IO plugin (PCD format)" alt="" coords="649,512,711,539"/>
+<area shape="rect" id="node15" href="$classqPhotoscanIO.html" title="PhotoScan." alt="" coords="625,563,735,589"/>
+<area shape="rect" id="node16" href="$classqRDBIO.html" title="RDB file (3D cloud)" alt="" coords="644,613,716,640"/>
+<area shape="rect" id="node17" href="$classqStepCADImport.html" title="Step file import plugin." alt="" coords="615,664,745,691"/>
+<area shape="rect" id="node2" href="$classccDefaultPluginInterface.html" title=" " alt="" coords="188,335,371,361"/>
+<area shape="rect" id="node3" href="$classccPluginInterface.html" title="Standard ECV plugin interface." alt="" coords="5,335,140,361"/>
+</map>

@@ -1,0 +1,16 @@
+<map id="cloudViewer::visualization::gui::SceneWidget::PickableGeometry" name="cloudViewer::visualization::gui::SceneWidget::PickableGeometry">
+<area shape="rect" id="node1" title=" " alt="" coords="320,556,591,597"/>
+<area shape="rect" id="node2" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="95,459,183,486"/>
+<area shape="rect" id="node3" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="5,132,84,159"/>
+<area shape="rect" id="node4" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="27,5,182,32"/>
+<area shape="rect" id="node10" href="$classccGLMatrixTpl.html" title=" " alt="" coords="83,183,257,209"/>
+<area shape="rect" id="node11" href="$classccGLMatrixTpl.html" title="A 4x4 &#39;transformation&#39; matrix (column major order)" alt="" coords="143,81,296,108"/>
+<area shape="rect" id="node5" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="249,369,389,395"/>
+<area shape="rect" id="node6" href="$classVector3Tpl.html" title=" " alt="" coords="238,272,403,299"/>
+<area shape="rect" id="node7" href="$classTuple3Tpl.html" title="3&#45;Tuple structure (templated version)" alt="" coords="329,81,473,108"/>
+<area shape="rect" id="node8" href="$classVector3Tpl.html" title="3D Vector (templated version)" alt="" coords="348,183,499,209"/>
+<area shape="rect" id="node9" href="$classccGLMatrix.html" title="Float version of ccGLMatrixTpl." alt="" coords="119,272,213,299"/>
+<area shape="rect" id="node12" href="$classcloudViewer_1_1t_1_1geometry_1_1Geometry.html" title="The base geometry class." alt="" coords="362,452,549,493"/>
+<area shape="rect" id="node13" href="$classcloudViewer_1_1core_1_1IsDevice.html" title=" " alt="" coords="414,361,561,403"/>
+<area shape="rect" id="node14" title=" " alt="" coords="573,459,631,486"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="cloudViewer::CloudSamplingTools" name="cloudViewer::CloudSamplingTools">
+<area shape="rect" id="node1" title="Several point cloud resampling algorithms (octree&#45;based, random, etc.)" alt="" coords="5,80,213,121"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1CVToolbox.html" title="Empty class &#45; for classification purpose only." alt="" coords="20,5,199,32"/>
+</map>

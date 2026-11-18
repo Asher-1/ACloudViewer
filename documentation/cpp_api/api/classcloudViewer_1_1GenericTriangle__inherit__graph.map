@@ -1,0 +1,5 @@
+<map id="cloudViewer::GenericTriangle" name="cloudViewer::GenericTriangle">
+<area shape="rect" id="node1" title="A generic triangle interface." alt="" coords="134,5,345,32"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1SimpleRefTriangle.html" title="A simple triangle class." alt="" coords="5,80,233,107"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1SimpleTriangle.html" title="A simple triangle class." alt="" coords="257,80,464,107"/>
+</map>

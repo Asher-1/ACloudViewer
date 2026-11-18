@@ -1,0 +1,4 @@
+<map id="VTKFilter" name="VTKFilter">
+<area shape="rect" id="node1" title="VTK point cloud or mesh I/O filter." alt="" coords="11,80,92,107"/>
+<area shape="rect" id="node2" href="$classFileIOFilter.html" title="Generic file I/O filter." alt="" coords="5,5,97,32"/>
+</map>

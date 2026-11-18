@@ -1,0 +1,36 @@
+var classccScalarFieldArithmeticsDlg =
+[
+    [ "SF2", "structccScalarFieldArithmeticsDlg_1_1SF2.html", "structccScalarFieldArithmeticsDlg_1_1SF2" ],
+    [ "Operation", "classccScalarFieldArithmeticsDlg.html#abc7da73f0cee4a24bc6b0caca8c753e2", [
+      [ "PLUS", "classccScalarFieldArithmeticsDlg.html#abc7da73f0cee4a24bc6b0caca8c753e2a199d98420ca40bbdaad0a89d87f4da6d", null ],
+      [ "MINUS", "classccScalarFieldArithmeticsDlg.html#abc7da73f0cee4a24bc6b0caca8c753e2a941d853a4d536de2ac9d25086416b16e", null ],
+      [ "MULTIPLY", "classccScalarFieldArithmeticsDlg.html#abc7da73f0cee4a24bc6b0caca8c753e2aa068388e247ff763a536b6435c90e355", null ],
+      [ "DIVIDE", "classccScalarFieldArithmeticsDlg.html#abc7da73f0cee4a24bc6b0caca8c753e2af4abe26df9aba03522fd890adddb232f", null ],
+      [ "SQRT", "classccScalarFieldArithmeticsDlg.html#abc7da73f0cee4a24bc6b0caca8c753e2ae8ba214388b85b67b9f684196b190606", null ],
+      [ "POW2", "classccScalarFieldArithmeticsDlg.html#abc7da73f0cee4a24bc6b0caca8c753e2ac337899760f65e7673ee4757ecc3bd83", null ],
+      [ "POW3", "classccScalarFieldArithmeticsDlg.html#abc7da73f0cee4a24bc6b0caca8c753e2a9f5ccb1e710e0faa7514f052dd0b44a8", null ],
+      [ "EXP", "classccScalarFieldArithmeticsDlg.html#abc7da73f0cee4a24bc6b0caca8c753e2a2b4297e37804fefe2b707db97a6af3bb", null ],
+      [ "LOG", "classccScalarFieldArithmeticsDlg.html#abc7da73f0cee4a24bc6b0caca8c753e2af9f3812447c620749d33d19a7ea12274", null ],
+      [ "LOG10", "classccScalarFieldArithmeticsDlg.html#abc7da73f0cee4a24bc6b0caca8c753e2a97c46ff1ee675bbc463a46c3d843f241", null ],
+      [ "COS", "classccScalarFieldArithmeticsDlg.html#abc7da73f0cee4a24bc6b0caca8c753e2ace3a4f6db6a776eddc55ecd73489fd80", null ],
+      [ "SIN", "classccScalarFieldArithmeticsDlg.html#abc7da73f0cee4a24bc6b0caca8c753e2a9dc6b7802972bc82af8b6f99898ce166", null ],
+      [ "TAN", "classccScalarFieldArithmeticsDlg.html#abc7da73f0cee4a24bc6b0caca8c753e2af7e247beb299db5023d9d482a28d1ed3", null ],
+      [ "ACOS", "classccScalarFieldArithmeticsDlg.html#abc7da73f0cee4a24bc6b0caca8c753e2a8a19c19f78ef4b98fdb0252b8c6783f2", null ],
+      [ "ASIN", "classccScalarFieldArithmeticsDlg.html#abc7da73f0cee4a24bc6b0caca8c753e2a42b69803a18474a63769b48c0c516522", null ],
+      [ "ATAN", "classccScalarFieldArithmeticsDlg.html#abc7da73f0cee4a24bc6b0caca8c753e2aaa922665e8cf5a59e5e5fd81274ce5e2", null ],
+      [ "INT", "classccScalarFieldArithmeticsDlg.html#abc7da73f0cee4a24bc6b0caca8c753e2a82576ecc144ed30178817c9a7912b24a", null ],
+      [ "INVERSE", "classccScalarFieldArithmeticsDlg.html#abc7da73f0cee4a24bc6b0caca8c753e2a32f1be53233bf6d25c99f8fe150e13f1", null ],
+      [ "INVALID", "classccScalarFieldArithmeticsDlg.html#abc7da73f0cee4a24bc6b0caca8c753e2a90028b48ef596b7488eb79be3d90676c", null ]
+    ] ],
+    [ "ccScalarFieldArithmeticsDlg", "classccScalarFieldArithmeticsDlg.html#a9138e4b8c7b1a47bd9b290726b17e93c", null ],
+    [ "apply", "classccScalarFieldArithmeticsDlg.html#ac5b9c9026884bb36b6230797924ca222", null ],
+    [ "Apply", "classccScalarFieldArithmeticsDlg.html#a9029a2b20bbd13aae2e934d3ec398994", null ],
+    [ "getOperation", "classccScalarFieldArithmeticsDlg.html#a43b710ea7a12614e8e0757a3db5d8b62", null ],
+    [ "GetOperationByName", "classccScalarFieldArithmeticsDlg.html#a3f96ab710cc0485003d674864227b69b", null ],
+    [ "GetOperationName", "classccScalarFieldArithmeticsDlg.html#adc898c534f94fd5bdee455ede47c9779", null ],
+    [ "getOperationName", "classccScalarFieldArithmeticsDlg.html#a4a671ddc83519e875fab3b6871517cc5", null ],
+    [ "getSF1Index", "classccScalarFieldArithmeticsDlg.html#a24370e3257a86f21cecd733d6ca8f302", null ],
+    [ "getSF2Index", "classccScalarFieldArithmeticsDlg.html#a772e1977531385fadbf8b3b2f21c4608", null ],
+    [ "onOperationIndexChanged", "classccScalarFieldArithmeticsDlg.html#a6426ce95ab42fecb064648d26a3d8a18", null ],
+    [ "onSF2IndexChanged", "classccScalarFieldArithmeticsDlg.html#abd13f580acdfe9d8a2599ceab0032f0a", null ]
+];

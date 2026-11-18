@@ -1,0 +1,5 @@
+<map id="colmap::SimpleRadialFisheyeCameraModel" name="colmap::SimpleRadialFisheyeCameraModel">
+<area shape="rect" id="node1" title=" " alt="" coords="37,215,252,256"/>
+<area shape="rect" id="node2" href="$structcolmap_1_1BaseCameraModel.html" title=" " alt="" coords="5,124,284,165"/>
+<area shape="rect" id="node3" href="$structcolmap_1_1BaseCameraModel.html" title=" " alt="" coords="44,5,245,47"/>
+</map>

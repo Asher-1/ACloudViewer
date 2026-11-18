@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.vis.deque
+------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.vis
+
+.. autoclass:: deque
+    :members:
+    :undoc-members:

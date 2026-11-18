@@ -1,0 +1,4 @@
+<map id="Runtime::PythonPluginInterface" name="Runtime::PythonPluginInterface">
+<area shape="rect" id="node1" title="Interface that &#39;class&#45;style&#39; PythonPlugin must implement to be loaded." alt="" coords="13,5,241,32"/>
+<area shape="rect" id="node2" href="$classRuntime_1_1PythonPluginTrampoline.html" title=" " alt="" coords="5,80,248,107"/>
+</map>

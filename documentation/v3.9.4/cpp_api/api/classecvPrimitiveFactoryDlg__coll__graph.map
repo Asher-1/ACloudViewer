@@ -1,0 +1,9 @@
+<map id="ecvPrimitiveFactoryDlg" name="ecvPrimitiveFactoryDlg">
+<area shape="rect" id="node1" title="Primitive factory." alt="" coords="104,171,277,197"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,81,80,108"/>
+<area shape="rect" id="node3" title=" " alt="" coords="105,81,277,108"/>
+<area shape="rect" id="node4" href="$classMainWindow.html" title=" " alt="" coords="301,81,408,108"/>
+<area shape="rect" id="node5" title=" " alt="" coords="134,5,250,32"/>
+<area shape="rect" id="node6" href="$classecvMainAppInterface.html" title="Main application interface (for plugins)" alt="" coords="275,5,435,32"/>
+<area shape="rect" id="node7" href="$classccPickingListener.html" title="Point/triangle picking listener interface." alt="" coords="459,5,594,32"/>
+</map>

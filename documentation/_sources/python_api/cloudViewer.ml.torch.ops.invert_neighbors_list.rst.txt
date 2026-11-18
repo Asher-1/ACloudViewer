@@ -1,0 +1,6 @@
+cloudViewer.ml.torch.ops.invert_neighbors_list
+----------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.ops
+
+.. autofunction:: invert_neighbors_list

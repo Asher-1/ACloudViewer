@@ -1,0 +1,5 @@
+<map id="cloudViewer::visualization::webrtc_server::WebRTCWindowSystem" name="cloudViewer::visualization::webrtc_server::WebRTCWindowSystem">
+<area shape="rect" id="node1" title="WebRTCWindowSystem is a BitmapWindowSystem with a WebRTC server that sends video frames to remote cli..." alt="" coords="5,184,288,225"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1visualization_1_1gui_1_1BitmapWindowSystem.html" title=" " alt="" coords="43,95,250,136"/>
+<area shape="rect" id="node3" href="$classcloudViewer_1_1visualization_1_1gui_1_1WindowSystem.html" title=" " alt="" coords="50,5,243,47"/>
+</map>

@@ -1,0 +1,9 @@
+<map id="GrainsAsEllipsoids" name="GrainsAsEllipsoids">
+<area shape="rect" id="node1" title=" " alt="" coords="37,304,179,331"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,229,80,256"/>
+<area shape="rect" id="node3" href="$classccCustomHObject.html" title="Custom hierarchy object." alt="" coords="104,229,243,256"/>
+<area shape="rect" id="node4" href="$classccHObject.html" title="Hierarchical CLOUDVIEWER Object." alt="" coords="129,155,217,181"/>
+<area shape="rect" id="node5" href="$classccObject.html" title="Generic &quot;CLOUDVIEWER &#160;Object&quot; template." alt="" coords="67,80,146,107"/>
+<area shape="rect" id="node6" href="$classccSerializableObject.html" title="Serializable object interface." alt="" coords="29,5,184,32"/>
+<area shape="rect" id="node7" href="$classccDrawableObject.html" title="Generic interface for (3D) drawable entities." alt="" coords="170,80,310,107"/>
+</map>

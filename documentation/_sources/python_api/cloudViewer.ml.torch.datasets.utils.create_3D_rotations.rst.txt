@@ -1,0 +1,6 @@
+cloudViewer.ml.torch.datasets.utils.create_3D_rotations
+-------------------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets.utils
+
+.. autofunction:: create_3D_rotations

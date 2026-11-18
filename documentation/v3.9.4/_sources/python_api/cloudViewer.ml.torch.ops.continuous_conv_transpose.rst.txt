@@ -1,0 +1,6 @@
+cloudViewer.ml.torch.ops.continuous_conv_transpose
+--------------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.ops
+
+.. autofunction:: continuous_conv_transpose

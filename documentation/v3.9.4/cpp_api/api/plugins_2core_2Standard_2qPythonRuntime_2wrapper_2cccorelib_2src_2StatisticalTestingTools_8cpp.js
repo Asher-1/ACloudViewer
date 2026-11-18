@@ -1,0 +1,4 @@
+var plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2StatisticalTestingTools_8cpp =
+[
+    [ "define_StatisticalTestingTools", "plugins_2core_2Standard_2qPythonRuntime_2wrapper_2cccorelib_2src_2StatisticalTestingTools_8cpp.html#ac8d1b50138d81904ef171c31f4e78e90", null ]
+];

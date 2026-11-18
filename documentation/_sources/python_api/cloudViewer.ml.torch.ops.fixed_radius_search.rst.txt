@@ -1,0 +1,6 @@
+cloudViewer.ml.torch.ops.fixed_radius_search
+--------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.ops
+
+.. autofunction:: fixed_radius_search

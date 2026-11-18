@@ -1,0 +1,6 @@
+cloudViewer.ml.torch.datasets.utils.trans_augment
+-------------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.datasets.utils
+
+.. autofunction:: trans_augment

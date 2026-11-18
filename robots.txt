@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://asher-1.github.io/ACloudViewer/sitemap.xml
+

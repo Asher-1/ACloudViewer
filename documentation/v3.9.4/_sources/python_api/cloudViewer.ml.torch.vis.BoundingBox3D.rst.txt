@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.vis.BoundingBox3D
+--------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.vis
+
+.. autoclass:: BoundingBox3D
+    :members:
+    :undoc-members:

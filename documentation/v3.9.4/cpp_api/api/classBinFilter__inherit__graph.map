@@ -1,0 +1,4 @@
+<map id="BinFilter" name="BinFilter">
+<area shape="rect" id="node1" title="CLOUDVIEWER dedicated binary point cloud I/O filter." alt="" coords="13,80,89,107"/>
+<area shape="rect" id="node2" href="$classFileIOFilter.html" title="Generic file I/O filter." alt="" coords="5,5,97,32"/>
+</map>

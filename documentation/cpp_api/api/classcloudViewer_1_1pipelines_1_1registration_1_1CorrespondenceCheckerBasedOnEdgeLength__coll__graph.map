@@ -1,0 +1,4 @@
+<map id="cloudViewer::pipelines::registration::CorrespondenceCheckerBasedOnEdgeLength" name="cloudViewer::pipelines::registration::CorrespondenceCheckerBasedOnEdgeLength">
+<area shape="rect" id="node1" title="Check if two point clouds build the polygons with similar edge lengths." alt="" coords="5,109,224,165"/>
+<area shape="rect" id="node2" href="$classcloudViewer_1_1pipelines_1_1registration_1_1CorrespondenceChecker.html" title="Base class that checks if two (small) point clouds can be aligned." alt="" coords="5,5,224,61"/>
+</map>

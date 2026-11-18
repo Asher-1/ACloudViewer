@@ -1,0 +1,38 @@
+var structmasc_1_1NeighborhoodFeature =
+[
+    [ "Shared", "structmasc_1_1NeighborhoodFeature.html#a201eb8916b2772b35b3bbcd2cca5e562", null ],
+    [ "NeighborhoodFeatureType", "structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840", [
+      [ "Invalid", "structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840ab3068a71101afb9e57facbe8210da5b9", null ],
+      [ "PCA1", "structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840a6b3965a0fb136b3b3f807bc0ab239987", null ],
+      [ "PCA2", "structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840af96f53653585ced6e528ce7a01abcb46", null ],
+      [ "PCA3", "structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840a3dfa71538d1de28a66be8510354acaa1", null ],
+      [ "SPHER", "structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840a956846f7a094c40e6a161dc66693de63", null ],
+      [ "LINEA", "structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840a338279662cb9784111c1c4e73ff9092c", null ],
+      [ "PLANA", "structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840ae495ee9d58d1dadc02e94b80b0e5c329", null ],
+      [ "Dip", "structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840ab19100167834ebcaaddaf320c17b5b31", null ],
+      [ "DipDir", "structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840a8c31bffb195ed3068e69c703f781e8d2", null ],
+      [ "ROUGH", "structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840a0c2969931b241939036f6b4bfd0e46e1", null ],
+      [ "NBPTS", "structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840aaabbdac763fe2eb5603811e8e0d20cb1", null ],
+      [ "CURV", "structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840a37e7605245cf7ffc638c56a2d79d4568", null ],
+      [ "ZRANGE", "structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840ad38e2c8f1ae85f5078c4da9a545c4c62", null ],
+      [ "Zmax", "structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840ae670766671acb6a54074b076c59fa314", null ],
+      [ "Zmin", "structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840aa49b0d4fae810e70b7f93a350b055f83", null ],
+      [ "ANISO", "structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840ae1c275b98014e0851a2cc27f8aedf6ef", null ],
+      [ "FOM", "structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840a317b99727dee6bb7789ae3b8608a627d", null ],
+      [ "VERT", "structmasc_1_1NeighborhoodFeature.html#a452eb495eaa34de9f1426fadfb5ce840a22a1efd933486856400d405a2a754639", null ]
+    ] ],
+    [ "NeighborhoodFeature", "structmasc_1_1NeighborhoodFeature.html#aca3f0292f412c370a4a4e00a854e7be1", null ],
+    [ "checkValidity", "structmasc_1_1NeighborhoodFeature.html#a3822cdc8d50bcea6559884d3c301dab6", null ],
+    [ "clone", "structmasc_1_1NeighborhoodFeature.html#a7a6a77aa5e9b3de6219e5c8bafef3827", null ],
+    [ "computeValue", "structmasc_1_1NeighborhoodFeature.html#a1c5597d15d0f521a78b1550a0400267f", null ],
+    [ "finish", "structmasc_1_1NeighborhoodFeature.html#a70062759e7c949d040d8593cd4a7d9a9", null ],
+    [ "FromString", "structmasc_1_1NeighborhoodFeature.html#a4c27749ec21077a210abf1e56fd67e61", null ],
+    [ "FromUpperString", "structmasc_1_1NeighborhoodFeature.html#aa894961e115b99f5e3b812991ad40555", null ],
+    [ "getType", "structmasc_1_1NeighborhoodFeature.html#a7af7b58d8063202b9ada93b602e0d038", null ],
+    [ "prepare", "structmasc_1_1NeighborhoodFeature.html#a37e017e85cc7886bffa3400b51a0096b", null ],
+    [ "toString", "structmasc_1_1NeighborhoodFeature.html#a7364f7bfd4e26c861bc63ecd410ba461", null ],
+    [ "ToString", "structmasc_1_1NeighborhoodFeature.html#a95f59460b8f3585abc4d2edfa8b722c7", null ],
+    [ "sf1", "structmasc_1_1NeighborhoodFeature.html#a27bc0aac97d787bcc321fe0536b418cd", null ],
+    [ "sf2", "structmasc_1_1NeighborhoodFeature.html#a7853db24b52a9536f09fe8328d389fc7", null ],
+    [ "type", "structmasc_1_1NeighborhoodFeature.html#a7472b183efaf296d2a4a2c31b79428c1", null ]
+];

@@ -1,0 +1,30 @@
+cloudViewer.ml.torch.modules.losses
+===================================
+
+.. currentmodule:: cloudViewer.ml.torch.modules.losses
+
+**Classes**
+
+.. autosummary::
+
+    CrossEntropyLoss
+    FocalLoss
+    SemSegLoss
+    SmoothL1Loss
+
+
+**Functions**
+
+.. autosummary::
+
+    filter_valid_label
+
+
+.. toctree::
+    :hidden:
+
+    CrossEntropyLoss <cloudViewer.ml.torch.modules.losses.CrossEntropyLoss>
+    FocalLoss <cloudViewer.ml.torch.modules.losses.FocalLoss>
+    SemSegLoss <cloudViewer.ml.torch.modules.losses.SemSegLoss>
+    SmoothL1Loss <cloudViewer.ml.torch.modules.losses.SmoothL1Loss>
+    filter_valid_label <cloudViewer.ml.torch.modules.losses.filter_valid_label>

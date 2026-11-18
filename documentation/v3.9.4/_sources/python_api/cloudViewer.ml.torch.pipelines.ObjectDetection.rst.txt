@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.pipelines.ObjectDetection
+----------------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.pipelines
+
+.. autoclass:: ObjectDetection
+    :members:
+    :undoc-members:

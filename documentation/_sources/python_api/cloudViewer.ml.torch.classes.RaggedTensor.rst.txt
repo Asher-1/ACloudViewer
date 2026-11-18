@@ -1,0 +1,8 @@
+cloudViewer.ml.torch.classes.RaggedTensor
+-----------------------------------------
+
+.. currentmodule:: cloudViewer.ml.torch.classes
+
+.. autoclass:: RaggedTensor
+    :members:
+    :undoc-members:
