@@ -105,7 +105,13 @@ fi
 # back to the pinned pip wheel when the system CMake is missing or too old
 # (same pattern as util/vulkan/install_vulkan_linux.sh). Docker images
 # preinstall a pinned CMake on PATH and skip this block.
+#
+# The pinned version must be one PyPI actually publishes. 3.31.8 does not
+# exist (PyPI has 3.31.0.1/.1/.2/.4/.6/.10), and pinning it made every cold
+# build fail with "No matching distribution found". A wheel present in a
+# warm Docker cache hid this; touching an earlier layer exposed it.
 # ---------------------------------------------------------------------------
+CMAKE_PIP_VERSION="3.31.10"
 cmake_version() {
     command -v cmake >/dev/null 2>&1 || return 1
     cmake --version | awk 'NR == 1 {print $3}'
@@ -117,10 +123,10 @@ cmake_too_old() {
     [[ "$(printf '%s\n%s\n' "${ver}" "3.24" | sort -V | head -n1)" != "3.24" ]]
 }
 if cmake_too_old; then
-    echo "System CMake $(cmake_version || echo '<missing>') is below the required 3.24; installing the pinned pip CMake 3.31.8."
-    if ! python3 -m pip install --user --upgrade cmake==3.31.8; then
+    echo "System CMake $(cmake_version || echo '<missing>') is below the required 3.24; installing the pinned pip CMake ${CMAKE_PIP_VERSION}."
+    if ! python3 -m pip install --user --upgrade "cmake==${CMAKE_PIP_VERSION}"; then
         # set -e would abort silently here; surface the manual-install paths.
-        echo "ERROR: pip install of the pinned CMake 3.31.8 failed." >&2
+        echo "ERROR: pip install of the pinned CMake ${CMAKE_PIP_VERSION} failed." >&2
         echo "Install CMake >= 3.24 manually: https://apt.kitware.com/ (Ubuntu) or https://cmake.org/download/" >&2
         exit 1
     fi

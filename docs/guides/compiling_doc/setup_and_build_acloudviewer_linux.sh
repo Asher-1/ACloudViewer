@@ -107,14 +107,16 @@ ${SUDO} apt-get install -y -q zlib1g-dev libbz2-dev libreadline-dev \
 # pinned pip CMake directly if the system one is still unsatisfied.
 # ---------------------------------------------------------------------------
 log "[1/7] Verifying CMake >= 3.24"
+# Must be a version PyPI publishes; 3.31.8 never existed.
+CMAKE_PIP_VERSION="3.31.10"
 cmake_min_ok() {
     local ver="$(cmake --version 2>/dev/null | awk 'NR == 1 {print $3}' || true)"
     [[ -n "${ver}" ]] \
         && [[ "$(printf '%s\n%s\n' "${ver}" "3.24" | sort -V | head -n1)" == "3.24" ]]
 }
 if ! cmake_min_ok; then
-    warn "CMake $(cmake --version 2>/dev/null | awk 'NR == 1 {print $3}' || echo '<missing>') found; installing the pinned pip CMake 3.31.8."
-    python3 -m pip install --user --upgrade cmake==3.31.8 \
+    warn "CMake $(cmake --version 2>/dev/null | awk 'NR == 1 {print $3}' || echo '<missing>') found; installing the pinned pip CMake ${CMAKE_PIP_VERSION}."
+    python3 -m pip install --user --upgrade "cmake==${CMAKE_PIP_VERSION}" \
         || die "pip install cmake failed; install CMake >= 3.24 manually: https://apt.kitware.com/ (Ubuntu) / https://cmake.org/download/"
     # The pip wheel lands in ~/.local/bin/cmake; put it ahead on PATH for the
     # cmake configure in [6/7].
