@@ -1266,7 +1266,30 @@ install_docs_dependencies() {
     command -v python
     python -V
     python -m pip install -U -q "pip==$PIP_VER"
-    which cmake || python -m pip install -U -q cmake
+    # CMake must be >= 3.24 (see the root CMakeLists.txt). Testing that a
+    # `cmake` binary EXISTS is not enough: Ubuntu 22.04 ships 3.22.1, so this
+    # check passed, pip never installed a newer one, and every configure step
+    # failed with "CMake 3.24 or higher is required". The Python module was
+    # therefore never built, which silently removed the whole Python API from
+    # the published documentation -- PyAPIDocsBuilder enumerates modules by
+    # importing them, so no module means no python_api/ tree and 404s on the
+    # live site. Compare versions, do not test existence.
+    cmake_ok() {
+        local v major minor
+        v=$(cmake --version 2>/dev/null | head -1 | sed 's/.*version //')
+        [ -n "$v" ] || return 1
+        major=${v%%.*}
+        minor=$(echo "$v" | cut -d. -f2)
+        # CMake 4 removes compatibility with cmake_minimum_required(<3.5),
+        # which this tree still uses in vendored projects, so accept 3.x only.
+        [ "$major" -eq 3 ] && [ "$minor" -ge 24 ]
+    }
+    if ! cmake_ok; then
+        echo "cmake $(cmake --version 2>/dev/null | head -1 | sed 's/.*version //' || echo '(missing)') is below 3.24; installing a 3.x release via pip"
+        python -m pip install -U -q 'cmake>=3.24,<4'
+        hash -r
+    fi
+    cmake --version
 
     $SUDO apt remove python3-blinker -y
     pip install --ignore-installed -U blinker
