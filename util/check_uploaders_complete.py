@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Report whether every asset-uploading workflow has finished for a commit.
 
 WHY THIS EXISTS

@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.cloudViewer.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Keep every *functional* copy of the app version derived from version.txt.
 
 WHY THIS EXISTS
