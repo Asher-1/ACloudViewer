@@ -1350,13 +1350,26 @@ build_docs() {
     cd build
     
     set -x
-    cmake "${cmakeOptions[@]}" \
+    # Both steps must abort the build on failure. Without the checks, a CMake
+    # that is too old prints "CMake 3.24 or higher is required", falls through
+    # to `make: *** No rule to make target 'python-package'`, and the function
+    # still prints "✅ Headless build complete". Downstream then silently
+    # produces docs with no Python API.
+    if ! cmake "${cmakeOptions[@]}" \
         -DENABLE_HEADLESS_RENDERING=ON \
         -DBUNDLE_CLOUDVIEWER_ML=OFF \
         -DBUILD_GUI=OFF \
         -DBUILD_WEBRTC=OFF \
-        ..
-    make python-package -j$NPROC
+        ..; then
+        set +x
+        echo "❌ CMake configure failed (CMake $(cmake --version | head -1 | awk '{print $3}') found at $(command -v cmake))" >&2
+        return 1
+    fi
+    if ! make python-package -j$NPROC; then
+        set +x
+        echo "❌ make python-package failed" >&2
+        return 1
+    fi
     set +x
     
     # Test Python module
@@ -1410,13 +1423,21 @@ build_docs() {
     echo ""
     
     set -x
-    cmake "${cmakeOptions[@]}" \
+    if ! cmake "${cmakeOptions[@]}" \
         -DENABLE_HEADLESS_RENDERING=OFF \
         -DBUNDLE_CLOUDVIEWER_ML=ON \
         -DBUILD_GUI=ON \
         -DBUILD_WEBRTC=ON \
-        ..
-    make python-package -j$NPROC
+        ..; then
+        set +x
+        echo "❌ CMake configure failed for the GUI build (CMake $(cmake --version | head -1 | awk '{print $3}') found at $(command -v cmake))" >&2
+        return 1
+    fi
+    if ! make python-package -j$NPROC; then
+        set +x
+        echo "❌ make python-package failed for the GUI build" >&2
+        return 1
+    fi
     set +x
     
     # Test Python module (may fail in headless CI, that's expected)

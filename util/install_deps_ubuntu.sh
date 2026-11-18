@@ -130,9 +130,19 @@ if cmake_too_old; then
         echo "Install CMake >= 3.24 manually: https://apt.kitware.com/ (Ubuntu) or https://cmake.org/download/" >&2
         exit 1
     fi
-    # The pip wheel lands in ~/.local/bin; make it win for this script and
-    # any shell sourcing this file afterwards.
+    # The pip wheel lands in ~/.local/bin, which is NOT on the default PATH
+    # and, more importantly, does not survive into the next Docker layer:
+    # `export PATH` inside a RUN step is gone once that step ends. A later
+    # layer then resolved /usr/bin/cmake (3.22.1) and configure failed with
+    # "CMake 3.24 or higher is required". Symlink into /usr/local/bin, which
+    # is on the default PATH and is part of the image, so every later layer
+    # sees the pinned CMake.
     export PATH="${HOME}/.local/bin:${PATH}"
+    for tool in cmake ctest cpack ccmake; do
+        [ -x "${HOME}/.local/bin/${tool}" ] || continue
+        ln -sf "${HOME}/.local/bin/${tool}" "/usr/local/bin/${tool}"
+    done
+    hash -r 2>/dev/null || true
 fi
 if cmake_too_old; then
     echo "ERROR: CMake >= 3.24 still unavailable after the pip fallback." >&2
