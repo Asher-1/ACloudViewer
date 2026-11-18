@@ -6,12 +6,16 @@ This directory contains automation scripts, build guides, and deployment documen
 
 ```
 docs/automation/
-├── README.md               # This file - automation overview
-├── BUILDING_DOCS.md        # Documentation build guide
-├── DEPLOYMENT.md           # GitHub Pages deployment guide
+├── README.md                      # This file - automation overview
+├── BUILDING_DOCS.md               # Documentation build guide
+├── DEPLOYMENT.md                  # GitHub Pages deployment guide
 └── scripts/
-    ├── scan_releases.py    # Scans GitHub Releases and generates downloads_data.json
-    └── README.md           # Detailed script documentation
+    ├── scan_releases.py           # Scans GitHub Releases, generates downloads_data.json
+    ├── deploy_unified_docs.sh     # Merges site + docs, derives versions.json/sitemap/404
+    ├── test_deploy_unified_docs.sh # Contract tests for the deploy script (no CI needed)
+    ├── verify_docs_site.py        # Browser e2e: switcher, deep links, 404 rewriting
+    ├── check_workflow_limits.py   # Fails CI on workflow files GitHub would reject
+    └── README.md                  # Detailed script documentation
 ```
 
 ## 📖 Documentation Guides

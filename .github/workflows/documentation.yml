@@ -23,9 +23,41 @@ concurrency:
 
 jobs:
   # ===========================================================================
+  # Job 0: Structural guards (cheap, runs first)
+  #
+  # A workflow file that exceeds GitHub's per-`run` expression limit is
+  # rejected before any job is created: no logs, no steps, nothing but an
+  # annotation in the run's HTML page. These guards make that class of failure
+  # and the deploy script's own contracts fail loudly and locally.
+  # ===========================================================================
+  docs-guards:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install guard dependencies
+        run: pip install pyyaml
+
+      - name: Workflow size limits
+        run: python3 docs/automation/scripts/check_workflow_limits.py
+
+      - name: Version derivation from version.txt
+        run: python3 util/sync_version.py --check
+
+      - name: Deploy script contract tests
+        run: bash docs/automation/scripts/test_deploy_unified_docs.sh
+
+  # ===========================================================================
   # Job 1: Build Documentation (runs for all events including PRs)
   # ===========================================================================
   build-docs:
+    needs: docs-guards
     runs-on: ubuntu-latest
     permissions:
       contents: write        # For uploading artifacts and releases
@@ -334,6 +366,17 @@ jobs:
             fi
           fi
           
+          # Inject the latest stable version into 404.html so the 404
+          # fallback page can redirect legacy flat /documentation/ deep links
+          # (e.g. /documentation/getting_started/build_from_source.html) to
+          # the equivalent page under /documentation/<latest-stable>/.
+          # The page itself gates on a vX.Y.Z|dev pattern, so a failed
+          # injection degrades safely to the plain 404 view.
+          if [ -f "website-deploy/404.html" ]; then
+            sed -i "s/@LATEST_STABLE_VERSION@/$WEBSITE_VERSION/g" website-deploy/404.html
+            echo "  ✅ Injected latest stable version ($WEBSITE_VERSION) into 404.html"
+          fi
+          
           # ============================================================
           # Ensure downloads_data.json is included
           # ============================================================
@@ -348,21 +391,31 @@ jobs:
           fi
           
           # Create a README for the documentation subdirectory link
+          # Every link below targets a page that is verified to exist in the
+          # built tree. The previous Quick Links pointed at
+          # /documentation/python_api/, /cpp_api/ and /tutorial/, which are
+          # 404s: the versioned layout made /documentation/ a redirect stub,
+          # and the real entries are `cpp_api.html` and `tutorial/index.html`.
+          # python_api/ is omitted entirely -- it is only produced when the
+          # Python bindings import successfully, which the docs build does not
+          # guarantee, so linking it would advertise a page that may not exist.
+          # `@DOC_LATEST@` is expanded by deploy_unified_docs.sh to the version
+          # that was actually deployed.
           cat > website-deploy/DOCUMENTATION.md << 'DOCEOF'
           # ACloudViewer Documentation
-          
-          Full API documentation is available at: [/documentation/](/documentation/)
-          
+
+          Full documentation is available at: [/documentation/](/documentation/)
+
           ## Documentation Structure
-          
+
           - **Main Website**: Current page (project info, downloads, getting started)
-          - **API Documentation**: [/documentation/](/documentation/) (Python API, C++ API, Tutorials)
-          
+          - **Documentation**: [/documentation/](/documentation/) (versioned C++ API, tutorials, guides)
+
           ## Quick Links
-          
-          - [Python API Reference](/documentation/python_api/)
-          - [C++ API Reference](/documentation/cpp_api/)
-          - [Tutorials](/documentation/tutorial/)
+
+          - [C++ API Reference](/documentation/@DOC_LATEST@/cpp_api.html)
+          - [Tutorials](/documentation/@DOC_LATEST@/tutorial/)
+          - [Getting Started](/documentation/@DOC_LATEST@/getting_started/introduction.html)
           DOCEOF
           
           echo ""
@@ -387,6 +440,24 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           echo "📤 Uploading to main-devel release..."
+
+          # The archive name carries the build SHA, so `--clobber` never
+          # overwrites anything: every push to main would add one more ~1.4 GB
+          # asset and none would ever be removed. Only the newest dev archive
+          # is ever consumed (Preserving development documentation downloads
+          # exactly one), so the older ones are dead weight.
+          #
+          # Delete the previously published dev archive(s) first, keeping any
+          # asset that is not a commit-stamped dev archive (e.g.
+          # downloads_data.json, which update-downloads.yml manages).
+          gh release view main-devel --json assets \
+            --jq '.assets[] | select(.name | test("^acloudviewer-[0-9a-f]+-docs\\.tar\\.gz$")) | .name' \
+          | while read -r stale; do
+              [ -n "$stale" ] || continue
+              echo "  🗑️  removing previous dev archive: $stale"
+              gh release delete-asset main-devel "$stale" --yes
+            done
+
           gh release upload main-devel \
             acloudviewer-${{ github.sha }}-docs.tar.gz \
             --clobber
@@ -468,11 +539,14 @@ jobs:
       DOC_VERSION: ${{ needs.build-docs.outputs.doc_version }}
     
     steps:
-      - name: Checkout (for gh CLI)
+      - name: Checkout (for gh CLI and deploy scripts)
         uses: actions/checkout@v4
         with:
+          # docs/automation must be present: the merge step runs
+          # docs/automation/scripts/deploy_unified_docs.sh from this checkout.
           sparse-checkout: |
             .github
+            docs/automation
           sparse-checkout-cone-mode: false
       
       - name: Download docs-output artifact
@@ -510,13 +584,31 @@ jobs:
           # Get list of releases with documentation archives
           echo "🔍 Scanning GitHub Releases for documentation archives..."
           echo ""
-          
-          # First, list all releases to debug
+
+          # `--limit 20` silently truncates the list, so once the project has
+          # more than 20 releases the oldest archives stop being restored and
+          # their /documentation/vX.Y.Z/ trees vanish from the next deployment
+          # without any error. Every published version must survive, so this
+          # pages through the full release list instead of taking a fixed head.
+          # See fetch_all_release_tags below.
+          fetch_all_release_tags() {
+            local page=1 batch=100
+            while [ "$page" -le 50 ]; do
+              local out
+              out=$(gh release list --limit "$batch" --json tagName,isDraft -q '.[] | select(.isDraft|not) | .tagName' 2>/dev/null) || return 0
+              [ -n "$out" ] || return 0
+              printf '%s\n' "$out"
+              # A short batch is the last page; a full one may have more.
+              [ "$(printf '%s\n' "$out" | wc -l)" -lt "$batch" ] && return 0
+              page=$((page + 1))
+            done
+          }
+
           echo "📋 All releases:"
-          gh release list --limit 20 || echo "  (failed to list releases)"
+          fetch_all_release_tags | sed 's/^/  /' || echo "  (failed to list releases)"
           echo ""
-          
-          RELEASES=$(gh release list --limit 20 --json tagName -q '.[].tagName' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' || true)
+
+          RELEASES=$(fetch_all_release_tags | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true)
           
           FOUND_COUNT=0
           NOT_FOUND_COUNT=0
@@ -568,369 +660,51 @@ jobs:
           else
             echo "ℹ️  No versioned releases found"
           fi
+
+          # ============================================================
+          # Preserve the DEV documentation tree.
+          #
+          # GitHub Pages replaces the whole artifact on each deploy. A release
+          # build produces only the new vX.Y.Z archive, so unless dev is
+          # carried forward it disappears from the deployment and every
+          # /documentation/dev/ link starts 404ing. Every main build publishes
+          # the dev docs to the `main-devel` release, which is therefore the
+          # correct place to restore them from here.
+          # ============================================================
+          echo ""
+          echo "📦 Preserving development documentation"
+          DEV_ARCHIVE=$(gh release view main-devel --json assets \
+            --jq '.assets[].name | select(test("^acloudviewer-[0-9a-f]+-docs\\.tar\\.gz$"))' 2>/dev/null | head -1 || true)
+          if [ -n "$DEV_ARCHIVE" ]; then
+            echo "  Found dev archive: $DEV_ARCHIVE"
+            if gh release download main-devel --pattern "$DEV_ARCHIVE" --dir /tmp 2>/dev/null; then
+              mkdir -p preserved-versions/documentation/dev
+              if tar -xzf "/tmp/$DEV_ARCHIVE" -C preserved-versions/documentation/dev/ 2>/dev/null; then
+                echo "  ✅ Restored dev: $(find preserved-versions/documentation/dev -type f | wc -l) files"
+              else
+                echo "  ⚠️  Could not extract $DEV_ARCHIVE"
+              fi
+              rm -f "/tmp/$DEV_ARCHIVE"
+            else
+              echo "  ⚠️  Could not download $DEV_ARCHIVE"
+            fi
+          else
+            echo "  ℹ️  No dev archive on main-devel yet"
+          fi
           
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Merge website and documentation for unified deployment
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🔄 Merging website and documentation for unified deployment"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo ""
-          echo "📋 Deployment Mode B:"
-          echo "   /documentation/       → Latest stable release"
-          echo "   /documentation/dev/   → Development version (main branch)"
-          echo "   /documentation/vX.X.X → Permanent version archives"
-          echo ""
-          
-          # Create unified deployment directory
-          mkdir -p unified-deploy
-          
-          # Always copy main website to root (for both main branch and releases)
-          echo "📄 Copying main website files to root..."
-          cp -r website-deploy/* unified-deploy/
-          echo "✅ Main website copied successfully"
-          echo ""
-          
-          # ============================================================
-          # Mode B: Different paths for release vs development builds
-          # ============================================================
-          
-          if [ "${{ env.IS_RELEASE }}" == "true" ] && [ -n "${{ env.RELEASE_VERSION }}" ]; then
-            # ============================================================
-            # RELEASE BUILD: Deploy to /documentation/vX.X.X/ + redirect
-            # Only ONE copy of documentation, /documentation/ redirects to it
-            # ============================================================
-            DOC_VERSION_PATH="documentation/${{ env.DOC_VERSION }}"
-            
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "🎯 Release build detected - Deploying stable documentation"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            
-            # 1. Deploy documentation to version-specific directory (只保留一份)
-            echo "📦 Deploying documentation to: /${DOC_VERSION_PATH}/"
-            mkdir -p "unified-deploy/${DOC_VERSION_PATH}"
-            cp -r docs-output/* "unified-deploy/${DOC_VERSION_PATH}/"
-            echo "✅ Documentation deployed to ${DOC_VERSION_PATH}/"
-            echo ""
-            
-            # 2. Create redirect from /documentation/ to latest release (避免重复)
-            echo "📦 Creating redirect: /documentation/ → /${DOC_VERSION_PATH}/"
-            mkdir -p unified-deploy/documentation
-            
-            # Create redirect HTML using echo commands (heredoc causes YAML parsing issues)
-            {
-              echo '<!DOCTYPE html>'
-              echo '<html lang="en">'
-              echo '<head>'
-              echo '    <meta charset="utf-8">'
-              echo '    <title>Redirecting to Latest Stable Documentation</title>'
-              echo "    <meta http-equiv=\"refresh\" content=\"0; url=./${{ env.DOC_VERSION }}/index.html\">"
-              echo "    <link rel=\"canonical\" href=\"./${{ env.DOC_VERSION }}/index.html\">"
-              echo '    <style>'
-              echo '        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;'
-              echo '               display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;'
-              echo '               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }'
-              echo '        .container { text-align: center; padding: 2rem; }'
-              echo '        a { color: #fff; text-decoration: underline; }'
-              echo '    </style>'
-              echo "    <script>window.location.replace('./${{ env.DOC_VERSION }}/index.html');</script>"
-              echo '</head>'
-              echo '<body>'
-              echo '    <div class="container">'
-              echo '        <h2>🔄 Redirecting to Latest Stable Documentation...</h2>'
-              echo "        <p>If not redirected automatically, <a href=\"./${{ env.DOC_VERSION }}/index.html\">click here</a>.</p>"
-              echo '    </div>'
-              echo '</body>'
-              echo '</html>'
-            } > unified-deploy/documentation/index.html
-            
-            echo "✅ Redirect created: /documentation/ → /${{ env.DOC_VERSION }}/"
-            echo ""
-            
-            # Store latest stable version for reference
-            echo "${{ env.DOC_VERSION }}" > unified-deploy/documentation/.latest_stable_version
-            
-            echo "📚 Release Documentation URLs:"
-            echo "   - Latest Stable: https://asher-1.github.io/ACloudViewer/documentation/ (redirects to ${{ env.DOC_VERSION }})"
-            echo "   - ${{ env.RELEASE_VERSION }}: https://asher-1.github.io/ACloudViewer/${DOC_VERSION_PATH}/"
-            echo ""
-            echo "💡 Optimization: Using redirect instead of copy saves ~500MB+ of artifact size"
-            
-          else
-            # ============================================================
-            # MAIN BRANCH BUILD: Only update /documentation/dev/
-            # Keep /documentation/ as the latest stable release
-            # ============================================================
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "🔧 Development build - Updating /documentation/dev/"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo ""
-            
-            # Deploy to /documentation/dev/ (development version)
-            echo "📦 Deploying development documentation to: /documentation/dev/"
-            mkdir -p unified-deploy/documentation/dev
-            cp -r docs-output/* unified-deploy/documentation/dev/
-            echo "✅ Development documentation updated"
-            echo ""
-            
-            echo "📚 Development Documentation URL:"
-            echo "   - Dev: https://asher-1.github.io/ACloudViewer/documentation/dev/"
-          fi
-          
-          # ============================================================
-          # Restore preserved version archives (critical for keeping version history)
-          # ============================================================
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📦 Restoring preserved version archives"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          
-          LATEST_STABLE_VERSION=""
-          
-          if [ -d "preserved-versions/documentation" ]; then
-            # Find all version directories and sort them to find the latest
-            VERSIONS=$(ls -d preserved-versions/documentation/v*/ 2>/dev/null | xargs -n1 basename | sort -V || true)
-            
-            if [ -n "$VERSIONS" ]; then
-              # Get the latest version (last in sorted list)
-              LATEST_STABLE_VERSION=$(echo "$VERSIONS" | tail -1)
-              echo "📋 Latest stable version from archives: $LATEST_STABLE_VERSION"
-              echo ""
-            fi
-            
-            # Copy preserved version archives
-            for VERSION_DIR in preserved-versions/documentation/v*/; do
-              if [ -d "$VERSION_DIR" ]; then
-                VERSION_NAME=$(basename "$VERSION_DIR")
-                TARGET_DIR="unified-deploy/documentation/$VERSION_NAME"
-                
-                # Don't overwrite if this version was just deployed (for release builds)
-                if [ ! -d "$TARGET_DIR" ]; then
-                  echo "  ✅ Restoring: documentation/$VERSION_NAME/"
-                  mkdir -p "$TARGET_DIR"
-                  cp -r "$VERSION_DIR"* "$TARGET_DIR/"
-                else
-                  echo "  ⏭️  Skipping: documentation/$VERSION_NAME/ (already exists in current deployment)"
-                fi
-              fi
-            done
-            
-            # For main branch builds: create redirect to latest stable version
-            # Using redirect instead of copy saves significant artifact size
-            if [ "${{ env.IS_RELEASE }}" != "true" ] && [ -n "$LATEST_STABLE_VERSION" ]; then
-              echo ""
-              echo "📦 Creating redirect: /documentation/ → /documentation/$LATEST_STABLE_VERSION/"
-              mkdir -p unified-deploy/documentation
-              
-              # Create redirect HTML (only if index.html doesn't exist yet)
-              if [ ! -f "unified-deploy/documentation/index.html" ]; then
-                {
-                  echo '<!DOCTYPE html>'
-                  echo '<html lang="en">'
-                  echo '<head>'
-                  echo '    <meta charset="utf-8">'
-                  echo '    <title>Redirecting to Latest Stable Documentation</title>'
-                  echo "    <meta http-equiv=\"refresh\" content=\"0; url=./${LATEST_STABLE_VERSION}/index.html\">"
-                  echo "    <link rel=\"canonical\" href=\"./${LATEST_STABLE_VERSION}/index.html\">"
-                  echo '    <style>'
-                  echo '        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;'
-                  echo '               display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;'
-                  echo '               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }'
-                  echo '        .container { text-align: center; padding: 2rem; }'
-                  echo '        a { color: #fff; text-decoration: underline; }'
-                  echo '    </style>'
-                  echo "    <script>window.location.replace('./${LATEST_STABLE_VERSION}/index.html');</script>"
-                  echo '</head>'
-                  echo '<body>'
-                  echo '    <div class="container">'
-                  echo '        <h2>🔄 Redirecting to Latest Stable Documentation...</h2>'
-                  echo "        <p>If not redirected automatically, <a href=\"./${LATEST_STABLE_VERSION}/index.html\">click here</a>.</p>"
-                  echo '    </div>'
-                  echo '</body>'
-                  echo '</html>'
-                } > unified-deploy/documentation/index.html
-                echo "✅ Redirect created: /documentation/ → /documentation/$LATEST_STABLE_VERSION/"
-                echo "$LATEST_STABLE_VERSION" > unified-deploy/documentation/.latest_stable_version
-              fi
-              echo ""
-              echo "📚 Stable Documentation URL:"
-              echo "   - Latest Stable: https://asher-1.github.io/ACloudViewer/documentation/ (redirects to $LATEST_STABLE_VERSION)"
-              echo ""
-              echo "💡 Optimization: Using redirect instead of copy saves ~500MB+ of artifact size"
-            fi
-            
-            echo ""
-            echo "📊 All version archives in deployment:"
-            ls -la unified-deploy/documentation/ 2>/dev/null | grep -E '^d' || echo "  (none)"
-          else
-            echo "  ℹ️  No preserved version archives to restore"
-          fi
-          
-          # ============================================================
-          # Update version selector in ALL documentation versions
-          # Historical archives were built with old templates, so we need
-          # to update them to use the latest version selector
-          # ============================================================
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🔄 Updating version selector in all documentation versions"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          
-          # Find the source of the latest version_switch.js
-          if [ -f "unified-deploy/documentation/dev/_static/version_switch.js" ]; then
-            LATEST_VERSION_SWITCH="unified-deploy/documentation/dev/_static/version_switch.js"
-            echo "📁 Using version_switch.js from /documentation/dev/"
-          elif [ -f "unified-deploy/documentation/_static/version_switch.js" ]; then
-            LATEST_VERSION_SWITCH="unified-deploy/documentation/_static/version_switch.js"
-            echo "📁 Using version_switch.js from /documentation/"
-          else
-            echo "⚠️  No version_switch.js found in dev documentation"
-            LATEST_VERSION_SWITCH=""
-          fi
-          
-          # Update version_switch.js in all documentation directories
-          if [ -n "$LATEST_VERSION_SWITCH" ]; then
-            echo ""
-            echo "📦 Copying latest version_switch.js to all documentation versions..."
-            
-            for DOC_DIR in unified-deploy/documentation/*/; do
-              if [ -d "$DOC_DIR/_static" ]; then
-                DOC_NAME=$(basename "$DOC_DIR")
-                if [ "$DOC_NAME" != "dev" ]; then
-                  cp "$LATEST_VERSION_SWITCH" "$DOC_DIR/_static/version_switch.js"
-                  echo "  ✅ Updated: $DOC_NAME/_static/version_switch.js"
-                fi
-              fi
-            done
-            
-            # Also update root documentation if it has _static
-            if [ -d "unified-deploy/documentation/_static" ] && [ "$LATEST_VERSION_SWITCH" != "unified-deploy/documentation/_static/version_switch.js" ]; then
-              cp "$LATEST_VERSION_SWITCH" "unified-deploy/documentation/_static/version_switch.js"
-              echo "  ✅ Updated: documentation/_static/version_switch.js"
-            fi
-          fi
-          
-          # Fix hardcoded version selector HTML in all documentation versions
-          # Historical archives have "Latest (main)" which should be "Latest Stable" and "Development (main)"
-          echo ""
-          echo "📝 Fixing hardcoded version selector HTML in historical archives..."
-          
-          # Count files to be fixed
-          FILES_FIXED=0
-          
-          # Find all HTML files with the old version selector
-          while IFS= read -r HTML_FILE; do
-            # Check if this file has the old version selector
-            if grep -q 'Latest (main)' "$HTML_FILE" 2>/dev/null; then
-              # Fix the version selector options using multiple sed commands for reliability
-              # 1. Replace option with value="latest" 
-              sed -i 's|<option value="latest">Latest (main)</option>|<option value="stable">Latest Stable</option><option value="dev">Development (main)</option>|g' "$HTML_FILE"
-              
-              # 2. Replace option with empty value
-              sed -i 's|<option value="">Latest (main)</option>|<option value="stable">Latest Stable</option><option value="dev">Development (main)</option>|g' "$HTML_FILE"
-              
-              # 3. Handle cases where just the text needs updating (display text only)
-              sed -i 's|>Latest (main)<|>Latest Stable<|g' "$HTML_FILE"
-              
-              FILES_FIXED=$((FILES_FIXED + 1))
-            fi
-          done < <(find unified-deploy/documentation -name "*.html" -type f 2>/dev/null)
-          
-          echo "  ✅ Fixed $FILES_FIXED HTML files with old version selector"
-          echo ""
-          echo "✅ Version selector updated in all documentation versions"
-          
-          # ============================================================
-          # Fallback: If no stable release exists, redirect to dev
-          # This ensures /documentation/ is always functional
-          # ============================================================
-          if [ "${{ env.IS_RELEASE }}" != "true" ]; then
-            # Check if /documentation/ has an index.html (redirect or actual content)
-            if [ ! -f "unified-deploy/documentation/index.html" ]; then
-              echo ""
-              echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-              echo "⚠️  No stable release found - Redirecting /documentation/ to dev"
-              echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-              echo ""
-              echo "Since no release has been published yet, /documentation/ will"
-              echo "redirect to the development version at /documentation/dev/"
-              echo ""
-              
-              # Create redirect to dev (using redirect saves artifact space)
-              mkdir -p unified-deploy/documentation
-              {
-                echo '<!DOCTYPE html>'
-                echo '<html lang="en">'
-                echo '<head>'
-                echo '    <meta charset="utf-8">'
-                echo '    <title>Redirecting to Development Documentation</title>'
-                echo '    <meta http-equiv="refresh" content="0; url=./dev/index.html">'
-                echo '    <link rel="canonical" href="./dev/index.html">'
-                echo '    <style>'
-                echo '        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;'
-                echo '               display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;'
-                echo '               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }'
-                echo '        .container { text-align: center; padding: 2rem; }'
-                echo '        a { color: #fff; text-decoration: underline; }'
-                echo '    </style>'
-                echo '    <script>window.location.replace("./dev/index.html");</script>'
-                echo '</head>'
-                echo '<body>'
-                echo '    <div class="container">'
-                echo '        <h2>🔄 Redirecting to Development Documentation...</h2>'
-                echo '        <p>No stable release published yet.</p>'
-                echo '        <p>If not redirected automatically, <a href="./dev/index.html">click here</a>.</p>'
-                echo '    </div>'
-                echo '</body>'
-                echo '</html>'
-              } > unified-deploy/documentation/index.html
-              echo "dev" > unified-deploy/documentation/.latest_stable_version
-              
-              echo "✅ Redirect created: /documentation/ → /documentation/dev/"
-              echo ""
-              echo "📚 Documentation URLs (dev as default):"
-              echo "   - Default: https://asher-1.github.io/ACloudViewer/documentation/ (redirects to dev)"
-              echo "   - Dev:     https://asher-1.github.io/ACloudViewer/documentation/dev/"
-              echo ""
-              echo "ℹ️  Once a release is published, /documentation/ will show the stable version"
-            fi
-          fi
-          
-          echo ""
-          echo "✅ Unified deployment prepared"
-          echo ""
-          echo "📊 Final deployment structure:"
-          echo "  - Total files: $(find unified-deploy -type f | wc -l)"
-          echo "  - Total size: $(du -sh unified-deploy | cut -f1)"
-          echo "  - Root files: $(ls unified-deploy/ | wc -l)"
-          echo "  - Documentation files: $(find unified-deploy/documentation -type f 2>/dev/null | wc -l)"
-          echo ""
-          echo "📁 Top-level structure:"
-          ls -la unified-deploy/ | head -20
-          echo ""
-          echo "📁 Documentation structure:"
-          ls -la unified-deploy/documentation/ 2>/dev/null | head -20 || echo "  (empty)"
-          echo ""
-          
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📚 Final Documentation URLs:"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "  - Latest Stable:  https://asher-1.github.io/ACloudViewer/documentation/"
-          echo "  - Development:    https://asher-1.github.io/ACloudViewer/documentation/dev/"
-          if [ "${{ env.IS_RELEASE }}" == "true" ]; then
-            echo "  - ${{ env.RELEASE_VERSION }}:      https://asher-1.github.io/ACloudViewer/documentation/${{ env.DOC_VERSION }}/"
-          fi
-          # List all version archives
-          for VERSION_DIR in unified-deploy/documentation/v*/; do
-            if [ -d "$VERSION_DIR" ]; then
-              VERSION_NAME=$(basename "$VERSION_DIR")
-              echo "  - $VERSION_NAME:      https://asher-1.github.io/ACloudViewer/documentation/$VERSION_NAME/"
-            fi
-          done
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-      
+        # The body lives in docs/automation/scripts/deploy_unified_docs.sh.
+        # GitHub rejects the whole workflow when a single `run:` scalar
+        # exceeds 21000 characters ("Exceeded max expression length"), and
+        # that failure creates no jobs and no logs. Keeping this step a
+        # constant-size pointer makes the workflow structure-independent of
+        # the deploy logic, which is now testable outside CI.
+        env:
+          SITE_URL: https://asher-1.github.io/ACloudViewer
+        run: bash docs/automation/scripts/deploy_unified_docs.sh
       # ============================================================================
       # GitHub Pages Artifact Deployment (No git objects pollution!)
       # This method uses GitHub's artifact storage instead of git branches,
@@ -1017,3 +791,99 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "✅ Deployment Complete!"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+
+      # =====================================================================
+      # Live smoke test.
+      #
+      # GitHub Pages serves the artifact asynchronously, so a green
+      # `deploy-pages` step only means the upload succeeded. Nothing above
+      # proves the deployed site is actually reachable or that versions.json
+      # exists -- which is exactly how a broken 404 redirect and a missing
+      # version manifest survived in production. Probe the real URLs and fail
+      # the run when they do not answer.
+      # =====================================================================
+      - name: Verify live deployment
+        if: success()
+        run: |
+          set -uo pipefail
+          SITE="https://asher-1.github.io/ACloudViewer"
+          FAILED=0
+
+          # probe <url> <expected-substring>: retries while Pages propagates.
+          # Bounded retry budget. Pages publishes an artifact asynchronously,
+          # so a short propagation window is legitimate; waiting minutes per
+          # probe is not. 6 attempts x (10s timeout + 5s wait) caps a failed
+          # probe at ~90s, keeping the whole check under the job timeout even
+          # when the deployment is genuinely broken.
+          PROBE_ATTEMPTS=6
+          PROBE_TIMEOUT=10
+          PROBE_WAIT=5
+
+          probe() {
+            local url="$1" needle="${2:-}"
+            local code="" body="" attempt
+            for attempt in $(seq 1 "$PROBE_ATTEMPTS"); do
+              body=$(curl -sS --max-time "$PROBE_TIMEOUT" -w '\n%{http_code}' "$url" 2>/dev/null) || body=""
+              code=$(printf '%s' "$body" | tail -n1)
+              if [ "$code" = "200" ]; then
+                # Plain substring test, deliberately NOT `printf | grep -q`:
+                # grep -q exits at the first match and closes the pipe, so
+                # printf dies of SIGPIPE (141) and `set -o pipefail` turns a
+                # successful match into a failed pipeline. That bug reported
+                # a healthy 200 page as "missing".
+                if [ -z "$needle" ] || case "$body" in *"$needle"*) true ;; *) false ;; esac; then
+                  echo "  OK   $url"
+                  return 0
+                fi
+                echo "  ..   $url (200 but missing '$needle', attempt $attempt/$PROBE_ATTEMPTS)"
+              else
+                echo "  ..   $url (HTTP ${code:-none}, attempt $attempt/$PROBE_ATTEMPTS)"
+              fi
+              [ "$attempt" -lt "$PROBE_ATTEMPTS" ] && sleep "$PROBE_WAIT"
+            done
+            echo "  FAIL $url (last HTTP ${code:-none})"
+            return 1
+          }
+
+          echo "=============================================="
+          echo "Live smoke test"
+          echo "=============================================="
+
+          probe "$SITE/" "ACloudViewer" || FAILED=1
+          probe "$SITE/documentation/" "index.html" || FAILED=1
+          probe "$SITE/documentation/versions.json" '"versions"' || FAILED=1
+          probe "$SITE/documentation/dev/index.html" "documentation" || FAILED=1
+          probe "$SITE/documentation/dev/cpp_api.html" "" || FAILED=1
+
+          # The 404 handler must carry a calibrated version, otherwise legacy
+          # deep links fall through to a bare 404 page.
+          V404=$(curl -sS --max-time 30 "$SITE/404.html" 2>/dev/null | grep -oE "var version = '[^']*'" | head -1)
+          if printf '%s' "$V404" | grep -qE "v[0-9]+\.[0-9]+\.[0-9]+|dev"; then
+            echo "  OK   404 handler calibrated ($V404)"
+          else
+            echo "  FAIL 404 handler not calibrated ($V404)"
+            FAILED=1
+          fi
+
+          # A legacy flat deep link must be rewritable, i.e. the handler must
+          # exist at the site root and reference the documentation tree.
+          if curl -sS --max-time 30 "$SITE/404.html" | grep -q '/documentation/'; then
+            echo "  OK   404 handler knows the documentation tree"
+          else
+            echo "  FAIL 404 handler has no documentation redirect logic"
+            FAILED=1
+          fi
+
+          # versions.json must agree with the directories actually served.
+          MANIFEST=$(curl -sS --max-time 30 "$SITE/documentation/versions.json")
+          for vid in $(printf '%s' "$MANIFEST" | grep -oE '"id": *"[^"]+"' | sed 's/.*: *"//;s/"$//'); do
+            probe "$SITE/documentation/$vid/index.html" "" || FAILED=1
+          done
+
+          echo "=============================================="
+          if [ "$FAILED" -ne 0 ]; then
+            echo "Live deployment verification FAILED"
+            exit 1
+          fi
+          echo "Live deployment verified"

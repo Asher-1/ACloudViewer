@@ -1,5 +1,9 @@
-# Metal migration validation only; macOS device/model acceptance is pending.
-# The parent is the same pinned llama.cpp archive as the CUDA/Vulkan candidates.
+# Metal migration validation; macOS device acceptance is done per task:
+# InstantMesh (Zero123++ UNet/VAE B=2 CFG + geometry + texture bake) is
+# accepted on MTL0 against same-host CPU parity, RMBG contract, and the
+# model-free convolution oracles; the other tasks' device acceptance remains
+# pending. The parent is the same pinned llama.cpp archive as the
+# CUDA/Vulkan candidates.
 patches:
   - file: 0001-acv-cpu-operators.patch
     note: "At the current pin, instantmesh_cpu_matmul_ nodes retain frozen DINO/LRM CPU vec-dot dispatch without disabling global LLAMAFILE or changing attention/other tasks. Remove after an official per-node replacement; require original frozen numeric gates, clean replay and same-host performance regression checks."
@@ -13,3 +17,54 @@ patches:
       task (sparse_ops.cpp / voxelnext.cpp); every manifest that builds those
       TUs must register this patch — the macOS (Metal chain) job compiles
       them even though device acceptance is pending."
+  - file: 0028-acv-metal-group-norm-batch.patch
+    note: "Stock Metal group_norm ignored ne03: a batched input normalized only
+      batch 0 and left the rest of dst untouched, which poisoned the Zero123++
+      CFG UNet (B=2) with zeros and drove the InstantMesh multiview diffusion
+      to NaN (black views/mesh on Metal while CUDA/CPU were correct).
+      Dispatches ngrp*ne03 threadgroups and derives each batch base from
+      nb03/nb3; the ne03=1 dispatch and outputs stay bitwise identical
+      (RMBG/VAE unaffected)."
+  - file: 0029-acv-metal-conv2d-dw-channel-batch.patch
+    note: "Stock Metal conv_2d_dw took C and N from the WEIGHT tensor's ne12/ne13,
+      but the ggml_conv_2d_dw_direct weight layout is (KW, KH, 1, C): the
+      channel axis lives on ne[3]. The dispatch therefore applied weight
+      channel 0 to every output channel and addressed batches 0..C-1 (both
+      out of range whenever C > 1 or N != C), silently corrupting every
+      depthwise convolution the sched routed to Metal and, for N < C, writing
+      past the output tensor into neighboring Metal buffer memory. The CPU
+      kernel reads channels/batch from src1 and CUDA reads dst->ne[2]/ne[3];
+      the patch aligns the Metal encoder with them (C = dst ne[2],
+      N = dst ne[3], plus the CPU's channels-consistency assert). Detected by
+      the qOCR zh_val_22 page: rec build 1 (host leaves, op on CPU) decoded
+      correctly while every later rec/layout/table build (device leaves, op
+      on Metal) decoded garbage; verified by the two-build rec probe and the
+      real-asset page diff against CPU."
+  - file: 0030-acv-metal-conv2d-dw-bias.patch
+    note: "The Metal depthwise kernels never consumed dst->src[2], while the
+      OCR interpreter's gpu_dw_direct_conv route folds the folded-batch-norm
+      bias into the conv node (0014 series: CPU/CUDA/Vulkan kernels consume
+      it; the Metal manifest deliberately declared no kernel support). Every
+      Metal depthwise convolution therefore silently lost its bias — detected
+      as the qOCR zh_val_22 garbage text and table/layout decode on macOS —
+      and the CPU/CUDA contract test test_ocr_dw_bias had no Metal row. Adds
+      the optional F32 bias binding (dummy-bound when absent, has_bias flag)
+      to both conv_2d_dw kernel variants and the encoder, applied after the
+      convolution write-out rounding exactly like the CUDA patch; extends
+      0029's C/N axis correction to the dispatch grid."
+  - file: 0031-acv-metal-conv-transpose-2d-tiled.patch
+    note: "Stock Metal conv_transpose_2d launched one threadgroup per output
+      pixel per output channel (OW*OH*OC*N, millions on the LingBot depth
+      head) and reduced over IC through shared memory, running ~200x below
+      the F32 hardware rate (687.5 ms of a 1.77 s LingBot frame on M-series).
+      Replaces it with one SIMD group (32 lanes = 32 output channels) per 4x4
+      output tile: each lane keeps its 16 outputs in registers and loops over
+      IC and the kernel taps, so there is no shared memory, no cross-thread
+      reduction, SIMD-broadcast input reads, and weight cache-line reuse
+      across taps; the encoder passes OW/OH for tile-edge guards and
+      dispatches ceil(OW/4)*ceil(OH/4)*ceil(OC/32)*N threadgroups. Measured
+      43.9 ms for the same op (15.7x); Metal-only, CUDA/Vulkan encoders are
+      untouched. The per-lane accumulation order differs from the stock tree
+      reduction (rounding-level only): the LingBot 12-frame stream stays
+      within every parity gate band against the same-host CPU reference
+      (pose_t_rmse 1.2e-4, depth_pool_rel_rmse 2.1e-3)."

@@ -136,6 +136,7 @@ real download/integrity/extraction failures, and discard results after closure.
 | Certify a first download using a warm cache or local demo | Reject. Cold evidence requires a previously absent root, one real shared ZIP download and verified extracted-member autofill; warm reuse is a separate test |
 | Hide the horizontal scrollbar to disguise clipped fields | Reject. Measure minimum widths, make fields shrink or reflow, and verify zero horizontal overflow with every field accessible |
 | Add plugin-private archive download or extraction | Reject. Call the existing repository's ensureDatasetReady and consume its datasetReady signal |
+| Hardcode a device combo (`auto/cpu/cuda/vulkan` strings), decide the backend with `#ifdef __APPLE__`, hand-write a task device whitelist, or pass a combo's display text as the runtime device | Reject. Device availability is runtime fact owned by AICore common (`aicore/backend_capi.h`); task-restricted support is owned by the task ABI (`aicore_model_device_info_query`). AICore-linked UI populates through `ecvAICoreDeviceUiHelper.h` — `populateDeviceCombo()` (or the model-aware overload that leaves task-rejected devices visible but disabled with the ABI's rejection reason) / `currentDeviceId()` / `restoreDeviceCombo()` |
 
 If the sample cache is absent, call shared preparation: absence is not a failed
 operation and must not open an Error dialog. If transport, digest verification
@@ -409,6 +410,15 @@ clock or from different model/input/quantization rows.
 - [ ] Qt5/Qt6-divergent UI APIs go through `core/include/QtCompat.h` — no
       `QT_VERSION` branches, Qt5-only calls, or plugin-local shims; both the
       Qt5 (Ubuntu 22.04 CI) and Qt6 (noble) paths compile.
+- [ ] Device combos come from `ecvAICoreDeviceUiHelper.h`
+      (`populateDeviceCombo`/`currentDeviceId`/`restoreDeviceCombo`): no
+      hardcoded device list, no platform `#ifdef` backend decision, device
+      persistence uses item-data identity (`currentData`/`findData`), task
+      restrictions come from the owning task ABI via the model-aware
+      `populateDeviceCombo(combo, model)` overload (never a plugin-side
+      whitelist), and `ecvAICoreUiHelper.h` stays Qt-only (optional
+      consumers such as video_base include it without an AICore include
+      path).
 - [ ] Documentation updates the owning source and links here rather than
       copying another long checklist.
 - [ ] Plugin UI grouping is self-declared via info.json `"group"`; after any

@@ -46,8 +46,8 @@
 #include "CVLog.h"
 #include "RelateAnythingPresets.h"
 #include "RelateAnythingVideoWidget.h"
-#include "aicore/backend_capi.h"
 #include "aicore/yolo_capi.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAICoreUiHelper.h"
 #include "ecvAssetIntegrity.h"
 #include "ecvClickableImageLabel.h"
@@ -183,14 +183,10 @@ RelateAnythingDialog::RelateAnythingDialog(QWidget* parent) : QDialog(parent) {
     m_device->setSizeAdjustPolicy(
             QComboBox::AdjustToMinimumContentsLengthWithIcon);
     m_device->setMinimumContentsLength(22);
-    for (int i = 0; i < aicore_device_count(); ++i) {
-        auto* d = aicore_device_at(i);
-        const QString id = QString::fromUtf8(d->id);
-        if (id != "auto" && id != "cpu" && !id.startsWith("cuda") &&
-            !id.startsWith("vulkan"))
-            continue;
-        m_device->addItem(QString::fromUtf8(d->label), id);
-    }
+    // Runtime registry projection; devices the task ABI rejects (Metal for
+    // RELATION) stay visible but disabled with the rejection reason — the
+    // whitelist knowledge lives in aicore_model_device_info_query, not here.
+    ecvAICoreUi::populateDeviceCombo(m_device, AICORE_MODEL_RELATION);
     m_download = new QPushButton(tr("Download model"));
     m_download->setAutoDefault(false);  // L9: prevent auto-default
     m_sample = ecvAICoreUi::makeSampleDataBtn(this);

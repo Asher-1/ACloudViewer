@@ -9,6 +9,7 @@
 #include <memory>
 #include <vector>
 
+#include "common/backend_gemm_tolerance.hpp"
 #include "src/common/ggml_backend_registry.hpp"
 #ifdef AICORE_TEST_UNET_CONV
 #include "src/tasks/instantmesh/unet.cpp"
@@ -99,7 +100,9 @@ int main(int argc, char** argv) {
                 "%s max_abs=%.9g actual_backend=%s\n", f32 ? "f32" : "mixed",
                 maximum,
                 ggml_backend_dev_name(ggml_backend_get_device(lease.handle())));
-        if (!(maximum < 2e-5)) ++failures;
+        if (!(maximum < aicore_test::oracle_max_abs_tolerance(
+                                lease.handle(), /*gemm_f32=*/f32)))
+            ++failures;
     }
     return failures ? 1 : 0;
 }

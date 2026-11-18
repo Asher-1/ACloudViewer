@@ -1,7 +1,7 @@
 {
 	"type" : "Standard",
 	"name" : "TreeIso",
-	"icon" : ":/CC/plugin/qTreeIso/images/forest.png",
+	"icon" : ":/CC/plugin/qTreeIso/images/forest.svg",
 	"description": "A 3D graph-based individual-tree isolator (treeiso) from Terrestrial Laser Scanning point clouds",
 	"authors" : [
 		{

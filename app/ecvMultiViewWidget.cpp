@@ -479,14 +479,14 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
     };
 
     auto* splitHBtn =
-            makeBtn(QIcon(":/Resources/images/svg/pqSplitHorizontal.svg"),
+            makeBtn(QIcon(":/Resources/images/svg/pq/pqSplitHorizontal.svg"),
                     tr("Split Left|Right"));
     connect(splitHBtn, &QToolButton::clicked, this,
             [this, frame]() { onSplitHorizontal(frame); });
     headerLayout->addWidget(splitHBtn);
 
     auto* splitVBtn =
-            makeBtn(QIcon(":/Resources/images/svg/pqSplitVertical.svg"),
+            makeBtn(QIcon(":/Resources/images/svg/pq/pqSplitVertical.svg"),
                     tr("Split Top|Bottom"));
     connect(splitVBtn, &QToolButton::clicked, this,
             [this, frame]() { onSplitVertical(frame); });
@@ -499,7 +499,7 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
             [this, frame]() { onMaximize(frame); });
     headerLayout->addWidget(maxBtn);
 
-    auto* closeBtn = makeBtn(QIcon(":/Resources/images/svg/pqCloseView.svg"),
+    auto* closeBtn = makeBtn(QIcon(":/Resources/images/svg/pq/pqCloseView.svg"),
                              tr("Close View"));
     closeBtn->setObjectName(QStringLiteral("closeViewBtn"));
     connect(closeBtn, &QToolButton::clicked, this,

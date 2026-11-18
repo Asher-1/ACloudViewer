@@ -21,57 +21,16 @@ ACloudViewer: A Modern Library for 3D Point Cloud Processing
        <p style="margin: 0 0 10px 0; font-weight: 600; color: #333;">
            📚 <strong>Documentation Version:</strong>
        </p>
-       <select id="docs-version-select-main" 
-               style="width: 100%; max-width: 300px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; background: white; cursor: pointer;"
-               onchange="if(window.ACloudViewerVersionSwitcher) { window.ACloudViewerVersionSwitcher.switchVersion(this.value); }">
-           <option value="stable">Latest Stable</option>
-           <option value="dev">Development (main)</option>
+       <select id="docs-version-select-main"
+               data-docs-version
+               disabled
+               style="width: 100%; max-width: 300px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; background: white; cursor: pointer;">
+           <option>Loading…</option>
        </select>
        <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">
-           Switch between stable release and development documentation. Use the version selector in the sidebar for quick access.
+           Versions are listed from the deployment itself. The sidebar selector offers the same list.
        </p>
    </div>
-   <script>
-   // Initialize main page version selector
-   (function() {
-       function updateMainSelector() {
-           const select = document.getElementById('docs-version-select-main');
-           if (!select) {
-               setTimeout(updateMainSelector, 200);
-               return;
-           }
-           
-           if (!window.ACloudViewerVersionSwitcher) {
-               setTimeout(updateMainSelector, 200);
-               return;
-           }
-           
-           const versions = window.ACloudViewerVersionSwitcher.getVersions();
-           const currentVersion = window.ACloudViewerVersionSwitcher.getCurrentVersion();
-           
-           if (versions.length > 0) {
-               select.innerHTML = '';
-               versions.forEach(v => {
-                   const option = document.createElement('option');
-                   option.value = v.value;
-                   option.textContent = v.display;
-                   if (v.value === currentVersion) {
-                       option.selected = true;
-                   }
-                   select.appendChild(option);
-               });
-           }
-       }
-       
-       if (document.readyState === 'loading') {
-           document.addEventListener('DOMContentLoaded', updateMainSelector);
-       } else {
-           updateMainSelector();
-       }
-       
-       document.addEventListener('versionsLoaded', updateMainSelector);
-   })();
-   </script>
 
 AICore AI Plugins
 -----------------
@@ -509,6 +468,7 @@ from the `SuperSplat Spirula Studio Gallery
    plugins/qVLXSeek/README
    plugins/qAnyLabeling/README
    plugins/qSpirula/README
+   plugins/qBroom/README
    plugins/qSIBR/README
 
 .. toctree::

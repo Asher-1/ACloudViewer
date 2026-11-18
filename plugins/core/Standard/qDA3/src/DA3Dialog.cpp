@@ -29,6 +29,7 @@
 #include "aicore/depth_capi.h"
 #include "aicore/inference_log.h"
 #include "aicore/model_catalog_capi.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAICoreUiHelper.h"
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
@@ -326,11 +327,7 @@ void DA3Dialog::setupUi() {
     modelLayout->addWidget(m_customMetricRow, 3, 0, 1, 4);
 
     m_deviceCombo = new QComboBox;
-    for (int i = 0; i < aicore_device_count(); ++i) {
-        const aicore_device_info* d = aicore_device_at(i);
-        m_deviceCombo->addItem(tr(d->label), QString::fromUtf8(d->id));
-        if (d->is_default) m_deviceCombo->setCurrentIndex(i);
-    }
+    ecvAICoreUi::populateDeviceCombo(m_deviceCombo);
     m_deviceCombo->setToolTip(
             tr("Auto tries %1.").arg(aicore_auto_device_order()));
 

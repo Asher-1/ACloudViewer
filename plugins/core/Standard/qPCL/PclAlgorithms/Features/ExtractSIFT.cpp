@@ -32,7 +32,7 @@ ExtractSIFT::ExtractSIFT()
                                    tr("Extract SIFT Keypoints"),
                                    tr("Extract SIFT keypoints for clouds with "
                                       "intensity/RGB or any scalar field"),
-                                   ":/toolbar/PclAlgorithms/icons/sift.png")),
+                                   ":/toolbar/PclAlgorithms/icons/sift.svg")),
       m_dialog(nullptr),
       m_nr_octaves(0),
       m_min_scale(0),

@@ -11,14 +11,36 @@ Complete guide for building ACloudViewer from source code on Windows, Linux, and
 | Platform | Complete Build Guide | Quick Build Script |
 |----------|---------------------|-------------------|
 | 🪟 **Windows** | **[Windows Build Guide →](docs/guides/compiling_doc/compiling-cloudviewer-windows.md)** | `python scripts/build_win.py` |
-| 🐧 **Linux** | **[Linux Build Guide →](docs/guides/compiling_doc/compiling-cloudviewer-linux.md)** | `./docker/build-release.sh` |
+| 🐧 **Linux (Docker)** | **[Linux Build Guide →](docs/guides/compiling_doc/compiling-cloudviewer-linux.md)** | `./docker/build-release.sh` |
+| 🐧 **Linux (Docker + Conda)** | **[Linux Build Guide →](docs/guides/compiling_doc/compiling-cloudviewer-linux.md)** | `./docker/build-release-conda.sh` |
+| 🐧 **Linux (Local, one-click)** | **[Linux Build Guide →](docs/guides/compiling_doc/compiling-cloudviewer-linux.md)** | `bash docs/guides/compiling_doc/setup_and_build_acloudviewer_linux.sh` |
 | 🍎 **macOS** | **[macOS Build Guide →](docs/guides/compiling_doc/compiling-cloudviewer-macos.md)** | `./scripts/build_macos.sh` |
 
 > 💡 **First time building?** The platform-specific guides include detailed setup instructions, dependency installation, and troubleshooting tips.
+>
+> 🐧 **Linux one-click script** runs end-to-end on a fresh Ubuntu machine: apt deps → pyenv Python 3.12 → Vulkan SDK env → VTK/PCL deps → qPythonRuntime requirements → CMake configure → build + `.run` installer. It is idempotent (re-running only redoes what is missing); see `--jobs N`, `--qt-dir DIR`, `--source-dir DIR`, `--prefix DIR`, `--skip-build` in the script header.
+>
+> 🐳 **Docker scripts** build inside pinned Ubuntu 22.04 containers (`build-release.sh` = pyenv/system path, `build-release-conda.sh` = `BUILD_WITH_CONDA=ON`); both require Docker and run from the repo root.
+
+### Skip the Build: Install Prebuilt Binaries via npm
+
+If you only want to **use** ACloudViewer (not develop it), the npm bootstrap installs the official release without compiling anything:
+
+```bash
+npm install -g @asher-1/acloudviewer   # installer bootstrap, requires Node.js >= 18
+acloudviewer install                   # downloads + launches the installer for your platform
+acloudviewer install --wheel           # alternative: install the Python cloudViewer wheel via pip (Python 3.10+)
+```
+
+- The npm package is an **installer bootstrap**: it fetches the official Windows/macOS/Linux installer (or Python wheel) from GitHub Releases and launches it — no source compilation on your machine.
+- Published to npmjs.org (primary) and mirrored on GitHub Packages; details and troubleshooting in [npm/README.md](npm/README.md).
+- No Node.js on the target machine? Download installers directly from the [Releases page](https://github.com/Asher-1/ACloudViewer/releases).
 
 **Additional Resources:**
 - 📚 **Comprehensive Reference**: [QUICKSTART.md](docs/guides/QUICKSTART.md) - Build options, environment setup, and advanced configuration
-- 🤖 **Agent Integration**: [agent-integration/README.md](agent-integration/README.md) - For AI agent / automation development
+- 🤖 **Agent Integration**: [agent-integration/README.md](agent-integration/README.md) - JSON-RPC / MCP / CLI harness entry point for AI agent & automation development
+- 🛠️ **Agent CLI Quick Reference**: [agent-integration/docs/CLI-QUICK-REFERENCE.md](agent-integration/docs/CLI-QUICK-REFERENCE.md) - One-page lookup for all `cli-anything-acloudviewer` commands (`[GUI]`/`[Headless]` tagged)
+- 🔌 **JSON-RPC API**: [agent-integration/docs/JSON-RPC-API.md](agent-integration/docs/JSON-RPC-API.md) - JSON-RPC 2.0 over WebSocket (port 6001) for real-time GUI control
 
 ---
 
@@ -696,6 +718,14 @@ build_gui_app with_conda package_installer with_aicore_cuda bundle_cuda_runtime
 
 ## 📚 Additional Documentation
 
+- **[Agent Integration](agent-integration/README.md)** - Building for AI agent development (JSON-RPC WebSocket / MCP server / CLI harness)
+- **[Agent CLI Quick Reference](agent-integration/docs/CLI-QUICK-REFERENCE.md)** - Fast lookup for all `cli-anything-acloudviewer` commands
+- **[JSON-RPC API](agent-integration/docs/JSON-RPC-API.md)** - JSON-RPC 2.0 over WebSocket (port 6001) exposed by `qJSonRPCPlugin`
+- **[Command Mapping](agent-integration/docs/COMMAND-MAPPING.md)** - CLI commands ↔ MCP tools ↔ JSON-RPC methods mapping
+- **[SIBR Viewer CLI](agent-integration/docs/SIBR-VIEWER-CLI.md)** - Launching SIBR Gaussian Splatting viewers through the unified agent CLI
+- **[Agent Integration Testing](agent-integration/docs/TESTING.md)** - End-to-end testing of the agent integration chain (GUI → AI agent)
+- **[Agent Integration Troubleshooting](agent-integration/docs/TROUBLESHOOTING.md)** - Common agent/CLI/RPC issues and fixes
+- **[npm Bootstrap](npm/README.md)** - Install prebuilt binaries via npm without building from source
 - **[Windows Build Guide](docs/guides/compiling_doc/compiling-cloudviewer-windows.md)** - Detailed Windows build instructions
 - **[Linux Build Guide](docs/guides/compiling_doc/compiling-cloudviewer-linux.md)** - Ubuntu/Debian build instructions
 - **[macOS Build Guide](docs/guides/compiling_doc/compiling-cloudviewer-macos.md)** - macOS build instructions

@@ -16,6 +16,7 @@
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QHBoxLayout>
+#include <QImageReader>
 #include <QLabel>
 #include <QLineEdit>
 #include <QProgressBar>
@@ -27,8 +28,10 @@
 #include "aicore/rmbg_capi.h"
 #include "aicore/sam3_capi.h"
 #include "aicore/sam3d_capi.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAICoreUiHelper.h"
 #include "ecvAssetIntegrity.h"
+#include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 #include "ecvTestDataRepository.h"
 
@@ -137,10 +140,21 @@ Sam3dDialog::Sam3dDialog(QWidget* parent) : QDialog(parent) {
             &Sam3dDialog::onTestDataClicked);
     form->addRow(QString(), m_testDataBtn);
 
+    // Click-to-enlarge source preview (shared ecvClickableImageLabel, same
+    // wiring as qTrellis): one textChanged trigger covers Browse, the
+    // sample-data fill, and manual edits alike.
+    m_imagePreview = new ecvClickableImageLabel(this);
+    m_imagePreview->setMinimumSize(ecvAICoreUi::dpiScaled(200),
+                                   ecvAICoreUi::dpiScaled(150));
+    m_imagePreview->setAlignment(Qt::AlignCenter);
+    m_imagePreview->setStyleSheet("border: 1px dashed #999;");
+    form->addRow(QString(), m_imagePreview);
+    connect(m_imageEdit, &QLineEdit::textChanged, this,
+            &Sam3dDialog::updateImagePreview);
+
     // Output options (DB import by default; file export is opt-in) ----------
     m_deviceCombo = new QComboBox(this);
-    m_deviceCombo->addItems({tr("auto"), QStringLiteral("cpu"),
-                             QStringLiteral("cuda"), QStringLiteral("vulkan")});
+    ecvAICoreUi::populateDeviceCombo(m_deviceCombo);
     form->addRow(tr("Device:"), m_deviceCombo);
 
     m_dtypeCombo = new QComboBox(this);
@@ -642,6 +656,21 @@ void Sam3dDialog::browseImage() {
     if (!path.isEmpty()) m_imageEdit->setText(path);
 }
 
+void Sam3dDialog::updateImagePreview() {
+    const QString path = m_imageEdit->text().trimmed();
+    if (path.isEmpty()) {
+        m_imagePreview->setPreviewImage(QImage(), ecvAICoreUi::previewSize());
+        return;
+    }
+    QImageReader reader(path);
+    if (!reader.canRead()) return;
+    const QImage img = reader.read();
+    if (img.isNull()) return;
+    // The label keeps the full-resolution copy internally, so clicking the
+    // thumbnail opens the original source image.
+    m_imagePreview->setPreviewImage(img, ecvAICoreUi::previewSize());
+}
+
 void Sam3dDialog::browseOutputDir() {
     const QString dir = QFileDialog::getExistingDirectory(
             this, tr("Output directory"), m_outputDirEdit->text());
@@ -666,7 +695,7 @@ Sam3dDialog::Settings Sam3dDialog::settings() const {
     s.samScoreThreshold = static_cast<float>(m_samScoreSpin->value());
     s.samNmsThreshold = static_cast<float>(m_samNmsSpin->value());
     s.samDedupIouThreshold = static_cast<float>(m_samDedupSpin->value());
-    s.device = m_deviceCombo->currentText();
+    s.device = ecvAICoreUi::currentDeviceId(m_deviceCombo);
     s.dtypeIndex = m_dtypeCombo->currentIndex();
     s.rmbgDtypeIndex = m_rmbgDtypeCombo->currentIndex();
     s.steps = m_stepsSpin->value();

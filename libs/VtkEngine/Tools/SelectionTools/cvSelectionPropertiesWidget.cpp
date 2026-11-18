@@ -863,8 +863,8 @@ void cvSelectionPropertiesWidget::setupSelectedDataHeader() {
     // Action buttons (ParaView-style with icons)
 
     // Freeze button (ParaView: converts selection to a frozen representation)
-    m_freezeButton = new QPushButton(QIcon(":/Resources/images/svg/pqLock.svg"),
-                                     tr("Freeze"));
+    m_freezeButton = new QPushButton(
+            QIcon(":/Resources/images/svg/pq/pqLock.svg"), tr("Freeze"));
     m_freezeButton->setToolTip(tr(
             "Freeze the current selection (convert to independent dataset)"));
     m_freezeButton->setFixedHeight(25);
@@ -874,7 +874,7 @@ void cvSelectionPropertiesWidget::setupSelectedDataHeader() {
 
     // Extract button (ParaView: pqExtractSelection.svg - creates new object
     // from selection)
-    QIcon extractIcon(":/Resources/images/svg/pqExtractSelection.svg");
+    QIcon extractIcon(":/Resources/images/svg/pq/pqExtractSelection.svg");
     if (extractIcon.isNull()) {
         extractIcon = QIcon(":/Resources/images/exportCloud.png");  // Fallback
     }
@@ -1100,10 +1100,10 @@ void cvSelectionPropertiesWidget::setupCreateSelectionSection() {
 
     // Element Type combo (Point/Cell)
     m_elementTypeCombo = new QComboBox();
-    QIcon pointIcon(":/Resources/images/svg/pqPointData.svg");
+    QIcon pointIcon(":/Resources/images/svg/pq/pqPointData.svg");
     m_elementTypeCombo->addItem(pointIcon, tr("Point"), 0);
 
-    QIcon cellIcon(":/Resources/images/svg/pqCellData.svg");
+    QIcon cellIcon(":/Resources/images/svg/pq/pqCellData.svg");
     m_elementTypeCombo->addItem(cellIcon, tr("Cell"), 1);
     m_elementTypeCombo->setToolTip(tr("Select element type (Point or Cell)"));
     connect(m_elementTypeCombo,
@@ -1153,9 +1153,9 @@ void cvSelectionPropertiesWidget::setupCreateSelectionSection() {
     buttonLayout->setSpacing(5);
 
     // Use ParaView-style icons
-    QIcon findIcon(":/Resources/images/svg/pqApply.svg");
+    QIcon findIcon(":/Resources/images/svg/pq/pqApply.svg");
     if (findIcon.isNull()) {
-        findIcon = QIcon(":/Resources/images/svg/pqApply.png");
+        findIcon = QIcon(":/Resources/images/svg/pq/pqApply.svg");
     }
     m_findDataButton = new QPushButton(findIcon, tr("Find Data"));
     m_findDataButton->setToolTip(tr("Find data using selection criteria"));
@@ -1163,9 +1163,9 @@ void cvSelectionPropertiesWidget::setupCreateSelectionSection() {
             &cvSelectionPropertiesWidget::onFindDataClicked);
     buttonLayout->addWidget(m_findDataButton);
 
-    QIcon resetIcon(":/Resources/images/svg/pqCancel.svg");
+    QIcon resetIcon(":/Resources/images/svg/pq/pqCancel.svg");
     if (resetIcon.isNull()) {
-        resetIcon = QIcon(":/Resources/images/svg/pqCancel.png");
+        resetIcon = QIcon(":/Resources/images/svg/pq/pqCancel.svg");
     }
     m_resetButton = new QPushButton(resetIcon, tr("Reset"));
     m_resetButton->setToolTip(tr("Reset any unaccepted changes"));
@@ -1173,9 +1173,9 @@ void cvSelectionPropertiesWidget::setupCreateSelectionSection() {
             &cvSelectionPropertiesWidget::onResetClicked);
     buttonLayout->addWidget(m_resetButton);
 
-    QIcon clearIcon(":/Resources/images/svg/pqReset.svg");
+    QIcon clearIcon(":/Resources/images/svg/pq/pqReset.svg");
     if (clearIcon.isNull()) {
-        clearIcon = QIcon(":/Resources/images/svg/pqReset.png");
+        clearIcon = QIcon(":/Resources/images/svg/pq/pqReset.svg");
     }
     m_clearButton = new QPushButton(clearIcon, tr("Clear"));
     m_clearButton->setToolTip(tr("Clear selection criteria and qualifiers"));
@@ -1219,7 +1219,8 @@ void cvSelectionPropertiesWidget::setupSelectionDisplaySection() {
 
     // Cell Labels button with dropdown menu (ParaView: pqCellData.svg icon)
     m_cellLabelsButton = new QPushButton(tr("Cell Labels"));
-    m_cellLabelsButton->setIcon(QIcon(":/Resources/images/svg/pqCellData.svg"));
+    m_cellLabelsButton->setIcon(
+            QIcon(":/Resources/images/svg/pq/pqCellData.svg"));
     m_cellLabelsButton->setToolTip(
             tr("Set the array to label selected cells with"));
     m_cellLabelsMenu = new QMenu(this);
@@ -1232,7 +1233,7 @@ void cvSelectionPropertiesWidget::setupSelectionDisplaySection() {
     // Point Labels button with dropdown menu (ParaView: pqPointData.svg icon)
     m_pointLabelsButton = new QPushButton(tr("Point Labels"));
     m_pointLabelsButton->setIcon(
-            QIcon(":/Resources/images/svg/pqPointData.svg"));
+            QIcon(":/Resources/images/svg/pq/pqPointData.svg"));
     m_pointLabelsButton->setToolTip(
             tr("Set the array to label selected points with"));
     m_pointLabelsMenu = new QMenu(this);
@@ -1247,7 +1248,7 @@ void cvSelectionPropertiesWidget::setupSelectionDisplaySection() {
     // Edit Label Properties button (ParaView: pqAdvanced.svg icon)
     m_editLabelPropertiesButton = new QPushButton(tr("Edit Label Properties"));
     m_editLabelPropertiesButton->setIcon(
-            QIcon(":/Resources/images/svg/pqAdvanced.png"));
+            QIcon(":/Resources/images/svg/pq/pqAdvanced.svg"));
     m_editLabelPropertiesButton->setToolTip(
             tr("Edit selection label properties"));
     connect(m_editLabelPropertiesButton, &QPushButton::clicked, this,
@@ -1333,7 +1334,7 @@ void cvSelectionPropertiesWidget::setupSelectionDisplaySection() {
     m_editInteractiveLabelPropertiesButton =
             new QPushButton(tr("Edit Interactive Label Properties"));
     m_editInteractiveLabelPropertiesButton->setIcon(
-            QIcon(":/Resources/images/svg/pqAdvanced.png"));
+            QIcon(":/Resources/images/svg/pq/pqAdvanced.svg"));
     m_editInteractiveLabelPropertiesButton->setToolTip(
             tr("Edit interactive selection label properties"));
     connect(m_editInteractiveLabelPropertiesButton, &QPushButton::clicked, this,
@@ -1446,12 +1447,13 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
     // Add active selection button (ParaView: pqPlus.svg/png)
     m_addSelectionButton = new QToolButton();
     // Try SVG first, fallback to PNG if not available
-    QIcon addIcon(":/Resources/images/svg/pqPlus.svg");
+    QIcon addIcon(":/Resources/images/svg/pq/pqPlus.svg");
     if (addIcon.isNull()) {
-        addIcon = QIcon(":/Resources/images/svg/pqPlus.png");
+        addIcon = QIcon(":/Resources/images/svg/pq/pqPlus.svg");
     }
     if (addIcon.isNull()) {
-        addIcon = QIcon(":/Resources/images/ecvPlus.png");  // Final fallback
+        addIcon = QIcon(
+                ":/Resources/images/svg/ecv/ecvPlus.svg");  // Final fallback
     }
     m_addSelectionButton->setIcon(addIcon);
     m_addSelectionButton->setToolTip(tr("Add active selection"));
@@ -1464,9 +1466,10 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
 
     // Remove selected selection button (ParaView: pqMinus.svg/png)
     m_removeSelectionButton = new QToolButton();
-    QIcon removeIcon(":/Resources/images/svg/pqMinus.svg");
+    QIcon removeIcon(":/Resources/images/svg/pq/pqMinus.svg");
     if (removeIcon.isNull()) {
-        removeIcon = QIcon(":/Resources/images/ecvMinus.png");  // Fallback
+        removeIcon =
+                QIcon(":/Resources/images/svg/ecv/ecvMinus.svg");  // Fallback
     }
     m_removeSelectionButton->setIcon(removeIcon);
     m_removeSelectionButton->setToolTip(
@@ -1484,9 +1487,10 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
     // Remove all selections button (ParaView: pqDelete.svg - using
     // smallTrash.png as alternative)
     m_removeAllSelectionsButton = new QToolButton();
-    QIcon trashIcon(":/Resources/images/smallTrash.png");
+    QIcon trashIcon(":/Resources/images/svg/small/smallTrash.svg");
     if (trashIcon.isNull()) {
-        trashIcon = QIcon(":/Resources/images/ecvdelete.png");  // Fallback
+        trashIcon =
+                QIcon(":/Resources/images/svg/ecv/ecvdelete.svg");  // Fallback
     }
     m_removeAllSelectionsButton->setIcon(trashIcon);
     m_removeAllSelectionsButton->setToolTip(tr("Remove all saved selections"));
@@ -1506,7 +1510,7 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
     m_activateCombinedSelectionsButton =
             new QPushButton(tr("Activate Combined Selections"));
     m_activateCombinedSelectionsButton->setIcon(
-            QIcon(":/Resources/images/smallValidate.png"));
+            QIcon(":/Resources/images/svg/small/smallValidate.svg"));
     m_activateCombinedSelectionsButton->setToolTip(
             tr("Set the combined saved selections as the active selection"));
     m_activateCombinedSelectionsButton->setFocusPolicy(Qt::TabFocus);
@@ -1543,11 +1547,11 @@ void cvSelectionPropertiesWidget::setupSelectedDataSpreadsheet() {
     m_attributeTypeCombo = new QComboBox();
 
     // Point Data with icon (ParaView: pqPointData.svg)
-    QIcon pointDataIcon(":/Resources/images/svg/pqPointData.svg");
+    QIcon pointDataIcon(":/Resources/images/svg/pq/pqPointData.svg");
     m_attributeTypeCombo->addItem(pointDataIcon, tr("Point Data"), 0);
 
     // Cell Data with icon (ParaView: pqCellData.svg)
-    QIcon cellDataIcon(":/Resources/images/svg/pqCellData.svg");
+    QIcon cellDataIcon(":/Resources/images/svg/pq/pqCellData.svg");
     m_attributeTypeCombo->addItem(cellDataIcon, tr("Cell Data"), 1);
 
     m_attributeTypeCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
@@ -1561,7 +1565,7 @@ void cvSelectionPropertiesWidget::setupSelectedDataSpreadsheet() {
     // Column 2: Toggle column visibility button (ParaView:
     // pqRectilinearGrid16.png)
     m_toggleColumnVisibilityButton = new QToolButton();
-    QIcon colVisIcon(":/Resources/images/interactors.png");
+    QIcon colVisIcon(":/Resources/images/svg/misc/interactors.svg");
     if (colVisIcon.isNull()) {
         colVisIcon = QIcon(":/Resources/images/settings.png");  // Fallback
     }
@@ -1578,7 +1582,7 @@ void cvSelectionPropertiesWidget::setupSelectedDataSpreadsheet() {
 
     // Column 3: Toggle field data button (ParaView: pqGlobalData.svg)
     m_toggleFieldDataButton = new QToolButton();
-    QIcon fieldDataIcon(":/Resources/images/svg/pqGlobalData.svg");
+    QIcon fieldDataIcon(":/Resources/images/svg/pq/pqGlobalData.svg");
     m_toggleFieldDataButton->setIcon(fieldDataIcon);
     m_toggleFieldDataButton->setToolTip(
             tr("Toggle field data visibility (show raw data arrays)"));
@@ -5139,7 +5143,7 @@ void cvSelectionPropertiesWidget::addQueryRow(int index,
 
     // Plus button (add row after this one)
     row.plusButton = new QPushButton(row.container);
-    QIcon plusIcon(":/Resources/images/svg/pqPlus.svg");
+    QIcon plusIcon(":/Resources/images/svg/pq/pqPlus.svg");
     if (plusIcon.isNull()) {
         row.plusButton->setText("+");
     } else {
@@ -5151,7 +5155,7 @@ void cvSelectionPropertiesWidget::addQueryRow(int index,
 
     // Minus button (remove this row)
     row.minusButton = new QPushButton(row.container);
-    QIcon minusIcon(":/Resources/images/svg/pqMinus.svg");
+    QIcon minusIcon(":/Resources/images/svg/pq/pqMinus.svg");
     if (minusIcon.isNull()) {
         row.minusButton->setText("-");
     } else {
@@ -6700,10 +6704,10 @@ void cvSelectionPropertiesWidget::updateElementTypeDisplay(bool isCellType) {
     QString typeName;
 
     if (isCellType) {
-        iconPath = ":/Resources/images/svg/pqCellData.svg";
+        iconPath = ":/Resources/images/svg/pq/pqCellData.svg";
         typeName = tr("Cell");
     } else {
-        iconPath = ":/Resources/images/svg/pqPointData.svg";
+        iconPath = ":/Resources/images/svg/pq/pqPointData.svg";
         typeName = tr("Point");
     }
 

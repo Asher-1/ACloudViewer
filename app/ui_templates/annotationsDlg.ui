@@ -32,7 +32,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/smallPause.png</normaloff>:/Resources/images/smallPause.png</iconset>
+         <normaloff>:/Resources/images/svg/small/smallPause.svg</normaloff>:/Resources/images/svg/small/smallPause.svg</iconset>
        </property>
        <property name="checkable">
         <bool>true</bool>
@@ -55,7 +55,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/square.png</normaloff>:/Resources/images/square.png</iconset>
+         <normaloff>:/Resources/images/svg/misc/square.svg</normaloff>:/Resources/images/svg/misc/square.svg</iconset>
        </property>
        <property name="checkable">
         <bool>true</bool>
@@ -75,7 +75,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/store.png</normaloff>:/Resources/images/store.png</iconset>
+         <normaloff>:/Resources/images/svg/misc/store.svg</normaloff>:/Resources/images/svg/misc/store.svg</iconset>
        </property>
        <property name="checkable">
         <bool>true</bool>
@@ -111,7 +111,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/smallReset.png</normaloff>:/Resources/images/smallReset.png</iconset>
+         <normaloff>:/Resources/images/svg/small/smallReset.svg</normaloff>:/Resources/images/svg/small/smallReset.svg</iconset>
        </property>
       </widget>
      </item>
@@ -151,7 +151,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/typeSF.png</normaloff>:/Resources/images/typeSF.png</iconset>
+         <normaloff>:/Resources/images/svg/type/typeSF.svg</normaloff>:/Resources/images/svg/type/typeSF.svg</iconset>
        </property>
       </widget>
      </item>
@@ -191,7 +191,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/smallCancel.png</normaloff>:/Resources/images/smallCancel.png</iconset>
+         <normaloff>:/Resources/images/svg/small/smallCancel.svg</normaloff>:/Resources/images/svg/small/smallCancel.svg</iconset>
        </property>
       </widget>
      </item>
@@ -227,7 +227,7 @@
         <item>
          <widget class="QToolButton" name="editToolButton">
           <property name="toolTip">
-           <string>Edit Mode（this will change exist annotations）</string>
+           <string>Edit Mode (this will change existing annotations)</string>
           </property>
           <property name="statusTip">
            <string>Edit Mode</string>
@@ -237,7 +237,7 @@
           </property>
           <property name="icon">
            <iconset resource="../MainWindow.qrc">
-            <normaloff>:/Resources/images/edit_48px.png</normaloff>:/Resources/images/edit_48px.png</iconset>
+            <normaloff>:/Resources/images/svg/misc/edit_48px.svg</normaloff>:/Resources/images/svg/misc/edit_48px.svg</iconset>
           </property>
           <property name="checkable">
            <bool>true</bool>
@@ -260,7 +260,7 @@
           </property>
           <property name="icon">
            <iconset resource="../MainWindow.qrc">
-            <normaloff>:/Resources/images/smallValidate.png</normaloff>:/Resources/images/smallValidate.png</iconset>
+            <normaloff>:/Resources/images/svg/small/smallValidate.svg</normaloff>:/Resources/images/svg/small/smallValidate.svg</iconset>
           </property>
          </widget>
         </item>
@@ -270,7 +270,7 @@
            <string>class sets</string>
           </property>
           <property name="styleSheet">
-           <string notr="true">font: 75 12pt &quot;微软雅黑&quot;;
+           <string notr="true">font: 75 12pt &quot;Microsoft YaHei&quot;;
 
 </string>
           </property>
@@ -310,7 +310,7 @@
           </property>
           <property name="icon">
            <iconset resource="../MainWindow.qrc">
-            <normaloff>:/Resources/images/ecvPlus.png</normaloff>:/Resources/images/ecvPlus.png</iconset>
+            <normaloff>:/Resources/images/svg/ecv/ecvPlus.svg</normaloff>:/Resources/images/svg/ecv/ecvPlus.svg</iconset>
           </property>
           <property name="checkable">
            <bool>true</bool>
@@ -342,7 +342,7 @@
           </property>
           <property name="icon">
            <iconset resource="../MainWindow.qrc">
-            <normaloff>:/Resources/images/ecvUnion.png</normaloff>:/Resources/images/ecvUnion.png</iconset>
+            <normaloff>:/Resources/images/svg/ecv/ecvUnion.svg</normaloff>:/Resources/images/svg/ecv/ecvUnion.svg</iconset>
           </property>
           <property name="checkable">
            <bool>true</bool>
@@ -365,7 +365,7 @@
           </property>
           <property name="icon">
            <iconset resource="../MainWindow.qrc">
-            <normaloff>:/Resources/images/ecvMinus.png</normaloff>:/Resources/images/ecvMinus.png</iconset>
+            <normaloff>:/Resources/images/svg/ecv/ecvMinus.svg</normaloff>:/Resources/images/svg/ecv/ecvMinus.svg</iconset>
           </property>
           <property name="shortcut">
            <string/>
@@ -391,7 +391,7 @@
           </property>
           <property name="icon">
            <iconset resource="../MainWindow.qrc">
-            <normaloff>:/Resources/images/ecvIntersection.png</normaloff>:/Resources/images/ecvIntersection.png</iconset>
+            <normaloff>:/Resources/images/ecvIntersection.svg</normaloff>:/Resources/images/ecvIntersection.svg</iconset>
           </property>
           <property name="shortcut">
            <string/>
@@ -472,7 +472,7 @@
         </property>
         <property name="icon">
          <iconset resource="../MainWindow.qrc">
-          <normaloff>:/Resources/images/ecvViewXpos.png</normaloff>:/Resources/images/ecvViewXpos.png</iconset>
+          <normaloff>:/Resources/images/svg/view/ecvViewXpos.svg</normaloff>:/Resources/images/svg/view/ecvViewXpos.svg</iconset>
         </property>
        </widget>
       </item>
@@ -486,7 +486,7 @@
         </property>
         <property name="icon">
          <iconset resource="../MainWindow.qrc">
-          <normaloff>:/Resources/images/ecvViewXneg.png</normaloff>:/Resources/images/ecvViewXneg.png</iconset>
+          <normaloff>:/Resources/images/svg/view/ecvViewXneg.svg</normaloff>:/Resources/images/svg/view/ecvViewXneg.svg</iconset>
         </property>
        </widget>
       </item>
@@ -500,7 +500,7 @@
         </property>
         <property name="icon">
          <iconset resource="../MainWindow.qrc">
-          <normaloff>:/Resources/images/ecvViewYpos.png</normaloff>:/Resources/images/ecvViewYpos.png</iconset>
+          <normaloff>:/Resources/images/svg/view/ecvViewYpos.svg</normaloff>:/Resources/images/svg/view/ecvViewYpos.svg</iconset>
         </property>
        </widget>
       </item>
@@ -514,7 +514,7 @@
         </property>
         <property name="icon">
          <iconset resource="../MainWindow.qrc">
-          <normaloff>:/Resources/images/ecvViewYneg.png</normaloff>:/Resources/images/ecvViewYneg.png</iconset>
+          <normaloff>:/Resources/images/svg/view/ecvViewYneg.svg</normaloff>:/Resources/images/svg/view/ecvViewYneg.svg</iconset>
         </property>
        </widget>
       </item>
@@ -528,7 +528,7 @@
         </property>
         <property name="icon">
          <iconset resource="../MainWindow.qrc">
-          <normaloff>:/Resources/images/ecvViewZneg.png</normaloff>:/Resources/images/ecvViewZneg.png</iconset>
+          <normaloff>:/Resources/images/svg/view/ecvViewZneg.svg</normaloff>:/Resources/images/svg/view/ecvViewZneg.svg</iconset>
         </property>
        </widget>
       </item>
@@ -542,7 +542,7 @@
         </property>
         <property name="icon">
          <iconset resource="../MainWindow.qrc">
-          <normaloff>:/Resources/images/ecvViewZpos.png</normaloff>:/Resources/images/ecvViewZpos.png</iconset>
+          <normaloff>:/Resources/images/svg/view/ecvViewZpos.svg</normaloff>:/Resources/images/svg/view/ecvViewZpos.svg</iconset>
         </property>
        </widget>
       </item>

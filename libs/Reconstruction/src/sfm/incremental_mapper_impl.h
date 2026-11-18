@@ -69,7 +69,7 @@ public:
     // second image (kInvalidImageId leaves the respective image
     // unconstrained).
     //
-    // Fork decision (第四十六轮手术边界): the candidate scan stays serial.
+    // Fork decision: the candidate scan stays serial.
     // Upstream fans the first-seed candidates out over a ThreadPool, which is
     // a legal nondeterminism axis that the within-distribution gate does not
     // require; the serial scan is what gives the fork its A/A reproducibility.

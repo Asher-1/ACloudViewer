@@ -7,7 +7,9 @@ on:
   # Automatically triggered after build workflows complete
   # Listen to all platform builds to capture new assets
   workflow_run:
-    workflows: ["Windows", "macOS", "Ubuntu"]  # Trigger after any build workflow finishes
+    # Exact names: workflow_run matches each workflow's `name:` verbatim
+    # (macos.yml is named "MacOS", so "macOS" here never fired it).
+    workflows: ["Windows", "MacOS", "Ubuntu"]  # Trigger after any build workflow finishes
     types: [completed]
     branches: [main]
   

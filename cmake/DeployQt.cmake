@@ -69,6 +69,20 @@ function( DeployQt )
 			set(temp_dir "${CMAKE_CURRENT_BINARY_DIR}/deployqt")
 		endif ()
 		set( temp_app_path "${temp_dir}/$<CONFIG>/${app_name}" )
+		
+		# Single source of truth for the backend-module suffix is
+		# AICoreRuntimeLayout.cmake (GGML_MODULE_SUFFIX: ".so" on all
+		# non-Windows platforms, cache value from ggml configure takes
+		# precedence). Backend modules are MODULE libraries and are
+		# "*.so" even on macOS — NOT CMAKE_SHARED_LIBRARY_SUFFIX
+		# (".dylib"): ggml-backend-reg dlopen()s ".so" on all UNIX, so
+		# copying "*.dylib" here would miss libggml-cpu.so /
+		# libggml-metal.so and leave the bundle without any ggml device.
+		if(NOT DEFINED GGML_MODULE_SUFFIX)
+		        set(acv_ggml_module_suffix ".so")
+		else()
+		        set(acv_ggml_module_suffix "${GGML_MODULE_SUFFIX}")
+		endif()
 		add_custom_command(
 				TARGET ${DEPLOY_QT_TARGET}
 				POST_BUILD
@@ -76,6 +90,14 @@ function( DeployQt )
 				COMMAND ${CMAKE_COMMAND} -E make_directory "${temp_dir}"
 				COMMAND ${CMAKE_COMMAND} -E copy_directory ${app_path} ${temp_app_path}
 				COMMAND "${mac_deploy_qt}" ${temp_app_path} -verbose=1
+				# ggml backend modules are dlopen'd at runtime and
+				# invisible to macdeployqt's otool scan. libAICore
+				# resolves its module dir via dladdr (the directory
+				# containing libAICore.dylib inside the bundle), so a
+				# bundle without these modules reports zero ggml
+				# devices (no CPU, no Metal) and every AICore task
+				# fails at model load.
+				COMMAND sh -c "cp ${CMAKE_BINARY_DIR}/bin/libggml-*${acv_ggml_module_suffix} '${temp_app_path}/Contents/Frameworks/'"
 				# Remove PostgreSQL SQL driver plugin which links against libpq
 				# (uses private macOS APIs, not Mac App Store compliant).
 				# cmake -E remove never fails if the file doesn't exist.

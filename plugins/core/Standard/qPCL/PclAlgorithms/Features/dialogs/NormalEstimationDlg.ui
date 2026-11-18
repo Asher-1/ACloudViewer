@@ -21,7 +21,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../../../qPCL.qrc">
-    <normaloff>:/toolbar/PclAlgorithms/icons/normal_curvature.png</normaloff>:/toolbar/PclAlgorithms/icons/normal_curvature.png</iconset>
+    <normaloff>:/toolbar/PclAlgorithms/icons/normal_curvature.svg</normaloff>:/toolbar/PclAlgorithms/icons/normal_curvature.svg</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

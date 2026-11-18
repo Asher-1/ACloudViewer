@@ -30,55 +30,77 @@ not authorize a new host port, change the source pin or rewrite any old receipt.
 
 ### Subsequent user-approved bounded follow-up
 
-#### 实际 RED 与最小实现进展
+#### Actual RED and minimal-implementation progress
 
-原 OCR 已完整退出，下面的旧等待描述保留历史边界。首次 CUDA 数值启动失败
-是 CUDA 11.8 模块误加载系统 11.1，缺 `cudaLaunchKernelExC`；错误地从父缓存
-取 `CMAKE_CUDA_COMPILER` 和旧 nsys help 输出有效内容却退出 1 的启动失败也
-保留。launcher 现从 `GGML_BUILD_DIR` 的真实 owner-cache 取得 toolkit，并做
-`ldd -r` 预检；nsys 仍拒绝缺失报告和真正错误，不降低 trace/数值判定。
+The original OCR has fully exited; the stale wait description below is kept as
+a historical boundary. The first CUDA numeric startup failure was CUDA 11.8
+modules mistakenly loading the system 11.1 toolkit, missing
+`cudaLaunchKernelExC`; the startup failures that wrongly took
+`CMAKE_CUDA_COMPILER` from the parent cache, and where an old nsys printed a
+valid help yet exited 1, are retained as well. The launcher now obtains the
+toolkit from the real owner cache under `GGML_BUILD_DIR` and pre-checks with
+`ldd -r`; nsys still rejects missing reports and true errors without lowering
+the trace/numeric bar.
 
-`build_app/Testing/relate-add-gelu-red-x1p4mzp_/receipt.json` 记录三后端各 256
-数值对照 rc=0；`routes/run-1fobgx5r/receipt.json` 完整执行 7 个 CUDA trace，
-只有 hint 预期融合但实际仍为 ADD + GELU 两个 kernel，取得有效 RED。原
-runtime/probe 身份不变。这是算子/路由证据，不是 checkpoint 或性能验收。
+`build_app/Testing/relate-add-gelu-red-x1p4mzp_/receipt.json` records the
+256-case numeric comparison per backend, all rc=0;
+`routes/run-1fobgx5r/receipt.json` fully executed 7 CUDA traces: only the hint
+mode expected fusion yet actually still ran ADD + GELU as two kernels — a
+valid RED. Original runtime/probe identity unchanged. This is operator/route
+evidence, not checkpoint or performance acceptance.
 
-获批的最小实现已经写入：`full_model.cpp` 接入 ConvNeXt DW direct-bias、
-pwconv1 与 decoder FFN 的 GELU epilogue hint；`0027-acv-cuda-add-gelu-epilogue.patch`
-注册于 CUDA 与 combined 有序链。kernel 复用原 `op_gelu_erf`，保留融合开关、
-完整单消费者域、实际指针/布局与危险 alias 回退。未复制 gallery/materiality
-策略，未修改 public ABI、源 reference pin、模型、原阈值、baseline 或旧 FAIL。
+The approved minimal implementation is written: `full_model.cpp` wires the
+ConvNeXt DW direct-bias plus the pwconv1 and decoder-FFN GELU epilogue hints;
+`0027-acv-cuda-add-gelu-epilogue.patch` is registered in the CUDA and combined
+ordered chains. The kernel reuses the original `op_gelu_erf`, keeping the
+fusion switch, the complete single-consumer domain, actual pointer/layout
+checks, and the dangerous-alias fallback. Gallery/materiality policy was not
+copied; public ABI, source reference pin, models, original thresholds,
+baseline, and old FAIL receipts were not modified.
 
-`build_app/Testing/build_relate_gelu_candidate_v1.py` 在唯一目录做 pristine
-forward/reverse/idempotent 重放；只接受原构建源码完全一致或恰好三份补丁源码
-差异，随后使用匹配原 flags 编译两个 CUDA TU，其他对象只读并核对身份。
+`build_app/Testing/build_relate_gelu_candidate_v1.py` performs pristine
+forward/reverse/idempotent replay in a unique directory; it accepts only a
+byte-identical original build source or exactly the three patch-source
+differences, then compiles the two CUDA TUs with matched original flags while
+every other object stays read-only and identity-checked.
 
-#### 候选编译、路由与真实消费者结果
+#### Candidate compilation, routing, and real-consumer results
 
-`build_app/Testing/relate-gelu-candidate-cvos3vzk/receipt.json` 记录四链
-forward/reverse/idempotent 通过；两个 CUDA TU 编译、独立模块链接、loader、
-三后端各 256 数值对照与七路由均 rc=0。hint 实际执行
-`add_gelu_erf_bias_kernel`，另外六路由保持分离，failures=[]，
-operator_route_green=true；候选模块 SHA-256 为
-`405d8e1f074299cfbf36571b749b4876057553c6289543f84d62fef6f15aa323`。
-原对象/源码身份未变，host_compiled=false 与 release_qualified=false 仍如实保留。
-纯重放的 `relate-gelu-candidate-nif_o1d3` 是另一份历史收据，不能代替编译结果。
+`build_app/Testing/relate-gelu-candidate-cvos3vzk/receipt.json` records the
+four-chain forward/reverse/idempotent pass; two CUDA TU compilations,
+independent module linking, the loader, the 256-case numeric comparison per
+the three backends, and the seven routes are all rc=0. The hint actually
+executes `add_gelu_erf_bias_kernel`, the other six routes stay separate,
+failures=[], operator_route_green=true; candidate module SHA-256 is
+`405d8e1f074299cfbf36571b749b4876057553c6289543f84d62fef6f15aa323`.
+Original object/source identity unchanged; host_compiled=false and
+release_qualified=false remain truthfully retained. The pure-replay
+`relate-gelu-candidate-nif_o1d3` is a separate historical receipt and cannot
+substitute the compiled result.
 
-host 另由匹配 `build_app` flags 重编译 `full_model.cpp`，仅替换独立链接命令的
-该对象，产出新的单体 `libAICore`。`relate-host-consumer-potqw5g7/receipt.json`
-记录 host 编译/链接及 loader 通过，24 个 sample-0 模型/backend 组合的
-before→candidate→before RAFO 字节一致。随后串行守卫遇到外部编译而停止新增
-采样；续跑使用同一快照字节，在新目录 `relate-host-consumer-k30cubhk` 完成余下
-4 个组合，旧收据不覆盖。两份收据共 28 个组合（11 个 ConvNeXt 加 ViT 控制），
-均有真实 backend 路径和位级输出核对，原库、输入、候选及旧收据身份未变。
+The host side additionally recompiled `full_model.cpp` with matching
+`build_app` flags, replacing only that object in the standalone link command,
+producing a new monolithic `libAICore`.
+`relate-host-consumer-potqw5g7/receipt.json` records the host compile/link and
+loader pass, with byte-identical RAFO across before -> candidate -> before for
+24 sample-0 model/backend combinations. The serial guard then stopped adding
+samples when an external compilation appeared; the continuation reused the
+same snapshot bytes and completed the remaining 4 combinations in the new
+directory `relate-host-consumer-k30cubhk`, without overwriting old receipts.
+The two receipts cover 28 combinations (11 ConvNeXt plus the ViT control),
+all with real backend paths and bitwise output verification; the original
+library, inputs, candidate, and old receipts kept their identities.
 
-保留本次四项 Vulkan p95 原 1.05 门 FAIL：tiny-F16 1.078470、small-F16
-1.063624、small-Q8 1.050964、ViT-F16 控制 1.091177。原协议仍为 threads=4、
-warmup=2、GPU repeat=10/CPU repeat=3；这是单轮 bracket 的局部对照，不是
-完整受控 release-profile A/B。large-F32 仍缺失，三源独立 checkpoint、原冻结
-性能门和原生平台仍开放。host_compiled=true 不等于 release_gate_closed=true。
+The four original Vulkan p95 1.05-gate FAILs are retained: tiny-F16 1.078470,
+small-F16 1.063624, small-Q8 1.050964, ViT-F16 control 1.091177. The original
+protocol is still threads=4, warmup=2, GPU repeat=10/CPU repeat=3; this is a
+single-bracket local comparison, not a complete controlled release-profile
+A/B. large-F32 is still missing; three-source independent checkpoints, the
+original frozen performance gates, and native platforms remain open.
+host_compiled=true does not equal release_gate_closed=true.
 
-以下测试队列描述是较早的观察，不再表示当前仍由 OCR 持锁。
+The test-queue description below is an earlier observation; it no longer means
+the OCR still holds the lock.
 
 The user subsequently approved the separate host/direct-bias/GELU-hint and
 CUDA ADD/GELU fusion increment, with original models, source reference gates,
@@ -165,14 +187,14 @@ Public relation consumers retain the same monolithic `libAICore` and catalog sam
 
 ### Local evidence locations (relative to repository root)
 
-- Four-chain replay: `build_relate14_sync_20261028/replay-nglegf_d/receipt.json`。
+- Four-chain replay: `build_relate14_sync_20261028/replay-nglegf_d/receipt.json`.
 - Isolated comparison source/build: `build_relate14_no_dw7_20261028/receipt.json` and `build.log`.
 - Candidate 25 tests: `build_relate14_dw7_20261028/Testing/Temporary/LastTest.log`; CUDA/Vulkan route receipts are in independent run directories under `Testing/dw7-*-routes/`.
-- Three-backend oracle/three-round A/B (including original FAIL): `build_relate14_sync_20261028/operator-ab-x43bkkgq/receipt.json`。
-- CUDA five-round remeasurement: `build_relate14_sync_20261028/operator-ab-h3qon14k/receipt.json`。
-- Valid public consumers: `build_relate14_sync_20261028/relation-consumer-jflnun3p/receipt.json`。
-- Two-model three-round subset remeasurement: `build_relate14_sync_20261028/relation-consumer-avojaaoq/receipt.json`。
-- Retained invalid RPATH diagnostic: `build_relate14_sync_20261028/relation-consumer-clyp_nqp/receipt.json`。
+- Three-backend oracle/three-round A/B (including original FAIL): `build_relate14_sync_20261028/operator-ab-x43bkkgq/receipt.json`.
+- CUDA five-round remeasurement: `build_relate14_sync_20261028/operator-ab-h3qon14k/receipt.json`.
+- Valid public consumers: `build_relate14_sync_20261028/relation-consumer-jflnun3p/receipt.json`.
+- Two-model three-round subset remeasurement: `build_relate14_sync_20261028/relation-consumer-avojaaoq/receipt.json`.
+- Retained invalid RPATH diagnostic: `build_relate14_sync_20261028/relation-consumer-clyp_nqp/receipt.json`.
 
 ## 2026-10-25 historical design (not current acceptance policy)
 

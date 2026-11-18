@@ -43,6 +43,7 @@
 #include "CVLog.h"
 #include "RAMVideoWidget.h"
 #include "aicore/backend_capi.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAICoreUiHelper.h"
 #include "ecvAssetIntegrity.h"
 #include "ecvClickableImageLabel.h"
@@ -72,11 +73,7 @@ RAMDialog::RAMDialog(QWidget* parent) : QDialog(parent) {
     m_model->setCurrentIndex(aicore_tagging_model_default_index());
     m_device = new QComboBox;
     m_device->setObjectName("ramDevice");
-    for (int i = 0; i < aicore_device_count(); ++i) {
-        auto* d = aicore_device_at(i);
-        m_device->addItem(QString::fromUtf8(d->label),
-                          QString::fromUtf8(d->id));
-    }
+    ecvAICoreUi::populateDeviceCombo(m_device);
     m_download = new QPushButton(tr("Download model"));
     m_sample = ecvAICoreUi::makeSampleDataBtn(this);
     m_sample->setObjectName("ramUseTestData");

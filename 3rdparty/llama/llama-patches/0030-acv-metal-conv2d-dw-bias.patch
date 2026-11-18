@@ -1,0 +1,141 @@
+diff --git a/src/ggml-metal/ggml-metal-impl.h b/src/ggml-metal/ggml-metal-impl.h
+index d25d22c..854ccd8 100644
+--- a/src/ggml-metal/ggml-metal-impl.h
++++ b/src/ggml-metal/ggml-metal-impl.h
+@@ -764,6 +764,7 @@ typedef struct {
+     int32_t  p1;    // padding y
+     int32_t  d0;    // dilation x
+     int32_t  d1;    // dilation y
++    int32_t  has_bias; // dst->src[2] carries a F32 per-channel bias
+ } ggml_metal_kargs_conv_2d_dw;
+ 
+ typedef struct {
+diff --git a/src/ggml-metal/ggml-metal-ops.cpp b/src/ggml-metal/ggml-metal-ops.cpp
+index e9b55ff..06baaee 100644
+--- a/src/ggml-metal/ggml-metal-ops.cpp
++++ b/src/ggml-metal/ggml-metal-ops.cpp
+@@ -4962,6 +4962,11 @@ int ggml_metal_op_conv_2d_dw(ggml_metal_op_t ctx, int idx) {
+     GGML_ASSERT(op->src[1]->type == GGML_TYPE_F32);
+     GGML_ASSERT(op->type == GGML_TYPE_F32);
+     GGML_ASSERT(op->src[0]->type == GGML_TYPE_F16 || op->src[0]->type == GGML_TYPE_F32);
++    // The optional per-channel bias has the same contract the CPU and CUDA
++    // encoders enforce (0014 depthwise-bias series).
++    GGML_ASSERT(!op->src[2] ||
++                (op->src[2]->type == GGML_TYPE_F32 &&
++                 ggml_is_contiguous(op->src[2])));
+     // The depthwise kernel layout is (KW, KH, 1, C): the channel axis lives
+     // on ne[3], not ne[2]. C and N must come from the input/dst (the CPU and
+     // CUDA encoders read them there); reading them from the weight dispatches
+@@ -5002,6 +5007,7 @@ int ggml_metal_op_conv_2d_dw(ggml_metal_op_t ctx, int idx) {
+         /*.p1   =*/ p1,
+         /*.d0   =*/ d0,
+         /*.d1   =*/ d1,
++        /*.has_bias =*/ op->src[2] ? 1 : 0,
+     };
+ 
+     const bool use_tiled = (nb12 < nb10);
+@@ -5014,8 +5020,8 @@ int ggml_metal_op_conv_2d_dw(ggml_metal_op_t ctx, int idx) {
+ 
+     const int32_t OW = ne0;
+     const int32_t OH = ne1;
+-    const int32_t C  = ne12;
+-    const int32_t N  = ne13;
++    const int32_t C  = ne2;
++    const int32_t N  = ne3;
+ 
+     const int tg_x = use_tiled ? (C + nth - 1) / nth : (OW + nth - 1) / nth;
+     const int tg_y = OH;
+@@ -5026,6 +5032,13 @@ int ggml_metal_op_conv_2d_dw(ggml_metal_op_t ctx, int idx) {
+     ggml_metal_encoder_set_buffer  (enc, ggml_metal_get_buffer_id(op->src[0]), 1);
+     ggml_metal_encoder_set_buffer  (enc, ggml_metal_get_buffer_id(op->src[1]), 2);
+     ggml_metal_encoder_set_buffer  (enc, ggml_metal_get_buffer_id(op),         3);
++    // The optional per-channel bias (dst->src[2], always F32 when present) is
++    // consumed by the kernel only when args.has_bias is set; without a bias a
++    // dummy binding keeps the buffer slot valid.
++    ggml_metal_encoder_set_buffer  (enc,
++                                    ggml_metal_get_buffer_id(op->src[2] ?
++                                                             op->src[2] : op),
++                                    4);
+ 
+     ggml_metal_encoder_dispatch_threadgroups(enc, tg_x, tg_y, tg_z, nth, 1, 1);
+ 
+diff --git a/src/ggml-metal/kernels/conv.metal b/src/ggml-metal/kernels/conv.metal
+index 41096b2..2e7e33c 100644
+--- a/src/ggml-metal/kernels/conv.metal
++++ b/src/ggml-metal/kernels/conv.metal
+@@ -447,6 +447,7 @@ kernel void kernel_conv_2d_dw_tiled(
+         device const char * weights,
+         device const char * src,
+         device       char * dst,
++        device const float * bias,
+         uint3   tgpig[[threadgroup_position_in_grid]],
+         uint3   tpitg[[thread_position_in_threadgroup]],
+         uint3     ntg[[threads_per_threadgroup]]) {
+@@ -515,6 +516,13 @@ kernel void kernel_conv_2d_dw_tiled(
+         (uint64_t) oh * args.nb1 +
+         (uint64_t) ow * args.nb0;
+ 
++    // Preserve the convolution write-out rounding before the separate bias
++    // addition (same ordering as the CPU and CUDA depthwise encoders); never
++    // fuse the bias into the final multiply-accumulate.
++    if (args.has_bias) {
++        acc += bias[c];
++    }
++
+     *(device float *)(dst + dst_offs) = acc;
+ }
+ 
+@@ -525,6 +533,7 @@ kernel void kernel_conv_2d_dw(
+         device const char * weights,
+         device const char * src,
+         device       char * dst,
++        device const float * bias,
+         uint3   tgpig[[threadgroup_position_in_grid]],
+         uint3   tpitg[[thread_position_in_threadgroup]],
+         uint3     ntg[[threads_per_threadgroup]]) {
+@@ -593,6 +602,13 @@ kernel void kernel_conv_2d_dw(
+         (uint64_t) oh * args.nb1 +
+         (uint64_t) ow * args.nb0;
+ 
++    // Preserve the convolution write-out rounding before the separate bias
++    // addition (same ordering as the CPU and CUDA depthwise encoders); never
++    // fuse the bias into the final multiply-accumulate.
++    if (args.has_bias) {
++        acc += bias[c];
++    }
++
+     *(device float *)(dst + dst_offs) = acc;
+ }
+ 
+@@ -602,6 +618,7 @@ kernel void kernel_conv_2d_dw<float>(
+         device const char * weights,
+         device const char * src,
+         device       char * dst,
++        device const float * bias,
+         uint3   tgpig[[threadgroup_position_in_grid]],
+         uint3   tpitg[[thread_position_in_threadgroup]],
+         uint3     ntg[[threads_per_threadgroup]]);
+@@ -612,6 +629,7 @@ kernel void kernel_conv_2d_dw<half>(
+         device const char * weights,
+         device const char * src,
+         device       char * dst,
++        device const float * bias,
+         uint3   tgpig[[threadgroup_position_in_grid]],
+         uint3   tpitg[[thread_position_in_threadgroup]],
+         uint3     ntg[[threads_per_threadgroup]]);
+@@ -622,6 +640,7 @@ kernel void kernel_conv_2d_dw_tiled<float>(
+         device const char * weights,
+         device const char * src,
+         device       char * dst,
++        device const float * bias,
+         uint3   tgpig[[threadgroup_position_in_grid]],
+         uint3   tpitg[[thread_position_in_threadgroup]],
+         uint3     ntg[[threads_per_threadgroup]]);
+@@ -632,6 +651,7 @@ kernel void kernel_conv_2d_dw_tiled<half>(
+         device const char * weights,
+         device const char * src,
+         device       char * dst,
++        device const float * bias,
+         uint3   tgpig[[threadgroup_position_in_grid]],
+         uint3   tpitg[[thread_position_in_threadgroup]],
+         uint3     ntg[[threads_per_threadgroup]]);

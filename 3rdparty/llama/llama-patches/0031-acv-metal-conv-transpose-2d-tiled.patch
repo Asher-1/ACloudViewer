@@ -1,0 +1,201 @@
+--- a/src/ggml-metal/kernels/conv.metal
++++ b/src/ggml-metal/kernels/conv.metal
+@@ -351,70 +351,83 @@
+         device const float * src1,
+         device        char * dst,
+         uint3   tgpig[[threadgroup_position_in_grid]],
+-        uint3    tgpg[[threadgroups_per_grid]]);
++        uint3   tpitg[[thread_position_in_threadgroup]]);
+ 
++// One SIMD group (32 lanes = 32 output channels) computes a 4x4 tile of
++// output pixels. Each lane keeps its 16 outputs in registers and loops
++// over IC and the kernel taps, so there is no shared memory and no
++// cross-thread reduction. All lanes read the same input element (SIMD
++// broadcast), and the KH*KW taps of one IC touch the same weight cache
++// lines (oc stride is KH*KW elements). A tap (kh, kw) only contributes to
++// pixels with (oy - kh) % s0 == 0 and (ox - kw) % s0 == 0; the matching
++// local rows/columns are enumerated with the stride s0 directly.
+ template <typename T>
+ kernel void kernel_conv_transpose_2d(
+         constant ggml_metal_kargs_conv_transpose_2d & args,
+         device const T * src0,
+         device const float * src1,
+         device        char * dst,
+-        threadgroup float * shared_sum [[threadgroup(0)]],
+         uint3   tgpig[[threadgroup_position_in_grid]],
+-        uint3   tpitg[[thread_position_in_threadgroup]],
+-        uint3     ntg[[threads_per_threadgroup]]) {
++        uint3   tpitg[[thread_position_in_threadgroup]]) {
+ 
+-    const int64_t out_x = tgpig[0];
+-    const int64_t out_y = tgpig[1];
+-    const int64_t batch = tgpig[2] / args.OC;
+-    const int64_t out_c = tgpig[2] % args.OC;
++    const int ox0 = tgpig[0] * 4;
++    const int oy0 = tgpig[1] * 4;
+ 
+-    const int64_t tid = tpitg[0];
+-    const int64_t num_threads = ntg[0];
++    const int oc_blocks = (args.OC + 31) / 32;
++    const int batch     = tgpig[2] / oc_blocks;
++    const int out_c     = (tgpig[2] % oc_blocks) * 32 + tpitg[0];
+ 
+-    float v = 0.0f;
+-
+-    for (int64_t in_c = tid; in_c < args.IC; in_c += num_threads) {
+-        for (int64_t kh = 0; kh < args.KH; kh++) {
+-            int64_t in_y = out_y - kh;
++    if (out_c >= args.OC) {
++        return;
++    }
+ 
+-            if (in_y < 0 || in_y % args.s0) continue;
++    float acc[16] = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
++                      0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+ 
+-            in_y /= args.s0;
++    const int64_t in_plane = (int64_t) args.IW * args.IH;
++    device const float * src1_batch = src1 + in_plane * args.IC * batch;
++    device const T * w_oc = src0 + (int64_t) args.KH * args.KW * out_c;
++    const int64_t w_ic_stride = (int64_t) args.KH * args.KW * args.OC;
+ 
+-            if (in_y >= args.IH) continue;
++    for (int64_t in_c = 0; in_c < args.IC; in_c++) {
++        device const float * in_c_ptr = src1_batch + in_plane * in_c;
++        device const T * w_c_ptr = w_oc + w_ic_stride * in_c;
+ 
+-            for (int64_t kw = 0; kw < args.KW; kw++) {
+-                int64_t in_x = out_x - kw;
++        for (int kh = 0; kh < args.KH; kh++) {
++            int ly0 = (kh - oy0) % args.s0;
++            if (ly0 < 0) ly0 += args.s0;
+ 
+-                if (in_x < 0 || in_x % args.s0) continue;
++            for (int kw = 0; kw < args.KW; kw++) {
++                const float w = (float) w_c_ptr[kh * args.KW + kw];
+ 
+-                in_x /= args.s0;
++                int lx0 = (kw - ox0) % args.s0;
++                if (lx0 < 0) lx0 += args.s0;
+ 
+-                if (in_x >= args.IW) continue;
++                for (int ly = ly0; ly < 4; ly += args.s0) {
++                    const int in_y = (oy0 + ly - kh) / args.s0;
++                    if (in_y < 0 || in_y >= args.IH) continue;
+ 
+-                const int64_t input_idx = (args.IW * args.IH) * (args.IC * batch + in_c) + (args.IW) * in_y + in_x;
+-                const int64_t kernel_idx = (args.KH * args.KW * args.OC) * in_c + (args.KH * args.KW) * out_c + (args.KW) * kh + kw;
++                    for (int lx = lx0; lx < 4; lx += args.s0) {
++                        const int in_x = (ox0 + lx - kw) / args.s0;
++                        if (in_x < 0 || in_x >= args.IW) continue;
+ 
+-                v += (float)src0[kernel_idx] * src1[input_idx];
++                        acc[ly * 4 + lx] += w * in_c_ptr[in_y * args.IW + in_x];
++                    }
++                }
+             }
+         }
+     }
+ 
+-    shared_sum[tid] = v;
+-
+-    threadgroup_barrier(mem_flags::mem_threadgroup);
+-
+-    for (int64_t s = num_threads / 2; s > 0; s >>= 1) {
+-        if (tid < s) {
+-            shared_sum[tid] += shared_sum[tid + s];
++    device char * dst_batch = dst + batch * args.nb3 + out_c * args.nb2;
++    for (int ly = 0; ly < 4; ly++) {
++        const int out_y = oy0 + ly;
++        if (out_y >= args.OH) continue;
++        for (int lx = 0; lx < 4; lx++) {
++            const int out_x = ox0 + lx;
++            if (out_x >= args.OW) continue;
++            device float * dst_ptr = (device float *) (dst_batch + out_y * args.nb1 + out_x * args.nb0);
++            dst_ptr[0] = acc[ly * 4 + lx];
+         }
+-        threadgroup_barrier(mem_flags::mem_threadgroup);
+-    }
+-
+-    if (tid == 0) {
+-        device float * dst_ptr = (device float *) (dst + batch*args.nb3 + out_c*args.nb2 + out_y * args.nb1 + out_x*args.nb0);
+-        dst_ptr[0] = shared_sum[0];
+     }
+ }
+ 
+@@ -424,10 +437,8 @@
+     device const float * src0,
+     device const float * src1,
+     device        char * dst,
+-    threadgroup float * shared_sum [[threadgroup(0)]],
+     uint3   tgpig[[threadgroup_position_in_grid]],
+-    uint3   tpitg[[thread_position_in_threadgroup]],
+-    uint3     ntg[[threads_per_threadgroup]]);
++    uint3   tpitg[[thread_position_in_threadgroup]]);
+ 
+ template [[host_name("kernel_conv_transpose_2d_f16_f32")]]
+ kernel void kernel_conv_transpose_2d<half>(
+@@ -435,10 +446,8 @@
+     device const half  * src0,
+     device const float * src1,
+     device        char * dst,
+-    threadgroup float * shared_sum [[threadgroup(0)]],
+-    uint3   tgpig[[threadgroup_position_in_grid]],
+-    uint3   tpitg[[thread_position_in_threadgroup]],
+-    uint3     ntg[[threads_per_threadgroup]]);
++    uint3   tgpig[[threadgroup_position_in_grid]],
++    uint3   tpitg[[thread_position_in_threadgroup]]);
+ 
+ // grid: x = C tile, y = OH, z = OW * N (for channel-contiguous layouts)
+ template <typename TK>
+--- a/src/ggml-metal/ggml-metal-impl.h
++++ b/src/ggml-metal/ggml-metal-impl.h
+@@ -702,6 +702,8 @@
+     int32_t  KW;
+     int32_t  OC;
+     int32_t  s0;
++    int32_t  OW;
++    int32_t  OH;
+     uint64_t nb0;
+     uint64_t nb1;
+     uint64_t nb2;
+--- a/src/ggml-metal/ggml-metal-ops.cpp
++++ b/src/ggml-metal/ggml-metal-ops.cpp
+@@ -5286,6 +5286,8 @@
+         /*.KW  =*/ KW,
+         /*.OC  =*/ OC,
+         /*.s0  =*/ s0,
++        /*.OW  =*/ OW,
++        /*.OH  =*/ OH,
+         /*.nb0 =*/ nb0,
+         /*.nb1 =*/ nb1,
+         /*.nb2 =*/ nb2,
+@@ -5300,18 +5302,16 @@
+     ggml_metal_encoder_set_buffer  (enc, ggml_metal_get_buffer_id(op->src[1]), 2);
+     ggml_metal_encoder_set_buffer  (enc, ggml_metal_get_buffer_id(op),         3);
+ 
+-    // Threads per threadgroup parallelize over IC (input channels).
+-    // Tree reduction in shared memory replaces the old serial accumulation.
+-    // The tree reduction in the shader requires a power of two. Lanes
+-    // stride over IC, so rounding down still consumes every input channel.
+-    int32_t nth_ic = 1;
+-    while (nth_ic <= std::min(IC, 256) / 2) {
+-        nth_ic *= 2;
+-    }
+-    const size_t smem = GGML_PAD(nth_ic * sizeof(float), 16);
+-    ggml_metal_encoder_set_threadgroup_memory_size(enc, smem, 0);
+-
+-    ggml_metal_encoder_dispatch_threadgroups(enc, OW, OH, OC * N, nth_ic, 1, 1);
++    // One SIMD group (32 lanes = 32 output channels) per 4x4 output-pixel
++    // tile. Each lane accumulates its 16 outputs in registers over IC and
++    // the kernel taps: no shared memory, no cross-thread reduction, input
++    // reads broadcast across the SIMD group, and the 16 taps of one IC
++    // reuse the same weight cache lines. The stock per-output-pixel
++    // threadgroup + tree-reduction dispatch launched OW*OH*OC threadgroups
++    // (millions on the LingBot depth head) and ran ~200x below the F32
++    // hardware rate.
++    const int32_t oc_blocks = (OC + 31) / 32;
++    ggml_metal_encoder_dispatch_threadgroups(enc, (OW + 3) / 4, (OH + 3) / 4, oc_blocks * N, 32, 1, 1);
+ 
+     return 1;
+ }

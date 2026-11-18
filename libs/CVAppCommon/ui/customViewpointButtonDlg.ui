@@ -132,7 +132,7 @@
        </property>
        <property name="icon">
         <iconset resource="../../app/MainWindow.qrc">
-         <normaloff>:/Resources/images/svg/pqPlus.png</normaloff>:/Resources/images/svg/pqPlus.png</iconset>
+         <normaloff>:/Resources/images/svg/pq/pqPlus.svg</normaloff>:/Resources/images/svg/pq/pqPlus.svg</iconset>
        </property>
       </widget>
      </item>

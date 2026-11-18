@@ -105,7 +105,7 @@ QList<QAction*> qFacets::getActions() {
         m_doFuseKdTreeCells->setToolTip(
                 tr("Detect planar facets by fusing Kd-tree cells"));
         m_doFuseKdTreeCells->setIcon(QIcon(
-                QString::fromUtf8(":/CC/plugin/qFacets/images/extractKD.png")));
+                QString::fromUtf8(":/CC/plugin/qFacets/images/extractKD.svg")));
         // connect signal
         connect(m_doFuseKdTreeCells, &QAction::triggered, this,
                 &qFacets::fuseKdTreeCells);
@@ -117,7 +117,7 @@ QList<QAction*> qFacets::getActions() {
         m_fastMarchingExtraction->setToolTip(
                 tr("Detect planar facets with Fast Marching"));
         m_fastMarchingExtraction->setIcon(QIcon(
-                QString::fromUtf8(":/CC/plugin/qFacets/images/extractFM.png")));
+                QString::fromUtf8(":/CC/plugin/qFacets/images/extractFM.svg")));
         // connect signal
         connect(m_fastMarchingExtraction, &QAction::triggered, this,
                 &qFacets::extractFacetsWithFM);
@@ -128,7 +128,7 @@ QList<QAction*> qFacets::getActions() {
         m_doExportFacets->setToolTip(
                 tr("Exports one or several facets to a shapefile"));
         m_doExportFacets->setIcon(QIcon(
-                QString::fromUtf8(":/CC/plugin/qFacets/images/shpFile.png")));
+                QString::fromUtf8(":/CC/plugin/qFacets/images/shpFile.svg")));
         // connect signal
         connect(m_doExportFacets, &QAction::triggered, this,
                 &qFacets::exportFacets);
@@ -141,7 +141,7 @@ QList<QAction*> qFacets::getActions() {
                 tr("Exports various information on a set of facets (ASCII CSV "
                    "file)"));
         m_doExportFacetsInfo->setIcon(QIcon(
-                QString::fromUtf8(":/CC/plugin/qFacets/images/csvFile.png")));
+                QString::fromUtf8(":/CC/plugin/qFacets/images/csvFile.svg")));
         // connect signal
         connect(m_doExportFacetsInfo, &QAction::triggered, this,
                 &qFacets::exportFacetsInfo);
@@ -154,7 +154,7 @@ QList<QAction*> qFacets::getActions() {
                 tr("Classifies facets based on their orienation (dip & dip "
                    "direction)"));
         m_doClassifyFacetsByAngle->setIcon(QIcon(QString::fromUtf8(
-                ":/CC/plugin/qFacets/images/classifIcon.png")));
+                ":/CC/plugin/qFacets/images/classifIcon.svg")));
         // connect signal
         connect(m_doClassifyFacetsByAngle, &QAction::triggered, this,
                 [=]() { classifyFacetsByAngle(); });
@@ -166,7 +166,7 @@ QList<QAction*> qFacets::getActions() {
                 tr("Computes and displays a stereogram (+ interactive "
                    "filtering)"));
         m_doShowStereogram->setIcon(QIcon(QString::fromUtf8(
-                ":/CC/plugin/qFacets/images/stereogram.png")));
+                ":/CC/plugin/qFacets/images/stereogram.svg")));
         // connect signal
         connect(m_doShowStereogram, &QAction::triggered, this,
                 &qFacets::showStereogram);

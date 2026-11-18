@@ -53,14 +53,19 @@ rules. This rule only provides fail-fast guards.
 **Directly modifying ggml source files in build directories is absolutely forbidden** (`build/ggml/`, `build_app/ggml/`, etc.).
 All ggml source modifications MUST go through patch files. The flow is:
 
-1. **最小复现**：先用真实失败测试确认根因，不修改 extracted build 源码。
-2. **编写补丁**：以 pinned llama.cpp 的 `ggml/` 子树为锚点编写 unified diff。
-3. **唯一目录**：存入 `3rdparty/llama/llama-patches/NNNN-description.patch`；
-   旧 `ggml-patches/` 和 `experimental/patches/` 均已退役。
-4. **注册重放**：更新所有受影响 backend manifests，用同一 runner 验证
-   pristine forward、reverse 和幂等重放。
-5. **构建验收**：signature 变更触发该 owner 重建；逐项运行算子、真实模型、
-   独立真值及受控 A/B 门。冻结目录、二进制和失败收据保持不变。
+1. **Minimal reproduction**: confirm the root cause with a real failing test;
+   do not modify extracted build sources.
+2. **Write the patch**: author a unified diff anchored on the pinned
+   llama.cpp `ggml/` subtree.
+3. **Single directory**: store it as
+   `3rdparty/llama/llama-patches/NNNN-description.patch`; the legacy
+   `ggml-patches/` and `experimental/patches/` are retired.
+4. **Register and replay**: update every affected backend manifest and verify
+   pristine forward, reverse, and idempotent replay with the same runner.
+5. **Build acceptance**: signature changes trigger that owner's rebuild; run
+   operator, real-model, independent ground-truth, and controlled A/B gates
+   item by item. Keep frozen directories, binaries, and failure receipts
+   untouched.
 
 ```
 3rdparty/llama/llama-patches/
@@ -78,8 +83,9 @@ All ggml source modifications MUST go through patch files. The flow is:
 ## ggml ExternalProject Architecture
 
 - The shared ExternalProject implementation is `3rdparty/llama/llama_runtime.cmake`.
-  正式入口 `3rdparty/llama/llama_cpp.cmake` 选择唯一 owner `ext_llama`，
-  同一 pinned archive 提供 llama/mtmd 及嵌入式 ggml；`ext_ggml` 入口已删除。
+  The formal entry point `3rdparty/llama/llama_cpp.cmake` selects the single
+  owner `ext_llama`; the same pinned archive provides llama/mtmd plus embedded
+  ggml; the `ext_ggml` entry point has been removed.
   A build/install prefix must have exactly one source owner. Use exported
   `GGML_DEPENDENCY_TARGET`, `GGML_EXTERNAL_TARGET`, and `GGML_BUILD_DIR` in
   consumers; do not introduce new hardcoded baseline target/path dependencies.
@@ -135,7 +141,7 @@ All ggml source modifications MUST go through patch files. The flow is:
 ## CopyGgmlBackends.cmake
 
 - Copies backend `.so` files from ExternalProject install dir to `build_app/bin/`
-- Handles versioned symlinks for core libs (当前 pin：libggml.so.0 → libggml.so.0.27.0)
+- Handles versioned symlinks for core libs (current pin: libggml.so.0 -> libggml.so.0.27.0)
 - Uses `COPY_CORE_SHARED` / `COPY_BACKEND_MODULES` / `REQUESTED_FILES_PIPE` modes
 - Stale backends are cleaned before copy (prevents old `.so` files lingering)
 
@@ -166,10 +172,12 @@ See `docs/guides/metal-inference-optimization.md`, which covers:
 
 ## ggml Version Upgrade (mandatory pipeline)
 
-升级 `3rdparty/llama/llama_cpp.cmake` 中的 llama revision/archive SHA 时，
-遵循 `.agents/skills/ggml-upgrade/SKILL.md` 与
-`docs/guides/ggml_upgrade_pipeline.md`：源码调查 → 补丁重放 → 契约 →
-独立真值/后端验证 → 受控性能 A/B。版本标签随同一 archive 重新派生。
+When upgrading the llama revision/archive SHA in
+`3rdparty/llama/llama_cpp.cmake`, follow `.agents/skills/ggml-upgrade/SKILL.md`
+and `docs/guides/ggml_upgrade_pipeline.md`: source investigation -> patch
+replay -> contract -> independent ground-truth/backend verification ->
+controlled performance A/B. Version labels are re-derived from the same
+archive.
 
 - One-click verification: `scripts/ggml_upgrade_verify.py --baseline <dir> --candidate <dir>`
   (regression threshold +5%, noise floor 3%, prints coverage of (task, backend) pairs).

@@ -2,9 +2,9 @@
   <qresource prefix="/CC/plugin/qM3C2Plugin">
     <file>images/Logo_cnrs_eub_eec.png</file>
     <file>images/iconM3C2.png</file>
-    <file>images/iconSwap.png</file>
-    <file>images/iconLoad.png</file>
-    <file>images/iconSave.png</file>
+    <file>images/iconSwap.svg</file>
+    <file>images/iconLoad.svg</file>
+    <file>images/iconSave.svg</file>
     <file>info.json</file>
   </qresource>
 </RCC>

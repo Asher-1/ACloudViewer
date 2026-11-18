@@ -112,7 +112,6 @@
 #include "VideoSegmentExporter.h"
 #include "VideoTab.h"
 #include "aicore/attribute_capi.h"
-#include "aicore/backend_capi.h"
 #include "aicore/deeplsd_capi.h"
 #include "aicore/depth_capi.h"
 #include "aicore/facedetect_capi.h"
@@ -125,6 +124,7 @@
 #include "aicore/sam3_capi.h"
 #include "aicore/tagging_capi.h"
 #include "aicore/yolo_capi.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAssetIntegrity.h"
 #include "ecvModelDownloader.h"
 #include "ecvTestDataRepository.h"
@@ -1345,7 +1345,7 @@ void AnnotationWindow::createUi() {
     m_objectsVisibilityButton->setObjectName(
             QStringLiteral("AnnotationShapesVisibilityToggle"));
     m_objectsVisibilityButton->setIcon(
-            QIcon(QStringLiteral(":/images/eye.svg")));
+            QIcon(QStringLiteral(":/CC/plugin/qAnyLabeling/images/eye.svg")));
     m_objectsVisibilityButton->setAutoRaise(true);
     m_objectsVisibilityButton->setCheckable(true);
     m_objectsVisibilityButton->setToolTip(tr("Show/hide all shapes"));
@@ -1355,7 +1355,8 @@ void AnnotationWindow::createUi() {
     m_objectsLockButton = new QToolButton(objectsHeader);
     m_objectsLockButton->setObjectName(
             QStringLiteral("AnnotationShapesLockToggle"));
-    m_objectsLockButton->setIcon(QIcon(QStringLiteral(":/images/lock.svg")));
+    m_objectsLockButton->setIcon(
+            QIcon(QStringLiteral(":/CC/plugin/qAnyLabeling/images/lock.svg")));
     m_objectsLockButton->setAutoRaise(true);
     m_objectsLockButton->setCheckable(true);
     m_objectsLockButton->setToolTip(tr("Lock/unlock all shapes"));
@@ -5264,7 +5265,7 @@ void AnnotationWindow::createActions() {
         setDirty(true);
     };
     QAction* hideSelected = editMenu->addAction(
-            QIcon(iconPath(QStringLiteral("hide-selected.png"))),
+            QIcon(iconPath(QStringLiteral("hidden.png"))),
             tr("Hide selected polygons"),
             [setSelectedVisibility]() { setSelectedVisibility(false); },
             QKeySequence(Qt::Key_S));
@@ -6788,18 +6789,10 @@ void AnnotationWindow::populateModels() {
         if (m_model->findText(model.family) < 0) m_model->addItem(model.family);
     }
     refreshQuantizations();
-    for (int i = 0; i < aicore_device_count(); ++i) {
-        const aicore_device_info* info = aicore_device_at(i);
-        if (info) {
-            const QString id = QString::fromUtf8(info->id);
-            m_backend->addItem(id.toUpper(), id);
-            m_backend->setItemData(m_backend->count() - 1,
-                                   QString::fromUtf8(info->label),
-                                   Qt::ToolTipRole);
-            if (info->is_default)
-                m_backend->setCurrentIndex(m_backend->count() - 1);
-        }
-    }
+    // Runtime registry projection (single point in ecvAICoreDeviceUiHelper):
+    // the runtime label replaces the old upper-cased id text and carries the
+    // same information the manual ToolTipRole data used to duplicate.
+    ecvAICoreUi::populateDeviceCombo(m_backend);
 }
 
 void AnnotationWindow::refreshQuantizations() {

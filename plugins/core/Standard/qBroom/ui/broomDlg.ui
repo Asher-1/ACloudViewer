@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../qBroom.qrc">
-    <normaloff>:/CC/plugin/qBroom/images/qBroom.png</normaloff>:/CC/plugin/qBroom/images/qBroom.png</iconset>
+    <normaloff>:/CC/plugin/qBroom/images/qBroom.svg</normaloff>:/CC/plugin/qBroom/images/qBroom.svg</iconset>
   </property>
   <property name="styleSheet">
    <string notr="true">QDialog{ background-color:white }</string>
@@ -324,7 +324,7 @@
           <widget class="QToolButton" name="topViewToolButton">
            <property name="icon">
             <iconset resource="../qBroom.qrc">
-             <normaloff>:/CC/plugin/qBroom/images/ccViewZpos.png</normaloff>:/CC/plugin/qBroom/images/ccViewZpos.png</iconset>
+             <normaloff>:/CC/plugin/qBroom/images/ccViewZpos.svg</normaloff>:/CC/plugin/qBroom/images/ccViewZpos.svg</iconset>
            </property>
            <property name="autoRaise">
             <bool>true</bool>
@@ -335,7 +335,7 @@
           <widget class="QToolButton" name="frontViewToolButton">
            <property name="icon">
             <iconset resource="../qBroom.qrc">
-             <normaloff>:/CC/plugin/qBroom/images/ccViewYpos.png</normaloff>:/CC/plugin/qBroom/images/ccViewYpos.png</iconset>
+             <normaloff>:/CC/plugin/qBroom/images/ccViewYpos.svg</normaloff>:/CC/plugin/qBroom/images/ccViewYpos.svg</iconset>
            </property>
            <property name="autoRaise">
             <bool>true</bool>
@@ -346,7 +346,7 @@
           <widget class="QToolButton" name="leftViewToolButton">
            <property name="icon">
             <iconset resource="../qBroom.qrc">
-             <normaloff>:/CC/plugin/qBroom/images/ccViewXpos.png</normaloff>:/CC/plugin/qBroom/images/ccViewXpos.png</iconset>
+             <normaloff>:/CC/plugin/qBroom/images/ccViewXpos.svg</normaloff>:/CC/plugin/qBroom/images/ccViewXpos.svg</iconset>
            </property>
            <property name="autoRaise">
             <bool>true</bool>
@@ -357,7 +357,7 @@
           <widget class="QToolButton" name="backViewToolButton">
            <property name="icon">
             <iconset resource="../qBroom.qrc">
-             <normaloff>:/CC/plugin/qBroom/images/ccViewYneg.png</normaloff>:/CC/plugin/qBroom/images/ccViewYneg.png</iconset>
+             <normaloff>:/CC/plugin/qBroom/images/ccViewYneg.svg</normaloff>:/CC/plugin/qBroom/images/ccViewYneg.svg</iconset>
            </property>
            <property name="autoRaise">
             <bool>true</bool>
@@ -368,7 +368,7 @@
           <widget class="QToolButton" name="rightViewToolButton">
            <property name="icon">
             <iconset resource="../qBroom.qrc">
-             <normaloff>:/CC/plugin/qBroom/images/ccViewXneg.png</normaloff>:/CC/plugin/qBroom/images/ccViewXneg.png</iconset>
+             <normaloff>:/CC/plugin/qBroom/images/ccViewXneg.svg</normaloff>:/CC/plugin/qBroom/images/ccViewXneg.svg</iconset>
            </property>
            <property name="autoRaise">
             <bool>true</bool>
@@ -379,7 +379,7 @@
           <widget class="QToolButton" name="bottomViewToolButton">
            <property name="icon">
             <iconset resource="../qBroom.qrc">
-             <normaloff>:/CC/plugin/qBroom/images/ccViewZneg.png</normaloff>:/CC/plugin/qBroom/images/ccViewZneg.png</iconset>
+             <normaloff>:/CC/plugin/qBroom/images/ccViewZneg.svg</normaloff>:/CC/plugin/qBroom/images/ccViewZneg.svg</iconset>
            </property>
            <property name="autoRaise">
             <bool>true</bool>
@@ -417,7 +417,7 @@
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../qBroom.qrc">:/CC/plugin/qBroom/images/warning.png</pixmap>
+            <pixmap resource="../qBroom.qrc">:/CC/plugin/qBroom/images/warning.svg</pixmap>
            </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>

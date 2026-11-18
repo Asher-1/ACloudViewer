@@ -8,6 +8,7 @@
 
 #include <aicore/inference_log.h>
 #include <aicore/map_anything_capi.h>
+#include <ecvAICoreDeviceUiHelper.h>
 #include <ecvAICoreUiHelper.h>
 #include <ecvAssetIntegrity.h>
 #include <ecvClickableImageLabel.h>
@@ -33,12 +34,6 @@
 #include <QWidget>
 
 namespace {
-
-QString deviceLabel(const QString& id) {
-    if (id == QStringLiteral("auto"))
-        return QObject::tr("Auto (CUDA > Vulkan > Metal > CPU)");
-    return id.toUpper();
-}
 
 // Scene combo index <-> shared multi-view scene dataset. These are the SAME
 // map_anything_vggt_test_data fixtures the MapAnything plugin consumes —
@@ -262,9 +257,7 @@ QWidget* QuerySplatDialog::buildConfigPage() {
     form->addRow(tr("Decoder model"), m_modelCombo);
 
     m_deviceCombo = new QComboBox(box);
-    for (const char* d : {"auto", "cuda", "vulkan", "metal", "cpu"})
-        m_deviceCombo->addItem(deviceLabel(QString::fromLatin1(d)),
-                               QString::fromLatin1(d));
+    ecvAICoreUi::populateDeviceCombo(m_deviceCombo);
     form->addRow(tr("Device"), m_deviceCombo);
 
     m_threadsSpin = new QSpinBox(box);
@@ -660,8 +653,7 @@ QuerySplatDialog::Settings QuerySplatDialog::getSettings() const {
     for (int i = 0; i < m_imageList->count(); ++i)
         s.imagePaths << m_imageList->item(i)->text();
     s.threads = m_threadsSpin ? m_threadsSpin->value() : 0;
-    s.device = m_deviceCombo ? m_deviceCombo->currentData().toString()
-                             : QStringLiteral("auto");
+    s.device = ecvAICoreUi::currentDeviceId(m_deviceCombo);
     s.imageSize = m_imageSizeSpin ? m_imageSizeSpin->value() : 0;
     s.ttoEnabled = m_ttoCheck && m_ttoCheck->isChecked();
     s.ttoSteps = m_ttoStepsSpin ? m_ttoStepsSpin->value() : 20;

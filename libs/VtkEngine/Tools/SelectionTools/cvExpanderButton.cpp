@@ -19,10 +19,10 @@ cvExpanderButton::cvExpanderButton(QWidget* parent)
       m_checked(false),
       m_pressed(false) {
     // Load icons from resources
-    m_checkedPixmap =
-            QIcon(":/Resources/images/svg/pqMinus.svg").pixmap(QSize(16, 16));
+    m_checkedPixmap = QIcon(":/Resources/images/svg/pq/pqMinus.svg")
+                              .pixmap(QSize(16, 16));
     m_uncheckedPixmap =
-            QIcon(":/Resources/images/svg/pqPlus.svg").pixmap(QSize(16, 16));
+            QIcon(":/Resources/images/svg/pq/pqPlus.svg").pixmap(QSize(16, 16));
 
     setupUi();
     updateIcon();

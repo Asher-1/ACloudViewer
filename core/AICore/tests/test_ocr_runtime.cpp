@@ -30,6 +30,7 @@
 #include <map>
 #include <string>
 #include <thread>
+#include <unordered_set>
 #include <vector>
 
 #include "common/blocked_conv.hpp"
@@ -143,6 +144,14 @@ int testDirectDwBias(const char* moduleDir, const char* deviceName) {
     if (!backend) return 1;
     const bool cpu =
             ggml_backend_dev_type(device) == GGML_BACKEND_DEVICE_TYPE_CPU;
+    // The F16 input/kernel variant (F32 dst) is a CPU limitation: the CPU
+    // kernel reads the source as float rows. Metal is the other exclusion:
+    // its device supports_op requires an F32 source for CONV_2D_DW, so the
+    // Metal dw-bias contract row (0030 patch) skips it. CUDA and Vulkan keep
+    // their original F16 coverage.
+    const char* devName = ggml_backend_dev_name(device);
+    const bool f16VariantSupported =
+            !cpu && (!devName || std::strncmp(devName, "MTL", 3) != 0);
     const float pixels[] = {1, 2,  3,  4,  5,  6,  7,  8,
                             9, 10, 11, 12, 13, 14, 15, 16};
     const float filter[] = {2, -1};
@@ -153,7 +162,7 @@ int testDirectDwBias(const char* moduleDir, const char* deviceName) {
                               18, 20, 22, 24, -13, -14, -15, -16};
     int errors = 0;
     for (ggml_type type : {GGML_TYPE_F32, GGML_TYPE_F16}) {
-        if (cpu && type == GGML_TYPE_F16) continue;
+        if ((cpu || !f16VariantSupported) && type == GGML_TYPE_F16) continue;
         for (bool recDirect : {false, true})
             for (bool hasBias : {false, true}) {
                 aicore::ocr::OcrWeights weights;
@@ -543,6 +552,37 @@ int main(int argc, char** argv) {
         ggml_free(ctx);
         return 1;
     }
+    // Test-only: OUTPUT-flagged tensors are never reused by ggml-alloc, so
+    // marking the first markN tensors of the fetch DAG makes the post-compute
+    // node walk read reliable values (raw data pointers race the async Metal
+    // compute). Marking uses the same DFS post-order for both builds, so the
+    // marked sets match between build1 and build2.
+    int markN = 0;
+    if (const char* mn = std::getenv("AICORE_OCR_PROBE_MARK_N"))
+        markN = std::atoi(mn);
+    std::vector<ggml_tensor*> marked1;
+    const auto markFirstNodes = [markN](ggml_tensor* root,
+                                        std::vector<ggml_tensor*>* out) {
+        if (markN <= 0 || !root) return;
+        std::unordered_set<ggml_tensor*> seen;
+        std::vector<std::pair<ggml_tensor*, bool>> stack{{root, false}};
+        while (!stack.empty()) {
+            auto [t, expanded] = stack.back();
+            stack.pop_back();
+            if (expanded) {
+                if ((int)out->size() >= markN) break;
+                ggml_set_output(t);
+                out->push_back(t);
+                continue;
+            }
+            if (!seen.insert(t).second) continue;
+            stack.push_back({t, true});
+            for (int si = GGML_MAX_SRC; si-- > 0;)
+                if (t->src[si]) stack.push_back({t->src[si], false});
+            if (t->view_src) stack.push_back({t->view_src, false});
+        }
+    };
+    markFirstNodes(output, &marked1);
 
     // Every PicoDet head must live in the graph, or its tensor stays
     // unallocated and the readback aborts. Truncated builds expand the
@@ -552,6 +592,33 @@ int main(int argc, char** argv) {
         outputs = fetchList;
     else
         outputs.push_back(output);
+    // Test-only replica of the production in-graph CTC argmax head
+    // (ocr_capi.cpp runGraphCached, GPU execution only): argmax class per
+    // (t, n) row over a contiguous [V, T*N] view, plus the p[argmax]
+    // gather. Built on CPU sessions too so the probe can compare the head
+    // outputs CPU vs backend exactly as the shipped pipeline consumes them.
+    ggml_tensor* argmaxIndex = nullptr;
+    ggml_tensor* argmaxProb = nullptr;
+    const bool wantArgmaxHead =
+            !det && !layout && !cls &&
+            std::getenv("AICORE_OCR_PROBE_ARGMAX") != nullptr;
+    if (wantArgmaxHead) {
+        ggml_tensor* out = output;
+        if (!ggml_is_contiguous(out)) out = ggml_cont(ctx, out);
+        const int64_t vocab = out->ne[0];
+        const int64_t rows = ggml_nelements(out) / vocab;
+        ggml_tensor* flat = ggml_reshape_2d(ctx, out, vocab, rows);
+        argmaxIndex = ggml_argmax(ctx, flat);
+        argmaxProb =
+                ggml_get_rows(ctx, ggml_reshape_3d(ctx, out, 1, vocab, rows),
+                              ggml_reshape_2d(ctx, argmaxIndex, 1, rows));
+        ggml_set_output(argmaxIndex);
+        ggml_set_output(argmaxProb);
+        outputs.push_back(argmaxIndex);
+        outputs.push_back(argmaxProb);
+        std::fprintf(stderr, "[argmax-head] vocab=%lld rows=%lld\n",
+                     (long long)vocab, (long long)rows);
+    }
     aicore::ocr::OcrGraphExec exec;
     ggml_cgraph* graph = nullptr;
     if (!aicore::ocr::prepareGraph(weights, ctx, plan, outputs, &graph, exec,
@@ -632,15 +699,14 @@ int main(int argc, char** argv) {
         // official Paddle graph op-by-op. Test-only; never built into
         // production sources.
         auto tensorSum = [](const ggml_tensor* t) {
+            // Synchronized read: raw t->data walks race the Metal command
+            // buffer and produce bogus sums on both builds.
+            const size_t n = static_cast<size_t>(ggml_nelements(t));
+            std::vector<float> v(n);
+            ggml_backend_tensor_get(const_cast<ggml_tensor*>(t), v.data(), 0,
+                                    sizeof(float) * n);
             double s = 0.0;
-            for (int64_t i3 = 0; i3 < t->ne[3]; ++i3)
-                for (int64_t i2 = 0; i2 < t->ne[2]; ++i2)
-                    for (int64_t i1 = 0; i1 < t->ne[1]; ++i1) {
-                        const char* row = (const char*)t->data + i3 * t->nb[3] +
-                                          i2 * t->nb[2] + i1 * t->nb[1];
-                        for (int64_t i0 = 0; i0 < t->ne[0]; ++i0)
-                            s += *(const float*)(row + i0 * t->nb[0]);
-                    }
+            for (float x : v) s += x;
             return s;
         };
         const int nNodes = ggml_graph_n_nodes(graph);
@@ -783,6 +849,169 @@ int main(int argc, char** argv) {
             return 1;
         }
         std::fclose(dump);
+    }
+    // Test-only: persist the argmax head outputs next to the softmax dump
+    // so a CPU/backend comparison can reproduce the production CTC input.
+    if (dumpPath && argmaxIndex && argmaxProb) {
+        const size_t nIdx = static_cast<size_t>(ggml_nelements(argmaxIndex));
+        const size_t nProb = static_cast<size_t>(ggml_nelements(argmaxProb));
+        std::vector<int32_t> idx(nIdx);
+        std::vector<float> prb(nProb);
+        ggml_backend_tensor_get(argmaxIndex, idx.data(), 0,
+                                sizeof(int32_t) * nIdx);
+        ggml_backend_tensor_get(argmaxProb, prb.data(), 0,
+                                sizeof(float) * nProb);
+        const std::string idxPath = std::string(dumpPath) + ".argmaxidx";
+        const std::string prbPath = std::string(dumpPath) + ".argmaxprob";
+        if (FILE* f = std::fopen(idxPath.c_str(), "wb")) {
+            std::fwrite(idx.data(), sizeof(int32_t), nIdx, f);
+            std::fclose(f);
+        }
+        if (FILE* f = std::fopen(prbPath.c_str(), "wb")) {
+            std::fwrite(prb.data(), sizeof(float), nProb, f);
+            std::fclose(f);
+        }
+        std::fprintf(stderr, "[argmax-head] dumped %zu idx / %zu prob\n", nIdx,
+                     nProb);
+    }
+    // Test-only reliable marked-tensor dump: OUTPUT-flagged tensors survive
+    // until the exec is freed, so these sums are the trustworthy b1/b2
+    // comparison (the raw graph walk races the async Metal compute).
+    const char* markedDumpDir = std::getenv("AICORE_OCR_PROBE_DUMP_MARKED_DIR");
+    const auto dumpMarked = [&](const std::vector<ggml_tensor*>& ms,
+                                const char* tag, int dumpSrcsAt = -1) {
+        for (size_t mi = 0; mi < ms.size(); ++mi) {
+            ggml_tensor* t = ms[mi];
+            if (!t || t->type != GGML_TYPE_F32) continue;
+            const size_t n = static_cast<size_t>(ggml_nelements(t));
+            std::vector<float> v(n);
+            ggml_backend_tensor_get(t, v.data(), 0, sizeof(float) * n);
+            double s = 0.0;
+            for (float x : v) s += x;
+            std::fprintf(stderr,
+                         "[m%s] z=%zu op=%s ne=%lld,%lld,%lld,%lld "
+                         "sum=%.10e data=%p\n",
+                         tag, mi, ggml_op_desc(t), (long long)t->ne[0],
+                         (long long)t->ne[1], (long long)t->ne[2],
+                         (long long)t->ne[3], s, (void*)t->data);
+            if (markedDumpDir) {
+                char pth[512];
+                std::snprintf(pth, sizeof(pth), "%s/%s_z%zu_%s.f32",
+                              markedDumpDir, tag, mi, ggml_op_desc(t));
+                if (FILE* f = std::fopen(pth, "wb")) {
+                    std::fwrite(v.data(), sizeof(float), n, f);
+                    std::fclose(f);
+                }
+            }
+            if ((int)mi == dumpSrcsAt) {
+                for (int si = 0; si < 3; ++si) {
+                    ggml_tensor* src = t->src[si];
+                    if (!src) continue;
+                    std::fprintf(
+                            stderr,
+                            "[m%s-z%zu-src%d] op=%s ne=%lld,%lld,%lld,%lld "
+                            "nb=%zu,%zu,%zu,%zu type=%d buf=%s host=%d "
+                            "data=%p view_src=%p contiguous=%d "
+                            "contig_channels=%d\n",
+                            tag, mi, si, ggml_op_desc(src),
+                            (long long)src->ne[0], (long long)src->ne[1],
+                            (long long)src->ne[2], (long long)src->ne[3],
+                            (size_t)src->nb[0], (size_t)src->nb[1],
+                            (size_t)src->nb[2], (size_t)src->nb[3],
+                            (int)src->type,
+                            src->buffer ? ggml_backend_buffer_name(src->buffer)
+                                        : "(null)",
+                            src->buffer ? (int)ggml_backend_buffer_is_host(
+                                                  src->buffer)
+                                        : -1,
+                            (void*)src->data, (void*)src->view_src,
+                            (int)ggml_is_contiguous(src),
+                            (int)ggml_is_contiguous_channels(src));
+                }
+            }
+        }
+        std::fflush(stderr);
+    };
+    if (markN > 0) dumpMarked(marked1, "1", 47);
+
+    // Test-only second build: the production session rebuilds the rec graph
+    // per (width, rows) chunk AFTER realizeToDevice has repointed the weight
+    // map to the device copies, so every build after the first binds
+    // device-resident weight leaves. Rebuild the same shape here and dump it
+    // separately to isolate that state (AICORE_OCR_PROBE_TWO_BUILDS=1).
+    if (dumpPath && std::getenv("AICORE_OCR_PROBE_TWO_BUILDS") && !det &&
+        !layout && !cls && probe.fetchAt < 0) {
+        ggml_context* ctx2 = ggml_init({tensorSize * 8, nullptr,
+                                        /*no_alloc=*/true});
+        std::vector<ggml_tensor*> marked2;
+        ggml_tensor* input2 =
+                ggml_new_tensor_4d(ctx2, GGML_TYPE_F32, inputShape[3],
+                                   inputShape[2], inputShape[1], inputShape[0]);
+        ggml_set_input(input2);
+        weights.resetFoldPool();
+        ggml_tensor* output2 = aicore::ocr::buildGraph(
+                ctx2, weights, input2, &error, nullptr, nullptr, &buildOptions);
+        if (!output2) {
+            std::fprintf(stderr, "build2 failed: %s\n", error.c_str());
+            return 1;
+        }
+        markFirstNodes(output2, &marked2);
+        std::vector<ggml_tensor*> outputs2{output2};
+        if (argmaxIndex) {
+            ggml_tensor* out = output2;
+            if (!ggml_is_contiguous(out)) out = ggml_cont(ctx2, out);
+            const int64_t vocab = out->ne[0];
+            const int64_t rows = ggml_nelements(out) / vocab;
+            ggml_tensor* flat = ggml_reshape_2d(ctx2, out, vocab, rows);
+            ggml_tensor* idx2 = ggml_argmax(ctx2, flat);
+            ggml_tensor* prb2 = ggml_get_rows(
+                    ctx2, ggml_reshape_3d(ctx2, out, 1, vocab, rows),
+                    ggml_reshape_2d(ctx2, idx2, 1, rows));
+            ggml_set_output(idx2);
+            ggml_set_output(prb2);
+            outputs2.push_back(idx2);
+            outputs2.push_back(prb2);
+        }
+        aicore::ocr::OcrGraphExec exec2;
+        ggml_cgraph* graph2 = nullptr;
+        if (!aicore::ocr::prepareGraph(weights, ctx2, plan, outputs2, &graph2,
+                                       exec2, error)) {
+            std::fprintf(stderr, "prepare2 failed: %s\n", error.c_str());
+            return 1;
+        }
+        ggml_backend_tensor_set(input2, inputData.data(), 0,
+                                sizeof(float) * inputData.size());
+        aicore::ocr::computeGraph(plan, exec2, graph2);
+        const size_t n2 = static_cast<size_t>(ggml_nelements(output2));
+        std::vector<float> got2(n2);
+        ggml_backend_tensor_get(output2, got2.data(), 0, sizeof(float) * n2);
+        const std::string p2 = std::string(dumpPath) + ".build2";
+        if (FILE* f = std::fopen(p2.c_str(), "wb")) {
+            std::fwrite(got2.data(), sizeof(float), n2, f);
+            std::fclose(f);
+        }
+        if (argmaxIndex) {
+            ggml_tensor* idx2t = outputs2[1];
+            ggml_tensor* prb2t = outputs2[2];
+            const size_t nI = static_cast<size_t>(ggml_nelements(idx2t));
+            std::vector<int32_t> i2(nI);
+            ggml_backend_tensor_get(idx2t, i2.data(), 0, sizeof(int32_t) * nI);
+            const size_t nP = static_cast<size_t>(ggml_nelements(prb2t));
+            std::vector<float> p2v(nP);
+            ggml_backend_tensor_get(prb2t, p2v.data(), 0, sizeof(float) * nP);
+            if (FILE* f = std::fopen((p2 + ".argmaxidx").c_str(), "wb")) {
+                std::fwrite(i2.data(), sizeof(int32_t), nI, f);
+                std::fclose(f);
+            }
+            if (FILE* f = std::fopen((p2 + ".argmaxprob").c_str(), "wb")) {
+                std::fwrite(p2v.data(), sizeof(float), nP, f);
+                std::fclose(f);
+            }
+        }
+        std::fprintf(stderr, "[build2] dumped\n");
+        if (markN > 0) dumpMarked(marked2, "2", 47);
+        exec2.free();
+        ggml_free(ctx2);
     }
     // Driver telemetry is sampled independently of graph timing. Keep this
     // graph and its allocations alive long enough to observe a short model;

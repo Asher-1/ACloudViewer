@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+<!-- Commercial HD v10: straight-edge authored polygons sampled
+     from the original raster; pixel-faithful correction layer. -->
+<path d="M7 0 L10 1 L10 6 L15 6 L15 7 L16 7 L15 10 L10 10 L10 15 L9 15 L9 16 L6 15 L6 10 L1 10 L1 9 L0 9 L1 6 L6 6 L6 1 L7 1 Z" fill="#50646e" fill-rule="evenodd"/>
+<rect x="6" y="0" width="1" height="1" fill="#c5cbcf"/>
+<rect x="8" y="0" width="1" height="1" fill="#7b8a92"/>
+<rect x="9" y="0" width="1" height="1" fill="#c5cbcf"/>
+<rect x="6" y="1" width="1" height="1" fill="#7b8a92"/>
+<rect x="9" y="1" width="1" height="1" fill="#7b8a92"/>
+<rect x="0" y="6" width="1" height="1" fill="#c5cbcf"/>
+<rect x="1" y="6" width="1" height="1" fill="#7b8a92"/>
+<rect x="14" y="6" width="1" height="1" fill="#7b8a92"/>
+<rect x="15" y="6" width="1" height="1" fill="#c5cbcf"/>
+<rect x="0" y="7" width="1" height="1" fill="#7b8a92"/>
+<rect x="15" y="8" width="1" height="1" fill="#7b8a92"/>
+<rect x="0" y="9" width="1" height="1" fill="#c5cbcf"/>
+<rect x="1" y="9" width="1" height="1" fill="#7b8a92"/>
+<rect x="14" y="9" width="1" height="1" fill="#7b8a92"/>
+<rect x="15" y="9" width="1" height="1" fill="#c5cbcf"/>
+<rect x="6" y="14" width="1" height="1" fill="#7b8a92"/>
+<rect x="9" y="14" width="1" height="1" fill="#7b8a92"/>
+<rect x="6" y="15" width="1" height="1" fill="#c5cbcf"/>
+<rect x="7" y="15" width="1" height="1" fill="#7b8a92"/>
+<rect x="9" y="15" width="1" height="1" fill="#c5cbcf"/>
+</svg>

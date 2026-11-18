@@ -188,7 +188,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/smallReset.png</normaloff>:/Resources/images/smallReset.png</iconset>
+         <normaloff>:/Resources/images/svg/small/smallReset.svg</normaloff>:/Resources/images/svg/small/smallReset.svg</iconset>
        </property>
       </widget>
      </item>
@@ -208,7 +208,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/smallCancel.png</normaloff>:/Resources/images/smallCancel.png</iconset>
+         <normaloff>:/Resources/images/svg/small/smallCancel.svg</normaloff>:/Resources/images/svg/small/smallCancel.svg</iconset>
        </property>
       </widget>
      </item>

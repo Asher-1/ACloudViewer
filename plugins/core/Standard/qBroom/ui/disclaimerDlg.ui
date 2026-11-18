@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../qBroom.qrc">
-    <normaloff>:/CC/plugin/qBroom/images/qBroom.png</normaloff>:/CC/plugin/qBroom/images/qBroom.png</iconset>
+    <normaloff>:/CC/plugin/qBroom/images/qBroom.svg</normaloff>:/CC/plugin/qBroom/images/qBroom.svg</iconset>
   </property>
   <property name="styleSheet">
    <string notr="true">background-color: white</string>

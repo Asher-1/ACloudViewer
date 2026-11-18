@@ -18,8 +18,9 @@ job uploads (artifacts and releases).
 | Style Check | `style.yml` | `workflow_dispatch`, `push: main`, `pull_request` | `ubuntu-latest` | — | `style-check` (auto-formats PR branches, plus Vulkan/RealSense script checks) |
 | Agent Integration | `agent-integration.yml` | `workflow_dispatch`, `push`/`pull_request` with `agent-integration/**`, `core/AICore/**`, plugin/AICore paths | per matrix | OS x Python (newest interpreter on macOS/Windows) | `test-basic` (Level 1+2+5), more levels |
 | Prebuild Ubuntu deps (VTK/PCL) | `prebuild-deps.yml` | `workflow_dispatch` only | docker (ubuntu) | per-codename tarball `vtk-pcl-deps-<codename>-vtk9.3.1-pcl1.14.1.tar.gz` | single build job (skips when the asset already exists) |
-| Update Downloads Data | `update-downloads.yml` | `workflow_run` after Windows/MacOS/Ubuntu, `release` events, `workflow_dispatch` | `ubuntu-latest` | — | refreshes `downloads_data.json` |
-| Clean release | `update-release.yml` | `workflow_run` after Windows/MacOS/Ubuntu/Ubuntu CUDA/Ubuntu Wheel | `ubuntu-latest` | — | idempotent release-asset cleanup |
+| Update Downloads Data | `update-downloads.yml` | `workflow_run` after Windows/MacOS/Ubuntu (main-branch completions only), `release` events, `workflow_dispatch` | `ubuntu-latest` | — | refreshes `downloads_data.json` |
+| Clean release | `update-release.yml` | `workflow_run` after Windows/MacOS/Ubuntu/Ubuntu CUDA/Ubuntu Wheel (main-branch completions only) | `ubuntu-latest` | — | idempotent release-asset cleanup |
+| npm publish | `npm-publish.yml` | `push: main` (npm/**), tags `npm-v*`, `workflow_dispatch`, `workflow_run` after the 5 uploaders (main-branch completions only), `release: published` (targeting main) | `ubuntu-latest` | — | `uploaders-complete` gate, `publish` (reconciles stable/`next` channels on npmjs + GitHub Packages mirror) |
 | VTK Packages | `vtk_packages.yml` | `workflow_dispatch` only | Linux / Windows / macOS | per-OS VTK archives | `Linux`, `Windows`, `MacOS` |
 | WebRTC | `webrtc.yml` | `workflow_dispatch` only (pin commits) | Linux / Windows | — | WebRTC static libs build |
 

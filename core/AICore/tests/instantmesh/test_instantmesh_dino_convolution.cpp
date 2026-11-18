@@ -13,6 +13,7 @@
 #include <memory>
 #include <vector>
 
+#include "common/backend_gemm_tolerance.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
@@ -110,7 +111,8 @@ bool linear_check(ggml_backend_t backend, ggml_type type) {
                     std::abs(double(actual[col * rows + row]) - expected));
         }
     std::printf("DINO linear %s max_abs=%.9g\n", ggml_type_name(type), maximum);
-    return maximum < 2e-5;
+    return maximum < aicore_test::oracle_max_abs_tolerance(
+                             backend, /*gemm_f32=*/type == GGML_TYPE_F32);
 }
 
 bool check(ggml_backend_t backend, ggml_type type) {
@@ -238,7 +240,8 @@ bool check(ggml_backend_t backend, ggml_type type) {
                         std::max(maximum, std::abs(double(actual) - expected));
             }
     std::printf("DINO patch %s max_abs=%.9g\n", ggml_type_name(type), maximum);
-    return maximum < 2e-5;
+    return maximum < aicore_test::oracle_max_abs_tolerance(
+                             backend, /*gemm_f32=*/type == GGML_TYPE_F32);
 }
 }  // namespace
 

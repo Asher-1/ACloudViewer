@@ -1,0 +1,104 @@
+/* ACloudViewer documentation overrides for the Furo theme.
+ *
+ * Structure and behaviour mirror the Open3D documentation site
+ * (https://www.open3d.org/docs/release/): the sidebar carries a collapsible
+ * "Docs Version" section built from #furo-versions, whose table lists each
+ * version against its C++ API entry point.
+ *
+ * Furo ships this markup itself (sidebar/variant-selector.html) but only
+ * renders it when READTHEDOCS is set, so the block is provided by our own
+ * sidebar template and styled here.
+ */
+
+/* Furo renders toctree captions small; enlarge them like Open3D does. */
+.toctree-wrapper.compound .caption {
+    font-size: 150%;
+    font-weight: bold;
+}
+
+/* -- Version switcher ------------------------------------------------- */
+
+#furo-versions {
+    font-size: var(--sidebar-item-font-size);
+}
+
+#furo-versions .caption {
+    display: inline-block;
+    color: var(--color-sidebar-caption-text);
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: var(--sidebar-caption-font-size);
+    padding-right: var(--sidebar-expander-width);
+    margin-top: 0;
+}
+
+/* The checkbox drives the collapse; it must not be visible itself. */
+#furo-versions input[type=checkbox] {
+    display: none;
+    position: absolute;
+    box-sizing: border-box;
+    padding: 0;
+    overflow: visible;
+}
+
+#furo-versions input[type=checkbox]:checked ~ .rst-other-versions {
+    display: inline-block;
+    line-height: var(--sidebar-item-line-height);
+    padding: var(--sidebar-item-spacing-vertical) var(--sidebar-item-spacing-horizontal);
+    text-decoration: none;
+}
+
+#furo-versions .rst-other-versions {
+    display: none;
+}
+
+#furo-versions .versions-label {
+    position: relative;
+    float: right;
+}
+
+/* Rotate the disclosure arrow when the list is expanded. */
+#furo-versions input[type=checkbox]:checked ~ .versions-label .icon svg,
+#furo-versions input[type=checkbox]:checked + label .icon svg {
+    transform: rotate(90deg);
+}
+
+#furo-versions .versions-label .icon svg {
+    transition: transform 0.15s ease-in-out;
+}
+
+/* -- Version table ---------------------------------------------------- */
+
+#furo-versions table.version-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+#furo-versions table.version-table td {
+    border: 1px solid var(--color-sidebar-background-border, #555555);
+    text-align: left;
+    padding: 0.25em 0.5em;
+    word-break: break-word;
+}
+
+#furo-versions table.version-table td.version-cell a {
+    text-decoration: none;
+}
+
+/* The version currently being read is highlighted rather than merely present,
+ * so a reader can always tell which archive they are in. */
+#furo-versions table.version-table tr.is-current td {
+    font-weight: bold;
+}
+
+#furo-versions table.version-table td.version-cell a:hover,
+#furo-versions table.version-table td.cpp-cell a:hover {
+    text-decoration: underline;
+}
+
+/* Keep notebook output inside a scrollable box (from Open3D's overrides). */
+.nboutput .output_area div > pre {
+    overflow-y: scroll !important;
+    max-height: 30em;
+}

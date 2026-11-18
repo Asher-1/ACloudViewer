@@ -150,7 +150,7 @@
            </property>
            <property name="icon">
             <iconset resource="../../../app/MainWindow.qrc">
-             <normaloff>:/Resources/images/others/pqXPlus.png</normaloff>:/Resources/images/others/pqXPlus.png</iconset>
+             <normaloff>:/Resources/images/svg/pq/pqXPlus.svg</normaloff>:/Resources/images/svg/pq/pqXPlus.svg</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -170,7 +170,7 @@
            </property>
            <property name="icon">
             <iconset resource="../../../app/MainWindow.qrc">
-             <normaloff>:/Resources/images/others/pqXMinus.png</normaloff>:/Resources/images/others/pqXMinus.png</iconset>
+             <normaloff>:/Resources/images/svg/pq/pqXMinus.svg</normaloff>:/Resources/images/svg/pq/pqXMinus.svg</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -190,7 +190,7 @@
            </property>
            <property name="icon">
             <iconset resource="../../../app/MainWindow.qrc">
-             <normaloff>:/Resources/images/others/pqYPlus.png</normaloff>:/Resources/images/others/pqYPlus.png</iconset>
+             <normaloff>:/Resources/images/svg/pq/pqYPlus.svg</normaloff>:/Resources/images/svg/pq/pqYPlus.svg</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -210,7 +210,7 @@
            </property>
            <property name="icon">
             <iconset resource="../../../app/MainWindow.qrc">
-             <normaloff>:/Resources/images/others/pqYMinus.png</normaloff>:/Resources/images/others/pqYMinus.png</iconset>
+             <normaloff>:/Resources/images/svg/pq/pqYMinus.svg</normaloff>:/Resources/images/svg/pq/pqYMinus.svg</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -230,7 +230,7 @@
            </property>
            <property name="icon">
             <iconset resource="../../../app/MainWindow.qrc">
-             <normaloff>:/Resources/images/others/pqZPlus.png</normaloff>:/Resources/images/others/pqZPlus.png</iconset>
+             <normaloff>:/Resources/images/svg/pq/pqZPlus.svg</normaloff>:/Resources/images/svg/pq/pqZPlus.svg</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -250,7 +250,7 @@
            </property>
            <property name="icon">
             <iconset resource="../../../app/MainWindow.qrc">
-             <normaloff>:/Resources/images/others/pqZMinus.png</normaloff>:/Resources/images/others/pqZMinus.png</iconset>
+             <normaloff>:/Resources/images/svg/pq/pqZMinus.svg</normaloff>:/Resources/images/svg/pq/pqZMinus.svg</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -401,7 +401,7 @@
            </property>
            <property name="icon">
             <iconset resource="../../../app/MainWindow.qrc">
-             <normaloff>:/Resources/images/ecvPointPicking.png</normaloff>:/Resources/images/ecvPointPicking.png</iconset>
+             <normaloff>:/Resources/images/svg/ecv/ecvPointPicking.svg</normaloff>:/Resources/images/svg/ecv/ecvPointPicking.svg</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -991,7 +991,7 @@
            </property>
            <property name="icon">
             <iconset resource="../../../app/MainWindow.qrc">
-             <normaloff>:/Resources/images/zoomIn_48px.png</normaloff>:/Resources/images/zoomIn_48px.png</iconset>
+             <normaloff>:/Resources/images/svg/misc/zoomIn_48px.svg</normaloff>:/Resources/images/svg/misc/zoomIn_48px.svg</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -1084,7 +1084,7 @@
            </property>
            <property name="icon">
             <iconset resource="../../../app/MainWindow.qrc">
-             <normaloff>:/Resources/images/zoomOut_48px.png</normaloff>:/Resources/images/zoomOut_48px.png</iconset>
+             <normaloff>:/Resources/images/svg/misc/zoomOut_48px.svg</normaloff>:/Resources/images/svg/misc/zoomOut_48px.svg</iconset>
            </property>
            <property name="iconSize">
             <size>

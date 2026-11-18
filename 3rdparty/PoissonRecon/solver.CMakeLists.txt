@@ -7,6 +7,14 @@ project(PoissonReconSolver CXX)
 # -funroll-loops -ffast-math on non-MSVC, OpenMP when found, /bigobj on MSVC)
 # so the poisson_mesher reconstruction output stays byte-identical with the
 # upstream binary.
+#
+# Open items carried from the v18.75 unification batch (previously tracked in
+# the retired libs/Reconstruction/TEST_ALIGNMENT_TODO.md ledger, git history):
+# 1. install/export rules for poisson_recon in the standalone Reconstruction
+#    package config (CMakeConfig.cmake.in list intentionally unchanged);
+# 2. macOS ASYNC thread-pool race needs CI re-verification;
+# 3. downstream texturing must record a new A/B baseline for the v12 -> v18
+#    solver-generation numeric delta.
 
 add_library(poisson_recon STATIC PoissonRecon.cpp SurfaceTrimmer.cpp)
 # The main project builds everything with CMAKE_POSITION_INDEPENDENT_CODE ON

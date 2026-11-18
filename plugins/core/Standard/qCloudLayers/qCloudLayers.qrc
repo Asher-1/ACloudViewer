@@ -1,12 +1,12 @@
 <RCC>
   <qresource prefix="/CC/plugin/qCloudLayers" >
-    <file>images/qCloudLayers.png</file>
-    <file>images/ccCancel.png</file>
-    <file>images/ccDelete.png</file>
-    <file>images/ccPlus.png</file>
-    <file>images/ccSmallPause.png</file>
-    <file>images/ccSmallValidate.png</file>
-    <file>images/ccStart.png</file>
+    <file>images/qCloudLayers.svg</file>
+    <file>images/ccCancel.svg</file>
+    <file>images/ccDelete.svg</file>
+    <file>images/ccPlus.svg</file>
+    <file>images/ccSmallPause.svg</file>
+    <file>images/ccSmallValidate.svg</file>
+    <file>images/ccStart.svg</file>
     <file>info.json</file>
   </qresource>
 </RCC>

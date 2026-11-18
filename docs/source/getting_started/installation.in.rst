@@ -76,15 +76,61 @@ Or drag and drop the application to Applications folder.
 
 Download the ``.exe`` installer from the releases page and run it. Follow the installation wizard.
 
-Docker Installation
--------------------
+Via npm (cross-platform bootstrap)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Docker images are available for easy deployment.
+Instead of downloading an installer manually, the ``@asher-1/acloudviewer`` npm
+package fetches and launches the matching official installer for your platform
+(Windows / macOS / Linux) automatically. The package version mirrors the app
+version, and three release channels are available:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 45 35
+
+   * - Channel
+     - Install command
+     - What you get
+   * - **Stable** (default)
+     - ``npm install -g @asher-1/acloudviewer``
+     - Latest official release (``latest`` dist-tag = app version); pins the
+       matching ``v<version>`` release.
+   * - **Preview / testing**
+     - ``npm install -g @asher-1/acloudviewer@next``
+     - Newest complete ``main-devel`` build (``X.Y.Z-dev.<timestamp>``); tracks
+       the rolling development assets.
+   * - **Exact version**
+     - ``npm install -g @asher-1/acloudviewer@``\ @cv_version@
+     - A specific published bootstrap version.
 
 .. code-block:: bash
 
-   docker pull ghcr.io/asher-1/acloudviewer:latest
-   docker run -it --gpus all ghcr.io/asher-1/acloudviewer:latest
+   npm install -g @asher-1/acloudviewer   # or @next for the preview channel
+   acloudviewer install                   # CPU by default; --cuda opts in (driver checked)
+   acloudviewer list                      # show available installers
+   acloudviewer uninstall --yes           # remove (QtIFW maintenancetool purge)
+
+``latest`` only ever points at a stable release; development builds are published
+under ``next`` and never move it. See ``npm/PUBLISHING.md`` in the repository for
+the full version scheme and the transitional ``3.9.5`` semantics.
+
+Docker Installation
+-------------------
+
+Docker is used for **reproducible builds and headless environments**, not for
+distributing the desktop installers: the release artifacts (``.run`` /
+``.exe`` / ``.dmg``) are GUI desktop packages, while containers are headless
+by nature. No prebuilt application image is published; the Docker images in
+this repository are build environments that compile the installers and
+wheels from source:
+
+.. code-block:: bash
+
+   ./docker/build-release.sh    # build the release installers inside Docker
+
+For headless / container usage, install the Python wheel from the GitHub
+release assets (see the Python section above) or the CLI harness — both run
+without a display server.
 
 See :doc:`../developer/docker` for more information.
 

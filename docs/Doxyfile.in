@@ -115,6 +115,7 @@ EXCLUDE_PATTERNS       = */test/* \
                          */thirdparty/* \
                          */Reconstruction/lib/* \
                          */VLFeat/* \
+                         */qSIBR/SIBR/* \
                          */.git/* \
                          */CMakeFiles/* \
                          *_autogen/* \
@@ -143,7 +144,16 @@ USE_MDFILE_AS_MAINPAGE =
 # Configuration options related to source browsing
 #---------------------------------------------------------------------------
 
-SOURCE_BROWSER         = YES
+# SOURCE_BROWSER emits a syntax-highlighted copy of every source file with
+# per-line anchors. Measured on this tree: 4726 pages / 361 MB, of which 72%
+# is implementation code (.cpp/.cc = 255 MB). Implementation source is the
+# least useful thing on an *API* site -- readers who want it use the repo or
+# an IDE.
+#
+# This does NOT remove the header pages. VERBATIM_HEADERS (below) still emits
+# 2303 header source pages, so every declaration keeps its source view. Only
+# the 2423 implementation-file pages go away.
+SOURCE_BROWSER         = NO
 INLINE_SOURCES         = NO
 STRIP_CODE_COMMENTS    = YES
 REFERENCED_BY_RELATION = YES
@@ -296,12 +306,26 @@ UML_LOOK               = NO
 UML_LIMIT_NUM_FIELDS   = 10
 TEMPLATE_RELATIONS     = YES
 INCLUDE_GRAPH          = YES
-INCLUDED_BY_GRAPH      = YES
+# INCLUDED_BY_GRAPH draws the reverse direction of the same relationship.
+# Nobody navigates "which files include this header" from an API reference,
+# and the forward graph already exists next to it: pure duplicate cost.
+# Measured: 2217 files / 197 MB.
+INCLUDED_BY_GRAPH      = NO
 CALL_GRAPH             = NO
 CALLER_GRAPH           = NO
 GRAPHICAL_HIERARCHY    = YES
 DIRECTORY_GRAPH        = YES
-DOT_IMAGE_FORMAT       = png
+# SVG costs the same build time and is dramatically smaller once archived:
+# it is text, so thousands of graphs share one compression dictionary, while
+# PNG pixel data has no cross-file redundancy to exploit. Measured on this
+# tree (doxygen 1.8.17 + dot 2.43):
+#   1947 MB -> 921 MB uncompressed, 1177 MB -> 145 MB as .tar.gz
+# It also fixes a correctness problem: PNG clamps graphs at 32767 px, so the
+# largest inheritance graphs were truncated. SVG is lossless at any size and
+# stays sharp when zoomed.
+# INTERACTIVE_SVG stays NO: YES wraps each graph in an <iframe> and adds
+# markup to every class page for no size benefit.
+DOT_IMAGE_FORMAT       = svg
 INTERACTIVE_SVG        = NO
 DOT_PATH               =
 DOTFILE_DIRS           =

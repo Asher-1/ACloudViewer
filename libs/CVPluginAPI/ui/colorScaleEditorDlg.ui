@@ -267,7 +267,7 @@
        <widget class="QToolButton" name="deleteSliderToolButton">
         <property name="icon">
          <iconset resource="../../../app/MainWindow.qrc">
-          <normaloff>:/Resources/images/smallTrash.png</normaloff>:/Resources/images/smallTrash.png</iconset>
+          <normaloff>:/Resources/images/svg/small/smallTrash.svg</normaloff>:/Resources/images/svg/small/smallTrash.svg</iconset>
         </property>
        </widget>
       </item>

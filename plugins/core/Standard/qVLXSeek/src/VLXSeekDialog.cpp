@@ -32,6 +32,7 @@
 #include <QStandardItemModel>
 #include <QVBoxLayout>
 
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAICoreUiHelper.h"
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
@@ -323,15 +324,13 @@ void VLXSeekDialog::populateCatalogCombos() {
         if (idx >= 0) m_precisionCombo->setCurrentIndex(idx);
     }
     m_deviceCombo->clear();
-    // The auto token travels as item data: a translated display text must
-    // never reach the runtime device request (qTrellis/qInstantMesh pattern).
-    m_deviceCombo->addItem(tr("auto"), QStringLiteral("auto"));
 #ifdef AICore_ENABLED
-    const int devices = aicore_device_count();
-    for (int i = 0; i < devices; ++i) {
-        if (const aicore_device_info* info = aicore_device_at(i))
-            m_deviceCombo->addItem(QString::fromUtf8(info->id));
-    }
+    // Runtime backend registry projection — never a device the core cannot
+    // resolve; item data carries the id passed to the C API (a translated
+    // display text must never reach the runtime device request).
+    ecvAICoreUi::populateDeviceCombo(m_deviceCombo);
+#else
+    m_deviceCombo->addItem(tr("auto"), QStringLiteral("auto"));
 #endif
 }
 
@@ -697,7 +696,7 @@ void VLXSeekDialog::onRun() {
                     m_precisionCombo->currentData().toString(), &vision))
             settings.precision = vision.quantization;
     }
-    settings.device = m_deviceCombo->currentData().toString();
+    settings.device = ecvAICoreUi::currentDeviceId(m_deviceCombo);
     settings.threads = m_threadsSpin->value();
     settings.maxNewTokens = m_tokensSpin->value();
     settings.inputPath = m_inputEdit->text();

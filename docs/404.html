@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 - Page Not Found | ACloudViewer</title>
-    <link rel="stylesheet" href="styles.css">
     <style>
         body {
             display: flex;
@@ -65,11 +64,69 @@
 </head>
 <body>
     <div class="error-container">
-        <img src="images/ACloudViewer_logo_horizontal.png" alt="ACloudViewer Logo" class="logo">
+        <img id="logo" src="images/ACloudViewer_logo_horizontal.png" alt="ACloudViewer Logo" class="logo">
         <h1 class="error-code">404</h1>
-        <h2>Page Not Found</h2>
-        <p>Sorry, the page you requested does not exist or has been removed.</p>
-        <a href="index.html" class="btn">Back to Home</a>
+        <h2 id="notfound-title">Page Not Found</h2>
+        <p id="notfound-message">Sorry, the page you requested does not exist or has been removed.</p>
+        <p id="redirect-note" hidden>
+            If you are not redirected automatically, <a id="redirect-link" href="index.html">click here</a>.
+        </p>
+        <a href="index.html" class="btn" id="home-btn">Back to Home</a>
     </div>
+    <script>
+    (function () {
+        // Normalize the pathname once: strip a trailing slash, except keep
+        // a trailing-slash-less '/documentation' intact so the marker below
+        // still matches (Pages normally 301-normalizes existing directories,
+        // but stay robust either way).
+        var path = window.location.pathname.replace(/\/$/, '');
+        if (path.endsWith('/documentation')) {
+            path += '/';
+        }
+        // Assets below resolve relative to the *requested* URL when this page
+        // is served as a 404 fallback, so anchor them to the site root.
+        var siteRoot = path.replace(/\/[^/]*$/, '/');
+        document.getElementById('logo').src = siteRoot + 'images/ACloudViewer_logo_horizontal.png';
+        document.getElementById('home-btn').href = siteRoot;
+
+        // Path-preserving redirector for the versioned documentation layout:
+        //   legacy flat URL   /documentation/getting_started/foo.html
+        //   rewritten to      /documentation/<latest-stable>/getting_started/foo.html
+        // The version is injected by .github/workflows/documentation.yml at
+        // deploy time (replaces the placeholder used below).
+        var marker = '/documentation/';
+        var idx = path.lastIndexOf(marker);
+        if (idx === -1) {
+            return; // Not a documentation URL: keep the plain 404 page.
+        }
+        var rest = path.slice(idx + marker.length).replace(/\/+$/, '');
+        if (rest === 'index.html') {
+            rest = '';
+        }
+        // URLs that already carry a version segment (vX.Y.Z) or point into
+        // the dev archive are genuine misses inside a version directory:
+        // do not rewrite them.
+        if (/^(v\d+\.\d+\.\d+|dev)(\/|$)/.test(rest)) {
+            return;
+        }
+        var version = '@LATEST_STABLE_VERSION@';
+        // Safety gate: only redirect when CI actually replaced the placeholder
+        // with a real version (vX.Y.Z or dev); otherwise fall through to the
+        // plain 404 (local preview / unexpected deployment).
+        if (!/^(v\d+\.\d+\.\d+|dev)$/.test(version)) {
+            return;
+        }
+        var target = path.slice(0, idx + marker.length) + version + '/' + rest;
+        // Preserve query string and fragment (Sphinx search/anchor deep links).
+        target += window.location.search + window.location.hash;
+        document.getElementById('notfound-title').textContent = 'Redirecting\u2026';
+        document.getElementById('notfound-message').textContent =
+            'The documentation layout is versioned. Taking you to the latest stable docs.';
+        var link = document.getElementById('redirect-link');
+        link.href = target;
+        document.getElementById('redirect-note').hidden = false;
+        window.location.replace(target);
+    })();
+    </script>
 </body>
 </html>

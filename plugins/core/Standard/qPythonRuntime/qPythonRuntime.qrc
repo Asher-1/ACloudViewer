@@ -20,22 +20,18 @@
         <file>info.json</file>
 
         <!--Editor Images-->
-        <file>images/editor/ccConsole.png</file>
-        <file>images/editor/ccDelete.png</file>
-        <file>images/editor/ccOpen.png</file>
-        <file>images/editor/ccPencil.png</file>
-        <file>images/editor/ccSave.png</file>
-        <file>images/editor/dbHObjectSymbol.png</file>
-        <!--        <file>images/editor/dbHObjectSymbolLocked.png</file>-->
-        <file>images/editor/dbLockSymbol.png</file>
-        <file>images/editor/smallTrash.png</file>
-        <file>images/editor/smallValidate.png</file>
-        <file>images/editor/store.png</file>
+        <file>images/editor/ccDelete.svg</file>
+        <file>images/editor/ccOpen.svg</file>
+        <file>images/editor/ccSave.svg</file>
+        <file>images/editor/dbLockSymbol.svg</file>
+        <file>images/editor/smallTrash.svg</file>
+        <file>images/editor/smallValidate.svg</file>
+        <file>images/editor/store.svg</file>
         <file>images/editor/plus.png</file>
         <file>images/editor/arrow_right.png</file>
-        <file>images/editor/ccSegment.png</file>
-        <file>images/editor/paste.png</file>
-        <file>images/editor/copy.png</file>
+        <file>images/editor/ccSegment.svg</file>
+        <file>images/editor/paste.svg</file>
+        <file>images/editor/copy.svg</file>
         <file>images/editor/comment.png</file>
         <file>images/editor/uncomment.png</file>
         <file>images/editor/indent_less.png</file>

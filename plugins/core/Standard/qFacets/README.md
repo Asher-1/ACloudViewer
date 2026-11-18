@@ -26,7 +26,7 @@ Two algorithms are available to extract planar facets.
 
 This method relies on a [kd-tree](https://en.wikipedia.org/wiki/K-d_tree) to recursively divide the cloud in small planar patches. These planar patches are then regrouped in bigger 'facets'.
 
-To use it, simply highlight the point cloud and click on the ![](images/extractKD.png) icon.
+To use it, simply highlight the point cloud and click on the **Extract Keypoints** icon.
 
 The following parameters dialog will appear:
 
@@ -53,7 +53,7 @@ After clicking on the 'OK' button, CloudCompare will first compute the kd-tree a
 
 This method resembles the previous one. The idea is once again to divide the input cloud in smaller patches and then to regroup them. This time the subdivision is systematic and not recursive. Therefore all the patches will have almost the same size but some may be very flat while others not (depending on the resolution). And the fusion process is based on a (Fast Marching) front propagation.
 
-To use it, simply highlight the point cloud and click on the ![](images/extractFM.png) icon.
+To use it, simply highlight the point cloud and click on the **Extract Facets** icon.
 
 The following parameters dialog will appear:
 
@@ -70,7 +70,7 @@ The 'Facets' frame is the same as the previous algorithm (see above).
 
 ### Export facets as a SHP file
 
-Once a set of facets has been generated, you can export it as a shape (SHP) file. Simply select the parent container and click on the ![](images/shpFile.png) icon.
+Once a set of facets has been generated, you can export it as a shape (SHP) file. Simply select the parent container and click on the **SHP export** icon.
 
 This will make a new dialog appear:
 
@@ -105,7 +105,7 @@ The colors of the polygons are based on their dip direction and the facets index
 
 ### Export facets as a CSV file
 
-Simply select the parent container of the generated facets and click on the ![](images/csvFile.png) icon.
+Simply select the parent container of the generated facets and click on the **CSV export** icon.
 
 This function works almost the same as the SHP export one (see above). The only difference is that no polygon file will be generated. But the same information as in the DBF file will be saved in a CSV file.
 
@@ -113,7 +113,7 @@ This function works almost the same as the SHP export one (see above). The only 
 
 This tool lets you re-organize the generated facets in folders (families) and sub-folders (sub-families) based on their orientation and relative distance.
 
-Select the parent container of the facets and then click on the ![](images/classifIcon.png) icon.
+Select the parent container of the facets and then click on the **Classify** icon.
 
 This will display a very simple dialog:
 
@@ -132,7 +132,7 @@ The facets will also be colored based on their family (instead of their dip/dip 
 
 ### Stereogram display
 
-The last tool of the qFacets plugin is the stereogram/stereoplot display. To use it you can either select a group of facets or a cloud with normals. Then click on the ![](images/stereogram.png) icon.
+The last tool of the qFacets plugin is the stereogram/stereoplot display. To use it you can either select a group of facets or a cloud with normals. Then click on the **Stereogram** icon.
 
 You will have first to define a few parameters for the stereogram plot:
 

@@ -25,15 +25,19 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
+#include <QScrollArea>
+#include <QScrollBar>
 #include <QSettings>
 #include <QSlider>
 #include <QStandardItemModel>
 #include <QVBoxLayout>
 #include <cmath>
 
+#include "aicore/backend_capi.h"
 #include "aicore/inference_log.h"
 #include "aicore/lingbot_capi.h"
 #include "cvFileDialog.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAICoreUiHelper.h"
 #include "ecvModelDownloader.h"
 #include "ecvPersistentSettings.h"
@@ -166,14 +170,22 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     // interaction stay untouched (NonModal), so the render window remains
     // fully navigable while the dialog floats above it.
     setWindowFlag(Qt::WindowStaysOnTopHint, true);
-    resize(640, 780);
+    // Initial size is pinned at the end of the constructor (geometry
+    // conservation: clamped to the screen's available geometry so the
+    // fixed input/action/progress rows never sit under the macOS Dock).
 
     auto* rootLayout = new QVBoxLayout(this);
-    // Two-column parameter grid (label|field|label|field) — halves the
-    // dialog height versus a single-column QFormLayout.
+    // Two-column parameter grids (label|field|label|field) — halves the
+    // dialog height versus a single-column QFormLayout. The INPUT grid
+    // stays fixed (input/sample actions must remain visible on short
+    // screens, qInstantMesh pattern); the CONFIGURATION grid scrolls.
+    auto* inputForm = new QGridLayout;
+    inputForm->setColumnStretch(1, 1);
+    inputForm->setColumnStretch(3, 1);
     auto* form = new QGridLayout;
     form->setColumnStretch(1, 1);
     form->setColumnStretch(3, 1);
+    int inputGridRow = 0;
     int gridRow = 0;
     auto gridLabel = [this](const QString& text) {
         return new QLabel(text, this);
@@ -198,6 +210,27 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
         ++gridRow;
     };
 
+    // Input-strip entries land on the FIXED grid (never scrolled away):
+    // input/sample actions must stay visible at any window height, only
+    // the configuration grid scrolls (qInstantMesh pattern).
+    auto inputRow = [&](const QString& label, QWidget* w) {
+        if (label.isEmpty()) {
+            inputForm->addWidget(w, inputGridRow, 0, 1, 4);
+        } else {
+            inputForm->addWidget(gridLabel(label), inputGridRow, 0);
+            inputForm->addWidget(w, inputGridRow, 1, 1, 3);
+        }
+        ++inputGridRow;
+    };
+    auto inputRow2 = [&](const QString& l1, QWidget* w1, const QString& l2,
+                         QWidget* w2) {
+        inputForm->addWidget(gridLabel(l1), inputGridRow, 0);
+        inputForm->addWidget(w1, inputGridRow, 1);
+        inputForm->addWidget(gridLabel(l2), inputGridRow, 2);
+        inputForm->addWidget(w2, inputGridRow, 3);
+        ++inputGridRow;
+    };
+
     // --- input ---
     m_folderRow = new QWidget(this);
     auto* folderLayout = new QHBoxLayout(m_folderRow);
@@ -206,7 +239,7 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     auto* browseFolderBtn = new QPushButton(tr("Browse…"), m_folderRow);
     folderLayout->addWidget(m_imageFolder, 1);
     folderLayout->addWidget(browseFolderBtn);
-    row(tr("Image folder"), m_folderRow);
+    inputRow(tr("Image folder"), m_folderRow);
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
     m_videoRow = new QWidget(this);
@@ -218,7 +251,7 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     videoLayout->addWidget(m_videoPath, 1);
     videoLayout->addWidget(browseVideoBtn);
     m_videoRow->setVisible(false);
-    row(QString(), m_videoRow);
+    inputRow(QString(), m_videoRow);
 
     m_videoFpsRow = new QWidget(this);
     auto* fpsLayout = new QHBoxLayout(m_videoFpsRow);
@@ -232,7 +265,7 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
                "10)."));
     fpsLayout->addWidget(m_videoFps, 1);
     m_videoFpsRow->setVisible(false);
-    row(QString(), m_videoFpsRow);
+    inputRow(QString(), m_videoFpsRow);
     connect(browseVideoBtn, &QPushButton::clicked, this,
             &LingbotMapDialog::onBrowseVideoFile);
 #endif
@@ -254,16 +287,16 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
             tr("Official crop width (upstream --image_size; default 518, "
                "snapped to the 14-px patch grid). Height follows the "
                "aspect ratio."));
-    row2(tr("Max frames"), m_maxFrames, tr("Processing width"), m_imageSize);
+    inputRow2(tr("Max frames"), m_maxFrames, tr("Processing width"),
+              m_imageSize);
 
     // --- backend ---
     m_deviceCombo = new QComboBox(this);
-    m_deviceCombo->addItem(tr("Auto"), QStringLiteral("auto"));
-    m_deviceCombo->addItem(QStringLiteral("CPU"), QStringLiteral("cpu"));
-    m_deviceCombo->addItem(QStringLiteral("GPU"), QStringLiteral("gpu"));
+    ecvAICoreUi::populateDeviceCombo(m_deviceCombo);
     m_deviceCombo->setToolTip(
-            tr("Auto follows the AICore runtime device order (CUDA → Vulkan "
-               "→ CPU on Linux); upstream --backend."));
+            tr("Auto follows the AICore runtime device order (%1); upstream "
+               "--backend.")
+                    .arg(QString::fromUtf8(aicore_auto_device_order())));
     // --- input source: image folder (default) or video file ---
     m_inputModeCombo = new QComboBox(this);
     m_inputModeCombo->addItem(tr("Image folder (ordered sequence)"),
@@ -307,7 +340,8 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
                 }
             });
 
-    row2(tr("Input source"), m_inputModeCombo, tr("Device"), m_deviceCombo);
+    inputRow2(tr("Input source"), m_inputModeCombo, tr("Device"),
+              m_deviceCombo);
 
     // --- model catalog (map role) ---
     m_modelCombo = new QComboBox(this);
@@ -389,7 +423,7 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     maskRowLayout->addWidget(browseMaskBtn);
     connect(browseMaskBtn, &QPushButton::clicked, this,
             &LingbotMapDialog::onBrowseSkyMaskDir);
-    row2(tr("Test data:"), testRow, tr("Mask folder"), m_skyMaskRow);
+    inputRow2(tr("Test data:"), testRow, tr("Mask folder"), m_skyMaskRow);
     m_skyMaskRow->setVisible(false);
 
     // Custom-data reminder: outdoor sequences with sky in view should enable
@@ -399,14 +433,14 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
                "masking (Native skyseg or cached masks) to filter sky points.");
     m_skyHint = ecvAICoreUi::makeHintLabel(m_customSkyHintText, this);
     m_skyHint->setVisible(false);
-    row(QString(), m_skyHint);
+    inputRow(QString(), m_skyHint);
 
     // Dataset → model guidance (tips/label): tells the user which model
     // and pipeline each dataset is adapted for, per the upstream long_real
     // campaign.
     m_datasetHint = ecvAICoreUi::makeHintLabel(QString(), this);
     m_datasetHint->setWordWrap(true);
-    row(QString(), m_datasetHint);
+    inputRow(QString(), m_datasetHint);
 
     m_threads = new QSpinBox(this);
     m_threads->setRange(0, 256);
@@ -865,7 +899,22 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     m_addDbCheck->setChecked(true);
     row(QString(), m_addDbCheck);
 
-    rootLayout->addLayout(form);
+    // Only configuration scrolls; the input strip and the run/progress
+    // block stay fixed (qInstantMesh pattern): on short screens (macOS
+    // Dock) the Image folder/Test data rows, Run/Pause/Cancel, the preview
+    // and the progress remain on-screen while the parameter stack scrolls.
+    auto* configScroll = new QScrollArea(this);
+    configScroll->setWidgetResizable(true);
+    configScroll->setFrameShape(QFrame::NoFrame);
+    configScroll->setMinimumHeight(ecvAICoreUi::dpiScaled(80));
+    auto* configPage = new QWidget(configScroll);
+    auto* configPageLayout = new QVBoxLayout(configPage);
+    configPageLayout->setContentsMargins(0, 0, 0, 0);
+    configPageLayout->addLayout(form);
+    configPageLayout->addStretch(1);
+    configScroll->setWidget(configPage);
+    rootLayout->addLayout(inputForm);
+    rootLayout->addWidget(configScroll, 1);
 
     // --- run / cancel ---
     auto* buttons = new QHBoxLayout;
@@ -997,6 +1046,23 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     onModelComboChanged();
     populateTestDataScenes();
     loadSettings();
+
+    // Geometry conservation (the qQuerySplat/qInstantMesh rule): measure
+    // the layout minimum after the settings and catalogs filled the form,
+    // pin the window minimum to it (the user can never shrink into
+    // clipping the fixed input/action/progress block), and keep the
+    // initial size inside the screen's available geometry so window
+    // managers on scaled or small displays cannot clip the bottom (the
+    // macOS Dock sits inside the excluded margins).
+    adjustSize();
+    const QSize minSize = pinnedMinimumSize();
+    setMinimumSize(minSize);
+    QSize target(ecvAICoreUi::dpiScaled(640), ecvAICoreUi::dpiScaled(780));
+    target = target.expandedTo(minSize);
+    if (const QScreen* screen = QGuiApplication::primaryScreen()) {
+        target = target.boundedTo(screen->availableSize() - QSize(16, 16));
+    }
+    resize(target);
 }
 
 LingbotMapDialog::~LingbotMapDialog() {
@@ -1241,7 +1307,7 @@ LingbotMapWorker::Settings LingbotMapDialog::collectSettings() const {
     s.imageExt = m_imageExt->text().trimmed();
     s.maxFrames = m_maxFrames->value();
     s.threads = m_threads->value();
-    s.device = m_deviceCombo->currentData().toString();
+    s.device = ecvAICoreUi::currentDeviceId(m_deviceCombo);
     s.image_size = m_imageSize->value();
     s.confThreshold = static_cast<float>(m_confThreshold->value());
     s.downsampleFactor = m_downsampleFactor->value();
@@ -1355,6 +1421,33 @@ void LingbotMapDialog::onCancel() {
     if (m_testDataInProgress) finishTestDataFlow();
     if (m_downloadInProgress) m_downloader->cancel();
     emit cancelRequested();
+}
+
+QSize LingbotMapDialog::pinnedMinimumSize() const {
+    // The fixed blocks' minimum alone lets the window shrink below the
+    // width the configuration content needs without horizontal scrolling
+    // (a scroll area's minimum ignores its content); widen the floor to
+    // the content minimum plus a vertical scrollbar.
+    QSize minSize = minimumSizeHint();
+    if (auto* scroll = findChild<QScrollArea*>()) {
+        const int contentWidth =
+                scroll->widget()->minimumSizeHint().width() +
+                scroll->verticalScrollBar()->sizeHint().width() +
+                ecvAICoreUi::dpiScaled(8);
+        minSize.setWidth(qMax(minSize.width(), contentWidth));
+    }
+    return minSize;
+}
+
+void LingbotMapDialog::showEvent(QShowEvent* event) {
+    QDialog::showEvent(event);
+    if (m_firstShow) {
+        m_firstShow = false;
+        // Polish-time font metrics can grow the layout minimum by a pixel
+        // and widen the content; re-pin so the floor matches the shown
+        // layout exactly.
+        setMinimumSize(pinnedMinimumSize().expandedTo(minimumSize()));
+    }
 }
 
 void LingbotMapDialog::closeEvent(QCloseEvent* event) {
@@ -1532,7 +1625,7 @@ void LingbotMapDialog::saveSettings() const {
                       m_modelCombo->currentData().toString());
     settings.setValue(QStringLiteral("modelFilenameExplicit"), m_modelExplicit);
     settings.setValue(QStringLiteral("device"),
-                      m_deviceCombo->currentData().toString());
+                      ecvAICoreUi::currentDeviceId(m_deviceCombo));
     settings.setValue(QStringLiteral("threads"), m_threads->value());
     settings.setValue(QStringLiteral("imageFolder"), m_imageFolder->text());
     settings.setValue(QStringLiteral("maxFrames"), m_maxFrames->value());

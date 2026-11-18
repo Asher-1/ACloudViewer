@@ -59,19 +59,19 @@ ecvFontPropertyWidget::ecvFontPropertyWidget(QWidget* parent)
     // Ensure icons are loaded (fallback if UI file doesn't load them)
     // Icons are from ParaView: pqBold24.png, pqItalics24.png, pqShadow24.png
     if (ui->boldButton) {
-        QIcon boldIcon(":/Resources/images/font/pqBold24.png");
+        QIcon boldIcon(":/Resources/images/svg/font/pqBold24.svg");
         if (!boldIcon.isNull()) {
             ui->boldButton->setIcon(boldIcon);
         }
     }
     if (ui->italicButton) {
-        QIcon italicIcon(":/Resources/images/font/pqItalics24.png");
+        QIcon italicIcon(":/Resources/images/svg/font/pqItalics24.svg");
         if (!italicIcon.isNull()) {
             ui->italicButton->setIcon(italicIcon);
         }
     }
     if (ui->shadowButton) {
-        QIcon shadowIcon(":/Resources/images/font/pqShadow24.png");
+        QIcon shadowIcon(":/Resources/images/svg/font/pqShadow24.svg");
         if (!shadowIcon.isNull()) {
             ui->shadowButton->setIcon(shadowIcon);
         }
@@ -487,19 +487,19 @@ void ecvFontPropertyWidget::setupHorizontalJustificationButton() {
     actionGroup->setExclusive(true);
 
     // Create actions with icons, matching ParaView's implementation
-    QAction* leftAlign =
-            new QAction(QIcon(":/Resources/images/font/pqTextAlignLeft.svg"),
-                        tr("Left"), actionGroup);
+    QAction* leftAlign = new QAction(
+            QIcon(":/Resources/images/svg/font/pqTextAlignLeft.svg"),
+            tr("Left"), actionGroup);
     leftAlign->setIconVisibleInMenu(true);
 
-    QAction* centerAlign =
-            new QAction(QIcon(":/Resources/images/font/pqTextAlignCenter.svg"),
-                        tr("Center"), actionGroup);
+    QAction* centerAlign = new QAction(
+            QIcon(":/Resources/images/svg/font/pqTextAlignCenter.svg"),
+            tr("Center"), actionGroup);
     centerAlign->setIconVisibleInMenu(true);
 
-    QAction* rightAlign =
-            new QAction(QIcon(":/Resources/images/font/pqTextAlignRight.svg"),
-                        tr("Right"), actionGroup);
+    QAction* rightAlign = new QAction(
+            QIcon(":/Resources/images/svg/font/pqTextAlignRight.svg"),
+            tr("Right"), actionGroup);
     rightAlign->setIconVisibleInMenu(true);
 
     QMenu* popup = new QMenu(this);
@@ -523,17 +523,17 @@ void ecvFontPropertyWidget::setupVerticalJustificationButton() {
 
     // Create actions with icons, matching ParaView's implementation
     QAction* topAlign = new QAction(
-            QIcon(":/Resources/images/font/pqTextVerticalAlignTop.svg"),
+            QIcon(":/Resources/images/svg/font/pqTextVerticalAlignTop.svg"),
             tr("Top"), actionGroup);
     topAlign->setIconVisibleInMenu(true);
 
     QAction* centerAlign = new QAction(
-            QIcon(":/Resources/images/font/pqTextVerticalAlignCenter.svg"),
+            QIcon(":/Resources/images/svg/font/pqTextVerticalAlignCenter.svg"),
             tr("Center"), actionGroup);
     centerAlign->setIconVisibleInMenu(true);
 
     QAction* bottomAlign = new QAction(
-            QIcon(":/Resources/images/font/pqTextVerticalAlignBottom.svg"),
+            QIcon(":/Resources/images/svg/font/pqTextVerticalAlignBottom.svg"),
             tr("Bottom"), actionGroup);
     bottomAlign->setIconVisibleInMenu(true);
 

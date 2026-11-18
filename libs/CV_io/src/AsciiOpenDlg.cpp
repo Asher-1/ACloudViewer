@@ -564,20 +564,20 @@ void AsciiOpenDlg::updateTable() {
     // setup table and widgets
     {
         // Icons
-        static const QIcon xIcon(
-                QString::fromUtf8(":/Resources/images/typeXCoordinate.png"));
-        static const QIcon yIcon(
-                QString::fromUtf8(":/Resources/images/typeYCoordinate.png"));
-        static const QIcon zIcon(
-                QString::fromUtf8(":/Resources/images/typeZCoordinate.png"));
-        static const QIcon NormIcon(
-                QString::fromUtf8(":/Resources/images/typeNormal.png"));
-        static const QIcon RGBIcon(
-                QString::fromUtf8(":/Resources/images/typeRgbCcolor.png"));
-        static const QIcon GreyIcon(
-                QString::fromUtf8(":/Resources/images/typeGrayColor.png"));
+        static const QIcon xIcon(QString::fromUtf8(
+                ":/Resources/images/svg/type/typeXCoordinate.svg"));
+        static const QIcon yIcon(QString::fromUtf8(
+                ":/Resources/images/svg/type/typeYCoordinate.svg"));
+        static const QIcon zIcon(QString::fromUtf8(
+                ":/Resources/images/svg/type/typeZCoordinate.svg"));
+        static const QIcon NormIcon(QString::fromUtf8(
+                ":/Resources/images/svg/type/typeNormal.svg"));
+        static const QIcon RGBIcon(QString::fromUtf8(
+                ":/Resources/images/svg/type/typeRgbCcolor.svg"));
+        static const QIcon GreyIcon(QString::fromUtf8(
+                ":/Resources/images/svg/type/typeGrayColor.svg"));
         static const QIcon ScalarIcon(
-                QString::fromUtf8(":/Resources/images/typeSF.png"));
+                QString::fromUtf8(":/Resources/images/svg/type/typeSF.svg"));
         static const QIcon LabelIcon(
                 QString::fromUtf8(":/Resources/images/dbLabelSymbol.png"));
 

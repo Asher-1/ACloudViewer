@@ -28,6 +28,7 @@
 #include "aicore/inference_log.h"
 #include "aicore/lightglue_capi.h"
 #include "aicore/model_catalog_capi.h"
+#include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAICoreUiHelper.h"
 #include "ecvModelDownloader.h"
 #include "ecvTestDataRepository.h"
@@ -258,12 +259,7 @@ void LightGlueDialog::setupUi() {
     modelLayout->addWidget(m_customModelRow, 1, 0, 1, 3);
 
     m_deviceCombo = new QComboBox;
-    for (int i = 0; i < aicore_device_count(); ++i) {
-        if (const aicore_device_info* d = aicore_device_at(i)) {
-            m_deviceCombo->addItem(tr(d->label), QString::fromUtf8(d->id));
-            if (d->is_default) m_deviceCombo->setCurrentIndex(i);
-        }
-    }
+    ecvAICoreUi::populateDeviceCombo(m_deviceCombo);
     m_threads = new QSpinBox;
     m_threads->setRange(0, 128);
     m_threads->setSpecialValueText(tr("Auto"));

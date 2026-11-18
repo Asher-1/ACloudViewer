@@ -34,7 +34,7 @@ public:
         : m_module_name("PCLModule"),
           m_entry_name("module"),
           m_status_tip("Compute something with PCL"),
-          m_icon(QIcon(QString::fromUtf8(":/toolbar/pcl.png"))) {}
+          m_icon(QIcon(QString::fromUtf8(":/toolbar/images/pcl.png"))) {}
 
     PclModuleDescription(QString filterName,
                          QString entryName,
