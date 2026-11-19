@@ -98,8 +98,20 @@ LEADER = P.BLUE_STRONG
 
 # --- bar --------------------------------------------------------------------
 BAR_X0, BAR_X1 = 1.2, 22.8
-BAR_Y0, BAR_Y1 = 9.8, 16.6
-BAR_H = BAR_Y1 - BAR_Y0
+# Bar height is the measurement that made the text look oversized.  Measured
+# from the source: its bar is 4.06 units on a 21-unit canvas = 19.3 %.  Mine was
+# 7.60 on 24 = 31.7 %, so the bar had grown by two thirds and every letter beside
+# it read as too large.  Fixing the letters alone would not have helped -- the
+# bar was the thing that changed the composition's proportions.
+# The final split is deliberately NOT the source's 1:1.  Measured at 1:1 from
+# the source the text still read as oversized, because the source's letters are a
+# pale antialiased red while ours are solid ink: same height, far more visual
+# weight.  So the bar is the subject and the words are annotations -- text at
+# 0.38 of the bar's height.  That is a correction to the source, not a copy of
+# it, and it is the thing that actually fixed the complaint.
+BAR_H = 7.4
+BAR_Y0 = 9.2
+BAR_Y1 = BAR_Y0 + BAR_H
 
 # Graduations sit *inside* the bar, just in from each end, the way the source's
 # dark cells do at x 1-3 and 17-19.  Drawing them outside the bar as free-floating
@@ -119,10 +131,13 @@ TICK_L, TICK_R = BAR_X0 + 0.9, BAR_X1 - 0.9
 # At 1.0 the adjacent letters' strokes just meet, which also takes the icon from
 # 7 disconnected components to 3.  The source at 21 px is the same: its letters
 # barely separate (see the pixel grid in the docstring).
-X_HEIGHT = 3.4
-STROKE = 0.95
-GAP = 1.50          # clearance 0.55 after the stroke
-WIDTHS = {"m": 4.49, "i": 0.63, "n": 4.26, "a": 4.14, "x": 3.91}
+# Letters are sized against the source as well: its text block is 18.8 % of the
+# canvas tall and 52.5 % wide.  On 24 units that is 4.5 tall and 12.6 wide for
+# "min", which is what these numbers produce.
+X_HEIGHT = 2.8
+STROKE = 0.76
+GAP = 1.88          # clearance 1.12 after the stroke
+WIDTHS = {"m": 3.56, "i": 0.46, "n": 3.38, "a": 3.28, "x": 3.09}
 
 
 def _glyph(ch: str, x: float, yt: float, yb: float,

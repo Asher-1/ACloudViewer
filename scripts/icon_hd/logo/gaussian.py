@@ -6,7 +6,7 @@ What the code does, and why it decides the drawing
     MainWindow.cpp:12489   doActionSFBilateralFilter()
 
 Both call the same `ccEntityAction::sfGaussianFilter`, with one difference.
-At ecvEntityAction.cpp:865 the scalar-field sigma is only computed
+At ecvEntityAction.cpp:865 the scalar-field BELL_SIGMA is only computed
 
     if (filterParams.filterType == ccPointCloud::RGB_FILTER_TYPES::BILATERAL)
 
@@ -71,157 +71,116 @@ RESULT_EDGE = P.BLUE_STRONG
 INPUT = P.GREY_MID
 INPUT_EDGE = P.GREY_DK
 
-# Shared profile geometry.  The step sits slightly left of centre so the two
-# terraces are unequal, which reads as a real cross-section rather than as a
-# symmetrical glyph.
-X0, X1 = 1.5, 22.5
-BASE = 21.8
-LOW_Y = 18.2
-HIGH_Y = 7.6
-STEP_X = 11.2
+# The horizontal extent of the bell and of the distance axis it stands on.
+X0, X1 = 1.2, 22.8
+
+# The bell.  `SIGMA` sets its width, `BASE`/`PEAK` its height, and the curve is
+# w(s) = exp(-(s-BELL_MU)^2 / 2*BELL_SIGMA^2) -- the same expression as the code's weight
+# at ecvPointCloud.cpp:2317.
+BELL_MU = 12.0
+BELL_SIGMA = 4.8
+BASE = 21.2
+PEAK = 3.2
+# Outline weight.  A Gaussian's filled area is only ~42 % of its own bounding
+# box, so a hairline curve cannot reach the samples' 41-69 % density band; the
+# stroke has to carry part of the ink.
+CURVE_SW = 1.15
+AXIS_SW = 1.5
 
 
 # ---------------------------------------------------------------------------
-# A -- the same edge, before and after
+# The Gaussian bell
 # ---------------------------------------------------------------------------
-
-
-def _smooth_profile(samples: int = 64) -> list[tuple[float, float]]:
-    """A smooth step at ``STEP_X`` between the two terraces.
-
-    A tanh is the right curve here rather than a Bezier: it is the exact
-    continuous limit of convolving a step with a Gaussian, which is literally
-    what the filter computes.  The width is set so the transition spans about a
-    third of the canvas -- wide enough to be unmistakable at 24 px, narrow enough
-    that both terraces are still flat over a readable run.
-    """
-    out = []
-    width = 2.6
-    for i in range(samples + 1):
-        x = X0 + (X1 - X0) * i / samples
-        t = math.tanh((x - STEP_X) / width)      # -1 .. +1
-        y = (LOW_Y + HIGH_Y) / 2 - (LOW_Y - HIGH_Y) / 2 * t
-        out.append((x, y))
-    return out
-
-
-def _step_profile() -> list[tuple[float, float]]:
-    """The original edge: two flat terraces and one vertical jump."""
-    return [(X0, LOW_Y), (STEP_X, LOW_Y), (STEP_X, HIGH_Y), (X1, HIGH_Y)]
 
 
 def concept_a() -> str:
-    """Grey step edge behind, blue smoothed edge in front, both filled.
+    """The kernel itself: a Gaussian bell with its one-BELL_SIGMA marks.
 
-    The fill is the point.  A pair of bare lines at this scale reads as a graph
-    decoration; a filled body with a contrasting edge reads as a *surface that
-    changed shape*, which is the operation.  The grey step is drawn first and is
-    visible only above the smoothed curve -- exactly where the sharp corner was
-    and no longer is.
+    This is the drawing the code licenses, exactly.  At ecvPointCloud.cpp:2317
+    the weight is
+
+        weight = exp(-d^2 / (2*BELL_SIGMA^2))
+
+    which is a Gaussian probability density in distance.  So the icon draws a
+    Gaussian bell, filled, standing on the distance axis -- not a *consequence*
+    of smoothing (a smoothed step, which is what an earlier version showed and
+    which reads as a generic S-curve at any size), but the kernel's own shape.
+
+    Two dashed verticals at BELL_MU +/- BELL_SIGMA put the parameter on the drawing.  They
+    are borrowed from the dialog's own note -- "3*BELL_SIGMA = 98% attenuation" -- so
+    the marks are the control the user actually turns, not decoration.
+
+    Against the neighbouring bilateral icon: this drawing has ONE bell.  The
+    bilateral weight is this bell multiplied by a second bell over the value
+    difference (ecvPointCloud.cpp:2322), which is exactly why its icon carries
+    the preserved crease and this one carries a single profile.
     """
-    smooth = _smooth_profile()
-    step = _step_profile()
 
-    def poly(pts, close_at_base=True):
-        d = [f"M {pts[0][0]:.2f} {BASE:.2f}", f"L {pts[0][0]:.2f} {pts[0][1]:.2f}"]
-        d += [f"L {x:.2f} {y:.2f}" for x, y in pts[1:]]
-        if close_at_base:
-            d.append(f"L {pts[-1][0]:.2f} {BASE:.2f}")
-        d.append("Z")
-        return " ".join(d)
+    def bell(samples: int = 96):
+        pts = []
+        for i in range(samples + 1):
+            x = X0 + (X1 - X0) * i / samples
+            y = BASE - (BASE - PEAK) * math.exp(
+                -((x - BELL_MU) ** 2) / (2 * BELL_SIGMA * BELL_SIGMA))
+            pts.append((x, y))
+        return pts
 
-    def line(pts):
-        d = [f"M {pts[0][0]:.2f} {pts[0][1]:.2f}"]
-        d += [f"L {x:.2f} {y:.2f}" for x, y in pts[1:]]
-        return " ".join(d)
+    pts = bell()
+    body_d = [f"M {pts[0][0]:.2f} {BASE:.2f}",
+              f"L {pts[0][0]:.2f} {pts[0][1]:.2f}"]
+    body_d += [f"L {x:.2f} {y:.2f}" for x, y in pts[1:]]
+    body_d.append(f"L {pts[-1][0]:.2f} {BASE:.2f} Z")
 
-    def closed_step(pts):
-        """The step's *whole* profile: down both ends and along the baseline.
+    top_d = [f"M {pts[0][0]:.2f} {pts[0][1]:.2f}"]
+    top_d += [f"L {x:.2f} {y:.2f}" for x, y in pts[1:]]
 
-        Drawing only the top edge left two loose vertical stubs floating over the
-        curve.  The original shape has to close against the same baseline the
-        filtered body uses, so the ghost reads as "the shape that used to be
-        here" rather than as debris.
-        """
-        d = [f"M {pts[0][0]:.2f} {BASE:.2f}",
-             f"L {pts[0][0]:.2f} {pts[0][1]:.2f}"]
-        d += [f"L {x:.2f} {y:.2f}" for x, y in pts[1:]]
-        d.append(f"L {pts[-1][0]:.2f} {BASE:.2f}")
-        d.append("Z")
-        return " ".join(d)
+    defs = ('<linearGradient id="gBell" x1="0" y1="0" x2="0" y2="1">'
+            f'<stop offset="0" stop-color="{RESULT_HI}"/>'
+            f'<stop offset="1" stop-color="{RESULT_LO}"/></linearGradient>')
 
-    defs = (
-        '<linearGradient id="gOut" x1="0" y1="0" x2="0" y2="1">'
-        f'<stop offset="0" stop-color="{RESULT_HI}"/>'
-        f'<stop offset="1" stop-color="{RESULT_LO}"/></linearGradient>'
-        '<linearGradient id="gIn" x1="0" y1="0" x2="0" y2="1">'
-        f'<stop offset="0" stop-color="{P.GREY_LT}"/>'
-        f'<stop offset="1" stop-color="{INPUT}"/></linearGradient>'
-    )
+    parts = [
+        # The baseline: the distance axis the kernel lives on.
+        f'  <path d="M {X0} {BASE:.2f} L {X1} {BASE:.2f}" fill="none" '
+        f'stroke="{P.INK}" stroke-width="0.8" stroke-linecap="round"/>',
 
-    body = "\n".join([
-        # The filtered result, filled and outlined.
-        f'  <path d="{poly(smooth)}" fill="url(#gOut)" stroke="{P.INK}" '
-        f'stroke-width="{P.STROKE}" stroke-linejoin="round"/>',
+        # The distribution, filled.
+        f'  <path d="{" ".join(body_d)}" fill="url(#gBell)" stroke="none"/>',
 
-        # The original step, as a thin marker: two verticals at the jump and a
-        # dash across the top terrace.  Drawing its whole outline (v3) meant the
-        # part below the curve was hidden and only loose fragments showed above
-        # it, which read as debris.  Three intentional segments cannot fragment.
-        f'  <path d="M {STEP_X:.2f} {LOW_Y + 1.2:.2f} L {STEP_X:.2f} '
-        f'{HIGH_Y - 1.4:.2f}" fill="none" stroke="{INPUT_EDGE}" '
-        f'stroke-width="1.1" stroke-linecap="round"/>',
+        # BELL_MU +/- BELL_SIGMA: dashed, so they read as measurements rather than as
+        # further outlines of the curve.
+        f'  <path d="M {BELL_MU - BELL_SIGMA:.2f} {BASE - (BASE - PEAK) * 0.607:.2f} '
+        f'L {BELL_MU - BELL_SIGMA:.2f} {BASE:.2f}" fill="none" stroke="{RESULT_EDGE}" '
+        f'stroke-width="0.55" stroke-dasharray="1.0 0.8"/>',
+        f'  <path d="M {BELL_MU + BELL_SIGMA:.2f} {BASE - (BASE - PEAK) * 0.607:.2f} '
+        f'L {BELL_MU + BELL_SIGMA:.2f} {BASE:.2f}" fill="none" stroke="{RESULT_EDGE}" '
+        f'stroke-width="0.55" stroke-dasharray="1.0 0.8"/>',
 
-        # The smoothed edge itself, the loudest line in the drawing.
-        f'  <path d="{line(smooth)}" fill="none" stroke="{RESULT_EDGE}" '
-        f'stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>',
-    ])
-    return P.svg(body, defs=defs)
+        # The span between them, marked once.  One measured interval, not two
+        # arrows -- the pair of dashed lines already reads as the boundary.
+        f'  <path d="M {BELL_MU - BELL_SIGMA:.2f} {BASE - 3.0:.2f} '
+        f'L {BELL_MU + BELL_SIGMA:.2f} {BASE - 3.0:.2f}" fill="none" '
+        f'stroke="{RESULT_EDGE}" stroke-width="1.1" stroke-linecap="round"/>',
+        f'  <path d="M {BELL_MU - BELL_SIGMA:.2f} {BASE - 3.6:.2f} '
+        f'L {BELL_MU - BELL_SIGMA:.2f} {BASE - 2.4:.2f}" fill="none" '
+        f'stroke="{RESULT_EDGE}" stroke-width="0.8"/>',
+        f'  <path d="M {BELL_MU + BELL_SIGMA:.2f} {BASE - 3.6:.2f} '
+        f'L {BELL_MU + BELL_SIGMA:.2f} {BASE - 2.4:.2f}" fill="none" '
+        f'stroke="{RESULT_EDGE}" stroke-width="0.8"/>',
 
-
-# ---------------------------------------------------------------------------
-# B -- the kernel, as the source drew it
-# ---------------------------------------------------------------------------
-
-
-def concept_b() -> str:
-    """Concentric bands with a radial falloff: the Gaussian kernel head-on.
-
-    Faithful to the original's idea.  Each band is one standard deviation wide,
-    echoing the dialog's own note that *3 sigma = 98 % attenuation* -- so the
-    bands are not decoration, they mark where the weight has dropped to ~61 %,
-    ~14 %, ~1 %.
-    """
-    cx, cy, r = 12.0, 12.0, 10.2
-    stops = [
-        (0.00, P.BLUE_PALE, 1.00),
-        (0.34, P.BLUE_MID, 0.72),
-        (0.68, RESULT_EDGE, 0.42),
-        (1.00, P.GREY_DK, 0.20),
+        # The curve's own outline, on top of the fill.
+        f'  <path d="{" ".join(top_d)}" fill="none" stroke="{P.INK}" '
+        f'stroke-width="{P.STROKE}" stroke-linecap="round" '
+        f'stroke-linejoin="round"/>',
     ]
-    defs = ('<radialGradient id="kern" cx="0.5" cy="0.5" r="0.5">'
-            + "".join(f'<stop offset="{o:.2f}" stop-color="{c}" '
-                      f'stop-opacity="{a:.2f}"/>' for o, c, a in stops)
-            + "</radialGradient>")
-
-    rings = []
-    for frac, sw in ((1.0, P.STROKE), (0.66, 0.5), (0.33, 0.5)):
-        rings.append(f'  <circle cx="{cx}" cy="{cy}" r="{r * frac:.2f}" '
-                     f'fill="none" stroke="{P.INK}" stroke-width="{sw}" '
-                     f'stroke-opacity="{"0.85" if frac == 1.0 else "0.35"}"/>')
-
-    body = "\n".join([
-        f'  <circle cx="{cx}" cy="{cy}" r="{r}" fill="url(#kern)" '
-        f'stroke="none"/>',
-        *rings,
-    ])
-    return P.svg(body, defs=defs)
+    return P.svg("\n".join(parts), defs=defs)
 
 
-CONCEPTS = {"A": concept_a, "B": concept_b}
+CONCEPTS = {"A": concept_a}
 
-# A is chosen: it shows what the filter does, not what its kernel looks like,
-# and it cannot be confused with the bilateral button beside it.
+# A is the kernel's own shape.  An earlier version drew a *smoothed step* instead
+# -- the consequence of filtering rather than the filter -- and it failed review
+# for a good reason: at any size a step with a rounded corner reads as a generic
+# S-curve, not as a Gaussian.
 CONCEPT = "A"
 
 

@@ -217,9 +217,35 @@ exits; later lines are the Python traceback that unwinds through
   adjusted blank lines around a `---` in a notebook. Neither could work: the
   file they edited was being overwritten by a download, and the construct itself
   was invalid.
+- **Editing a file the build does not read.** Before changing a notebook or a
+  template, confirm the build actually consumes *that* file. The tell here was
+  cheap: the CI diagnostic quoted a `^^^^` underline, which pandoc only emits
+  for level-4 headings, while the checked-in notebook uses `###`. Different
+  input, different output.
 - **Treating a red run as one bug.** Three independent defects were live at once
   (archive re-copy, dev probe, notebook overwrite). Fixing the first two changed
-  nothing visible until the third was found.
+  nothing visible until the third was found. After each fix, confirm the
+  **failing step moved**; a run that is still red at the same step means the
+  fix did not take effect, not that the problem is hard.
 - **Assuming CI covers deployment.** Branch runs skip `deploy-docs` entirely.
 - **Adding `|| true` or `|| echo` to get a red run green.** That is how the
   pipeline reached a state where "success" meant nothing.
+- **Widening the blast radius of a request.** "Stop downloading one notebook"
+  does not mean "remove the CloudViewer-ML checkout": that checkout supplies the
+  dependencies for 31 documented ML modules. Remove one thing at a time and say
+  what was removed.
+
+## Verifying locally without the CI image
+
+`cloudViewer` only exists inside the CI image, so a local build cannot produce
+`python_api/`. Two consequences:
+
+- `--py-api-rst=never` reproduces everything except the Python API.
+- The Python API guard will fail a local `--py-api-rst=always` build. That is
+  correct behaviour, not a local-workflow bug.
+
+pandoc must match CI's version (3.9). `pip install pypandoc_binary` provides it
+at `~/.local/lib/python3.11/site-packages/pypandoc/files/pandoc`; put that
+directory on `PATH`. The distro package is 2.9.2.1 and produces different
+heading adornments, which makes diagnostics disagree with CI in a way that is
+easy to misread as a content problem.
