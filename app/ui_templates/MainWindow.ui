@@ -171,7 +171,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/dbViewportSymbol.png</normaloff>:/Resources/images/dbViewportSymbol.png</iconset>
+       <normaloff>:/Resources/images/svg/db/dbViewportSymbol.svg</normaloff>:/Resources/images/svg/db/dbViewportSymbol.svg</iconset>
      </property>
      <addaction name="actionSetViewTop"/>
      <addaction name="actionSetViewFront"/>
@@ -531,7 +531,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/dbPolylineSymbol.png</normaloff>:/Resources/images/dbPolylineSymbol.png</iconset>
+       <normaloff>:/Resources/images/svg/db/dbPolylineSymbol.svg</normaloff>:/Resources/images/svg/db/dbPolylineSymbol.svg</iconset>
      </property>
      <addaction name="actionSamplePointsOnPolyline"/>
      <addaction name="actionSmoothPolyline"/>
@@ -637,7 +637,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/dbCloudSymbol.png</normaloff>:/Resources/images/dbCloudSymbol.png</iconset>
+       <normaloff>:/Resources/images/svg/db/dbCloudSymbol.svg</normaloff>:/Resources/images/svg/db/dbCloudSymbol.svg</iconset>
      </property>
      <addaction name="actionCreateSinglePointCloud"/>
      <addaction name="actionPasteCloudFromClipboard"/>
@@ -1100,7 +1100,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionPrimitiveFactory">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/dbMiscGeomSymbol.png</normaloff>:/Resources/images/dbMiscGeomSymbol.png</iconset>
+     <normaloff>:/Resources/images/svg/db/dbMiscGeomSymbol.svg</normaloff>:/Resources/images/svg/db/dbMiscGeomSymbol.svg</iconset>
    </property>
    <property name="text">
     <string>Primitive factory</string>
@@ -1265,7 +1265,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionPointPicking">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainPointPicking.svg</normaloff>:/Resources/images/svg/ecv/toolMainPointPicking.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainPointPicking.svg</normaloff>:/Resources/images/svg/main/toolMainPointPicking.svg</iconset>
    </property>
    <property name="text">
     <string>Point picking</string>
@@ -1280,7 +1280,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionPointListPicking">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainPointListPicking.svg</normaloff>:/Resources/images/svg/ecv/toolMainPointListPicking.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainPointListPicking.svg</normaloff>:/Resources/images/svg/main/toolMainPointListPicking.svg</iconset>
    </property>
    <property name="text">
     <string>Point list picking</string>
@@ -1484,7 +1484,7 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainConsole.svg</normaloff>:/Resources/images/svg/ecv/toolMainConsole.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainConsole.svg</normaloff>:/Resources/images/svg/main/toolMainConsole.svg</iconset>
    </property>
    <property name="text">
     <string>Console</string>
@@ -1520,7 +1520,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionDelete">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainDeleteEntity.svg</normaloff>:/Resources/images/svg/ecv/toolMainDeleteEntity.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainDeleteEntity.svg</normaloff>:/Resources/images/svg/main/toolMainDeleteEntity.svg</iconset>
    </property>
    <property name="text">
     <string>Delete</string>
@@ -1609,7 +1609,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionRGBGaussianFilter">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainGaussianFilter.svg</normaloff>:/Resources/images/svg/ecv/toolMainGaussianFilter.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainGaussianFilter.svg</normaloff>:/Resources/images/svg/main/toolMainGaussianFilter.svg</iconset>
    </property>
    <property name="text">
     <string>Gaussian filter</string>
@@ -1624,7 +1624,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionRGBBilateralFilter">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainBilateralFilter.svg</normaloff>:/Resources/images/svg/ecv/toolMainBilateralFilter.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainBilateralFilter.svg</normaloff>:/Resources/images/svg/main/toolMainBilateralFilter.svg</iconset>
    </property>
    <property name="text">
     <string>Bilateral filter</string>
@@ -1893,7 +1893,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionClone">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainCloneEntity.svg</normaloff>:/Resources/images/svg/ecv/toolMainCloneEntity.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainCloneEntity.svg</normaloff>:/Resources/images/svg/main/toolMainCloneEntity.svg</iconset>
    </property>
    <property name="text">
     <string>Clone</string>
@@ -1908,7 +1908,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionMerge">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainMergeEntities.svg</normaloff>:/Resources/images/svg/ecv/toolMainMergeEntities.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainMergeEntities.svg</normaloff>:/Resources/images/svg/main/toolMainMergeEntities.svg</iconset>
    </property>
    <property name="text">
     <string>Merge</string>
@@ -1968,7 +1968,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionClearNormals">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainDeleteEntity.svg</normaloff>:/Resources/images/svg/ecv/toolMainDeleteEntity.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainDeleteEntity.svg</normaloff>:/Resources/images/svg/main/toolMainDeleteEntity.svg</iconset>
    </property>
    <property name="text">
     <string>Clear</string>
@@ -2275,7 +2275,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionSamplePointsOnMesh">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainSamplePointsOnMesh.svg</normaloff>:/Resources/images/svg/ecv/toolMainSamplePointsOnMesh.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainSamplePointsOnMesh.svg</normaloff>:/Resources/images/svg/main/toolMainSamplePointsOnMesh.svg</iconset>
    </property>
    <property name="text">
     <string>Sample Points</string>
@@ -2521,7 +2521,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionShowHistogram">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainShowHistogram.svg</normaloff>:/Resources/images/svg/ecv/toolMainShowHistogram.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainShowHistogram.svg</normaloff>:/Resources/images/svg/main/toolMainShowHistogram.svg</iconset>
    </property>
    <property name="text">
     <string>Show histogram</string>
@@ -2533,7 +2533,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionComputeStatParams">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainComputeStat.svg</normaloff>:/Resources/images/svg/ecv/toolMainComputeStat.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainComputeStat.svg</normaloff>:/Resources/images/svg/main/toolMainComputeStat.svg</iconset>
    </property>
    <property name="text">
     <string>Compute stat. params</string>
@@ -2591,7 +2591,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionSubsample">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainSubsample.svg</normaloff>:/Resources/images/svg/ecv/toolMainSubsample.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainSubsample.svg</normaloff>:/Resources/images/svg/main/toolMainSubsample.svg</iconset>
    </property>
    <property name="text">
     <string>Subsample</string>
@@ -2606,7 +2606,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionSFGradient">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainSFGradient.svg</normaloff>:/Resources/images/svg/ecv/toolMainSFGradient.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainSFGradient.svg</normaloff>:/Resources/images/svg/main/toolMainSFGradient.svg</iconset>
    </property>
    <property name="text">
     <string>Gradient</string>
@@ -2629,7 +2629,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionCloudCloudDist">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainCloudCloudDistance.svg</normaloff>:/Resources/images/svg/ecv/toolMainCloudCloudDistance.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainCloudCloudDistance.svg</normaloff>:/Resources/images/svg/main/toolMainCloudCloudDistance.svg</iconset>
    </property>
    <property name="text">
     <string>Cloud/Cloud Dist.</string>
@@ -2644,7 +2644,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionCloudMeshDist">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainCloudMeshDistance.svg</normaloff>:/Resources/images/svg/ecv/toolMainCloudMeshDistance.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainCloudMeshDistance.svg</normaloff>:/Resources/images/svg/main/toolMainCloudMeshDistance.svg</iconset>
    </property>
    <property name="text">
     <string>Cloud/Mesh Dist</string>
@@ -2809,7 +2809,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionDeleteScalarField">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainDeleteCurrentSF.svg</normaloff>:/Resources/images/svg/ecv/toolMainDeleteCurrentSF.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainDeleteCurrentSF.svg</normaloff>:/Resources/images/svg/main/toolMainDeleteCurrentSF.svg</iconset>
    </property>
    <property name="text">
     <string>Delete</string>
@@ -2838,7 +2838,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionAddConstantSF">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainAddConstSF.svg</normaloff>:/Resources/images/svg/ecv/toolMainAddConstSF.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainAddConstSF.svg</normaloff>:/Resources/images/svg/main/toolMainAddConstSF.svg</iconset>
    </property>
    <property name="text">
     <string>Add constant SF</string>
@@ -2912,7 +2912,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionGaussianFilter">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainGaussianFilter.svg</normaloff>:/Resources/images/svg/ecv/toolMainGaussianFilter.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainGaussianFilter.svg</normaloff>:/Resources/images/svg/main/toolMainGaussianFilter.svg</iconset>
    </property>
    <property name="text">
     <string>Gaussian filter</string>
@@ -2927,7 +2927,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionBilateralFilter">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainBilateralFilter.svg</normaloff>:/Resources/images/svg/ecv/toolMainBilateralFilter.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainBilateralFilter.svg</normaloff>:/Resources/images/svg/main/toolMainBilateralFilter.svg</iconset>
    </property>
    <property name="text">
     <string>Bilateral filter</string>
@@ -2942,7 +2942,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionFilterByValue">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainFilterByValue.svg</normaloff>:/Resources/images/svg/ecv/toolMainFilterByValue.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainFilterByValue.svg</normaloff>:/Resources/images/svg/main/toolMainFilterByValue.svg</iconset>
    </property>
    <property name="text">
     <string>Filter By Value</string>
@@ -3006,7 +3006,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionPointPairsAlign">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainPointPairsAlign.svg</normaloff>:/Resources/images/svg/ecv/toolMainPointPairsAlign.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainPointPairsAlign.svg</normaloff>:/Resources/images/svg/main/toolMainPointPairsAlign.svg</iconset>
    </property>
    <property name="text">
     <string>Align (point pairs picking)</string>
@@ -3053,7 +3053,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionTranslateRotate">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainTranslateRotate.svg</normaloff>:/Resources/images/svg/ecv/toolMainTranslateRotate.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainTranslateRotate.svg</normaloff>:/Resources/images/svg/main/toolMainTranslateRotate.svg</iconset>
    </property>
    <property name="text">
     <string>Translate/Rotate</string>
@@ -3207,7 +3207,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionSORFilter">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainSORFilter.svg</normaloff>:/Resources/images/svg/ecv/toolMainSORFilter.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainSORFilter.svg</normaloff>:/Resources/images/svg/main/toolMainSORFilter.svg</iconset>
    </property>
    <property name="text">
     <string>SOR filter</string>
@@ -3297,7 +3297,7 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainPerspectiveProjection.svg</normaloff>:/Resources/images/svg/ecv/toolMainPerspectiveProjection.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainPerspectiveProjection.svg</normaloff>:/Resources/images/svg/main/toolMainPerspectiveProjection.svg</iconset>
    </property>
    <property name="text">
     <string>Perspective  Projection</string>
@@ -3318,7 +3318,7 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainOrthoProjection.svg</normaloff>:/Resources/images/svg/ecv/toolMainOrthoProjection.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainOrthoProjection.svg</normaloff>:/Resources/images/svg/main/toolMainOrthoProjection.svg</iconset>
    </property>
    <property name="text">
     <string>Orthogonal  Projection</string>
@@ -3508,7 +3508,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionViewFromSensor">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/dbViewportSymbol.png</normaloff>:/Resources/images/dbViewportSymbol.png</iconset>
+     <normaloff>:/Resources/images/svg/db/dbViewportSymbol.svg</normaloff>:/Resources/images/svg/db/dbViewportSymbol.svg</iconset>
    </property>
    <property name="text">
     <string>View from sensor</string>

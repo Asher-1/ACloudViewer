@@ -64,7 +64,7 @@ static const QString UPDATE_RUL =
 // logos
 static const QString APP_LOGO = ":/Resources/images/icon/logo_256.png";
 static const QString APP_START_LOGO = ":/Resources/images/icon/logo_256.png";
-static const QString CLOUDFILE_LOGO = ":/Resources/images/dbCloudSymbol.png";
+static const QString CLOUDFILE_LOGO = ":/Resources/images/svg/db/dbCloudSymbol.svg";
 static const QString THEME_LOGO = ":/Resources/images/theme.png";
 static const QString MINIMUM_LOGO = ":/Resources/images/mini.svg";
 static const QString MAXIMUM_LOGO = ":/Resources/images/max.png";

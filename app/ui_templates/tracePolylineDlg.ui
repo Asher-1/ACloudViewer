@@ -144,7 +144,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/dbContainerSymbol3.png</normaloff>:/Resources/images/dbContainerSymbol3.png</iconset>
+       <normaloff>:/Resources/images/svg/db/dbContainerSymbol3.svg</normaloff>:/Resources/images/svg/db/dbContainerSymbol3.svg</iconset>
      </property>
     </widget>
    </item>
@@ -172,7 +172,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/svg/ecv/toolMainAddConstSF.svg</normaloff>:/Resources/images/svg/ecv/toolMainAddConstSF.svg</iconset>
+       <normaloff>:/Resources/images/svg/main/toolMainAddConstSF.svg</normaloff>:/Resources/images/svg/main/toolMainAddConstSF.svg</iconset>
      </property>
      <property name="shortcut">
       <string extracomment="Shortcut for continue">C</string>

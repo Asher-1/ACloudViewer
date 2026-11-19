@@ -75,16 +75,39 @@ BAND_SW = 0.85
 
 # Same dot geometry as the approved cloud icons: a 1.5:1 gap-to-dot ratio is what
 # keeps a scatter reading as separate points rather than a blob.
-R_DOT = 0.72
-SPACING = 2.55
+R_DOT = 0.66
+SPACING = 2.3
 
-CLUSTER_C = (10.4, 13.4)
-CLUSTER_R = 5.6
+# The layout is split: the point cloud above, the label below.  The original
+# gives the letters the bottom 54 % of the canvas; here they get the bottom third
+# because the cloud has to stay recognisable at the same time.
+CLUSTER_C = (12.0, 8.4)
+CLUSTER_R = 5.0
 
-# The threshold contour: an ellipse around the cluster, slightly irregular so it
-# reads as *computed from the data* rather than as a geometric decoration.
-BAND_C = (10.6, 13.2)
-BAND_RX, BAND_RY = 8.5, 7.4
+BAND_C = (12.0, 9.4)
+BAND_RX, BAND_RY = 7.6, 8.4
+
+# --- the label --------------------------------------------------------------
+#
+# The original icon's letters are its content, not decoration: "SOR" is how the
+# user tells this filter from the five other filter buttons in the same toolbar.
+# They are therefore reproduced, as paths (never <text>, which depends on the
+# host having the font).
+#
+# Measured from the source: the three letters span 91 % of the canvas width and
+# 54 % of its height, i.e. roughly 6 units tall on a 21-unit canvas.  Here they
+# are 5.2 on 24 -- large enough to read at 24 px, small enough to leave the cloud
+# most of the space.
+LETTER_H = 4.6
+LETTER_W = 4.0
+LETTER_GAP = 1.5
+LETTER_SW = 1.2
+# 27.8 % of the cloud's height, measured.  The first attempt left a 3.40u gap
+# between the ring's bottom and the letters' top -- almost exactly a quarter of
+# the cloud -- which read as loose rather than composed.  The label now rides up
+# into the ring's lower arc instead of sitting under it.
+LABEL_Y = 18.5                    # baseline
+LABEL_W = 3 * LETTER_W + 2 * LETTER_GAP
 
 
 def _cluster() -> list[tuple[float, float]]:
@@ -110,7 +133,78 @@ def _outliers() -> list[tuple[float, float]]:
     landing one of them close enough to the band that the icon read as a
     *density* gradient instead of as a binary in/out decision.
     """
-    return [(20.6, 6.2), (4.0, 5.6), (20.2, 19.4)]
+    return [(19.8, 4.6), (4.2, 5.2), (20.2, 11.6)]
+
+
+# ---------------------------------------------------------------------------
+# letterforms
+# ---------------------------------------------------------------------------
+
+
+def _letter(ch: str, x: float, yb: float, *, h: float = LETTER_H,
+            w: float = LETTER_W, sw: float = LETTER_SW) -> str:
+    """One capital, drawn as a stroked path.
+
+    Capitals because the source's label is capitalised, and at 5 units tall a
+    lowercase letter's counters close at toolbar size.  Each is built from arcs
+    and straight runs rather than a rounded rectangle, so S keeps its double
+    curve and R keeps its leg -- the two features that separate them from O at a
+    glance.
+    """
+    yt = yb - h
+    r = w * 0.5
+    d = {
+        # S: upper bowl opens right, lower bowl opens left.
+        "S": (f"M {x + w:.2f} {yt + h * 0.16:.2f} "
+              f"Q {x + w * 0.55:.2f} {yt - h * 0.02:.2f} {x + w * 0.30:.2f} {yt + h * 0.10:.2f} "
+              f"Q {x - w * 0.06:.2f} {yt + h * 0.28:.2f} {x + w * 0.18:.2f} {yt + h * 0.46:.2f} "
+              f"L {x + w * 0.82:.2f} {yt + h * 0.54:.2f} "
+              f"Q {x + w * 1.06:.2f} {yt + h * 0.72:.2f} {x + w * 0.70:.2f} {yt + h * 0.90:.2f} "
+              f"Q {x + w * 0.40:.2f} {yt + h * 1.02:.2f} {x:.2f} {yt + h * 0.84:.2f}"),
+        # O: one closed oval.
+        "O": (f"M {x + r:.2f} {yt:.2f} "
+              f"C {x + w * 1.12:.2f} {yt:.2f} {x + w * 1.12:.2f} {yb:.2f} {x + r:.2f} {yb:.2f} "
+              f"C {x - w * 0.12:.2f} {yb:.2f} {x - w * 0.12:.2f} {yt:.2f} {x + r:.2f} {yt:.2f} Z"),
+        # R: bowl plus a diagonal leg that starts at the bowl's foot.
+        "R": (f"M {x:.2f} {yb:.2f} L {x:.2f} {yt:.2f} "
+              f"L {x + w * 0.60:.2f} {yt:.2f} "
+              f"Q {x + w * 1.05:.2f} {yt:.2f} {x + w * 1.05:.2f} {yt + h * 0.27:.2f} "
+              f"Q {x + w * 1.05:.2f} {yt + h * 0.54:.2f} {x + w * 0.60:.2f} {yt + h * 0.54:.2f} "
+              f"L {x:.2f} {yt + h * 0.54:.2f} "
+              f"M {x + w * 0.55:.2f} {yt + h * 0.54:.2f} L {x + w * 1.02:.2f} {yb:.2f}"),
+    }[ch]
+    return (f'  <path d="{d}" fill="none" stroke="{P.INK}" '
+            f'stroke-width="{sw}" stroke-linecap="round" stroke-linejoin="round"/>')
+
+
+def _knockout(ch: str, x: float, yb: float) -> str:
+    """The same letter, drawn wide in the canvas colour, as a halo.
+
+    The label overlaps the ring's lower quarter by design, and without this the
+    dashed arc runs straight through the middle of the letters: on a 16 px
+    render that is three characters and eight dash segments fighting for the same
+    pixels.  The halo removes the dashes under the text so the label reads as one
+    object sitting in front of the ring, which is the correct depth order too.
+    """
+    return _letter(ch, x, yb, sw=LETTER_SW + 3.1).replace(
+        f'stroke="{P.INK}"', 'stroke="#FFFFFF"')
+
+
+def _label() -> str:
+    """SOR, riding up into the ring's lower quarter.
+
+    Measured: the letters' top sits 27.8 % of the cloud's height above the ring's
+    bottom.  Sitting fully under the ring left a 3.40u gap -- almost exactly a
+    quarter of the cloud's height -- and the icon read as two stacked pieces
+    rather than one composed mark.
+    """
+    x0 = (24.0 - LABEL_W) / 2
+    step = LETTER_W + LETTER_GAP
+    halos = "\n".join(_knockout(ch, x0 + i * step, LABEL_Y)
+                       for i, ch in enumerate("SOR"))
+    ink = "\n".join(_letter(ch, x0 + i * step, LABEL_Y)
+                     for i, ch in enumerate("SOR"))
+    return halos + "\n" + ink
 
 
 def _dots(pts, colour, r=R_DOT) -> list[str]:
@@ -182,5 +276,6 @@ def build() -> str:
         # is barely two pixels, and the whole icon's message is carried by the
         # contrast between kept and removed.
         *_removed(_outliers()),
+        _label(),
     ]
     return P.svg("\n".join(parts))

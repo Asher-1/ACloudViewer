@@ -33,7 +33,7 @@
       <widget class="QToolButton" name="unstackAlignToolButton">
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/svg/ecv/toolMainUnstack.svg</normaloff>:/Resources/images/svg/ecv/toolMainUnstack.svg</iconset>
+         <normaloff>:/Resources/images/svg/main/toolMainUnstack.svg</normaloff>:/Resources/images/svg/main/toolMainUnstack.svg</iconset>
        </property>
       </widget>
      </item>
@@ -41,7 +41,7 @@
       <widget class="QToolButton" name="typeAlignToolButton">
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/svg/ecv/toolMainPencil.svg</normaloff>:/Resources/images/svg/ecv/toolMainPencil.svg</iconset>
+         <normaloff>:/Resources/images/svg/main/toolMainPencil.svg</normaloff>:/Resources/images/svg/main/toolMainPencil.svg</iconset>
        </property>
       </widget>
      </item>
@@ -210,7 +210,7 @@
       <widget class="QToolButton" name="unstackRefToolButton">
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/svg/ecv/toolMainUnstack.svg</normaloff>:/Resources/images/svg/ecv/toolMainUnstack.svg</iconset>
+         <normaloff>:/Resources/images/svg/main/toolMainUnstack.svg</normaloff>:/Resources/images/svg/main/toolMainUnstack.svg</iconset>
        </property>
       </widget>
      </item>
@@ -218,7 +218,7 @@
       <widget class="QToolButton" name="typeRefToolButton">
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/svg/ecv/toolMainPencil.svg</normaloff>:/Resources/images/svg/ecv/toolMainPencil.svg</iconset>
+         <normaloff>:/Resources/images/svg/main/toolMainPencil.svg</normaloff>:/Resources/images/svg/main/toolMainPencil.svg</iconset>
        </property>
       </widget>
      </item>

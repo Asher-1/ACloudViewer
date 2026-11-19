@@ -1453,7 +1453,7 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
     }
     if (addIcon.isNull()) {
         addIcon = QIcon(
-                ":/Resources/images/svg/ecv/toolMainPlus.svg");  // Final fallback
+                ":/Resources/images/svg/main/toolMainPlus.svg");  // Final fallback
     }
     m_addSelectionButton->setIcon(addIcon);
     m_addSelectionButton->setToolTip(tr("Add active selection"));
@@ -1469,7 +1469,7 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
     QIcon removeIcon(":/Resources/images/svg/pq/pqMinus.svg");
     if (removeIcon.isNull()) {
         removeIcon =
-                QIcon(":/Resources/images/svg/ecv/toolMainMinus.svg");  // Fallback
+                QIcon(":/Resources/images/svg/main/toolMainMinus.svg");  // Fallback
     }
     m_removeSelectionButton->setIcon(removeIcon);
     m_removeSelectionButton->setToolTip(
@@ -1490,7 +1490,7 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
     QIcon trashIcon(":/Resources/images/svg/small/smallTrash.svg");
     if (trashIcon.isNull()) {
         trashIcon =
-                QIcon(":/Resources/images/svg/ecv/toolMainDeleteEntity.svg");  // Fallback
+                QIcon(":/Resources/images/svg/main/toolMainDeleteEntity.svg");  // Fallback
     }
     m_removeAllSelectionsButton->setIcon(trashIcon);
     m_removeAllSelectionsButton->setToolTip(tr("Remove all saved selections"));

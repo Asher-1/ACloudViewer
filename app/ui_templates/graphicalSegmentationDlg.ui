@@ -68,7 +68,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/dbPolylineSymbol.png</normaloff>:/Resources/images/dbPolylineSymbol.png</iconset>
+       <normaloff>:/Resources/images/svg/db/dbPolylineSymbol.svg</normaloff>:/Resources/images/svg/db/dbPolylineSymbol.svg</iconset>
      </property>
      <property name="popupMode">
       <enum>QToolButton::MenuButtonPopup</enum>
@@ -273,7 +273,7 @@
   <action name="actionUseExistingPolyline">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/dbPolylineSymbol.png</normaloff>:/Resources/images/dbPolylineSymbol.png</iconset>
+     <normaloff>:/Resources/images/svg/db/dbPolylineSymbol.svg</normaloff>:/Resources/images/svg/db/dbPolylineSymbol.svg</iconset>
    </property>
    <property name="text">
     <string>Use existing polyline</string>

@@ -310,7 +310,7 @@
           </property>
           <property name="icon">
            <iconset resource="../MainWindow.qrc">
-            <normaloff>:/Resources/images/svg/ecv/toolMainPlus.svg</normaloff>:/Resources/images/svg/ecv/toolMainPlus.svg</iconset>
+            <normaloff>:/Resources/images/svg/main/toolMainPlus.svg</normaloff>:/Resources/images/svg/main/toolMainPlus.svg</iconset>
           </property>
           <property name="checkable">
            <bool>true</bool>
@@ -342,7 +342,7 @@
           </property>
           <property name="icon">
            <iconset resource="../MainWindow.qrc">
-            <normaloff>:/Resources/images/svg/ecv/toolMainUnion.svg</normaloff>:/Resources/images/svg/ecv/toolMainUnion.svg</iconset>
+            <normaloff>:/Resources/images/svg/main/toolMainUnion.svg</normaloff>:/Resources/images/svg/main/toolMainUnion.svg</iconset>
           </property>
           <property name="checkable">
            <bool>true</bool>
@@ -365,7 +365,7 @@
           </property>
           <property name="icon">
            <iconset resource="../MainWindow.qrc">
-            <normaloff>:/Resources/images/svg/ecv/toolMainMinus.svg</normaloff>:/Resources/images/svg/ecv/toolMainMinus.svg</iconset>
+            <normaloff>:/Resources/images/svg/main/toolMainMinus.svg</normaloff>:/Resources/images/svg/main/toolMainMinus.svg</iconset>
           </property>
           <property name="shortcut">
            <string/>

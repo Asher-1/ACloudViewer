@@ -3975,7 +3975,7 @@ void ecvDisplayTools::DrawClickableItems(
         //"full-screen" exit icon (CloudCompare ecvExit.png)
         {
             static const QImage s_exitIcon(
-                    ":/Resources/images/svg/ecv/toolMainExit.svg");
+                    ":/Resources/images/svg/main/toolMainExit.svg");
             int is = iconSize;
             int x0 = xStart;
             int y0 = fullH - (yStart + is);

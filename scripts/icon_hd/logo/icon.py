@@ -170,7 +170,8 @@ def registry() -> dict[str, Icon]:
     error, and so a broken module does not take the whole CLI down.
     """
     from . import (align, bilateral, clouddistance, delselsf, filter as filt,
-                   gaussian, gradient, meshdistance, sor, stat)
+                   gaussian, gradient, meshdistance, sor, subsample,
+                   stat)
 
     built = [
         Icon("align", "toolMainPointPairsAlign.svg", align.build,
@@ -183,6 +184,8 @@ def registry() -> dict[str, Icon]:
              "scalar-field gradient magnitude, as a tapering ramp"),
         Icon("sor", "toolMainSORFilter.svg", sor.build,
              "statistical outlier removal: points outside the band are dropped"),
+        Icon("subsample", "toolMainSubsample.svg", subsample.build,
+             "keep fewer points, preserve the cloud's extent"),
         Icon("clouddistance", "toolMainCloudCloudDistance.svg",
              clouddistance.build, "point-to-point distance between two clouds"),
         Icon("meshdistance", "toolMainCloudMeshDistance.svg",

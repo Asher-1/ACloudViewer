@@ -73,6 +73,9 @@ jobs:
       - name: Deploy script contract tests
         run: bash docs/automation/scripts/test_deploy_unified_docs.sh
 
+      - name: Website preparation contract tests
+        run: bash docs/automation/scripts/test_prepare_website.sh
+
   # ===========================================================================
   # Job 1: Build Documentation (runs for all events including PRs)
   # ===========================================================================
@@ -322,140 +325,18 @@ jobs:
           if-no-files-found: error
           retention-days: 1  # Short retention, only needed for deploy job
       
-      - name: Upload website-deploy for deploy job
+      - name: Prepare the website for deployment
         if: steps.config.outputs.should_deploy == 'true'
-        run: |
-          echo "📋 Preparing main website with generated downloads_data.json..."
-          echo ""
-          
-          # Create website deployment directory
-          mkdir -p website-deploy
-          
-          # Copy main website files (excluding build artifacts)
-          echo "Copying main website files..."
-          rsync -av --exclude='_out' --exclude='_build' --exclude='*.pyc' \
-                --exclude='__pycache__' --exclude='.pytest_cache' \
-                docs/ website-deploy/
-          
-          # ============================================================
-          # Replace @VERSION@ placeholder in index.html
-          # Mode B: Website version should match the stable documentation
-          # ============================================================
-          echo ""
-          echo "🔄 Replacing @VERSION@ placeholder in website files..."
-          echo "   (Mode B: Website version = Latest stable release)"
-          
-          # Determine version to use
-          IS_RELEASE="${{ steps.config.outputs.is_release }}"
-          RELEASE_VERSION="${{ steps.config.outputs.release_version }}"
-          
-          if [ "$IS_RELEASE" == "true" ] && [ -n "$RELEASE_VERSION" ]; then
-            # For releases, use the release tag (e.g., v3.9.4)
-            WEBSITE_VERSION="$RELEASE_VERSION"
-            echo "  Release build: using $WEBSITE_VERSION"
-          else
-            # For main branch (Mode B): Use the latest stable release version
-            # This keeps website version consistent with /documentation/ (stable)
-            echo "  Development build: looking for latest stable release..."
-            
-            # Try to get latest release tag from GitHub
-            LATEST_RELEASE=$(gh release list --limit 10 --json tagName -q '.[].tagName' 2>/dev/null | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || true)
-            
-            if [ -n "$LATEST_RELEASE" ]; then
-              WEBSITE_VERSION="$LATEST_RELEASE"
-              echo "  Found latest stable release: $WEBSITE_VERSION"
-            else
-              # Fallback: extract version from version.txt
-              echo "  No stable release found, falling back to version.txt..."
-              VERSION_FILE="libs/cloudViewer/version.txt"
-              if [ -f "$VERSION_FILE" ]; then
-                MAJOR=$(grep "CLOUDVIEWER_VERSION_MAJOR" "$VERSION_FILE" | awk '{print $2}')
-                MINOR=$(grep "CLOUDVIEWER_VERSION_MINOR" "$VERSION_FILE" | awk '{print $2}')
-                PATCH=$(grep "CLOUDVIEWER_VERSION_PATCH" "$VERSION_FILE" | awk '{print $2}')
-                if [ -n "$MAJOR" ] && [ -n "$MINOR" ] && [ -n "$PATCH" ]; then
-                  WEBSITE_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
-                else
-                  WEBSITE_VERSION="dev"
-                fi
-              else
-                WEBSITE_VERSION="dev"
-              fi
-              echo "  Using fallback version: $WEBSITE_VERSION"
-            fi
-          fi
-          
-          echo "  Version to use: $WEBSITE_VERSION"
-          
-          # Replace @VERSION@ in index.html
-          if [ -f "website-deploy/index.html" ]; then
-            if grep -q '@VERSION@' website-deploy/index.html; then
-              sed -i "s/@VERSION@/$WEBSITE_VERSION/g" website-deploy/index.html
-              echo "  ✅ Replaced @VERSION@ with $WEBSITE_VERSION in index.html"
-            else
-              echo "  ℹ️  No @VERSION@ placeholder found in index.html"
-            fi
-          fi
-          
-          # Inject the latest stable version into 404.html so the 404
-          # fallback page can redirect legacy flat /documentation/ deep links
-          # (e.g. /documentation/getting_started/build_from_source.html) to
-          # the equivalent page under /documentation/<latest-stable>/.
-          # The page itself gates on a vX.Y.Z|dev pattern, so a failed
-          # injection degrades safely to the plain 404 view.
-          if [ -f "website-deploy/404.html" ]; then
-            sed -i "s/@LATEST_STABLE_VERSION@/$WEBSITE_VERSION/g" website-deploy/404.html
-            echo "  ✅ Injected latest stable version ($WEBSITE_VERSION) into 404.html"
-          fi
-          
-          # ============================================================
-          # Ensure downloads_data.json is included
-          # ============================================================
-          if [ -f "docs/downloads_data.json" ]; then
-            echo "✅ downloads_data.json ready for deployment"
-            cp docs/downloads_data.json website-deploy/
-            echo "  Size: $(du -h docs/downloads_data.json | cut -f1)"
-            echo "  Versions: $(jq '.version_metadata | length' docs/downloads_data.json)"
-          else
-            echo "⚠️ downloads_data.json not found, using placeholder"
-            # Same schema as docs/script.js expects (see the note above).
-            echo '{"generated_at":"'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'","version_metadata":[],"download_data":{}}' > website-deploy/downloads_data.json
-          fi
-          
-          # Create a README for the documentation subdirectory link
-          # Every link below targets a page that is verified to exist in the
-          # built tree. The previous Quick Links pointed at
-          # /documentation/python_api/, /cpp_api/ and /tutorial/, which are
-          # 404s: the versioned layout made /documentation/ a redirect stub,
-          # and the real entries are `cpp_api.html` and `tutorial/index.html`.
-          # python_api/ is omitted entirely -- it is only produced when the
-          # Python bindings import successfully, which the docs build does not
-          # guarantee, so linking it would advertise a page that may not exist.
-          # `@DOC_LATEST@` is expanded by deploy_unified_docs.sh to the version
-          # that was actually deployed.
-          cat > website-deploy/DOCUMENTATION.md << 'DOCEOF'
-          # ACloudViewer Documentation
+        env:
+          IS_RELEASE: ${{ steps.config.outputs.is_release }}
+          RELEASE_VERSION: ${{ steps.config.outputs.release_version }}
+          GH_TOKEN: ${{ github.token }}
+        # 130 lines of inline shell lived here. It could not be tested, it ate
+        # the 21000-character budget that silently invalidates a workflow file,
+        # and changing it meant scrolling YAML. The deploy half was already a
+        # script with contract tests; this one now matches it.
+        run: bash docs/automation/scripts/prepare_website.sh
 
-          Full documentation is available at: [/documentation/](/documentation/)
-
-          ## Documentation Structure
-
-          - **Main Website**: Current page (project info, downloads, getting started)
-          - **Documentation**: [/documentation/](/documentation/) (versioned C++ API, tutorials, guides)
-
-          ## Quick Links
-
-          - [C++ API Reference](/documentation/@DOC_LATEST@/cpp_api.html)
-          - [Tutorials](/documentation/@DOC_LATEST@/tutorial/)
-          - [Getting Started](/documentation/@DOC_LATEST@/getting_started/introduction.html)
-          DOCEOF
-          
-          echo ""
-          echo "✅ Main website prepared for deployment"
-          echo ""
-          echo "📊 Website deployment statistics:"
-          echo "  - Total files: $(find website-deploy -type f | wc -l)"
-          echo "  - Total size: $(du -sh website-deploy | cut -f1)"
-      
       - name: Upload website-deploy artifact
         if: steps.config.outputs.should_deploy == 'true'
         uses: actions/upload-artifact@v4

@@ -331,7 +331,7 @@
           </property>
           <property name="icon">
            <iconset resource="../MainWindow.qrc">
-            <normaloff>:/Resources/images/svg/ecv/toolMainClippingBoxSingleExport.svg</normaloff>:/Resources/images/svg/ecv/toolMainClippingBoxSingleExport.svg</iconset>
+            <normaloff>:/Resources/images/svg/main/toolMainClippingBoxSingleExport.svg</normaloff>:/Resources/images/svg/main/toolMainClippingBoxSingleExport.svg</iconset>
           </property>
          </widget>
         </item>
@@ -345,7 +345,7 @@
           </property>
           <property name="icon">
            <iconset resource="../MainWindow.qrc">
-            <normaloff>:/Resources/images/svg/ecv/toolMainClippingBoxMultiExport.svg</normaloff>:/Resources/images/svg/ecv/toolMainClippingBoxMultiExport.svg</iconset>
+            <normaloff>:/Resources/images/svg/main/toolMainClippingBoxMultiExport.svg</normaloff>:/Resources/images/svg/main/toolMainClippingBoxMultiExport.svg</iconset>
           </property>
           <property name="shortcut">
            <string/>

@@ -579,7 +579,7 @@ void AsciiOpenDlg::updateTable() {
         static const QIcon ScalarIcon(
                 QString::fromUtf8(":/Resources/images/svg/type/typeSF.svg"));
         static const QIcon LabelIcon(
-                QString::fromUtf8(":/Resources/images/dbLabelSymbol.png"));
+                QString::fromUtf8(":/Resources/images/svg/db/dbLabelSymbol.svg"));
 
         int columnWidth =
                 (m_ui->tableWidget->width() * 9) / (columnsCount * 10);

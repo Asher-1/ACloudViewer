@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-1.2919,0.3009) scale(1.09851)">
+
+  <path d="M 4.40 9.40 C 4.40 4.76 7.80 1.00 12.00 1.00 C 16.20 1.00 19.60 4.76 19.60 9.40 C 19.60 14.04 16.20 17.80 12.00 17.80 C 7.80 17.80 4.40 14.04 4.40 9.40 Z" fill="none" stroke="#A4A6A6" stroke-width="0.85" stroke-dasharray="1.5 1.25"/>
+  <circle cx="8.36" cy="9.37" r="0.66" fill="#9AC1E0" stroke="#6F6F59" stroke-width="0.34"/>
+  <circle cx="15.12" cy="7.02" r="0.66" fill="#9AC1E0" stroke="#6F6F59" stroke-width="0.34"/>
+  <circle cx="13.46" cy="11.29" r="0.66" fill="#9AC1E0" stroke="#6F6F59" stroke-width="0.34"/>
+  <circle cx="8.93" cy="5.59" r="0.66" fill="#9AC1E0" stroke="#6F6F59" stroke-width="0.34"/>
+  <circle cx="15.81" cy="10.50" r="0.66" fill="#9AC1E0" stroke="#6F6F59" stroke-width="0.34"/>
+  <circle cx="11.48" cy="7.19" r="0.66" fill="#9AC1E0" stroke="#6F6F59" stroke-width="0.34"/>
+  <circle cx="10.97" cy="10.44" r="0.66" fill="#9AC1E0" stroke="#6F6F59" stroke-width="0.34"/>
+  <circle cx="11.68" cy="4.23" r="0.66" fill="#9AC1E0" stroke="#6F6F59" stroke-width="0.34"/>
+  <circle cx="13.26" cy="8.95" r="0.66" fill="#9AC1E0" stroke="#6F6F59" stroke-width="0.34"/>
+  <path d="M 18.81 3.61 L 20.79 5.59 M 20.79 3.61 L 18.81 5.59" fill="none" stroke="#C0392B" stroke-width="1.0" stroke-linecap="butt"/>
+  <path d="M 3.21 4.21 L 5.19 6.19 M 5.19 4.21 L 3.21 6.19" fill="none" stroke="#C0392B" stroke-width="1.0" stroke-linecap="butt"/>
+  <path d="M 19.21 10.61 L 21.19 12.59 M 21.19 10.61 L 19.21 12.59" fill="none" stroke="#C0392B" stroke-width="1.0" stroke-linecap="butt"/>
+  <path d="M 8.50 14.64 Q 6.70 13.81 5.70 14.36 Q 4.26 15.19 5.22 16.02 L 7.78 16.38 Q 8.74 17.21 7.30 18.04 Q 6.10 18.59 4.50 17.76" fill="none" stroke="#FFFFFF" stroke-width="4.3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 12.00 13.90 C 14.48 13.90 14.48 18.50 12.00 18.50 C 9.52 18.50 9.52 13.90 12.00 13.90 Z" fill="none" stroke="#FFFFFF" stroke-width="4.3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 15.50 18.50 L 15.50 13.90 L 17.90 13.90 Q 19.70 13.90 19.70 15.14 Q 19.70 16.38 17.90 16.38 L 15.50 16.38 M 17.70 16.38 L 19.58 18.50" fill="none" stroke="#FFFFFF" stroke-width="4.3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 8.50 14.64 Q 6.70 13.81 5.70 14.36 Q 4.26 15.19 5.22 16.02 L 7.78 16.38 Q 8.74 17.21 7.30 18.04 Q 6.10 18.59 4.50 17.76" fill="none" stroke="#6F6F59" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 12.00 13.90 C 14.48 13.90 14.48 18.50 12.00 18.50 C 9.52 18.50 9.52 13.90 12.00 13.90 Z" fill="none" stroke="#6F6F59" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 15.50 18.50 L 15.50 13.90 L 17.90 13.90 Q 19.70 13.90 19.70 15.14 Q 19.70 16.38 17.90 16.38 L 15.50 16.38 M 17.70 16.38 L 19.58 18.50" fill="none" stroke="#6F6F59" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+
+</g>
+</svg>
