@@ -52,6 +52,18 @@ jobs:
         # Docker build.
         run: python3 docs/automation/scripts/check_notebook_headings.py
 
+      - name: Install browser for site verification
+        # verify_docs_site.py drives a real browser through the version
+        # switcher and the 404 handler. That behaviour is not reachable from
+        # the live probe, which only checks that URLs return 200. It ran
+        # nowhere before, so it was dead weight; run it here.
+        run: |
+          pip install playwright certifi
+          python3 -m playwright install --with-deps chromium
+
+      - name: Documentation site behaviour
+        run: python3 docs/automation/scripts/verify_docs_site.py
+
       - name: Workflow size limits
         run: python3 docs/automation/scripts/check_workflow_limits.py
 
@@ -185,7 +197,10 @@ jobs:
             else
               echo "❌ Failed to obtain downloads_data.json!"
               echo "Creating minimal placeholder..."
-              echo '{"generated_at":"'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'","version_metadata":{},"download_links":{}}' > docs/downloads_data.json
+              # Must match what docs/script.js reads: version_metadata is an
+              # array and the download map is `download_data`. A `download_links`
+              # object made the page render an empty downloads table.
+              echo '{"generated_at":"'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'","version_metadata":[],"download_data":{}}' > docs/downloads_data.json
             fi
           fi
           
@@ -402,7 +417,8 @@ jobs:
             echo "  Versions: $(jq '.version_metadata | length' docs/downloads_data.json)"
           else
             echo "⚠️ downloads_data.json not found, using placeholder"
-            echo '{"generated_at":"'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'","version_metadata":{},"download_links":{}}' > website-deploy/downloads_data.json
+            # Same schema as docs/script.js expects (see the note above).
+            echo '{"generated_at":"'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'","version_metadata":[],"download_data":{}}' > website-deploy/downloads_data.json
           fi
           
           # Create a README for the documentation subdirectory link
@@ -617,17 +633,26 @@ jobs:
           # without any error. Every published version must survive, so this
           # pages through the full release list instead of taking a fixed head.
           # See fetch_all_release_tags below.
+          # `gh release list` has no --page flag, so paginating it is not
+          # possible and the previous loop was wrong in a way that produced no
+          # error: it incremented `page` but never passed it to gh, so every
+          # iteration re-fetched the same first 100 releases. With under 100
+          # releases the loop returned on the first pass and looked correct;
+          # with 100+ it would emit ~5000 duplicate tags and then issue that
+          # many release view/download calls.
+          #
+          # Ask for a single large page instead, and say so when the result
+          # fills that page, because at that point archives are being dropped.
           fetch_all_release_tags() {
-            local page=1 batch=100
-            while [ "$page" -le 50 ]; do
-              local out
-              out=$(gh release list --limit "$batch" --json tagName,isDraft -q '.[] | select(.isDraft|not) | .tagName' 2>/dev/null) || return 0
-              [ -n "$out" ] || return 0
-              printf '%s\n' "$out"
-              # A short batch is the last page; a full one may have more.
-              [ "$(printf '%s\n' "$out" | wc -l)" -lt "$batch" ] && return 0
-              page=$((page + 1))
-            done
+            local batch=1000
+            local out
+            out=$(gh release list --limit "$batch" --json tagName,isDraft \
+                    -q '.[] | select(.isDraft|not) | .tagName' 2>/dev/null) || return 0
+            [ -n "$out" ] || return 0
+            printf '%s\n' "$out"
+            if [ "$(printf '%s\n' "$out" | wc -l)" -ge "$batch" ]; then
+              echo "⚠️  Release list reached the ${batch}-entry limit; older version archives are NOT being restored." >&2
+            fi
           }
 
           echo "📋 All releases:"

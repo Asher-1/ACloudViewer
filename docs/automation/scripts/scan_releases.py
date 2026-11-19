@@ -24,6 +24,12 @@ GITHUB_REPO = "Asher-1/ACloudViewer"
 GITHUB_API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases"
 BETA_RELEASE_TAG = "main-devel"
 
+# How many releases to read from the GitHub API in one page. The download page
+# is meant to list every published release, so this must comfortably exceed the
+# number of releases the repository has (18 at the time of writing). It was
+# hardcoded to 5 at the call site, which silently dropped 13 versions.
+DEFAULT_RELEASE_LIMIT = 100
+
 # Regex patterns for parsing asset names
 
 # Pattern 1: Standard format (current)
@@ -85,8 +91,16 @@ def fetch_releases(limit: int = 10) -> List[Dict]:
         request.add_header('Authorization', f'token {token}')
         print("✓ Using GitHub token for authentication")
     
-    # Bypass SSL verification for local testing (not recommended for production)
-    context = ssl._create_unverified_context()
+    # Verify TLS. This used to call ssl._create_unverified_context() "for local
+    # testing", which disables certificate validation for every caller -- and
+    # this script runs in CI to publish download links. Without verification a
+    # network attacker could substitute release metadata, and the site would
+    # advertise attacker-chosen URLs.
+    try:
+        import certifi
+        context = ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        context = ssl.create_default_context()
     
     try:
         with urlopen(request, timeout=30, context=context) as response:
@@ -421,8 +435,12 @@ def main():
     print("=" * 80)
     
     try:
-        # Fetch releases
-        releases = fetch_releases(limit=5)  # Get latest 5 releases
+        # Fetch every release, not just the newest five. The repository has 18
+        # releases and the page is meant to list all of them; a hardcoded
+        # limit=5 silently dropped 13 versions from the download table.
+        # fetch_releases() returns the first `limit` entries of a single
+        # API page, so a generous limit keeps every published release.
+        releases = fetch_releases(limit=DEFAULT_RELEASE_LIMIT)
         
         # Analyze releases
         version_info = analyze_releases(releases)

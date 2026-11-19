@@ -333,7 +333,16 @@ log "✅ Website copied to deploy root"
 # ---------------------------------------------------------------------------
 # This build's own documentation
 # ---------------------------------------------------------------------------
-if [ "$IS_RELEASE" = "true" ] && [ -n "$DOC_VERSION" ]; then
+# A release build without a version would silently take the dev branch below:
+# the release docs would overwrite /documentation/dev/, no archive would be
+# created, and /documentation/vX.Y.Z/ would never exist. Nothing would fail.
+# The workflow always supplies DOC_VERSION for a release event, so reaching
+# here means the two inputs disagree -- refuse rather than guess.
+if [ "$IS_RELEASE" = "true" ] && [ -z "$DOC_VERSION" ]; then
+    die "IS_RELEASE=true but DOC_VERSION is empty: a release build must name the version directory it publishes to"
+fi
+
+if [ "$IS_RELEASE" = "true" ]; then
     rule
     log "🎯 Release build → /documentation/${DOC_VERSION}/"
     rule
