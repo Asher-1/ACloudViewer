@@ -485,11 +485,22 @@ jobs:
         run: |
           RELEASE_VERSION="${{ steps.config.outputs.release_version }}"
           echo "📤 Uploading documentation archive to release ${RELEASE_VERSION}..."
-          
-          # Rename archive to include version tag for easy identification
-          VERSIONED_ARCHIVE="acloudviewer-${RELEASE_VERSION}-docs.tar.gz"
-          cp acloudviewer-*-docs.tar.gz "${VERSIONED_ARCHIVE}"
-          
+
+          # Reuse the archive this job already produced instead of renaming it
+          # again. The extraction step has ALREADY renamed it to
+          # acloudviewer-<tag>-docs.tar.gz on release builds, so `cp *.tar.gz
+          # <that same name>` fails with "are the same file" (GNU cp exits 1),
+          # which killed build-docs before anything could deploy. Resolve the
+          # single archive by glob and upload it under its own name.
+          shopt -s nullglob
+          archives=(acloudviewer-*-docs.tar.gz)
+          if [ "${#archives[@]}" -ne 1 ]; then
+            echo "❌ Expected exactly one documentation archive, found ${#archives[@]}: ${archives[*]}"
+            exit 1
+          fi
+          VERSIONED_ARCHIVE="${archives[0]}"
+          echo "   Archive: ${VERSIONED_ARCHIVE} ($(du -h "${VERSIONED_ARCHIVE}" | cut -f1))"
+
           gh release upload "${RELEASE_VERSION}" \
             "${VERSIONED_ARCHIVE}" \
             --clobber
