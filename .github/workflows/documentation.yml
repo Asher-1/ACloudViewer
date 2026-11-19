@@ -879,8 +879,19 @@ jobs:
           probe "$SITE/" "ACloudViewer" || FAILED=1
           probe "$SITE/documentation/" "index.html" || FAILED=1
           probe "$SITE/documentation/versions.json" '"versions"' || FAILED=1
-          probe "$SITE/documentation/dev/index.html" "documentation" || FAILED=1
-          probe "$SITE/documentation/dev/cpp_api.html" "" || FAILED=1
+
+          # dev is only guaranteed when this deployment actually contains it.
+          # A release build restores dev from the main-devel archive, and that
+          # restore is explicitly tolerated as best-effort above ("No dev
+          # archive on main-devel yet"). Probing it unconditionally turned a
+          # state the pipeline accepts into a failed deployment, so gate the
+          # probes on the artifact instead of on hope.
+          if [ -f unified-deploy/documentation/dev/index.html ]; then
+            probe "$SITE/documentation/dev/index.html" "documentation" || FAILED=1
+            probe "$SITE/documentation/dev/cpp_api.html" "" || FAILED=1
+          else
+            echo "  SKIP /documentation/dev/ (not part of this deployment)"
+          fi
 
           # The 404 handler must carry a calibrated version, otherwise legacy
           # deep links fall through to a bare 404 page.
