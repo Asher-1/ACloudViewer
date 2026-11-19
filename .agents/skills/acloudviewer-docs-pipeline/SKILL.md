@@ -249,3 +249,36 @@ at `~/.local/lib/python3.11/site-packages/pypandoc/files/pandoc`; put that
 directory on `PATH`. The distro package is 2.9.2.1 and produces different
 heading adornments, which makes diagnostics disagree with CI in a way that is
 easy to misread as a content problem.
+
+## Incremental builds
+
+`main()` removes the output directory whenever `--sphinx` or `--doxygen` is
+passed, not only with `--clean`:
+
+```python
+if args.clean or (args.sphinx or args.doxygen):
+    _create_or_clear_dir(html_output_dir)
+```
+
+Sphinx's doctree cache defaults to `<build>/.doctrees`, i.e. **inside** the
+directory that removal deletes, so without an explicit `-d` every build
+re-parses every source. The fix is a *sibling* directory, not a subdirectory —
+putting it inside is deleted along with everything else. Measured: inside gives
+`[new config] 155 added` on the second run; sibling gives
+`loading pickled environment... done`.
+
+## A red run is not always your change
+
+Check the failing Docker *layer* before reading it as a code defect. The Qt
+install layer has failed on its own with
+
+```
+Err:199 ...qtattributionsscanner-qt5... Connection timed out
+Fetched 116 MB in 1h 5min 43s (29.5 kB/s)
+```
+
+`apt`'s retry count is 0 by default, so one dropped connection to
+archive.ubuntu.com aborts a job that already spent an hour. The Dockerfile now
+sets `Acquire::Retries`/timeout and retries the install, then asserts
+`dpkg -s qtbase5-dev` — the loop's `exit 0` only proves apt returned success.
+
