@@ -103,7 +103,7 @@
                  </property>
                  <property name="icon">
                   <iconset resource="../MainWindow.qrc">
-                   <normaloff>:/Resources/images/svg/ecv/ecvPointPicking.svg</normaloff>:/Resources/images/svg/ecv/ecvPointPicking.svg</iconset>
+                   <normaloff>:/Resources/images/svg/ecv/toolMainPointPicking.svg</normaloff>:/Resources/images/svg/ecv/toolMainPointPicking.svg</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -223,7 +223,7 @@
                  </property>
                  <property name="icon">
                   <iconset resource="../MainWindow.qrc">
-                   <normaloff>:/Resources/images/svg/ecv/ecvPointPicking.svg</normaloff>:/Resources/images/svg/ecv/ecvPointPicking.svg</iconset>
+                   <normaloff>:/Resources/images/svg/ecv/toolMainPointPicking.svg</normaloff>:/Resources/images/svg/ecv/toolMainPointPicking.svg</iconset>
                  </property>
                  <property name="iconSize">
                   <size>

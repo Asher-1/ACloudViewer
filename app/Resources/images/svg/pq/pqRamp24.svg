@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="20.833" height="20.833" viewBox="1.583 1.583 20.833 20.833">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g transform="translate(-1.823645,-1.823645) scale(1.152018)">
 <!-- Commercial HD v10: straight-edge authored polygons sampled
      from the original raster; pixel-faithful correction layer. -->
 <path d="M15 4 L16 4 L16 7 L17 7 L17 8 L20 8 L20 9 L16 9 L9 17 L7 17 L7 15 L15 8 Z" fill="#707059" fill-rule="evenodd" fill-opacity="0.812"/>
@@ -107,4 +108,5 @@
 <rect x="5" y="21" width="1" height="1" fill="#707059"/>
 <rect x="6" y="21" width="1" height="1" fill="#82826e"/>
 <rect x="7" y="21" width="1" height="1" fill="#dcdcd6"/>
+</g>
 </svg>

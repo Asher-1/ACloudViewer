@@ -1,11 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g transform="translate(-0.000000,-0.000000) scale(0.750000)">
 <!-- Commercial HD v10: straight-edge authored polygons sampled
      from the original raster; pixel-faithful correction layer. -->
-<defs><linearGradient id="g0" gradientUnits="userSpaceOnUse" x1="20.734" y1="6.011" x2="21.816" y2="31.350"><stop offset="0" stop-color="#676c5c"/><stop offset="1" stop-color="#707059"/></linearGradient><linearGradient id="g1" gradientUnits="userSpaceOnUse" x1="25.059" y1="29.351" x2="25.941" y2="21.649"><stop offset="0" stop-color="#abd990"/><stop offset="1" stop-color="#acda91"/></linearGradient><linearGradient id="g2" gradientUnits="userSpaceOnUse" x1="10.791" y1="27.784" x2="10.503" y2="22.743"><stop offset="0" stop-color="#dd4231"/><stop offset="1" stop-color="#f23a2a"/></linearGradient><linearGradient id="g3" gradientUnits="userSpaceOnUse" x1="27.826" y1="10.313" x2="22.788" y2="10.049"><stop offset="0" stop-color="#edbe16"/><stop offset="1" stop-color="#ffd106"/></linearGradient></defs>
-<path d="M21 6 L22 6 L22 8 L24 8 L24 20 L28 20 L28 8 L30 8 L30 6 L32 7 L32 9 L29 9 L29 20 L32 20 L32 31 L31 31 L31 32 L21 32 L20 29 L9 29 L9 32 L6 31 L6 30 L8 30 L8 28 L20 28 L20 24 L8 24 L8 22 L7 22 L7 23 L5 23 L5 22 L9 20 L9 23 L20 23 L20 20 L23 20 L23 9 L20 9 Z M21 21 L21 30 L31 30 L31 21 Z" fill="url(#g0)" fill-rule="evenodd"/>
-<path d="M22 22 L30 22 L30 30 L22 30 Z" fill="url(#g1)" fill-rule="evenodd"/>
-<path d="M6 23 L8 23 L8 25 L20 25 L20 28 L8 28 L8 29 L6 29 L5 27 L3 27 L3 25 L5 25 Z" fill="url(#g2)" fill-rule="evenodd"/>
-<path d="M25 3 L27 3 L27 5 L29 6 L29 8 L28 8 L28 19 L25 19 L25 8 L23 8 L23 6 L25 5 Z" fill="url(#g3)" fill-rule="evenodd"/>
+<defs></defs>
+<path d="M21 6 L22 6 L22 8 L24 8 L24 20 L28 20 L28 8 L30 8 L30 6 L32 7 L32 9 L29 9 L29 20 L32 20 L32 31 L31 31 L31 32 L21 32 L20 29 L9 29 L9 32 L6 31 L6 30 L8 30 L8 28 L20 28 L20 24 L8 24 L8 22 L7 22 L7 23 L5 23 L5 22 L9 20 L9 23 L20 23 L20 20 L23 20 L23 9 L20 9 Z M21 21 L21 30 L31 30 L31 21 Z" fill="#6B6E5A" fill-rule="evenodd"/>
+<path d="M22 22 L30 22 L30 30 L22 30 Z" fill="#ABD990" fill-rule="evenodd"/>
+<path d="M6 23 L8 23 L8 25 L20 25 L20 28 L8 28 L8 29 L6 29 L5 27 L3 27 L3 25 L5 25 Z" fill="#E73E2D" fill-rule="evenodd"/>
+<path d="M25 3 L27 3 L27 5 L29 6 L29 8 L28 8 L28 19 L25 19 L25 8 L23 8 L23 6 L25 5 Z" fill="#F6C70E" fill-rule="evenodd"/>
 <path d="M10 5 L17 5 L17 8 L15 9 L15 11 L14 11 L14 13 L13 13 L13 14 L18 14 L17 16 L10 16 L11 12 L12 12 L13 9 L14 9 L14 7 L10 7 Z" fill="#787879" fill-rule="evenodd" fill-opacity="0.867"/>
 <path d="M5 7 L7 7 L7 10 L9 10 L9 12 L7 12 L6 15 L5 15 L5 12 L2 12 L2 10 L4 10 Z" fill="#787879" fill-rule="evenodd" fill-opacity="0.937"/>
 <path d="M8 24 L20 24 L20 25 L8 25 Z" fill="#ba503e" fill-rule="evenodd"/>
@@ -229,4 +230,5 @@
 <rect x="29" y="31" width="1" height="1" fill="#afada3"/>
 <rect x="30" y="31" width="1" height="1" fill="#a9a79c"/>
 <rect x="31" y="31" width="1" height="1" fill="#c1c2b7"/>
+</g>
 </svg>

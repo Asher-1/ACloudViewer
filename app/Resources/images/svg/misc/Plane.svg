@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
 <!-- Commercial HD v10: straight-edge authored polygons sampled
      from the original raster; pixel-faithful correction layer. -->
-<defs><linearGradient id="g0" gradientUnits="userSpaceOnUse" x1="3.151" y1="3.845" x2="18.849" y2="19.155"><stop offset="0" stop-color="#7692b2"/><stop offset="1" stop-color="#90aac5"/></linearGradient></defs>
-<path d="M19 3 L20 3 L20 20 L2 20 L2 19 L3 19 L3 4 L19 4 Z" fill="url(#g0)" fill-rule="evenodd"/>
+<defs></defs>
+<path d="M19 3 L20 3 L20 20 L2 20 L2 19 L3 19 L3 4 L19 4 Z" fill="#839EBB" fill-rule="evenodd"/>
 <path d="M1 2 L21 2 L21 21 L1 21 Z M2 3 L2 20 L20 20 L20 3 Z" fill="#314e6c" fill-rule="evenodd"/>
 <path d="M2 3 L19 3 L19 4 L3 4 L3 19 L2 19 Z" fill="#a5b6ca" fill-rule="evenodd"/>
 <rect x="21" y="2" width="1" height="1" fill="#eaeaea"/>

@@ -37,13 +37,10 @@ import multiprocessing
 import os
 import re
 import shutil
-import ssl
 import subprocess
 import sys
-import urllib.request
 from pathlib import Path
 
-import certifi
 import nbconvert
 import nbformat
 try:
@@ -593,15 +590,6 @@ class JupyterDocsBuilder:
         self.clean_notebooks = clean_notebooks
         self.execute_notebooks = execute_notebooks
 
-    def overwrite_tutorial_file(self, url, output_file, output_file_path):
-        with urllib.request.urlopen(
-                url,
-                context=ssl.create_default_context(cafile=certifi.where()),
-        ) as response:
-            with open(output_file, 'wb') as out_file:
-                shutil.copyfileobj(response, out_file)
-        shutil.move(output_file, output_file_path)
-        
     def run(self):
         """Copy Jupyter notebooks to tutorial directories."""
         print("📓 Copying Jupyter notebooks to tutorial directories...")
@@ -750,30 +738,44 @@ class JupyterDocsBuilder:
                 "This will cause the build to fail.".format(len(failed_notebooks))
             )
 
-        # Fetch a reference notebook from upstream and install it as
-        # t_pipelines/t_icp_registration.ipynb.
+        # Every notebook the documentation needs lives in docs/jupyter/.
         #
-        # This used to run unconditionally, and it silently undid every edit
-        # to the checked-in notebook: `_update_file` above copies
-        # docs/jupyter/t_pipelines/t_icp_registration.ipynb into the Sphinx
-        # source tree, then this overwrote it with the upstream Open3D copy
-        # (1670 lines, `####` headings) -- while the repository's own file is
-        # 1285 lines with `###` headings. The build therefore compiled a
-        # notebook nobody edited in this repo, which is why source-level fixes
-        # to that file kept having no effect on CI.
+        # There used to be a download here: t_icp_registration.ipynb was
+        # fetched from github.com/isl-org/Open3D/files/8243984 and written
+        # over the copy staged just above. That is wrong in two independent
+        # ways, and both were live bugs:
         #
-        # The repository copy is authoritative. Only fetch when it is absent,
-        # and never overwrite an existing file.
-        upstream_notebook = nb_parent_dst / "t_pipelines" / "t_icp_registration.ipynb"
-        if upstream_notebook.exists():
-            print(f"ℹ️  keeping the repository copy of {upstream_notebook.name}"
-                  f" ({sum(1 for _ in upstream_notebook.open())} lines)")
-        else:
-            url = "https://github.com/isl-org/Open3D/files/8243984/t_icp_registration.zip"
-            upstream_notebook.parent.mkdir(parents=True, exist_ok=True)
-            self.overwrite_tutorial_file(url, "t_icp_registration.ipynb",
-                                         str(upstream_notebook))
-        
+        #   1. The upstream file is not ours. It is 1670 lines using `o3d.*`
+        #      and `####` headings; this repository's is 1285 lines using
+        #      cv3d.*/cloudViewer.* and `###`. Building it produced docs for
+        #      a different library, and every local edit to the repository
+        #      copy was discarded before Sphinx read it.
+        #   2. It made the build depend on a third party at run time. If
+        #      Open3D renames or deletes that attachment, urlopen raises and
+        #      the entire documentation build fails -- for no benefit, since
+        #      the file is already in this repository.
+        #
+        # Without that download, a notebook that exists in the repo but fails
+        # to reach the source tree would silently vanish from the site. Verify
+        # the whole set instead of one hardcoded name: every tracked notebook
+        # must be present at the destination after the copy above.
+        source_notebooks = sorted(
+            p.relative_to(nb_parent_src) for p in nb_parent_src.glob("**/*.ipynb")
+        )
+        missing = [
+            str(rel) for rel in source_notebooks
+            if not (nb_parent_dst / rel).exists()
+        ]
+        if missing:
+            raise RuntimeError(
+                "{} notebook(s) from {} are missing in the Sphinx source tree: {}"
+                .format(len(missing), nb_parent_src, ", ".join(missing))
+                + ". The docs build no longer downloads them from an upstream "
+                  "project, so every notebook must be committed under "
+                  "docs/jupyter/ and copied successfully."
+            )
+        print(f"✓ All {len(source_notebooks)} notebook(s) staged into the source tree")
+
         # Copy static images (like donation.png) to _static directory
         print("📸 Copying static images to _static directory...")
         static_src = Path(self.current_file_dir) / "images"
@@ -815,7 +817,13 @@ class SphinxDocsBuilder:
         except (ImportError, OSError):
             print("⚠️  pypandoc not found, nbsphinx may fail without pandoc")
         
-        # Copy docs files from Open3D-ML repo
+        # Copy docs files from the CloudViewer-ML checkout.
+        #
+        # The ML project ships its own docs/tensorboard.md; keeping the copy
+        # in sync is intentional and unrelated to the notebook download that
+        # was removed below. The destination is docs/tensorboard.md, which
+        # source/tutorial/visualization/tensorboard_plugin.rst includes with a
+        # relative `.. include::` path.
         cloudviewer_root = os.environ.get(
             "CLOUDVIEWER_ML_ROOT",
             os.path.join(self.current_file_dir, "../../CloudViewer-ML"))
@@ -825,7 +833,7 @@ class SphinxDocsBuilder:
         for cloudviewer_doc in cloudviewer_docs:
             if os.path.isfile(cloudviewer_doc):
                 shutil.copy(cloudviewer_doc, self.current_file_dir)
-        
+
         build_dir = os.path.join(self.html_output_dir, "html")
         source_dir = os.path.join(self.current_file_dir, "source")
         nproc = multiprocessing.cpu_count() if self.parallel else 1

@@ -123,7 +123,7 @@
      </property>
      <property name="icon">
       <iconset resource="../../../../app/MainWindow.qrc">
-       <normaloff>:/Resources/images/svg/ecv/ecvSamplePoints.svg</normaloff>:/Resources/images/svg/ecv/ecvSamplePoints.svg</iconset>
+       <normaloff>:/Resources/images/svg/ecv/toolMainSamplePointsOnMesh.svg</normaloff>:/Resources/images/svg/ecv/toolMainSamplePointsOnMesh.svg</iconset>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -186,7 +186,7 @@
      </property>
      <property name="icon">
       <iconset resource="../../../../app/MainWindow.qrc">
-       <normaloff>:/Resources/images/svg/ecv/ecvAddConstSF.svg</normaloff>:/Resources/images/svg/ecv/ecvAddConstSF.svg</iconset>
+       <normaloff>:/Resources/images/svg/ecv/toolMainAddConstSF.svg</normaloff>:/Resources/images/svg/ecv/toolMainAddConstSF.svg</iconset>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -264,7 +264,7 @@
      </property>
      <property name="icon">
       <iconset resource="../../../../app/MainWindow.qrc">
-       <normaloff>:/Resources/images/svg/ecv/ecvConsole.svg</normaloff>:/Resources/images/svg/ecv/ecvConsole.svg</iconset>
+       <normaloff>:/Resources/images/svg/ecv/toolMainConsole.svg</normaloff>:/Resources/images/svg/ecv/toolMainConsole.svg</iconset>
      </property>
     </widget>
    </item>

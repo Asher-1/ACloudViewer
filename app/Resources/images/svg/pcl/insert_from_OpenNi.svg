@@ -1,16 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g transform="translate(-0.000000,-0.000000) scale(0.500000)">
 <!-- Commercial HD v10: straight-edge authored polygons sampled
      from the original raster; pixel-faithful correction layer. -->
-<defs><linearGradient id="g0" gradientUnits="userSpaceOnUse" x1="22.678" y1="12.919" x2="32.771" y2="9.352"><stop offset="0" stop-color="#3c535d"/><stop offset="1" stop-color="#506670"/></linearGradient><linearGradient id="g1" gradientUnits="userSpaceOnUse" x1="3.963" y1="19.727" x2="2.149" y2="19.605"><stop offset="0" stop-color="#677b85"/><stop offset="1" stop-color="#7a8b94"/></linearGradient><linearGradient id="g2" gradientUnits="userSpaceOnUse" x1="13.483" y1="9.533" x2="14.127" y2="5.326"><stop offset="0" stop-color="#eaedee"/><stop offset="1" stop-color="#fefefe"/></linearGradient><linearGradient id="g3" gradientUnits="userSpaceOnUse" x1="6.524" y1="6.493" x2="9.058" y2="8.940"><stop offset="0" stop-color="#a0aaae"/><stop offset="1" stop-color="#b5bcc0"/></linearGradient><linearGradient id="g4" gradientUnits="userSpaceOnUse" x1="21.348" y1="6.993" x2="21.411" y2="10.033"><stop offset="0" stop-color="#798990"/><stop offset="1" stop-color="#89959b"/></linearGradient><linearGradient id="g5" gradientUnits="userSpaceOnUse" x1="21.018" y1="41.996" x2="20.743" y2="40.825"><stop offset="0" stop-color="#292726"/><stop offset="1" stop-color="#373d3f"/></linearGradient></defs>
+<defs></defs>
 <path d="M13 9 L14 9 L14 10 L18 10 L18 11 L22 11 L23 13 L31 14 L31 15 L33 15 L33 14 L32 14 L33 11 L35 11 L35 12 L37 12 L37 13 L40 13 L40 14 L42 14 L42 15 L44 14 L44 19 L45 19 L45 35 L44 35 L44 37 L43 37 L42 39 L38 40 L38 41 L35 41 L35 42 L20 41 L20 40 L22 39 L22 30 L21 30 L20 27 L17 26 L16 24 L9 24 L9 23 L12 23 L12 21 L13 21 L13 20 L12 20 L12 10 L13 10 Z M34 14 L34 15 L36 15 L36 14 Z M13 15 L13 17 L16 17 L16 15 Z M28 19 L27 19 L27 20 L28 20 Z M31 22 L30 22 L30 23 L31 23 Z M22 23 L21 23 L21 24 L22 24 Z M27 25 L26 25 L26 26 L27 26 Z M33 25 L32 25 L32 27 L33 27 Z M25 26 L24 26 L24 27 L25 27 Z M26 28 L25 28 L25 29 L26 29 Z M33 33 L32 33 L32 34 L33 34 Z M31 36 L30 36 L30 37 L31 37 Z" fill="#93a2a9" fill-rule="evenodd"/>
 <path d="M5 9 L6 9 L6 10 L12 10 L12 21 L10 21 L9 24 L16 24 L16 25 L22 30 L22 38 L21 38 L21 40 L18 41 L18 42 L10 41 L10 40 L4 35 L4 10 L5 10 Z M8 24 L7 24 L7 25 L8 25 Z M10 26 L10 27 L8 27 L8 28 L10 28 L10 29 L9 29 L9 34 L10 34 L10 36 L13 37 L13 38 L18 38 L18 37 L19 37 L19 33 L20 33 L19 30 L18 30 L18 28 L17 28 L17 27 L14 27 L14 26 Z" fill="#adb7bb" fill-rule="evenodd"/>
 <path d="M11 27 L16 27 L16 28 L18 29 L18 31 L19 31 L19 36 L18 36 L17 38 L14 38 L14 37 L12 37 L12 36 L10 35 L9 29 L10 29 Z" fill="#578397" fill-rule="evenodd"/>
-<path d="M28 9 L31 9 L31 10 L29 10 L29 11 L34 10 L33 13 L27 14 L27 13 L22 12 L22 11 L25 11 L25 10 L28 10 Z" fill="url(#g0)" fill-rule="evenodd"/>
-<path d="M3 7 L5 7 L5 8 L4 8 L4 9 L5 9 L5 10 L4 10 L4 35 L3 35 Z" fill="url(#g1)" fill-rule="evenodd"/>
-<path d="M11 5 L16 6 L16 7 L20 7 L20 9 L18 9 L18 8 L13 8 L13 10 L10 10 L10 9 L12 8 Z" fill="url(#g2)" fill-rule="evenodd"/>
-<path d="M7 6 L10 6 L10 10 L6 10 Z" fill="url(#g3)" fill-rule="evenodd"/>
-<path d="M21 7 L22 7 L22 8 L25 8 L24 11 L23 11 L23 10 L19 11 L19 9 L21 9 Z" fill="url(#g4)" fill-rule="evenodd"/>
-<path d="M20 41 L25 41 L25 42 L18 43 L18 42 L20 42 Z" fill="url(#g5)" fill-rule="evenodd" fill-opacity="0.569"/>
+<path d="M28 9 L31 9 L31 10 L29 10 L29 11 L34 10 L33 13 L27 14 L27 13 L22 12 L22 11 L25 11 L25 10 L28 10 Z" fill="#465C66" fill-rule="evenodd"/>
+<path d="M3 7 L5 7 L5 8 L4 8 L4 9 L5 9 L5 10 L4 10 L4 35 L3 35 Z" fill="#70838C" fill-rule="evenodd"/>
+<path d="M11 5 L16 6 L16 7 L20 7 L20 9 L18 9 L18 8 L13 8 L13 10 L10 10 L10 9 L12 8 Z" fill="#F4F5F6" fill-rule="evenodd"/>
+<path d="M7 6 L10 6 L10 10 L6 10 Z" fill="#AAB3B7" fill-rule="evenodd"/>
+<path d="M21 7 L22 7 L22 8 L25 8 L24 11 L23 11 L23 10 L19 11 L19 9 L21 9 Z" fill="#818F95" fill-rule="evenodd"/>
+<path d="M20 41 L25 41 L25 42 L18 43 L18 42 L20 42 Z" fill="#303232" fill-rule="evenodd" fill-opacity="0.569"/>
 <rect x="9" y="4" width="1" height="1" fill="#d5dadd"/>
 <rect x="10" y="4" width="1" height="1" fill="#809198"/>
 <rect x="11" y="4" width="1" height="1" fill="#6b7e87"/>
@@ -1192,4 +1193,5 @@
 <rect x="20" y="45" width="1" height="1" fill="#e2e2e2"/>
 <rect x="21" y="45" width="1" height="1" fill="#e7e7e7"/>
 <rect x="22" y="45" width="1" height="1" fill="#eeeeee"/>
+</g>
 </svg>

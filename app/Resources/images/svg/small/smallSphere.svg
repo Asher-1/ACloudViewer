@@ -1,15 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g transform="translate(-0.000000,-0.000000) scale(1.500000)">
 <!-- Commercial HD v10: straight-edge authored polygons sampled
      from the original raster; pixel-faithful correction layer. -->
-<defs><linearGradient id="g0" gradientUnits="userSpaceOnUse" x1="10.285" y1="11.150" x2="3.951" y2="1.703"><stop offset="0" stop-color="#e3e3e3"/><stop offset="1" stop-color="#ffffff"/></linearGradient><linearGradient id="g1" gradientUnits="userSpaceOnUse" x1="6.549" y1="10.532" x2="6.451" y2="11.468"><stop offset="0" stop-color="#c2c2c2"/><stop offset="1" stop-color="#d4d4d4"/></linearGradient><linearGradient id="g2" gradientUnits="userSpaceOnUse" x1="6.885" y1="13.912" x2="6.920" y2="15.063"><stop offset="0" stop-color="#545554"/><stop offset="1" stop-color="#6a6864"/></linearGradient><linearGradient id="g3" gradientUnits="userSpaceOnUse" x1="6.545" y1="11.605" x2="6.455" y2="12.395"><stop offset="0" stop-color="#adadad"/><stop offset="1" stop-color="#bababa"/></linearGradient><linearGradient id="g4" gradientUnits="userSpaceOnUse" x1="-0.452" y1="7.991" x2="0.619" y2="7.750"><stop offset="0" stop-color="#9a9791"/><stop offset="1" stop-color="#a2a2a0"/></linearGradient><linearGradient id="g5" gradientUnits="userSpaceOnUse" x1="7.272" y1="12.139" x2="6.728" y2="13.861"><stop offset="0" stop-color="#818181"/><stop offset="1" stop-color="#9a9a9a"/></linearGradient><linearGradient id="g6" gradientUnits="userSpaceOnUse" x1="10.000" y1="0.000" x2="5.000" y2="0.000"><stop offset="0" stop-color="#a3a19d"/><stop offset="1" stop-color="#adaba6"/></linearGradient><linearGradient id="g7" gradientUnits="userSpaceOnUse" x1="12.136" y1="6.847" x2="13.864" y2="6.153"><stop offset="0" stop-color="#a7a7a7"/><stop offset="1" stop-color="#cacaca"/></linearGradient></defs>
-<path d="M5 1 L10 1 L10 2 L13 3 L13 11 L2 11 L2 10 L1 10 L1 5 L2 5 Z" fill="url(#g0)" fill-rule="evenodd"/>
-<path d="M2 11 L12 11 L12 12 L2 12 Z" fill="url(#g1)" fill-rule="evenodd"/>
-<path d="M4 14 L10 14 L10 16 L6 16 L6 15 L4 15 Z" fill="url(#g2)" fill-rule="evenodd"/>
-<path d="M3 12 L11 12 L11 13 L3 13 Z" fill="url(#g3)" fill-rule="evenodd"/>
-<path d="M0 5 L1 5 L1 10 L2 10 L2 11 L0 11 Z" fill="url(#g4)" fill-rule="evenodd"/>
-<path d="M4 13 L11 13 L11 14 L4 14 Z" fill="url(#g5)" fill-rule="evenodd"/>
-<path d="M5 0 L11 0 L11 1 L5 1 Z" fill="url(#g6)" fill-rule="evenodd"/>
-<path d="M13 4 L14 4 L14 10 L13 10 Z" fill="url(#g7)" fill-rule="evenodd"/>
+<defs></defs>
+<path d="M5 1 L10 1 L10 2 L13 3 L13 11 L2 11 L2 10 L1 10 L1 5 L2 5 Z" fill="#F1F1F1" fill-rule="evenodd"/>
+<path d="M2 11 L12 11 L12 12 L2 12 Z" fill="#CBCBCB" fill-rule="evenodd"/>
+<path d="M4 14 L10 14 L10 16 L6 16 L6 15 L4 15 Z" fill="#5F5E5C" fill-rule="evenodd"/>
+<path d="M3 12 L11 12 L11 13 L3 13 Z" fill="#B3B3B3" fill-rule="evenodd"/>
+<path d="M0 5 L1 5 L1 10 L2 10 L2 11 L0 11 Z" fill="#9E9C98" fill-rule="evenodd"/>
+<path d="M4 13 L11 13 L11 14 L4 14 Z" fill="#8D8D8D" fill-rule="evenodd"/>
+<path d="M5 0 L11 0 L11 1 L5 1 Z" fill="#A8A6A1" fill-rule="evenodd"/>
+<path d="M13 4 L14 4 L14 10 L13 10 Z" fill="#B8B8B8" fill-rule="evenodd"/>
 <rect x="3" y="1" width="1" height="1" fill="#b4b1ab"/>
 <rect x="4" y="1" width="1" height="1" fill="#b7b6b4"/>
 <rect x="5" y="1" width="1" height="1" fill="#ebebeb"/>
@@ -95,4 +96,5 @@
 <rect x="12" y="14" width="1" height="1" fill="#a7a39d"/>
 <rect x="5" y="15" width="1" height="1" fill="#a5a29c"/>
 <rect x="10" y="15" width="1" height="1" fill="#a5a29c"/>
+</g>
 </svg>

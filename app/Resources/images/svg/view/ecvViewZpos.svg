@@ -1,9 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 21 21">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g transform="translate(-0.000000,-0.000000) scale(1.142857)">
 <!-- Commercial HD v10: hand-authored exact camera-orientation cube,
      every fill/gradient/edge sampled from the original raster. -->
-<defs><linearGradient id="g0" gradientUnits="userSpaceOnUse" x1="0" y1="1.5" x2="0" y2="5.5"><stop offset="0.250" stop-color="#f6aa6d"/><stop offset="0.500" stop-color="#f6974b"/><stop offset="0.750" stop-color="#f8ad73"/></linearGradient></defs>
+<defs></defs>
 <path d="M5.5 1.5 L0.5 5.5 L0.5 18.5 L5.5 14.5 Z" fill="#fefefe"/>
-<path d="M5.5 1.5 L19.5 1.5 L14.5 5.5 L0.5 5.5 Z" fill="url(#g0)"/>
+<path d="M5.5 1.5 L19.5 1.5 L14.5 5.5 L0.5 5.5 Z" fill="#F6A463"/>
 <path d="M19.5 1.5 L14.5 5.5 L14.5 18.5 L19.5 14.5 Z" fill="#fefefe"/>
 <path d="M0.5 5.5 L14.5 5.5 L14.5 18.5 L0.5 18.5 Z" fill="#fefefe"/>
 <path d="M0.5 18.5 L14.5 18.5 L19.5 14.5 L5.5 14.5 Z" fill="#fefefe"/>
@@ -99,4 +100,5 @@
 <rect x="17" y="16" width="1" height="1" fill="#6c6c6c"/>
 <rect x="2" y="17" width="1" height="1" fill="#c4c4c4"/>
 <rect x="16" y="17" width="1" height="1" fill="#797979"/>
+</g>
 </svg>

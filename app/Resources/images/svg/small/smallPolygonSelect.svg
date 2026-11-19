@@ -1,8 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g transform="translate(-0.000000,-0.000000) scale(1.500000)">
 <!-- Commercial HD v10: straight-edge authored polygons sampled
      from the original raster; pixel-faithful correction layer. -->
-<defs><linearGradient id="g0" gradientUnits="userSpaceOnUse" x1="6.844" y1="12.001" x2="6.779" y2="1.988"><stop offset="0" stop-color="#dadcf4"/><stop offset="1" stop-color="#f2f1fb"/></linearGradient></defs>
-<path d="M5 2 L10 2 L11 5 L13 6 L13 9 L11 10 L11 12 L5 13 L5 12 L3 11 L3 9 L1 8 Z" fill="url(#g0)" fill-rule="evenodd"/>
+<defs></defs>
+<path d="M5 2 L10 2 L11 5 L13 6 L13 9 L11 10 L11 12 L5 13 L5 12 L3 11 L3 9 L1 8 Z" fill="#E6E6F7" fill-rule="evenodd"/>
 <path d="M4 1 L11 1 L11 2 L4 2 Z" fill="#19418b" fill-rule="evenodd"/>
 <rect x="3" y="1" width="1" height="1" fill="#d6ddeb"/>
 <rect x="4" y="1" width="1" height="1" fill="#788fbb"/>
@@ -81,4 +82,5 @@
 <rect x="8" y="15" width="1" height="1" fill="#c3c3c3"/>
 <rect x="9" y="15" width="1" height="1" fill="#c3c3c3"/>
 <rect x="10" y="15" width="1" height="1" fill="#cccccc"/>
+</g>
 </svg>

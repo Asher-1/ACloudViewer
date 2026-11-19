@@ -1,12 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="20.833" height="20.833" viewBox="1.583 1.583 20.833 20.833">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g transform="translate(-1.823645,-1.823645) scale(1.152018)">
 <!-- Commercial HD v10: straight-edge authored polygons sampled
      from the original raster; pixel-faithful correction layer. -->
-<defs><linearGradient id="g0" gradientUnits="userSpaceOnUse" x1="11.781" y1="1.844" x2="12.073" y2="5.169"><stop offset="0" stop-color="#878984"/><stop offset="1" stop-color="#90928d"/></linearGradient><linearGradient id="g1" gradientUnits="userSpaceOnUse" x1="4.500" y1="18.516" x2="5.500" y2="17.484"><stop offset="0" stop-color="#83857e"/><stop offset="1" stop-color="#a8a9a7"/></linearGradient><linearGradient id="g2" gradientUnits="userSpaceOnUse" x1="18.523" y1="18.499" x2="17.477" y2="17.501"><stop offset="0" stop-color="#82847e"/><stop offset="1" stop-color="#a9aaa7"/></linearGradient></defs>
+<defs></defs>
 <path d="M11 3 L13 3 L13 6 L14 6 L14 7 L18 6 L18 9 L19 9 L19 10 L22 10 L22 14 L19 14 L19 15 L18 15 L18 18 L14 17 L14 18 L13 18 L13 21 L11 21 L11 18 L10 18 L10 17 L6 18 L6 15 L5 15 L5 14 L2 14 L2 10 L5 10 L5 9 L6 9 L6 6 L10 7 L10 6 L11 6 Z M10 8 L10 9 L8 10 L8 14 L9 14 L10 16 L14 16 L14 15 L16 14 L16 10 L15 10 L14 8 Z" fill="#bdbebd" fill-rule="evenodd"/>
 <path d="M9 18 L11 18 L11 21 L13 21 L13 18 L15 18 L15 19 L14 19 L14 22 L10 22 L10 19 L9 19 Z" fill="#8a8c87" fill-rule="evenodd" fill-opacity="0.847"/>
-<path d="M10 2 L14 2 L14 5 L15 5 L15 6 L13 6 L13 3 L11 3 L11 5 L10 5 Z" fill="url(#g0)" fill-rule="evenodd" fill-opacity="0.847"/>
-<path d="M4 17 L6 17 L7 20 L5 20 Z" fill="url(#g1)" fill-rule="evenodd" fill-opacity="0.776"/>
-<path d="M18 17 L20 17 L19 20 L17 20 Z" fill="url(#g2)" fill-rule="evenodd" fill-opacity="0.753"/>
+<path d="M10 2 L14 2 L14 5 L15 5 L15 6 L13 6 L13 3 L11 3 L11 5 L10 5 Z" fill="#8B8D88" fill-rule="evenodd" fill-opacity="0.847"/>
+<path d="M4 17 L6 17 L7 20 L5 20 Z" fill="#959792" fill-rule="evenodd" fill-opacity="0.776"/>
+<path d="M18 17 L20 17 L19 20 L17 20 Z" fill="#959792" fill-rule="evenodd" fill-opacity="0.753"/>
 <rect x="10" y="2" width="1" height="1" fill="#bfc0bd"/>
 <rect x="11" y="2" width="1" height="1" fill="#888a85"/>
 <rect x="12" y="2" width="1" height="1" fill="#888a85"/>
@@ -172,4 +173,5 @@
 <rect x="11" y="21" width="1" height="1" fill="#888a85"/>
 <rect x="12" y="21" width="1" height="1" fill="#888a85"/>
 <rect x="13" y="21" width="1" height="1" fill="#c3c4c1"/>
+</g>
 </svg>

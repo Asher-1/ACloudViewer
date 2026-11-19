@@ -1,10 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 21 21">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g transform="translate(-0.000000,-0.000000) scale(1.142857)">
 <!-- Commercial HD v10: hand-authored exact camera-orientation cube,
      every fill/gradient/edge sampled from the original raster. -->
-<defs><linearGradient id="g0" gradientUnits="userSpaceOnUse" x1="0" y1="1.5" x2="0" y2="5.5"><stop offset="0.250" stop-color="#f9b986"/><stop offset="0.500" stop-color="#f9b986"/><stop offset="0.750" stop-color="#f8aa6f"/></linearGradient><linearGradient id="g1" gradientUnits="userSpaceOnUse" x1="0" y1="1.5" x2="0" y2="18.5"><stop offset="0.294" stop-color="#f6984d"/><stop offset="0.353" stop-color="#f6984d"/><stop offset="0.412" stop-color="#f6984d"/><stop offset="0.471" stop-color="#f6984d"/><stop offset="0.529" stop-color="#f8aa6f"/><stop offset="0.588" stop-color="#f8aa6f"/><stop offset="0.647" stop-color="#f9b986"/><stop offset="0.706" stop-color="#f9b986"/></linearGradient><linearGradient id="g2" gradientUnits="userSpaceOnUse" x1="0" y1="5.5" x2="0" y2="18.5"><stop offset="0.154" stop-color="#f6984d"/><stop offset="0.231" stop-color="#f6984d"/><stop offset="0.308" stop-color="#f6984d"/><stop offset="0.385" stop-color="#f8aa6f"/><stop offset="0.462" stop-color="#f8aa6f"/><stop offset="0.538" stop-color="#f9b986"/><stop offset="0.615" stop-color="#f9b986"/></linearGradient></defs>
-<path d="M5.5 1.5 L19.5 1.5 L14.5 5.5 L0.5 5.5 Z" fill="url(#g0)"/>
-<path d="M19.5 1.5 L14.5 5.5 L14.5 18.5 L19.5 14.5 Z" fill="url(#g1)"/>
-<path d="M0.5 5.5 L14.5 5.5 L14.5 18.5 L0.5 18.5 Z" fill="url(#g2)"/>
+<defs></defs>
+<path d="M5.5 1.5 L19.5 1.5 L14.5 5.5 L0.5 5.5 Z" fill="#F8B47E"/>
+<path d="M19.5 1.5 L14.5 5.5 L14.5 18.5 L19.5 14.5 Z" fill="#F7A463"/>
+<path d="M0.5 5.5 L14.5 5.5 L14.5 18.5 L0.5 18.5 Z" fill="#F7A667"/>
 <path d="M5.5 1.5 L0.5 5.5 L0.5 18.5 L5.5 14.5 Z" fill="#fefefe"/>
 <path d="M0.5 18.5 L14.5 18.5 L19.5 14.5 L5.5 14.5 Z" fill="#fefefe"/>
 <path d="M18.54 1.50 L14.13 5.03 L14.87 5.97 L19.50 2.27 L19.50 1.50 L19.50 1.50 Z" fill="#6e4b2f"/>
@@ -129,4 +130,5 @@
 <rect x="17" y="16" width="1" height="1" fill="#737372"/>
 <rect x="2" y="17" width="1" height="1" fill="#c7c7c7"/>
 <rect x="16" y="17" width="1" height="1" fill="#8a8a8a"/>
+</g>
 </svg>

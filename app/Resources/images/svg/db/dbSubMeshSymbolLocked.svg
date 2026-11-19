@@ -1,13 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
 <!-- Commercial HD v10: straight-edge authored polygons sampled
      from the original raster; pixel-faithful correction layer. -->
-<defs><linearGradient id="g0" gradientUnits="userSpaceOnUse" x1="12.773" y1="5.400" x2="15.472" y2="6.931"><stop offset="0" stop-color="#db792e"/><stop offset="1" stop-color="#fc8f32"/></linearGradient><linearGradient id="g1" gradientUnits="userSpaceOnUse" x1="13.285" y1="16.259" x2="12.414" y2="13.850"><stop offset="0" stop-color="#e69b5f"/><stop offset="1" stop-color="#fbac6e"/></linearGradient></defs>
+<defs></defs>
 <path d="M16 18 L18 18 L18 21 L20 21 L20 19 L23 18 L23 21 L22 21 L21 23 L18 23 L18 22 L16 21 Z" fill="#dedede" fill-rule="evenodd"/>
-<path d="M13 5 L15 5 L15 6 L17 6 L17 7 L14 9 Z" fill="url(#g0)" fill-rule="evenodd"/>
+<path d="M13 5 L15 5 L15 6 L17 6 L17 7 L14 9 Z" fill="#EB8430" fill-rule="evenodd"/>
 <path d="M4 8 L6 8 L7 11 L3 11 Z" fill="#f3a768" fill-rule="evenodd"/>
 <path d="M1 5 L4 6 L3 9 L1 8 Z" fill="#f48931" fill-rule="evenodd"/>
 <path d="M17 8 L19 9 L19 11 L15 11 Z" fill="#f4aa68" fill-rule="evenodd"/>
-<path d="M12 14 L14 14 L15 17 L12 17 Z" fill="url(#g1)" fill-rule="evenodd"/>
+<path d="M12 14 L14 14 L15 17 L12 17 Z" fill="#F0A366" fill-rule="evenodd"/>
 <path d="M7 3 L8 3 L10 6 L6 6 Z" fill="#f7ab6b" fill-rule="evenodd"/>
 <path d="M7 16 L10 17 L8 20 L7 20 Z" fill="#f78c31" fill-rule="evenodd"/>
 <path d="M10 19 L12 20 L12 22 L9 22 Z" fill="#f7ac6b" fill-rule="evenodd"/>

@@ -172,7 +172,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/svg/ecv/ecvAddConstSF.svg</normaloff>:/Resources/images/svg/ecv/ecvAddConstSF.svg</iconset>
+       <normaloff>:/Resources/images/svg/ecv/toolMainAddConstSF.svg</normaloff>:/Resources/images/svg/ecv/toolMainAddConstSF.svg</iconset>
      </property>
      <property name="shortcut">
       <string extracomment="Shortcut for continue">C</string>

@@ -1,12 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g transform="translate(-0.000000,-0.000000) scale(1.500000)">
 <!-- Commercial HD v10: straight-edge authored polygons sampled
      from the original raster; pixel-faithful correction layer. -->
-<defs><linearGradient id="g0" gradientUnits="userSpaceOnUse" x1="12.013" y1="13.228" x2="-0.371" y2="6.145"><stop offset="0" stop-color="#dde1e4"/><stop offset="1" stop-color="#f7f7f7"/></linearGradient><linearGradient id="g1" gradientUnits="userSpaceOnUse" x1="6.883" y1="-0.241" x2="6.972" y2="1.188"><stop offset="0" stop-color="#adb9c4"/><stop offset="1" stop-color="#c5ccd2"/></linearGradient><linearGradient id="g2" gradientUnits="userSpaceOnUse" x1="8.505" y1="12.521" x2="8.861" y2="10.128"><stop offset="0" stop-color="#b8bfcc"/><stop offset="1" stop-color="#dbdfe8"/></linearGradient><linearGradient id="g3" gradientUnits="userSpaceOnUse" x1="11.206" y1="3.461" x2="8.794" y2="4.539"><stop offset="0" stop-color="#f6f2fc"/><stop offset="1" stop-color="#fefffe"/></linearGradient><linearGradient id="g4" gradientUnits="userSpaceOnUse" x1="12.638" y1="6.653" x2="10.702" y2="8.673"><stop offset="0" stop-color="#97d657"/><stop offset="1" stop-color="#9de561"/></linearGradient></defs>
-<path d="M4 1 L10 1 L10 2 L4 3 L4 15 L8 15 L8 13 L11 13 L12 16 L1 16 L1 15 L3 15 L3 14 L2 14 L2 2 L4 2 Z" fill="url(#g0)" fill-rule="evenodd"/>
-<path d="M3 0 L12 0 L12 1 L11 1 L11 2 L10 2 L10 1 L4 1 L4 2 L3 2 Z" fill="url(#g1)" fill-rule="evenodd"/>
-<path d="M8 10 L9 10 L9 12 L12 11 L13 13 L5 13 L5 12 L8 12 Z" fill="url(#g2)" fill-rule="evenodd"/>
-<path d="M9 3 L12 3 L12 6 L9 6 Z" fill="url(#g3)" fill-rule="evenodd"/>
-<path d="M10 7 L14 7 L14 10 L13 10 L13 9 L10 9 Z" fill="url(#g4)" fill-rule="evenodd"/>
+<defs></defs>
+<path d="M4 1 L10 1 L10 2 L4 3 L4 15 L8 15 L8 13 L11 13 L12 16 L1 16 L1 15 L3 15 L3 14 L2 14 L2 2 L4 2 Z" fill="#EAECED" fill-rule="evenodd"/>
+<path d="M3 0 L12 0 L12 1 L11 1 L11 2 L10 2 L10 1 L4 1 L4 2 L3 2 Z" fill="#B9C2CB" fill-rule="evenodd"/>
+<path d="M8 10 L9 10 L9 12 L12 11 L13 13 L5 13 L5 12 L8 12 Z" fill="#C9CFDA" fill-rule="evenodd"/>
+<path d="M9 3 L12 3 L12 6 L9 6 Z" fill="#FAF8FD" fill-rule="evenodd"/>
+<path d="M10 7 L14 7 L14 10 L13 10 L13 9 L10 9 Z" fill="#9ADD5C" fill-rule="evenodd"/>
 <path d="M1 2 L2 2 L2 8 L1 8 Z" fill="#91a1b1" fill-rule="evenodd"/>
 <rect x="2" y="0" width="1" height="1" fill="#e3e4e7"/>
 <rect x="4" y="0" width="1" height="1" fill="#a0b0bc"/>
@@ -134,4 +135,5 @@
 <rect x="5" y="15" width="1" height="1" fill="#c7cfd2"/>
 <rect x="6" y="15" width="1" height="1" fill="#b7bec8"/>
 <rect x="7" y="15" width="1" height="1" fill="#c1c9d0"/>
+</g>
 </svg>

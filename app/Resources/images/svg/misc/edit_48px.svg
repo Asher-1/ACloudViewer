@@ -1,9 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g transform="translate(-0.000000,-0.000000) scale(0.500000)">
 <!-- Commercial HD v10: straight-edge authored polygons sampled
      from the original raster; pixel-faithful correction layer. -->
-<defs><linearGradient id="g0" gradientUnits="userSpaceOnUse" x1="1.008" y1="3.640" x2="35.013" y2="44.987"><stop offset="0" stop-color="#efe8de"/><stop offset="1" stop-color="#f0e9dd"/></linearGradient><linearGradient id="g1" gradientUnits="userSpaceOnUse" x1="27.489" y1="16.685" x2="33.031" y2="22.753"><stop offset="0" stop-color="#ddbe5d"/><stop offset="1" stop-color="#e3c465"/></linearGradient></defs>
-<path d="M3 2 L36 2 L36 3 L37 3 L37 8 L18 26 L18 28 L20 28 L21 31 L26 32 L26 31 L29 29 L29 27 L31 27 L31 26 L35 23 L35 21 L37 21 L37 45 L36 45 L36 46 L3 46 L3 44 L2 44 L2 4 L3 4 Z M17 32 L15 33 L15 36 L18 35 Z" fill="url(#g0)" fill-rule="evenodd"/>
-<path d="M37 8 L38 8 L43 14 L42 14 L25 32 L23 32 L23 30 L20 30 L19 26 L20 26 Z" fill="url(#g1)" fill-rule="evenodd"/>
+<defs></defs>
+<path d="M3 2 L36 2 L36 3 L37 3 L37 8 L18 26 L18 28 L20 28 L21 31 L26 32 L26 31 L29 29 L29 27 L31 27 L31 26 L35 23 L35 21 L37 21 L37 45 L36 45 L36 46 L3 46 L3 44 L2 44 L2 4 L3 4 Z M17 32 L15 33 L15 36 L18 35 Z" fill="#EFE8DD" fill-rule="evenodd"/>
+<path d="M37 8 L38 8 L43 14 L42 14 L25 32 L23 32 L23 30 L20 30 L19 26 L20 26 Z" fill="#E0C161" fill-rule="evenodd"/>
 <path d="M40 4 L43 4 L43 5 L47 8 L47 10 L46 10 L45 12 L39 7 Z" fill="#c65753" fill-rule="evenodd"/>
 <rect x="41" y="3" width="1" height="1" fill="#f2d6d5"/>
 <rect x="40" y="4" width="1" height="1" fill="#d98b88"/>
@@ -170,4 +171,5 @@
 <rect x="15" y="35" width="1" height="1" fill="#9a9690"/>
 <rect x="16" y="35" width="1" height="1" fill="#c6c1b9"/>
 <rect x="36" y="44" width="1" height="1" fill="#f8f4ee"/>
+</g>
 </svg>

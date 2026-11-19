@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" shape-rendering="crispEdges">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" shape-rendering="crispEdges">
+<g transform="translate(-0.000000,-0.000000) scale(0.750000)">
 <!-- Lossless pixel-exact transcription v8 (32x32, 337 rects): every source pixel preserved, crisp at any scale -->
 <rect x="14" y="0" width="1" height="1" fill="#30bfff" fill-opacity="0.062745"/>
 <rect x="15" y="0" width="1" height="1" fill="#36c3fe" fill-opacity="0.839216"/>
@@ -337,4 +338,5 @@
 <rect x="15" y="31" width="1" height="1" fill="#36c3fe" fill-opacity="0.835294"/>
 <rect x="16" y="31" width="1" height="1" fill="#39c0fe" fill-opacity="0.831373"/>
 <rect x="17" y="31" width="1" height="1" fill="#33bbff" fill-opacity="0.058824"/>
+</g>
 </svg>

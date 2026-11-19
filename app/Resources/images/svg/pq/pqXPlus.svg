@@ -1,19 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g transform="translate(-0.000000,-0.000000) scale(0.750000)">
 <!-- Commercial HD v10: straight-edge authored polygons sampled
      from the original raster; pixel-faithful correction layer. -->
-<defs><linearGradient id="g0" gradientUnits="userSpaceOnUse" x1="15.341" y1="9.904" x2="29.928" y2="31.050"><stop offset="0" stop-color="#686b5a"/><stop offset="1" stop-color="#717258"/></linearGradient><linearGradient id="g1" gradientUnits="userSpaceOnUse" x1="21.563" y1="12.401" x2="29.317" y2="9.027"><stop offset="0" stop-color="#a2ca89"/><stop offset="1" stop-color="#addc92"/></linearGradient><linearGradient id="g2" gradientUnits="userSpaceOnUse" x1="25.015" y1="29.377" x2="25.985" y2="21.623"><stop offset="0" stop-color="#e53f2e"/><stop offset="1" stop-color="#e73e2d"/></linearGradient><linearGradient id="g3" gradientUnits="userSpaceOnUse" x1="10.795" y1="27.774" x2="10.494" y2="22.732"><stop offset="0" stop-color="#f1c015"/><stop offset="1" stop-color="#ffcf08"/></linearGradient><linearGradient id="g4" gradientUnits="userSpaceOnUse" x1="29.945" y1="24.999" x2="30.055" y2="25.001"><stop offset="0" stop-color="#bb503d"/><stop offset="1" stop-color="#bb503d"/></linearGradient><linearGradient id="g5" gradientUnits="userSpaceOnUse" x1="6.662" y1="20.537" x2="8.259" y2="22.819"><stop offset="0" stop-color="#686c5d"/><stop offset="1" stop-color="#797554"/></linearGradient><linearGradient id="g6" gradientUnits="userSpaceOnUse" x1="6.242" y1="30.410" x2="8.601" y2="29.016"><stop offset="0" stop-color="#5e6662"/><stop offset="1" stop-color="#7f7951"/></linearGradient></defs>
-<path d="M21 6 L22 6 L22 8 L24 8 L24 20 L28 20 L28 8 L30 8 L30 6 L32 7 L32 9 L29 9 L29 20 L32 20 L32 31 L31 31 L31 32 L21 32 L20 29 L9 29 L9 28 L20 28 L20 24 L9 24 L9 23 L20 23 L20 20 L23 20 L23 9 L20 9 Z M21 21 L21 30 L31 30 L31 21 Z" fill="url(#g0)" fill-rule="evenodd"/>
-<path d="M25 3 L27 3 L27 5 L29 6 L29 8 L28 8 L28 19 L24 19 L24 8 L23 8 L23 6 L25 5 Z" fill="url(#g1)" fill-rule="evenodd"/>
-<path d="M22 22 L30 22 L30 30 L22 30 Z" fill="url(#g2)" fill-rule="evenodd"/>
-<path d="M6 23 L8 23 L8 25 L20 25 L20 28 L8 28 L8 29 L6 29 L5 27 L3 27 L3 25 L5 25 Z" fill="url(#g3)" fill-rule="evenodd"/>
+<defs></defs>
+<path d="M21 6 L22 6 L22 8 L24 8 L24 20 L28 20 L28 8 L30 8 L30 6 L32 7 L32 9 L29 9 L29 20 L32 20 L32 31 L31 31 L31 32 L21 32 L20 29 L9 29 L9 28 L20 28 L20 24 L9 24 L9 23 L20 23 L20 20 L23 20 L23 9 L20 9 Z M21 21 L21 30 L31 30 L31 21 Z" fill="#6C6E59" fill-rule="evenodd"/>
+<path d="M25 3 L27 3 L27 5 L29 6 L29 8 L28 8 L28 19 L24 19 L24 8 L23 8 L23 6 L25 5 Z" fill="#A7D38D" fill-rule="evenodd"/>
+<path d="M22 22 L30 22 L30 30 L22 30 Z" fill="#E63E2D" fill-rule="evenodd"/>
+<path d="M6 23 L8 23 L8 25 L20 25 L20 28 L8 28 L8 29 L6 29 L5 27 L3 27 L3 25 L5 25 Z" fill="#F8C70E" fill-rule="evenodd"/>
 <path d="M10 5 L13 5 L14 8 L16 7 L16 5 L18 5 L18 7 L17 7 L17 9 L16 9 L16 12 L19 14 L18 16 L15 14 L15 12 L13 13 L12 16 L10 16 L10 14 L11 14 L12 11 L13 11 L13 9 L11 8 Z" fill="#787879" fill-rule="evenodd" fill-opacity="0.973"/>
 <path d="M5 7 L7 7 L7 10 L9 10 L9 12 L7 11 L7 14 L6 14 L6 15 L5 15 L5 12 L4 12 L4 11 L2 12 L2 10 L4 10 Z" fill="#787879" fill-rule="evenodd"/>
 <path d="M8 24 L20 24 L20 25 L8 25 Z" fill="#c9a72a" fill-rule="evenodd"/>
 <path d="M21 21 L22 21 L22 30 L21 30 Z" fill="#a45646" fill-rule="evenodd"/>
-<path d="M30 21 L31 21 L31 30 L30 30 Z" fill="url(#g4)" fill-rule="evenodd"/>
+<path d="M30 21 L31 21 L31 30 L30 30 Z" fill="#BB503D" fill-rule="evenodd"/>
 <path d="M22 21 L30 21 L30 22 L22 22 Z" fill="#cd4836" fill-rule="evenodd"/>
-<path d="M8 20 L9 20 L9 24 L8 24 L8 22 L6 23 L6 21 L8 21 Z" fill="url(#g5)" fill-rule="evenodd"/>
-<path d="M8 28 L9 28 L9 32 L6 31 L6 30 L8 30 Z" fill="url(#g6)" fill-rule="evenodd"/>
+<path d="M8 20 L9 20 L9 24 L8 24 L8 22 L6 23 L6 21 L8 21 Z" fill="#707058" fill-rule="evenodd"/>
+<path d="M8 28 L9 28 L9 32 L6 31 L6 30 L8 30 Z" fill="#6E6F59" fill-rule="evenodd"/>
 <rect x="25" y="0" width="1" height="1" fill="#989889"/>
 <rect x="26" y="0" width="1" height="1" fill="#8c8c7c"/>
 <rect x="24" y="1" width="1" height="1" fill="#ccccc4"/>
@@ -263,4 +264,5 @@
 <rect x="29" y="31" width="1" height="1" fill="#abb6aa"/>
 <rect x="30" y="31" width="1" height="1" fill="#a6aea0"/>
 <rect x="31" y="31" width="1" height="1" fill="#c1c1b7"/>
+</g>
 </svg>

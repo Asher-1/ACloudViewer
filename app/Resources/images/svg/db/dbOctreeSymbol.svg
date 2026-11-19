@@ -1,10 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g transform="translate(-0.000000,-0.000000) scale(1.500000)">
 <!-- Commercial HD v10: straight-edge authored polygons sampled
      from the original raster; pixel-faithful correction layer. -->
-<defs><linearGradient id="g0" gradientUnits="userSpaceOnUse" x1="10.760" y1="3.822" x2="5.195" y2="4.956"><stop offset="0" stop-color="#e6842f"/><stop offset="1" stop-color="#fa8c32"/></linearGradient></defs>
+<defs></defs>
 <path d="M10 6 L12 6 L12 11 L11 11 L11 12 L8 12 L8 7 L10 7 Z" fill="#feb57a" fill-rule="evenodd"/>
 <path d="M4 5 L7 6 L7 12 L4 11 Z" fill="#5a2900" fill-rule="evenodd"/>
-<path d="M8 3 L11 4 L12 6 L6 6 L5 4 L8 4 Z" fill="url(#g0)" fill-rule="evenodd"/>
+<path d="M8 3 L11 4 L12 6 L6 6 L5 4 L8 4 Z" fill="#F08830" fill-rule="evenodd"/>
 <path d="M3 4 L4 4 L4 10 L3 10 Z" fill="#846c53" fill-rule="evenodd"/>
 <rect x="6" y="0" width="1" height="1" fill="#d6d6d6"/>
 <rect x="7" y="0" width="1" height="1" fill="#b5b5b5"/>
@@ -105,4 +106,5 @@
 <rect x="9" y="14" width="1" height="1" fill="#4a4a4a"/>
 <rect x="10" y="14" width="1" height="1" fill="#525252"/>
 <rect x="11" y="14" width="1" height="1" fill="#b5b5b5"/>
+</g>
 </svg>

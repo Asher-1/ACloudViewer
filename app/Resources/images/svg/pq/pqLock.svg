@@ -1,13 +1,12 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
 <svg
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:xlink="http://www.w3.org/1999/xlink"
    version="1.0"
-   width="28.646"
-   height="28.646"
-   id="svg4727" viewBox="1.552 1.927 28.646 28.646">
+   width="24"
+   height="24"
+   id="svg4727" viewBox="0 0 24 24">
+<g transform="translate(-1.300286,-1.614466) scale(0.837813)">
   <defs
      id="defs4729">
     <radialGradient
@@ -49,4 +48,5 @@
        id="rect265"
        style="fill:url(#radialGradient4745);stroke:#6f7059;stroke-width:1.35174119" />
   </g>
+</g>
 </svg>

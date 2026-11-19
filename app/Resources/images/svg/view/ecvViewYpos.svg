@@ -1,12 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 21 21">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g transform="translate(-0.000000,-0.000000) scale(1.142857)">
 <!-- Commercial HD v10: hand-authored exact camera-orientation cube,
      every fill/gradient/edge sampled from the original raster. -->
-<defs><linearGradient id="g0" gradientUnits="userSpaceOnUse" x1="0" y1="5.5" x2="0" y2="18.5"><stop offset="0.154" stop-color="#f9b987"/><stop offset="0.231" stop-color="#f9b078"/><stop offset="0.308" stop-color="#f8a463"/><stop offset="0.385" stop-color="#f79b53"/><stop offset="0.462" stop-color="#f79648"/><stop offset="0.538" stop-color="#f79648"/><stop offset="0.615" stop-color="#f79b53"/><stop offset="0.692" stop-color="#f8a463"/><stop offset="0.769" stop-color="#f8ac72"/><stop offset="0.846" stop-color="#f9b078"/></linearGradient></defs>
+<defs></defs>
 <path d="M5.5 1.5 L19.5 1.5 L14.5 5.5 L0.5 5.5 Z" fill="#fefefe"/>
 <path d="M5.5 1.5 L0.5 5.5 L0.5 18.5 L5.5 14.5 Z" fill="#fefefe"/>
 <path d="M19.5 1.5 L14.5 5.5 L14.5 18.5 L19.5 14.5 Z" fill="#fefefe"/>
 <path d="M0.5 18.5 L14.5 18.5 L19.5 14.5 L5.5 14.5 Z" fill="#fefefe"/>
-<path d="M0.5 5.5 L14.5 5.5 L14.5 18.5 L0.5 18.5 Z" fill="url(#g0)"/>
+<path d="M0.5 5.5 L14.5 5.5 L14.5 18.5 L0.5 18.5 Z" fill="#F7A463"/>
 <path d="M0.5 5.5 V14.5" fill="none" stroke="#724e31" stroke-width="1"/>
 <path d="M14.5 5.5 V14.5" fill="none" stroke="#725035" stroke-width="1"/>
 <path d="M14.5 14.5 V18.5 M0.5 18.5 H14.5" fill="none" stroke="#725843" stroke-width="1"/>
@@ -87,4 +88,5 @@
 <rect x="16" y="16" width="1" height="1" fill="#b7b7b7"/>
 <rect x="17" y="16" width="1" height="1" fill="#717171"/>
 <rect x="16" y="17" width="1" height="1" fill="#868686"/>
+</g>
 </svg>
