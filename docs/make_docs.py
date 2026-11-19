@@ -379,12 +379,37 @@ class PyAPIDocsBuilder:
         print(f"🔨 Generating *.rst Python API docs in directory: {self.output_dir}")
         _create_or_clear_dir(self.output_dir)
 
+        generated = 0
+        failures = []
         for module_name in self.module_names:
             try:
                 module = self._try_import_module(module_name)
                 self._generate_module_class_function_docs(module_name, module)
+                generated += 1
             except Exception as e:
+                failures.append(f"{module_name}: {e}")
                 print(f"[Warning] Module {module_name} cannot be imported: {e}.")
+
+        # Producing zero pages is not a warning.
+        #
+        # source/index.rst lists 11 python_api/ entries. When the module cannot
+        # be imported every one of those pages is missing, but the failure used
+        # to be a per-module print and the build still exited 0: Sphinx's
+        # "document isn't included in any toctree" / not_readable warnings are
+        # suppressed in conf.py, so -W never saw it and the site shipped
+        # without the Python API. Losing the entire API reference is a build
+        # failure, not a degraded result.
+        if self.module_names and generated == 0:
+            detail = "\n  ".join(failures[:5])
+            raise RuntimeError(
+                "Python API generation produced 0 of {} documented modules; "
+                "every source/python_api/ page that index.rst references would "
+                "be missing.\n  {}\n"
+                "The cloudViewer module must be importable (built with "
+                "-DBUILD_PYTHON_MODULE=ON / `make python-package`) before the "
+                "documentation is rendered.".format(len(self.module_names), detail)
+            )
+        print(f"  ✓ Generated python_api for {generated}/{len(self.module_names)} module(s)")
 
     @staticmethod
     def _get_documented_module_names():
