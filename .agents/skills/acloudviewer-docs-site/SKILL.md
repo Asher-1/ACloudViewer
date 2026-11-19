@@ -350,6 +350,10 @@ notebooks share that helper.
 `-W` fails on malformed RST that pybind11 generates from C++ signatures. There is
 no source file to fix.
 
+**Do not suppress these.** Fix the markup in `process_docstring`. The text is
+correct; only its incidental markup is wrong, and a suppressed warning still
+renders a mangled page.
+
 ### Collect them all first
 
 The real build stops at the first failure, costing a full round per warning. Use
@@ -360,29 +364,164 @@ PYTHONPATH=<repo>/build_app/lib/python_package \
   python3 docs/automation/scripts/check_docstring_rst.py
 ```
 
-It must reproduce autodoc's pipeline or it reports phantom errors:
+It must reproduce autodoc's pipeline — **in order** — or it reports phantom
+errors:
 
 1. `prepare_docstring()` — removes the common indent (ignoring line 1)
-2. **Napoleon** — converts Google/NumPy sections (`Args:`) to RST
-3. `autodoc-process-docstring` → `conf.py::process_docstring`
+2. `conf.py::process_docstring` (the transform, event priority **400**)
+3. **Napoleon** — converts Google/NumPy sections (`Args:`) to RST (default
+   priority **500**)
 4. docutils parses
 
-Skipping step 2 alone produced 106 phantom `Unexpected indentation` errors here,
-because `Args:` followed by deeper indentation looks like a broken definition
-list.
+The order of 2 and 3 is not a detail. Running the transform *after* Napoleon
+reports phantom errors in both directions:
 
-### Measured distribution (2831 docstrings)
+- Skipping Napoleon produced 106 phantom `Unexpected indentation` errors,
+  because `Args:` followed by deeper indentation reads as a broken definition
+  list to plain docutils.
+- The checker originally ran the transform **after** Napoleon and therefore
+  never exercised the state the real build sees. It reported 0 problems while
+  the build failed; the two diverged at the math blocks, which Napoleon
+  re-indents. Call the transform on `prepare_docstring()` output *before*
+  wrapping in `GoogleDocstring`/`NumpyDocstring`.
 
-| Count | Message |
-|---|---|
-| 81 | Unexpected indentation |
-| 60 | Inline substitution_reference start-string without end-string |
-| 24 | Block quote ends without a blank line |
-| 13 | Definition list ends without a blank line |
-| 8 | Inline strong start-string without end-string |
-| 4 | Unknown interpreted text role "class" |
-| 2 | Unknown interpreted text role "eq" |
-| 2 | Inline emphasis start-string without end-string |
+### The checker must cover what the build covers
+
+Two independent bugs made the checker report **0 problems while the real build
+failed**:
+
+- The root list was hardcoded to five modules. `cloudViewer.reconstruction`
+  was not in it, so `SequentialMatchingOptions.vocab_tree_path` was never
+  checked. Read `docs/documented_modules.txt` — the same file
+  `PyAPIDocsBuilder` uses — instead of keeping a second copy of the list.
+- Walking those modules pulls in **re-exports**: `cloudViewer.visualization`
+  re-exports torch, tensorboard, matplotlib and numpy. Their docstrings are
+  Sphinx-flavoured and produce ~9,000 "Unknown role/directive" errors that the
+  real build resolves through its role registry. Filter by `__module__`: only
+  objects whose `__module__` starts with `cloudViewer` are ours to check.
+  pybind members report `cloudViewer.cuda.pybind.<...>`, so the prefix test
+  catches them; `torch.zeros_like` reports `torch` and is skipped.
+
+The correct scope is ~2,300 docstrings, not 2,800 (five roots) and not 14,900
+(unfiltered).
+
+### Measured distribution and the fix for each
+
+Starting point: **197 diagnostics / 2,830 docstrings**. Every family below has a
+proven, non-suppressing fix applied in `process_docstring`.
+
+| Count | Message | Fix |
+|---|---|---|
+| 65 | Unexpected indentation | `_separate_indent_changes` |
+| 60 | Inline substitution_reference start-string | `_promote_pipe_art_blocks` |
+| 36 | Block quote ends without a blank line | `_separate_indent_changes` |
+| 14 | Definition list ends without a blank line | `_separate_indent_changes` |
+| 8 | Inline strong start-string | `_escape_bare_stars` |
+| 2 | Inline emphasis start-string | `_escape_bare_stars` |
+| 1 | Inline literal start-string | `_escape_unbalanced_backticks` |
+| 4 | Unknown role "class" | none — resolved by Sphinx |
+| 2 | Unknown role "eq" | none — resolved by Sphinx |
+| 2 | Unknown directive "todo" | none — `sphinx.ext.todo` |
+
+The last three are checker artifacts. Prove it before chasing them: `:eq:`,
+`:file:` and the `todo` directive all report `CLEAN` when the same text is
+parsed through Sphinx's real environment. Do not "fix" them.
+
+### The structural transforms
+
+**`_separate_indent_changes`** — pybind interleaves a paragraph with
+continuation-aligned code:
+
+```
+mesh.vertex.positions = cv3d.core.Tensor([[0, 0, 0],
+                                         [0, 0, 1]], dtype_f, device)
+```
+
+The second line is indented only to align under the bracket. docutils has no
+paragraph open there, so it reports "Unexpected indentation" and then a
+"Block quote ends" when the indent drops back. Inserting a blank line wherever
+consecutive text lines change indent makes each run its own block. **101 of the
+197 disappear from this one transform.**
+
+**`_promote_pipe_art_blocks`** — embedded directory trees:
+
+```
+    RedwoodIndoorOffice2
+    |-- colors
+    |   |-- 00000.jpg
+```
+
+docutils reads `|--` as a substitution-reference opener. Emit `::` above the run
+and indent it: the art becomes a real literal block and renders verbatim.
+
+Two traps in implementing it, both real bugs on the first attempt:
+
+- Detect on the **tree markers** (`|`, `'--`, `` `-- ``), not on indentation.
+  This runs after `_dedent_docstring`, which has already flattened the block to
+  column 0; an indentation test skips every case.
+- Advance the loop index by at least one. A flush-left pipe line makes
+  `start == end == i`, and `i = end` spins forever — it hung the checker, not
+  the build.
+
+### `.. math::` blocks must be fenced before any line-wise fix
+
+The blanket per-line transforms (star escaping, trailing-`::` trimming,
+`_separate_indent_changes`) would corrupt LaTeX. Protect math first:
+
+1. Scan for a line whose stripped form starts with `.. math::`.
+2. Find the block end. The reliable terminator is **`\end{...}`**, not blank
+   lines: pybind emits flush-left math bodies, and `x^{*}` lines carry no
+   backslash at all, so a "stops at the first non-indented line" rule cuts the
+   block in half. After seeing `\end{...}`, keep consuming `:`-prefixed option
+   lines (they may be separated by blank lines).
+3. Replace the block in place with a single sentinel line, run the normal
+   `_reflow` over the rest, then splice the original block back.
+4. **Indent the body** if its first content line is flush-left, and **lift
+   option lines** (`:label:`, `:nowrap:`) directly under the directive with a
+   blank line before the body. A `:label:` that stayed *below* the LaTeX cost
+   two separate failures: `invalid option block` (options must precede the
+   body) and then `equation not found` (the label never registered).
+
+Steps 3 and 4 happen on the extracted block, not on the live list — the
+sentinel must round-trip to a byte-identical directive.
+
+### Equation labels collide across docstrings
+
+Two distinct `RobustKernel` classes in different modules embed the same literal
+`:label: robust_loss`, so the second registration fails `-W` with "duplicate
+label". docutils labels are global to the document set. Namespace them per
+docstring — `_namespace_equation_labels` rewrites both the `:label:` value and
+every `:eq:` reference in the same docstring with a `name`-derived suffix. Do
+this **after** the blocks are restored; renaming inside the fenced copies is
+fine, renaming the sentinel is not.
+
+### Empty-body directives
+
+`.. math::` with no body after option relocation produces "Content block
+expected". Check the restored block still has a non-empty, non-option body
+before emitting it.
+
+### Field lists need a blank line above them
+
+`-W` reports "Field list ends without a blank line" for a flush-left `:param x:`
+that follows text directly. This one cannot be fixed in the first pass —
+Napoleon *creates* the field list, and it runs at 500, after the transform at
+400. Connect a **second** handler at priority **600** (after Napoleon) that
+only inserts the separating blank line. It must be an adapter with the full
+`(app, what, name, obj, options, lines)` signature; connecting a one-argument
+helper directly throws `takes 1 positional argument but 6 were given` and
+aborts the whole build.
+
+### Two-phase ordering summary
+
+| Priority | Handler | Sees |
+|---|---|---|
+| 400 | `process_docstring` | raw pybind text; fencings, indent fixes, star escapes |
+| 500 | napoleon (default) | normalised text; converts `Args:` to field lists |
+| 600 | `_second_pass_docstring` | post-napoleon RST; blank line before field lists |
+
+Anything that depends on Napoleon's output belongs in the 600 pass; anything
+that Napoleon must see un-mangled belongs in the 400 pass.
 
 ### Why `suppress_warnings` cannot help
 
@@ -395,26 +534,40 @@ nothing.
 `autodoc_warningiserror` does not help either — it is threaded into
 `import_object()` only, not into docstring parsing.
 
-The working levers are therefore:
+A `logging.Filter` on `location` (`"docstring of" in location`) also does not
+work as written: `WarningIsErrorFilter` is inserted before any filter added
+later, and it raises on the record first. Do not reach for either.
 
-- **`conf.py::process_docstring`** — fix the text before docutils sees it. This
-  is the correct layer: the content is right, only its markup is incidental.
-  Handles: namespace rewriting, unbalanced `` ` ``/`*`, `text::` that promises a
-  literal block that never arrives, and `.. note::` bodies that are not indented
-  and blank-line separated.
+- **`conf.py::process_docstring`** — the correct and only layer. Runs at
+  `priority=400`, before napoleon's default 500, so napoleon sees normalised
+  input and converts `Args:` properly.
 - **`suppress_warnings`** — only for warnings that carry a type (e.g.
   `py:duplicate`, `ref.*`, `myst.*`). Note `py:duplicate` (Python domain) is a
   different key from `ref.duplicate`; using the wrong one suppressed nothing for
   65 warnings.
 
-Prefer fixing in `process_docstring` over suppression: suppressed warnings still
-render malformed markup on the page.
+### Duplicate object descriptions are a separate problem
+
+`:inherited-members:` documents a base class's **nested classes** again on every
+subclass page. `ccObject.Type` is reached from every geometry type, so it
+registered once per subclass and failed `-W` with "duplicate object
+description". This is not a docstring issue and `process_docstring` cannot touch
+it — the fix is in the generator (`_generate_class_doc` in `make_docs.py`):
+emit `:exclude-members:` for nested classes the class only inherits, computed
+from the MRO so it stays correct when the binding adds another enum.
 
 ### Directive vs literal-block rule
 
 `.. note::` and `text::` both end in `::`, but only the latter opens a literal
 block. Trimming every trailing `::` turned `.. note::` into plain text and broke
 the indentation fix. Guard with `startswith(".. ")`.
+
+### Backtick balance is not a parity check
+
+An even count does not mean balanced: ```` `` `` ```` is four backticks, which
+docutils reads as one opener with no closer (`str: (Default ````)` occurs in
+`SequentialMatchingOptions.vocab_tree_path`). Scan runs in order and treat only
+a run of exactly two as an inline-literal delimiter.
 
 ---
 

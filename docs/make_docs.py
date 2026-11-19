@@ -354,6 +354,75 @@ class PyExampleDocsBuilder:
                             self._add_example_to_docs(ex, out_dir)
 
 
+def _inherited_nested_classes(cls):
+    """Names of nested classes this class only inherits, not declares.
+
+    `:inherited-members:` documents a base class's nested classes a second
+    time on every subclass page, which makes Sphinx report a duplicate object
+    description and fail `-W`. The set is computed from the real MRO so it
+    stays correct when the binding adds another enum, instead of hard-coding
+    the one name measured today.
+    """
+    if cls is None or not inspect.isclass(cls):
+        return set()
+
+    own = {name for name, value in vars(cls).items() if inspect.isclass(value)}
+    inherited = set()
+    for base in cls.__mro__[1:]:
+        for name, value in vars(base).items():
+            if inspect.isclass(value) and name not in own:
+                inherited.add(name)
+    return inherited
+
+
+def _module_is_importable(dotted_name):
+    """True when the module can actually be imported in this build.
+
+    documented_modules.txt is the union across build configurations; an
+    optional module such as cloudViewer.visualization.webrtc_server is listed
+    even when WebRTC was compiled out. Checking the import is the only reliable
+    way to know whether the page can exist here.
+    """
+    import importlib
+    try:
+        importlib.import_module(dotted_name)
+        return True
+    except Exception:
+        return False
+
+
+def _looks_like_name(text):
+    """True for a bare page-title or autosummary entry (a dotted identifier).
+
+    Used to tell real entries from the underline rows the override templates
+    carry (`cloudViewer.visualization` followed by `-----...`). Without this
+    check the underline was treated as an entry and deleted.
+    """
+    import re
+    return re.fullmatch(r"[A-Za-z_][\w.]*", text) is not None
+
+
+def _is_own_member(package, member):
+    """True when `member` belongs to this project rather than being re-exported.
+
+    `cloudViewer.visualization.tensorboard_plugin.summary` re-exports torch's
+    `SummaryWriter` and functools' `partial`. Listing those as project API put
+    their docstrings on our pages, where they fail `-W` ("Inline emphasis
+    start-string without end-string") because they were written for a different
+    renderer.
+
+    Objects defined in the package are documented; anything whose `__module__`
+    points elsewhere is left out. pybind members report cloudViewer.cuda.pybind.*,
+    which is still ours.
+    """
+    mod = getattr(member, "__module__", "") or ""
+    if not mod:
+        # Generated protocol classes often carry no __module__; they are part
+        # of this build's own bindings rather than a foreign re-export.
+        return True
+    return mod.startswith("cloudViewer")
+
+
 class PyAPIDocsBuilder:
     """
     Generate Python API *.rst files, per (sub) module, per class, per function.
@@ -487,7 +556,8 @@ class PyAPIDocsBuilder:
         with open(output_path, "w") as f:
             f.write(out_string)
 
-    def _generate_class_doc(self, full_module_name, class_name, output_path):
+    def _generate_class_doc(self, full_module_name, class_name, output_path,
+                            cls=None):
         out_string = ""
         out_string += "%s.%s" % (full_module_name, class_name)
         out_string += "\n" + "-" * len(out_string)
@@ -498,6 +568,19 @@ class PyAPIDocsBuilder:
         if not (full_module_name.startswith("cloudViewer.ml.tf") or
                 full_module_name.startswith("cloudViewer.ml.torch")):
             out_string += "\n    :inherited-members:"
+            # `:inherited-members:` pulls in nested classes declared on a base
+            # class, and each one is *documented* again on every subclass page.
+            # pybind nested enums (e.g. ccObject.Type, reached from every
+            # geometry type) then register their object description once per
+            # subclass, and Sphinx fails -W with "duplicate object description
+            # of ...". Excluding the inherited nested classes keeps the single
+            # authoritative description on the class that defines them while
+            # cross-references still resolve. Measured: this is the only
+            # duplicate in the tree.
+            inherited_nested = _inherited_nested_classes(cls)
+            if inherited_nested:
+                out_string += "\n    :exclude-members: " + ", ".join(
+                    sorted(inherited_nested))
         out_string += "\n"
 
         with open(output_path, "w") as f:
@@ -559,6 +642,7 @@ class PyAPIDocsBuilder:
             obj[0]
             for obj in inspect.getmembers(module)
             if inspect.isclass(obj[1]) and not obj[0].startswith('_')
+            and _is_own_member(full_module_name, obj[1])
         ]
         for class_name in class_names:
             file_name = "%s.%s.rst" % (full_module_name, class_name)
@@ -567,13 +651,15 @@ class PyAPIDocsBuilder:
             if os.path.isfile(input_path):
                 shutil.copyfile(input_path, output_path)
                 continue
-            self._generate_class_doc(full_module_name, class_name, output_path)
+            self._generate_class_doc(full_module_name, class_name, output_path,
+                                     cls=dict(inspect.getmembers(module)).get(class_name))
 
         # Function docs
         function_names = [
             obj[0]
             for obj in inspect.getmembers(module)
             if inspect.isroutine(obj[1]) and not obj[0].startswith('_')
+            and _is_own_member(full_module_name, obj[1])
         ]
         for function_name in function_names:
             file_name = "%s.%s.rst" % (full_module_name, function_name)
@@ -599,7 +685,10 @@ class PyAPIDocsBuilder:
         sub_module_doc_path = os.path.join(self.output_dir, full_module_name + ".rst")
         input_path = os.path.join(self.input_dir, full_module_name + ".rst")
         if os.path.isfile(input_path):
-            shutil.copyfile(input_path, sub_module_doc_path)
+            self._copy_override_pruned(input_path, sub_module_doc_path,
+                                       documented_sub_module_names, module)
+            # The override page is the authoritative one; generating after it
+            # would overwrite the pruned copy with a fresh full listing.
             return
         self._generate_module_doc(
             full_module_name,
@@ -608,6 +697,67 @@ class PyAPIDocsBuilder:
             documented_sub_module_names,
             sub_module_doc_path,
         )
+
+    @staticmethod
+    def _copy_override_pruned(input_path, output_path, live_submodules, module):
+        """Copy a hand-written module page, dropping entries this build lacks.
+
+        The override files in source/python_api_in list every name the project
+        can ship. When the build lacks a feature (e.g.
+        cloudViewer.visualization.webrtc_server) the `.. autosummary::` entry
+        cannot import and Sphinx fails with `-W`.
+
+        The rule is the one the generator already applies: an entry stays only
+        when the module object exposes it and it is ours to document
+        (`_is_own_member`). Everything else is an optional feature this build
+        did not produce, or a re-export from torch/functools/tensorboard.
+
+        Dotted entries (`tensorboard_plugin.summary`) are always kept: they are
+        separate documented modules reached through their own page, and getattr
+        cannot resolve the dotted path. Pruning one orphans that page
+        ("document isn't included in any toctree").
+        """
+        import inspect as _inspect
+
+        live = set(live_submodules)
+        documented = set(PyAPIDocsBuilder._get_documented_module_names())
+        kept, dropped = [], []
+        for line in open(input_path, encoding="utf-8").read().splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith(("..", ":", "**")):
+                kept.append(line)
+                continue
+            # Both forms appear: a bare autosummary name, and a toctree entry
+            # "name <module.name>". The toctree form contains a space, so it
+            # must be reduced to its name before deciding.
+            entry = stripped.split(" <", 1)[0].strip()
+            if not _looks_like_name(entry):
+                kept.append(line)
+                continue
+
+            if "." in entry:
+                kept.append(line)            # dotted = its own documented module
+                continue
+            if entry in live:
+                kept.append(line)
+                continue
+            # A documented module still needs to exist in THIS build: it may be
+            # listed in documented_modules.txt yet not be built (WebRTC off).
+            full = "%s.%s" % (module.__name__, entry)
+            if full in documented and _module_is_importable(full):
+                kept.append(line)
+                continue
+            child = getattr(module, entry, None)
+            if child is not None and _is_own_member(module.__name__, child):
+                kept.append(line)
+                continue
+            dropped.append(entry)
+
+        if dropped:
+            print(f"  Pruned {len(dropped)} entr(ies) not built here from "
+                  f"{os.path.basename(output_path)}: {', '.join(sorted(set(dropped)))}")
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(kept) + "\n")
 
 
 class JupyterDocsBuilder:
