@@ -1102,26 +1102,39 @@ def process_rst_templates(pwd, version):
         return
     
     print(f"[make_docs] Found {len(in_rst_files)} .in.rst file(s)")
-    
-    success_count = 0
+
+    failed = []
     for in_file in in_rst_files:
         out_file = in_file.replace('.in.rst', '.rst')
         try:
             with open(in_file, 'r', encoding='utf-8') as f:
                 content = f.read()
-            
+
             # Replace @cv_version@ with actual version
             content = content.replace('@cv_version@', version)
-            
+
             with open(out_file, 'w', encoding='utf-8') as f:
                 f.write(content)
-            
+
             print(f"[make_docs] Generated: {os.path.basename(out_file)}")
-            success_count += 1
         except Exception as e:
             print(f"[make_docs] Error processing {in_file}: {e}")
-    
-    print(f"[make_docs] Processed {success_count}/{len(in_rst_files)} file(s) successfully")
+            failed.append((in_file, e))
+
+    # A template that fails to render leaves the page its toctree entry points
+    # at missing. index.rst lists getting_started/installation and
+    # getting_started/builddocs, both of which come from .in.rst templates, so
+    # a silent failure produced 404s on two required Getting Started pages.
+    # (The Python API had the same shape and is guarded the same way.)
+    if failed:
+        detail = "\n  ".join(f"{os.path.basename(p)}: {e}" for p, e in failed)
+        raise RuntimeError(
+            "{} of {} .in.rst template(s) failed to render; the pages that "
+            "source/index.rst references would be missing:\n  {}"
+            .format(len(failed), len(in_rst_files), detail)
+        )
+
+    print(f"[make_docs] Processed {len(in_rst_files)}/{len(in_rst_files)} file(s) successfully")
     print("=" * 70)
     print()
 
