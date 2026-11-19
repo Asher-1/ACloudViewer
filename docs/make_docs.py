@@ -884,6 +884,18 @@ class SphinxDocsBuilder:
 
         build_dir = os.path.join(self.html_output_dir, "html")
         source_dir = os.path.join(self.current_file_dir, "source")
+        # Keep Sphinx's doctree cache OUTSIDE the output directory.
+        #
+        # Without -d, Sphinx writes .doctrees/ inside the build dir. main()
+        # removes the whole output directory before every run (`if args.clean
+        # or (args.sphinx or args.doxygen)`), so the cache was destroyed each
+        # time and every build re-parsed all sources. Putting it *inside* that
+        # directory is not enough -- it must be a sibling, which survives the
+        # removal. Verified: without this, the second build still logged
+        # "[new config] 155 added" (full rebuild); with a sibling directory the
+        # doctrees are reused.
+        doctree_dir = os.path.join(
+            os.path.dirname(os.path.normpath(self.html_output_dir)), "doctrees")
         nproc = multiprocessing.cpu_count() if self.parallel else 1
         print(f"Building docs with {nproc} processes")
 
@@ -923,7 +935,8 @@ class SphinxDocsBuilder:
 
             cmd = sphinx_build + [
                 "-j",
-                str(nproc), "-b", "html", "-D", "version=" + release_version,
+                str(nproc), "-b", "html", "-d", doctree_dir,
+                "-D", "version=" + release_version,
                 "-D", "release=" + release_version
             ] + cmd_args_today + cmd_args_strict + [
                 source_dir,
@@ -941,6 +954,8 @@ class SphinxDocsBuilder:
                 str(nproc),
                 "-b",
                 "html",
+                "-d",
+                doctree_dir,
                 "-D", "version=" + main_version,
                 "-D", "release=" + main_version,
             ] + cmd_args_today + cmd_args_strict + [

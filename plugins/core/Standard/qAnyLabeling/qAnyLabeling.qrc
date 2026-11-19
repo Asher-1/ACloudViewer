@@ -10,14 +10,11 @@
         <file>images/arrow-left.svg</file>
         <file>images/arrow-right.svg</file>
         <file>images/auto-run.png</file>
-        <file>images/backward.svg</file>
         <file>images/badge-percent.svg</file>
         <file>images/brain.png</file>
         <file>images/brush.png</file>
         <file>images/cancel.png</file>
         <file>images/caret-down.svg</file>
-        <file>images/caret-left.svg</file>
-        <file>images/caret-right.svg</file>
         <file>images/caret-up.svg</file>
         <file>images/cartesian.png</file>
         <file>images/cavy.png</file>
@@ -26,49 +23,36 @@
         <file>images/checkmark-white.svg</file>
         <file>images/circle-selection.png</file>
         <file>images/circle.png</file>
-        <file>images/click.svg</file>
         <file>images/color.png</file>
-        <file>images/color.svg</file>
         <file>images/component.svg</file>
         <file>images/compare.png</file>
         <file>images/contrast.svg</file>
         <file>images/copy-green.svg</file>
         <file>images/copy.png</file>
         <file>images/copy.svg</file>
-        <file>images/crop.png</file>
         <file>images/cuboid.png</file>
         <file>images/custom.png</file>
         <file>images/delete.png</file>
-        <file>images/document.svg</file>
         <file>images/download.svg</file>
         <file>images/edit.png</file>
         <file>images/edit.svg</file>
         <file>images/eraser.svg</file>
-        <file>images/error.svg</file>
         <file>images/export.svg</file>
         <file>images/eye-off.svg</file>
         <file>images/eye.svg</file>
         <file>images/file.png</file>
         <file>images/fit-width.png</file>
         <file>images/fit-window.png</file>
-        <file>images/fit.svg</file>
         <file>images/folder-chatbot.svg</file>
         <file>images/folder.svg</file>
-        <file>images/forward.svg</file>
         <file>images/group-shapes.png</file>
-        <file>images/help-circle.svg</file>
-        <file>images/help.png</file>
         <file>images/hidden.png</file>
         <file>images/husky.png</file>
-        <file>images/icon.icns</file>
-        <file>images/icon.ico</file>
         <file>images/icon.png</file>
         <file>images/image.svg</file>
         <file>images/import-export.svg</file>
-        <file>images/json.svg</file>
         <file>images/labels.png</file>
         <file>images/layers.svg</file>
-        <file>images/left.svg</file>
         <file>images/line-strip.png</file>
         <file>images/line.png</file>
         <file>images/link.svg</file>
@@ -77,18 +61,13 @@
         <file>images/label.png</file>
         <file>images/loop.png</file>
         <file>images/magic_wand.png</file>
-        <file>images/minus.svg</file>
-        <file>images/navigator.png</file>
         <file>images/network.svg</file>
-        <file>images/new.svg</file>
         <file>images/next.png</file>
         <file>images/open.png</file>
         <file>images/open.svg</file>
-        <file>images/overview.png</file>
         <file>images/paddlepaddle.png</file>
         <file>images/paste.png</file>
         <file>images/pause.svg</file>
-        <file>images/pdf.svg</file>
         <file>images/play.svg</file>
         <file>images/point.png</file>
         <file>images/polygon.png</file>
@@ -99,7 +78,6 @@
         <file>images/rectangle.png</file>
         <file>images/redo.svg</file>
         <file>images/refresh.svg</file>
-        <file>images/right.svg</file>
         <file>images/rotation.png</file>
         <file>images/ruler.svg</file>
         <file>images/run.svg</file>
@@ -114,9 +92,10 @@
         <file>images/show-hidden.png</file>
         <file>images/sidebar.svg</file>
         <file>images/star-black.svg</file>
+        <file>images/stop.svg</file>
         <file>images/star.svg</file>
         <file>images/starred.svg</file>
-        <file>images/stop.svg</file>
+        <file>images/vision.svg</file>
         <file>images/swatch-book.svg</file>
         <file>images/tag.svg</file>
         <file>images/tags.svg</file>
@@ -125,17 +104,17 @@
         <file>images/undo.svg</file>
         <file>images/ungroup-shapes.png</file>
         <file>images/union.png</file>
-        <file>images/us.png</file>
         <file>images/video.png</file>
-        <file>images/video.svg</file>
-        <file>images/view.svg</file>
-        <file>images/vision.svg</file>
         <file>images/wand.svg</file>
-        <file>images/warning.svg</file>
         <file>images/zoom-in.png</file>
-        <file>images/zoom-in.svg</file>
         <file>images/zoom-out.png</file>
-        <file>images/zoom-out.svg</file>
         <file>images/zoom.png</file>
+        <file>images/alibaba.png</file>
+        <file>images/anthropic.png</file>
+        <file>images/deepseek.png</file>
+        <file>images/google.png</file>
+        <file>images/ollama.png</file>
+        <file>images/openai.png</file>
+        <file>images/openrouter.png</file>
     </qresource>
 </RCC>
