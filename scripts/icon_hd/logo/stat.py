@@ -39,20 +39,17 @@ Style (fixed baseline)
 
 Usage
 -----
-    python3 -m scripts.icon_hd.logo.ecvstat --sheet o.png
-    python3 -m scripts.icon_hd.logo.ecvstat --write
+    python3 -m scripts.icon_hd.logo.icon stat --show
+    python3 -m scripts.icon_hd.logo.icon stat --sheet out.png
+    python3 -m scripts.icon_hd.logo.icon stat --write
 """
 
 from __future__ import annotations
 
-import io
 import math
-from pathlib import Path
 
 from . import paraview_style as P
 
-ROOT = Path(__file__).resolve().parents[3]
-TARGET = ROOT / "app/Resources/images/svg/ecv/ecvComputeStat.svg"
 
 CURVE_HI = P.BLUE_PALE     # #D0E5F6
 CURVE_LO = P.BLUE_MID      # #9AC1E0
@@ -124,7 +121,7 @@ def _greek_sigma(x: float, y: float, size: float = 2.0) -> str:
            f'stroke-linecap="round" stroke-linejoin="round"/>'
 
 
-def ecv_compute_stat() -> str:
+def build() -> str:
     """A fitted Gaussian over axes, with mu and sigma marked on it."""
     defs = (
         '<linearGradient id="bell" x1="0" y1="0" x2="0" y2="1">'
@@ -177,50 +174,3 @@ def ecv_compute_stat() -> str:
     parts.append(_greek_sigma(MU + SIGMA + 1.4, sy - 1.4, 2.0))
 
     return P.svg("\n".join(parts), defs=defs)
-
-
-def _fit_icon() -> str:
-    raw = ecv_compute_stat()
-    inner = raw.split(">", 1)[1].rsplit("</svg>", 1)[0]
-    return P.fit(inner, target=0.92)
-
-
-if __name__ == "__main__":                                   # pragma: no cover
-    import argparse
-
-    ap = argparse.ArgumentParser(description="Preview ecvComputeStat.")
-    ap.add_argument("--sheet", default=None)
-    ap.add_argument("--write", action="store_true")
-    a = ap.parse_args()
-
-    svg = _fit_icon()
-    if a.write:
-        TARGET.write_text(svg)
-        print(f"wrote {TARGET}")
-    if a.sheet:
-        import cairosvg
-        from PIL import Image, ImageDraw, ImageFont
-
-        try:
-            font = ImageFont.truetype(
-                "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 13)
-        except Exception:
-            font = ImageFont.load_default()
-
-        sizes = (16, 24, 32, 48, 96, 192)
-        w = sum(sizes) + 26 * (len(sizes) + 1)
-        h = max(sizes) + 52
-        canvas = Image.new("RGBA", (w, h), (255, 255, 255, 255))
-        dr = ImageDraw.Draw(canvas)
-        x = 26
-        for s in sizes:
-            png = cairosvg.svg2png(bytestring=svg.encode(), output_width=s,
-                                   output_height=s)
-            canvas.alpha_composite(Image.open(io.BytesIO(png)).convert("RGBA"),
-                                   (x, 16 + max(sizes) - s))
-            dr.text((x, h - 22), f"{s}px", font=font, fill=(120, 120, 120))
-            x += s + 26
-        canvas.convert("RGB").save(a.sheet)
-        print(f"sheet -> {a.sheet}")
-    if not a.write and not a.sheet:
-        print(svg)

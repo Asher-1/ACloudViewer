@@ -41,20 +41,17 @@ Style (fixed baseline)
 
 Usage
 -----
-    python3 -m scripts.icon_hd.logo.ecvmeshdistance --sheet o.png
-    python3 -m scripts.icon_hd.logo.ecvmeshdistance --write
+    python3 -m scripts.icon_hd.logo.icon meshdistance --show
+    python3 -m scripts.icon_hd.logo.icon meshdistance --sheet out.png
+    python3 -m scripts.icon_hd.logo.icon meshdistance --write
 """
 
 from __future__ import annotations
 
-import io
 import math
-from pathlib import Path
 
 from . import paraview_style as P
 
-ROOT = Path(__file__).resolve().parents[3]
-TARGET = ROOT / "app/Resources/images/svg/ecv/ecvCloudMeshDistance.svg"
 
 MESH_HI = "#E8C87A"       # tan family, lifted toward the samples' #C1A561
 MESH_LO = "#B98F1E"
@@ -284,7 +281,7 @@ def _labels(x1, y1, x2, y2) -> str:
 # ---------------------------------------------------------------------------
 
 
-def ecv_cloud_mesh_distance() -> str:
+def build() -> str:
     """A triangulated surface above right, a point cloud below left, and a
     graduated arrow between them at an exact 45 degrees.
 
@@ -325,50 +322,3 @@ def ecv_cloud_mesh_distance() -> str:
     parts.append(_ruler(x1, y1, x2, y2))
     parts.append(_labels(x1, y1, x2, y2))
     return P.svg("\n".join(parts))
-
-
-def _fit_icon() -> str:
-    raw = ecv_cloud_mesh_distance()
-    inner = raw.split(">", 1)[1].rsplit("</svg>", 1)[0]
-    return P.fit(inner, target=0.92)
-
-
-if __name__ == "__main__":                                   # pragma: no cover
-    import argparse
-
-    ap = argparse.ArgumentParser(description="Preview ecvCloudMeshDistance.")
-    ap.add_argument("--sheet", default=None)
-    ap.add_argument("--write", action="store_true")
-    a = ap.parse_args()
-
-    svg = _fit_icon()
-    if a.write:
-        TARGET.write_text(svg)
-        print(f"wrote {TARGET}")
-    if a.sheet:
-        import cairosvg
-        from PIL import Image, ImageDraw, ImageFont
-
-        try:
-            font = ImageFont.truetype(
-                "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 13)
-        except Exception:
-            font = ImageFont.load_default()
-
-        sizes = (16, 24, 32, 48, 96, 192)
-        w = sum(sizes) + 26 * (len(sizes) + 1)
-        h = max(sizes) + 52
-        canvas = Image.new("RGBA", (w, h), (255, 255, 255, 255))
-        dr = ImageDraw.Draw(canvas)
-        x = 26
-        for s in sizes:
-            png = cairosvg.svg2png(bytestring=svg.encode(), output_width=s,
-                                   output_height=s)
-            canvas.alpha_composite(Image.open(io.BytesIO(png)).convert("RGBA"),
-                                   (x, 16 + max(sizes) - s))
-            dr.text((x, h - 22), f"{s}px", font=font, fill=(120, 120, 120))
-            x += s + 26
-        canvas.convert("RGB").save(a.sheet)
-        print(f"sheet -> {a.sheet}")
-    if not a.write and not a.sheet:
-        print(svg)

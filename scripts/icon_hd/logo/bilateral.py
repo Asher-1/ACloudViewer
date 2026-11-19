@@ -36,19 +36,16 @@ the eight approved samples by `stylecheck`-compatible metrics.
 
 Usage
 -----
-    python3 -m scripts.icon_hd.logo.ecvbilateral --sheet out.png
-    python3 -m scripts.icon_hd.logo.ecvbilateral --concept A
+    python3 -m scripts.icon_hd.logo.icon bilateral --show
+    python3 -m scripts.icon_hd.logo.icon bilateral --sheet out.png
+    python3 -m scripts.icon_hd.logo.icon bilateral --write
 """
 
 from __future__ import annotations
 
-import io
-from pathlib import Path
 
 from . import paraview_style as P
 
-ROOT = Path(__file__).resolve().parents[3]
-TARGET = ROOT / "app/Resources/images/svg/ecv/ecvBilateralFilter.svg"
 
 # Colours taken from the eight samples' measured palette, not invented.
 #
@@ -187,61 +184,13 @@ def concept_c() -> str:
 
 
 CONCEPTS = {"A": concept_a, "B": concept_b, "C": concept_c}
+# The chosen concept, as the icon registry's single entry point.  B is the
+# approved one: two folded faces meeting at a hard crease.  A and C remain
+# importable because the comparison between them is what justified B, and a
+# future reviewer will want to see it without re-deriving the three drawings.
+CONCEPT = "B"
 
 
-def fitted(name: str) -> str:
-    raw = CONCEPTS[name]()
-    inner = raw.split(">", 1)[1].rsplit("</svg>", 1)[0]
-    return P.fit(inner, target=0.92)
-
-
-if __name__ == "__main__":                                   # pragma: no cover
-    import argparse
-
-    ap = argparse.ArgumentParser(description="ecvBilateralFilter concepts.")
-    ap.add_argument("--concept", default=None, choices=sorted(CONCEPTS))
-    ap.add_argument("--sheet", default=None)
-    ap.add_argument("--write", default=None, choices=sorted(CONCEPTS))
-    a = ap.parse_args()
-
-    if a.write:
-        TARGET.write_text(fitted(a.write))
-        print(f"wrote {TARGET}  (concept {a.write})")
-    if a.concept:
-        print(fitted(a.concept))
-    if a.sheet:
-        import cairosvg
-        from PIL import Image, ImageDraw, ImageFont
-
-        try:
-            font = ImageFont.truetype(
-                "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 16)
-        except Exception:
-            font = ImageFont.load_default()
-
-        sizes = (16, 24, 32, 48, 96, 192)
-        names = sorted(CONCEPTS)
-        lab_w, gap, top = 300, 24, 40
-        w = lab_w + sum(sizes) + gap * len(sizes) + 20
-        h = top + len(names) * (max(sizes) + 34) + 16
-        canvas = Image.new("RGBA", (w, h), (252, 252, 253, 255))
-        dr = ImageDraw.Draw(canvas)
-        x = lab_w
-        for s in sizes:
-            dr.text((x, 12), f"{s}px", font=font, fill=(120, 120, 120))
-            x += s + gap
-        for i, nm in enumerate(names):
-            y = top + i * (max(sizes) + 34)
-            dr.text((14, y + max(sizes) // 2 - 10), f"{nm}  concept_{nm.lower()}",
-                    font=font, fill=(30, 30, 30))
-            svg = fitted(nm).encode()
-            x = lab_w
-            for s in sizes:
-                png = cairosvg.svg2png(bytestring=svg, output_width=s,
-                                       output_height=s)
-                canvas.alpha_composite(
-                    Image.open(io.BytesIO(png)).convert("RGBA"),
-                    (x, y + max(sizes) - s))
-                x += s + gap
-        canvas.convert("RGB").save(a.sheet)
-        print(f"sheet -> {a.sheet}")
+def build() -> str:
+    """The approved concept (B), raw and unfitted."""
+    return CONCEPTS[CONCEPT]()

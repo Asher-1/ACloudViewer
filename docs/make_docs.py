@@ -729,13 +729,24 @@ class JupyterDocsBuilder:
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         print("")
         
-        # In CI environment (GITHUB_ACTIONS), raise to fail the build if any notebooks failed
-        # Note: We check GITHUB_ACTIONS specifically, not just CI, because CI=true is set
-        # locally to disable interactive mode in notebooks
-        if failed_notebooks and "GITHUB_ACTIONS" in os.environ:
+        # A notebook that fails to execute must fail the build.
+        #
+        # This used to fire only when GITHUB_ACTIONS was set. The docs build
+        # runs inside docker/Dockerfile.docs, which sets CI=true and does NOT
+        # set GITHUB_ACTIONS, so the check never ran there: the log printed
+        # "❌ Execution of surface_reconstruction.ipynb failed (this will
+        # cause CI to fail)" and the build carried on, shipping a notebook
+        # with partial execution output. The message was simply untrue.
+        #
+        # CI is the signal that means "no human can inspect this build".
+        # Locally (no CI, no GITHUB_ACTIONS) a failing notebook is still
+        # saved with partial output so the author can debug it.
+        if failed_notebooks and ("CI" in os.environ or "GITHUB_ACTIONS" in os.environ):
             raise RuntimeError(
-                "{} notebook(s) failed to execute in CI environment. "
-                "This will cause the build to fail.".format(len(failed_notebooks))
+                "{} notebook(s) failed to execute in CI environment: {}. "
+                "The published documentation would silently contain partial "
+                "or missing output.".format(
+                    len(failed_notebooks), ", ".join(failed_notebooks))
             )
 
         # Every notebook the documentation needs lives in docs/jupyter/.

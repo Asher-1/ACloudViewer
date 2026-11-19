@@ -33,7 +33,7 @@
       <widget class="QToolButton" name="unstackAlignToolButton">
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/svg/ecv/toolMainShowAlignCloud.svg</normaloff>:/Resources/images/svg/ecv/toolMainShowAlignCloud.svg</iconset>
+         <normaloff>:/Resources/images/svg/ecv/toolMainUnstack.svg</normaloff>:/Resources/images/svg/ecv/toolMainUnstack.svg</iconset>
        </property>
       </widget>
      </item>
@@ -210,7 +210,7 @@
       <widget class="QToolButton" name="unstackRefToolButton">
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/svg/ecv/toolMainShowAlignCloud.svg</normaloff>:/Resources/images/svg/ecv/toolMainShowAlignCloud.svg</iconset>
+         <normaloff>:/Resources/images/svg/ecv/toolMainUnstack.svg</normaloff>:/Resources/images/svg/ecv/toolMainUnstack.svg</iconset>
        </property>
       </widget>
      </item>

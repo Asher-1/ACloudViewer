@@ -40,21 +40,17 @@ and an end, and they say "point pair" outright, which is the tool's actual name.
 
 Usage
 -----
-    python3 -m scripts.icon_hd.logo.ecvalign                # print the SVG
-    python3 -m scripts.icon_hd.logo.ecvalign --sheet out.png
-    python3 -m scripts.icon_hd.logo.ecvalign --write        # replace the icon
+    python3 -m scripts.icon_hd.logo.icon align --show
+    python3 -m scripts.icon_hd.logo.icon align --sheet out.png
+    python3 -m scripts.icon_hd.logo.icon align --write
 """
 
 from __future__ import annotations
 
-import io
 import math
-from pathlib import Path
 
 from . import paraview_style as P
 
-ROOT = Path(__file__).resolve().parents[3]
-TARGET = ROOT / "app/Resources/images/svg/ecv/ecvAlign.svg"
 
 GREEN_HI = P.GREEN_LT      # #A7D28C -- pqPreview's dominant fill
 GREEN_LO = P.GREEN         # #72BE44 -- pqIsosurface's saturated green
@@ -81,7 +77,7 @@ def _form(points, gid: str) -> str:
            f'stroke-width="{P.STROKE}" stroke-linejoin="round"/>'
 
 
-def ecv_align() -> str:
+def build() -> str:
     """Green cloud, red cloud, and a blue arrow from one marked point to the
     other: align by picking corresponding point pairs."""
     # Two forms of *equal* size with a clear gap between them.
@@ -126,47 +122,3 @@ def ecv_align() -> str:
 
     inner = "\n".join(parts)
     return P.svg(inner, defs=defs)
-
-
-def _fit_icon() -> str:
-    """``P.svg`` above keeps the raw 24-unit frame; the icon itself is fitted so
-    its bounds span 92 % of the canvas like the samples."""
-    raw = ecv_align()
-    body = raw.split(">", 1)[1].rsplit("</svg>", 1)[0]
-    return P.fit(body, target=0.92)
-
-
-if __name__ == "__main__":                                   # pragma: no cover
-    import argparse
-
-    ap = argparse.ArgumentParser(description="Preview the ecvAlign rework.")
-    ap.add_argument("--sheet", default=None)
-    ap.add_argument("--write", action="store_true")
-    a = ap.parse_args()
-
-    svg = _fit_icon()
-    if a.write:
-        TARGET.write_text(svg)
-        print(f"wrote {TARGET}")
-    if a.sheet:
-        import cairosvg
-        from PIL import Image, ImageDraw
-
-        sizes = (16, 24, 32, 48, 96, 192)
-        gap, pad, lab = 16, 16, 22
-        w = sum(sizes) + gap * (len(sizes) + 1)
-        h = max(sizes) + lab + pad * 2
-        canvas = Image.new("RGBA", (w, h), (250, 250, 251, 255))
-        dr = ImageDraw.Draw(canvas)
-        x = gap
-        for s in sizes:
-            png = cairosvg.svg2png(bytestring=svg.encode(),
-                                   output_width=s, output_height=s)
-            canvas.alpha_composite(Image.open(io.BytesIO(png)).convert("RGBA"),
-                                   (x, pad + max(sizes) - s))
-            dr.text((x, pad + max(sizes) + 4), f"{s}", fill=(90, 90, 90))
-            x += s + gap
-        canvas.convert("RGB").save(a.sheet)
-        print(f"sheet -> {a.sheet}")
-    if not a.write and not a.sheet:
-        print(svg)

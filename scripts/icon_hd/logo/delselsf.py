@@ -32,19 +32,16 @@ Style (fixed baseline)
 
 Usage
 -----
-    python3 -m scripts.icon_hd.logo.ecvdelsf --sheet o.png
-    python3 -m scripts.icon_hd.logo.ecvdelsf --write
+    python3 -m scripts.icon_hd.logo.icon delsf --show
+    python3 -m scripts.icon_hd.logo.icon delsf --sheet out.png
+    python3 -m scripts.icon_hd.logo.icon delsf --write
 """
 
 from __future__ import annotations
 
-import io
-from pathlib import Path
 
 from . import paraview_style as P
 
-ROOT = Path(__file__).resolve().parents[3]
-TARGET = ROOT / "app/Resources/images/svg/ecv/ecvDeleteSF.svg"
 
 # The scalar-field ramp.  Ends are the samples' own saturated colours; the
 # interior follows the usual blue-green-yellow-red order so it reads as a
@@ -127,7 +124,7 @@ def _arrow(x1: float, y: float, x2: float) -> str:
     ])
 
 
-def ecv_delete_sf() -> str:
+def build() -> str:
     """A scalar-field ramp being dropped into a bin."""
     defs = (
         '<linearGradient id="ramp" x1="0" y1="0" x2="0" y2="1">'
@@ -146,50 +143,3 @@ def ecv_delete_sf() -> str:
         _arrow(8.2, 12.2, 11.2),
     ]
     return P.svg("\n".join(parts), defs=defs)
-
-
-def _fit_icon() -> str:
-    raw = ecv_delete_sf()
-    inner = raw.split(">", 1)[1].rsplit("</svg>", 1)[0]
-    return P.fit(inner, target=0.92)
-
-
-if __name__ == "__main__":                                   # pragma: no cover
-    import argparse
-
-    ap = argparse.ArgumentParser(description="Preview ecvDeleteSF.")
-    ap.add_argument("--sheet", default=None)
-    ap.add_argument("--write", action="store_true")
-    a = ap.parse_args()
-
-    svg = _fit_icon()
-    if a.write:
-        TARGET.write_text(svg)
-        print(f"wrote {TARGET}")
-    if a.sheet:
-        import cairosvg
-        from PIL import Image, ImageDraw, ImageFont
-
-        try:
-            font = ImageFont.truetype(
-                "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 13)
-        except Exception:
-            font = ImageFont.load_default()
-
-        sizes = (16, 24, 32, 48, 96, 192)
-        w = sum(sizes) + 26 * (len(sizes) + 1)
-        h = max(sizes) + 52
-        canvas = Image.new("RGBA", (w, h), (255, 255, 255, 255))
-        dr = ImageDraw.Draw(canvas)
-        x = 26
-        for s in sizes:
-            png = cairosvg.svg2png(bytestring=svg.encode(), output_width=s,
-                                   output_height=s)
-            canvas.alpha_composite(Image.open(io.BytesIO(png)).convert("RGBA"),
-                                   (x, 16 + max(sizes) - s))
-            dr.text((x, h - 22), f"{s}px", font=font, fill=(120, 120, 120))
-            x += s + 26
-        canvas.convert("RGB").save(a.sheet)
-        print(f"sheet -> {a.sheet}")
-    if not a.write and not a.sheet:
-        print(svg)

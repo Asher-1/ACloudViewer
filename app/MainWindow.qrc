@@ -127,13 +127,13 @@
         <file>Resources/images/svg/ecv/toolMainPointPicking.svg</file>
         <file>Resources/images/svg/misc/store.svg</file>
         <file>Resources/images/svg/ecv/toolMainPencil.svg</file>
-        <file>Resources/images/svg/ecv/toolMainShowAlignCloud.svg</file>
+        <file>Resources/images/svg/ecv/toolMainUnstack.svg</file>
         <file>Resources/images/svg/ecv/toolMainSFGradient.svg</file>
         <file>Resources/images/svg/ecv/toolMainSamplePointsOnMesh.svg</file>
         <file>Resources/images/ecvTracePolyline.png</file>
         <file>Resources/images/svg/ecv/toolMainAddConstSF.svg</file>
         <file>Resources/images/svg/db/dbOctreeSymbol.svg</file>
-        <file>Resources/images/svg/ecv/toolMainDistributionFit.svg</file>
+        <file>Resources/images/svg/ecv/toolMainComputeStat.svg</file>
         <file>Resources/images/svg/ecv/toolMainShowHistogram.svg</file>
         <file>Resources/images/svg/ecv/toolMainSubsample.svg</file>
         <file>Resources/images/svg/ecv/toolMainCloudCloudDistance.svg</file>

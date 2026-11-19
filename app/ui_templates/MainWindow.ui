@@ -2533,7 +2533,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionComputeStatParams">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/toolMainDistributionFit.svg</normaloff>:/Resources/images/svg/ecv/toolMainDistributionFit.svg</iconset>
+     <normaloff>:/Resources/images/svg/ecv/toolMainComputeStat.svg</normaloff>:/Resources/images/svg/ecv/toolMainComputeStat.svg</iconset>
    </property>
    <property name="text">
     <string>Compute stat. params</string>
