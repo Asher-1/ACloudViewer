@@ -434,18 +434,19 @@ class PyAPIDocsBuilder:
 
     def _try_import_module(self, full_module_name):
         """Returns the module object for the given module path"""
+        root_module = None
         try:
-            import cloudViewer
-            if hasattr(cloudViewer, '_build_config'):
-                if cloudViewer._build_config.get('BUILD_TENSORFLOW_OPS', False):
+            import cloudViewer as root_module
+            if hasattr(root_module, '_build_config'):
+                if root_module._build_config.get('BUILD_TENSORFLOW_OPS', False):
                     import cloudViewer.ml.tf
-                if cloudViewer._build_config.get('BUILD_PYTORCH_OPS', False):
+                if root_module._build_config.get('BUILD_PYTORCH_OPS', False):
                     import cloudViewer.ml.torch
         except (ImportError, AttributeError, KeyError) as e:
-            # Optional modules, ignore if not available
+            # The root module may be absent; the per-module import below
+            # decides whether this particular module is available.
             print(f"⚠️  {e}")
-            pass
-        
+
         # Try to import the specific module
         try:
             # Try to import directly. This will work for pure python submodules
@@ -456,8 +457,19 @@ class PyAPIDocsBuilder:
             # This code path is necessary for modules for which we manually
             # define a specific module path (e.g. the modules defined with
             # pybind).
+            #
+            # `cloudViewer` is only bound when the `import` above succeeded, so
+            # referencing it directly raised "cannot access local variable
+            # 'cloudViewer'" and hid the real cause. The name is also shadowed
+            # by the assignment inside the try, which makes it a local for the
+            # whole function.
+            if root_module is None:
+                raise ImportError(
+                    f"Could not find module {full_module_name}: the cloudViewer "
+                    "root module is not importable (is it built and on PYTHONPATH?)"
+                )
             try:
-                current_module = cloudViewer
+                current_module = root_module
                 for sub_module_name in full_module_name.split(".")[1:]:
                     current_module = getattr(current_module, sub_module_name)
                 return current_module
