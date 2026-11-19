@@ -638,6 +638,10 @@ jobs:
           
           FOUND_COUNT=0
           NOT_FOUND_COUNT=0
+          # Releases whose archive downloaded but could not be restored. These
+          # are real regressions (a previously published version would vanish),
+          # as opposed to a release that simply never shipped docs.
+          FAILED_ARCHIVES=""
           
           if [ -n "$RELEASES" ]; then
             echo "✅ Found versioned releases:"
@@ -655,12 +659,27 @@ jobs:
               DOCS_ARCHIVE="acloudviewer-${VERSION}-docs.tar.gz"
               if gh release download "$VERSION" --pattern "$DOCS_ARCHIVE" --dir /tmp 2>/dev/null; then
                 echo "    ✅ Found and downloaded $DOCS_ARCHIVE"
-                mkdir -p "preserved-versions/documentation/$VERSION"
-                tar -xzf "/tmp/$DOCS_ARCHIVE" -C "preserved-versions/documentation/$VERSION/" 2>/dev/null || {
-                  echo "    ⚠️  Failed to extract $DOCS_ARCHIVE"
-                }
+                # Extract into a staging dir first. Creating the target
+                # directory before knowing the archive is readable left an
+                # EMPTY vX.Y.Z/ behind on a corrupt archive; list_version_dirs
+                # then counted it as a deployed version, so versions.json
+                # advertised a release whose pages all 404. Only publish the
+                # directory when extraction actually produced content.
+                rm -rf "preserved-versions/documentation/.staging"
+                mkdir -p "preserved-versions/documentation/.staging"
+                if tar -xzf "/tmp/$DOCS_ARCHIVE" -C "preserved-versions/documentation/.staging" 2>/dev/null \
+                   && [ -f "preserved-versions/documentation/.staging/index.html" ]; then
+                  rm -rf "preserved-versions/documentation/$VERSION"
+                  mv "preserved-versions/documentation/.staging" \
+                     "preserved-versions/documentation/$VERSION"
+                  echo "    ✅ Restored $VERSION ($(find "preserved-versions/documentation/$VERSION" -type f | wc -l) files)"
+                  FOUND_COUNT=$((FOUND_COUNT + 1))
+                else
+                  rm -rf "preserved-versions/documentation/.staging"
+                  echo "    ❌ $DOCS_ARCHIVE is unreadable or has no index.html; not publishing $VERSION"
+                  FAILED_ARCHIVES="$FAILED_ARCHIVES $VERSION"
+                fi
                 rm -f "/tmp/$DOCS_ARCHIVE"
-                FOUND_COUNT=$((FOUND_COUNT + 1))
               else
                 echo "    ⏭️  No documentation archive found for $VERSION"
                 echo "       Expected: $DOCS_ARCHIVE"
@@ -673,6 +692,19 @@ jobs:
             echo "📊 Summary:"
             echo "  - Found archives: $FOUND_COUNT"
             echo "  - Missing archives: $NOT_FOUND_COUNT"
+            echo ""
+            # A release that HAS an archive but whose archive cannot be
+            # restored means a previously published version is about to
+            # disappear from the site (Pages replaces the artifact wholesale,
+            # and versions.json is derived from directories on disk, so a
+            # missing directory also removes the version from every probe).
+            # That is a regression, not a "release never shipped docs" case.
+            if [ -n "$FAILED_ARCHIVES" ]; then
+              echo "❌ Failed to restore archives for:$FAILED_ARCHIVES"
+              echo "   Publishing now would DELETE these versions from the site."
+              echo "   Fix the release asset(s) or remove the release before deploying."
+              exit 1
+            fi
             echo ""
             echo "📊 Preserved version archives:"
             ls -la preserved-versions/documentation/ 2>/dev/null | grep -E '^d.*v[0-9]+' || echo "  (none found)"

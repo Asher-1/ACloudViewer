@@ -56,11 +56,11 @@ from . import paraview_style as P
 ROOT = Path(__file__).resolve().parents[3]
 TARGET = ROOT / "app/Resources/images/svg/ecv/ecvAlign.svg"
 
-GREEN_HI = "#C2DCAE"
-GREEN_LO = "#7BAA5E"
-RED_HI = "#D89089"
-RED_LO = "#A63A32"
-ARROW = "#2896D3"
+GREEN_HI = P.GREEN_LT      # #A7D28C -- pqPreview's dominant fill
+GREEN_LO = P.GREEN         # #72BE44 -- pqIsosurface's saturated green
+TAN_HI = "#D8C081"         # pqPaste's tan (#C1A561) lifted one step, because at
+TAN_LO = P.TAN             # full value it read as muddy olive beside the green
+ARROW = P.BLUE_STRONG      # #2896D3 -- pqFullscreen's action blue
 
 
 def _grad(gid: str, hi: str, lo: str, angle: float) -> str:
@@ -84,22 +84,21 @@ def _form(points, gid: str) -> str:
 def ecv_align() -> str:
     """Green cloud, red cloud, and a blue arrow from one marked point to the
     other: align by picking corresponding point pairs."""
-    # Six-sided forms with a deliberate, calm irregularity -- enough to read as
-    # scanned data, not enough to look like a bug.
+    # Two forms of *equal* size with a clear gap between them.
     #
-    # Both are large and slightly overlapping.  Measured: with a clear gap
-    # between them the icon came out at 38 % ink against the samples' 54-69 %,
-    # because the whitespace between two separate objects dominates.  In
-    # pqPreview the magnifier overlaps the square, and that overlap is what
-    # carries the mass; the same trick applies here, and it also reads better as
-    # "these two clouds are being related" rather than "two clouds".
-    green = [(1.0, 12.0), (5.6, 9.4), (12.4, 10.4), (15.2, 15.2),
-             (12.6, 21.6), (4.4, 22.0), (0.8, 17.6)]
-    red = [(14.0, 0.8), (21.8, 1.2), (23.2, 7.6), (19.8, 12.4),
-           (13.6, 11.4), (11.8, 5.2)]
+    # Measured on the original: the green form spans 39.2 x 38.3 % of the canvas
+    # and the red form 43.3 x 38.3 % -- they are the same size.  The previous
+    # version drew the green one at 75.8 x 69.2 % and the red at 22.5 x 19.2 %,
+    # which inverted both the size and the hierarchy.  At 24 units, 40 % of the
+    # canvas is 9.6 units, so each form is a ~9.5-unit blob in opposite corners
+    # with roughly 2.5 units of clear space between them.
+    green = [(1.6, 14.6), (4.6, 12.8), (8.6, 13.2), (10.6, 16.6),
+             (9.4, 20.8), (5.0, 22.2), (1.8, 19.8)]
+    red = [(13.6, 2.0), (17.8, 1.6), (21.8, 3.4), (22.2, 7.6),
+           (19.4, 10.4), (15.2, 10.0), (13.2, 6.4)]
 
     defs = (_grad("gA", GREEN_HI, GREEN_LO, 35)
-            + _grad("gB", RED_HI, RED_LO, 215))
+            + _grad("gB", TAN_HI, TAN_LO, 215))
 
     parts = [_form(green, "gA"), _form(red, "gB")]
 
