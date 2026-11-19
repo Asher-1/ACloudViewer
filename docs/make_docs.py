@@ -750,11 +750,29 @@ class JupyterDocsBuilder:
                 "This will cause the build to fail.".format(len(failed_notebooks))
             )
 
-        url = "https://github.com/isl-org/Open3D/files/8243984/t_icp_registration.zip"
-        output_file = "t_icp_registration.ipynb"
-        output_file_path = nb_parent_dst / "t_pipelines" / output_file
-        output_file_path.parent.mkdir(parents=True, exist_ok=True)
-        self.overwrite_tutorial_file(url, output_file, str(output_file_path))
+        # Fetch a reference notebook from upstream and install it as
+        # t_pipelines/t_icp_registration.ipynb.
+        #
+        # This used to run unconditionally, and it silently undid every edit
+        # to the checked-in notebook: `_update_file` above copies
+        # docs/jupyter/t_pipelines/t_icp_registration.ipynb into the Sphinx
+        # source tree, then this overwrote it with the upstream Open3D copy
+        # (1670 lines, `####` headings) -- while the repository's own file is
+        # 1285 lines with `###` headings. The build therefore compiled a
+        # notebook nobody edited in this repo, which is why source-level fixes
+        # to that file kept having no effect on CI.
+        #
+        # The repository copy is authoritative. Only fetch when it is absent,
+        # and never overwrite an existing file.
+        upstream_notebook = nb_parent_dst / "t_pipelines" / "t_icp_registration.ipynb"
+        if upstream_notebook.exists():
+            print(f"ℹ️  keeping the repository copy of {upstream_notebook.name}"
+                  f" ({sum(1 for _ in upstream_notebook.open())} lines)")
+        else:
+            url = "https://github.com/isl-org/Open3D/files/8243984/t_icp_registration.zip"
+            upstream_notebook.parent.mkdir(parents=True, exist_ok=True)
+            self.overwrite_tutorial_file(url, "t_icp_registration.ipynb",
+                                         str(upstream_notebook))
         
         # Copy static images (like donation.png) to _static directory
         print("📸 Copying static images to _static directory...")
