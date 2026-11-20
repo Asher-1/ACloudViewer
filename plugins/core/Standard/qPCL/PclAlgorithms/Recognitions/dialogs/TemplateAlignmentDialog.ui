@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../../../qPCL.qrc">
-    <normaloff>:/toolbar/PclAlgorithms/icons/templateAlignment.png</normaloff>:/toolbar/PclAlgorithms/icons/templateAlignment.png</iconset>
+    <normaloff>:/qPCL/icons/pclTemplateAlignment.svg</normaloff>:/qPCL/icons/pclTemplateAlignment.svg</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

@@ -294,7 +294,7 @@ if __name__ == "__main__":                                  # pragma: no cover
     from PIL import Image
 
     root = Path(__file__).resolve().parents[3]
-    src = root / "app/Resources/images/svg"
+    src = Path(__file__).resolve().with_name('reference_samples')
     names = ["pqPreview.png", "pqPaste.png", "pqIsosurface.png", "pqGlyph.png",
              "pqFullscreen.png", "pqRecentFile.svg", "pqProbeLocation.svg",
              "pqSolidColor.svg"]

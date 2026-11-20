@@ -1,3 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
 <svg
    xmlns:dc="http://purl.org/dc/elements/1.1/"
    xmlns:cc="http://creativecommons.org/ns#"
@@ -7,14 +9,13 @@
    xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="24"
-   height="24"
+   width="32px"
+   height="32px"
    id="svg3757"
    sodipodi:version="0.32"
    inkscape:version="0.46"
    sodipodi:docname="icon3b.svg"
-   inkscape:output_extension="org.inkscape.output.svg.inkscape" viewBox="0 0 24 24">
-<g transform="translate(-3.897397,-2.975808) scale(0.921588)">
+   inkscape:output_extension="org.inkscape.output.svg.inkscape">
   <defs
      id="defs3759">
     <linearGradient
@@ -240,5 +241,4 @@
        transform="matrix(0.9271642,0,0,0.9271642,1.2011862,0.544084)"
        sodipodi:open="true" />
   </g>
-</g>
 </svg>

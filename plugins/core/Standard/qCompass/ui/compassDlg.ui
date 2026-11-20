@@ -213,7 +213,7 @@
      </property>
      <property name="icon">
       <iconset resource="../../../../app/MainWindow.qrc">
-       <normaloff>:/Resources/images/ecvGear.png</normaloff>:/Resources/images/ecvGear.png</iconset>
+       <normaloff>:/Resources/images/svg/misc/propertyEditor.svg</normaloff>:/Resources/images/svg/misc/propertyEditor.svg</iconset>
      </property>
      <property name="checkable">
       <bool>false</bool>
@@ -253,7 +253,7 @@
      </property>
      <property name="icon">
       <iconset resource="../../../../app/MainWindow.qrc">
-       <normaloff>:/Resources/images/save.png</normaloff>:/Resources/images/save.png</iconset>
+       <normaloff>:/Resources/images/svg/main/toolMainSave.svg</normaloff>:/Resources/images/svg/main/toolMainSave.svg</iconset>
      </property>
     </widget>
    </item>

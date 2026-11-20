@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-<!-- Restyled in the ParaView icon language: 64-unit artboard, outline #6f6f59 / #787878, measured pq palette. -->
-<g transform="scale(0.375)">
-<polygon points="20,40 36,40 14,56" fill="#d0e5f6" stroke="#787878" stroke-width="4" stroke-linejoin="round"/>
-<rect x="8" y="10" width="48" height="34" rx="10" ry="10" fill="#d0e5f6" stroke="#787878" stroke-width="5.33" stroke-linejoin="round"/>
-<circle cx="32" cy="20" r="4" fill="#6f6f59"/>
-<path d="M32 27.5 L32 36.5" fill="none" stroke="#6f6f59" stroke-width="7" stroke-linecap="round"/></g>
-</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.6171,-1.6686) scale(1.05143)">
+
+<defs><linearGradient id="patch" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#D0E5F6"/><stop offset="1.000" stop-color="#9AC1E0"/></linearGradient></defs>
+<title>Estimate surface normals and curvature</title>
+  <path d="M 2 17 Q 7 6 12 12 Q 17 18 22 5 L 22 19 Q 17 23 12 17 Q 7 11 2 21 Z" fill="url(#patch)" stroke="#6F6F59"/>  <path d="M 5 13 L 3.8 8 M 9 13 L 9 7 M 13 15 L 14 9 M 18 14 L 20 8" fill="none" stroke="#4E8C2E" stroke-width="1.0"/>  <path d="M 3.8 8 L 2.7 9.8 L 4.7 9.4 Z" fill="#4E8C2E" stroke="none"/>  <path d="M 9 7 L 8 8.8 L 10 8.8 Z" fill="#4E8C2E" stroke="none"/>  <path d="M 2 21 Q 7 11 12 17 Q 17 23 22 10" fill="none" stroke="#6F6F59" stroke-width="0.55"/>
+
+</g>
+</svg>

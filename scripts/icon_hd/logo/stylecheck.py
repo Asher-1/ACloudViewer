@@ -51,7 +51,7 @@ from PIL import Image
 from scipy import ndimage
 
 ROOT = Path(__file__).resolve().parents[3]
-SAMPLE_DIR = ROOT / "app/Resources/images/svg"
+SAMPLE_DIR = Path(__file__).resolve().with_name('reference_samples')
 
 SAMPLES = ["pqPreview.png", "pqPaste.png", "pqIsosurface.png", "pqGlyph.png",
            "pqFullscreen.png", "pqRecentFile.svg", "pqProbeLocation.svg",

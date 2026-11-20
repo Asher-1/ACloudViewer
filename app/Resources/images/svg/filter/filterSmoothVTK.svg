@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.5646,-0.6171) scale(1.05143)">
+
+<defs><radialGradient id="smooth" cx="0.3" cy="0.25" r="0.9"><stop offset="0.000" stop-color="#D0E5F6"/><stop offset="0.550" stop-color="#9AC1E0"/><stop offset="1.000" stop-color="#2896D3"/></radialGradient></defs>
+<title>VTK smooth filter — smoothed surface</title>
+  <circle cx="12" cy="9.5" r="7.5" fill="url(#smooth)" stroke="#6F6F59"/>  <path d="M 3 10 C 7 6 17 14 21 9" fill="none" stroke="#787878" stroke-width="0.7"/>  <path d="M 3 18 L 4.8 22 L 6.6 18 M 8.6 18 H 13 M 10.8 18 V 22 M 15.7 18 V 22 M 15.7 20 L 19.2 18 M 15.7 20 L 19.2 22" fill="none" stroke-width="1.05"/>
+
+</g>
+</svg>

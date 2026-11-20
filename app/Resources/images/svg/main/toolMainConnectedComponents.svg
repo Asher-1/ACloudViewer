@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(0.4800,0.4800) scale(0.96000)">
+
+<title>Label connected components — two separated centres</title>
+  <path d="M 18 2.8 A 10.8 10.8 0 0 0 1.2 11.2 C 4.2 7 9.8 8.7 11.5 11.2 C 12 6.8 14.8 5 18 5.2 Z" fill="#9AC1E0" stroke="#6F6F59"/>
+<g transform="rotate(180 12 12)">  <path d="M 18 2.8 A 10.8 10.8 0 0 0 1.2 11.2 C 4.2 7 9.8 8.7 11.5 11.2 C 12 6.8 14.8 5 18 5.2 Z" fill="#A7D28C" stroke="#6F6F59"/></g>
+  <circle cx="6.5" cy="12" r="2.4" fill="#2896D3" stroke="#6F6F59"/>
+  <circle cx="17.5" cy="12" r="2.4" fill="#72BE44" stroke="#6F6F59"/>
+
+</g>
+</svg>

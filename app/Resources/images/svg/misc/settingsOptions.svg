@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.0704,0.2731) scale(0.98133)">
+
+<defs><linearGradient id="handle" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#F3C017"/><stop offset="1.000" stop-color="#C4813E"/></linearGradient></defs>
+<title>Settings — wrench and screwdriver</title>
+  <path d="M 19.5 1.5 C 15 0 12 4 13.8 7.4 L 2.1 19.1 C .7 20.5 3.5 23.3 4.9 21.9 L 16.6 10.2 C 20 12 24 9 22.5 4.5 L 19.7 7.3 L 17 4.6 Z" fill="#9AC1E0" stroke="#6F6F59"/>
+  <path d="M 2 1.5 L 5 3.1 L 5.7 5.1 L 14.8 14.2 L 13.2 15.8 L 4.1 6.7 L 2.1 6 Z" fill="#E0E0E0" stroke="#6F6F59"/>
+  <path d="M 12 14.5 L 14.5 12 L 22.1 19.6 Q 23.2 20.7 21.8 22.1 Q 20.5 23.4 19.4 22.2 Z" fill="url(#handle)" stroke="#6F6F59"/>
+  <path d="M 15 16 L 20.2 21.2" fill="none" stroke="#A3915E" stroke-width="0.65"/>
+
+</g>
+</svg>

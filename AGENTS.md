@@ -18,6 +18,48 @@ For AICore work, the skill is the engineering contract. Current public headers,
 CMake, `3rdparty/llama/llama-patches/manifest.yaml`, and current test output override
 stale prose or historical benchmark reports.
 
+## Core Principles
+
+Action hierarchy for every change: **Delete > Replace > Add**. The simplest
+complete solution wins; this repo's layered architecture (Module Layers below)
+means most behavior already has an owner.
+
+1. **Solve at the owner.** Put behavior in the code path that owns or observes
+   it; extend the existing owner instead of creating a parallel abstraction.
+   Concretely: one monolithic `libAICore` (never a per-task shared lib), one
+   task model catalog (never a second plugin-side table — qTrellis reads
+   `aicore_trellis_model_entry`), ggml changes as ordered patches in
+   `3rdparty/llama/llama-patches/manifest.yaml` (never in-place edits of
+   extracted `build*/ggml/` trees). For fixes, relocate the trigger and delete
+   the wrong path rather than guarding a symptom with a staleness check,
+   init flag, skip-first-call branch, or `try/catch` around broken logic.
+2. **Search and reuse first.** Search the whole repo before adding a feature,
+   component, helper, or utility. Reuse `CVCoreLib` algorithms,
+   `ecvDisplayTools`, `ecvPluginDbNaming`, the shared AICore runtime / timing
+   structs, and existing plugin scaffolding (`AddPlugin()`). Three similar
+   lines beat a helper nobody else calls.
+3. **Delete/modify existing code before creating new code.** A new file must
+   first prove it cannot fit cleanly in an existing owner. Bugfixes are
+   net-negative by default unless deletion/relocation is demonstrably
+   impossible.
+4. **Keep scope minimal.** Implement only the simplest complete solution; no
+   speculative flags, compatibility shims, policy scaffolding, or unrelated
+   cleanup. Match the surrounding file's style (Naming table below). Tests are
+   out of scope by default — rely on `ctest` and the AICore validation gate;
+   add minimal test code only for an uncovered, high-risk regression path.
+5. **Ship zero-regression, production-ready changes.** Understand what you
+   remove instead of keeping broken code as insurance. Run the relevant gate
+   before handing back: `ctest`, `validate_all.py` on **every affected
+   backend**, and controlled A/B (`--baseline-build`) for any performance
+   claim. Accuracy needs task-specific numeric gates; backend parity does not
+   replace upstream-framework truth.
+
+**Review gate:** for every addition, decide whether deleting or changing
+existing code would have fixed the problem instead — if it would, that is a
+blocking finding. AI/automation CLI must go through the
+`cli-anything-acloudviewer` toolchain (never guess binary args). Doc edits stay
+incremental (add rows/sections; do not rewrite existing paragraphs).
+
 ## Project Overview
 
 ACloudViewer is an open-source **3D point cloud and mesh processing** application and library, descended from CloudCompare with integrations for Open3D, ParaView-style visualization, **COLMAP** reconstruction, VTK rendering, Python bindings, and optional **AI inference** (Depth Anything V3, FreeSplatter via ggml). Primary language: **C++17**. GUI: **Qt 5/6**. Optional **CUDA**, **Vulkan** (Linux/Windows), **Metal** (macOS), and **Python 3.10+**.
@@ -124,6 +166,56 @@ Plugin entry: each plugin implements `QObject` + `ccStdPluginInterface`, ships `
 
 See `.agents/skills/acloudviewer-aicore-plugin/SKILL.md` for the full data-flow,
 lifecycle, plugin-worker, testing, and review checklist.
+
+## Common Commands (quick reference)
+
+Verified against the repo's actual scripts; full recipes follow in Build
+Instructions / Testing. Run from the repo root unless noted. Current CMake
+targets and test output override historical command names.
+
+```bash
+# format / lint — pinned in python/requirements_style.txt (clang-format 18, yapf 0.43)
+pip install -r python/requirements_style.txt
+python util/check_style.py            # check C++ (.clang-format: Google, 4-space, 80-col) + Python (.style.yapf)
+python util/check_style.py --apply    # auto-fix in place
+
+# C++ unit tests (BUILD_UNIT_TESTS defaults OFF)
+cmake -S . -B build_app -DBUILD_UNIT_TESTS=ON ...    # full flags: see Build Instructions
+cmake --build build_app -j "${BUILD_JOBS:-4}"
+ctest --test-dir build_app --output-on-failure
+
+# AICore real-asset gate (LIGHT tier default; --full = complete matrix / release evidence)
+cmake --build build_app --target aicore-validate-all -j1   # one-click: build probes + fetch catalog + run
+python3 core/AICore/scripts/validate_all.py --build build_app --backend cuda \
+  --output build_app/Testing/aicore_validation.json        # + --full / --baseline-build <before> / --models <glob>
+# focused AICore targets: aicore-fast-tests, aicore-contract-tests, aicore-model-tests
+
+# CI helper — a FUNCTION LIBRARY, not a CLI (source it, then call functions)
+source util/ci_utils.sh               # build_gui_app / run_cpp_unit_tests / run_all_tests / build_docs / ...
+bash util/tests/test_ci_utils.sh      # contract test for the helper itself
+
+# platform build scripts
+util/install_deps_ubuntu.sh assume-yes          # Linux apt deps (ACLOUDVIEWER_SKIP_VULKAN_SETUP=1 to skip Vulkan)
+./scripts/build_macos.sh                         # macOS app + wheels (conda activate first)
+python ./scripts/build_win.py                    # Windows app + wheel (conda activate first)
+docker/build-release.sh                          # Linux CUDA wheel (22.04); build-release-conda.sh adds BUILD_WITH_CONDA=ON
+
+# agent CLI / MCP — headless unless noted; never guess binary args (see agent-integration/)
+cli-anything-acloudviewer info                   # environment
+cli-anything-acloudviewer convert in.ply out.pcd
+cli-anything-acloudviewer process subsample in.ply -o out.ply
+cli-anything-acloudviewer reconstruct auto ./imgs -w ./ws --quality high
+cli-anything-acloudviewer --json scene list      # GUI scene tree (needs GUI)
+cli-anything-acloudviewer-mcp --mode headless    # MCP stdio server
+
+# ggml upgrade / reconstruction alignment verification
+python scripts/ggml_upgrade_verify.py            # contract: .agents/skills/ggml-upgrade
+python scripts/check_colmap_alignment.py
+```
+
+> Stale-name guard: `test_capi` and `test_bag_reader` from older prose do not
+> exist on this branch — use the AICore targets above; qManualCalib tests live
+> on the `qcalib` branch only.
 
 ## Build Instructions
 
@@ -316,7 +408,7 @@ cd build_app && ctest --output-on-failure
 
 # qDA3 / AICore tests (need GGUF assets; missing → exit 77 skip)
 cmake -DAICore_ENABLED=ON -DAICore_BUILD_TESTS=ON ..
-cmake --build build_app --target test_capi -j "${BUILD_JOBS:-4}"
+cmake --build build_app --target aicore-contract-tests -j "${BUILD_JOBS:-4}"   # real target; legacy name test_capi no longer exists
 
 # Real-asset validation; default LIGHT tier (sam3/trellis run only their
 # declared lightweight subsets). Missing rows fail unless explicitly allowed.
@@ -482,8 +574,8 @@ New AICore / reconstruction code may use `snake_case` for functions and `PascalC
 
 ### Formatting
 
-- C++: clang-format (project history references clang-format-10); match surrounding style in each module
-- Python: yapf (see CHANGELOG); agent harness follows Click + pytest patterns
+- C++: clang-format — root `.clang-format` (Google base, 4-space indent, 80-col, C++17); pinned **clang-format 18** in `python/requirements_style.txt` (the historical clang-format-10 reference is stale). Check/fix via `python util/check_style.py [--apply]` (used by `style.yml`); match surrounding style in each module
+- Python: yapf — `.style.yapf` (google), pinned **yapf 0.43** in `python/requirements_style.txt`; same `util/check_style.py` entry. Agent harness follows Click + pytest patterns. No root pre-commit config
 
 ## External Dependencies (summary)
 

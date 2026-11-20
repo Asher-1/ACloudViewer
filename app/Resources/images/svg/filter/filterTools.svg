@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.0436,0.0567) scale(1.00364)">
+
+<defs><linearGradient id="funnel" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#9AC1E0"/><stop offset="1.000" stop-color="#2896D3"/></linearGradient></defs>
+<title>Filter tools and noise filter — funnel with input samples</title>
+  <path d="M 2 8 H 22 L 14.7 16 V 21 L 10.2 22.5 V 16 Z" fill="url(#funnel)" stroke="#6F6F59"/>
+  <rect x="2" y="8" width="20" height="2" rx="0.3" fill="#D0E5F6" stroke="#6F6F59"/>
+  <path d="M 4 3 L 6.3 1.7 L 8 4.7 L 5.7 6 Z" fill="#F3C017" stroke="#6F6F59"/>
+  <rect x="10.4" y="4.1" width="2.8" height="2.8" rx="0.3" fill="#C4813E" stroke="#6F6F59"/>
+  <rect x="16.5" y="1.4" width="3" height="5" rx="0.4" fill="#A7D28C" stroke="#6F6F59"/>
+
+</g>
+</svg>

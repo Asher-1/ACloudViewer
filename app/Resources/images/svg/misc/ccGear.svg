@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24">
 <!-- Restyled in the ParaView icon language: 64-unit artboard, outline #6f6f59 / #787878, measured pq palette. -->
 <g transform="scale(0.375)">
 <path d="M55.48 36.99 L55.48 27.01 L47.86 27.45 L46.43 24.00 L52.13 18.93 L45.07 11.87 L40.00 17.57 L36.55 16.14 L36.99 8.52 L27.01 8.52 L27.45 16.14 L24.00 17.57 L18.93 11.87 L11.87 18.93 L17.57 24.00 L16.14 27.45 L8.52 27.01 L8.52 36.99 L16.14 36.55 L17.57 40.00 L11.87 45.07 L18.93 52.13 L24.00 46.43 L27.45 47.86 L27.01 55.48 L36.99 55.48 L36.55 47.86 L40.00 46.43 L45.07 52.13 L52.13 45.07 L46.43 40.00 L47.86 36.55 Z  M39.50 32.00 A7.5 7.5 0 1 0 39.50 32.00 Z" fill="#cccdcd" fill-rule="evenodd" stroke="#787878" stroke-width="5" stroke-linecap="butt" stroke-linejoin="round"/></g>

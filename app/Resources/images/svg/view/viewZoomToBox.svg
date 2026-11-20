@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.5523,-0.5523) scale(1.00822)">
+
+<defs><radialGradient id="lens" cx="0.35" cy="0.3" r="0.9"><stop offset="0.000" stop-color="#D0E5F6"/><stop offset="1.000" stop-color="#9AC1E0"/></radialGradient></defs>
+<title>Zoom to box — rubber band and magnifier</title>
+  <path d="M 2 2 H 17.8 V 17.8 H 2 Z" fill="none" stroke-width="1.0" stroke-dasharray="2.7 1.8"/>
+  <path d="M 18.3 16.7 L 23 21.4 L 21.4 23 L 16.7 18.3 Z" fill="#E0E0E0" stroke="#6F6F59"/>
+  <circle cx="13" cy="13" r="6.7" fill="url(#lens)" stroke="#6F6F59"/>
+  <path d="M 8.5 11.8 C 9 9.5 10.5 8.3 12.9 8.2" fill="none" stroke="#D0E5F6" stroke-width="1.0"/>
+
+</g>
+</svg>

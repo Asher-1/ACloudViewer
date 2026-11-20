@@ -33,7 +33,7 @@ CorrespondenceMatching::CorrespondenceMatching()
               tr("Correspondence Matching"),
               tr("Correspondence Matching"),
               tr("Correspondence Matching from clouds"),
-              ":/toolbar/PclAlgorithms/icons/correspondence_grouping.png")),
+              ":/qPCL/icons/pclCorrespondenceGrouping.svg")),
       m_dialog(nullptr),
       m_sceneCloud(nullptr),
       m_useVoxelGrid(false),

@@ -281,39 +281,21 @@ def cloud_locked() -> str:
 
 
 def container() -> str:
-    """The database container: one cylinder banded into four stores.
-
-    The old `dbContainerSymbol.svg` was a 26 KB trace of this same cylinder, with
-    visible steppy edges along every ellipse. Redrawn it is under a kilobyte and
-    the curves are real curves.
-    """
+    """Four stored bands in one cylinder, using the measured ParaView palette."""
     rx, y0, y1 = 7.6, 4.8, 20.2
     ry = rx * 0.30
     bands = 4
-    shades = ["#8FA8CE", "#7C90BC", "#68809F", "#556A87"]
+    shades = [P.BLUE_PALE, P.BLUE_MID, P.BLUE_STRONG, P.GREY_MID]
     parts = []
-    # side wall, one band per store
     for i in range(bands):
-        ya = y0 + (y1 - y0) * i / bands
-        yb = y0 + (y1 - y0) * (i + 1) / bands
-        parts.append(
-            f'  <path d="M 12.00 {ya:.2f} L {12 - rx:.2f} {ya:.2f} '
-            f'L {12 - rx:.2f} {yb:.2f} L {12 + rx:.2f} {yb:.2f} '
-            f'L {12 + rx:.2f} {ya:.2f} Z" fill="{shades[i]}" stroke="none"/>')
-    # the seams and the foot follow the ellipse
-    for i in range(bands):
-        ya = y0 + (y1 - y0) * (i + 1) / bands
-        parts.append(
-            f'  <path d="M {12 - rx:.2f} {ya:.2f} '
-            f'A {rx:.2f} {ry:.2f} 0 0 0 {12 + rx:.2f} {ya:.2f}" fill="none" '
-            f'stroke="{INK}" stroke-width="0.7"/>')
-    parts += [
-        f'  <path d="M {12 - rx:.2f} {y0:.2f} L {12 - rx:.2f} {y1:.2f} '
-        f'A {rx:.2f} {ry:.2f} 0 0 0 {12 + rx:.2f} {y1:.2f} L {12 + rx:.2f} {y0:.2f} Z" '
-        f'fill="none" stroke="{INK}" stroke-width="{SW}" stroke-linejoin="round"/>',
-        f'  <ellipse cx="12.00" cy="{y0:.2f}" rx="{rx:.2f}" ry="{ry:.2f}" '
-        f'fill="{BLUE_LT}" stroke="{INK}" stroke-width="{SW}"/>',
-    ]
+        ya = y0 + (y1-y0)*i/bands
+        yb = y0 + (y1-y0)*(i+1)/bands
+        parts.append(f'  <path d="M 12.00 {ya:.2f} L {12-rx:.2f} {ya:.2f} L {12-rx:.2f} {yb:.2f} L {12+rx:.2f} {yb:.2f} L {12+rx:.2f} {ya:.2f} Z" fill="{shades[i]}" stroke="none"/>')
+    for i in range(1,bands):
+        yy=y0+(y1-y0)*i/bands
+        parts.append(f'  <path d="M {12-rx:.2f} {yy:.2f} A {rx:.2f} {ry:.2f} 0 0 0 {12+rx:.2f} {yy:.2f}" fill="none" stroke="{INK}" stroke-width="0.6"/>')
+    parts += [f'  <path d="M {12-rx:.2f} {y0:.2f} L {12-rx:.2f} {y1:.2f} A {rx:.2f} {ry:.2f} 0 0 0 {12+rx:.2f} {y1:.2f} L {12+rx:.2f} {y0:.2f} Z" fill="none" stroke="{INK}" stroke-width="{SW}"/>',
+              f'  <ellipse cx="12.00" cy="{y0:.2f}" rx="{rx:.2f}" ry="{ry:.2f}" fill="{BLUE_LT}" stroke="{INK}" stroke-width="{SW}"/>']
     return "\n".join(parts)
 
 

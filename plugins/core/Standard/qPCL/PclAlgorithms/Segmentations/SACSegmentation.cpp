@@ -45,11 +45,11 @@ int extractRecursive(PointCloudT::Ptr xyzCloud,
                      ecvMainAppInterface* app = nullptr);
 
 SACSegmentation::SACSegmentation()
-    : BasePclModule(PclModuleDescription(
-              tr("SAC Segmentation"),
-              tr("SAC Segmentation"),
-              tr("SAC Segmentation from clouds"),
-              ":/toolbar/PclAlgorithms/icons/SAC_Segmentation.png")),
+    : BasePclModule(
+              PclModuleDescription(tr("SAC Segmentation"),
+                                   tr("SAC Segmentation"),
+                                   tr("SAC Segmentation from clouds"),
+                                   ":/qPCL/icons/pclSACSegmentation.svg")),
       m_dialog(nullptr),
       m_distanceThreshold(0.01f),
       m_normalDisWeight(0.1f),

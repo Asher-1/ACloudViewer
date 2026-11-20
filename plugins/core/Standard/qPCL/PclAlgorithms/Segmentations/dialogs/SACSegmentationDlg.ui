@@ -21,7 +21,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../../../qPCL.qrc">
-    <normaloff>:/toolbar/PclAlgorithms/icons/SAC_Segmentation.png</normaloff>:/toolbar/PclAlgorithms/icons/SAC_Segmentation.png</iconset>
+    <normaloff>:/qPCL/icons/pclSACSegmentation.svg</normaloff>:/qPCL/icons/pclSACSegmentation.svg</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

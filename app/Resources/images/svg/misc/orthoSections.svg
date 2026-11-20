@@ -1,6 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24">
 <!-- Restyled in the ParaView icon language: 64-unit artboard, outline #6f6f59 / #787878, measured pq palette. -->
 <g transform="scale(0.375)">
-<path d="M6 40 L30 20 L58 30 L34 50 Z" fill="#d0e5f6" stroke="#787878" stroke-width="5.33" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M15 36 L28 28 L40 38 L52 33" fill="none" stroke="#6f6f59" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/></g>
+<circle cx="32" cy="32" r="23" fill="#ffffff" stroke="#787878" stroke-width="5"/>
+<path d="M32 12 L32 17" fill="none" stroke="#a9aaaa" stroke-width="3" stroke-linecap="round"/>
+<path d="M32 47 L32 52" fill="none" stroke="#a9aaaa" stroke-width="3" stroke-linecap="round"/>
+<path d="M12 32 L17 32" fill="none" stroke="#a9aaaa" stroke-width="3" stroke-linecap="round"/>
+<path d="M47 32 L52 32" fill="none" stroke="#a9aaaa" stroke-width="3" stroke-linecap="round"/>
+<path d="M46 17 L39 17" fill="none" stroke="#ff0000" stroke-width="5" stroke-linecap="round"/>
+<path d="M36 20 L36 26" fill="none" stroke="#8b0000" stroke-width="5" stroke-linecap="round"/>
+<path d="M33 29 L26 29" fill="none" stroke="#ff0000" stroke-width="5" stroke-linecap="round"/>
+<path d="M23 32 L23 38" fill="none" stroke="#8b0000" stroke-width="5" stroke-linecap="round"/>
+<path d="M20 41 L14 41" fill="none" stroke="#ff0000" stroke-width="5" stroke-linecap="round"/></g>
 </svg>

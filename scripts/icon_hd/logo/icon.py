@@ -46,7 +46,7 @@ from typing import Callable
 from . import paraview_style as P
 
 ROOT = Path(__file__).resolve().parents[3]
-ICON_DIR = ROOT / "app/Resources/images/svg/ecv"
+ICON_DIR = ROOT / "app/Resources/images/svg/main"
 
 # The size ladder every preview uses.  16 is the toolbar size that actually
 # constrains the drawing; 192 is where craft is visible.  Rendering the whole
@@ -75,9 +75,21 @@ class Icon:
 def fit(raw: str) -> str:
     """Normalise a raw icon SVG to the samples' 92 % canvas span.
 
-    Undoes the outer `<svg>` wrapper, so `P.fit` receives the body it expects.
+    `raw` may be either a full document (`<svg ...>...</svg>`) or a bare body; both
+    are accepted.
+
+    The bare-body case is handled explicitly because the first version was not, and
+    it failed silently rather than loudly: `raw.split(">", 1)[1]` assumes the first
+    `>` closes an `<svg>` tag, but on a body it closes the *first element*. An icon
+    whose first element was a `<circle>` lost that circle entirely and still
+    rendered as a plausible-looking icon -- the defect only showed up as "why is
+    the blue dot missing".
     """
-    body = raw.split(">", 1)[1].rsplit("</svg>", 1)[0]
+    stripped = raw.strip()
+    if stripped.startswith("<svg"):
+        body = stripped.split(">", 1)[1].rsplit("</svg>", 1)[0]
+    else:
+        body = stripped
     return P.fit(body, target=0.92)
 
 
@@ -169,9 +181,9 @@ def registry() -> dict[str, Icon]:
     Imported lazily so `--list` still works when one icon module has a syntax
     error, and so a broken module does not take the whole CLI down.
     """
-    from . import (align, bilateral, clouddistance, delselsf, filter as filt,
-                   gaussian, gradient, meshdistance, sor, subsample,
-                   stat)
+    from . import (align, bilateral, clouddistance, delselsf, entitytools,
+                   filter as filt, gaussian, gradient, meshdistance, sor,
+                   subsample, stat)
 
     built = [
         Icon("align", "toolMainPointPairsAlign.svg", align.build,
@@ -196,6 +208,16 @@ def registry() -> dict[str, Icon]:
              "remove the displayed scalar field"),
         Icon("filter", "toolMainFilterByValue.svg", filt.build,
              "keep a value range on a scalar-field ramp"),
+        Icon("addconstsf", "toolMainAddConstSF.svg",
+             entitytools.add_constant_sf, "add a constant scalar field"),
+        Icon("clippingbox", "toolMainClippingBox.svg",
+             entitytools.clipping_box, "clip a volume with a horizontal section"),
+        Icon("clipmulti", "toolMainClippingBoxMultiExport.svg",
+             entitytools.clipping_multi_export, "create multiple repeated slices"),
+        Icon("clipsingle", "toolMainClippingBoxSingleExport.svg",
+             entitytools.clipping_single_export, "create a cloud from one section"),
+        Icon("clone", "toolMainCloneEntity.svg",
+             entitytools.clone_entity, "duplicate the selected entities"),
     ]
     return {ic.key: ic for ic in built}
 

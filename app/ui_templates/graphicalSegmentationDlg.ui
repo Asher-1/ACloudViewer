@@ -176,7 +176,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/exportIcon.png</normaloff>:/Resources/images/exportIcon.png</iconset>
+       <normaloff>:/Resources/images/svg/annotation/annotationExportSelection.svg</normaloff>:/Resources/images/svg/annotation/annotationExportSelection.svg</iconset>
      </property>
     </widget>
    </item>
@@ -285,7 +285,7 @@
   <action name="actionExportSegmentationPolyline">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/save.png</normaloff>:/Resources/images/save.png</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainSave.svg</normaloff>:/Resources/images/svg/main/toolMainSave.svg</iconset>
    </property>
    <property name="text">
     <string>Export segmentation polyline</string>

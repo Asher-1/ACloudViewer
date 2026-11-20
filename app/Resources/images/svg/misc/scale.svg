@@ -1,7 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24">
 <!-- Restyled in the ParaView icon language: 64-unit artboard, outline #6f6f59 / #787878, measured pq palette. -->
 <g transform="scale(0.375)">
-<rect x="8" y="10" width="38" height="34" rx="3" ry="3" fill="#ffffff" stroke="#787878" stroke-width="4.5" stroke-linejoin="round"/>
-<path d="M14 36 L23 27 L32 20 L42 13" fill="none" stroke="#6f6f59" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-<rect x="22" y="24" width="36" height="32" rx="3" ry="3" fill="#d0e5f6" stroke="#787878" stroke-width="4.5" stroke-linejoin="round"/></g>
+<rect x="10" y="2" width="50" height="30" rx="3" ry="3" fill="#d0e5f6" stroke="#787878" stroke-width="4.5" stroke-linejoin="round"/>
+<path d="M30 6 L30 28" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M44 6 L44 28" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M16 12 L56 12" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M16 22 L56 22" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M31 34 L39 25 L46 30 L53 14" fill="none" stroke="#6f6f59" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="56.6,5.8 57.1,15.8 48.9,12.2" fill="#6f6f59"/>
+<rect x="2" y="34" width="29" height="27" rx="3" ry="3" fill="#ffffff" stroke="#787878" stroke-width="4.5" stroke-linejoin="round"/>
+<path d="M7 40 L21 40" fill="none" stroke="#a9aaaa" stroke-width="3.5" stroke-linecap="round"/></g>
 </svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-1.6310,-2.0816) scale(1.12653)">
+
+<title>Automatic rotation animation</title>  <circle cx="12" cy="12" r="6" fill="#D0E5F6" stroke="#6F6F59"/>  <path d="M 4 8 A 9 9 0 1 1 4 17" fill="none" stroke="#4E8C2E" stroke-width="1.5"/>  <path d="M 3 7 L 8 7 L 4 12 Z" fill="#F3C017" stroke="#6F6F59"/>
+
+</g>
+</svg>

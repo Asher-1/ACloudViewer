@@ -21,7 +21,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../../../qPCL.qrc">
-    <normaloff>:/toolbar/PclAlgorithms/icons/mincut.png</normaloff>:/toolbar/PclAlgorithms/icons/mincut.png</iconset>
+    <normaloff>:/qPCL/icons/pclMinimumCut.svg</normaloff>:/qPCL/icons/pclMinimumCut.svg</iconset>
   </property>
   <property name="modal">
    <bool>false</bool>

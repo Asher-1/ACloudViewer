@@ -115,7 +115,7 @@
      <widget class="QWidget" name="boxTab">
       <attribute name="icon">
        <iconset resource="../MainWindow.qrc">
-        <normaloff>:/Resources/images/cube.png</normaloff>:/Resources/images/cube.png</iconset>
+        <normaloff>:/Resources/images/svg/primitive/primitiveBox.svg</normaloff>:/Resources/images/svg/primitive/primitiveBox.svg</iconset>
       </attribute>
       <attribute name="title">
        <string>Box</string>
@@ -225,7 +225,7 @@
      <widget class="QWidget" name="sphereTab">
       <attribute name="icon">
        <iconset resource="../MainWindow.qrc">
-        <normaloff>:/Resources/images/sphere.png</normaloff>:/Resources/images/sphere.png</iconset>
+        <normaloff>:/Resources/images/svg/primitive/primitiveSphere.svg</normaloff>:/Resources/images/svg/primitive/primitiveSphere.svg</iconset>
       </attribute>
       <attribute name="title">
        <string>Sphere</string>
@@ -388,7 +388,7 @@
      <widget class="QWidget" name="cylTab">
       <attribute name="icon">
        <iconset resource="../MainWindow.qrc">
-        <normaloff>:/Resources/images/cylinder.png</normaloff>:/Resources/images/cylinder.png</iconset>
+        <normaloff>:/Resources/images/svg/primitive/primitiveCylinder.svg</normaloff>:/Resources/images/svg/primitive/primitiveCylinder.svg</iconset>
       </attribute>
       <attribute name="title">
        <string>Cylinder</string>
@@ -475,7 +475,7 @@
      <widget class="QWidget" name="coneTab">
       <attribute name="icon">
        <iconset resource="../MainWindow.qrc">
-        <normaloff>:/Resources/images/cone.svg</normaloff>:/Resources/images/cone.svg</iconset>
+        <normaloff>:/Resources/images/svg/primitive/primitiveCone.svg</normaloff>:/Resources/images/svg/primitive/primitiveCone.svg</iconset>
       </attribute>
       <attribute name="title">
        <string>Cone</string>
@@ -814,7 +814,7 @@
      <widget class="QWidget" name="dishTab">
       <attribute name="icon">
        <iconset resource="../MainWindow.qrc">
-        <normaloff>:/Resources/images/dish.png</normaloff>:/Resources/images/dish.png</iconset>
+        <normaloff>:/Resources/images/svg/primitive/primitiveDish.svg</normaloff>:/Resources/images/svg/primitive/primitiveDish.svg</iconset>
       </attribute>
       <attribute name="title">
        <string>Dish</string>

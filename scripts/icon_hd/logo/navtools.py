@@ -1,208 +1,102 @@
-"""Navigation and picking tool icons -- five at a time.
+"""Five navigation icons, preserving the original action silhouettes.
 
-Written as one batch because they share a domain (how you look at or select in the
-3D view) and because drawing them together keeps their visual grammar consistent:
-the two projections are a matched pair, and the two picking modes differ only in
-how many points they take.
-
-What each one means
--------------------
-    GlobalZoom              fit the whole scene in view -- a frame with arrows
-                            pulling outward to its corners
-    OrthoProjection         a box seen with parallel edges
-    PerspectiveProjection   the same box, with edges converging to a vanishing
-                            point
-    PointPicking            pick one point: a cursor over a single mark
-    PointListPicking        pick many points: a numbered list of picked points
-
-The projection pair is the one that has to be *read against itself*. A box drawn
-in the same place, same colour, same size, differing only in whether its far edges
-converge -- that is the entire difference between the two projections, and a pair
-that does anything else makes the toolbar buttons guesswork.
-
-The picking pair works the same way: one mark versus a list of marks.
-
-Style (fixed baseline)
-----------------------
-    outline   #6F6F59 on every form
-    palette   the samples' blues and greys, #2896D3 for the action marks
-    fills     subtle gradients only where volume is needed
-    span      92 % of the canvas
-
-Usage
------
-    python3 -m scripts.icon_hd.logo.icon zoom --show
-    python3 -m scripts.icon_hd.logo.icon --all --score
+Projection icons retain the source's offset rectangular ends and translucent
+connecting faces. Perspective uses a small lower-left end and a large upper-right
+end; orthographic uses equal ends. Do not substitute a generic solid cube.
 """
-
 from __future__ import annotations
 
 from . import paraview_style as P
-
-BLUE = P.BLUE_STRONG
-PALE = P.BLUE_PALE
-MID = P.BLUE_MID
-GREY = P.GREY
-GREY_DK = P.GREY_DK
-INK = P.INK
-SW = P.STROKE
-
-
-# ---------------------------------------------------------------------------
-# GlobalZoom -- expand the frame to hold everything
-# ---------------------------------------------------------------------------
+from .icon import fit
 
 
 def global_zoom() -> str:
-    """A frame with four corner arrows pushing outward.
-
-    Read from the original, which is two heavy vertical bars with magenta corner
-    blocks -- unreadable as anything. The action is *fit everything in view*, and
-    the standard mark for that is a frame growing to its corners. Redrawn as four
-    L-brackets because a full rectangle plus arrows reads as "export" or "resize",
-    while broken corners read as "expand to these bounds".
-    """
-    def bracket(cx: float, cy: float, sx: int, sy: int) -> str:
-        ln = 4.6
-        return (f'  <path d="M {cx + sx * ln:.2f} {cy:.2f} '
-                f'L {cx:.2f} {cy:.2f} L {cx:.2f} {cy + sy * ln:.2f}" '
-                f'fill="none" stroke="{BLUE}" stroke-width="2.1" '
-                f'stroke-linecap="square"/>')
-
-    def arrow(x1: float, y1: float, x2: float, y2: float) -> str:
-        import math
-        a = math.atan2(y2 - y1, x2 - x1)
-        h, w = 2.0, 1.15
-        ax, ay = x2 - math.cos(a) * h, y2 - math.sin(a) * h
-        px, py = -math.sin(a) * w, math.cos(a) * w
-        return "\n".join([
-            f'  <path d="M {x1:.2f} {y1:.2f} L {ax:.2f} {ay:.2f}" fill="none" '
-            f'stroke="{BLUE}" stroke-width="1.5" stroke-linecap="round"/>',
-            f'  <path d="M {x2:.2f} {y2:.2f} L {ax + px:.2f} {ay + py:.2f} '
-            f'L {ax - px:.2f} {ay - py:.2f} Z" fill="{BLUE}" stroke="none"/>',
-        ])
-
-    return "\n".join([
-        bracket(6.2, 6.2, 1, 1),
-        bracket(17.8, 6.2, -1, 1),
-        bracket(6.2, 17.8, 1, -1),
-        bracket(17.8, 17.8, -1, -1),
-        arrow(9.4, 9.4, 4.2, 4.2),
-        arrow(14.6, 14.6, 19.8, 19.8),
+    """Fit the scene: four bounds and two outward diagonal arrows."""
+    body = ['<title>Fit the entire scene in view</title>']
+    for x, y, sx, sy in [(2.4, 2.4, 1, 1), (21.6, 2.4, -1, 1),
+                          (2.4, 21.6, 1, -1), (21.6, 21.6, -1, -1)]:
+        body.append(P.stroke(f'M {x+sx*5} {y} H {x} V {y+sy*5}', sw=1.6))
+    body.extend([
+        P.fill('M 4.5 4.5 L 11 5.2 L 9.1 7.1 L 11.2 9.2 '
+               'L 9.2 11.2 L 7.1 9.1 L 5.2 11 Z', P.BLUE_MID, sw=0.7),
+        P.fill('M 19.5 19.5 L 13 18.8 L 14.9 16.9 L 12.8 14.8 '
+               'L 14.8 12.8 L 16.9 14.9 L 18.8 13 Z', P.BLUE_MID, sw=0.7),
     ])
+    return P.svg('\n'.join(body))
 
 
-# ---------------------------------------------------------------------------
-# The projection pair
-# ---------------------------------------------------------------------------
-
-
-def _box(converge: bool) -> str:
-    """A cube in three-quarter view.
-
-    `converge` is the whole parameter: true draws the far face smaller and the
-    receding edges aimed at one point (perspective); false keeps the far face
-    identical in size and every edge parallel (orthographic). Nothing else
-    differs, which is what makes the pair legible as a pair.
-    """
-    # near face
-    nx0, ny0, nx1, ny1 = 3.2, 6.4, 13.4, 19.4
-    # far face: inset toward the vanishing point when perspective
-    if converge:
-        k = 0.74                      # far face is 74 % the near face's size
-        fx0 = nx0 + (15.6 - nx0) * 0.30
-        fy0 = ny0 - (ny0 - 4.4) * 0.62
-        fx1 = fx0 + (nx1 - nx0) * k
-        fy1 = fy0 + (ny1 - ny0) * k
+def _projection(perspective: bool) -> str:
+    # Coordinates come from the original 32px source, scaled by 0.75.
+    # Far end: (8,2)..(30,25). Perspective near end: (2,17)..(14,30).
+    # Equal end sizes and a constant (6,-5) offset express orthographic mode.
+    if perspective:
+        back = [(6, 1.5), (22.5, 3.75), (22.5, 18.75), (6, 13)]
+        front = [(1.5, 12.75), (10.5, 14), (10.5, 22.5), (1.5, 21.75)]
     else:
-        fx0, fy0 = 8.6, 1.9
-        fx1, fy1 = fx0 + (nx1 - nx0), fy0 + (ny1 - ny0)
-
-    parts = [
-        # far face
-        f'  <path d="M {fx0:.2f} {fy0:.2f} L {fx1:.2f} {fy0:.2f} '
-        f'L {fx1:.2f} {fy1:.2f} L {fx0:.2f} {fy1:.2f} Z" fill="{MID}" '
-        f'stroke="{INK}" stroke-width="{SW}" stroke-linejoin="round"/>',
-        # connecting edges
-        f'  <path d="M {nx0:.2f} {ny0:.2f} L {fx0:.2f} {fy0:.2f} '
-        f'M {nx1:.2f} {ny0:.2f} L {fx1:.2f} {fy0:.2f} '
-        f'M {nx1:.2f} {ny1:.2f} L {fx1:.2f} {fy1:.2f} '
-        f'M {nx0:.2f} {ny1:.2f} L {fx0:.2f} {fy1:.2f}" fill="none" '
-        f'stroke="{INK}" stroke-width="{SW}"/>',
-        # near face
-        f'  <path d="M {nx0:.2f} {ny0:.2f} L {nx1:.2f} {ny0:.2f} '
-        f'L {nx1:.2f} {ny1:.2f} L {nx0:.2f} {ny1:.2f} Z" fill="{PALE}" '
-        f'stroke="{INK}" stroke-width="{SW}" stroke-linejoin="round"/>',
-    ]
-    return "\n".join(parts)
+        back = [(7.5, 1.5), (22.5, 1.5), (22.5, 18), (7.5, 18)]
+        front = [(1.5, 5.25), (16.5, 5.25), (16.5, 21.75), (1.5, 21.75)]
+    defs = '\n'.join([
+        P.linear('back', [(0, P.BLUE_PALE), (1, '#EAF2F8')]),
+        P.linear('side', [(0, P.BLUE_MID), (1, P.BLUE_STRONG)]),
+        P.linear('front', [(0, P.BLUE_MID), (1, '#789CB7')]),
+    ])
+    title = 'Perspective projection' if perspective else 'Orthographic projection'
+    body = [f'<title>{title}</title>', P.poly(back, 'url(#back)'),
+            P.poly([front[0], back[0], back[3], front[3]], 'url(#side)'),
+            P.poly([front[3], back[3], back[2], front[2]], P.BLUE_MID),
+            P.poly([front[1], back[1], back[2], front[2]], P.BLUE_PALE),
+            P.poly([front[0], back[0], back[1], front[1]], 'url(#back)')]
+    # The transparent front preserves the original glass-volume reading.
+    body.append(P.poly(front, 'url(#front)').replace(' stroke=', ' fill-opacity="0.78" stroke=', 1))
+    body.append(P.stroke(f'M {back[0][0]} {back[0][1]} L {back[3][0]} {back[3][1]} '
+                         f'L {back[2][0]} {back[2][1]}', sw=0.65))
+    return P.svg('\n'.join(body), defs=defs)
 
 
 def ortho_projection() -> str:
-    """The box with parallel edges."""
-    return _box(converge=False)
+    return _projection(False)
 
 
 def perspective_projection() -> str:
-    """The same box with converging edges."""
-    return _box(converge=True)
-
-
-# ---------------------------------------------------------------------------
-# The picking pair
-# ---------------------------------------------------------------------------
-
-
-def _cursor(x: float, y: float, s: float = 1.0) -> str:
-    """An arrow cursor with its tip at (x, y)."""
-    d = (f"M {x:.2f} {y:.2f} L {x:.2f} {y + 9.4 * s:.2f} "
-         f"L {x + 2.4 * s:.2f} {y + 7.2 * s:.2f} "
-         f"L {x + 4.0 * s:.2f} {y + 10.6 * s:.2f} "
-         f"L {x + 5.6 * s:.2f} {y + 9.9 * s:.2f} "
-         f"L {x + 3.9 * s:.2f} {y + 6.6 * s:.2f} "
-         f"L {x + 7.0 * s:.2f} {y + 6.4 * s:.2f} Z")
-    return "\n".join([
-        f'  <path d="{d}" fill="#FFFFFF" stroke="{INK}" stroke-width="{SW}" '
-        f'stroke-linejoin="round"/>',
-    ])
+    return _projection(True)
 
 
 def point_picking() -> str:
-    """One point picked: a cursor over a single marked point."""
-    return "\n".join([
-        # the point being picked
-        f'  <circle cx="6.6" cy="6.8" r="2.2" fill="{BLUE}" stroke="{INK}" '
-        f'stroke-width="0.6"/>',
-        f'  <circle cx="6.6" cy="6.8" r="4.1" fill="none" stroke="{BLUE}" '
-        f'stroke-width="0.8" stroke-dasharray="1.3 1.1"/>',
-        _cursor(9.4, 8.2, 1.02),
-    ])
+    """Keep the original target ring and overlapping arrow cursor."""
+    defs = P.linear('metal', [(0, '#FAFAF6'), (1, P.GREY)])
+    body = [
+        '<title>Pick a point</title>',
+        P.stroke('M 11.5 1.5 V 6 M 11.5 16.5 V 21 '
+                 'M 1.5 11.5 H 6 M 17 11.5 H 21', sw=1.7),
+        '<circle cx="11.5" cy="11.5" r="4.1" fill="url(#metal)" '
+        f'stroke="{P.INK}" stroke-width="1.35"/>',
+        '<circle cx="11.5" cy="11.5" r="2.3" fill="none" '
+        f'stroke="{P.INK}" stroke-width="0.7"/>',
+        P.fill('M 13.6 13.4 L 21.8 19.4 L 18.5 19.7 L 20.1 22.1 '
+               'L 17.9 23 L 16.6 20.2 L 14.4 22.1 Z', '#FAFAF6', sw=1.0),
+    ]
+    return P.svg('\n'.join(body), defs=defs)
 
 
 def point_list_picking() -> str:
-    """Many points picked: a list, each line preceded by a picked marker.
-
-    The list form is the distinction from `point_picking`: same cursor idea is not
-    enough once several points are involved, because what the tool produces is not
-    a selection but a *table* of picked points.
-    """
-    rows = []
-    for i in range(4):
-        y = 6.4 + i * 4.2
-        rows.append(f'  <circle cx="6.2" cy="{y:.2f}" r="1.5" fill="{BLUE}" '
-                    f'stroke="{INK}" stroke-width="0.5"/>')
-        rows.append(f'  <path d="M 9.8 {y:.2f} L 18.4 {y:.2f}" fill="none" '
-                    f'stroke="{INK}" stroke-width="1.15" stroke-linecap="round"/>')
-    return "\n".join([
-        f'  <rect x="2.8" y="3.4" width="18.4" height="17.2" rx="1.4" '
-        f'fill="#FFFFFF" stroke="{BLUE}" stroke-width="1.7"/>',
-        *rows,
-    ])
+    """Retain the source's tall sheet and four marker/line rows."""
+    defs = P.linear('paper', [(0, '#FAFAF6'), (1, P.BLUE_PALE)])
+    body = ['<title>Pick a list of points</title>',
+            P.rect(3.6, 1.5, 16.8, 21, 'url(#paper)', r=0.6)]
+    for y in (5.4, 9.8, 14.2, 18.6):
+        body.extend([P.circle(7.4, y, 1.25, P.GREEN, outline=P.INK),
+                     P.stroke(f'M 11 {y} H 17.6', colour=P.BLUE_STRONG, sw=1.5)])
+    return P.svg('\n'.join(body), defs=defs)
 
 
 ICONS = {
-    "zoom": ("toolMainGlobalZoom", global_zoom),
-    "ortho": ("toolMainOrthoProjection", ortho_projection),
-    "perspective": ("toolMainPerspectiveProjection", perspective_projection),
-    "pointpicking": ("toolMainPointPicking", point_picking),
-    "pointlist": ("toolMainPointListPicking", point_list_picking),
+    'zoom': ('toolMainGlobalZoom', global_zoom),
+    'ortho': ('toolMainOrthoProjection', ortho_projection),
+    'perspective': ('toolMainPerspectiveProjection', perspective_projection),
+    'pointpicking': ('toolMainPointPicking', point_picking),
+    'pointlist': ('toolMainPointListPicking', point_list_picking),
 }
+
+
+def built(key: str) -> str:
+    return fit(ICONS[key][1]())

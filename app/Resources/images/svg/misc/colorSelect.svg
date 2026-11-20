@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(0.8632,0.2821) scale(0.96842)">
+
+<defs><radialGradient id="warm" cx="0.35" cy="0.25" r="0.9"><stop offset="0.000" stop-color="#F3C017"/><stop offset="1.000" stop-color="#C4813E"/></radialGradient>
+<radialGradient id="green" cx="0.35" cy="0.25" r="0.9"><stop offset="0.000" stop-color="#A7D28C"/><stop offset="1.000" stop-color="#72BE44"/></radialGradient>
+<radialGradient id="blue" cx="0.35" cy="0.25" r="0.9"><stop offset="0.000" stop-color="#D0E5F6"/><stop offset="1.000" stop-color="#2896D3"/></radialGradient></defs>
+<title>Colors — three overlapping color circles</title>
+  <circle cx="15.6" cy="7.2" r="6" fill="url(#green)" stroke="#6F6F59"/>
+  <circle cx="7.5" cy="12" r="6" fill="url(#warm)" stroke="#6F6F59"/>
+  <circle cx="15.6" cy="17" r="6" fill="url(#blue)" stroke="#6F6F59"/>
+
+</g>
+</svg>

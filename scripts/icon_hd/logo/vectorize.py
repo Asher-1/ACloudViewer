@@ -26,7 +26,7 @@ Method
 Usage
 -----
     python3 -m scripts.icon_hd.logo.vectorize --list
-    python3 -m scripts.icon_hd.logo.vectorize --check app/Resources/images/3D3.png
+    python3 -m scripts.icon_hd.logo.vectorize --check app/Resources/images/svg/pq/pqCamera.svg
     python3 -m scripts.icon_hd.logo.vectorize --all --dry-run
 """
 

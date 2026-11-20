@@ -81,7 +81,15 @@ through `logo/vectorize.py` when the source is genuinely flat.
 python3 scripts/icon_hd/icons.py verify   # qrc + XML + raster-in-svg + platforms
 python3 scripts/icon_hd/icons.py build    # inventory: vector vs raster per folder
 python3 scripts/icon_hd/icons.py audit    # before/after review page with code evidence
+python3 scripts/icon_hd/icons.py inventory --out /tmp/icon-audit  # resource and reference report
+python3 scripts/icon_hd/icons.py verify --qt  # offscreen app and qPCL resource loading
 ```
+
+Use Python 3.10 or newer. `inventory` uses the standard library and Git.
+`verify --qt` requires a C++ compiler, Qt 5 Widgets and SVG development packages,
+`pkg-config` and a matching `rcc`. Use `--rcc /path/to/rcc` for a custom Qt installation.
+Completed migration, restoration and batch-review scripts are retired.
+The committed resources and provenance manifest are the sources for current verification.
 
 `verify` is the gate that matters. It checks that every reference in every
 `.qrc`, Windows `.rc`, CMake file and `.desktop` entry resolves, so a deletion on
@@ -113,3 +121,43 @@ shows it beside each icon in the review page.
   six vectorisation routes measured against the ACloudViewer mark.
 * `QTreeView` branch connectors keep exact pixel coordinates; Qt stretches them
   through `border-image` at whatever row height it needs.
+
+## FilterToolBar migration into `svg/filter/`
+
+The nine `FilterToolBar` actions (`MainWindow.ui`) are all filter operations, so
+their artwork now lives in `app/Resources/images/svg/filter/` under the folder's
+`filter*` naming convention. Ledger and comparison sheets:
+`~/ACloudViewer-icon-reviews/filter-toolbar-migration/`.
+
+| Action | Old path | New path | Operation |
+|---|---|---|---|
+| `actionClipFilter` | `pq/pqClip.svg` | `filter/filterClip.svg` | restore ParaView original |
+| `actionSliceFilter` | `pq/pqSlice.svg` | `filter/filterSlice.svg` | restore ParaView original |
+| `actionThresholdFilter` | `pq/pqThreshold.svg` | `filter/filterThreshold.svg` | restore ParaView original |
+| `actionIsoSurfaceFilter` | `pq/pqIsosurface.svg` | `filter/filterIsoSurface.svg` | restore ParaView original |
+| `actionDecimateFilter` | `mesh/meshDecimate.svg` | `filter/filterDecimate.svg` | move (bytes preserved) |
+| `actionSmoothFilter` | `filter/filterSmoothVTK.svg` | unchanged | keep |
+| `actionProbeFilter` | `pq/pqProbeLocation.svg` | `filter/filterProbeLocation.svg` | move (bytes preserved) |
+| `actionGlyphFilter` | `pq/pqGlyph.svg` | `filter/filterGlyph.svg` | move (bytes preserved) |
+| `actionStreamlineFilter` | `pq/pqStreamTracer.svg` | `filter/filterStreamTracer.svg` | move (bytes preserved) |
+
+The first four custom redraws were rejected because they neither matched the
+operation nor referenced the original ParaView icons (a floating plane read as
+slice, a 2-D colour bar read as a scalar ramp, a green ball read as a sphere
+primitive). Applying the recognition lesson above, they were restored byte-exact
+from the upstream ParaView SVGs rather than redrawn again; the restored bytes are
+pinned in `pq_original_sources.json` (`dir: filter`, ids 21–24, plus the relocated
+probe original id 17). The resource tests check the manifest and canonical QRC
+paths. Edit current artwork at its registered path.
+
+The five restored originals (`filterClip`, `filterSlice`, `filterThreshold`,
+`filterIsoSurface`, `filterProbeLocation`) additionally carry an approved
+intrinsic preview size `width="128" height="128"` on the root, with
+`viewBox="0 0 64 64"` and geometry unchanged. A controlled Qt A/B showed the
+default renderer/image/pixmap/label move 64→128 while requested toolbar
+16/24/32 px normal/disabled pixmaps stay pixel-identical. The manifest records
+this as `default_size: [128, 128]` with `sha256` = installed bytes and
+`source_sha256` = upstream geometry pin; `test_pq_smooth_vectors.py` verifies the
+installed pin, the declared root size, and byte-exact geometry after normalising
+the added root attributes (rows whose upstream already carries width/height keep
+the raw pin).

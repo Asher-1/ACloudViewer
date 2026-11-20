@@ -1,69 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" shape-rendering="crispEdges">
-<g transform="translate(-0.000000,-0.000000) scale(0.960000)">
-<!-- Lossless pixel-exact transcription v8 (25x25, 64 rects): every source pixel preserved, crisp at any scale -->
-<rect x="16" y="1" width="1" height="1" fill="#ff5d5d"/>
-<rect x="17" y="1" width="1" height="1" fill="#ff2f2f"/>
-<rect x="18" y="1" width="1" height="1" fill="#ff6666"/>
-<rect x="15" y="2" width="1" height="1" fill="#ff2b2b"/>
-<rect x="16" y="2" width="3" height="1" fill="#ff0000"/>
-<rect x="19" y="2" width="1" height="1" fill="#ff3f3f"/>
-<rect x="15" y="3" width="5" height="1" fill="#ff0000"/>
-<rect x="15" y="4" width="1" height="1" fill="#ff0404"/>
-<rect x="16" y="4" width="3" height="1" fill="#ff0000"/>
-<rect x="19" y="4" width="1" height="1" fill="#ff0c0c"/>
-<rect x="14" y="5" width="1" height="1" fill="#191919"/>
-<rect x="15" y="5" width="1" height="1" fill="#e26969"/>
-<rect x="16" y="5" width="1" height="1" fill="#ff0101"/>
-<rect x="17" y="5" width="1" height="1" fill="#ff0000"/>
-<rect x="18" y="5" width="1" height="1" fill="#ff0404"/>
-<rect x="13" y="6" width="1" height="1" fill="#1d1d1d"/>
-<rect x="11" y="7" width="1" height="1" fill="#727272"/>
-<rect x="12" y="7" width="1" height="1" fill="#2e2e2e"/>
-<rect x="10" y="8" width="1" height="1" fill="#505050"/>
-<rect x="11" y="8" width="1" height="1" fill="#484848"/>
-<rect x="9" y="9" width="1" height="1" fill="#353535"/>
-<rect x="10" y="9" width="1" height="1" fill="#1a1a1a"/>
-<rect x="8" y="10" width="1" height="1" fill="#222222"/>
-<rect x="11" y="10" width="1" height="1" fill="#171717"/>
-<rect x="4" y="11" width="1" height="1" fill="#66ff66"/>
-<rect x="5" y="11" width="1" height="1" fill="#61ff61"/>
-<rect x="7" y="11" width="1" height="1" fill="#181818"/>
-<rect x="11" y="11" width="1" height="1" fill="#5d5d5d"/>
-<rect x="3" y="12" width="1" height="1" fill="#09ff09"/>
-<rect x="4" y="12" width="2" height="1" fill="#00ff00"/>
-<rect x="6" y="12" width="1" height="1" fill="#03ff03"/>
-<rect x="12" y="12" width="1" height="1" fill="#6c6c6c"/>
-<rect x="2" y="13" width="1" height="1" fill="#71ff71"/>
-<rect x="3" y="13" width="4" height="2" fill="#00ff00"/>
-<rect x="7" y="13" width="1" height="1" fill="#56ff56"/>
-<rect x="12" y="13" width="1" height="1" fill="#6e6e6e"/>
-<rect x="2" y="14" width="1" height="1" fill="#7aff7a"/>
-<rect x="7" y="14" width="1" height="1" fill="#59f959"/>
-<rect x="11" y="14" width="1" height="1" fill="#585858"/>
-<rect x="3" y="15" width="1" height="1" fill="#18ff18"/>
-<rect x="4" y="15" width="2" height="1" fill="#00ff00"/>
-<rect x="6" y="15" width="1" height="1" fill="#0eff0e"/>
-<rect x="7" y="15" width="1" height="1" fill="#376637"/>
-<rect x="8" y="15" width="1" height="1" fill="#4d4d4d"/>
-<rect x="11" y="15" width="1" height="1" fill="#1a1a1a"/>
-<rect x="9" y="16" width="1" height="1" fill="#252525"/>
-<rect x="10" y="16" width="1" height="1" fill="#101010"/>
-<rect x="11" y="16" width="1" height="1" fill="#737373"/>
-<rect x="11" y="17" width="1" height="1" fill="#2d2d2d"/>
-<rect x="12" y="17" width="1" height="1" fill="#393939"/>
-<rect x="13" y="18" width="1" height="1" fill="#363636"/>
-<rect x="14" y="18" width="1" height="1" fill="#313131"/>
-<rect x="18" y="18" width="1" height="1" fill="#3b3bff"/>
-<rect x="19" y="18" width="1" height="1" fill="#3939ff"/>
-<rect x="15" y="19" width="1" height="1" fill="#3f3f3f"/>
-<rect x="16" y="19" width="1" height="1" fill="#2c2c75"/>
-<rect x="17" y="19" width="4" height="3" fill="#0000ff"/>
-<rect x="16" y="20" width="1" height="1" fill="#5a5af7"/>
-<rect x="21" y="20" width="1" height="1" fill="#5959ff"/>
-<rect x="16" y="21" width="1" height="1" fill="#7d7dff"/>
-<rect x="21" y="21" width="1" height="1" fill="#7474ff"/>
-<rect x="17" y="22" width="1" height="1" fill="#2c2cff"/>
-<rect x="18" y="22" width="2" height="1" fill="#0000ff"/>
-<rect x="20" y="22" width="1" height="1" fill="#2727ff"/>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width=".9" stroke-linecap="round" stroke-linejoin="round">
+  <title>Measure three-point angle</title>
+  <path d="M5 13L16.8 4 M5 13L18.4 19.3" fill="none" stroke="#6F6F59" stroke-width="1.5"/>
+  <path d="M10.4 8.9C12.4 11.4 12.6 14.1 11.2 16" fill="none" stroke="#6F6F59" stroke-width="1.35"/>
+  <circle cx="5" cy="13" r="2.8" fill="#72BE44"/>
+  <circle cx="16.8" cy="4" r="2.65" fill="#DE4130"/>
+  <circle cx="18.4" cy="19.3" r="2.65" fill="#2896D3"/>
 </svg>

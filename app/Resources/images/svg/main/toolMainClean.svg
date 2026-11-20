@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.4711,0.0400) scale(1.02222)">
+
+<defs><linearGradient id="handle" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#D0E5F6"/><stop offset="1.000" stop-color="#2896D3"/></linearGradient>
+<linearGradient id="bristles" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#C1A561"/><stop offset="0.500" stop-color="#F3C017"/><stop offset="1.000" stop-color="#C1A561"/></linearGradient></defs>
+<title>Clean point-cloud data — samples and sweeping broom</title>
+  <circle cx="3" cy="9.2" r="0.85" fill="#9AC1E0" stroke="#6F6F59"/>
+  <circle cx="5.8" cy="7.2" r="0.85" fill="#2896D3" stroke="#6F6F59"/>
+  <circle cx="8.6" cy="9.5" r="0.85" fill="#9AC1E0" stroke="#6F6F59"/>
+  <circle cx="3.1" cy="13" r="0.85" fill="#2896D3" stroke="#6F6F59"/>
+  <circle cx="6" cy="12" r="0.85" fill="#2896D3" stroke="#6F6F59"/>
+  <circle cx="8.5" cy="13.7" r="0.85" fill="#9AC1E0" stroke="#6F6F59"/>
+  <circle cx="3.8" cy="16.7" r="0.85" fill="#2896D3" stroke="#6F6F59"/>
+  <circle cx="2" cy="4.7" r="0.55" fill="#A4A6A6" stroke="none"/>
+  <circle cx="8.2" cy="2.5" r="0.55" fill="#A4A6A6" stroke="none"/>
+  <path d="M 20.3 1.7 Q 21 1 21.8 1.8 L 22.4 2.4 Q 23 3.1 22.2 3.8 L 14.4 13.1 L 12.4 11.3 Z" fill="url(#handle)" stroke="#6F6F59" stroke-width="0.65"/>
+  <path d="M 12.3 11 L 15.4 13.8 L 13.6 16 L 10.5 13.2 Z" fill="#E0E0E0" stroke="#6F6F59" stroke-width="0.65"/>
+  <path d="M 10.5 13.1 L 13.9 15.9 L 13.1 22 Q 8.1 21.8 5.2 18.3 L 8.6 13.5 Z" fill="url(#bristles)" stroke="#6F6F59"/>
+  <path d="M 9 15.5 L 6.8 19.6 M 10.6 16.3 L 9 20.8 M 12.1 17 L 11.4 21.5" fill="none" stroke="#A3915E" stroke-width="0.6"/>
+
+</g>
+</svg>

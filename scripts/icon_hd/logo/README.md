@@ -89,7 +89,7 @@ Everything in this folder is driven by one command:
 
 ```bash
 python3 scripts/icon_hd/icons.py doctor   # what is installed, what is missing
-python3 scripts/icon_hd/icons.py build    # render all 272 tool icons into app/
+python3 scripts/icon_hd/icons.py build    # list current tool icons and file sizes
 python3 scripts/icon_hd/icons.py audit    # before/after review page
 python3 scripts/icon_hd/icons.py verify   # qrc + XML + raster-in-svg + platforms
 python3 scripts/icon_hd/icons.py logo measure   # product-mark geometry

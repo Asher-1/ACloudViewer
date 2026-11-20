@@ -32,8 +32,7 @@ EuclideanClusterSegmentation::EuclideanClusterSegmentation()
               tr("EuclideanCluster Segmentation"),
               tr("EuclideanCluster Segmentation"),
               tr("EuclideanCluster Segmentation from clouds"),
-              ":/toolbar/PclAlgorithms/icons/"
-              "EuclideanClusterSegmentation.png")),
+              ":/qPCL/icons/pclEuclideanClusterSegmentation.svg")),
       m_dialog(nullptr),
       m_randomClusterColor(false),
       m_clusterTolerance(0.02f),

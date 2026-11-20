@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.6171,-0.6171) scale(1.05143)">
+
+<title>Representation side-set data</title>  <path d="M 12 2 L 20.66 7.0 L 12 12 L 3.34 7.0 Z" fill="#E0E0E0" stroke="#6F6F59"/>
+  <path d="M 3.34 7.0 L 12 12 L 12 22 L 3.34 17.0 Z" fill="#D0E5F6" stroke="#6F6F59"/>
+  <path d="M 20.66 7.0 L 12 12 L 12 22 L 20.66 17.0 Z" fill="#72BE44" stroke="#6F6F59"/>  <path d="M 12 12 L 20.66 7 M 12 17 L 20.66 12 M 16.33 9.5 V 19.5" fill="none" stroke-width="0.65"/>
+
+</g>
+</svg>

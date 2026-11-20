@@ -1,27 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-<g transform="translate(-0.000000,-0.000000) scale(1.500000)">
-<!-- Commercial HD v10: straight-edge authored polygons sampled
-     from the original raster; pixel-faithful correction layer. -->
-<path d="M7 0 L10 1 L10 6 L15 6 L15 7 L16 7 L15 10 L10 10 L10 15 L9 15 L9 16 L6 15 L6 10 L1 10 L1 9 L0 9 L1 6 L6 6 L6 1 L7 1 Z" fill="#50646e" fill-rule="evenodd"/>
-<rect x="6" y="0" width="1" height="1" fill="#c5cbcf"/>
-<rect x="8" y="0" width="1" height="1" fill="#7b8a92"/>
-<rect x="9" y="0" width="1" height="1" fill="#c5cbcf"/>
-<rect x="6" y="1" width="1" height="1" fill="#7b8a92"/>
-<rect x="9" y="1" width="1" height="1" fill="#7b8a92"/>
-<rect x="0" y="6" width="1" height="1" fill="#c5cbcf"/>
-<rect x="1" y="6" width="1" height="1" fill="#7b8a92"/>
-<rect x="14" y="6" width="1" height="1" fill="#7b8a92"/>
-<rect x="15" y="6" width="1" height="1" fill="#c5cbcf"/>
-<rect x="0" y="7" width="1" height="1" fill="#7b8a92"/>
-<rect x="15" y="8" width="1" height="1" fill="#7b8a92"/>
-<rect x="0" y="9" width="1" height="1" fill="#c5cbcf"/>
-<rect x="1" y="9" width="1" height="1" fill="#7b8a92"/>
-<rect x="14" y="9" width="1" height="1" fill="#7b8a92"/>
-<rect x="15" y="9" width="1" height="1" fill="#c5cbcf"/>
-<rect x="6" y="14" width="1" height="1" fill="#7b8a92"/>
-<rect x="9" y="14" width="1" height="1" fill="#7b8a92"/>
-<rect x="6" y="15" width="1" height="1" fill="#c5cbcf"/>
-<rect x="7" y="15" width="1" height="1" fill="#7b8a92"/>
-<rect x="9" y="15" width="1" height="1" fill="#c5cbcf"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.0436,-0.0436) scale(1.00364)">
+
+<defs><linearGradient id="add" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#A7D28C"/><stop offset="0.480" stop-color="#72BE44"/><stop offset="1.000" stop-color="#4E8C2E"/></linearGradient></defs>
+<title>Add constant scalar field</title>
+  <path d="M 9.1 1.5 H 14.9 V 9.1 H 22.5 V 14.9 H 14.9 V 22.5 H 9.1 V 14.9 H 1.5 V 9.1 H 9.1 Z" fill="url(#add)" stroke="#6F6F59" stroke-width="0.85"/>
+
 </g>
 </svg>

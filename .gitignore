@@ -286,3 +286,5 @@ scripts/icon_hd/authored/
 scripts/icon_hd/logo/masters
 scripts/icon_hd/logo/review
 .claude
+.playwright-cli
+output/

@@ -1,35 +1,33 @@
 <RCC>
     <qresource prefix="/">
-        <file>Resources/images/open.png</file>
-        <file>Resources/images/save.png</file>
-        <file>Resources/images/saveBinary.png</file>
-        <file>Resources/images/cube.png</file>
-        <file>Resources/images/about.png</file>
-        <file>Resources/images/help.png</file>
-        <file>Resources/images/bgcolor.png</file>
-        <file>Resources/images/clear.png</file>
-        <file>Resources/images/add.png</file>
-        <file>Resources/images/sphere.png</file>
-        <file>Resources/images/cylinder.png</file>
-        <file>Resources/images/language.png</file>
-        <file>Resources/images/theme.png</file>
-        <file>Resources/images/close.png</file>
-        <file>Resources/images/max.png</file>
-        <file>Resources/images/mini.svg</file>
+        <file>Resources/images/svg/main/toolMainOpen.svg</file>
+        <file>Resources/images/svg/main/toolMainSave.svg</file>
+        <file>Resources/images/svg/main/toolMainSaveProject.svg</file>
+        <file>Resources/images/svg/primitive/primitiveBox.svg</file>
+        <file>Resources/images/svg/main/toolMainAbout.svg</file>
+        <file>Resources/images/svg/main/toolMainHelp.svg</file>
+        <file>Resources/images/svg/main/toolMainColorize.svg</file>
+        <file>Resources/images/svg/main/toolMainClearAll.svg</file>
+        <file>Resources/images/svg/main/toolMainImportFromFile.svg</file>
+        <file>Resources/images/svg/primitive/primitiveSphere.svg</file>
+        <file>Resources/images/svg/primitive/primitiveCylinder.svg</file>
+        <file>Resources/images/svg/main/toolMainLanguage.svg</file>
+        <file>Resources/images/svg/main/toolMainTheme.svg</file>
+        <file>Resources/images/svg/window/windowClose.svg</file>
+        <file>Resources/images/svg/window/windowMaximize.svg</file>
+        <file>Resources/images/svg/window/windowMinimize.svg</file>
         <file>Resources/images/svg/type/typeGrayColor.svg</file>
         <file>Resources/images/svg/type/typeNormal.svg</file>
-        <file>Resources/images/svg/type/typePositiveSF.svg</file>
         <file>Resources/images/svg/type/typeRgbCcolor.svg</file>
         <file>Resources/images/svg/type/typeSF.svg</file>
         <file>Resources/images/svg/type/typeXCoordinate.svg</file>
         <file>Resources/images/svg/type/typeYCoordinate.svg</file>
         <file>Resources/images/svg/type/typeZCoordinate.svg</file>
         <file>Resources/images/svg/db/dbCloudSymbol.svg</file>
-        <file>Resources/images/svg/db/dbFileSymbol.svg</file>
         <file>Resources/images/svg/db/dbLabelSymbol.svg</file>
-        <file>Resources/images/FullScreen.png</file>
-        <file>Resources/images/cone.svg</file>
-        <file>Resources/images/dish.png</file>
+        <file>Resources/images/svg/main/toolMainExclusiveFullScreen.svg</file>
+        <file>Resources/images/svg/primitive/primitiveCone.svg</file>
+        <file>Resources/images/svg/primitive/primitiveDish.svg</file>
         <file>Resources/images/svg/main/toolMainMinus.svg</file>
         <file>Resources/images/svg/main/toolMainPlus.svg</file>
         <file>Resources/images/svg/misc/Plane.svg</file>
@@ -52,12 +50,12 @@
         <file>Resources/images/QTreeView/vline.svg</file>
         <file>Resources/images/svg/main/toolMainDeleteEntity.svg</file>
         <file>Resources/images/svg/main/toolMainExit.svg</file>
-        <file>Resources/images/cloud.svg</file>
+        <file>Resources/images/svg/surface/surfaceExportCloud.svg</file>
         <file>Resources/images/svg/db/dbAreaLabelSymbol.svg</file>
         <file>Resources/images/svg/db/dbCalibratedImageSymbol.svg</file>
         <file>Resources/images/svg/db/dbCamSensorSymbol.svg</file>
         <file>Resources/images/svg/db/dbCloudSymbolLocked.svg</file>
-        <file>Resources/images/dbContainerSymbol.svg</file>
+        <file>Resources/images/svg/db/dbContainerSymbol.svg</file>
         <file>Resources/images/svg/db/dbContainerSymbol3.svg</file>
         <file>Resources/images/svg/db/dbContainerSymbolLocked.svg</file>
         <file>Resources/images/svg/db/dbGBLSensorSymbol.svg</file>
@@ -73,28 +71,26 @@
         <file>Resources/images/svg/db/dbOctreeSymbolLocked.svg</file>
         <file>Resources/images/svg/db/dbPolylineSymbol.svg</file>
         <file>Resources/images/svg/db/dbCircle.svg</file>
-        <file>Resources/images/primCylinder.gif</file>
+        <file>Resources/images/svg/primitive/primitivePromoteCylinder.svg</file>
         <file>Resources/images/svg/db/dbSubMeshSymbol.svg</file>
         <file>Resources/images/svg/db/dbSubMeshSymbolLocked.svg</file>
         <file>Resources/images/svg/db/dbViewportSymbol.svg</file>
-        <file>Resources/images/zoom.png</file>
-        <file>Resources/images/ecvGear.png</file>
-        <file>Resources/images/color.png</file>
-        <file>Resources/images/ecvBackgroundColor.png</file>
-        <file>Resources/images/ecvColorMenu.png</file>
-        <file>Resources/images/ecvObjectColor.png</file>
-        <file>Resources/images/ecvClearColor.png</file>
-        <file>Resources/images/svg/main/toolMainGlobalZoom.svg</file>
-        <file>Resources/images/ecvDisplaySettings.png</file>
+        <file>Resources/images/svg/misc/propertyEditor.svg</file>
+        <file>Resources/images/svg/misc/colorSelect.svg</file>
+        <file>Resources/images/svg/main/toolMainSetBackgroundColor.svg</file>
+        <file>Resources/images/svg/main/toolMainColorMenu.svg</file>
+        <file>Resources/images/svg/main/toolMainSetUniqueColor.svg</file>
+        <file>Resources/images/svg/main/toolMainClearColors.svg</file>
+        <file>Resources/images/svg/main/toolMainDisplaySettings.svg</file>
         <file>Resources/images/svg/main/toolMainConsole.svg</file>
-        <file>Resources/images/svg/view/ecvViewIso1.svg</file>
-        <file>Resources/images/svg/view/ecvViewIso2.svg</file>
-        <file>Resources/images/svg/view/ecvViewXneg.svg</file>
-        <file>Resources/images/svg/view/ecvViewXpos.svg</file>
-        <file>Resources/images/svg/view/ecvViewYneg.svg</file>
-        <file>Resources/images/svg/view/ecvViewYpos.svg</file>
-        <file>Resources/images/svg/view/ecvViewZneg.svg</file>
-        <file>Resources/images/svg/view/ecvViewZpos.svg</file>
+        <file>Resources/images/svg/view/mainViewIso1.svg</file>
+        <file>Resources/images/svg/view/mainViewIso2.svg</file>
+        <file>Resources/images/svg/view/mainViewXneg.svg</file>
+        <file>Resources/images/svg/view/mainViewXpos.svg</file>
+        <file>Resources/images/svg/view/mainViewYneg.svg</file>
+        <file>Resources/images/svg/view/mainViewYpos.svg</file>
+        <file>Resources/images/svg/view/mainViewZneg.svg</file>
+        <file>Resources/images/svg/view/mainViewZpos.svg</file>
         <file>Resources/images/svg/main/toolMainCloneEntity.svg</file>
         <file>Resources/images/svg/main/toolMainMergeEntities.svg</file>
         <file>Resources/images/svg/main/toolMainClippingBox.svg</file>
@@ -103,7 +99,6 @@
         <file>Resources/images/svg/misc/interactors.svg</file>
         <file>Resources/images/svg/misc/square.svg</file>
         <file>Resources/images/svg/misc/restore.svg</file>
-        <file>Resources/images/svg/small/smallBasket.svg</file>
         <file>Resources/images/svg/small/smallCancel.svg</file>
         <file>Resources/images/svg/small/smallCSVFile.svg</file>
         <file>Resources/images/svg/small/smallPause.svg</file>
@@ -117,20 +112,20 @@
         <file>Resources/images/svg/small/smallSegmentIn.svg</file>
         <file>Resources/images/svg/small/smallSegmentOut.svg</file>
         <file>Resources/images/svg/misc/hashtag.svg</file>
-        <file>Resources/images/exportIcon.png</file>
+        <file>Resources/images/svg/annotation/annotationExportSelection.svg</file>
         <file>Resources/images/svg/misc/ccGear.svg</file>
         <file>Resources/images/svg/small/smallSphere.svg</file>
         <file>Resources/images/svg/small/smallTrash.svg</file>
         <file>Resources/images/svg/small/smallValidate.svg</file>
-        <file>Resources/images/ecvSegment.png</file>
+        <file>Resources/images/svg/main/toolMainSegment.svg</file>
         <file>Resources/images/svg/main/toolMainPointListPicking.svg</file>
         <file>Resources/images/svg/main/toolMainPointPicking.svg</file>
         <file>Resources/images/svg/misc/store.svg</file>
-        <file>Resources/images/svg/main/toolMainPencil.svg</file>
-        <file>Resources/images/svg/main/toolMainUnstack.svg</file>
+        <file>Resources/images/svg/registration/registrationAddManualPoint.svg</file>
+        <file>Resources/images/svg/registration/registrationRemoveLastPoint.svg</file>
         <file>Resources/images/svg/main/toolMainSFGradient.svg</file>
         <file>Resources/images/svg/main/toolMainSamplePointsOnMesh.svg</file>
-        <file>Resources/images/ecvTracePolyline.png</file>
+        <file>Resources/images/svg/main/toolMainTracePolyline.svg</file>
         <file>Resources/images/svg/main/toolMainAddConstSF.svg</file>
         <file>Resources/images/svg/db/dbOctreeSymbol.svg</file>
         <file>Resources/images/svg/main/toolMainComputeStat.svg</file>
@@ -139,8 +134,7 @@
         <file>Resources/images/svg/main/toolMainCloudCloudDistance.svg</file>
         <file>Resources/images/svg/main/toolMainCloudMeshDistance.svg</file>
         <file>Resources/images/svg/main/toolMainDeleteCurrentSF.svg</file>
-        <file>Resources/images/ecvCCExtract.svg</file>
-        <file>Resources/images/svg/main/toolMainSFArithmetic.svg</file>
+        <file>Resources/images/svg/main/toolMainConnectedComponents.svg</file>
         <file>Resources/images/svg/main/toolMainBilateralFilter.svg</file>
         <file>Resources/images/svg/main/toolMainFilterByValue.svg</file>
         <file>Resources/images/svg/main/toolMainGaussianFilter.svg</file>
@@ -148,43 +142,43 @@
         <file>Resources/images/svg/main/toolMainPointPairsAlign.svg</file>
         <file>Resources/images/svg/main/toolMainTranslateRotate.svg</file>
         <file>Resources/images/svg/misc/scale.svg</file>
-        <file>Resources/images/transformScale.png</file>
-        <file>Resources/images/clean_72px_27328.png</file>
-        <file>Resources/images/filter.png</file>
+        <file>Resources/images/svg/main/toolMainApplyScale.svg</file>
+        <file>Resources/images/svg/main/toolMainClean.svg</file>
+        <file>Resources/images/svg/filter/filterTools.svg</file>
         <file>Resources/images/svg/main/toolMainSORFilter.svg</file>
-        <file>Resources/images/annotations.png</file>
-        <file>Resources/images/ecvIntersection.svg</file>
+        <file>Resources/images/svg/annotation/annotationTools.svg</file>
+        <file>Resources/images/svg/annotation/annotationIntersectSelections.svg</file>
         <file>Resources/images/svg/main/toolMainUnion.svg</file>
-        <file>Resources/images/small_save.png</file>
+        <file>Resources/images/svg/annotation/annotationSave.svg</file>
         <file>Resources/images/svg/main/toolMainOrthoProjection.svg</file>
         <file>Resources/images/svg/main/toolMainPerspectiveProjection.svg</file>
         <file>Resources/images/svg/pq/pqRamp24.svg</file>
-        <file>Resources/images/ecvicp.png</file>
+        <file>Resources/images/svg/main/toolMainICP.svg</file>
         <file>Resources/images/qt.png</file>
         <file>Resources/images/svg/pq/pqContours.svg</file>
-        <file>Resources/images/Components_72px.png</file>
-        <file>Resources/images/decimate.png</file>
-        <file>Resources/images/export.svg</file>
-        <file>Resources/images/exportCloud.png</file>
-        <file>Resources/images/settings.png</file>
-        <file>Resources/images/subdivide.png</file>
-        <file>Resources/images/surface.svg</file>
-        <file>Resources/images/meshSmooth.png</file>
-        <file>Resources/images/vtkSmooth.png</file>
-        <file>Resources/images/mesh4.png</file>
-        <file>Resources/images/octree.png</file>
-        <file>Resources/images/svg/pqCalculator.svg</file>
-        <file>Resources/images/svg/pqCamera.png</file>
-        <file>Resources/images/svg/pqExitApp.png</file>
-        <file>Resources/images/svg/pqFullscreen.png</file>
-        <file>Resources/images/svg/pqGlyph.png</file>
-        <file>Resources/images/svg/pqIsosurface.png</file>
-        <file>Resources/images/svg/pqProbeLocation.svg</file>
+        <file>Resources/images/svg/main/toolMainAboutPlugins.svg</file>
+        <file>Resources/images/svg/filter/filterDecimate.svg</file>
+        <file>Resources/images/svg/main/toolMainExportPlaneInfo.svg</file>
+        <file>Resources/images/svg/small/ioExportCloud.svg</file>
+        <file>Resources/images/svg/misc/settingsOptions.svg</file>
+        <file>Resources/images/svg/mesh/meshSubdivide.svg</file>
+        <file>Resources/images/svg/surface/surfaceRender.svg</file>
+        <file>Resources/images/svg/mesh/meshSmoothLaplacian.svg</file>
+        <file>Resources/images/svg/filter/filterSmoothVTK.svg</file>
+        <file>Resources/images/svg/mesh/meshTools.svg</file>
+        <file>Resources/images/svg/mesh/meshOctree.svg</file>
+        <file>Resources/images/svg/pq/pqCalculator.svg</file>
+        <file>Resources/images/svg/pq/pqCamera.svg</file>
+        <file>Resources/images/svg/pq/pqExitApp.svg</file>
+        <file>Resources/images/svg/pq/pqFullscreen.svg</file>
+        <file>Resources/images/svg/filter/filterGlyph.svg</file>
+        <file>Resources/images/svg/filter/filterIsoSurface.svg</file>
+        <file>Resources/images/svg/filter/filterProbeLocation.svg</file>
         <file>Resources/images/svg/pq/pqUndoCamera.svg</file>
         <file>Resources/images/svg/misc/logManager.svg</file>
         <file>Resources/images/svg/pq/pqRedoCamera.svg</file>
-        <file>Resources/images/svg/pqStreamTracer.png</file>
-        <file>Resources/images/svg/pqThreshold.png</file>
+        <file>Resources/images/svg/filter/filterStreamTracer.svg</file>
+        <file>Resources/images/svg/filter/filterThreshold.svg</file>
         <file>Resources/images/svg/pq/pqProtractor.svg</file>
         <file>Resources/images/svg/pq/pqRuler.svg</file>
         <file>Resources/images/svg/pq/pqSettings.svg</file>
@@ -192,25 +186,24 @@
         <file>Resources/images/svg/pq/pqSplitVertical.svg</file>
         <file>Resources/images/svg/pq/pqCaptureScreenshot.svg</file>
         <file>Resources/images/svg/pq/pqEditCamera.svg</file>
-        <file>Resources/images/svg/pq/pqDelete.svg</file>
         <file>Resources/images/svg/pq/pqCloseView.svg</file>
-        <file>Resources/images/svg/slice.png</file>
-        <file>Resources/images/svg/pqFaceSetData.svg</file>
-        <file>Resources/images/svg/pqSideSetData.png</file>
-        <file>Resources/images/svg/pqClip.png</file>
-        <file>Resources/images/svg/pqEyeball.png</file>
+        <file>Resources/images/svg/filter/filterSlice.svg</file>
+        <file>Resources/images/svg/pq/pqFaceSetData.svg</file>
+        <file>Resources/images/svg/pq/pqSideSetData.svg</file>
+        <file>Resources/images/svg/filter/filterClip.svg</file>
+        <file>Resources/images/svg/pq/pqEyeball.svg</file>
         <file>Resources/images/svg/misc/lockedAxis.svg</file>
-        <file>Resources/images/3D3.png</file>
-        <file>Resources/images/unroll.png</file>
-        <file>Resources/images/svg/pqPreview.png</file>
-        <file>Resources/images/svg/pqRecentFile.svg</file>
-        <file>Resources/images/pqPickCenter@2x.png</file>
-        <file>Resources/images/pqResetCenter@2x.png</file>
+        <file>Resources/images/svg/view/view3D.svg</file>
+        <file>Resources/images/svg/main/toolMainUnroll.svg</file>
+        <file>Resources/images/svg/pq/pqPreview.svg</file>
+        <file>Resources/images/svg/pq/pqRecentFile.svg</file>
+        <file>Resources/images/svg/view/viewPickRotationCenter.svg</file>
+        <file>Resources/images/svg/view/viewResetRotationCenter.svg</file>
         <file>Resources/images/svg/pq/pqShowOrientationAxes.svg</file>
         <file>Resources/images/svg/pq/pqAxes.svg</file>
         <file>Resources/images/svg/pq/pqZoomToGlobalData.svg</file>
         <file>Resources/images/svg/pq/pqZoomToSelectedData.svg</file>
-        <file>Resources/images/pqZoomToBox@2x.png</file>
+        <file>Resources/images/svg/view/viewZoomToBox.svg</file>
         <file>Resources/images/svg/pq/pqSurfaceHoveringCell.svg</file>
         <file>Resources/images/svg/pq/pqSurfaceHoveringPoint.svg</file>
         <file>Resources/images/svg/pq/pqSurfaceSelectionCell.svg</file>
@@ -238,7 +231,7 @@
         <file>Resources/images/svg/pq/pqPlus.svg</file>
         <file>Resources/images/svg/pq/pqMinus.svg</file>
         <file>Resources/images/svg/pq/pqClearSort.svg</file>
-        <file>Resources/images/pqShowCenterAxes@2x.png</file>
+        <file>Resources/images/svg/view/viewShowRotationCenter.svg</file>
         <file>Resources/images/svg/pq/pqXMinus.svg</file>
         <file>Resources/images/svg/pq/pqXPlus.svg</file>
         <file>Resources/images/svg/pq/pqYMinus.svg</file>
@@ -246,22 +239,18 @@
         <file>Resources/images/svg/pq/pqZMinus.svg</file>
         <file>Resources/images/svg/pq/pqZPlus.svg</file>
         <file>Resources/images/svg/pq/pqAdvanced.svg</file>
-        <file>Resources/images/svg/misc/info.svg</file>
-        <file>Resources/images/svg/misc/plus.svg</file>
-        <file>Resources/images/svg/pq/pqArrowDown16.svg</file>
-        <file>Resources/images/svg/pq/pqArrowUp16.svg</file>
-        <file>Resources/images/svg/pqWrench.png</file>
+        <file>Resources/images/svg/pq/pqWrench.svg</file>
         <file>Resources/images/svg/misc/zoomIn_48px.svg</file>
         <file>Resources/images/svg/misc/zoomOut_48px.svg</file>
         <file>Resources/images/svg/misc/edit_48px.svg</file>
         <file>Resources/images/svg/misc/zoom_to_selection.svg</file>
-        <file>Resources/images/voxelSampling.jpg</file>
-        <file>Resources/images/convex_concave_hull.png</file>
-        <file>Resources/images/poisson.png</file>
-        <file>Resources/images/ecvCloudPrimitiveDistance.png</file>
+        <file>Resources/images/svg/mesh/meshVoxelSampling.svg</file>
+        <file>Resources/images/svg/mesh/meshConvexHull.svg</file>
+        <file>Resources/images/svg/mesh/meshPoissonReconstruction.svg</file>
+        <file>Resources/images/svg/main/toolMainCloudPrimitiveDistance.svg</file>
         <file>Resources/images/svg/small/smallSplit.svg</file>
-        <file>Resources/images/integrated_sensor.png</file>
-        <file>Resources/images/Wavefrom.png</file>
+        <file>Resources/images/svg/view/viewSensorTools.svg</file>
+        <file>Resources/images/svg/view/viewWaveformTools.svg</file>
         <file>Resources/images/icon/cloudviewer_16.ico</file>
         <file>Resources/images/icon/cloudviewer_16.png</file>
         <file>Resources/images/icon/cloudviewer_32.ico</file>
@@ -272,11 +261,6 @@
         <file>Resources/images/icon/cloudviewer_128.png</file>
         <file>Resources/images/icon/logo_256.ico</file>
         <file>Resources/images/icon/logo_256.png</file>
-        <file>Resources/images/pcl/normal_estimation.png</file>
-        <file>Resources/images/svg/pcl/new_cloud_from_selection.svg</file>
-        <file>Resources/images/svg/pcl/insert_from_OpenNi.svg</file>
-        <file>Resources/images/svg/pcl/insert_from_file.svg</file>
-        <file>Resources/images/svg/pcl/frustum_selection.svg</file>
         <file>Resources/images/svg/pq/pqPointData.svg</file>
         <file>Resources/images/svg/pq/pqCellData.svg</file>
         <file>Resources/images/svg/pq/pqApply.svg</file>
@@ -284,15 +268,10 @@
         <file>Resources/images/svg/pq/pqReset.svg</file>
         <file>Resources/images/svg/pq/pqResetUI.svg</file>
         <file>Resources/images/svg/pq/pqResetSettings.svg</file>
-        <file>Resources/images/svg/pqPaste.png</file>
+        <file>Resources/images/svg/pq/pqPaste.svg</file>
         <file>Resources/images/svg/pq/pqInvert.svg</file>
-        <file>Resources/images/svg/pqSolidColor.svg</file>
-        <file>Resources/images/svg/pq/pqAutoApply.svg</file>
+        <file>Resources/images/svg/pq/pqSolidColor.svg</file>
         <file>Resources/images/svg/pq/pqExtractSelection.svg</file>
-        <file>Resources/images/svg/pq/pqPlotSelectionOverTime.svg</file>
-        <file>Resources/images/svg/pq/pqSurfaceSelectionCellDataInteractive.svg</file>
-        <file>Resources/images/svg/pq/pqSurfaceSelectionPointDataInteractive.svg</file>
-        <file>Resources/images/svg/pq/pqFindData.svg</file>
         <file>Resources/images/svg/pq/pqLock.svg</file>
         <file>Resources/images/svg/font/pqBold24.svg</file>
         <file>Resources/images/svg/font/pqItalics24.svg</file>
@@ -303,6 +282,8 @@
         <file>Resources/images/svg/font/pqTextVerticalAlignTop.svg</file>
         <file>Resources/images/svg/font/pqTextVerticalAlignCenter.svg</file>
         <file>Resources/images/svg/font/pqTextVerticalAlignBottom.svg</file>
+        <file>Resources/images/svg/main/toolMainNormals.svg</file>
+        <file>Resources/images/svg/view/viewRotationAnimation.svg</file>
     </qresource>
     <qresource prefix="/qt">
         <file>etc/qt.conf</file>

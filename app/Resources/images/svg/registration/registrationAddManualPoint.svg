@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(0.3865,0.5777) scale(0.95584)">
+
+<defs><linearGradient id="pencil" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#F3C017"/><stop offset="1.000" stop-color="#C1A561"/></linearGradient></defs>
+<title>Enter a point manually for point-pair registration</title>
+  <path d="M 3 17 L 15 3 L 20 7 L 8 21 L 2 23 Z" fill="url(#pencil)" stroke="#6F6F59"/>  <path d="M 15 3 L 17 1 Q 18 0.5 19 1.5 L 21.5 3.5 Q 22 4.5 21 5.5 L 20 7 Z" fill="#E0E0E0" stroke="#6F6F59"/>  <path d="M 3 17 L 8 21 L 2 23 Z" fill="#E0E0E0" stroke="#6F6F59"/>  <path d="M 2.4 20.7 L 4.5 22.1 L 2 23 Z" fill="#6F6F59" stroke="none"/>  <path d="M 6 17.7 L 17.2 5" fill="none" stroke="#A3915E" stroke-width="0.65"/>  <path d="M 15 19 H 22 M 18.5 15.5 V 22.5" fill="none" stroke="#2896D3" stroke-width="1.5"/>
+
+</g>
+</svg>

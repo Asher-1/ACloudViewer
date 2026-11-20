@@ -132,26 +132,29 @@ private:
         // Special case for default - no icon in general, but a lock if locked
         mDefaultIcons = {
                 {},
-                QIcon(QStringLiteral(":/Resources/images/svg/db/dbLockSymbol.svg"))};
+                QIcon(QStringLiteral(
+                        ":/Resources/images/svg/db/dbLockSymbol.svg"))};
 
         const int hObjectIndex = mIconList.count();
         mIconList.append(
                 {QIcon(QStringLiteral(
                          ":/Resources/images/svg/db/dbHObjectSymbol.svg")),
-                 QIcon(QStringLiteral(
-                         ":/Resources/images/svg/db/dbHObjectSymbolLocked.svg"))});
+                 QIcon(QStringLiteral(":/Resources/images/svg/db/"
+                                      "dbHObjectSymbolLocked.svg"))});
 
         const int cloudIndex = mIconList.count();
         mIconList.append(
-                {QIcon(QStringLiteral(":/Resources/images/svg/db/dbCloudSymbol.svg")),
-                 QIcon(QStringLiteral(
-                         ":/Resources/images/svg/db/dbCloudSymbolLocked.svg"))});
+                {QIcon(QStringLiteral(
+                         ":/Resources/images/svg/db/dbCloudSymbol.svg")),
+                 QIcon(QStringLiteral(":/Resources/images/svg/db/"
+                                      "dbCloudSymbolLocked.svg"))});
 
         const int geomIndex = mIconList.count();
-        mIconList.append({QIcon(QStringLiteral(
-                                  ":/Resources/images/svg/db/dbMiscGeomSymbol.svg")),
-                          QIcon(QStringLiteral(":/Resources/images/svg/db/"
-                                               "dbMiscGeomSymbolLocked.svg"))});
+        mIconList.append(
+                {QIcon(QStringLiteral(
+                         ":/Resources/images/svg/db/dbMiscGeomSymbol.svg")),
+                 QIcon(QStringLiteral(":/Resources/images/svg/db/"
+                                      "dbMiscGeomSymbolLocked.svg"))});
 
         const int meshIndex = mIconList.count();
         mIconList.append(
@@ -168,14 +171,16 @@ private:
                                       "dbSubMeshSymbolLocked.svg"))});
 
         const int polyLineIndex = mIconList.count();
-        mIconList.append({QIcon(QStringLiteral(
-                                  ":/Resources/images/svg/db/dbPolylineSymbol.svg")),
-                          {}});
+        mIconList.append(
+                {QIcon(QStringLiteral(
+                         ":/Resources/images/svg/db/dbPolylineSymbol.svg")),
+                 {}});
 
         const int lineSetIndex = mIconList.count();
-        mIconList.append({QIcon(QStringLiteral(
-                                  ":/Resources/images/svg/db/dbPolylineSymbol.svg")),
-                          {}});
+        mIconList.append(
+                {QIcon(QStringLiteral(
+                         ":/Resources/images/svg/db/dbPolylineSymbol.svg")),
+                 {}});
 
         const int circleIndex = mIconList.count();
         mIconList.append({QIcon(QStringLiteral(
@@ -190,10 +195,9 @@ private:
                                       "dbOctreeSymbolLocked.svg"))});
 
         const int calibratedImageIndex = mIconList.count();
-        mIconList.append(
-                {QIcon(QStringLiteral(
-                         ":/Resources/images/svg/db/dbCalibratedImageSymbol.svg")),
-                 {}});
+        mIconList.append({QIcon(QStringLiteral(":/Resources/images/svg/db/"
+                                               "dbCalibratedImageSymbol.svg")),
+                          {}});
 
         const int imageIndex = mIconList.count();
         mIconList.append(
@@ -222,24 +226,27 @@ private:
         const int containerIndex = mIconList.count();
         mIconList.append(
                 {QIcon(QStringLiteral(
-                         ":/Resources/images/dbContainerSymbol.svg")),
-                 QIcon(QStringLiteral(
-                         ":/Resources/images/svg/db/dbContainerSymbolLocked.svg"))});
+                         ":/Resources/images/svg/db/dbContainerSymbol.svg")),
+                 QIcon(QStringLiteral(":/Resources/images/svg/db/"
+                                      "dbContainerSymbolLocked.svg"))});
 
         const int labelIndex = mIconList.count();
         mIconList.append(
-                {QIcon(QStringLiteral(":/Resources/images/svg/db/dbLabelSymbol.svg")),
+                {QIcon(QStringLiteral(
+                         ":/Resources/images/svg/db/dbLabelSymbol.svg")),
                  {}});
 
         const int viewportObjIndex = mIconList.count();
-        mIconList.append({QIcon(QStringLiteral(
-                                  ":/Resources/images/svg/db/dbViewportSymbol.svg")),
-                          {}});
+        mIconList.append(
+                {QIcon(QStringLiteral(
+                         ":/Resources/images/svg/db/dbViewportSymbol.svg")),
+                 {}});
 
         const int viewportLabelIndex = mIconList.count();
-        mIconList.append({QIcon(QStringLiteral(
-                                  ":/Resources/images/svg/db/dbAreaLabelSymbol.svg")),
-                          {}});
+        mIconList.append(
+                {QIcon(QStringLiteral(
+                         ":/Resources/images/svg/db/dbAreaLabelSymbol.svg")),
+                 {}});
 
         mIconMap = {{CV_TYPES::HIERARCHY_OBJECT, hObjectIndex},
                     {CV_TYPES::POINT_CLOUD, cloudIndex},

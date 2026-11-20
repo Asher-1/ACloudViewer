@@ -21,7 +21,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../../../qPCL.qrc">
-    <normaloff>:/toolbar/PclAlgorithms/icons/greedy_triangulation.png</normaloff>:/toolbar/PclAlgorithms/icons/greedy_triangulation.png</iconset>
+    <normaloff>:/qPCL/icons/pclGreedyTriangulation.svg</normaloff>:/qPCL/icons/pclGreedyTriangulation.svg</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>

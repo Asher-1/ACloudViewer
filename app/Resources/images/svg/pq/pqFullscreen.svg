@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.8621,-0.8621) scale(1.07184)">
+
+<title>Fullscreen view</title>  <rect x="3" y="3" width="18" height="18" rx="0.4" fill="#D0E5F6" stroke="#6F6F59"/>  <path d="M 2 8 V 2 H 8 L 6.1 4 L 9 6.9 L 6.9 9 L 4 6.1 Z" fill="#F3C017" stroke="#6F6F59" stroke-width="0.55"/>  <path d="M 16 2 H 22 V 8 L 20 6.1 L 17.1 9 L 15 6.9 L 17.9 4 Z" fill="#F3C017" stroke="#6F6F59" stroke-width="0.55"/>  <path d="M 2 16 V 22 H 8 L 6.1 20 L 9 17.1 L 6.9 15 L 4 17.9 Z" fill="#F3C017" stroke="#6F6F59" stroke-width="0.55"/>  <path d="M 16 22 H 22 V 16 L 20 17.9 L 17.1 15 L 15 17.1 L 17.9 20 Z" fill="#F3C017" stroke="#6F6F59" stroke-width="0.55"/>
+
+</g>
+</svg>
