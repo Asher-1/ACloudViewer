@@ -333,12 +333,36 @@ rst = '\n'.join(nbsphinx.markdown2rst(''.join(c['source']))
 **Every notebook needs a toctree entry.** `-W` rejects `document isn't included
 in any toctree`, and the page is invisible until something forces rendering.
 
-**Headless screenshots can be degenerate.** `capture_screen_float_buffer()`
-returns a scalar when the window never produced a frame; `np.asarray` gives a 0-d
-array and `PIL.Image.fromarray` raises `IndexError: tuple index out of range`.
-`surface_reconstruction.ipynb` triggers this with 565k points / 1.13M triangles.
-`cloudViewer_tutorial.py` guards on `ndim < 3` and skips the inline image; all 28
-notebooks share that helper.
+**Headless screenshots can be degenerate.** The offscreen path fails in two
+distinct places, and guarding the wrong one costs a full CI round:
+
+1. **`poll_events()` raises before any frame exists.** `surface_reconstruction.ipynb`
+   (565k points / 1.13M triangles) dies inside the non-interactive render loop:
+
+   ```
+   IndexError: vector::_M_range_check:
+       __n (which is 565492) >= this->size() (which is 565492)
+   ```
+
+   This is *not* the same error as (2), and a guard placed after the capture
+   never runs — execution already died at `poll_events()`. Wrap
+   `poll_events()`/`update_renderer()` themselves, destroy the window, return.
+
+2. **The capture returns a 0-d value.** `capture_screen_float_buffer()` can
+   return a scalar when no frame was produced; `np.asarray` gives a 0-d array
+   and `PIL.Image.fromarray` raises `IndexError: tuple index out of range`.
+   Keep the `arr.ndim < 3 or arr.size == 0` check **as well** — it handles the
+   case where rendering succeeded but produced nothing usable.
+
+Both guards live in `docs/jupyter/cloudViewer_tutorial.py`; all 28 notebooks
+share that helper through `cv3dtut`.
+
+**A local pass does not disprove a CI failure here.** The `poll_events()`
+crash depends on the CI's headless GLFW path; the same notebook executes
+cleanly with a local build. Do not read "local_docs_check passed" as
+"the notebook is fine". Prove the guard by injecting the exception: drive the
+patched function with a fake visualizer whose `poll_events` raises the CI
+error, and assert the window is destroyed and the capture never runs.
 
 **Notebooks only execute when cloudViewer was actually built.** A run reporting
 `Successfully executed: 0 notebook(s)` is not a pass — nothing ran.
