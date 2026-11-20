@@ -55,8 +55,22 @@ def jupyter_draw_geometries(
     else:
         for geom in geoms:
             vis.update_geometry(geom)
-        vis.poll_events()
-        vis.update_renderer()
+        # The offscreen path can fail before a single frame exists. The
+        # Poisson tutorial (565492 points / 1130852 triangles) raises from
+        # poll_events(), not from the capture:
+        #   IndexError: vector::_M_range_check:
+        #       __n (which is 565492) >= this->size() (which is 565492)
+        # A guard placed after the capture never runs, because execution
+        # already died here -- that is why the earlier fix had no effect.
+        # Render defensively and fall through to the degenerate-capture check.
+        try:
+            vis.poll_events()
+            vis.update_renderer()
+        except IndexError as exc:
+            print("[cloudViewer_tutorial] offscreen render unavailable "
+                  f"({type(exc).__name__}: {exc}); skipping inline image")
+            vis.destroy_window()
+            return
     im = vis.capture_screen_float_buffer()
     vis.destroy_window()
 
