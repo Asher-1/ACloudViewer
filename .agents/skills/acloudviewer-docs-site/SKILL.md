@@ -333,36 +333,39 @@ rst = '\n'.join(nbsphinx.markdown2rst(''.join(c['source']))
 **Every notebook needs a toctree entry.** `-W` rejects `document isn't included
 in any toctree`, and the page is invisible until something forces rendering.
 
-**Headless screenshots can be degenerate.** The offscreen path fails in two
-distinct places, and guarding the wrong one costs a full CI round:
+**Headless rendering needs a real GL context, not a guard.** This cost two CI
+rounds and a wrong fix. The mechanism:
 
-1. **`poll_events()` raises before any frame exists.** `surface_reconstruction.ipynb`
-   (565k points / 1.13M triangles) dies inside the non-interactive render loop:
+- The docs image has no display. GLFW then falls back to
+  `glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_NULL)` (OSMesa software).
+- That platform is handed no GL version — the log says
+  `GLEW initialization returned GLEW_ERROR_NO_GL_VERSION in headless mode,
+  continuing anyway`, and the code continues anyway.
+- Rendering then runs against an invalid context. Locally this reproduces as a
+  **segmentation fault** with `DISPLAY` unset; in CI it surfaces through pybind
+  as `IndexError: vector::_M_range_check: __n (which is N) >= this->size()
+  (which is N)`, where N is the mesh vertex count.
+- The failure moves as you patch it: guarding `poll_events` lets execution
+  reach the next cell (`remove low density vertices`) and fail there. Guarding
+  cell by cell is the wrong layer.
 
-   ```
-   IndexError: vector::_M_range_check:
-       __n (which is 565492) >= this->size() (which is 565492)
-   ```
+**Fix: give it a display.** `docker/Dockerfile.docs` installs `xvfb` +
+`libgl1-mesa-dri` + `libglx-mesa0`, and the docs build runs under
+`xvfb-run -a --server-args="-screen 0 1920x1080x24" bash -c
+"source util/ci_utils.sh && build_docs …"`. The child shell sources
+`ci_utils.sh` itself so `build_docs` keeps its helpers; `export -f build_docs`
+alone does not carry them.
 
-   This is *not* the same error as (2), and a guard placed after the capture
-   never runs — execution already died at `poll_events()`. Wrap
-   `poll_events()`/`update_renderer()` themselves, destroy the window, return.
+**Proof, not inference.** Same notebook, no `DISPLAY`: without Xvfb it segfaults
+(exit 139); under `xvfb-run` it reports `ok`. Reproduce with
+`env -u DISPLAY -u WAYLAND_DISPLAY bash docs/automation/scripts/local_docs_check.sh <nb>`.
 
-2. **The capture returns a 0-d value.** `capture_screen_float_buffer()` can
-   return a scalar when no frame was produced; `np.asarray` gives a 0-d array
-   and `PIL.Image.fromarray` raises `IndexError: tuple index out of range`.
-   Keep the `arr.ndim < 3 or arr.size == 0` check **as well** — it handles the
-   case where rendering succeeded but produced nothing usable.
+Open3D solves the same problem with an EGL offscreen context
+(`EGLOffscreenContext`). This repository has never had EGL, so Xvfb is the
+matching fix rather than a port.
 
-Both guards live in `docs/jupyter/cloudViewer_tutorial.py`; all 28 notebooks
-share that helper through `cv3dtut`.
-
-**A local pass does not disprove a CI failure here.** The `poll_events()`
-crash depends on the CI's headless GLFW path; the same notebook executes
-cleanly with a local build. Do not read "local_docs_check passed" as
-"the notebook is fine". Prove the guard by injecting the exception: drive the
-patched function with a fake visualizer whose `poll_events` raises the CI
-error, and assert the window is destroyed and the capture never runs.
+Do **not** add a `try/except` in `cloudViewer_tutorial.py` to swallow this. It
+hides a broken context and only postpones the crash to the next cell.
 
 **Notebooks only execute when cloudViewer was actually built.** A run reporting
 `Successfully executed: 0 notebook(s)` is not a pass — nothing ran.
