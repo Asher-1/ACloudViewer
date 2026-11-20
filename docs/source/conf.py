@@ -238,6 +238,29 @@ sys.path.insert(
                  "cloudViewer"),
 )
 
+
+def _configure_ml_import_path():
+    """Make external ML types importable in Sphinx's parent and workers.
+
+    Autodoc workers can return pickled objects whose defining modules are
+    ml3d.*. Importing cloudViewer only inside a worker updates that worker's
+    sys.path, not the parent's unpickler, so register the declared dependency
+    before Sphinx starts parallel processing.
+    """
+    ml_root = os.environ.get("CLOUDVIEWER_ML_ROOT")
+    if not ml_root:
+        return
+    ml_root = os.path.abspath(os.path.expanduser(ml_root))
+    if not os.path.isdir(os.path.join(ml_root, "ml3d")):
+        raise RuntimeError(
+            f"CLOUDVIEWER_ML_ROOT must contain an ml3d directory: {ml_root}")
+    if ml_root not in sys.path:
+        sys.path.insert(0, ml_root)
+
+
+_configure_ml_import_path()
+
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.

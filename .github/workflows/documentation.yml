@@ -52,6 +52,9 @@ jobs:
         # Docker build.
         run: python3 docs/automation/scripts/check_notebook_headings.py
 
+      - name: Parallel Sphinx ML import contract
+        run: python3 docs/automation/scripts/test_sphinx_ml_imports.py
+
       - name: Install browser for site verification
         # verify_docs_site.py drives a real browser through the version
         # switcher and the 404 handler. That behaviour is not reachable from
