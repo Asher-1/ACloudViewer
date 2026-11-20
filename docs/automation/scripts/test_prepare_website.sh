@@ -32,9 +32,13 @@ EOF
 EOF
     echo '{"site":"data"}' > "$d/docs/downloads_data.json"
     # Build output that must NOT be copied
-    mkdir -p "$d/docs/_out/html" "$d/docs/_build"
+    mkdir -p "$d/docs/_out/html" "$d/docs/_build" \
+             "$d/docs/doxygen/html" "$d/docs/doxygen/xml" "$d/docs/doctrees"
     echo '<html>built</html>' > "$d/docs/_out/html/index.html"
     echo 'v3.9.4' > "$d/docs/_build/marker"
+    echo '<html>C++ API</html>' > "$d/docs/doxygen/html/index.html"
+    echo '<doxygen/>' > "$d/docs/doxygen/xml/index.xml"
+    echo 'cached environment' > "$d/docs/doctrees/environment.pickle"
     printf 'CLOUDVIEWER_VERSION_MAJOR 3\nCLOUDVIEWER_VERSION_MINOR 9\nCLOUDVIEWER_VERSION_PATCH 5\n' \
         > "$d/libs/cloudViewer/version.txt"
     printf '%s\n' "$d"
@@ -96,6 +100,8 @@ d=$(new_case c4)
 run_prepare "$d" false ""
 check "_out is not copied" "[ ! -e '$d/website-deploy/_out' ]"
 check "_build is not copied" "[ ! -e '$d/website-deploy/_build' ]"
+check "Doxygen intermediates are not copied" "[ ! -e '$d/website-deploy/doxygen' ]"
+check "Sphinx doctree cache is not copied" "[ ! -e '$d/website-deploy/doctrees' ]"
 check "authored files are copied" "[ -f '$d/website-deploy/index.html' ]"
 
 echo "═══ Case 5: downloads_data.json keeps the schema the site reads ═══"
@@ -126,6 +132,22 @@ check "@DOC_LATEST@ survives for the deploy step" \
     "grep -q '@DOC_LATEST@' '$d/website-deploy/DOCUMENTATION.md'"
 check "links point at the versioned layout" \
     "grep -q '/documentation/@DOC_LATEST@/cpp_api.html' '$d/website-deploy/DOCUMENTATION.md'"
+
+echo "═══ Case 8: cp fallback excludes the same generated trees ═══"
+d=$(new_case c8)
+mkdir -p "$d/bin"
+# Give the child only the tools the fallback needs, deliberately no rsync.
+for tool in cp mkdir rm find date jq du awk sed grep head wc cut cat; do
+    if command -v "$tool" >/dev/null 2>&1; then
+        ln -s "$(command -v "$tool")" "$d/bin/$tool"
+    fi
+done
+( cd "$d" && env PATH="$d/bin" IS_RELEASE=true RELEASE_VERSION=v9.9.9 \
+    "$BASH" "$SCRIPT" > "$d/prepare.log" 2>&1 )
+check "cp fallback omits all four generated trees" \
+    "[ ! -e '$d/website-deploy/_out' ] && [ ! -e '$d/website-deploy/_build' ] && [ ! -e '$d/website-deploy/doxygen' ] && [ ! -e '$d/website-deploy/doctrees' ]"
+check "cp fallback preserves authored website and download data" \
+    "[ -f '$d/website-deploy/index.html' ] && [ -f '$d/website-deploy/downloads_data.json' ]"
 
 echo
 echo "──────────────────────────────"

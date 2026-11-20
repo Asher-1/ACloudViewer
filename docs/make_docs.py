@@ -1046,7 +1046,13 @@ class SphinxDocsBuilder:
         # doctrees are reused.
         doctree_dir = os.path.join(
             os.path.dirname(os.path.normpath(self.html_output_dir)), "doctrees")
-        nproc = multiprocessing.cpu_count() if self.parallel else 1
+        nproc = 1
+        if self.parallel:
+            nproc = multiprocessing.cpu_count()
+            # Share the build budget used by ci_utils.sh; a many-core local
+            # host must not bypass NPROC during the Sphinx phase.
+            if "NPROC" in os.environ:
+                nproc = min(nproc, max(1, int(os.environ["NPROC"])))
         print(f"Building docs with {nproc} processes")
 
         # Find sphinx-build command

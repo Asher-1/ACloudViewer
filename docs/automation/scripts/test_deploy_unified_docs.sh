@@ -19,7 +19,8 @@ check() { if eval "$2"; then ok "$1"; else bad "$1"; fi; }
 # new_case <name> -> creates an isolated workdir, echoes its path
 new_case() {
     local d="${SCRATCH}/$1"
-    mkdir -p "$d/website-deploy/images" "$d/docs-output/_static"
+    mkdir -p "$d/website-deploy/images" "$d/docs-output/_static/css"
+    echo '/* current shared styles */' > "$d/docs-output/_static/css/furo_overrides.css"
     echo '<html>site</html>' > "$d/website-deploy/index.html"
     echo '<html>doc</html>'  > "$d/docs-output/index.html"
     echo '/*switcher*/'      > "$d/docs-output/_static/version_switch.js"
@@ -48,6 +49,8 @@ d=$(new_case c2)
 mkdir -p "$d/preserved-versions/documentation/v3.9.3" "$d/preserved-versions/documentation/v3.9.4"
 echo a > "$d/preserved-versions/documentation/v3.9.3/index.html"
 echo b > "$d/preserved-versions/documentation/v3.9.4/index.html"
+mkdir -p "$d/preserved-versions/documentation/v3.9.3/_static/css"
+echo '/* archived custom styles */' > "$d/preserved-versions/documentation/v3.9.3/_static/css/furo_overrides.css"
 run_deploy "$d" false "" ""
 check "versions.json is valid JSON" "python3 -m json.tool '$d/unified-deploy/documentation/versions.json' >/dev/null 2>&1"
 check "latest == v3.9.4 (highest archive, not dev)" "grep -q '\"latest\": \"v3.9.4\"' '$d/unified-deploy/documentation/versions.json'"
@@ -60,6 +63,8 @@ v=[e['id'] for e in json.load(open('$d/unified-deploy/documentation/versions.jso
 sys.exit(0 if v.index('v3.9.4') < v.index('v3.9.3') else 1)\""
 check "v3.9.4 marked latest, v3.9.3 marked archive" "grep -q '\"id\": \"v3.9.4\", \"label\": \"v3.9.4\", \"kind\": \"latest\"' '$d/unified-deploy/documentation/versions.json'"
 check "switcher propagated into archive" "cmp -s '$d/unified-deploy/documentation/dev/_static/version_switch.js' '$d/unified-deploy/documentation/v3.9.4/_static/version_switch.js'"
+check "missing archived stylesheet is restored" "cmp -s '$d/docs-output/_static/css/furo_overrides.css' '$d/unified-deploy/documentation/v3.9.4/_static/css/furo_overrides.css'"
+check "existing archived stylesheet is preserved" "grep -q 'archived custom styles' '$d/unified-deploy/documentation/v3.9.3/_static/css/furo_overrides.css'"
 check "404 calibrated to v3.9.4" "grep -q \"var version = 'v3.9.4'\" '$d/unified-deploy/404.html'"
 
 echo "═══ Case 3: dev build, never released ═══"

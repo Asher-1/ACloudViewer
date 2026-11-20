@@ -13,23 +13,24 @@ from __future__ import annotations
 
 import sys
 import warnings
-
-# Import the conf.py helpers so the test exercises exactly what the build uses.
-sys.path.insert(0, "docs/source")
+from functools import lru_cache
+from pathlib import Path
 
 import docutils.core
 import docutils.utils
 
 
-def parse_like_sphinx(doc: str, google: bool = True, numpy: bool = True) -> list[str]:
+def parse_like_sphinx(doc: str, google: bool = True, numpy: bool = True,
+                      *, name: str = "cloudViewer.check", obj=None) -> list[str]:
     """Reproduce autodoc's docstring pipeline exactly as the build runs it.
 
     Order matters, in two ways that both caused wrong measurements here:
 
       1. prepare_docstring()      removes the common indent
       2. conf.py's process_docstring   (registered at priority 400)
-      3. Napoleon                  converts Google/NumPy sections ("Args:")
-      4. docutils parses it
+      3. Napoleon                  converts Google/NumPy sections (priority 500)
+      4. conf.py's _second_pass_docstring (registered at priority 600)
+      5. docutils parses it
 
     Step 2 runs *before* step 3 in the build: conf.py connects
     `autodoc-process-docstring` with priority=400 while napoleon registers at
@@ -46,13 +47,13 @@ def parse_like_sphinx(doc: str, google: bool = True, numpy: bool = True) -> list
 
     lines = prepare_docstring(doc)
     # conf.py's transform runs first, exactly as the build orders it.
-    transform = _load_transform()
-    if transform is not None:
-        transform(None, None, "check", None, None, lines)
+    transform, second_pass = _load_transforms()
+    transform(None, None, name, obj, None, lines)
     if google:
         lines = str(GoogleDocstring(lines)).splitlines()
     if numpy:
         lines = str(NumpyDocstring(lines)).splitlines()
+    second_pass(None, None, name, obj, None, lines)
     return lines
 
 
@@ -89,7 +90,7 @@ def collect_docstrings(root_modules):
         # Never walk third-party packages. `cloudViewer.visualization` re-exports
         # tensorboard, whose lazy modules run arbitrary import code inside
         # __dir__ and crash the walk. Only cloudViewer's own names are in scope.
-        if is_module and not name.split(".")[0].startswith("cloudViewer"):
+        if is_module and not getattr(obj, "__name__", "").startswith("cloudViewer"):
             continue
         if not (is_module or mod.startswith("cloudViewer")):
             continue
@@ -162,14 +163,9 @@ def _documented_roots():
 
 
 def main() -> int:
-    from sphinx.util.docstrings import prepare_docstring
-
-    # conf.py imports sphinx, which is available; import just the helpers it
-    # needs rather than executing the whole module.
-    transform = _load_transform()
-    if transform is None:
-        print("❌ could not load conf.py")
-        return 1
+    # Validate both event handlers up front, without executing conf.py's
+    # build-time filesystem hooks. Each docstring runs through each once.
+    _load_transforms()
 
     roots = _documented_roots()
 
@@ -180,16 +176,17 @@ def main() -> int:
         total += 1
         # Go through the SAME preparation autodoc uses (indent removal +
         # Napoleon). Skipping either stage produces phantom diagnostics.
-        lines = parse_like_sphinx(doc)
-        transform(None, None, name, None, None, lines)
+        lines = parse_like_sphinx(doc, name=name)
         for msg in diagnostics("\n".join(lines)):
             bad += 1
-            key = msg.split(":")[-1].strip() if ":" in msg else msg
+            # Keep the diagnostic text, including a trailing colon (math
+            # directive errors otherwise collapse to an empty category).
+            key = msg.split(") ", 1)[-1]
             by_msg[key] = by_msg.get(key, 0) + 1
             samples.setdefault(key, (name, msg))
 
     print(f"docstrings checked: {total}")
-    print(f"docstrings with remaining diagnostics: {bad}")
+    print(f"remaining diagnostics: {bad}")
     for key, count in sorted(by_msg.items(), key=lambda kv: -kv[1]):
         name, msg = samples[key]
         print(f"  {count:4}x  {key[:88]}")
@@ -197,8 +194,9 @@ def main() -> int:
     return 1 if bad else 0
 
 
-def _load_transform():
-    """Extract process_docstring (and every helper it calls) from conf.py.
+@lru_cache(maxsize=1)
+def _load_transforms():
+    """Extract both autodoc event handlers and their helpers from conf.py.
 
     Collect by convention rather than by an explicit list: a name allowlist
     silently goes stale every time a helper is added, and the failure looks
@@ -207,17 +205,18 @@ def _load_transform():
     import ast
     import types
 
-    src = open("docs/source/conf.py", encoding="utf-8").read()
+    conf_path = Path(__file__).resolve().parents[2] / "source" / "conf.py"
+    src = conf_path.read_text(encoding="utf-8")
     tree = ast.parse(src)
 
     funcs = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
-    if "process_docstring" not in funcs:
-        print("missing process_docstring in conf.py")
-        return None
+    handlers = {"process_docstring", "_second_pass_docstring"}
+    missing = handlers - funcs.keys()
+    if missing:
+        raise RuntimeError(f"missing autodoc handlers in conf.py: {sorted(missing)}")
 
-    # Everything reachable from process_docstring: module-level functions plus
-    # the names it references.
-    wanted = {"process_docstring", "fix_namespace"}
+    # Everything reachable from either priority-400 or priority-600 handler.
+    wanted = set(handlers)
     changed = True
     while changed:
         changed = False
@@ -237,7 +236,12 @@ def _load_transform():
     mod.__dict__["re"] = __import__("re")
     exec(compile(ast.Module(body=nodes, type_ignores=[]), "<conf>", "exec"),
          mod.__dict__)
-    return mod.process_docstring
+    return mod.process_docstring, mod._second_pass_docstring
+
+
+def _load_transform():
+    """Compatibility entry point for focused transform experiments."""
+    return _load_transforms()[0]
 
 
 if __name__ == "__main__":

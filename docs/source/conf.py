@@ -906,7 +906,8 @@ def _second_pass_docstring(app, what, name, obj, options, lines):
     Sphinx raise "takes 1 positional argument but 6 were given" and abort the
     whole build -- so the adapter exists to keep the two signatures apart.
     """
-    _blank_line_before_fields(lines)
+    if _is_project_docstring(name, obj):
+        _blank_line_before_fields(lines)
 
 
 def _blank_line_before_fields(lines):
@@ -1194,10 +1195,14 @@ def _indent_directive_bodies(lines):
     i = 0
     while i < len(lines):
         stripped = lines[i].lstrip() if lines[i] else ""
-        if not stripped.startswith(".. ") or not stripped.endswith("::"):
+        if not re.match(r"^\.\.\s+[\w-]+::(?:\s+.*)?$", stripped):
             i += 1
             continue
 
+        # A directive may already carry content on its opening line (for
+        # example WebRTC's '.. note:: Ordering ...'). Its flush-left
+        # continuation still belongs to that directive, just as with an empty
+        # opening line. Do not mistake the inline text for a directive end.
         # Body starts at the next line; stop at a blank line that is already
         # followed by indented text (the directive is already well-formed).
         j = i + 1
@@ -1243,7 +1248,10 @@ def _indent_directive_bodies(lines):
         for k, line in enumerate(body):
             if line.strip():
                 body[k] = "   " + line
-        lines[i + 1:i + 1 + len(body)] = [""] + body
+        # Inline content and its wrapped continuation form one paragraph.
+        # Empty directive headers instead need the separating blank line.
+        separator = [""] if stripped.endswith("::") else []
+        lines[i + 1:i + 1 + len(body)] = separator + body
         i = i + 1 + len(body)
         continue
 

@@ -64,7 +64,7 @@
 </head>
 <body>
     <div class="error-container">
-        <img id="logo" src="images/ACloudViewer_logo_horizontal.png" alt="ACloudViewer Logo" class="logo">
+        <img id="logo" alt="ACloudViewer Logo" class="logo">
         <h1 class="error-code">404</h1>
         <h2 id="notfound-title">Page Not Found</h2>
         <p id="notfound-message">Sorry, the page you requested does not exist or has been removed.</p>
@@ -85,7 +85,9 @@
         }
         // Assets below resolve relative to the *requested* URL when this page
         // is served as a 404 fallback, so anchor them to the site root.
-        var siteRoot = path.replace(/\/[^/]*$/, '/');
+        var marker = '/documentation/';
+        var idx = path.lastIndexOf(marker);
+        var siteRoot = idx === -1 ? path.replace(/\/[^/]*$/, '/') : path.slice(0, idx + 1);
         document.getElementById('logo').src = siteRoot + 'images/ACloudViewer_logo_horizontal.png';
         document.getElementById('home-btn').href = siteRoot;
 
@@ -94,8 +96,6 @@
         //   rewritten to      /documentation/<latest-stable>/getting_started/foo.html
         // The version is injected by .github/workflows/documentation.yml at
         // deploy time (replaces the placeholder used below).
-        var marker = '/documentation/';
-        var idx = path.lastIndexOf(marker);
         if (idx === -1) {
             return; // Not a documentation URL: keep the plain 404 page.
         }

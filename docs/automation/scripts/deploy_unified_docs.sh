@@ -252,7 +252,7 @@ rewrite_website_doc_links() {
 # switcher that cannot see versions published after they were built.
 # ---------------------------------------------------------------------------
 propagate_version_switcher() {
-    local latest="$1" src="" dir name
+    local latest="$1" src="" dir name css_src css_dest
 
     # Preference order matters. The dev build carries the switcher compiled
     # from the current source tree; an archive carries whatever was current
@@ -285,6 +285,16 @@ propagate_version_switcher() {
         fi
         cp "$src" "$dest"
         log "    ✅ ${name}/_static/version_switch.js"
+
+        # Some historical archives reference this stylesheet but omitted it.
+        # Repair only missing assets; never replace an archive's own CSS.
+        css_src="$(dirname "$src")/css/furo_overrides.css"
+        css_dest="${dir}_static/css/furo_overrides.css"
+        if [ ! -f "$css_dest" ] && [ -f "$css_src" ]; then
+            mkdir -p "$(dirname "$css_dest")"
+            cp "$css_src" "$css_dest"
+            log "    ✅ restored missing ${name}/_static/css/furo_overrides.css"
+        fi
     done
 }
 
