@@ -333,39 +333,33 @@ rst = '\n'.join(nbsphinx.markdown2rst(''.join(c['source']))
 **Every notebook needs a toctree entry.** `-W` rejects `document isn't included
 in any toctree`, and the page is invisible until something forces rendering.
 
-**Headless rendering needs a real GL context, not a guard.** This cost two CI
-rounds and a wrong fix. The mechanism:
+**Do not "fix" a headless notebook failure by adding a display or a guard.**
+Both were tried and both were wrong; the evidence that killed them:
 
-- The docs image has no display. GLFW then falls back to
-  `glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_NULL)` (OSMesa software).
-- That platform is handed no GL version — the log says
-  `GLEW initialization returned GLEW_ERROR_NO_GL_VERSION in headless mode,
-  continuing anyway`, and the code continues anyway.
-- Rendering then runs against an invalid context. Locally this reproduces as a
-  **segmentation fault** with `DISPLAY` unset; in CI it surfaces through pybind
-  as `IndexError: vector::_M_range_check: __n (which is N) >= this->size()
-  (which is N)`, where N is the mesh vertex count.
-- The failure moves as you patch it: guarding `poll_events` lets execution
-  reach the next cell (`remove low density vertices`) and fail there. Guarding
-  cell by cell is the wrong layer.
+- CI builds doc notebooks with `-DENABLE_HEADLESS_RENDERING=ON`, which links
+  OSMesa. No display is required or expected.
+- The v3.9.4 release run (`0ac4b09e`) reports `Successfully executed: 28
+  notebook(s)` and `Failed to execute: 0` **in the same Docker image**
+  (`docker/Dockerfile.docs` is byte-identical to the failing commit). The
+  environment is therefore not the cause; a code change is.
+- A **local** build is usually `ENABLE_HEADLESS_RENDERING=OFF`. Running that
+  without `DISPLAY` crashes — that is expected and is **not** a proxy for CI.
+  Check `build_app/CMakeCache.txt` before drawing any conclusion from a local
+  headless run.
 
-**Fix: give it a display.** `docker/Dockerfile.docs` installs `xvfb` +
-`libgl1-mesa-dri` + `libglx-mesa0`, and the docs build runs under
-`xvfb-run -a --server-args="-screen 0 1920x1080x24" bash -c
-"source util/ci_utils.sh && build_docs …"`. The child shell sources
-`ci_utils.sh` itself so `build_docs` keeps its helpers; `export -f build_docs`
-alone does not carry them.
+How to actually locate the regression: find the last green Documentation run
+and the first red one, then diff the changed files between them.
 
-**Proof, not inference.** Same notebook, no `DISPLAY`: without Xvfb it segfaults
-(exit 139); under `xvfb-run` it reports `ok`. Reproduce with
-`env -u DISPLAY -u WAYLAND_DISPLAY bash docs/automation/scripts/local_docs_check.sh <nb>`.
+```
+gh api "repos/.../actions/runs?per_page=60" \
+  --jq '.workflow_runs[]|select(.name=="Documentation")|"\(.created_at) \(.conclusion) \(.head_sha[0:8])"'
+```
 
-Open3D solves the same problem with an EGL offscreen context
-(`EGLOffscreenContext`). This repository has never had EGL, so Xvfb is the
-matching fix rather than a port.
-
-Do **not** add a `try/except` in `cloudViewer_tutorial.py` to swallow this. It
-hides a broken context and only postpones the crash to the next cell.
+In this repository the renderer itself (`libs/cloudViewer/visualization/**`)
+did not change across the transition; the mesh *inputs* did. A CI symptom of
+`IndexError: vector::_M_range_check: __n (which is N) >= this->size() (which is
+N)` through pybind means a `std::vector::at()` somewhere — do not assume it is
+the mesh vertex index just because N equals the vertex count.
 
 **Notebooks only execute when cloudViewer was actually built.** A run reporting
 `Successfully executed: 0 notebook(s)` is not a pass — nothing ran.
