@@ -7,9 +7,11 @@
 
 #include <QCoreApplication>
 #include <QDir>
+#include <QElapsedTimer>
 #include <QEventLoop>
 #include <QFile>
 #include <QFileInfo>
+#include <QStringList>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTemporaryDir>
@@ -131,11 +133,20 @@ int main(int argc, char** argv) {
         }
     });
     ecvModelDownloader downloader;
+    bool lastTransferCompleted = false;
     auto transfer = [&](const ecvModelDownloader::Request& request,
                         int timeoutMs = 5000) {
         QEventLoop loop;
         QTimer timer;
         timer.setSingleShot(true);
+        QElapsedTimer elapsed;
+        elapsed.start();
+        const int requestsBefore = requests;
+        const int resumesBefore = resumed;
+        QStringList messages;
+        const auto logConnection = QObject::connect(
+                &downloader, &ecvModelDownloader::logMessage, &loop,
+                [&](const QString& message) { messages.append(message); });
         bool completed = false;
         bool success = false;
         auto connection =
@@ -151,6 +162,25 @@ int main(int argc, char** argv) {
         downloader.download(request);
         if (!completed) loop.exec();
         QObject::disconnect(connection);
+        QObject::disconnect(logConnection);
+        if (!completed || !success) {
+            std::fprintf(
+                    stderr,
+                    "transfer %s: completed=%d success=%d elapsed=%lld ms "
+                    "watchdog=%d ms requests=%d ranges=%d busy=%d "
+                    "destBytes=%lld partBytes=%lld\n",
+                    qPrintable(request.destPath), completed, success,
+                    static_cast<long long>(elapsed.elapsed()), timeoutMs,
+                    requests - requestsBefore, resumed - resumesBefore,
+                    downloader.isBusy(),
+                    static_cast<long long>(QFileInfo(request.destPath).size()),
+                    static_cast<long long>(
+                            QFileInfo(request.destPath + ".part").size()));
+            for (const QString& message : messages) {
+                std::fprintf(stderr, "  %s\n", qPrintable(message));
+            }
+        }
+        lastTransferCompleted = completed;
         if (!completed) downloader.cancel();
         return completed && success;
     };
@@ -190,6 +220,7 @@ int main(int argc, char** argv) {
     request.destPath = QDir(root).filePath("second-q8.gguf");
     served = QByteArray("GGUF") + QByteArray(96 * 1024, 'z');
     REQUIRE(!transfer(request));
+    REQUIRE(lastTransferCompleted);  // Digest rejection must not be a timeout.
     REQUIRE(!downloader.isBusy());
     served = model;
     REQUIRE(transfer(request));
@@ -261,7 +292,27 @@ int main(int argc, char** argv) {
         REQUIRE(part.write(model) == model.size());
         REQUIRE(part.write(QByteArray(4096, 'j')) == 4096);
     }
-    REQUIRE(transfer(request));
+    const int requestsBeforeOversized = requests;
+    const int resumesBeforeOversized = resumed;
+    bool discardedOversized = false;
+    const auto oversizedConnection = QObject::connect(
+            &downloader, &ecvModelDownloader::logMessage, &app,
+            [&](const QString& message) {
+                if (message.contains("Range not satisfiable")) {
+                    discardedOversized = true;
+                }
+            });
+    // Wait for finished(), not the first response: a 416 schedules the real
+    // 4-second initial backoff before the second HTTP request. The ordinary
+    // 5-second one-request watchdog leaves less than one second for both
+    // network attempts under a loaded runner. This watchdog is only a deadlock
+    // bound; request counts and the terminal state below define success.
+    const bool oversizedCompleted = transfer(request, 30000);
+    QObject::disconnect(oversizedConnection);
+    REQUIRE(oversizedCompleted);
+    REQUIRE(discardedOversized);
+    REQUIRE(requests == requestsBeforeOversized + 2);
+    REQUIRE(resumed == resumesBeforeOversized + 1);
     REQUIRE(QFileInfo(request.destPath).size() == model.size());
     REQUIRE(!QFile::exists(request.destPath + ".part"));
     // [G3] A rename failure retries the local finalize without destroying

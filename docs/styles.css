@@ -71,7 +71,7 @@ body {
 .nav-menu {
     display: flex;
     list-style: none;
-    gap: 30px;
+    gap: 12px;
     align-items: center;
     margin: 0;
     padding: 0;
@@ -89,7 +89,7 @@ body {
     color: var(--text-color);
     font-weight: 500;
     transition: var(--transition);
-    padding: 8px 16px;
+    padding: 8px;
     border-radius: 20px;
     white-space: nowrap;
 }
@@ -114,7 +114,36 @@ body {
     border-radius: 3px;
 }
 
-/* Hero Section */
+/* Keep the full navigation visible until its intrinsic width no longer fits. */
+@media (max-width: 1200px) {
+    .hamburger {
+        display: flex;
+    }
+
+    .nav-menu {
+        position: absolute;
+        top: 70px;
+        left: 0;
+        right: 0;
+        background: white;
+        flex-direction: column;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        transform: translateY(-120%);
+        transition: var(--transition);
+        z-index: 999;
+    }
+
+    .nav-menu.active {
+        transform: translateY(0);
+    }
+
+    .nav-menu li {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
 .hero {
     position: relative;
     min-height: 100vh;
@@ -1351,33 +1380,6 @@ body {
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .hamburger {
-        display: flex;
-    }
-
-    .nav-menu {
-        position: absolute;
-        top: 70px;
-        left: 0;
-        right: 0;
-        background: white;
-        flex-direction: column;
-        padding: 20px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-        transform: translateY(-120%);
-        transition: var(--transition);
-        z-index: 999;
-    }
-
-    .nav-menu.active {
-        transform: translateY(0);
-    }
-    
-    .nav-menu li {
-        width: 100%;
-        justify-content: center;
-    }
-
     .hero-title {
         font-size: 2.5rem;
     }

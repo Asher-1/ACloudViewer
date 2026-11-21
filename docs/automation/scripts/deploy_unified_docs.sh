@@ -252,7 +252,7 @@ rewrite_website_doc_links() {
 # switcher that cannot see versions published after they were built.
 # ---------------------------------------------------------------------------
 propagate_version_switcher() {
-    local latest="$1" src="" dir name
+    local latest="$1" src="" dir name css_src css_dest
 
     # Preference order matters. The dev build carries the switcher compiled
     # from the current source tree; an archive carries whatever was current
@@ -285,6 +285,16 @@ propagate_version_switcher() {
         fi
         cp "$src" "$dest"
         log "    ✅ ${name}/_static/version_switch.js"
+
+        # Some historical archives reference this stylesheet but omitted it.
+        # Repair only missing assets; never replace an archive's own CSS.
+        css_src="$(dirname "$src")/css/furo_overrides.css"
+        css_dest="${dir}_static/css/furo_overrides.css"
+        if [ ! -f "$css_dest" ] && [ -f "$css_src" ]; then
+            mkdir -p "$(dirname "$css_dest")"
+            cp "$css_src" "$css_dest"
+            log "    ✅ restored missing ${name}/_static/css/furo_overrides.css"
+        fi
     done
 }
 
@@ -319,6 +329,19 @@ rule
 [ -d website-deploy ] || die "website-deploy/ missing"
 [ -d docs-output ]    || die "docs-output/ missing"
 
+# A documentation tree with no entry page is not a degraded deployment, it is
+# a broken one. Doxygen output (cpp_api/) survives a failed Sphinx run, so the
+# directory can hold tens of thousands of files while /documentation/dev/
+# itself serves 404. Refuse it here rather than publishing it.
+[ -f docs-output/index.html ] || \
+    die "docs-output/index.html is missing: the documentation build produced no entry page"
+
+[ ! -e unified-deploy ] || die "unified-deploy already exists: use a fresh staging directory"
+if [ "$IS_RELEASE" = "true" ]; then
+    [[ "$DOC_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || \
+        die "release DOC_VERSION must be a stable vX.Y.Z tag"
+    [ "$RELEASE_VERSION" = "$DOC_VERSION" ] || die "release version inputs disagree"
+fi
 mkdir -p unified-deploy
 cp -r website-deploy/. unified-deploy/
 log "✅ Website copied to deploy root"
@@ -326,7 +349,16 @@ log "✅ Website copied to deploy root"
 # ---------------------------------------------------------------------------
 # This build's own documentation
 # ---------------------------------------------------------------------------
-if [ "$IS_RELEASE" = "true" ] && [ -n "$DOC_VERSION" ]; then
+# A release build without a version would silently take the dev branch below:
+# the release docs would overwrite /documentation/dev/, no archive would be
+# created, and /documentation/vX.Y.Z/ would never exist. Nothing would fail.
+# The workflow always supplies DOC_VERSION for a release event, so reaching
+# here means the two inputs disagree -- refuse rather than guess.
+if [ "$IS_RELEASE" = "true" ] && [ -z "$DOC_VERSION" ]; then
+    die "IS_RELEASE=true but DOC_VERSION is empty: a release build must name the version directory it publishes to"
+fi
+
+if [ "$IS_RELEASE" = "true" ]; then
     rule
     log "🎯 Release build → /documentation/${DOC_VERSION}/"
     rule
@@ -357,6 +389,8 @@ if [ -d preserved-versions/documentation ]; then
             log "  ⏭️  ${name} (already deployed by this build)"
             continue
         fi
+        [ -f "preserved-versions/documentation/${name}/index.html" ] || \
+            die "preserved ${name} has no index.html; refusing to lose a historical entry page"
         mkdir -p "$target"
         cp -r "preserved-versions/documentation/${name}/." "$target/"
         log "  ✅ restored ${name}"
@@ -367,6 +401,8 @@ if [ -d preserved-versions/documentation ]; then
     # entire dev tree would be dropped from the Pages artifact on every
     # release, and /documentation/dev/ would start 404ing.
     if [ ! -d "$DEV_DIR" ] && [ -d "preserved-versions/documentation/dev" ]; then
+        [ -f preserved-versions/documentation/dev/index.html ] || \
+            die "preserved dev has no index.html; refusing to advertise incomplete documentation"
         mkdir -p "$DEV_DIR"
         cp -r "preserved-versions/documentation/dev/." "$DEV_DIR/"
         log "  ✅ restored dev (preserved across this release deploy)"
@@ -422,6 +458,66 @@ fix_legacy_selector_markup
 write_sitemap "$LATEST_VERSION"
 
 # ---------------------------------------------------------------------------
+# The supported published-site quota and compressed transfer size differ.
+# upload-pages-artifact creates an uncompressed tar; Actions compresses that
+# tar for upload. deploy-pages only warns about a large Actions artifact, and
+# deployment above the supported site quota can succeed without a guarantee.
+# Keep the repository's conservative 1 GiB content and gzip budgets separately;
+# a small gzip stream must not be treated as proof of published-site capacity.
+# Measure logical file bytes rather than filesystem allocation. The gzip
+# measurement below is a transfer estimate, not the exact Actions ZIP size.
+# ---------------------------------------------------------------------------
+readonly PAGES_LIMIT_KB=$((1024 * 1024))
+readonly PAGES_LIMIT_BYTES=$((PAGES_LIMIT_KB * 1024))
+
+check_pages_size_budget() {
+    local artifact_kb artifact_bytes raw_mb raw_bytes ver_mb name
+
+    # Published content and compressed upload are independent budgets. Sum
+    # logical file bytes, not allocated blocks (sparse files and small-file
+    # filesystem overhead must not change the published-content decision).
+    raw_bytes=$(python3 - <<'PY'
+from pathlib import Path
+print(sum(p.stat().st_size for p in Path('unified-deploy').rglob('*') if p.is_file()))
+PY
+    )
+    log "   Published content: ${raw_bytes} bytes (limit: 1073741824)"
+    if [ "$raw_bytes" -gt 1073741824 ]; then
+        log "❌ Published site exceeds 1 GiB before compression; refusing deployment."
+        log "   Reduce duplicate generated content or resolve hosting capacity without dropping historical versions."
+        return 1
+    fi
+    raw_mb=$(du -sm unified-deploy | cut -f1)
+
+    # -c: total only; the size is compared, the bytes themselves are discarded.
+    artifact_bytes=$(tar -czf - -C unified-deploy . 2>/dev/null | wc -c)
+    artifact_kb=$(((artifact_bytes + 1023) / 1024))
+
+    log "   ${raw_mb} MB on disk, ${artifact_kb} KB gzip estimate (repository budget: ${PAGES_LIMIT_KB} KB)"
+
+    if [ -d "$DOC_ROOT" ]; then
+        for name in $(list_version_dirs "$DOC_ROOT"); do
+            ver_mb=$(du -sm "${DOC_ROOT}/${name}" | cut -f1)
+            log "     ${name}: ${ver_mb} MB"
+        done
+        if [ -d "$DEV_DIR" ]; then
+            ver_mb=$(du -sm "$DEV_DIR" | cut -f1)
+            log "     dev: ${ver_mb} MB"
+        fi
+    fi
+
+    if [ "$artifact_bytes" -gt "$PAGES_LIMIT_BYTES" ]; then
+        log ""
+        log "❌ Compressed artifact is ${artifact_kb} KB; it exceeds the repository's ${PAGES_LIMIT_KB} KB gzip budget."
+        log "   Refusing publication until capacity is resolved."
+        log "   Inspect duplicate intermediates, image encodings and Doxygen inputs."
+        log "   Preserve all historical versions and their complete API pages."
+        return 1
+    fi
+    return 0
+}
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 rule
@@ -436,4 +532,9 @@ for name in "${DEPLOYED_VERSIONS[@]:-}"; do
     [ -n "$name" ] && log "   ${name}: ${SITE_URL}/documentation/${name}/"
 done
 rule
+
+if ! check_pages_size_budget; then
+    die "deployment exceeds the GitHub Pages artifact limit"
+fi
+
 log "✅ Unified deployment prepared"

@@ -3,7 +3,7 @@
 GitHub Releases Scanner and Download Data Generator
 
 This script:
-1. Fetches all releases from GitHub API
+1. Fetches the configured release inventory from explicit GitHub API pages
 2. Parses asset names to detect platforms, Python versions, architectures, etc.
 3. Automatically discovers supported configurations
 4. Generates JSON data for the download selector
@@ -13,16 +13,18 @@ import os
 import re
 import json
 import ssl
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Set
 from urllib.request import Request, urlopen
-from urllib.error import URLError, HTTPError
 from collections import defaultdict
 
 # GitHub repository information
 GITHUB_REPO = "Asher-1/ACloudViewer"
 GITHUB_API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases"
 BETA_RELEASE_TAG = "main-devel"
+
+# Bound the requested release inventory; each API page is fetched explicitly.
+DEFAULT_RELEASE_LIMIT = 100
 
 # Regex patterns for parsing asset names
 
@@ -73,32 +75,37 @@ def get_github_token() -> Optional[str]:
     return os.environ.get('GITHUB_TOKEN')
 
 
-def fetch_releases(limit: int = 10) -> List[Dict]:
-    """Fetch releases from GitHub API"""
-    print(f"📡 Fetching releases from {GITHUB_API_URL}...")
-    
-    request = Request(GITHUB_API_URL)
-    request.add_header('Accept', 'application/vnd.github.v3+json')
-    
+def fetch_releases(limit: int = DEFAULT_RELEASE_LIMIT) -> List[Dict]:
+    """Fetch up to limit releases across API pages; fail on any partial fetch."""
+    if limit <= 0:
+        raise ValueError("release limit must be positive")
     token = get_github_token()
-    if token:
-        request.add_header('Authorization', f'token {token}')
-        print("✓ Using GitHub token for authentication")
-    
-    # Bypass SSL verification for local testing (not recommended for production)
-    context = ssl._create_unverified_context()
-    
     try:
+        import certifi
+        context = ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        context = ssl.create_default_context()
+
+    releases = []
+    per_page = min(limit, 100)
+    page = 1
+    while len(releases) < limit:
+        request = Request(f"{GITHUB_API_URL}?per_page={per_page}&page={page}")
+        request.add_header('Accept', 'application/vnd.github.v3+json')
+        if token:
+            request.add_header('Authorization', f'token {token}')
+        # Never return a partial inventory after an API/transport/JSON error:
+        # callers publish this list as the complete download catalogue.
         with urlopen(request, timeout=30, context=context) as response:
-            releases = json.loads(response.read().decode('utf-8'))
-        print(f"✅ Found {len(releases)} releases")
-        return releases[:limit]
-    except HTTPError as e:
-        print(f"❌ HTTP Error: {e.code} - {e.reason}")
-        raise
-    except URLError as e:
-        print(f"❌ URL Error: {e.reason}")
-        raise
+            batch = json.loads(response.read().decode('utf-8'))
+        if not isinstance(batch, list):
+            raise ValueError("GitHub releases response must be an array")
+        releases.extend(batch[:limit - len(releases)])
+        if len(batch) < per_page:
+            break
+        page += 1
+    print(f"✅ Found {len(releases)} releases")
+    return releases
 
 
 def parse_app_asset(asset_name: str) -> Optional[Dict]:
@@ -406,6 +413,10 @@ def generate_version_metadata(version_info: Dict) -> List[Dict]:
         metadata.append({
             'value': tag,
             'display_name': info['display_name'],
+            'release_date': (datetime.fromisoformat(
+                info['published_at'].replace('Z', '+00:00'))
+                .astimezone(timezone.utc).date().isoformat()
+                if info.get('published_at') else None),
             'python_versions': sorted(list(python_versions)),
             'ubuntu_versions': sorted(list(ubuntu_versions)),
             'has_documentation': has_documentation,
@@ -421,8 +432,9 @@ def main():
     print("=" * 80)
     
     try:
-        # Fetch releases
-        releases = fetch_releases(limit=5)  # Get latest 5 releases
+        # The limit bounds the total inventory, not a single API page.
+        # Explicit pagination avoids GitHub's implicit 30-release truncation.
+        releases = fetch_releases(limit=DEFAULT_RELEASE_LIMIT)
         
         # Analyze releases
         version_info = analyze_releases(releases)

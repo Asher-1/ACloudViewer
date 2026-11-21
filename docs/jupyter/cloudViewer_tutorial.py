@@ -59,8 +59,23 @@ def jupyter_draw_geometries(
         vis.update_renderer()
     im = vis.capture_screen_float_buffer()
     vis.destroy_window()
-    im = (255 * np.asarray(im)).astype(np.uint8)
-    IPython.display.display(PIL.Image.fromarray(im, "RGB"))
+
+    # capture_screen_float_buffer() returns a flat 0-d value when the window
+    # never produced a frame. Heavy scenes trigger this: the Poisson tutorial
+    # renders 565k points / 1.13M triangles and the capture comes back
+    # degenerate. PIL.Image.fromarray() then raises
+    #   IndexError: tuple index out of range
+    # which surfaced as "Execution of surface_reconstruction.ipynb failed".
+    # Skip the image instead of crashing the notebook; the tutorial's numbers
+    # (printed mesh stats) are still visible in the rendered output.
+    arr = np.asarray(im)
+    if arr.ndim < 3 or arr.size == 0:
+        print("[cloudViewer_tutorial] screenshot unavailable "
+              f"(capture shape={arr.shape}); skipping inline image")
+        return
+
+    arr = (255 * arr).astype(np.uint8)
+    IPython.display.display(PIL.Image.fromarray(arr, "RGB"))
 
 
 cv3d.visualization.draw_geometries = jupyter_draw_geometries

@@ -505,9 +505,6 @@ jobs:
         BUILD_CUDA_MODULE: [ON, OFF]
         python_version: ['3.12']
 
-    env:
-      CONDA_DEP_FILE_CLOUDVIEWER: ".ci/conda_windows_cloudViewer.yml"
-
     steps:
       - name: Install CUDA
         uses: Jimver/cuda-toolkit@v0.2.23
@@ -539,17 +536,14 @@ jobs:
       - name: Checkout ACloudViewer
         uses: actions/checkout@v4
 
-      - name: Set up python version
-        run: |
-          (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.10", "${{ matrix.python_version }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
-
-      - name: Set up Python environment (conda, same as build)
-        uses: conda-incubator/setup-miniconda@v3
+      # Level 3 only exercises the installed self-contained installer; nothing
+      # is built here. setup-python + pip matches the ubuntu.yml / macos.yml
+      # agent-integration jobs and avoids solving the full build env, whose
+      # repodata fetch hit anaconda.org rate limits (HTTP 429) on this lane.
+      - name: Set up Python ${{ matrix.python_version }}
+        uses: actions/setup-python@v5
         with:
-          architecture: 'x64'
-          activate-environment: cloudViewer
-          auto-activate-base: false
-          environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+          python-version: ${{ matrix.python_version }}
 
       - name: Checkout CLI-Anything (agent harness)
         uses: ./.github/actions/checkout-agent-harness

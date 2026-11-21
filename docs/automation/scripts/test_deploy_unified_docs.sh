@@ -6,8 +6,17 @@ set -euo pipefail
 
 SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/deploy_unified_docs.sh"
 REPO_ROOT="$(cd "$(dirname "$SCRIPT")/../../.." && pwd)"
-SCRATCH="$(mktemp -d)"
-trap 'chmod -R u+w "$SCRATCH" 2>/dev/null || true; rm -r "$SCRATCH"' EXIT
+RESTORE_SCRIPT="$(dirname "$SCRIPT")/restore_release_archives.sh"
+SCRATCH="$(realpath "$(mktemp -d "${TMPDIR:-/tmp}/acloudviewer-deploy-test.XXXXXX")")"
+cleanup() {
+    local resolved
+    resolved="$(realpath -m -- "$SCRATCH")"
+    [ "$resolved" = "$SCRATCH" ] && [[ "$(basename "$resolved")" == acloudviewer-deploy-test.* ]] \
+        || { echo "Refusing unexpected test cleanup path: $resolved" >&2; return 1; }
+    chmod -R u+w "$resolved" 2>/dev/null || true
+    rm -r -- "$resolved"
+}
+trap cleanup EXIT
 
 pass=0
 fail=0
@@ -19,7 +28,8 @@ check() { if eval "$2"; then ok "$1"; else bad "$1"; fi; }
 # new_case <name> -> creates an isolated workdir, echoes its path
 new_case() {
     local d="${SCRATCH}/$1"
-    mkdir -p "$d/website-deploy/images" "$d/docs-output/_static"
+    mkdir -p "$d/website-deploy/images" "$d/docs-output/_static/css"
+    echo '/* current shared styles */' > "$d/docs-output/_static/css/furo_overrides.css"
     echo '<html>site</html>' > "$d/website-deploy/index.html"
     echo '<html>doc</html>'  > "$d/docs-output/index.html"
     echo '/*switcher*/'      > "$d/docs-output/_static/version_switch.js"
@@ -48,6 +58,8 @@ d=$(new_case c2)
 mkdir -p "$d/preserved-versions/documentation/v3.9.3" "$d/preserved-versions/documentation/v3.9.4"
 echo a > "$d/preserved-versions/documentation/v3.9.3/index.html"
 echo b > "$d/preserved-versions/documentation/v3.9.4/index.html"
+mkdir -p "$d/preserved-versions/documentation/v3.9.3/_static/css"
+echo '/* archived custom styles */' > "$d/preserved-versions/documentation/v3.9.3/_static/css/furo_overrides.css"
 run_deploy "$d" false "" ""
 check "versions.json is valid JSON" "python3 -m json.tool '$d/unified-deploy/documentation/versions.json' >/dev/null 2>&1"
 check "latest == v3.9.4 (highest archive, not dev)" "grep -q '\"latest\": \"v3.9.4\"' '$d/unified-deploy/documentation/versions.json'"
@@ -60,6 +72,8 @@ v=[e['id'] for e in json.load(open('$d/unified-deploy/documentation/versions.jso
 sys.exit(0 if v.index('v3.9.4') < v.index('v3.9.3') else 1)\""
 check "v3.9.4 marked latest, v3.9.3 marked archive" "grep -q '\"id\": \"v3.9.4\", \"label\": \"v3.9.4\", \"kind\": \"latest\"' '$d/unified-deploy/documentation/versions.json'"
 check "switcher propagated into archive" "cmp -s '$d/unified-deploy/documentation/dev/_static/version_switch.js' '$d/unified-deploy/documentation/v3.9.4/_static/version_switch.js'"
+check "missing archived stylesheet is restored" "cmp -s '$d/docs-output/_static/css/furo_overrides.css' '$d/unified-deploy/documentation/v3.9.4/_static/css/furo_overrides.css'"
+check "existing archived stylesheet is preserved" "grep -q 'archived custom styles' '$d/unified-deploy/documentation/v3.9.3/_static/css/furo_overrides.css'"
 check "404 calibrated to v3.9.4" "grep -q \"var version = 'v3.9.4'\" '$d/unified-deploy/404.html'"
 
 echo "═══ Case 3: dev build, never released ═══"
@@ -129,6 +143,278 @@ check "placeholder expanded to dev" \
   "grep -q '/documentation/dev/getting_started/build_from_source\.html' '$d/unified-deploy/index.html'"
 check "no placeholder survives into the artifact" \
   "! grep -q '@DOC_LATEST@' '$d/unified-deploy/index.html'"
+
+echo "═══ Case 9: an entry-page-less docs tree is rejected ═══"
+# Regression: a Sphinx run that produced nothing usable still leaves Doxygen's
+# cpp_api/ behind, so docs-output/ can hold ~96k files and no index.html. The
+# deploy used to accept that, publish it, and serve 404 at /documentation/dev/.
+# Such a tree must now be refused before anything is uploaded.
+d=$(new_case c9)
+rm -f "$d/docs-output/index.html"
+set +e
+run_deploy "$d" false "" ""
+rc=$?
+set -e
+check "deploy fails when docs-output has no index.html" "[ $rc -ne 0 ]"
+check "failure names the missing entry page" \
+  "grep -q 'index.html' '$d/deploy.log'"
+
+echo "═══ Case 10: incomplete preserved dev is rejected on release ═══"
+d=$(new_case c10)
+mkdir -p "$d/preserved-versions/documentation/dev/cpp_api"
+echo partial > "$d/preserved-versions/documentation/dev/cpp_api/index.html"
+set +e
+run_deploy "$d" true v3.9.5 v3.9.5
+rc=$?
+set -e
+check "invalid preserved dev blocks publication" "[ $rc -ne 0 ]"
+check "preserved dev failure names its entry page" \
+    "grep -q 'preserved dev has no index.html' '$d/deploy.log'"
+
+echo "═══ Case 11: reused staging is rejected rather than merged ═══"
+d=$(new_case c11)
+run_deploy "$d" false "" ""
+set +e
+run_deploy "$d" false "" ""
+rc=$?
+set -e
+check "reused staging cannot retain deleted pages" "[ $rc -ne 0 ]"
+
+echo "═══ Case 12: raw content greater than 1 GiB is rejected before compression ═══"
+d=$(new_case c12)
+python3 - "$d/docs-output/expanded.txt" <<'PY'
+import sys
+with open(sys.argv[1], 'wb') as stream:
+    stream.truncate(1073741825)
+PY
+set +e
+run_deploy "$d" false "" ""
+rc=$?
+set -e
+check "raw publication content over 1 GiB is rejected" "[ $rc -ne 0 ]"
+check "raw-size failure names published content budget" \
+  "grep -q 'Published site exceeds 1 GiB' '$d/deploy.log'"
+
+echo "═══ Case 13: gzip estimate one byte over 1 GiB is rejected ═══"
+d=$(new_case c13)
+mkdir -p "$d/bin"
+cat > "$d/bin/tar" <<'TAR'
+#!/usr/bin/env bash
+set -euo pipefail
+# Stream exactly the boundary plus one byte; integer KB truncation must not
+# accidentally allow the 1023 bytes immediately above the limit.
+dd if=/dev/zero bs=1048576 count=1024 status=none
+printf x
+TAR
+chmod +x "$d/bin/tar"
+set +e
+( cd "$d" && env PATH="$d/bin:$PATH" IS_RELEASE=false RELEASE_VERSION='' DOC_VERSION='' bash "$SCRIPT" > "$d/deploy.log" 2>&1 )
+rc=$?
+set -e
+check "compressed Pages artifact over 1 GiB is rejected" "[ $rc -ne 0 ]"
+check "compressed-size failure names upload limit" \
+  "grep -q 'Compressed artifact is' '$d/deploy.log'"
+
+# Reuse this harness's isolated cases for the release-restoration boundary.
+# No test reaches GitHub: the fake accepts only the exact gh operations used
+# by the helper and copies tiny local tar fixtures for known asset names.
+new_restore_case() {
+    local d
+    d=$(new_case "$1")
+    mkdir -p "$d/bin" "$d/assets"
+    printf '%s\n' '[{"tagName":"v3.9.4","isDraft":false},{"tagName":"v3.9.5","isDraft":false},{"tagName":"main-devel","isDraft":false},{"tagName":"v9.9.9","isDraft":true}]' > "$d/releases.json"
+    printf '%s\n' '{"assets":[{"name":"acloudviewer-v3.9.4-docs.tar.gz"}]}' > "$d/v3.9.4.json"
+    # Lexically smaller SHA is newer: selecting by name must fail this case.
+    printf '%s\n' '{"assets":[{"name":"acloudviewer-ffff-docs.tar.gz","createdAt":"2026-01-01T00:00:00Z"},{"name":"downloads_data.json"},{"name":"acloudviewer-0000-docs.tar.gz","createdAt":"2026-02-01T00:00:00Z"}]}' > "$d/main-devel.json"
+    cat > "$d/bin/gh" <<'GH'
+#!/usr/bin/env bash
+set -euo pipefail
+root="${FAKE_GH_ROOT:?}"
+printf '%s\n' "$*" >> "$root/gh-calls.log"
+case "$1 $2" in
+    'release list')
+        [ ! -e "$root/list-error" ] || exit 23
+        cat "$root/releases.json" ;;
+    'release view')
+        [ ! -e "$root/view-error-$3" ] || exit 24
+        cat "$root/$3.json" ;;
+    'release download')
+        release="$3"; shift 3
+        pattern='' dir=''
+        while [ "$#" -gt 0 ]; do
+            case "$1" in
+                --pattern) pattern="$2"; shift 2 ;;
+                --dir) dir="$2"; shift 2 ;;
+                *) exit 90 ;;
+            esac
+        done
+        [ ! -e "$root/download-error-$release" ] || exit 25
+        [ ! -e "$root/download-omitted" ] || exit 0
+        [ -n "$dir" ] && [ -n "$pattern" ] || exit 91
+        cp "$root/assets/$release/$pattern" "$dir/$pattern" ;;
+    *) exit 92 ;;
+esac
+GH
+    chmod +x "$d/bin/gh"
+    printf '%s\n' "$d"
+}
+
+make_restore_archive() {
+    local d="$1" release="$2" asset="$3" content="$4" tree
+    tree="$(mktemp -d "$d/archive-tree.XXXXXX")"
+    mkdir -p "$d/assets/$release" "$tree/cpp_api"
+    echo 'C++ reference' > "$tree/cpp_api/index.html"
+    if [ -n "$content" ]; then
+        printf '%s\n' "$content" > "$tree/index.html"
+    fi
+    tar -czf "$d/assets/$release/$asset" -C "$tree" .
+}
+
+run_restore() {
+    local d="$1" dev="${2:-true}" current="${3:-v3.9.5}"
+    if ( cd "$d" && env PATH="$d/bin:$PATH" FAKE_GH_ROOT="$d" \
+        bash "$RESTORE_SCRIPT" "$d/restored" "$dev" "$current" > "$d/restore.log" 2>&1 ); then
+        restore_rc=0
+    else
+        restore_rc=$?
+    fi
+}
+
+valid_restore_archives() {
+    make_restore_archive "$1" v3.9.4 acloudviewer-v3.9.4-docs.tar.gz stable
+    make_restore_archive "$1" main-devel acloudviewer-ffff-docs.tar.gz old-dev
+    make_restore_archive "$1" main-devel acloudviewer-0000-docs.tar.gz newest-dev
+}
+
+echo "═══ Case 13: inventory and known-asset transport failures stop restoration ═══"
+for fault in list-error view-error-v3.9.4 download-error-v3.9.4 \
+             view-error-main-devel download-error-main-devel; do
+    d=$(new_restore_case "restore-$fault")
+    valid_restore_archives "$d"
+    touch "$d/$fault"
+    run_restore "$d"
+    check "$fault fails closed" "[ $restore_rc -ne 0 ]"
+    check "$fault does not advertise a dev tree" "[ ! -e '$d/restored/dev' ]"
+done
+
+echo "═══ Case 14: successful empty asset inventories are not failures ═══"
+d=$(new_restore_case restore-no-assets)
+printf '%s\n' '{"assets":[]}' > "$d/v3.9.4.json"
+printf '%s\n' '{"assets":[{"name":"downloads_data.json"}]}' > "$d/main-devel.json"
+run_restore "$d"
+check "releases with no matching asset may continue" "[ $restore_rc -eq 0 ]"
+check "no matching asset means no download attempt" "! grep -q 'release download' '$d/gh-calls.log'"
+check "absent assets create no fake version directories" "[ ! -e '$d/restored/dev' ] && [ ! -e '$d/restored/v3.9.4' ]"
+
+echo "═══ Case 15: both stable and dev must have root entry pages ═══"
+for invalid in stable dev; do
+    d=$(new_restore_case "restore-invalid-$invalid")
+    valid_restore_archives "$d"
+    if [ "$invalid" = stable ]; then
+        make_restore_archive "$d" v3.9.4 acloudviewer-v3.9.4-docs.tar.gz ''
+        target=v3.9.4
+    else
+        make_restore_archive "$d" main-devel acloudviewer-0000-docs.tar.gz ''
+        target=dev
+    fi
+    run_restore "$d"
+    check "invalid $invalid archive blocks publication" "[ $restore_rc -ne 0 ]"
+    check "invalid $invalid tree is never moved into destination" "[ ! -e '$d/restored/$target' ]"
+    check "invalid $invalid failure names root index.html" "grep -q 'root index.html' '$d/restore.log'"
+    check "invalid $invalid staging is cleaned" "! compgen -G '$d/restored/.restore.*' >/dev/null"
+done
+
+echo "═══ Case 16: restore history and newest dev by creation time ═══"
+d=$(new_restore_case restore-valid)
+valid_restore_archives "$d"
+run_restore "$d"
+check "known stable and dev assets restore successfully" "[ $restore_rc -eq 0 ]"
+check "stable archive contents are retained" "grep -qx stable '$d/restored/v3.9.4/index.html'"
+check "newest createdAt wins instead of SHA ordering" "grep -qx newest-dev '$d/restored/dev/index.html'"
+check "only the selected dev asset is downloaded" "! grep -q 'release download main-devel --pattern acloudviewer-ffff' '$d/gh-calls.log'"
+check "current release is skipped before asset lookup" "! grep -q 'release view v3.9.5' '$d/gh-calls.log' && [ ! -e '$d/restored/v3.9.5' ]"
+check "draft releases are ignored" "! grep -q 'release view v9.9.9' '$d/gh-calls.log'"
+check "unrelated release assets are not downloaded" "! grep -q 'release download.*downloads_data.json' '$d/gh-calls.log'"
+check "successful restoration removes temporary staging" "! compgen -G '$d/restored/.restore.*' >/dev/null"
+
+echo "═══ Case 17: malformed inventories are not empty inventories ═══"
+for malformed in releases assets duplicate; do
+    d=$(new_restore_case "restore-bad-$malformed")
+    case "$malformed" in
+        releases) printf '%s\n' '[{"tagName":"v3.9.4"}]' > "$d/releases.json" ;;
+        assets) printf '%s\n' '{"assets":null}' > "$d/v3.9.4.json" ;;
+        duplicate) printf '%s\n' '{"assets":[{"name":"acloudviewer-v3.9.4-docs.tar.gz"},{"name":"acloudviewer-v3.9.4-docs.tar.gz"}]}' > "$d/v3.9.4.json" ;;
+    esac
+    run_restore "$d"
+    check "malformed $malformed fails closed" "[ $restore_rc -ne 0 ]"
+    check "malformed $malformed cannot restore a guessed tree" "[ ! -e '$d/restored/v3.9.4' ]"
+done
+
+echo "═══ Case 18: ambiguous or unusable dev creation times are rejected ═══"
+for time_fault in missing invalid tie; do
+    d=$(new_restore_case "restore-time-$time_fault")
+    printf '%s\n' '{"assets":[]}' > "$d/v3.9.4.json"
+    case "$time_fault" in
+        missing) jq 'del(.assets[0].createdAt)' "$d/main-devel.json" > "$d/replacement.json" ;;
+        invalid) jq '.assets[0].createdAt="not-a-date"' "$d/main-devel.json" > "$d/replacement.json" ;;
+        tie) jq '.assets[0].createdAt=.assets[2].createdAt' "$d/main-devel.json" > "$d/replacement.json" ;;
+    esac
+    cp "$d/replacement.json" "$d/main-devel.json"
+    run_restore "$d"
+    check "dev timestamp $time_fault fails explicitly" "[ $restore_rc -ne 0 ]"
+    check "dev timestamp $time_fault is not guessed from a name" "! grep -q 'release download main-devel' '$d/gh-calls.log'"
+done
+
+echo "═══ Case 19: successful transport still requires the declared tar ═══"
+for transport in omitted corrupt; do
+    d=$(new_restore_case "restore-$transport")
+    valid_restore_archives "$d"
+    if [ "$transport" = omitted ]; then
+        touch "$d/download-omitted"
+    else
+        echo 'not a tarball' > "$d/assets/v3.9.4/acloudviewer-v3.9.4-docs.tar.gz"
+    fi
+    run_restore "$d"
+    check "$transport archive cannot publish a version" "[ $restore_rc -ne 0 ] && [ ! -e '$d/restored/v3.9.4' ]"
+done
+
+echo "═══ Case 20: optional dev is controlled by event, not guessed ═══"
+d=$(new_restore_case restore-no-dev-event)
+valid_restore_archives "$d"
+touch "$d/view-error-main-devel"
+run_restore "$d" false
+check "main builds do not restore redundant dev assets" "[ $restore_rc -eq 0 ] && [ ! -e '$d/restored/dev' ]"
+check "disabled dev restore never inspects main-devel" "! grep -q 'release view main-devel' '$d/gh-calls.log'"
+d=$(new_restore_case restore-no-dev-release)
+printf '%s\n' '[{"tagName":"v3.9.4","isDraft":false}]' > "$d/releases.json"
+valid_restore_archives "$d"
+run_restore "$d"
+check "a genuinely missing main-devel release is allowed" "[ $restore_rc -eq 0 ] && [ -f '$d/restored/v3.9.4/index.html' ] && [ ! -e '$d/restored/dev' ]"
+d=$(new_restore_case restore-empty-release-list)
+echo '[]' > "$d/releases.json"
+run_restore "$d"
+check "successful empty release list is allowed" "[ $restore_rc -eq 0 ]"
+
+echo "═══ Case 21: existing historical restore targets are never replaced ═══"
+d=$(new_restore_case restore-existing)
+valid_restore_archives "$d"
+mkdir -p "$d/restored/v3.9.4"
+echo preserved > "$d/restored/v3.9.4/index.html"
+run_restore "$d"
+check "existing restored history is not overwritten" "[ $restore_rc -ne 0 ] && grep -qx preserved '$d/restored/v3.9.4/index.html'"
+
+echo "═══ Case 22: a full release page is not a complete inventory ═══"
+d=$(new_restore_case restore-truncated-list)
+python3 - "$d/releases.json" <<'PY'
+import json
+import sys
+with open(sys.argv[1], 'w', encoding='utf-8') as stream:
+    json.dump([{'tagName': 'draft-' + str(i), 'isDraft': True}
+               for i in range(1000)], stream)
+PY
+run_restore "$d"
+check "inventory cap counts drafts too and fails closed" "[ $restore_rc -ne 0 ]"
+check "inventory truncation cannot look like no stable releases" "grep -q '1000-release limit' '$d/restore.log'"
 
 echo
 echo "──────────────────────────────"
