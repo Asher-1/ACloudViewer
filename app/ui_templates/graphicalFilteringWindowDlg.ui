@@ -45,7 +45,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/svg/ecv/ecvClippingBox.svg</normaloff>:/Resources/images/svg/ecv/ecvClippingBox.svg</iconset>
+       <normaloff>:/Resources/images/svg/main/toolMainClippingBox.svg</normaloff>:/Resources/images/svg/main/toolMainClippingBox.svg</iconset>
      </property>
      <property name="popupMode">
       <enum>QToolButton::MenuButtonPopup</enum>
@@ -65,7 +65,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/svg/ecv/ecvClippingBoxSingleExport.svg</normaloff>:/Resources/images/svg/ecv/ecvClippingBoxSingleExport.svg</iconset>
+       <normaloff>:/Resources/images/svg/main/toolMainClippingBoxSingleExport.svg</normaloff>:/Resources/images/svg/main/toolMainClippingBoxSingleExport.svg</iconset>
      </property>
     </widget>
    </item>
@@ -82,7 +82,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/svg/ecv/ecvClippingBoxMultExport.svg</normaloff>:/Resources/images/svg/ecv/ecvClippingBoxMultExport.svg</iconset>
+       <normaloff>:/Resources/images/svg/main/toolMainClippingBoxMultiExport.svg</normaloff>:/Resources/images/svg/main/toolMainClippingBoxMultiExport.svg</iconset>
      </property>
     </widget>
    </item>
@@ -184,7 +184,7 @@
   <action name="actionSegmentationExtraction">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/svg/ecv/ecvClippingBox.svg</normaloff>:/Resources/images/svg/ecv/ecvClippingBox.svg</iconset>
+     <normaloff>:/Resources/images/svg/main/toolMainClippingBox.svg</normaloff>:/Resources/images/svg/main/toolMainClippingBox.svg</iconset>
    </property>
    <property name="text">
     <string>Segmentation Extraction</string>
@@ -199,7 +199,7 @@
   <action name="actionPolylineExtraction">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/dbPolylineSymbol.png</normaloff>:/Resources/images/dbPolylineSymbol.png</iconset>
+     <normaloff>:/Resources/images/svg/db/dbPolylineSymbol.svg</normaloff>:/Resources/images/svg/db/dbPolylineSymbol.svg</iconset>
    </property>
    <property name="text">
     <string>Polyline Extraction</string>

@@ -37,7 +37,7 @@
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
 | **OS**                   | Windows 10/11 (64-bit)                                                                                                              |
 | **Visual Studio**        | 2022 (with "Desktop development with C++" workload)                                                                                 |
-| **CMake**                | ≥ 3.20 (bundled with VS or standalone)                                                                                              |
+| **CMake**                | ≥ 3.24 (the conda build env ships 3.31.8; a standalone install works too — early VS 2022 releases bundle an older CMake) |
 | **Python**               | 3.10 – 3.12 (via Conda)                                                                                                             |
 | **Conda**                | Miniconda or Anaconda                                                                                                               |
 | **Git**                  | [https://git-scm.com/download/win](https://git-scm.com/download/win)                                                                |

@@ -876,7 +876,8 @@ void cvSelectionPropertiesWidget::setupSelectedDataHeader() {
     // from selection)
     QIcon extractIcon(":/Resources/images/svg/pq/pqExtractSelection.svg");
     if (extractIcon.isNull()) {
-        extractIcon = QIcon(":/Resources/images/exportCloud.png");  // Fallback
+        extractIcon = QIcon(
+                ":/Resources/images/svg/small/ioExportCloud.svg");  // Fallback
     }
     m_extractButton = new QPushButton(extractIcon, tr("Extract"));
     m_extractButton->setToolTip(
@@ -1453,7 +1454,8 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
     }
     if (addIcon.isNull()) {
         addIcon = QIcon(
-                ":/Resources/images/svg/ecv/ecvPlus.svg");  // Final fallback
+                ":/Resources/images/svg/main/toolMainPlus.svg");  // Final
+                                                                  // fallback
     }
     m_addSelectionButton->setIcon(addIcon);
     m_addSelectionButton->setToolTip(tr("Add active selection"));
@@ -1468,8 +1470,8 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
     m_removeSelectionButton = new QToolButton();
     QIcon removeIcon(":/Resources/images/svg/pq/pqMinus.svg");
     if (removeIcon.isNull()) {
-        removeIcon =
-                QIcon(":/Resources/images/svg/ecv/ecvMinus.svg");  // Fallback
+        removeIcon = QIcon(
+                ":/Resources/images/svg/main/toolMainMinus.svg");  // Fallback
     }
     m_removeSelectionButton->setIcon(removeIcon);
     m_removeSelectionButton->setToolTip(
@@ -1489,8 +1491,8 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
     m_removeAllSelectionsButton = new QToolButton();
     QIcon trashIcon(":/Resources/images/svg/small/smallTrash.svg");
     if (trashIcon.isNull()) {
-        trashIcon =
-                QIcon(":/Resources/images/svg/ecv/ecvdelete.svg");  // Fallback
+        trashIcon = QIcon(
+                ":/Resources/images/svg/main/toolMainDeleteEntity.svg");  // Fallback
     }
     m_removeAllSelectionsButton->setIcon(trashIcon);
     m_removeAllSelectionsButton->setToolTip(tr("Remove all saved selections"));
@@ -1567,7 +1569,8 @@ void cvSelectionPropertiesWidget::setupSelectedDataSpreadsheet() {
     m_toggleColumnVisibilityButton = new QToolButton();
     QIcon colVisIcon(":/Resources/images/svg/misc/interactors.svg");
     if (colVisIcon.isNull()) {
-        colVisIcon = QIcon(":/Resources/images/settings.png");  // Fallback
+        colVisIcon = QIcon(
+                ":/Resources/images/svg/misc/settingsOptions.svg");  // Fallback
     }
     m_toggleColumnVisibilityButton->setIcon(colVisIcon);
     m_toggleColumnVisibilityButton->setToolTip(tr("Toggle column visibility"));

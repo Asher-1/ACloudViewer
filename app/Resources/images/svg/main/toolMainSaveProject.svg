@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.5805,-0.3237) scale(1.02698)">
+
+<defs><linearGradient id="case" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#D0E5F6"/><stop offset="1.000" stop-color="#2896D3"/></linearGradient></defs>
+<title>Save project as BIN</title>
+  <path d="M 2 2 H 20 L 22 4 V 22 H 2 Z" fill="url(#case)" stroke="#6F6F59"/>
+  <rect x="5" y="2" width="13" height="10" rx="0.3" fill="#E0E0E0" stroke="#6F6F59"/>
+  <rect x="6" y="16" width="12" height="6" rx="0.3" fill="#E0E0E0" stroke="#6F6F59"/>
+  <rect x="8" y="17" width="2.2" height="4" rx="0.1" fill="#787878" stroke="#6F6F59"/>
+  <rect x="5" y="2" width="13" height="2" fill="#C1A561" stroke="#6F6F59"/>
+  <rect x="9" y="5" width="13.5" height="8" rx="0.5" fill="#E0E0E0" stroke="#6F6F59"/>
+  <path d="M 11 7 L 12 6.5 V 11 M 10.8 11 H 13.2" fill="none" stroke-width="1"/>
+  <path d="M 15 6.5 H 19 V 11 H 15 Z M 16.2 7.6 V 9.9 H 17.8 V 7.6 Z" fill="#6F6F59" stroke="none" fill-rule="evenodd"/>
+
+</g>
+</svg>

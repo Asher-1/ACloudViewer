@@ -24,7 +24,7 @@ QString ecvRecentFiles::s_settingKey("RecentFiles");
 
 ecvRecentFiles::ecvRecentFiles(QWidget *parent) : QObject(parent) {
     m_menu = new QMenu(tr("Open Recent..."), parent);
-    m_menu->setIcon(QIcon(":/Resources/images/svg/pqRecentFile.svg"));
+    m_menu->setIcon(QIcon(":/Resources/images/svg/pq/pqRecentFile.svg"));
     m_actionClearMenu = new QAction(tr("Clear Menu"), this);
 
     connect(m_actionClearMenu, &QAction::triggered, this, [this]() {

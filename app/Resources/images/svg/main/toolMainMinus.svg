@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.0436,-0.0436) scale(1.00364)">
+
+<defs><linearGradient id="minus" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#A7D28C"/><stop offset="0.500" stop-color="#72BE44"/><stop offset="1.000" stop-color="#4E8C2E"/></linearGradient></defs>
+<title>Trim selection — minus</title>
+  <rect x="1.5" y="9.6" width="21" height="4.8" rx="0.5" fill="url(#minus)" stroke="#6F6F59"/>
+
+</g>
+</svg>

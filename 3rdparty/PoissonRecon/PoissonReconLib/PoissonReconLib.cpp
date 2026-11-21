@@ -149,8 +149,9 @@ public:
         if (outputDensity_) {
             mesh_.addDensity(static_cast<double>(w));
         }
-        ++count_;
-        return count_;
+        // Level-set extraction uses the return value as the vertex index,
+        // not the number of vertices written (the first vertex is index 0).
+        return count_++;
     }
 
 protected:
@@ -186,8 +187,9 @@ public:
             rgb[k] = color[k];
         }
         mesh_.addColor(rgb);
-        ++count_;
-        return count_;
+        // Level-set extraction uses the return value as the vertex index,
+        // not the number of vertices written (the first vertex is index 0).
+        return count_++;
     }
 
 protected:

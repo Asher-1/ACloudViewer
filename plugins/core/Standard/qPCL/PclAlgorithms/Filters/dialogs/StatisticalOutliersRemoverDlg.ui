@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../../../qPCL.qrc">
-    <normaloff>:/toolbar/PclAlgorithms/icons/sor_outlier_remover.svg</normaloff>:/toolbar/PclAlgorithms/icons/sor_outlier_remover.svg</iconset>
+    <normaloff>:/qPCL/icons/pclStatisticalOutliers.svg</normaloff>:/qPCL/icons/pclStatisticalOutliers.svg</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

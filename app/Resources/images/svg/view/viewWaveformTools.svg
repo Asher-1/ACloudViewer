@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.6171,-0.6171) scale(1.05143)">
+
+<title>Full waveform tools — waveform and echoes</title>
+  <rect x="2" y="3" width="20" height="18" rx="0.5" fill="#D0E5F6" stroke="#6F6F59"/>  <path d="M 3.5 16 H 7 L 8.4 6 L 10.5 19 L 12.3 9 L 14 15 H 16" fill="none" stroke="#2896D3" stroke-width="1.2"/>  <path d="M 17.2 7.2 Q 21.4 12 17.2 16.8 M 15.3 9 Q 18 12 15.3 15" fill="none" stroke="#4E8C2E" stroke-width="1"/>
+
+</g>
+</svg>

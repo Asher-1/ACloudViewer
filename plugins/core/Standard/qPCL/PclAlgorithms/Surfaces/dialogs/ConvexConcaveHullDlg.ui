@@ -21,7 +21,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../../../qPCL.qrc">
-    <normaloff>:/toolbar/PclAlgorithms/icons/convex_concave_hull.png</normaloff>:/toolbar/PclAlgorithms/icons/convex_concave_hull.png</iconset>
+    <normaloff>:/qPCL/icons/pclConvexConcaveHull.svg</normaloff>:/qPCL/icons/pclConvexConcaveHull.svg</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>

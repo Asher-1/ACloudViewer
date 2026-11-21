@@ -77,11 +77,27 @@ RUN apt-get install --fix-missing -yq --no-install-recommends \
 # Install Qt5 and set QT_BASE_DIR
 # Uses system default Qt5 packages (Qt 5.12+ on Ubuntu 20.04, Qt 5.15+ on Ubuntu 22.04+)
 # All versions meet the minimum requirement of Qt 5.12+
-RUN apt-get -y update && \
-    apt-get install -qy \
-      libqt5svg5-dev libqt5opengl5-dev qtbase5-dev qttools5-dev qttools5-dev-tools qml-module-qtquick* \
-      libqt5websockets5-dev libqt5xmlpatterns5-dev libqt5x11extras5-dev qt5-image-formats-plugins \
-      qttranslations5-l10n qtdeclarative5-dev qtdeclarative5-dev-tools libqt5quickcontrols2-5 libqt5networkauth5-dev && \
+#
+# Qt is a large download from archive.ubuntu.com, and a single dropped
+# connection used to kill the whole job after ~65 minutes:
+#
+#   Err:199 ...qtattributionsscanner-qt5... Connection timed out
+#   E: Failed to fetch ...
+#
+# apt's retries default to 0. Retry transient failures and keep partial
+# downloads, so one bad connection does not cost a full rebuild.
+RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries && \
+    echo 'Acquire::http::Timeout "60";' > /etc/apt/apt.conf.d/80-timeout && \
+    apt-get -y update && \
+    ( for attempt in 1 2 3; do \
+          apt-get install -qy --fix-missing \
+            libqt5svg5-dev libqt5opengl5-dev qtbase5-dev qttools5-dev qttools5-dev-tools qml-module-qtquick* \
+            libqt5websockets5-dev libqt5xmlpatterns5-dev libqt5x11extras5-dev qt5-image-formats-plugins \
+            qttranslations5-l10n qtdeclarative5-dev qtdeclarative5-dev-tools libqt5quickcontrols2-5 libqt5networkauth5-dev \
+          && exit 0; \
+          echo "apt attempt $attempt failed; retrying in 10s"; sleep 10; \
+      done; exit 1 ) && \
+    dpkg -s qtbase5-dev >/dev/null 2>&1 && \
     QT_BASE_DIR="/usr/lib/x86_64-linux-gnu/qt5" && \
     echo "QT_BASE_DIR=$QT_BASE_DIR" >> /root/.bashrc && \
     echo "export QT_BASE_DIR=$QT_BASE_DIR" >> /root/.bashrc && \

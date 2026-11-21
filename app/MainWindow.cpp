@@ -3578,8 +3578,9 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     if (isComparativeRenderView || isRenderView) {
         viewToolBar->addSeparator();
 
-        auto* view3DAct = new QAction(QIcon(":/Resources/images/3D3.png"),
-                                      tr("3D View"), viewToolBar);
+        auto* view3DAct =
+                new QAction(QIcon(":/Resources/images/svg/view/view3D.svg"),
+                            tr("3D View"), viewToolBar);
         view3DAct->setObjectName("view3DToggleAction");
         view3DAct->setCheckable(true);
         view3DAct->setChecked(true);

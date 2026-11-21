@@ -27,11 +27,10 @@
 #include <sstream>
 
 MinimumCutSegmentation::MinimumCutSegmentation()
-    : BasePclModule(
-              PclModuleDescription(tr("Min Cut Segmentation"),
-                                   tr("Min Cut Segmentation"),
-                                   tr("Min Cut Segmentation from clouds"),
-                                   ":/toolbar/PclAlgorithms/icons/mincut.png")),
+    : BasePclModule(PclModuleDescription(tr("Min Cut Segmentation"),
+                                         tr("Min Cut Segmentation"),
+                                         tr("Min Cut Segmentation from clouds"),
+                                         ":/qPCL/icons/pclMinimumCut.svg")),
       m_dialog(nullptr),
       m_colored(false),
       m_neighboursNumber(14),

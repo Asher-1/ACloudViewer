@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.5646,-0.6171) scale(1.05143)">
+
+<defs><radialGradient id="surface" cx="0.32" cy="0.27" r="0.85"><stop offset="0.000" stop-color="#EDF4E7"/><stop offset="0.300" stop-color="#A7D28C"/><stop offset="0.720" stop-color="#72BE44"/><stop offset="1.000" stop-color="#4E8C2E"/></radialGradient></defs>
+<title>Sphere primitive or sphere fitting</title>
+  <circle cx="12" cy="12" r="10" fill="url(#surface)" stroke="#6F6F59"/>
+
+</g>
+</svg>

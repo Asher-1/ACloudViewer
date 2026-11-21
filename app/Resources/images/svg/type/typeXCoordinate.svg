@@ -1,47 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-<!-- Commercial HD v10: straight-edge authored polygons sampled
-     from the original raster; pixel-faithful correction layer. -->
-<path d="M2 0 L4 1 L4 2 L3 2 L3 13 L14 13 L14 12 L15 12 L15 13 L16 13 L15 15 L14 15 L14 14 L11 14 L11 15 L10 15 L10 14 L7 14 L7 15 L6 15 L6 14 L3 14 L3 16 L2 16 L2 14 L0 14 L0 13 L2 13 L2 10 L1 10 L1 9 L2 9 L2 6 L1 6 L1 5 L2 5 L2 2 L1 2 Z" fill="#000000" fill-rule="evenodd"/>
-<path d="M6 0 L11 0 L10 2 L11 2 L11 4 L13 4 L12 6 L14 7 L14 9 L15 9 L16 11 L12 11 L13 9 L10 7 L9 2 L6 1 Z" fill="#0000ff" fill-rule="evenodd"/>
-<path d="M7 9 L9 9 L10 11 L6 11 Z" fill="#0000ff" fill-rule="evenodd"/>
-<rect x="1" y="0" width="1" height="1" fill="#ffffff"/>
-<rect x="2" y="0" width="1" height="1" fill="#000000"/>
-<rect x="3" y="0" width="1" height="1" fill="#ffffff"/>
-<rect x="10" y="0" width="1" height="1" fill="#0000ff"/>
-<rect x="13" y="0" width="1" height="1" fill="#0000ff"/>
-<rect x="14" y="0" width="1" height="1" fill="#0000ff"/>
-<rect x="15" y="0" width="1" height="1" fill="#0000ff"/>
-<rect x="1" y="1" width="1" height="1" fill="#000000"/>
-<rect x="6" y="1" width="1" height="1" fill="#ffffff"/>
-<rect x="7" y="1" width="1" height="1" fill="#ffffff"/>
-<rect x="8" y="1" width="1" height="1" fill="#0000ff"/>
-<rect x="10" y="1" width="1" height="1" fill="#ffffff"/>
-<rect x="14" y="1" width="1" height="1" fill="#0000ff"/>
-<rect x="9" y="2" width="1" height="1" fill="#0000ff"/>
-<rect x="13" y="2" width="1" height="1" fill="#0000ff"/>
-<rect x="9" y="3" width="1" height="1" fill="#0000ff"/>
-<rect x="13" y="3" width="1" height="1" fill="#0000ff"/>
-<rect x="9" y="4" width="1" height="1" fill="#ffffff"/>
-<rect x="12" y="4" width="1" height="1" fill="#0000ff"/>
-<rect x="9" y="5" width="1" height="1" fill="#ffffff"/>
-<rect x="12" y="5" width="1" height="1" fill="#ffffff"/>
-<rect x="9" y="6" width="1" height="1" fill="#ffffff"/>
-<rect x="12" y="6" width="1" height="1" fill="#0000ff"/>
-<rect x="13" y="6" width="1" height="1" fill="#ffffff"/>
-<rect x="9" y="7" width="1" height="1" fill="#0000ff"/>
-<rect x="10" y="7" width="1" height="1" fill="#ffffff"/>
-<rect x="11" y="7" width="1" height="1" fill="#0000ff"/>
-<rect x="9" y="8" width="1" height="1" fill="#0000ff"/>
-<rect x="11" y="8" width="1" height="1" fill="#ffffff"/>
-<rect x="12" y="8" width="1" height="1" fill="#0000ff"/>
-<rect x="6" y="9" width="1" height="1" fill="#ffffff"/>
-<rect x="9" y="9" width="1" height="1" fill="#ffffff"/>
-<rect x="12" y="9" width="1" height="1" fill="#ffffff"/>
-<rect x="15" y="9" width="1" height="1" fill="#ffffff"/>
-<rect x="6" y="10" width="1" height="1" fill="#0000ff"/>
-<rect x="9" y="10" width="1" height="1" fill="#0000ff"/>
-<rect x="12" y="10" width="1" height="1" fill="#0000ff"/>
-<rect x="15" y="10" width="1" height="1" fill="#0000ff"/>
-<rect x="15" y="13" width="1" height="1" fill="#000000"/>
-<rect x="15" y="14" width="1" height="1" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+  <title>X coordinate</title>
+  <defs><linearGradient id="letter" x1="0" y1="0" x2="0" y2="1"><stop offset="0.000" stop-color="#56AADE"/><stop offset="1.000" stop-color="#247DB5"/></linearGradient></defs>
+  <path d="M3.6 22.4V2.5M1.4 19H21.7M1.85 4.4L3.6 2.5L5.35 4.4M19.65 17.25L21.7 19L19.65 20.75" fill="none" stroke="#6F6F59" stroke-width="1.28"/>
+  <path d="M1.9 8.5H3.6M1.9 13.3H3.6M8.7 19V21.05M13.4 19V21.05M18.1 19V21.05" fill="none" stroke="#6F6F59" stroke-width="1.05"/>
+  <path d="M10 3H12.8L15.6 7.6L18.4 3H21.2L17.1 9.5L21.6 16.1H18.65L15.6 11.45L12.48 16.1H9.6L14.12 9.5Z" fill="url(#letter)" stroke="#235F88" stroke-width="0.42"/>
 </svg>

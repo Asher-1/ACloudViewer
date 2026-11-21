@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.0436,-0.0436) scale(1.00364)">
+
+<defs><linearGradient id="exit" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#A7D28C"/><stop offset="1.000" stop-color="#4E8C2E"/></linearGradient></defs>
+<title>Exit full-screen view</title>
+  <rect x="1.5" y="1.5" width="21" height="21" rx="0.6" fill="url(#exit)" stroke="#6F6F59"/>
+  <path d="M 5 20 V 4 H 17 V 9" fill="none" stroke="#FAFAF6" stroke-width="1.25"/>
+  <circle cx="12.6" cy="6.3" r="1.6" fill="#FAFAF6" stroke="none"/>
+  <path d="M 11 8.3 L 14 8.7 L 15.9 11 H 19 V 13 H 15 L 13.3 11.5 L 12.5 15 L 15.4 17.1 L 16.8 21 H 14.4 L 13.3 18.5 L 10.4 17 L 8.6 21 H 6.3 L 9.2 14.5 L 10 10.8 L 8.3 12.2 H 6 V 10.3 H 7.5 Z" fill="#FAFAF6" stroke="none"/>
+
+</g>
+</svg>

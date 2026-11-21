@@ -44,6 +44,68 @@ PAGE = """<!DOCTYPE html><html><head><title>{title}</title>
 DEEP = "python_api/index.html"
 # A page present in the archive ONLY (forces the version-root fallback).
 ARCHIVE_ONLY = "guide/advanced.html"
+# Immutable v3.9.4 templates used IDs, value/display and versionsLoaded rather
+# than the current data markers/id/label/docs:versionsready API. Keep these
+# snippets exercising the old caller, not a rewritten modern equivalent.
+LEGACY_DEEP = "legacy/index.html"
+LEGACY_PAGE = """<!DOCTYPE html><html><head><title>legacy template</title>
+<script src="../_static/version_switch.js"></script></head><body>
+<select id="docs-version-select-sidebar"
+        onchange="ACloudViewerVersionSwitcher.switchVersion(this.value)">
+<option value="latest">Latest (main)</option></select>
+<script>
+(function() {
+  function initVersionSelector() {
+    const select = document.getElementById('docs-version-select-sidebar');
+    if (!select) return;
+    if (window.ACloudViewerVersionSwitcher) {
+      window.ACloudViewerVersionSwitcher.updateSidebarSelector();
+    } else {
+      setTimeout(initVersionSelector, 200);
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initVersionSelector);
+  } else { initVersionSelector(); }
+  document.addEventListener('versionsLoaded', function() {
+    window.legacyVersionsLoaded = (window.legacyVersionsLoaded || 0) + 1;
+    if (window.ACloudViewerVersionSwitcher) {
+      window.ACloudViewerVersionSwitcher.updateSidebarSelector();
+    }
+  });
+})();
+</script>
+<select id="docs-version-select-main"
+        onchange="if(window.ACloudViewerVersionSwitcher) { window.ACloudViewerVersionSwitcher.switchVersion(this.value); }">
+<option value="latest">Latest (main)</option></select>
+<script>
+(function() {
+  function updateMainSelector() {
+    const select = document.getElementById('docs-version-select-main');
+    if (!select || !window.ACloudViewerVersionSwitcher) {
+      setTimeout(updateMainSelector, 200); return;
+    }
+    const versions = window.ACloudViewerVersionSwitcher.getVersions();
+    const currentVersion = window.ACloudViewerVersionSwitcher.getCurrentVersion();
+    if (versions.length > 0) {
+      select.innerHTML = '';
+      versions.forEach(v => {
+        const option = document.createElement('option');
+        option.value = v.value;
+        option.textContent = v.display;
+        if (v.value === currentVersion || (currentVersion === 'latest' && v.value === 'latest')) {
+          option.selected = true;
+        }
+        select.appendChild(option);
+      });
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateMainSelector);
+  } else { updateMainSelector(); }
+  document.addEventListener('versionsLoaded', updateMainSelector);
+})();
+</script></body></html>"""
 
 
 def write_page(base: Path, relative: str, title: str) -> None:
@@ -57,7 +119,9 @@ def write_page(base: Path, relative: str, title: str) -> None:
 
 def build_tree(root: Path) -> None:
     """Run the real deploy script against a synthetic build."""
-    (root / "website-deploy").mkdir(parents=True)
+    (root / "website-deploy" / "images").mkdir(parents=True)
+    shutil.copy(DOCS / ".." / "images" / "ACloudViewer_logo_horizontal.png",
+                root / "website-deploy" / "images" / "ACloudViewer_logo_horizontal.png")
     shutil.copy(DOCS / ".." / "404.html", root / "website-deploy" / "404.html")
     (root / "website-deploy" / "index.html").write_text("<html>site</html>")
 
@@ -75,6 +139,10 @@ def build_tree(root: Path) -> None:
     write_page(arch, ARCHIVE_ONLY, "v3.9.4 advanced guide")
     (arch / "_static").mkdir(parents=True, exist_ok=True)
     (arch / "_static" / "version_switch.js").write_text("/* stale switcher */")
+    for version in (dev, arch):
+        legacy = version / LEGACY_DEEP
+        legacy.parent.mkdir(parents=True, exist_ok=True)
+        legacy.write_text(LEGACY_PAGE)
 
     subprocess.run(
         ["bash", str(DEPLOY)],
@@ -163,6 +231,10 @@ def main() -> int:
             with sync_playwright() as p:
                 browser = p.chromium.launch()
                 ctx = browser.new_context()
+                logo_failures = []
+                ctx.on("response", lambda response: logo_failures.append(response.url)
+                       if response.status >= 400 and
+                       "images/ACloudViewer_logo_horizontal.png" in response.url else None)
 
                 def goto(path: str):
                     page = ctx.new_page()
@@ -205,6 +277,56 @@ def main() -> int:
                 rec.check("absent deep page falls back to the version root",
                           page.url.rstrip("/").endswith("/documentation/dev"), page.url)
 
+                print("═══ immutable legacy template compatibility ═══")
+                legacy_errors = []
+                legacy_page = ctx.new_page()
+                legacy_page.on("pageerror", lambda error: legacy_errors.append(str(error)))
+                for version in ("dev", "v3.9.4"):
+                    legacy_page.goto(base + "/documentation/" + version + "/" + LEGACY_DEEP,
+                                     wait_until="domcontentloaded")
+                    legacy_page.wait_for_function("window.legacyVersionsLoaded === 1", timeout=5000)
+                    rec.check("legacy versionsLoaded event delivered " + version,
+                              legacy_page.evaluate("window.legacyVersionsLoaded") == 1)
+                    for selector in ("#docs-version-select-sidebar", "#docs-version-select-main"):
+                        opts = legacy_page.eval_on_selector_all(
+                            selector + " option",
+                            "els => els.map(e => [e.value, e.textContent.trim(), e.selected])")
+                        rec.check("legacy selector reads manifest " + version + " " + selector,
+                                  [o[0] for o in opts] == ids and
+                                  any(o[0] == version and o[2] for o in opts) and
+                                  all(o[1] and o[1] != "undefined" for o in opts), str(opts))
+                    rec.check("legacy getVersions aliases preserve canonical fields " + version,
+                              legacy_page.evaluate("""ACloudViewerVersionSwitcher.getVersions().every(
+                                  v => v.value === v.id && v.display && v.label && v.kind)"""))
+                # Exercise each immutable inline onchange. Also add the new marker
+                # to one legacy select to prove a mixed template never navigates twice.
+                for selector, target, mixed in (
+                    ("#docs-version-select-sidebar", "dev", False),
+                    ("#docs-version-select-main", "v3.9.4", True),
+                ):
+                    legacy_page.wait_for_function("window.legacyVersionsLoaded === 1")
+                    if mixed:
+                        legacy_page.locator(selector).evaluate("e => e.setAttribute('data-docs-version', '')")
+                    probes = []
+                    def record_probe(request):
+                        if request.method == "HEAD":
+                            probes.append(request.url)
+                    legacy_page.on("request", record_probe)
+                    legacy_page.select_option(selector, target)
+                    legacy_page.wait_for_url("**/documentation/" + target + "/" + LEGACY_DEEP,
+                                             timeout=8000)
+                    legacy_page.wait_for_function("window.legacyVersionsLoaded === 1")
+                    legacy_page.remove_listener("request", record_probe)
+                    rec.check("legacy inline switch preserves deep page " + selector,
+                              legacy_page.url.endswith("/documentation/" + target + "/" + LEGACY_DEEP))
+                    rec.check("legacy inline switch sends one existence probe " + selector,
+                              len(probes) == 1, str(probes))
+                rec.check("immutable legacy templates have no JavaScript exceptions",
+                          not legacy_errors, str(legacy_errors))
+                # The aliases are runtime-only; deployment's manifest stays canonical.
+                rec.check("legacy compatibility does not change versions.json schema",
+                          all(set(v) == {"id", "label", "kind"} for v in manifest["versions"]))
+
                 print("═══ 404 handler ═══")
                 page = goto("/documentation/getting_started/build_from_source.html")
                 page.wait_for_timeout(800)
@@ -221,6 +343,11 @@ def main() -> int:
                 page.wait_for_timeout(400)
                 rec.check("versioned dev miss is left alone",
                           "/documentation/dev/nope.html" in page.url, page.url)
+                page.wait_for_function("document.getElementById('logo').naturalWidth > 0")
+                rec.check("404 logo resolves from nested paths",
+                          page.locator("#logo").evaluate("e => e.complete && e.naturalWidth > 0"))
+                rec.check("404 logo never requests a broken relative URL",
+                          not logo_failures, str(logo_failures))
 
                 browser.close()
         finally:

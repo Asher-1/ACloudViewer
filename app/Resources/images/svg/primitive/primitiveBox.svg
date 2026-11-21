@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.6171,-0.6171) scale(1.05143)">
+
+<defs><linearGradient id="left" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#D0E5F6"/><stop offset="1.000" stop-color="#9AC1E0"/></linearGradient>
+<linearGradient id="right" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#9AC1E0"/><stop offset="1.000" stop-color="#2896D3"/></linearGradient></defs>
+<title>Box primitive</title>
+  <path d="M 12 2 L 20.66 7.0 L 12 12 L 3.34 7.0 Z" fill="#D0E5F6" stroke="#6F6F59"/>
+  <path d="M 3.34 7.0 L 12 12 L 12 22 L 3.34 17.0 Z" fill="url(#left)" stroke="#6F6F59"/>
+  <path d="M 20.66 7.0 L 12 12 L 12 22 L 20.66 17.0 Z" fill="url(#right)" stroke="#6F6F59"/>
+
+</g>
+</svg>

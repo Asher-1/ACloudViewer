@@ -37,13 +37,10 @@ import multiprocessing
 import os
 import re
 import shutil
-import ssl
 import subprocess
 import sys
-import urllib.request
 from pathlib import Path
 
-import certifi
 import nbconvert
 import nbformat
 try:
@@ -357,6 +354,75 @@ class PyExampleDocsBuilder:
                             self._add_example_to_docs(ex, out_dir)
 
 
+def _inherited_nested_classes(cls):
+    """Names of nested classes this class only inherits, not declares.
+
+    `:inherited-members:` documents a base class's nested classes a second
+    time on every subclass page, which makes Sphinx report a duplicate object
+    description and fail `-W`. The set is computed from the real MRO so it
+    stays correct when the binding adds another enum, instead of hard-coding
+    the one name measured today.
+    """
+    if cls is None or not inspect.isclass(cls):
+        return set()
+
+    own = {name for name, value in vars(cls).items() if inspect.isclass(value)}
+    inherited = set()
+    for base in cls.__mro__[1:]:
+        for name, value in vars(base).items():
+            if inspect.isclass(value) and name not in own:
+                inherited.add(name)
+    return inherited
+
+
+def _module_is_importable(dotted_name):
+    """True when the module can actually be imported in this build.
+
+    documented_modules.txt is the union across build configurations; an
+    optional module such as cloudViewer.visualization.webrtc_server is listed
+    even when WebRTC was compiled out. Checking the import is the only reliable
+    way to know whether the page can exist here.
+    """
+    import importlib
+    try:
+        importlib.import_module(dotted_name)
+        return True
+    except Exception:
+        return False
+
+
+def _looks_like_name(text):
+    """True for a bare page-title or autosummary entry (a dotted identifier).
+
+    Used to tell real entries from the underline rows the override templates
+    carry (`cloudViewer.visualization` followed by `-----...`). Without this
+    check the underline was treated as an entry and deleted.
+    """
+    import re
+    return re.fullmatch(r"[A-Za-z_][\w.]*", text) is not None
+
+
+def _is_own_member(package, member):
+    """True when `member` belongs to this project rather than being re-exported.
+
+    `cloudViewer.visualization.tensorboard_plugin.summary` re-exports torch's
+    `SummaryWriter` and functools' `partial`. Listing those as project API put
+    their docstrings on our pages, where they fail `-W` ("Inline emphasis
+    start-string without end-string") because they were written for a different
+    renderer.
+
+    Objects defined in the package are documented; anything whose `__module__`
+    points elsewhere is left out. pybind members report cloudViewer.cuda.pybind.*,
+    which is still ours.
+    """
+    mod = getattr(member, "__module__", "") or ""
+    if not mod:
+        # Generated protocol classes often carry no __module__; they are part
+        # of this build's own bindings rather than a foreign re-export.
+        return True
+    return mod.startswith("cloudViewer")
+
+
 class PyAPIDocsBuilder:
     """
     Generate Python API *.rst files, per (sub) module, per class, per function.
@@ -382,12 +448,37 @@ class PyAPIDocsBuilder:
         print(f"🔨 Generating *.rst Python API docs in directory: {self.output_dir}")
         _create_or_clear_dir(self.output_dir)
 
+        generated = 0
+        failures = []
         for module_name in self.module_names:
             try:
                 module = self._try_import_module(module_name)
                 self._generate_module_class_function_docs(module_name, module)
+                generated += 1
             except Exception as e:
+                failures.append(f"{module_name}: {e}")
                 print(f"[Warning] Module {module_name} cannot be imported: {e}.")
+
+        # Producing zero pages is not a warning.
+        #
+        # source/index.rst lists 11 python_api/ entries. When the module cannot
+        # be imported every one of those pages is missing, but the failure used
+        # to be a per-module print and the build still exited 0: Sphinx's
+        # "document isn't included in any toctree" / not_readable warnings are
+        # suppressed in conf.py, so -W never saw it and the site shipped
+        # without the Python API. Losing the entire API reference is a build
+        # failure, not a degraded result.
+        if self.module_names and generated == 0:
+            detail = "\n  ".join(failures[:5])
+            raise RuntimeError(
+                "Python API generation produced 0 of {} documented modules; "
+                "every source/python_api/ page that index.rst references would "
+                "be missing.\n  {}\n"
+                "The cloudViewer module must be importable (built with "
+                "-DBUILD_PYTHON_MODULE=ON / `make python-package`) before the "
+                "documentation is rendered.".format(len(self.module_names), detail)
+            )
+        print(f"  ✓ Generated python_api for {generated}/{len(self.module_names)} module(s)")
 
     @staticmethod
     def _get_documented_module_names():
@@ -412,18 +503,19 @@ class PyAPIDocsBuilder:
 
     def _try_import_module(self, full_module_name):
         """Returns the module object for the given module path"""
+        root_module = None
         try:
-            import cloudViewer
-            if hasattr(cloudViewer, '_build_config'):
-                if cloudViewer._build_config.get('BUILD_TENSORFLOW_OPS', False):
+            import cloudViewer as root_module
+            if hasattr(root_module, '_build_config'):
+                if root_module._build_config.get('BUILD_TENSORFLOW_OPS', False):
                     import cloudViewer.ml.tf
-                if cloudViewer._build_config.get('BUILD_PYTORCH_OPS', False):
+                if root_module._build_config.get('BUILD_PYTORCH_OPS', False):
                     import cloudViewer.ml.torch
         except (ImportError, AttributeError, KeyError) as e:
-            # Optional modules, ignore if not available
+            # The root module may be absent; the per-module import below
+            # decides whether this particular module is available.
             print(f"⚠️  {e}")
-            pass
-        
+
         # Try to import the specific module
         try:
             # Try to import directly. This will work for pure python submodules
@@ -434,8 +526,19 @@ class PyAPIDocsBuilder:
             # This code path is necessary for modules for which we manually
             # define a specific module path (e.g. the modules defined with
             # pybind).
+            #
+            # `cloudViewer` is only bound when the `import` above succeeded, so
+            # referencing it directly raised "cannot access local variable
+            # 'cloudViewer'" and hid the real cause. The name is also shadowed
+            # by the assignment inside the try, which makes it a local for the
+            # whole function.
+            if root_module is None:
+                raise ImportError(
+                    f"Could not find module {full_module_name}: the cloudViewer "
+                    "root module is not importable (is it built and on PYTHONPATH?)"
+                )
             try:
-                current_module = cloudViewer
+                current_module = root_module
                 for sub_module_name in full_module_name.split(".")[1:]:
                     current_module = getattr(current_module, sub_module_name)
                 return current_module
@@ -453,7 +556,8 @@ class PyAPIDocsBuilder:
         with open(output_path, "w") as f:
             f.write(out_string)
 
-    def _generate_class_doc(self, full_module_name, class_name, output_path):
+    def _generate_class_doc(self, full_module_name, class_name, output_path,
+                            cls=None):
         out_string = ""
         out_string += "%s.%s" % (full_module_name, class_name)
         out_string += "\n" + "-" * len(out_string)
@@ -464,6 +568,19 @@ class PyAPIDocsBuilder:
         if not (full_module_name.startswith("cloudViewer.ml.tf") or
                 full_module_name.startswith("cloudViewer.ml.torch")):
             out_string += "\n    :inherited-members:"
+            # `:inherited-members:` pulls in nested classes declared on a base
+            # class, and each one is *documented* again on every subclass page.
+            # pybind nested enums (e.g. ccObject.Type, reached from every
+            # geometry type) then register their object description once per
+            # subclass, and Sphinx fails -W with "duplicate object description
+            # of ...". Excluding the inherited nested classes keeps the single
+            # authoritative description on the class that defines them while
+            # cross-references still resolve. Measured: this is the only
+            # duplicate in the tree.
+            inherited_nested = _inherited_nested_classes(cls)
+            if inherited_nested:
+                out_string += "\n    :exclude-members: " + ", ".join(
+                    sorted(inherited_nested))
         out_string += "\n"
 
         with open(output_path, "w") as f:
@@ -525,6 +642,7 @@ class PyAPIDocsBuilder:
             obj[0]
             for obj in inspect.getmembers(module)
             if inspect.isclass(obj[1]) and not obj[0].startswith('_')
+            and _is_own_member(full_module_name, obj[1])
         ]
         for class_name in class_names:
             file_name = "%s.%s.rst" % (full_module_name, class_name)
@@ -533,13 +651,15 @@ class PyAPIDocsBuilder:
             if os.path.isfile(input_path):
                 shutil.copyfile(input_path, output_path)
                 continue
-            self._generate_class_doc(full_module_name, class_name, output_path)
+            self._generate_class_doc(full_module_name, class_name, output_path,
+                                     cls=dict(inspect.getmembers(module)).get(class_name))
 
         # Function docs
         function_names = [
             obj[0]
             for obj in inspect.getmembers(module)
             if inspect.isroutine(obj[1]) and not obj[0].startswith('_')
+            and _is_own_member(full_module_name, obj[1])
         ]
         for function_name in function_names:
             file_name = "%s.%s.rst" % (full_module_name, function_name)
@@ -565,7 +685,10 @@ class PyAPIDocsBuilder:
         sub_module_doc_path = os.path.join(self.output_dir, full_module_name + ".rst")
         input_path = os.path.join(self.input_dir, full_module_name + ".rst")
         if os.path.isfile(input_path):
-            shutil.copyfile(input_path, sub_module_doc_path)
+            self._copy_override_pruned(input_path, sub_module_doc_path,
+                                       documented_sub_module_names, module)
+            # The override page is the authoritative one; generating after it
+            # would overwrite the pruned copy with a fresh full listing.
             return
         self._generate_module_doc(
             full_module_name,
@@ -574,6 +697,67 @@ class PyAPIDocsBuilder:
             documented_sub_module_names,
             sub_module_doc_path,
         )
+
+    @staticmethod
+    def _copy_override_pruned(input_path, output_path, live_submodules, module):
+        """Copy a hand-written module page, dropping entries this build lacks.
+
+        The override files in source/python_api_in list every name the project
+        can ship. When the build lacks a feature (e.g.
+        cloudViewer.visualization.webrtc_server) the `.. autosummary::` entry
+        cannot import and Sphinx fails with `-W`.
+
+        The rule is the one the generator already applies: an entry stays only
+        when the module object exposes it and it is ours to document
+        (`_is_own_member`). Everything else is an optional feature this build
+        did not produce, or a re-export from torch/functools/tensorboard.
+
+        Dotted entries (`tensorboard_plugin.summary`) are always kept: they are
+        separate documented modules reached through their own page, and getattr
+        cannot resolve the dotted path. Pruning one orphans that page
+        ("document isn't included in any toctree").
+        """
+        import inspect as _inspect
+
+        live = set(live_submodules)
+        documented = set(PyAPIDocsBuilder._get_documented_module_names())
+        kept, dropped = [], []
+        for line in open(input_path, encoding="utf-8").read().splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith(("..", ":", "**")):
+                kept.append(line)
+                continue
+            # Both forms appear: a bare autosummary name, and a toctree entry
+            # "name <module.name>". The toctree form contains a space, so it
+            # must be reduced to its name before deciding.
+            entry = stripped.split(" <", 1)[0].strip()
+            if not _looks_like_name(entry):
+                kept.append(line)
+                continue
+
+            if "." in entry:
+                kept.append(line)            # dotted = its own documented module
+                continue
+            if entry in live:
+                kept.append(line)
+                continue
+            # A documented module still needs to exist in THIS build: it may be
+            # listed in documented_modules.txt yet not be built (WebRTC off).
+            full = "%s.%s" % (module.__name__, entry)
+            if full in documented and _module_is_importable(full):
+                kept.append(line)
+                continue
+            child = getattr(module, entry, None)
+            if child is not None and _is_own_member(module.__name__, child):
+                kept.append(line)
+                continue
+            dropped.append(entry)
+
+        if dropped:
+            print(f"  Pruned {len(dropped)} entr(ies) not built here from "
+                  f"{os.path.basename(output_path)}: {', '.join(sorted(set(dropped)))}")
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(kept) + "\n")
 
 
 class JupyterDocsBuilder:
@@ -593,15 +777,6 @@ class JupyterDocsBuilder:
         self.clean_notebooks = clean_notebooks
         self.execute_notebooks = execute_notebooks
 
-    def overwrite_tutorial_file(self, url, output_file, output_file_path):
-        with urllib.request.urlopen(
-                url,
-                context=ssl.create_default_context(cafile=certifi.where()),
-        ) as response:
-            with open(output_file, 'wb') as out_file:
-                shutil.copyfileobj(response, out_file)
-        shutil.move(output_file, output_file_path)
-        
     def run(self):
         """Copy Jupyter notebooks to tutorial directories."""
         print("📓 Copying Jupyter notebooks to tutorial directories...")
@@ -741,21 +916,64 @@ class JupyterDocsBuilder:
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         print("")
         
-        # In CI environment (GITHUB_ACTIONS), raise to fail the build if any notebooks failed
-        # Note: We check GITHUB_ACTIONS specifically, not just CI, because CI=true is set
-        # locally to disable interactive mode in notebooks
-        if failed_notebooks and "GITHUB_ACTIONS" in os.environ:
+        # A notebook that fails to execute must fail the build.
+        #
+        # This used to fire only when GITHUB_ACTIONS was set. The docs build
+        # runs inside docker/Dockerfile.docs, which sets CI=true and does NOT
+        # set GITHUB_ACTIONS, so the check never ran there: the log printed
+        # "❌ Execution of surface_reconstruction.ipynb failed (this will
+        # cause CI to fail)" and the build carried on, shipping a notebook
+        # with partial execution output. The message was simply untrue.
+        #
+        # CI is the signal that means "no human can inspect this build".
+        # Locally (no CI, no GITHUB_ACTIONS) a failing notebook is still
+        # saved with partial output so the author can debug it.
+        if failed_notebooks and ("CI" in os.environ or "GITHUB_ACTIONS" in os.environ):
             raise RuntimeError(
-                "{} notebook(s) failed to execute in CI environment. "
-                "This will cause the build to fail.".format(len(failed_notebooks))
+                "{} notebook(s) failed to execute in CI environment: {}. "
+                "The published documentation would silently contain partial "
+                "or missing output.".format(
+                    len(failed_notebooks), ", ".join(failed_notebooks))
             )
 
-        url = "https://github.com/isl-org/Open3D/files/8243984/t_icp_registration.zip"
-        output_file = "t_icp_registration.ipynb"
-        output_file_path = nb_parent_dst / "t_pipelines" / output_file
-        output_file_path.parent.mkdir(parents=True, exist_ok=True)
-        self.overwrite_tutorial_file(url, output_file, str(output_file_path))
-        
+        # Every notebook the documentation needs lives in docs/jupyter/.
+        #
+        # There used to be a download here: t_icp_registration.ipynb was
+        # fetched from github.com/isl-org/Open3D/files/8243984 and written
+        # over the copy staged just above. That is wrong in two independent
+        # ways, and both were live bugs:
+        #
+        #   1. The upstream file is not ours. It is 1670 lines using `o3d.*`
+        #      and `####` headings; this repository's is 1285 lines using
+        #      cv3d.*/cloudViewer.* and `###`. Building it produced docs for
+        #      a different library, and every local edit to the repository
+        #      copy was discarded before Sphinx read it.
+        #   2. It made the build depend on a third party at run time. If
+        #      Open3D renames or deletes that attachment, urlopen raises and
+        #      the entire documentation build fails -- for no benefit, since
+        #      the file is already in this repository.
+        #
+        # Without that download, a notebook that exists in the repo but fails
+        # to reach the source tree would silently vanish from the site. Verify
+        # the whole set instead of one hardcoded name: every tracked notebook
+        # must be present at the destination after the copy above.
+        source_notebooks = sorted(
+            p.relative_to(nb_parent_src) for p in nb_parent_src.glob("**/*.ipynb")
+        )
+        missing = [
+            str(rel) for rel in source_notebooks
+            if not (nb_parent_dst / rel).exists()
+        ]
+        if missing:
+            raise RuntimeError(
+                "{} notebook(s) from {} are missing in the Sphinx source tree: {}"
+                .format(len(missing), nb_parent_src, ", ".join(missing))
+                + ". The docs build no longer downloads them from an upstream "
+                  "project, so every notebook must be committed under "
+                  "docs/jupyter/ and copied successfully."
+            )
+        print(f"✓ All {len(source_notebooks)} notebook(s) staged into the source tree")
+
         # Copy static images (like donation.png) to _static directory
         print("📸 Copying static images to _static directory...")
         static_src = Path(self.current_file_dir) / "images"
@@ -797,7 +1015,13 @@ class SphinxDocsBuilder:
         except (ImportError, OSError):
             print("⚠️  pypandoc not found, nbsphinx may fail without pandoc")
         
-        # Copy docs files from Open3D-ML repo
+        # Copy docs files from the CloudViewer-ML checkout.
+        #
+        # The ML project ships its own docs/tensorboard.md; keeping the copy
+        # in sync is intentional and unrelated to the notebook download that
+        # was removed below. The destination is docs/tensorboard.md, which
+        # source/tutorial/visualization/tensorboard_plugin.rst includes with a
+        # relative `.. include::` path.
         cloudviewer_root = os.environ.get(
             "CLOUDVIEWER_ML_ROOT",
             os.path.join(self.current_file_dir, "../../CloudViewer-ML"))
@@ -807,10 +1031,28 @@ class SphinxDocsBuilder:
         for cloudviewer_doc in cloudviewer_docs:
             if os.path.isfile(cloudviewer_doc):
                 shutil.copy(cloudviewer_doc, self.current_file_dir)
-        
+
         build_dir = os.path.join(self.html_output_dir, "html")
         source_dir = os.path.join(self.current_file_dir, "source")
-        nproc = multiprocessing.cpu_count() if self.parallel else 1
+        # Keep Sphinx's doctree cache OUTSIDE the output directory.
+        #
+        # Without -d, Sphinx writes .doctrees/ inside the build dir. main()
+        # removes the whole output directory before every run (`if args.clean
+        # or (args.sphinx or args.doxygen)`), so the cache was destroyed each
+        # time and every build re-parsed all sources. Putting it *inside* that
+        # directory is not enough -- it must be a sibling, which survives the
+        # removal. Verified: without this, the second build still logged
+        # "[new config] 155 added" (full rebuild); with a sibling directory the
+        # doctrees are reused.
+        doctree_dir = os.path.join(
+            os.path.dirname(os.path.normpath(self.html_output_dir)), "doctrees")
+        nproc = 1
+        if self.parallel:
+            nproc = multiprocessing.cpu_count()
+            # Share the build budget used by ci_utils.sh; a many-core local
+            # host must not bypass NPROC during the Sphinx phase.
+            if "NPROC" in os.environ:
+                nproc = min(nproc, max(1, int(os.environ["NPROC"])))
         print(f"Building docs with {nproc} processes")
 
         # Find sphinx-build command
@@ -849,7 +1091,8 @@ class SphinxDocsBuilder:
 
             cmd = sphinx_build + [
                 "-j",
-                str(nproc), "-b", "html", "-D", "version=" + release_version,
+                str(nproc), "-b", "html", "-d", doctree_dir,
+                "-D", "version=" + release_version,
                 "-D", "release=" + release_version
             ] + cmd_args_today + cmd_args_strict + [
                 source_dir,
@@ -867,6 +1110,8 @@ class SphinxDocsBuilder:
                 str(nproc),
                 "-b",
                 "html",
+                "-d",
+                doctree_dir,
                 "-D", "version=" + main_version,
                 "-D", "release=" + main_version,
             ] + cmd_args_today + cmd_args_strict + [
@@ -881,6 +1126,17 @@ class SphinxDocsBuilder:
         except subprocess.CalledProcessError as e:
             print(f"❌ Sphinx build failed: {e}")
             raise
+
+        # A Sphinx run can exit 0 and still leave nothing usable behind (e.g.
+        # when every source is skipped). Downstream steps treat _out/html as
+        # the whole documentation tree, so an index-less directory ships as a
+        # site whose entry page 404s. Fail here, where the cause is obvious.
+        index_html = os.path.join(build_dir, "index.html")
+        if not os.path.isfile(index_html):
+            raise RuntimeError(
+                f"Sphinx reported success but {index_html} is missing; "
+                "refusing to publish an entry-page-less documentation tree"
+            )
 
 
 def get_cloudviewer_version(pwd):
@@ -1017,26 +1273,39 @@ def process_rst_templates(pwd, version):
         return
     
     print(f"[make_docs] Found {len(in_rst_files)} .in.rst file(s)")
-    
-    success_count = 0
+
+    failed = []
     for in_file in in_rst_files:
         out_file = in_file.replace('.in.rst', '.rst')
         try:
             with open(in_file, 'r', encoding='utf-8') as f:
                 content = f.read()
-            
+
             # Replace @cv_version@ with actual version
             content = content.replace('@cv_version@', version)
-            
+
             with open(out_file, 'w', encoding='utf-8') as f:
                 f.write(content)
-            
+
             print(f"[make_docs] Generated: {os.path.basename(out_file)}")
-            success_count += 1
         except Exception as e:
             print(f"[make_docs] Error processing {in_file}: {e}")
-    
-    print(f"[make_docs] Processed {success_count}/{len(in_rst_files)} file(s) successfully")
+            failed.append((in_file, e))
+
+    # A template that fails to render leaves the page its toctree entry points
+    # at missing. index.rst lists getting_started/installation and
+    # getting_started/builddocs, both of which come from .in.rst templates, so
+    # a silent failure produced 404s on two required Getting Started pages.
+    # (The Python API had the same shape and is guarded the same way.)
+    if failed:
+        detail = "\n  ".join(f"{os.path.basename(p)}: {e}" for p, e in failed)
+        raise RuntimeError(
+            "{} of {} .in.rst template(s) failed to render; the pages that "
+            "source/index.rst references would be missing:\n  {}"
+            .format(len(failed), len(in_rst_files), detail)
+        )
+
+    print(f"[make_docs] Processed {len(in_rst_files)}/{len(in_rst_files)} file(s) successfully")
     print("=" * 70)
     print()
 

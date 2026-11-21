@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(0.1714,-0.8636) scale(0.98571)">
+
+<defs><ns0:linearGradient xmlns:ns0="http://www.w3.org/2000/svg" id="funnel" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><ns0:stop offset="0.000" stop-color="#D0E5F6" /><ns0:stop offset="1.000" stop-color="#2896D3" /></ns0:linearGradient></defs>
+<title>FILTER — labeled functional PCL icon</title><g transform="translate(3 .2) scale(.75)"><ns0:path xmlns:ns0="http://www.w3.org/2000/svg" d="M 2 3 H 22 L 14.5 12 V 19 L 10 22 V 12 Z" fill="url(#funnel)" stroke="#6F6F59" />  <ns0:path xmlns:ns0="http://www.w3.org/2000/svg" d="M 5 6 H 19 M 6.5 8.5 H 17.5" fill="none" stroke="#4E8C2E" stroke-width="0.6" />
+</g>  <rect x="1.3" y="18.1" width="21.4" height="5.5" rx="0.6" fill="#D0E5F6" stroke="#6F6F59"/><path data-label="FILTER" d="M188 -1493H1227V-1202H573V-924H1188V-633H573V0H188ZM1587 -1493H1972V0H1587ZM2349 -1493H2734V-291H3410V0H2349ZM3476 -1493H4852V-1202H4357V0H3972V-1202H3476ZM5051 -1493H6090V-1202H5436V-924H6051V-633H5436V-291H6112V0H5051ZM6997 -831Q7118 -831 7170.5 -876.0Q7223 -921 7223 -1024Q7223 -1126 7170.5 -1170.0Q7118 -1214 6997 -1214H6835V-831ZM6835 -565V0H6450V-1493H7038Q7333 -1493 7470.5 -1394.0Q7608 -1295 7608 -1081Q7608 -933 7536.5 -838.0Q7465 -743 7321 -698Q7400 -680 7462.5 -616.5Q7525 -553 7589 -424L7798 0H7388L7206 -371Q7151 -483 7094.5 -524.0Q7038 -565 6944 -565Z" transform="translate(1.56952 22.60000) scale(0.002612)" fill="#6F6F59" stroke="none"/>
+
+</g>
+</svg>

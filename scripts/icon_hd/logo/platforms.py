@@ -34,7 +34,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 IMAGES = ROOT / "app/Resources/images"
 
-SKIP_DIRS = {"build", "build_app", "3rdparty", ".git", "node_modules"}
+SKIP_DIRS = {"build", "build_app", "build_headless_docs", "3rdparty", ".git", "node_modules"}
 
 
 def _walk(suffixes):

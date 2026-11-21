@@ -28,11 +28,11 @@
 #include <iostream>
 
 TemplateAlignment::TemplateAlignment()
-    : BasePclModule(PclModuleDescription(
-              tr("Template Alignment"),
-              tr("Template Alignment"),
-              tr("Template Alignment from clouds"),
-              ":/toolbar/PclAlgorithms/icons/templateAlignment.png")),
+    : BasePclModule(
+              PclModuleDescription(tr("Template Alignment"),
+                                   tr("Template Alignment"),
+                                   tr("Template Alignment from clouds"),
+                                   ":/qPCL/icons/pclTemplateAlignment.svg")),
       m_dialog(nullptr),
       m_templateMatch(nullptr),
       m_targetCloud(nullptr),

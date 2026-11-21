@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.6171,-0.6171) scale(1.05143)">
+
+<defs><linearGradient id="side" x1="0.0" y1="0.0" x2="1" y2="0"><stop offset="0.000" stop-color="#A4A6A6"/><stop offset="0.320" stop-color="#E0E0E0"/><stop offset="0.600" stop-color="#CDCDCD"/><stop offset="1.000" stop-color="#787878"/></linearGradient></defs>
+<title>Cylinder primitive</title>
+  <path d="M 3.5 5.5 C 3.5 10.2 20.5 10.2 20.5 5.5 V 18.5 C 20.5 23.2 3.5 23.2 3.5 18.5 Z" fill="url(#side)" stroke="#6F6F59"/>
+<ellipse cx="12" cy="5.5" rx="8.5" ry="3.5" fill="#D0E5F6" stroke="#6F6F59"/>
+
+</g>
+</svg>

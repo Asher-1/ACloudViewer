@@ -57,7 +57,7 @@
 | Item             | Requirement                                    |
 | ---------------- | ---------------------------------------------- |
 | **OS**           | Ubuntu 20.04 / 22.04 / 24.04                   |
-| **CMake**        | ≥ 3.20                                         |
+| **CMake**        | ≥ 3.24 — `util/install_deps_ubuntu.sh` auto-installs the pinned 3.31.10 pip wheel when the apt one is older (Ubuntu 20.04/22.04 ship 3.16/3.22) |
 | **Python**       | 3.10 – 3.13                                    |
 | **Compiler**     | GCC ≥ 9 or Clang (provided by `install_deps`)  |
 | **AICore GPU (default)** | **Vulkan** — `AICore_USE_VULKAN=ON` on Linux (CMake default); run `util/vulkan/install_vulkan_env.sh` or `install_deps_ubuntu.sh` for build-time SDK/glslc |
@@ -80,7 +80,7 @@
 
 ```bash
 # From the ACloudViewer repository root:
-utils/install_deps_ubuntu.sh assume-yes
+util/install_deps_ubuntu.sh assume-yes
 ```
 
 This script installs all required system packages (`xorg-dev`, `libglu1-mesa-dev`,
@@ -381,7 +381,7 @@ python3 -c "import cloudViewer as cv3d; print(cv3d.__version__)"
 The base system tools are still needed even with Conda:
 
 ```bash
-utils/install_deps_ubuntu.sh assume-yes
+util/install_deps_ubuntu.sh assume-yes
 ```
 
 ### B2. Create the Conda environment

@@ -2118,7 +2118,8 @@ void ecvDisplayTools::SetPerspectiveState(ecvViewContext& ctx,
                                               : ctx.viewportParams.fov_deg);
             assert(cloudViewer::GreaterThanEpsilon(currentFov_deg));
             double screenSize =
-                    std::min(ctx.glViewport.width(), ctx.glViewport.height()) *
+                    static_cast<double>(std::min(ctx.glViewport.width(),
+                                                 ctx.glViewport.height())) *
                     ctx.viewportParams.pixelSize;
             if (screenSize > 0.0) {
                 PC.z = screenSize / (ctx.viewportParams.zoom *
@@ -3975,7 +3976,7 @@ void ecvDisplayTools::DrawClickableItems(
         //"full-screen" exit icon (CloudCompare ecvExit.png)
         {
             static const QImage s_exitIcon(
-                    ":/Resources/images/svg/ecv/ecvExit.svg");
+                    ":/Resources/images/svg/main/toolMainExit.svg");
             int is = iconSize;
             int x0 = xStart;
             int y0 = fullH - (yStart + is);

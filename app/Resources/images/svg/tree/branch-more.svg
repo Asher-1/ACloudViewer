@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="17.708" height="17.708" viewBox="8.646 -0.354 17.708 17.708">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g transform="translate(-11.718094,0.479783) scale(1.355320)">
 <!-- Commercial HD v10: straight-edge authored polygons sampled
      from the original raster; pixel-faithful correction layer. -->
 
@@ -58,4 +59,5 @@
 <rect x="12" y="15" width="1" height="1" fill="#d4d1ce"/>
 <rect x="11" y="16" width="1" height="1" fill="#d2cecb"/>
 <rect x="12" y="16" width="1" height="1" fill="#d4d1ce"/>
+</g>
 </svg>

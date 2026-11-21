@@ -252,7 +252,7 @@ rewrite_website_doc_links() {
 # switcher that cannot see versions published after they were built.
 # ---------------------------------------------------------------------------
 propagate_version_switcher() {
-    local latest="$1" src="" dir name
+    local latest="$1" src="" dir name css_src css_dest
 
     # Preference order matters. The dev build carries the switcher compiled
     # from the current source tree; an archive carries whatever was current
@@ -285,6 +285,16 @@ propagate_version_switcher() {
         fi
         cp "$src" "$dest"
         log "    ✅ ${name}/_static/version_switch.js"
+
+        # Some historical archives reference this stylesheet but omitted it.
+        # Repair only missing assets; never replace an archive's own CSS.
+        css_src="$(dirname "$src")/css/furo_overrides.css"
+        css_dest="${dir}_static/css/furo_overrides.css"
+        if [ ! -f "$css_dest" ] && [ -f "$css_src" ]; then
+            mkdir -p "$(dirname "$css_dest")"
+            cp "$css_src" "$css_dest"
+            log "    ✅ restored missing ${name}/_static/css/furo_overrides.css"
+        fi
     done
 }
 
@@ -319,6 +329,13 @@ rule
 [ -d website-deploy ] || die "website-deploy/ missing"
 [ -d docs-output ]    || die "docs-output/ missing"
 
+# A documentation tree with no entry page is not a degraded deployment, it is
+# a broken one. Doxygen output (cpp_api/) survives a failed Sphinx run, so the
+# directory can hold tens of thousands of files while /documentation/dev/
+# itself serves 404. Refuse it here rather than publishing it.
+[ -f docs-output/index.html ] || \
+    die "docs-output/index.html is missing: the documentation build produced no entry page"
+
 mkdir -p unified-deploy
 cp -r website-deploy/. unified-deploy/
 log "✅ Website copied to deploy root"
@@ -326,7 +343,16 @@ log "✅ Website copied to deploy root"
 # ---------------------------------------------------------------------------
 # This build's own documentation
 # ---------------------------------------------------------------------------
-if [ "$IS_RELEASE" = "true" ] && [ -n "$DOC_VERSION" ]; then
+# A release build without a version would silently take the dev branch below:
+# the release docs would overwrite /documentation/dev/, no archive would be
+# created, and /documentation/vX.Y.Z/ would never exist. Nothing would fail.
+# The workflow always supplies DOC_VERSION for a release event, so reaching
+# here means the two inputs disagree -- refuse rather than guess.
+if [ "$IS_RELEASE" = "true" ] && [ -z "$DOC_VERSION" ]; then
+    die "IS_RELEASE=true but DOC_VERSION is empty: a release build must name the version directory it publishes to"
+fi
+
+if [ "$IS_RELEASE" = "true" ]; then
     rule
     log "🎯 Release build → /documentation/${DOC_VERSION}/"
     rule
@@ -422,6 +448,64 @@ fix_legacy_selector_markup
 write_sitemap "$LATEST_VERSION"
 
 # ---------------------------------------------------------------------------
+# GitHub Pages refuses artifacts over 1 GB.
+#
+# upload-pages-artifact only WARNS about an oversized artifact and
+# deploy-pages then fails at the very end, after a 20-30 minute build. The
+# live site keeps serving the previous deployment, so the failure looks like
+# "the deploy half worked" -- new versions 404 while old ones stay reachable,
+# which is exactly the confusing state this check prevents.
+#
+# The limit applies to the COMPRESSED artifact, so measuring the tree with
+# `du` would both false-positive (documentation compresses to roughly 1/3)
+# and miss the real threshold. This gzips the tree the same way
+# upload-pages-artifact does and compares the resulting byte count.
+#
+# Measured cause the first time this fired: one restored archive built with
+# the old Doxyfile (2.0 GB extracted) plus the new dev tree produced a
+# 1343 MB artifact, 300 MB over. Sizes are reported per component so the
+# culprit is obvious.
+# ---------------------------------------------------------------------------
+readonly PAGES_LIMIT_KB=$((1024 * 1024))
+
+check_pages_size_budget() {
+    local artifact_kb raw_mb ver_mb name
+
+    raw_mb=$(du -sm unified-deploy | cut -f1)
+
+    # -c: total only; the size is compared, the bytes themselves are discarded.
+    artifact_kb=$(tar -czf - -C unified-deploy . 2>/dev/null | wc -c)
+    artifact_kb=$((artifact_kb / 1024))
+
+    log "   ${raw_mb} MB on disk, ${artifact_kb} KB compressed (GitHub Pages limit: 1048576 KB)"
+
+    if [ -d "$DOC_ROOT" ]; then
+        for name in $(list_version_dirs "$DOC_ROOT"); do
+            ver_mb=$(du -sm "${DOC_ROOT}/${name}" | cut -f1)
+            log "     ${name}: ${ver_mb} MB"
+        done
+        if [ -d "$DEV_DIR" ]; then
+            ver_mb=$(du -sm "$DEV_DIR" | cut -f1)
+            log "     dev: ${ver_mb} MB"
+        fi
+    fi
+
+    if [ "$artifact_kb" -gt "$PAGES_LIMIT_KB" ]; then
+        log ""
+        log "❌ Compressed artifact is ${artifact_kb} KB; GitHub Pages rejects anything over ${PAGES_LIMIT_KB} KB."
+        log "   deploy-pages would fail AFTER the build, leaving the previous site live"
+        log "   and the new version unreachable. Failing here instead."
+        log ""
+        log "   Most likely cause: a version archive in the deployment was built with"
+        log "   an older Doxyfile. Rebuild it with the current docs/Doxyfile.in, e.g."
+        log "     DOT_IMAGE_FORMAT=svg  SOURCE_BROWSER=NO  INCLUDED_BY_GRAPH=NO"
+        log "   and re-upload the release asset, or drop that version."
+        return 1
+    fi
+    return 0
+}
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 rule
@@ -436,4 +520,9 @@ for name in "${DEPLOYED_VERSIONS[@]:-}"; do
     [ -n "$name" ] && log "   ${name}: ${SITE_URL}/documentation/${name}/"
 done
 rule
+
+if ! check_pages_size_budget; then
+    die "deployment exceeds the GitHub Pages artifact limit"
+fi
+
 log "✅ Unified deployment prepared"

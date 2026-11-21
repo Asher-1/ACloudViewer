@@ -42,7 +42,30 @@ jobs:
           python-version: '3.11'
 
       - name: Install guard dependencies
-        run: pip install pyyaml
+        run: pip install pyyaml docutils
+
+      - name: Notebook section titles
+        # nbsphinx concatenates markdown cells and feeds them to docutils via
+        # pandoc. A cell ending in "---" whose successor starts with prose is
+        # read as a section-title overline, and sphinx-build -W then fails the
+        # whole build. Catch it here, in seconds, instead of after a 30-minute
+        # Docker build.
+        run: python3 docs/automation/scripts/check_notebook_headings.py
+
+      - name: Parallel Sphinx ML import contract
+        run: python3 docs/automation/scripts/test_sphinx_ml_imports.py
+
+      - name: Install browser for site verification
+        # verify_docs_site.py drives a real browser through the version
+        # switcher and the 404 handler. That behaviour is not reachable from
+        # the live probe, which only checks that URLs return 200. It ran
+        # nowhere before, so it was dead weight; run it here.
+        run: |
+          pip install playwright certifi
+          python3 -m playwright install --with-deps chromium
+
+      - name: Documentation site behaviour
+        run: python3 docs/automation/scripts/verify_docs_site.py
 
       - name: Workflow size limits
         run: python3 docs/automation/scripts/check_workflow_limits.py
@@ -52,6 +75,9 @@ jobs:
 
       - name: Deploy script contract tests
         run: bash docs/automation/scripts/test_deploy_unified_docs.sh
+
+      - name: Website preparation contract tests
+        run: bash docs/automation/scripts/test_prepare_website.sh
 
   # ===========================================================================
   # Job 1: Build Documentation (runs for all events including PRs)
@@ -177,7 +203,10 @@ jobs:
             else
               echo "❌ Failed to obtain downloads_data.json!"
               echo "Creating minimal placeholder..."
-              echo '{"generated_at":"'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'","version_metadata":{},"download_links":{}}' > docs/downloads_data.json
+              # Must match what docs/script.js reads: version_metadata is an
+              # array and the download map is `download_data`. A `download_links`
+              # object made the page render an empty downloads table.
+              echo '{"generated_at":"'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'","version_metadata":[],"download_data":{}}' > docs/downloads_data.json
             fi
           fi
           
@@ -259,9 +288,16 @@ jobs:
           mkdir -p docs-output
           tar -xzf "${ARCHIVE_NAME}" -C docs-output/
           
-          # Verify extraction
+          # Verify extraction. A tree without an entry page is not a degraded
+          # deployment, it is a broken one: the Doxygen cpp_api/ subdirectory
+          # alone still yields ~96k files, which passes every count-based
+          # sanity check while /documentation/dev/ itself serves 404. Fail
+          # here so the upload and deploy steps never see this artifact.
           if [ ! -f "docs-output/index.html" ]; then
-            echo "⚠️  Warning: index.html not found in extracted documentation"
+            echo "❌ index.html is missing from the extracted documentation."
+            echo "   The Sphinx step did not produce a usable tree; the"
+            echo "   artifact holds only Doxygen output. Refusing to deploy."
+            exit 1
           fi
           
           echo ""
@@ -292,139 +328,18 @@ jobs:
           if-no-files-found: error
           retention-days: 1  # Short retention, only needed for deploy job
       
-      - name: Upload website-deploy for deploy job
+      - name: Prepare the website for deployment
         if: steps.config.outputs.should_deploy == 'true'
-        run: |
-          echo "📋 Preparing main website with generated downloads_data.json..."
-          echo ""
-          
-          # Create website deployment directory
-          mkdir -p website-deploy
-          
-          # Copy main website files (excluding build artifacts)
-          echo "Copying main website files..."
-          rsync -av --exclude='_out' --exclude='_build' --exclude='*.pyc' \
-                --exclude='__pycache__' --exclude='.pytest_cache' \
-                docs/ website-deploy/
-          
-          # ============================================================
-          # Replace @VERSION@ placeholder in index.html
-          # Mode B: Website version should match the stable documentation
-          # ============================================================
-          echo ""
-          echo "🔄 Replacing @VERSION@ placeholder in website files..."
-          echo "   (Mode B: Website version = Latest stable release)"
-          
-          # Determine version to use
-          IS_RELEASE="${{ steps.config.outputs.is_release }}"
-          RELEASE_VERSION="${{ steps.config.outputs.release_version }}"
-          
-          if [ "$IS_RELEASE" == "true" ] && [ -n "$RELEASE_VERSION" ]; then
-            # For releases, use the release tag (e.g., v3.9.4)
-            WEBSITE_VERSION="$RELEASE_VERSION"
-            echo "  Release build: using $WEBSITE_VERSION"
-          else
-            # For main branch (Mode B): Use the latest stable release version
-            # This keeps website version consistent with /documentation/ (stable)
-            echo "  Development build: looking for latest stable release..."
-            
-            # Try to get latest release tag from GitHub
-            LATEST_RELEASE=$(gh release list --limit 10 --json tagName -q '.[].tagName' 2>/dev/null | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || true)
-            
-            if [ -n "$LATEST_RELEASE" ]; then
-              WEBSITE_VERSION="$LATEST_RELEASE"
-              echo "  Found latest stable release: $WEBSITE_VERSION"
-            else
-              # Fallback: extract version from version.txt
-              echo "  No stable release found, falling back to version.txt..."
-              VERSION_FILE="libs/cloudViewer/version.txt"
-              if [ -f "$VERSION_FILE" ]; then
-                MAJOR=$(grep "CLOUDVIEWER_VERSION_MAJOR" "$VERSION_FILE" | awk '{print $2}')
-                MINOR=$(grep "CLOUDVIEWER_VERSION_MINOR" "$VERSION_FILE" | awk '{print $2}')
-                PATCH=$(grep "CLOUDVIEWER_VERSION_PATCH" "$VERSION_FILE" | awk '{print $2}')
-                if [ -n "$MAJOR" ] && [ -n "$MINOR" ] && [ -n "$PATCH" ]; then
-                  WEBSITE_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
-                else
-                  WEBSITE_VERSION="dev"
-                fi
-              else
-                WEBSITE_VERSION="dev"
-              fi
-              echo "  Using fallback version: $WEBSITE_VERSION"
-            fi
-          fi
-          
-          echo "  Version to use: $WEBSITE_VERSION"
-          
-          # Replace @VERSION@ in index.html
-          if [ -f "website-deploy/index.html" ]; then
-            if grep -q '@VERSION@' website-deploy/index.html; then
-              sed -i "s/@VERSION@/$WEBSITE_VERSION/g" website-deploy/index.html
-              echo "  ✅ Replaced @VERSION@ with $WEBSITE_VERSION in index.html"
-            else
-              echo "  ℹ️  No @VERSION@ placeholder found in index.html"
-            fi
-          fi
-          
-          # Inject the latest stable version into 404.html so the 404
-          # fallback page can redirect legacy flat /documentation/ deep links
-          # (e.g. /documentation/getting_started/build_from_source.html) to
-          # the equivalent page under /documentation/<latest-stable>/.
-          # The page itself gates on a vX.Y.Z|dev pattern, so a failed
-          # injection degrades safely to the plain 404 view.
-          if [ -f "website-deploy/404.html" ]; then
-            sed -i "s/@LATEST_STABLE_VERSION@/$WEBSITE_VERSION/g" website-deploy/404.html
-            echo "  ✅ Injected latest stable version ($WEBSITE_VERSION) into 404.html"
-          fi
-          
-          # ============================================================
-          # Ensure downloads_data.json is included
-          # ============================================================
-          if [ -f "docs/downloads_data.json" ]; then
-            echo "✅ downloads_data.json ready for deployment"
-            cp docs/downloads_data.json website-deploy/
-            echo "  Size: $(du -h docs/downloads_data.json | cut -f1)"
-            echo "  Versions: $(jq '.version_metadata | length' docs/downloads_data.json)"
-          else
-            echo "⚠️ downloads_data.json not found, using placeholder"
-            echo '{"generated_at":"'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'","version_metadata":{},"download_links":{}}' > website-deploy/downloads_data.json
-          fi
-          
-          # Create a README for the documentation subdirectory link
-          # Every link below targets a page that is verified to exist in the
-          # built tree. The previous Quick Links pointed at
-          # /documentation/python_api/, /cpp_api/ and /tutorial/, which are
-          # 404s: the versioned layout made /documentation/ a redirect stub,
-          # and the real entries are `cpp_api.html` and `tutorial/index.html`.
-          # python_api/ is omitted entirely -- it is only produced when the
-          # Python bindings import successfully, which the docs build does not
-          # guarantee, so linking it would advertise a page that may not exist.
-          # `@DOC_LATEST@` is expanded by deploy_unified_docs.sh to the version
-          # that was actually deployed.
-          cat > website-deploy/DOCUMENTATION.md << 'DOCEOF'
-          # ACloudViewer Documentation
+        env:
+          IS_RELEASE: ${{ steps.config.outputs.is_release }}
+          RELEASE_VERSION: ${{ steps.config.outputs.release_version }}
+          GH_TOKEN: ${{ github.token }}
+        # 130 lines of inline shell lived here. It could not be tested, it ate
+        # the 21000-character budget that silently invalidates a workflow file,
+        # and changing it meant scrolling YAML. The deploy half was already a
+        # script with contract tests; this one now matches it.
+        run: bash docs/automation/scripts/prepare_website.sh
 
-          Full documentation is available at: [/documentation/](/documentation/)
-
-          ## Documentation Structure
-
-          - **Main Website**: Current page (project info, downloads, getting started)
-          - **Documentation**: [/documentation/](/documentation/) (versioned C++ API, tutorials, guides)
-
-          ## Quick Links
-
-          - [C++ API Reference](/documentation/@DOC_LATEST@/cpp_api.html)
-          - [Tutorials](/documentation/@DOC_LATEST@/tutorial/)
-          - [Getting Started](/documentation/@DOC_LATEST@/getting_started/introduction.html)
-          DOCEOF
-          
-          echo ""
-          echo "✅ Main website prepared for deployment"
-          echo ""
-          echo "📊 Website deployment statistics:"
-          echo "  - Total files: $(find website-deploy -type f | wc -l)"
-          echo "  - Total size: $(du -sh website-deploy | cut -f1)"
-      
       - name: Upload website-deploy artifact
         if: steps.config.outputs.should_deploy == 'true'
         uses: actions/upload-artifact@v4
@@ -470,11 +385,22 @@ jobs:
         run: |
           RELEASE_VERSION="${{ steps.config.outputs.release_version }}"
           echo "📤 Uploading documentation archive to release ${RELEASE_VERSION}..."
-          
-          # Rename archive to include version tag for easy identification
-          VERSIONED_ARCHIVE="acloudviewer-${RELEASE_VERSION}-docs.tar.gz"
-          cp acloudviewer-*-docs.tar.gz "${VERSIONED_ARCHIVE}"
-          
+
+          # Reuse the archive this job already produced instead of renaming it
+          # again. The extraction step has ALREADY renamed it to
+          # acloudviewer-<tag>-docs.tar.gz on release builds, so `cp *.tar.gz
+          # <that same name>` fails with "are the same file" (GNU cp exits 1),
+          # which killed build-docs before anything could deploy. Resolve the
+          # single archive by glob and upload it under its own name.
+          shopt -s nullglob
+          archives=(acloudviewer-*-docs.tar.gz)
+          if [ "${#archives[@]}" -ne 1 ]; then
+            echo "❌ Expected exactly one documentation archive, found ${#archives[@]}: ${archives[*]}"
+            exit 1
+          fi
+          VERSIONED_ARCHIVE="${archives[0]}"
+          echo "   Archive: ${VERSIONED_ARCHIVE} ($(du -h "${VERSIONED_ARCHIVE}" | cut -f1))"
+
           gh release upload "${RELEASE_VERSION}" \
             "${VERSIONED_ARCHIVE}" \
             --clobber
@@ -591,17 +517,26 @@ jobs:
           # without any error. Every published version must survive, so this
           # pages through the full release list instead of taking a fixed head.
           # See fetch_all_release_tags below.
+          # `gh release list` has no --page flag, so paginating it is not
+          # possible and the previous loop was wrong in a way that produced no
+          # error: it incremented `page` but never passed it to gh, so every
+          # iteration re-fetched the same first 100 releases. With under 100
+          # releases the loop returned on the first pass and looked correct;
+          # with 100+ it would emit ~5000 duplicate tags and then issue that
+          # many release view/download calls.
+          #
+          # Ask for a single large page instead, and say so when the result
+          # fills that page, because at that point archives are being dropped.
           fetch_all_release_tags() {
-            local page=1 batch=100
-            while [ "$page" -le 50 ]; do
-              local out
-              out=$(gh release list --limit "$batch" --json tagName,isDraft -q '.[] | select(.isDraft|not) | .tagName' 2>/dev/null) || return 0
-              [ -n "$out" ] || return 0
-              printf '%s\n' "$out"
-              # A short batch is the last page; a full one may have more.
-              [ "$(printf '%s\n' "$out" | wc -l)" -lt "$batch" ] && return 0
-              page=$((page + 1))
-            done
+            local batch=1000
+            local out
+            out=$(gh release list --limit "$batch" --json tagName,isDraft \
+                    -q '.[] | select(.isDraft|not) | .tagName' 2>/dev/null) || return 0
+            [ -n "$out" ] || return 0
+            printf '%s\n' "$out"
+            if [ "$(printf '%s\n' "$out" | wc -l)" -ge "$batch" ]; then
+              echo "⚠️  Release list reached the ${batch}-entry limit; older version archives are NOT being restored." >&2
+            fi
           }
 
           echo "📋 All releases:"
@@ -612,6 +547,10 @@ jobs:
           
           FOUND_COUNT=0
           NOT_FOUND_COUNT=0
+          # Releases whose archive downloaded but could not be restored. These
+          # are real regressions (a previously published version would vanish),
+          # as opposed to a release that simply never shipped docs.
+          FAILED_ARCHIVES=""
           
           if [ -n "$RELEASES" ]; then
             echo "✅ Found versioned releases:"
@@ -629,12 +568,27 @@ jobs:
               DOCS_ARCHIVE="acloudviewer-${VERSION}-docs.tar.gz"
               if gh release download "$VERSION" --pattern "$DOCS_ARCHIVE" --dir /tmp 2>/dev/null; then
                 echo "    ✅ Found and downloaded $DOCS_ARCHIVE"
-                mkdir -p "preserved-versions/documentation/$VERSION"
-                tar -xzf "/tmp/$DOCS_ARCHIVE" -C "preserved-versions/documentation/$VERSION/" 2>/dev/null || {
-                  echo "    ⚠️  Failed to extract $DOCS_ARCHIVE"
-                }
+                # Extract into a staging dir first. Creating the target
+                # directory before knowing the archive is readable left an
+                # EMPTY vX.Y.Z/ behind on a corrupt archive; list_version_dirs
+                # then counted it as a deployed version, so versions.json
+                # advertised a release whose pages all 404. Only publish the
+                # directory when extraction actually produced content.
+                rm -rf "preserved-versions/documentation/.staging"
+                mkdir -p "preserved-versions/documentation/.staging"
+                if tar -xzf "/tmp/$DOCS_ARCHIVE" -C "preserved-versions/documentation/.staging" 2>/dev/null \
+                   && [ -f "preserved-versions/documentation/.staging/index.html" ]; then
+                  rm -rf "preserved-versions/documentation/$VERSION"
+                  mv "preserved-versions/documentation/.staging" \
+                     "preserved-versions/documentation/$VERSION"
+                  echo "    ✅ Restored $VERSION ($(find "preserved-versions/documentation/$VERSION" -type f | wc -l) files)"
+                  FOUND_COUNT=$((FOUND_COUNT + 1))
+                else
+                  rm -rf "preserved-versions/documentation/.staging"
+                  echo "    ❌ $DOCS_ARCHIVE is unreadable or has no index.html; not publishing $VERSION"
+                  FAILED_ARCHIVES="$FAILED_ARCHIVES $VERSION"
+                fi
                 rm -f "/tmp/$DOCS_ARCHIVE"
-                FOUND_COUNT=$((FOUND_COUNT + 1))
               else
                 echo "    ⏭️  No documentation archive found for $VERSION"
                 echo "       Expected: $DOCS_ARCHIVE"
@@ -647,6 +601,19 @@ jobs:
             echo "📊 Summary:"
             echo "  - Found archives: $FOUND_COUNT"
             echo "  - Missing archives: $NOT_FOUND_COUNT"
+            echo ""
+            # A release that HAS an archive but whose archive cannot be
+            # restored means a previously published version is about to
+            # disappear from the site (Pages replaces the artifact wholesale,
+            # and versions.json is derived from directories on disk, so a
+            # missing directory also removes the version from every probe).
+            # That is a regression, not a "release never shipped docs" case.
+            if [ -n "$FAILED_ARCHIVES" ]; then
+              echo "❌ Failed to restore archives for:$FAILED_ARCHIVES"
+              echo "   Publishing now would DELETE these versions from the site."
+              echo "   Fix the release asset(s) or remove the release before deploying."
+              exit 1
+            fi
             echo ""
             echo "📊 Preserved version archives:"
             ls -la preserved-versions/documentation/ 2>/dev/null | grep -E '^d.*v[0-9]+' || echo "  (none found)"
@@ -853,8 +820,19 @@ jobs:
           probe "$SITE/" "ACloudViewer" || FAILED=1
           probe "$SITE/documentation/" "index.html" || FAILED=1
           probe "$SITE/documentation/versions.json" '"versions"' || FAILED=1
-          probe "$SITE/documentation/dev/index.html" "documentation" || FAILED=1
-          probe "$SITE/documentation/dev/cpp_api.html" "" || FAILED=1
+
+          # dev is only guaranteed when this deployment actually contains it.
+          # A release build restores dev from the main-devel archive, and that
+          # restore is explicitly tolerated as best-effort above ("No dev
+          # archive on main-devel yet"). Probing it unconditionally turned a
+          # state the pipeline accepts into a failed deployment, so gate the
+          # probes on the artifact instead of on hope.
+          if [ -f unified-deploy/documentation/dev/index.html ]; then
+            probe "$SITE/documentation/dev/index.html" "documentation" || FAILED=1
+            probe "$SITE/documentation/dev/cpp_api.html" "" || FAILED=1
+          else
+            echo "  SKIP /documentation/dev/ (not part of this deployment)"
+          fi
 
           # The 404 handler must carry a calibrated version, otherwise legacy
           # deep links fall through to a bare 404 page.

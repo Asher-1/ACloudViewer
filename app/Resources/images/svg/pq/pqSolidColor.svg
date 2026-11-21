@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-1.0622,-1.1168) scale(1.09307)">
+
+<defs><radialGradient id="solid" cx="0.32" cy="0.28" r="0.9"><stop offset="0.000" stop-color="#E4C093"/><stop offset="0.550" stop-color="#C4813E"/><stop offset="1.000" stop-color="#9A602E"/></radialGradient></defs>
+<title>Solid color swatch</title>  <circle cx="12" cy="12" r="9.6" fill="url(#solid)" stroke="#6F6F59"/>
+
+</g>
+</svg>

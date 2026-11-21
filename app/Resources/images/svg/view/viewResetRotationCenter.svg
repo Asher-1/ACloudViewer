@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-2.9912,-2.3520) scale(1.16211)">
+
+<title>Reset rotation center — recenter target</title>
+  <path d="M 20 8 A 8.7 8.7 0 1 0 21 14 L 18.2 13.5 A 5.9 5.9 0 1 1 17.4 8.8 L 15.2 9.5 L 21.5 11.8 L 22 5.1 Z" fill="#A7D28C" stroke="#6F6F59" stroke-width="0.7"/>  <circle cx="11.5" cy="12" r="2.1" fill="#F3C017" stroke="#6F6F59"/>  <path d="M 11.5 7 V 9.9 M 11.5 14.1 V 17 M 6.5 12 H 9.4 M 13.6 12 H 16.5" fill="none" stroke-width="1.1"/>
+
+</g>
+</svg>

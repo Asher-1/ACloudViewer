@@ -1,18 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="14.583" height="14.583" viewBox="0.708 0.708 14.583 14.583">
-<!-- Commercial HD v10: straight-edge authored polygons sampled
-     from the original raster; pixel-faithful correction layer. -->
-<path d="M1 1 L14 1 L14 14 L1 14 Z M2 2 L2 6 L4 6 L4 2 Z M5 2 L5 6 L8 6 L8 2 Z M9 2 L9 6 L13 6 L13 2 Z M2 7 L2 10 L4 10 L4 7 Z M5 7 L5 10 L8 10 L8 7 Z M9 7 L9 10 L13 10 L13 7 Z M2 11 L2 13 L4 13 L4 11 Z M5 11 L5 13 L8 13 L8 11 Z M9 11 L9 13 L13 13 L13 11 Z" fill="#c9aa00" fill-rule="evenodd"/>
-<path d="M14 2 L15 2 L15 15 L2 15 L2 14 L14 14 Z" fill="#c6c6c6" fill-rule="evenodd"/>
-<path d="M9 2 L13 2 L13 6 L9 6 Z" fill="#fff2b5" fill-rule="evenodd"/>
-<path d="M5 2 L8 2 L8 6 L5 6 Z" fill="#fff2b5" fill-rule="evenodd"/>
-<path d="M9 7 L13 7 L13 10 L9 10 Z" fill="#fff2b5" fill-rule="evenodd"/>
-<path d="M5 7 L8 7 L8 10 L5 10 Z" fill="#fff2b5" fill-rule="evenodd"/>
-<path d="M2 2 L4 2 L4 6 L2 6 Z" fill="#fff2b5" fill-rule="evenodd"/>
-<path d="M9 11 L13 11 L13 13 L9 13 Z" fill="#fff2b5" fill-rule="evenodd"/>
-<path d="M2 7 L4 7 L4 10 L2 10 Z" fill="#fff2b5" fill-rule="evenodd"/>
-<path d="M5 11 L8 11 L8 13 L5 13 Z" fill="#fff2b5" fill-rule="evenodd"/>
-<rect x="2" y="11" width="1" height="1" fill="#fff2b5"/>
-<rect x="3" y="11" width="1" height="1" fill="#fff2b5"/>
-<rect x="2" y="12" width="1" height="1" fill="#fff2b5"/>
-<rect x="3" y="12" width="1" height="1" fill="#fff2b5"/>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="128" height="128" viewBox="0 0 64 64">
+  <path d="M0 0 C17.16 0 34.32 0 52 0 C52 1.32 52 2.64 52 4 C53.32 4 54.64 4 56 4 C56 21.16 56 38.32 56 56 C38.84 56 21.68 56 4 56 C4 54.68 4 53.36 4 52 C2.68 52 1.36 52 0 52 C0 34.84 0 17.68 0 0 Z " fill="#C9AA00" transform="translate(4,4)" />
+  <path d="M0 0 C1.32 0 2.64 0 4 0 C4 17.16 4 34.32 4 52 C-13.16 52 -30.32 52 -48 52 C-48 50.68 -48 49.36 -48 48 C-32.16 48 -16.32 48 0 48 C0 32.16 0 16.32 0 0 Z " fill="#C6C6C6" transform="translate(56,8)" />
+  <path d="M0 0 C5.28 0 10.56 0 16 0 C16 5.28 16 10.56 16 16 C10.72 16 5.44 16 0 16 C0 10.72 0 5.44 0 0 Z " fill="#FFF2B5" transform="translate(36,8)" />
+  <path d="M0 0 C5.28 0 10.56 0 16 0 C16 3.96 16 7.92 16 12 C10.72 12 5.44 12 0 12 C0 8.04 0 4.08 0 0 Z " fill="#FFF2B5" transform="translate(36,28)" />
+  <path d="M0 0 C3.96 0 7.92 0 12 0 C12 5.28 12 10.56 12 16 C8.04 16 4.08 16 0 16 C0 10.72 0 5.44 0 0 Z " fill="#FFF2B5" transform="translate(20,8)" />
+  <path d="M0 0 C3.96 0 7.92 0 12 0 C12 3.96 12 7.92 12 12 C8.04 12 4.08 12 0 12 C0 8.04 0 4.08 0 0 Z " fill="#FFF2B5" transform="translate(20,28)" />
+  <path d="M0 0 C5.28 0 10.56 0 16 0 C16 2.64 16 5.28 16 8 C10.72 8 5.44 8 0 8 C0 5.36 0 2.72 0 0 Z " fill="#FFF2B5" transform="translate(36,44)" />
+  <path d="M0 0 C2.64 0 5.28 0 8 0 C8 5.28 8 10.56 8 16 C5.36 16 2.72 16 0 16 C0 10.72 0 5.44 0 0 Z " fill="#FFF2B5" transform="translate(8,8)" />
+  <path d="M0 0 C3.96 0 7.92 0 12 0 C12 2.64 12 5.28 12 8 C8.04 8 4.08 8 0 8 C0 5.36 0 2.72 0 0 Z " fill="#FFF2B5" transform="translate(20,44)" />
+  <path d="M0 0 C2.64 0 5.28 0 8 0 C8 3.96 8 7.92 8 12 C5.36 12 2.72 12 0 12 C0 8.04 0 4.08 0 0 Z " fill="#FFF2B5" transform="translate(8,28)" />
+  <path d="M0 0 C2.64 0 5.28 0 8 0 C8 2.64 8 5.28 8 8 C5.36 8 2.72 8 0 8 C0 5.36 0 2.72 0 0 Z " fill="#FFF2B5" transform="translate(8,44)" />
 </svg>

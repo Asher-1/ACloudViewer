@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.0436,-0.0436) scale(1.00364)">
+
+<defs><linearGradient id="paper" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#FAFAF6"/><stop offset="1.000" stop-color="#D0E5F6"/></linearGradient></defs>
+<title>Pick a list of points</title>
+  <rect x="3.6" y="1.5" width="16.8" height="21" rx="0.6" fill="url(#paper)" stroke="#6F6F59"/>
+  <circle cx="7.4" cy="5.4" r="1.25" fill="#72BE44" stroke="#6F6F59"/>
+  <path d="M 11 5.4 H 17.6" fill="none" stroke="#2896D3" stroke-width="1.5"/>
+  <circle cx="7.4" cy="9.8" r="1.25" fill="#72BE44" stroke="#6F6F59"/>
+  <path d="M 11 9.8 H 17.6" fill="none" stroke="#2896D3" stroke-width="1.5"/>
+  <circle cx="7.4" cy="14.2" r="1.25" fill="#72BE44" stroke="#6F6F59"/>
+  <path d="M 11 14.2 H 17.6" fill="none" stroke="#2896D3" stroke-width="1.5"/>
+  <circle cx="7.4" cy="18.6" r="1.25" fill="#72BE44" stroke="#6F6F59"/>
+  <path d="M 11 18.6 H 17.6" fill="none" stroke="#2896D3" stroke-width="1.5"/>
+
+</g>
+</svg>

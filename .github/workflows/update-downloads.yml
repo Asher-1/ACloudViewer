@@ -165,14 +165,26 @@ jobs:
             if [ "$CLEANUP_DAYS" != "0" ] && [ -n "$CLEANUP_DAYS" ]; then
               echo "  🗑️  Removing versions older than $CLEANUP_DAYS days..."
               CUTOFF_DATE=$(date -u -d "$CLEANUP_DAYS days ago" +%Y-%m-%d)
-              
+
+              # version_metadata is an ARRAY (docs/script.js calls
+              # versionMetadata.find(...)) and download_data is an object keyed
+              # by version tag. The previous jq treated the array as an object,
+              # so it aborted with "Cannot use number (0) as object key" and the
+              # step never completed.
+              #
+              # The date filter is now conditional on the field existing.
+              # scan_releases.py does not emit release_date, so an unconditional
+              # `select(.release_date >= $cutoff)` would drop EVERY version --
+              # turning a broken filter into data loss.
               jq --arg cutoff "$CUTOFF_DATE" '
-                .version_metadata = (.version_metadata | to_entries | 
-                  map(select(.value.release_date >= $cutoff)) | 
-                  from_entries) |
-                .download_links = (.download_links | to_entries | 
-                  map(select(.key as $k | $k | in(.version_metadata))) | 
-                  from_entries)
+                .version_metadata = (.version_metadata
+                  | map(select(
+                      (.release_date // null) == null
+                      or .release_date >= $cutoff))) |
+                .version_metadata as $kept |
+                .download_data = (.download_data
+                  | with_entries(select(.key as $k
+                      | any($kept[]; .value == $k))))
               ' downloads_data.json.new > downloads_data.json.filtered
               
               REMOVED=$(( $(jq '.version_metadata | length' downloads_data.json.new) - $(jq '.version_metadata | length' downloads_data.json.filtered) ))

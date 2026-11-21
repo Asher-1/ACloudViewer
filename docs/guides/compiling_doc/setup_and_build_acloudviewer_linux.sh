@@ -100,6 +100,32 @@ ${SUDO} apt-get install -y -q zlib1g-dev libbz2-dev libreadline-dev \
     libsqlite3-dev libffi-dev liblzma-dev libncurses-dev libxmlsec1-dev
 
 # ---------------------------------------------------------------------------
+# CMake >= 3.24 gate (cmake_minimum_required). install_deps_ubuntu.sh above
+# installs the pinned pip CMake when the apt one is too old (Ubuntu
+# 20.04/22.04 ship 3.16/3.22), but it may run under sudo (landing in root's
+# ~/.local/bin), so re-check here as the invoking user and fall back to the
+# pinned pip CMake directly if the system one is still unsatisfied.
+# ---------------------------------------------------------------------------
+log "[1/7] Verifying CMake >= 3.24"
+# Must be a version PyPI publishes; 3.31.8 never existed.
+CMAKE_PIP_VERSION="3.31.10"
+cmake_min_ok() {
+    local ver="$(cmake --version 2>/dev/null | awk 'NR == 1 {print $3}' || true)"
+    [[ -n "${ver}" ]] \
+        && [[ "$(printf '%s\n%s\n' "${ver}" "3.24" | sort -V | head -n1)" == "3.24" ]]
+}
+if ! cmake_min_ok; then
+    warn "CMake $(cmake --version 2>/dev/null | awk 'NR == 1 {print $3}' || echo '<missing>') found; installing the pinned pip CMake ${CMAKE_PIP_VERSION}."
+    python3 -m pip install --user --upgrade "cmake==${CMAKE_PIP_VERSION}" \
+        || die "pip install cmake failed; install CMake >= 3.24 manually: https://apt.kitware.com/ (Ubuntu) / https://cmake.org/download/"
+    # The pip wheel lands in ~/.local/bin/cmake; put it ahead on PATH for the
+    # cmake configure in [6/7].
+    export PATH="${HOME}/.local/bin:${PATH}"
+fi
+cmake_min_ok || die "CMake >= 3.24 still unavailable after the pip fallback (https://apt.kitware.com/ / https://cmake.org/download/)"
+echo "CMake $(cmake --version | awk 'NR == 1 {print $3}') OK"
+
+# ---------------------------------------------------------------------------
 # [2/7] pyenv + Python (skip when the requested version already exists)
 # ---------------------------------------------------------------------------
 log "[2/7] Setting up pyenv + Python ${PYTHON_VERSION}"

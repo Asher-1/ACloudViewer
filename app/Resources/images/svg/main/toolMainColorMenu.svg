@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.5646,-0.6171) scale(1.05143)">
+
+<title>Color menu — color wheel</title>
+  <path d="M 12 12 L 12 2 A 10 10 0 0 1 20.6603 7 Z" fill="#F3C017" stroke="none"/>
+  <path d="M 12 12 L 20.6603 7 A 10 10 0 0 1 20.6603 17 Z" fill="#C4813E" stroke="none"/>
+  <path d="M 12 12 L 20.6603 17 A 10 10 0 0 1 12 22 Z" fill="#9AC1E0" stroke="none"/>
+  <path d="M 12 12 L 12 22 A 10 10 0 0 1 3.33975 17 Z" fill="#2896D3" stroke="none"/>
+  <path d="M 12 12 L 3.33975 17 A 10 10 0 0 1 3.33975 7 Z" fill="#72BE44" stroke="none"/>
+  <path d="M 12 12 L 3.33975 7 A 10 10 0 0 1 12 2 Z" fill="#A7D28C" stroke="none"/>
+  <circle cx="12" cy="12" r="10" fill="none" stroke="#6F6F59"/>
+  <circle cx="12" cy="12" r="4.5" fill="#787878" stroke="#6F6F59"/>
+
+</g>
+</svg>

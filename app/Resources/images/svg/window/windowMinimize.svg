@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-1.9453,-1.9453) scale(1.16211)">
+
+<title>Minimize window — collapse to a bar</title>
+  <rect x="3" y="3" width="18" height="18" rx="0.4" fill="#D0E5F6" stroke="#6F6F59"/>  <path d="M 10.6 5.6 H 13.4 V 11.6 H 15.8 L 12 15.6 L 8.2 11.6 H 10.6 Z" fill="#F3C017" stroke="#6F6F59" stroke-width="0.55"/>  <path d="M 5 17 H 19 V 19.4 H 5 Z" fill="#F3C017" stroke="#6F6F59" stroke-width="0.55"/>
+
+</g>
+</svg>

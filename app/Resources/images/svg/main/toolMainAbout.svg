@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.2156,-0.2667) scale(1.02222)">
+
+<defs><radialGradient id="button" cx="0.4" cy="0.3" r="0.9"><stop offset="0.000" stop-color="#FAFAF6"/><stop offset="0.700" stop-color="#E0E0E0"/><stop offset="1.000" stop-color="#CDCDCD"/></radialGradient></defs>
+<title>About — information symbol</title>
+  <circle cx="12" cy="12" r="10.3" fill="url(#button)" stroke="#6F6F59"/>
+  <circle cx="12.3" cy="6.8" r="1.2" fill="#2896D3" stroke="none"/>  <path d="M 10.1 10 H 13.6 L 12.3 16.7 H 14.3 V 18 H 8.8 V 16.7 H 10.3 L 11.3 11.4 H 10.1 Z" fill="#2896D3" stroke="none"/>
+
+</g>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.6171,-1.1429) scale(1.05143)">
+
+<defs><linearGradient id="folder" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#D0E5F6"/><stop offset="1.000" stop-color="#2896D3"/></linearGradient></defs>
+<title>Open file</title>
+  <path d="M 2 4 H 10 L 12 6 H 22 V 21 H 2 Z" fill="url(#folder)" stroke="#6F6F59"/>
+  <path d="M 5 9 H 22 L 19 21 H 2 Z" fill="#9AC1E0" stroke="#6F6F59"/>
+  <path d="M 12 9 H 18 V 13 H 20 L 15 18 L 10 13 H 12 Z" fill="#F3C017" stroke="#6F6F59" stroke-width="0.7"/>
+
+</g>
+</svg>

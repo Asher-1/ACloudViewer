@@ -116,7 +116,7 @@ install_glslc_from_source() {
     cmake_version="$("${cmake_bin}" --version | awk 'NR == 1 {print $3}')"
     if ! version_at_least "${cmake_version}" "3.22.1"; then
         echo "System CMake ${cmake_version} is too old for ${shaderc_tag}; installing a build-only CMake." >&2
-        python3 -m pip install --user --upgrade "cmake==3.31.6"
+        python3 -m pip install --user --upgrade "cmake==${CMAKE_PIP_VERSION:-3.31.10}"
         cmake_bin="${HOME}/.local/bin/cmake"
     fi
 

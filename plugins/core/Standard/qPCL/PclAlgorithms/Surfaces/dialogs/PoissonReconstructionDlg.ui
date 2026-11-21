@@ -21,7 +21,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../../../qPCL.qrc">
-    <normaloff>:/toolbar/PclAlgorithms/icons/poisson.png</normaloff>:/toolbar/PclAlgorithms/icons/poisson.png</iconset>
+    <normaloff>:/qPCL/icons/pclPoissonReconstruction.svg</normaloff>:/qPCL/icons/pclPoissonReconstruction.svg</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>

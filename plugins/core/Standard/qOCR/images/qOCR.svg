@@ -1,17 +1,3 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="1.604 1.604 44.792 44.792" width="44.792" height="44.792">
-  <!-- document sheet -->
-  <rect x="6" y="4" width="36" height="40" rx="4" fill="#eef3fb" stroke="#2c5aa0" stroke-width="2.5"/>
-  <!-- scan frame corners -->
-  <path d="M6 14 L6 4 L16 4" fill="none" stroke="#e07b39" stroke-width="3" stroke-linecap="round"/>
-  <path d="M32 4 L42 4 L42 14" fill="none" stroke="#e07b39" stroke-width="3" stroke-linecap="round"/>
-  <path d="M42 34 L42 44 L32 44" fill="none" stroke="#e07b39" stroke-width="3" stroke-linecap="round"/>
-  <path d="M16 44 L6 44 L6 34" fill="none" stroke="#e07b39" stroke-width="3" stroke-linecap="round"/>
-  <!-- recognized text lines -->
-  <rect x="12" y="11" width="13" height="3.4" rx="1" fill="#2c5aa0"/>
-  <rect x="12" y="17" width="20" height="3.4" rx="1" fill="#5a8fd0"/>
-  <rect x="12" y="23" width="9" height="3.4" rx="1" fill="#5a8fd0"/>
-  <!-- detection box over a word -->
-  <rect x="23" y="21.6" width="14" height="6.6" fill="none" stroke="#27a745" stroke-width="1.8" stroke-dasharray="2.6 1.6"/>
-  <!-- OCR lettering -->
-  <text x="24" y="38.5" font-family="Arial, Helvetica, sans-serif" font-size="12.5" font-weight="bold" fill="#2c5aa0" text-anchor="middle" letter-spacing="1">OCR</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 64 64" stroke="#6F6F59" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+<title>OCR — AICore plugin</title><g stroke-width=".85" transform="translate(9 1) scale(1.95)">  <path d="M 5 2 H 16 L 20 6 V 21 H 5 Z" fill="#D0E5F6" stroke="#6F6F59"/>  <path d="M 16 2 V 6 H 20" fill="#9AC1E0" stroke="#6F6F59"/>  <path d="M 8 10 H 16 M 8 13 H 16 M 8 16 H 13" fill="none" stroke-width="0.7"/>  <circle cx="17" cy="16" r="3.1" fill="none" stroke="#72BE44"/>  <path d="M 19.3 18.3 L 22 21" fill="none" stroke="#2896D3" stroke-width="1.1"/></g>  <rect x="2.5" y="45.4" width="59" height="16.300000000000004" rx="1.3" fill="#D0E5F6" stroke="#6F6F59"/><g data-plugin-name="OCR" data-name-lines="1"><path data-label="OCR" d="M870 -1241Q694 -1241 597.0 -1111.0Q500 -981 500 -745Q500 -510 597.0 -380.0Q694 -250 870 -250Q1047 -250 1144.0 -380.0Q1241 -510 1241 -745Q1241 -981 1144.0 -1111.0Q1047 -1241 870 -1241ZM870 -1520Q1230 -1520 1434.0 -1314.0Q1638 -1108 1638 -745Q1638 -383 1434.0 -177.0Q1230 29 870 29Q511 29 306.5 -177.0Q102 -383 102 -745Q102 -1108 306.5 -1314.0Q511 -1520 870 -1520ZM3113 -82Q3007 -27 2892.0 1.0Q2777 29 2652 29Q2279 29 2061.0 -179.5Q1843 -388 1843 -745Q1843 -1103 2061.0 -1311.5Q2279 -1520 2652 -1520Q2777 -1520 2892.0 -1492.0Q3007 -1464 3113 -1409V-1100Q3006 -1173 2902.0 -1207.0Q2798 -1241 2683 -1241Q2477 -1241 2359.0 -1109.0Q2241 -977 2241 -745Q2241 -514 2359.0 -382.0Q2477 -250 2683 -250Q2798 -250 2902.0 -284.0Q3006 -318 3113 -391ZM3979 -831Q4100 -831 4152.5 -876.0Q4205 -921 4205 -1024Q4205 -1126 4152.5 -1170.0Q4100 -1214 3979 -1214H3817V-831ZM3817 -565V0H3432V-1493H4020Q4315 -1493 4452.5 -1394.0Q4590 -1295 4590 -1081Q4590 -933 4518.5 -838.0Q4447 -743 4303 -698Q4382 -680 4444.5 -616.5Q4507 -553 4571 -424L4780 0H4370L4188 -371Q4133 -483 4076.5 -524.0Q4020 -565 3926 -565Z" transform="translate(15.61110 58.00529) scale(0.006714)" fill="#343C30" stroke="none"/></g>
 </svg>

@@ -29,7 +29,7 @@ void ecvCustomViewpointsToolbar::constructor() {
     this->BasePixmap.fill(QColor(0, 0, 0, 0));
     QPainter pixPaint(&this->BasePixmap);
     pixPaint.drawPixmap(0, 0, 48, 48,
-                        QPixmap(":/Resources/images/svg/pqCamera.png"));
+                        QPixmap(":/Resources/images/svg/pq/pqCamera.svg"));
 
     // Create plus pixmap
     this->PlusPixmap = this->BasePixmap.copy();
@@ -39,7 +39,7 @@ void ecvCustomViewpointsToolbar::constructor() {
     this->ConfigPixmap = this->BasePixmap.copy();
     QPainter pixWithConfigPaint(&this->ConfigPixmap);
     pixWithConfigPaint.drawPixmap(
-            32, 32, 32, 32, QPixmap(":/Resources/images/svg/pqWrench.png"));
+            32, 32, 32, 32, QPixmap(":/Resources/images/svg/pq/pqWrench.svg"));
 
     this->PlusAction = this->ConfigAction = nullptr;
 

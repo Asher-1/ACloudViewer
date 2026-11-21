@@ -34,7 +34,7 @@ RegionGrowingSegmentation::RegionGrowingSegmentation()
               tr("Region Growing Segmentation"),
               tr("Region Growing Segmentation"),
               tr("Region Growing Segmentation from clouds"),
-              ":/toolbar/PclAlgorithms/icons/Regiongrowing.png")),
+              ":/qPCL/icons/pclRegionGrowing.svg")),
       m_dialog(nullptr),
       m_basedRgb(false),
       m_k_search(50),

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.0914,-0.7749) scale(1.05143)">
+
+<defs><radialGradient id="surface" cx="0.3" cy="0.25" r="0.9"><stop offset="0.000" stop-color="#A7D28C"/><stop offset="0.700" stop-color="#72BE44"/><stop offset="1.000" stop-color="#4E8C2E"/></radialGradient></defs>
+<title>Point-cloud to analytic primitive distance — point to surface</title>
+  <circle cx="16" cy="8" r="5.6" fill="url(#surface)" stroke="#6F6F59"/>
+  <path d="M 16 2.4 C 12.5 4.1 12.5 11.9 16 13.6 M 16 2.4 C 19.5 4.1 19.5 11.9 16 13.6 M 10.7 6.1 Q 16 9.2 21.3 6.1 M 10.7 9.9 Q 16 6.8 21.3 9.9" fill="none" stroke="#6F6F59" stroke-width="0.55"/>
+  <path d="M 6.5 17.2 L 12.04 11.96" fill="none" stroke="#6F6F59" stroke-width="1.45"/>
+  <path d="M 6.5 17.2 L 12.04 11.96" fill="none" stroke="#F3C017" stroke-width="0.9"/>
+  <path d="M 12.04 11.96 L 11.497935349613199 13.57126221168407 L 10.401084381557121 12.411614432479743 Z" fill="#F3C017" stroke="none"/>
+  <path d="M 6.5 17.2 L 8.138915618442878 16.74838556752026 L 7.042064650386799 15.58873778831593 Z" fill="#F3C017" stroke="none"/>
+  <path d="M 5.7 16.5 L 7.3 18 M 11.3 11.3 L 12.8 12.8" fill="none" stroke="#787878" stroke-width="0.75"/>
+  <circle cx="12.04" cy="11.96" r="0.6" fill="#A7D28C" stroke="#6F6F59"/>
+  <circle cx="2.3" cy="12.3" r="0.85" fill="#2896D3" stroke="#6F6F59"/>
+  <circle cx="5" cy="8.8" r="0.8" fill="#2896D3" stroke="#6F6F59"/>
+  <circle cx="6.5" cy="17.2" r="1.05" fill="#2896D3" stroke="#6F6F59"/>
+  <circle cx="3.2" cy="20.8" r="0.85" fill="#2896D3" stroke="#6F6F59"/>
+  <circle cx="9" cy="21" r="0.85" fill="#2896D3" stroke="#6F6F59"/>
+  <circle cx="12.3" cy="18.5" r="0.8" fill="#2896D3" stroke="#6F6F59"/>
+
+</g>
+</svg>

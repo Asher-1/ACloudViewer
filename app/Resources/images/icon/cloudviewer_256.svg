@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<g transform="translate(-0.000000,-0.000000) scale(0.023438)">
   <defs>
     <linearGradient id="cvRibbon" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="1024">
       <stop offset="0.21" stop-color="#92E5EE"/>
@@ -114,4 +115,5 @@
     <circle cx="546.5" cy="641.4" r="5.4" fill="#D89E5F"/>
     <circle cx="511.1" cy="649.1" r="6.2" fill="#D99E5C"/>
   </g>
+</g>
 </svg>

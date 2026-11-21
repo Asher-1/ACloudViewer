@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.6775,-0.7303) scale(1.05646)">
+
+<defs><linearGradient id="surface" x1="0.0" y1="0.0" x2="1" y2="0"><stop offset="0.000" stop-color="#4E8C2E"/><stop offset="0.400" stop-color="#A7D28C"/><stop offset="0.650" stop-color="#72BE44"/><stop offset="1.000" stop-color="#4E8C2E"/></linearGradient></defs>
+<title>Cone or truncated-cone primitive</title>
+  <path d="M 12 2 L 22 18.5 C 22 23.2 2 23.2 2 18.5 Z" fill="url(#surface)" stroke="#6F6F59"/>
+  <path d="M 2 18.5 C 5 21.8 19 21.8 22 18.5" fill="none" stroke-width="0.65"/>
+
+</g>
+</svg>

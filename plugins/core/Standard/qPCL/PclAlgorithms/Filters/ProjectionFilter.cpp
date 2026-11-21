@@ -28,7 +28,7 @@ ProjectionFilter::ProjectionFilter()
               tr("Projection Filter"),
               tr("Projection Filter"),
               tr("Projection Filter for the selected entity"),
-              ":/toolbar/PclAlgorithms/icons/filter_projection.png")),
+              ":/qPCL/icons/pclProjectionFilter.svg")),
       m_dialog(nullptr),
       m_projectionMode(true),
       m_coefficientA(0.0f),

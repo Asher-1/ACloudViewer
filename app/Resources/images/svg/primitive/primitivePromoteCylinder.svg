@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-1.2480,-0.7859) scale(1.02698)">
+
+<defs><linearGradient id="wall" x1="0.0" y1="0.0" x2="1" y2="0"><stop offset="0.000" stop-color="#D0E5F6"/><stop offset="0.500" stop-color="#9AC1E0"/><stop offset="1.000" stop-color="#2896D3"/></linearGradient></defs>
+<title>Promote a selected circle to a cylinder — extrusion</title>
+  <path d="M 3 7 C 3 12 17 12 17 7 V 19 C 17 24 3 24 3 19 Z" fill="url(#wall)" stroke="#6F6F59"/><ellipse cx="10" cy="7" rx="7" ry="3.3" fill="#A7D28C" stroke="#6F6F59"/>  <path d="M 19 15 V 7 H 17 L 20.3 2 L 23 7 H 21 V 15 Z" fill="#F3C017" stroke="#6F6F59" stroke-width="0.6"/>
+
+</g>
+</svg>

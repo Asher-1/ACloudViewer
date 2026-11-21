@@ -1,0 +1,222 @@
+{
+  "ParaView_commit": "f3a6d92607d6933628addca3d77cf41c59532072",
+  "items": [
+    {
+      "id": 1,
+      "name": "pqAxes.svg",
+      "status": "source-measured-geometry",
+      "source": "/home/ludahai/develop/code/github/ParaView/Qt/Components/Resources/Icons/pqAxes.png",
+      "source_sha256": "07a31b89464bcc7299fc5121dd0ff545cc3163e3b37969b4e73ab1b29fcf7e37",
+      "sha256": "53b258fdc54b918ef1ffd37d423eeab654d3fa4571790a04e20948eab6c5050f"
+    },
+    {
+      "id": 2,
+      "name": "pqContours.svg",
+      "status": "source-measured-geometry",
+      "source": "/home/ludahai/ACloudViewer-icon-reviews/pq-mosaic-repair/originals/pqContours.svg",
+      "source_sha256": "d16db453db6a8bd47da07922aaf639a957321ed9f05256656b1934eac5e7bae0",
+      "sha256": "e87fe994c34c94ca769937f1fc02f224f3b45fd238fe2afdbc5eb953338a1b72"
+    },
+    {
+      "id": 3,
+      "name": "pqFixedRepr32.svg",
+      "status": "vtracer-png",
+      "source": "/home/ludahai/develop/code/github/ParaView/Qt/Components/Resources/Icons/pqFixedRepr32.png",
+      "source_sha256": "602ec9903d4384cc990a522a4c8c407d224810a59bc6628ea8a4a12b28db3bca",
+      "sha256": "c0aa5ab71dc609fbc0c522364e44caee0edab756664ba2256f4b60e33c751fde"
+    },
+    {
+      "id": 4,
+      "name": "pqInvert.svg",
+      "status": "direct-svg",
+      "source": "/home/ludahai/develop/code/github/ParaView/Qt/Components/Resources/Icons/pqInvert.svg",
+      "source_sha256": "13e6062f8b68f0eb6357c655e98e9dfe61d49f9359a16004c886c539006421ae",
+      "sha256": "13e6062f8b68f0eb6357c655e98e9dfe61d49f9359a16004c886c539006421ae"
+    },
+    {
+      "id": 5,
+      "name": "pqRamp24.svg",
+      "status": "source-measured-geometry",
+      "source": "/home/ludahai/develop/code/github/ParaView/Qt/Components/Resources/Icons/pqRamp24.png",
+      "source_sha256": "f27f2a1bbe3fca38046c7be5d2c8e514becefbb2e8b9ef910d2e044acd2839ad",
+      "sha256": "5bd2058b4ddbacec087cc76ca62e34a0f2697394b76e580358f42f97a1b38022"
+    },
+    {
+      "id": 6,
+      "name": "pqRectilinearGrid16.svg",
+      "status": "vtracer-png",
+      "source": "/home/ludahai/develop/code/github/ParaView/Qt/Components/Resources/Icons/pqRectilinearGrid16.png",
+      "source_sha256": "518ebb0efc1b08b6b4b7db667a7f08f68b700ebde6bd1e2e49dbd4f295b48dcc",
+      "sha256": "2dfbf7204d83dcb74b1ec068afcf26f13d6de020003592f380f3218f4175527b"
+    },
+    {
+      "id": 7,
+      "name": "pqSaveTable32.svg",
+      "status": "source-measured-geometry",
+      "source": "/home/ludahai/develop/code/github/ParaView/Qt/Components/Resources/Icons/pqSaveTable32.png",
+      "source_sha256": "796d21a752b6ed7af9233eaf92f322d3eff5b5245a52e2efca147670936114a1",
+      "sha256": "4d6eb2cb7e48344fd7d9fc3a8d009d03e4b69d32496692ef0c71e4fd4bda67b3"
+    },
+    {
+      "id": 8,
+      "name": "pqSelect16.svg",
+      "status": "source-measured-geometry",
+      "source": "/home/ludahai/develop/code/github/ParaView/Qt/Components/Resources/Icons/pqSelect16@2x.png",
+      "source_sha256": "38a95f7955025d091fd281a72c45b9afce7ca864421ccf3ef50343021d6c5427",
+      "sha256": "c647f4762c3cf32dc89d96f44ba07504d44b28c6b7781ea676a2464712c49e61"
+    },
+    {
+      "id": 9,
+      "name": "pqXMinus.svg",
+      "status": "direct-svg",
+      "source": "/home/ludahai/develop/code/github/ParaView/Qt/Components/Resources/Icons/pqXMinus.svg",
+      "source_sha256": "0bef9498a943ae44b3b6fedc9a956df2ff71271f430daf90bd1372b403d8274c",
+      "sha256": "0bef9498a943ae44b3b6fedc9a956df2ff71271f430daf90bd1372b403d8274c"
+    },
+    {
+      "id": 10,
+      "name": "pqXPlus.svg",
+      "status": "direct-svg",
+      "source": "/home/ludahai/develop/code/github/ParaView/Qt/Components/Resources/Icons/pqXPlus.svg",
+      "source_sha256": "263e0a7a4046964533f24ef74135c20b32db2961d092b63d516f07976f30e20f",
+      "sha256": "263e0a7a4046964533f24ef74135c20b32db2961d092b63d516f07976f30e20f"
+    },
+    {
+      "id": 11,
+      "name": "pqYMinus.svg",
+      "status": "direct-svg",
+      "source": "/home/ludahai/develop/code/github/ParaView/Qt/Components/Resources/Icons/pqYMinus.svg",
+      "source_sha256": "4d225581a18b8782c976d07d2c9969701453f8ad517d4d31765d43570a2b53ce",
+      "sha256": "4d225581a18b8782c976d07d2c9969701453f8ad517d4d31765d43570a2b53ce"
+    },
+    {
+      "id": 12,
+      "name": "pqYPlus.svg",
+      "status": "direct-svg",
+      "source": "/home/ludahai/develop/code/github/ParaView/Qt/Components/Resources/Icons/pqYPlus.svg",
+      "source_sha256": "e5c241699b73f161db6e60b1f70f1e5681bf6e778a0870fd97e166c1f115c953",
+      "sha256": "e5c241699b73f161db6e60b1f70f1e5681bf6e778a0870fd97e166c1f115c953"
+    },
+    {
+      "id": 13,
+      "name": "pqZMinus.svg",
+      "status": "direct-svg",
+      "source": "/home/ludahai/develop/code/github/ParaView/Qt/Components/Resources/Icons/pqZMinus.svg",
+      "source_sha256": "e54b733b8fca529ca9718b63fdc6d96ee1d8f9ace7a93fe4c82a41df6003ab7e",
+      "sha256": "e54b733b8fca529ca9718b63fdc6d96ee1d8f9ace7a93fe4c82a41df6003ab7e"
+    },
+    {
+      "id": 14,
+      "name": "pqZPlus.svg",
+      "status": "direct-svg",
+      "source": "/home/ludahai/develop/code/github/ParaView/Qt/Components/Resources/Icons/pqZPlus.svg",
+      "source_sha256": "087703b22baefd7a930b8dd9c581ff8c702068e5712902938f904ccac48381e1",
+      "sha256": "087703b22baefd7a930b8dd9c581ff8c702068e5712902938f904ccac48381e1"
+    },
+    {
+      "id": 15,
+      "name": "pqCalculator.svg",
+      "status": "approved-keep",
+      "source": "/home/ludahai/develop/code/github/ACloudViewer/app/Resources/images/svg/pq/pqCalculator.svg",
+      "source_sha256": "0e18da12866b4629aebcc715ef0282bbbd4a3a490237944d73bc9879124e2158",
+      "sha256": "0e18da12866b4629aebcc715ef0282bbbd4a3a490237944d73bc9879124e2158"
+    },
+    {
+      "id": 16,
+      "name": "pqFaceSetData.svg",
+      "status": "approved-keep",
+      "source": "/home/ludahai/develop/code/github/ACloudViewer/app/Resources/images/svg/pq/pqFaceSetData.svg",
+      "source_sha256": "a27bc2294e3414adca529adba474db5653c2c4855347f859bee73f97752ac0cc",
+      "sha256": "a27bc2294e3414adca529adba474db5653c2c4855347f859bee73f97752ac0cc"
+    },
+    {
+      "id": 17,
+      "name": "filterProbeLocation.svg",
+      "status": "direct-svg",
+      "source": "/home/ludahai/develop/code/github/ParaView/Qt/Components/Resources/Icons/pqProbeLocation.svg",
+      "source_sha256": "01a66ec324a36ef22153dd09f444fed6511fa8def5207611f66ebd96d64f7726",
+      "sha256": "199f6c271a0715c5cc6bc83b0b58515e3dccfb986ec2bfe930cd858fcc573218",
+      "dir": "filter",
+      "default_size": [
+        128,
+        128
+      ]
+    },
+    {
+      "id": 18,
+      "name": "pqRecentFile.svg",
+      "status": "direct-svg",
+      "source": "/home/ludahai/develop/code/github/ParaView/Qt/Components/Resources/Icons/pqRecentFile.svg",
+      "source_sha256": "9cd7091ee63c95f8af6924ea7bcd2b4c6fa7ca2237890f33616a7e5681515514",
+      "sha256": "9cd7091ee63c95f8af6924ea7bcd2b4c6fa7ca2237890f33616a7e5681515514"
+    },
+    {
+      "id": 19,
+      "name": "pqSolidColor.svg",
+      "status": "approved-keep",
+      "source": "/home/ludahai/develop/code/github/ACloudViewer/app/Resources/images/svg/pq/pqSolidColor.svg",
+      "source_sha256": "3100c7b7ed791c26b309e79fa734a930d91a34738426c85583bbffcf1caf12ba",
+      "sha256": "3100c7b7ed791c26b309e79fa734a930d91a34738426c85583bbffcf1caf12ba"
+    },
+    {
+      "id": 20,
+      "name": "pqShowOrientationAxes.svg",
+      "status": "direct-svg",
+      "source": "/home/ludahai/develop/code/github/ParaView/Qt/Components/Resources/Icons/pqShowOrientationAxes.svg",
+      "source_sha256": "14772f5b0013aa84de64fe4c3dc45581d360197c0bac0a57e814f2025a25e345",
+      "sha256": "14772f5b0013aa84de64fe4c3dc45581d360197c0bac0a57e814f2025a25e345"
+    },
+    {
+      "id": 21,
+      "name": "filterClip.svg",
+      "dir": "filter",
+      "status": "direct-svg",
+      "source": "/home/ludahai/develop/code/github/ParaView/Qt/Components/Resources/Icons/pqClip.svg",
+      "source_sha256": "f149c2ff95a3dc95bd3433ef8aaa3ef070b6dd0568b7f4dca6a80723e2b7937f",
+      "sha256": "018426ca532c54caf05adfc122cb3dd621b28a1903f40ecee585870e608b25d5",
+      "default_size": [
+        128,
+        128
+      ]
+    },
+    {
+      "id": 22,
+      "name": "filterSlice.svg",
+      "dir": "filter",
+      "status": "direct-svg",
+      "source": "/home/ludahai/develop/code/github/ParaView/Qt/Components/Resources/Icons/pqSlice.svg",
+      "source_sha256": "4cc8bc6ada7e7d7b0d851984148efa57837d535640b8e60bcdf9daf069b0ebe6",
+      "sha256": "aa2487644518eecb61f23d90cf3bca36550f7d88ac37e858332ae7fbcf4f67b5",
+      "default_size": [
+        128,
+        128
+      ]
+    },
+    {
+      "id": 23,
+      "name": "filterThreshold.svg",
+      "dir": "filter",
+      "status": "direct-svg",
+      "source": "/home/ludahai/develop/code/github/ParaView/Qt/Components/Resources/Icons/pqThreshold.svg",
+      "source_sha256": "5fe48f318da2b4b00ae8a7976c22c431ec38b06e9583fa928b93f2ed9d177891",
+      "sha256": "227928e299c5e30c5df7736652e704fcbfa73b4d109899db526abf9a7cfe68e5",
+      "default_size": [
+        128,
+        128
+      ]
+    },
+    {
+      "id": 24,
+      "name": "filterIsoSurface.svg",
+      "dir": "filter",
+      "status": "direct-svg",
+      "source": "/home/ludahai/develop/code/github/ParaView/Qt/Components/Resources/Icons/pqIsosurface.svg",
+      "source_sha256": "e600b93c64c46a73ecf1f9e770350bbfb6433329d83b26798d2d7e78aae7c0b9",
+      "sha256": "96ab17e075f9d4a9c872c21694a1be5637b2b0d8322522f0dc7070d513120ef8",
+      "default_size": [
+        128,
+        128
+      ]
+    }
+  ]
+}

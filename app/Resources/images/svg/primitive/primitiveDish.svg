@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.6171,-0.3543) scale(1.05143)">
+
+<defs><linearGradient id="outer" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#E0E0E0"/><stop offset="1.000" stop-color="#787878"/></linearGradient>
+<radialGradient id="capFace" cx="0.5" cy="0.2" r="0.9"><stop offset="0.000" stop-color="#D0E5F6"/><stop offset="0.700" stop-color="#E0E0E0"/><stop offset="1.000" stop-color="#9AC1E0"/></radialGradient></defs>
+<title>Dish primitive — spherical or ellipsoidal cap</title>
+  <path d="M 2 7 C 3 13.5 6.5 19.2 12 20 C 17.5 19.2 21 13.5 22 7 Z" fill="url(#outer)" stroke="#6F6F59"/>
+<ellipse cx="12" cy="7" rx="10" ry="3.4" fill="url(#capFace)" stroke="#6F6F59"/>
+  <path d="M 3.4 7.8 C 6.8 10.4 17.2 10.4 20.6 7.8" fill="none" stroke="#A4A6A6" stroke-width="0.6"/>
+
+</g>
+</svg>

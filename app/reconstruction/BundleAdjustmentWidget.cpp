@@ -27,6 +27,8 @@ BundleAdjustmentWidget::BundleAdjustmentWidget(
       options_(options),
       reconstruction_(nullptr),
       thread_control_widget_(new ThreadControlWidget(this)) {
+    setWindowFlags(Qt::Dialog);
+    setWindowModality(Qt::ApplicationModal);
     setWindowTitle("Bundle adjustment");
 
     // Ceres is the only backend exposed here: the Caspar GPU solver is a

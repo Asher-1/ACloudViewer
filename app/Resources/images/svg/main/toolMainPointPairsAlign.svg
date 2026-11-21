@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.1697,-0.2210) scale(1.02698)">
+
+<defs><linearGradient id="gA" x1="0.090" y1="0.213" x2="0.910" y2="0.787"><stop offset="0" stop-color="#A7D28C"/><stop offset="1" stop-color="#72BE44"/></linearGradient><linearGradient id="gB" x1="0.910" y1="0.787" x2="0.090" y2="0.213"><stop offset="0" stop-color="#D8C081"/><stop offset="1" stop-color="#C1A561"/></linearGradient></defs>
+  <path d="M 1.60 14.60 L 4.60 12.80 L 8.60 13.20 L 10.60 16.60 L 9.40 20.80 L 5.00 22.20 L 1.80 19.80 Z" fill="url(#gA)" stroke="#6F6F59" stroke-width="0.85" stroke-linejoin="round"/>
+  <path d="M 13.60 2.00 L 17.80 1.60 L 21.80 3.40 L 22.20 7.60 L 19.40 10.40 L 15.20 10.00 L 13.20 6.40 Z" fill="url(#gB)" stroke="#6F6F59" stroke-width="0.85" stroke-linejoin="round"/>
+  <path d="M 8.6 15.6 C 12.8 16.2, 16.2 12.0, 16.2 8.6" fill="none" stroke="#2896D3" stroke-width="2.1"/>
+  <path d="M 16.2 8.6 L 17.724534678166595 10.828406160256131 L 14.675465321833403 10.828406160256131 Z" fill="#2896D3" stroke="none"/>
+  <circle cx="8.6" cy="15.6" r="1.4" fill="#2896D3" stroke="#6F6F59"/>
+  <circle cx="17.8" cy="7.2" r="1.4" fill="#2896D3" stroke="#6F6F59"/>
+
+</g>
+</svg>

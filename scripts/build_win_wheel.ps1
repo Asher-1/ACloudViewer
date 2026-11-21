@@ -125,6 +125,19 @@ $env:CONDA_LIB_DIR = "$env:CONDA_PREFIX\Library"
 $env:EIGEN_ROOT_DIR = "$env:CONDA_LIB_DIR\include\eigen3"
 $env:PATH = "$env:CONDA_PREFIX\Library;$env:CONDA_PREFIX\Library\cmake;$env:EIGEN_ROOT_DIR;$env:PATH"
 
+# Fail fast when the toolchain CMake cannot satisfy cmake_minimum_required
+# (VERSION 3.24): the conda env pin is 3.31.8 (.ci/conda_windows_cloudViewer.yml),
+# but a stale PATH entry (older VS-bundled cmake) can shadow it.
+$cmakeExe = Get-Command cmake -ErrorAction SilentlyContinue
+if (-not $cmakeExe) {
+    throw "cmake not found on PATH. Recreate the conda env from .ci/conda_windows_cloudViewer.yml (ships cmake 3.31.8) or install CMake >= 3.24 from https://cmake.org/download/."
+}
+$cmakeVer = ((cmake --version | Select-Object -First 1) -replace '^.*\s(\d+(\.\d+){1,3}).*$', '$1')
+if ([version]$cmakeVer -lt [version]"3.24.0") {
+    throw "CMake $cmakeVer found but >= 3.24 is required (conda env ships 3.31.8; ensure '$env:CONDA_PREFIX\Library\cmake' wins on PATH, or install from https://cmake.org/download/)."
+}
+Write-Host "Using CMake $cmakeVer at $($cmakeExe.Source)"
+
 Write-Host "echo Start to build GUI package on Windows..."
 . (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT "util\ci_utils.ps1")
 

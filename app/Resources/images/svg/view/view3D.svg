@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.6960,-0.6960) scale(1.10400)">
+
+<title>3D view — new view and 3D-mode controls</title>
+  <rect x="2" y="3" width="19" height="17" rx="0.6" fill="#D0E5F6" stroke="#6F6F59"/>  <rect x="2" y="3" width="19" height="2.5" fill="#9AC1E0" stroke="#6F6F59"/>  <path d="M 5 8 H 8.3 L 6.5 11 H 8.3 V 15 H 5 M 11 8 V 15 H 13 Q 16 15 16 11.5 Q 16 8 13 8 Z" fill="none" stroke-width="1.05"/>  <path d="M 5 17.5 H 18" fill="none" stroke="#2896D3" stroke-width="0.7"/>
+
+</g>
+</svg>

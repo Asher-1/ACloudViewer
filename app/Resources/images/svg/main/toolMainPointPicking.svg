@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(0.9600,0.3815) scale(0.96419)">
+
+<defs><linearGradient id="metal" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#FAFAF6"/><stop offset="1.000" stop-color="#CDCDCD"/></linearGradient></defs>
+<title>Pick a point</title>
+  <path d="M 11.5 1.5 V 6 M 11.5 16.5 V 21 M 1.5 11.5 H 6 M 17 11.5 H 21" fill="none" stroke-width="1.7"/>
+<circle cx="11.5" cy="11.5" r="4.1" fill="url(#metal)" stroke="#6F6F59" stroke-width="1.35"/>
+<circle cx="11.5" cy="11.5" r="2.3" fill="none" stroke="#6F6F59" stroke-width="0.7"/>
+  <path d="M 13.6 13.4 L 21.8 19.4 L 18.5 19.7 L 20.1 22.1 L 17.9 23 L 16.6 20.2 L 14.4 22.1 Z" fill="#FAFAF6" stroke="#6F6F59" stroke-width="1.0"/>
+
+</g>
+</svg>

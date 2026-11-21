@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.4778,-0.1697) scale(1.02698)">
+
+<defs><linearGradient id="reference" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#D0E5F6"/><stop offset="1.000" stop-color="#9AC1E0"/></linearGradient></defs>
+<title>ICP — align corresponding blue and green sample sets</title>
+  <path d="M 3.2 8.2 L 8 5 L 13 6.5 L 14.2 11.8 L 8.5 15 L 3 13 Z" fill="url(#reference)" stroke="#6F6F59"/>
+  <path d="M 6.2 5.6 L 11 2.4 L 16 3.9 L 17.2 9.2 L 11.5 12.4 L 6 10.4 Z" fill="none" stroke="#4E8C2E" stroke-width="0.8"/>
+  <path d="M 6.2 5.6 L 3.2 8.2 M 16 3.9 L 13 6.5 M 11.5 12.4 L 8.5 15" fill="none" stroke="#787878" stroke-width="0.65" stroke-dasharray="1 0.8"/>
+  <circle cx="3.2" cy="8.2" r="0.85" fill="#2896D3" stroke="#6F6F59"/>
+  <circle cx="8" cy="5" r="0.85" fill="#2896D3" stroke="#6F6F59"/>
+  <circle cx="13" cy="6.5" r="0.85" fill="#2896D3" stroke="#6F6F59"/>
+  <circle cx="14.2" cy="11.8" r="0.85" fill="#2896D3" stroke="#6F6F59"/>
+  <circle cx="8.5" cy="15" r="0.85" fill="#2896D3" stroke="#6F6F59"/>
+  <circle cx="3" cy="13" r="0.85" fill="#2896D3" stroke="#6F6F59"/>
+  <circle cx="6.2" cy="5.6" r="0.85" fill="#72BE44" stroke="#6F6F59"/>
+  <circle cx="11" cy="2.4" r="0.85" fill="#72BE44" stroke="#6F6F59"/>
+  <circle cx="16" cy="3.9" r="0.85" fill="#72BE44" stroke="#6F6F59"/>
+  <circle cx="17.2" cy="9.200000000000001" r="0.85" fill="#72BE44" stroke="#6F6F59"/>
+  <circle cx="11.5" cy="12.4" r="0.85" fill="#72BE44" stroke="#6F6F59"/>
+  <circle cx="6" cy="10.4" r="0.85" fill="#72BE44" stroke="#6F6F59"/>
+  <path d="M 21 7.5 L 22.3 8.6 L 18.4 12.6 L 20 14 L 14.6 15 L 15.7 9.7 L 17.1 11 Z" fill="#F3C017" stroke="#6F6F59" stroke-width="0.65"/>
+  <path d="M 5 18 H 8 M 6.5 18 V 22 M 5 22 H 8 M 13 18 H 10 V 22 H 13 M 15.4 22 V 18 H 18.2 V 20 H 15.4" fill="none" stroke-width="1.05"/>
+
+</g>
+</svg>

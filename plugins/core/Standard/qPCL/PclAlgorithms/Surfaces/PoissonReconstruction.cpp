@@ -31,7 +31,7 @@ PoissonReconstruction::PoissonReconstruction()
               tr("Poisson Reconstruction"),
               tr("Poisson Reconstruction"),
               tr("Poisson Reconstruction from clouds"),
-              ":/toolbar/PclAlgorithms/icons/poisson.png")),
+              ":/qPCL/icons/pclPoissonReconstruction.svg")),
       m_dialog(nullptr),
       m_normalSearchRadius(10),
       m_knn_radius(10),

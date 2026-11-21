@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.6171,-0.4069) scale(1.05143)">
+
+<defs><linearGradient id="cover" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#9AC1E0"/><stop offset="1.000" stop-color="#2896D3"/></linearGradient></defs>
+<title>Help — question-mark book</title>
+  <path d="M 2 9.8 L 12 17 V 21 L 2 13.8 Z" fill="#9AC1E0" stroke="#6F6F59"/>
+  <path d="M 12 17 L 22 9.8 V 13.8 L 12 21 Z" fill="#E0E0E0" stroke="#6F6F59"/>
+  <path d="M 2 9.8 L 12 2.5 L 22 9.8 L 12 17 Z" fill="url(#cover)" stroke="#6F6F59"/>
+  <path d="M 9.1 7.6 C 9.1 4.5 15.3 4.5 15.4 7.5 C 15.5 9.4 12.2 9.5 12 11.8" fill="none" stroke="#FAFAF6" stroke-width="1.4"/>
+  <circle cx="12" cy="13.9" r="0.9" fill="#FAFAF6" stroke="none"/>
+
+</g>
+</svg>

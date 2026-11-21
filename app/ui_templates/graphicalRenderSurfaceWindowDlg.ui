@@ -74,7 +74,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/cloud.svg</normaloff>:/Resources/images/cloud.svg</iconset>
+       <normaloff>:/Resources/images/svg/surface/surfaceExportCloud.svg</normaloff>:/Resources/images/svg/surface/surfaceExportCloud.svg</iconset>
      </property>
     </widget>
    </item>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.5895,0.3789) scale(0.96842)">
+
+<defs><linearGradient id="bristle" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#C1A561"/><stop offset="1.000" stop-color="#F3C017"/></linearGradient></defs>
+<title>Clear all — broom</title>
+  <path d="M 3 1.5 L 5 1 L 13 13 L 11 15 Z" fill="#C4813E" stroke="#6F6F59"/>
+  <path d="M 9 11 L 13 8 L 16 12 L 12 15 Z" fill="#E0E0E0" stroke="#6F6F59"/>
+  <path d="M 12 14 L 16 11 L 23 19 L 15 23 L 8 19 Z" fill="url(#bristle)" stroke="#6F6F59"/>
+  <path d="M 13 16 L 17 21 M 15.5 15 L 19 20 M 11 18 L 14 21" fill="none" stroke="#A3915E" stroke-width="0.65"/>
+
+</g>
+</svg>

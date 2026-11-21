@@ -21,7 +21,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../../../qPCL.qrc">
-    <normaloff>:/toolbar/PclAlgorithms/icons/EuclideanClusterSegmentation.png</normaloff>:/toolbar/PclAlgorithms/icons/EuclideanClusterSegmentation.png</iconset>
+    <normaloff>:/qPCL/icons/pclEuclideanClusterSegmentation.svg</normaloff>:/qPCL/icons/pclEuclideanClusterSegmentation.svg</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0">
    <item>

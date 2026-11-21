@@ -63,7 +63,7 @@
         </property>
         <property name="icon">
          <iconset resource="../../../app/MainWindow.qrc">
-          <normaloff>:/Resources/images/save.png</normaloff>:/Resources/images/save.png</iconset>
+          <normaloff>:/Resources/images/svg/main/toolMainSave.svg</normaloff>:/Resources/images/svg/main/toolMainSave.svg</iconset>
         </property>
        </widget>
       </item>
@@ -74,7 +74,7 @@
         </property>
         <property name="icon">
          <iconset resource="../../../app/MainWindow.qrc">
-          <normaloff>:/Resources/images/open.png</normaloff>:/Resources/images/open.png</iconset>
+          <normaloff>:/Resources/images/svg/main/toolMainOpen.svg</normaloff>:/Resources/images/svg/main/toolMainOpen.svg</iconset>
         </property>
        </widget>
       </item>
@@ -298,7 +298,7 @@
        <widget class="QToolButton" name="colorToolButton">
         <property name="icon">
          <iconset resource="../../../app/MainWindow.qrc">
-          <normaloff>:/Resources/images/color.png</normaloff>:/Resources/images/color.png</iconset>
+          <normaloff>:/Resources/images/svg/misc/colorSelect.svg</normaloff>:/Resources/images/svg/misc/colorSelect.svg</iconset>
         </property>
        </widget>
       </item>

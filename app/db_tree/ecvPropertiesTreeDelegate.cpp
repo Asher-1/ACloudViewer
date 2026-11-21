@@ -1922,7 +1922,8 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
         case OBJECT_MESH_TEXTUREFILE: {
             ecvTextureFileSelector* selector = new ecvTextureFileSelector(
                     parent,
-                    QString::fromUtf8(":/Resources/images/ecvGear.png"));
+                    QString::fromUtf8(
+                            ":/Resources/images/svg/misc/propertyEditor.svg"));
             // Initialize with empty map - will be populated in setEditorData
             // based on current mesh object
             QMap<QString, QString> emptyMap;
@@ -1939,7 +1940,8 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
         case OBJECT_CURRENT_COLOR_RAMP: {
             ccColorScaleSelector* selector = new ccColorScaleSelector(
                     ccColorScalesManager::GetUniqueInstance(), parent,
-                    QString::fromUtf8(":/Resources/images/ecvGear.png"));
+                    QString::fromUtf8(
+                            ":/Resources/images/svg/misc/propertyEditor.svg"));
             // fill combobox box with Color Scales Manager
             selector->init();
             connect(selector, &ccColorScaleSelector::colorScaleSelected, this,

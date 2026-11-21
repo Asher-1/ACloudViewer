@@ -20,12 +20,13 @@ Quick Start
    # Or with conda:
    ./docker/build-release-conda.sh
 
-**Linux (Manual):**
+**Linux (Local, one-click):**
 
 .. code-block:: bash
 
-   utils/install_deps_ubuntu.sh assume-yes
-   ./scripts/build_ubuntu.sh
+   # Apt deps, pyenv Python, Vulkan SDK, VTK/PCL deps, CMake configure and
+   # build in one shot; re-running only redoes what is missing (idempotent).
+   bash docs/guides/compiling_doc/setup_and_build_acloudviewer_linux.sh
 
 **macOS:**
 
@@ -49,7 +50,7 @@ Minimum Requirements
 - **CPU**: 8+ cores recommended
 - **RAM**: 16 GB+ recommended
 - **Disk**: 20 GB free space
-- **CMake**: 3.19 or higher
+- **CMake**: 3.24 or higher (CI and Conda environments pin 3.31.8; `util/install_deps_ubuntu.sh` auto-installs the pinned pip CMake (3.31.10) when the apt one is older)
 
 Recommended
 ~~~~~~~~~~~
@@ -135,7 +136,7 @@ Install dependencies automatically:
 .. code-block:: bash
 
    # Install all dependencies
-   utils/install_deps_ubuntu.sh assume-yes
+   util/install_deps_ubuntu.sh assume-yes
 
 Or install manually:
 
@@ -147,6 +148,12 @@ Or install manually:
        libeigen3-dev libflann-dev libboost-all-dev \
        qt5-default libqt5svg5-dev libqt5opengl5-dev qttools5-dev \
        libglu1-mesa-dev freeglut3-dev mesa-common-dev
+
+.. note::
+   The apt ``cmake`` package is below the required 3.24 on Ubuntu 20.04/22.04
+   (3.16/3.22). Install a newer CMake via the Kitware apt repository (see
+   :doc:`quickstart`) or ``python3 -m pip install --user --upgrade "cmake>=3.24,<4"``
+   — or simply use the one-click script above, which handles this automatically.
 
 Python Environment (pyenv)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -773,7 +780,7 @@ Additional Resources
 
 **Build Scripts:**
 
-- Linux: ``scripts/build_ubuntu.sh``
+- Linux: ``docs/guides/compiling_doc/setup_and_build_acloudviewer_linux.sh``
 - macOS: ``scripts/build_macos.sh``
 - Windows: ``scripts/build_win.py``
 - Docker: ``docker/build-release.sh``
