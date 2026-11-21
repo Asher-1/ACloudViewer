@@ -161,3 +161,37 @@ this as `default_size: [128, 128]` with `sha256` = installed bytes and
 installed pin, the declared root size, and byte-exact geometry after normalising
 the added root attributes (rows whose upstream already carries width/height keep
 the raw pin).
+
+## Named AICore plugin artwork
+
+The explicitly requested AICore restyle is limited to the 21 primary plugin SVGs
+in `plugins/core/Standard`, excluding `qAnyLabeling` before discovery or writes.
+Each plugin retains its own QRC, metadata URL and existing SVG filename. Source
+PNGs, video-logo candidates and example/result images are not runtime replacements
+and are left untouched. The full AnyLabeling file tree and non-target artwork are
+SHA-256 protected in the external review directory.
+
+```bash
+python3 scripts/icon_hd/icons.py aicore install
+python3 scripts/icon_hd/icons.py aicore review
+python3 scripts/icon_hd/icons.py aicore verify
+# Optional: --out /absolute/review/directory
+```
+
+`logo/aicoreicons.py` owns the 21 semantic marks, complete plugin wordmarks and
+original captions. Short names occupy one bold line; long names are wrapped into
+two lines without dropping characters. Verified source captions such as `Depth`,
+`VGGT`, `MAP·3D`, `3DGS`, `RIDES`, `SCENE RELATIONS`, `<objN>` and `DEP` remain
+outlined paths. `logo/iconlabels.py` escapes XML attribute content and outlines
+DejaVu Sans Bold only at authoring time; the shipped SVGs have no runtime font
+requirement, live text, embedded raster or filter. SVG intrinsic dimensions are
+128×128; the independent 64-unit viewBox remains scale-independent.
+
+The verifier compiles each plugin QRC into an isolated bundle, checks the
+metadata's effective icon URL and canonical bytes, and renders normal/disabled
+states at 16/24/32/48/64/128/384/1024 px. It then checks all 21 bundles together.
+Review output uses fixed `AI-01`–`AI-21` identifiers and retains actual originals.
+At very small toolbar sizes the full long names are physically limited; the
+128px name-glyph bounds are measured independently, and no 16px readability or
+visual approval is inferred from a successful render. No inference ABI, workers,
+model behavior or plugin activation settings are changed by this icon command.

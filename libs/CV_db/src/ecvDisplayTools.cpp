@@ -2118,7 +2118,8 @@ void ecvDisplayTools::SetPerspectiveState(ecvViewContext& ctx,
                                               : ctx.viewportParams.fov_deg);
             assert(cloudViewer::GreaterThanEpsilon(currentFov_deg));
             double screenSize =
-                    std::min(ctx.glViewport.width(), ctx.glViewport.height()) *
+                    static_cast<double>(std::min(ctx.glViewport.width(),
+                                                 ctx.glViewport.height())) *
                     ctx.viewportParams.pixelSize;
             if (screenSize > 0.0) {
                 PC.z = screenSize / (ctx.viewportParams.zoom *

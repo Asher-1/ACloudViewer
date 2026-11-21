@@ -1,17 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <rect x="2" y="2" width="60" height="60" rx="10" fill="#1e3a5f"/>
-  <!-- detection box -->
-  <rect x="9" y="24" width="34" height="26" rx="2" fill="none" stroke="#ffcc00" stroke-width="3"/>
-  <!-- label tag -->
-  <rect x="6" y="10" width="40" height="12" rx="2" fill="#ffcc00"/>
-  <text x="26" y="19" font-family="sans-serif" font-size="7" font-weight="bold" fill="#1e3a5f" text-anchor="middle">RF-DETR</text>
-  <!-- small secondary box -->
-  <rect x="34" y="38" width="16" height="14" rx="2" fill="none" stroke="#4fc3f7" stroke-width="2"/>
-  <!-- crosshair -->
-  <circle cx="54" cy="14" r="5" fill="none" stroke="#4fc3f7" stroke-width="2"/>
-  <line x1="54" y1="5" x2="54" y2="8" stroke="#4fc3f7" stroke-width="2"/>
-  <line x1="54" y1="20" x2="54" y2="23" stroke="#4fc3f7" stroke-width="2"/>
-  <line x1="45" y1="14" x2="48" y2="14" stroke="#4fc3f7" stroke-width="2"/>
-  <line x1="60" y1="14" x2="62" y2="14" stroke="#4fc3f7" stroke-width="2"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 64 64" stroke="#6F6F59" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+<title>RF-DETR — AICore plugin</title><g stroke-width=".85" transform="translate(9 1) scale(1.95)">  <rect x="3" y="5" width="12" height="13" rx="0.5" fill="#D0E5F6" stroke="#6F6F59"/>  <rect x="11" y="12" width="9" height="9" rx="0.5" fill="none" stroke="#72BE44"/>  <path d="M 2 7 V 4 H 6 M 12 4 H 16 V 7 M 16 16 V 19 H 12 M 6 19 H 2 V 16" fill="none" stroke="#72BE44" stroke-width="0.9"/>  <circle cx="19" cy="5" r="2.2" fill="none" stroke="#2896D3"/>  <path d="M 19 1 V 9 M 15 5 H 23" fill="none" stroke="#2896D3" stroke-width="0.65"/></g>  <rect x="2.5" y="45.4" width="59" height="16.300000000000004" rx="1.3" fill="#D0E5F6" stroke="#6F6F59"/><g data-plugin-name="RF-DETR" data-name-lines="1"><path data-label="RF-DETR" d="M735 -831Q856 -831 908.5 -876.0Q961 -921 961 -1024Q961 -1126 908.5 -1170.0Q856 -1214 735 -1214H573V-831ZM573 -565V0H188V-1493H776Q1071 -1493 1208.5 -1394.0Q1346 -1295 1346 -1081Q1346 -933 1274.5 -838.0Q1203 -743 1059 -698Q1138 -680 1200.5 -616.5Q1263 -553 1327 -424L1536 0H1126L944 -371Q889 -483 832.5 -524.0Q776 -565 682 -565ZM1765 -1493H2804V-1202H2150V-924H2765V-633H2150V0H1765ZM3087 -735H3715V-444H3087ZM4399 -1202V-291H4537Q4773 -291 4897.5 -408.0Q5022 -525 5022 -748Q5022 -970 4898.0 -1086.0Q4774 -1202 4537 -1202ZM4014 -1493H4420Q4760 -1493 4926.5 -1444.5Q5093 -1396 5212 -1280Q5317 -1179 5368.0 -1047.0Q5419 -915 5419 -748Q5419 -579 5368.0 -446.5Q5317 -314 5212 -213Q5092 -97 4924.0 -48.5Q4756 0 4420 0H4014ZM5714 -1493H6753V-1202H6099V-924H6714V-633H6099V-291H6775V0H5714ZM6935 -1493H8311V-1202H7816V0H7431V-1202H6935ZM9057 -831Q9178 -831 9230.5 -876.0Q9283 -921 9283 -1024Q9283 -1126 9230.5 -1170.0Q9178 -1214 9057 -1214H8895V-831ZM8895 -565V0H8510V-1493H9098Q9393 -1493 9530.5 -1394.0Q9668 -1295 9668 -1081Q9668 -933 9596.5 -838.0Q9525 -743 9381 -698Q9460 -680 9522.5 -616.5Q9585 -553 9649 -424L9858 0H9448L9266 -371Q9211 -483 9154.5 -524.0Q9098 -565 9004 -565Z" transform="translate(3.63849 58.20000) scale(0.005646)" fill="#343C30" stroke="none"/></g>
 </svg>

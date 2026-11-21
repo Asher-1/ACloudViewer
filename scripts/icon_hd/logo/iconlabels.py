@@ -1,6 +1,7 @@
 """Font-independent algorithm labels: font used only at authoring time, never SVG runtime."""
 from functools import lru_cache
 from pathlib import Path
+from html import escape
 from fontTools.ttLib import TTFont
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
@@ -21,7 +22,7 @@ def label_path(text,x=2,y=22,width=20,height=4):
         paths.append(pen.getCommands());advance+=font['hmtx'][name][0]
     font.close();scale=min(width/(maxx-minx),height/(maxy-miny))
     tx=x+(width-(maxx-minx)*scale)/2-minx*scale;ty=y+miny*scale
-    return f'<path data-label="{text}" d="'+''.join(paths)+f'" transform="translate({tx:.5f} {ty:.5f}) scale({scale:.6f})" fill="{P.INK}" stroke="none"/>'
+    return f'<path data-label="{escape(text, quote=True)}" d="'+''.join(paths)+f'" transform="translate({tx:.5f} {ty:.5f}) scale({scale:.6f})" fill="{P.INK}" stroke="none"/>'
 
 def with_label(raw,text):
     import xml.etree.ElementTree as E

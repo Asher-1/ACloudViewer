@@ -264,6 +264,10 @@ def main(argv=None) -> int:
     p.add_argument("--qt", action="store_true", help="另用 Qt 离屏加载 app 和 qPCL 图标")
     p.add_argument("--rcc", default="rcc", help="与 Qt5 pkg-config 对应的资源编译器")
 
+    p = sub.add_parser("aicore", help="Install/review/verify named AICore plugin SVGs; AnyLabeling excluded")
+    p.add_argument("action", choices=["install", "review", "verify"])
+    p.add_argument("--out", type=Path, default=None)
+
     p = sub.add_parser("logo", help="产品标识管线")
     p.add_argument("args", nargs=argparse.REMAINDER)
 
@@ -292,6 +296,12 @@ def main(argv=None) -> int:
 
             return verify_qt(a.rcc)
         return status
+    if a.verb == "aicore":
+        from aicore_icons import main as aicore_icons_main
+        args = [a.action]
+        if a.out:
+            args += ["--out", str(a.out)]
+        return aicore_icons_main(args)
     if a.verb == "logo":
         return logo(a.args)
 

@@ -1,20 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <rect x="2" y="2" width="60" height="60" rx="10" fill="#2e4a2e"/>
-  <!-- foreground portrait silhouette -->
-  <circle cx="32" cy="22" r="9" fill="#e8e8e8"/>
-  <path d="M16 54 a16 16 0 0 1 32 0 Z" fill="#e8e8e8"/>
-  <!-- background removed: checker pattern -->
-  <rect x="8" y="8" width="8" height="8" fill="#7f8c7f"/>
-  <rect x="16" y="16" width="8" height="8" fill="#7f8c7f"/>
-  <rect x="24" y="8" width="8" height="8" fill="#7f8c7f"/>
-  <rect x="32" y="16" width="8" height="8" fill="#7f8c7f"/>
-  <rect x="40" y="8" width="8" height="8" fill="#7f8c7f"/>
-  <rect x="48" y="16" width="8" height="8" fill="#7f8c7f"/>
-  <rect x="8" y="32" width="8" height="8" fill="#7f8c7f"/>
-  <rect x="16" y="40" width="8" height="8" fill="#7f8c7f"/>
-  <rect x="24" y="32" width="8" height="8" fill="#7f8c7f"/>
-  <rect x="32" y="40" width="8" height="8" fill="#7f8c7f"/>
-  <rect x="40" y="32" width="8" height="8" fill="#7f8c7f"/>
-  <rect x="48" y="40" width="8" height="8" fill="#7f8c7f"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 64 64" stroke="#6F6F59" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+<title>RMBG — AICore plugin</title><g stroke-width=".85" transform="translate(9 1) scale(1.95)">  <rect x="2" y="2" width="20" height="20" rx="0.6" fill="#E0E0E0" stroke="#6F6F59"/>  <rect x="2" y="2" width="5" height="5" fill="#D0E5F6" stroke="none"/>  <rect x="12" y="2" width="5" height="5" fill="#D0E5F6" stroke="none"/>  <rect x="7" y="7" width="5" height="5" fill="#D0E5F6" stroke="none"/>  <rect x="17" y="7" width="5" height="5" fill="#D0E5F6" stroke="none"/>  <rect x="2" y="12" width="5" height="5" fill="#D0E5F6" stroke="none"/>  <rect x="12" y="12" width="5" height="5" fill="#D0E5F6" stroke="none"/>  <rect x="7" y="17" width="5" height="5" fill="#D0E5F6" stroke="none"/>  <rect x="17" y="17" width="5" height="5" fill="#D0E5F6" stroke="none"/>  <circle cx="12" cy="8" r="3.7" fill="#FAFAF6" stroke="#6F6F59"/>  <path d="M 5.5 21 C 5.5 13 18.5 13 18.5 21 Z" fill="#FAFAF6" stroke="#6F6F59"/></g>  <rect x="2.5" y="45.4" width="59" height="16.300000000000004" rx="1.3" fill="#D0E5F6" stroke="#6F6F59"/><g data-plugin-name="RMBG" data-name-lines="1"><path data-label="RMBG" d="M735 -831Q856 -831 908.5 -876.0Q961 -921 961 -1024Q961 -1126 908.5 -1170.0Q856 -1214 735 -1214H573V-831ZM573 -565V0H188V-1493H776Q1071 -1493 1208.5 -1394.0Q1346 -1295 1346 -1081Q1346 -933 1274.5 -838.0Q1203 -743 1059 -698Q1138 -680 1200.5 -616.5Q1263 -553 1327 -424L1536 0H1126L944 -371Q889 -483 832.5 -524.0Q776 -565 682 -565ZM1765 -1493H2255L2595 -694L2937 -1493H3426V0H3062V-1092L2718 -287H2474L2130 -1092V0H1765ZM4401 -915Q4492 -915 4539.0 -955.0Q4586 -995 4586 -1073Q4586 -1150 4539.0 -1190.5Q4492 -1231 4401 -1231H4188V-915ZM4414 -262Q4530 -262 4588.5 -311.0Q4647 -360 4647 -459Q4647 -556 4589.0 -604.5Q4531 -653 4414 -653H4188V-262ZM4772 -799Q4896 -763 4964.0 -666.0Q5032 -569 5032 -428Q5032 -212 4886.0 -106.0Q4740 0 4442 0H3803V-1493H4381Q4692 -1493 4831.5 -1399.0Q4971 -1305 4971 -1098Q4971 -989 4920.0 -912.5Q4869 -836 4772 -799ZM6706 -111Q6562 -41 6407.0 -6.0Q6252 29 6087 29Q5714 29 5496.0 -179.5Q5278 -388 5278 -745Q5278 -1106 5500.0 -1313.0Q5722 -1520 6108 -1520Q6257 -1520 6393.5 -1492.0Q6530 -1464 6651 -1409V-1100Q6526 -1171 6402.5 -1206.0Q6279 -1241 6155 -1241Q5925 -1241 5800.5 -1112.5Q5676 -984 5676 -745Q5676 -508 5796.0 -379.0Q5916 -250 6137 -250Q6197 -250 6248.5 -257.5Q6300 -265 6341 -281V-571H6106V-829H6706Z" transform="translate(8.85681 58.00529) scale(0.006714)" fill="#343C30" stroke="none"/></g>
 </svg>
