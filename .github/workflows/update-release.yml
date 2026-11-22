@@ -68,15 +68,20 @@ jobs:
           set -euo pipefail
           work=$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/release-cleanup.XXXXXX")
           [[ "$work" = /*/release-cleanup.* ]] || exit 1
-          trap 'rm -f -- "$work/assets.json" "$work/shas.txt" "$work/delete.txt"; rmdir -- "$work"' EXIT
-          # Validate both complete inputs and the entire deletion plan first.
+          trap 'rm -f -- "$work/assets.json" "$work/shas.txt" "$work/published.json" "$work/delete.txt"; rmdir -- "$work"' EXIT
+          # Validate the inventory, retention history and published catalogue before deleting.
           gh release view main-devel --json assets > "$work/assets.json"
           git log --format=%H -n 3 > "$work/shas.txt"
-          python3 - "$work/assets.json" "$work/shas.txt" > "$work/delete.txt" <<'PY'
+          # The release catalogue may already describe a future deployment.
+          # Protect what users can download from the currently published site.
+          curl --fail --show-error --silent --location --retry 2 --max-time 30 \
+            https://asher-1.github.io/ACloudViewer/downloads_data.json > "$work/published.json"
+          python3 - "$work/assets.json" "$work/shas.txt" "$work/published.json" > "$work/delete.txt" <<'PY'
           import json
           from pathlib import Path
           import re
           import sys
+          from urllib.parse import unquote, urlsplit
 
           assets = json.loads(Path(sys.argv[1]).read_text())['assets']
           commits = Path(sys.argv[2]).read_text().splitlines()
@@ -87,6 +92,43 @@ jobs:
           names = [a['name'] for a in assets]
           if len(set(names)) != len(names):
               raise SystemExit('Duplicate release asset names')
+          published = json.loads(Path(sys.argv[3]).read_text())
+          metadata = published.get('version_metadata') if isinstance(published, dict) else None
+          downloads = published.get('download_data') if isinstance(published, dict) else None
+          if (not isinstance(metadata, list) or not metadata or not isinstance(downloads, dict)
+                  or any(not isinstance(row, dict) or not isinstance(row.get('value'), str)
+                         or not row['value'] for row in metadata)):
+              raise SystemExit('Invalid published download catalogue')
+          versions = [row['value'] for row in metadata]
+          if len(set(versions)) != len(versions) or set(versions) != set(downloads):
+              raise SystemExit('Incomplete published download catalogue')
+          protected = set()
+          def collect(node, version):
+              if not isinstance(node, dict):
+                  raise SystemExit('Invalid published download entry')
+              if not node:
+                  return
+              if 'url' in node:
+                  if not isinstance(node['url'], str):
+                      raise SystemExit('Invalid published asset URL')
+                  url = urlsplit(node['url'])
+                  parts = url.path.split('/')
+                  if (url.scheme != 'https' or url.netloc.lower() != 'github.com'
+                          or url.query or url.fragment or len(parts) != 7
+                          or parts[1:5] != ['Asher-1', 'ACloudViewer', 'releases', 'download']):
+                      raise SystemExit('Unexpected published asset URL; refusing cleanup')
+                  tag, asset = unquote(parts[5]), unquote(parts[6])
+                  if tag != version or not asset or '/' in asset or '\\' in asset:
+                      raise SystemExit('Mismatched published asset URL')
+                  if tag == 'main-devel':
+                      protected.add(asset)
+              else:
+                  for child in node.values():
+                      collect(child, version)
+          for version, entry in downloads.items():
+              collect(entry, version)
+          if not protected:
+              raise SystemExit('Published catalogue has no main-devel URLs; refusing cleanup')
           # This owner prunes only stamped platform installers and Python wheels.
           # Docs have their own verified uploader/pruner; metadata and unknown
           # assets are deliberately outside this owner's deletion boundary.
@@ -101,7 +143,7 @@ jobs:
               r'manylinux_\d+_\d+_x86_64)\.whl')
           for name in names:
               match = installer.fullmatch(name) or wheel.fullmatch(name)
-              if match and not any(sha.startswith(match['sha']) for sha in commits):
+              if match and name not in protected and not any(sha.startswith(match['sha']) for sha in commits):
                   print(name)
           PY
           while IFS= read -r asset; do
