@@ -63,6 +63,9 @@ jobs:
     permissions:
       contents: write  # For uploading release assets
     
+    env:
+      EVENT_NAME: ${{ github.event_name }}
+
     outputs:
       has_changes: ${{ steps.check_changes.outputs.has_changes }}
     
@@ -83,56 +86,36 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📥 Fetching existing downloads_data.json"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo ""
-          
-          mkdir -p existing
-          
-          # Try to fetch from main-devel release (where we store it)
-          echo "🔍 Checking main-devel release..."
-          if gh release download main-devel --pattern "downloads_data.json" --dir existing 2>/dev/null; then
-            echo "✅ Found existing downloads_data.json in main-devel release"
-            echo "  - Size: $(du -h existing/downloads_data.json | cut -f1)"
-            echo "  - Versions: $(jq '.version_metadata | length' existing/downloads_data.json)"
-          else
-            # Fallback: try to fetch from GitHub Pages
-            echo "⚠️  Not found in release, trying GitHub Pages..."
-            PAGES_URL="https://asher-1.github.io/ACloudViewer/downloads_data.json"
-            if curl -fsSL "$PAGES_URL" -o existing/downloads_data.json 2>/dev/null; then
-              echo "✅ Found existing downloads_data.json on GitHub Pages"
-              echo "  - Size: $(du -h existing/downloads_data.json | cut -f1)"
-              echo "  - Versions: $(jq '.version_metadata | length' existing/downloads_data.json)"
-            else
-              echo "⚠️  No existing downloads_data.json found (first time?)"
-              echo '{"generated_at":"","version_metadata":{},"download_links":{}}' > existing/downloads_data.json
-            fi
-          fi
-          
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          python3 docs/automation/scripts/fetch_downloads_data.py --output existing/downloads_data.json
+          echo "Existing catalogue: $(jq '.version_metadata | length' existing/downloads_data.json) versions"
+
       
       - name: Generate latest downloads_data.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          FORCE_UPDATE: ${{ inputs.force_update }}
+          TRIGGER_DOCS_DEPLOY: ${{ inputs.trigger_docs_deploy }}
+          CLEANUP_DAYS: ${{ inputs.cleanup_old_versions }}
+          MAX_VERSIONS: ${{ inputs.max_versions }}
+          DRY_RUN: ${{ inputs.dry_run }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📦 Scanning GitHub Releases for Download Data"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
-          echo "⏰ Trigger: ${{ github.event_name }}"
+          echo "⏰ Trigger: $EVENT_NAME"
           echo "🕐 Time: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
           echo ""
           
           # Show manual trigger options if applicable
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          if [ "$EVENT_NAME" == "workflow_dispatch" ]; then
             echo "🔧 Manual Trigger Options:"
-            echo "  - Force update: ${{ github.event.inputs.force_update }}"
-            echo "  - Trigger docs deploy: ${{ github.event.inputs.trigger_docs_deploy }}"
-            echo "  - Cleanup old (days): ${{ github.event.inputs.cleanup_old_versions }}"
-            echo "  - Max versions: ${{ github.event.inputs.max_versions }}"
-            echo "  - Dry run: ${{ github.event.inputs.dry_run }}"
+            echo "  - Force update: $FORCE_UPDATE"
+            echo "  - Trigger docs deploy: $TRIGGER_DOCS_DEPLOY"
+            echo "  - Cleanup old (days): $CLEANUP_DAYS"
+            echo "  - Max versions: $MAX_VERSIONS"
+            echo "  - Dry run: $DRY_RUN"
             echo ""
           fi
           
@@ -149,30 +132,48 @@ jobs:
             echo "  - Versions: $(jq '.version_metadata | length' downloads_data.json.new)"
             echo ""
             echo "📊 Available versions:"
-            jq -r '.version_metadata | to_entries[] | "  - \(.key) (\(.value.release_date))"' downloads_data.json.new | sort -V
+            jq -r '.version_metadata[] | "  - \(.value) (\(.release_date))"' downloads_data.json.new | sort -V
           else
             echo "❌ Failed to generate downloads_data.json"
             exit 1
           fi
           
           # Apply manual trigger filters if specified
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          if [ "$EVENT_NAME" == "workflow_dispatch" ]; then
             echo ""
             echo "🔧 Applying manual trigger filters..."
             
+            CLEANUP_DAYS="${CLEANUP_DAYS:-0}"
+            MAX_VERSIONS="${MAX_VERSIONS:-0}"
+            for value in "$CLEANUP_DAYS" "$MAX_VERSIONS"; do
+              if ! [[ "$value" =~ ^[0-9]+$ ]]; then
+                echo "Cleanup days and max versions must be non-negative integers" >&2
+                exit 1
+              fi
+            done
+
             # Cleanup old versions
-            CLEANUP_DAYS="${{ github.event.inputs.cleanup_old_versions }}"
             if [ "$CLEANUP_DAYS" != "0" ] && [ -n "$CLEANUP_DAYS" ]; then
               echo "  🗑️  Removing versions older than $CLEANUP_DAYS days..."
               CUTOFF_DATE=$(date -u -d "$CLEANUP_DAYS days ago" +%Y-%m-%d)
-              
+
+              # version_metadata is an ARRAY (docs/script.js calls
+              # versionMetadata.find(...)) and download_data is an object keyed
+              # by version tag. The previous jq treated the array as an object,
+              # so it aborted with "Cannot use number (0) as object key" and the
+              # step never completed.
+              #
+              # Scanner emits UTC YYYY-MM-DD release_date. Keep unknown dates
+              # conservatively; never infer a date from a display label.
               jq --arg cutoff "$CUTOFF_DATE" '
-                .version_metadata = (.version_metadata | to_entries | 
-                  map(select(.value.release_date >= $cutoff)) | 
-                  from_entries) |
-                .download_links = (.download_links | to_entries | 
-                  map(select(.key as $k | $k | in(.version_metadata))) | 
-                  from_entries)
+                .version_metadata = (.version_metadata
+                  | map(select(
+                      (.release_date // null) == null
+                      or .release_date >= $cutoff))) |
+                .version_metadata as $kept |
+                .download_data = (.download_data
+                  | with_entries(select(.key as $k
+                      | any($kept[]; .value == $k))))
               ' downloads_data.json.new > downloads_data.json.filtered
               
               REMOVED=$(( $(jq '.version_metadata | length' downloads_data.json.new) - $(jq '.version_metadata | length' downloads_data.json.filtered) ))
@@ -181,22 +182,16 @@ jobs:
             fi
             
             # Limit max versions
-            MAX_VERSIONS="${{ github.event.inputs.max_versions }}"
             if [ "$MAX_VERSIONS" != "0" ] && [ -n "$MAX_VERSIONS" ]; then
               echo "  📊 Limiting to $MAX_VERSIONS most recent versions..."
               
               jq --argjson max "$MAX_VERSIONS" '
-                (.version_metadata | to_entries | 
-                  sort_by(.value.release_date) | reverse | 
-                  .[:$max] | 
-                  from_entries) as $kept_metadata |
-                {
-                  generated_at,
-                  version_metadata: $kept_metadata,
-                  download_links: (.download_links | to_entries | 
-                    map(select(.key | in($kept_metadata))) | 
-                    from_entries)
-                }
+                .version_metadata = (.version_metadata
+                  | sort_by(.release_date // "") | reverse | .[:$max]) |
+                .version_metadata as $kept |
+                .download_data = (.download_data
+                  | with_entries(select(.key as $k
+                      | any($kept[]; .value == $k))))
               ' downloads_data.json.new > downloads_data.json.limited
               
               KEPT=$(jq '.version_metadata | length' downloads_data.json.limited)
@@ -254,7 +249,7 @@ jobs:
           echo "  - Versions: $(jq '.version_metadata | length' downloads_data.json.new)"
           echo ""
           echo "📋 Versions that would be published:"
-          jq -r '.version_metadata | to_entries[] | "  - \(.key) (\(.value.release_date))"' downloads_data.json.new | sort -V
+          jq -r '.version_metadata[] | "  - \(.value) (\(.release_date))"' downloads_data.json.new | sort -V
           echo ""
           echo "ℹ️  To actually apply these changes, run without dry_run option"
           echo ""
@@ -297,7 +292,7 @@ jobs:
           echo "  - Current versions: $(jq '.version_metadata | length' existing/downloads_data.json)"
           echo ""
           
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          if [ "$EVENT_NAME" == "workflow_dispatch" ]; then
             echo "💡 Manual Trigger Tips:"
             echo "  - Use 'force_update: true' to save even without changes"
             echo "  - Use 'trigger_docs_deploy: true' to also trigger documentation deployment"
@@ -327,17 +322,20 @@ jobs:
       - name: Trigger documentation workflow
         env:
           GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          HAS_CHANGES: ${{ needs.update-downloads-data.outputs.has_changes }}
+          REPOSITORY: ${{ github.repository }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🚀 Triggering documentation workflow to deploy updated downloads_data.json"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
-          echo "Trigger reason: ${{ github.event_name }}"
-          echo "Has changes: ${{ needs.update-downloads-data.outputs.has_changes }}"
+          echo "Trigger reason: $EVENT_NAME"
+          echo "Has changes: $HAS_CHANGES"
           echo ""
           
           gh workflow run documentation.yml \
-            --repo ${{ github.repository }} \
+            --repo "$REPOSITORY" \
             --ref main
           
           echo ""

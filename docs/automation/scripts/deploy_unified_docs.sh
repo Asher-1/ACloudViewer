@@ -252,7 +252,7 @@ rewrite_website_doc_links() {
 # switcher that cannot see versions published after they were built.
 # ---------------------------------------------------------------------------
 propagate_version_switcher() {
-    local latest="$1" src="" dir name
+    local latest="$1" src="" dir name css_src css_dest
 
     # Preference order matters. The dev build carries the switcher compiled
     # from the current source tree; an archive carries whatever was current
@@ -285,7 +285,144 @@ propagate_version_switcher() {
         fi
         cp "$src" "$dest"
         log "    ✅ ${name}/_static/version_switch.js"
+
+        # Some historical archives reference this stylesheet but omitted it.
+        # Repair only missing assets; never replace an archive's own CSS.
+        css_src="$(dirname "$src")/css/furo_overrides.css"
+        css_dest="${dir}_static/css/furo_overrides.css"
+        if [ ! -f "$css_dest" ] && [ -f "$css_src" ]; then
+            mkdir -p "$(dirname "$css_dest")"
+            cp "$css_src" "$css_dest"
+            log "    ✅ restored missing ${name}/_static/css/furo_overrides.css"
+        fi
     done
+}
+
+# ---------------------------------------------------------------------------
+# Repair Doxygen mainpage pictures omitted by older release packages. Sources
+# must belong to that same version; current dev screenshots are not substitutes.
+# The workflow fetches only required release tags before this read-only step.
+# ---------------------------------------------------------------------------
+repair_archive_mainpage_images() {
+    local name dir index image target source candidate repo commit temporary
+    repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+    while IFS= read -r name; do
+        dir="${DOC_ROOT}/${name}"
+        index="${dir}/cpp_api/api/index.html"
+        [ -f "$index" ] || continue
+        commit=""
+        for image in AbstractionLayers.png MainUI.png ICP-registration.png Reconstruction.png SemanticAnnotation.png; do
+            target="${dir}/cpp_api/api/${image}"
+            [ ! -e "$target" ] && [ ! -L "$target" ] || continue
+            grep -Eq "src=[\"']${image//./\\.}[\"']" "$index" || continue
+            source=""
+            for candidate in "${dir}/_images/${image}" "${dir}/images/${image}"; do
+                if [ -f "$candidate" ] && [ ! -L "$candidate" ]; then
+                    source="$candidate"
+                    break
+                fi
+            done
+            if [ -n "$source" ]; then
+                cp "$source" "$target"
+                log "  ✅ restored ${name}/cpp_api/api/${image} from same-version ${source}"
+                continue
+            fi
+            if [ -z "$commit" ]; then
+                commit="$(git -C "$repo" rev-parse --verify "refs/tags/${name}^{commit}")" || \
+                    die "Cannot restore ${name}/${image}: same-release source tag is unavailable"
+            fi
+            temporary="$(mktemp "${target}.XXXXXX")"
+            if ! git -C "$repo" show "${commit}:docs/images/${image}" > "$temporary" || [ ! -s "$temporary" ]; then
+                # The checked mktemp path is the sole temporary file we own.
+                [ "$(dirname "$temporary")" = "$(dirname "$target")" ] && \
+                    [[ "$(basename "$temporary")" == "${image}."* ]] || die "Unexpected image staging path"
+                rm -- "$temporary"
+                die "Cannot restore ${name}/${image}: same-release image is unavailable at ${commit}"
+            fi
+            [ "$(dirname "$temporary")" = "$(dirname "$target")" ] && \
+                [[ "$(basename "$temporary")" == "${image}."* ]] || die "Unexpected image staging path"
+            mv -- "$temporary" "$target"
+            log "  ✅ restored ${name}/cpp_api/api/${image} from release ${commit}"
+        done
+    done < <(list_version_dirs "$DOC_ROOT")
+}
+
+# v3.9.4 re-exported PyTorch 2.7 SummaryWriter docstrings but omitted their
+# seven images. Preserve its original relative URLs and HTML; do not apply
+# these version-specific assets to other releases or unknown references.
+repair_archived_tensorboard_images() {
+    local dir="${DOC_ROOT}/v3.9.4" page assets image target expected actual notice
+    page="${dir}/python_api/cloudViewer.visualization.tensorboard_plugin.summary.SummaryWriter.html"
+    [ -f "$page" ] || return 0
+    grep -q 'python_api/_static/img/tensorboard/' "$page" || return 0
+    assets="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../assets/torch-tensorboard"
+    while IFS= read -r image; do
+        case "$image" in
+            add_histogram.png) expected=1cdb99f78f7678e24ae10a5598d94a8c4301b1b07937b2fe715ceb39e60d0208 ;;
+            add_histogram_raw.png) expected=c5324136e40de96b18c230c6d92b441d603f17f47da3bd2cc101c80fca4982e0 ;;
+            add_hparam.png) expected=a08ac24f8b106726fd2783cbd02647c43722c35e7615ea871134112c0b7b249a ;;
+            add_image.png) expected=33577c29ac83db40e01bffe0d8fc7108273d4e3ab84a759a66f0eb5e2a69094a ;;
+            add_images.png) expected=bbedd25f35cd9a89f7e9a76a2e812d29fb38a0c3f431fada60130ab2d8090912 ;;
+            add_scalar.png) expected=2fb7ffb2ac36558b6060ce28d7b0ca70ef556771d608563f37785e7264d7dded ;;
+            add_scalars.png) expected=d94436b2edb05443d6fa4023dd01d6c0eb79fec0e295ae28bc60fdc5047175d7 ;;
+            *) die "Unknown v3.9.4 SummaryWriter TensorBoard image: ${image}" ;;
+        esac
+        target="${dir}/python_api/python_api/_static/img/tensorboard/${image}"
+        [ ! -e "$target" ] && [ ! -L "$target" ] || continue
+        [ -f "${assets}/${image}" ] || die "Missing verified PyTorch image: ${image}"
+        actual="$(sha256sum "${assets}/${image}")"
+        [ "${actual%% *}" = "$expected" ] || die "PyTorch image checksum mismatch: ${image}"
+        mkdir -p "$(dirname "$target")"
+        for notice in LICENSE README.md; do
+            [ -s "${assets}/${notice}" ] || die "Missing PyTorch image attribution: ${notice}"
+            [ -e "$(dirname "$target")/${notice}" ] || cp "${assets}/${notice}" "$(dirname "$target")/${notice}"
+        done
+        cp "${assets}/${image}" "$target"
+        log "  ✅ restored v3.9.4 SummaryWriter ${image} from verified PyTorch 2.7 assets"
+    done < <(grep -oE 'python_api/_static/img/tensorboard/[^"<>[:space:]]+' "$page" | \
+             sed 's|.*/||' | sort -u)
+}
+
+# Bind recovered formula numbers to the exact historical TeX input, not to
+# formula IDs from a newer dev build. Python uses only the standard library.
+repair_archived_formulas() {
+    local assets
+    assets="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../assets/v3.9.4-formulas"
+    python3 - "${DOC_ROOT}/v3.9.4/cpp_api/api" "$assets" <<'PY'
+from pathlib import Path
+import hashlib
+import json
+import re
+import shutil
+import sys
+
+api, assets = map(Path, sys.argv[1:])
+if not api.is_dir():
+    raise SystemExit(0)
+references = set()
+for page in api.rglob('*.html'):
+    references.update(re.findall(r'''src=["'](form_\d+\.png)["']''', page.read_text(encoding='utf-8')))
+missing = sorted(name for name in references if not (api / name).exists() and not (api / name).is_symlink())
+if not missing:
+    raise SystemExit(0)
+expected_tex = '31adb22408e895f689f8f84405c8bb6d5e533418c444e69db4b857a28a8c5c94'
+tex = api / '_formulas.tex'
+if not tex.is_file() or hashlib.sha256(tex.read_bytes()).hexdigest() != expected_tex:
+    raise SystemExit('Cannot restore v3.9.4 formulas: missing or mismatched original _formulas.tex')
+manifest = json.loads((assets / 'manifest.json').read_text(encoding='utf-8'))
+if manifest['original_tex_sha256'] != expected_tex:
+    raise SystemExit('Cannot restore v3.9.4 formulas: source manifest mismatch')
+rows = {row['image']: row for row in manifest['PNG_formula_mapping']}
+for name in missing:
+    source = assets / name
+    if name not in rows or not source.is_file():
+        raise SystemExit(f'Cannot restore v3.9.4 formula: unavailable verified asset {name}')
+    if hashlib.sha256(source.read_bytes()).hexdigest() != rows[name]['png_sha256']:
+        raise SystemExit(f'Cannot restore v3.9.4 formula: PNG checksum mismatch {name}')
+for name in missing:
+    shutil.copyfile(assets / name, api / name)
+print(f'  ✅ restored {len(missing)} v3.9.4 formula PNGs from exact historical TeX')
+PY
 }
 
 # ---------------------------------------------------------------------------
@@ -319,6 +456,19 @@ rule
 [ -d website-deploy ] || die "website-deploy/ missing"
 [ -d docs-output ]    || die "docs-output/ missing"
 
+# A documentation tree with no entry page is not a degraded deployment, it is
+# a broken one. Doxygen output (cpp_api/) survives a failed Sphinx run, so the
+# directory can hold tens of thousands of files while /documentation/dev/
+# itself serves 404. Refuse it here rather than publishing it.
+[ -f docs-output/index.html ] || \
+    die "docs-output/index.html is missing: the documentation build produced no entry page"
+
+[ ! -e unified-deploy ] || die "unified-deploy already exists: use a fresh staging directory"
+if [ "$IS_RELEASE" = "true" ]; then
+    [[ "$DOC_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || \
+        die "release DOC_VERSION must be a stable vX.Y.Z tag"
+    [ "$RELEASE_VERSION" = "$DOC_VERSION" ] || die "release version inputs disagree"
+fi
 mkdir -p unified-deploy
 cp -r website-deploy/. unified-deploy/
 log "✅ Website copied to deploy root"
@@ -326,7 +476,16 @@ log "✅ Website copied to deploy root"
 # ---------------------------------------------------------------------------
 # This build's own documentation
 # ---------------------------------------------------------------------------
-if [ "$IS_RELEASE" = "true" ] && [ -n "$DOC_VERSION" ]; then
+# A release build without a version would silently take the dev branch below:
+# the release docs would overwrite /documentation/dev/, no archive would be
+# created, and /documentation/vX.Y.Z/ would never exist. Nothing would fail.
+# The workflow always supplies DOC_VERSION for a release event, so reaching
+# here means the two inputs disagree -- refuse rather than guess.
+if [ "$IS_RELEASE" = "true" ] && [ -z "$DOC_VERSION" ]; then
+    die "IS_RELEASE=true but DOC_VERSION is empty: a release build must name the version directory it publishes to"
+fi
+
+if [ "$IS_RELEASE" = "true" ]; then
     rule
     log "🎯 Release build → /documentation/${DOC_VERSION}/"
     rule
@@ -357,6 +516,8 @@ if [ -d preserved-versions/documentation ]; then
             log "  ⏭️  ${name} (already deployed by this build)"
             continue
         fi
+        [ -f "preserved-versions/documentation/${name}/index.html" ] || \
+            die "preserved ${name} has no index.html; refusing to lose a historical entry page"
         mkdir -p "$target"
         cp -r "preserved-versions/documentation/${name}/." "$target/"
         log "  ✅ restored ${name}"
@@ -367,6 +528,8 @@ if [ -d preserved-versions/documentation ]; then
     # entire dev tree would be dropped from the Pages artifact on every
     # release, and /documentation/dev/ would start 404ing.
     if [ ! -d "$DEV_DIR" ] && [ -d "preserved-versions/documentation/dev" ]; then
+        [ -f preserved-versions/documentation/dev/index.html ] || \
+            die "preserved dev has no index.html; refusing to advertise incomplete documentation"
         mkdir -p "$DEV_DIR"
         cp -r "preserved-versions/documentation/dev/." "$DEV_DIR/"
         log "  ✅ restored dev (preserved across this release deploy)"
@@ -416,10 +579,101 @@ calibrate_not_found_page "$LATEST_VERSION"
 rule
 log "🔄 Propagating version switcher to all archives"
 rule
+repair_archive_mainpage_images
+repair_archived_tensorboard_images
+repair_archived_formulas
+# Original examples fill known missing QCustomPlot illustrations in both new
+# and archived API trees; existing historical images and HTML stay unchanged.
+for api_dir in "${DOC_ROOT}"/*/cpp_api/api; do
+    [ -d "$api_dir" ] || continue
+    python3 "$(dirname "${BASH_SOURCE[0]}")/install_qcp_doc_images.py" --api-root "$api_dir"
+done
 propagate_version_switcher "$LATEST_VERSION"
 fix_legacy_selector_markup
 
 write_sitemap "$LATEST_VERSION"
+
+# ---------------------------------------------------------------------------
+# Officially supported site size and the tar acceptance ceiling differ.
+# Project policy: warn beyond the 1 GB supported range, but only block at the
+# documented tar ceiling. GB is decimal here: the tar must be <10,000,000,000 B.
+# The gzip count is transfer telemetry, not an independent acceptance gate.
+# Real deployment, timeout and live-site verification remain mandatory.
+# ---------------------------------------------------------------------------
+readonly PAGES_SUPPORTED_BYTES=1000000000
+readonly PAGES_TAR_LIMIT_BYTES=10000000000
+
+check_pages_size_budget() {
+    local measurements raw_bytes tar_bytes gzip_bytes ver_mb name
+    if ! measurements=$(python3 - <<'PYMEASURE'
+# PAGES_ARCHIVE_MEASUREMENT
+from pathlib import Path
+import subprocess
+import tempfile
+import zlib
+
+root = Path('unified-deploy')
+raw = 0
+for path in root.rglob('*'):
+    if path.is_symlink() or not (path.is_file() or path.is_dir()):
+        raise SystemExit(f'Unsupported Pages entry: {path}')
+    if path.is_file():
+        raw += path.stat().st_size
+# Match upload-pages-artifact@v3's GNU tar inputs. Count the full tar stream,
+# including headers, padding and end blocks, and compress that same stream.
+with tempfile.TemporaryFile() as errors:
+    process = subprocess.Popen([
+        'tar', '--dereference', '--hard-dereference', '--directory', str(root),
+        '-cf', '-', '--exclude=.git', '--exclude=.github', '.'
+    ], stdout=subprocess.PIPE, stderr=errors)
+    compressor = zlib.compressobj(level=6, wbits=31)
+    tar_bytes = gzip_bytes = 0
+    try:
+        for chunk in iter(lambda: process.stdout.read(1024 * 1024), b''):
+            tar_bytes += len(chunk)
+            gzip_bytes += len(compressor.compress(chunk))
+        gzip_bytes += len(compressor.flush())
+    finally:
+        process.stdout.close()
+        code = process.wait()
+    if code:
+        errors.seek(0)
+        raise SystemExit('Pages tar measurement failed: ' + errors.read().decode(errors='replace'))
+print(raw, tar_bytes, gzip_bytes)
+PYMEASURE
+    ); then
+        log "❌ Cannot validate Pages archive; refusing publication."
+        return 1
+    fi
+    read -r raw_bytes tar_bytes gzip_bytes <<< "$measurements"
+    if ! [[ "$raw_bytes" =~ ^[0-9]+$ && "$tar_bytes" =~ ^[0-9]+$ && "$gzip_bytes" =~ ^[0-9]+$ ]]; then
+        log "❌ Invalid Pages size measurements."
+        return 1
+    fi
+    log "   Published content: ${raw_bytes} bytes"
+    log "   Uncompressed tar: ${tar_bytes} bytes (must be below ${PAGES_TAR_LIMIT_BYTES} bytes; 10 GB decimal)"
+    log "   Gzip transfer estimate: ${gzip_bytes} bytes (informational, not Actions ZIP size)"
+    if [ "$tar_bytes" -ge "$PAGES_TAR_LIMIT_BYTES" ]; then
+        log "❌ Pages tar reaches the 10 GB acceptance ceiling; refusing deployment."
+        return 1
+    fi
+    if [ "$raw_bytes" -gt "$PAGES_SUPPORTED_BYTES" ] || [ "$tar_bytes" -gt "$PAGES_SUPPORTED_BYTES" ]; then
+        log "⚠️  Site/tar exceeds GitHub Pages' officially supported 1 GB range."
+        log "   Proceeding under the selected project policy; deployment may still fail or time out."
+        log "   Successful upload is not a substitute for deployment and live verification."
+    fi
+    if [ -d "$DOC_ROOT" ]; then
+        for name in $(list_version_dirs "$DOC_ROOT"); do
+            ver_mb=$(du -sm "${DOC_ROOT}/${name}" | cut -f1)
+            log "     ${name}: ${ver_mb} MB on disk"
+        done
+        if [ -d "$DEV_DIR" ]; then
+            ver_mb=$(du -sm "$DEV_DIR" | cut -f1)
+            log "     dev: ${ver_mb} MB on disk"
+        fi
+    fi
+    return 0
+}
 
 # ---------------------------------------------------------------------------
 # Summary
@@ -436,4 +690,9 @@ for name in "${DEPLOYED_VERSIONS[@]:-}"; do
     [ -n "$name" ] && log "   ${name}: ${SITE_URL}/documentation/${name}/"
 done
 rule
+
+if ! check_pages_size_budget; then
+    die "deployment exceeds the GitHub Pages artifact limit"
+fi
+
 log "✅ Unified deployment prepared"

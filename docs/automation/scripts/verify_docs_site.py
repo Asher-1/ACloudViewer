@@ -44,6 +44,68 @@ PAGE = """<!DOCTYPE html><html><head><title>{title}</title>
 DEEP = "python_api/index.html"
 # A page present in the archive ONLY (forces the version-root fallback).
 ARCHIVE_ONLY = "guide/advanced.html"
+# Immutable v3.9.4 templates used IDs, value/display and versionsLoaded rather
+# than the current data markers/id/label/docs:versionsready API. Keep these
+# snippets exercising the old caller, not a rewritten modern equivalent.
+LEGACY_DEEP = "legacy/index.html"
+LEGACY_PAGE = """<!DOCTYPE html><html><head><title>legacy template</title>
+<script src="../_static/version_switch.js"></script></head><body>
+<select id="docs-version-select-sidebar"
+        onchange="ACloudViewerVersionSwitcher.switchVersion(this.value)">
+<option value="latest">Latest (main)</option></select>
+<script>
+(function() {
+  function initVersionSelector() {
+    const select = document.getElementById('docs-version-select-sidebar');
+    if (!select) return;
+    if (window.ACloudViewerVersionSwitcher) {
+      window.ACloudViewerVersionSwitcher.updateSidebarSelector();
+    } else {
+      setTimeout(initVersionSelector, 200);
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initVersionSelector);
+  } else { initVersionSelector(); }
+  document.addEventListener('versionsLoaded', function() {
+    window.legacyVersionsLoaded = (window.legacyVersionsLoaded || 0) + 1;
+    if (window.ACloudViewerVersionSwitcher) {
+      window.ACloudViewerVersionSwitcher.updateSidebarSelector();
+    }
+  });
+})();
+</script>
+<select id="docs-version-select-main"
+        onchange="if(window.ACloudViewerVersionSwitcher) { window.ACloudViewerVersionSwitcher.switchVersion(this.value); }">
+<option value="latest">Latest (main)</option></select>
+<script>
+(function() {
+  function updateMainSelector() {
+    const select = document.getElementById('docs-version-select-main');
+    if (!select || !window.ACloudViewerVersionSwitcher) {
+      setTimeout(updateMainSelector, 200); return;
+    }
+    const versions = window.ACloudViewerVersionSwitcher.getVersions();
+    const currentVersion = window.ACloudViewerVersionSwitcher.getCurrentVersion();
+    if (versions.length > 0) {
+      select.innerHTML = '';
+      versions.forEach(v => {
+        const option = document.createElement('option');
+        option.value = v.value;
+        option.textContent = v.display;
+        if (v.value === currentVersion || (currentVersion === 'latest' && v.value === 'latest')) {
+          option.selected = true;
+        }
+        select.appendChild(option);
+      });
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateMainSelector);
+  } else { updateMainSelector(); }
+  document.addEventListener('versionsLoaded', updateMainSelector);
+})();
+</script></body></html>"""
 
 
 def write_page(base: Path, relative: str, title: str) -> None:
@@ -57,9 +119,35 @@ def write_page(base: Path, relative: str, title: str) -> None:
 
 def build_tree(root: Path) -> None:
     """Run the real deploy script against a synthetic build."""
-    (root / "website-deploy").mkdir(parents=True)
+    (root / "website-deploy" / "images").mkdir(parents=True)
+    shutil.copy(DOCS / ".." / "images" / "ACloudViewer_logo_horizontal.png",
+                root / "website-deploy" / "images" / "ACloudViewer_logo_horizontal.png")
+    shutil.copy(DOCS / ".." / "index.html", root / "website-deploy" / "index.html")
+    shutil.copy(DOCS / ".." / "styles.css", root / "website-deploy" / "styles.css")
+    shutil.copy(DOCS / ".." / "script.js", root / "website-deploy" / "script.js")
+    downloads = {
+        "generated_at": "fixture",
+        "version_metadata": [
+            {"value": "main-devel", "display_name": "Beta", "is_default": True,
+             "python_versions": ["3.11"], "ubuntu_versions": ["ubuntu20.04"]},
+            {"value": "ubuntu-prebuild-deps", "display_name": "ubuntu-prebuild-deps",
+             "is_default": False, "python_versions": [], "ubuntu_versions": []},
+            {"value": "v3.9.4", "display_name": "v3.9.4", "is_default": False,
+             "python_versions": ["3.11"], "ubuntu_versions": ["ubuntu20.04"]},
+        ],
+        "download_data": {},
+    }
+    for version in ("main-devel", "v3.9.4"):
+        release_url = f"https://github.com/Asher-1/ACloudViewer/releases/download/{version}/ACloudViewer-3.9.4%2B0123456789abcdef-"
+        package = {"url": release_url + f"{version}-windows.exe", "size": "1024.00 MB"}
+        linux = {"url": release_url + f"{version}-linux.run", "size": "1024.00 MB"}
+        downloads["download_data"][version] = {
+            "windows": {"app": {"cpu": {"amd64": package}}},
+            "linux": {"ubuntu20.04": {"app": {"cpu": {"amd64": linux}}}},
+        }
+    (root / "website-deploy" / "downloads_data.json").write_text(
+        json.dumps(downloads), encoding="utf-8")
     shutil.copy(DOCS / ".." / "404.html", root / "website-deploy" / "404.html")
-    (root / "website-deploy" / "index.html").write_text("<html>site</html>")
 
     dev = root / "docs-output"
     write_page(dev, "index.html", "dev home")
@@ -75,6 +163,10 @@ def build_tree(root: Path) -> None:
     write_page(arch, ARCHIVE_ONLY, "v3.9.4 advanced guide")
     (arch / "_static").mkdir(parents=True, exist_ok=True)
     (arch / "_static" / "version_switch.js").write_text("/* stale switcher */")
+    for version in (dev, arch):
+        legacy = version / LEGACY_DEEP
+        legacy.parent.mkdir(parents=True, exist_ok=True)
+        legacy.write_text(LEGACY_PAGE)
 
     subprocess.run(
         ["bash", str(DEPLOY)],
@@ -163,11 +255,99 @@ def main() -> int:
             with sync_playwright() as p:
                 browser = p.chromium.launch()
                 ctx = browser.new_context()
+                logo_failures = []
+                ctx.on("response", lambda response: logo_failures.append(response.url)
+                       if response.status >= 400 and
+                       "images/ACloudViewer_logo_horizontal.png" in response.url else None)
 
                 def goto(path: str):
                     page = ctx.new_page()
                     page.goto(base + path, wait_until="domcontentloaded")
                     return page
+
+                print("═══ live homepage navigation and download selectors ═══")
+                home = ctx.new_page()
+                home.route("https://**/*", lambda route: route.abort())
+                response = home.goto(base + "/", wait_until="domcontentloaded")
+                home.wait_for_selector("#download-output a.download-link", timeout=15000)
+                rec.check("real homepage source renders with local CSS/JS",
+                          response is not None and response.status == 200 and
+                          home.title().startswith("ACloudViewer"), home.title())
+                expected_nav = {"Home", "Features", "AICore AI", "Download", "Quick Start",
+                                "Gallery", "Documentation", "Support", "GitHub"}
+                actual_nav = {text.strip() for text in home.locator(
+                    ".nav-menu > li > a").all_text_contents()}
+                rec.check("all navigation links remain present",
+                          expected_nav.issubset(actual_nav), str(sorted(actual_nav)))
+                desktop = home.evaluate("""() => ({
+                    width: innerWidth,
+                    documentWidth: document.documentElement.scrollWidth,
+                    navRight: document.querySelector('.nav-menu').getBoundingClientRect().right,
+                    hamburger: getComputedStyle(document.querySelector('.hamburger')).display,
+                    links: [...document.querySelectorAll('.nav-menu > li > a')].map(a => a.getBoundingClientRect().right)
+                })""")
+                rec.check("desktop navigation fits without hiding links at 1280px",
+                          desktop["width"] == 1280 and desktop["documentWidth"] <= desktop["width"] and
+                          desktop["navRight"] <= desktop["width"] and
+                          all(x <= desktop["width"] for x in desktop["links"]), str(desktop))
+                rec.check("desktop uses full navigation above its fit breakpoint",
+                          desktop["hamburger"] == "none", desktop["hamburger"])
+                for width in (1200, 1024, 768, 390, 320):
+                    home.set_viewport_size({"width": width, "height": 844})
+                    hamburger = home.locator(".hamburger")
+                    rec.check(f"navigation collapses to hamburger at {width}px",
+                              hamburger.is_visible() and
+                              home.locator(".nav-menu").evaluate("e => !e.classList.contains('active')"))
+                    hamburger.click()
+                    home.wait_for_function("document.querySelector('.nav-menu').classList.contains('active')")
+                    home.wait_for_function("getComputedStyle(document.querySelector('.nav-menu')).transform === 'matrix(1, 0, 0, 1, 0, 0)'")
+                    opened = home.evaluate("""() => ({
+                        width: innerWidth,
+                        documentWidth: document.documentElement.scrollWidth,
+                        bodyOverflow: getComputedStyle(document.body).overflowX,
+                        menuRight: document.querySelector('.nav-menu').getBoundingClientRect().right,
+                        links: document.querySelectorAll('.nav-menu > li > a').length
+                    })""")
+                    rec.check(f"whole homepage fits without document clipping at {width}px",
+                              opened["documentWidth"] <= width and opened["bodyOverflow"] not in ("hidden", "clip"),
+                              str(opened))
+                    rec.check(f"all navigation links fit in expanded {width}px menu",
+                              opened["links"] == len(expected_nav) and opened["menuRight"] <= width,
+                              str(opened))
+                    hamburger.click()
+
+                code_layout = home.locator(".step-content .code-block").evaluate_all("""blocks => blocks.map(block => ({
+                    right: block.getBoundingClientRect().right,
+                    width: block.clientWidth,
+                    contentWidth: block.scrollWidth,
+                    overflow: getComputedStyle(block).overflowX,
+                    command: block.querySelector('code').textContent,
+                    copyButton: !!block.querySelector('.copy-btn')
+                }))""")
+                rec.check("long quickstart commands scroll within bounded code blocks",
+                          bool(code_layout) and all(row["right"] <= 320 and row["overflow"] == "auto" and
+                                                    row["copyButton"] for row in code_layout) and
+                          any(row["contentWidth"] > row["width"] and "cv3d.__version__" in row["command"]
+                              for row in code_layout), str(code_layout))
+
+                empty_version = home.locator("#version-selector .selector-btn").filter(
+                    has_text="ubuntu-prebuild-deps")
+                rec.check("metadata with no downloadable files is not selectable",
+                          empty_version.count() == 0)
+                active_os = home.locator("#os-selector .selector-btn.active")
+                rec.check("default Windows state is explicitly selected",
+                          active_os.get_attribute("data-value") == "windows",
+                          active_os.get_attribute("data-value"))
+                default_download = home.locator("#download-output a.download-link")
+                rec.check("default Windows choice matches its download target",
+                          "main-devel-windows.exe" in default_download.get_attribute("href"),
+                          default_download.get_attribute("href"))
+                home.locator('#os-selector .selector-btn[data-value="linux"]').click()
+                rec.check("changing OS synchronizes active state and options",
+                          home.locator("#os-selector .selector-btn.active").get_attribute("data-value") == "linux" and
+                          home.locator("#linux-version-row").is_visible() and
+                          "main-devel-linux.run" in home.locator("#download-output a.download-link").get_attribute("href"))
+                home.close()
 
                 print("═══ switcher population ═══")
                 page = goto("/documentation/dev/")
@@ -205,6 +385,56 @@ def main() -> int:
                 rec.check("absent deep page falls back to the version root",
                           page.url.rstrip("/").endswith("/documentation/dev"), page.url)
 
+                print("═══ immutable legacy template compatibility ═══")
+                legacy_errors = []
+                legacy_page = ctx.new_page()
+                legacy_page.on("pageerror", lambda error: legacy_errors.append(str(error)))
+                for version in ("dev", "v3.9.4"):
+                    legacy_page.goto(base + "/documentation/" + version + "/" + LEGACY_DEEP,
+                                     wait_until="domcontentloaded")
+                    legacy_page.wait_for_function("window.legacyVersionsLoaded === 1", timeout=5000)
+                    rec.check("legacy versionsLoaded event delivered " + version,
+                              legacy_page.evaluate("window.legacyVersionsLoaded") == 1)
+                    for selector in ("#docs-version-select-sidebar", "#docs-version-select-main"):
+                        opts = legacy_page.eval_on_selector_all(
+                            selector + " option",
+                            "els => els.map(e => [e.value, e.textContent.trim(), e.selected])")
+                        rec.check("legacy selector reads manifest " + version + " " + selector,
+                                  [o[0] for o in opts] == ids and
+                                  any(o[0] == version and o[2] for o in opts) and
+                                  all(o[1] and o[1] != "undefined" for o in opts), str(opts))
+                    rec.check("legacy getVersions aliases preserve canonical fields " + version,
+                              legacy_page.evaluate("""ACloudViewerVersionSwitcher.getVersions().every(
+                                  v => v.value === v.id && v.display && v.label && v.kind)"""))
+                # Exercise each immutable inline onchange. Also add the new marker
+                # to one legacy select to prove a mixed template never navigates twice.
+                for selector, target, mixed in (
+                    ("#docs-version-select-sidebar", "dev", False),
+                    ("#docs-version-select-main", "v3.9.4", True),
+                ):
+                    legacy_page.wait_for_function("window.legacyVersionsLoaded === 1")
+                    if mixed:
+                        legacy_page.locator(selector).evaluate("e => e.setAttribute('data-docs-version', '')")
+                    probes = []
+                    def record_probe(request):
+                        if request.method == "HEAD":
+                            probes.append(request.url)
+                    legacy_page.on("request", record_probe)
+                    legacy_page.select_option(selector, target)
+                    legacy_page.wait_for_url("**/documentation/" + target + "/" + LEGACY_DEEP,
+                                             timeout=8000)
+                    legacy_page.wait_for_function("window.legacyVersionsLoaded === 1")
+                    legacy_page.remove_listener("request", record_probe)
+                    rec.check("legacy inline switch preserves deep page " + selector,
+                              legacy_page.url.endswith("/documentation/" + target + "/" + LEGACY_DEEP))
+                    rec.check("legacy inline switch sends one existence probe " + selector,
+                              len(probes) == 1, str(probes))
+                rec.check("immutable legacy templates have no JavaScript exceptions",
+                          not legacy_errors, str(legacy_errors))
+                # The aliases are runtime-only; deployment's manifest stays canonical.
+                rec.check("legacy compatibility does not change versions.json schema",
+                          all(set(v) == {"id", "label", "kind"} for v in manifest["versions"]))
+
                 print("═══ 404 handler ═══")
                 page = goto("/documentation/getting_started/build_from_source.html")
                 page.wait_for_timeout(800)
@@ -221,6 +451,11 @@ def main() -> int:
                 page.wait_for_timeout(400)
                 rec.check("versioned dev miss is left alone",
                           "/documentation/dev/nope.html" in page.url, page.url)
+                page.wait_for_function("document.getElementById('logo').naturalWidth > 0")
+                rec.check("404 logo resolves from nested paths",
+                          page.locator("#logo").evaluate("e => e.complete && e.naturalWidth > 0"))
+                rec.check("404 logo never requests a broken relative URL",
+                          not logo_failures, str(logo_failures))
 
                 browser.close()
         finally:

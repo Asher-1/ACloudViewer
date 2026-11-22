@@ -237,7 +237,10 @@
     // index page; the sidebar uses the table above.
     function renderSelectors() {
         var selected = currentSelection();
-        var selects = document.querySelectorAll('select[data-docs-version]');
+        // Immutable release HTML predates data-docs-version and calls the
+        // legacy API from inline scripts. Its IDs remain part of our contract.
+        var selects = document.querySelectorAll(
+            'select[data-docs-version], #docs-version-select-sidebar, #docs-version-select-main');
 
         Array.prototype.forEach.call(selects, function (select) {
             select.innerHTML = '';
@@ -272,7 +275,9 @@
             if (!select || !select.matches || !select.matches('select[data-docs-version]')) {
                 return;
             }
-            if (select.value) {
+            // Archived templates already navigate in inline onchange. Do not
+            // issue a second HEAD probe/navigation if they also carry a marker.
+            if (select.value && !select.hasAttribute('onchange')) {
                 switchVersion(select.value);
             }
         });
@@ -296,17 +301,27 @@
                     current: state.current
                 }
             }));
+            // v3.9.4 inline initializers listen for this historical event.
+            document.dispatchEvent(new CustomEvent('versionsLoaded'));
         });
     }
 
     window.ACloudViewerVersionSwitcher = {
         switchVersion: switchVersion,
         getCurrentVersion: getCurrentVersion,
-        getVersions: function () { return state.versions.slice(); },
+        getVersions: function () {
+            // Preserve the canonical id/label/kind fields and supply the old
+            // template's value/display aliases only at the runtime boundary.
+            // versions.json itself keeps its single canonical schema.
+            return state.versions.map(function (v) {
+                return Object.assign({}, v, { value: v.id, display: versionLabel(v) });
+            });
+        },
         getLatest: function () { return state.latest; },
         render: render,
         renderVersionTable: renderVersionTable,
         renderSelectors: renderSelectors,
+        updateSidebarSelector: renderSelectors,
         init: init
     };
 

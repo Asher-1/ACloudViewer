@@ -1266,7 +1266,30 @@ install_docs_dependencies() {
     command -v python
     python -V
     python -m pip install -U -q "pip==$PIP_VER"
-    which cmake || python -m pip install -U -q cmake
+    # CMake must be >= 3.24 (see the root CMakeLists.txt). Testing that a
+    # `cmake` binary EXISTS is not enough: Ubuntu 22.04 ships 3.22.1, so this
+    # check passed, pip never installed a newer one, and every configure step
+    # failed with "CMake 3.24 or higher is required". The Python module was
+    # therefore never built, which silently removed the whole Python API from
+    # the published documentation -- PyAPIDocsBuilder enumerates modules by
+    # importing them, so no module means no python_api/ tree and 404s on the
+    # live site. Compare versions, do not test existence.
+    cmake_ok() {
+        local v major minor
+        v=$(cmake --version 2>/dev/null | head -1 | sed 's/.*version //')
+        [ -n "$v" ] || return 1
+        major=${v%%.*}
+        minor=$(echo "$v" | cut -d. -f2)
+        # CMake 4 removes compatibility with cmake_minimum_required(<3.5),
+        # which this tree still uses in vendored projects, so accept 3.x only.
+        [ "$major" -eq 3 ] && [ "$minor" -ge 24 ]
+    }
+    if ! cmake_ok; then
+        echo "cmake $(cmake --version 2>/dev/null | head -1 | sed 's/.*version //' || echo '(missing)') is below 3.24; installing a 3.x release via pip"
+        python -m pip install -U -q 'cmake>=3.24,<4'
+        hash -r
+    fi
+    cmake --version
 
     $SUDO apt remove python3-blinker -y
     pip install --ignore-installed -U blinker
@@ -1350,13 +1373,26 @@ build_docs() {
     cd build
     
     set -x
-    cmake "${cmakeOptions[@]}" \
+    # Both steps must abort the build on failure. Without the checks, a CMake
+    # that is too old prints "CMake 3.24 or higher is required", falls through
+    # to `make: *** No rule to make target 'python-package'`, and the function
+    # still prints "✅ Headless build complete". Downstream then silently
+    # produces docs with no Python API.
+    if ! cmake "${cmakeOptions[@]}" \
         -DENABLE_HEADLESS_RENDERING=ON \
         -DBUNDLE_CLOUDVIEWER_ML=OFF \
         -DBUILD_GUI=OFF \
         -DBUILD_WEBRTC=OFF \
-        ..
-    make python-package -j$NPROC
+        ..; then
+        set +x
+        echo "❌ CMake configure failed (CMake $(cmake --version | head -1 | awk '{print $3}') found at $(command -v cmake))" >&2
+        return 1
+    fi
+    if ! make python-package -j$NPROC; then
+        set +x
+        echo "❌ make python-package failed" >&2
+        return 1
+    fi
     set +x
     
     # Test Python module
@@ -1382,7 +1418,17 @@ build_docs() {
     # Use --clean-notebooks to clean existing notebooks before copying
     # Use --execute-notebooks=always to ensure notebooks are executed in headless mode
     # Use --py-api-rst=never and --py-example-rst=never to skip Python API/example generation in first build
-    python make_docs.py $DOC_ARGS --clean --sphinx --strict --clean-notebooks --execute-notebooks=always --py-api-rst=never --py-example-rst=never
+    #
+    # The exit status MUST be checked. This function ships with `set +u`, not
+    # `set -e`, so a failing Sphinx run falls through to the "✅ complete"
+    # banner below and the Docker layer exits 0. That is how a broken build
+    # reached Pages as a plausible-looking but index-less tree: Doxygen still
+    # wrote cpp_api/, so the upload had 96k files and nothing complained.
+    if ! python make_docs.py $DOC_ARGS --clean --sphinx --strict --clean-notebooks --execute-notebooks=always --py-api-rst=never --py-example-rst=never; then
+        set +x
+        echo "❌ Notebook execution build failed (see the Sphinx output above)"
+        return 1
+    fi
     set +x
     
     echo ""
@@ -1400,13 +1446,21 @@ build_docs() {
     echo ""
     
     set -x
-    cmake "${cmakeOptions[@]}" \
+    if ! cmake "${cmakeOptions[@]}" \
         -DENABLE_HEADLESS_RENDERING=OFF \
         -DBUNDLE_CLOUDVIEWER_ML=ON \
         -DBUILD_GUI=ON \
         -DBUILD_WEBRTC=ON \
-        ..
-    make python-package -j$NPROC
+        ..; then
+        set +x
+        echo "❌ CMake configure failed for the GUI build (CMake $(cmake --version | head -1 | awk '{print $3}') found at $(command -v cmake))" >&2
+        return 1
+    fi
+    if ! make python-package -j$NPROC; then
+        set +x
+        echo "❌ make python-package failed for the GUI build" >&2
+        return 1
+    fi
     set +x
     
     # Test Python module (may fail in headless CI, that's expected)
@@ -1446,7 +1500,11 @@ build_docs() {
     # - HTML outputs are combined via file system
     # Don't use --clean here to preserve executed notebook outputs from first build
     # Use --py-api-rst=always and --py-example-rst=always to generate Python API/example docs in second build
-    python make_docs.py $DOC_ARGS --sphinx --strict --doxygen --parallel --execute-notebooks=never --py-api-rst=always --py-example-rst=always
+    if ! python make_docs.py $DOC_ARGS --sphinx --strict --doxygen --parallel --execute-notebooks=never --py-api-rst=always --py-example-rst=always; then
+        set +x
+        echo "❌ Full documentation build failed (see the Sphinx/Doxygen output above)"
+        return 1
+    fi
     set +x
     
     echo ""

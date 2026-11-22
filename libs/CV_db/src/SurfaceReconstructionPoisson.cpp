@@ -103,7 +103,10 @@ public:
                     "enough memory!");
             return false;
         }
-        if (!cloud->reserveTheNormsTable()) {
+        // The Poisson wrapper currently does not emit vertex normals. An
+        // allocated-but-empty table makes hasNormals() true and downstream
+        // vertex removal attempts to read normals that do not exist.
+        if (!normals_.empty() && !cloud->reserveTheNormsTable()) {
             utility::LogError(
                     "[CreateFromPointCloudPoisson] reserve normals failed, not "
                     "enough memory!");

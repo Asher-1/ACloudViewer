@@ -1101,43 +1101,29 @@ async function loadDownloadsData() {
     }
 }
 
+function hasAvailableDownload(version) {
+    const visit = node => {
+        if (!node || typeof node !== 'object') return false;
+        if (typeof node.url === 'string' && node.url.trim()) return true;
+        return Object.values(node).some(visit);
+    };
+    return visit(downloadsData && downloadsData[version]);
+}
+
 function initializeVersionSelector() {
     versionSelector.innerHTML = '';
-    
-    // 1. Sort versions: Beta (main-devel) first, then other versions in order
-    const sortedVersions = [...versionMetadata].sort((a, b) => {
-        // Beta (main-devel) always comes first
-        if (a.value === 'main-devel') return -1;
-        if (b.value === 'main-devel') return 1;
-        return 0; // Keep original order for other versions
-    });
-    
-    // 2. Filter out Beta if it has no download resources
-    const versionsToShow = sortedVersions.filter(version => {
-        if (version.value === 'main-devel') {
-            // Check if Beta has any download resources
-            const betaData = downloadsData && downloadsData['main-devel'];
-            if (!betaData) {
-                console.log('ℹ️ Beta version hidden: no download data available');
-                return false;
-            }
-            
-            // Check if there are any actual downloads
-            const hasDownloads = Object.values(betaData).some(osData => {
-                return Object.keys(osData).length > 0;
-            });
-            
-            if (!hasDownloads) {
-                console.log('ℹ️ Beta version hidden: no downloads available');
-                return false;
-            }
-        }
-        return true;
-    });
-    
-    // 3. Create buttons for filtered versions
-    let hasSetDefault = false;
-    versionsToShow.forEach((version, index) => {
+    currentSelection.version = null;
+    const versionsToShow = versionMetadata
+        .filter(version => hasAvailableDownload(version.value))
+        .sort((a, b) => {
+            // Keep the beta channel first when it has actual downloads.
+            if (a.value === 'main-devel') return -1;
+            if (b.value === 'main-devel') return 1;
+            return 0;
+        });
+    const defaultVersion = versionsToShow.find(version => version.is_default) || versionsToShow[0];
+
+    versionsToShow.forEach(version => {
         const btn = document.createElement('button');
         btn.className = 'selector-btn';
         btn.dataset.value = version.value;
@@ -1145,12 +1131,9 @@ function initializeVersionSelector() {
         btn.dataset.ubuntuVersions = version.ubuntu_versions.join(',');
         btn.textContent = version.display_name;
         
-        // Only set active for the first version (or the one marked as default)
-        // Ensure only ONE version is selected
-        if (!hasSetDefault && (version.is_default || index === 0)) {
+        if (version === defaultVersion) {
             btn.classList.add('active');
             currentSelection.version = version.value;
-            hasSetDefault = true;
         }
         
         btn.addEventListener('click', () => {
@@ -1175,7 +1158,20 @@ function initializeVersionSelector() {
     }
 }
 
+function setInitialSelection(selector, value) {
+    selector.querySelectorAll('.selector-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.value === value);
+    });
+}
+
 function initializeSelectors() {
+    // Reflect the same defaults used by updateDownloadLink before any click.
+    setInitialSelection(osSelector, currentSelection.os);
+    setInitialSelection(packageSelector, currentSelection.package);
+    setInitialSelection(cudaSelector, currentSelection.cuda);
+    setInitialSelection(archSelector, currentSelection.arch);
+    linuxVersionRow.style.display = currentSelection.os === 'linux' ? 'flex' : 'none';
+    pythonRow.style.display = currentSelection.package === 'wheel' ? 'flex' : 'none';
     // OS selector
     osSelector.querySelectorAll('.selector-btn').forEach(btn => {
         btn.addEventListener('click', () => {
