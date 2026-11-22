@@ -57,13 +57,17 @@
 | Item             | Requirement                                    |
 | ---------------- | ---------------------------------------------- |
 | **OS**           | Ubuntu 20.04 / 22.04 / 24.04                   |
-| **CMake**        | ≥ 3.20                                         |
+| **CMake**        | ≥ 3.24                                         |
 | **Python**       | 3.10 – 3.13                                    |
 | **Compiler**     | GCC ≥ 9 or Clang (provided by `install_deps`)  |
 | **AICore GPU (default)** | **Vulkan** — `AICore_USE_VULKAN=ON` on Linux (CMake default); run `util/vulkan/install_vulkan_env.sh` or `install_deps_ubuntu.sh` for build-time SDK/glslc |
 | **GPU (optional)** | CUDA toolkit ≥ 11.8 for optional `-DAICore_USE_CUDA=ON` / `-DBUILD_CUDA_MODULE=ON` |
 
 ---
+
+> Ubuntu 20.04/22.04 provide an older CMake by default. Install CMake >=3.24
+> before configuring, for example with `python3 -m pip install --user --upgrade "cmake>=3.24,<4"`,
+> add `~/.local/bin` to PATH, and verify `cmake --version`.
 
 ## Option A — Build without Conda (System Packages Only)
 
@@ -80,7 +84,7 @@
 
 ```bash
 # From the ACloudViewer repository root:
-utils/install_deps_ubuntu.sh assume-yes
+util/install_deps_ubuntu.sh assume-yes
 ```
 
 This script installs all required system packages (`xorg-dev`, `libglu1-mesa-dev`,
@@ -381,7 +385,7 @@ python3 -c "import cloudViewer as cv3d; print(cv3d.__version__)"
 The base system tools are still needed even with Conda:
 
 ```bash
-utils/install_deps_ubuntu.sh assume-yes
+util/install_deps_ubuntu.sh assume-yes
 ```
 
 ### B2. Create the Conda environment

@@ -37,7 +37,7 @@
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
 | **OS**                   | Windows 10/11 (64-bit)                                                                                                              |
 | **Visual Studio**        | 2022 (with "Desktop development with C++" workload)                                                                                 |
-| **CMake**                | ≥ 3.20 (bundled with VS or standalone)                                                                                              |
+| **CMake**                | ≥ 3.24 (bundled with VS or standalone)                                                                                              |
 | **Python**               | 3.10 – 3.12 (via Conda)                                                                                                             |
 | **Conda**                | Miniconda or Anaconda                                                                                                               |
 | **Git**                  | [https://git-scm.com/download/win](https://git-scm.com/download/win)                                                                |
