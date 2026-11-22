@@ -127,6 +127,7 @@ def _sync_plugin_showcase_assets(app):
         "qRelateAnything": ("images/relate_anything_test.jpg",
                             "images/relate_anything_video_test.jpg"),
         "qVLXSeek": ("images/detection.jpg", "images/region_ocr.jpg"),
+        "qWeVisOne": ("images/detection.jpg", "images/matting.jpg"),
         "qAnyLabeling": ("docs/images/overview.png",),
         "qSpirula": ("images/spirula_indoor_reconstruction.jpg",
                      "images/spirula_outdoor_scene.jpg",

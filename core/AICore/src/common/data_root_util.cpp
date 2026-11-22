@@ -17,6 +17,10 @@ std::string locate_data_root() {
     return cloudViewer::utility::filesystem::LocateDataRoot();
 }
 
+std::string home_dir() {
+    return cloudViewer::utility::filesystem::GetHomeDirectory();
+}
+
 std::string extract_model_dir(const char* sub_dir) {
     return (std::filesystem::u8path(locate_data_root()) / "extract" /
             std::filesystem::u8path(sub_dir))

@@ -627,6 +627,20 @@ if(UNIX AND NOT APPLE)
 endif()
 _aicore_test_common(test_vlx_probe NO_CTEST)
 
+add_executable(test_wevisone_probe wevisone/test_wevisone_probe.cpp)
+target_link_libraries(test_wevisone_probe PRIVATE AICore)
+_aicore_capi_link(test_wevisone_probe)
+if(TARGET Qt::Core AND TARGET Qt::Gui)
+    target_link_libraries(test_wevisone_probe PRIVATE Qt::Core Qt::Gui)
+elseif(Qt5_FOUND)
+    target_link_libraries(test_wevisone_probe PRIVATE Qt5::Core Qt5::Gui)
+endif()
+if(UNIX AND NOT APPLE)
+    target_compile_options(test_wevisone_probe PRIVATE -fPIC)
+    target_link_options(test_wevisone_probe PRIVATE -no-pie)
+endif()
+_aicore_test_common(test_wevisone_probe NO_CTEST)
+
 
 # Manual parity dump tool (NOT a ctest): writes upstream-compatible LBF3
 # per-frame binaries for the compare_lingbot_parity.py A/B against
@@ -1055,7 +1069,11 @@ foreach(_im_rmbg_quant f32 f16 q8)
 endforeach()
 set_tests_properties(test_instantmesh_full_lifecycle test_instantmesh_no_cfg_lifecycle
     test_instantmesh_timing_boundary PROPERTIES
-    LABELS "capi;instantmesh;model;e2e" SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
+    LABELS "capi;instantmesh;model;e2e" SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu
+    # The CPU full diffusion pipeline runs ~300 s on a desktop core; the
+    # contract stage's --timeout 300 hang guard otherwise flakes this test
+    # under -j4 contention. Same heavy-test override as facedetect_detect_only.
+    TIMEOUT 1800)
 if(AICORE_TEST_ENV_EXTRA)
     set_tests_properties(test_instantmesh_lifecycle test_instantmesh_full_lifecycle
         test_instantmesh_no_cfg_lifecycle test_instantmesh_timing_boundary

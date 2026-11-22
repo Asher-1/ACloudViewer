@@ -677,6 +677,21 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                     QString::fromLatin1(kAnyLabelingDownloadUrl),
                     {QCryptographicHash::Sha256,
                      QByteArray(kAnyLabelingSha256)}};
+        case Dataset::WeVisOne:
+            // Revision-pinned URL: the pinned manifest (task-sample queries)
+            // only exists from this commit onward; the digest in
+            // asset_digests.h matches exactly this revision's LFS object.
+            return {kind,
+                    QStringLiteral("WeVisOne-VL official test images"),
+                    QStringLiteral("wevisone_vl_test_data.zip"),
+                    QStringLiteral("wevisone_vl_test_data"),
+                    QStringLiteral(
+                            "https://huggingface.co/Asher-1/WeVisOne-VL-GGML/"
+                            "resolve/ec7bf6528100a17ac97269e1a7d94d35d9e0c792/"
+                            "wevisone_vl_test_data.zip"),
+                    {QCryptographicHash::Sha256,
+                     ecvAssetIntegrity::PinnedDigest(
+                             QStringLiteral("wevisone_vl_test_data.zip"))}};
     }
     Q_UNREACHABLE();
     return {};
@@ -894,6 +909,16 @@ bool ecvTestDataRepository::isExtractedComplete(Dataset kind) const {
                              .isEmpty() &&
                     !findDatasetFile(kind,
                                      QStringLiteral("14_cuboid_street.json"))
+                             .isEmpty();
+            break;
+        case Dataset::WeVisOne:
+            // Complete when the deterministic first-fill demo image (the
+            // detection sample) and the segmentation/matting demo photo are
+            // both present.
+            extractedComplete =
+                    !findDatasetFile(kind, QStringLiteral("livingroom.jpg"))
+                             .isEmpty() &&
+                    !findDatasetFile(kind, QStringLiteral("seabreeze.jpg"))
                              .isEmpty();
             break;
     }

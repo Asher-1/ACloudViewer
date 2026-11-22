@@ -63,4 +63,5 @@
 #include "aicore/tagging_capi.h"
 #include "aicore/trellis_capi.h"
 #include "aicore/vlx_seek_capi.h"
+#include "aicore/wevisone_capi.h"
 #include "aicore/yolo_capi.h"

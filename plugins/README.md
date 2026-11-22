@@ -31,7 +31,7 @@ draggable toolbar instead of the generic plugin menu/toolbar. The only group
 today is `"aicore"` (the AI inference family: qDA3, qDeepLSD, qFaceDetect,
 qFreeSplatter, qGKD, qInstantMesh, qLightGlue, qLingbotMap, qMapAnything,
 qOCR, qOpenPCDet, qQuerySplat, qRAM, qRelateAnything, qRFDetr, qRMBG,
-qSAM3, qSAM3D, qTrellis, qVLXSeek, qYOLO, qAnyLabeling); ungrouped plugins
+qSAM3, qSAM3D, qTrellis, qVLXSeek, qWeVisOne, qYOLO, qAnyLabeling); ungrouped plugins
 keep the historical order and toolbar.
 
 ---
@@ -64,6 +64,7 @@ inference tasks with one shared ggml runtime (including RelateAnything).
 | **qOpenPCDet** | `PLUGIN_STANDARD_QOPENPCDET` | [docs/guides/plugins/qOpenPCDet.md](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qOpenPCDet.md) | [qOpenPCDet/README.md](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qOpenPCDet/README.md) |
 | **qQuerySplat** | `PLUGIN_STANDARD_QQUERYSPLAT` | [docs/guides/plugins/qQuerySplat.md](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qQuerySplat.md) | [qQuerySplat/README.md](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qQuerySplat/README.md) |
 | **qVLXSeek** | `PLUGIN_STANDARD_QVLXSEEK` | [docs/guides/plugins/qVLXSeek.md](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qVLXSeek.md) | [qVLXSeek/README.md](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qVLXSeek/README.md) |
+| **qWeVisOne** | `PLUGIN_STANDARD_QWEVISONE` | [docs/guides/plugins/qWeVisOne.md](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qWeVisOne.md) | [qWeVisOne/README.md](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qWeVisOne/README.md) |
 
 **Core library:** enable with `-DAICore_ENABLED=ON` (auto-enables `GGML_ENABLED`).
 
@@ -93,6 +94,7 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QOPENPCDET=ON \
       -DPLUGIN_STANDARD_QINSTANTMESH=ON \
       -DPLUGIN_STANDARD_QVLXSEEK=ON \
+      -DPLUGIN_STANDARD_QWEVISONE=ON \
       -DPLUGIN_STANDARD_QQUERYSPLAT=ON \
       -DPLUGIN_STANDARD_QSIBR=ON \
       ..

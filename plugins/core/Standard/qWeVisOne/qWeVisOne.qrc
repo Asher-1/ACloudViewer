@@ -1,0 +1,7 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+  <qresource prefix="/CC/plugin/qWeVisOne">
+    <file>info.json</file>
+    <file>images/qWeVisOne.svg</file>
+  </qresource>
+</RCC>

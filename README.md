@@ -172,7 +172,7 @@ and the [qSpirula user guide](https://github.com/Asher-1/ACloudViewer/blob/main/
 
 ## AICore AI Plugins — Depth, Detection, Matching & 3D Generation
 
-Twenty-two GUI plugins share one native inference library — **`libAICore.so`**, whose ggml runtime is vendored from [llama.cpp](https://github.com/ggml-org/llama.cpp). Run quantized **GGUF** models on **CUDA / Vulkan (Linux/Windows) / Metal (macOS) / CPU** with **no Python or PyTorch** at runtime. Results land directly in the DB tree and plug into reconstruction, COLMAP, and SIBR workflows.
+Twenty-three GUI plugins share one native inference library — **`libAICore.so`**, whose ggml runtime is vendored from [llama.cpp](https://github.com/ggml-org/llama.cpp). Run quantized **GGUF** models on **CUDA / Vulkan (Linux/Windows) / Metal (macOS) / CPU** with **no Python or PyTorch** at runtime. Results land directly in the DB tree and plug into reconstruction, COLMAP, and SIBR workflows.
 
 **Perception — depth · lines · matching · faces · text**
 
@@ -196,6 +196,7 @@ Twenty-two GUI plugins share one native inference library — **`libAICore.so`**
 | **[qRelateAnything](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qRelateAnything.md)** | Scene relation graphs | RelSGG ViT / ConvNeXt GGUF (24 models) | Subject–predicate–object edges over tracked objects (image & video) | `PLUGIN_STANDARD_QRELATEANYTHING` |
 | **[qGKD](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qGKD.md)** | Open-world keypoint detection | GKDT-L GGUF (ECCV 2026) | Text / visual 1-shot / multimodal / multi-object prompts | `PLUGIN_STANDARD_QGKD` |
 | **[qVLXSeek](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qVLXSeek.md)** | Open-vocab grounding & region QA | VLX-Seek 1.5-10B GGUF | Detection, counting, VQA, region OCR via region retrieval | `PLUGIN_STANDARD_QVLXSEEK` |
+| **[qWeVisOne](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qWeVisOne.md)** | Unified detection / counting / OCR / seg / matting | WeVisOne-VL 2B/4B (Qwen3-VL) GGUF | 11 tasks via structured box tokens + pixel-decoder alpha mattes | `PLUGIN_STANDARD_QWEVISONE` |
 
 **3D generation & reconstruction**
 
@@ -322,6 +323,10 @@ Twenty-two GUI plugins share one native inference library — **`libAICore.so`**
 <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qAnyLabeling/docs/images/overview.png" width="100%">
 <br><sub><b>qAnyLabeling</b> — X-AnyLabeling-style annotation workbench with fully local AI assist</sub>
 </td>
+<td width="33%" align="center">
+<div style="display:flex;gap:6px;"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qWeVisOne/images/detection.jpg" width="49%"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qWeVisOne/images/count_point.jpg" width="49%"></div>
+<br><sub><b>qWeVisOne</b> — unified perception: detection, counting, OCR, segmentation &amp; matting (WeVisOne-VL 2B/4B)</sub>
+</td>
 </tr>
 </table>
 
@@ -357,6 +362,7 @@ cmake -B build_app \
   -DPLUGIN_STANDARD_QOPENPCDET=ON \
   -DPLUGIN_STANDARD_QINSTANTMESH=ON \
   -DPLUGIN_STANDARD_QVLXSEEK=ON \
+  -DPLUGIN_STANDARD_QWEVISONE=ON \
   -DPLUGIN_STANDARD_QQUERYSPLAT=ON \
   -DBUILD_RECONSTRUCTION=ON \
   -DPLUGIN_STANDARD_QSIBR=ON \

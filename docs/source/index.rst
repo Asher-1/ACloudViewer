@@ -35,7 +35,7 @@ ACloudViewer: A Modern Library for 3D Point Cloud Processing
 AICore AI Plugins
 -----------------
 
-Twenty-two GUI plugins share one native inference library — **libAICore.so**, whose ggml runtime is vendored from `llama.cpp <https://github.com/ggml-org/llama.cpp>`_.
+Twenty-three GUI plugins share one native inference library — **libAICore.so**, whose ggml runtime is vendored from `llama.cpp <https://github.com/ggml-org/llama.cpp>`_.
 Run quantized **GGUF** models on **CUDA / Vulkan / Metal / CPU** with **no Python or PyTorch** at runtime.
 Results land directly in the DB tree and plug into reconstruction, COLMAP, and SIBR workflows.
 
@@ -123,6 +123,11 @@ Results land directly in the DB tree and plug into reconstruction, COLMAP, and S
      - VLX-Seek 1.5-10B GGUF
      - Detection, counting, VQA, region OCR via region retrieval
      - ``PLUGIN_STANDARD_QVLXSEEK``
+   * - **qWeVisOne**
+     - Unified vision-language perception
+     - WeVisOne-VL 2B/4B GGUF (11 tasks)
+     - Detection, referring, counting, OCR, segmentation, matting, VQA
+     - ``PLUGIN_STANDARD_QWEVISONE``
 
 .. list-table:: 3D generation & reconstruction
    :header-rows: 1
@@ -245,6 +250,13 @@ Results land directly in the DB tree and plug into reconstruction, COLMAP, and S
      </figure>
      <figure style="margin:0; text-align:center;">
        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+         <img src="_static/plugin-assets/qWeVisOne/detection.jpg" alt="WeVisOne-VL detection" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
+         <img src="_static/plugin-assets/qWeVisOne/matting.jpg" alt="WeVisOne-VL matting" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
+       </div>
+       <figcaption style="margin-top:10px; font-size:.9em; color:#475569;"><strong>qWeVisOne</strong> — unified vision-language perception: detection, referring, counting, OCR, segmentation, matting, VQA (WeVisOne-VL 2B/4B)</figcaption>
+     </figure>
+     <figure style="margin:0; text-align:center;">
+       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
          <img src="_static/plugin-assets/qYOLO/yolo-seg.jpg" alt="YOLO instance segmentation" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
          <img src="_static/plugin-assets/qYOLO/yolo-pose.jpg" alt="YOLO pose estimation" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
        </div>
@@ -355,6 +367,7 @@ Why AICore?
      -DPLUGIN_STANDARD_QOPENPCDET=ON \
      -DPLUGIN_STANDARD_QINSTANTMESH=ON \
      -DPLUGIN_STANDARD_QVLXSEEK=ON \
+     -DPLUGIN_STANDARD_QWEVISONE=ON \
      -DPLUGIN_STANDARD_QQUERYSPLAT=ON \
      -DBUILD_RECONSTRUCTION=ON \
      -DPLUGIN_STANDARD_QSIBR=ON \
@@ -363,7 +376,7 @@ Why AICore?
    cmake --build build_app --target ACloudViewer -j$(nproc)
 
 See :doc:`guides/plugins/README` for the complete overview and the
-per-plugin user guides — one guide for each of the twenty-two AICore
+per-plugin user guides — one guide for each of the twenty-three AICore
 plugins plus the qSpirula Spirula Studio integration — listed in the
 toctree below.
 Full build options: :doc:`getting_started/build_from_source`.

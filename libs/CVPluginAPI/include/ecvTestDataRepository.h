@@ -109,7 +109,15 @@ public:
          *  > Use Test Data one-click fill), import/export format samples,
          *  PaddleOCR KIE/rec samples, the LLVIP compare pair, the video
          *  tracking demo and the KITTI 3D cuboid sample. */
-        AnyLabeling  ///< X-AnyLabeling official annotation demos (qAnyLabeling)
+        AnyLabeling,  ///< X-AnyLabeling official annotation demos
+                      ///< (qAnyLabeling)
+        /** WeVisOne-VL official test images (qWeVisOne): the upstream
+         *  test_data bundle (25 demo/evaluation photos plus the task-sample
+         *  manifest.json) shipped as wevisone_vl_test_data.zip on the
+         *  Asher-1/WeVisOne-VL-GGML model repository next to the GGUF
+         *  weights. Appended last: existing enumerator values stay stable
+         *  for plugins compiled against the previous layout. */
+        WeVisOne  ///< WeVisOne-VL official test images (qWeVisOne)
     };
 
     /** Dataset metadata. */

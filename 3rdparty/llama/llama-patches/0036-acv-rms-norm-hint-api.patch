@@ -1,0 +1,29 @@
+diff --git a/include/ggml.h b/include/ggml.h
+--- a/include/ggml.h
++++ b/include/ggml.h
+@@ -1447,6 +1447,9 @@
+     // STRICT_F32 uses the PyTorch vectorized Welford LayerNorm on CUDA and
+     // fuses a directly following MUL/ADD affine; other cases are unchanged.
+     GGML_API void ggml_norm_set_hint(struct ggml_tensor * a, enum ggml_op_hint hint);
++    // STRICT_F32 selects the pinned scalar RMS-norm accumulation order for
++    // llama LLM greedy parity; owner-scoped through the task eval callback.
++    GGML_API void ggml_rms_norm_set_hint(struct ggml_tensor * a, enum ggml_op_hint hint);
+ 
+     GGML_API struct ggml_tensor * ggml_rms_norm(
+             struct ggml_context * ctx,
+diff --git a/src/ggml.c b/src/ggml.c
+--- a/src/ggml.c
++++ b/src/ggml.c
+@@ -3240,6 +3240,12 @@
+     ggml_set_op_params_i32(a, 1, (int32_t) hint);
+ }
+ 
++void ggml_rms_norm_set_hint(struct ggml_tensor * a, enum ggml_op_hint hint) {
++    GGML_ASSERT(a->op == GGML_OP_RMS_NORM);
++    GGML_ASSERT(hint == GGML_HINT_NONE || hint == GGML_HINT_STRICT_F32);
++    ggml_set_op_params_i32(a, 1, (int32_t) hint);
++}
++
+ // ggml_rms_norm
+ 
+ static struct ggml_tensor * ggml_rms_norm_impl(

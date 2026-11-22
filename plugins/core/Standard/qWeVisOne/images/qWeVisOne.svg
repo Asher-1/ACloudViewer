@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  qWeVisOne plugin icon. Unified visual perception: one eye over a scene
+  with a detection box, a green alpha matte and a point marker — the three
+  output families (boxes / mattes / points) of the WeVisOne-VL model — plus
+  the "WeVisOne" text mandated by the plugin guidelines.
+-->
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1c1030"/>
+      <stop offset="1" stop-color="#33195c"/>
+    </linearGradient>
+    <radialGradient id="iris" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#b48cff"/>
+      <stop offset="1" stop-color="#6a3df0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- rounded background -->
+  <rect x="4" y="4" width="120" height="120" rx="20" fill="url(#bg)"/>
+  <rect x="4" y="4" width="120" height="120" rx="20" fill="none"
+        stroke="#a97fff" stroke-opacity="0.55" stroke-width="2"/>
+
+  <!-- perception eye outline -->
+  <path d="M 18 52 Q 64 18 110 52 Q 64 86 18 52 Z" fill="none"
+        stroke="#e9defc" stroke-width="4" stroke-linejoin="round"/>
+  <circle cx="64" cy="52" r="16" fill="url(#iris)" stroke="#e9defc"
+          stroke-width="3"/>
+  <circle cx="64" cy="52" r="6" fill="#1c1030"/>
+
+  <!-- detection box output (red, the official render color) -->
+  <rect x="20" y="70" width="30" height="22" rx="3" fill="none"
+        stroke="#ff4d4d" stroke-width="3"/>
+
+  <!-- alpha matte output (green, the official overlay color) -->
+  <path d="M 60 92 Q 66 70 78 76 Q 92 82 86 92 Q 74 98 60 92 Z"
+        fill="#00dc00" fill-opacity="0.45" stroke="#00dc00"
+        stroke-opacity="0.8" stroke-width="2"/>
+
+  <!-- point output marker -->
+  <circle cx="102" cy="80" r="5" fill="#ffd27a"/>
+  <circle cx="102" cy="80" r="9" fill="none" stroke="#ffd27a"
+          stroke-opacity="0.6" stroke-width="2"/>
+
+  <!-- plugin name -->
+  <text x="64" y="115" text-anchor="middle"
+        font-family="DejaVu Sans, Arial, sans-serif" font-size="17"
+        font-weight="bold" fill="#ffffff">WeVisOne</text>
+</svg>

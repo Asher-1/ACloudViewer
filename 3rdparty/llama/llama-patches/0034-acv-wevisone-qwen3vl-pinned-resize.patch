@@ -1,0 +1,22 @@
+diff --git a/tools/mtmd/clip.cpp b/tools/mtmd/clip.cpp
+--- a/tools/mtmd/clip.cpp
++++ b/tools/mtmd/clip.cpp
+@@ -1769,6 +1769,18 @@
+                         hparams.image_resize_algo = RESIZE_ALGO_BICUBIC;
+                         hparams.image_resize_pad  = PAD_NONE; // the HF processor resizes to the smart_resize size, no padding
+                         hparams.image_round_half_even = true; // smart_resize uses Python round()
++                        // ACV WeVisOne parity: the pinned llama (620d2225) predates the
++                        // HF-aligned resize change above, so its qwen3vl preprocessing
++                        // used the PAD_CEIL default and std::round grid rounding.
++                        // WeVisOne is the only AICore consumer of PROJECTOR_TYPE_QWEN3VL
++                        // (vlx_seek builds its own graphs; the llm task uses idefics3);
++                        // restore the pinned resize semantics for it so greedy decoding
++                        // matches the upstream reference. Other Qwen-family projectors
++                        // keep the HF-aligned behavior.
++                        if (model.proj_type == PROJECTOR_TYPE_QWEN3VL) {
++                            hparams.image_resize_pad      = PAD_CEIL;
++                            hparams.image_round_half_even = false;
++                        }
+                         get_u32(KEY_SPATIAL_MERGE_SIZE, hparams.n_merge, false);
+                         get_u32(KEY_WIN_ATTN_PATTERN, hparams.n_wa_pattern, model.proj_type == PROJECTOR_TYPE_QWEN25VL); // only 2.5 requires it
+                         // ref: https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct/blob/main/preprocessor_config.json

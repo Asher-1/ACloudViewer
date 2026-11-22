@@ -103,6 +103,7 @@ borrowed pixels + width/height + row stride + channel format
 | `relation_capi.h` | RelateAnything typed edges, raw predicate/pair logits and native CLIP text embeddings | `aicore_image_view` plus borrowed object regions |
 | `trellis_capi.h` | TRELLIS image-to-3D generation |
 | `vlx_seek_capi.h` | VLX-Seek fine-grained region-retrieval grounding (WeDetect-Uni proposals, Qwen3.5-VL + C-RADIOv4/SimpleFPN/HFRE vision stack, qwen3_5 LLM via the pinned libllama; seven en/zh task templates, typed boxes + answer, common timing/shutdown) |
+| `wevisone_capi.h` | WeVisOne-VL full-chain unified visual perception (Qwen3-VL ViT + LLM over the pinned libllama/libmtmd; eleven prompt-family tasks — detection/referring/point/count_box/count_point/ocr/ocr_grounding/segmentation/matting/visual_prompt/freeform — greedy coordinate-token boxes/points/counts, optional pixel-decoder binary masks and continuous alpha mattes, single-source model catalog `src/tasks/wevisone/wevisone_model_catalog.cpp`, common timing/shutdown) |
 | `yolo_capi.h` | YOLO detection, segment, pose, OBB, semantic, classify, depth, and prompts |
 
 The individual task header is authoritative. The umbrella `aicore.h` is a

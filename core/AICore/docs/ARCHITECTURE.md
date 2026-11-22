@@ -72,7 +72,7 @@ flowchart TB
     end
 
     subgraph LIB["libAICore (single SHARED, hidden symbols)"]
-        subgraph TASKS["Task layer src/tasks/[task]/<br/>(17 tasks in the unified library)"]
+        subgraph TASKS["Task layer src/tasks/[task]/<br/>(29 tasks in the unified library)"]
             T1["loader / graph /<br/>preprocess / postprocess"]
             T2["capi.cpp (C ABI landing)<br/>+ private exports (.exports.map)"]
         end
@@ -183,6 +183,7 @@ core/AICore/
 | `sam3d_capi.h` | SAM 3D Objects image-to-Gaussians generation with optional mesh decoding | `aicore_image_view` + optional stride-aware mask |
 | `tagging_capi.h` | RAM/RAM++ image tags, all logits/scores and Tag2Text captions | `aicore_image_view` |
 | `relation_capi.h` | RelateAnything typed edges, raw predicate/pair logits and native CLIP text embeddings | `aicore_image_view` plus borrowed object regions |
+| `wevisone_capi.h` | WeVisOne-VL full-chain visual perception: Qwen3-VL ViT + LLM greedy coordinate-token answers (eleven prompt-family tasks), optional pixel-decoder masks/mattes; single-source model catalog: `src/tasks/wevisone/wevisone_model_catalog.cpp` | `aicore_image_view` |
 
 > Shape rule: **new bitmap-consuming tasks must use `aicore_image_view`**. A few
 > tasks use their own typed structs because the input is not a bitmap (features,

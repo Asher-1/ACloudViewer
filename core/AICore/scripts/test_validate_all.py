@@ -2965,6 +2965,166 @@ class ValidateAllTests(unittest.TestCase):
             self.assertIn("cannot execute probe", attempt.output_tail)
 
 
+class WeVisOneManifestRowTests(unittest.TestCase):
+    """wevisone catalog <-> manifest contract: every published gguf has an
+    inference consumer in the full matrix, the light tier keeps only the
+    recommended-set anchors, and the parity rows carry the upstream
+    reference / GT decode_masks / batch tokens."""
+
+    REPO = MODULE_PATH.parents[3]
+    TASKS = ("detection", "referring", "point", "count_box", "count_point",
+             "ocr", "ocr_grounding", "segmentation", "matting",
+             "visual_prompt", "freeform")
+
+    @classmethod
+    def catalog_files(cls):
+        source = (cls.REPO / "core/AICore/src/tasks/wevisone/"
+                  "wevisone_model_catalog.cpp").read_text(encoding="utf-8")
+        return re.findall(r'^\s*\{"([^"]+\.gguf)",\s*$', source,
+                          re.MULTILINE)
+
+    @staticmethod
+    def wevisone_args(assets, root, full, models=""):
+        return SimpleNamespace(
+            tasks="wevisone", assets=assets, repo=root,
+            build=root / "build", backend="cuda", image="image",
+            image2="image2", face_image="face", sam_image="sam",
+            yolo_image="yolo", threads=1, warmup_runs=1, inference_runs=1,
+            trellis_steps=1, gpu_idle_timeout=60.0, full=full, models=models,
+            references={"wevisone_upstream": str(root / "ref")})
+
+    def expand(self, full, models=""):
+        manifest = VALIDATE_ALL.load_manifest(VALIDATE_ALL.DEFAULT_MANIFEST)
+        names = self.catalog_files()
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            assets = root / "assets"
+            (assets / "wevisone_models").mkdir(parents=True)
+            for name in names:
+                (assets / "wevisone_models" / name).write_bytes(b"fixture")
+            specs, diagnostics = VALIDATE_ALL.expand_specs(
+                manifest, self.wevisone_args(assets, root, full, models),
+                root / "reports")
+        return names, specs, diagnostics
+
+    def test_catalog_has_twelve_published_entries(self):
+        names = self.catalog_files()
+        self.assertEqual(len(names), 12)
+        self.assertEqual(
+            len([n for n in names if n.startswith("wevisone-vlm-")]), 6)
+        self.assertEqual(
+            len([n for n in names if n.startswith("mmproj-")]), 2)
+        self.assertEqual(
+            len([n for n in names
+                 if n.startswith("wevisone-mask-decoder-")]), 4)
+
+    def test_full_matrix_consumes_every_catalog_model(self):
+        names, specs, diagnostics = self.expand(full=True)
+        self.assertEqual(diagnostics["missing_assets"], [])
+        self.assertEqual(diagnostics["uncovered_assets"], [])
+        # 2 light anchors + 66 task/tier/family parity rows + 2 decoder-f16
+        # owners + 2 GT decode_masks rows + 2 batch rows.
+        self.assertEqual(len(specs), 74)
+        for name in names:
+            consumers = [s for s in specs
+                         if any(p.name == name for p in s.model_paths)]
+            self.assertTrue(consumers, name)
+            for spec in consumers:
+                self.assertEqual(Path(spec.command[0]).name,
+                                 "test_wevisone_probe")
+
+    def test_light_tier_keeps_only_the_recommended_set_anchors(self):
+        _, specs, diagnostics = self.expand(full=False)
+        self.assertEqual(diagnostics["missing_assets"], [])
+        self.assertEqual(diagnostics["uncovered_assets"], [])
+        self.assertEqual({s.scenario_id for s in specs},
+                         {"wevisone-detection-2b-q8_0",
+                          "wevisone-matting-2b-q8_0"})
+        for spec in specs:
+            self.assertNotIn("--upstream-dir", spec.command)
+
+    def test_parity_rows_carry_upstream_gt_and_batch_tokens(self):
+        manifest = VALIDATE_ALL.load_manifest(VALIDATE_ALL.DEFAULT_MANIFEST)
+        rows = {s["id"]: s for s in manifest["scenarios"]
+                if s["task"] == "wevisone"}
+        upstream = [r for r in rows.values() if not r.get("light")]
+        self.assertEqual(len(upstream), 72)
+        for row in upstream:
+            self.assertIn("{reference:wevisone_upstream}", row["args"])
+            self.assertEqual(row["accuracy"]["reference"],
+                             "upstream_wevisone_cli")
+        for family in ("2b", "4b"):
+            for precision in ("f16", "q8_0", "q4_K_M"):
+                for task in self.TASKS:
+                    self.assertIn(
+                        f"wevisone-{task}-{family}-{precision}-upstream",
+                        rows)
+            gt = rows[f"wevisone-matting-{family}-f16-gt-upstream"]["args"]
+            self.assertIn("--response", gt)
+            self.assertIn("--gt-boxes", gt)
+            self.assertIn("--prompt", gt)
+            batch = rows[
+                f"wevisone-detection-{family}-q8_0-batch-upstream"]["args"]
+            self.assertIn("--image2", batch)
+            decoder = rows[
+                f"wevisone-segmentation-{family}-f16-decoder-f16-upstream"]
+            self.assertIn(f"wevisone_models/wevisone-mask-decoder-"
+                          f"{family}-f16.gguf", decoder["owned_globs"])
+
+    def test_models_selection_narrows_to_one_vlm(self):
+        _, specs, _ = self.expand(full=False,
+                                  models="wevisone-vlm-4b-q4_K_M.gguf")
+        self.assertTrue(specs)
+        for spec in specs:
+            self.assertIn("wevisone-vlm-4b-q4_K_M.gguf",
+                          " ".join(spec.command))
+
+    def test_generation_coordinate_gate_and_gt_strict_gate(self):
+        # Generation parity is coordinate-aware: labels/OCR/structure/count
+        # exact (upstream_text_match) plus a coordinate-bin band, NOT a strict
+        # pixel box band (a cross-ggml bin flip legitimately moves the box and
+        # the matte edge). GT-conditioned rows isolate the decoder and keep
+        # the strict pixel box + matte bands.
+        manifest = VALIDATE_ALL.load_manifest(VALIDATE_ALL.DEFAULT_MANIFEST)
+        rows = [s for s in manifest["scenarios"] if s["task"] == "wevisone"]
+
+        def checks(row):
+            return {c["metric"]: (c["op"], c["value"])
+                    for c in row["accuracy"]["checks"]}
+
+        gen = gt = 0
+        for row in rows:
+            if row.get("light") or not row["accuracy"]["checks"]:
+                continue
+            ck = checks(row)
+            is_gt = "--response" in row["args"]
+            if is_gt:
+                gt += 1
+                self.assertEqual(ck["upstream_box_max_delta_px"], ("<=", 0.05))
+                self.assertEqual(ck["upstream_matte_max_delta"], ("<=", 0.05))
+                self.assertEqual(ck["upstream_text_match"], ("==", 1))
+                self.assertNotIn("upstream_coord_max_bin_delta", ck)
+            else:
+                gen += 1
+                self.assertEqual(ck["upstream_coord_max_bin_delta"], ("<=", 2))
+                self.assertEqual(ck["upstream_text_match"], ("==", 1))
+                self.assertNotIn("upstream_box_max_delta_px", ck)
+                self.assertNotIn("upstream_matte_max_delta", ck)
+                if "--image2" in row["args"]:
+                    self.assertEqual(ck["batch_coord_max_bin_delta"],
+                                     ("<=", 2))
+                    self.assertEqual(ck["batch_text_match"], ("==", 1))
+                    self.assertNotIn("batch_box_max_delta_px", ck)
+                # Matte-producing generation rows still require the matte
+                # structurally; the numeric band is conditional in the probe.
+                task = row["args"][row["args"].index("--task") + 1]
+                if task in ("matting", "segmentation"):
+                    self.assertIn("matte_count",
+                                  row["accuracy"]["require_metrics"])
+        self.assertEqual(gen, 70)
+        self.assertEqual(gt, 2)
+
+
 class AttributeManifestRowTests(unittest.TestCase):
     """The local PULC attribute rows own pinned onnx sources, the shared
     pinned input, and a structured gate that actually reads probe metrics."""

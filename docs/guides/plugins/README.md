@@ -1,6 +1,6 @@
 # AI inference plugins (AICore)
 
-ACloudViewer provides twenty-two AI plugins through the unified inference library **`libAICore.so`** (ggml). **No Python/PyTorch runtime is required.**
+ACloudViewer provides twenty-three AI plugins through the unified inference library **`libAICore.so`** (ggml). **No Python/PyTorch runtime is required.**
 
 | Plugin | Guide | CMake option | Summary |
 |--------|-------|--------------|---------|
@@ -25,6 +25,7 @@ ACloudViewer provides twenty-two AI plugins through the unified inference librar
 | **qRelateAnything** | [qRelateAnything user guide](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qRelateAnything.md) | `PLUGIN_STANDARD_QRELATEANYTHING` | Scene relation graphs: interchangeable detector (YOLOE / YOLO-World / RF-DETR) → subject–predicate–object edges with Kalman-tracked video smoothing |
 | **qSAM3D** | [qSAM3D user guide](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qSAM3D.md) | `PLUGIN_STANDARD_QSAM3D` | SAM 3D Objects: single image → Gaussian splat PLY + optional FlexiCubes mesh |
 | **qVLXSeek** | [qVLXSeek user guide](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qVLXSeek.md) | `PLUGIN_STANDARD_QVLXSEEK` | VLX-Seek 1.5-10B open-vocabulary grounding: detection / counting / VQA / region OCR via region retrieval |
+| **qWeVisOne** | [qWeVisOne user guide](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qWeVisOne.md) | `PLUGIN_STANDARD_QWEVISONE` | WeVisOne-VL 2B/4B (Qwen3-VL) unified perception: detection / counting / VQA / region OCR / matting via structured box tokens + pixel-decoder alpha matte |
 | **qAnyLabeling** | [qAnyLabeling user guide](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qAnyLabeling.md) | `PLUGIN_STANDARD_QANYLABELING` | X-AnyLabeling-style annotation workbench — shapes, brush, magic wand, video/3D annotation; every AI assist runs locally through the AICore catalogs |
 
 **3D Gaussian Splatting toolkit:** real-time rendering and novel-view
@@ -72,6 +73,7 @@ cmake -B build_app \
   -DPLUGIN_STANDARD_QOPENPCDET=ON \
   -DPLUGIN_STANDARD_QINSTANTMESH=ON \
   -DPLUGIN_STANDARD_QVLXSEEK=ON \
+  -DPLUGIN_STANDARD_QWEVISONE=ON \
   -DPLUGIN_STANDARD_QQUERYSPLAT=ON \
   -DPLUGIN_STANDARD_QSIBR=ON \
   -DBUILD_RECONSTRUCTION=ON \
@@ -106,6 +108,7 @@ cmake --build build_app --target ACloudViewer QDA3_PLUGIN QFACEDETECT_PLUGIN QFR
   [`qRelateAnything`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qRelateAnything/README.md) ·
   [`qSAM3D`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qSAM3D/README.md) ·
   [`qVLXSeek`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qVLXSeek/README.md) ·
+  [`qWeVisOne`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qWeVisOne/README.md) ·
   [`qAnyLabeling`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qAnyLabeling/README.md)
 - Plugin catalog: [`plugins/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/README.md)
 - Sphinx doc build syncs the above READMEs into `docs/source/plugins/` (see `docs/source/conf.py`)

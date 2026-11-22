@@ -27,6 +27,7 @@ Detailed plugin documentation, implementation notes, and examples.
    qRelateAnything <plugins/qRelateAnything/README>
    qSAM3D <plugins/qSAM3D/README>
    qVLXSeek <plugins/qVLXSeek/README>
+   qWeVisOne <plugins/qWeVisOne/README>
    qAnyLabeling <plugins/qAnyLabeling/README>
    qSpirula <plugins/qSpirula/README>
    qBroom <plugins/qBroom/README>

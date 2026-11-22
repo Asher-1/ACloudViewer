@@ -128,6 +128,9 @@ file(GLOB AICORE_LLM_SOURCES CONFIGURE_DEPENDS ${AICORE_TASKS_SRC_DIR}/llm/*.cpp
 set(AICORE_VLX_SEEK_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/vlx_seek)
 file(GLOB AICORE_VLX_SEEK_SOURCES CONFIGURE_DEPENDS
     ${AICORE_VLX_SEEK_SRC_DIR}/*.cpp)
+set(AICORE_WEVISONE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/wevisone)
+file(GLOB AICORE_WEVISONE_SOURCES CONFIGURE_DEPENDS
+    ${AICORE_WEVISONE_SRC_DIR}/*.cpp)
 file(GLOB AICORE_ATTRIBUTE_SOURCES CONFIGURE_DEPENDS ${AICORE_TASKS_SRC_DIR}/attribute/*.cpp)
 file(GLOB AICORE_GKD_SOURCES CONFIGURE_DEPENDS ${AICORE_GKD_SRC_DIR}/*.cpp)
 file(GLOB AICORE_MAP_ANYTHING_SOURCES CONFIGURE_DEPENDS
@@ -228,6 +231,7 @@ add_library(${PROJECT_NAME} SHARED
     ${AICORE_TAGGING_SOURCES}
     ${AICORE_LLM_SOURCES}
     ${AICORE_VLX_SEEK_SOURCES}
+    ${AICORE_WEVISONE_SOURCES}
     ${AICORE_ATTRIBUTE_SOURCES}
     ${AICORE_GKD_SOURCES}
     ${AICORE_MAP_ANYTHING_SOURCES}
@@ -324,6 +328,22 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
 endif()
 
+# WeVisOne-VL host-side floating-point parity: the reference implementation
+# (upstream Asher-1/WeVisOne-VL-GGML cpp_ggml) compiles WITHOUT -march
+# (x86-64 baseline, no FMA anywhere), while CMakeFindSSE adds
+# -march=x86-64-v3 to this tree. The torch-exact bicubic canvas spells its
+# single tap FMA as std::fma; every other host mul+add (smart-resize grids,
+# sine pos tables, box-Fourier log terms, decoder assembly) must stay
+# unfused. Disabling contraction on every wevisone TU reproduces the
+# upstream no-FMA contract; ggml kernels are unaffected (they are compiled
+# in the dependency project without -march). MSVC does not contract
+# without /fp:contract.
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(
+        ${AICORE_WEVISONE_SOURCES}
+        PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+endif()
+
 # VLX-Seek JPEG decode parity: libjpeg-turbo ISLOW + fancy upsampling equals
 # the PIL default decode the upstream parity feeds use; stb differs by
 # +-1..2 LSB on real photos, enough to flip near-tied greedy tokens. Link
@@ -331,6 +351,9 @@ endif()
 # it exists; stb stays the non-JPEG fallback.
 if(TARGET 3rdparty_jpeg)
     target_compile_definitions(${PROJECT_NAME} PRIVATE ACV_VLX_HAVE_LIBJPEG=1)
+    # WeVisOne-VL shares the same PIL-exact JPEG decode contract; the Qt
+    # image_utils fallback covers non-JPEG files (no stb dependency).
+    target_compile_definitions(${PROJECT_NAME} PRIVATE ACV_WEV_HAVE_LIBJPEG=1)
 endif()
 
 # QuerySplat host kernels gate their OpenMP loops behind QS_USE_OPENMP
@@ -780,7 +803,7 @@ endif()
 set(_aicore_enabled_task_names
     aliked deeplsd depth facedetect gaussian gkd lightglue lingbot loma ocr
     openpcdet querysplat reid rfdetr rmbg sam3 sam3d tagging relation table
-    trellis instantmesh yolo llm vlx_seek)
+    trellis instantmesh yolo llm vlx_seek wevisone)
 list(JOIN _aicore_enabled_task_names "," _aicore_enabled_tasks_csv)
 
 if(AICore_BUILD_TESTS)
