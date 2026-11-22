@@ -443,5 +443,151 @@ if args[:2]==['release','delete-asset'] and os.environ['FAULT']=='delete': raise
                 ])
 
 
+class PlatformReleaseCleanupTests(unittest.TestCase):
+    CURRENT = 'dddcdb92657254f9fe1ecb01351d458d489f8fa2'
+    RECENT = [
+        CURRENT, '4a6e4bb85f8368f959a8e4341d9548b3fb20a542',
+        'fc450c9a53290558119a71c16c41bcc6ff72048b'
+    ]
+
+    def step(self):
+        workflow = yaml.safe_load(
+            WORKFLOW.with_name('update-release.yml').read_text())
+        job = workflow['jobs']['clean-release']
+        checkout = next(
+            s for s in job['steps'] if s.get('uses') == 'actions/checkout@v4')
+        self.assertEqual(checkout['with']['fetch-depth'], 3)
+        return next(s['run']
+                    for s in job['steps']
+                    if s.get('name') == 'Clean old release assets')
+
+    def run_cleanup(self, names, fault='', commits=None, payload=None):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'inventory').write_text(
+                json.dumps({'assets': [{
+                    'name': n
+                } for n in names]}) if payload is None else payload)
+            (root / 'commits').write_text(
+                '\n'.join(self.RECENT if commits is None else commits) + '\n')
+            for tool in ['gh', 'git']:
+                stub = root / tool
+                stub.write_text('''#!/usr/bin/env python3
+import json, os, sys
+from pathlib import Path
+args = sys.argv[1:]
+with open('calls', 'a') as stream: stream.write(json.dumps([Path(sys.argv[0]).name] + args) + '\\n')
+fault = os.environ['CLEANUP_TEST_FAULT']
+if Path(sys.argv[0]).name == 'git':
+    if args != ['log', '--format=%H', '-n', '3']: raise SystemExit(91)
+    if fault == 'git': raise SystemExit(12)
+    print(Path('commits').read_text(), end='')
+    raise SystemExit(0)
+if args == ['release', 'view', 'main-devel', '--json', 'assets']:
+    if fault == 'inventory': raise SystemExit(13)
+    print(Path('inventory').read_text())
+    raise SystemExit(0)
+if args[:3] == ['release', 'delete-asset', 'main-devel']:
+    if len(args) != 5 or args[-1] != '--yes': raise SystemExit(92)
+    raise SystemExit(14 if fault == 'delete' else 0)
+if args == ['release', 'view', 'main-devel']: raise SystemExit(0)
+raise SystemExit(93)
+''')
+                stub.chmod(0o755)
+            result = subprocess.run(
+                ['bash', '-euo', 'pipefail', '-c',
+                 self.step()],
+                cwd=root,
+                env={
+                    **os.environ, 'PATH':
+                        str(root) + os.pathsep + os.environ['PATH'],
+                    'RUNNER_TEMP':
+                        str(root),
+                    'CLEANUP_TEST_FAULT':
+                        fault
+                },
+                capture_output=True,
+                text=True)
+            calls = [
+                json.loads(line)
+                for line in (root / 'calls').read_text().splitlines()
+            ]
+            deleted = [
+                args[4]
+                for args in calls
+                if args[:4] == ['gh', 'release', 'delete-asset', 'main-devel']
+            ]
+            self.assertFalse(list(root.glob('release-cleanup.*')))
+            return result, deleted, calls
+
+    def test_cleanup_protects_metadata_docs_shared_and_current_assets(self):
+        protected = [
+            'downloads_data.json', 'shared-assets.zip', 'notes with spaces.txt',
+            'acloudviewer-' + self.CURRENT + '-45020940979-1-docs.tar.gz',
+            'acloudviewer-6c3f6650-docs.tar.gz',
+            'acloudviewer-v3.9.4-docs.tar.gz',
+            'ACloudViewer-3.9.5-win-cpu-amd64.exe',
+            'ACloudViewer-3.9.5+dddcdb92-win-cpu-amd64.exe',
+            'ACloudViewer-3.9.5+' + self.CURRENT + '-mac-cpu-ARM64.dmg',
+            'cloudviewer-3.9.5+dddcdb92-cp312-cp312-win_amd64.whl',
+            'cloudviewer_cpu-3.9.5+4a6e4bb8-cp313-cp313-manylinux_2_35_x86_64.whl',
+            'ACloudViewer-3.9.5+fc450c9a-ubuntu22.04-cuda-amd64.run'
+        ]
+        old = [
+            'ACloudViewer-3.9.5+6c3f6650-win-cpu-amd64.exe',
+            'ACloudViewer-3.9.5+6c3f6650-mac-cpu-ARM64.dmg',
+            'ACloudViewer-3.9.5+6c3f6650-ubuntu20.04-cuda-amd64.run',
+            'cloudviewer-3.9.5+6c3f6650-cp310-cp310-macosx_11_0_arm64.whl',
+            'cloudviewer-3.9.5+6c3f6650-cp312-cp312-win_amd64.whl',
+            'cloudviewer_cpu-3.9.5+6c3f6650-cp313-cp313-manylinux_2_35_x86_64.whl'
+        ]
+        result, deleted, _ = self.run_cleanup(protected + old)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(deleted, old)
+
+    def test_cleanup_uses_stamp_boundaries_not_arbitrary_sha_substrings(self):
+        wrong_place = 'ACloudViewer-3.9.5+6c3f6650-win-cpu-amd64-dddcdb92.exe'
+        unknown = [
+            'ACloudViewer-3.9.5+6c3f6650-win-cpu-amd64.exe.sha256', wrong_place,
+            'unrelated-dddcdb92.zip',
+            'cloudviewer-3.9.5+6c3f6650-cp312-abi3-win_amd64.whl'
+        ]
+        result, deleted, _ = self.run_cleanup(unknown)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(deleted, [])
+
+    def test_cleanup_failures_cannot_delete_from_partial_or_invalid_inventory(
+            self):
+        asset = 'ACloudViewer-3.9.5+6c3f6650-win-cpu-amd64.exe'
+        for fault in ['inventory', 'git']:
+            with self.subTest(fault=fault):
+                result, deleted, _ = self.run_cleanup([asset], fault=fault)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(deleted, [])
+        for payload in [
+                'not-json', '{"assets":null}',
+                '{"assets":[{"name":"x"},{"name":"x"}]}',
+                '{"assets":[{"name":123}]}'
+        ]:
+            with self.subTest(payload=payload):
+                result, deleted, _ = self.run_cleanup([], payload=payload)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(deleted, [])
+        for commits in [self.RECENT[:1], ['dddcdb92'] * 3]:
+            with self.subTest(commits=commits):
+                result, deleted, _ = self.run_cleanup([asset], commits=commits)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(deleted, [])
+
+    def test_cleanup_delete_failure_stops_before_later_candidates(self):
+        first = 'ACloudViewer-3.9.5+6c3f6650-win-cpu-amd64.exe'
+        second = 'cloudviewer-3.9.5+6c3f6650-cp310-cp310-win_amd64.whl'
+        result, deleted, calls = self.run_cleanup([first, second],
+                                                  fault='delete')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(deleted, [first])
+        self.assertNotIn(['gh', 'release', 'view', 'main-devel'], calls)
+
+
 if __name__ == '__main__':
     unittest.main()
