@@ -292,6 +292,74 @@ if args[:2]==['release','delete-asset']:
         self.assertEqual(upload['with']['name'], expected)
         self.assertEqual(deploy['with']['artifact_name'], expected)
 
+    def test_archive_source_fetch_is_narrow_and_fail_closed(self):
+        workflow = yaml.safe_load(
+            WORKFLOW.with_name('documentation.yml').read_text())
+        step = next(s for s in workflow['jobs']['deploy-docs']['steps']
+                    if s.get('name') == 'Restore archived source revisions')
+        for state in [
+                'missing', 'exists', 'fetch-fails', 'fetch-omits-ref',
+                'no-history', 'invalid-version'
+        ]:
+            with self.subTest(
+                    state=state), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                versions = root / 'preserved-versions/documentation'
+                versions.mkdir(parents=True)
+                if state != 'no-history':
+                    name = ('v3.9.4$(touch injected)'
+                            if state == 'invalid-version' else 'v3.9.4')
+                    (versions / name).mkdir()
+                stub = root / 'git'
+                stub.write_text('''#!/usr/bin/env python3
+import os, sys
+from pathlib import Path
+args = sys.argv[1:]
+with open('calls', 'a') as stream: stream.write(' '.join(args) + '\\n')
+state = os.environ['SOURCE_TEST_STATE']
+if args[0] == 'rev-parse':
+    if args[-1] != 'refs/tags/v3.9.4^{commit}': raise SystemExit(90)
+    if state == 'exists' or Path('tag-ready').is_file():
+        print('a' * 40)
+        raise SystemExit(0)
+    raise SystemExit(1)
+if args == ['fetch', '--depth=1', '--no-tags', 'origin',
+            'refs/tags/v3.9.4:refs/tags/v3.9.4']:
+    if state == 'fetch-fails': raise SystemExit(13)
+    if state != 'fetch-omits-ref': Path('tag-ready').touch()
+    raise SystemExit(0)
+raise SystemExit(91)
+''')
+                stub.chmod(0o755)
+                result = subprocess.run(
+                    ['bash', '-euo', 'pipefail', '-c', step['run']],
+                    cwd=root,
+                    env={
+                        **os.environ, 'PATH':
+                            str(root) + os.pathsep + os.environ['PATH'],
+                        'SOURCE_TEST_STATE':
+                            state
+                    },
+                    capture_output=True,
+                    text=True)
+                calls = ((root / 'calls').read_text().splitlines() if
+                         (root / 'calls').exists() else [])
+                if state in ['fetch-fails', 'fetch-omits-ref']:
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertNotIn('Archived source', result.stdout)
+                else:
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                fetches = [call for call in calls if call.startswith('fetch ')]
+                if state in ['missing', 'fetch-fails', 'fetch-omits-ref']:
+                    self.assertEqual(fetches, [
+                        'fetch --depth=1 --no-tags origin refs/tags/v3.9.4:refs/tags/v3.9.4'
+                    ])
+                else:
+                    self.assertEqual(fetches, [])
+                if state in ['no-history', 'invalid-version']:
+                    self.assertEqual(calls, [])
+                self.assertFalse((root / 'injected').exists())
+
     def test_failed_upload_retains_last_backup(self):
         self.run_backup(upload_fails=True)
 

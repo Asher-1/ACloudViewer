@@ -26,7 +26,6 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     line-height: 1.6;
     color: var(--text-color);
-    overflow-x: hidden;
 }
 
 .container {
@@ -977,6 +976,8 @@ body {
 
 .step-content {
     flex: 1;
+    min-width: 0;
+    max-width: 100%;
 }
 
 .step-content h4 {
@@ -1021,7 +1022,7 @@ body {
     gap: 10px;
     justify-content: center;
     margin: 40px 0;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     overflow: visible;
 }
 
@@ -1602,8 +1603,8 @@ body {
     font-weight: 600;
 }
 
-/* Mobile Language Switcher */
-@media (max-width: 768px) {
+/* Language switcher follows the collapsed navigation layout. */
+@media (max-width: 1200px) {
     .language-switcher {
         width: 100%;
         display: flex;
@@ -1673,6 +1674,9 @@ body {
 
 .step-info {
     flex: 1;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
 }
 
 .step-info h4 {

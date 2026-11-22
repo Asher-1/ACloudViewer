@@ -138,8 +138,9 @@ def build_tree(root: Path) -> None:
         "download_data": {},
     }
     for version in ("main-devel", "v3.9.4"):
-        package = {"url": f"https://downloads.example/{version}-windows.exe", "size": "1 MB"}
-        linux = {"url": f"https://downloads.example/{version}-linux.run", "size": "1 MB"}
+        release_url = f"https://github.com/Asher-1/ACloudViewer/releases/download/{version}/ACloudViewer-3.9.4%2B0123456789abcdef-"
+        package = {"url": release_url + f"{version}-windows.exe", "size": "1024.00 MB"}
+        linux = {"url": release_url + f"{version}-linux.run", "size": "1024.00 MB"}
         downloads["download_data"][version] = {
             "windows": {"app": {"cpu": {"amd64": package}}},
             "linux": {"ubuntu20.04": {"app": {"cpu": {"amd64": linux}}}},
@@ -291,7 +292,7 @@ def main() -> int:
                           all(x <= desktop["width"] for x in desktop["links"]), str(desktop))
                 rec.check("desktop uses full navigation above its fit breakpoint",
                           desktop["hamburger"] == "none", desktop["hamburger"])
-                for width in (1200, 1024, 768, 390):
+                for width in (1200, 1024, 768, 390, 320):
                     home.set_viewport_size({"width": width, "height": 844})
                     hamburger = home.locator(".hamburger")
                     rec.check(f"navigation collapses to hamburger at {width}px",
@@ -299,15 +300,35 @@ def main() -> int:
                               home.locator(".nav-menu").evaluate("e => !e.classList.contains('active')"))
                     hamburger.click()
                     home.wait_for_function("document.querySelector('.nav-menu').classList.contains('active')")
+                    home.wait_for_function("getComputedStyle(document.querySelector('.nav-menu')).transform === 'matrix(1, 0, 0, 1, 0, 0)'")
                     opened = home.evaluate("""() => ({
                         width: innerWidth,
+                        documentWidth: document.documentElement.scrollWidth,
+                        bodyOverflow: getComputedStyle(document.body).overflowX,
                         menuRight: document.querySelector('.nav-menu').getBoundingClientRect().right,
                         links: document.querySelectorAll('.nav-menu > li > a').length
                     })""")
+                    rec.check(f"whole homepage fits without document clipping at {width}px",
+                              opened["documentWidth"] <= width and opened["bodyOverflow"] not in ("hidden", "clip"),
+                              str(opened))
                     rec.check(f"all navigation links fit in expanded {width}px menu",
                               opened["links"] == len(expected_nav) and opened["menuRight"] <= width,
                               str(opened))
                     hamburger.click()
+
+                code_layout = home.locator(".step-content .code-block").evaluate_all("""blocks => blocks.map(block => ({
+                    right: block.getBoundingClientRect().right,
+                    width: block.clientWidth,
+                    contentWidth: block.scrollWidth,
+                    overflow: getComputedStyle(block).overflowX,
+                    command: block.querySelector('code').textContent,
+                    copyButton: !!block.querySelector('.copy-btn')
+                }))""")
+                rec.check("long quickstart commands scroll within bounded code blocks",
+                          bool(code_layout) and all(row["right"] <= 320 and row["overflow"] == "auto" and
+                                                    row["copyButton"] for row in code_layout) and
+                          any(row["contentWidth"] > row["width"] and "cv3d.__version__" in row["command"]
+                              for row in code_layout), str(code_layout))
 
                 empty_version = home.locator("#version-selector .selector-btn").filter(
                     has_text="ubuntu-prebuild-deps")

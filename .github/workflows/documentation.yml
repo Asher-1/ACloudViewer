@@ -42,7 +42,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install guard dependencies
-        run: pip install pyyaml docutils nbconvert
+        run: pip install pyyaml docutils==0.20.1 nbconvert==7.17.1 sphinx==7.1.2 pillow
 
       - name: Notebook section titles
         # nbsphinx concatenates markdown cells and feeds them to docutils via
@@ -60,6 +60,9 @@ jobs:
 
       - name: Doxygen completeness, cache publication and worker limits
         run: python3 docs/automation/scripts/test_docs_parallelism.py
+
+      - name: Sphinx docstring and raw image publication contracts
+        run: python3 docs/automation/scripts/test_docstring_pipeline.py
 
       - name: Parallel Sphinx ML import contract
         run: python3 docs/automation/scripts/test_sphinx_ml_imports.py
@@ -499,6 +502,22 @@ jobs:
         run: |
           bash docs/automation/scripts/restore_release_archives.sh \
             preserved-versions/documentation "$IS_RELEASE" "$RELEASE_VERSION"
+
+      - name: Restore archived source revisions
+        # Archived API HTML may reference images omitted from its old tar.
+        # Read them from the matching release source, never the current dev
+        # screenshots. Fetch only restored version tags, not full git history.
+        run: |
+          for version_dir in preserved-versions/documentation/v*; do
+            [ -d "$version_dir" ] || continue
+            version="${version_dir##*/}"
+            [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || continue
+            if ! git rev-parse --verify --quiet "refs/tags/${version}^{commit}" >/dev/null; then
+              git fetch --depth=1 --no-tags origin "refs/tags/${version}:refs/tags/${version}"
+            fi
+            source_commit=$(git rev-parse --verify "refs/tags/${version}^{commit}")
+            echo "Archived source ${version}: ${source_commit}"
+          done
 
       - name: Merge website and documentation for unified deployment
         # The body lives in docs/automation/scripts/deploy_unified_docs.sh.

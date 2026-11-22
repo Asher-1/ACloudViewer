@@ -1,0 +1,381 @@
+{
+  "assets": [
+    {
+      "name": "AxisNamesOverview.png",
+      "description": "Four semantically distinct axes attached to one plot viewport.",
+      "bytes": 49541,
+      "sha256": "8960ab079c88be8e48b84bb4b47abf9d13ea351c11b2e5ddf523af67ac54f599",
+      "decoded_rgba_sha256": "75d308b78a38347a5d6164b85a631a427f25f24dfc938236c3e207afc9b0f658",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "AxisRectSpacingOverview.png",
+      "description": "Long labels and explicit tick/label padding reserve plot margins.",
+      "bytes": 36086,
+      "sha256": "78dc730d0903cf5cc542e95a745adb0e109c689bb27c84086a8b687b74f5184b",
+      "decoded_rgba_sha256": "d9c47c1f26e60dd338ecf1d34b901e76552bf30b8c0892d8139ffe37a4cb78da",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPBars.png",
+      "description": "Three original processing-time series grouped by five stage keys.",
+      "bytes": 24172,
+      "sha256": "1761c604a231a75e3d6555ff1c5b00e4d340252b0fb23c9069dc7786a877b5a7",
+      "decoded_rgba_sha256": "11bb323ba4771df3769ae0a0810ceb06728971c9f8f19299f5b002ab062fa735",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPBarsGroup.png",
+      "description": "A different instrument-throughput dataset illustrates QCPBarsGroup membership.",
+      "bytes": 22438,
+      "sha256": "c7225e9fbe4a7fb2b8ca0156a9fc3f0ff77d5fa9a6577f2ee28d250b4c8342e9",
+      "decoded_rgba_sha256": "b2428b9826c293d32914df009bb07375db857cb6023bae0b9bc13c604729cb94",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPColorGradient-levelcount.png",
+      "description": "Nine discrete levels demonstrate quantized colour mapping.",
+      "bytes": 55321,
+      "sha256": "bbfdab328182e55a1ec2545769d4b2a1967d2a0dfdb07be109d67b67f02640a7",
+      "decoded_rgba_sha256": "014a5b09467cf3545c282318b8dfc7f2ff0a33ab946a2cbd25d61f9c16be118d",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPColorGradient-periodic.png",
+      "description": "atan2 phase field demonstrates a periodic hue gradient.",
+      "bytes": 52192,
+      "sha256": "469b0b7b757b5499960a2b79ebd4558aa703d5c1a27b53b03dff9f7660d7a11f",
+      "decoded_rgba_sha256": "feba674c52571039fdaf3c589d598ad98f8edfdc121ac2b4f2050625e28d3d84",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPColorGradient.png",
+      "description": "A newly specified four-stop palette maps a smooth analytic scalar field.",
+      "bytes": 52347,
+      "sha256": "c9735669dc309524a05af2cb5fe1a9850794a35ddba4571760b3f69018f6a820",
+      "decoded_rgba_sha256": "b5b6f82ab935b617ccd31488e9b610b64ff6c5fd775ca3fe3b3b07e392415066",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPColorMap-interpolate.png",
+      "description": "A coarse 8-by-6 field with interpolation disabled shows individual cells.",
+      "bytes": 19741,
+      "sha256": "14c8a886310750c21c8fe918d42bea1efe0bf1a5b2555ceece550d6b14cb4775",
+      "decoded_rgba_sha256": "98f9b53239d71c898c4cbec4eae2e252e9d938cf0b52a838b2ea20a40f53e899",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPColorMap-tightboundary.png",
+      "description": "A finite coarse matrix illustrates exact cell-range boundaries.",
+      "bytes": 22110,
+      "sha256": "f5adc181e186cfbc17d4a60230a7238660a02448e7c3b0e5240c3d5e5b445a94",
+      "decoded_rgba_sha256": "aff69a35ee88595fbf9229808699e88198a7960fa34e707e72e25875307aa87b",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPColorMap.png",
+      "description": "A smooth analytic two-dimensional scalar field.",
+      "bytes": 53603,
+      "sha256": "4c5e0c4e561e0d8cd29b0503eb2f66c45a6d683506f30c44d5f352f9bb3f1cd9",
+      "decoded_rgba_sha256": "00aeb0bace1704ba1652b1b8ce6a5e28b54e40d3ab01b9159b4b5da6fb28a038",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPColorScale.png",
+      "description": "A real QCPColorScale is attached to a map and labels its value range.",
+      "bytes": 56921,
+      "sha256": "787810c9309a7df5ef065e0a536161e042a5cfacb95af256435fff4ed76b70c5",
+      "decoded_rgba_sha256": "63b519dc83312cfbdd5dde41a719264587701c1c7b3f4de06168a5debc4b5ac4",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPCurve.png",
+      "description": "A parameterized spiral-style path revisits key positions.",
+      "bytes": 26070,
+      "sha256": "e31501bcceda92cfca2a04f05e7a2d57fff91b6087b6b2fd746076d9df4728f3",
+      "decoded_rgba_sha256": "bc00599269673f50dd1806f41a9d32ce64c2d8394bc17a6da382b840a2447010",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPFinancial.png",
+      "description": "An original eight-session OHLC candlestick series.",
+      "bytes": 19718,
+      "sha256": "2a48c7855476f4d0054fc49b2837d26db103402df714ec57420afab6e10a10f6",
+      "decoded_rgba_sha256": "870c3cde8e1f2e60a656b748248398b24b13c52e8f525e4da96e270720bd0c60",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPGraph.png",
+      "description": "A smooth reference and noisy single-valued samples with an intentional NaN gap.",
+      "bytes": 37689,
+      "sha256": "6415bfe3de133b9c5fe774049af66b4e669cc8fdcf842a1a211de1f6f18f2f89",
+      "decoded_rgba_sha256": "1e8f92629db76cabcc0e70360013177e56dce84b26668e8f46b8838c18c685d1",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPItemBracket-length.png",
+      "description": "Three bracket cap lengths are compared in pixel units.",
+      "bytes": 17226,
+      "sha256": "2ca84d4fbe26e0be87c56683cd5376aeb056f1f3a5409c2db087e93f8c44ca38",
+      "decoded_rgba_sha256": "feadf43d35c679264506cec5911e103e4d2bfab86f0e29c275f48c31eea3fbca",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPItemBracket.png",
+      "description": "A bracket marks an interval in the signal plot.",
+      "bytes": 19479,
+      "sha256": "fc0763768df95797545022cc1e1a39c4a24e5354a74b85f2b259b6667a1a3b09",
+      "decoded_rgba_sha256": "067c28990f3ea9d4cbe935c39bde21b4f69d2d34b98b214b5baf251bb16ed42e",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPItemCurve.png",
+      "description": "Cubic item endpoints and independent direction control points are marked.",
+      "bytes": 22976,
+      "sha256": "32164f12550dbdf36873648bab7544b6be6f959aab9849ec0c97eea6966d538b",
+      "decoded_rgba_sha256": "14eb85150b488c87886d38c866d17c01fc52e778a04ce9f0cfa95aeab06c991c",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPItemEllipse.png",
+      "description": "An ellipse is bounded by two opposing plot-coordinate corners.",
+      "bytes": 26123,
+      "sha256": "09e8dfd1374f4b2730170690844b27b9c498dde63a63fc90ff91674e45632579",
+      "decoded_rgba_sha256": "343aa385dd85859906a033ebc19da89cda586552441958b7d3f52367f156b6a1",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPItemLine.png",
+      "description": "A line item connects two positions and terminates in a spike arrow.",
+      "bytes": 23875,
+      "sha256": "b33313ab4988f0a61bc044bb97cad4f566f3faa8ece3907d47df2f0db26b3f44",
+      "decoded_rgba_sha256": "a7c8372fd8fe37c76df4748529c73464e0cc11876723b49dc384db4787853e9d",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPItemPixmap.png",
+      "description": "A procedurally drawn geometric texture is placed and scaled as a pixmap.",
+      "bytes": 31458,
+      "sha256": "4bc394133067ea7963125a858d9f7942c73737dfae430897dadc15e3a039dcd4",
+      "decoded_rgba_sha256": "23241e73adfdcbeab7e985aa157ef8117eea9ec6fbddeb86b5acfb84898163e6",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPItemRect.png",
+      "description": "A translucent rectangular region is positioned by opposing corners.",
+      "bytes": 15041,
+      "sha256": "316243875b71644ccec6817de318b7d3313daeacfc293939600012e57cc847e9",
+      "decoded_rgba_sha256": "8c217eb20b36bfa3e7c1721cd47bad5a08705f55cc454877f4dd52bce4009002",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPItemStraightLine.png",
+      "description": "A line through two anchors is extended and clipped by the axis rectangle.",
+      "bytes": 25945,
+      "sha256": "569bc6d3b28823b82a80b1e94053bce76714a1976669e98557745525f1b96fad",
+      "decoded_rgba_sha256": "9bd7ccc1cbac84b3bb8d9839329b44b2188e2af2bf68cad94237b1435ae0028a",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPItemText.png",
+      "description": "A rotated text item labels an analysis region.",
+      "bytes": 22935,
+      "sha256": "834eaa2071624c92ef5e484803bad7c1be5c081f40110e792622ad23b08505e7",
+      "decoded_rgba_sha256": "deaae417461fc18dbd0e171362a6ba2be98e0dae004366520fd1d3d9c9e6d319",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPItemTracer.png",
+      "description": "A tracer interpolates to a chosen key coordinate on a graph.",
+      "bytes": 31174,
+      "sha256": "2077c2f057d82a1fc5f5d56f2d92b5b23bdc11e64eaf5789461aa04dfa41d7b6",
+      "decoded_rgba_sha256": "59f6404ce83feb25a7bfd1dd6c8d93231c2de3a8958003b79ef71f3f6f5e75a3",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPLineEnding.png",
+      "description": "Nine endpoint styles are rendered on independent measurement guides.",
+      "bytes": 21044,
+      "sha256": "0798b13c82972ef68d071bbef49556cd7f42aa031f0cc1007a5163e83e489cf7",
+      "decoded_rgba_sha256": "bbd03bad3f9567c4dfb353c1c180fabf5c5b49bb56b28abbb42e13252056a6d2",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPMarginGroup.png",
+      "description": "Two plots with different labels share a left-margin group for aligned plot areas.",
+      "bytes": 43964,
+      "sha256": "920d134482cd665a49d7b96d1f3ac0bf0bb214b9a7989b5865d2e30c0532acf0",
+      "decoded_rgba_sha256": "33ec0f351e92bffaa870ca098c73febeaa02fddc896f86a550f35c4ddb702b91",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "QCPStatisticalBox.png",
+      "description": "Four original five-number summaries include independent outlier values.",
+      "bytes": 20057,
+      "sha256": "09674b253d1887f196d915312fbfa0c7a58d64d82ce420a83173e43c5e7f4c11",
+      "decoded_rgba_sha256": "c880b14bdfbf14cb5a086f6dc9d66e01bb31979743bd1525babb850667284d57",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "adaptive-sampling-line.png",
+      "description": "A dense analytic line uses QCPGraph adaptive sampling.",
+      "bytes": 63622,
+      "sha256": "5b588ac94b4a11ab93d0b5ab9a4c4f7ab438a3736a32dcc601496fbda36862aa",
+      "decoded_rgba_sha256": "60db86782aeb66b88da11390525424736cd74804e125f1d6f37fae8ce3a552f1",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    },
+    {
+      "name": "adaptive-sampling-scatter.png",
+      "description": "A dense point-only graph uses adaptive sampling.",
+      "bytes": 144665,
+      "sha256": "5a8fcb361eb53d7cb0e5232134626c1a21162355a280b9e7345b2605191e7880",
+      "decoded_rgba_sha256": "d6b920d859719cdcf808248a71bb418ae987667f2ae57f09a788534ced094bb9",
+      "dimensions": [
+        760,
+        450
+      ],
+      "license_status": "New original rendered example: GPL-2.0-or-later, see LICENSE; generator GPL-3.0-or-later; no upstream documentation image copied",
+      "copied_official_png_bytes": false
+    }
+  ]
+}

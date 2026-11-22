@@ -174,7 +174,7 @@ releases = fetch_releases(limit=DEFAULT_RELEASE_LIMIT)  # 100 total, explicitly 
 - The documentation selector reads `/documentation/versions.json`, generated from restored version directories, independently of download metadata
 - Stable documentation archives live on their releases; dev archives named with source SHA, workflow run ID and attempt live on `main-devel`. A main build uploads a uniquely named archive without `--clobber`, confirms the asset exists, then prunes older docs backups. Re-running the same workflow attempt cannot target or delete its predecessor.
 - `restore_release_archives.sh` owns archive restoration. It distinguishes a genuinely absent asset from a failed inventory/download and requires a regular root `index.html` before publishing stable or dev trees. If several dev archives coexist, it selects the uniquely newest valid `createdAt`; missing/invalid/tied timestamps or a broken newest archive stop restoration instead of silently falling back to older content
-- Each merge uses fresh staging. Logical published file bytes and a gzip transfer estimate have separate conservative 1 GiB repository guards; a small Actions upload does not prove the site meets the published-content quota. The November 2026 real main/release replay measured complete stable+dev content at about 2.02 GB before compression. Over-budget input must stop publication: retain full historical content, do not raise the limits or silently remove versions, and report the failed publication gate rather than “deployment passed”.
+- Each merge uses fresh staging. Report logical content bytes, the exact uncompressed tar stream (including headers/padding), and a gzip transfer estimate separately. The selected project policy blocks tar size **at or above 10,000,000,000 bytes (10 GB decimal)**. Above GitHub Pages' officially supported 1 GB range, emit a risk warning but continue to real deployment; this is not a guarantee of service or deployment success. Gzip size is telemetry, not an independent 1 GB rejection gate. Preserve every historical version, reject invalid archive entries and propagate actual upload/deployment/live-verification failures. The deployment timeout remains enforced; upload success alone never means the live site passed.
 
 ### New-build source copies
 
@@ -187,6 +187,16 @@ The same frozen-output comparison measured a deterministic GNU tar stream with f
 New builds retain rendered C++ pages, header-source HTML, SVG graphs and their clickable links. The integration copy omits only confirmed root-level Graphviz `.map`/`.md5` sidecars with paired SVG graphs and matching cache signatures; these remain in the producer tree for incremental builds. It preserves JS source maps, downloads, PNG-mode maps and nested user files. The frozen dev API integration omitted 22,483 cache files totaling 17,444,422 bytes, with every retained file byte-identical. Historical archives are unchanged.
 
 Set a positive `NPROC` for bounded local builds. Sphinx workers and generated Doxygen `DOT_NUM_THREADS` both honor it; Doxygen retains a smaller explicit graph-worker setting. A missing template, invalid limit or template I/O failure stops the requested Doxygen build instead of reusing a stale configuration. Account for other concurrent work when choosing the limit.
+
+### Resource completeness
+
+Doxygen's HTML generation can return success after a LaTeX formula failure. The build loads `amsmath` for the metric equations and validates referenced local images before replacing the published C++ API tree; formula PNGs are decoded with the existing Pillow dependency. Plugin READMEs containing raw HTML image tags are also published at their rendered relative paths: MyST's ordinary Markdown image handling does not copy those dependencies automatically. Missing source assets fail the build, and stale output images must not conceal them.
+
+Historical repairs are missing-file overlays, not replacements of release archives. The v3.9.4 mainpage pictures come from its own release source tag; TensorBoard illustrations use the matched, attributed PyTorch 2.7 assets; its formula pictures are bound to the SHA256 of its original `_formulas.tex`. Existing historical HTML and images are not overwritten by these repairs. The workflow fetches only required release tags for source recovery, rather than the complete git history.
+
+### Original QCustomPlot illustrations
+
+Known missing QCustomPlot 1.x illustrations are supplied by 29 newly authored API examples, visibly labelled “Original example”. They use deterministic original data and layouts, not copied upstream documentation artwork. The shared `install_qcp_doc_images.py` publisher validates the reviewed asset hashes and installs only referenced missing images for both new builds and historical overlays. It does not rewrite API HTML or replace a release's existing images. Source, reproduction commands, per-image hashes and the separate generator/image license notices are retained under `assets/qcustomplot-original/` and attribution is distributed with repaired API trees.
 
 ## 📝 Maintenance
 

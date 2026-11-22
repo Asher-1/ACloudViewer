@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Verify documentation worker limits and required Doxygen output contracts."""
+import hashlib
 import importlib.util
+import json
+import io
 import os
 from pathlib import Path
 import subprocess
@@ -125,6 +128,63 @@ class DoxygenOutputTest(unittest.TestCase):
         self.addCleanup(os.chdir, original)
         self.builder = make_docs.DoxygenDocsBuilder("output", "doxygen")
 
+    @staticmethod
+    def formula_png():
+        from PIL import Image
+        stream = io.BytesIO()
+        Image.new('L', (4, 4), color=255).save(stream, format='PNG')
+        return stream.getvalue()
+
+    def test_formula_failure_cannot_replace_existing_api_tree(self):
+        (self.root / 'Doxyfile').write_text('OUTPUT_DIRECTORY = unused\n')
+        api = self.root / 'output/html/cpp_api/api'
+        api.mkdir(parents=True)
+        (api / 'previous.html').write_text('last valid API')
+        for image in (None, b'', b'not PNG', self.formula_png()[:-6]):
+            with self.subTest(image=image):
+
+                def incomplete_formula(*args, **kwargs):
+                    root = self.root / 'doxygen/html'
+                    root.mkdir()
+                    (root / 'index.html').write_text(
+                        '<img class="formulaDsp" src="form_0.png" alt="x^2">')
+                    if image is not None:
+                        (root / 'form_0.png').write_bytes(image)
+
+                with patch.object(make_docs.subprocess,
+                                  'check_call',
+                                  side_effect=incomplete_formula):
+                    with self.assertRaisesRegex(
+                            RuntimeError,
+                            'missing local images|Invalid Doxygen formula'):
+                        self.builder.run()
+                self.assertEqual((api / 'previous.html').read_text(),
+                                 'last valid API')
+
+    def test_local_images_are_required_but_external_images_are_not_fetched(
+            self):
+        root = self.root / 'images-check'
+        root.mkdir()
+        (root / 'index.html').write_text(
+            '<img src="https://example.invalid/x.png">'
+            '<img src="data:image/png;base64,AA==">'
+            '<img src="image%20one.png?v=1#fragment">')
+        with self.assertRaisesRegex(RuntimeError, 'image%20one.png'):
+            self.builder._validate_html_images(root)
+        (root / 'image one.png').write_bytes(b'image fixture')
+        self.builder._validate_html_images(root)
+
+    def test_formula_pixel_stream_must_be_complete(self):
+        root = self.root / 'formula-check'
+        root.mkdir()
+        (root / 'index.html').write_text('<img src="form_0.png">')
+        png = self.formula_png()
+        (root / 'form_0.png').write_bytes(png)
+        self.builder._validate_html_images(root)
+        (root / 'form_0.png').write_bytes(png[:len(png) // 2])
+        with self.assertRaisesRegex(RuntimeError, 'Invalid Doxygen formula'):
+            self.builder._validate_html_images(root)
+
     def test_success_without_html_entry_is_rejected(self):
         (self.root / "Doxyfile").write_text("OUTPUT_DIRECTORY = unused\n",
                                             encoding="utf-8")
@@ -182,28 +242,37 @@ class DoxygenOutputTest(unittest.TestCase):
             (html / "index.html").write_text("C++ API", encoding="utf-8")
             (html / "classMesh.html").write_text(
                 '<object data="classMesh__coll__graph.svg"></object>'
-                '<map name="inline"><area href="classMesh.html"></map>',
+                '<map name="inline"><area href="classMesh.html"></map>'
+                '<img class="formulaInl" src="form_0.png" alt="x^2">',
                 encoding="utf-8")
-            (html / "classMesh_8h_source.html").write_text("header", encoding="utf-8")
+            (html / "classMesh_8h_source.html").write_text("header",
+                                                           encoding="utf-8")
             (html / "search.js").write_text("search", encoding="utf-8")
+            (html / "form_0.png").write_bytes(self.formula_png())
             (html / "classMesh__coll__graph.svg").write_text(
-                '<svg><a href="classMesh.html">Mesh</a></svg>', encoding="utf-8")
+                '<svg><a href="classMesh.html">Mesh</a></svg>',
+                encoding="utf-8")
             (html / "classMesh__coll__graph.map").write_text(
-                '<map id="graph"><area href="$classMesh.html"></map>', encoding="utf-8")
-            (html / "classMesh__coll__graph.md5").write_text('a' * 32, encoding="utf-8")
+                '<map id="graph"><area href="$classMesh.html"></map>',
+                encoding="utf-8")
+            (html / "classMesh__coll__graph.md5").write_text('a' * 32,
+                                                             encoding="utf-8")
             # Legal downloads/source maps, including a paired SVG with a
             # non-Graphviz source map, must not be blanket-excluded.
-            (html / "search.js.map").write_text('{"version":3}', encoding="utf-8")
+            (html / "search.js.map").write_text('{"version":3}',
+                                                encoding="utf-8")
             (html / "download.md5").write_text('b' * 32, encoding="utf-8")
             (html / "drawing.svg").write_text('<svg/>', encoding="utf-8")
             (html / "drawing.map").write_text('{"version":3}', encoding="utf-8")
             (html / "binary.svg").write_text('<svg/>', encoding="utf-8")
             (html / "binary.map").write_bytes(b'\xff\xfe user download')
             (html / "binary.md5").write_bytes(b'\xff\xfe checksum download')
-            (html / "png_graph.map").write_text('<map id="png"/>', encoding="utf-8")
+            (html / "png_graph.map").write_text('<map id="png"/>',
+                                                encoding="utf-8")
             (html / "assets").mkdir()
             (html / "assets/user.svg").write_text('<svg/>', encoding="utf-8")
-            (html / "assets/user.map").write_text('<map id="user"/>', encoding="utf-8")
+            (html / "assets/user.map").write_text('<map id="user"/>',
+                                                  encoding="utf-8")
 
         with patch.object(make_docs.subprocess,
                           "check_call",
@@ -214,14 +283,19 @@ class DoxygenOutputTest(unittest.TestCase):
                          "C++ API")
         self.assertTrue((api / "classMesh.html").is_file())
         source = self.root / "doxygen/html"
-        for name in ['classMesh__coll__graph.map', 'classMesh__coll__graph.md5']:
+        for name in [
+                'classMesh__coll__graph.map', 'classMesh__coll__graph.md5'
+        ]:
             self.assertTrue((source / name).is_file())  # Build cache retained.
             self.assertFalse((api / name).exists())
-        for name in ['classMesh.html', 'classMesh_8h_source.html', 'search.js',
-                     'classMesh__coll__graph.svg', 'search.js.map', 'download.md5',
-                     'drawing.map', 'binary.map', 'binary.md5', 'png_graph.map',
-                     'assets/user.map']:
-            self.assertEqual((api / name).read_bytes(), (source / name).read_bytes())
+        for name in [
+                'classMesh.html', 'classMesh_8h_source.html', 'search.js',
+                'form_0.png', 'classMesh__coll__graph.svg', 'search.js.map',
+                'download.md5', 'drawing.map', 'binary.map', 'binary.md5',
+                'png_graph.map', 'assets/user.map'
+        ]:
+            self.assertEqual((api / name).read_bytes(),
+                             (source / name).read_bytes())
         self.assertEqual((api / "MainUI.png").read_bytes(), b"image fixture")
         self.assertFalse((api / "stale.html").exists())
         self.assertEqual(overview.read_text(encoding="utf-8"), "Sphinx landing")
@@ -229,9 +303,86 @@ class DoxygenOutputTest(unittest.TestCase):
         # A successful producer is insufficient if integration omits its tree.
         with patch.object(make_docs.subprocess, "check_call", side_effect=generate_html), \
              patch.object(make_docs.shutil, "copytree"):
-            with self.assertRaisesRegex(
-                    RuntimeError, "integration has no entry page"):
+            with self.assertRaisesRegex(RuntimeError,
+                                        "integration has no entry page"):
                 self.builder.run()
+
+
+class OriginalIllustrationPublicationTest(unittest.TestCase):
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        root = Path(self.temp.name)
+        self.api = root / 'api'
+        self.assets = root / 'assets'
+        self.api.mkdir()
+        self.assets.mkdir()
+        self.png = DoxygenOutputTest.formula_png()
+        for name in ['QCPGraph.png', 'QCPBars.png']:
+            (self.assets / name).write_bytes(self.png)
+        (self.assets / 'manifest.json').write_text(
+            json.dumps({
+                'assets': [{
+                    'name': name,
+                    'sha256': hashlib.sha256(self.png).hexdigest()
+                } for name in ['QCPGraph.png', 'QCPBars.png']]
+            }))
+        for name in ['README.md', 'LICENSE-NOTICE.md', 'LICENSE']:
+            (self.assets / name).write_text('Original example attribution')
+        spec = importlib.util.spec_from_file_location(
+            'install_qcp_doc_images',
+            Path(__file__).with_name('install_qcp_doc_images.py'))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.install = module.install
+
+    def test_only_referenced_missing_image_is_copied_with_attribution(self):
+        page = self.api / 'classQCPGraph.html'
+        page.write_text('<img src="QCPGraph.png">')
+        before = page.read_bytes()
+        self.assertEqual(self.install(self.api, self.assets), 1)
+        self.assertEqual((self.api / 'QCPGraph.png').read_bytes(), self.png)
+        self.assertFalse((self.api / 'QCPBars.png').exists())
+        self.assertEqual(page.read_bytes(), before)
+        self.assertTrue((self.api / 'QCustomPlot-original-README.md').is_file())
+
+    def test_existing_historical_image_is_not_replaced(self):
+        (self.api / 'index.html').write_text('<img src="QCPGraph.png">')
+        (self.api / 'QCPGraph.png').write_bytes(b'historical own image')
+        self.assertEqual(self.install(self.api, self.assets), 0)
+        self.assertEqual((self.api / 'QCPGraph.png').read_bytes(),
+                         b'historical own image')
+
+    def test_corrupt_asset_cannot_create_partial_repair(self):
+        (self.api / 'index.html'
+        ).write_text('<img src="QCPGraph.png"><img src="QCPBars.png">')
+        (self.assets / 'QCPBars.png').write_bytes(b'corrupt')
+        with self.assertRaisesRegex(ValueError, 'checksum/format'):
+            self.install(self.api, self.assets)
+        self.assertFalse((self.api / 'QCPGraph.png').exists())
+
+    def test_escape_and_unknown_images_fail_instead_of_fabricated_fallback(
+            self):
+        for source in ['../QCPGraph.png', 'QCPUnknown.png']:
+            with self.subTest(source=source):
+                (self.api / 'index.html').write_text(f'<img src="{source}">')
+                with self.assertRaises(ValueError):
+                    self.install(self.api, self.assets)
+        self.assertFalse((self.api.parent / 'QCPGraph.png').exists())
+
+    def test_attribution_symlink_cannot_write_outside_api(self):
+        (self.api / 'index.html').write_text('<img src="QCPGraph.png">')
+        outside = self.api.parent / 'outside-notice'
+        (self.api / 'QCustomPlot-original-LICENSE').symlink_to(outside)
+        with self.assertRaisesRegex(ValueError, 'attribution target'):
+            self.install(self.api, self.assets)
+        self.assertFalse(outside.exists())
+        self.assertFalse((self.api / 'QCPGraph.png').exists())
+
+    def test_unrelated_api_does_not_require_or_copy_examples(self):
+        (self.api / 'index.html').write_text('<img src="other.png">')
+        self.assertEqual(self.install(self.api, self.assets / 'absent'), 0)
 
 
 if __name__ == "__main__":

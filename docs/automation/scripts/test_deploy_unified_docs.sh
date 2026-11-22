@@ -76,6 +76,187 @@ check "missing archived stylesheet is restored" "cmp -s '$d/docs-output/_static/
 check "existing archived stylesheet is preserved" "grep -q 'archived custom styles' '$d/unified-deploy/documentation/v3.9.3/_static/css/furo_overrides.css'"
 check "404 calibrated to v3.9.4" "grep -q \"var version = 'v3.9.4'\" '$d/unified-deploy/404.html'"
 
+echo "═══ Case 2b: repair only referenced same-release mainpage images ═══"
+d=$(new_case c2b)
+archive="$d/preserved-versions/documentation/v3.9.4"
+mkdir -p "$archive/cpp_api/api" "$archive/_images" "$archive/images" "$d/docs-output/cpp_api/api"
+echo stable > "$archive/index.html"
+for image in AbstractionLayers.png MainUI.png ICP-registration.png Reconstruction.png SemanticAnnotation.png; do
+    printf '<img src="%s">\n' "$image" >> "$archive/cpp_api/api/index.html"
+    if [ "$image" = Reconstruction.png ]; then
+        printf 'same-release-%s' "$image" > "$archive/images/$image"
+    else
+        printf 'same-release-%s' "$image" > "$archive/_images/$image"
+    fi
+    printf 'wrong-dev-%s' "$image" > "$d/docs-output/cpp_api/api/$image"
+done
+# Existing archive content must win even when another same-version source exists.
+echo existing-history > "$archive/cpp_api/api/MainUI.png"
+run_deploy "$d" false "" ""
+for image in AbstractionLayers.png ICP-registration.png Reconstruction.png SemanticAnnotation.png; do
+    check "same-release $image restored without dev substitution" \
+        "grep -qx 'same-release-$image' '$d/unified-deploy/documentation/v3.9.4/cpp_api/api/$image'"
+done
+check "existing archive mainpage picture is never overwritten" \
+    "grep -qx existing-history '$d/unified-deploy/documentation/v3.9.4/cpp_api/api/MainUI.png'"
+check "archived mainpage HTML is unchanged by image repair" \
+    "cmp -s '$archive/cpp_api/api/index.html' '$d/unified-deploy/documentation/v3.9.4/cpp_api/api/index.html'"
+
+echo "═══ Case 2c: only the matching release tag can supply omitted assets ═══"
+for fault in none unavailable; do
+    d=$(new_case "c2c-$fault")
+    archive="$d/preserved-versions/documentation/v3.9.4"
+    mkdir -p "$archive/cpp_api/api" "$d/bin" "$d/release-images" "$d/docs-output/cpp_api/api"
+    echo stable > "$archive/index.html"
+    for image in AbstractionLayers.png MainUI.png ICP-registration.png Reconstruction.png SemanticAnnotation.png; do
+        printf '<img src="%s">\n' "$image" >> "$archive/cpp_api/api/index.html"
+        printf 'release-tag-%s' "$image" > "$d/release-images/$image"
+        printf 'wrong-dev-%s' "$image" > "$d/docs-output/cpp_api/api/$image"
+    done
+    cat > "$d/bin/git" <<'GIT'
+#!/usr/bin/env python3
+import os,sys
+from pathlib import Path
+args=sys.argv[1:]
+assert args[:2]==['-C',os.environ['TEST_SCRIPT_REPO']],args
+args=args[2:]
+root=Path(os.environ['TEST_IMAGE_ROOT'])
+with (root/'git-calls.log').open('a') as log: log.write(' '.join(args)+'\n')
+if args==['rev-parse','--verify','refs/tags/v3.9.4^{commit}']:
+    print('a'*40)
+elif len(args)==2 and args[0]=='show' and args[1].startswith('a'*40+':docs/images/'):
+    if os.environ['TEST_IMAGE_FAULT']=='unavailable': raise SystemExit(1)
+    name=args[1].split('/')[-1]
+    sys.stdout.buffer.write((root/'release-images'/name).read_bytes())
+else:
+    raise AssertionError(args)
+GIT
+    chmod +x "$d/bin/git"
+    set +e
+    ( cd "$d" && env PATH="$d/bin:$PATH" TEST_SCRIPT_REPO="$REPO_ROOT" \
+        TEST_IMAGE_ROOT="$d" TEST_IMAGE_FAULT="$fault" IS_RELEASE=false RELEASE_VERSION='' DOC_VERSION='' \
+        bash "$SCRIPT" > "$d/deploy.log" 2>&1 )
+    rc=$?
+    set -e
+    if [ "$fault" = none ]; then
+        check "same-release tag extraction succeeds" "[ $rc -eq 0 ]"
+        for image in AbstractionLayers.png MainUI.png ICP-registration.png Reconstruction.png SemanticAnnotation.png; do
+            check "release tag supplies exact $image bytes" \
+                "cmp -s '$d/release-images/$image' '$d/unified-deploy/documentation/v3.9.4/cpp_api/api/$image'"
+        done
+        check "source commit identity is recorded" "grep -q 'from release aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' '$d/deploy.log'"
+    else
+        check "missing same-release source stops deployment" "[ $rc -ne 0 ]"
+        check "missing source reports correct release and image" \
+            "grep -q 'Cannot restore v3.9.4/AbstractionLayers.png' '$d/deploy.log'"
+        check "failed extraction publishes no partial image" \
+            "[ ! -e '$d/unified-deploy/documentation/v3.9.4/cpp_api/api/AbstractionLayers.png' ] && ! compgen -G '$d/unified-deploy/documentation/v3.9.4/cpp_api/api/AbstractionLayers.png.*' >/dev/null"
+    fi
+done
+
+echo "═══ Case 2d: unreferenced images are not manufactured ═══"
+d=$(new_case c2d)
+archive="$d/preserved-versions/documentation/v3.9.4"
+mkdir -p "$archive/cpp_api/api"
+echo stable > "$archive/index.html"
+echo '<html>API without showcase images</html>' > "$archive/cpp_api/api/index.html"
+run_deploy "$d" false "" ""
+check "unreferenced mainpage images are not added" \
+    "[ ! -e '$d/unified-deploy/documentation/v3.9.4/cpp_api/api/MainUI.png' ] && ! grep -q 'from release' '$d/deploy.log'"
+
+echo "═══ Case 2e: archived PyTorch 2.7 figures preserve original URLs ═══"
+d=$(new_case c2e)
+archive="$d/preserved-versions/documentation/v3.9.4"
+page=python_api/cloudViewer.visualization.tensorboard_plugin.summary.SummaryWriter.html
+mkdir -p "$archive/python_api" "$archive/python_api/python_api/_static/img/tensorboard" \
+    "$d/preserved-versions/documentation/v3.9.5/python_api"
+echo stable > "$archive/index.html"
+echo future > "$d/preserved-versions/documentation/v3.9.5/index.html"
+for image in add_histogram.png add_histogram_raw.png add_hparam.png add_image.png add_images.png add_scalar.png add_scalars.png; do
+    printf '<a href="python_api/_static/img/tensorboard/%s"><img src="python_api/_static/img/tensorboard/%s"></a>\n' "$image" "$image" >> "$archive/$page"
+done
+cp "$archive/$page" "$d/preserved-versions/documentation/v3.9.5/$page"
+echo existing-release-image > "$archive/python_api/python_api/_static/img/tensorboard/add_scalar.png"
+run_deploy "$d" false "" ""
+for image in add_histogram.png add_histogram_raw.png add_hparam.png add_image.png add_images.png add_scalars.png; do
+    check "archived $image uses verified upstream bytes" \
+        "cmp -s '$REPO_ROOT/docs/automation/assets/torch-tensorboard/$image' '$d/unified-deploy/documentation/v3.9.4/python_api/python_api/_static/img/tensorboard/$image'"
+done
+check "existing archived TensorBoard image is untouched" \
+    "grep -qx existing-release-image '$d/unified-deploy/documentation/v3.9.4/python_api/python_api/_static/img/tensorboard/add_scalar.png'"
+check "SummaryWriter HTML stays byte-identical" \
+    "cmp -s '$archive/$page' '$d/unified-deploy/documentation/v3.9.4/$page'"
+check "upstream copyright and source attribution are distributed" \
+    "cmp -s '$REPO_ROOT/docs/automation/assets/torch-tensorboard/LICENSE' '$d/unified-deploy/documentation/v3.9.4/python_api/python_api/_static/img/tensorboard/LICENSE' && [ -s '$d/unified-deploy/documentation/v3.9.4/python_api/python_api/_static/img/tensorboard/README.md' ]"
+check "known Torch assets are not applied to an unknown archive" \
+    "[ ! -e '$d/unified-deploy/documentation/v3.9.5/python_api/python_api/_static/img/tensorboard/add_image.png' ]"
+
+for fault in unknown missing; do
+    d=$(new_case "c2e-$fault")
+    archive="$d/preserved-versions/documentation/v3.9.4"
+    mkdir -p "$archive/python_api"
+    echo stable > "$archive/index.html"
+    if [ "$fault" = unknown ]; then
+        echo '<img src="python_api/_static/img/tensorboard/unreviewed.png">' > "$archive/$page"
+        tested_script="$SCRIPT"
+    else
+        echo '<img src="python_api/_static/img/tensorboard/add_image.png">' > "$archive/$page"
+        mkdir -p "$d/isolated/docs/automation/scripts"
+        cp "$SCRIPT" "$d/isolated/docs/automation/scripts/deploy_unified_docs.sh"
+    cp "$(dirname "$SCRIPT")/install_qcp_doc_images.py" "$d/isolated/docs/automation/scripts/"
+        tested_script="$d/isolated/docs/automation/scripts/deploy_unified_docs.sh"
+    fi
+    set +e
+    ( cd "$d" && env IS_RELEASE=false RELEASE_VERSION='' DOC_VERSION='' bash "$tested_script" > "$d/deploy.log" 2>&1 )
+    rc=$?
+    set -e
+    check "$fault TensorBoard resource fails explicitly" "[ $rc -ne 0 ] && grep -Eq 'Unknown v3.9.4 SummaryWriter|Missing verified PyTorch' '$d/deploy.log'"
+done
+
+echo "═══ Case 2f: formula recovery is bound to historical TeX ═══"
+for fault in none tex checksum; do
+    d=$(new_case "c2f-$fault")
+    archive="$d/preserved-versions/documentation/v3.9.4"
+    mkdir -p "$archive/cpp_api/api" "$d/isolated/docs/automation/scripts" \
+        "$d/isolated/docs/automation/assets"
+    echo stable > "$archive/index.html"
+    echo '<img src="form_0.png"><img src="form_1.png">' > "$archive/cpp_api/api/index.html"
+    echo existing-formula > "$archive/cpp_api/api/form_1.png"
+    cp "$SCRIPT" "$d/isolated/docs/automation/scripts/deploy_unified_docs.sh"
+    cp "$(dirname "$SCRIPT")/install_qcp_doc_images.py" "$d/isolated/docs/automation/scripts/"
+    cp -r "$REPO_ROOT/docs/automation/assets/v3.9.4-formulas" "$d/isolated/docs/automation/assets/"
+    python3 - "$d" "$fault" <<'PYTEST'
+from pathlib import Path
+import hashlib,json,sys
+root=Path(sys.argv[1]);fault=sys.argv[2]
+assets=root/'isolated/docs/automation/assets/v3.9.4-formulas'
+m=json.loads((assets/'manifest.json').read_text())
+tex=m['original_tex'].encode()
+assert hashlib.sha256(tex).hexdigest()==m['original_tex_sha256']
+(root/'preserved-versions/documentation/v3.9.4/cpp_api/api/_formulas.tex').write_bytes(tex)
+if fault=='checksum':(assets/'form_0.png').write_bytes(b'corrupt')
+PYTEST
+    if [ "$fault" = tex ]; then echo wrong-version > "$archive/cpp_api/api/_formulas.tex"; fi
+    set +e
+    ( cd "$d" && env IS_RELEASE=false RELEASE_VERSION='' DOC_VERSION='' \
+        bash "$d/isolated/docs/automation/scripts/deploy_unified_docs.sh" > "$d/deploy.log" 2>&1 )
+    rc=$?
+    set -e
+    if [ "$fault" = none ]; then
+        check "formula PNG restored from verified same-version mapping" \
+            "[ $rc -eq 0 ] && cmp -s '$REPO_ROOT/docs/automation/assets/v3.9.4-formulas/form_0.png' '$d/unified-deploy/documentation/v3.9.4/cpp_api/api/form_0.png'"
+        check "existing formula PNG is not overwritten" \
+            "grep -qx existing-formula '$d/unified-deploy/documentation/v3.9.4/cpp_api/api/form_1.png'"
+        check "formula repair preserves historical HTML" \
+            "cmp -s '$archive/cpp_api/api/index.html' '$d/unified-deploy/documentation/v3.9.4/cpp_api/api/index.html'"
+    else
+        check "formula $fault mismatch fails explicitly" \
+            "[ $rc -ne 0 ] && grep -q 'Cannot restore v3.9.4 formula' '$d/deploy.log'"
+        check "formula $fault failure does not publish PNG" \
+            "[ ! -e '$d/unified-deploy/documentation/v3.9.4/cpp_api/api/form_0.png' ]"
+    fi
+done
+
 echo "═══ Case 3: dev build, never released ═══"
 d=$(new_case c3); run_deploy "$d" false "" ""
 check "versions.json is valid JSON" "python3 -m json.tool '$d/unified-deploy/documentation/versions.json' >/dev/null 2>&1"
@@ -180,40 +361,79 @@ rc=$?
 set -e
 check "reused staging cannot retain deleted pages" "[ $rc -ne 0 ]"
 
-echo "═══ Case 12: raw content greater than 1 GiB is rejected before compression ═══"
+echo "═══ Case 12: content beyond 1 GiB warns without dropping pages ═══"
 d=$(new_case c12)
-python3 - "$d/docs-output/expanded.txt" <<'PY'
+python3 - "$d/docs-output/expanded.txt" <<'PYSPARSE'
 import sys
 with open(sys.argv[1], 'wb') as stream:
     stream.truncate(1073741825)
-PY
+PYSPARSE
 set +e
 run_deploy "$d" false "" ""
 rc=$?
 set -e
-check "raw publication content over 1 GiB is rejected" "[ $rc -ne 0 ]"
-check "raw-size failure names published content budget" \
-  "grep -q 'Published site exceeds 1 GiB' '$d/deploy.log'"
+check "raw content beyond 1 GiB is not an independent blocker" "[ $rc -eq 0 ]"
+check "supported-size warning is visible" "grep -qi 'warn\|warning\|⚠' '$d/deploy.log'"
+check "large source and entry page are retained" \
+    "[ -f '$d/unified-deploy/documentation/dev/index.html' ] && [ \"\$(stat -c %s '$d/unified-deploy/documentation/dev/expanded.txt')\" = 1073741825 ]"
 
-echo "═══ Case 13: gzip estimate one byte over 1 GiB is rejected ═══"
-d=$(new_case c13)
-mkdir -p "$d/bin"
-cat > "$d/bin/tar" <<'TAR'
-#!/usr/bin/env bash
-set -euo pipefail
-# Stream exactly the boundary plus one byte; integer KB truncation must not
-# accidentally allow the 1023 bytes immediately above the limit.
-dd if=/dev/zero bs=1048576 count=1024 status=none
-printf x
-TAR
-chmod +x "$d/bin/tar"
+echo "═══ Case 13: exact uncompressed tar boundary is authoritative ═══"
+# Exercise the real owner function through its full script, replacing only the
+# marked measurement process. No 10 GB stream or copied threshold algorithm.
+real_python=$(command -v python3)
+for spec in 'below:1 9999999999 1000000001:0' 'at:1 10000000000 1:1' 'above:1 10000000001 1:1' 'process-error:ERROR:1'; do
+    label=${spec%%:*};rest=${spec#*:};measurement=${rest%:*};expected=${rest##*:}
+    d=$(new_case "c13-$label")
+    mkdir -p "$d/bin"
+    printf '#!%s\n' "$real_python" > "$d/bin/python3"
+    cat >> "$d/bin/python3" <<'PYMEASURE'
+import os,subprocess,sys
+if sys.argv[1:]==['-']:
+    source=sys.stdin.read()
+    if '# PAGES_ARCHIVE_MEASUREMENT' in source:
+        if os.environ['TEST_MEASUREMENT']=='ERROR':
+            print('simulated tar measurement failure',file=sys.stderr)
+            raise SystemExit(23)
+        print(os.environ['TEST_MEASUREMENT'])
+        raise SystemExit(0)
+    result=subprocess.run([os.environ['REAL_PYTHON'],'-'],input=source,text=True)
+    raise SystemExit(result.returncode)
+os.execv(os.environ['REAL_PYTHON'],[os.environ['REAL_PYTHON'],*sys.argv[1:]])
+PYMEASURE
+    chmod +x "$d/bin/python3"
+    set +e
+    ( cd "$d" && env PATH="$d/bin:$PATH" REAL_PYTHON="$real_python" TEST_MEASUREMENT="$measurement" \
+        IS_RELEASE=false RELEASE_VERSION='' DOC_VERSION='' bash "$SCRIPT" > "$d/deploy.log" 2>&1 )
+    rc=$?
+    set -e
+    if [ "$expected" = 0 ]; then
+        check "tar below 10 GB passes even when gzip exceeds 1 GB" "[ $rc -eq 0 ]"
+    else
+        check "tar boundary or measurement $label fails closed" "[ $rc -ne 0 ]"
+    fi
+done
+
+echo "═══ Case 13b: unsupported publication file fails measurement ═══"
+d=$(new_case c13-filetype)
+mkfifo "$d/docs-output/unsupported.pipe"
 set +e
-( cd "$d" && env PATH="$d/bin:$PATH" IS_RELEASE=false RELEASE_VERSION='' DOC_VERSION='' bash "$SCRIPT" > "$d/deploy.log" 2>&1 )
+run_deploy "$d" false "" ""
 rc=$?
 set -e
-check "compressed Pages artifact over 1 GiB is rejected" "[ $rc -ne 0 ]"
-check "compressed-size failure names upload limit" \
-  "grep -q 'Compressed artifact is' '$d/deploy.log'"
+check "nonregular publication input cannot be silently omitted" "[ $rc -ne 0 ]"
+
+echo "═══ Case 13c: tar producer failure is not a valid size ═══"
+d=$(new_case c13-tarerror)
+mkdir -p "$d/bin"
+printf '#!/usr/bin/env bash\necho simulated-tar-failure >&2\nexit 7\n' > "$d/bin/tar"
+chmod +x "$d/bin/tar"
+set +e
+( cd "$d" && env PATH="$d/bin:$PATH" IS_RELEASE=false RELEASE_VERSION='' DOC_VERSION='' \
+    bash "$SCRIPT" > "$d/deploy.log" 2>&1 )
+rc=$?
+set -e
+check "tar subprocess failure blocks publication" \
+    "[ $rc -ne 0 ] && grep -q 'Pages tar measurement failed' '$d/deploy.log'"
 
 # Reuse this harness's isolated cases for the release-restoration boundary.
 # No test reaches GitHub: the fake accepts only the exact gh operations used

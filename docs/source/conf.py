@@ -29,6 +29,7 @@ import shutil
 import subprocess
 import sys
 from datetime import datetime
+from urllib.parse import unquote, urlsplit
 
 
 # Get current file directory first
@@ -173,10 +174,44 @@ def _cleanup_guides_plugins(app, exception):
 
 
 def _cleanup_plugin_docs(app, exception):
-    """Sphinx ``build-finished`` hook: remove the generated plugins/ directory."""
+    """Publish raw-HTML image dependencies before removing generated sources."""
     srcdir = app.srcdir if app else current_file_dir
     dest_root = os.path.join(srcdir, "plugins")
     if os.path.isdir(dest_root):
+        if exception is None and app.builder.format == "html":
+            # MyST copies Markdown images to _images, but leaves raw <img>
+            # URLs unchanged. Publish only those referenced plugin-local files,
+            # not every source image or a second copy of all Markdown images.
+            for readme in glob.glob(os.path.join(dest_root, "*", "README.md")):
+                document = os.path.relpath(readme, srcdir).replace(os.sep,
+                                                                   "/")[:-3]
+                output = app.builder.get_outfilename(document)
+                with open(output, encoding="utf-8") as stream:
+                    rendered = stream.read()
+                for match in re.finditer(
+                        r'<img\b[^>]*\bsrc\s*=\s*(["\'])(.*?)\1',
+                        rendered,
+                        flags=re.IGNORECASE | re.DOTALL):
+                    url = urlsplit(match.group(2))
+                    if url.scheme or url.netloc or url.path.startswith("/"):
+                        continue
+                    relative = unquote(url.path)
+                    source = os.path.realpath(
+                        os.path.join(os.path.dirname(readme), relative))
+                    target = os.path.realpath(
+                        os.path.join(os.path.dirname(output), relative))
+                    if (os.path.commonpath([source,
+                                            os.path.dirname(readme)])
+                            != os.path.dirname(readme) or os.path.commonpath([
+                                target, os.path.realpath(app.outdir)
+                            ]) != os.path.realpath(app.outdir)):
+                        continue  # Outside the plugin-copy owner's source/output boundary.
+                    if not os.path.isfile(source):
+                        raise FileNotFoundError(
+                            f"Plugin image referenced by {output} is missing: {source}"
+                        )
+                    os.makedirs(os.path.dirname(target), exist_ok=True)
+                    shutil.copy2(source, target)
         shutil.rmtree(dest_root)
         print(f"[conf.py] Cleaned up {dest_root}")
 

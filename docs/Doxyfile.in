@@ -210,6 +210,10 @@ EXT_LINKS_IN_WINDOW    = NO
 #---------------------------------------------------------------------------
 
 GENERATE_LATEX         = NO
+# HTML formula bitmaps are still generated through LaTeX when MathJax is off.
+# The metric equations use amsmath's text command inside eqnarray.
+EXTRA_PACKAGES         = amsmath
+USE_MATHJAX            = NO
 
 #---------------------------------------------------------------------------
 # Configuration options related to the RTF output
