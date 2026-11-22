@@ -122,8 +122,32 @@ def build_tree(root: Path) -> None:
     (root / "website-deploy" / "images").mkdir(parents=True)
     shutil.copy(DOCS / ".." / "images" / "ACloudViewer_logo_horizontal.png",
                 root / "website-deploy" / "images" / "ACloudViewer_logo_horizontal.png")
+    shutil.copy(DOCS / ".." / "index.html", root / "website-deploy" / "index.html")
+    shutil.copy(DOCS / ".." / "styles.css", root / "website-deploy" / "styles.css")
+    shutil.copy(DOCS / ".." / "script.js", root / "website-deploy" / "script.js")
+    downloads = {
+        "generated_at": "fixture",
+        "version_metadata": [
+            {"value": "main-devel", "display_name": "Beta", "is_default": True,
+             "python_versions": ["3.11"], "ubuntu_versions": ["ubuntu20.04"]},
+            {"value": "ubuntu-prebuild-deps", "display_name": "ubuntu-prebuild-deps",
+             "is_default": False, "python_versions": [], "ubuntu_versions": []},
+            {"value": "v3.9.4", "display_name": "v3.9.4", "is_default": False,
+             "python_versions": ["3.11"], "ubuntu_versions": ["ubuntu20.04"]},
+        ],
+        "download_data": {},
+    }
+    for version in ("main-devel", "v3.9.4"):
+        release_url = f"https://github.com/Asher-1/ACloudViewer/releases/download/{version}/ACloudViewer-3.9.4%2B0123456789abcdef-"
+        package = {"url": release_url + f"{version}-windows.exe", "size": "1024.00 MB"}
+        linux = {"url": release_url + f"{version}-linux.run", "size": "1024.00 MB"}
+        downloads["download_data"][version] = {
+            "windows": {"app": {"cpu": {"amd64": package}}},
+            "linux": {"ubuntu20.04": {"app": {"cpu": {"amd64": linux}}}},
+        }
+    (root / "website-deploy" / "downloads_data.json").write_text(
+        json.dumps(downloads), encoding="utf-8")
     shutil.copy(DOCS / ".." / "404.html", root / "website-deploy" / "404.html")
-    (root / "website-deploy" / "index.html").write_text("<html>site</html>")
 
     dev = root / "docs-output"
     write_page(dev, "index.html", "dev home")
@@ -240,6 +264,90 @@ def main() -> int:
                     page = ctx.new_page()
                     page.goto(base + path, wait_until="domcontentloaded")
                     return page
+
+                print("═══ live homepage navigation and download selectors ═══")
+                home = ctx.new_page()
+                home.route("https://**/*", lambda route: route.abort())
+                response = home.goto(base + "/", wait_until="domcontentloaded")
+                home.wait_for_selector("#download-output a.download-link", timeout=15000)
+                rec.check("real homepage source renders with local CSS/JS",
+                          response is not None and response.status == 200 and
+                          home.title().startswith("ACloudViewer"), home.title())
+                expected_nav = {"Home", "Features", "AICore AI", "Download", "Quick Start",
+                                "Gallery", "Documentation", "Support", "GitHub"}
+                actual_nav = {text.strip() for text in home.locator(
+                    ".nav-menu > li > a").all_text_contents()}
+                rec.check("all navigation links remain present",
+                          expected_nav.issubset(actual_nav), str(sorted(actual_nav)))
+                desktop = home.evaluate("""() => ({
+                    width: innerWidth,
+                    documentWidth: document.documentElement.scrollWidth,
+                    navRight: document.querySelector('.nav-menu').getBoundingClientRect().right,
+                    hamburger: getComputedStyle(document.querySelector('.hamburger')).display,
+                    links: [...document.querySelectorAll('.nav-menu > li > a')].map(a => a.getBoundingClientRect().right)
+                })""")
+                rec.check("desktop navigation fits without hiding links at 1280px",
+                          desktop["width"] == 1280 and desktop["documentWidth"] <= desktop["width"] and
+                          desktop["navRight"] <= desktop["width"] and
+                          all(x <= desktop["width"] for x in desktop["links"]), str(desktop))
+                rec.check("desktop uses full navigation above its fit breakpoint",
+                          desktop["hamburger"] == "none", desktop["hamburger"])
+                for width in (1200, 1024, 768, 390, 320):
+                    home.set_viewport_size({"width": width, "height": 844})
+                    hamburger = home.locator(".hamburger")
+                    rec.check(f"navigation collapses to hamburger at {width}px",
+                              hamburger.is_visible() and
+                              home.locator(".nav-menu").evaluate("e => !e.classList.contains('active')"))
+                    hamburger.click()
+                    home.wait_for_function("document.querySelector('.nav-menu').classList.contains('active')")
+                    home.wait_for_function("getComputedStyle(document.querySelector('.nav-menu')).transform === 'matrix(1, 0, 0, 1, 0, 0)'")
+                    opened = home.evaluate("""() => ({
+                        width: innerWidth,
+                        documentWidth: document.documentElement.scrollWidth,
+                        bodyOverflow: getComputedStyle(document.body).overflowX,
+                        menuRight: document.querySelector('.nav-menu').getBoundingClientRect().right,
+                        links: document.querySelectorAll('.nav-menu > li > a').length
+                    })""")
+                    rec.check(f"whole homepage fits without document clipping at {width}px",
+                              opened["documentWidth"] <= width and opened["bodyOverflow"] not in ("hidden", "clip"),
+                              str(opened))
+                    rec.check(f"all navigation links fit in expanded {width}px menu",
+                              opened["links"] == len(expected_nav) and opened["menuRight"] <= width,
+                              str(opened))
+                    hamburger.click()
+
+                code_layout = home.locator(".step-content .code-block").evaluate_all("""blocks => blocks.map(block => ({
+                    right: block.getBoundingClientRect().right,
+                    width: block.clientWidth,
+                    contentWidth: block.scrollWidth,
+                    overflow: getComputedStyle(block).overflowX,
+                    command: block.querySelector('code').textContent,
+                    copyButton: !!block.querySelector('.copy-btn')
+                }))""")
+                rec.check("long quickstart commands scroll within bounded code blocks",
+                          bool(code_layout) and all(row["right"] <= 320 and row["overflow"] == "auto" and
+                                                    row["copyButton"] for row in code_layout) and
+                          any(row["contentWidth"] > row["width"] and "cv3d.__version__" in row["command"]
+                              for row in code_layout), str(code_layout))
+
+                empty_version = home.locator("#version-selector .selector-btn").filter(
+                    has_text="ubuntu-prebuild-deps")
+                rec.check("metadata with no downloadable files is not selectable",
+                          empty_version.count() == 0)
+                active_os = home.locator("#os-selector .selector-btn.active")
+                rec.check("default Windows state is explicitly selected",
+                          active_os.get_attribute("data-value") == "windows",
+                          active_os.get_attribute("data-value"))
+                default_download = home.locator("#download-output a.download-link")
+                rec.check("default Windows choice matches its download target",
+                          "main-devel-windows.exe" in default_download.get_attribute("href"),
+                          default_download.get_attribute("href"))
+                home.locator('#os-selector .selector-btn[data-value="linux"]').click()
+                rec.check("changing OS synchronizes active state and options",
+                          home.locator("#os-selector .selector-btn.active").get_attribute("data-value") == "linux" and
+                          home.locator("#linux-version-row").is_visible() and
+                          "main-devel-linux.run" in home.locator("#download-output a.download-link").get_attribute("href"))
+                home.close()
 
                 print("═══ switcher population ═══")
                 page = goto("/documentation/dev/")

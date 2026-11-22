@@ -38,6 +38,8 @@ die()  { log "❌ $*" >&2; exit 1; }
 # Doxygen intermediates and Sphinx's sibling doctree cache are build output
 # too. The rendered C++ pages already ship in the versioned docs archive;
 # copying these trees here duplicates them (including unused XML/cache data).
+# Sphinx source and notebook inputs belong to the versioned documentation,
+# not to the marketing-site root; keep their rendered pages in the docs tree.
 # ---------------------------------------------------------------------------
 copy_website() {
     [ -d docs ] || die "docs/ missing"
@@ -45,14 +47,16 @@ copy_website() {
     mkdir -p "$WEBSITE_DIR"
     if command -v rsync >/dev/null 2>&1; then
         rsync -a --exclude='_out' --exclude='_build' \
-              --exclude='doxygen' --exclude='doctrees' --exclude='*.pyc' \
+              --exclude='doxygen' --exclude='doctrees' \
+              --exclude='/source' --exclude='/jupyter' --exclude='*.pyc' \
               --exclude='__pycache__' --exclude='.pytest_cache' \
               docs/ "$WEBSITE_DIR/"
     else
         # rsync is not guaranteed on every runner image; cp is enough here.
         cp -r docs/. "$WEBSITE_DIR/"
         rm -rf "$WEBSITE_DIR/_out" "$WEBSITE_DIR/_build" \
-               "$WEBSITE_DIR/doxygen" "$WEBSITE_DIR/doctrees"
+               "$WEBSITE_DIR/doxygen" "$WEBSITE_DIR/doctrees" \
+               "$WEBSITE_DIR/source" "$WEBSITE_DIR/jupyter"
         find "$WEBSITE_DIR" -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
         find "$WEBSITE_DIR" -name '*.pyc' -type f -delete 2>/dev/null || true
     fi

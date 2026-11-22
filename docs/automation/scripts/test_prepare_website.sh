@@ -39,6 +39,9 @@ EOF
     echo '<html>C++ API</html>' > "$d/docs/doxygen/html/index.html"
     echo '<doxygen/>' > "$d/docs/doxygen/xml/index.xml"
     echo 'cached environment' > "$d/docs/doctrees/environment.pickle"
+    mkdir -p "$d/docs/source" "$d/docs/jupyter"
+    echo 'Sphinx input' > "$d/docs/source/index.rst"
+    echo 'notebook input' > "$d/docs/jupyter/example.ipynb"
     printf 'CLOUDVIEWER_VERSION_MAJOR 3\nCLOUDVIEWER_VERSION_MINOR 9\nCLOUDVIEWER_VERSION_PATCH 5\n' \
         > "$d/libs/cloudViewer/version.txt"
     printf '%s\n' "$d"
@@ -102,6 +105,8 @@ check "_out is not copied" "[ ! -e '$d/website-deploy/_out' ]"
 check "_build is not copied" "[ ! -e '$d/website-deploy/_build' ]"
 check "Doxygen intermediates are not copied" "[ ! -e '$d/website-deploy/doxygen' ]"
 check "Sphinx doctree cache is not copied" "[ ! -e '$d/website-deploy/doctrees' ]"
+check "versioned documentation inputs are not duplicated at website root" \
+    "[ ! -e '$d/website-deploy/source' ] && [ ! -e '$d/website-deploy/jupyter' ]"
 check "authored files are copied" "[ -f '$d/website-deploy/index.html' ]"
 
 echo "═══ Case 5: downloads_data.json keeps the schema the site reads ═══"
@@ -146,6 +151,8 @@ done
     "$BASH" "$SCRIPT" > "$d/prepare.log" 2>&1 )
 check "cp fallback omits all four generated trees" \
     "[ ! -e '$d/website-deploy/_out' ] && [ ! -e '$d/website-deploy/_build' ] && [ ! -e '$d/website-deploy/doxygen' ] && [ ! -e '$d/website-deploy/doctrees' ]"
+check "cp fallback omits versioned documentation inputs" \
+    "[ ! -e '$d/website-deploy/source' ] && [ ! -e '$d/website-deploy/jupyter' ]"
 check "cp fallback preserves authored website and download data" \
     "[ -f '$d/website-deploy/index.html' ] && [ -f '$d/website-deploy/downloads_data.json' ]"
 

@@ -39,7 +39,9 @@ import re
 import shutil
 import subprocess
 import sys
+from html.parser import HTMLParser
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
 import nbconvert
 import nbformat
@@ -122,23 +124,73 @@ class DoxygenDocsBuilder:
         self.html_output_dir = html_output_dir
         self.doxygen_output_dir = doxygen_output_dir or "doxygen"
 
+    @staticmethod
+    def _validate_html_images(root):
+        """Require local images, even when Doxygen reports TeX failures as exit 0."""
+
+        class Images(HTMLParser):
+
+            def __init__(self):
+                super().__init__()
+                self.sources = []
+
+            def handle_starttag(self, tag, attributes):
+                if tag == 'img':
+                    self.sources.extend(value for key, value in attributes
+                                        if key == 'src' and value)
+
+        missing = []
+        formulas = set()
+        for page in root.rglob('*.html'):
+            parser = Images()
+            parser.feed(page.read_text(encoding='utf-8'))
+            for source in parser.sources:
+                url = urlsplit(source)
+                if url.scheme or url.netloc or not url.path:
+                    continue
+                image = page.parent / unquote(url.path)
+                if not image.is_file():
+                    missing.append(f'{page.relative_to(root)} -> {source}')
+                elif re.fullmatch(r'form_\d+\.png', image.name):
+                    formulas.add(image)
+        if missing:
+            raise RuntimeError('Doxygen HTML has missing local images:\n  ' +
+                               '\n  '.join(missing[:20]))
+        if formulas:
+            from PIL import Image
+        for image in formulas:
+            try:
+                with Image.open(image) as picture:
+                    if picture.format != 'PNG':
+                        raise ValueError('expected a PNG formula image')
+                    picture.verify()
+                with Image.open(image) as picture:
+                    picture.load()
+                    if min(picture.size) <= 0:
+                        raise ValueError('empty formula image')
+            except (OSError, SyntaxError, ValueError) as error:
+                raise RuntimeError(
+                    f'Invalid Doxygen formula image {image}: {error}'
+                ) from error
+
     def run(self):
         """Run Doxygen to generate C++ API documentation."""
-        if not os.path.exists("Doxyfile"):
-            print("⚠️  Doxyfile not found, skipping C++ API documentation")
-            return
+        if not Path("Doxyfile").is_file():
+            raise RuntimeError(
+                "Doxyfile not found: cannot build requested C++ API documentation"
+            )
 
         print("=" * 70)
         print("🔨 Building C++ API Documentation (Doxygen)")
         print("=" * 70)
         print()
-        
+
         # Use absolute path for doxygen output directory
         doxygen_abs_dir = os.path.abspath(self.doxygen_output_dir)
         _create_or_clear_dir(doxygen_abs_dir)
         print(f"📂 Doxygen output directory: {doxygen_abs_dir}")
         print()
-        
+
         # Create a temporary Doxyfile with custom OUTPUT_DIRECTORY
         temp_doxyfile = os.path.join(doxygen_abs_dir, "Doxyfile.tmp")
         with open("Doxyfile", "r") as f_in:
@@ -149,15 +201,15 @@ class DoxygenDocsBuilder:
                         f_out.write(f"OUTPUT_DIRECTORY       = {doxygen_abs_dir}\n")
                     else:
                         f_out.write(line)
-        
+
         cmd = ["doxygen", temp_doxyfile]
         print(f'Command: "{" ".join(cmd)}"')
         print()
-        
+
         try:
             subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)
             print()
-            
+
             # Copy mainpage images to Doxygen HTML output
             # These images are referenced in mainpage.dox via \htmlonly blocks
             # and won't be automatically copied by Doxygen
@@ -168,63 +220,89 @@ class DoxygenDocsBuilder:
                 'Reconstruction.png',
                 'SemanticAnnotation.png'
             ]
-            
-            doxygen_html = os.path.join(doxygen_abs_dir, "html")
-            if os.path.exists(doxygen_html):
-                print("📸 Copying mainpage images to Doxygen output:")
-                for img in mainpage_images:
-                    src = Path('images') / img
-                    dst = Path(doxygen_html) / img
-                    if src.exists():
-                        shutil.copy2(src, dst)
-                        print(f"  ✓ {img} ({src.stat().st_size // 1024} KB)")
-                    else:
-                        print(f"  ⚠️  {img} not found in images/")
-                print()
-            
-            # Copy Doxygen HTML output to final location as cpp_api/api/ subdirectory
-            # This avoids overwriting Sphinx-generated pages (overview.html, quickstart.html, plugins.html)
-            cpp_api_dir = os.path.join(self.html_output_dir, "html", "cpp_api")
-            output_path = os.path.join(cpp_api_dir, "api")
-            
-            if os.path.exists(doxygen_html):
-                # Remove old api/ subdirectory if it exists
-                if os.path.exists(output_path):
-                    print(f"🗑️  Removing old cpp_api/api/ directory: {output_path}")
-                    shutil.rmtree(output_path)
-                
-                # Ensure cpp_api/ directory exists (for Sphinx-generated pages)
-                os.makedirs(cpp_api_dir, exist_ok=True)
-                
-                print(f"📁 Copying Doxygen HTML: {doxygen_html} -> {output_path}")
-                shutil.copytree(doxygen_html, output_path)
-                
-                index_file = Path(output_path) / "index.html"
-                if index_file.exists():
-                    print(f"✅ C++ API docs: {index_file.as_uri()}")
-                    print()
-                    print("Documentation available at:")
-                    print(f"  - Relative: ../cpp_api/api/index.html")
-                    print(f"  - Absolute: {output_path}/index.html")
+
+            doxygen_html = Path(doxygen_abs_dir) / "html"
+            index_file = doxygen_html / "index.html"
+            if not index_file.is_file():
+                raise RuntimeError(
+                    f"Doxygen exited successfully but {index_file} is missing")
+
+            print("📸 Copying mainpage images to Doxygen output:")
+            for img in mainpage_images:
+                src = Path('images') / img
+                dst = doxygen_html / img
+                if src.exists():
+                    shutil.copy2(src, dst)
+                    print(f"  ✓ {img} ({src.stat().st_size // 1024} KB)")
                 else:
-                    print("⚠️  index.html not found in Doxygen output")
-            else:
-                print(f"⚠️  Doxygen HTML output not found: {doxygen_html}")
-            
-            # Note about XML output (optional, for Breathe fallback)
-            doxygen_xml = os.path.join(doxygen_abs_dir, "xml")
-            if os.path.exists(doxygen_xml):
+                    print(f"  ⚠️  {img} not found in images/")
+            print()
+
+            # Use the same original-example publisher as historical overlays.
+            illustrations = Path(__file__).resolve().parent / 'automation/scripts/install_qcp_doc_images.py'
+            subprocess.run([sys.executable, str(illustrations), '--api-root',
+                            str(doxygen_html)], check=True)
+
+            # Doxygen can exit 0 after a failed LaTeX conversion. Refuse the
+            # incomplete producer before removing an existing published tree.
+            self._validate_html_images(doxygen_html)
+
+            # Keep Doxygen below Sphinx-generated cpp_api landing pages.
+            cpp_api_dir = Path(self.html_output_dir) / "html" / "cpp_api"
+            output_path = cpp_api_dir / "api"
+            if output_path.exists():
+                print(f"🗑️  Removing old cpp_api/api/ directory: {output_path}")
+                shutil.rmtree(output_path)
+            cpp_api_dir.mkdir(parents=True, exist_ok=True)
+
+            print(f"📁 Copying Doxygen HTML: {doxygen_html} -> {output_path}")
+            def ignore_graph_cache(directory, names):
+                # Graphviz's cmap/md5 sidecars are build inputs, not browser
+                # resources: clickable links are embedded in the paired SVG.
+                # Restrict this to the Doxygen root and verified SVG pairs;
+                # keep JS source maps, downloads and PNG image maps untouched.
+                if Path(directory) != doxygen_html:
+                    return []
+                ignored = []
+                for name in names:
+                    path = Path(directory) / name
+                    if (path.suffix not in ('.map', '.md5') or
+                            not path.is_file() or
+                            not path.with_suffix('.svg').is_file()):
+                        continue
+                    if (path.suffix == '.map' and
+                            path.read_bytes().lstrip().startswith(b'<map ')):
+                        ignored.append(name)
+                    elif (path.suffix == '.md5' and
+                          re.fullmatch(rb'[0-9a-f]{32}', path.read_bytes())):
+                        ignored.append(name)
+                return ignored
+
+            shutil.copytree(doxygen_html, output_path, ignore=ignore_graph_cache)
+
+            # Check the path that will be referenced by the published site.
+            index_file = output_path / "index.html"
+            if not index_file.is_file():
+                raise RuntimeError(f"C++ API integration has no entry page: {index_file}")
+            print(f"✅ C++ API docs: {index_file.resolve().as_uri()}")
+            print()
+            print("Documentation available at:")
+            print("  - Relative: ../cpp_api/api/index.html")
+            print(f"  - Absolute: {output_path}/index.html")
+
+            doxygen_xml = Path(doxygen_abs_dir) / "xml"
+            if doxygen_xml.is_dir():
                 print(f"ℹ️  Doxygen XML also generated at {doxygen_xml}/ (for optional Breathe use)")
-            
+
             print()
             print("=" * 70)
-                
+
         except subprocess.CalledProcessError as e:
             print()
             print(f"❌ Doxygen build failed with exit code {e.returncode}")
             print("=" * 70)
             raise
-        
+
         # Note: We keep the doxygen/ directory for:
         # 1. XML files (if Breathe integration is needed)
         # 2. Debugging (inspect raw Doxygen output)
@@ -677,7 +755,7 @@ class PyAPIDocsBuilder:
             if inspect.ismodule(obj[1]) and not obj[0].startswith('_')
         ]
         documented_sub_module_names = [
-            sub_module_name for sub_module_name in sub_module_names 
+            sub_module_name for sub_module_name in sub_module_names
             if "%s.%s" % (full_module_name, sub_module_name) in self.module_names
         ]
 
@@ -780,10 +858,10 @@ class JupyterDocsBuilder:
     def run(self):
         """Copy Jupyter notebooks to tutorial directories."""
         print("📓 Copying Jupyter notebooks to tutorial directories...")
-        
+
         if self.execute_notebooks == "never":
             return
-        
+
         # Setting os.environ["CI"] will disable interactive (blocking) mode in
         # Jupyter notebooks
         os.environ["CI"] = "true"
@@ -795,7 +873,7 @@ class JupyterDocsBuilder:
         if not nb_parent_src.exists():
             print(f"⚠️  Jupyter directory not found: {nb_parent_src}")
             return
-        
+
         example_dirs = [
             name for name in os.listdir(nb_parent_src)
             if os.path.isdir(nb_parent_src / name)
@@ -863,7 +941,7 @@ class JupyterDocsBuilder:
                 c.get("outputs") or c.get("execution_count")
                 for c in nb.cells
                 if c.cell_type == "code")
-            
+
             # Determine if notebook should be executed
             if self.execute_notebooks == "always":
                 execute = has_code
@@ -871,7 +949,7 @@ class JupyterDocsBuilder:
                 execute = False
             else:  # "auto"
                 execute = (has_code and not has_output)
-            
+
             print("has_code: {}, has_output: {}, execute_mode: {}, execute: {}".format(
                 has_code, has_output, self.execute_notebooks, execute))
 
@@ -899,7 +977,7 @@ class JupyterDocsBuilder:
                     print("⚠️  Saved notebook with partial/failed execution: {}".format(nb_path.name))
                     # Track failed notebook but continue processing others
                     failed_notebooks.append(nb_path.name)
-        
+
         # Report summary
         print("")
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -915,7 +993,7 @@ class JupyterDocsBuilder:
                 print("   - {}".format(nb_name))
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         print("")
-        
+
         # A notebook that fails to execute must fail the build.
         #
         # This used to fire only when GITHUB_ACTIONS was set. The docs build
@@ -978,7 +1056,7 @@ class JupyterDocsBuilder:
         print("📸 Copying static images to _static directory...")
         static_src = Path(self.current_file_dir) / "images"
         static_dst = Path(self.current_file_dir) / "source" / "_static"
-        
+
         if static_src.exists():
             static_dst.mkdir(parents=True, exist_ok=True)
             # Copy donation.png if it exists
@@ -986,7 +1064,7 @@ class JupyterDocsBuilder:
             if donation_img.exists():
                 _update_file(donation_img, static_dst / "donation.png")
                 print(f"  ✓ donation.png ({donation_img.stat().st_size // 1024} KB)")
-        
+
 
 
 class SphinxDocsBuilder:
@@ -1004,7 +1082,7 @@ class SphinxDocsBuilder:
     def run(self):
         """Run Sphinx to build HTML documentation."""
         print("🔨 Building documentation with Sphinx...")
-        
+
         # Ensure pandoc is in PATH (for nbsphinx)
         try:
             import pypandoc
@@ -1014,7 +1092,7 @@ class SphinxDocsBuilder:
                 print(f"📓 Added pandoc to PATH: {pandoc_dir}")
         except (ImportError, OSError):
             print("⚠️  pypandoc not found, nbsphinx may fail without pandoc")
-        
+
         # Copy docs files from the CloudViewer-ML checkout.
         #
         # The ML project ships its own docs/tensorboard.md; keeping the copy
@@ -1120,7 +1198,7 @@ class SphinxDocsBuilder:
             ]
 
         print('Calling: "%s"' % " ".join(cmd))
-        
+
         try:
             subprocess.check_call(cmd, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError as e:
@@ -1180,34 +1258,53 @@ def process_doxyfile_template(pwd, version):
     """
     doxyfile_in = os.path.join(pwd, "Doxyfile.in")
     doxyfile_out = os.path.join(pwd, "Doxyfile")
-    
-    if not os.path.exists(doxyfile_in):
-        print("[make_docs] No Doxyfile.in found, skipping Doxyfile generation")
-        return
-    
+
+    if not os.path.isfile(doxyfile_in):
+        raise FileNotFoundError(f"Doxygen template is missing: {doxyfile_in}")
+
     print(f"[make_docs] Processing Doxyfile.in -> Doxyfile")
-    
+
+    # Validate before the template I/O handler: invalid limits must fail rather
+    # than leave an old, unbounded Doxyfile available for the requested build.
+    dot_limit = None
+    if "NPROC" in os.environ:
+        dot_limit = int(os.environ["NPROC"])
+        if dot_limit <= 0:
+            raise ValueError("NPROC must be a positive integer for Doxygen")
+
     try:
         with open(doxyfile_in, 'r', encoding='utf-8') as f:
             content = f.read()
-        
+
         # Doxygen output directory (relative to docs/ or absolute)
         # The DoxygenDocsBuilder will override this via temporary Doxyfile
         # but we provide a default here for direct doxygen command usage
         doxygen_output_dir = "doxygen"
-        
+
         # Replace template variables
         content = content.replace('@PROJECT_VERSION@', version)
         content = content.replace('@DOXYGEN_OUTPUT_DIRECTORY@', doxygen_output_dir)
-        
+        if dot_limit is not None:
+            def limit_dot_threads(match):
+                configured = int(match.group(1))
+                workers = min(configured, dot_limit) if configured > 0 else dot_limit
+                return f"DOT_NUM_THREADS = {workers}"
+
+            content, replaced = re.subn(
+                r'^\s*DOT_NUM_THREADS\s*=\s*(\d+)[^\n]*$',
+                limit_dot_threads, content, flags=re.MULTILINE)
+            if not replaced:
+                content += f"\nDOT_NUM_THREADS = {dot_limit}\n"
+
         with open(doxyfile_out, 'w', encoding='utf-8') as f:
             f.write(content)
-        
+
         print(f"[make_docs] Generated Doxyfile:")
         print(f"[make_docs]   PROJECT_VERSION: {version}")
         print(f"[make_docs]   OUTPUT_DIRECTORY: {doxygen_output_dir}")
-    except Exception as e:
+    except OSError as e:
         print(f"[make_docs] Error processing Doxyfile.in: {e}")
+        raise
 
 
 def update_index_html_version(pwd, version):
@@ -1258,7 +1355,7 @@ def process_rst_templates(pwd, version):
     print("=" * 70)
     print("Processing RST template files (.in.rst)")
     print("=" * 70)
-    
+
     # Find all .in.rst files
     source_dir = os.path.join(pwd, "source")
     in_rst_files = []
@@ -1266,12 +1363,12 @@ def process_rst_templates(pwd, version):
         for file in files:
             if file.endswith('.in.rst'):
                 in_rst_files.append(os.path.join(root, file))
-    
+
     if not in_rst_files:
         print("[make_docs] No .in.rst files found")
         print()
         return
-    
+
     print(f"[make_docs] Found {len(in_rst_files)} .in.rst file(s)")
 
     failed = []
@@ -1411,7 +1508,7 @@ def main():
     else:
         html_output_dir = os.path.join(pwd, "_out")
         print(f"📂 HTML output directory: {html_output_dir} (default)")
-    
+
     # Doxygen directory (use --doxygen-dir if provided)
     if args.doxygen_dir:
         doxygen_output_dir = os.path.abspath(args.doxygen_dir)
@@ -1425,7 +1522,7 @@ def main():
         doxygen_output_dir = os.path.join(pwd, "doxygen")
         print(f"📂 Doxygen directory: {doxygen_output_dir} (default)")
     print()
-    
+
     # Clean or create output directory
     if args.clean or (args.sphinx or args.doxygen):
         _create_or_clear_dir(html_output_dir)
@@ -1445,7 +1542,7 @@ def main():
 
     # Update index.html version badges
     update_index_html_version(pwd, version)
-    
+
     # Process RST templates FIRST (before any Sphinx-related tasks)
     # This replaces @cv_version@ placeholders with actual version
     if args.sphinx:
@@ -1496,7 +1593,7 @@ def main():
     print("=" * 70)
     print("✅ Documentation build complete!")
     print("=" * 70)
-    
+
     # Show output location
     if args.sphinx:
         html_dir = os.path.join(html_output_dir, "html")
@@ -1505,7 +1602,7 @@ def main():
         print(f"  cd {pwd}")
         print(f"  python3 -m http.server 8080 --directory {html_dir}")
         print(f"  Then open: http://localhost:8080")
-    
+
     return 0
 
 

@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 """Regression coverage for autodoc event ordering and pybind directive repair."""
+import ast
 import contextlib
+import glob
+import os
+import re
+import shutil
+import tempfile
+from urllib.parse import unquote, urlsplit
 import importlib.util
 import io
 from pathlib import Path
@@ -146,6 +153,92 @@ See :eq:`robust_loss`.
         root.own = own
         self.assertEqual(list(checker.collect_docstrings([(root, "cloudViewer")])),
                          [("cloudViewer.own", "Our own docstring.")])
+
+
+class PluginImagePublicationTests(unittest.TestCase):
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.src = self.root / 'source'
+        self.output = self.root / 'html'
+        self.plugin = self.src / 'plugins/qExample'
+        (self.plugin / 'images').mkdir(parents=True)
+        (self.plugin / 'README.md').write_text('Plugin documentation')
+        self.page = self.output / 'plugins/qExample/README.html'
+        self.page.parent.mkdir(parents=True)
+        self.app = types.SimpleNamespace(
+            srcdir=str(self.src),
+            outdir=str(self.output),
+            builder=types.SimpleNamespace(
+                format='html',
+                get_outfilename=lambda name: str(self.output /
+                                                 (name + '.html'))))
+        conf = Path(__file__).resolve().parents[2] / 'source/conf.py'
+        tree = ast.parse(conf.read_text())
+        function = next(node for node in tree.body
+                        if isinstance(node, ast.FunctionDef) and
+                        node.name == '_cleanup_plugin_docs')
+        namespace = dict(os=os,
+                         re=re,
+                         glob=glob,
+                         shutil=shutil,
+                         unquote=unquote,
+                         urlsplit=urlsplit)
+        exec(
+            compile(ast.Module(body=[function], type_ignores=[]), str(conf),
+                    'exec'), namespace)
+        self.finish = namespace['_cleanup_plugin_docs']
+
+    def test_raw_html_image_published_without_copying_unreferenced_images(self):
+        (self.plugin / 'images/raw image.png').write_bytes(b'raw fixture')
+        (self.plugin / 'images/unused.png').write_bytes(b'unused fixture')
+        (self.output / '_images').mkdir()
+        (self.output / '_images/markdown.png').write_bytes(b'already published')
+        self.page.write_text(
+            '''<img width="180" src="images/raw%20image.png?v=1">
+<img src="../../_images/markdown.png"><img src="https://example.invalid/external.png">'''
+        )
+        self.finish(self.app, None)
+        self.assertEqual(
+            (self.page.parent / 'images/raw image.png').read_bytes(),
+            b'raw fixture')
+        self.assertFalse((self.page.parent / 'images/unused.png').exists())
+        self.assertEqual((self.output / '_images/markdown.png').read_bytes(),
+                         b'already published')
+        self.assertFalse(self.plugin.exists())
+
+    def test_missing_raw_image_is_not_a_successful_build(self):
+        self.page.write_text('<img src="images/missing.png">')
+        with self.assertRaisesRegex(FileNotFoundError,
+                                    'Plugin image referenced'):
+            self.finish(self.app, None)
+        self.assertFalse((self.page.parent / 'images/missing.png').exists())
+
+    def test_updated_plugin_source_replaces_its_previous_output(self):
+        (self.plugin / 'images/raw.png').write_bytes(b'source fixture')
+        (self.page.parent / 'images').mkdir()
+        target = self.page.parent / 'images/raw.png'
+        target.write_bytes(b'existing output')
+        self.page.write_text('<img src="images/raw.png">')
+        self.finish(self.app, None)
+        self.assertEqual(target.read_bytes(), b'source fixture')
+
+    def test_removed_source_cannot_be_hidden_by_old_output(self):
+        (self.page.parent / 'images').mkdir()
+        target = self.page.parent / 'images/removed.png'
+        target.write_bytes(b'stale output')
+        self.page.write_text('<img src="images/removed.png">')
+        with self.assertRaisesRegex(FileNotFoundError,
+                                    'Plugin image referenced'):
+            self.finish(self.app, None)
+        self.assertEqual(target.read_bytes(), b'stale output')
+
+    def test_failed_build_only_cleans_sources(self):
+        self.finish(self.app, RuntimeError('original Sphinx failure'))
+        self.assertFalse(self.plugin.exists())
+        self.assertFalse(self.page.exists())
 
 
 if __name__ == "__main__":
