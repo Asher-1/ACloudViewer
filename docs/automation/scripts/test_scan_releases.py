@@ -461,7 +461,12 @@ class PlatformReleaseCleanupTests(unittest.TestCase):
                     for s in job['steps']
                     if s.get('name') == 'Clean old release assets')
 
-    def run_cleanup(self, names, fault='', commits=None, payload=None):
+    def run_cleanup(self,
+                    names,
+                    fault='',
+                    commits=None,
+                    payload=None,
+                    published=None):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / 'inventory').write_text(
@@ -470,7 +475,26 @@ class PlatformReleaseCleanupTests(unittest.TestCase):
                 } for n in names]}) if payload is None else payload)
             (root / 'commits').write_text(
                 '\n'.join(self.RECENT if commits is None else commits) + '\n')
-            for tool in ['gh', 'git']:
+            default_catalogue = {
+                'version_metadata': [{
+                    'value': 'main-devel'
+                }],
+                'download_data': {
+                    'main-devel': {
+                        'windows': {
+                            'app': {
+                                'url':
+                                    'https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/'
+                                    'ACloudViewer-3.9.5%2Bdddcdb92-win-cpu-amd64.exe'
+                            }
+                        }
+                    }
+                }
+            }
+            (root / 'published').write_text(
+                json.dumps(default_catalogue if published is
+                           None else published))
+            for tool in ['gh', 'git', 'curl']:
                 stub = root / tool
                 stub.write_text('''#!/usr/bin/env python3
 import json, os, sys
@@ -478,6 +502,12 @@ from pathlib import Path
 args = sys.argv[1:]
 with open('calls', 'a') as stream: stream.write(json.dumps([Path(sys.argv[0]).name] + args) + '\\n')
 fault = os.environ['CLEANUP_TEST_FAULT']
+if Path(sys.argv[0]).name == 'curl':
+    if args[-1] != 'https://asher-1.github.io/ACloudViewer/downloads_data.json': raise SystemExit(94)
+    if fault == 'pages-http': raise SystemExit(22)
+    if fault == 'pages-json': print('<html>unavailable</html>')
+    else: print(Path('published').read_text())
+    raise SystemExit(0)
 if Path(sys.argv[0]).name == 'git':
     if args != ['log', '--format=%H', '-n', '3']: raise SystemExit(91)
     if fault == 'git': raise SystemExit(12)
@@ -519,6 +549,97 @@ raise SystemExit(93)
             ]
             self.assertFalse(list(root.glob('release-cleanup.*')))
             return result, deleted, calls
+
+    def test_doc_only_commits_cannot_prune_currently_published_build(self):
+        served = 'ACloudViewer-3.9.5+dddcdb92-win-cpu-amd64.exe'
+        old = 'ACloudViewer-3.9.5+6c3f6650-win-cpu-amd64.exe'
+        recent = [
+            '19fae64887fd4adfd1913e974417bcfa31521b1f',
+            'f2d17f73aa032effd9bcacf3de97e209a17fad31',
+            'e5941ae27e1faca90daeb9101a556dbb509c8a5f'
+        ]
+        result, deleted, calls = self.run_cleanup([served, old], commits=recent)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(deleted, [old])
+        self.assertTrue(any(call[0] == 'curl' for call in calls))
+
+    def test_published_urls_absent_from_inventory_do_not_create_delete_targets(
+            self):
+        result, deleted, _ = self.run_cleanup(['downloads_data.json'])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(deleted, [])
+
+    def test_other_release_reference_cannot_protect_main_devel_same_name(self):
+        name = 'ACloudViewer-3.9.5+6c3f6650-win-cpu-amd64.exe'
+        published = {
+            'version_metadata': [{
+                'value': 'main-devel'
+            }, {
+                'value': 'v3.9.4'
+            }],
+            'download_data': {
+                'main-devel': {
+                    'url':
+                        'https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/current-asset.exe'
+                },
+                'v3.9.4': {
+                    'url':
+                        'https://github.com/Asher-1/ACloudViewer/releases/download/v3.9.4/'
+                        + name
+                }
+            }
+        }
+        result, deleted, _ = self.run_cleanup([name], published=published)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(deleted, [name])
+
+    def test_failed_or_invalid_published_lookup_never_deletes(self):
+        name = 'ACloudViewer-3.9.5+6c3f6650-win-cpu-amd64.exe'
+        for fault in ['pages-http', 'pages-json']:
+            with self.subTest(fault=fault):
+                result, deleted, _ = self.run_cleanup([name], fault=fault)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(deleted, [])
+        for catalogue in [
+            {
+                'version_metadata': [],
+                'download_data': {}
+            },
+            {
+                'version_metadata': [{
+                    'value': 'main-devel'
+                }],
+                'download_data': {}
+            },
+            {
+                'version_metadata': [{
+                    'value': 'main-devel'
+                }],
+                'download_data': {
+                    'main-devel': {
+                        'url':
+                            'https://github.com/other/ACloudViewer/releases/download/main-devel/'
+                            + name
+                    }
+                }
+            },
+            {
+                'version_metadata': [{
+                    'value': 'main-devel'
+                }],
+                'download_data': {
+                    'main-devel': {
+                        'url':
+                            'https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/bad%2Fname.exe'
+                    }
+                }
+            },
+        ]:
+            with self.subTest(catalogue=catalogue):
+                result, deleted, _ = self.run_cleanup([name],
+                                                      published=catalogue)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(deleted, [])
 
     def test_cleanup_protects_metadata_docs_shared_and_current_assets(self):
         protected = [
