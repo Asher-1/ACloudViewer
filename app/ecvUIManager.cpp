@@ -115,9 +115,7 @@ void QUIWidget::setStyle(QUIWidget::Style style) {
     setStyle(qssFile);
 }
 
-void QUIWidget::setStyle(QString &qssFile) {
-    MainWindow::ChangeStyle(qssFile);
-}
+void QUIWidget::setStyle(QString &qssFile) { MainWindow::ChangeStyle(qssFile); }
 
 void QUIWidget::setStyle(const QString &qssFile,
                          QString &paletteColor,

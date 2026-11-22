@@ -177,7 +177,9 @@ ModelViewerWidget::ModelViewerWidget(QWidget* parent,
       selected_point3D_id_(kInvalidPoint3DId),
       app_(app),
       cloud_sparse_(nullptr),
-      main_sensors_(nullptr) {
+      cloud_sparse_id_(0),
+      main_sensors_(nullptr),
+      main_sensors_id_(0) {
     SetupView();
     SetPointColormap(new PointColormapPhotometric());
     SetImageColormap(new ImageColormapUniform());
