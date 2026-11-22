@@ -79,6 +79,9 @@ jobs:
       - name: Documentation site behaviour
         run: python3 docs/automation/scripts/verify_docs_site.py
 
+      - name: Pages artifact visibility contracts
+        run: node --test docs/automation/scripts/test_wait_pages_artifact.cjs
+
       - name: Workflow size limits
         run: python3 docs/automation/scripts/check_workflow_limits.py
 
@@ -539,6 +542,7 @@ jobs:
         uses: actions/configure-pages@v4
       
       - name: Upload Pages artifact
+        id: pages_artifact
         uses: actions/upload-pages-artifact@v3
         with:
           # A rerun can leave an artifact from the preceding attempt under the
@@ -548,6 +552,26 @@ jobs:
           # Note: This uploads the entire unified-deploy directory as a single artifact
           # No git objects are created - deployment uses GitHub's artifact storage
       
+      - name: Set up Node for Pages visibility check
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install Pages visibility client
+        run: |
+          set -euo pipefail
+          # Match the official client locked by deploy-pages@v4.
+          npm install --prefix "${RUNNER_TEMP:?}/pages-artifact-client" \
+            --ignore-scripts --no-audit --no-fund --no-package-lock --no-save \
+            @actions/artifact@2.1.3
+
+      - name: Wait for exact uploaded Pages artifact
+        uses: ./.github/actions/wait-pages-artifact
+        env:
+          NODE_PATH: ${{ runner.temp }}/pages-artifact-client/node_modules
+          PAGES_ARTIFACT_ID: ${{ steps.pages_artifact.outputs.artifact_id }}
+          PAGES_ARTIFACT_NAME: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

@@ -1,0 +1,5 @@
+name: Wait for uploaded Pages artifact
+description: Verify the exact finalized artifact through the deployment runtime service
+runs:
+  using: node24
+  main: index.cjs
