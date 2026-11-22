@@ -152,10 +152,14 @@ QString modelCacheDir();
 QString modelDisplayLabel(const OpenPCDetModelEntry& entry);
 
 /** Human-readable class name for a 1-indexed label. The AICore OpenPCDet
- *  C API exposes the label index only (no class-name table), so the
- *  KITTI 3-class convention (1=Car, 2=Pedestrian, 3=Cyclist) is applied
- *  when the model declares exactly 3 classes; any other layout falls
- *  back to "class N". Pure mapping — unit tested without AICore. */
+ *  C API exposes the label index only (no class-name table), so the name
+ *  is resolved from the class count: 3 classes use the KITTI convention
+ *  (1=Car, 2=Pedestrian, 3=Cyclist), 10 classes the nuScenes OpenPCDet
+ *  CLASS_NAMES order (1=car, 2=truck, 3=construction_vehicle, 4=bus,
+ *  5=trailer, 6=barrier, 7=motorcycle, 8=bicycle, 9=pedestrian,
+ *  10=traffic_cone), and the single-class car-only checkpoint maps
+ *  label 1 to "Car". Any other layout falls back to "class N". Pure
+ *  mapping — unit tested without AICore. */
 QString className(int32_t label, int numClass);
 
 /** RGB tuple of the per-class visualization palette (0-255 per channel),

@@ -99,11 +99,13 @@ table (class / score / center / size / heading), application console and CSV exp
 
 1. Pick a checkpoint in the left list and a quantization (`f32` / `f16` /
    `q8_0`, default = the recommended F16 row) inside the panel. Score / NMS /
-   Max boxes seed themselves with the checkpoint's GGUF-declared defaults
-   (`aicore_openpcdet_model_defaults`, the upstream OpenPCDet config values
-   written at conversion time) as soon as a model file is cached; setting a
-   spinbox back to its minimum (`model`) restores the follow-the-GGUF
-   behavior, and explicit non-zero values persist as overrides
+   Max boxes seed themselves with the effective task defaults
+   (`aicore_openpcdet_model_defaults`) as soon as a model file is cached.
+   Score seeds the product visualization default 0.3 for every checkpoint;
+   NMS / Max boxes seed the GGUF-declared defaults (the upstream OpenPCDet
+   config values written at conversion time). Setting a spinbox back to its
+   minimum (`model`) restores the follow-the-defaults behavior, and explicit
+   non-zero values persist as overrides
 2. Point-cloud panels: select a point cloud in the DB tree **or** point at
    a KITTI `.bin` / ASCII `.txt` file (the file wins). Scene panels
    (`kitti_caddn`, `nuscenes_bevfusion`): select a scene directory

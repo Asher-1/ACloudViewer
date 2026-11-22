@@ -105,6 +105,11 @@ public:
      */
     bool setAppStyle(const QString &styleKey);
 
+    // Apply the selected theme stylesheet followed by shared ParaView-style Qt
+    // component artwork. The theme key is the chosen name/resource path.
+    void setComponentTheme(const QString &baseStyleSheet,
+                           const QString &themeKey);
+
 private:
     /**
      * @brief Setup application paths

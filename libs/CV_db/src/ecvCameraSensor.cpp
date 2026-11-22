@@ -1374,7 +1374,9 @@ CCVector3 ccCameraSensor::computeUpperLeftPoint() const {
             m_scale * ConvertFocalPixToMM(m_intrinsicParams.vertFocal_pix,
                                           m_intrinsicParams.pixelSize_mm[1]);
     upperLeftPoint.y = upperLeftPoint.z * tanf(halfFov);
-    upperLeftPoint.x = upperLeftPoint.z * tanf(halfFov * ar);
+    // Pinhole aspect: tan(hHalfFov) = tan(vHalfFov) * ar (multiplicative,
+    // not tan(vHalfFov * ar)), so the plane matches the sensor W/H exactly.
+    upperLeftPoint.x = upperLeftPoint.z * tanf(halfFov) * ar;
 
     return upperLeftPoint;
 }
@@ -1390,8 +1392,8 @@ bool ccCameraSensor::computeFrustumCorners() {
                m_intrinsicParams.arrayHeight;
     float halfFov = m_intrinsicParams.vFOV_rad / 2;
 
-    float xIn = std::abs(tan(halfFov * ar));
     float yIn = std::abs(tan(halfFov));
+    float xIn = yIn * ar;
     const float& zNear = m_intrinsicParams.zNear_mm;
     const float& zFar = m_intrinsicParams.zFar_mm;
 
@@ -1614,62 +1616,22 @@ void ccCameraSensor::updateData() {
     m_sideLines.lines_.push_back(Eigen::Vector2i(0, 3));
     m_sideLines.lines_.push_back(Eigen::Vector2i(0, 4));
 
-    // up arrow: sits just OUTSIDE the near plane's top edge and points
-    // further up. "Up" is frame-dependent (see localUpSign): -Y in the
-    // OpenCV/VtkColmap frame, +Y in the OpenGL legacy frame.
+    // Orientation indicator, COLMAP model-viewer style: a right triangle at
+    // the image plane's top-left corner, legs along the top edge (right) and
+    // the left edge (down), size = half the larger plane half-extent.
+    // "Up" is frame-dependent (see localUpSign): -Y in the OpenCV/VtkColmap
+    // frame, +Y in the OpenGL legacy frame.
     const double up = localUpSign(m_poseFrame);
-    const double arrowHeight = up * 3 * upperLeftPointd.y / 2;
-    const double baseHeight = up * 6 * upperLeftPointd.y / 5;
-    const double arrowHalfWidth = 2 * upperLeftPointd.x / 5;
-    const double baseHalfWidth = 1 * upperLeftPointd.x / 5;
-    const double planeEdgeY = up * upperLeftPointd.y;
+    const double size = 0.5 * std::max(upperLeftPointd.x, upperLeftPointd.y);
+    const double topY = up * upperLeftPointd.y;
 
-    // arrow
     m_arrow.clear();
     m_arrow.points_.push_back(
-            Eigen::Vector3d(-baseHalfWidth, baseHeight, planeZ));
+            Eigen::Vector3d(-upperLeftPointd.x, topY, planeZ));
     m_arrow.points_.push_back(
-            Eigen::Vector3d(baseHalfWidth, baseHeight, planeZ));
+            Eigen::Vector3d(-upperLeftPointd.x + size, topY, planeZ));
     m_arrow.points_.push_back(
-            Eigen::Vector3d(baseHalfWidth, planeEdgeY, planeZ));
-    m_arrow.points_.push_back(
-            Eigen::Vector3d(-baseHalfWidth, planeEdgeY, planeZ));
-    m_arrow.lines_.push_back(Eigen::Vector2i(0, 1));
-    m_arrow.lines_.push_back(Eigen::Vector2i(1, 2));
-    m_arrow.lines_.push_back(Eigen::Vector2i(2, 3));
-    m_arrow.lines_.push_back(Eigen::Vector2i(3, 0));
-    m_arrow.points_.push_back(
-            Eigen::Vector3d(-arrowHalfWidth, baseHeight, planeZ));
-    m_arrow.points_.push_back(
-            Eigen::Vector3d(arrowHalfWidth, baseHeight, planeZ));
-    m_arrow.points_.push_back(Eigen::Vector3d(0, arrowHeight, planeZ));
-    m_arrow.lines_.push_back(Eigen::Vector2i(4, 5));
-    m_arrow.lines_.push_back(Eigen::Vector2i(5, 6));
-    m_arrow.lines_.push_back(Eigen::Vector2i(6, 4));
-
-    // axis (for test)
-    {
-        const double l = std::abs(upperLeftPointd.z) / 2.0;
-        const double viewAxisZ =
-                static_cast<double>(localImagePlaneZ(m_poseFrame, l));
-        m_axis.clear();
-        m_axis.points_.push_back(Eigen::Vector3d(0.0, 0.0, 0.0));
-        m_axis.points_.push_back(Eigen::Vector3d(l, 0.0, 0.0));
-        m_axis.points_.push_back(Eigen::Vector3d(0.0, l, 0.0));
-        m_axis.points_.push_back(Eigen::Vector3d(0.0, 0.0, viewAxisZ));
-
-        // right vector
-        m_axis.lines_.push_back(Eigen::Vector2i(0, 1));
-        m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::red));
-
-        // up vector
-        m_axis.lines_.push_back(Eigen::Vector2i(0, 2));
-        m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::yellow));
-
-        // view vector
-        m_axis.lines_.push_back(Eigen::Vector2i(0, 3));
-        m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::green));
-    }
+            Eigen::Vector3d(-upperLeftPointd.x, topY - up * size, planeZ));
 }
 
 void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {

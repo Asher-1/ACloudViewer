@@ -278,7 +278,7 @@ ccCameraSensor* buildCameraSensorFromPose(const float* rowMajorCam2world,
             static_cast<float>(imageWidth) / static_cast<float>(imageHeight);
     const float halfDisplayFov = viewport_v_fov_rad * 0.5f;
     const float frustumHalfWidthAtUnitScale =
-            std::abs(display_focal_mm) * std::tan(halfDisplayFov * ar);
+            std::abs(display_focal_mm) * std::tan(halfDisplayFov) * ar;
     const float targetHalfWidth =
             std::max(sceneMaxExtent, 1e-4f) * kCameraFrustumSceneExtentFraction;
     float graphicScaleFactor = 1.0f;

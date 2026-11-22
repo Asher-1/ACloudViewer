@@ -7,6 +7,7 @@
 
 #include <QApplication>
 #include <QCryptographicHash>
+#include <QDoubleSpinBox>
 #include <QElapsedTimer>
 #include <QEventLoop>
 #include <QFile>
@@ -16,6 +17,7 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QSettings>
+#include <QSpinBox>
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QWindow>
@@ -73,6 +75,16 @@ int main(int argc, char** argv) {
     PHASE("construct");
     // Legacy row 3 was the first nuScenes checkpoint in the interleaved list.
     QSettings().setValue("qOpenPCDet/activeRow", 3);
+    // Stale follow-model display regression: positive threshold values
+    // persisted by an older session must not override the GGUF-declared
+    // defaults shown while "Use model defaults" is checked.
+    QSettings().setValue("qOpenPCDet/score/nuscenes_pointpillar_multihead",
+                         0.5);
+    QSettings().setValue("qOpenPCDet/nms/nuscenes_pointpillar_multihead", 0.5);
+    QSettings().setValue("qOpenPCDet/maxBoxes/nuscenes_pointpillar_multihead",
+                         500);
+    QSettings().setValue(
+            "qOpenPCDet/useDefaults/nuscenes_pointpillar_multihead", true);
     OpenPCDetDialog dialog;
     PHASE("construct-done");
     check(QFileInfo(dialog.getSettings().modelPath)
@@ -115,6 +127,31 @@ int main(int argc, char** argv) {
     while (dialog.windowHandle() && !dialog.windowHandle()->isExposed() &&
            exposure.elapsed() < 3000)
         QApplication::processEvents(QEventLoop::AllEvents, 20);
+    // The stale persisted overrides written before construction must not be
+    // displayed while the multihead panel follows the model defaults (no
+    // GGUF in this temp root, so the spins stay at the "model" placeholder).
+    if (navigation)
+        for (int row = 0; row < navigation->count(); ++row) {
+            if (!(navigation->item(row)->flags() & Qt::ItemIsSelectable))
+                continue;
+            navigation->setCurrentRow(row);
+            if (!QFileInfo(dialog.getSettings().modelPath)
+                         .fileName()
+                         .startsWith("nuscenes_pointpillar_multihead."))
+                continue;
+            for (auto* spin : dialog.findChildren<QDoubleSpinBox*>())
+                if (spin->isVisible())
+                    check(spin->value() == 0.0,
+                          "Follow-model mode must not display stale persisted "
+                          "score/NMS overrides");
+            for (auto* spin : dialog.findChildren<QSpinBox*>())
+                if (spin->isVisible() &&
+                    spin->specialValueText() == QStringLiteral("model"))
+                    check(spin->value() == 0,
+                          "Follow-model mode must not display a stale "
+                          "persisted max-boxes override");
+            break;
+        }
     dialog.setProgress(5, 100);
     PHASE("resize-loop");
     for (const QSize size :

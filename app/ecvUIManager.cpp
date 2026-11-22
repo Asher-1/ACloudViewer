@@ -116,15 +116,7 @@ void QUIWidget::setStyle(QUIWidget::Style style) {
 }
 
 void QUIWidget::setStyle(QString &qssFile) {
-    QFile file(qssFile);
-
-    if (file.open(QFile::ReadOnly)) {
-        QString qss = QLatin1String(file.readAll());
-        QString paletteColor = qss.mid(20, 7);
-        qApp->setPalette(QPalette(QColor(paletteColor)));
-        qApp->setStyleSheet(qss);
-        file.close();
-    }
+    MainWindow::ChangeStyle(qssFile);
 }
 
 void QUIWidget::setStyle(const QString &qssFile,
@@ -134,10 +126,9 @@ void QUIWidget::setStyle(const QString &qssFile,
 
     if (file.open(QFile::ReadOnly)) {
         QString qss = QLatin1String(file.readAll());
-        paletteColor = qss.mid(20, 7);
-        textColor = qss.mid(49, 7);
-        qApp->setPalette(QPalette(QColor(paletteColor)));
-        qApp->setStyleSheet(qss);
+        MainWindow::ChangeStyle(qssFile);
+        paletteColor = qApp->palette().color(QPalette::Window).name();
+        textColor = qApp->palette().color(QPalette::WindowText).name();
         file.close();
     }
 }
@@ -157,8 +148,7 @@ void QUIWidget::setStyle(const QString &qssFile,
         QString qss = QLatin1String(file.readAll());
         getQssColor(qss, textColor, panelColor, borderColor, normalColorStart,
                     normalColorEnd, darkColorStart, darkColorEnd, highColor);
-        qApp->setPalette(QPalette(QColor(panelColor)));
-        qApp->setStyleSheet(qss);
+        MainWindow::ChangeStyle(qssFile);
         file.close();
     }
 }

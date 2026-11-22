@@ -105,8 +105,9 @@ void ReconstructionWidget::iniEnvironment() {
     settings.endGroup();
 }
 
-void ReconstructionWidget::ImportReconstruction(const std::string& path) {
-    const size_t idx = reconstruction_manager_.Read(path);
+void ReconstructionWidget::ImportReconstruction(const QVariant& path) {
+    const size_t idx =
+            reconstruction_manager_.Read(path.toString().toStdString());
     reconstruction_manager_widget_->Update();
     reconstruction_manager_widget_->SelectReconstruction(idx);
     RenderNow();

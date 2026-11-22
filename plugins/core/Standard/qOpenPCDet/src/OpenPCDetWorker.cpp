@@ -191,9 +191,9 @@ bool OpenPCDetWorker::runInference() {
     aicore_openpcdet_options_set_threads(opts, m_settings.threads);
     // Threshold override resolution: thresholdsExplicit callers own their
     // values verbatim (0 = a legal explicit threshold, NOT "follow model").
-    // Without the flag the legacy <=0 sentinels keep working so existing
-    // dialogs and the batch command behave unchanged; the sentinel fallback
-    // dies once the UI ships the default/override tri-state.
+    // Without the flag, <=0 values skip the setters so the task defaults
+    // apply (Score 0.3; NMS/max GGUF); positive values act as explicit
+    // overrides for legacy callers.
     const bool explicitThresholds =
             m_settings.thresholdsExplicit || m_settings.scoreThresh > 0.0f ||
             m_settings.nmsThresh > 0.0f || m_settings.maxBoxes > 0;

@@ -133,15 +133,22 @@ TEST(OpenPCDetHelpers, ClassNameKittiMapping) {
 
 TEST(OpenPCDetHelpers, ClassNameNuScenesMapping) {
     // nuScenes 10-class convention, 1-indexed, in the OpenPCDet
-    // CLASS_NAMES order (verified against gen_bev_nuscenes.py):
-    // 1=car, 2=truck, 3=bus, 4=trailer, 5=construction,
-    // 6=pedestrian, 7=motorcycle, 8=bicycle, 9=traffic_cone, 10=barrier.
+    // CLASS_NAMES order the engine emits (converter label_indices =
+    // CLASS_NAMES.index(name) + 1): 1=car, 2=truck,
+    // 3=construction_vehicle, 4=bus, 5=trailer, 6=barrier, 7=motorcycle,
+    // 8=bicycle, 9=pedestrian, 10=traffic_cone.
     EXPECT_EQ(OpenPCDetHelpers::className(1, 10), QStringLiteral("car"));
     EXPECT_EQ(OpenPCDetHelpers::className(2, 10), QStringLiteral("truck"));
-    EXPECT_EQ(OpenPCDetHelpers::className(6, 10), QStringLiteral("pedestrian"));
-    EXPECT_EQ(OpenPCDetHelpers::className(9, 10),
+    EXPECT_EQ(OpenPCDetHelpers::className(3, 10),
+              QStringLiteral("construction_vehicle"));
+    EXPECT_EQ(OpenPCDetHelpers::className(4, 10), QStringLiteral("bus"));
+    EXPECT_EQ(OpenPCDetHelpers::className(5, 10), QStringLiteral("trailer"));
+    EXPECT_EQ(OpenPCDetHelpers::className(6, 10), QStringLiteral("barrier"));
+    EXPECT_EQ(OpenPCDetHelpers::className(7, 10), QStringLiteral("motorcycle"));
+    EXPECT_EQ(OpenPCDetHelpers::className(8, 10), QStringLiteral("bicycle"));
+    EXPECT_EQ(OpenPCDetHelpers::className(9, 10), QStringLiteral("pedestrian"));
+    EXPECT_EQ(OpenPCDetHelpers::className(10, 10),
               QStringLiteral("traffic_cone"));
-    EXPECT_EQ(OpenPCDetHelpers::className(10, 10), QStringLiteral("barrier"));
     // Out-of-range labels fall back to the generic form.
     EXPECT_EQ(OpenPCDetHelpers::className(0, 10), QStringLiteral("class 0"));
     EXPECT_EQ(OpenPCDetHelpers::className(11, 10), QStringLiteral("class 11"));
@@ -519,11 +526,12 @@ TEST(OpenPCDetHelpers, ClassColorMapping) {
     EXPECT_EQ(car.r, 228);
     EXPECT_EQ(car.g, 26);
     EXPECT_EQ(car.b, 28);
-    // label 9 = traffic_cone in the nuScenes order.
-    auto cone = OpenPCDetHelpers::classColor(9, 10);
-    EXPECT_EQ(cone.r, 102);
-    EXPECT_EQ(cone.g, 194);
-    EXPECT_EQ(cone.b, 165);
+    // label 9 = pedestrian in the nuScenes CLASS_NAMES order; the palette
+    // stays label-driven (Set1 index 9), independent of the class name.
+    auto ped = OpenPCDetHelpers::classColor(9, 10);
+    EXPECT_EQ(ped.r, 102);
+    EXPECT_EQ(ped.g, 194);
+    EXPECT_EQ(ped.b, 165);
     // Same label-driven palette at 3 classes (KITTI).
     auto kittiCar = OpenPCDetHelpers::classColor(1, 3);
     EXPECT_EQ(kittiCar.r, 228);

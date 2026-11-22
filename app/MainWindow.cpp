@@ -2823,29 +2823,17 @@ ecvGenericGLDisplay* MainWindow::getActiveGLDisplay() {
 }
 
 void MainWindow::ChangeStyle(const QString& qssFile) {
-    QString fileName = qssFile;
-
-    if (!fileName.isEmpty()) {
-        QFile file(fileName);
-
-        if (file.open(QFile::ReadOnly)) {
-            QString str = file.readAll();
-            static QString qssStyle;
-
-            if (qssStyle == str) {
-                return;
-            }
-
-            qssStyle = str;
-            QString paletteColor = str.mid(20, 7);
-            ecvApp->setPalette(QPalette(QColor(paletteColor)));
-            ecvApp->setStyleSheet(qssStyle);
+    QString baseStyle;
+    if (!qssFile.isEmpty()) {
+        QFile file(qssFile);
+        if (!file.open(QFile::ReadOnly)) {
+            return;
         }
-    } else {
-        // default
-        ecvApp->setPalette(QPalette(QColor(240, 240, 240, 255)));
-        ecvApp->setStyleSheet(QString());
+        baseStyle = QString::fromUtf8(file.readAll());
     }
+    // Common palette parsing and vector component rules are applied at the
+    // application owner on every switch, including A -> default -> A.
+    ecvApp->setComponentTheme(baseStyle, qssFile);
 }
 
 void MainWindow::setUiManager(QUIWidget* uiManager) {

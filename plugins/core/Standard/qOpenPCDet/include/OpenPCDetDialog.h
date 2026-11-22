@@ -48,9 +48,10 @@ struct OpenPCDetTaskPanel {
     // because the quant combo carries only the three catalog suffixes).
     QWidget* customModelRow = nullptr;
     QLineEdit* customModelPath = nullptr;
-    // Threshold row: "Use model defaults" (GGUF-declared values, inputs
-    // disabled) versus an explicit override whose values — including a
-    // legal explicit 0 — are forwarded verbatim to the worker.
+    // Threshold row: "Use model defaults" (effective task defaults: Score
+    // 0.3, NMS/max GGUF-declared; inputs disabled) versus an explicit
+    // override whose values — including a legal explicit 0 — are forwarded
+    // verbatim to the worker.
     QCheckBox* useDefaultsCheck = nullptr;
     QDoubleSpinBox* score = nullptr;
     QDoubleSpinBox* nms = nullptr;
@@ -95,7 +96,7 @@ public:
         QString modelPath;
         QString device = QStringLiteral("auto");
         int threads = 0;
-        /** 0 = follow the GGUF-declared threshold. */
+        /** 0 = follow the task default score threshold (0.3). */
         float scoreThresh = 0.0f;
         /** 0 = follow the GGUF-declared NMS IoU. */
         float nmsThresh = 0.0f;
@@ -182,10 +183,11 @@ private:
     QString resolveModelPath(const QString& filename) const;
     bool ensureModelAvailable(PendingAction action);
     void startDownload(const OpenPCDetModelEntry& model);
-    /** Seed the Score / NMS / Max boxes spinboxes with the GGUF-declared
-     *  defaults of the panel's checkpoint (upstream OpenPCDet config
-     *  values, read from the cached model header without loading weights).
-     *  Keeps the current values when no catalog GGUF is available yet. */
+    /** Seed the Score / NMS / Max boxes spinboxes with the effective task
+     *  defaults of the panel's checkpoint (Score 0.3; NMS/max upstream
+     *  OpenPCDet config values, read from the cached model header without
+     *  loading weights). Keeps the current values when no catalog GGUF is
+     *  available yet. */
     void applyModelDefaults(OpenPCDetTaskPanel& panel);
     /** Update the scene preview of \p panel (empty path or unreadable
      *  payload clears the preview). */

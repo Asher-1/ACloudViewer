@@ -150,3 +150,48 @@ Three layers, later overrides earlier:
 3. **Picker-saved default** — choosing an effort in the picker saves it with
    the model as the default for new sessions of that profile (UI state, not
    the patch file). This is the "default" marker visible in the menu.
+
+## 5. Image (vision) input — declare `input:` per model
+
+Symptom: image uploads fine, but sending it to a vision-capable gateway model
+(e.g. gpt-6.1-sol) errors "model does not support image". Cause: pi-ai resolves
+a model's modalities as `declaredInput(entry.input) ?? base?.input ??
+defaultInput(["text"])`. Gateway-custom model ids are NOT in dsh's built-in
+base catalog, so an entry without `input:` falls back to **text-only**, and
+pi-ai throws `pi-ai model "<id>" does not support image input` when the
+request contains an image. It is a missing capability declaration, not a code
+bug. Fix: add `input: [text, image]` to the model entry in the patch (the
+Settings→Models page's `inputModalities` multi-select writes the same field;
+enabling `image` also unlocks `imagePixelBudget`). The model catalog
+hot-reloads — no restart. Verify: `dsh --profile web --dump-config` shows
+`input: [text, image]` under the model. Apply the same declaration to every
+vision-capable gateway model you add (gpt-6.1-terra, gemini, claude, …).
+
+### Bulk fix + audit (a gateway key group usually holds 20+ models)
+
+Declaring `input:` one entry at a time across a 26-model list is slow and
+easy to miss. Enumerate → patch → audit:
+
+```bash
+P=~/.dsh/profiles/web/cordis.patch.yml
+grep -nE '^\s+- id: ' "$P"     # every model id in the patch; keep 12/14-space indent
+# insert `input: [text, image]` immediately after each vision model's `name:` line
+
+# audit: any model whose reasoningEfforts block is reached without an input: line
+awk '/- id: /{id=$3; has=0; next}
+     /input: \[text, image\]/{has=1}
+     /reasoningEfforts:/{if(id!="" && !has) print "MISSING: "id; id=""}' "$P"
+
+# compose check + count (absolute dsh path; non-interactive shells may lack PATH)
+~/.npm-global/bin/dsh --profile web --dump-config >/tmp/dsh-dump.txt; echo "exit=$?"
+grep -c 'input:' /tmp/dsh-dump.txt   # equals the number of vision-declared models
+```
+
+The text-only fallback is silent until the first image request, so re-run the
+audit after every model-list change (key rotation, new gateway model, UI save).
+Two ordering traps: (a) `dsh` is often missing from a detached/agent shell's
+PATH — `nohup: failed to run command 'dsh': No such file or directory`, exit
+127 — always call `~/.npm-global/bin/dsh` or resolve it via `command -v`;
+(b) the Settings→Models page writes this same patch file from its own client
+state, so don't hand-edit while that page holds unsaved changes (`never edit
+both sides at once` from Phase C).

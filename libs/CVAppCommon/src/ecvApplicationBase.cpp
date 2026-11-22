@@ -25,6 +25,7 @@
 
 // Common
 #include "ecvApplicationBase.h"
+#include "ecvComponentStyle.h"
 #include "ecvPersistentSettings.h"
 #include "ecvPluginManager.h"
 #include "ecvSettingManager.h"
@@ -111,9 +112,11 @@ ecvApplicationBase::ecvApplicationBase(int &argc,
     // Note: We use Qt API directly here instead of setAppStyle() because
     // CVLog and ecvSettingManager are not yet initialized in the constructor
     QSettings settings;
+    QString initialStyleKey;
     settings.beginGroup(ecvPS::AppStyle());
     {
         QString styleKey = settings.value("style", QString()).toString();
+        initialStyleKey = styleKey;
 
         // CloudCompare behavior: only apply a style if one was explicitly
         // saved. If empty, use Qt's platform default (macOS, windowsvista,
@@ -156,6 +159,7 @@ ecvApplicationBase::ecvApplicationBase(int &argc,
 #endif
     }
     settings.endGroup();
+    setComponentTheme(styleSheet(), initialStyleKey);
 
     ccPluginManager::get().setPaths(m_PluginPaths);
 
@@ -167,6 +171,11 @@ ecvApplicationBase::ecvApplicationBase(int &argc,
 
     connect(this, &ecvApplicationBase::aboutToQuit,
             [=]() { ccMaterial::ReleaseTextures(); });
+}
+
+void ecvApplicationBase::setComponentTheme(const QString &baseStyleSheet,
+                                           const QString &themeKey) {
+    ecvComponentStyle::applyTheme(this, baseStyleSheet, themeKey);
 }
 
 QString ecvApplicationBase::versionStr() const { return c_VersionStr; }
@@ -346,6 +355,8 @@ bool ecvApplicationBase::setAppStyle(const QString &styleKey) {
                 QStringLiteral("Applying application style: %1").arg(styleKey));
         setStyle(style);
     }
+
+    setComponentTheme(styleSheet(), styleKey);
 
     // Save to persistent settings (must be after successful style application)
     ecvSettingManager::setValue(ecvPS::AppStyle(), "style", styleKey);

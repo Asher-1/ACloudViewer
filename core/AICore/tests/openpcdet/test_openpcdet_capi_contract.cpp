@@ -153,7 +153,9 @@ int main(int argc, char** argv) {
             int32_t boxes = -1;
             AICORE_CHECK(aicore_openpcdet_model_defaults(path.c_str(), &score,
                                                          &nms, &boxes) == 0);
-            AICORE_CHECK(score == info.score_thresh);
+            // model_defaults returns the EFFECTIVE score default (product
+            // visualization 0.3), not the GGUF evaluation threshold.
+            AICORE_CHECK(score == 0.3f);
             AICORE_CHECK(nms == info.nms_thresh);
             AICORE_CHECK(boxes == info.max_boxes);
         }

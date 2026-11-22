@@ -30,6 +30,7 @@ target_sources(${PROJECT_NAME}
         PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/QDarkStyleSheet/qdarkstyle/dark/darkstyle.qrc
         ${CMAKE_CURRENT_LIST_DIR}/QDarkStyleSheet/qdarkstyle/light/lightstyle.qrc
+        ${CMAKE_CURRENT_LIST_DIR}/resources/component-icons.qrc
 )
 
 if (OPTION_SUPPORT_GAMEPADS)

@@ -30,12 +30,17 @@ namespace {
 constexpr const char* kKittiClassNames[3] = {"Car", "Pedestrian", "Cyclist"};
 
 // nuScenes 10-class convention, 1-indexed, in the OpenPCDet CLASS_NAMES
-// order consumed by the engine (verified against the upstream
-// OpenPCDet-GGML demo scripts, gen_bev_nuscenes.py LABEL_NAMES_NUSCENES:
-// 1=car .. 6=pedestrian .. 10=barrier — NOT the nuScenes devkit order).
+// order the engine actually emits. The converter writes
+// label_indices = CLASS_NAMES.index(name) + 1 and the PyTorch reference
+// uses the same mapping, so label N is the N-th entry of the upstream
+// nuscenes config CLASS_NAMES (car, truck, construction_vehicle, bus,
+// trailer, barrier, motorcycle, bicycle, pedestrian, traffic_cone).
+// NOTE: the upstream gen_bev_nuscenes.py LABEL_NAMES_NUSCENES display
+// table is inconsistent with that label order; do NOT copy it.
 constexpr const char* kNuScenesClassNames[10] = {
-        "car",        "truck",      "bus",     "trailer",      "construction",
-        "pedestrian", "motorcycle", "bicycle", "traffic_cone", "barrier"};
+        "car",        "truck",       "construction_vehicle", "bus",
+        "trailer",    "barrier",     "motorcycle",           "bicycle",
+        "pedestrian", "traffic_cone"};
 
 // Wireframe corner walk of the box corner layout in boxCorners():
 // corner i keeps (lx, ly, lz) signs in bits 0/1/2 of i.
@@ -203,16 +208,16 @@ OpenPCDetClassColor classColor(int32_t label, int numClass) {
     // table to the 10 nuScenes classes. Label-driven, like the upstream
     // scripts; numClass only documents the model layout.
     static constexpr unsigned char kUpstreamSet1[10][3] = {
-            {228, 26, 28},    // 1  car / Car            #e41a1c
-            {55, 126, 184},   // 2  truck / Pedestrian   #377eb8
-            {77, 175, 74},    // 3  bus / Cyclist        #4daf4a
-            {152, 78, 163},   // 4  trailer              #984ea3
-            {255, 127, 0},    // 5  construction         #ff7f00
-            {166, 86, 40},    // 6  pedestrian           #a65628
-            {247, 129, 191},  // 7  motorcycle           #f781bf
-            {153, 153, 153},  // 8  bicycle              #999999
-            {102, 194, 165},  // 9  traffic_cone         #66c2a5
-            {252, 141, 98},   // 10 barrier              #fc8d62
+            {228, 26, 28},    // 1  car / Car                  #e41a1c
+            {55, 126, 184},   // 2  truck / Pedestrian         #377eb8
+            {77, 175, 74},    // 3  construction_vehicle / Cyc #4daf4a
+            {152, 78, 163},   // 4  bus                        #984ea3
+            {255, 127, 0},    // 5  trailer                    #ff7f00
+            {166, 86, 40},    // 6  barrier                    #a65628
+            {247, 129, 191},  // 7  motorcycle                 #f781bf
+            {153, 153, 153},  // 8  bicycle                    #999999
+            {102, 194, 165},  // 9  pedestrian                 #66c2a5
+            {252, 141, 98},   // 10 traffic_cone               #fc8d62
     };
     // Deterministic fallback for labels outside the published range.
     static constexpr unsigned char kCycle[6][3] = {

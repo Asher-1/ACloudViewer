@@ -719,31 +719,77 @@
      <item>
       <widget class="ccCustomQTreeView" name="dbTreeView">
        <property name="styleSheet">
-        <string notr="true">QTreeView::branch:has-siblings:!adjoins-item {
-    border-image: url(:/Resources/images/QTreeView/vline.svg) 0;
+        <string notr="true">QTreeView#dbTreeView {
+ border: 1px solid rgba(117,139,153,90); border-radius: 3px;
+ selection-background-color: #34779E; selection-color: #FFFFFF; outline: 0;
 }
-
-QTreeView::branch:has-siblings:adjoins-item {
-    border-image: url(:/Resources/images/svg/tree/branch-more.svg) 0;
+QTreeView#dbTreeView::item {
+ min-height: 24px; padding: 0px 4px; margin: 0px; border: 1px solid transparent;
 }
-
-QTreeView::branch:!has-children:!has-siblings:adjoins-item {
-    border-image: url(:/Resources/images/QTreeView/branch-end.svg) 0;
+QTreeView#dbTreeView::item:hover:!selected { background: rgba(40,150,211,24); }
+QTreeView#dbTreeView::item:selected { background: #34779E; color: #FFFFFF; }
+QTreeView#dbTreeView::item:selected:!active { background: #53758A; color: #FFFFFF; }
+QTreeView#dbTreeView::branch {
+ image: none; border-image: none; margin: 0px; border: none; background: transparent;
 }
-
-QTreeView::branch:has-children:!has-siblings:closed,
-QTreeView::branch:closed:has-children:has-siblings {
-        border-image: none;
-        image: url(:/Resources/images/svg/tree/branch-closed.svg);
+QTreeView#dbTreeView::branch:has-siblings:!adjoins-item {
+ border-image: url(:/Resources/images/QTreeView/vline.svg) 0;
 }
-
-QTreeView::branch:open:has-children:!has-siblings,
-QTreeView::branch:open:has-children:has-siblings  {
-        border-image: none;
-        image: url(:/Resources/images/svg/tree/branch-open.svg);
+QTreeView#dbTreeView::branch:has-siblings:adjoins-item {
+ border-image: url(:/Resources/images/QTreeView/branch-more.svg) 0;
+}
+QTreeView#dbTreeView::branch:!has-children:!has-siblings:adjoins-item {
+ border-image: url(:/Resources/images/QTreeView/branch-end.svg) 0;
+}
+QTreeView#dbTreeView::branch:closed:has-children {
+ border-image: none; image: url(:/Resources/images/QTreeView/branch-closed.svg);
+}
+QTreeView#dbTreeView::branch:open:has-children {
+ border-image: none; image: url(:/Resources/images/QTreeView/branch-open.svg);
+}
+QTreeView#dbTreeView::branch:closed:has-children:hover {
+ image: url(:/Resources/images/QTreeView/branch-closed-hover.svg);
+}
+QTreeView#dbTreeView::branch:open:has-children:hover {
+ image: url(:/Resources/images/QTreeView/branch-open-hover.svg);
+}
+QTreeView#dbTreeView::branch:selected { background: #34779E; }
+QTreeView#dbTreeView::branch:selected:!active { background: #53758A; }
+QTreeView#dbTreeView::branch:closed:has-children:selected {
+ image: url(:/Resources/images/QTreeView/branch-closed-selected.svg);
+}
+QTreeView#dbTreeView::branch:open:has-children:selected {
+ image: url(:/Resources/images/QTreeView/branch-open-selected.svg);
+}
+QTreeView#dbTreeView::indicator {
+ width: 14px; height: 14px; image: none; border-image: none;
+ border: 1px solid #8CA0AC; border-radius: 3px; background: rgba(117,139,153,12);
+}
+QTreeView#dbTreeView::indicator:unchecked { image: none; border-image: none; }
+QTreeView#dbTreeView::indicator:hover { border-color: #2896D3; }
+QTreeView#dbTreeView::indicator:checked {
+ border-image: none; border-color: #34779E; background: #34779E;
+ image: url(:/Resources/images/QTreeView/check.svg);
+}
+QTreeView#dbTreeView::indicator:indeterminate {
+ border-image: none; border-color: #34779E; background: #34779E;
+ image: url(:/Resources/images/QTreeView/mixed.svg);
+}
+QTreeView#dbTreeView::indicator:disabled {
+ border-color: #9CA8AE; background: rgba(117,139,153,30);
+}
+QTreeView#dbTreeView::indicator:checked:disabled,
+QTreeView#dbTreeView::indicator:indeterminate:disabled {
+ border-color: #8CA0AC; background: #8CA0AC;
+}
+QTreeView#dbTreeView::item:selected:focus {
+ border: 1px solid #7DBBE0;
 }</string>
        </property>
-       <property name="dragEnabled">
+       <property name="iconSize"><size><width>20</width><height>20</height></size></property>
+        <property name="indentation"><number>20</number></property>
+        <property name="mouseTracking"><bool>true</bool></property>
+        <property name="dragEnabled">
         <bool>true</bool>
        </property>
        <property name="dragDropMode">

@@ -43,11 +43,17 @@
         <file>Resources/images/icon/logo_64.png</file>
         <file>Resources/images/icon/logo_128.png</file>
         <file>Resources/images/icon/ecv_icon.rc</file>
-        <file>Resources/images/svg/tree/branch-closed.svg</file>
+        <file>Resources/images/QTreeView/branch-closed.svg</file>
         <file>Resources/images/QTreeView/branch-end.svg</file>
-        <file>Resources/images/svg/tree/branch-more.svg</file>
-        <file>Resources/images/svg/tree/branch-open.svg</file>
+        <file>Resources/images/QTreeView/branch-more.svg</file>
+        <file>Resources/images/QTreeView/branch-open.svg</file>
         <file>Resources/images/QTreeView/vline.svg</file>
+        <file>Resources/images/QTreeView/branch-closed-hover.svg</file>
+        <file>Resources/images/QTreeView/branch-open-hover.svg</file>
+        <file>Resources/images/QTreeView/branch-closed-selected.svg</file>
+        <file>Resources/images/QTreeView/branch-open-selected.svg</file>
+        <file>Resources/images/QTreeView/check.svg</file>
+        <file>Resources/images/QTreeView/mixed.svg</file>
         <file>Resources/images/svg/main/toolMainDeleteEntity.svg</file>
         <file>Resources/images/svg/main/toolMainExit.svg</file>
         <file>Resources/images/svg/surface/surfaceExportCloud.svg</file>

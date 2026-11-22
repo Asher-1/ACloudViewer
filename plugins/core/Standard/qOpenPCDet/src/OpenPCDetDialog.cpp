@@ -355,7 +355,7 @@ void OpenPCDetDialog::populatePanels() {
         panel.modelInfoLabel->setVisible(!cp.familyNote.isEmpty());
         configCol->addWidget(panel.modelInfoLabel);
 
-        // Threshold row (0 = follow the GGUF-declared value).
+        // Threshold row (0 = follow the effective task defaults).
         auto* thresholdRow = new QWidget(panel.tab);
         auto* thresholdLayout = new QHBoxLayout(thresholdRow);
         thresholdLayout->setContentsMargins(0, 0, 0, 0);
@@ -369,7 +369,7 @@ void OpenPCDetDialog::populatePanels() {
         panel.score->setSpecialValueText(tr("model"));
         panel.score->setToolTip(
                 tr("Detection score threshold override; 0 follows the "
-                   "GGUF-declared value"));
+                   "task default (0.3)"));
         // Shared helper pins compact spinboxes to a fixed 72px, but the
         // threshold row stacks three label+spin pairs; under wide platform
         // font metrics (Linux offscreen/CI renders labels ~15% wider than
@@ -410,11 +410,12 @@ void OpenPCDetDialog::populatePanels() {
         thresholdLayout->addWidget(panel.maxBoxes);
         thresholdLayout->addStretch();
         configCol->addWidget(thresholdRow);
-        // Default/override tri-state (plan §2): checked = the GGUF-declared
-        // values shown disabled; unchecked = editable explicit values
-        // (including a legal explicit 0). Own row: sharing the threshold
-        // row forced the form's minimum width past the smallest supported
-        // window (the dialog test's horizontal-clipping contract).
+        // Default/override tri-state (plan §2): checked = the effective
+        // task defaults shown disabled (Score 0.3; NMS/max GGUF-declared);
+        // unchecked = editable explicit values (including a legal explicit
+        // 0). Own row: sharing the threshold row forced the form's minimum
+        // width past the smallest supported window (the dialog test's
+        // horizontal-clipping contract).
         panel.useDefaultsCheck =
                 new QCheckBox(tr("Use model defaults"), panel.tab);
         panel.useDefaultsCheck->setChecked(true);
@@ -434,7 +435,14 @@ void OpenPCDetDialog::populatePanels() {
                     p.score->setEnabled(!checked);
                     p.nms->setEnabled(!checked);
                     p.maxBoxes->setEnabled(!checked);
-                    if (checked) applyModelDefaults(p);
+                    if (checked) {
+                        // Follow-model display must show the effective task
+                        // defaults, not the previous explicit overrides.
+                        p.score->setValue(0.0);
+                        p.nms->setValue(0.0);
+                        p.maxBoxes->setValue(0);
+                        applyModelDefaults(p);
+                    }
                 });
 
         // Custom GGUF row (optional override of the catalog selection).
@@ -674,9 +682,9 @@ void OpenPCDetDialog::populatePanels() {
         m_panels.append(panel);
         m_taskStack->addWidget(panel.tab);
         addTaskItem(panelLabel(cp), m_taskStack->count() - 1);
-        // Show the checkpoint's GGUF-declared thresholds (upstream OpenPCDet
-        // config defaults) instead of the "model" placeholder when the
-        // cached GGUF header is available.
+        // Show the effective task defaults (Score 0.3; NMS/max from the
+        // upstream OpenPCDet config) instead of the "model" placeholder
+        // when the cached GGUF header is available.
         applyModelDefaults(m_panels.last());
     }
 
@@ -769,26 +777,29 @@ void OpenPCDetDialog::loadSettings() {
             const int idx = panel.quantCombo->findData(filename);
             if (idx >= 0) panel.quantCombo->setCurrentIndex(idx);
         }
-        // A persisted zero is the legacy "model" placeholder, not a user
-        // choice — keep the GGUF-declared defaults applied by
-        // populatePanels(); explicit non-zero overrides still win.
-        const double score =
-                settings.value(QStringLiteral("score/") + key, 0.0).toDouble();
-        if (score > 0.0) panel.score->setValue(score);
-        const double nms =
-                settings.value(QStringLiteral("nms/") + key, 0.0).toDouble();
-        if (nms > 0.0) panel.nms->setValue(nms);
-        const int maxBoxes =
-                settings.value(QStringLiteral("maxBoxes/") + key, 0).toInt();
-        if (maxBoxes > 0) panel.maxBoxes->setValue(maxBoxes);
         // Tri-state migration: a legacy positive value was an explicit
         // override, the legacy 0 sentinel was "follow the GGUF".
+        const double score =
+                settings.value(QStringLiteral("score/") + key, 0.0).toDouble();
+        const double nms =
+                settings.value(QStringLiteral("nms/") + key, 0.0).toDouble();
+        const int maxBoxes =
+                settings.value(QStringLiteral("maxBoxes/") + key, 0).toInt();
         const bool legacyOverride = score > 0.0 || nms > 0.0 || maxBoxes > 0;
         const bool useDefaults =
                 settings.value(QStringLiteral("useDefaults/") + key,
                                !legacyOverride)
                         .toBool();
         panel.useDefaultsCheck->setChecked(useDefaults);
+        // Follow-model mode: persisted spin values are only the previous
+        // session's display of the task defaults and may be stale across
+        // builds — keep the values populatePanels() seeded from the
+        // current model header. Explicit mode restores the user's overrides.
+        if (!useDefaults) {
+            if (score > 0.0) panel.score->setValue(score);
+            if (nms > 0.0) panel.nms->setValue(nms);
+            if (maxBoxes > 0) panel.maxBoxes->setValue(maxBoxes);
+        }
         panel.pointsFileEdit->setText(
                 settings.value(QStringLiteral("pointsFile/") + key).toString());
         // Restoring text fires textChanged while another panel may be
@@ -1263,12 +1274,46 @@ bool OpenPCDetDialog::fillTestDataPanel(int panelIndex) {
     return true;
 }
 
+// Find a previously imported sample cloud by its source-file marker so a
+// repeated "Use test data" click reuses it instead of stacking duplicates.
+// Each import tags the cloud with OpenPCDet/Sample = source file name; the
+// KITTI (000008) and nuScenes (n015) samples differ, so switching models
+// still imports the right distinct cloud while re-clicks reuse the existing
+// one.
+static ccPointCloud* findImportedSampleCloud(ccHObject* node,
+                                             const QString& sampleFile) {
+    if (!node) return nullptr;
+    if (node->getClassID() == CV_TYPES::POINT_CLOUD &&
+        node->getMetaData(QStringLiteral("OpenPCDet/Sample")).toString() ==
+                sampleFile) {
+        return static_cast<ccPointCloud*>(node);
+    }
+    for (unsigned i = 0; i < node->getChildrenNumber(); ++i) {
+        if (ccPointCloud* found =
+                    findImportedSampleCloud(node->getChild(i), sampleFile)) {
+            return found;
+        }
+    }
+    return nullptr;
+}
+
 void OpenPCDetDialog::loadSampleCloudIntoDb(const QString& binPath,
                                             int pointFeatures,
                                             const QString& displayName) {
     if (!m_app) return;  // no DB tree (tests / headless)
     if (binPath.isEmpty()) {
         appendLog(tr("[Error] Sample frame not found in the test-data cache."));
+        return;
+    }
+    const QString sampleFile = QFileInfo(binPath).fileName();
+    if (ccPointCloud* existing =
+                findImportedSampleCloud(m_app->dbRootObject(), sampleFile)) {
+        m_app->setSelectedInDB(existing, true);
+        m_app->updateUI();
+        setActiveCloud(existing, existing->getName());
+        appendLog(tr("[Test data] Sample cloud '%1' is already in the DB tree; "
+                     "reusing it instead of importing a duplicate.")
+                          .arg(existing->getName()));
         return;
     }
     QFile file(binPath);
@@ -1331,8 +1376,7 @@ void OpenPCDetDialog::loadSampleCloudIntoDb(const QString& binPath,
     const QString cloudName = ecvPluginDbNaming::makeUnique(displayName, m_app);
     cloud->setName(cloudName);
     cloud->setMetaData(QStringLiteral("OpenPCDet"), true);
-    cloud->setMetaData(QStringLiteral("OpenPCDet/Sample"),
-                       QFileInfo(binPath).fileName());
+    cloud->setMetaData(QStringLiteral("OpenPCDet/Sample"), sampleFile);
     m_app->addToDB(cloud, true, true, false, true);
     m_app->setSelectedInDB(cloud, true);
     m_app->updateUI();

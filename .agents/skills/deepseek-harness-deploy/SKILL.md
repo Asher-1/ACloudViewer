@@ -19,7 +19,7 @@ present) plus hands-on findings the doc does not cover.
 | User guide (providers, reasoning levels) | `.../@deepseek-ai/dsh/docs/user/guide/providers.md` |
 | Credential seam | `.../@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-credentials-local/src/index.ts` |
 | Troubleshooting table | [references/troubleshooting.md](references/troubleshooting.md) |
-| Gateway models, dual keys, reasoning levels | [references/models-and-reasoning.md](references/models-and-reasoning.md) |
+| Gateway models, dual keys, reasoning levels, image (vision) modality declarations | [references/models-and-reasoning.md](references/models-and-reasoning.md) |
 | Remote zero-human bootstrap (Path A): decision tree, platform-seccomp boundary, permission mode, GPU bind, self-heal | [references/remote-bootstrap.md](references/remote-bootstrap.md) |
 | One-click remote scripts (bootstrap / verify / local-forward) | `scripts/bootstrap-remote.sh`, `scripts/verify-remote.sh`, `scripts/local-forward.sh` |
 
@@ -103,7 +103,7 @@ entries located by `id`, spaces not tabs):
         apiKeyEnv: DEEPROUTE_GATEWAY_API_KEY
         api: openai-responses
         baseURL: https://token-wormhole.deeproute.cn
-        models: [ ... ]                     # id/name pairs; contextWindow & reasoningEfforts optional
+        models: [ ... ]                     # id/name; contextWindow, reasoningEfforts, input optional
       deeproute-claude:                     # Claude via the Anthropic entry (optional, see reference)
         apiKeyEnv: DEEPROUTE_ANTHROPIC_API_KEY
         api: anthropic-messages
@@ -410,7 +410,8 @@ or the preset selector.
 ## Reference Files
 
 - Failures and fixes: [references/troubleshooting.md](references/troubleshooting.md)
-- Gateway entitlement, model probing, reasoning-effort declaration and default-level semantics:
+- Gateway entitlement, model probing, reasoning-effort declaration, default-level
+  semantics, image/vision `input:` declaration with bulk audit:
   [references/models-and-reasoning.md](references/models-and-reasoning.md)
 - Remote zero-human bootstrap (Path A): substrate decision tree, platform-seccomp boundary proof,
   danger-full-access permission model, GPU directory-bind recipe, reboot self-heal, pitfalls:

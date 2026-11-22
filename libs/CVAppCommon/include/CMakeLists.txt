@@ -5,6 +5,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/CommonSettings.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvSettingManager.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvApplicationBase.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvComponentStyle.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvCameraParamEditDlg.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvCustomViewpointButtonDlg.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvCustomViewpointsToolbar.h
