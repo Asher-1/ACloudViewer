@@ -296,7 +296,7 @@ std::optional<std::string> DownloadFile(
   }
 #endif
 
-  // Retry up to 3 times for transient connection errors (e.g. CURLE_COULDNT_CONNECT).
+  // Retry transient transport and HTTP failures within the same attempt budget.
   constexpr int kMaxAttempts = 3;
 
   for (int attempt = 1; attempt <= kMaxAttempts; ++attempt) {
@@ -366,21 +366,26 @@ std::optional<std::string> DownloadFile(
       return std::nullopt;
     }
 
+    long response_code = 0;
+    curl_easy_getinfo(handle.ptr, CURLINFO_RESPONSE_CODE, &response_code);
+    const bool retryable_http =
+        (code == CURLE_OK || code == CURLE_HTTP_RETURNED_ERROR) &&
+        (response_code == 408 || response_code == 429 || response_code == 500 ||
+         response_code == 502 || response_code == 503 || response_code == 504);
+    const bool retryable =
+        code == CURLE_COULDNT_CONNECT || code == CURLE_COULDNT_RESOLVE_HOST ||
+        code == CURLE_OPERATION_TIMEDOUT || retryable_http;
+    if (retryable && attempt < kMaxAttempts) {
+      const int delay = attempt * 5;
+      std::cerr << "WARNING: Download attempt " << attempt << " failed (code "
+                << code << ": " << curl_easy_strerror(code) << ", HTTP "
+                << response_code << "). Retrying in " << delay << "s..."
+                << std::endl;
+      std::this_thread::sleep_for(std::chrono::seconds(delay));
+      continue;
+    }
+
     if (code != CURLE_OK) {
-      const bool retryable =
-          (code == CURLE_COULDNT_CONNECT ||
-           code == CURLE_COULDNT_RESOLVE_HOST ||
-           code == CURLE_OPERATION_TIMEDOUT);
-
-      if (retryable && attempt < kMaxAttempts) {
-        const int delay = attempt * 5;
-        std::cerr << "WARNING: Download attempt " << attempt << " failed (code "
-                  << code << ": " << curl_easy_strerror(code)
-                  << "). Retrying in " << delay << "s..." << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(delay));
-        continue;
-      }
-
       if (code == CURLE_SSL_CACERT_BADFILE || code == CURLE_SSL_CACERT) {
         std::cerr << "ERROR: Curl SSL certificate error (code " << code
                   << "). Try setting SSL_CERT_FILE to point to your system's "
@@ -401,8 +406,6 @@ std::optional<std::string> DownloadFile(
       return std::nullopt;
     }
 
-    long response_code = 0;
-    curl_easy_getinfo(handle.ptr, CURLINFO_RESPONSE_CODE, &response_code);
     if (response_code != 0 && (response_code < 200 || response_code >= 300)) {
       std::cerr << "ERROR: Request failed with status: " << response_code
                 << std::endl;
