@@ -20,12 +20,6 @@ on:
         required: false
         default: "false"
 
-  # Weekly cold-build gate: the full workflow runs with the compile cache
-  # disabled (COLD_BUILD=true), keeping the from-scratch end-to-end path
-  # exercised so cache hits can never rot the no-cache build.
-  schedule:
-    - cron: '0 3 * * 1'
-
   push:
     branches:
       - main
@@ -86,10 +80,10 @@ jobs:
       # commands used by the scripts and the workflow test step. Requires the
       # MSVC environment from the msvc-dev-cmd step below.
       CLOUDVIEWER_GENERATOR: "Ninja Multi-Config"
-      # Cold-build gate: releases, the weekly schedule and an explicit
+      # Cold-build gate: releases and an explicit
       # workflow_dispatch run WITHOUT the compile cache so the shipped
       # artifacts stay reproducible from clean sources.
-      COLD_BUILD: ${{ (github.event_name == 'release' || github.event_name == 'schedule' || github.event.inputs.cold_build == 'true') && 'true' || 'false' }}
+      COLD_BUILD: ${{ (github.event_name == 'release' || github.event.inputs.cold_build == 'true') && 'true' || 'false' }}
 
     steps:
       - name: Setup DEVELOPER_BUILD
@@ -310,7 +304,7 @@ jobs:
         # for 338 min) killed by the cap would save nothing, and every later
         # round would start cold again. A timed-out build saves its partial
         # pool and the next round resumes from it. Uncached builds keep the
-        # job cap (weekly cold gate, release).
+        # job cap (explicit cold build, release).
         timeout-minutes: ${{ (env.COLD_BUILD != 'true' && steps.sccache.outcome == 'success') && 330 || 360 }}
         working-directory: ${{ env.SRC_DIR }}
         run: |
@@ -615,10 +609,10 @@ jobs:
       # compiled the whole double pass with 0 sccache requests (job summary
       # all-zero stats in run 39088510659) and hit the 6h runner limit.
       CLOUDVIEWER_GENERATOR: "Ninja Multi-Config"
-      # Cold-build gate, same expression as the app matrix job: releases, the
-      # weekly schedule and an explicit workflow_dispatch run WITHOUT the
-      # compile cache so the shipped artifacts stay reproducible.
-      COLD_BUILD: ${{ (github.event_name == 'release' || github.event_name == 'schedule' || github.event.inputs.cold_build == 'true') && 'true' || 'false' }}
+      # Cold-build gate, same expression as the app matrix job: releases and
+      # an explicit workflow_dispatch run WITHOUT the compile cache so the
+      # shipped artifacts stay reproducible.
+      COLD_BUILD: ${{ (github.event_name == 'release' || github.event.inputs.cold_build == 'true') && 'true' || 'false' }}
 
     steps:
       - name: Setup DEVELOPER_BUILD

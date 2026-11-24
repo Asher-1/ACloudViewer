@@ -229,6 +229,7 @@ class DocumentationWorkflowTests(unittest.TestCase):
                     'EVENT_RELEASE_TAG': tag,
                     'SOURCE_SHA': 'a' * 40,
                     'DEVELOPER_BUILD': 'OFF',
+                    'REUSE_DOCS': 'false',
                     'GITHUB_OUTPUT': str(root / 'output')
                 },
                 capture_output=True,
@@ -256,6 +257,7 @@ class DocumentationWorkflowTests(unittest.TestCase):
                         'EVENT_RELEASE_TAG': tag,
                         'SOURCE_SHA': 'a' * 40,
                         'DEVELOPER_BUILD': 'ON',
+                        'REUSE_DOCS': 'false',
                         'GITHUB_OUTPUT': str(output)
                     },
                     capture_output=True,
@@ -478,6 +480,553 @@ if args[:2]==['release','delete-asset'] and os.environ['FAULT']=='delete': raise
                 self.assertEqual(deleted, [
                     'release delete-asset main-devel acloudviewer-bbbbbbbb-docs.tar.gz --yes'
                 ])
+
+
+class PlatformReleaseCleanupTests(unittest.TestCase):
+    CURRENT = 'dddcdb92657254f9fe1ecb01351d458d489f8fa2'
+    RECENT = [
+        CURRENT, '4a6e4bb85f8368f959a8e4341d9548b3fb20a542',
+        'fc450c9a53290558119a71c16c41bcc6ff72048b'
+    ]
+
+    def step(self):
+        workflow = yaml.safe_load(
+            WORKFLOW.with_name('update-release.yml').read_text())
+        job = workflow['jobs']['clean-release']
+        checkout = next(
+            s for s in job['steps'] if s.get('uses') == 'actions/checkout@v4')
+        self.assertEqual(checkout['with']['fetch-depth'], 3)
+        return next(s['run']
+                    for s in job['steps']
+                    if s.get('name') == 'Clean old release assets')
+
+    def run_cleanup(self,
+                    names,
+                    fault='',
+                    commits=None,
+                    payload=None,
+                    published=None):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'inventory').write_text(
+                json.dumps({'assets': [{
+                    'name': n
+                } for n in names]}) if payload is None else payload)
+            (root / 'commits').write_text(
+                '\n'.join(self.RECENT if commits is None else commits) + '\n')
+            default_catalogue = {
+                'version_metadata': [{
+                    'value': 'main-devel'
+                }],
+                'download_data': {
+                    'main-devel': {
+                        'windows': {
+                            'app': {
+                                'url':
+                                    'https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/'
+                                    'ACloudViewer-3.9.5%2Bdddcdb92-win-cpu-amd64.exe'
+                            }
+                        }
+                    }
+                }
+            }
+            (root / 'published').write_text(
+                json.dumps(default_catalogue if published is
+                           None else published))
+            for tool in ['gh', 'git', 'curl']:
+                stub = root / tool
+                stub.write_text('''#!/usr/bin/env python3
+import json, os, sys
+from pathlib import Path
+args = sys.argv[1:]
+with open('calls', 'a') as stream: stream.write(json.dumps([Path(sys.argv[0]).name] + args) + '\\n')
+fault = os.environ['CLEANUP_TEST_FAULT']
+if Path(sys.argv[0]).name == 'curl':
+    if args[-1] != 'https://asher-1.github.io/ACloudViewer/downloads_data.json': raise SystemExit(94)
+    if fault == 'pages-http': raise SystemExit(22)
+    if fault == 'pages-json': print('<html>unavailable</html>')
+    else: print(Path('published').read_text())
+    raise SystemExit(0)
+if Path(sys.argv[0]).name == 'git':
+    if args != ['log', '--format=%H', '-n', '3']: raise SystemExit(91)
+    if fault == 'git': raise SystemExit(12)
+    print(Path('commits').read_text(), end='')
+    raise SystemExit(0)
+if args == ['release', 'view', 'main-devel', '--json', 'assets']:
+    if fault == 'inventory': raise SystemExit(13)
+    print(Path('inventory').read_text())
+    raise SystemExit(0)
+if args[:3] == ['release', 'delete-asset', 'main-devel']:
+    if len(args) != 5 or args[-1] != '--yes': raise SystemExit(92)
+    raise SystemExit(14 if fault == 'delete' else 0)
+if args == ['release', 'view', 'main-devel']: raise SystemExit(0)
+raise SystemExit(93)
+''')
+                stub.chmod(0o755)
+            result = subprocess.run(
+                ['bash', '-euo', 'pipefail', '-c',
+                 self.step()],
+                cwd=root,
+                env={
+                    **os.environ, 'PATH':
+                        str(root) + os.pathsep + os.environ['PATH'],
+                    'RUNNER_TEMP':
+                        str(root),
+                    'CLEANUP_TEST_FAULT':
+                        fault
+                },
+                capture_output=True,
+                text=True)
+            calls = [
+                json.loads(line)
+                for line in (root / 'calls').read_text().splitlines()
+            ]
+            deleted = [
+                args[4]
+                for args in calls
+                if args[:4] == ['gh', 'release', 'delete-asset', 'main-devel']
+            ]
+            self.assertFalse(list(root.glob('release-cleanup.*')))
+            return result, deleted, calls
+
+    def test_doc_only_commits_cannot_prune_currently_published_build(self):
+        served = 'ACloudViewer-3.9.5+dddcdb92-win-cpu-amd64.exe'
+        old = 'ACloudViewer-3.9.5+6c3f6650-win-cpu-amd64.exe'
+        recent = [
+            '19fae64887fd4adfd1913e974417bcfa31521b1f',
+            'f2d17f73aa032effd9bcacf3de97e209a17fad31',
+            'e5941ae27e1faca90daeb9101a556dbb509c8a5f'
+        ]
+        result, deleted, calls = self.run_cleanup([served, old], commits=recent)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(deleted, [old])
+        self.assertTrue(any(call[0] == 'curl' for call in calls))
+
+    def test_published_urls_absent_from_inventory_do_not_create_delete_targets(
+            self):
+        result, deleted, _ = self.run_cleanup(['downloads_data.json'])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(deleted, [])
+
+    def test_other_release_reference_cannot_protect_main_devel_same_name(self):
+        name = 'ACloudViewer-3.9.5+6c3f6650-win-cpu-amd64.exe'
+        published = {
+            'version_metadata': [{
+                'value': 'main-devel'
+            }, {
+                'value': 'v3.9.4'
+            }],
+            'download_data': {
+                'main-devel': {
+                    'url':
+                        'https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/current-asset.exe'
+                },
+                'v3.9.4': {
+                    'url':
+                        'https://github.com/Asher-1/ACloudViewer/releases/download/v3.9.4/'
+                        + name
+                }
+            }
+        }
+        result, deleted, _ = self.run_cleanup([name], published=published)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(deleted, [name])
+
+    def test_failed_or_invalid_published_lookup_never_deletes(self):
+        name = 'ACloudViewer-3.9.5+6c3f6650-win-cpu-amd64.exe'
+        for fault in ['pages-http', 'pages-json']:
+            with self.subTest(fault=fault):
+                result, deleted, _ = self.run_cleanup([name], fault=fault)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(deleted, [])
+        for catalogue in [
+            {
+                'version_metadata': [],
+                'download_data': {}
+            },
+            {
+                'version_metadata': [{
+                    'value': 'main-devel'
+                }],
+                'download_data': {}
+            },
+            {
+                'version_metadata': [{
+                    'value': 'main-devel'
+                }],
+                'download_data': {
+                    'main-devel': {
+                        'url':
+                            'https://github.com/other/ACloudViewer/releases/download/main-devel/'
+                            + name
+                    }
+                }
+            },
+            {
+                'version_metadata': [{
+                    'value': 'main-devel'
+                }],
+                'download_data': {
+                    'main-devel': {
+                        'url':
+                            'https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/bad%2Fname.exe'
+                    }
+                }
+            },
+        ]:
+            with self.subTest(catalogue=catalogue):
+                result, deleted, _ = self.run_cleanup([name],
+                                                      published=catalogue)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(deleted, [])
+
+    def test_cleanup_protects_metadata_docs_shared_and_current_assets(self):
+        protected = [
+            'downloads_data.json', 'shared-assets.zip', 'notes with spaces.txt',
+            'acloudviewer-' + self.CURRENT + '-45020940979-1-docs.tar.gz',
+            'acloudviewer-6c3f6650-docs.tar.gz',
+            'acloudviewer-v3.9.4-docs.tar.gz',
+            'ACloudViewer-3.9.5-win-cpu-amd64.exe',
+            'ACloudViewer-3.9.5+dddcdb92-win-cpu-amd64.exe',
+            'ACloudViewer-3.9.5+' + self.CURRENT + '-mac-cpu-ARM64.dmg',
+            'cloudviewer-3.9.5+dddcdb92-cp312-cp312-win_amd64.whl',
+            'cloudviewer_cpu-3.9.5+4a6e4bb8-cp313-cp313-manylinux_2_35_x86_64.whl',
+            'ACloudViewer-3.9.5+fc450c9a-ubuntu22.04-cuda-amd64.run'
+        ]
+        old = [
+            'ACloudViewer-3.9.5+6c3f6650-win-cpu-amd64.exe',
+            'ACloudViewer-3.9.5+6c3f6650-mac-cpu-ARM64.dmg',
+            'ACloudViewer-3.9.5+6c3f6650-ubuntu20.04-cuda-amd64.run',
+            'cloudviewer-3.9.5+6c3f6650-cp310-cp310-macosx_11_0_arm64.whl',
+            'cloudviewer-3.9.5+6c3f6650-cp312-cp312-win_amd64.whl',
+            'cloudviewer_cpu-3.9.5+6c3f6650-cp313-cp313-manylinux_2_35_x86_64.whl'
+        ]
+        result, deleted, _ = self.run_cleanup(protected + old)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(deleted, old)
+
+    def test_cleanup_uses_stamp_boundaries_not_arbitrary_sha_substrings(self):
+        wrong_place = 'ACloudViewer-3.9.5+6c3f6650-win-cpu-amd64-dddcdb92.exe'
+        unknown = [
+            'ACloudViewer-3.9.5+6c3f6650-win-cpu-amd64.exe.sha256', wrong_place,
+            'unrelated-dddcdb92.zip',
+            'cloudviewer-3.9.5+6c3f6650-cp312-abi3-win_amd64.whl'
+        ]
+        result, deleted, _ = self.run_cleanup(unknown)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(deleted, [])
+
+    def test_cleanup_failures_cannot_delete_from_partial_or_invalid_inventory(
+            self):
+        asset = 'ACloudViewer-3.9.5+6c3f6650-win-cpu-amd64.exe'
+        for fault in ['inventory', 'git']:
+            with self.subTest(fault=fault):
+                result, deleted, _ = self.run_cleanup([asset], fault=fault)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(deleted, [])
+        for payload in [
+                'not-json', '{"assets":null}',
+                '{"assets":[{"name":"x"},{"name":"x"}]}',
+                '{"assets":[{"name":123}]}'
+        ]:
+            with self.subTest(payload=payload):
+                result, deleted, _ = self.run_cleanup([], payload=payload)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(deleted, [])
+        for commits in [self.RECENT[:1], ['dddcdb92'] * 3]:
+            with self.subTest(commits=commits):
+                result, deleted, _ = self.run_cleanup([asset], commits=commits)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(deleted, [])
+
+    def test_cleanup_delete_failure_stops_before_later_candidates(self):
+        first = 'ACloudViewer-3.9.5+6c3f6650-win-cpu-amd64.exe'
+        second = 'cloudviewer-3.9.5+6c3f6650-cp310-cp310-win_amd64.whl'
+        result, deleted, calls = self.run_cleanup([first, second],
+                                                  fault='delete')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(deleted, [first])
+        self.assertNotIn(['gh', 'release', 'view', 'main-devel'], calls)
+
+
+class UploaderPublicationGateTests(unittest.TestCase):
+    SHA = 'a' * 40
+
+    @classmethod
+    def setUpClass(cls):
+        spec = importlib.util.spec_from_file_location(
+            'check_uploaders_complete',
+            HERE.parents[2] / 'util/check_uploaders_complete.py')
+        cls.gate = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.gate)
+        cls.workflow = yaml.safe_load(WORKFLOW.read_text())
+
+    def runs(self):
+        return [
+            dict(name=name,
+                 id=i + 1,
+                 run_attempt=1,
+                 head_sha=self.SHA,
+                 head_branch='main',
+                 event='push',
+                 status='completed',
+                 conclusion='success')
+            for i, name in enumerate(self.gate.UPLOADERS + ('Documentation',))
+        ]
+
+    def invoke(self, rows, strict=True):
+        args = ['gate', '--sha', self.SHA, '--repo', 'Asher-1/ACloudViewer']
+        if strict:
+            args += ['--require-success', '--require-docs']
+        with patch.object(self.gate, 'gh_api', return_value={'workflow_runs': rows}), \
+                patch('sys.stdout', new=io.StringIO()), \
+                patch('sys.stderr', new=io.StringIO()):
+            return self.gate.main(args)
+
+    def test_strict_requires_all_six_successful_main_pushes(self):
+        self.assertEqual(self.invoke(self.runs()), 0)
+        for i in range(6):
+            rows = self.runs()
+            rows[i].update(status='in_progress', conclusion=None)
+            self.assertEqual(self.invoke(rows), 2)
+            rows[i].update(status='completed', conclusion='failure')
+            self.assertEqual(self.invoke(rows), 1)
+            self.assertEqual(self.invoke(rows[:i] + rows[i + 1:]), 1)
+
+    def test_cancelled_skipped_or_missing_conclusions_are_not_success(self):
+        for conclusion in ['cancelled', 'skipped', 'neutral', None]:
+            rows = self.runs()
+            rows[0]['conclusion'] = conclusion
+            self.assertEqual(self.invoke(rows), 1)
+
+    def test_non_push_wrong_sha_and_non_main_cannot_satisfy_gate(self):
+        for field, value in [('event', 'workflow_dispatch'),
+                             ('event', 'pull_request'), ('head_sha', 'b' * 40),
+                             ('head_branch', 'feature')]:
+            rows = self.runs()
+            rows[0][field] = value
+            self.assertEqual(self.invoke(rows), 1)
+
+    def test_latest_run_wins_independently_of_api_order(self):
+        rows = self.runs()
+        newer = {
+            **rows[0], 'id': 100,
+            'status': 'in_progress',
+            'conclusion': None
+        }
+        for inventory in [rows + [newer], [newer] + rows]:
+            self.assertEqual(self.invoke(inventory), 2)
+        newer.update(status='completed', conclusion='success')
+        rows[0]['conclusion'] = 'failure'
+        self.assertEqual(self.invoke([newer] + rows), 0)
+
+    def test_rerun_attempt_must_succeed(self):
+        rows = self.runs()
+        rerun = {
+            **rows[0], 'run_attempt': 2,
+            'status': 'queued',
+            'conclusion': None
+        }
+        self.assertEqual(self.invoke(rows + [rerun]), 2)
+
+    def test_strict_paginates_and_fails_closed_on_partial_query(self):
+        filler = [dict(name='Other') for _ in range(100)]
+        with patch.object(self.gate,
+                          'gh_api',
+                          side_effect=[{
+                              'workflow_runs': filler
+                          }, {
+                              'workflow_runs': self.runs()
+                          }]) as get:
+            states = self.gate.successful_states('Asher-1/ACloudViewer',
+                                                 self.SHA, True)
+        self.assertEqual(set(states.values()), {'success'})
+        self.assertIn('page=2', get.call_args.args[0])
+        with patch.object(self.gate,
+                          'gh_api',
+                          side_effect=[{
+                              'workflow_runs': filler
+                          }, RuntimeError('offline')]):
+            with self.assertRaises(RuntimeError):
+                self.gate.successful_states('Asher-1/ACloudViewer', self.SHA,
+                                            True)
+        for invalid in [{'workflow_runs': None}, {'workflow_runs': [None]}]:
+            with patch.object(self.gate, 'gh_api', return_value=invalid):
+                with self.assertRaises(RuntimeError):
+                    self.gate.successful_states('Asher-1/ACloudViewer',
+                                                self.SHA, True)
+
+    def test_strict_rejects_abbreviated_sha_before_api(self):
+        with patch.object(self.gate, 'gh_api') as get:
+            with self.assertRaises(RuntimeError):
+                self.gate.successful_states('Asher-1/ACloudViewer', 'abcdef12',
+                                            True)
+            get.assert_not_called()
+
+    def test_legacy_callers_keep_completed_or_absent_contract(self):
+        rows = self.runs()[:1]
+        rows[0]['conclusion'] = 'failure'
+        self.assertEqual(self.invoke(rows, strict=False), 0)
+        rows[0]['status'] = 'in_progress'
+        self.assertEqual(self.invoke(rows, strict=False), 2)
+
+    def gate_script(self):
+        return next(
+            step['run']
+            for step in self.workflow['jobs']['downloads-ready']['steps']
+            if step.get('id') == 'gate')
+
+    def run_workflow_gate(self,
+                          *,
+                          pending=False,
+                          failure=False,
+                          stale=False,
+                          event='workflow_run'):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'util').mkdir()
+            source = HERE.parents[2] / 'util/check_uploaders_complete.py'
+            (root / 'util/check_uploaders_complete.py').write_text(
+                source.read_text())
+            rows = self.runs()
+            if pending:
+                rows[0].update(status='in_progress', conclusion=None)
+            if failure:
+                rows[0].update(conclusion='failure')
+            (root / 'runs.json').write_text(json.dumps({'workflow_runs': rows}))
+            fake = root / 'gh'
+            fake.write_text("""#!/usr/bin/env python3
+import sys, pathlib
+with pathlib.Path('calls').open('a') as out: out.write(' '.join(sys.argv[1:])+'\\n')
+print('a'*40 if sys.argv[2].endswith('/commits/main') else pathlib.Path('runs.json').read_text())
+""")
+            fake.chmod(0o755)
+            env = {
+                **os.environ, 'PATH':
+                    str(root) + os.pathsep + os.environ['PATH'],
+                'GITHUB_OUTPUT':
+                    str(root / 'outputs'),
+                'GITHUB_REPOSITORY':
+                    'Asher-1/ACloudViewer',
+                'EVENT_NAME':
+                    event,
+                'SOURCE_BRANCH':
+                    'main',
+                'SOURCE_SHA': ('b' if stale else 'a') * 40
+            }
+            result = subprocess.run(
+                ['bash', '-c', self.gate_script()],
+                cwd=root,
+                env=env,
+                capture_output=True,
+                text=True)
+            output = (root /
+                      'outputs').read_text() if (root /
+                                                 'outputs').exists() else ''
+            calls = (root / 'calls').read_text()
+            return result, output, calls
+
+    def test_workflow_gate_stops_early_or_blocks_without_scanning(self):
+        result, output, _ = self.run_workflow_gate(pending=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('ready=false', output)
+        result, output, _ = self.run_workflow_gate(failure=True)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertNotIn('ready=true', output)
+        result, output, calls = self.run_workflow_gate(stale=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('ready=false', output)
+        self.assertNotIn('/actions/runs', calls)
+        result, output, _ = self.run_workflow_gate()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('ready=true', output)
+        self.assertIn('source_sha=' + self.SHA, output)
+
+    def test_workflow_wiring_waits_for_native_docs_and_reuses_only(self):
+        events = self.workflow.get('on', self.workflow.get(True))
+        self.assertEqual(set(events['workflow_run']['workflows']),
+                         set(self.gate.UPLOADERS) | {'Documentation'})
+        self.assertEqual(events['workflow_run']['branches'], ['main'])
+        ready = self.workflow['jobs']['downloads-ready']
+        self.assertIn('conclusion', ready['if'])
+        self.assertEqual(ready['permissions']['actions'], 'read')
+        update = self.workflow['jobs']['update-downloads-data']
+        self.assertEqual(update['needs'], 'downloads-ready')
+        dispatch = next(
+            step['run']
+            for step in self.workflow['jobs']['trigger-docs-deploy']['steps']
+            if step.get('name') == 'Trigger documentation workflow')
+        self.assertIn('-f reuse_docs=true', dispatch)
+        self.assertIn('"$current_sha" != "$SOURCE_SHA"', dispatch)
+        windows = yaml.safe_load(
+            (HERE.parents[2] / '.github/workflows/windows.yml').read_text())
+        self.assertNotIn('schedule', windows.get('on', windows.get(True)))
+        self.assertNotIn("github.event_name == 'schedule'", json.dumps(windows))
+        codeql = yaml.safe_load(
+            (HERE.parents[2] / '.github/workflows/codeql.yml').read_text())
+        self.assertIn('schedule', codeql.get('on', codeql.get(True)))
+
+    def test_docs_archive_and_catalogue_uploads_do_not_change_scanned_content(
+            self):
+        app = {
+            'name':
+                'ACloudViewer-3.9.5+aaaaaaaa-win-cpu-amd64.exe',
+            'browser_download_url':
+                'https://github.com/Asher-1/ACloudViewer/releases/download/main-devel/app.exe',
+            'size':
+                12345
+        }
+        release = {
+            'tag_name': 'main-devel',
+            'published_at': '2026-11-23T08:00:00Z',
+            'assets': [app]
+        }
+        with patch('sys.stdout', new=io.StringIO()):
+            before = scanner.analyze_releases([release])
+            release['assets'] += [{
+                'name': 'acloudviewer-' + self.SHA + '-100-1-docs.tar.gz',
+                'browser_download_url': 'https://example.invalid/docs',
+                'size': 999
+            }, {
+                'name': 'downloads_data.json',
+                'browser_download_url': 'https://example.invalid/catalogue',
+                'size': 444
+            }]
+            after = scanner.analyze_releases([release])
+            self.assertEqual(scanner.build_download_structure(before),
+                             scanner.build_download_structure(after))
+            self.assertEqual(scanner.generate_version_metadata(before),
+                             scanner.generate_version_metadata(after))
+
+    def test_semantic_compare_ignores_key_order_and_timestamp_not_real_changes(
+            self):
+        update = self.workflow['jobs']['update-downloads-data']
+        script = next(step['run']
+                      for step in update['steps']
+                      if step.get('id') == 'check_changes')
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'existing').mkdir()
+            (root / 'existing/downloads_data.json'
+            ).write_text('{"download_data":{"b":2,"a":1},"generated_at":"old"}')
+            for candidate, expected in [
+                ('{"generated_at":"new","download_data":{"a":1,"b":2}}', False),
+                ('{"generated_at":"new","download_data":{"a":2,"b":2}}', True)
+            ]:
+                (root / 'downloads_data.json.new').write_text(candidate)
+                output = root / 'output'
+                output.write_text('')
+                result = subprocess.run(['bash', '-e', '-c', script],
+                                        cwd=root,
+                                        env={
+                                            **os.environ, 'GITHUB_OUTPUT':
+                                                str(output)
+                                        },
+                                        capture_output=True,
+                                        text=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn('has_changes=' + str(expected).lower(),
+                              output.read_text())
 
 
 if __name__ == '__main__':

@@ -70,6 +70,8 @@ ExternalProject_Add(
         $<$<PLATFORM_ID:Windows>:-DBUILD_WITH_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}>
         ${ExternalProject_CMAKE_ARGS_hidden}
     CMAKE_CACHE_ARGS    # Lists must be passed via CMAKE_CACHE_ARGS
+        # Upstream's official firmware host moved; retain v2.44.0 payload hashes.
+        -DREALSENSE_FIRMWARE_URL:STRING=https://librealsense.realsenseai.com
         -DCMAKE_CUDA_ARCHITECTURES:STRING=${CMAKE_CUDA_ARCHITECTURES}
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}realsense2${CMAKE_STATIC_LIBRARY_SUFFIX}

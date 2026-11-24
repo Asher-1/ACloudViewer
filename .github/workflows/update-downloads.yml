@@ -4,12 +4,12 @@ name: Update Downloads Data
 # It does NOT deploy to GitHub Pages directly to avoid overwriting documentation
 # The documentation.yml workflow will pick up the updated file during deployment
 on:
-  # Automatically triggered after build workflows complete
-  # Listen to all platform builds to capture new assets
+  # Platform completions and native docs completion wake the same cheap gate.
+  # Publish only after the successful main upload wave is ready.
   workflow_run:
     # Exact names: workflow_run matches each workflow's `name:` verbatim
     # (macos.yml is named "MacOS", so "macOS" here never fired it).
-    workflows: ["Windows", "MacOS", "Ubuntu"]  # Trigger after any build workflow finishes
+    workflows: ["Windows", "MacOS", "Ubuntu", "Ubuntu CUDA", "Ubuntu Wheel", "Documentation"]
     types: [completed]
     branches: [main]
   
@@ -58,7 +58,52 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  downloads-ready:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      ready: ${{ steps.gate.outputs.ready }}
+      source_sha: ${{ steps.gate.outputs.source_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: util/check_uploaders_complete.py
+          sparse-checkout-cone-mode: false
+      - name: Wait for the successful current main upload wave
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+          SOURCE_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          set -euo pipefail
+          current_sha=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq '.sha')
+          if [ "$EVENT_NAME" = workflow_run ]; then
+            if [ "$SOURCE_BRANCH" != main ] || [ "$SOURCE_SHA" != "$current_sha" ]; then
+              echo "Skipping superseded or non-main build completion"
+              echo "ready=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            rc=0
+            python3 util/check_uploaders_complete.py --sha "$SOURCE_SHA" \
+              --repo "$GITHUB_REPOSITORY" --require-success --require-docs || rc=$?
+            case "$rc" in
+              0) ;;
+              2) echo "ready=false" >> "$GITHUB_OUTPUT"; exit 0 ;;
+              *) exit "$rc" ;;
+            esac
+          fi
+          echo "source_sha=$current_sha" >> "$GITHUB_OUTPUT"
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
   update-downloads-data:
+    needs: downloads-ready
+    if: needs.downloads-ready.outputs.ready == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write  # For uploading release assets
@@ -68,6 +113,7 @@ jobs:
 
     outputs:
       has_changes: ${{ steps.check_changes.outputs.has_changes }}
+      source_sha: ${{ needs.downloads-ready.outputs.source_sha }}
     
     steps:
       - name: Checkout main branch for scripts
@@ -208,8 +254,8 @@ jobs:
         run: |
           if [ -f "existing/downloads_data.json" ]; then
             # Compare checksums (ignoring generated_at timestamp)
-            OLD_CONTENT=$(jq 'del(.generated_at)' existing/downloads_data.json | md5sum | cut -d' ' -f1)
-            NEW_CONTENT=$(jq 'del(.generated_at)' downloads_data.json.new | md5sum | cut -d' ' -f1)
+            OLD_CONTENT=$(jq -S -c 'del(.generated_at)' existing/downloads_data.json | md5sum | cut -d' ' -f1)
+            NEW_CONTENT=$(jq -S -c 'del(.generated_at)' downloads_data.json.new | md5sum | cut -d' ' -f1)
             
             if [ "$OLD_CONTENT" == "$NEW_CONTENT" ]; then
               echo "has_changes=false" >> $GITHUB_OUTPUT
@@ -258,7 +304,14 @@ jobs:
         if: (steps.check_changes.outputs.has_changes == 'true' || github.event.inputs.force_update == 'true') && github.event.inputs.dry_run != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ needs.downloads-ready.outputs.source_sha }}
         run: |
+          set -euo pipefail
+          current_sha=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq '.sha')
+          if [ "$current_sha" != "$SOURCE_SHA" ]; then
+            echo "Main advanced during catalogue generation; refusing stale upload" >&2
+            exit 1
+          fi
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📤 Uploading downloads_data.json to main-devel release"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -318,6 +371,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       actions: write
+      contents: read
     steps:
       - name: Trigger documentation workflow
         env:
@@ -325,7 +379,14 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           HAS_CHANGES: ${{ needs.update-downloads-data.outputs.has_changes }}
           REPOSITORY: ${{ github.repository }}
+          SOURCE_SHA: ${{ needs.update-downloads-data.outputs.source_sha }}
         run: |
+          set -euo pipefail
+          current_sha=$(gh api "repos/$REPOSITORY/commits/main" --jq '.sha')
+          if [ "$current_sha" != "$SOURCE_SHA" ]; then
+            echo "Main advanced; its own successful build wave will publish the new catalogue"
+            exit 0
+          fi
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🚀 Triggering documentation workflow to deploy updated downloads_data.json"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -336,11 +397,11 @@ jobs:
           
           gh workflow run documentation.yml \
             --repo "$REPOSITORY" \
-            --ref main
+            --ref main \
+            -f reuse_docs=true
           
           echo ""
           echo "✅ Documentation workflow triggered"
           echo "   The updated downloads_data.json will be included in the deployment"
           echo ""
-          echo "📝 Note: Full documentation rebuild will run to ensure all pages"
-          echo "         include the latest download links and version information."
+          echo "📝 Reuse verified exact-SHA docs; only prepare and deploy the new site."
