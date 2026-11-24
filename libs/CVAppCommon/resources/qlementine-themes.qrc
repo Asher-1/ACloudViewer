@@ -1,0 +1,33 @@
+<RCC>
+    <qresource prefix="/ecv/qlementine/themes">
+        <file alias="bf.json">qlementine-themes/bf.json</file>
+        <file alias="black.json">qlementine-themes/black.json</file>
+        <file alias="blue.json">qlementine-themes/blue.json</file>
+        <file alias="catppuccin.json">qlementine-themes/catppuccin.json</file>
+        <file alias="darkblack.json">qlementine-themes/darkblack.json</file>
+        <file alias="darkblue.json">qlementine-themes/darkblue.json</file>
+        <file alias="darkgray.json">qlementine-themes/darkgray.json</file>
+        <file alias="dracula.json">qlementine-themes/dracula.json</file>
+        <file alias="flatblack.json">qlementine-themes/flatblack.json</file>
+        <file alias="flatwhite.json">qlementine-themes/flatwhite.json</file>
+        <file alias="fluent.json">qlementine-themes/fluent.json</file>
+        <file alias="gray.json">qlementine-themes/gray.json</file>
+        <file alias="gruvbox.json">qlementine-themes/gruvbox.json</file>
+        <file alias="lightblack.json">qlementine-themes/lightblack.json</file>
+        <file alias="lightblue.json">qlementine-themes/lightblue.json</file>
+        <file alias="lightgray.json">qlementine-themes/lightgray.json</file>
+        <file alias="macos.json">qlementine-themes/macos.json</file>
+        <file alias="macos-dark.json">qlementine-themes/macos-dark.json</file>
+        <file alias="materialdark.json">qlementine-themes/materialdark.json</file>
+        <file alias="materiallight.json">qlementine-themes/materiallight.json</file>
+        <file alias="nord.json">qlementine-themes/nord.json</file>
+        <file alias="onedark.json">qlementine-themes/onedark.json</file>
+        <file alias="paraview.json">qlementine-themes/paraview.json</file>
+        <file alias="psblack.json">qlementine-themes/psblack.json</file>
+        <file alias="qdarkstyle-dark.json">qlementine-themes/qdarkstyle-dark.json</file>
+        <file alias="qdarkstyle-light.json">qlementine-themes/qdarkstyle-light.json</file>
+        <file alias="silvery.json">qlementine-themes/silvery.json</file>
+        <file alias="test.json">qlementine-themes/test.json</file>
+        <file alias="tokyonight.json">qlementine-themes/tokyonight.json</file>
+    </qresource>
+</RCC>

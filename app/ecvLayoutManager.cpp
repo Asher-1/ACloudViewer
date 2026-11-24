@@ -21,6 +21,7 @@
 #include <QMessageBox>
 #include <QSettings>
 #include <QToolBar>
+#include <algorithm>
 
 ecvLayoutManager::ecvLayoutManager(QMainWindow* mainWindow,
                                    ccPluginUIManager* pluginManager)
@@ -120,24 +121,8 @@ void ecvLayoutManager::setToolbarIconSize(QToolBar* toolbar, int screenWidth) {
     QSize iconSize = getIconSizeForScreen(screenWidth);
     toolbar->setIconSize(iconSize);
 
-    // Set stylesheet to ensure buttons have proper size and icons fill the
-    // button Use consistent padding across all toolbars
-    // Reduce padding for smaller icons to make buttons more compact
-    int buttonSize =
-            iconSize.width() +
-            (iconSize.width() <= 16 ? 2 : 4);  // Less padding for small icons
-    toolbar->setStyleSheet(QString("QToolBar#%1 QToolButton { "
-                                   "    min-width: %2px; "
-                                   "    min-height: %2px; "
-                                   "    max-width: %2px; "
-                                   "    max-height: %2px; "
-                                   "    padding: 1px; "
-                                   "} "
-                                   "QToolBar#%1 QToolButton::menu-indicator { "
-                                   "    image: none; "
-                                   "}")
-                                   .arg(toolbar->objectName())
-                                   .arg(buttonSize));
+    // Keep vector icon size policy here; the active QStyle owns button
+    // geometry, padding and menu indicators (including Custom mode).
 
     // NOTE: Do NOT pre-rasterize the action icons here (e.g. replacing each
     // action->icon() with a pixmap scaled to `iconSize`). Toolbars sample icons
@@ -177,65 +162,6 @@ void ecvLayoutManager::hideAdditionalPluginToolbars() {
             toolbar->hide();
         }
     }
-}
-
-void ecvLayoutManager::placeAICoreToolbarOnTop() {
-    QToolBar* toolbar = m_mainWindow->findChild<QToolBar*>("AI Core Toolbar");
-    if (!toolbar || toolbar->parent() != m_mainWindow) {
-        return;
-    }
-    // removeToolBar followed by addToolBar appends the toolbar at the end of
-    // the last row of the top area, which is where the Python plugin toolbars
-    // sit, so the AI Core toolbar always ends up right after them. A toolbar
-    // the user has closed is not reopened: restoring a layout must not undo
-    // that choice.
-    const bool wasVisible = toolbar->isVisible();
-    m_mainWindow->removeToolBar(toolbar);
-    m_mainWindow->addToolBar(Qt::TopToolBarArea, toolbar);
-    toolbar->setVisible(wasVisible);
-}
-
-void ecvLayoutManager::repositionUnifiedPluginToolbar() {
-    // Find UnifiedPluginToolbar - search all children
-    QList<QToolBar*> allToolbars = m_mainWindow->findChildren<QToolBar*>();
-    QToolBar* unifiedPluginToolbar = nullptr;
-
-    for (QToolBar* tb : allToolbars) {
-        if (tb->objectName() == "UnifiedPluginToolbar") {
-            unifiedPluginToolbar = tb;
-            break;
-        }
-    }
-
-    if (!unifiedPluginToolbar) {
-        CVLog::Warning("[ecvLayoutManager] UnifiedPluginToolbar not found!");
-        return;
-    }
-
-    if (unifiedPluginToolbar->actions().isEmpty()) {
-        CVLog::Warning(
-                "[ecvLayoutManager] UnifiedPluginToolbar has no actions!");
-        return;
-    }
-
-    // Ensure it's attached to main window
-    if (unifiedPluginToolbar->parent() != m_mainWindow) {
-        unifiedPluginToolbar->setParent(m_mainWindow);
-    }
-
-    // Simply ensure it's visible and in the top area
-    Qt::ToolBarArea area = m_mainWindow->toolBarArea(unifiedPluginToolbar);
-    if (area == Qt::NoToolBarArea) {
-        // Not added yet, add it to top
-        m_mainWindow->addToolBar(Qt::TopToolBarArea, unifiedPluginToolbar);
-    } else if (area != Qt::TopToolBarArea) {
-        // In wrong area, move it to top
-        m_mainWindow->removeToolBar(unifiedPluginToolbar);
-        m_mainWindow->addToolBar(Qt::TopToolBarArea, unifiedPluginToolbar);
-    }
-
-    unifiedPluginToolbar->setVisible(true);
-    unifiedPluginToolbar->show();
 }
 
 void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
@@ -435,48 +361,49 @@ void ecvLayoutManager::setupToolbarLayout(int screenWidth) {
         setToolbarIconSize(unifiedPluginToolbar, screenWidth);
     }
 
-    // Add toolbar break for second row
-    m_mainWindow->addToolBarBreak(Qt::TopToolBarArea);
+    // Preserve group order. If the traditional second row overflows, use
+    // spare width in the first row before resorting to Qt's overflow menus.
+    auto trailing = reconstructionToolbars;
+    for (const auto& name : {"AnnotationToolBar", "MeasurementsToolBar"}) {
+        if (auto* toolbar = toolbarMap.take(QString::fromLatin1(name)))
+            trailing.append(toolbar);
+    }
+    trailing.append(toolbarMap.values());
+    trailing.append(pythonPluginToolbars);
+    if (aiCoreToolbar) trailing.append(aiCoreToolbar);
 
-    // Add reconstruction toolbars at beginning of second row
-    for (QToolBar* toolbar : reconstructionToolbars) {
-        m_mainWindow->addToolBar(Qt::TopToolBarArea, toolbar);
-        toolbar->setVisible(true);
+    int firstWidth = 0;
+    for (auto* toolbar : topToolbars) {
+        if (m_mainWindow->toolBarArea(toolbar) == Qt::TopToolBarArea)
+            firstWidth += toolbar->sizeHint().width();
+    }
+    int secondWidth = 0;
+    for (auto* toolbar : trailing) {
+        toolbar->setOrientation(Qt::Horizontal);
         setToolbarIconSize(toolbar, screenWidth);
+        secondWidth += toolbar->sizeHint().width();
     }
 
-    // Add second row toolbars (SelectionToolBar moved to per-view title bars)
-    QStringList secondRowOrder = {"AnnotationToolBar", "MeasurementsToolBar"};
-    for (const QString& name : secondRowOrder) {
-        if (toolbarMap.contains(name)) {
-            QToolBar* toolbar = toolbarMap[name];
-            m_mainWindow->addToolBar(Qt::TopToolBarArea, toolbar);
-            toolbar->setVisible(true);
-            setToolbarIconSize(toolbar, screenWidth);
-            toolbarMap.remove(name);
+    int split = 0;
+    if (secondWidth > screenWidth) {
+        int bestWidth = std::max(firstWidth, secondWidth);
+        for (int i = 0; i + 1 < trailing.size(); ++i) {
+            const int width = trailing[i]->sizeHint().width();
+            firstWidth += width;
+            secondWidth -= width;
+            const int candidate = std::max(firstWidth, secondWidth);
+            if (candidate < bestWidth) {
+                bestWidth = candidate;
+                split = i + 1;
+            }
+            if (secondWidth <= screenWidth || firstWidth >= secondWidth) break;
         }
     }
-
-    // Add remaining toolbars
-    for (QToolBar* toolbar : toolbarMap.values()) {
+    for (int i = 0; i < trailing.size(); ++i) {
+        if (i == split) m_mainWindow->addToolBarBreak(Qt::TopToolBarArea);
+        auto* toolbar = trailing[i];
         m_mainWindow->addToolBar(Qt::TopToolBarArea, toolbar);
         toolbar->setVisible(true);
-        setToolbarIconSize(toolbar, screenWidth);
-    }
-
-    // Add Python plugin toolbars at the end of second row
-    for (QToolBar* toolbar : pythonPluginToolbars) {
-        m_mainWindow->addToolBar(Qt::TopToolBarArea, toolbar);
-        toolbar->setVisible(true);
-        setToolbarIconSize(toolbar, screenWidth);
-    }
-
-    // The AI Core toolbar follows the Python plugin toolbars, so it is the
-    // last toolbar of the last row.
-    if (aiCoreToolbar) {
-        m_mainWindow->addToolBar(Qt::TopToolBarArea, aiCoreToolbar);
-        aiCoreToolbar->setVisible(true);
-        setToolbarIconSize(aiCoreToolbar, screenWidth);
     }
 #endif
 
@@ -599,12 +526,13 @@ bool ecvLayoutManager::isAutoRestoreEnabled() const {
 void ecvLayoutManager::restoreGUILayout(bool forceDefault) {
     QSettings settings;
 
-    // Check if auto-restore is enabled (do this check first, matching
-    // CloudCompare)
-    if (isAutoRestoreEnabled()) {
+    // Honor the explicit default reset and the user's auto-restore switch.
+    // The previous inverted branch discarded saved toolbar/dock order whenever
+    // restoration was enabled, which could masquerade as a theme reorder.
+    if (forceDefault || !isAutoRestoreEnabled()) {
         CVLog::PrintVerbose(
-                "[ecvLayoutManager] Auto-restore enabled, using default "
-                "layout");
+                "[ecvLayoutManager] Default layout requested or auto-restore "
+                "disabled, using default layout");
         setupDefaultLayout();
         return;
     }
@@ -615,7 +543,7 @@ void ecvLayoutManager::restoreGUILayout(bool forceDefault) {
     QRect screenGeometry = getScreenGeometry();
     int screenWidth = screenGeometry.width();
 
-    if (!forceDefault && geometry.isValid()) {
+    if (geometry.isValid()) {
         // Restore saved layout
         m_mainWindow->restoreGeometry(geometry.toByteArray());
         m_mainWindow->restoreState(
@@ -624,12 +552,8 @@ void ecvLayoutManager::restoreGUILayout(bool forceDefault) {
         // After restoring, hide additional plugin toolbars
         hideAdditionalPluginToolbars();
 
-        // Ensure UnifiedPluginToolbar is visible
-        repositionUnifiedPluginToolbar();
-
-        // A saved state predating the last-row placement keeps the AI Core
-        // toolbar elsewhere; it belongs after the Python plugin toolbars.
-        placeAICoreToolbarOnTop();
+        // Qt restored the user's toolbar areas, order, visibility and breaks.
+        // Default placement belongs only in setupToolbarLayout().
 
         // Update icon sizes for all toolbars after restoring layout
         // This ensures icons are properly sized even when restoring from saved
@@ -725,13 +649,9 @@ bool ecvLayoutManager::restoreCustomLayout() {
     m_mainWindow->restoreGeometry(geometry.toByteArray());
     m_mainWindow->restoreState(state.toByteArray());
 
-    // Apply the same position invariants as restoreGUILayout: hide unified
-    // toolbars, ensure UnifiedPluginToolbar is visible, and place the AI Core
-    // toolbar at the end of the last top row, after the Python plugin
-    // toolbars, even when the saved custom layout predates that rule.
+    // Only discard the originals that have been merged into another toolbar.
+    // Leave the restored toolbars in the arrangement the user saved.
     hideAdditionalPluginToolbars();
-    repositionUnifiedPluginToolbar();
-    placeAICoreToolbarOnTop();
 
     CVLog::PrintVerbose(
             "[ecvLayoutManager] Custom layout restored successfully");

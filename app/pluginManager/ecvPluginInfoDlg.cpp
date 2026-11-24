@@ -107,10 +107,6 @@ ccPluginInfoDlg::ccPluginInfoDlg(QWidget *parent)
             "QLabel { background-color : #FFFF99; color : black; }"));
     m_UI->mWarningLabel->hide();
 
-    m_UI->mSearchLineEdit->setStyleSheet(
-            "QLineEdit, QLineEdit:focus { border: none; }");
-    m_UI->mSearchLineEdit->setAttribute(Qt::WA_MacShowFocusRect, false);
-
     m_ProxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
     m_ProxyModel->setSourceModel(m_ItemModel);
 

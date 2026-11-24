@@ -7,8 +7,9 @@
 
 #pragma once
 
-#include <QObject>
-#include <QtTest/QtTest>
+#include <gtest/gtest.h>
+
+#include <QString>
 
 #define LINE_FILE ":/TestFiles/Data/shp/line.shp"
 #define LINEM_FILE ":/TestFiles/Data/shp/linem.shp"
@@ -20,9 +21,8 @@
 #define POLYGONZ_FILE ":/TestFiles/Data/shp/polygon_z.shp"
 #define POINTZ_FILE ":/TestFiles/Data/shp/point_z.shp"
 
-class TestShpFilter : public QObject {
-    Q_OBJECT
-private:
+class TestShpFilter : public ::testing::Test {
+protected:
     /* Reading tests */
     void readPolylineFile(const QString &filePath = LINE_FILE) const;
 

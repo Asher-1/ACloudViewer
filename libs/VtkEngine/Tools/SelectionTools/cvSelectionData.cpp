@@ -122,6 +122,11 @@ bool cvSelectionData::isEmpty() const {
 
 //-----------------------------------------------------------------------------
 int cvSelectionData::count() const {
+    if (!m_actorInfos.isEmpty()) {
+        int total = 0;
+        for (const auto& info : m_actorInfos) total += info.sourceIds.size();
+        if (total > 0) return total;
+    }
     return m_vtkArray ? m_vtkArray->GetNumberOfTuples() : 0;
 }
 
@@ -151,13 +156,13 @@ QString cvSelectionData::fieldTypeString() const {
 
 //-----------------------------------------------------------------------------
 void cvSelectionData::addActorInfo(const cvActorSelectionInfo& info) {
-    m_actorInfos.append(info);
-
-    // Sort by Z-value (front to back: smaller Z = closer to camera)
-    std::sort(m_actorInfos.begin(), m_actorInfos.end(),
-              [](const cvActorSelectionInfo& a, const cvActorSelectionInfo& b) {
-                  return a.zValue < b.zValue;
-              });
+    cvActorSelectionInfo stored = info;
+    if (stored.sourceIds.isEmpty() && m_actorInfos.isEmpty()) {
+        stored.sourceIds = ids();
+    }
+    // Keep the primary source IDs and their representation in the same order.
+    // Node order/attribute IDs are not a measurement of camera depth.
+    m_actorInfos.append(stored);
 }
 
 //-----------------------------------------------------------------------------
@@ -170,6 +175,8 @@ void cvSelectionData::setActorInfo(vtkActor* actor,
     info.actor = actor;
     info.polyData = polyData;
     info.zValue = zValue;
+    info.sourceIds = ids();
+    info.selectedIds = ids();
 
     m_actorInfos.append(info);
 }

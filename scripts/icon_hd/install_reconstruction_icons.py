@@ -24,7 +24,7 @@ def dimensions_128(data):
     return (text[:match.start()]+tag+text[match.end():]).encode()
 
 def run(paraview_root=Path('/home/ludahai/develop/code/github/ParaView')):
-    if len(BUILDERS)!=29 or len(UPSTREAM)!=4:raise RuntimeError('Expected 29 authored paths and 4 source SVGs')
+    if len(BUILDERS)!=30 or len(UPSTREAM)!=3:raise RuntimeError('Expected 30 authored paths and 3 source SVGs')
     REVIEW.mkdir(parents=True,exist_ok=True);originals=REVIEW/'originals';originals.mkdir(exist_ok=True);pvarchive=REVIEW/'paraview-originals';pvarchive.mkdir(exist_ok=True)
     snapshots={p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in (ROOT/'app/Resources/images').rglob('*') if p.is_file() and MEDIA not in p.parents}
     protect=REVIEW/'protected-other-images.json'
@@ -122,11 +122,16 @@ def run(paraview_root=Path('/home/ludahai/develop/code/github/ParaView')):
     rows=[]
     for index,(name,target,backup,data,kind,source) in enumerate(sorted(plans),1):
         root=ET.fromstring(data)
-        rows.append({'id':index,'name':name,'action':description[name],'before':str(backup),'after':str(target),
-                     'source_kind':kind,'paraView_source':source,'code_ui_evidence':evidence[name],
-                      'before_sha256':hashlib.sha256(backup.read_bytes()).hexdigest(),
-                     'after_sha256':hashlib.sha256(data).hexdigest(),'intrinsic':[128,128],
-                     'viewBox':root.attrib.get('viewBox'),'source_lettering':'No live text node; embedded-raster glyph content not fully OCR-certified.'})
+        row={'id':index,'name':name,'action':description[name],'before':str(backup),'after':str(target),
+             'source_kind':kind,'paraView_source':source,'code_ui_evidence':evidence[name],
+             'before_sha256':hashlib.sha256(backup.read_bytes()).hexdigest(),
+             'after_sha256':hashlib.sha256(data).hexdigest(),'intrinsic':[128,128],
+             'viewBox':root.attrib.get('viewBox'),'source_lettering':'No live text node; embedded-raster glyph content not fully OCR-certified.'}
+        if name=='project-open.svg':
+            row.update(source_kind='user-requested-camera-workflow-cue',
+                       previous_sha256='3784ec92ae8d83a49df640cfcd9a49f044d2636284e75292fcb0a2857bafce58',
+                       authorization='User explicitly requested a camera cue to distinguish project open from generic folder-plus.')
+        rows.append(row)
     ico=[]
     for name in ['reconstruction_32.ico','reconstruction_64.ico','reconstruction_128.ico']:
         p=MEDIA/name;ico.append({'name':name,'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'role':'Windows standalone reconstruction application identity; unchanged'})

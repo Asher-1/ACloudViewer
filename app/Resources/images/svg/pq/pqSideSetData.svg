@@ -1,9 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
-<g transform="translate(-0.6171,-0.6171) scale(1.05143)">
-
-<title>Representation side-set data</title>  <path d="M 12 2 L 20.66 7.0 L 12 12 L 3.34 7.0 Z" fill="#E0E0E0" stroke="#6F6F59"/>
-  <path d="M 3.34 7.0 L 12 12 L 12 22 L 3.34 17.0 Z" fill="#D0E5F6" stroke="#6F6F59"/>
-  <path d="M 20.66 7.0 L 12 12 L 12 22 L 20.66 17.0 Z" fill="#72BE44" stroke="#6F6F59"/>  <path d="M 12 12 L 20.66 7 M 12 17 L 20.66 12 M 16.33 9.5 V 19.5" fill="none" stroke-width="0.65"/>
-
-</g>
+<title>ANN-02 — Bounding-box annotation with corner handles</title>  <path d="M 2.6 6.1 L 10.8 2.1 L 17.3 6.0 V 14.2 L 9.1 18.1 L 2.6 14.1 Z" fill="#D0E5F6" stroke="none"/>  <path d="M 2.6 6.1 L 10.8 2.1 L 17.3 6 L 9.1 10 Z M 2.6 6.1 V 14.1 L 9.1 18.1 L 17.3 14.2 V 6 M 9.1 10 V 18.1" fill="none" stroke="#6F6F59" stroke-width="1.05"/>  <path d="M 10.8 2.1 V 10.3 L 17.3 14.2 M 2.6 14.1 L 10.8 10.3" fill="none" stroke="#787878" stroke-width="0.6" stroke-dasharray="1.5 1.1"/>  <rect x="1.6500000000000001" y="5.1499999999999995" width="1.9" height="1.9" rx="0.12" fill="#A7D28C" stroke="#6F6F59"/>  <rect x="9.850000000000001" y="1.1500000000000001" width="1.9" height="1.9" rx="0.12" fill="#A7D28C" stroke="#6F6F59"/>  <rect x="16.35" y="5.05" width="1.9" height="1.9" rx="0.12" fill="#A7D28C" stroke="#6F6F59"/>  <rect x="8.15" y="9.05" width="1.9" height="1.9" rx="0.12" fill="#A7D28C" stroke="#6F6F59"/>  <rect x="1.6500000000000001" y="13.15" width="1.9" height="1.9" rx="0.12" fill="#A7D28C" stroke="#6F6F59"/>  <rect x="8.15" y="17.150000000000002" width="1.9" height="1.9" rx="0.12" fill="#A7D28C" stroke="#6F6F59"/><g data-source="annotation/annotationTools.svg" transform="translate(12.0 11.7) scale(.49)">
+<g transform="translate(-0.0482,-0.5523) scale(1.00822)">
+<defs><linearGradient id="tag" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#F3C017"/><stop offset="1.000" stop-color="#C1A561"/></linearGradient></defs>
+<path d="M 4.5 5.2 C 1.2 4.2 1.2 15 4.8 15.4" fill="none" stroke-width="0.7"/>
+<path d="M 3 2 H 9.2 L 22.5 15.3 L 14.5 23 L 1.5 10 V 3.5 Q 1.5 2 3 2 Z M 6.8 6 A 1.5 1.5 0 1 0 3.8 6 A 1.5 1.5 0 1 0 6.8 6 Z" fill="url(#tag)" stroke="#6F6F59" fill-rule="evenodd"/>
+</g></g>
 </svg>

@@ -62,6 +62,12 @@ def project_new():
     return svg('Create new reconstruction project',folder()+P.circle(17.9,17.7,4.5,P.GREEN_LT)+P.stroke('M 15.3 17.7 H 20.5 M 17.9 15.1 V 20.3',sw=1.15))
 
 
+def project_open():
+    # Reuse Reconstruction's camera cue to distinguish an image project from
+    # the global folder-plus action.
+    return svg('Open photogrammetry project (.ini)', folder()+camera(10,2,1.15))
+
+
 def project_edit():
     pencil=P.fill('M 7 19 L 8 15 L 17 6 L 20 9 L 11 18 Z',P.YELLOW,sw=.7)+P.fill('M 7 19 L 8 15 L 11 18 Z',P.GREY_DK,sw=.6)
     return svg('Edit reconstruction project',folder()+pencil)
@@ -175,7 +181,7 @@ BUILDERS={
 'export-as-text.svg':lambda:transfer('out','text'),'export-as.svg':lambda:transfer('out','as'),
 'export.svg':lambda:transfer('out','model'),'feature-extraction.svg':features,'feature-matching.svg':matching,
 'grab-movie.svg':movie,'import-from.svg':lambda:transfer('in','from'),'import.svg':lambda:transfer('in','model'),
-'log.svg':log,'match-matrix.svg':matrix,'project-edit.svg':project_edit,'project-new.svg':project_new,
+'log.svg':log,'match-matrix.svg':matrix,'project-edit.svg':project_edit,'project-new.svg':project_new,'project-open.svg':project_open,
 'reconstruction-normalize.svg':normalize,'reconstruction-options.svg':lambda:options(False),
 'reconstruction-pause.svg':pause,'reconstruction-reset.svg':reset,'reconstruction-start.svg':play,
 'reconstruction-stats.svg':stats,'reconstruction-step.svg':step,'render-disabled.svg':lambda:render_state(False),
@@ -184,5 +190,5 @@ BUILDERS={
 }
 # Standard file operations keep ParaView's original authored paths, with only
 # intrinsic dimensions adjusted to the explicit preview requirement.
-UPSTREAM={'project-open.svg':'pqOpen.svg','project-save.svg':'pqSave.svg',
+UPSTREAM={'project-save.svg':'pqSave.svg',
           'project-save-as.svg':'pqSaveAs.svg','grab-image.svg':'pqCaptureScreenshot.svg'}

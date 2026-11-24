@@ -7,6 +7,8 @@
 
 // Generic convolution lowering must not silently quantize YOLO F32 models to
 // F16.
+#include <gtest/gtest.h>
+
 #include <QTemporaryDir>
 #include <algorithm>
 #include <cmath>
@@ -19,20 +21,18 @@
 #include "gguf.h"
 #include "tasks/yolo/yolo_graph.hpp"
 
-#define CHECK(x)                                                 \
-    do {                                                         \
-        if (!(x)) {                                              \
-            std::fprintf(stderr, "FAIL %d: %s\n", __LINE__, #x); \
-            return 1;                                            \
-        }                                                        \
-    } while (0)
+namespace {
 
-int run(bool depthwise, const char* device, int size) {
+const char* device = "cpu";
+
+void run(bool depthwise, const char* device, int size) {
     QTemporaryDir temp;
-    CHECK(temp.isValid());
+    ASSERT_TRUE(temp.isValid());
     const auto path = temp.filePath("f32-conv.gguf").toStdString();
-    ggml_context* weights = ggml_init({1024 * 1024, nullptr, false});
-    CHECK(weights);
+    std::unique_ptr<ggml_context, decltype(&ggml_free)> weight_owner(
+            ggml_init({1024 * 1024, nullptr, false}), &ggml_free);
+    auto* weights = weight_owner.get();
+    ASSERT_TRUE(weights);
     const int output_channels = depthwise ? 3 : size == 1 ? 1 : 16;
     ggml_tensor* kernel =
             ggml_new_tensor_4d(weights, GGML_TYPE_F32, size, size,
@@ -43,8 +43,10 @@ int run(bool depthwise, const char* device, int size) {
         coefficients[i] = float((int(i * 29 % 127) - 63) / 97.0);
     std::copy(coefficients.begin(), coefficients.end(),
               static_cast<float*>(kernel->data));
-    gguf_context* file = gguf_init_empty();
-    CHECK(file);
+    std::unique_ptr<gguf_context, decltype(&gguf_free)> file_owner(
+            gguf_init_empty(), &gguf_free);
+    auto* file = file_owner.get();
+    ASSERT_TRUE(file);
     gguf_set_val_str(file, "yolo.task", "classify");
     gguf_set_val_str(file, "yolo.dtype", "f32");
     gguf_set_val_u32(file, "yolo.nc", 1);
@@ -64,25 +66,26 @@ int run(bool depthwise, const char* device, int size) {
     gguf_set_arr_data(file, "op.0.k", GGUF_TYPE_UINT32, sizes, 2);
     gguf_set_arr_data(file, "op.0.p", GGUF_TYPE_UINT32, padding, 2);
     gguf_add_tensor(file, kernel);
-    CHECK(gguf_write_to_file(file, path.c_str(), false));
-    gguf_free(file);
-    ggml_free(weights);
+    ASSERT_TRUE(gguf_write_to_file(file, path.c_str(), false));
+    file_owner.reset();
+    weight_owner.reset();
 
     yolo::SessionOptions options;
     options.threads = 1;
     std::unique_ptr<yolo::Session, decltype(&yolo::free_session)> session(
             yolo::create_session(path, device, options), &yolo::free_session);
-    CHECK(session);
+    ASSERT_TRUE(session);
     // Rebuild the canvas with the same weights and inputs not representable in
     // F16.
     for (int width : {32, 16, 32}) {
-        CHECK(yolo::session_ensure_canvas(session.get(), width, 32));
+        SCOPED_TRACE(testing::Message() << "Canvas " << width << "x32");
+        ASSERT_TRUE(yolo::session_ensure_canvas(session.get(), width, 32));
         const int plane = width * 32;
         std::vector<float> pixels(plane * 3);
         for (size_t i = 0; i < pixels.size(); ++i)
             pixels[i] = float((int(i * 37 % 991) - 495) / 997.0);
-        CHECK(yolo::session_run(session.get(), pixels.data()));
-        CHECK(session->output->type == GGML_TYPE_F32);
+        ASSERT_TRUE(yolo::session_run(session.get(), pixels.data()));
+        ASSERT_TRUE(session->output->type == GGML_TYPE_F32);
         std::vector<float> actual(plane * output_channels);
         ggml_backend_tensor_get(session->output, actual.data(), 0,
                                 actual.size() * sizeof(float));
@@ -115,20 +118,21 @@ int run(bool depthwise, const char* device, int size) {
         std::printf("F32 %s k=%d canvas=%dx32 max_error=%.9g\n",
                     depthwise ? "depthwise" : "convolution", size, width,
                     error);
-        CHECK(error < 2e-6f);
+        EXPECT_LT(error, 2e-6f);
     }
-    return 0;
 }
 
 // F16 convolution must consume the GGUF's original F32 bias without narrowing
 // before ADD. Rounding ±2048.25 to ±2048 in production lowering changes this
 // analytical result from ±0.25 to 0.
-int run_f16_bias(const char* device) {
+void run_f16_bias(const char* device) {
     QTemporaryDir temp;
-    CHECK(temp.isValid());
+    ASSERT_TRUE(temp.isValid());
     const auto path = temp.filePath("f16-bias.gguf").toStdString();
-    auto* weights = ggml_init({1024 * 1024, nullptr, false});
-    CHECK(weights);
+    std::unique_ptr<ggml_context, decltype(&ggml_free)> weight_owner(
+            ggml_init({1024 * 1024, nullptr, false}), &ggml_free);
+    auto* weights = weight_owner.get();
+    ASSERT_TRUE(weights);
     constexpr int channels = 16;
     auto* kernel =
             ggml_new_tensor_4d(weights, GGML_TYPE_F16, 1, 1, 3, channels);
@@ -141,8 +145,10 @@ int run_f16_bias(const char* device) {
         values[1] = values[2] = ggml_fp32_to_fp16(0.0f);
         static_cast<float*>(bias->data)[oc] = oc % 2 ? -2048.25f : 2048.25f;
     }
-    auto* file = gguf_init_empty();
-    CHECK(file);
+    std::unique_ptr<gguf_context, decltype(&gguf_free)> file_owner(
+            gguf_init_empty(), &gguf_free);
+    auto* file = file_owner.get();
+    ASSERT_TRUE(file);
     gguf_set_val_str(file, "yolo.task", "classify");
     gguf_set_val_str(file, "yolo.dtype", "f16");
     gguf_set_val_u32(file, "yolo.nc", channels);
@@ -161,50 +167,49 @@ int run_f16_bias(const char* device) {
     gguf_set_arr_data(file, "op.0.p", GGUF_TYPE_UINT32, zero, 2);
     gguf_add_tensor(file, kernel);
     gguf_add_tensor(file, bias);
-    CHECK(gguf_write_to_file(file, path.c_str(), false));
-    gguf_free(file);
-    ggml_free(weights);
+    ASSERT_TRUE(gguf_write_to_file(file, path.c_str(), false));
+    file_owner.reset();
+    weight_owner.reset();
     yolo::SessionOptions options;
     options.threads = 1;
     std::unique_ptr<yolo::Session, decltype(&yolo::free_session)> session(
             yolo::create_session(path, device, options), &yolo::free_session);
-    CHECK(session);
+    ASSERT_TRUE(session);
     for (int width : {32, 16, 32}) {
-        CHECK(yolo::session_ensure_canvas(session.get(), width, 32));
+        SCOPED_TRACE(testing::Message() << "Canvas " << width << "x32");
+        ASSERT_TRUE(yolo::session_ensure_canvas(session.get(), width, 32));
         const size_t plane = width * 32;
         std::vector<float> pixels(plane * 3, 0.0f);
         std::fill_n(pixels.begin(), plane, 2048.0f);
-        CHECK(yolo::session_run(session.get(), pixels.data()));
+        ASSERT_TRUE(yolo::session_run(session.get(), pixels.data()));
         std::vector<float> actual(plane * channels);
-        CHECK(session->output->type == GGML_TYPE_F32);
+        ASSERT_TRUE(session->output->type == GGML_TYPE_F32);
         ggml_backend_tensor_get(session->output, actual.data(), 0,
                                 actual.size() * sizeof(float));
         for (size_t i = 0; i < actual.size(); ++i) {
             const float expected = (i / plane) % 2 ? -0.25f : 0.25f;
-            if (actual[i] != expected) {
-                std::fprintf(stderr,
-                             "F16 weight/F32 bias device=%s canvas=%dx32 "
-                             "index=%zu actual=%.9g expected=%.9g\n",
-                             device, width, i, actual[i], expected);
-                return 1;
-            }
+            ASSERT_EQ(actual[i], expected) << "Device " << device << ", canvas "
+                                           << width << "x32, index " << i;
         }
     }
-    return 0;
 }
 
 // Fixed tensor addresses/shapes simulate reuse by a new model after context
 // destruction; different owners must restage weights. This proves CUDA cache
 // identity only, not real-checkpoint accuracy or performance qualification.
-int run_f16_plan_owner(const char* device) {
+void run_f16_plan_owner(const char* device) {
     auto backend = yolo::init_backend_ctx(1, device);
+    auto release_backend = [](yolo::BackendCtx* value) {
+        yolo::free_backend_ctx(*value);
+    };
+    std::unique_ptr<yolo::BackendCtx, decltype(release_backend)> backend_owner(
+            &backend, release_backend);
     if (!backend.is_cuda) {
-        yolo::free_backend_ctx(backend);
-        return 0;
+        GTEST_SKIP() << "CUDA plan-owner scenario requires a CUDA backend";
     }
     std::unique_ptr<ggml_context, decltype(&ggml_free)> context(
             ggml_init({1024 * 1024, nullptr, true}), &ggml_free);
-    CHECK(context);
+    ASSERT_TRUE(context);
     constexpr int width = 16, channels = 16;
     auto* weights =
             ggml_new_tensor_4d(context.get(), GGML_TYPE_F16, 1, 1, 3, channels);
@@ -212,13 +217,13 @@ int run_f16_plan_owner(const char* device) {
                                      3, 1);
     auto* output = ggml_conv_2d_direct(context.get(), weights, input, 1, 1, 0,
                                        0, 1, 1);
-    CHECK(output && output->type == GGML_TYPE_F16);
+    ASSERT_TRUE(output && output->type == GGML_TYPE_F16);
     auto* graph = ggml_new_graph(context.get());
     ggml_build_forward_expand(graph, output);
     std::unique_ptr<ggml_backend_buffer, decltype(&ggml_backend_buffer_free)>
             buffer(ggml_backend_alloc_ctx_tensors(context.get(), backend.gpu),
                    &ggml_backend_buffer_free);
-    CHECK(buffer);
+    ASSERT_TRUE(buffer);
     std::vector<ggml_fp16_t> pixels(width * width * 3, ggml_fp32_to_fp16(1.0f));
     ggml_backend_tensor_set(input, pixels.data(), 0,
                             pixels.size() * sizeof(ggml_fp16_t));
@@ -231,35 +236,49 @@ int run_f16_plan_owner(const char* device) {
         ggml_backend_tensor_set(weights, coefficients.data(), 0,
                                 coefficients.size() * sizeof(ggml_fp16_t));
         std::memcpy(&output->op_params[8], &owner, sizeof(owner));
-        CHECK(ggml_backend_graph_compute(backend.gpu, graph) ==
-              GGML_STATUS_SUCCESS);
+        ASSERT_EQ(ggml_backend_graph_compute(backend.gpu, graph),
+                  GGML_STATUS_SUCCESS);
         ggml_backend_synchronize(backend.gpu);
         ggml_backend_tensor_get(output, actual.data(), 0,
                                 actual.size() * sizeof(ggml_fp16_t));
         for (const auto value : actual) {
             const float expected = 3.0f * weight;
-            if (ggml_fp16_to_fp32(value) != expected) {
-                std::fprintf(stderr,
-                             "plan owner=%llu actual=%.9g expected=%.9g\n",
-                             static_cast<unsigned long long>(owner),
-                             ggml_fp16_to_fp32(value), expected);
-                return 1;
-            }
+            ASSERT_EQ(ggml_fp16_to_fp32(value), expected)
+                    << "Plan owner " << owner;
         }
     }
     buffer.reset();
     context.reset();
-    yolo::free_backend_ctx(backend);
-    return 0;
 }
 
+TEST(YoloConvolution, PreservesF32BiasWithF16Weights) {
+    ASSERT_NO_FATAL_FAILURE(run_f16_bias(device));
+}
+
+TEST(YoloConvolution, RestagesCudaPlansForDistinctModelOwners) {
+    ASSERT_NO_FATAL_FAILURE(run_f16_plan_owner(device));
+}
+
+TEST(YoloConvolution, PreservesF32PointwiseConvolution) {
+    ASSERT_NO_FATAL_FAILURE(run(false, device, 1));
+}
+
+TEST(YoloConvolution, PreservesF32SpatialConvolution) {
+    ASSERT_NO_FATAL_FAILURE(run(false, device, 3));
+}
+
+TEST(YoloConvolution, PreservesF32PointwiseDepthwiseConvolution) {
+    ASSERT_NO_FATAL_FAILURE(run(true, device, 1));
+}
+
+TEST(YoloConvolution, PreservesF32SpatialDepthwiseConvolution) {
+    ASSERT_NO_FATAL_FAILURE(run(true, device, 3));
+}
+
+}  // namespace
+
 int main(int argc, char** argv) {
-    const char* device = argc > 1 ? argv[1] : "cpu";
-    int status = run_f16_bias(device);
-    status |= run_f16_plan_owner(device);
-    for (int size : {1, 3}) {
-        status |= run(false, device, size);
-        status |= run(true, device, size);
-    }
-    return status;
+    testing::InitGoogleTest(&argc, argv);
+    if (argc > 1) device = argv[1];
+    return RUN_ALL_TESTS();
 }

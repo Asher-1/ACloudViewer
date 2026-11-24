@@ -1,0 +1,41 @@
+{
+  "base": "dark",
+  "overrides": {
+    "meta": {
+      "name": "gruvbox",
+      "version": "1",
+      "author": "ACloudViewer - palette migration"
+    },
+    "backgroundColorMain1": "#282828",
+    "backgroundColorMain2": "#302f2e",
+    "backgroundColorMain3": "#3a3834",
+    "backgroundColorMain4": "#43413b",
+    "backgroundColorWorkspace": "#282828",
+    "backgroundColorTabBar": "#302f2e",
+    "neutralColor": "#3c3a36",
+    "neutralColorHovered": "#47453e",
+    "neutralColorPressed": "#534f46",
+    "neutralColorDisabled": "#343330",
+    "secondaryColor": "#EBDBB2",
+    "secondaryColorHovered": "#EBDBB2",
+    "secondaryColorPressed": "#EBDBB2",
+    "secondaryColorDisabled": "#76705f",
+    "secondaryAlternativeColor": "#b0a589",
+    "secondaryAlternativeColorHovered": "#c4b796",
+    "secondaryAlternativeColorPressed": "#EBDBB2",
+    "secondaryAlternativeColorDisabled": "#6c6758",
+    "borderColor": "#4f4c44",
+    "borderColorHovered": "#6c6758",
+    "borderColorPressed": "#807966",
+    "borderColorDisabled": "#3c3a36",
+    "primaryColor": "#FE8019",
+    "primaryColorHovered": "#fc8928",
+    "primaryColorPressed": "#d7701c",
+    "primaryColorDisabled": "#684224",
+    "primaryColorForeground": "#111111",
+    "primaryColorForegroundHovered": "#111111",
+    "primaryColorForegroundPressed": "#111111",
+    "primaryColorForegroundDisabled": "#76705f",
+    "focusColor": "#FE801966"
+  }
+}

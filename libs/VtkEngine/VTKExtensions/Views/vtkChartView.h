@@ -29,6 +29,7 @@ class ccHObject;
 class ccGenericMesh;
 class ccMesh;
 class ccPointCloud;
+class cvSelectionData;
 
 class vtkChart;
 class vtkContextView;
@@ -54,6 +55,7 @@ public:
 
     QString title() const;
     ChartType chartType() const { return m_chartType; }
+    bool usesCellData() const { return m_useCellData; }
 
     unsigned maxChartPoints() const { return m_maxChartPoints; }
     void setMaxChartPoints(unsigned max);
@@ -80,8 +82,7 @@ public slots:
     void setEntity(ccHObject* entity);
 
 signals:
-    void pointsHighlighted(ccPointCloud* cloud,
-                           const QVector<unsigned>& indices);
+    void pointsHighlighted(ccHObject* entity, const QVector<unsigned>& indices);
 
 private slots:
     void onEntitySelectionChanged(ccHObject* entity);
@@ -110,6 +111,9 @@ private:
     using FieldValueFn = std::function<float(int fieldIdx, unsigned ptIdx)>;
 
     void rebuildChart();
+    void applySourceSelection(const cvSelectionData& selection);
+    float fieldValue(int fieldIdx, unsigned sourceId) const;
+    QPair<double, double> histogramRange(int fieldIdx, unsigned count) const;
     void rebuildXYChart(const QList<int>& selectedFields,
                         unsigned sampleCount,
                         unsigned pointCount,

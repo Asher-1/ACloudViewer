@@ -566,14 +566,18 @@ TEST(OpenPCDetHelpers, PointInBoxGeometry) {
 }
 
 // ---------------------------------------------------------------------------
-// "Use test data" panel mapping + bundle resolution (openpcdet_test_data)
+// "Use test data" panel mapping + bundle resolution (openpcdet_test_data_v2)
 // ---------------------------------------------------------------------------
 
 namespace {
 
-constexpr const char* kKittiFrame = "kitti_000008.bin";
-constexpr const char* kKittiSampled = "kitti_000008_sampled16384.bin";
-constexpr const char* kNuscenesSweep = "nuscenes_n015_lidar.bin";
+constexpr const char* kKittiFrame = "frames/kitti_000008/kitti_000008.bin";
+constexpr const char* kKittiSampled =
+        "frames/kitti_000008/kitti_000008_sampled16384.bin";
+constexpr const char* kNuscenesSweep =
+        "frames/nuscenes_n015/nuscenes_n015_lidar.bin";
+constexpr const char* kKittiScene = "frames/kitti_000008/scene";
+constexpr const char* kNuscenesScene = "frames/nuscenes_n015/scene";
 
 }  // namespace
 
@@ -623,7 +627,7 @@ TEST(OpenPCDetTestData, MappingScenePanels) {
           QStringLiteral("kitti_voxelrcnn_focal_multimodal")}) {
         const OpenPCDetHelpers::OpenPCDetTestDataFiles files =
                 OpenPCDetHelpers::testDataFilesForCheckpoint(stem);
-        EXPECT_EQ(files.sceneDirName, QStringLiteral("scene_caddn"))
+        EXPECT_EQ(files.sceneDirName, QLatin1String(kKittiScene))
                 << stem.toStdString();
         EXPECT_EQ(files.scenePointsFile, QLatin1String(kKittiFrame))
                 << stem.toStdString();
@@ -633,9 +637,42 @@ TEST(OpenPCDetTestData, MappingScenePanels) {
     const OpenPCDetHelpers::OpenPCDetTestDataFiles bevfusion =
             OpenPCDetHelpers::testDataFilesForCheckpoint(
                     QStringLiteral("nuscenes_bevfusion"));
-    EXPECT_EQ(bevfusion.sceneDirName, QStringLiteral("scene_bevfusion"));
+    EXPECT_EQ(bevfusion.sceneDirName, QLatin1String(kNuscenesScene));
     EXPECT_EQ(bevfusion.scenePointsFile, QLatin1String(kNuscenesSweep));
     EXPECT_TRUE(bevfusion.pointsFile.isEmpty());
+}
+
+TEST(OpenPCDetTestData, MappingHonorsSelectedFrame) {
+    // An explicit frameId overrides the default frame on every branch.
+    const auto point = OpenPCDetHelpers::testDataFilesForCheckpoint(
+            QStringLiteral("kitti_pointpillar"),
+            QStringLiteral("kitti_000002"));
+    EXPECT_EQ(point.pointsFile,
+              QStringLiteral("frames/kitti_000002/kitti_000002.bin"));
+    const auto sampled = OpenPCDetHelpers::testDataFilesForCheckpoint(
+            QStringLiteral("kitti_pointrcnn"), QStringLiteral("kitti_000005"));
+    EXPECT_EQ(sampled.pointsFile,
+              QStringLiteral(
+                      "frames/kitti_000005/kitti_000005_sampled16384.bin"));
+    const auto caddn = OpenPCDetHelpers::testDataFilesForCheckpoint(
+            QStringLiteral("kitti_caddn"), QStringLiteral("kitti_000010"));
+    EXPECT_EQ(caddn.sceneDirName, QStringLiteral("frames/kitti_000010/scene"));
+    EXPECT_EQ(caddn.scenePointsFile,
+              QStringLiteral("frames/kitti_000010/kitti_000010.bin"));
+    const auto bevfusion = OpenPCDetHelpers::testDataFilesForCheckpoint(
+            QStringLiteral("nuscenes_bevfusion"),
+            QStringLiteral("nuscenes_ca1d2e3f"));
+    EXPECT_EQ(bevfusion.sceneDirName,
+              QStringLiteral("frames/nuscenes_ca1d2e3f/scene"));
+    EXPECT_EQ(bevfusion.scenePointsFile,
+              QStringLiteral(
+                      "frames/nuscenes_ca1d2e3f/nuscenes_ca1d2e3f_lidar.bin"));
+    const auto sweep = OpenPCDetHelpers::testDataFilesForCheckpoint(
+            QStringLiteral("nuscenes_voxelnext"),
+            QStringLiteral("nuscenes_ca1d2e3f"));
+    EXPECT_EQ(sweep.pointsFile,
+              QStringLiteral(
+                      "frames/nuscenes_ca1d2e3f/nuscenes_ca1d2e3f_lidar.bin"));
 }
 
 TEST(OpenPCDetTestData, MappingCoversEveryCheckpoint) {
@@ -672,12 +709,13 @@ TEST(OpenPCDetTestData, ResolveErrorsOnMissingBundle) {
     // No bundle root at all.
     EXPECT_FALSE(OpenPCDetHelpers::resolveTestDataPaths(
             QStringLiteral("/no/such/openpcdet/bundle"),
-            QStringLiteral("kitti_pointpillar"), &files, &error));
+            QStringLiteral("kitti_pointpillar"), QString(), &files, &error));
     EXPECT_FALSE(error.isEmpty());
     // Empty root.
     error.clear();
     EXPECT_FALSE(OpenPCDetHelpers::resolveTestDataPaths(
-            QString(), QStringLiteral("kitti_pointpillar"), &files, &error));
+            QString(), QStringLiteral("kitti_pointpillar"), QString(), &files,
+            &error));
     EXPECT_FALSE(error.isEmpty());
 }
 
@@ -688,27 +726,32 @@ TEST(OpenPCDetTestData, ResolveErrorsOnMissingMember) {
     OpenPCDetHelpers::OpenPCDetTestDataFiles files;
     QString error;
     EXPECT_FALSE(OpenPCDetHelpers::resolveTestDataPaths(
-            dir.path(), QStringLiteral("kitti_pointpillar"), &files, &error));
+            dir.path(), QStringLiteral("kitti_pointpillar"), QString(), &files,
+            &error));
     EXPECT_TRUE(error.contains(QLatin1String(kKittiFrame)))
             << error.toStdString();
 
     // Partial extraction (only the KITTI frame): KITTI panels resolve, the
     // nuScenes / scene panels still fail on their missing members.
-    ASSERT_TRUE(QDir(dir.path()).mkpath(QStringLiteral(".")));
-    QFile kitti(QDir(dir.path()).filePath(QLatin1String(kKittiFrame)));
+    const QString kittiPath =
+            QDir(dir.path()).filePath(QLatin1String(kKittiFrame));
+    ASSERT_TRUE(QDir().mkpath(QFileInfo(kittiPath).absolutePath()));
+    QFile kitti(kittiPath);
     ASSERT_TRUE(kitti.open(QIODevice::WriteOnly));
     kitti.write("data");
     kitti.close();
 
     error.clear();
     EXPECT_FALSE(OpenPCDetHelpers::resolveTestDataPaths(
-            dir.path(), QStringLiteral("nuscenes_voxelnext"), &files, &error));
+            dir.path(), QStringLiteral("nuscenes_voxelnext"), QString(), &files,
+            &error));
     EXPECT_TRUE(error.contains(QLatin1String(kNuscenesSweep)))
             << error.toStdString();
     error.clear();
     EXPECT_FALSE(OpenPCDetHelpers::resolveTestDataPaths(
-            dir.path(), QStringLiteral("nuscenes_bevfusion"), &files, &error));
-    EXPECT_TRUE(error.contains(QStringLiteral("scene_bevfusion")))
+            dir.path(), QStringLiteral("nuscenes_bevfusion"), QString(), &files,
+            &error));
+    EXPECT_TRUE(error.contains(QLatin1String(kNuscenesScene)))
             << error.toStdString();
 }
 
@@ -727,29 +770,95 @@ TEST(OpenPCDetTestData, ResolveFillsAbsolutePaths) {
     touch(QLatin1String(kKittiFrame));
     touch(QLatin1String(kKittiSampled));
     touch(QLatin1String(kNuscenesSweep));
-    touch(QStringLiteral("scene_caddn/scene.json"));
-    touch(QStringLiteral("scene_bevfusion/scene.json"));
+    touch(QStringLiteral("frames/kitti_000008/scene/scene.json"));
+    touch(QStringLiteral("frames/nuscenes_n015/scene/scene.json"));
 
     const QString root = QDir(dir.path()).absolutePath();
     OpenPCDetHelpers::OpenPCDetTestDataFiles files;
     ASSERT_TRUE(OpenPCDetHelpers::resolveTestDataPaths(
-            root, QStringLiteral("kitti_pointrcnn"), &files, nullptr));
+            root, QStringLiteral("kitti_pointrcnn"), QString(), &files,
+            nullptr));
     EXPECT_EQ(files.pointsFile,
               QDir(root).filePath(QLatin1String(kKittiSampled)));
 
     ASSERT_TRUE(OpenPCDetHelpers::resolveTestDataPaths(
-            root, QStringLiteral("nuscenes_bevfusion"), &files, nullptr));
+            root, QStringLiteral("nuscenes_bevfusion"), QString(), &files,
+            nullptr));
     EXPECT_EQ(files.sceneDirName,
-              QDir(root).filePath(QStringLiteral("scene_bevfusion")));
+              QDir(root).filePath(QLatin1String(kNuscenesScene)));
     EXPECT_EQ(files.scenePointsFile,
               QDir(root).filePath(QLatin1String(kNuscenesSweep)));
 
     ASSERT_TRUE(OpenPCDetHelpers::resolveTestDataPaths(
-            root, QStringLiteral("kitti_caddn"), &files, nullptr));
+            root, QStringLiteral("kitti_caddn"), QString(), &files, nullptr));
     EXPECT_EQ(files.sceneDirName,
-              QDir(root).filePath(QStringLiteral("scene_caddn")));
+              QDir(root).filePath(QLatin1String(kKittiScene)));
     EXPECT_EQ(files.scenePointsFile,
               QDir(root).filePath(QLatin1String(kKittiFrame)));
+
+    // An explicit frame resolves under its own frames/<id>/ directory.
+    touch(QStringLiteral("frames/kitti_000002/kitti_000002.bin"));
+    ASSERT_TRUE(OpenPCDetHelpers::resolveTestDataPaths(
+            root, QStringLiteral("kitti_pointpillar"),
+            QStringLiteral("kitti_000002"), &files, nullptr));
+    EXPECT_EQ(files.pointsFile,
+              QDir(root).filePath(
+                      QStringLiteral("frames/kitti_000002/kitti_000002.bin")));
+}
+
+TEST(OpenPCDetTestData, FrameListerEnumeratesBundle) {
+    QTemporaryDir dir;
+    ASSERT_TRUE(dir.isValid());
+    const QString root = QDir(dir.path()).absolutePath();
+    const auto touch = [&root](const QString& rel) {
+        const QString path = QDir(root).filePath(rel);
+        ASSERT_TRUE(QDir().mkpath(QFileInfo(path).absolutePath()));
+        QFile f(path);
+        ASSERT_TRUE(f.open(QIODevice::WriteOnly));
+        f.write("x");
+    };
+    // Two KITTI frames (one with the PointRCNN variant + scene) and one
+    // nuScenes sweep; an empty directory must be skipped.
+    touch(QStringLiteral("frames/kitti_000008/kitti_000008.bin"));
+    touch(QStringLiteral("frames/kitti_000008/kitti_000008_sampled16384.bin"));
+    touch(QStringLiteral("frames/kitti_000008/scene/scene.json"));
+    touch(QStringLiteral("frames/kitti_000002/kitti_000002.bin"));
+    touch(QStringLiteral("frames/nuscenes_n015/nuscenes_n015_lidar.bin"));
+    touch(QStringLiteral("frames/nuscenes_n015/scene/scene.json"));
+    ASSERT_TRUE(QDir(root).mkpath(QStringLiteral("frames/kitti_empty")));
+
+    const auto frames = ecvTestDataRepository::getOpenPCDetFrames(root);
+    ASSERT_EQ(frames.size(), 3);
+    // Sorted by id: kitti_000002, kitti_000008, nuscenes_n015.
+    EXPECT_EQ(frames[0].id, QStringLiteral("kitti_000002"));
+    EXPECT_EQ(frames[0].displayName, QStringLiteral("KITTI 000002"));
+    EXPECT_EQ(frames[0].pointsFile,
+              QDir(root).filePath(
+                      QStringLiteral("frames/kitti_000002/kitti_000002.bin")));
+    EXPECT_TRUE(frames[0].sampledFile.isEmpty());
+    EXPECT_TRUE(frames[0].sceneDir.isEmpty());
+
+    EXPECT_EQ(frames[1].id, QStringLiteral("kitti_000008"));
+    EXPECT_EQ(frames[1].displayName, QStringLiteral("KITTI 000008"));
+    EXPECT_EQ(frames[1].sampledFile,
+              QDir(root).filePath(QStringLiteral(
+                      "frames/kitti_000008/kitti_000008_sampled16384.bin")));
+    EXPECT_EQ(frames[1].sceneDir,
+              QDir(root).filePath(QStringLiteral("frames/kitti_000008/scene")));
+
+    EXPECT_EQ(frames[2].id, QStringLiteral("nuscenes_n015"));
+    EXPECT_EQ(frames[2].displayName, QStringLiteral("nuScenes n015"));
+    EXPECT_EQ(frames[2].pointsFile,
+              QDir(root).filePath(QStringLiteral(
+                      "frames/nuscenes_n015/nuscenes_n015_lidar.bin")));
+    EXPECT_TRUE(frames[2].sampledFile.isEmpty());
+
+    // No frames/ directory -> empty list.
+    QTemporaryDir empty;
+    ASSERT_TRUE(empty.isValid());
+    EXPECT_TRUE(
+            ecvTestDataRepository::getOpenPCDetFrames(empty.path()).isEmpty());
+    EXPECT_TRUE(ecvTestDataRepository::getOpenPCDetFrames(QString()).isEmpty());
 }
 
 TEST(OpenPCDetTestData, RepositoryMetadataAndLayout) {
@@ -769,26 +878,26 @@ TEST(OpenPCDetTestData, RepositoryMetadataAndLayout) {
     const auto info = ecvTestDataRepository::getDatasetInfo(kind);
     EXPECT_EQ(info.kind, kind);
     EXPECT_EQ(info.displayName, QStringLiteral("OpenPCDet detection sample"));
-    EXPECT_EQ(info.zipFileName, QStringLiteral("openpcdet_test_data.zip"));
-    EXPECT_EQ(info.extractDirName, QStringLiteral("openpcdet_test_data"));
-    EXPECT_EQ(info.extractGroupName, QStringLiteral("openpcdet_test_data"));
+    EXPECT_EQ(info.zipFileName, QStringLiteral("openpcdet_test_data_v2.zip"));
+    EXPECT_EQ(info.extractDirName, QStringLiteral("openpcdet_test_data_v2"));
+    EXPECT_EQ(info.extractGroupName, QStringLiteral("openpcdet_test_data_v2"));
     EXPECT_EQ(info.downloadUrl,
               QStringLiteral("https://github.com/Asher-1/cloudViewer_downloads/"
                              "releases/download/OpenPCDet-GGUF/"
-                             "openpcdet_test_data.zip"));
+                             "openpcdet_test_data_v2.zip"));
     EXPECT_EQ(QString::fromLatin1(info.anchor.digestHex),
-              QStringLiteral("f1f185a385ddd0b440ed5699be47169eb89b7a0107e29"
-                             "fd26e33ed81a07939dd"));
+              QStringLiteral("9e60d9240b8f2f8cfdfc95da0d4cdc3990e7e9bb8375"
+                             "531fc0abfc8e91b89db5"));
 
     // Grouped layout: zip under <root>/download, members under
     // <root>/extract/<group>/<zip root>.
     EXPECT_EQ(ecvTestDataRepository::zipPath(kind),
               QDir(ecvTestDataRepository::downloadDir())
-                      .filePath(QStringLiteral("openpcdet_test_data.zip")));
+                      .filePath(QStringLiteral("openpcdet_test_data_v2.zip")));
     EXPECT_EQ(ecvTestDataRepository::extractPath(kind),
               QDir(QDir(ecvTestDataRepository::extractDir())
-                           .filePath(QStringLiteral("openpcdet_test_data")))
-                      .filePath(QStringLiteral("openpcdet_test_data")));
+                           .filePath(QStringLiteral("openpcdet_test_data_v2")))
+                      .filePath(QStringLiteral("openpcdet_test_data_v2")));
 
     // Nothing extracted in the scratch root: unavailable, and the member
     // lookup comes back empty.
@@ -802,6 +911,311 @@ TEST(OpenPCDetTestData, RepositoryMetadataAndLayout) {
     } else {
         qputenv("CLOUDVIEWER_DATA_ROOT", savedRoot.toUtf8());
     }
+}
+
+// ---------------------------------------------------------------------------
+// Multi-camera projection + scene reading (known-answer, no AICore needed)
+// ---------------------------------------------------------------------------
+
+namespace {
+
+// Synthetic pinhole scene: KITTI LiDAR axes (x forward, y left, z up) map
+// to camera axes (x right, y down, z forward) via x_cam=-y, y_cam=-z,
+// z_cam=x; fx=fy=100, principal point (320,240), 640x480 frame. The
+// lidar_to_image matrix is K @ [R|t] of that chain.
+OpenPCDetHelpers::OpenPCDetSceneView makePinholeScene() {
+    OpenPCDetHelpers::OpenPCDetSceneView scene;
+    OpenPCDetHelpers::OpenPCDetSceneCamera cam;
+    cam.image = QImage(640, 480, QImage::Format_RGB888);
+    cam.image.fill(Qt::black);
+    cam.name = QStringLiteral("CAM_TEST");
+    const float l2i[16] = {320, -100, 0, 0, 240, 0, -100, 0,
+                           1,   0,    0, 0, 0,   0, 0,    1};
+    std::memcpy(cam.lidarToImage, l2i, sizeof(l2i));
+    scene.cameras.append(cam);
+    return scene;
+}
+
+OpenPCDetDetection makeBox(float x, float y, float z, float size) {
+    OpenPCDetDetection det;
+    det.x = x;
+    det.y = y;
+    det.z = z;
+    det.dx = size;
+    det.dy = size;
+    det.dz = size;
+    det.heading = 0.0f;
+    det.score = 0.9f;
+    det.label = 1;
+    return det;
+}
+
+QVector<QLineF> boxSegments(const OpenPCDetHelpers::OpenPCDetSceneView& scene,
+                            const OpenPCDetDetection& det,
+                            int camera = 0) {
+    float corners[24];
+    OpenPCDetHelpers::boxCorners(det, corners);
+    return OpenPCDetHelpers::projectBoxEdges(corners, scene, camera);
+}
+
+void writeSceneBin(const QString& path, const std::vector<float>& values) {
+    QFile file(path);
+    ASSERT_TRUE(file.open(QIODevice::WriteOnly));
+    file.write(reinterpret_cast<const char*>(values.data()),
+               static_cast<qint64>(values.size() * sizeof(float)));
+}
+
+// Minimal readable scene directory: numCameras x height x width RGB
+// frames filled with \p fill (per camera), identity calibration unless
+// overridden by the caller afterwards.
+QString makeSceneDir(QTemporaryDir* dir,
+                     int numCameras,
+                     int height,
+                     int width,
+                     const std::vector<float>& fills,
+                     const QByteArray& extraJson = QByteArray()) {
+    const QString root = dir->path();
+    {
+        QFile json(root + QStringLiteral("/scene.json"));
+        EXPECT_TRUE(json.open(QIODevice::WriteOnly));
+        QByteArray payload = QByteArrayLiteral("{\"num_cameras\": ") +
+                             QByteArray::number(numCameras) +
+                             QByteArrayLiteral(", \"image_height\": ") +
+                             QByteArray::number(height) +
+                             QByteArrayLiteral(", \"image_width\": ") +
+                             QByteArray::number(width) +
+                             QByteArrayLiteral(", \"image_channels\": 3") +
+                             extraJson + QByteArrayLiteral("}");
+        json.write(payload);
+    }
+    std::vector<float> images;
+    for (int c = 0; c < numCameras; ++c) {
+        const float fill = fills[static_cast<size_t>(c)];
+        images.insert(images.end(), static_cast<size_t>(height * width * 3),
+                      fill);
+    }
+    writeSceneBin(root + QStringLiteral("/images.bin"), images);
+    const std::vector<float> identity16 = {1, 0, 0, 0, 0, 1, 0, 0,
+                                           0, 0, 1, 0, 0, 0, 0, 1};
+    std::vector<float> l2i, aug;
+    for (int c = 0; c < numCameras; ++c) {
+        l2i.insert(l2i.end(), identity16.begin(), identity16.end());
+        aug.insert(aug.end(), identity16.begin(), identity16.end());
+    }
+    writeSceneBin(root + QStringLiteral("/lidar_to_image.bin"), l2i);
+    writeSceneBin(root + QStringLiteral("/image_aug.bin"), aug);
+    writeSceneBin(root + QStringLiteral("/lidar_aug.bin"), identity16);
+    return root;
+}
+
+}  // namespace
+
+TEST(OpenPCDetSceneProjection, KnownAnswerPinhole) {
+    const auto scene = makePinholeScene();
+    // Box 10 m ahead, 2 m cube: every corner projects inside the frame.
+    const auto segments = boxSegments(scene, makeBox(10, 0, 0, 2));
+    ASSERT_EQ(segments.size(), 12);
+    // Edge {0,1}: corner 0 (9,-1,-1) -> (331.111, 251.111),
+    //             corner 1 (11,-1,-1) -> (329.091, 249.091).
+    const QLineF edge = segments.at(0);
+    EXPECT_NEAR(edge.x1(), 320.0 + 100.0 / 9.0, 1e-3);
+    EXPECT_NEAR(edge.y1(), 240.0 + 100.0 / 9.0, 1e-3);
+    EXPECT_NEAR(edge.x2(), 320.0 + 100.0 / 11.0, 1e-3);
+    EXPECT_NEAR(edge.y2(), 240.0 + 100.0 / 11.0, 1e-3);
+    // Invalid camera / null corners project nothing.
+    float corners[24];
+    OpenPCDetHelpers::boxCorners(makeBox(10, 0, 0, 2), corners);
+    EXPECT_TRUE(OpenPCDetHelpers::projectBoxEdges(corners, scene, 1).isEmpty());
+    EXPECT_TRUE(OpenPCDetHelpers::projectBoxEdges(nullptr, scene, 0).isEmpty());
+}
+
+TEST(OpenPCDetSceneProjection, NearPlaneClipping) {
+    const auto scene = makePinholeScene();
+    // Box centered on the camera plane: the 4 edges of the x=-1 face
+    // (2 cycle edges + 2 verticals) sit fully behind the near plane and
+    // drop out; the 4 front edges and the 4 crossing edges survive, the
+    // latter clipped to the image rectangle.
+    const auto segments = boxSegments(scene, makeBox(0, 0, 0, 2));
+    EXPECT_EQ(segments.size(), 8);
+    for (const QLineF& line : segments) {
+        EXPECT_GE(line.x1(), 0.0);
+        EXPECT_LE(line.x1(), 639.0);
+        EXPECT_GE(line.y1(), 0.0);
+        EXPECT_LE(line.y1(), 479.0);
+        EXPECT_GE(line.x2(), 0.0);
+        EXPECT_LE(line.x2(), 639.0);
+        EXPECT_GE(line.y2(), 0.0);
+        EXPECT_LE(line.y2(), 479.0);
+    }
+    // Fully behind the camera: nothing projects.
+    EXPECT_TRUE(boxSegments(scene, makeBox(-10, 0, 0, 2)).isEmpty());
+}
+
+TEST(OpenPCDetSceneProjection, ImageRectangleClipping) {
+    const auto scene = makePinholeScene();
+    // Box straddling the right frame edge (u ~ 601..687 at 640 width).
+    const auto segments = boxSegments(scene, makeBox(10, -32, 0, 2));
+    ASSERT_FALSE(segments.isEmpty());
+    bool touchesEdge = false;
+    for (const QLineF& line : segments) {
+        EXPECT_LE(line.x1(), 639.0 + 1e-6);
+        EXPECT_LE(line.x2(), 639.0 + 1e-6);
+        if (std::abs(line.x1() - 639.0) < 1e-6 ||
+            std::abs(line.x2() - 639.0) < 1e-6) {
+            touchesEdge = true;
+        }
+    }
+    EXPECT_TRUE(touchesEdge);
+    // Fully outside the frame: nothing survives the clip.
+    EXPECT_TRUE(boxSegments(scene, makeBox(10, -60, 0, 2)).isEmpty());
+}
+
+TEST(OpenPCDetSceneProjection, ImageAugmentationApplied) {
+    auto scene = makePinholeScene();
+    // BEVFusion-style resize 0.48 + center-x/bottom crop on a 704x256
+    // frame; the box sits low enough to land inside the cropped window.
+    const float aug[16] = {0.48f, 0, 0, -32, 0, 0.48f, 0, -176,
+                           0,     0, 1, 0,   0, 0,     0, 1};
+    std::memcpy(scene.cameras[0].imageAug, aug, sizeof(aug));
+    scene.cameras[0].image = QImage(704, 256, QImage::Format_RGB888);
+    scene.cameras[0].image.fill(Qt::black);
+    const auto segments = boxSegments(scene, makeBox(10, 0, -15, 2));
+    ASSERT_EQ(segments.size(), 12);
+    // Corner 0 (9,-1,-16): raw (331.111, 417.778) -> aug (126.933,
+    // 24.533); corner 1 (11,-1,-16): raw (329.091, 385.455) ->
+    // (125.964, 8.938).
+    const QLineF edge = segments.at(0);
+    EXPECT_NEAR(edge.x1(), 0.48 * (320.0 + 100.0 / 9.0) - 32.0, 1e-3);
+    EXPECT_NEAR(edge.y1(), 0.48 * (240.0 + 1600.0 / 9.0) - 176.0, 1e-3);
+    EXPECT_NEAR(edge.x2(), 0.48 * (320.0 + 100.0 / 11.0) - 32.0, 1e-3);
+    EXPECT_NEAR(edge.y2(), 0.48 * (240.0 + 1600.0 / 11.0) - 176.0, 1e-3);
+}
+
+TEST(OpenPCDetSceneProjection, LidarAugmentationUndone) {
+    auto scene = makePinholeScene();
+    // Pure translation (1,2,3): a box at (11,2,3) must project exactly
+    // like the untranslated box at (10,0,0).
+    const float translated[16] = {1, 0, 0, 1, 0, 1, 0, 2,
+                                  0, 0, 1, 3, 0, 0, 0, 1};
+    std::memcpy(scene.lidarAug, translated, sizeof(translated));
+    const auto moved = boxSegments(scene, makeBox(11, 2, 3, 2));
+    std::memcpy(scene.lidarAug, makePinholeScene().lidarAug,
+                sizeof(scene.lidarAug));
+    const auto base = boxSegments(scene, makeBox(10, 0, 0, 2));
+    ASSERT_EQ(moved.size(), base.size());
+    for (int i = 0; i < moved.size(); ++i) {
+        EXPECT_NEAR(moved[i].x1(), base[i].x1(), 1e-3);
+        EXPECT_NEAR(moved[i].y1(), base[i].y1(), 1e-3);
+        EXPECT_NEAR(moved[i].x2(), base[i].x2(), 1e-3);
+        EXPECT_NEAR(moved[i].y2(), base[i].y2(), 1e-3);
+    }
+    // 90-degree yaw about +Z: undo rotates (x,y) -> (y,-x); a box at
+    // (0,10,0) lands on the same pixels as the forward box.
+    const float rotated[16] = {0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+    std::memcpy(scene.lidarAug, rotated, sizeof(rotated));
+    const auto spun = boxSegments(scene, makeBox(0, 10, 0, 2));
+    ASSERT_EQ(spun.size(), 12);
+    // Corner 0 (-1,9,-1) -> undo (9,1,-1) -> (308.889, 251.111);
+    // corner 1 (1,9,-1) -> undo (9,-1,-1) -> (331.111, 251.111).
+    EXPECT_NEAR(spun[0].x1(), 320.0 - 100.0 / 9.0, 1e-3);
+    EXPECT_NEAR(spun[0].y1(), 240.0 + 100.0 / 9.0, 1e-3);
+    EXPECT_NEAR(spun[0].x2(), 320.0 + 100.0 / 9.0, 1e-3);
+    EXPECT_NEAR(spun[0].y2(), 240.0 + 100.0 / 9.0, 1e-3);
+}
+
+TEST(OpenPCDetSceneRead, CamerasRoundtripWithNames) {
+    QTemporaryDir dir;
+    ASSERT_TRUE(dir.isValid());
+    const QString root = makeSceneDir(
+            &dir, 2, 2, 2, {0.25f, 0.75f},
+            QByteArrayLiteral(", \"camera_names\": [\"CAM_A\", \"CAM_B\"]"));
+    OpenPCDetHelpers::OpenPCDetSceneView view;
+    QString error;
+    ASSERT_TRUE(OpenPCDetHelpers::readSceneCameras(root, &view, &error))
+            << error.toStdString();
+    ASSERT_EQ(view.cameras.size(), 2);
+    EXPECT_EQ(view.cameras[0].name, QStringLiteral("CAM_A"));
+    EXPECT_EQ(view.cameras[1].name, QStringLiteral("CAM_B"));
+    EXPECT_EQ(view.cameras[0].image.pixelColor(0, 0), QColor(64, 64, 64));
+    EXPECT_EQ(view.cameras[1].image.pixelColor(1, 1), QColor(191, 191, 191));
+    // Identity calibration passes through verbatim.
+    EXPECT_FLOAT_EQ(view.cameras[0].lidarToImage[0], 1.0f);
+    EXPECT_FLOAT_EQ(view.cameras[0].lidarToImage[5], 1.0f);
+    EXPECT_FLOAT_EQ(view.lidarAug[15], 1.0f);
+}
+
+TEST(OpenPCDetSceneRead, NormalizedPayloadDenormalized) {
+    QTemporaryDir dir;
+    ASSERT_TRUE(dir.isValid());
+    // ImageNet-normalized 0.2 gray: (0.2 - mean) / std per channel —
+    // the negative red value identifies the BEVFusion payload
+    // convention (real frames always carry below-mean pixels).
+    const QString root = dir.path();
+    {
+        QFile json(root + QStringLiteral("/scene.json"));
+        ASSERT_TRUE(json.open(QIODevice::WriteOnly));
+        json.write(QByteArrayLiteral(
+                "{\"num_cameras\": 1, \"image_height\": 1, "
+                "\"image_width\": 1, \"image_channels\": 3}"));
+    }
+    const float mean[3] = {0.485f, 0.456f, 0.406f};
+    const float stdv[3] = {0.229f, 0.224f, 0.225f};
+    std::vector<float> images;
+    for (int c = 0; c < 3; ++c) images.push_back((0.2f - mean[c]) / stdv[c]);
+    writeSceneBin(root + QStringLiteral("/images.bin"), images);
+    const std::vector<float> identity16 = {1, 0, 0, 0, 0, 1, 0, 0,
+                                           0, 0, 1, 0, 0, 0, 0, 1};
+    writeSceneBin(root + QStringLiteral("/lidar_to_image.bin"), identity16);
+    writeSceneBin(root + QStringLiteral("/image_aug.bin"), identity16);
+    writeSceneBin(root + QStringLiteral("/lidar_aug.bin"), identity16);
+    OpenPCDetHelpers::OpenPCDetSceneView view;
+    QString error;
+    ASSERT_TRUE(OpenPCDetHelpers::readSceneCameras(root, &view, &error))
+            << error.toStdString();
+    ASSERT_EQ(view.cameras.size(), 1);
+    // Denormalized back to 0.2 gray (0.2 * 255 + 0.5 = 51).
+    EXPECT_EQ(view.cameras[0].image.pixelColor(0, 0), QColor(51, 51, 51));
+}
+
+TEST(OpenPCDetSceneRead, LegacyCameraNameFallback) {
+    QTemporaryDir dir;
+    ASSERT_TRUE(dir.isValid());
+    const QString single = makeSceneDir(&dir, 1, 1, 1, {0.5f});
+    OpenPCDetHelpers::OpenPCDetSceneView view;
+    ASSERT_TRUE(OpenPCDetHelpers::readSceneCameras(single, &view, nullptr));
+    ASSERT_EQ(view.cameras.size(), 1);
+    EXPECT_EQ(view.cameras[0].name, QStringLiteral("CAM2"));
+
+    QTemporaryDir dir6;
+    ASSERT_TRUE(dir6.isValid());
+    const QString ring =
+            makeSceneDir(&dir6, 6, 1, 1, {0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f});
+    ASSERT_TRUE(OpenPCDetHelpers::readSceneCameras(ring, &view, nullptr));
+    ASSERT_EQ(view.cameras.size(), 6);
+    const QStringList expected = {
+            QStringLiteral("CAM_FRONT"),      QStringLiteral("CAM_FRONT_RIGHT"),
+            QStringLiteral("CAM_FRONT_LEFT"), QStringLiteral("CAM_BACK"),
+            QStringLiteral("CAM_BACK_LEFT"),  QStringLiteral("CAM_BACK_RIGHT")};
+    for (int c = 0; c < 6; ++c) {
+        EXPECT_EQ(view.cameras[c].name, expected.at(c));
+    }
+}
+
+TEST(OpenPCDetSceneRead, ErrorsOnBadPayload) {
+    OpenPCDetHelpers::OpenPCDetSceneView view;
+    QString error;
+    EXPECT_FALSE(OpenPCDetHelpers::readSceneCameras(
+            QStringLiteral("/no/such/scene/dir"), &view, &error));
+    EXPECT_FALSE(error.isEmpty());
+    QTemporaryDir dir;
+    ASSERT_TRUE(dir.isValid());
+    const QString root = makeSceneDir(&dir, 1, 2, 2, {0.5f});
+    // Truncated calibration member is rejected with a named error.
+    QFile::resize(root + QStringLiteral("/lidar_to_image.bin"), 16);
+    error.clear();
+    EXPECT_FALSE(OpenPCDetHelpers::readSceneCameras(root, &view, &error));
+    EXPECT_TRUE(error.contains(QStringLiteral("lidar_to_image.bin")))
+            << error.toStdString();
 }
 
 int main(int argc, char** argv) {
@@ -1272,16 +1686,12 @@ TEST(OpenPCDetDualInput, FullCatalogMatrix) {
     const QString extractRoot = ecvTestDataRepository::extractDir();
     const QString modelsRoot =
             extractRoot + QStringLiteral("/openpcdet_models");
-    // The pinned fixture bundle carries the point frames AND the two
-    // multi-modal scene dirs; the model-cache input dir carries point frames
-    // only, so the bundle wins when present.
-    const QString fixtureRoot =
-            extractRoot +
-            QStringLiteral("/openpcdet_test_data/openpcdet_test_data");
+    // The pinned v2 fixture bundle carries every selectable frame under
+    // frames/<id>/ (point files AND the per-frame scene dirs); the mapping
+    // returns frames/-relative paths, so the bundle is the single source.
     const QString inputsRoot =
-            QDir(fixtureRoot).exists()
-                    ? fixtureRoot
-                    : extractRoot + QStringLiteral("/openpcdet_inputs");
+            extractRoot +
+            QStringLiteral("/openpcdet_test_data_v2/openpcdet_test_data_v2");
 
     const QVector<OpenPCDetHelpers::OpenPCDetCheckpoint> checkpoints =
             OpenPCDetHelpers::catalogCheckpoints();
@@ -1313,7 +1723,8 @@ TEST(OpenPCDetDualInput, FullCatalogMatrix) {
                     << cp.stem.toStdString();
         } else if (cp.stem.contains(QStringLiteral("pointrcnn"))) {
             EXPECT_EQ(files.pointsFile,
-                      QStringLiteral("kitti_000008_sampled16384.bin"))
+                      QStringLiteral("frames/kitti_000008/"
+                                     "kitti_000008_sampled16384.bin"))
                     << cp.stem.toStdString();
         }
 

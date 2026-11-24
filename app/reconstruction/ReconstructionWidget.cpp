@@ -493,6 +493,19 @@ void ReconstructionWidget::CreateMenus() {
 void ReconstructionWidget::CreateToolbar() {
     reconstruction_toolbar_ = new QToolBar(tr("Reconstruction"), this);
     reconstruction_toolbar_->setObjectName(QString::fromUtf8("Reconstruction"));
+    action_project_new_->setToolTip(
+            tr("Reconstruction: create a photogrammetry project"));
+    action_project_open_->setToolTip(
+            tr("Reconstruction: open a project configuration (.ini), not scene "
+               "data"));
+    action_project_edit_->setToolTip(
+            tr("Reconstruction: edit the project image folder and database"));
+    action_project_save_->setToolTip(
+            tr("Reconstruction: save the current project configuration"));
+    action_import_->setToolTip(
+            tr("Reconstruction: import a reconstructed camera/point model"));
+    action_export_->setToolTip(
+            tr("Reconstruction: export the selected reconstructed model"));
     reconstruction_toolbar_->addAction(action_project_new_);
     reconstruction_toolbar_->addAction(action_project_open_);
     reconstruction_toolbar_->addAction(action_project_edit_);

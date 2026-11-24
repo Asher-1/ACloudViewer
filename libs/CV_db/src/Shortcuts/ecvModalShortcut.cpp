@@ -73,6 +73,10 @@ void ecvModalShortcut::setContextWidget(QWidget* contextWidget,
                     m_shortcut->setContext(contextArea);
                 }
             }
+            if (isEnabled())
+                Q_EMIT this->enabled();
+            else
+                Q_EMIT disabled();
             return;
         }
     }
@@ -98,6 +102,10 @@ void ecvModalShortcut::setContextWidget(QWidget* contextWidget,
                              &QAction::trigger);
         }
     }
+    if (isEnabled())
+        Q_EMIT this->enabled();
+    else
+        Q_EMIT disabled();
 }
 
 //-----------------------------------------------------------------------------
@@ -114,9 +122,10 @@ void ecvModalShortcut::setEnabled(bool enable, bool changeFocus) {
 
     if (enable) {
         if (!m_shortcut->isEnabled()) {
-            // Emit signal first (so ecvKeySequences can disable siblings)
-            Q_EMIT enabled();
+            // Observers see the new ownership state synchronously. The
+            // manager disables siblings before returning to the event loop.
             m_shortcut->setEnabled(true);
+            Q_EMIT enabled();
 
             // If requested, give focus to the context widget
             // so users can immediately use the shortcut

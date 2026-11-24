@@ -10,18 +10,15 @@
 /**
  * @file VtkShortcutRegistry.h
  * @brief Shared VTK shortcut definitions used by both the shortcut dialog
- *        (editing / persistence) and QVTKWidgetCustom (runtime dispatch).
+ *        and QVTKWidgetCustom widget-local QAction instances.
  *
  * Each entry maps a human-readable action to the parameters that
  * vtkCustomInteractorStyle::handleShortcut() expects.  Users may remap
- * shortcuts; the remapped QKeySequence is persisted in QSettings under
- * the "VtkShortcuts" group while the underlying VTK action parameters
- * remain constant.
+ * shortcuts through ecvKeySequences while the underlying VTK operation
+ * parameters remain constant. Qt owns all shortcut matching and dispatch.
  */
 
 #include <QKeySequence>
-#include <QMap>
-#include <QSettings>
 #include <QString>
 #include <QVector>
 
@@ -110,28 +107,4 @@ inline QVector<VtkShortcutDef> vtkDefaultShortcuts() {
              QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_6), '6', true, true,
              false},
     };
-}
-
-/// Build the runtime dispatch map: QKeySequence (possibly remapped) →
-/// VtkShortcutDef. Reads overrides from QSettings("VtkShortcuts").
-inline QMap<QString, VtkShortcutDef> buildVtkShortcutMap() {
-    QMap<QString, VtkShortcutDef> map;
-
-    QSettings settings;
-    settings.beginGroup(QStringLiteral("VtkShortcuts"));
-
-    for (const auto& def : vtkDefaultShortcuts()) {
-        QKeySequence seq = def.defaultKey;
-        if (settings.contains(def.id)) {
-            seq = settings.value(def.id).value<QKeySequence>();
-        }
-        if (!seq.isEmpty()) {
-            VtkShortcutDef entry = def;
-            entry.defaultKey = seq;
-            map[seq.toString(QKeySequence::PortableText)] = entry;
-        }
-    }
-
-    settings.endGroup();
-    return map;
 }

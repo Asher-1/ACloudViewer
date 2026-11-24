@@ -21,6 +21,7 @@
 #include <QPoint>
 
 class vtkActor;
+class vtkPlane;
 class vtkImplicitPlaneWidget2;
 class vtkGridAxesActor3D;
 class vtkRenderPass;
@@ -493,6 +494,9 @@ private:
     bool m_edlFXAAEnabled = true;
     int m_edlLowResFactor = 4;
     vtkSmartPointer<vtkRenderPass> m_edlPass;
+    void updateSlicePlane();
+    void updateMultiSlices();
+    vtkSmartPointer<vtkPlane> m_slicePlane;
     bool m_sliceMode = false;
     bool m_autoRefresh = false;
     bool m_shutdownDone = false;

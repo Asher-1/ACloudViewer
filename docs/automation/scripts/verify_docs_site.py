@@ -38,6 +38,8 @@ PAGE = """<!DOCTYPE html><html><head><title>{title}</title>
 <script src="{rel}_static/version_switch.js"></script></head><body>
 <h1>{title}</h1>
 <select id="sel" data-docs-version></select>
+<div data-docs-version-table></div>
+<h2 id="reading-position" style="margin-top:1200px">API details</h2>
 </body></html>"""
 
 # A page present in BOTH versions (deep-link rewriting must preserve it).
@@ -375,6 +377,38 @@ def main() -> int:
                 rec.check("deep page maps to the same deep page",
                           page.url.endswith("/documentation/v3.9.4/" + DEEP), page.url)
                 rec.check("landed on the archive content", "v3.9.4 python api" in page.content())
+
+                print("═══ query, anchor and sidebar position ═══")
+                position = "?highlight=point%20cloud#reading-position"
+                page.goto(base + "/documentation/dev/" + DEEP + position)
+                page.wait_for_selector("#sel:not([disabled])")
+                page.select_option("#sel", "v3.9.4")
+                page.wait_for_url(base + "/documentation/v3.9.4/" + DEEP + position)
+                rec.check("dropdown preserves path, query and anchor",
+                          page.url.endswith("/v3.9.4/" + DEEP + position))
+                rec.check("target anchor restores reading location",
+                          0 <= page.locator("#reading-position").bounding_box()["y"] < 900)
+                changed_position = "?highlight=point%20cloud#changed-after-load"
+                page.evaluate("window.location.hash = 'changed-after-load'")
+                page.wait_for_function("document.querySelector('.version-cell a').hash === '#changed-after-load'")
+                rec.check("copy/new-tab link tracks anchors changed after page load",
+                          page.locator(".version-cell a").first.get_attribute("href").endswith(changed_position))
+                page.locator(".version-cell a").filter(has_text="Development").click()
+                page.wait_for_url(base + "/documentation/dev/" + DEEP + changed_position)
+                rec.check("sidebar version link preserves path, query and anchor",
+                          page.url.endswith("/dev/" + DEEP + changed_position))
+                page.goto(base + "/documentation/dev/" + position)
+                page.wait_for_selector("#sel:not([disabled])")
+                page.select_option("#sel", "v3.9.4")
+                page.wait_for_url(base + "/documentation/v3.9.4/" + position)
+                rec.check("version-root switch retains query and anchor",
+                          page.url.endswith("/v3.9.4/" + position))
+                page.goto(base + "/documentation/v3.9.4/" + ARCHIVE_ONLY + position)
+                page.wait_for_selector("#sel:not([disabled])")
+                page.locator(".version-cell a").filter(has_text="Development").click()
+                page.wait_for_url(base + "/documentation/dev/")
+                rec.check("sidebar missing page falls back without stale query or anchor",
+                          page.url.endswith("/documentation/dev/"))
 
                 print("═══ missing-page fallback ═══")
                 page.goto(base + "/documentation/v3.9.4/" + ARCHIVE_ONLY,

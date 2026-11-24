@@ -1,0 +1,8 @@
+{
+  "upstream": "https://github.com/oclero/qlementine",
+  "version": "v1.5.2",
+  "commit": "7825161fce66ac5a49bc0ffe39ab13df5ff8ff4a",
+  "archive_sha256": "e59107e4ea2d70393dddec0c246d59fe30bd4b20360255ae56cf793ac45187d8",
+  "license": "MIT; bundled fonts SIL-OFL-1.1",
+  "policy": "ExternalProject fetches the pinned official URL into the shared third-party download cache; CMake PATCH_COMMAND applies and verifies the reviewed Git patch. Upgrades update URL/version/digest/manifest and tests together; no vendored source archive or floating HEAD."
+}

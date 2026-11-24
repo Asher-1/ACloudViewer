@@ -24,6 +24,7 @@
 #include <vtkTimeStamp.h>
 
 #include <map>
+#include <set>
 
 #include "qVTK.h"
 
@@ -59,6 +60,11 @@ public:
      * @return Selection result (caller must Delete())
      */
     virtual vtkSelection* Select(int region[4]);
+
+    // Restrict data-selection rendering without changing normal mouse picking.
+    // An empty set intentionally selects nothing. Refresh before each capture.
+    void SetSelectableProps(const std::set<vtkProp*>& props);
+    bool CaptureBuffers() override;
 
     /**
      * @brief Perform polygon selection
@@ -179,6 +185,7 @@ private:
 
     /// Map from prop pointer to unique ID
     std::map<void*, int> PropMap;
+    std::set<vtkProp*> SelectableProps;
 };
 
 #endif  // cvHardwareSelector_h

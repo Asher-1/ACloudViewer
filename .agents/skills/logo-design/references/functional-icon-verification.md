@@ -130,6 +130,81 @@ Use these procedures alongside [Functional toolbar icons and Qt resource closure
 2. Read and reuse [the project Qt probe](<../../../../scripts/icon_hd/verify_qt_resources.py>). If its default toolchain resolution differs from the active build, use its inspected probe implementation with the selected compiler, Qt linkage and runtime, or configure the entry point in the manner supported on this branch. Build app and plugin resources separately via the selected `rcc`. For the observed app layout, the offscreen fixture uses `"$rcc" --binary app/MainWindow.qrc -o "$review_dir/app.rcc"`. Use `"$uic" "$ui_path" -o "$generated_header"` on every affected UI with outputs outside source assets. Record missing tooling or unverified flags as TODOs.
 3. Load each bundle independently and then in combination when relevant. Verify QFile/QResource bytes (or SHA-256) for each expected effective URL against the corresponding physical file. Render non-null icons at at least two actual requested sizes in `QIcon::Normal` and `QIcon::Disabled` and record size/state counts. For the view rename probe, 16/24/32 px × both states × eight URLs is 48 checks. Exercise real Qt high zoom for zoom defects. Test known obsolete URLs absent when they should be retired, and ensure app-only loading succeeds without qPCL. Report missing links and failed loads by URL. Offscreen resource coverage and actual GUI interaction coverage are distinct fields.
 
+## Third-party Qt framework integration gate
+
+This gate applies when UI/icon work brings in or ports a library; a successful
+standalone gallery does not establish a correct repository dependency boundary.
+
+1. **Read and reuse the existing owners first.** Read the repository's
+   [reuse/ownership contract](<../../acloudviewer-aicore-plugin/references/reuse-contract.md>)
+   for the owner-first decision process, and inspect the active
+   [dependency registration](<../../../../3rdparty/find_dependencies.cmake>),
+   [libpng recipe](<../../../../3rdparty/libpng/libpng.cmake>) and
+   [OpenImageIO recipe](<../../../../3rdparty/openimageio/openimageio.cmake>) before
+   writing an integration. Apply the ownership principle to the actual UI/build
+   owner; this does not make a pure UI dependency an AICore task.
+2. **Use the repository dependency flow.** Add or extend
+   `3rdparty/<dep>/<dep>.cmake` with `ExternalProject_Add`: upstream URL, explicit
+   version, SHA-256, `DOWNLOAD_DIR` under
+   `CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR`, `UPDATE_COMMAND ""`, declared
+   dependencies/byproducts, install location and the existing target/export
+   convention. Keep a fixed default; an explicit upgrade changes the pin, digest
+   and reviewed patch/test evidence together. Do not follow floating HEAD, commit
+   source tarballs into the repository, add a second private download cache, or
+   replace this flow with an app-local unpack/add_subdirectory mechanism.
+3. **Patch at the dependency owner.** Store Qt5/Qt6 source compatibility as an
+   ordered, reviewable Git patch set invoked by CMake `PATCH_COMMAND` after
+   extraction. Use `git apply --no-index --check`, then `git apply --no-index`
+   with `WORKING_DIRECTORY` set to the exact extracted source root, so enclosing
+   repository discovery cannot redirect or silently skip the patch. Inspect the
+   [existing patch runner](<../../../../3rdparty/openimageio/patches/apply_openimageio_patch.cmake>)
+   for that failure mode, not as an unqualified template: **do not copy its
+   completed-build-stamp early return**. After apply, verify every required
+   change against the current patch identity and source content. A reused tree
+   must prove the complete expected patched state (reverse-check where valid,
+   or complete content/hash/semantic checks when ordered patches overlap).
+   Neither a single marker, patcher exit 0, nor "already built" proves this.
+   If neither cleanly applicable nor fully verified as already applied, fail
+   loudly. Missing patch files, partial application and source drift are errors,
+   not "already applied or not applicable" success. Do not use shell `patch`,
+   hand-edit production extracted trees, or promise automatic conflict-free
+   compatibility with arbitrary upstream versions.
+4. **Close platform/build propagation.** Consume the Qt major/targets already
+   chosen by `cmake/CMakeExternalLibs.cmake` (`QT_PREFIX`, `QT_VERSION_MAJOR`,
+   `Qt::` aliases); do not add another `if(USE_QT6)`/outer `find_package` in a
+   dependency recipe. A separate ExternalProject CMake process still discovers
+   Qt using the exact parent-selected package paths; that is not permission to
+   independently select a different major. Reuse shared ExternalProject CMake
+   arguments and verify compiler/launcher/toolchain, C++ standard, Qt major and
+   required Qt component package paths. Preserve parent macOS architecture,
+   sysroot and deployment target; escape list-valued arguments across sub-builds.
+   Declare actual platform static library names/prefixes/suffixes, Debug postfix
+   and MSVC CRT/configuration compatibility, PIC when embedding archives into
+   shared libraries, generated export headers, install/export targets and final
+   dependency closure. Do not let a dependency override parent policy or multiply
+   nested build/autogen concurrency beyond the authorized total job budget.
+5. **Prove replay and runtime separately.** Test fresh extraction, verified
+   already-patched reuse, changed patch/pin and deliberate conflict rejection,
+   then the actual consumer build/link and installed resource/license closure.
+   For a Qt style, test real dense widgets, popup/input/focus/disabled/local
+   palette, animations and teardown, Native/Custom round trips and configured
+   DPI; protect approved DB Tree/artwork and plugin-local resources. Preserve
+   explicitly requested semantic action emphasis (such as the shared sample/test-
+   data button) in both Native and Custom; consolidate it in the existing helper
+   instead of deleting it as generic chrome. Keep all Qt
+   diagnostics. Record Qt version, OS, compiler, DPR and whether the test was
+   offscreen or a real desktop. A Qt5 run does not prove Qt6, Windows/macOS or
+   multi-monitor behavior; same-source adaptation is not cross-major ABI
+   compatibility. Pure UI changes need their relevant UI/build gates, not
+   unrelated AICore numerical inference tests.
+   For translucent menus/popups, also compare native windows created before and
+   after style installation. Qt5 `QMenu::popup` can create a depth24, alpha0
+   surface before polish; a late transparent attribute does not recreate that
+   native visual. Widget-grab PNG alpha is not proof of native transparency.
+   Check actual surface/depth and compositor separately; opaque fallback must
+   agree in paint, metrics, shadow margins and placement. A background-only
+   desktop capture is failed capture evidence, not successful visual acceptance.
+
 ## Qt default dimensions and installation
 
 1. **Inventory before changing defaults.** Identify direct `QImage`, `QPixmap`, `QSvgRenderer` consumers, `QLabel` or other size-driven widgets, rich text, stylesheet tree branches and dynamic consumers in addition to toolbar `QIcon` requests. Protect accepted or byte-identical upstream artwork unless the user has scoped it in. Inventory proposed, already-at-size, size-sensitive and protected files with paths, consumers, reasons and hashes. Keep numeric results from prior branches as evidence only for those branches.

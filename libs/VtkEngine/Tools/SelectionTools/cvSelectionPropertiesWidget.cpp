@@ -16,6 +16,7 @@
 #include "cvSelectionExporter.h"
 #include "cvSelectionHighlighter.h"
 #include "cvSelectionLabelPropertiesDialog.h"
+#include "cvSelectionPipeline.h"
 #include "cvViewSelectionManager.h"
 
 // CV_DB_LIB
@@ -26,6 +27,7 @@
 
 // VtkEngine (for cross-view data producer enumeration)
 #include "Visualization/vtkGLView.h"
+#include "VtkUtils/ecvMenuWidgets.h"
 
 // CV_CORE_LIB
 #include <CVLog.h>
@@ -113,6 +115,39 @@
 #include <QTableWidget>
 #include <QToolButton>
 #include <QVBoxLayout>
+
+namespace {
+
+// Attribute and geometry operations index the current view's display dataset,
+// never source IDs. Preserve source ownership when publishing their results.
+template <typename Operation>
+cvSelectionData applyToDisplayedSelection(const cvSelectionData& selection,
+                                          Visualization::VtkVis* viewer,
+                                          Operation operation) {
+    const auto displayed =
+            cvSelectionPipeline::resolveSelectionForView(selection, viewer);
+    cvSelectionData result;
+    for (auto info : displayed.actorInfos()) {
+        const cvSelectionData local(info.selectedIds,
+                                    selection.fieldAssociation());
+        const auto changed = operation(info.polyData.GetPointer(), local);
+        if (changed.isEmpty()) continue;
+        info.selectedIds = changed.ids();
+        const auto sourceIds = cvSelectionPipeline::remapToSourceIds(
+                changed.vtkArray(), info.polyData,
+                selection.fieldAssociation() == cvSelectionData::CELLS);
+        info.sourceIds.clear();
+        for (vtkIdType i = 0; i < sourceIds->GetNumberOfTuples(); ++i)
+            info.sourceIds.append(sourceIds->GetValue(i));
+        if (result.isEmpty())
+            result = cvSelectionData(info.sourceIds,
+                                     selection.fieldAssociation());
+        result.addActorInfo(info);
+    }
+    return result;
+}
+
+}  // namespace
 
 // ParaView-style selection colors palette
 const QColor cvSelectionPropertiesWidget::s_selectionColors[] = {
@@ -856,9 +891,6 @@ void cvSelectionPropertiesWidget::setupUi() {
 void cvSelectionPropertiesWidget::setupSelectedDataHeader() {
     // Selected Data header label
     m_selectedDataLabel = new QLabel(tr("<b>Selected Data</b>"));
-    m_selectedDataLabel->setStyleSheet(
-            "QLabel { background-color: #e0e0e0; padding: 5px; border-radius: "
-            "3px; }");
 
     // Action buttons (ParaView-style with icons)
 
@@ -945,12 +977,6 @@ void cvSelectionPropertiesWidget::onFilterApplyClicked() {
         return;
     }
 
-    vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
-    if (!polyData) {
-        CVLog::Warning("[Filter] Cannot access selection data for filtering");
-        return;
-    }
-
     if (!m_selectionManager) {
         CVLog::Warning("[Filter] No selection manager available");
         return;
@@ -967,43 +993,36 @@ void cvSelectionPropertiesWidget::onFilterApplyClicked() {
     double maxVal = m_filterMaxSpin->value();
     QString attrName = m_filterAttributeCombo->currentText();
 
-    cvSelectionData filtered;
-    switch (filterType) {
-        case 0: {
-            filtered = filter->filterByAttributeRange(polyData, m_selectionData,
-                                                      attrName, minVal, maxVal);
-            break;
-        }
-        case 1: {
-            double bounds[6] = {minVal, maxVal, minVal, maxVal, minVal, maxVal};
-            filtered = filter->filterByBoundingBox(polyData, m_selectionData,
-                                                   bounds);
-            break;
-        }
-        case 2: {
-            filtered = filter->filterByDistanceFromPoint(
-                    polyData, m_selectionData, 0, 0, 0, minVal, maxVal);
-            break;
-        }
-        case 3: {
-            filtered = filter->filterByNormalAngle(polyData, m_selectionData, 0,
-                                                   0, 1, minVal, maxVal);
-            break;
-        }
-        case 4: {
-            filtered = filter->filterByArea(polyData, m_selectionData, minVal,
-                                            maxVal);
-            break;
-        }
-        case 5: {
-            filtered = filter->filterByNeighborCount(polyData, m_selectionData,
-                                                     static_cast<int>(minVal),
-                                                     static_cast<int>(maxVal));
-            break;
-        }
-        default:
-            return;
-    }
+    const auto filtered = applyToDisplayedSelection(
+            m_selectionData, getVtkVis(),
+            [&](vtkPolyData* polyData, const cvSelectionData& local) {
+                switch (filterType) {
+                    case 0:
+                        return filter->filterByAttributeRange(
+                                polyData, local, attrName, minVal, maxVal);
+                    case 1: {
+                        double bounds[6] = {minVal, maxVal, minVal,
+                                            maxVal, minVal, maxVal};
+                        return filter->filterByBoundingBox(polyData, local,
+                                                           bounds);
+                    }
+                    case 2:
+                        return filter->filterByDistanceFromPoint(
+                                polyData, local, 0, 0, 0, minVal, maxVal);
+                    case 3:
+                        return filter->filterByNormalAngle(
+                                polyData, local, 0, 0, 1, minVal, maxVal);
+                    case 4:
+                        return filter->filterByArea(polyData, local, minVal,
+                                                    maxVal);
+                    case 5:
+                        return filter->filterByNeighborCount(
+                                polyData, local, static_cast<int>(minVal),
+                                static_cast<int>(maxVal));
+                    default:
+                        return cvSelectionData();
+                }
+            });
 
     if (filtered.isEmpty()) {
         CVLog::Warning("[Filter] Filter produced empty result");
@@ -1011,19 +1030,6 @@ void cvSelectionPropertiesWidget::onFilterApplyClicked() {
     }
 
     int oldCount = m_selectionData.count();
-
-    // Propagate actor info from original selection so highlighting works
-    vtkActor* primaryActor = m_selectionData.primaryActor();
-    if (primaryActor && primaryActor->GetMapper()) {
-        vtkPolyData* actorPoly = vtkPolyData::SafeDownCast(
-                primaryActor->GetMapper()->GetInput());
-        filtered.setActorInfo(primaryActor, actorPoly);
-    }
-    for (const auto& info : m_selectionData.actorInfos()) {
-        if (info.actor != primaryActor) {
-            filtered.addActorInfo(info);
-        }
-    }
 
     // Update the manager's selection (triggers selectionChanged signal)
     m_selectionManager->setCurrentSelection(filtered);
@@ -1034,7 +1040,7 @@ void cvSelectionPropertiesWidget::onFilterApplyClicked() {
     }
 
     // Update our own UI (spreadsheet, statistics, etc.)
-    updateSelection(filtered, polyData);
+    updateSelection(filtered);
 
     CVLog::Print("[Filter] Applied filter: %d -> %d items", oldCount,
                  filtered.count());
@@ -1362,9 +1368,6 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
     m_dataProducerLabel->setToolTip(
             tr("The dataset for which selections are saved"));
     m_dataProducerValue = new QLabel();
-    m_dataProducerValue->setStyleSheet(
-            "QLabel { background-color: snow; border: 1px inset grey; "
-            "}");  // ParaView exact style
     m_dataProducerValue->setToolTip(
             tr("The dataset for which selections are saved"));
     m_dataProducerValue->setText(
@@ -1383,9 +1386,6 @@ void cvSelectionPropertiesWidget::setupSelectionEditorSection() {
             tr("The element type of the saved selections"));
     m_elementTypeValue = new QLabel();
     m_elementTypeValue->setTextFormat(Qt::RichText);
-    m_elementTypeValue->setStyleSheet(
-            "QLabel { background-color: snow; border: 1px inset grey; "
-            "}");  // ParaView exact style
     m_elementTypeValue->setToolTip(
             tr("The element type of the saved selections"));
     elementTypeLayout->addWidget(m_elementTypeLabel);
@@ -1787,20 +1787,11 @@ bool cvSelectionPropertiesWidget::updateSelection(
         }
     }
 
-    // Get polyData if not provided (using centralized ParaView-style method)
-    if (!polyData) {
-        cvViewSelectionManager* mgr2 =
-                m_selectionManager ? m_selectionManager
-                                   : cvViewSelectionManager::instance();
-        if (mgr2) {
-            polyData = mgr2->getPolyData();
-        }
-
-        // Fallback to getPolyDataForSelection
-        if (!polyData) {
-            polyData = getPolyDataForSelection(&m_selectionData);
-        }
-    }
+    const auto displayed = cvSelectionPipeline::resolveSelectionForView(
+            m_selectionData, getVtkVis());
+    polyData = displayed.primaryPolyData();
+    const cvSelectionData localSelection(displayed.actorInfo().selectedIds,
+                                         m_selectionData.fieldAssociation());
 
     if (!polyData) {
         CVLog::Warning(
@@ -1824,11 +1815,11 @@ bool cvSelectionPropertiesWidget::updateSelection(
     }
 
     // Update statistics and list
-    updateStatistics(polyData);
+    updateStatistics(polyData, &localSelection);
     updateSelectionList(polyData);
 
     // Update spreadsheet data (ParaView-style: auto-update on selection change)
-    updateSpreadsheetData(polyData);
+    updateSpreadsheetData(polyData, &localSelection);
 
     // Enable export buttons
     bool isCells =
@@ -2076,7 +2067,10 @@ void cvSelectionPropertiesWidget::updateSelectionList(vtkPolyData* polyData) {
     m_selectionTableWidget->clear();
     m_selectionTableWidget->setRowCount(0);
 
-    QVector<qint64> ids = m_selectionData.ids();
+    const auto displayed = cvSelectionPipeline::resolveSelectionForView(
+            m_selectionData, getVtkVis());
+    polyData = displayed.primaryPolyData();
+    const auto ids = displayed.actorInfo().selectedIds;
     if (ids.isEmpty()) {
         m_selectionTableWidget->setColumnCount(0);
         if (m_listInfoLabel) {
@@ -2085,6 +2079,8 @@ void cvSelectionPropertiesWidget::updateSelectionList(vtkPolyData* polyData) {
         }
         return;
     }
+
+    if (!polyData) return;
 
     bool isPoints =
             (m_selectionData.fieldAssociation() == cvSelectionData::POINTS);
@@ -2370,6 +2366,29 @@ void cvSelectionPropertiesWidget::onBoundaryOpacityChanged(double value) {
 }
 
 void cvSelectionPropertiesWidget::onExportToMeshClicked() {
+    QSet<QString> sources;
+    for (const auto& info : m_selectionData.actorInfos()) {
+        if (!info.sourceId.isEmpty()) sources.insert(info.sourceId);
+    }
+    if (sources.size() > 1) {
+        QMessageBox::warning(
+                this, tr("Export Selection"),
+                tr("The selection contains multiple source objects. "
+                   "Extract each source separately."));
+        return;
+    }
+    const auto displayed = cvSelectionPipeline::resolveSelectionForView(
+            m_selectionData, getVtkVis());
+    if (displayed.actorInfos().size() != 1) {
+        QMessageBox::warning(
+                this, tr("Export Selection"),
+                tr("The selected source is not available in this view. "
+                   "Activate a view displaying that source."));
+        return;
+    }
+    const auto displayInfo = displayed.actorInfo();
+    const cvSelectionData localSelection(displayInfo.selectedIds,
+                                         displayed.fieldAssociation());
     if (m_selectionData.isEmpty()) {
         CVLog::Warning("[cvSelectionPropertiesWidget] No selection to export");
         QMessageBox::warning(this, tr("Export Failed"),
@@ -2392,7 +2411,7 @@ void cvSelectionPropertiesWidget::onExportToMeshClicked() {
     if (m_selectionManager && m_selectionManager->isSourceObjectValid()) {
         ccMesh* sourceMesh = m_selectionManager->getSourceMesh();
 
-        if (sourceMesh) {
+        if (sourceMesh && sourceMesh->getViewId() == displayInfo.sourceId) {
             // CVLog::Print(QString("[cvSelectionPropertiesWidget] Using direct
             // "
             //                      "extraction from source mesh '%1'")
@@ -2450,7 +2469,7 @@ void cvSelectionPropertiesWidget::onExportToMeshClicked() {
 
     // Export selection to mesh
     // Get polyData (using centralized ParaView-style method)
-    vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
+    vtkPolyData* polyData = displayInfo.polyData;
 
     if (!polyData) {
         CVLog::Error(
@@ -2464,7 +2483,7 @@ void cvSelectionPropertiesWidget::onExportToMeshClicked() {
 
     // Validate that polyData has enough cells for the selection
     vtkIdType polyDataCells = polyData->GetNumberOfCells();
-    QVector<qint64> selectionIds = m_selectionData.ids();
+    QVector<qint64> selectionIds = localSelection.ids();
     bool hasValidIds = false;
     for (qint64 id : selectionIds) {
         if (id >= 0 && id < polyDataCells) {
@@ -2492,7 +2511,7 @@ void cvSelectionPropertiesWidget::onExportToMeshClicked() {
     ccMesh* mesh = nullptr;
 
     try {
-        mesh = cvSelectionExporter::exportToMesh(polyData, m_selectionData,
+        mesh = cvSelectionExporter::exportToMesh(polyData, localSelection,
                                                  options);
     } catch (const std::exception& e) {
         CVLog::Error(QString("[cvSelectionPropertiesWidget] Exception during "
@@ -2542,6 +2561,29 @@ void cvSelectionPropertiesWidget::onExportToMeshClicked() {
 }
 
 void cvSelectionPropertiesWidget::onExportToPointCloudClicked() {
+    QSet<QString> sources;
+    for (const auto& info : m_selectionData.actorInfos()) {
+        if (!info.sourceId.isEmpty()) sources.insert(info.sourceId);
+    }
+    if (sources.size() > 1) {
+        QMessageBox::warning(
+                this, tr("Export Selection"),
+                tr("The selection contains multiple source objects. "
+                   "Extract each source separately."));
+        return;
+    }
+    const auto displayed = cvSelectionPipeline::resolveSelectionForView(
+            m_selectionData, getVtkVis());
+    if (displayed.actorInfos().size() != 1) {
+        QMessageBox::warning(
+                this, tr("Export Selection"),
+                tr("The selected source is not available in this view. "
+                   "Activate a view displaying that source."));
+        return;
+    }
+    const auto displayInfo = displayed.actorInfo();
+    const cvSelectionData localSelection(displayInfo.selectedIds,
+                                         displayed.fieldAssociation());
     if (m_selectionData.isEmpty()) {
         CVLog::Warning("[cvSelectionPropertiesWidget] No selection to export");
         QMessageBox::warning(this, tr("Export Failed"),
@@ -2569,7 +2611,7 @@ void cvSelectionPropertiesWidget::onExportToPointCloudClicked() {
                                     .arg(sourceCloud != nullptr
                                                  ? sourceCloud->getName()
                                                  : "nullptr"));
-        if (sourceCloud) {
+        if (sourceCloud && sourceCloud->getViewId() == displayInfo.sourceId) {
             // For cell selection on point cloud, convert to point selection
             cvSelectionData exportSelection = m_selectionData;
             if (m_selectionData.fieldAssociation() == cvSelectionData::CELLS) {
@@ -2636,7 +2678,7 @@ void cvSelectionPropertiesWidget::onExportToPointCloudClicked() {
     // ParaView behavior: Allow both POINTS and CELLS selections for point cloud
     // export For point clouds, cell IDs ARE point IDs (each vertex is a cell)
     // Check if source is a point cloud (no polygons)
-    vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
+    vtkPolyData* polyData = displayInfo.polyData;
     bool isSourcePointCloud = polyData && (polyData->GetNumberOfPolys() == 0);
 
     if (m_selectionData.fieldAssociation() != cvSelectionData::POINTS &&
@@ -2674,7 +2716,7 @@ void cvSelectionPropertiesWidget::onExportToPointCloudClicked() {
     vtkIdType maxId = isCellSelectionOnPointCloud
                               ? polyData->GetNumberOfCells()
                               : polyData->GetNumberOfPoints();
-    QVector<qint64> selectionIds = m_selectionData.ids();
+    QVector<qint64> selectionIds = localSelection.ids();
     bool hasValidIds = false;
     int validCount = 0;
     int invalidCount = 0;
@@ -2715,7 +2757,7 @@ void cvSelectionPropertiesWidget::onExportToPointCloudClicked() {
 
     // For cell selection on point cloud, convert to point selection
     // (cell IDs = point IDs for vertex cells)
-    cvSelectionData exportSelection = m_selectionData;
+    cvSelectionData exportSelection = localSelection;
     if (isCellSelectionOnPointCloud) {
         CVLog::Print(
                 "[cvSelectionPropertiesWidget] Converting cell selection to "
@@ -2957,9 +2999,7 @@ void cvSelectionPropertiesWidget::highlightSingleItem(qint64 id) {
                 // Restore original full selection highlight with SELECTED mode
                 // (green)
                 m_highlighter->highlightSelection(
-                        m_selectionData.vtkArray(),
-                        m_selectionData.fieldAssociation(),
-                        cvSelectionHighlighter::SELECTED);
+                        m_selectionData, cvSelectionHighlighter::SELECTED);
             }
 
             Visualization::VtkVis* pclVis = getVtkVis();
@@ -3003,18 +3043,11 @@ void cvSelectionPropertiesWidget::onExtractBoundaryClicked() {
         return;
     }
 
-    // Get polyData using centralized ParaView-style method
-    vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
-
-    if (!polyData) {
-        CVLog::Warning(
-                "[cvSelectionPropertiesWidget] No polyData for boundary "
-                "extraction");
-        return;
-    }
-
-    cvSelectionData boundary =
-            algebra->extractBoundary(polyData, m_selectionData);
+    const auto boundary = applyToDisplayedSelection(
+            m_selectionData, getVtkVis(),
+            [algebra](vtkPolyData* poly, const cvSelectionData& local) {
+                return algebra->extractBoundary(poly, local);
+            });
 
     if (!boundary.isEmpty()) {
         m_selectionManager->setCurrentSelection(boundary);
@@ -3074,30 +3107,32 @@ void cvSelectionPropertiesWidget::onCellLabelsClicked() {
     m_cellLabelsMenu->clear();
 
     // Add "None" option to disable labels
-    QAction* noneAction = m_cellLabelsMenu->addAction(tr("None"));
-    noneAction->setCheckable(true);
-    noneAction->setChecked(m_currentCellLabelArray.isEmpty());
-    connect(noneAction, &QAction::triggered, [this]() {
-        m_currentCellLabelArray.clear();
-        // Apply to highlighter
-        if (m_highlighter) {
-            m_highlighter->setCellLabelArray(QString(), false);
-        }
-        CVLog::Print("[cvSelectionPropertiesWidget] Cell labels disabled");
-    });
+    ecvAddMenuButton<QRadioButton>(
+            m_cellLabelsMenu, tr("None"), m_currentCellLabelArray.isEmpty(),
+            this, [this](bool checked) {
+                if (!checked) return;
+                m_currentCellLabelArray.clear();
+                // Apply to highlighter
+                if (m_highlighter) {
+                    m_highlighter->setCellLabelArray(QString(), false);
+                }
+                CVLog::Print(
+                        "[cvSelectionPropertiesWidget] Cell labels disabled");
+            });
 
     // Add "ID" option - ParaView uses vtkOriginalCellIds for this
-    QAction* idAction = m_cellLabelsMenu->addAction(tr("ID"));
-    idAction->setCheckable(true);
-    idAction->setChecked(m_currentCellLabelArray == "ID");
-    connect(idAction, &QAction::triggered, [this]() {
-        m_currentCellLabelArray = "ID";
-        // Apply to highlighter
-        if (m_highlighter) {
-            m_highlighter->setCellLabelArray("ID", true);
-        }
-        CVLog::Print("[cvSelectionPropertiesWidget] Cell labels set to ID");
-    });
+    ecvAddMenuButton<QRadioButton>(
+            m_cellLabelsMenu, tr("ID"), m_currentCellLabelArray == "ID", this,
+            [this](bool checked) {
+                if (!checked) return;
+                m_currentCellLabelArray = "ID";
+                // Apply to highlighter
+                if (m_highlighter) {
+                    m_highlighter->setCellLabelArray("ID", true);
+                }
+                CVLog::Print(
+                        "[cvSelectionPropertiesWidget] Cell labels set to ID");
+            });
 
     m_cellLabelsMenu->addSeparator();
 
@@ -3113,19 +3148,20 @@ void cvSelectionPropertiesWidget::onCellLabelsClicked() {
                 if (name.startsWith("vtk", Qt::CaseInsensitive)) {
                     continue;
                 }
-                QAction* action = m_cellLabelsMenu->addAction(name);
-                action->setCheckable(true);
-                action->setChecked(m_currentCellLabelArray == name);
-                connect(action, &QAction::triggered, [this, name]() {
-                    m_currentCellLabelArray = name;
-                    // Apply to highlighter
-                    if (m_highlighter) {
-                        m_highlighter->setCellLabelArray(name, true);
-                    }
-                    CVLog::Print(QString("[cvSelectionPropertiesWidget] "
-                                         "Cell labels set to %1")
-                                         .arg(name));
-                });
+                ecvAddMenuButton<QRadioButton>(
+                        m_cellLabelsMenu, name, m_currentCellLabelArray == name,
+                        this, [this, name](bool checked) {
+                            if (!checked) return;
+                            m_currentCellLabelArray = name;
+                            // Apply to highlighter
+                            if (m_highlighter) {
+                                m_highlighter->setCellLabelArray(name, true);
+                            }
+                            CVLog::Print(
+                                    QString("[cvSelectionPropertiesWidget] "
+                                            "Cell labels set to %1")
+                                            .arg(name));
+                        });
             }
         }
     }
@@ -3143,29 +3179,30 @@ void cvSelectionPropertiesWidget::onPointLabelsClicked() {
     m_pointLabelsMenu->clear();
 
     // Add "None" option to disable labels
-    QAction* noneAction = m_pointLabelsMenu->addAction(tr("None"));
-    noneAction->setCheckable(true);
-    noneAction->setChecked(m_currentPointLabelArray.isEmpty());
-    connect(noneAction, &QAction::triggered, [this]() {
-        m_currentPointLabelArray.clear();
-        // Apply to highlighter
-        if (m_highlighter) {
-            m_highlighter->setPointLabelArray(QString(), false);
-        }
-        CVLog::Print("[cvSelectionPropertiesWidget] Point labels disabled");
-    });
+    ecvAddMenuButton<QRadioButton>(
+            m_pointLabelsMenu, tr("None"), m_currentPointLabelArray.isEmpty(),
+            this, [this](bool checked) {
+                if (!checked) return;
+                m_currentPointLabelArray.clear();
+                // Apply to highlighter
+                if (m_highlighter) {
+                    m_highlighter->setPointLabelArray(QString(), false);
+                }
+                CVLog::Print(
+                        "[cvSelectionPropertiesWidget] Point labels disabled");
+            });
 
     // Add "ID" option - ParaView uses vtkOriginalPointIds for this
-    QAction* idAction = m_pointLabelsMenu->addAction(tr("ID"));
-    idAction->setCheckable(true);
-    idAction->setChecked(m_currentPointLabelArray == "ID");
-    connect(idAction, &QAction::triggered, [this]() {
-        m_currentPointLabelArray = "ID";
-        // Apply to highlighter
-        if (m_highlighter) {
-            m_highlighter->setPointLabelArray("ID", true);
-        }
-    });
+    ecvAddMenuButton<QRadioButton>(
+            m_pointLabelsMenu, tr("ID"), m_currentPointLabelArray == "ID", this,
+            [this](bool checked) {
+                if (!checked) return;
+                m_currentPointLabelArray = "ID";
+                // Apply to highlighter
+                if (m_highlighter) {
+                    m_highlighter->setPointLabelArray("ID", true);
+                }
+            });
 
     m_pointLabelsMenu->addSeparator();
 
@@ -3182,19 +3219,21 @@ void cvSelectionPropertiesWidget::onPointLabelsClicked() {
                     continue;
                 }
                 // Allow Normals and other arrays
-                QAction* action = m_pointLabelsMenu->addAction(name);
-                action->setCheckable(true);
-                action->setChecked(m_currentPointLabelArray == name);
-                connect(action, &QAction::triggered, [this, name]() {
-                    m_currentPointLabelArray = name;
-                    // Apply to highlighter
-                    if (m_highlighter) {
-                        m_highlighter->setPointLabelArray(name, true);
-                    }
-                    CVLog::Print(QString("[cvSelectionPropertiesWidget] "
-                                         "Point labels set to %1")
-                                         .arg(name));
-                });
+                ecvAddMenuButton<QRadioButton>(
+                        m_pointLabelsMenu, name,
+                        m_currentPointLabelArray == name, this,
+                        [this, name](bool checked) {
+                            if (!checked) return;
+                            m_currentPointLabelArray = name;
+                            // Apply to highlighter
+                            if (m_highlighter) {
+                                m_highlighter->setPointLabelArray(name, true);
+                            }
+                            CVLog::Print(
+                                    QString("[cvSelectionPropertiesWidget] "
+                                            "Point labels set to %1")
+                                            .arg(name));
+                        });
             }
         }
     }
@@ -4157,91 +4196,34 @@ void cvSelectionPropertiesWidget::onInvertSelectionToggled(bool checked) {
             QString("[cvSelectionPropertiesWidget] Invert selection: %1")
                     .arg(checked ? "ON" : "OFF"));
 
-    // Store original selection on first invert (if not already stored)
-    if (m_originalSelectionIds.isEmpty()) {
-        m_originalSelectionIds = m_selectionData.ids();
-    }
-
-    if (m_originalSelectionIds.isEmpty()) {
-        CVLog::Warning(
-                "[cvSelectionPropertiesWidget] No original selection for "
-                "inversion");
-        return;
-    }
-
-    // Get polyData
-    vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
-    if (!polyData) {
-        CVLog::Warning(
-                "[cvSelectionPropertiesWidget] No polyData for inversion");
-        return;
-    }
-
-    // Determine which IDs to display
-    QVector<qint64> displayIds;
-
-    bool isCellSelection =
-            (m_selectionData.fieldAssociation() == cvSelectionData::CELLS);
-    vtkIdType totalCount = isCellSelection ? polyData->GetNumberOfCells()
-                                           : polyData->GetNumberOfPoints();
-
-    if (checked) {
-        // Invert: show all IDs NOT in original selection
-        QSet<qint64> originalIdSet = qSetFromVector(m_originalSelectionIds);
-
-        displayIds.reserve(static_cast<int>(totalCount) -
-                           m_originalSelectionIds.size());
-        for (vtkIdType i = 0; i < totalCount; ++i) {
-            if (!originalIdSet.contains(static_cast<qint64>(i))) {
-                displayIds.append(static_cast<qint64>(i));
-            }
-        }
-    } else {
-        // Not inverted: show original selection
-        displayIds = m_originalSelectionIds;
-    }
-
-    // Update 3D highlight
-    if (m_highlighter) {
-        vtkSmartPointer<vtkIdTypeArray> idArray =
-                vtkSmartPointer<vtkIdTypeArray>::New();
-        idArray->SetNumberOfTuples(displayIds.size());
-        for (int i = 0; i < displayIds.size(); ++i) {
-            idArray->SetValue(i, static_cast<vtkIdType>(displayIds[i]));
-        }
-
-        int fieldAssoc =
-                (m_selectionData.fieldAssociation() == cvSelectionData::CELLS)
-                        ? 0
-                        : 1;
-        m_highlighter->highlightSelection(polyData, idArray, fieldAssoc,
+    // Inversion is a display preview, not a mutation of the authoritative
+    // source selection. Each displayed source has its own local ID domain.
+    const auto preview = applyToDisplayedSelection(
+            m_selectionData, getVtkVis(),
+            [checked](vtkPolyData* poly, const cvSelectionData& local) {
+                if (!checked) return local;
+                QSet<qint64> original;
+                for (auto id : local.ids()) original.insert(id);
+                const auto count =
+                        local.fieldAssociation() == cvSelectionData::CELLS
+                                ? poly->GetNumberOfCells()
+                                : poly->GetNumberOfPoints();
+                QVector<qint64> inverted;
+                for (vtkIdType id = 0; id < count; ++id)
+                    if (!original.contains(id)) inverted.append(id);
+                return cvSelectionData(inverted, local.fieldAssociation());
+            });
+    if (m_highlighter)
+        m_highlighter->highlightSelection(preview,
                                           cvSelectionHighlighter::SELECTED);
 
-        // Update labels
-        QString pointLabelArray = m_highlighter->getPointLabelArrayName();
-        QString cellLabelArray = m_highlighter->getCellLabelArrayName();
-        if (!pointLabelArray.isEmpty() &&
-            m_highlighter->isPointLabelVisible()) {
-            m_highlighter->setPointLabelArray(pointLabelArray, true);
-        }
-        if (!cellLabelArray.isEmpty() && m_highlighter->isCellLabelVisible()) {
-            m_highlighter->setCellLabelArray(cellLabelArray, true);
-        }
+    if (!preview.isEmpty()) {
+        const auto info = preview.actorInfo();
+        const cvSelectionData local(info.selectedIds,
+                                    preview.fieldAssociation());
+        updateSpreadsheetData(info.polyData, &local);
+        updateStatistics(info.polyData, &local);
     }
-
-    // Update spreadsheet display ONLY (not full updateSelection)
-    // Create temporary display data without modifying m_selectionData
-    cvSelectionData displaySelection(displayIds,
-                                     m_selectionData.fieldAssociation());
-    if (m_selectionData.hasActorInfo()) {
-        displaySelection.setActorInfo(m_selectionData.primaryActor(),
-                                      m_selectionData.primaryPolyData());
-    }
-
-    // Update UI with custom selection (without modifying m_selectionData)
-    // This is much cleaner and safer than temporarily replacing m_selectionData
-    updateSpreadsheetData(polyData, &displaySelection);
-    updateStatistics(polyData, &displaySelection);
 
     emit invertSelectionRequested();
 }
@@ -4533,13 +4515,11 @@ void cvSelectionPropertiesWidget::onToggleColumnVisibility() {
 
     for (int col = 0; col < m_spreadsheetTable->columnCount(); ++col) {
         QString header = m_spreadsheetTable->horizontalHeaderItem(col)->text();
-        QAction* action = menu.addAction(header);
-        action->setCheckable(true);
-        action->setChecked(!m_spreadsheetTable->isColumnHidden(col));
-        action->setData(col);
-        connect(action, &QAction::toggled, [this, col](bool visible) {
-            m_spreadsheetTable->setColumnHidden(col, !visible);
-        });
+        ecvAddMenuButton<QCheckBox>(
+                &menu, header, !m_spreadsheetTable->isColumnHidden(col), this,
+                [this, col](bool visible) {
+                    m_spreadsheetTable->setColumnHidden(col, !visible);
+                });
     }
 
     menu.exec(QCursor::pos());
@@ -4898,9 +4878,44 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
         savedSelections.append({attr, op});
     }
 
-    // Update selection and notify manager
-    vtkPolyData* polyData = getPolyDataForSelection(&m_selectionData);
-    m_selectionData = combinedResult;
+    // Query IDs address the chosen producer's exact displayed dataset.
+    // Do not guess a source from an unrelated current selection/first actor.
+    vtkPolyData* polyData = getPolyDataForDataProducer();
+    if (!polyData) polyData = getPolyDataForSelection(&m_selectionData);
+    vtkActor* queryActor = nullptr;
+    QString querySource;
+    for (auto* actor : getDataActors()) {
+        if (!actor->GetMapper() || actor->GetMapper()->GetInput() != polyData)
+            continue;
+        const auto id = QString::fromStdString(
+                getVtkVis()->selectionSourceId(actor, 0));
+        if (id.isEmpty() || queryActor) {
+            queryActor = nullptr;
+            break;
+        }
+        queryActor = actor;
+        querySource = id;
+    }
+    if (!queryActor) {
+        QMessageBox::warning(
+                this, tr("Find Data"),
+                tr("The query data producer cannot be uniquely resolved "
+                   "in this view. Activate a view displaying that source."));
+        return;
+    }
+    cvActorSelectionInfo info;
+    info.actor = queryActor;
+    info.polyData = polyData;
+    info.sourceId = querySource;
+    info.selectedIds = combinedResult.ids();
+    const auto mapped = cvSelectionPipeline::remapToSourceIds(
+            combinedResult.vtkArray(), polyData, isCell);
+    for (vtkIdType i = 0; i < mapped->GetNumberOfTuples(); ++i)
+        info.sourceIds.append(mapped->GetValue(i));
+    cvSelectionData qualified(info.sourceIds,
+                              combinedResult.fieldAssociation());
+    qualified.addActorInfo(info);
+    m_selectionData = qualified;
     updateSelection(m_selectionData, polyData);
 
     if (m_selectionManager) {
@@ -4944,11 +4959,6 @@ void cvSelectionPropertiesWidget::onFindDataClicked() {
     Visualization::VtkVis* pclVis = getVtkVis();
     if (pclVis) {
         pclVis->UpdateScreen();
-    }
-
-    // Update the Selected Data spreadsheet table with the query results
-    if (polyData) {
-        updateSpreadsheetData(polyData);
     }
 
     QMessageBox::information(this, tr("Find Data"),

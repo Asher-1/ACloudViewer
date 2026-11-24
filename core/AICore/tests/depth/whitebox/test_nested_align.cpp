@@ -10,6 +10,8 @@
 // NestedAligner, and compares depth_final / scale_factor / extrinsics_final vs
 // the reference at 2e-3 (rel). This isolates the alignment math from the slow
 // backbones. SKIP (77) if AICORE_TEST_DEPTH_BASELINE_NESTED is absent.
+#include <gtest/gtest.h>
+
 #include <array>
 #include <cstdio>
 #include <cstdlib>
@@ -19,9 +21,9 @@
 #include "tasks/depth/nested.hpp"
 #include "tests/depth/whitebox/parity.hpp"
 
-int main() {
+TEST(DepthWhitebox, NestedAlign) {
     const char* base = std::getenv("AICORE_TEST_DEPTH_BASELINE_NESTED");
-    if (!base) return 77;
+    if (!base) GTEST_SKIP() << "Missing configured model/reference assets";
     const int H = 224, W = 224;
 
     auto loadv = [&](const char* name, std::vector<float>& out) -> bool {
@@ -32,16 +34,22 @@ int main() {
     aicore::depth::AnyviewOut any;
     aicore::depth::MetricOut metric;
     std::vector<float> ext_any, intr_any;
-    if (!loadv("depth_any", any.depth)) return 1;
-    if (!loadv("depth_conf_any", any.depth_conf)) return 1;
-    if (!loadv("extrinsics_any", ext_any)) return 1;
-    if (!loadv("intrinsics_any", intr_any)) return 1;
-    if (!loadv("depth_metric_raw", metric.depth)) return 1;
-    if (!loadv("sky", metric.sky)) return 1;
+    if (!loadv("depth_any", any.depth))
+        FAIL() << "Required operation or numeric contract failed";
+    if (!loadv("depth_conf_any", any.depth_conf))
+        FAIL() << "Required operation or numeric contract failed";
+    if (!loadv("extrinsics_any", ext_any))
+        FAIL() << "Required operation or numeric contract failed";
+    if (!loadv("intrinsics_any", intr_any))
+        FAIL() << "Required operation or numeric contract failed";
+    if (!loadv("depth_metric_raw", metric.depth))
+        FAIL() << "Required operation or numeric contract failed";
+    if (!loadv("sky", metric.sky))
+        FAIL() << "Required operation or numeric contract failed";
     if (ext_any.size() != 12 || intr_any.size() != 9) {
         std::fprintf(stderr, "bad extrinsics/intrinsics shapes %zu %zu\n",
                      ext_any.size(), intr_any.size());
-        return 1;
+        FAIL() << "Required operation or numeric contract failed";
     }
     for (int i = 0; i < 12; ++i) any.extrinsics[i] = ext_any[i];
     for (int i = 0; i < 9; ++i) any.intrinsics[i] = intr_any[i];
@@ -49,23 +57,26 @@ int main() {
     aicore::depth::NestedOut res =
             aicore::depth::NestedAligner::align(any, metric, H, W);
 
-    bool ok = true;
     {
         std::vector<float> ref;
-        if (!loadv("depth_final", ref)) return 1;
-        ok &= da_parity::compare(res.depth, ref, "depth_final", 2e-3f, 2e-3f);
+        if (!loadv("depth_final", ref))
+            FAIL() << "Required operation or numeric contract failed";
+        EXPECT_TRUE(da_parity::compare(res.depth, ref, "depth_final", 2e-3f,
+                                       2e-3f));
     }
     {
         std::vector<float> ref;
-        if (!loadv("scale_factor", ref)) return 1;
+        if (!loadv("scale_factor", ref))
+            FAIL() << "Required operation or numeric contract failed";
         std::vector<float> got = {res.scale_factor};
-        ok &= da_parity::compare(got, ref, "scale_factor", 2e-3f, 2e-3f);
+        EXPECT_TRUE(da_parity::compare(got, ref, "scale_factor", 2e-3f, 2e-3f));
     }
     {
         std::vector<float> ref;
-        if (!loadv("extrinsics_final", ref)) return 1;
+        if (!loadv("extrinsics_final", ref))
+            FAIL() << "Required operation or numeric contract failed";
         std::vector<float> got(res.extrinsics.begin(), res.extrinsics.end());
-        ok &= da_parity::compare(got, ref, "extrinsics_final", 2e-3f, 2e-3f);
+        EXPECT_TRUE(
+                da_parity::compare(got, ref, "extrinsics_final", 2e-3f, 2e-3f));
     }
-    return ok ? 0 : 1;
 }

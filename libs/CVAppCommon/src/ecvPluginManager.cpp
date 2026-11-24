@@ -226,6 +226,10 @@ void ccPluginManager::setPluginEnabled(const ccPluginInterface *plugin,
     settings.setValue("Disabled", list);
 }
 
+QString ccPluginManager::pluginId(const ccPluginInterface *plugin) const {
+    return plugin ? plugin->IID() : QString();
+}
+
 bool ccPluginManager::isEnabled(const ccPluginInterface *plugin) const {
     const QString &iid = plugin->IID();
 

@@ -296,8 +296,6 @@ private:
     void createTextActor(const cvAnnotation& annotation);
     void updateTextActor(const QString& id);
     void removeTextActor(const QString& id);
-    double* computeSelectionCenter(const cvSelectionData& selection,
-                                   vtkPolyData* polyData);
 
     /**
      * @brief Convert 3D world coordinates to 2D display coordinates

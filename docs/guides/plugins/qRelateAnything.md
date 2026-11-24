@@ -1,5 +1,10 @@
 # RelateAnything scene relations
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRelateAnything/images/relate_anything_test.jpg" width="49%" alt="RelateAnything — scene relation graph on an image">
+  <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRelateAnything/images/relate_anything_video_test.jpg" width="49%" alt="RelateAnything — relation tracking on video">
+</p>
+
 Enable `AICore_ENABLED` and `PLUGIN_STANDARD_QRELATEANYTHING`, then open the
 RelateAnything plugin. It detects objects with the existing YOLO inference task
 and displays subject–predicate–object relations with scores and an annotated

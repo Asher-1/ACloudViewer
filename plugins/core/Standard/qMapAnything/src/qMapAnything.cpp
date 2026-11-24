@@ -7,6 +7,7 @@
 
 #include "qMapAnything.h"
 
+#include <ecvAICoreUiHelper.h>
 #include <ecvCameraSensor.h>
 #include <ecvCameraSensorDisplayUtils.h>
 #include <ecvImage.h>
@@ -194,6 +195,7 @@ void qMapAnything::showDialog() {
     if (!m_dialog) {
         m_dialog = new MapAnythingDialog(
                 static_cast<QWidget*>(m_app->getMainWindow()));
+        ecvAICoreUi::bindDialogAction(m_action, m_dialog);
         m_dialog->setAppInterface(m_app);
         connect(m_dialog, &MapAnythingDialog::runRequested, this,
                 &qMapAnything::executeTask);

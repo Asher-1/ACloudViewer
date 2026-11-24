@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <cstdint>
 
 #include "aicore/aliked_capi.h"
@@ -19,35 +21,29 @@
 #include "aicore/trellis_capi.h"
 #include "aicore/yolo_capi.h"
 
-#define CHECK(expr)          \
-    do {                     \
-        if (!(expr)) {       \
-            return __LINE__; \
-        }                    \
-    } while (false)
+static_assert(AICORE_PIPELINE_TIMINGS_ABI_VERSION == 1u);
+static_assert(AICORE_TIMING_PREPROCESS == (1u << 0));
+static_assert(AICORE_TIMING_INFERENCE == (1u << 1));
+static_assert(AICORE_TIMING_POSTPROCESS == (1u << 2));
+static_assert(AICORE_TIMING_SERIALIZATION == (1u << 3));
+static_assert(AICORE_TIMING_E2E == (1u << 4));
 
-int main() {
-    static_assert(AICORE_PIPELINE_TIMINGS_ABI_VERSION == 1u);
-    static_assert(AICORE_TIMING_PREPROCESS == (1u << 0));
-    static_assert(AICORE_TIMING_INFERENCE == (1u << 1));
-    static_assert(AICORE_TIMING_POSTPROCESS == (1u << 2));
-    static_assert(AICORE_TIMING_SERIALIZATION == (1u << 3));
-    static_assert(AICORE_TIMING_E2E == (1u << 4));
-
+TEST(PipelineTimingContract, RejectsNullTaskContexts) {
     aicore_pipeline_timings out{};
-    CHECK(aicore_aliked_last_pipeline_timings(nullptr, &out) == -1);
-    CHECK(aicore_deeplsd_last_pipeline_timings(nullptr, &out) == -1);
-    CHECK(aicore_depth_last_pipeline_timings(nullptr, &out) == -1);
-    CHECK(aicore_facedetect_last_pipeline_timings(nullptr, &out) == -1);
-    CHECK(aicore_gaussian_last_pipeline_timings(nullptr, &out) == -1);
-    CHECK(aicore_lightglue_last_pipeline_timings(nullptr, &out) == -1);
-    CHECK(aicore_rfdetr_last_pipeline_timings(nullptr, &out) == -1);
-    CHECK(aicore_rmbg_last_pipeline_timings(nullptr, &out) == -1);
-    CHECK(aicore_sam3_last_pipeline_timings(nullptr, &out) == -1);
-    CHECK(aicore_sam3_tracker_last_pipeline_timings(nullptr, &out) == -1);
-    CHECK(aicore_trellis_last_pipeline_timings(nullptr, &out) == -1);
-    CHECK(aicore_yolo_last_pipeline_timings(nullptr, &out) == -1);
+    EXPECT_EQ(aicore_aliked_last_pipeline_timings(nullptr, &out), -1);
+    EXPECT_EQ(aicore_deeplsd_last_pipeline_timings(nullptr, &out), -1);
+    EXPECT_EQ(aicore_depth_last_pipeline_timings(nullptr, &out), -1);
+    EXPECT_EQ(aicore_facedetect_last_pipeline_timings(nullptr, &out), -1);
+    EXPECT_EQ(aicore_gaussian_last_pipeline_timings(nullptr, &out), -1);
+    EXPECT_EQ(aicore_lightglue_last_pipeline_timings(nullptr, &out), -1);
+    EXPECT_EQ(aicore_rfdetr_last_pipeline_timings(nullptr, &out), -1);
+    EXPECT_EQ(aicore_rmbg_last_pipeline_timings(nullptr, &out), -1);
+    EXPECT_EQ(aicore_sam3_last_pipeline_timings(nullptr, &out), -1);
+    EXPECT_EQ(aicore_sam3_tracker_last_pipeline_timings(nullptr, &out), -1);
+    EXPECT_EQ(aicore_trellis_last_pipeline_timings(nullptr, &out), -1);
+    EXPECT_EQ(aicore_yolo_last_pipeline_timings(nullptr, &out), -1);
+}
 
-    CHECK(aicore_depth_last_pipeline_timings(nullptr, nullptr) == -1);
-    return 0;
+TEST(PipelineTimingContract, RejectsNullOutput) {
+    EXPECT_EQ(aicore_depth_last_pipeline_timings(nullptr, nullptr), -1);
 }

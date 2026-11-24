@@ -12,6 +12,9 @@
 #include <QVTKOpenGLNativeWidget.h>
 #include <Shortcuts/ecvKeySequences.h>
 #include <Tools/SelectionTools/cvSelectionHighlighter.h>
+#include <Tools/SelectionTools/cvSelectionPipeline.h>
+#include <Tools/SelectionTools/cvSelectionToolController.h>
+#include <VTKExtensions/Core/vtkMemberFunctionCommand.h>
 #include <VTKExtensions/Views/GridAxes/vtkGridAxesActor3D.h>
 #include <VTKExtensions/Views/GridAxes/vtkGridAxesHelper.h>
 #include <VTKExtensions/Views/vtkPVAxesWidget.h>
@@ -265,6 +268,13 @@ struct vtkOrthoSliceViewWidget::Impl {
     bool hasMeshCells = false;
     vtkSmartPointer<vtkPVAxesWidget> orientWidget;
     vtkSmartPointer<vtkCameraOrientationWidget> cameraOrientWidget;
+    // Zoom snapshot for orientation-gizmo clicks (VTK resets the camera after
+    // orienting it); restored on EndInteractionEvent. See
+    // onOrientWidgetInteraction.
+    double orientZoomFocal[3] = {0.0, 0.0, 0.0};
+    double orientZoomDistance = 1.0;
+    double orientZoomParallelScale = 1.0;
+    bool orientZoomValid = false;
 
     struct ExtraSliceData {
         vtkSmartPointer<vtkPlane> planes[3];
@@ -276,6 +286,7 @@ struct vtkOrthoSliceViewWidget::Impl {
     QList<ExtraSliceData> extraSlices;
     QList<std::shared_ptr<vtkOrthoSliceRepresentation>> sliceRepresentations;
     vtkSmartPointer<vtkActor> selectionHighlightActor;
+    QList<cvActorSelectionInfo> selectionSources;
 };
 
 vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
@@ -1332,98 +1343,45 @@ void vtkOrthoSliceViewWidget::connectExternalHighlighter(QObject* highlighter) {
     m_externalHighlighterLinked = true;
     auto* ren3D = d->renderers[PERSPECTIVE_VIEW].GetPointer();
 
-    auto cloneHighlightActor = [](vtkActor* src) -> vtkSmartPointer<vtkActor> {
-        if (!src) return {};
-        auto clone = vtkSmartPointer<vtkActor>::New();
-        clone->ShallowCopy(src);
-        if (auto* srcMapper =
-                    vtkDataSetMapper::SafeDownCast(src->GetMapper())) {
-            auto mapper = vtkSmartPointer<vtkDataSetMapper>::New();
-            mapper->ShallowCopy(srcMapper);
-            clone->SetMapper(mapper);
+    auto applySelection = [this, ren3D](const cvSelectionData& selection) {
+        if (!ren3D) return;
+        if (d->selectionHighlightActor) {
+            ren3D->RemoveActor(d->selectionHighlightActor);
+            d->selectionHighlightActor = nullptr;
         }
-        clone->SetPickable(0);
-        return clone;
-    };
-
-    auto safeUpdate = [this]() {
+        cvSelectionData resolved;
+        for (const auto& source : d->selectionSources) {
+            auto local = cvSelectionPipeline::resolveSelectionForActor(
+                    selection, source.sourceId, source.actor, source.polyData);
+            if (local.isEmpty()) continue;
+            resolved = cvSelectionPipeline::combineSelections(
+                    resolved, local, cvSelectionPipeline::OPERATION_ADDITION);
+        }
+        auto poly = cvSelectionHighlighter::buildSelectionOverlay(resolved);
+        if (poly) {
+            const auto kind =
+                    selection.fieldAssociation() == cvSelectionData::POINTS
+                            ? cvSelectionHighlighter::SelectionOverlayPoints
+                            : cvSelectionHighlighter::SelectionOverlaySurface;
+            m_selectionOverlayKind = kind;
+            d->selectionHighlightActor =
+                    cvSelectionHighlighter::createSelectionOverlayActor(poly,
+                                                                        kind);
+            if (d->selectionHighlightActor)
+                ren3D->AddActor(d->selectionHighlightActor);
+        }
         if (d->vtkWidget && d->vtkWidget->isVisible()) d->vtkWidget->update();
     };
-
-    auto removeClone = [this, ren3D](vtkActor* source) {
-        if (!source || !ren3D) return;
-        auto it = m_externalHighlightClones.find(source);
-        if (it == m_externalHighlightClones.end()) return;
-        if (it.value()) ren3D->RemoveActor(it.value());
-        m_externalHighlightClones.erase(it);
-    };
-
-    // SELECTED: selectionOverlayUpdated drives d->selectionHighlightActor.
-    m_hlActorAddedConn =
-            connect(hl, &cvSelectionHighlighter::highlightActorAdded, this,
-                    [this, ren3D, cloneHighlightActor, safeUpdate,
-                     removeClone](vtkActor* actor) {
-                        if (!actor || !ren3D) return;
-                        removeClone(actor);
-                        auto clone = cloneHighlightActor(actor);
-                        if (!clone) return;
-                        ren3D->AddActor(clone);
-                        m_externalHighlightClones.insert(actor, clone);
-                        applyDisplayProperties();
-                        safeUpdate();
-                    });
-    m_hlActorRemovedConn =
-            connect(hl, &cvSelectionHighlighter::highlightActorRemoved, this,
-                    [this, removeClone, safeUpdate](vtkActor* actor) {
-                        removeClone(actor);
-                        applyDisplayProperties();
-                        safeUpdate();
-                    });
     m_hlClearedConn =
             connect(hl, &cvSelectionHighlighter::highlightsCleared, this,
-                    [this, ren3D, safeUpdate]() {
-                        for (auto it = m_externalHighlightClones.begin();
-                             it != m_externalHighlightClones.end(); ++it) {
-                            if (it.value() && ren3D)
-                                ren3D->RemoveActor(it.value());
-                        }
-                        m_externalHighlightClones.clear();
-                        if (d->selectionHighlightActor && ren3D) {
-                            ren3D->RemoveActor(d->selectionHighlightActor);
-                            d->selectionHighlightActor = nullptr;
-                        }
-                        safeUpdate();
-                    });
-
-    m_hlOverlayConn = connect(
-            hl, &cvSelectionHighlighter::selectionOverlayUpdated, this,
-            [this, ren3D, safeUpdate](vtkPolyData* poly, int kind) {
-                m_selectionOverlayKind = kind;
-                if (d->selectionHighlightActor && ren3D) {
-                    ren3D->RemoveActor(d->selectionHighlightActor);
-                    d->selectionHighlightActor = nullptr;
-                }
-                if (kind != cvSelectionHighlighter::SelectionOverlayNone &&
-                    ren3D) {
-                    d->selectionHighlightActor =
-                            cvSelectionHighlighter::createSelectionOverlayActor(
-                                    poly,
-                                    static_cast<cvSelectionHighlighter::
-                                                        SelectionOverlayKind>(
-                                            kind));
-                    if (d->selectionHighlightActor) {
-                        ren3D->AddActor(d->selectionHighlightActor);
-                    }
-                }
-                if (d->selectionHighlightActor) {
-                    cvSelectionHighlighter::styleSelectionOverlayProperty(
-                            d->selectionHighlightActor->GetProperty(),
-                            static_cast<cvSelectionHighlighter::
-                                                SelectionOverlayKind>(kind));
-                }
-                if (d->renderWindow) d->renderWindow->Render();
-                safeUpdate();
-            });
+                    [applySelection]() { applySelection(cvSelectionData()); });
+    // A completed source-qualified selection is resolved on this view's
+    // actors. Temporary hover actors from another renderer never propagate.
+    if (auto* ctrl = cvSelectionToolController::instance()) {
+        m_hlOverlayConn =
+                connect(ctrl, &cvSelectionToolController::selectionFinished,
+                        this, applySelection);
+    }
 }
 
 void vtkOrthoSliceViewWidget::getSlicePosition(double pos[3]) const {
@@ -2396,7 +2354,7 @@ void vtkOrthoSliceViewWidget::applyDisplayProperties() {
 void vtkOrthoSliceViewWidget::resizeEvent(QResizeEvent* event) {
     QWidget::resizeEvent(event);
     updateOrientationWidgetViewport();
-    resetCameras();
+    render();
 }
 
 void vtkOrthoSliceViewWidget::setEntityListProvider(
@@ -2567,6 +2525,7 @@ void vtkOrthoSliceViewWidget::onSourceComboChanged(int index) {
 }
 
 void vtkOrthoSliceViewWidget::clearEntityDisplay() {
+    d->selectionSources.clear();
     d->extraSlices.clear();
     d->sliceRepresentations.clear();
 
@@ -2734,6 +2693,13 @@ void vtkOrthoSliceViewWidget::loadEntityIntoView(ccHObject* entity) {
             }
             d->fullModelActor->SetVisibility(1);
             d->renderers[PERSPECTIVE_VIEW]->AddActor(d->fullModelActor);
+            cvActorSelectionInfo source;
+            source.sourceId = meshForConvert && d->hasMeshCells
+                                      ? meshForConvert->getViewId()
+                                      : pcCloud->getViewId();
+            source.actor = d->fullModelActor;
+            source.polyData = d->entityPolyData;
+            d->selectionSources.append(source);
 
             createOutlineActor();
         }
@@ -2896,7 +2862,8 @@ void vtkOrthoSliceViewWidget::loadEntitiesIntoView(
     clearEntityDisplay();
 
     auto entityToPolyData =
-            [](ccHObject* entity) -> vtkSmartPointer<vtkPolyData> {
+            [](ccHObject* entity,
+               QString& sourceId) -> vtkSmartPointer<vtkPolyData> {
         if (!entity) return {};
         auto* mesh = ccHObjectCaster::ToMesh(entity);
         auto* genericMesh = ccHObjectCaster::ToGenericMesh(entity);
@@ -2936,6 +2903,11 @@ void vtkOrthoSliceViewWidget::loadEntitiesIntoView(
         if (polyData && polyData->GetNumberOfPoints() == 0) polyData = nullptr;
         if (!polyData && pcCloud)
             polyData = Converters::Cc2Vtk::PointCloudToPolyData(pcCloud);
+        if (polyData) {
+            sourceId = meshForConvert && polyData->GetNumberOfPolys() > 0
+                               ? meshForConvert->getViewId()
+                               : pcCloud->getViewId();
+        }
         return polyData;
     };
 
@@ -2946,7 +2918,8 @@ void vtkOrthoSliceViewWidget::loadEntitiesIntoView(
 
     d->entityPolyData = nullptr;
     for (ccHObject* entity : entities) {
-        auto polyData = entityToPolyData(entity);
+        QString sourceId;
+        auto polyData = entityToPolyData(entity, sourceId);
         if (!polyData) continue;
 
         auto rep = std::make_shared<vtkOrthoSliceRepresentation>();
@@ -2954,6 +2927,11 @@ void vtkOrthoSliceViewWidget::loadEntitiesIntoView(
         rep->setSliceOrigin(d->slicePos[0], d->slicePos[1], d->slicePos[2]);
         rep->addToRenderers(orthoRenderers, perspectiveRenderer);
         d->sliceRepresentations.append(rep);
+        cvActorSelectionInfo source;
+        source.sourceId = sourceId;
+        source.actor = rep->surfaceActor3D();
+        source.polyData = polyData;
+        d->selectionSources.append(source);
 
         if (!d->entityPolyData) d->entityPolyData = polyData;
     }
@@ -3179,6 +3157,39 @@ bool vtkOrthoSliceViewWidget::orientationMarkerVisible() const {
     return d->orientWidget && d->orientWidget->GetVisibility() != 0;
 }
 
+// Same zoom-preserving guard as VtkVis::onOrientWidgetInteraction: VTK's
+// vtkCameraOrientationWidget::EndSelectAction orients the camera then calls
+// ParentRenderer->ResetCamera(), refitting the scene. Snapshot the zoom on
+// interaction start and restore it along the new orientation on end.
+void vtkOrthoSliceViewWidget::onOrientWidgetInteraction(vtkObject* caller,
+                                                        unsigned long eventId,
+                                                        void* /*callData*/) {
+    auto* widget = vtkCameraOrientationWidget::SafeDownCast(caller);
+    vtkRenderer* ren = widget ? widget->GetParentRenderer() : nullptr;
+    vtkCamera* cam = ren ? ren->GetActiveCamera() : nullptr;
+    if (!d || !cam) return;
+
+    if (eventId == vtkCommand::StartInteractionEvent) {
+        cam->GetFocalPoint(d->orientZoomFocal);
+        d->orientZoomDistance = cam->GetDistance();
+        d->orientZoomParallelScale = cam->GetParallelScale();
+        d->orientZoomValid = true;
+    } else if (eventId == vtkCommand::EndInteractionEvent &&
+               d->orientZoomValid) {
+        d->orientZoomValid = false;
+        double vpn[3];
+        cam->GetViewPlaneNormal(vpn);
+        double pos[3];
+        for (int i = 0; i < 3; ++i) {
+            pos[i] = d->orientZoomFocal[i] + vpn[i] * d->orientZoomDistance;
+        }
+        cam->SetFocalPoint(d->orientZoomFocal);
+        cam->SetPosition(pos);
+        cam->SetParallelScale(d->orientZoomParallelScale);
+        ren->ResetCameraClippingRange();
+    }
+}
+
 void vtkOrthoSliceViewWidget::toggleCameraOrientationWidget(bool visible) {
     ensureOrientationWidgetsInitialized();
     auto* renderer = d->renderers[PERSPECTIVE_VIEW].GetPointer();
@@ -3194,6 +3205,16 @@ void vtkOrthoSliceViewWidget::toggleCameraOrientationWidget(bool visible) {
         d->cameraOrientWidget->SetInteractor(interactor);
         d->cameraOrientWidget->SetAnimate(false);
         d->cameraOrientWidget->CreateDefaultRepresentation();
+        // Preserve zoom across gizmo clicks (VTK resets the camera after
+        // orienting it; see onOrientWidgetInteraction).
+        auto zoomGuard = vtkSmartPointer<
+                vtkMemberFunctionCommand<vtkOrthoSliceViewWidget>>::New();
+        zoomGuard->SetCallback(
+                *this, &vtkOrthoSliceViewWidget::onOrientWidgetInteraction);
+        d->cameraOrientWidget->AddObserver(vtkCommand::StartInteractionEvent,
+                                           zoomGuard);
+        d->cameraOrientWidget->AddObserver(vtkCommand::EndInteractionEvent,
+                                           zoomGuard);
         if (auto* rep = vtkCameraOrientationRepresentation::SafeDownCast(
                     d->cameraOrientWidget->GetRepresentation())) {
             configureCameraOrientationRepresentation(rep);

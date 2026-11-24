@@ -195,3 +195,64 @@ At very small toolbar sizes the full long names are physically limited; the
 128px name-glyph bounds are measured independently, and no 16px readability or
 visual approval is inferred from a successful render. No inference ABI, workers,
 model behavior or plugin activation settings are changed by this icon command.
+
+## Native / Custom component appearance
+
+`ecvApplicationBase` owns one `Appearance/state` map (version, style, theme).
+System default, Fusion and other `QStyleFactory` keys use genuine native styles:
+no global component proxy or application QSS is installed. Only explicit Custom
+mode enables the component preview; its final rendering backend still requires
+real-window visual review. Approved DB Tree local styles and functional/plugin
+artwork remain separate, protected assets.
+
+Startup restores the state once, after `ecvSettingManager::Init`. Legacy
+`AppStyle/style` and `ThemeSettings/CurrentTheme` are migration input only: an
+explicit native style wins over an old CSS-menu value; legacy QDarkStyle or a
+standalone CSS selection maps to Custom. Later theme-menu selections are allowed
+only while Custom is active. Invalid native keys/resources do not update state
+or settings. Display Options Apply is a preview, matching its other parameters;
+Cancel, Escape and window-close restore the full entry snapshot, while OK commits.
+
+```bash
+# Build CVAppCommon/ACloudViewer before the actual-owner integration probe.
+python3 scripts/icon_hd/verify_appearance_modes.py --build build_app --out /tmp/appearance-review
+# Independent component-layer probe (not proof of application mode/persistence).
+python3 scripts/icon_hd/verify_qt_components.py --build build_app --out /tmp/component-review
+```
+
+The actual-owner runner currently supports Linux configured builds and exercises
+the real Display Options dialog at DPR 1/2 plus a separate-process settings
+restore. Component verification uses the configured Qt tools, retains all Qt
+messages, and fails on unsupported-property, parse, resource or regex messages.
+Offscreen platform limitations are logged separately, not hidden. Do not infer
+Qt6, Windows/macOS or full application scene acceptance from Linux Qt5 probes.
+
+The local ParaView checkout uses platform Qt styles (Fusion by default on
+Windows), not a reusable complete UI-theme engine. Its `pqComboBoxStyle` only
+controls `SH_ComboBox_Popup`; rendering `ColorPalette` proxies are not QWidget UI
+themes. Reuse independent Qt helpers/artwork only with source/license attribution,
+not by linking the entire ParaView server-manager stack for widget cosmetics.
+
+### Qlementine backend update
+
+Custom now uses the pinned, app-private Qlementine Qt5/Qt6 source port rather than
+the previous component proxy. The older component-preview description above is
+historical: no old application QSS or generic icon overlay is layered over the
+new backend. Theme identifiers remain stable, but their runtime representation is
+explicit JSON color tokens sharing one geometry implementation. The legacy proxy
+and its 72 unreferenced private glyph resources were archived and retired.
+
+The component verifier now links the actual CVAppCommon owner; it no longer
+compiles an isolated legacy proxy or registers old app QSS resources to make a
+probe pass. It validates Qlementine only in Custom, native Fusion exits, real
+popup/menu/tab/dock input, animation toggles and DPR1/1.5/2. Persistent settings
+and Apply/Cancel/Escape/close remain a separate actual-dialog regression.
+
+The framework is now fetched through the repository's libpng-style
+`ExternalProject` flow: pinned official URL/SHA, shared download cache and CMake
+dynamic `git apply --no-index`, with complete fresh/reuse file-hash verification.
+No upstream source archive or custom unpack loader remains in the source tree.
+Local evidence remains Qt5.15.2/Linux; same-source
+Qt6 compatibility is an upgrade path, not a completed cross-platform runtime
+acceptance claim. See the dependency's port notes for lifecycle fixes and license
+provenance. No AI inference implementation, assets or backend contract changes.

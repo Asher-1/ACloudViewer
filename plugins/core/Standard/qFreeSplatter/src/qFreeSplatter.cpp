@@ -8,6 +8,7 @@
 #include "qFreeSplatter.h"
 
 #include <FileIOFilter.h>
+#include <ecvAICoreUiHelper.h>
 #include <ecvCameraSensor.h>
 #include <ecvCameraSensorDisplayUtils.h>
 #include <ecvColorScalesManager.h>
@@ -904,6 +905,7 @@ void qFreeSplatter::showDialog() {
     if (!m_app) return;
     if (!m_dialog) {
         m_dialog = new FreeSplatterDialog(m_app->getMainWindow());
+        ecvAICoreUi::bindDialogAction(m_action, m_dialog);
         m_dialog->setAppInterface(m_app);
         connect(m_dialog, &FreeSplatterDialog::runRequested, this,
                 &qFreeSplatter::executeTask);

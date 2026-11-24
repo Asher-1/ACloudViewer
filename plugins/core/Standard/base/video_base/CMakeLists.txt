@@ -91,9 +91,10 @@ endif()
 # mouse event sent to m_previewLabel must reach the onPreviewMouse* hooks
 # through the base event filter (installEventFilter -> eventFilter ->
 # virtual hook). The live interaction is dead if any link breaks.
+if(BUILD_UNIT_TESTS)
 add_executable( test_video_base_gestures
     ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_preview_gestures.cpp )
-target_link_libraries( test_video_base_gestures PRIVATE video_base )
+target_link_libraries( test_video_base_gestures PRIVATE video_base gtest )
 set_target_properties( test_video_base_gestures PROPERTIES AUTOMOC ON
     POSITION_INDEPENDENT_CODE ON )
 if(NOT MSVC)
@@ -114,5 +115,7 @@ if(COMMAND aicore_register_test)
     aicore_register_test(NAME video_base_gestures
         TARGET test_video_base_gestures)
 else()
-    add_test(NAME video_base_gestures COMMAND test_video_base_gestures)
+    cloudviewer_add_test(NAME video_base_gestures COMMAND test_video_base_gestures)
+endif()
+
 endif()

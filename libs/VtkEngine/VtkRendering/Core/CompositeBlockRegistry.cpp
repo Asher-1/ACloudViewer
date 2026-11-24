@@ -342,6 +342,14 @@ bool CompositeBlockRegistry::blockVisible(const std::string& groupId,
     return true;
 }
 
+bool CompositeBlockRegistry::blockPickable(const std::string& groupId,
+                                           vtkIdType flatIndex) const {
+    const Group* group = groupOf(groupId);
+    vtkDataObject* block = group ? blockObject(*group, flatIndex) : nullptr;
+    return block && (!group->attributes->HasBlockPickability(block) ||
+                     group->attributes->GetBlockPickability(block));
+}
+
 bool CompositeBlockRegistry::bakeLeafTransform(const std::string& leafId,
                                                const vtkMatrix4x4* matrix) {
     if (!matrix) {

@@ -32,11 +32,11 @@ public:
         QString device = QStringLiteral("auto");
         int threads = 0;
         /** Detection score threshold. Without thresholdsExplicit, <= 0
-         *  follows the task default (0.3) and positive values act as
-         *  explicit overrides; with thresholdsExplicit the value is
+         *  follows the per-checkpoint task default and positive values act
+         *  as explicit overrides; with thresholdsExplicit the value is
          *  forwarded verbatim (0 = no filtering). */
         float scoreThresh = 0.0f;
-        /** Rotated NMS IoU override; <= 0 keeps the GGUF value. */
+        /** Rotated NMS IoU override; <= 0 keeps the task default. */
         float nmsThresh = 0.0f;
         /** Maximum returned boxes; <= 0 keeps the GGUF value. */
         int maxBoxes = 0;

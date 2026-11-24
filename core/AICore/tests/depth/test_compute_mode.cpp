@@ -5,24 +5,22 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include <cstdio>
+#include <gtest/gtest.h>
 
 #include "tasks/depth/compute_mode.hpp"
 
-int main() {
-    if (aicore::depth::gpu_mode()) {
-        std::fprintf(stderr, "gpu_mode should default to false\n");
-        return 1;
-    }
+class DepthComputeMode : public ::testing::Test {
+protected:
+    void TearDown() override { aicore::depth::set_gpu_mode(false); }
+};
+
+TEST_F(DepthComputeMode, DefaultsToCpu) {
+    EXPECT_FALSE(aicore::depth::gpu_mode());
+}
+
+TEST_F(DepthComputeMode, CanEnableAndClearGpuMode) {
     aicore::depth::set_gpu_mode(true);
-    if (!aicore::depth::gpu_mode()) {
-        std::fprintf(stderr, "gpu_mode not set\n");
-        return 1;
-    }
+    EXPECT_TRUE(aicore::depth::gpu_mode());
     aicore::depth::set_gpu_mode(false);
-    if (aicore::depth::gpu_mode()) {
-        std::fprintf(stderr, "gpu_mode not cleared\n");
-        return 1;
-    }
-    return 0;
+    EXPECT_FALSE(aicore::depth::gpu_mode());
 }

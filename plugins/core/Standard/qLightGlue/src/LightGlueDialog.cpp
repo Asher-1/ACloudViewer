@@ -395,11 +395,6 @@ void LightGlueDialog::setupUi() {
     ioLayout->addLayout(dbHeader);
 
     m_dbContentWidget = new QWidget;
-    m_dbContentWidget->setStyleSheet(
-            "QWidget#dbContent { "
-            "  border: 1px solid palette(mid); "
-            "  border-radius: 4px; "
-            "  background: palette(base); }");
     m_dbContentWidget->setObjectName("dbContent");
     auto* dbContentLayout = new QVBoxLayout(m_dbContentWidget);
     dbContentLayout->setContentsMargins(4, 4, 4, 4);

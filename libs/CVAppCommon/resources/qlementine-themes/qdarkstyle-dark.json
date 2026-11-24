@@ -1,0 +1,10 @@
+{
+  "base": "dark",
+  "overrides": {
+    "meta": {
+      "name": "qdarkstyle-dark",
+      "version": "1",
+      "author": "ACloudViewer"
+    }
+  }
+}

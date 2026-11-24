@@ -1,0 +1,3342 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index f5aaec4..25fceb3 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,7 +1,5 @@
+-cmake_minimum_required(VERSION 3.21.0)
++cmake_minimum_required(VERSION 3.16)
+ 
+-# Enable parallel build (not enabled by default on Windows).
+-set(CMAKE_BUILD_PARALLEL_LEVEL $ENV{NUMBER_OF_PROCESSORS})
+ 
+ # Set project information.
+ project("qlementine"
+@@ -13,16 +11,6 @@ set(PROJECT_COPYRIGHT "© Olivier Cléro, MIT License.")
+ 
+ include(GNUInstallDirs)
+ 
+-# Temporary hack to make it work with Qt6 <6.4.2 && >6.4.2 With Qt5, it was
+-# "path/to/Qt/6.7.0/msvc2019_64/lib/cmake/Qt6", but with Qt6, it is now
+-# "path/to/Qt/6.7.0/msvc2019_64".
+-if(WIN32)
+-  string(FIND "${CMAKE_PREFIX_PATH}" "/lib/cmake/Qt6" USING_Qt6_INDEX)
+-  if(NOT ${USING_Qt6_INDEX} EQUAL -1)
+-    string(REPLACE "/lib/cmake/Qt6" "" "${CMAKE_PREFIX_PATH}" "${CMAKE_PREFIX_PATH}")
+-  endif()
+-endif()
+-
+ # Global flags.
+ set(CMAKE_CXX_EXTENSIONS OFF)
+ set(CMAKE_CXX_STANDARD 17)
+@@ -31,16 +19,20 @@ set(CMAKE_AUTORCC ON)
+ set(CMAKE_AUTOMOC ON)
+ set(CMAKE_AUTOUIC ON)
+ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+-if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
+-  set(CMAKE_OSX_DEPLOYMENT_TARGET "14.0")
+-endif()
+-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
++list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+ 
+ # Find Qt.
+-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Svg)
+-qt_standard_project_setup(
+-  # REQUIRES 6.9.0
+-)
++# Respect the embedding application's Qt major version; never mix ABIs.
++if(DEFINED USE_QT6)
++  if(USE_QT6)
++    set(QT_VERSION_MAJOR 6)
++  else()
++    set(QT_VERSION_MAJOR 5)
++  endif()
++elseif(NOT QT_VERSION_MAJOR)
++  find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets Svg)
++endif()
++find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Svg)
+ 
+ # The library.
+ add_subdirectory(lib)
+diff --git a/cmake/config.cmake.in b/cmake/config.cmake.in
+index 901aed7..0df3ff2 100644
+--- a/cmake/config.cmake.in
++++ b/cmake/config.cmake.in
+@@ -3,7 +3,7 @@
+ include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@Targets.cmake")
+ include(CMakeFindDependencyMacro)
+ 
+-find_dependency(Qt6 REQUIRED COMPONENTS Core Widgets Svg)
++find_dependency(Qt@QT_VERSION_MAJOR@ REQUIRED COMPONENTS Core Widgets Svg)
+ 
+ check_required_components(@PROJECT_NAME@)
+ 
+diff --git a/cmake/qlementine.pc.in b/cmake/qlementine.pc.in
+index e4832cd..600e952 100644
+--- a/cmake/qlementine.pc.in
++++ b/cmake/qlementine.pc.in
+@@ -7,6 +7,6 @@ Name: @PROJECT_NAME@
+ Description: @PROJECT_DESCRIPTION@
+ Version: @PROJECT_VERSION@
+ URL: https://github.com/oclero/qlementine
+-Requires: Qt6Core Qt6Widgets Qt6Svg
++Requires: Qt@QT_VERSION_MAJOR@Core Qt@QT_VERSION_MAJOR@Widgets Qt@QT_VERSION_MAJOR@Svg
+ Libs: -L${libdir} -l@PROJECT_NAME@
+ Cflags: -I${includedir}
+diff --git a/lib/CMakeLists.txt b/lib/CMakeLists.txt
+index 95ba502..3d99c9f 100644
+--- a/lib/CMakeLists.txt
++++ b/lib/CMakeLists.txt
+@@ -121,12 +121,13 @@ set(RESOURCES
+ )
+ 
+ option(BUILD_SHARED_LIBS "Build shared libraries instead of static" OFF)
++option(QLEMENTINE_BUILD_SHARED "Build Qlementine as a shared library" ${BUILD_SHARED_LIBS})
+ option(QLEMENTINE_BUILD_STATIC "Build static library alongside shared (when BUILD_SHARED_LIBS=ON)" OFF)
+ 
+-set(_build_shared ${BUILD_SHARED_LIBS})
++set(_build_shared ${QLEMENTINE_BUILD_SHARED})
+ set(_build_static ON)  # Always build static unless only shared is requested
+ 
+-if(BUILD_SHARED_LIBS AND NOT QLEMENTINE_BUILD_STATIC)
++if(QLEMENTINE_BUILD_SHARED AND NOT QLEMENTINE_BUILD_STATIC)
+   set(_build_static OFF)  # Only shared
+ endif()
+ 
+@@ -143,7 +144,7 @@ if(_build_shared)
+     set(_shared_target ${PROJECT_NAME})
+   endif()
+ 
+-  qt_add_library(${_shared_target} SHARED
++  add_library(${_shared_target} SHARED
+     ${HEADERS}
+     ${SOURCES}
+     ${RESOURCES}
+@@ -188,7 +189,7 @@ if(_build_static)
+     set(_static_target ${PROJECT_NAME})
+   endif()
+ 
+-  qt_add_library(${_static_target} STATIC
++  add_library(${_static_target} STATIC
+     ${HEADERS}
+     ${SOURCES}
+     ${RESOURCES}
+@@ -254,6 +255,12 @@ generate_export_header(${_export_header_target}
+ foreach(_target IN LISTS _targets_to_build)
+   if(TARGET ${_target})
+     message(STATUS "Configuring target: ${_target}")
++    set_target_properties(${_target} PROPERTIES POSITION_INDEPENDENT_CODE ON AUTOGEN_PARALLEL 4)
++    # Upstream uses auto for QString concatenations; do not inherit a host's
++    # opt-in QStringBuilder semantics and its deferred-expression lifetimes.
++    target_compile_options(${_target} PRIVATE
++      $<$<CXX_COMPILER_ID:MSVC>:/UQT_USE_QSTRINGBUILDER>
++      $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-UQT_USE_QSTRINGBUILDER>)
+ 
+     target_include_directories(${_target}
+       PUBLIC
+@@ -266,9 +273,9 @@ foreach(_target IN LISTS _targets_to_build)
+ 
+     target_link_libraries(${_target}
+       PUBLIC
+-        Qt::Core
+-        Qt::Widgets
+-        Qt::Svg
++        Qt${QT_VERSION_MAJOR}::Core
++        Qt${QT_VERSION_MAJOR}::Widgets
++        Qt${QT_VERSION_MAJOR}::Svg
+     )
+ 
+     target_compile_options(${_target}
+@@ -344,41 +351,22 @@ export(EXPORT "${PROJECT_NAME}Targets"
+   FILE "${CMAKE_BINARY_DIR}/cmake/${PROJECT_NAME}Targets.cmake"
+   NAMESPACE ${PROJECT_NAME}::)
+ 
+-# Qt Style Plugin
+-qt_add_plugin(qlementinestyleplugin
+-  SHARED
+-  CLASS_NAME QlementineStylePlugin
+-  OUTPUT_NAME qlementinestyleplugin
+-  ${CMAKE_CURRENT_SOURCE_DIR}/src/style/QlementineStylePlugin.hpp
+-  ${CMAKE_CURRENT_SOURCE_DIR}/src/style/QlementineStylePlugin.cpp
+-  ${CMAKE_CURRENT_SOURCE_DIR}/src/style/qlementine_style_plugin.json
+-  ${RESOURCES}
+-)
+-
+-target_include_directories(qlementinestyleplugin
+-  PRIVATE
+-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+-)
+-
+-target_link_libraries(qlementinestyleplugin
+-  PRIVATE
+-    ${PROJECT_NAME}
+-    Qt::Core
+-    Qt::Widgets
+-    Qt::Svg
+-)
+-
+-set_target_properties(qlementinestyleplugin
+-  PROPERTIES
+-    FOLDER lib
+-    ARCHIVE_OUTPUT_NAME qlementinestyleplugin
+-    CMAKE_AUTORCC ON
+-    CMAKE_AUTOMOC ON
+-    CMAKE_AUTOUIC ON
+-)
+-
+-install(TARGETS qlementinestyleplugin
+-  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/qt6/plugins/styles"
+-  RUNTIME DESTINATION "${CMAKE_INSTALL_LIBDIR}/qt6/plugins/styles"
+-)
++# Qt Style Plugin (not needed when embedded as an app-private Custom backend).
++option(QLEMENTINE_BUILD_STYLE_PLUGIN "Build the standalone QStyle plugin" ON)
++if(QLEMENTINE_BUILD_STYLE_PLUGIN)
++  add_library(qlementinestyleplugin MODULE
++    ${CMAKE_CURRENT_SOURCE_DIR}/src/style/QlementineStylePlugin.hpp
++    ${CMAKE_CURRENT_SOURCE_DIR}/src/style/QlementineStylePlugin.cpp
++    ${CMAKE_CURRENT_SOURCE_DIR}/src/style/qlementine_style_plugin.json
++    ${RESOURCES}
++  )
++  target_include_directories(qlementinestyleplugin PRIVATE
++    ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/src)
++  target_link_libraries(qlementinestyleplugin PRIVATE ${PROJECT_NAME}
++    Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Svg)
++  set_target_properties(qlementinestyleplugin PROPERTIES
++    OUTPUT_NAME qlementinestyleplugin AUTOMOC ON AUTORCC ON AUTOUIC ON AUTOGEN_PARALLEL 4)
++  install(TARGETS qlementinestyleplugin
++    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/qt${QT_VERSION_MAJOR}/plugins/styles"
++    RUNTIME DESTINATION "${CMAKE_INSTALL_LIBDIR}/qt${QT_VERSION_MAJOR}/plugins/styles")
++endif()
+diff --git a/lib/include/oclero/qlementine/animation/WidgetAnimationManager.hpp b/lib/include/oclero/qlementine/animation/WidgetAnimationManager.hpp
+index ec0f7b9..0e2b71f 100644
+--- a/lib/include/oclero/qlementine/animation/WidgetAnimationManager.hpp
++++ b/lib/include/oclero/qlementine/animation/WidgetAnimationManager.hpp
+@@ -36,7 +36,7 @@ class QLEMENTINE_EXPORT WidgetAnimationManager : public QObject {
+   Q_OBJECT
+ public:
+   explicit WidgetAnimationManager(QObject* parent = nullptr);
+-  ~WidgetAnimationManager() override = default;
++  ~WidgetAnimationManager() override { stopAll(); }
+ 
+   bool enabled() const;
+   void setEnabled(bool enabled);
+@@ -64,7 +64,6 @@ private:
+   void addWidget(const QWidget* widget, WidgetAnimator* widgetAnimator);
+   void removeWidget(const QWidget* widget);
+   WidgetAnimator* findWidget(const QWidget* widget) const;
+-  void forEarch(const std::function<void(const QWidget* w, WidgetAnimator* a)>& cb);
+ 
+   void initializeEasingCurves();
+ 
+diff --git a/lib/include/oclero/qlementine/style/Delegates.hpp b/lib/include/oclero/qlementine/style/Delegates.hpp
+index d249985..5d38af3 100644
+--- a/lib/include/oclero/qlementine/style/Delegates.hpp
++++ b/lib/include/oclero/qlementine/style/Delegates.hpp
+@@ -20,7 +20,7 @@ protected:
+   QSize sizeHint(const QStyleOptionViewItem& opt, const QModelIndex& idx) const override;
+ 
+ private:
+-  const QWidget* _widget{ nullptr };
++  QPointer<QWidget> _widget;
+   const QPointer<QlementineStyle> _qlementineStyle;
+ };
+ } // namespace oclero::qlementine
+diff --git a/lib/include/oclero/qlementine/style/QlementineStyleOption.hpp b/lib/include/oclero/qlementine/style/QlementineStyleOption.hpp
+index 54110ba..81979d5 100644
+--- a/lib/include/oclero/qlementine/style/QlementineStyleOption.hpp
++++ b/lib/include/oclero/qlementine/style/QlementineStyleOption.hpp
+@@ -6,7 +6,7 @@
+ #include <oclero/qlementine/utils/RadiusesF.hpp>
+ 
+ #include <QStyleOption>
+-#include <QtTypeTraits>
++#include <oclero/qlementine/utils/QtCompat.hpp>
+ 
+ namespace oclero::qlementine {
+ enum class StyleOptionTypeExt {
+@@ -18,7 +18,7 @@ enum class StyleOptionTypeExt {
+ /// Allows to customize the radius of the focus border.
+ class QStyleOptionFocusRoundedRect : public QStyleOptionFocusRect {
+ public:
+-  enum StyleOptionType { Type = qToUnderlying(StyleOptionTypeExt::SO_FocusRoundedRect) };
++  enum StyleOptionType { Type = compat::toUnderlying(StyleOptionTypeExt::SO_FocusRoundedRect) };
+ 
+   RadiusesF radiuses;
+   int hMargin{ 0 };
+@@ -50,7 +50,7 @@ public:
+ /// Allows to customize the radius of a button.
+ class QStyleOptionRoundedButton : public QStyleOptionButton {
+ public:
+-  enum StyleOptionType { Type = qToUnderlying(StyleOptionTypeExt::SO_RoundedButton) };
++  enum StyleOptionType { Type = compat::toUnderlying(StyleOptionTypeExt::SO_RoundedButton) };
+ 
+   RadiusesF radiuses{ 0. };
+ 
+@@ -72,7 +72,7 @@ public:
+ /// Adds the ability to have a second line of text in the button.
+ class QStyleOptionCommandLinkButton : public QStyleOptionButton {
+ public:
+-  enum StyleOptionType { Type = qToUnderlying(StyleOptionTypeExt::SO_CommandLinkButton) };
++  enum StyleOptionType { Type = compat::toUnderlying(StyleOptionTypeExt::SO_CommandLinkButton) };
+ 
+   QString description;
+ 
+diff --git a/lib/include/oclero/qlementine/utils/MenuUtils.hpp b/lib/include/oclero/qlementine/utils/MenuUtils.hpp
+index 5c73950..d153e5c 100644
+--- a/lib/include/oclero/qlementine/utils/MenuUtils.hpp
++++ b/lib/include/oclero/qlementine/utils/MenuUtils.hpp
+@@ -9,9 +9,12 @@
+ 
+ class QMenu;
+ class QAction;
++class QObject;
+ 
+ namespace oclero::qlementine {
+ QLEMENTINE_EXPORT QMenu* getTopLevelMenu(QMenu* menu);
+ 
+-QLEMENTINE_EXPORT void flashAction(QAction* action, QMenu* menu, const std::function<void()>& onAnimationFinished);
++// Context owns the pending flash/callback; the default preserves action ownership.
++QLEMENTINE_EXPORT void flashAction(QAction* action, QMenu* menu,
++  const std::function<void()>& onAnimationFinished, QObject* context = nullptr);
+ } // namespace oclero::qlementine
+diff --git a/after/lib/include/oclero/qlementine/utils/QtCompat.hpp b/lib/include/oclero/qlementine/utils/QtCompat.hpp
+new file mode 100644
+index 0000000..9884004
+--- /dev/null
++++ b/lib/include/oclero/qlementine/utils/QtCompat.hpp
+@@ -0,0 +1,78 @@
++// SPDX-License-Identifier: MIT
++// ACloudViewer compatibility additions to pinned Qlementine v1.5.2.
++#pragma once
++
++#include <QtGlobal>
++#include <QEvent>
++#include <QPainter>
++#include <QMouseEvent>
++#include <QPixmap>
++#include <QWidget>
++#include <QWindow>
++#include <QScreen>
++#include <QGuiApplication>
++#include <type_traits>
++#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
++#include <QPainterStateGuard>
++#endif
++
++namespace oclero::qlementine::compat {
++template<class Enum>
++constexpr std::underlying_type_t<Enum> toUnderlying(Enum value) noexcept {
++  return static_cast<std::underlying_type_t<Enum>>(value);
++}
++#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
++using EnterEvent = QEnterEvent;
++#else
++using EnterEvent = QEvent;
++#endif
++
++#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
++using PainterStateGuard = QPainterStateGuard;
++#else
++// The pinned upstream only uses the one-save RAII form; keep early-return and
++// nested-painter semantics identical instead of disabling any painting code.
++class PainterStateGuard {
++public:
++  explicit PainterStateGuard(QPainter* painter) : _painter(painter) {
++    Q_ASSERT(_painter);
++    _painter->save();
++  }
++  ~PainterStateGuard() { _painter->restore(); }
++  PainterStateGuard(const PainterStateGuard&) = delete;
++  PainterStateGuard& operator=(const PainterStateGuard&) = delete;
++private:
++  QPainter* _painter;
++};
++#endif
++
++inline QScreen* screenForWidget(const QWidget* widget) {
++#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
++  return widget ? widget->screen() : QGuiApplication::primaryScreen();
++#else
++  if (widget && widget->window() && widget->window()->windowHandle())
++    return widget->window()->windowHandle()->screen();
++  return QGuiApplication::primaryScreen();
++#endif
++}
++
++// Existing QWidget native visuals cannot acquire alpha by changing an
++// attribute after creation (notably Qt5 QMenu::popup). Query the actual surface.
++inline bool popupHasAlpha(const QWidget* widget) {
++  if (!widget) return true;
++  const auto* popup = widget->window();
++  const auto* handle = popup ? popup->windowHandle() : nullptr;
++  return !handle || handle->format().alphaBufferSize() > 0;
++}
++
++inline QSizeF pixmapLogicalSize(const QPixmap& pixmap) {
++  return QSizeF(pixmap.size()) / pixmap.devicePixelRatio();
++}
++inline QPointF mousePosition(const QMouseEvent* event) {
++#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
++  return event->position();
++#else
++  return event->localPos();
++#endif
++}
++} // namespace oclero::qlementine::compat
+diff --git a/lib/include/oclero/qlementine/utils/StyleUtils.hpp b/lib/include/oclero/qlementine/utils/StyleUtils.hpp
+index 248726c..03ab813 100644
+--- a/lib/include/oclero/qlementine/utils/StyleUtils.hpp
++++ b/lib/include/oclero/qlementine/utils/StyleUtils.hpp
+@@ -18,7 +18,6 @@ QLEMENTINE_EXPORT bool shouldHaveHoverEvents(const QWidget* w);
+ QLEMENTINE_EXPORT bool shouldHaveMouseTracking(const QWidget* w);
+ 
+ /// Should the widget text be displayed in bold.
+-QLEMENTINE_EXPORT bool shouldHaveBoldFont(const QWidget* w);
+ 
+ /// Focus border outside the widget.
+ QLEMENTINE_EXPORT bool shouldHaveExternalFocusFrame(const QWidget* w);
+diff --git a/lib/include/oclero/qlementine/widgets/AboutDialog.hpp b/lib/include/oclero/qlementine/widgets/AboutDialog.hpp
+index ced295d..f1e5165 100644
+--- a/lib/include/oclero/qlementine/widgets/AboutDialog.hpp
++++ b/lib/include/oclero/qlementine/widgets/AboutDialog.hpp
+@@ -5,6 +5,7 @@
+ #include <oclero/qlementine/qlementine_export.h>
+ 
+ #include <QDialog>
++#include <QIcon>
+ 
+ class QLabel;
+ class QHBoxLayout;
+diff --git a/lib/include/oclero/qlementine/widgets/AbstractItemListWidget.hpp b/lib/include/oclero/qlementine/widgets/AbstractItemListWidget.hpp
+index 86ae71a..d76825d 100644
+--- a/lib/include/oclero/qlementine/widgets/AbstractItemListWidget.hpp
++++ b/lib/include/oclero/qlementine/widgets/AbstractItemListWidget.hpp
+@@ -4,6 +4,7 @@
+ #pragma once
+ 
+ #include <oclero/qlementine/qlementine_export.h>
++#include <oclero/qlementine/utils/QtCompat.hpp>
+ #include <oclero/qlementine/style/Theme.hpp>
+ #include <oclero/qlementine/style/QlementineStyleOption.hpp>
+ 
+@@ -83,7 +84,7 @@ protected: // QWidget override.
+   void keyPressEvent(QKeyEvent* e) override;
+   void keyReleaseEvent(QKeyEvent* e) override;
+   void mousePressEvent(QMouseEvent* e) override;
+-  void enterEvent(QEnterEvent* e) override;
++  void enterEvent(compat::EnterEvent* e) override;
+   void leaveEvent(QEvent* e) override;
+   void mouseReleaseEvent(QMouseEvent* e) override;
+   void mouseMoveEvent(QMouseEvent* e) override;
+diff --git a/lib/include/oclero/qlementine/widgets/Popover.hpp b/lib/include/oclero/qlementine/widgets/Popover.hpp
+index 944b7d3..291ccf8 100644
+--- a/lib/include/oclero/qlementine/widgets/Popover.hpp
++++ b/lib/include/oclero/qlementine/widgets/Popover.hpp
+@@ -168,6 +168,7 @@ Q_SIGNALS:
+   void manualPositionRequested();
+ 
+ protected:
++  bool event(QEvent* e) override;
+   void paintEvent(QPaintEvent* e) override;
+   void mousePressEvent(QMouseEvent* e) override;
+   void mouseReleaseEvent(QMouseEvent* e) override;
+diff --git a/lib/include/oclero/qlementine/widgets/Switch.hpp b/lib/include/oclero/qlementine/widgets/Switch.hpp
+index 317c2d4..620df53 100644
+--- a/lib/include/oclero/qlementine/widgets/Switch.hpp
++++ b/lib/include/oclero/qlementine/widgets/Switch.hpp
+@@ -4,6 +4,7 @@
+ #pragma once
+ 
+ #include <oclero/qlementine/qlementine_export.h>
++#include <oclero/qlementine/utils/QtCompat.hpp>
+ #include <oclero/qlementine/widgets/RoundedFocusFrame.hpp>
+ 
+ #include <QAbstractButton>
+@@ -44,7 +45,7 @@ Q_SIGNALS:
+ 
+ protected:
+   void paintEvent(QPaintEvent* e) override;
+-  void enterEvent(QEnterEvent* e) override;
++  void enterEvent(compat::EnterEvent* e) override;
+   void leaveEvent(QEvent* e) override;
+   void changeEvent(QEvent* e) override;
+   void focusInEvent(QFocusEvent* e) override;
+diff --git a/lib/src/animation/WidgetAnimationManager.cpp b/lib/src/animation/WidgetAnimationManager.cpp
+index 7242dfc..f9c04d7 100644
+--- a/lib/src/animation/WidgetAnimationManager.cpp
++++ b/lib/src/animation/WidgetAnimationManager.cpp
+@@ -64,19 +64,12 @@ WidgetAnimator* WidgetAnimationManager::findWidget(const QWidget* widget) const
+   return nullptr;
+ }
+ 
+-void WidgetAnimationManager::forEarch(const std::function<void(const QWidget* w, WidgetAnimator* a)>& cb) {
+-  if (!cb)
+-    return;
+-  std::for_each(_map.begin(), _map.end(), [&cb](const auto& kvp) {
+-    cb(kvp.first, kvp.second);
+-  });
+-}
+-
+ void WidgetAnimationManager::stopAll() {
+-  forEarch([this](const QWidget* w, WidgetAnimator*) {
+-    // Stop all animations happening on the widget.
+-    removeWidget(w);
+-  });
++  // removeWidget erases its entry; range iteration would invalidate the very
++  // iterator being advanced when the user disables animations at runtime.
++  while (!_map.empty()) {
++    removeWidget(_map.begin()->first);
++  }
+ }
+ 
+ void WidgetAnimationManager::initializeEasingCurves() {
+diff --git a/lib/src/resources/ResourceInitialization.cpp b/lib/src/resources/ResourceInitialization.cpp
+index e5edc67..e44e99f 100644
+--- a/lib/src/resources/ResourceInitialization.cpp
++++ b/lib/src/resources/ResourceInitialization.cpp
+@@ -4,6 +4,7 @@
+ #include <oclero/qlementine/resources/ResourceInitialization.hpp>
+ 
+ #include <qglobal.h>
++#include <mutex>
+ 
+ // This must be done outside of any namespace.
+ void qlementineResourceInitialization() {
+@@ -15,6 +16,7 @@ void qlementineResourceInitialization() {
+ 
+ namespace oclero::qlementine::resources {
+ void initializeResources() {
+-  qlementineResourceInitialization();
++  static std::once_flag once;
++  std::call_once(once, qlementineResourceInitialization);
+ }
+ } // namespace oclero::qlementine::resources
+diff --git a/lib/src/style/Delegates.cpp b/lib/src/style/Delegates.cpp
+index 13fa3c4..db5e935 100644
+--- a/lib/src/style/Delegates.cpp
++++ b/lib/src/style/Delegates.cpp
+@@ -10,7 +10,7 @@
+ #include <oclero/qlementine/utils/ColorUtils.hpp>
+ 
+ #include <QPainter>
+-#include <QPainterStateGuard>
++#include <oclero/qlementine/utils/QtCompat.hpp>
+ #include <QTreeView>
+ 
+ namespace oclero::qlementine {
+@@ -20,7 +20,8 @@ ComboBoxDelegate::ComboBoxDelegate(QWidget* widget, QlementineStyle& style)
+   , _qlementineStyle(&style) {}
+ 
+ void ComboBoxDelegate::paint(QPainter* p, const QStyleOptionViewItem& opt, const QModelIndex& idx) const {
+-  QPainterStateGuard stateGuard(p);
++  if (!_qlementineStyle || !_widget) { QItemDelegate::paint(p, opt, idx); return; }
++  compat::PainterStateGuard stateGuard(p);
+   p->setRenderHint(QPainter::Antialiasing, true);
+   p->setRenderHint(QPainter::SmoothPixmapTransform, true);
+   const auto& theme = _qlementineStyle ? _qlementineStyle->theme() : Theme{};
+@@ -155,6 +156,7 @@ void ComboBoxDelegate::paint(QPainter* p, const QStyleOptionViewItem& opt, const
+ }
+ 
+ QSize ComboBoxDelegate::sizeHint(const QStyleOptionViewItem& opt, const QModelIndex& idx) const {
++  if (!_qlementineStyle || !_widget) return QItemDelegate::sizeHint(opt, idx);
+   const auto& theme = _qlementineStyle ? _qlementineStyle->theme() : Theme{};
+ 
+   const auto isSeparator = idx.data(Qt::AccessibleDescriptionRole).toString() == QLatin1String("separator");
+diff --git a/lib/src/style/PolishUtils.cpp b/lib/src/style/PolishUtils.cpp
+index 9598100..83f6e64 100644
+--- a/lib/src/style/PolishUtils.cpp
++++ b/lib/src/style/PolishUtils.cpp
+@@ -2,6 +2,7 @@
+ // SPDX-License-Identifier: MIT
+ 
+ #include "PolishUtils.hpp"
++#include <oclero/qlementine/utils/QtCompat.hpp>
+ 
+ #include "EventFilters.hpp"
+ 
+@@ -25,6 +26,9 @@
+ #include <QTabBar>
+ #include <QTextEdit>
+ #include <QToolButton>
++#include <QStyledItemDelegate>
++#include <QTextDocument>
++#include <QTextDocument>
+ 
+ namespace oclero::qlementine {
+ void polishToolTip(QWidget* widget) {
+@@ -66,12 +70,8 @@ void polishCommonWidget(QWidget* widget) {
+     widget->setMinimumSize(0, 1);
+   }
+ 
+-  // Font.
+-  if (shouldHaveBoldFont(widget)) {
+-    auto font = QFont{ widget->font() };
+-    font.setBold(true);
+-    widget->setFont(font);
+-  }
++  // Preserve the application's explicit font roles. Ordinary controls should
++  // not all become bold; semantic primary/sample actions own their emphasis.
+ 
+   // Enable hover state.
+   if (shouldHaveHoverEvents(widget)) {
+@@ -102,11 +102,12 @@ void polishExternalFocusFrame(
+ void polishMenu(
+   QWidget* widget, PolishedWidgetRegistry& registry, PolishedWidgetRegistry::Entry& entry, bool eventFiltersInstalled) {
+   if (auto* menu = qobject_cast<QMenu*>(widget)) {
+-    menu->setBackgroundRole(QPalette::NoRole);
++    const bool alpha = compat::popupHasAlpha(menu);
++    menu->setBackgroundRole(alpha ? QPalette::NoRole : QPalette::Window);
+     menu->setAutoFillBackground(false);
+-    menu->setAttribute(Qt::WA_TranslucentBackground, true);
+-    menu->setAttribute(Qt::WA_OpaquePaintEvent, false);
+-    menu->setAttribute(Qt::WA_NoSystemBackground, true);
++    menu->setAttribute(Qt::WA_TranslucentBackground, alpha);
++    menu->setAttribute(Qt::WA_OpaquePaintEvent, !alpha);
++    menu->setAttribute(Qt::WA_NoSystemBackground, alpha);
+     menu->setWindowFlag(Qt::FramelessWindowHint, true);
+     menu->setWindowFlag(Qt::NoDropShadowWindowHint, true);
+     menu->setProperty("_q_windowsDropShadow", false);
+@@ -119,27 +120,34 @@ void polishMenu(
+   }
+ }
+ 
+-void polishComboBoxPopup(QWidget* widget, const QlementineStyle& style) {
++void polishComboBoxPopup(QWidget* widget, const QlementineStyle& style,
++  PolishedWidgetRegistry::Entry& entry, bool eventFiltersInstalled) {
+   if (auto* itemView = qobject_cast<QAbstractItemView*>(widget)) {
+     auto* popup = itemView->parentWidget();
+     auto isComboBoxPopupContainer = popup && popup->inherits("QComboBoxPrivateContainer");
+-    if (isComboBoxPopupContainer) {
+-      popup->setAttribute(Qt::WA_TranslucentBackground, true);
+-      popup->setAttribute(Qt::WA_OpaquePaintEvent, false);
+-      popup->setAttribute(Qt::WA_NoSystemBackground, true);
++    if (isComboBoxPopupContainer && !eventFiltersInstalled) {
++      PolishedWidgetRegistry::WidgetPolishTransaction popupChanges(popup, entry);
++      PolishedWidgetRegistry::WidgetPolishTransaction viewportChanges(itemView->viewport(), entry);
++      const bool alpha = compat::popupHasAlpha(popup);
++      popup->setAttribute(Qt::WA_TranslucentBackground, alpha);
++      popup->setAttribute(Qt::WA_OpaquePaintEvent, !alpha);
++      popup->setAttribute(Qt::WA_NoSystemBackground, alpha);
+       popup->setWindowFlag(Qt::FramelessWindowHint, true);
+       popup->setWindowFlag(Qt::NoDropShadowWindowHint, true);
+       popup->setProperty("_q_windowsDropShadow", false);
+ 
+       // Same shadow as QMenu.
+-      const auto shadowWidth = style.theme().spacing;
++      const auto shadowWidth = alpha ? style.theme().spacing : 0;
+       const auto borderWidth = style.theme().borderWidth;
+       const auto margin = shadowWidth + borderWidth;
+-      popup->layout()->setContentsMargins(margin, margin, margin, margin);
++      if (popup->layout()) popup->layout()->setContentsMargins(margin, margin, margin, margin);
+ 
+       itemView->viewport()->setAutoFillBackground(false);
+       auto* comboBox = findFirstParentOfType<QComboBox>(itemView);
+-      new ComboboxItemViewFilter(comboBox, itemView);
++      if (comboBox) {
++        auto* filter = new ComboboxItemViewFilter(comboBox, itemView);
++        entry.eventFilters.push_back(filter);
++      }
+     }
+   }
+ }
+@@ -172,17 +180,24 @@ void polishMouseWheelBlocker(
+   }
+ }
+ 
+-void polishComboBox(QlementineStyle& style, QWidget* widget) {
++void polishComboBox(QlementineStyle& style, QWidget* widget,
++  PolishedWidgetRegistry::Entry& entry, bool eventFiltersInstalled) {
+   if (auto* comboBox = qobject_cast<QComboBox*>(widget)) {
+-    comboBox->setSizeAdjustPolicy(QComboBox::SizeAdjustPolicy::AdjustToContents);
+-
+-    // Only replace the delegate if the combobox doesn't already have a custom one.
+-    // This preserves delegates set by third-party widgets.
+-    if (isDefaultItemDelegate(comboBox->itemDelegate())) {
+-      // Will define a delegate to stylize the QComboBox items,
+-      comboBox->setItemDelegate(new ComboBoxDelegate(comboBox, style));
+-      // Trigger the redefine when the QComboBox's view changes.
+-      new ComboboxFilter(comboBox);
++    if (!eventFiltersInstalled && isDefaultItemDelegate(comboBox->itemDelegate())) {
++      const QPointer<QComboBox> combo(comboBox);
++      const QPointer<QAbstractItemDelegate> original(comboBox->itemDelegate());
++      auto* delegate = new ComboBoxDelegate(comboBox, style);
++      const QPointer<QAbstractItemDelegate> installed(delegate);
++      comboBox->setItemDelegate(delegate);
++      entry.restoreActions.emplace_back([combo, original, installed]() {
++        if (!combo) return;
++        // Preserve a delegate the application installed after polishing.
++        if (combo->itemDelegate() == installed.data())
++          combo->setItemDelegate(original ? original.data() : new QStyledItemDelegate(combo));
++        if (installed) delete installed.data();
++      });
++      auto* filter = new ComboboxFilter(comboBox);
++      entry.eventFilters.push_back(filter);
+     }
+   }
+ }
+@@ -197,10 +212,20 @@ void polishTabBar(
+   }
+ }
+ 
+-void polishMessageBox(QWidget* widget, const QlementineStyle& style) {
++void polishMessageBox(QWidget* widget, const QlementineStyle& style, PolishedWidgetRegistry::Entry& entry) {
+   if (auto* messageBox = qobject_cast<QMessageBox*>(widget)) {
+     if (auto* textEdit = messageBox->findChild<QTextEdit*>()) {
+-      textEdit->document()->setDocumentMargin(style.theme().spacing * 2);
++      const QPointer<QTextEdit> editor(textEdit);
++      const QPointer<QTextDocument> document(textEdit->document());
++      const qreal original = document->documentMargin();
++      const qreal applied = style.theme().spacing * 2;
++      if (original != applied) {
++        document->setDocumentMargin(applied);
++        entry.restoreActions.emplace_back([editor, document, original, applied]() {
++          if (editor && document && editor->document() == document && document->documentMargin() == applied)
++            document->setDocumentMargin(original);
++        });
++      }
+     }
+   }
+ }
+@@ -213,10 +238,8 @@ void polishScrollArea(QWidget* widget) {
+ }
+ 
+ void polishSlider(QWidget* widget) {
+-  // Make the QSlider horizontal by default.
+-  if (auto* slider = qobject_cast<QSlider*>(widget)) {
+-    slider->setOrientation(Qt::Orientation::Horizontal);
+-  }
++  // Orientation belongs to the application, not a visual style.
++  Q_UNUSED(widget)
+ }
+ 
+ void polishTextEditors(
+@@ -228,6 +251,7 @@ void polishTextEditors(
+       registry.addEventFilter(plainTextEdit, entry, eventFilter);
+     }
+     if (auto* viewport = plainTextEdit->findChild<QWidget*>(QStringLiteral("qt_scrollarea_viewport"))) {
++      PolishedWidgetRegistry::WidgetPolishTransaction viewportChanges(viewport, entry);
+       viewport->setAutoFillBackground(false);
+     }
+   }
+@@ -238,6 +262,7 @@ void polishTextEditors(
+       registry.addEventFilter(textEdit, entry, eventFilter);
+     }
+     if (auto* viewport = textEdit->findChild<QWidget*>(QStringLiteral("qt_scrollarea_viewport"))) {
++      PolishedWidgetRegistry::WidgetPolishTransaction viewportChanges(viewport, entry);
+       viewport->setAutoFillBackground(false);
+     }
+   }
+@@ -278,13 +303,5 @@ void polishDestructionTracking(QWidget* widget, QObject* parent, PolishedWidgetR
+ 
+ void unpolishWidget(QlementineStyle&, QWidget* widget, PolishedWidgetRegistry& registry) {
+   registry.removeAndDeleteEventFilters(widget);
+-
+-  if (shouldHaveHoverEvents(widget)) {
+-    widget->setAttribute(Qt::WA_Hover, false);
+-    widget->setAttribute(Qt::WA_OpaquePaintEvent, true);
+-  }
+-  if (shouldHaveMouseTracking(widget)) {
+-    widget->setMouseTracking(false);
+-  }
+ }
+ } // namespace oclero::qlementine
+diff --git a/lib/src/style/PolishUtils.hpp b/lib/src/style/PolishUtils.hpp
+index 141f392..9ae49d3 100644
+--- a/lib/src/style/PolishUtils.hpp
++++ b/lib/src/style/PolishUtils.hpp
+@@ -25,19 +25,21 @@ void polishExternalFocusFrame(
+ void polishMenu(
+   QWidget* widget, PolishedWidgetRegistry& registry, PolishedWidgetRegistry::Entry& entry, bool eventFiltersInstalled);
+ 
+-void polishComboBoxPopup(QWidget* widget, const QlementineStyle& style);
++void polishComboBoxPopup(QWidget* widget, const QlementineStyle& style,
++  PolishedWidgetRegistry::Entry& entry, bool eventFiltersInstalled);
+ 
+ void polishVerticalCompression(QWidget* widget);
+ 
+ void polishMouseWheelBlocker(
+   QWidget* widget, PolishedWidgetRegistry& registry, PolishedWidgetRegistry::Entry& entry, bool eventFiltersInstalled);
+ 
+-void polishComboBox(QlementineStyle& style, QWidget* widget);
++void polishComboBox(QlementineStyle& style, QWidget* widget,
++  PolishedWidgetRegistry::Entry& entry, bool eventFiltersInstalled);
+ 
+ void polishTabBar(
+   QWidget* widget, PolishedWidgetRegistry& registry, PolishedWidgetRegistry::Entry& entry, bool eventFiltersInstalled);
+ 
+-void polishMessageBox(QWidget* widget, const QlementineStyle& style);
++void polishMessageBox(QWidget* widget, const QlementineStyle& style, PolishedWidgetRegistry::Entry& entry);
+ 
+ void polishScrollArea(QWidget* widget);
+ 
+diff --git a/lib/src/style/PolishedWidgetRegistry.cpp b/lib/src/style/PolishedWidgetRegistry.cpp
+index b1a566e..e0dbfe4 100644
+--- a/lib/src/style/PolishedWidgetRegistry.cpp
++++ b/lib/src/style/PolishedWidgetRegistry.cpp
+@@ -5,57 +5,229 @@
+ 
+ #include <QObject>
+ #include <QWidget>
++#include <QLayout>
++#include <QFont>
++#include <QVariant>
++#include <QMargins>
++#include <QPalette>
++#include <QSizePolicy>
+ 
+ namespace oclero::qlementine {
++namespace {
++struct WidgetState {
++    QSize minimum;
++    QSize maximum;
++    QSizePolicy sizePolicy;
++    Qt::FocusPolicy focusPolicy;
++    bool hasExplicitFont;
++    QFont font;
++    QPalette::ColorRole backgroundRole;
++    QPalette::ColorRole foregroundRole;
++    bool autoFillBackground;
++    bool mouseTracking;
++    Qt::WindowFlags windowFlags;
++    QVariant shadowProperty;
++    QMargins contentsMargins;
++    QPointer<QLayout> layout;
++    QMargins layoutMargins;
++    bool attributes[4];
++
++    explicit WidgetState(QWidget* widget)
++        : minimum(widget->minimumSize()),
++          maximum(widget->maximumSize()),
++          sizePolicy(widget->sizePolicy()),
++          focusPolicy(widget->focusPolicy()),
++          hasExplicitFont(widget->testAttribute(Qt::WA_SetFont)),
++          font(widget->font()),
++          backgroundRole(widget->backgroundRole()),
++          foregroundRole(widget->foregroundRole()),
++          autoFillBackground(widget->autoFillBackground()),
++          mouseTracking(widget->hasMouseTracking()),
++          windowFlags(widget->windowFlags()),
++          shadowProperty(widget->property("_q_windowsDropShadow")),
++          contentsMargins(widget->contentsMargins()),
++          layout(widget->layout()),
++          layoutMargins(layout ? layout->contentsMargins() : QMargins{}),
++          attributes{widget->testAttribute(Qt::WA_Hover),
++                     widget->testAttribute(Qt::WA_OpaquePaintEvent),
++                     widget->testAttribute(Qt::WA_TranslucentBackground),
++                     widget->testAttribute(Qt::WA_NoSystemBackground)} {}
++};
++
++template <typename T, typename Getter, typename Setter>
++void rememberChangedProperty(PolishedWidgetRegistry::Entry& entry,
++                             const QPointer<QWidget>& widget,
++                             const T& original,
++                             const T& applied,
++                             Getter getter,
++                             Setter setter) {
++    if (original == applied) return;
++    entry.restoreActions.emplace_back([=]() {
++        // A value changed by the business layer after polish belongs to it.
++        if (widget && getter(widget.data()) == applied)
++            setter(widget.data(), original);
++    });
++}
++}  // namespace
++
+ PolishedWidgetRegistry::Entry& PolishedWidgetRegistry::ensure(QWidget* widget) {
+-  return _widgets[widget];
++    auto it = _widgets.find(widget);
++    if (it == _widgets.end())
++        it = _widgets.insert(widget, Entry{});
++    return it.value();
+ }
+ 
+-bool PolishedWidgetRegistry::hasEventFilters(QWidget* widget) const {
+-  const auto iter = _widgets.find(widget);
+-  return iter != _widgets.end() && !iter.value().eventFilters.empty();
++PolishedWidgetRegistry::WidgetPolishTransaction::WidgetPolishTransaction(
++        QWidget* widget, Entry& entry) {
++    if (!widget) return;
++    const QPointer<QWidget> guard(widget);
++    const WidgetState before(widget);
++    _commit = [guard, before, &entry]() {
++        if (!guard) return;
++        const WidgetState after(guard.data());
++        auto remember = [&](const auto& original, const auto& applied,
++                            auto getter, auto setter) {
++            rememberChangedProperty(entry, guard, original, applied, getter,
++                                    setter);
++        };
++
++        // Track dimensions separately so a business change to height does not
++        // suppress restoration of the independent width changed by the style.
++        remember(before.minimum.width(), after.minimum.width(),
++                 [](QWidget* w) { return w->minimumWidth(); },
++                 [](QWidget* w, int v) { w->setMinimumWidth(v); });
++        remember(before.minimum.height(), after.minimum.height(),
++                 [](QWidget* w) { return w->minimumHeight(); },
++                 [](QWidget* w, int v) { w->setMinimumHeight(v); });
++        remember(before.maximum.width(), after.maximum.width(),
++                 [](QWidget* w) { return w->maximumWidth(); },
++                 [](QWidget* w, int v) { w->setMaximumWidth(v); });
++        remember(before.maximum.height(), after.maximum.height(),
++                 [](QWidget* w) { return w->maximumHeight(); },
++                 [](QWidget* w, int v) { w->setMaximumHeight(v); });
++        remember(before.sizePolicy, after.sizePolicy,
++                 [](QWidget* w) { return w->sizePolicy(); },
++                 [](QWidget* w, QSizePolicy v) { w->setSizePolicy(v); });
++        remember(before.focusPolicy, after.focusPolicy,
++                 [](QWidget* w) { return w->focusPolicy(); },
++                 [](QWidget* w, Qt::FocusPolicy v) { w->setFocusPolicy(v); });
++
++        if (before.font != after.font ||
++            before.hasExplicitFont != after.hasExplicitFont) {
++            entry.restoreActions.emplace_back([=]() {
++                if (guard && guard->font() == after.font &&
++                    guard->testAttribute(Qt::WA_SetFont) ==
++                            after.hasExplicitFont) {
++                    guard->setFont(before.hasExplicitFont ? before.font
++                                                          : QFont{});
++                    guard->setAttribute(Qt::WA_SetFont,
++                                        before.hasExplicitFont);
++                }
++            });
++        }
++
++        remember(before.backgroundRole, after.backgroundRole,
++                 [](QWidget* w) { return w->backgroundRole(); },
++                 [](QWidget* w, QPalette::ColorRole v) {
++                     w->setBackgroundRole(v);
++                 });
++        remember(before.foregroundRole, after.foregroundRole,
++                 [](QWidget* w) { return w->foregroundRole(); },
++                 [](QWidget* w, QPalette::ColorRole v) {
++                     w->setForegroundRole(v);
++                 });
++        remember(before.autoFillBackground, after.autoFillBackground,
++                 [](QWidget* w) { return w->autoFillBackground(); },
++                 [](QWidget* w, bool v) { w->setAutoFillBackground(v); });
++        remember(before.mouseTracking, after.mouseTracking,
++                 [](QWidget* w) { return w->hasMouseTracking(); },
++                 [](QWidget* w, bool v) { w->setMouseTracking(v); });
++        remember(before.windowFlags, after.windowFlags,
++                 [](QWidget* w) { return w->windowFlags(); },
++                 [](QWidget* w, Qt::WindowFlags v) { w->setWindowFlags(v); });
++        remember(before.shadowProperty, after.shadowProperty,
++                 [](QWidget* w) {
++                     return w->property("_q_windowsDropShadow");
++                 },
++                 [](QWidget* w, const QVariant& v) {
++                     w->setProperty("_q_windowsDropShadow", v);
++                 });
++        remember(before.contentsMargins, after.contentsMargins,
++                 [](QWidget* w) { return w->contentsMargins(); },
++                 [](QWidget* w, const QMargins& v) {
++                     w->setContentsMargins(v);
++                 });
++
++        // Do not overwrite an application layout replacement made during the
++        // Custom lifetime; only restore the same layout's style-owned margins.
++        if (before.layout && before.layout == after.layout &&
++            before.layoutMargins != after.layoutMargins) {
++            entry.restoreActions.emplace_back([=]() {
++                if (guard && before.layout &&
++                    guard->layout() == before.layout &&
++                    before.layout->contentsMargins() == after.layoutMargins)
++                    before.layout->setContentsMargins(before.layoutMargins);
++            });
++        }
++
++        const Qt::WidgetAttribute attributes[] = {
++            Qt::WA_Hover, Qt::WA_OpaquePaintEvent,
++            Qt::WA_TranslucentBackground, Qt::WA_NoSystemBackground};
++        for (int i = 0; i < 4; ++i) {
++            const auto attribute = attributes[i];
++            remember(before.attributes[i], after.attributes[i],
++                     [attribute](QWidget* w) {
++                         return w->testAttribute(attribute);
++                     },
++                     [attribute](QWidget* w, bool v) {
++                         w->setAttribute(attribute, v);
++                     });
++        }
++    };
+ }
+ 
+-void PolishedWidgetRegistry::addEventFilter(QWidget* widget, Entry& entry, QObject* eventFilter) {
+-  if (!widget || !eventFilter)
+-    return;
++bool PolishedWidgetRegistry::hasEventFilters(QWidget* widget) const {
++    const auto iter = _widgets.find(widget);
++    return iter != _widgets.end() && !iter.value().eventFilters.empty();
++}
+ 
+-  widget->installEventFilter(eventFilter);
+-  rememberEventFilter(entry, eventFilter);
++void PolishedWidgetRegistry::addEventFilter(QWidget* widget, Entry& entry,
++                                             QObject* eventFilter) {
++    if (!widget || !eventFilter) return;
++    widget->installEventFilter(eventFilter);
++    rememberEventFilter(entry, eventFilter);
+ }
+ 
+-void PolishedWidgetRegistry::rememberEventFilter(Entry& entry, QObject* eventFilter) {
+-  if (eventFilter) {
+-    entry.eventFilters.push_back(eventFilter);
+-  }
++void PolishedWidgetRegistry::rememberEventFilter(Entry& entry,
++                                                  QObject* eventFilter) {
++    if (eventFilter) entry.eventFilters.push_back(eventFilter);
+ }
+ 
+ void PolishedWidgetRegistry::removeAndDeleteEventFilters(QWidget* widget) {
+-  auto iter = _widgets.find(widget);
+-  if (iter == _widgets.end())
+-    return;
+-
+-  const auto eventFilters = iter.value().eventFilters;
+-  for (auto* eventFilter : eventFilters) {
+-    if (eventFilter) {
+-      widget->removeEventFilter(eventFilter);
+-      delete eventFilter;
++    auto iter = _widgets.find(widget);
++    if (iter == _widgets.end()) return;
++
++    const auto eventFilters = iter.value().eventFilters;
++    for (const auto& filter : eventFilters) {
++        auto* eventFilter = filter.data();
++        if (eventFilter) {
++            widget->removeEventFilter(eventFilter);
++            delete eventFilter;
++        }
+     }
+-  }
+ 
+-  _widgets.erase(iter);
++    auto restore = std::move(iter.value().restoreActions);
++    _widgets.erase(iter);
++    for (auto action = restore.rbegin(); action != restore.rend(); ++action)
++        (*action)();
+ }
+ 
+-void PolishedWidgetRegistry::forgetDestroyedWidget(QWidget* widget, QObject* destructionEventFilter) {
+-  if (!widget)
+-    return;
+-
+-  auto iter = _widgets.find(widget);
+-  if (iter == _widgets.end())
+-    return;
+-
+-  auto& eventFilters = iter.value().eventFilters;
+-  eventFilters.removeAll(destructionEventFilter);
+-  _widgets.erase(iter);
++void PolishedWidgetRegistry::forgetDestroyedWidget(
++        QWidget* widget, QObject* destructionEventFilter) {
++    if (!widget) return;
++    auto iter = _widgets.find(widget);
++    if (iter == _widgets.end()) return;
++    iter.value().eventFilters.removeAll(destructionEventFilter);
++    _widgets.erase(iter);
+ }
+-} // namespace oclero::qlementine
++}  // namespace oclero::qlementine
+diff --git a/lib/src/style/PolishedWidgetRegistry.hpp b/lib/src/style/PolishedWidgetRegistry.hpp
+index b1e4034..84ad57b 100644
+--- a/lib/src/style/PolishedWidgetRegistry.hpp
++++ b/lib/src/style/PolishedWidgetRegistry.hpp
+@@ -5,6 +5,9 @@
+ 
+ #include <QList>
+ #include <QMap>
++#include <QPointer>
++#include <functional>
++#include <vector>
+ 
+ class QObject;
+ class QWidget;
+@@ -12,19 +15,31 @@ class QWidget;
+ namespace oclero::qlementine {
+ class PolishedWidgetRegistry {
+ public:
+-  struct Entry {
+-    QList<QObject*> eventFilters;
+-  };
++    struct Entry {
++        QList<QPointer<QObject>> eventFilters;
++        std::vector<std::function<void()>> restoreActions;
++    };
+ 
+-  Entry& ensure(QWidget* widget);
+-  bool hasEventFilters(QWidget* widget) const;
++    class WidgetPolishTransaction {
++    public:
++        WidgetPolishTransaction(QWidget* widget, Entry& entry);
++        ~WidgetPolishTransaction() {
++            if (_commit) _commit();
++        }
++        WidgetPolishTransaction(const WidgetPolishTransaction&) = delete;
++        WidgetPolishTransaction& operator=(const WidgetPolishTransaction&) = delete;
++    private:
++        std::function<void()> _commit;
++    };
+ 
+-  void addEventFilter(QWidget* widget, Entry& entry, QObject* eventFilter);
+-  void rememberEventFilter(Entry& entry, QObject* eventFilter);
+-  void removeAndDeleteEventFilters(QWidget* widget);
+-  void forgetDestroyedWidget(QWidget* widget, QObject* destructionEventFilter);
++    Entry& ensure(QWidget* widget);
++    bool hasEventFilters(QWidget* widget) const;
++    void addEventFilter(QWidget* widget, Entry& entry, QObject* eventFilter);
++    void rememberEventFilter(Entry& entry, QObject* eventFilter);
++    void removeAndDeleteEventFilters(QWidget* widget);
++    void forgetDestroyedWidget(QWidget* widget, QObject* destructionEventFilter);
+ 
+ private:
+-  QMap<QWidget*, Entry> _widgets;
++    QMap<QWidget*, Entry> _widgets;
+ };
+ } // namespace oclero::qlementine
+diff --git a/lib/src/style/QlementineStyle.cpp b/lib/src/style/QlementineStyle.cpp
+index 153308f..2361472 100644
+--- a/lib/src/style/QlementineStyle.cpp
++++ b/lib/src/style/QlementineStyle.cpp
+@@ -43,7 +43,7 @@
+ #include <QMenuBar>
+ #include <QMessageBox>
+ #include <QPainter>
+-#include <QPainterStateGuard>
++#include <oclero/qlementine/utils/QtCompat.hpp>
+ #include <QPainterPath>
+ #include <QPixmapCache>
+ #include <QPlainTextEdit>
+@@ -59,6 +59,7 @@
+ #include <QTextEdit>
+ #include <QTimer>
+ #include <QToolBar>
++#include <QStyleFactory>
+ #include <QToolButton>
+ #include <QToolTip>
+ #include <QTreeView>
+@@ -66,6 +67,8 @@
+ 
+ #include <cmath>
+ #include <mutex>
++#include <array>
++#include <optional>
+ 
+ namespace oclero::qlementine {
+ 
+@@ -101,8 +104,67 @@ constexpr auto Property_AutoIconColor = "autoIconColor";
+ constexpr auto Property_Status = "status";
+ 
+ 
++struct ApplicationPolishState {
++  QFont font;
++  bool dontShowIcons;
++  bool dontShowShortcuts;
++  std::array<bool, 5> effects;
++};
++static constexpr std::array<Qt::UIEffect, 5> applicationEffects = {
++  Qt::UI_AnimateMenu, Qt::UI_FadeMenu, Qt::UI_AnimateCombo,
++  Qt::UI_AnimateTooltip, Qt::UI_FadeTooltip
++};
++
++// Dense scientific toolbars use the proven Fusion geometry contract while
++// keeping Qlementine painting, colors, focus and animations. Other tool buttons
++// (forms/tab bars) retain their own Qlementine sizing.
++static bool isToolbarControl(const QWidget* widget) {
++  for (auto* current = widget; current; current = current->parentWidget()) {
++    if (qobject_cast<const QToolBar*>(current)) return true;
++    if (current->isWindow()) break;
++  }
++  return false;
++}
++
++// Use the same caption metrics for the size hint and the painted label.
++static bool isVerticalTabShape(QTabBar::Shape shape) {
++  return shape == QTabBar::RoundedEast || shape == QTabBar::RoundedWest
++    || shape == QTabBar::TriangularEast || shape == QTabBar::TriangularWest;
++}
++
++static bool isVerticalTab(const QStyleOptionTab* tab) {
++  return isVerticalTabShape(tab->shape);
++}
++
++static bool isVerticalTabBar(const QWidget* widget) {
++  const auto* bar = qobject_cast<const QTabBar*>(widget);
++  return bar && isVerticalTabShape(bar->shape());
++}
++
++struct ToolCaptionMetrics {
++  QSize icon;
++  QSize text;
++  int padding;
++  int gap;
++  bool stacked;
++
++  ToolCaptionMetrics(const QStyleOptionToolButton& opt, const QWidget* widget, int themeSpacing)
++    : icon(opt.toolButtonStyle == Qt::ToolButtonTextOnly || opt.icon.isNull() ? QSize(0, 0) : opt.iconSize)
++    , text(opt.toolButtonStyle == Qt::ToolButtonIconOnly || opt.text.isEmpty() ? QSize(0, 0)
++        : opt.fontMetrics.size(Qt::TextSingleLine | Qt::TextShowMnemonic, opt.text))
++    , padding(isToolbarControl(widget) ? 2 : themeSpacing)
++    , gap(!icon.isEmpty() && !text.isEmpty() ? (isToolbarControl(widget) ? 4 : themeSpacing) : 0)
++    , stacked(opt.toolButtonStyle == Qt::ToolButtonTextUnderIcon) {}
++
++  QSize size() const {
++    return stacked ? QSize(std::max(icon.width(), text.width()), icon.height() + gap + text.height())
++                   : QSize(icon.width() + gap + text.width(), std::max(icon.height(), text.height()));
++  }
++};
++
+ struct QlementineStyleImpl {
+   QlementineStyle& owner;
++  std::unique_ptr<QStyle> toolbarGeometry{QStyleFactory::create(QStringLiteral("Fusion"))};
+   Theme theme{};
+   std::unique_ptr<QFontMetrics> fontMetricsBold{ nullptr };
+   WidgetAnimationManager animations;
+@@ -111,11 +173,14 @@ struct QlementineStyleImpl {
+   PolishedWidgetRegistry polishedWidgets;
+   AutoIconColor autoIconColor{ AutoIconColor::None };
+   std::function<QString(QString)> iconPathFunc;
++  std::optional<ApplicationPolishState> applicationState;
+ 
+   explicit QlementineStyleImpl(QlementineStyle& o)
+     : owner(o) {
+-    std::call_once(qlementineOnceFlag, qlementine::resources::initializeResources);
+-    installFonts();
++    std::call_once(qlementineOnceFlag, [this]() {
++      qlementine::resources::initializeResources();
++      installFonts();
++    });
+   }
+ 
+   /// Registers all the theme fonts to Qt's font database.
+@@ -350,6 +415,11 @@ void QlementineStyle::triggerCompleteRepaint() {
+   _impl->standardIconCache.clear();
+   QPixmapCache::clear();
+ 
++  // Preparing a style or changing a per-widget instance must not mutate the
++  // application's palette/font before that instance is actually installed.
++  if (QApplication::style() != this)
++    return;
++
+   // Update the palette.
+   const auto palette = standardPalette();
+   QApplication::setPalette(palette);
+@@ -449,7 +519,7 @@ void QlementineStyle::setIconPathGetter(const std::function<QString(QString)>& f
+ /* QStyle overrides. */
+ 
+ void QlementineStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption* opt, QPainter* p, const QWidget* w) const {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   p->setRenderHint(QPainter::SmoothPixmapTransform, true);
+   switch (pe) {
+     case PE_Frame:
+@@ -565,6 +635,11 @@ void QlementineStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption* opt
+           _impl->animations.animateBackgroundColor(w, bgColor, _impl->theme.animationDuration);
+         const auto radiuses = optRoundedButton ? optRoundedButton->radiuses : RadiusesF{ _impl->theme.borderRadius };
+         drawRoundedRect(p, optButton->rect, currentBgColor, radiuses);
++        if (!isFlat && role == ColorRole::Secondary) {
++          const auto& edge = effectiveMouse == MouseState::Disabled ? _impl->theme.borderColorDisabled
++            : effectiveMouse == MouseState::Hovered ? _impl->theme.borderColorHovered : _impl->theme.borderColor;
++          drawRoundedRectBorder(p, optButton->rect, edge, _impl->theme.borderWidth, radiuses);
++        }
+       }
+       return;
+     }
+@@ -619,6 +694,12 @@ void QlementineStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption* opt
+           isTabBarScrollButton ? tabBarScrollButtonBackgroundColor(mouse) : toolButtonBackgroundColor(mouse, role);
+         const auto& currentColor = _impl->animations.animateBackgroundColor(w, bgColor, _impl->theme.animationDuration);
+         drawRoundedRect(p, rect, currentColor, buttonRadiuses);
++        if (buttonState.testFlag(State_On) && buttonState.testFlag(State_Enabled) &&
++            isToolbarControl(w)) {
++          // Keep the checked state legible even for icons with an opaque plate.
++          drawRoundedRectBorder(p, rect.adjusted(0, 0, -1, -1),
++            _impl->theme.secondaryColor, 1., buttonRadiuses);
++        }
+       }
+       return;
+     case PE_PanelMenuBar: {
+@@ -866,8 +947,8 @@ void QlementineStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption* opt
+     case PE_IndicatorSpinUp:
+       break;
+     case PE_IndicatorToolBarHandle:
+-      // TODO
+-      break;
++      _impl->toolbarGeometry->drawPrimitive(pe, opt, p, w);
++      return;
+     case PE_IndicatorToolBarSeparator: {
+       const auto& rect = opt->rect;
+       const auto& color = toolBarSeparatorColor();
+@@ -1114,25 +1195,28 @@ void QlementineStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption* opt
+       }
+       return;
+     case PE_PanelMenu: {
+-      const auto radius = _impl->theme.borderRadius;
++      const bool alpha = compat::popupHasAlpha(w);
++      const auto radius = alpha ? _impl->theme.borderRadius : 0.;
+       const auto& bgColor = menuBackgroundColor();
+       const auto& borderColor = menuBorderColor();
+       const auto borderW = _impl->theme.borderWidth;
+       p->setRenderHint(QPainter::Antialiasing, true);
+       const auto totalRect = opt->rect;
+-      const auto shadowPadding = pixelMetric(PM_MenuPanelWidth);
++      const auto shadowPadding = pixelMetric(PM_MenuPanelWidth, opt, w);
+       const auto frameRect = totalRect.marginsRemoved({ shadowPadding, shadowPadding, shadowPadding, shadowPadding });
+-      const auto dropShadowRadius = _impl->theme.spacing;
+-      const auto dropShadowOffsetY = shadowPadding / 3;
+-      const auto dropShadowPixmap =
+-        getDropShadowPixmap(frameRect.size(), radius, dropShadowRadius, _impl->theme.shadowColor1);
+-      const auto dropShadowX = frameRect.x() + (frameRect.width() - dropShadowPixmap.width()) / 2;
+-      const auto dropShadowY = frameRect.y() + (frameRect.height() - dropShadowPixmap.height()) / 2 + dropShadowOffsetY;
+-
+-      const auto compMode = p->compositionMode();
+-      p->setCompositionMode(QPainter::CompositionMode::CompositionMode_Multiply);
+-      p->drawPixmap(dropShadowX, dropShadowY, dropShadowPixmap);
+-      p->setCompositionMode(compMode);
++      if (alpha) {
++        const auto dropShadowRadius = _impl->theme.spacing;
++        const auto dropShadowOffsetY = shadowPadding / 3;
++        const auto dropShadowPixmap =
++          getDropShadowPixmap(frameRect.size(), radius, dropShadowRadius, _impl->theme.shadowColor1);
++        const auto dropShadowX = frameRect.x() + (frameRect.width() - dropShadowPixmap.width()) / 2;
++        const auto dropShadowY = frameRect.y() + (frameRect.height() - dropShadowPixmap.height()) / 2 + dropShadowOffsetY;
++        p->drawPixmap(dropShadowX, dropShadowY, dropShadowPixmap);
++      } else {
++        // Fill the native 24-bit window including every corner: client-side
++        // transparent shadow padding would otherwise be displayed solid black.
++        p->fillRect(totalRect, bgColor);
++      }
+       // Avoid ugly antialiasing artefacts in the corners.
+       const auto halfBorderW = borderW / 2.;
+       const auto bgFrameRect =
+@@ -1148,7 +1232,7 @@ void QlementineStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption* opt
+ }
+ 
+ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QPainter* p, const QWidget* w) const {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   p->setRenderHint(QPainter::SmoothPixmapTransform, true);
+   switch (ce) {
+     case CE_PushButton:
+@@ -1310,6 +1394,10 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
+       return;
+     case CE_TabBarTab:
+       if (const auto* optTab = qstyleoption_cast<const QStyleOptionTab*>(opt)) {
++        if (isVerticalTab(optTab)) {
++          _impl->toolbarGeometry->drawControl(ce, opt, p, w);
++          return;
++        }
+         const auto padding = _impl->tabExtraPadding(optTab, w);
+ 
+         // Background.
+@@ -1374,7 +1462,7 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
+         const auto& iconSize = icon.isNull() ? QSize{ 0, 0 } : optTab->iconSize;
+         const auto& fm = optTab->fontMetrics;
+         const auto textAvailableWidth = rect.width() - (iconSize.isEmpty() ? 0 : iconSize.width() + spacing);
+-        const auto elidedText = fm.elidedText(optTab->text, Qt::ElideMiddle, textAvailableWidth, Qt::TextSingleLine);
++        const auto elidedText = fm.elidedText(optTab->text, Qt::ElideMiddle, textAvailableWidth, Qt::TextShowMnemonic);
+         const auto hasText = elidedText != QStringLiteral("…");
+         const auto textColor = tabTextColor(mouse, selection, optTab, w);
+ 
+@@ -1532,53 +1620,49 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
+           auto availableW = fgRect.width() - (hasSubMenu ? arrowW + spacing : 0);
+           auto availableX = fgRect.x();
+ 
+-          // Check.
+-          if (menuHasCheckable || checkable) {
++          // Check indicator and icon share a single left column (QCommonStyle
++          // semantics). Qt's maxIconWidth already sizes the icon column; reserving
++          // a separate full check column on top of it left a wide blank gutter
++          // before every icon in menus that also contain checkable items.
++          const auto showIcons = !QCoreApplication::testAttribute(Qt::AA_DontShowIconsInMenus);
++          const auto hasCheckColumn = menuHasCheckable || checkable;
++          const auto columnW = std::max(showIcons ? optMenuItem->maxIconWidth : 0,
++            hasCheckColumn ? _impl->theme.iconSize.width() : 0);
++          const auto iconSpace = columnW > 0 ? columnW + spacing : 0;
++
++          if (checkable) {
+             const auto checkBoxSize = _impl->theme.iconSize;
+-
+-            if (checkable) {
+-              const auto checkBoxX = availableX;
+-              const auto checkBoxY = fgRect.y() + (fgRect.height() - checkBoxSize.height()) / 2;
+-              const auto checkboxRect = QRect{ QPoint{ checkBoxX, checkBoxY }, checkBoxSize };
+-              const auto isRadio = optMenuItem->checkType == QStyleOptionMenuItem::Exclusive;
+-              const auto progress = checkState == CheckState::Checked ? 1. : 0.;
+-              const auto borderW = _impl->theme.borderWidth;
+-              const auto selected = getSelectionState(optMenuItem->state);
+-              const auto active = getActiveState(optMenuItem->state);
+-              const auto& boxFgColor = listItemCheckButtonForegroundColor(mouse, checkState, selected, active);
+-              const auto& boxBgColor = listItemCheckButtonBackgroundColor(mouse, checkState, selected, active);
+-              const auto& boxBorderColor = listItemCheckButtonBorderColor(mouse, checkState, selected, active);
+-
+-              // TODO draw smaller checks.
+-              if (isRadio) {
+-                drawRadioButton(p, checkboxRect, boxBgColor, boxBorderColor, boxFgColor, borderW, progress);
+-              } else {
+-                const auto checkBoxRadius = _impl->theme.checkBoxBorderRadius;
+-                drawCheckButton(p, checkboxRect, checkBoxRadius, boxBgColor, boxBorderColor, boxFgColor, borderW,
+-                  progress, checkState);
+-              }
++            const auto checkBoxX = availableX + (columnW - checkBoxSize.width()) / 2;
++            const auto checkBoxY = fgRect.y() + (fgRect.height() - checkBoxSize.height()) / 2;
++            const auto checkboxRect = QRect{ QPoint{ checkBoxX, checkBoxY }, checkBoxSize };
++            const auto isRadio = optMenuItem->checkType == QStyleOptionMenuItem::Exclusive;
++            const auto progress = checkState == CheckState::Checked ? 1. : 0.;
++            const auto borderW = _impl->theme.borderWidth;
++            const auto selected = getSelectionState(optMenuItem->state);
++            const auto active = getActiveState(optMenuItem->state);
++            const auto& boxFgColor = listItemCheckButtonForegroundColor(mouse, checkState, selected, active);
++            const auto& boxBgColor = listItemCheckButtonBackgroundColor(mouse, checkState, selected, active);
++            const auto& boxBorderColor = listItemCheckButtonBorderColor(mouse, checkState, selected, active);
++
++            if (isRadio) {
++              drawRadioButton(p, checkboxRect, boxBgColor, boxBorderColor, boxFgColor, borderW, progress);
++            } else {
++              const auto checkBoxRadius = _impl->theme.checkBoxBorderRadius;
++              drawCheckButton(p, checkboxRect, checkBoxRadius, boxBgColor, boxBorderColor, boxFgColor, borderW,
++                progress, checkState);
++            }
++          } else if (showIcons) {
++            const auto pixmap = getPixmap(optMenuItem->icon, _impl->theme.iconSize, mouse, checkState, w);
++            if (!pixmap.isNull()) {
++              const auto& colorizedPixmap = getColorizedPixmap(pixmap, w, fgColor, fgColor, mouse);
++              const auto targetPxRatio = colorizedPixmap.devicePixelRatio();
++              const auto pixmapW = targetPxRatio != 0 ? (int) ((qreal) colorizedPixmap.width() / targetPxRatio) : 0;
++              const auto pixmapH = targetPxRatio != 0 ? (int) ((qreal) colorizedPixmap.height() / targetPxRatio) : 0;
++              const auto pixmapX = availableX;
++              const auto pixmapY = fgRect.y() + (fgRect.height() - pixmapH) / 2;
++              const auto pixmapRect = QRect{ pixmapX, pixmapY, pixmapW, pixmapH };
++              p->drawPixmap(pixmapRect, colorizedPixmap);
+             }
+-
+-            const auto taken = checkBoxSize.width() + spacing;
+-            availableW -= taken;
+-            availableX += taken;
+-          }
+-
+-          // Icon.
+-          const auto iconSpace =
+-            !QCoreApplication::testAttribute(Qt::AA_DontShowIconsInMenus) && optMenuItem->maxIconWidth > 0
+-              ? optMenuItem->maxIconWidth + spacing
+-              : 0;
+-          const auto pixmap = getPixmap(optMenuItem->icon, _impl->theme.iconSize, mouse, checkState, w);
+-          if (!pixmap.isNull()) {
+-            const auto& colorizedPixmap = getColorizedPixmap(pixmap, w, fgColor, fgColor, mouse);
+-            const auto targetPxRatio = colorizedPixmap.devicePixelRatio();
+-            const auto pixmapW = targetPxRatio != 0 ? (int) ((qreal) colorizedPixmap.width() / targetPxRatio) : 0;
+-            const auto pixmapH = targetPxRatio != 0 ? (int) ((qreal) colorizedPixmap.height() / targetPxRatio) : 0;
+-            const auto pixmapX = availableX;
+-            const auto pixmapY = fgRect.y() + (fgRect.height() - pixmapH) / 2;
+-            const auto pixmapRect = QRect{ pixmapX, pixmapY, pixmapW, pixmapH };
+-            p->drawPixmap(pixmapRect, colorizedPixmap);
+           }
+           availableW -= iconSpace;
+           availableX += iconSpace;
+@@ -1588,13 +1672,16 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
+             const auto& fm = optMenuItem->fontMetrics;
+             const auto shortcutW = fm.boundingRect(optMenuItem->rect, Qt::AlignRight, shortcut).width();
+             if (availableW > shortcutW) {
+-              const auto shortcutX = fgRect.x() + fgRect.width() - shortcutW;
++              const auto shortcutX = fgRect.x() + fgRect.width() - (hasSubMenu ? arrowW + spacing : 0) - shortcutW;
+               const auto shortcutRect = QRect{ shortcutX, fgRect.y(), shortcutW, fgRect.height() };
+               constexpr auto shortcutFlags =
+                 Qt::AlignVCenter | Qt::AlignBaseline | Qt::TextSingleLine | Qt::AlignRight | Qt::TextHideMnemonic;
+               const auto& shortcutColor = menuItemSecondaryForegroundColor(mouse);
+               p->setPen(shortcutColor);
++              p->save();
++              p->setFont(optMenuItem->font);
+               p->drawText(shortcutRect, shortcutFlags, shortcut);
++              p->restore();
+ 
+               const auto taken = shortcutW + spacing * 2;
+               availableW -= taken;
+@@ -1605,7 +1692,7 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
+           if (!label.isEmpty()) {
+             const auto textW = availableW;
+             const auto& fm = optMenuItem->fontMetrics;
+-            const auto elidedText = fm.elidedText(label, Qt::ElideRight, textW, Qt::TextSingleLine);
++            const auto elidedText = fm.elidedText(label, Qt::ElideRight, textW, Qt::TextShowMnemonic);
+             const auto textX = availableX;
+             const auto textRect = QRect{ textX, fgRect.y(), availableW, fgRect.height() };
+             int textFlags =
+@@ -1618,7 +1705,10 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
+             }
+ 
+             p->setPen(fgColor);
++            p->save();
++            p->setFont(optMenuItem->font);
+             p->drawText(textRect, textFlags, elidedText, nullptr);
++            p->restore();
+           }
+ 
+           // Menu indicator.
+@@ -1735,92 +1825,53 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
+           buttonState.setFlag(State_On, false);
+         }
+ 
+-        const auto& iconSize = icon.isNull() ? QSize{ 0, 0 } : optToolButton->iconSize;
+-        const auto& fm = optToolButton->fontMetrics;
+-        const auto buttonStyle = optToolButton->toolButtonStyle;
+-        const auto showText = buttonStyle != Qt::ToolButtonIconOnly;
+-        const auto showIcon = buttonStyle != Qt::ToolButtonTextOnly;
+         const auto mouse = getToolButtonMouseState(buttonState);
+         const auto role = getColorRole(buttonState, false);
+         const auto checked = getCheckState(buttonState);
+         const auto& fgColor = toolButtonForegroundColor(mouse, role);
+-        const auto spacing = _impl->theme.spacing;
+-        const auto hasMenu = optToolButton->features.testFlag(QStyleOptionToolButton::HasMenu);
+-        const auto leftPadding = buttonStyle == Qt::ToolButtonTextOnly ? spacing * 2 : spacing;
+-        const auto hasIcon = showIcon && !iconSize.isEmpty();
+-        const auto hasText = showText && !optToolButton->text.isEmpty();
+-        const auto rightPadding =
+-          !hasMenu && (buttonStyle == Qt::ToolButtonTextOnly || buttonStyle == Qt::ToolButtonTextBesideIcon)
+-            ? spacing * 2
+-            : spacing;
+-        const auto topPadding = buttonStyle == Qt::ToolButtonTextUnderIcon ? spacing : 0;
+-        const auto bottomPadding = buttonStyle == Qt::ToolButtonTextUnderIcon ? spacing : 0;
+-        const auto fgRect = rect.adjusted(leftPadding, topPadding, -rightPadding, -bottomPadding);
+-        const auto centered = !hasMenu;
+-        const auto textW = fm.boundingRect(optToolButton->rect, Qt::AlignCenter, optToolButton->text).width();
+-        const auto textH = fm.boundingRect(optToolButton->rect, Qt::AlignCenter, optToolButton->text).height();
+-
+-        auto availableW = 0;
+-        auto availableX = 0;
+-        if (buttonStyle != Qt::ToolButtonTextUnderIcon) {
+-          availableW = centered ? std::min(fgRect.width(), iconSize.width() + spacing + textW) : fgRect.width();
+-          availableX = centered ? fgRect.x() + (fgRect.width() - availableW) / 2 : fgRect.x();
+-        } else {
+-          const auto contentMaxW = std::max(iconSize.width(), textW);
+-          availableW = centered ? std::min(fgRect.width(), contentMaxW) : fgRect.width();
+-          availableX = centered ? fgRect.x() + (fgRect.width() - availableW) / 2 : fgRect.x();
++        const ToolCaptionMetrics caption(*optToolButton, w, _impl->theme.spacing);
++        // Small fixed-size auto-raise buttons (view-titlebar controls outside a
++        // QToolBar) must not let the theme padding starve the icon: clamp the
++        // padding to the spare space so the glyph draws at full size, uncropped.
++        int hPadding = caption.padding;
++        if (!caption.icon.isEmpty() && !caption.stacked) {
++          hPadding = std::min(hPadding, std::max(0, (rect.width() - caption.icon.width()) / 2));
++          hPadding = std::min(hPadding, std::max(0, (rect.height() - caption.icon.height()) / 2));
+         }
+-        auto availableH = std::min(fgRect.height(), iconSize.height() + spacing + textH);
+-        auto availableY = fgRect.y();
+-
+-        // Icon.
+-        if (hasIcon) {
+-          const auto pixmap = getPixmap(icon, iconSize, mouse, checked, w);
+-          const auto& colorizedPixmap = getColorizedPixmap(pixmap, w, fgColor, fgColor, mouse);
+-          const auto pixmapPixelRatio = colorizedPixmap.devicePixelRatio();
+-          const auto pixmapW = pixmapPixelRatio != 0 ? (int) ((qreal) colorizedPixmap.width() / pixmapPixelRatio) : 0;
+-          const auto pixmapH = pixmapPixelRatio != 0 ? (int) ((qreal) colorizedPixmap.height() / pixmapPixelRatio) : 0;
+-          if (buttonStyle == Qt::ToolButtonTextUnderIcon) {
+-            const auto pixmapX = availableX + (availableW - pixmapW) / 2;
+-            const auto pixmapY = fgRect.y() + (fgRect.height() - availableH) / 2;
+-            const auto pixmapRect = QRect{ pixmapX, pixmapY, pixmapW, pixmapH };
+-            availableH -= pixmapH + spacing;
+-            availableY += pixmapH + spacing;
+-            p->drawPixmap(pixmapRect, colorizedPixmap);
+-          } else {
+-            const auto iconOnly = buttonStyle == Qt::ToolButtonIconOnly;
+-            const auto pixmapX = iconOnly ? availableX + (availableW - pixmapW) / 2 : availableX;
+-            const auto pixmapY = rect.y() + (rect.height() - pixmapH) / 2;
+-            const auto pixmapRect = QRect{ pixmapX, pixmapY, pixmapW, pixmapH };
+-            availableW -= pixmapW + spacing;
+-            availableX += pixmapW + spacing;
+-            p->drawPixmap(pixmapRect, colorizedPixmap);
+-          }
++        const int vPadding = caption.stacked ? caption.padding : 0;
++        const auto content = rect.adjusted(hPadding, vPadding, -hPadding, -vPadding);
++        if (content.isEmpty()) return;
++
++        const QSize desired = caption.size();
++        const int width = std::min(content.width(), desired.width());
++        const int height = std::min(content.height(), desired.height());
++        const QRect group(content.x() + (content.width() - width) / 2,
++          content.y() + (content.height() - height) / 2, width, height);
++        QRect textRect = group;
++        if (!caption.icon.isEmpty()) {
++          // Fit the icon to the available content as a final safety net so a
++          // glyph is never centre-cropped when space is genuinely insufficient.
++          const QSize fittedIcon = caption.icon.boundedTo(content.size());
++          const QRect logicalIcon = caption.stacked
++            ? QRect(group.x() + (group.width() - fittedIcon.width()) / 2, group.y(),
++                fittedIcon.width(), fittedIcon.height())
++            : QRect(group.x(), group.y() + (group.height() - fittedIcon.height()) / 2,
++                fittedIcon.width(), fittedIcon.height());
++          const auto iconRect = visualRect(optToolButton->direction, content, logicalIcon);
++          const auto pixmap = getPixmap(icon, fittedIcon, mouse, checked, w);
++          const auto& colorized = getColorizedPixmap(pixmap, w, fgColor, fgColor, mouse);
++          drawItemPixmap(p, iconRect, Qt::AlignCenter, colorized);
++          if (caption.stacked)
++            textRect.setTop(logicalIcon.bottom() + 1 + caption.gap);
++          else
++            textRect.setLeft(logicalIcon.right() + 1 + caption.gap);
+         }
+-
+-        // Text.
+-        if (hasText) {
+-          if (buttonStyle == Qt::ToolButtonTextUnderIcon && availableH > 0) {
+-            const auto elidedText = fm.elidedText(optToolButton->text, Qt::ElideRight, availableW, Qt::TextSingleLine);
+-            const auto textRect = QRect{ availableX, availableY, availableW, availableH };
+-            const int textFlags = Qt::AlignCenter | Qt::AlignBaseline | Qt::TextSingleLine | Qt::TextHideMnemonic;
+-            p->setBrush(Qt::NoBrush);
+-            p->setPen(fgColor);
+-            p->drawText(textRect, textFlags, elidedText, nullptr);
+-          } else if (availableW > 0) {
+-            const auto elidedText = fm.elidedText(optToolButton->text, Qt::ElideRight, availableW, Qt::TextSingleLine);
+-            const auto elidedTextW = fm.boundingRect(optToolButton->rect, Qt::AlignCenter, elidedText).width();
+-            const auto textRect = QRect{ availableX, availableY, elidedTextW, availableH };
+-            int textFlags = Qt::AlignVCenter | Qt::AlignBaseline | Qt::TextSingleLine | Qt::TextHideMnemonic;
+-            if (iconSize.isEmpty() || !showIcon) {
+-              textFlags |= Qt::AlignHCenter;
+-            } else {
+-              textFlags |= Qt::AlignLeft;
+-            }
+-            p->setBrush(Qt::NoBrush);
+-            p->setPen(fgColor);
+-            p->drawText(textRect, textFlags, elidedText, nullptr);
+-          }
++        if (!caption.text.isEmpty() && !textRect.isEmpty()) {
++          textRect = visualRect(optToolButton->direction, content, textRect);
++          const auto text = optToolButton->fontMetrics.elidedText(optToolButton->text,
++            Qt::ElideRight, textRect.width(), Qt::TextShowMnemonic);
++          p->setPen(fgColor);
++          p->drawText(textRect, Qt::AlignCenter | Qt::TextSingleLine | Qt::TextHideMnemonic, text);
+         }
+       }
+       return;
+@@ -1986,8 +2037,13 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
+           if (!hasArrow || iconRect.right() <= maxLabelX) {
+             const auto colorize = this->autoIconColor(w) != AutoIconColor::None;
+             const auto iconMode = (optHeader->state & State_Enabled || colorize) ? QIcon::Normal : QIcon::Disabled;
+-            const auto iconPixmap =
+-              icon.pixmap({ iconExtent, iconExtent }, qlementine::getWindow(w)->devicePixelRatio(), iconMode);
++#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
++            const auto* iconWindow = qlementine::getWindow(w);
++            const auto iconPixmap = icon.pixmap({ iconExtent, iconExtent },
++              iconWindow ? iconWindow->devicePixelRatio() : qApp->devicePixelRatio(), iconMode);
++#else
++            const auto iconPixmap = icon.pixmap(qlementine::getWindow(w), { iconExtent, iconExtent }, iconMode);
++#endif
+             const auto& colorizedPixmap = getColorizedPixmap(iconPixmap, w, fgColor, fgColor, mouse);
+             p->drawPixmap(iconRect, colorizedPixmap);
+           }
+@@ -2037,6 +2093,24 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
+       p->fillRect(lineRect, lineColor);
+     }
+       return;
++    case CE_DockWidgetTitle:
++      if (const auto* dwOpt = qstyleoption_cast<const QStyleOptionDockWidget*>(opt)) {
++        // QCommonStyle paints the title across the FULL title-bar width, so it
++        // runs under the float/close buttons. Draw it inside the text sub-element
++        // (which already excludes the buttons) and let drawItemText elide it.
++        if (dwOpt->movable) {
++          p->setPen(dwOpt->palette.color(QPalette::Dark));
++          p->drawRect(dwOpt->rect.adjusted(0, 0, -1, -1));
++        }
++        if (!dwOpt->title.isEmpty()) {
++          const auto textRect = subElementRect(SE_DockWidgetTitleBarText, opt, w);
++          if (textRect.isValid()) {
++            drawItemText(p, textRect, Qt::AlignLeft | Qt::AlignVCenter, dwOpt->palette,
++              dwOpt->state & State_Enabled, dwOpt->title, QPalette::WindowText);
++          }
++        }
++      }
++      return;
+     // case CE_RubberBand:
+     //   break;
+     // case CE_DockWidgetTitle:
+@@ -2407,9 +2481,23 @@ void QlementineStyle::drawControl(ControlElement ce, const QStyleOption* opt, QP
+         if (textRect.width() > 0 && !optItem->text.isEmpty()) {
+           const auto& fm = optItem->fontMetrics;
+           if (textRect.width() > 0) {
+-            const auto elidedText = fm.elidedText(optItem->text, Qt::ElideRight, textRect.width(), Qt::TextSingleLine);
++            QString content = optItem->text;
++            content.replace(QChar(0x2028), QLatin1Char('\n'));
++            const bool multiline = content.contains(QLatin1Char('\n'));
++            const bool wrap = optItem->features.testFlag(QStyleOptionViewItem::WrapText);
++            QString elidedText;
++            if (multiline && !wrap) {
++              QStringList lines = content.split(QLatin1Char('\n'));
++              for (auto& line : lines) line = fm.elidedText(line, Qt::ElideRight, textRect.width());
++              elidedText = lines.join(QLatin1Char('\n'));
++            } else {
++              elidedText = wrap ? content : fm.elidedText(content, Qt::ElideRight, textRect.width());
++            }
+             const auto textAlignment = optItem->displayAlignment;
+-            auto textFlags = Qt::AlignVCenter | Qt::AlignBaseline | Qt::TextSingleLine;
++            const auto verticalAlignment = textAlignment & Qt::AlignVertical_Mask;
++            int textFlags = (verticalAlignment ? int(verticalAlignment) : int(Qt::AlignVCenter)) | Qt::TextExpandTabs;
++            if (wrap) textFlags |= Qt::TextWordWrap;
++            else if (!multiline) textFlags |= Qt::TextSingleLine;
+             textFlags = textAlignment.testFlag(Qt::AlignHCenter) ? textFlags | Qt::AlignHCenter
+                         : textAlignment.testFlag(Qt::AlignRight) ? textFlags | Qt::AlignRight
+                                                                  : textFlags | Qt::AlignLeft;
+@@ -2621,8 +2709,11 @@ QRect QlementineStyle::subElementRect(SubElement se, const QStyleOption* opt, co
+             y += iconSize.height() + (hasText || hasCheck ? spacing : 0);
+           }
+           if (se == SE_ItemViewItemText) {
+-            return hasText ? QRect{ optItem->rect.x() + hPadding, y, optItem->rect.width() - 2 * hPadding, textH }
+-                           : QRect{};
++            // QStyledItemDelegate also requests this region for editing an
++            // empty value. Absence of paint text must not erase editor geometry.
++            return QRect{ optItem->rect.x() + hPadding, y,
++              std::max(0, optItem->rect.width() - 2 * hPadding),
++              std::max(textH, optItem->fontMetrics.height()) };
+           }
+ 
+           if (hasText) {
+@@ -2655,7 +2746,9 @@ QRect QlementineStyle::subElementRect(SubElement se, const QStyleOption* opt, co
+           if (hasIcon) {
+             x += iconSize.width() + spacing;
+           }
+-          return hasText ? QRect{ x, contentY, std::max(0, contentRight - x), contentH } : QRect{};
++          // Empty item values can still own an editor (persistent property
++          // widgets, newly inserted table cells). Preserve their cell region.
++          return QRect{ x, contentY, std::max(0, contentRight - x), contentH };
+         }
+       }
+       break;
+@@ -2731,6 +2824,7 @@ QRect QlementineStyle::subElementRect(SubElement se, const QStyleOption* opt, co
+     case SE_TabBarTabLeftButton:
+       // Button on the left of a tab.
+       if (const auto* optTab = qstyleoption_cast<const QStyleOptionTab*>(opt)) {
++        if (isVerticalTab(optTab)) return _impl->toolbarGeometry->subElementRect(se, opt, w);
+         const auto& rect = optTab->rect;
+         const auto buttonSize = optTab->leftButtonSize;
+         const auto paddingTop = _impl->theme.tabBarPaddingTop;
+@@ -2744,6 +2838,7 @@ QRect QlementineStyle::subElementRect(SubElement se, const QStyleOption* opt, co
+     case SE_TabBarTabRightButton:
+       // Button on the right of a tab (close button).
+       if (const auto* optTab = qstyleoption_cast<const QStyleOptionTab*>(opt)) {
++        if (isVerticalTab(optTab)) return _impl->toolbarGeometry->subElementRect(se, opt, w);
+         const auto& rect = optTab->rect;
+         const auto buttonSize = optTab->rightButtonSize;
+         const auto spacing = _impl->theme.spacing;
+@@ -2756,6 +2851,7 @@ QRect QlementineStyle::subElementRect(SubElement se, const QStyleOption* opt, co
+       return {};
+     case SE_TabBarTabText:
+       if (const auto* optTab = qstyleoption_cast<const QStyleOptionTab*>(opt)) {
++        if (isVerticalTab(optTab)) return _impl->toolbarGeometry->subElementRect(se, opt, w);
+         const auto& rect = optTab->rect;
+         const auto spacing = _impl->theme.spacing;
+         const auto leftButtonWidth = optTab->leftButtonSize.width();
+@@ -2771,6 +2867,7 @@ QRect QlementineStyle::subElementRect(SubElement se, const QStyleOption* opt, co
+       }
+       return {};
+     case SE_TabBarScrollLeftButton: {
++      if (isVerticalTabBar(w)) return _impl->toolbarGeometry->subElementRect(se, opt, w);
+       const auto& rect = opt->rect;
+       const auto spacing = _impl->theme.spacing;
+       const auto width = _impl->theme.controlHeightMedium + static_cast<int>(spacing * 1.5);
+@@ -2780,6 +2877,7 @@ QRect QlementineStyle::subElementRect(SubElement se, const QStyleOption* opt, co
+       return { x, y, width, height };
+     }
+     case SE_TabBarScrollRightButton: {
++      if (isVerticalTabBar(w)) return _impl->toolbarGeometry->subElementRect(se, opt, w);
+       const auto& rect = opt->rect;
+       const auto spacing = _impl->theme.spacing;
+       const auto width = _impl->theme.controlHeightMedium + static_cast<int>(spacing * 1.5);
+@@ -2789,8 +2887,7 @@ QRect QlementineStyle::subElementRect(SubElement se, const QStyleOption* opt, co
+       return { x, y, width, height };
+     }
+     case SE_ToolBarHandle:
+-      //qDebug() << "SE_ToolBarHandle";
+-      break;
++      return _impl->toolbarGeometry->subElementRect(se, opt, w);
+     case SE_ShapedFrameContents:
+       break;
+     default:
+@@ -2801,7 +2898,7 @@ QRect QlementineStyle::subElementRect(SubElement se, const QStyleOption* opt, co
+ 
+ void QlementineStyle::drawComplexControl(
+   ComplexControl cc, const QStyleOptionComplex* opt, QPainter* p, const QWidget* w) const {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   p->setRenderHint(QPainter::SmoothPixmapTransform, true);
+   switch (cc) {
+     case CC_SpinBox:
+@@ -3192,7 +3289,9 @@ void QlementineStyle::drawComplexControl(
+           p->drawLine(lineP1, lineP2);
+ 
+           // Arrow.
+-          const auto& arrowSize = _impl->theme.iconSize;
++          const auto arrowExtent = isToolbarControl(w)
++            ? std::max(4, std::min(10, menuButtonRect.width() - 2)) : _impl->theme.iconSize.width();
++          const QSize arrowSize(arrowExtent, arrowExtent);
+           const auto arrowX = menuButtonRect.x() + (menuButtonRect.width() - arrowSize.width()) / 2;
+           const auto arrowY = menuButtonRect.y() + (menuButtonRect.height() - arrowSize.height()) / 2;
+           const auto arrowRect = QRect{ arrowX, arrowY, arrowSize.width(), arrowSize.height() };
+@@ -3204,8 +3303,10 @@ void QlementineStyle::drawComplexControl(
+           p->drawPath(path);
+         } else if (hasMenu) {
+           // Arrow.
+-          const auto spacing = _impl->theme.spacing;
+-          const auto& arrowSize = _impl->theme.iconSize;
++          const auto spacing = isToolbarControl(w) ? 0 : _impl->theme.spacing;
++          const auto arrowExtent = isToolbarControl(w)
++            ? std::max(4, std::min(10, menuButtonRect.width() - 2)) : _impl->theme.iconSize.width();
++          const QSize arrowSize(arrowExtent, arrowExtent);
+           const auto arrowX = menuButtonRect.x() + (menuButtonRect.width() - arrowSize.width()) / 2 - spacing;
+           const auto arrowY = menuButtonRect.y() + (menuButtonRect.height() - arrowSize.height()) / 2;
+           const auto arrowRect = QRect{ arrowX, arrowY, arrowSize.width(), arrowSize.height() };
+@@ -3219,7 +3320,11 @@ void QlementineStyle::drawComplexControl(
+       }
+       return;
+     case CC_TitleBar:
+-      break;
++    case CC_MdiControls:
++      // QMdiSubWindow (Python Editor) needs a complete paint/layout/hit-test
++      // contract. QCommonStyle plus empty subcontrol rects hides every button.
++      _impl->toolbarGeometry->drawComplexControl(cc, opt, p, w);
++      return;
+     case CC_Dial:
+       if (const auto* dialOpt = qstyleoption_cast<const QStyleOptionSlider*>(opt)) {
+         const auto min = dialOpt->minimum;
+@@ -3308,8 +3413,7 @@ void QlementineStyle::drawComplexControl(
+         }
+       }
+       return;
+-    case CC_MdiControls:
+-      break;
++
+     default:
+       break;
+   }
+@@ -3479,11 +3583,8 @@ QStyle::SubControl QlementineStyle::hitTestComplexControl(
+       }
+       return SC_None;
+     case CC_TitleBar:
+-      // TODO
+-      break;
+     case CC_MdiControls:
+-      // TODO
+-      break;
++      return _impl->toolbarGeometry->hitTestComplexControl(cc, opt, pos, w);
+     default:
+       break;
+   }
+@@ -3579,7 +3680,9 @@ QRect QlementineStyle::subControlRect(
+           case SC_ComboBoxListBoxPopup: {
+             const auto contentMarginH = pixelMetric(PM_MenuHMargin);
+             const auto contentMarginV = pixelMetric(PM_MenuVMargin);
+-            const auto shadowWidth = _impl->theme.spacing;
++            const auto* combo = qobject_cast<const QComboBox*>(w);
++            const auto* popup = combo && combo->view() ? combo->view()->window() : nullptr;
++            const auto shadowWidth = compat::popupHasAlpha(popup) ? _impl->theme.spacing : 0;
+             const auto borderWidth = _impl->theme.borderWidth;
+             const auto width = std::max(opt->rect.width(), w->width());
+             const auto height = opt->rect.height() + 12; // Not possible to change height here.
+@@ -3685,6 +3788,8 @@ QRect QlementineStyle::subControlRect(
+       }
+       return {};
+     case CC_ToolButton:
++      if (isToolbarControl(w))
++        return _impl->toolbarGeometry->subControlRect(cc, opt, sc, w);
+       if (const auto* toolButtonOpt = qstyleoption_cast<const QStyleOptionToolButton*>(opt)) {
+         const auto& rect = toolButtonOpt->rect;
+ 
+@@ -3709,31 +3814,8 @@ QRect QlementineStyle::subControlRect(
+       }
+       return {};
+     case CC_TitleBar:
+-      if (qstyleoption_cast<const QStyleOptionTitleBar*>(opt)) {
+-        switch (sc) {
+-          case SC_TitleBarSysMenu:
+-            return {};
+-          case SC_TitleBarMinButton:
+-            return {};
+-          case SC_TitleBarMaxButton:
+-            return {};
+-          case SC_TitleBarCloseButton:
+-            return {};
+-          case SC_TitleBarNormalButton:
+-            return {};
+-          case SC_TitleBarShadeButton:
+-            return {};
+-          case SC_TitleBarUnshadeButton:
+-            return {};
+-          case SC_TitleBarContextHelpButton:
+-            return {};
+-          case SC_TitleBarLabel:
+-            return {};
+-          default:
+-            return {};
+-        }
+-      }
+-      return {};
++    case CC_MdiControls:
++      return _impl->toolbarGeometry->subControlRect(cc, opt, sc, w);
+     case CC_Dial:
+       if (const auto* dialOpt = qstyleoption_cast<const QStyleOptionSlider*>(opt)) {
+         const auto& totalRect = dialOpt->rect;
+@@ -3816,18 +3898,6 @@ QRect QlementineStyle::subControlRect(
+         }
+       }
+       return {};
+-    case CC_MdiControls:
+-      switch (sc) {
+-        case SC_MdiMinButton:
+-          return {};
+-        case SC_MdiNormalButton:
+-          return {};
+-        case SC_MdiCloseButton:
+-          return {};
+-        default:
+-          break;
+-      }
+-      break;
+     default:
+       break;
+   }
+@@ -3918,73 +3988,32 @@ QSize QlementineStyle::sizeFromContents(
+         const auto& iconSize = optToolButton->iconSize;
+ 
+         // Special cases.
+-        if (widget->inherits("QLineEditIconButton")) {
++        if (widget && widget->inherits("QLineEditIconButton")) {
+           return _impl->theme.iconSize;
+-        } else if (widget->inherits("QMenuBarExtension")) {
++        } else if (widget && widget->inherits("QMenuBarExtension")) {
+           const auto extent = pixelMetric(PM_ToolBarExtensionExtent);
+           return QSize{ extent, extent };
+-        } else if (qobject_cast<QTabBar*>(widget->parentWidget())) {
++        } else if (widget && qobject_cast<QTabBar*>(widget->parentWidget()) && optToolButton->arrowType != Qt::NoArrow) {
+           const auto w = _impl->theme.controlHeightMedium + static_cast<int>(spacing * 1.5);
+           const auto h = _impl->theme.controlHeightLarge + spacing;
+           return QSize{ w, h };
+         }
+ 
+-        const auto buttonStyle = optToolButton->toolButtonStyle;
+-        const auto hasMenu = optToolButton->features.testFlag(QStyleOptionToolButton::ToolButtonFeature::HasMenu);
+-        const auto menuIsOnSeparateButton =
+-          hasMenu && optToolButton->features.testFlag(QStyleOptionToolButton::ToolButtonFeature::MenuButtonPopup);
+-
+-        const auto separatorW = menuIsOnSeparateButton ? _impl->theme.borderWidth : 0;
+-        const auto menuIndicatorW = hasMenu ? separatorW + iconSize.width() + spacing / 2 : 0;
+-
+-        switch (buttonStyle) {
+-          case Qt::ToolButtonStyle::ToolButtonTextOnly: {
+-            const auto textW =
+-              optToolButton->fontMetrics.boundingRect(optToolButton->rect, Qt::AlignCenter, optToolButton->text)
+-                .width();
+-            const auto leftPadding = spacing * 2;
+-            const auto rightPadding = hasMenu ? spacing : spacing * 2;
+-            const auto w = leftPadding + textW + rightPadding + menuIndicatorW;
+-            const auto h = iconSize.height() < _impl->theme.controlHeightLarge
+-                             ? _impl->theme.controlHeightLarge
+-                             : iconSize.height() + _impl->theme.spacing;
+-            return QSize{ w, h };
+-          }
+-          case Qt::ToolButtonStyle::ToolButtonIconOnly: {
+-            const auto w = iconSize.width() + spacing * 2 + menuIndicatorW;
+-            const auto h = iconSize.height() < _impl->theme.controlHeightLarge
+-                             ? _impl->theme.controlHeightLarge
+-                             : iconSize.height() + _impl->theme.spacing;
+-            return QSize{ w, h };
+-          }
+-          case Qt::ToolButtonStyle::ToolButtonTextUnderIcon: {
+-            constexpr auto maxTextW = 150;
+-            const auto textW = qMin(maxTextW,
+-              optToolButton->fontMetrics.boundingRect(optToolButton->rect, Qt::AlignCenter, optToolButton->text)
+-                .width());
+-            const auto textH = optToolButton->fontMetrics.height();
+-            const auto hPadding = _impl->theme.spacing;
+-            const auto vPadding = _impl->theme.spacing;
+-            const auto w = hPadding * 2 + qMax(iconSize.width(), textW) + menuIndicatorW;
+-            const auto h = vPadding * 2 + iconSize.height() + spacing + textH;
+-            return QSize{ w, h };
+-          }
+-          case Qt::ToolButtonStyle::ToolButtonTextBesideIcon: {
+-            const auto iconW = iconSize.width();
+-            const auto textW =
+-              optToolButton->fontMetrics.boundingRect(optToolButton->rect, Qt::AlignCenter, optToolButton->text)
+-                .width();
+-            const auto leftPadding = spacing;
+-            const auto rightPadding = hasMenu ? spacing : spacing * 2;
+-            const auto w = leftPadding + iconW + spacing + textW + rightPadding + menuIndicatorW;
+-            const auto h = iconSize.height() < _impl->theme.controlHeightLarge
+-                             ? _impl->theme.controlHeightLarge
+-                             : iconSize.height() + _impl->theme.spacing;
+-            return QSize{ w, h };
+-          }
+-          default:
+-            return QSize{};
+-        }
++        const ToolCaptionMetrics caption(*optToolButton, widget, spacing);
++        const bool inToolbar = isToolbarControl(widget);
++        const auto nativeSize = inToolbar ? _impl->toolbarGeometry->sizeFromContents(ct, opt, contentSize, widget)
++                                          : QSize(0, 0);
++        if (inToolbar && caption.text.isEmpty()) return nativeSize;
++        const bool hasMenu = optToolButton->features.testFlag(QStyleOptionToolButton::HasMenu);
++        const int menuWidth = hasMenu ? (inToolbar
++          ? _impl->toolbarGeometry->pixelMetric(PM_MenuButtonIndicator, opt, widget)
++          : iconSize.width() + (optToolButton->features.testFlag(QStyleOptionToolButton::MenuButtonPopup)
++              ? _impl->theme.borderWidth + spacing / 2 : 0)) : 0;
++        const auto desired = caption.size();
++        const int width = desired.width() + caption.padding * 2 + menuWidth;
++        const int height = desired.height() + (caption.stacked ? caption.padding * 2 : 4);
++        return nativeSize.expandedTo(QSize(width,
++          inToolbar ? height : std::max(height, _impl->theme.controlHeightLarge)));
+       }
+       break;
+     case CT_ComboBox:
+@@ -4058,7 +4087,7 @@ QSize QlementineStyle::sizeFromContents(
+           const auto spacing = _impl->theme.spacing;
+           const auto& fm = optMenuItem->fontMetrics;
+           const auto [label, shortcut] = getMenuLabelAndShortcut(optMenuItem->text);
+-          const auto labelW = fm.boundingRect(optMenuItem->rect, Qt::AlignLeft, label).width();
++          const auto labelW = fm.size(Qt::TextSingleLine | Qt::TextShowMnemonic, label).width();
+ 
+           // Submenu arrow.
+           const auto hasArrow = optMenuItem->menuItemType == QStyleOptionMenuItem::SubMenu;
+@@ -4066,23 +4095,25 @@ QSize QlementineStyle::sizeFromContents(
+ 
+           // Shortcut. NB: Some difficulties to understand what's going on. Qt changes the width so here's a hack.
+           const auto hasShortcut = shortcut.length() > 0;
++#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+           const auto reservedShortcutW = optMenuItem->reservedShortcutWidth;
++#else
++          const auto reservedShortcutW = optMenuItem->tabWidth;
++#endif
+           const auto shortcutTextWidth = hasShortcut ? fm.boundingRect(shortcut).width() : 0;
+           const auto shortcutW = std::max(reservedShortcutW, shortcutTextWidth);
+ 
+-          // Icon.
+-          const auto iconW =
+-            !QCoreApplication::testAttribute(Qt::AA_DontShowIconsInMenus) && optMenuItem->maxIconWidth > 0
+-              ? optMenuItem->maxIconWidth + spacing
+-              : 0;
+-
+-          // Check or Radio.
++          // Icon and check indicator share one left column (see CE_MenuItem).
++          const auto showIcons = !QCoreApplication::testAttribute(Qt::AA_DontShowIconsInMenus);
+           const auto hasCheck =
+             optMenuItem->menuHasCheckableItems || optMenuItem->checkType != QStyleOptionMenuItem::NotCheckable;
+-          const auto checkW = hasCheck ? iconSize.width() + spacing : 0;
++          const auto columnW = std::max(showIcons ? optMenuItem->maxIconWidth : 0,
++            hasCheck ? iconSize.width() : 0);
++          const auto iconW = columnW > 0 ? columnW + spacing : 0;
+ 
+-          const auto w = std::max(0, hPadding + checkW + iconW + labelW + shortcutW + arrowW + hPadding);
+-          const auto h = std::max(_impl->theme.controlHeightMedium, iconSize.height() + vPadding);
++          const auto w = std::max(0, hPadding + iconW + labelW + shortcutW + (shortcutW > 0 ? spacing * 2 : 0) + arrowW + hPadding);
++          const auto h = std::max(_impl->theme.controlHeightMedium,
++             std::max({iconSize.height(), fm.height(), contentSize.height()}) + vPadding);
+           return { w, h };
+         }
+         return QSize{};
+@@ -4102,11 +4133,14 @@ QSize QlementineStyle::sizeFromContents(
+       return contentSize;
+     case CT_TabBarTab:
+       if (const auto* optTab = qstyleoption_cast<const QStyleOptionTab*>(opt)) {
++        if (isVerticalTab(optTab)) return _impl->toolbarGeometry->sizeFromContents(ct, opt, contentSize, widget);
+         // TODO Handle expanding tab bar.
+         // TODO Choose min/max values according to available space and total tab count.
+         // Don't make tabs too long or too short.
+         const auto spacing = _impl->theme.spacing;
+-        const auto h = _impl->theme.controlHeightLarge + spacing;
++        const auto h = std::max(_impl->theme.controlHeightLarge + spacing,
++          std::max({optTab->fontMetrics.height(), optTab->iconSize.height(), optTab->leftButtonSize.height(),
++            optTab->rightButtonSize.height()}) + _impl->theme.tabBarPaddingTop + spacing);
+ 
+         auto w = spacing * 2;
+ 
+@@ -4127,7 +4161,7 @@ QSize QlementineStyle::sizeFromContents(
+ 
+         // Text.
+         if (!optTab->text.isEmpty()) {
+-          w += qlementine::textWidth(optTab->fontMetrics, optTab->text);
++          w += optTab->fontMetrics.size(Qt::TextSingleLine | Qt::TextShowMnemonic, optTab->text).width();
+         }
+ 
+         // Clamp tab size.
+@@ -4234,7 +4268,7 @@ QSize QlementineStyle::sizeFromContents(
+       }
+       break;
+     case CT_MdiControls:
+-      break;
++      return _impl->toolbarGeometry->sizeFromContents(ct, opt, contentSize, widget);
+     case CT_ItemViewItem:
+       if (const auto* optItem = qstyleoption_cast<const QStyleOptionViewItem*>(opt)) {
+         const auto& features = optItem->features;
+@@ -4245,7 +4279,19 @@ QSize QlementineStyle::sizeFromContents(
+         const auto& iconSize = hasIcon ? optItem->decorationSize : QSize{ 0, 0 };
+ 
+         const auto hasText = features.testFlag(QStyleOptionViewItem::HasDisplay) && !optItem->text.isEmpty();
+-        const auto textH = hasText ? optItem->fontMetrics.height() : 0;
++        QString displayText = optItem->text;
++        displayText.replace(QChar(0x2028), QLatin1Char('\n'));
++        const bool wrapText = features.testFlag(QStyleOptionViewItem::WrapText);
++        const bool multiline = displayText.contains(QLatin1Char('\n'));
++        const bool measuredIcon = features.testFlag(QStyleOptionViewItem::HasDecoration) && !optItem->icon.isNull();
++        const bool measuredCheck = features.testFlag(QStyleOptionViewItem::HasCheckIndicator);
++        const int leadingWidth = (measuredIcon ? optItem->decorationSize.width() + spacing : 0)
++          + (measuredCheck ? _impl->theme.iconSize.width() + spacing : 0);
++        const int textWidth = std::max(1, optItem->rect.width() - 2 * hPadding - leadingWidth);
++        const int textFlags = Qt::TextExpandTabs | (wrapText ? Qt::TextWordWrap : 0);
++        const auto textH = !hasText ? 0 : (multiline || wrapText)
++          ? optItem->fontMetrics.boundingRect(QRect(0, 0, textWidth, 100000), textFlags, displayText).height()
++          : optItem->fontMetrics.height();
+ 
+         const auto hasCheck = features.testFlag(QStyleOptionViewItem::HasCheckIndicator);
+         const auto& checkSize = hasCheck ? _impl->theme.iconSize : QSize{ 0, 0 };
+@@ -4277,7 +4323,7 @@ QSize QlementineStyle::sizeFromContents(
+           const auto gridSize = listView ? listView->gridSize() : QSize{ 0, 0 };
+           w = qMax(gridSize.width(), w);
+           h = qMax(gridSize.height(), h);
+-          return QSize{ w, h };
++          return QSize{ std::max(w, contentSize.width()), std::max(h, contentSize.height()) };
+         } else {
+           const auto sideBySideIconWidth = (iconSize.width() > 0 ? iconSize.width() + spacing : 0);
+           const auto sideBySideCheckWidth = (checkSize.width() > 0 ? checkSize.width() + spacing : 0);
+@@ -4287,7 +4333,7 @@ QSize QlementineStyle::sizeFromContents(
+             textH + spacing,
+             defaultH,
+           });
+-          return QSize{ w, h };
++          return QSize{ std::max(w, contentSize.width()), std::max(h, contentSize.height()) };
+         }
+       }
+       break;
+@@ -4319,10 +4365,12 @@ int QlementineStyle::pixelMetric(PixelMetric m, const QStyleOption* opt, const Q
+       return _impl->theme.iconSize.height();
+ 
+     // LineEdit.
++#if QT_VERSION >= QT_VERSION_CHECK(6, 2, 0)
+     case PM_LineEditIconMargin:
+       return _impl->theme.spacing;
+     case PM_LineEditIconSize:
+       return _impl->theme.iconSize.height();
++#endif
+ 
+     // Frame.
+     case PM_DefaultFrameWidth:
+@@ -4371,9 +4419,9 @@ int QlementineStyle::pixelMetric(PixelMetric m, const QStyleOption* opt, const Q
+     case PM_TabBarTabOverlap:
+       return static_cast<int>(_impl->theme.borderRadius);
+     case PM_TabBarTabHSpace:
+-      return 0;
+     case PM_TabBarTabVSpace:
+-      return 0;
++      // Qt adds these metrics before asking CT_TabBarTab for its size.
++      return isVerticalTabBar(w) ? _impl->toolbarGeometry->pixelMetric(m, opt, w) : 0;
+     case PM_TabBarBaseHeight:
+       return _impl->theme.controlHeightLarge + _impl->theme.spacing;
+     case PM_TabBarBaseOverlap:
+@@ -4401,11 +4449,9 @@ int QlementineStyle::pixelMetric(PixelMetric m, const QStyleOption* opt, const Q
+       return 1;
+     // TitleBar.
+     case PM_TitleBarHeight:
+-      break;
+     case PM_TitleBarButtonIconSize:
+-      break;
+     case PM_TitleBarButtonSize:
+-      break;
++      return _impl->toolbarGeometry->pixelMetric(m, opt, w);
+ 
+     // Menu.
+     case PM_MenuScrollerHeight:
+@@ -4418,8 +4464,8 @@ int QlementineStyle::pixelMetric(PixelMetric m, const QStyleOption* opt, const Q
+       return _impl->theme.spacing / 2 + borderW;
+     }
+     case PM_MenuPanelWidth:
+-      // Keep some space for drop shadow.
+-      return blurRadiusNecessarySpace(_impl->theme.spacing);
++      // Reserve client-side shadow pixels only for real alpha surfaces.
++      return compat::popupHasAlpha(w) ? blurRadiusNecessarySpace(_impl->theme.spacing) : 0;
+     case PM_MenuTearoffHeight:
+       // Tear off is the part of the menu that is clickable to detach the menu.
+       return _impl->theme.controlHeightSmall;
+@@ -4453,23 +4499,18 @@ int QlementineStyle::pixelMetric(PixelMetric m, const QStyleOption* opt, const Q
+ 
+     // Mdi.
+     case PM_MdiSubWindowFrameWidth:
+-      break;
+     case PM_MdiSubWindowMinimizedWidth:
+-      break;
++      return _impl->toolbarGeometry->pixelMetric(m, opt, w);
+ 
+-    // ToolBar.
++    // Toolbar metrics agree with the same compact geometry used by its
++    // buttons, including handle/separator and split-menu hit targets.
+     case PM_ToolBarFrameWidth:
+-      return _impl->theme.borderWidth;
+     case PM_ToolBarHandleExtent:
+-      return _impl->theme.spacing / 2;
+     case PM_ToolBarItemSpacing:
+-      return _impl->theme.spacing / 2;
+     case PM_ToolBarItemMargin:
+-      return _impl->theme.spacing;
+     case PM_ToolBarSeparatorExtent:
+-      return _impl->theme.spacing * 2;
+     case PM_ToolBarExtensionExtent:
+-      return _impl->theme.iconSize.height() + _impl->theme.spacing;
++      return _impl->toolbarGeometry->pixelMetric(m, opt, w);
+     case PM_ToolBarIconSize:
+       return _impl->theme.iconSize.height();
+ 
+@@ -4570,7 +4611,9 @@ int QlementineStyle::styleHint(StyleHint sh, const QStyleOption* opt, const QWid
+ 
+     // Workspace
+     case SH_Workspace_FillSpaceOnMaximize:
+-      return true;
++      // Keep Qt's merged-menubar behavior for maximized MDI subwindows;
++      // Fusion is the geometry reference used by the rest of this adapter.
++      return _impl->toolbarGeometry->styleHint(sh, opt, w, shret);
+ 
+     // ScrollBar
+     case SH_ScrollBar_MiddleClickAbsolutePosition:
+@@ -4833,7 +4876,7 @@ int QlementineStyle::styleHint(StyleHint sh, const QStyleOption* opt, const QWid
+ 
+     // ToolBar
+     case SH_ToolBar_Movable:
+-      return false;
++      return _impl->toolbarGeometry->styleHint(sh, opt, w, shret);
+     case SH_ToolButtonStyle:
+       return Qt::ToolButtonStyle::ToolButtonIconOnly;
+     case SH_ToolButton_PopupDelay:
+@@ -4875,6 +4918,30 @@ int QlementineStyle::styleHint(StyleHint sh, const QStyleOption* opt, const QWid
+ 
+ QIcon QlementineStyle::standardIcon(StandardPixmap sp, const QStyleOption* opt, const QWidget* w) const {
+   switch (sp) {
++    case SP_DockWidgetCloseButton:
++    case SP_TitleBarCloseButton:
++    case SP_TitleBarMinButton:
++    case SP_TitleBarMaxButton:
++    case SP_TitleBarNormalButton: {
++      // Native glyph semantics are retained, but their monochrome pixels must
++      // follow this theme instead of staying black on a dark dock titlebar.
++      auto& icon = _impl->standardIconCache[sp];
++      const auto size = _impl->theme.iconSize;
++      if (!icon.availableSizes().contains(size)) {
++        const auto source = QCommonStyle::standardIcon(sp, opt, w);
++        updateUncheckableButtonIconPixmap(icon, size, *this,
++          [source](const QSize& extent, const QColor& color) {
++            // QCommonStyle returns these glyphs as small fixed bitmaps and
++            // QIcon::pixmap() does not upscale them; scale to the requested
++            // extent so the colorized icon fills the titlebar/dock button.
++            auto src = source.pixmap(extent);
++            if (src.size() != extent)
++              src = src.scaled(extent, Qt::KeepAspectRatio, Qt::SmoothTransformation);
++            return qlementine::getColorizedPixmap(src, color);
++          });
++      }
++      return icon;
++    }
+     case SP_MessageBoxQuestion:
+     case SP_MessageBoxInformation:
+     case SP_MessageBoxCritical:
+@@ -4918,6 +4985,14 @@ void QlementineStyle::polish(QPalette& palette) {
+ 
+ void QlementineStyle::polish(QApplication* app) {
+   QCommonStyle::polish(app);
++  if (!_impl->applicationState) {
++    ApplicationPolishState state{app->font(),
++      QCoreApplication::testAttribute(Qt::AA_DontShowIconsInMenus),
++      QCoreApplication::testAttribute(Qt::AA_DontShowShortcutsInContextMenus), {}};
++    for (std::size_t i = 0; i < applicationEffects.size(); ++i)
++      state.effects[i] = QApplication::isEffectEnabled(applicationEffects[i]);
++    _impl->applicationState = state;
++  }
+   app->setFont(_impl->theme.fontRegular);
+ 
+   QCoreApplication::setAttribute(Qt::AA_DontShowIconsInMenus, false);
+@@ -4931,6 +5006,15 @@ void QlementineStyle::polish(QApplication* app) {
+ }
+ 
+ void QlementineStyle::unpolish(QApplication* app) {
++  if (_impl->applicationState) {
++    const auto state = *_impl->applicationState;
++    _impl->applicationState.reset();
++    QCoreApplication::setAttribute(Qt::AA_DontShowIconsInMenus, state.dontShowIcons);
++    QCoreApplication::setAttribute(Qt::AA_DontShowShortcutsInContextMenus, state.dontShowShortcuts);
++    for (std::size_t i = 0; i < applicationEffects.size(); ++i)
++      QApplication::setEffectEnabled(applicationEffects[i], state.effects[i]);
++    app->setFont(state.font);
++  }
+   QCommonStyle::unpolish(app);
+ }
+ 
+@@ -4944,6 +5028,7 @@ void QlementineStyle::polish(QWidget* w) {
+   // end up with multiple event filters on the same widget.
+   auto& polishedWidgetInfo = _impl->polishedWidgets.ensure(w);
+   const auto eventFiltersInstalled = !polishedWidgetInfo.eventFilters.empty();
++  PolishedWidgetRegistry::WidgetPolishTransaction widgetChanges(w, polishedWidgetInfo);
+ 
+   // Not yet ideal, but still better than a huge fonction.
+   polishToolTip(w);
+@@ -4951,10 +5036,10 @@ void QlementineStyle::polish(QWidget* w) {
+   polishCommonWidget(w);
+   polishExternalFocusFrame(w, _impl->polishedWidgets, polishedWidgetInfo, eventFiltersInstalled);
+   polishMenu(w, _impl->polishedWidgets, polishedWidgetInfo, eventFiltersInstalled);
+-  polishComboBoxPopup(w, *this);
++  polishComboBoxPopup(w, *this, polishedWidgetInfo, eventFiltersInstalled);
+   polishVerticalCompression(w);
+   polishMouseWheelBlocker(w, _impl->polishedWidgets, polishedWidgetInfo, eventFiltersInstalled);
+-  polishComboBox(*this, w);
++  polishComboBox(*this, w, polishedWidgetInfo, eventFiltersInstalled);
+   polishTabBar(w, _impl->polishedWidgets, polishedWidgetInfo, eventFiltersInstalled);
+ 
+   if (auto* label = qobject_cast<QLabel*>(w)) {
+@@ -4965,7 +5050,7 @@ void QlementineStyle::polish(QWidget* w) {
+     }
+   }
+ 
+-  polishMessageBox(w, *this);
++  polishMessageBox(w, *this, polishedWidgetInfo);
+   polishScrollArea(w);
+   polishSlider(w);
+   polishTextEditors(w, _impl->polishedWidgets, polishedWidgetInfo, eventFiltersInstalled);
+@@ -4982,7 +5067,7 @@ void QlementineStyle::unpolish(QWidget* w) {
+ 
+ void QlementineStyle::drawPrimitiveExt(
+   PrimitiveElementExt pe, const QStyleOption* opt, QPainter* p, const QWidget* w) const {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   p->setRenderHint(QPainter::SmoothPixmapTransform, true);
+   const auto* optButton = buttonStyleOption(opt);
+   const auto* optCommandButton = qstyleoption_cast<const QStyleOptionCommandLinkButton*>(opt);
+@@ -5138,7 +5223,7 @@ QSize QlementineStyle::sizeFromContentsExt(
+ 
+ void QlementineStyle::drawControlExt(
+   ControlElementExt ce, const QStyleOption* opt, QPainter* p, const QWidget* w) const {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   p->setRenderHint(QPainter::SmoothPixmapTransform, true);
+   const auto* optButton = buttonStyleOption(opt);
+   const auto* optCommandButton = qstyleoption_cast<const QStyleOptionCommandLinkButton*>(opt);
+@@ -5444,20 +5529,19 @@ QColor QlementineStyle::listItemBackgroundColor(MouseState const mouse, Selectio
+       case MouseState::Hovered:
+         return isSelected ? _impl->theme.neutralColor : _impl->theme.neutralColorDisabled;
+       case MouseState::Disabled:
+-        return isSelected ? _impl->theme.neutralColor : _impl->theme.neutralColorTransparent;
++        return isSelected ? _impl->theme.backgroundColorMain3 : _impl->theme.neutralColorTransparent;
+       case MouseState::Transparent:
+       case MouseState::Normal:
+       default:
+-        return isSelected ? _impl->theme.neutralColor : _impl->theme.neutralColorTransparent;
++        return isSelected ? _impl->theme.backgroundColorMain3 : _impl->theme.neutralColorTransparent;
+     }
+   }
+ }
+ 
+ QColor const& QlementineStyle::listItemForegroundColor(
+   MouseState const mouse, SelectionState const selected, FocusState const focus, ActiveState const active) const {
+-  Q_UNUSED(focus)
+   const auto isSelected = selected == SelectionState::Selected;
+-  const auto isActive = active == ActiveState::Active;
++  const auto isActive = active == ActiveState::Active && focus == FocusState::Focused;
+ 
+   if (isActive) {
+     switch (mouse) {
+diff --git a/lib/src/style/Theme.cpp b/lib/src/style/Theme.cpp
+index ac16182..240c93b 100644
+--- a/lib/src/style/Theme.cpp
++++ b/lib/src/style/Theme.cpp
+@@ -239,11 +239,15 @@ void Theme::initializeFonts() {
+   if (useSystemFonts && !fontSizeWasOverriden) {
+     fontSize = resolveFontPixelSize(defaultFont);
+   }
+-  fontRegular.setPixelSize(std::max(1, fontSize));
++  // Preserve system point-size semantics for application code that adjusts
++  // pointSizeF(), and let Qt handle per-screen text DPI without pixel rounding.
++  if (!useSystemFonts || fontSizeWasOverriden)
++    fontRegular.setPixelSize(std::max(1, fontSize));
+ 
+   fontBold = defaultFont;
+   fontBold.setWeight(QFont::Weight::Bold);
+-  fontBold.setPixelSize(std::max(1, fontSize));
++  if (!useSystemFonts || fontSizeWasOverriden)
++    fontBold.setPixelSize(std::max(1, fontSize));
+ 
+   fontH1 = titleFont;
+   fontH1.setWeight(QFont::Weight::Bold);
+@@ -270,14 +274,16 @@ void Theme::initializeFonts() {
+   if (useSystemFonts && !fontSizeS1WasOverriden) {
+     fontSizeS1 = resolveFontPixelSize(defaultFont);
+   }
+-  fontCaption.setPixelSize(std::max(1, fontSizeS1));
++  if (!useSystemFonts || fontSizeS1WasOverriden)
++    fontCaption.setPixelSize(std::max(1, fontSizeS1));
+ 
+   fontMonospace = fixedFont;
+   fontMonospace.setWeight(QFont::Weight::Normal);
+   if (useSystemFonts && !fontSizeMonospaceWasOverriden) {
+     fontSizeMonospace = resolveFontPixelSize(fixedFont);
+   }
+-  fontMonospace.setPixelSize(std::max(1, fontSizeMonospace));
++  if (!useSystemFonts || fontSizeMonospaceWasOverriden)
++    fontMonospace.setPixelSize(std::max(1, fontSizeMonospace));
+ }
+ 
+ void Theme::initializePalette() {
+@@ -309,7 +315,13 @@ void Theme::initializePalette() {
+   palette.setColor(QPalette::ColorGroup::All, QPalette::ColorRole::Highlight, primaryColor);
+   palette.setColor(QPalette::ColorGroup::Disabled, QPalette::ColorRole::Highlight, primaryColorDisabled);
+   palette.setColor(QPalette::ColorGroup::All, QPalette::ColorRole::HighlightedText, primaryColorForeground);
+-  palette.setColor(QPalette::ColorGroup::Disabled, QPalette::ColorRole::HighlightedText, primaryColorDisabled);
++  // Disabled selection still carries information. Honor the explicit token
++  // when readable; otherwise choose a contrasting text color, never the fill.
++  auto disabledSelectionText = primaryColorForegroundDisabled;
++  if (getContrastRatio(disabledSelectionText, primaryColorDisabled) < 3.)
++    disabledSelectionText = getContrastRatio(Qt::black, primaryColorDisabled)
++      >= getContrastRatio(Qt::white, primaryColorDisabled) ? QColor(Qt::black) : QColor(Qt::white);
++  palette.setColor(QPalette::ColorGroup::Disabled, QPalette::ColorRole::HighlightedText, disabledSelectionText);
+ 
+   // Text.
+   palette.setColor(QPalette::ColorGroup::All, QPalette::ColorRole::Text, secondaryColor);
+diff --git a/lib/src/style/eventFilters/ComboboxItemViewFilter.hpp b/lib/src/style/eventFilters/ComboboxItemViewFilter.hpp
+index 2d6774b..3f74929 100644
+--- a/lib/src/style/eventFilters/ComboboxItemViewFilter.hpp
++++ b/lib/src/style/eventFilters/ComboboxItemViewFilter.hpp
+@@ -15,6 +15,10 @@
+ #include <QAbstractItemView>
+ #include <QChildEvent>
+ #include <QScreen>
++#include <QPointer>
++#include <vector>
++#include <typeinfo>
++#include <oclero/qlementine/utils/QtCompat.hpp>
+ 
+ namespace oclero::qlementine {
+ 
+@@ -23,7 +27,9 @@ inline bool isDefaultItemDelegate(const QAbstractItemDelegate* delegate) {
+   if (!delegate)
+     return true;
+   const auto* meta = delegate->metaObject();
+-  return meta == &QStyledItemDelegate::staticMetaObject || meta == &QItemDelegate::staticMetaObject
++  // A custom C++ delegate need not declare Q_OBJECT: its metaObject can still
++  // be the base class's. RTTI prevents silently replacing application behavior.
++  return typeid(*delegate) == typeid(QStyledItemDelegate) || typeid(*delegate) == typeid(QItemDelegate)
+          || QByteArray(meta->className()) == "QComboMenuDelegate";
+ }
+ 
+@@ -55,19 +61,6 @@ public:
+ protected:
+   bool eventFilter(QObject* watchedObject, QEvent* evt) override {
+     switch (evt->type()) {
+-      case QEvent::Type::ChildAdded: {
+-        if (watchedObject == _comboBox) {
+-          const auto* childEvent = static_cast<QChildEvent*>(evt);
+-          const auto* child = childEvent->child();
+-          if (child == _comboBox->view()) {
+-            if (auto* qlementine = qobject_cast<QlementineStyle*>(_comboBox->style())) {
+-              if (isDefaultItemDelegate(_comboBox->itemDelegate())) {
+-                _comboBox->setItemDelegate(new ComboBoxDelegate(_comboBox, *qlementine));
+-              }
+-            }
+-          }
+-        }
+-      } break;
+       case QEvent::Type::Show:
+         fixViewGeometry();
+         break;
+@@ -96,12 +89,12 @@ protected:
+ 
+ private:
+   void fixViewGeometry() const {
+-    if (_comboBox) {
++    if (_comboBox && _view) {
+       if (auto* view = _comboBox->view()) {
+         if (const auto* qlementineStyle = qobject_cast<QlementineStyle*>(_comboBox->style())) {
+           const auto isTreeView = view->inherits("QTreeView");
+           const auto hMargin = qlementineStyle->pixelMetric(QStyle::PM_MenuHMargin);
+-          const auto shadowWidth = qlementineStyle->theme().spacing;
++          const auto shadowWidth = compat::popupHasAlpha(view->window()) ? qlementineStyle->theme().spacing : 0;
+           const auto borderWidth = qlementineStyle->theme().borderWidth;
+ 
+           // Width.
+@@ -116,7 +109,7 @@ private:
+ 
+           // Height.
+           const auto absoluteMinHeight = qlementineStyle->theme().controlHeightLarge * (isTreeView ? 5 : 1);
+-          const auto screen = view->screen();
++          const auto screen = compat::screenForWidget(view);
+           // Don't exceed the available screen space above or below the combobox.
+           const auto comboGlobalY = _comboBox->mapToGlobal(QPoint(0, 0)).y();
+           constexpr auto screenPadding = 128;
+@@ -163,15 +156,21 @@ private:
+     return { width, height };
+   }
+ 
+-  QComboBox* _comboBox{ nullptr };
+-  QAbstractItemView* _view{ nullptr };
++  QPointer<QComboBox> _comboBox;
++  QPointer<QAbstractItemView> _view;
+   int _initialMaxHeight{ 0 };
+   QModelIndex _clickedIndex{};
+ };
+ 
+ class ComboboxFilter : public QObject {
+ public:
+-  ~ComboboxFilter() override = default;
++  ~ComboboxFilter() override {
++    for (auto it = _delegates.rbegin(); it != _delegates.rend(); ++it) {
++      if (_comboBox && _comboBox->itemDelegate() == it->installed.data())
++        _comboBox->setItemDelegate(it->original ? it->original.data() : new QStyledItemDelegate(_comboBox));
++      if (it->installed) delete it->installed.data();
++    }
++  }
+ 
+   explicit ComboboxFilter(QComboBox* comboBox)
+     : QObject(comboBox)
+@@ -192,7 +191,9 @@ public:
+         if (child == _comboBox->view()) {
+           if (auto* qlementine = qobject_cast<QlementineStyle*>(_comboBox->style())) {
+             if (isDefaultItemDelegate(_comboBox->itemDelegate())) {
+-              _comboBox->setItemDelegate(new ComboBoxDelegate(_comboBox, *qlementine));
++              auto* delegate = new ComboBoxDelegate(_comboBox, *qlementine);
++              _delegates.push_back({ _comboBox->itemDelegate(), delegate });
++              _comboBox->setItemDelegate(delegate);
+             }
+           }
+ 
+@@ -214,6 +215,11 @@ public:
+   }
+ 
+ private:
+-  QComboBox* _comboBox{ nullptr };
++  struct DelegateState {
++    QPointer<QAbstractItemDelegate> original;
++    QPointer<QAbstractItemDelegate> installed;
++  };
++  std::vector<DelegateState> _delegates;
++  QPointer<QComboBox> _comboBox;
+ };
+ } // namespace oclero::qlementine
+diff --git a/lib/src/style/eventFilters/MenuEventFilter.hpp b/lib/src/style/eventFilters/MenuEventFilter.hpp
+index 945bcf0..7c851f3 100644
+--- a/lib/src/style/eventFilters/MenuEventFilter.hpp
++++ b/lib/src/style/eventFilters/MenuEventFilter.hpp
+@@ -16,8 +16,10 @@
+ #include <QTimer>
+ #include <QMouseEvent>
+ #include <QPointer>
++#include <oclero/qlementine/utils/QtCompat.hpp>
+ 
+ #include <algorithm>
++#include <memory>
+ 
+ namespace oclero::qlementine {
+ class MenuEventFilter : public QObject {
+@@ -44,7 +46,7 @@ public:
+         const auto alignForMenuBar = isMenuBarMenu && !isSubMenu;
+         const auto* qlementineStyle = qobject_cast<QlementineStyle*>(_menu->style());
+         const auto menuItemHPadding = qlementineStyle ? qlementineStyle->theme().spacing : 0;
+-        const auto menuDropShadowWidth = qlementineStyle ? qlementineStyle->theme().spacing : 0;
++        const auto menuDropShadowWidth = qlementineStyle && compat::popupHasAlpha(_menu) ? qlementineStyle->theme().spacing : 0;
+         const auto menuOriginalPos = _menu->pos();
+         const auto menuBarTranslation = alignForMenuBar ? QPoint(-menuItemHPadding, 0) : QPoint(0, 0);
+         const auto shadowTranslation = QPoint(-menuDropShadowWidth, -menuDropShadowWidth);
+@@ -56,7 +58,7 @@ public:
+           const auto anchor = menuBar->mapToGlobal(actionRect.center());
+           const auto* screen = QGuiApplication::screenAt(anchor);
+           if (!screen) {
+-            screen = menuBar->screen();
++            screen = compat::screenForWidget(menuBar);
+           }
+           if (screen) {
+             menuNewPos.setX(std::max(menuNewPos.x(), screen->availableGeometry().left() - menuDropShadowWidth));
+@@ -68,7 +70,7 @@ public:
+         const auto menuSize = _menu->size();
+         if (menuSize != QSize(0, 0)) {
+           _menu->resize(0, 0); // Hide the menu for now until we can set the position.
+-          QTimer::singleShot(0, _menu, [this, menuNewPos, menuSize]() {
++          QTimer::singleShot(0, this, [this, menuNewPos, menuSize]() {
+             _menu->move(menuNewPos);
+             _menu->resize(menuSize);
+           });
+@@ -110,11 +112,14 @@ public:
+             flashAction(action, _menu, [this, action]() {
+               // We send a manually-built mouse event to click on the menu item.
+               const auto menuItemCenter = _menu->actionGeometry(action).center();
+-              _mouseEventToNotFilter.reset(new QMouseEvent(QEvent::MouseButtonRelease, menuItemCenter,
+-                _menu->mapToGlobal(menuItemCenter), Qt::LeftButton, Qt::NoButton, Qt::NoModifier));
+-              QCoreApplication::sendEvent(_menu, _mouseEventToNotFilter.get());
+-              _mouseEventToNotFilter.reset();
+-            });
++              const auto mouseEvent = std::make_shared<QMouseEvent>(QEvent::MouseButtonRelease, menuItemCenter,
++                _menu->mapToGlobal(menuItemCenter), Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
++              _mouseEventToNotFilter = mouseEvent;
++              // sendEvent can trigger a Native switch that destroys this filter.
++              // Keep the dispatched event alive locally and do not touch this
++              // or any member after the synchronous dispatch returns.
++              QCoreApplication::sendEvent(_menu, mouseEvent.get());
++            }, this);
+             return true;
+           }
+         } else if (_menu->rect().contains(mousePos)) {
+@@ -134,6 +139,6 @@ private:
+   // This is roughly copied from how QMenuPrivate::mouseDown detects whether the mouse is down.
+   bool _mousePressed{ false };
+   // Please do not dereference it, this is just to close properly the QMenu.
+-  std::unique_ptr<QEvent> _mouseEventToNotFilter{};
++  std::shared_ptr<QEvent> _mouseEventToNotFilter{};
+ };
+ } // namespace oclero::qlementine
+diff --git a/lib/src/style/eventFilters/WidgetWithFocusFrameEventFilter.hpp b/lib/src/style/eventFilters/WidgetWithFocusFrameEventFilter.hpp
+index 5359b9e..de49095 100644
+--- a/lib/src/style/eventFilters/WidgetWithFocusFrameEventFilter.hpp
++++ b/lib/src/style/eventFilters/WidgetWithFocusFrameEventFilter.hpp
+@@ -15,41 +15,27 @@ class WidgetWithFocusFrameEventFilter : public QObject {
+ public:
+   explicit WidgetWithFocusFrameEventFilter(QWidget* widget)
+     : QObject(widget)
+-    , _widget(widget) {
+-    _focusFrame = new QFocusFrame(_widget);
+-  }
++    , _widget(widget) {}
+ 
+-  ~WidgetWithFocusFrameEventFilter() override = default;
++  ~WidgetWithFocusFrameEventFilter() override { retireFocusFrame(); }
+ 
+   bool eventFilter(QObject* watchedObject, QEvent* evt) override {
+     if (watchedObject == _widget) {
+       switch (evt->type()) {
+-        case QEvent::Paint:
+-          // Create the focus frame as late as possible to give
+-          // more chances to any parent (e.g. scrollarea) to already exist.
+-          // QEvent::Show isn't sufficient. We need to delay even more, so
+-          // waiting for the first QEvent::Paint is our only solution.
+-          if (!_added) {
+-            QTimer::singleShot(0, this, [this]() {
+-              attachFocusFrame();
+-            });
+-          }
+-          break;
++        case QEvent::FocusIn:
+         case QEvent::Show:
+-          // Defer to avoid mapTo() on a partially-connected hierarchy
+-          // after reparenting (same pattern as the Paint path above).
+-          if (_added) {
+-            QTimer::singleShot(0, this, [this]() {
+-              reattachFocusFrame();
+-            });
+-          }
++          QTimer::singleShot(0, this, [this]() {
++            if (!_focusFrame && _widget && _widget->isVisible() && _widget->hasFocus()) {
++              _focusFrame = new QFocusFrame(_widget);
++              _focusFrame->setWidget(_widget);
++            }
++          });
+           break;
++        case QEvent::FocusOut:
++        case QEvent::ParentAboutToChange:
+         case QEvent::Hide:
+-          // Disconnect the focus frame when the widget is hidden (e.g.
+-          // during reparenting) to prevent stale mapTo() calls.
+-          if (_added) {
+-            detachFocusFrame();
+-          }
++        case QEvent::HideToParent:
++          retireFocusFrame();
+           break;
+         default:
+           break;
+@@ -60,28 +46,19 @@ public:
+   }
+ 
+ private:
+-  void attachFocusFrame() {
+-    if (!_added && _widget && _focusFrame) {
+-      _added = true;
+-      _focusFrame->setWidget(_widget);
+-    }
+-  }
+-
+-  void reattachFocusFrame() {
+-    if (_widget && _focusFrame) {
+-      _focusFrame->setWidget(nullptr);
+-      _focusFrame->setWidget(_widget);
+-    }
+-  }
+-
+-  void detachFocusFrame() {
+-    if (_focusFrame) {
+-      _focusFrame->setWidget(nullptr);
+-    }
++  void retireFocusFrame() {
++    const QPointer<QFocusFrame> frame = _focusFrame;
++    _focusFrame = nullptr;
++    if (!frame) return;
++    // QApplication::setStyle keeps an allWidgets() snapshot across unpolish
++    // and polish. Removing a QWidget synchronously here invalidates that list.
++    // Detach now for safe reparenting; keep it alive until the event unwinds.
++    frame->setWidget(nullptr);
++    frame->hide();
++    frame->deleteLater();
+   }
+ 
+   QPointer<QWidget> _widget;
+   QPointer<QFocusFrame> _focusFrame;
+-  bool _added{ false };
+ };
+ } // namespace oclero::qlementine
+diff --git a/lib/src/tools/ThemeEditor.cpp b/lib/src/tools/ThemeEditor.cpp
+index 0ffe162..f593d71 100644
+--- a/lib/src/tools/ThemeEditor.cpp
++++ b/lib/src/tools/ThemeEditor.cpp
+@@ -8,6 +8,7 @@
+ #include <oclero/qlementine/widgets/LineEdit.hpp>
+ 
+ #include <QPushButton>
++#include <QIcon>
+ #include <QBoxLayout>
+ #include <QFormLayout>
+ #include <QStyle>
+@@ -213,7 +214,7 @@ struct ThemeEditor::Impl {
+         // Get previous path.
+         const auto defaultDirPath =
+           QStandardPaths::writableLocation(QStandardPaths::StandardLocation::DocumentsLocation);
+-        const auto defaultPath = defaultDirPath + '/' + DEFAULT_FILE_NAME;
++        const QString defaultPath = defaultDirPath + '/' + DEFAULT_FILE_NAME;
+         QSettings settings;
+         const auto previousPath = settings.value(PREVIOUS_PATH_SETTINGS_KEY, defaultPath).toString();
+ 
+@@ -244,7 +245,7 @@ struct ThemeEditor::Impl {
+         // Get previous path.
+         const auto defaultDirPath =
+           QStandardPaths::writableLocation(QStandardPaths::StandardLocation::DocumentsLocation);
+-        const auto defaultPath = defaultDirPath + '/' + DEFAULT_FILE_NAME;
++        const QString defaultPath = defaultDirPath + '/' + DEFAULT_FILE_NAME;
+         QSettings settings;
+         const auto previousPath = settings.value(PREVIOUS_PATH_SETTINGS_KEY, defaultPath).toString();
+ 
+diff --git a/lib/src/utils/BadgeUtils.cpp b/lib/src/utils/BadgeUtils.cpp
+index 35c83fa..ad2d11b 100644
+--- a/lib/src/utils/BadgeUtils.cpp
++++ b/lib/src/utils/BadgeUtils.cpp
+@@ -6,7 +6,7 @@
+ #include <oclero/qlementine/utils/PrimitiveUtils.hpp>
+ 
+ #include <QPainterPath>
+-#include <QPainterStateGuard>
++#include <oclero/qlementine/utils/QtCompat.hpp>
+ 
+ namespace oclero::qlementine {
+ /// Gets the background and foreground colors.
+@@ -37,7 +37,7 @@ std::pair<QSize, QSize> getStatusBadgeSizes(StatusBadgeSize statusBadgeSize, con
+ /// Draws the icons by drawing QPainterPaths directly, instead of using SVG files.
+ void drawStatusBadgeIcon(QPainter* p, const QRect& rect, StatusBadge statusBadge, StatusBadgeSize statusBadgeSize,
+   const QColor& color, qreal lineThickness) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+ 
+   switch (statusBadge) {
+     case StatusBadge::Success: {
+@@ -311,7 +311,7 @@ void drawStatusBadgeIcon(QPainter* p, const QRect& rect, StatusBadge statusBadge
+ 
+ void drawStatusBadge(
+   QPainter* p, const QRect& rect, StatusBadge statusBadge, StatusBadgeSize size, const Theme& theme) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   const auto [bgColor, fgColor] = getStatusBadgeColors(statusBadge, theme);
+   const auto [badgeSize, iconSize] = getStatusBadgeSizes(size, theme);
+ 
+diff --git a/lib/src/utils/ColorUtils.cpp b/lib/src/utils/ColorUtils.cpp
+index 18cff3c..9949f3a 100644
+--- a/lib/src/utils/ColorUtils.cpp
++++ b/lib/src/utils/ColorUtils.cpp
+@@ -173,7 +173,11 @@ std::optional<QColor> tryGetColorFromHexaString(QString const& str) {
+ }
+ 
+ std::optional<QColor> tryGetColorFromVariant(QVariant const& variant) {
++#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+   const auto variantType = variant.typeId();
++#else
++  const auto variantType = variant.userType();
++#endif
+ 
+   // Channel list ([RRR, GGG, BBB, AAA]).
+   if (variantType == QMetaType::Type::QVariantList) {
+diff --git a/lib/src/utils/GeometryUtils.cpp b/lib/src/utils/GeometryUtils.cpp
+index 1c13e19..c82acac 100644
+--- a/lib/src/utils/GeometryUtils.cpp
++++ b/lib/src/utils/GeometryUtils.cpp
+@@ -2,6 +2,7 @@
+ // SPDX-License-Identifier: MIT
+ 
+ #include <oclero/qlementine/utils/GeometryUtils.hpp>
++#include <cmath>
+ 
+ namespace oclero::qlementine {
+ bool isPointInRoundedRect(const QPointF& point, const QRectF& rect, qreal cornerRadius) {
+diff --git a/lib/src/utils/MenuUtils.cpp b/lib/src/utils/MenuUtils.cpp
+index 7a0059f..0234dc2 100644
+--- a/lib/src/utils/MenuUtils.cpp
++++ b/lib/src/utils/MenuUtils.cpp
+@@ -8,11 +8,12 @@
+ namespace oclero::qlementine {
+ class FlashActionHelper : QObject {
+ public:
+-  FlashActionHelper(QAction* action, QMenu* menu, const std::function<void()>& onAnimationFinished)
+-    : QObject(action)
++  FlashActionHelper(QAction* action, QMenu* menu, const std::function<void()>& onAnimationFinished, QObject* context)
++    : QObject(context ? context : action)
+     , _menu(menu)
+     , _action(action)
+-    , _onAnimationFinished(onAnimationFinished) {
++    , _onAnimationFinished(onAnimationFinished)
++    , _originalSignalsBlocked(menu ? menu->signalsBlocked() : false) {
+     if (_menu && _action) {
+       _action->setProperty("qlementine_flashing", true);
+       _menu->blockSignals(true);
+@@ -20,7 +21,14 @@ public:
+     }
+   }
+ 
+-  ~FlashActionHelper() override = default;
++  ~FlashActionHelper() override {
++    // Unpolishing can destroy the callback owner before the flash completes.
++    if (_timerId != -1) {
++      killTimer(_timerId);
++      _timerId = -1;
++      restoreFlashState();
++    }
++  }
+ 
+ protected:
+   void timerEvent(QTimerEvent*) override {
+@@ -31,23 +39,24 @@ protected:
+     } else {
+       if (_timerId != -1) {
+         killTimer(_timerId);
++        _timerId = -1;
+       }
+-
+-      if (_menu) {
+-        if (_action) {
+-          _menu->setActiveAction(_action);
+-          _action->setProperty("qlementine_flashing", false);
+-        }
+-        _menu->blockSignals(false);
+-      }
+-      if (_onAnimationFinished) {
+-        _onAnimationFinished();
+-      }
++      if (_menu && _action) _menu->setActiveAction(_action);
++      restoreFlashState();
++      const auto completion = _menu && _action ? _onAnimationFinished : std::function<void()>{};
++      // Completion can synchronously replace the style and destroy our owner.
++      // Schedule deletion before calling it and never access this afterwards.
+       deleteLater();
++      if (completion) completion();
+     }
+   }
+ 
+ private:
++  void restoreFlashState() {
++    if (_action) _action->setProperty("qlementine_flashing", false);
++    if (_menu) _menu->blockSignals(_originalSignalsBlocked);
++  }
++
+   static constexpr int flashActionBlinkDuration{ 60 }; // ms
+   static constexpr int flashActionDuration{ flashActionBlinkDuration }; // ms
+   int _flashActionElapsedTime{ 0 }; // ms
+@@ -55,6 +64,7 @@ private:
+   QPointer<QMenu> _menu{ nullptr };
+   QPointer<QAction> _action{ nullptr };
+   std::function<void()> _onAnimationFinished{};
++  bool _originalSignalsBlocked{ false };
+ };
+ 
+ QMenu* getTopLevelMenu(QMenu* menu) {
+@@ -69,7 +79,8 @@ QMenu* getTopLevelMenu(QMenu* menu) {
+   return parent;
+ }
+ 
+-void flashAction(QAction* action, QMenu* menu, const std::function<void()>& onAnimationFinished) {
+-  new FlashActionHelper(action, menu, onAnimationFinished);
++void flashAction(QAction* action, QMenu* menu, const std::function<void()>& onAnimationFinished, QObject* context) {
++  if (!action || !menu) return;
++  new FlashActionHelper(action, menu, onAnimationFinished, context);
+ }
+ } // namespace oclero::qlementine
+diff --git a/lib/src/utils/PrimitiveUtils.cpp b/lib/src/utils/PrimitiveUtils.cpp
+index d68e5e8..d91852a 100644
+--- a/lib/src/utils/PrimitiveUtils.cpp
++++ b/lib/src/utils/PrimitiveUtils.cpp
+@@ -12,7 +12,7 @@
+ #include <QTextLine>
+ #include <QPaintDevice>
+ #include <QPainter>
+-#include <QPainterStateGuard>
++#include <oclero/qlementine/utils/QtCompat.hpp>
+ #include <QPainterPath>
+ #include <QPixmapCache>
+ #include <QWindow>
+@@ -126,7 +126,7 @@ std::tuple<QString, QString> getMenuLabelAndShortcut(QString const& text) {
+ }
+ 
+ void drawEllipseBorder(QPainter* p, QRectF const& rect, QColor const& color, qreal const borderWidth) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   const auto halfBorderW = borderWidth / 2.;
+   const auto borderRect = rect.marginsRemoved({ halfBorderW, halfBorderW, halfBorderW, halfBorderW });
+   p->setPen(QPen(color, borderWidth, Qt::SolidLine));
+@@ -183,7 +183,7 @@ QPainterPath getMultipleRadiusesRectPath(QRectF const& rect, RadiusesF const& ra
+ }
+ 
+ void drawRoundedRect(QPainter* p, QRectF const& rect, QBrush const& brush, qreal const radius) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   if (radius < 0.1) {
+     p->fillRect(rect, brush);
+   } else {
+@@ -195,7 +195,7 @@ void drawRoundedRect(QPainter* p, QRectF const& rect, QBrush const& brush, qreal
+ }
+ 
+ void drawRoundedRect(QPainter* p, QRectF const& rect, QBrush const& brush, RadiusesF const& radiuses) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   if (radiuses.hasSameRadius()) {
+     drawRoundedRect(p, rect, brush, radiuses.topLeft);
+   } else {
+@@ -208,7 +208,7 @@ void drawRoundedRect(QPainter* p, QRectF const& rect, QBrush const& brush, Radiu
+ }
+ 
+ void drawRoundedRect(QPainter* p, QRect const& rect, QBrush const& brush, qreal const radius) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   if (radius < 0.1) {
+     p->fillRect(rect, brush);
+   } else {
+@@ -220,7 +220,7 @@ void drawRoundedRect(QPainter* p, QRect const& rect, QBrush const& brush, qreal
+ }
+ 
+ void drawRoundedRect(QPainter* p, QRect const& rect, QBrush const& brush, RadiusesF const& radiuses) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   if (radiuses.hasSameRadius()) {
+     drawRoundedRect(p, rect, brush, radiuses.topLeft);
+   } else {
+@@ -234,7 +234,7 @@ void drawRoundedRect(QPainter* p, QRect const& rect, QBrush const& brush, Radius
+ 
+ void drawRoundedRectBorder(
+   QPainter* p, QRectF const& rect, QColor const& color, qreal const borderWidth, qreal const radius) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   if (borderWidth > 0) {
+     p->setRenderHint(QPainter::RenderHint::Antialiasing);
+     p->setPen(QPen{ color, borderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin });
+@@ -252,12 +252,12 @@ void drawRoundedRectBorder(
+ 
+ void drawRoundedRectBorder(
+   QPainter* p, QRect const& rect, QColor const& color, qreal const borderWidth, qreal const radius) {
+-  drawRoundedRectBorder(p, rect.toRectF(), color, borderWidth, radius);
++  drawRoundedRectBorder(p, QRectF(rect), color, borderWidth, radius);
+ }
+ 
+ void drawRoundedRectBorder(
+   QPainter* p, QRectF const& rect, QColor const& color, qreal const borderWidth, RadiusesF const& radiuses) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   if (borderWidth > 0) {
+     if (radiuses.hasSameRadius()) {
+       drawRoundedRectBorder(p, rect, color, borderWidth, radiuses.topLeft);
+@@ -289,7 +289,7 @@ void drawRectBorder(QPainter* p, QRect const& rect, QColor const& color, qreal c
+ }
+ 
+ void drawRectBorder(QPainter* p, QRectF const& rect, QColor const& color, qreal const borderWidth) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   if (borderWidth > 0) {
+     p->setRenderHint(QPainter::RenderHint::Antialiasing);
+     p->setPen(QPen{ color, borderWidth, Qt::SolidLine, Qt::SquareCap, Qt::BevelJoin });
+@@ -301,7 +301,7 @@ void drawRectBorder(QPainter* p, QRectF const& rect, QColor const& color, qreal
+ }
+ 
+ void drawRoundedTriangle(QPainter* p, QRectF const& rect, qreal const radius) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   const auto w = rect.width();
+   const auto h = rect.height();
+   const auto x = rect.x();
+@@ -350,7 +350,7 @@ void drawRoundedTriangle(QPainter* p, QRectF const& rect, qreal const radius) {
+ 
+ void drawCheckerboard(
+   QPainter* p, const QRectF& rect, const QColor& darkColor, const QColor& lightColor, const qreal cellWidth) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   const auto hCellCount = rect.width() / cellWidth;
+   const auto vCellCount = rect.height() / cellWidth;
+ 
+@@ -378,7 +378,7 @@ void drawProgressBarValueRect(QPainter* p, QRect const& rect, QColor const& colo
+ 
+   QPainterPath clipPath;
+   clipPath.addRoundedRect(rect, radius, radius);
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   {
+     p->setClipPath(clipPath);
+     p->fillRect(valueRect, color);
+@@ -386,7 +386,7 @@ void drawProgressBarValueRect(QPainter* p, QRect const& rect, QColor const& colo
+ }
+ 
+ void drawColorMark(QPainter* p, QRect const& rect, const QColor& color, const QColor& borderColor, int borderWidth) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   const auto circleDiameter = rect.height();
+   const auto markRect = QRect((rect.width() - circleDiameter) / 2, 0, circleDiameter, circleDiameter);
+ 
+@@ -400,7 +400,7 @@ void drawColorMark(QPainter* p, QRect const& rect, const QColor& color, const QC
+ 
+     QPainterPath clipPath;
+     clipPath.addEllipse(markRect);
+-    QPainterStateGuard clipStateGuard(p);
++    compat::PainterStateGuard clipStateGuard(p);
+     {
+       p->setClipPath(clipPath);
+       drawCheckerboard(p, markRect, darkCellColor, lightCellColor, cellWidth);
+@@ -771,7 +771,7 @@ void drawTreeViewIndicator(const QRect& rect, QPainter* p, bool open) {
+ }
+ 
+ void drawCalendarIndicator(const QRect& rect, QPainter* p, const QColor& color) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   constexpr auto defaultSize = 16.;
+   constexpr auto defaultPenWidth = 1.01;
+   constexpr auto defaultRadius = 2.5;
+@@ -808,7 +808,7 @@ void drawCalendarIndicator(const QRect& rect, QPainter* p, const QColor& color)
+ }
+ 
+ void drawGripIndicator(const QRect& rect, QPainter* p, const QColor& color, Qt::Orientation orientation) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   constexpr auto defaultSize = 16.;
+   constexpr auto defaultBulletDiameter = 2.;
+ 
+@@ -838,7 +838,7 @@ void drawGripIndicator(const QRect& rect, QPainter* p, const QColor& color, Qt::
+ 
+ void drawRadioButton(QPainter* p, const QRect& rect, QColor const& bgColor, const QColor& borderColor,
+   QColor const& fgColor, const qreal borderWidth, qreal progress) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   // Background.
+   p->setRenderHint(QPainter::RenderHint::Antialiasing);
+   p->setPen(Qt::NoPen);
+@@ -865,7 +865,7 @@ void drawRadioButton(QPainter* p, const QRect& rect, QColor const& bgColor, cons
+ 
+ void drawCheckButton(QPainter* p, const QRect& rect, qreal radius, const QColor& bgColor, const QColor& borderColor,
+   QColor const& fgColor, const qreal borderWidth, qreal progress, CheckState checkState) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   // Background.
+   p->setRenderHint(QPainter::RenderHint::Antialiasing);
+   if (radius < 1) {
+@@ -904,7 +904,7 @@ void drawItemForeground(QPainter* p, const QRect& rect, const QPixmap& iconPixma
+   const QFontMetrics& fontMetrics, QColor const& textColor, const int spacing, Qt::Alignment const alignment,
+   const QString& secondaryText, QColor const& secondaryTextColor, bool const useMnemonic, bool const showMnemonic,
+   Qt::TextElideMode const elideMode) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   p->setRenderHint(QPainter::SmoothPixmapTransform, true);
+   p->setRenderHint(QPainter::Antialiasing, true);
+ 
+@@ -1009,7 +1009,7 @@ int getTickInterval(int tickInterval, int singleStep, int pageStep, int min, int
+ 
+ void drawSliderTickMarks(QPainter* p, QRect const& tickmarksRect, QColor const& tickColor, const int min, const int max,
+   const int interval, const int tickThickness, const int singleStep, const int pageStep) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   const auto sliderLength = tickmarksRect.width();
+   const auto tickInterval = getTickInterval(interval, singleStep, pageStep, min, max, sliderLength);
+ 
+@@ -1030,7 +1030,7 @@ void drawSliderTickMarks(QPainter* p, QRect const& tickmarksRect, QColor const&
+ 
+ void drawDialTickMarks(QPainter* p, QRect const& tickmarksRect, QColor const& tickColor, const int min, const int max,
+   const int tickThickness, const int tickLength, const int singleStep, const int pageStep, const int minArcLength) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   p->setRenderHint(QPainter::Antialiasing, true);
+   p->setPen(QPen(tickColor, tickThickness, Qt::SolidLine, Qt::FlatCap));
+   p->setBrush(Qt::NoBrush);
+@@ -1065,7 +1065,7 @@ void drawDialTickMarks(QPainter* p, QRect const& tickmarksRect, QColor const& ti
+ void drawDial(QPainter* p, QRect const& dialRect, int min, int max, double value, QColor const& bgColor,
+   QColor const& handleColor, QColor const& grooveColor, QColor const& valueColor, QColor const& markColor,
+   const int grooveThickness, const int markLength, const int markThickness) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   constexpr auto totalAngleDegrees = 360;
+   constexpr auto deadAngleDegrees = 90;
+   constexpr auto angleSpreadDegrees = totalAngleDegrees - deadAngleDegrees;
+@@ -1178,7 +1178,7 @@ QPainterPath getTabPath(QRect const& rect, const RadiusesF& radiuses) {
+ 
+ void drawTab(QPainter* p, QRect const& rect, const RadiusesF& radius, const QColor& bgColor, bool drawShadow,
+   const QColor& shadowColor) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   if (drawShadow) {
+     drawTabShadow(p, rect, radius, shadowColor);
+   }
+@@ -1190,7 +1190,7 @@ void drawTab(QPainter* p, QRect const& rect, const RadiusesF& radius, const QCol
+ }
+ 
+ void drawTabShadow(QPainter* p, QRect const& rect, const RadiusesF& radius, const QColor& color) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   p->setRenderHint(QPainter::SmoothPixmapTransform, true);
+   // Draw the tab in a temporary buffer.
+   const auto path = getTabPath(rect, radius);
+@@ -1291,7 +1291,7 @@ QString displayedShortcutString(const QKeySequence& shortcut) {
+ 
+ void drawShortcut(QPainter& p, const QKeySequence& shortcut, const QRect& rect, const Theme& theme, bool enabled,
+   Qt::Alignment alignment) {
+-  QPainterStateGuard stateGuard(&p);
++  compat::PainterStateGuard stateGuard(&p);
+   const auto shortcutStr = displayedShortcutString(shortcut);
+   if (shortcutStr.isEmpty())
+     return;
+@@ -1396,14 +1396,18 @@ QPixmap getPixmap(
+   if (QPixmapCache::find(cacheKey, &pixmap)) {
+     return pixmap;
+   }
++#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+   pixmap = icon.pixmap(iconSize, devicePixelRatio, iconMode, iconState);
++#else
++  pixmap = icon.pixmap(qlementine::getWindow(widget), iconSize, iconMode, iconState);
++#endif
+   QPixmapCache::insert(cacheKey, pixmap);
+   return pixmap;
+ }
+ 
+ QRect drawIcon(const QRect& rect, QPainter* p, const QIcon& icon, const MouseState mouse, const CheckState checked,
+   const QWidget* widget, bool colorize, const QColor& color) {
+-  QPainterStateGuard stateGuard(p);
++  compat::PainterStateGuard stateGuard(p);
+   p->setRenderHint(QPainter::SmoothPixmapTransform, true);
+   if (rect.isEmpty() || icon.isNull()) {
+     return { rect.x(), rect.y(), 0, 0 };
+diff --git a/lib/src/utils/StyleUtils.cpp b/lib/src/utils/StyleUtils.cpp
+index b4b307d..8ec2e97 100644
+--- a/lib/src/utils/StyleUtils.cpp
++++ b/lib/src/utils/StyleUtils.cpp
+@@ -37,10 +37,6 @@ bool shouldHaveMouseTracking(const QWidget* w) {
+   return qobject_cast<const QAbstractItemView*>(w);
+ }
+ 
+-bool shouldHaveBoldFont(const QWidget* w) {
+-  return qobject_cast<const QPushButton*>(w) || qobject_cast<const QToolButton*>(w);
+-}
+-
+ bool shouldHaveExternalFocusFrame(const QWidget* w) {
+   // Special case for QPlainTextEdit. Need to be handled before QAbstractScrollArea.
+   if (const auto* plainTextEdit = qobject_cast<const QPlainTextEdit*>(w)) {
+@@ -103,9 +99,11 @@ bool shouldNotHaveWheelEvents(const QWidget* w) {
+ }
+ 
+ int getTabIndex(const QStyleOptionTab* optTab, const QWidget* parentWidget) {
++#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+   if (const auto* optTabV4 = qstyleoption_cast<const QStyleOptionTab*>(optTab)) {
+     return optTabV4->tabIndex;
+   }
++#endif
+ 
+   if (const auto* tabBar = qobject_cast<const QTabBar*>(parentWidget)) {
+     return tabBar->tabAt(optTab->rect.topLeft());
+diff --git a/lib/src/utils/WidgetUtils.cpp b/lib/src/utils/WidgetUtils.cpp
+index 80d0670..1b44f14 100644
+--- a/lib/src/utils/WidgetUtils.cpp
++++ b/lib/src/utils/WidgetUtils.cpp
+@@ -8,6 +8,7 @@
+ #include <QFrame>
+ #include <QBoxLayout>
+ #include <QLayout>
++#include <oclero/qlementine/utils/QtCompat.hpp>
+ 
+ namespace oclero::qlementine {
+ QWidget* makeHorizontalLine(QWidget* parentWidget, int maxWidth) {
+@@ -63,7 +64,7 @@ void centerWidget(QWidget* widget, QWidget* host) {
+ 
+ qreal getDpi(const QWidget* widget) {
+   if (widget) {
+-    if (const auto* screen = widget->screen()) {
++    if (const auto* screen = compat::screenForWidget(widget)) {
+       return screen->logicalDotsPerInch();
+     }
+   }
+diff --git a/lib/src/widgets/AboutDialog.cpp b/lib/src/widgets/AboutDialog.cpp
+index acea77a..5a378ff 100644
+--- a/lib/src/widgets/AboutDialog.cpp
++++ b/lib/src/widgets/AboutDialog.cpp
+@@ -7,6 +7,7 @@
+ #include <QBoxLayout>
+ #include <QPushButton>
+ #include <QDesktopServices>
++#include <QUrl>
+ 
+ #include <oclero/qlementine/widgets/Label.hpp>
+ 
+diff --git a/lib/src/widgets/AbstractItemListWidget.cpp b/lib/src/widgets/AbstractItemListWidget.cpp
+index 235a132..7a27515 100644
+--- a/lib/src/widgets/AbstractItemListWidget.cpp
++++ b/lib/src/widgets/AbstractItemListWidget.cpp
+@@ -348,7 +348,7 @@ void AbstractItemListWidget::keyReleaseEvent(QKeyEvent* e) {
+   }
+ }
+ 
+-void AbstractItemListWidget::enterEvent(QEnterEvent* e) {
++void AbstractItemListWidget::enterEvent(compat::EnterEvent* e) {
+   QWidget::enterEvent(e);
+   update();
+ }
+diff --git a/lib/src/widgets/Popover.cpp b/lib/src/widgets/Popover.cpp
+index 897f19e..4e149a1 100644
+--- a/lib/src/widgets/Popover.cpp
++++ b/lib/src/widgets/Popover.cpp
+@@ -7,6 +7,7 @@
+ #include <oclero/qlementine/utils/PrimitiveUtils.hpp>
+ #include <oclero/qlementine/utils/ImageUtils.hpp>
+ #include <oclero/qlementine/utils/GeometryUtils.hpp>
++#include <oclero/qlementine/utils/QtCompat.hpp>
+ 
+ #include <QApplication>
+ #include <QBitmap>
+@@ -18,6 +19,7 @@
+ #include <QTimer>
+ 
+ #include <array>
++#include <cmath>
+ 
+ namespace oclero::qlementine {
+ // Values taken arbitrarly, to make it feel smooth and natural.
+@@ -71,7 +73,10 @@ public:
+     const auto type = e->type();
+     switch (type) {
+       case QEvent::LayoutRequest:
++      case QEvent::ScreenChangeInternal:
++#if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
+       case QEvent::DevicePixelRatioChange:
++#endif
+         callResize();
+         break;
+       default:
+@@ -511,6 +516,26 @@ void Popover::adjustSizeToContent() {
+   adjustSize();
+ }
+ 
++bool Popover::event(QEvent* e) {
++  const auto result = QWidget::event(e);
++  // Qt5 propagates screen changes through this widget event; Qt6.6+ also
++  // provides the explicit DPR event. Invalidate physical-pixel caches even
++  // when the frame's logical size stays unchanged on the new screen.
++  if (e->type() == QEvent::ScreenChangeInternal
++#if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
++      || e->type() == QEvent::DevicePixelRatioChange
++#endif
++  ) {
++    _dropShadowCache.shadowPixmap = {};
++    _dropShadowCache.frameSize = {};
++    if (_frame) {
++      updateFrameMask();
++      update();
++    }
++  }
++  return result;
++}
++
+ void Popover::paintEvent(QPaintEvent*) {
+   QPainter p(this);
+   p.setRenderHint(QPainter::Antialiasing, true);
+@@ -524,10 +549,11 @@ void Popover::paintEvent(QPaintEvent*) {
+     const auto frameSize = _frame->size();
+     const auto frameX = _frame->x();
+     const auto frameY = _frame->y();
+-    if (_dropShadowCache.frameSize != frameSize) {
++    if (_dropShadowCache.frameSize != frameSize
++        || !qFuzzyCompare(_dropShadowCache.shadowPixmap.devicePixelRatioF(), _frame->devicePixelRatioF())) {
+       updateDropShadowCache();
+     }
+-    const auto dropShadowSize = _dropShadowCache.shadowPixmap.deviceIndependentSize();
++    const auto dropShadowSize = compat::pixmapLogicalSize(_dropShadowCache.shadowPixmap);
+     const auto dropShadowX = frameX + (frameSize.width() - dropShadowSize.width()) / 2. + _dropShadowOffset.x();
+     const auto dropShadowY = frameY + (frameSize.height() - dropShadowSize.height()) / 2. + _dropShadowOffset.y();
+ 
+@@ -549,7 +575,7 @@ void Popover::paintEvent(QPaintEvent*) {
+ 
+     if (_borderColor.isValid() && _borderWidth > 0.) {
+       const auto half_border = _borderWidth / 2.;
+-      const auto border_rect = bgRect.toRectF().adjusted(half_border, half_border, -half_border, -half_border);
++      const auto border_rect = QRectF(bgRect).adjusted(half_border, half_border, -half_border, -half_border);
+       const auto border_radius = _radius - half_border;
+       p.setPen(QPen{ _borderColor, _borderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin });
+       p.setBrush(Qt::NoBrush);
+@@ -561,7 +587,7 @@ void Popover::paintEvent(QPaintEvent*) {
+ void Popover::mousePressEvent(QMouseEvent* e) {
+   QWidget::mousePressEvent(e);
+ 
+-  if (hitboxContainsPoint(e->position())) {
++  if (hitboxContainsPoint(compat::mousePosition(e))) {
+     Q_EMIT pressed();
+   } else {
+     e->ignore();
+@@ -572,7 +598,7 @@ void Popover::mousePressEvent(QMouseEvent* e) {
+ void Popover::mouseReleaseEvent(QMouseEvent* e) {
+   QWidget::mouseReleaseEvent(e);
+ 
+-  if (hitboxContainsPoint(e->position())) {
++  if (hitboxContainsPoint(compat::mousePosition(e))) {
+     Q_EMIT released();
+   } else {
+     e->ignore();
+@@ -666,7 +692,7 @@ void Popover::updatePopoverGeometry() {
+     // Check if the preferred position fits entirely on screen, or try another position until it works.
+     const auto& priority = positionPriority(_preferredPosition);
+     const auto screenGeometry =
+-      _anchorWidget ? _anchorWidget->screen()->availableGeometry() : screen()->availableGeometry();
++      _anchorWidget ? compat::screenForWidget(_anchorWidget)->availableGeometry() : compat::screenForWidget(this)->availableGeometry();
+     for (const auto position : priority) {
+       auto geometry = getGeometryForPosition(position, _preferredAlignment);
+ 
+@@ -717,8 +743,8 @@ QRect Popover::getGeometryForPosition(Position const position, Alignment const a
+   // Take the content size as a basis, rather than the whole size that includes drop shadow.
+   const auto popoverSize = _frame->sizeHint();
+   const auto screenGeometry = _anchorWidget
+-                                ? _anchorWidget->screen()->availableGeometry().marginsRemoved(_screenPadding)
+-                                : screen()->availableGeometry().marginsRemoved(_screenPadding);
++                                ? compat::screenForWidget(_anchorWidget)->availableGeometry().marginsRemoved(_screenPadding)
++                                : compat::screenForWidget(this)->availableGeometry().marginsRemoved(_screenPadding);
+   const auto popoverFittedSize = QSize{
+     std::min(screenGeometry.width(), popoverSize.width()),
+     std::min(screenGeometry.height(), popoverSize.height()),
+@@ -924,12 +950,15 @@ QBitmap Popover::getFrameMask() const {
+     p.drawRoundedRect(maskRect, maskRadius, maskRadius);
+   }
+ 
+-  const auto bitmap = QBitmap::fromPixmap(mask);
++  // This mask is authored in logical pixels (DPR 1), as required by setMask.
++  // fromImage is available in both Qt5 and Qt6 and preserves the bitmap's
++  // black/white polarity without relying on the Qt6-only fromPixmap helper.
++  const auto bitmap = QBitmap::fromImage(mask.toImage());
+   return bitmap;
+ }
+ 
+ bool Popover::hitboxContainsPoint(const QPointF& pos) const {
+-  const auto& frameRect = _frame->geometry().toRectF();
++  const auto& frameRect = QRectF(_frame->geometry());
+   return qlementine::isPointInRoundedRect(pos, frameRect, _radius);
+ }
+ } // namespace oclero::qlementine
+diff --git a/lib/src/widgets/Switch.cpp b/lib/src/widgets/Switch.cpp
+index 4e43c0b..2549fde 100644
+--- a/lib/src/widgets/Switch.cpp
++++ b/lib/src/widgets/Switch.cpp
+@@ -72,7 +72,7 @@ void Switch::paintEvent(QPaintEvent*) {
+   const auto& textColor = getTextColor();
+   const auto borderW = 1.0;
+   const auto halfBorderW = borderW / 2.;
+-  const auto bgRect = switchRect.toRectF().marginsRemoved({ halfBorderW, halfBorderW, halfBorderW, halfBorderW });
++  const auto bgRect = QRectF(switchRect).marginsRemoved({ halfBorderW, halfBorderW, halfBorderW, halfBorderW });
+   p.setPen(Qt::NoPen);
+   p.setBrush(bgColor);
+   p.drawRoundedRect(bgRect, switchRadius, switchRadius);
+@@ -137,7 +137,7 @@ void Switch::paintEvent(QPaintEvent*) {
+   }
+ }
+ 
+-void Switch::enterEvent(QEnterEvent* e) {
++void Switch::enterEvent(compat::EnterEvent* e) {
+   QAbstractButton::enterEvent(e);
+   _isMouseOver = true;
+   startAnimation();

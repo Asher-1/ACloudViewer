@@ -139,6 +139,19 @@ assert_ko "python_release_deps_required: copied env skips" \
 assert_ko "python_release_deps_required: non-minimal copied env skips" \
     bash -c "source '$LIB' && PLUGIN_PYTHON_COPY_MINIMAL_ENV=OFF python_release_deps_required"
 
+# --- 7. C++ execution delegates to the root entry without target-name lists ---
+assert_ok "run_cpp_unit_tests: default path resolves from the source root" \
+    bash -c "source '$LIB'; cmake() { [[ \"\$*\" == *\"-DBUILD_DIR=$REPO_ROOT/build\"* &&
+        \"\$*\" == *\"-P $REPO_ROOT/tests/Run.cmake\"* ]]; };
+        cd /tmp && run_cpp_unit_tests"
+assert_ok "run_cpp_unit_tests: explicit build path and caller filter survive" \
+    bash -c "source '$LIB'; unset LOW_MEM_USAGE;
+        cmake() { [[ \"\$*\" == *'-DBUILD_DIR=/tmp/cv-test-build'* &&
+            \"\$GTEST_FILTER\" == 'Example.*' ]]; };
+        GTEST_FILTER='Example.*' run_cpp_unit_tests /tmp/cv-test-build"
+assert_ko "run_cpp_unit_tests: root gate failure propagates" \
+    bash -c "source '$LIB'; cmake() { return 9; }; run_cpp_unit_tests /tmp/cv-test-build"
+
 # --- Summary ---
 echo ""
 echo "test_ci_utils.sh: $PASS passed, $FAIL failed"

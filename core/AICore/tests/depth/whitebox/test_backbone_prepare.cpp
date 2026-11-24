@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <cmath>
 #include <cstdlib>
 #include <vector>
@@ -13,23 +15,23 @@
 #include "tasks/depth/model_loader.hpp"
 #include "tests/depth/whitebox/parity.hpp"
 
-int main() {
+TEST(DepthWhitebox, BackbonePrepare) {
     const char* gguf = std::getenv("AICORE_TEST_DEPTH_GGUF");
     const char* base = std::getenv("AICORE_TEST_DEPTH_BASELINE");
-    if (!gguf || !base) return 77;
+    if (!gguf || !base)
+        GTEST_SKIP() << "Required model/reference environment is unset";
     aicore::depth::ModelLoader ml;
-    if (!ml.load(gguf)) return 1;
+    ASSERT_TRUE(ml.load(gguf));
     std::vector<float> img;
     std::vector<int64_t> s;
-    if (!da_parity::load_baseline(base, "input_image", img, s)) return 1;
+    ASSERT_TRUE(da_parity::load_baseline(base, "input_image", img, s));
     int HW = (int)(img.size() / 3);
     int H = (int)std::lround(std::sqrt((double)HW)), W = H;
     aicore::depth::Backend be;
     aicore::depth::DinoBackbone bb(ml, be);
     std::vector<float> got;
-    if (!bb.prepare_tokens(img, H, W, got)) return 1;
+    ASSERT_TRUE(bb.prepare_tokens(img, H, W, got));
     std::vector<float> ref;
-    da_parity::load_baseline(base, "pos_embed_added", ref, s);
-    bool ok = da_parity::compare(got, ref, "pos_embed_added", 2e-3f, 2e-3f);
-    return ok ? 0 : 1;
+    ASSERT_TRUE(da_parity::load_baseline(base, "pos_embed_added", ref, s));
+    EXPECT_TRUE(da_parity::compare(got, ref, "pos_embed_added", 2e-3f, 2e-3f));
 }

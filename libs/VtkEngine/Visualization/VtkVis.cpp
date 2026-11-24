@@ -5585,6 +5585,56 @@ std::string stripPickSuffix(std::string id) {
 
 }  // namespace
 
+std::string VtkVis::selectionSourceId(vtkActor* actor,
+                                      unsigned int blockIndex) {
+    if (!actor) return {};
+    const auto group = m_compositeRegistry.groupIdOfActor(actor);
+    if (!group.empty()) {
+        return m_compositeRegistry.leafAtFlatIndex(group, blockIndex);
+    }
+    for (const auto& entry : *getCloudActorMap()) {
+        if (entry.second.actor == actor) return entry.first;
+    }
+    for (const auto& entry : *getShapeActorMap()) {
+        if (entry.second == actor) return entry.first;
+    }
+    return {};
+}
+
+bool VtkVis::selectionRepresentation(const std::string& sourceId,
+                                     vtkActor*& actor,
+                                     vtkPolyData*& polyData,
+                                     unsigned int& blockIndex) {
+    actor = nullptr;
+    polyData = nullptr;
+    blockIndex = 0;
+    if (m_compositeRegistry.containsLeaf(sourceId)) {
+        const auto group = m_compositeRegistry.groupOfLeaf(sourceId);
+        actor = m_compositeRegistry.groupActor(group);
+        for (vtkIdType b = 0; b < m_compositeRegistry.leafSlotCount(group);
+             ++b) {
+            if (m_compositeRegistry.leafAtFlatIndex(group, b) != sourceId)
+                continue;
+            if (!m_compositeRegistry.blockVisible(group, b) ||
+                !m_compositeRegistry.blockPickable(group, b))
+                return false;
+            polyData = vtkPolyData::SafeDownCast(
+                    m_compositeRegistry.blockAtFlatIndex(group, b));
+            blockIndex = static_cast<unsigned int>(b);
+            break;
+        }
+    } else if (contains(sourceId)) {
+        actor = getActorById(sourceId);
+        if (actor && actor->GetMapper()) {
+            polyData =
+                    vtkPolyData::SafeDownCast(actor->GetMapper()->GetInput());
+        }
+    }
+    auto* renderer = getCurrentRenderer();
+    return actor && polyData && actor->GetVisibility() &&
+           actor->GetPickable() && renderer && renderer->HasViewProp(actor);
+}
+
 std::string VtkVis::getIdByActor(vtkProp* actor) {
     if (!actor) {
         return std::string();
@@ -7394,6 +7444,45 @@ void VtkVis::GetDataAxesGridProperties(const std::string& viewID,
 // Camera Orientation Widget (ParaView-compatible)
 // ============================================================================
 
+// VTK's vtkCameraOrientationWidget::EndSelectAction orientates the camera
+// (focal + distance preserving) and then calls ParentRenderer->ResetCamera(),
+// which refits the scene and destroys the user's zoom level. Snapshot the
+// zoom state when the gizmo interaction starts and restore it along the new
+// orientation when the interaction ends, matching the zoom-preserving view
+// presets (toolbar buttons / Ctrl+Alt+1..6).
+void VtkVis::onOrientWidgetInteraction(vtkObject* caller,
+                                       unsigned long eventId,
+                                       void* /*callData*/) {
+    auto* widget = vtkCameraOrientationWidget::SafeDownCast(caller);
+    vtkRenderer* ren = widget ? widget->GetParentRenderer() : nullptr;
+    vtkCamera* cam = ren ? ren->GetActiveCamera() : nullptr;
+    if (!cam) return;
+
+    if (eventId == vtkCommand::StartInteractionEvent) {
+        cam->GetFocalPoint(m_orientWidgetZoomFocal);
+        m_orientWidgetZoomDistance = cam->GetDistance();
+        m_orientWidgetZoomParallelScale = cam->GetParallelScale();
+        m_orientWidgetZoomValid = true;
+    } else if (eventId == vtkCommand::EndInteractionEvent &&
+               m_orientWidgetZoomValid) {
+        m_orientWidgetZoomValid = false;
+        // ResetCamera kept the new orientation but moved focal/distance and
+        // rescaled parallel projection. Re-apply the snapshot along the
+        // current view plane normal (focal -> camera direction).
+        double vpn[3];
+        cam->GetViewPlaneNormal(vpn);
+        double pos[3];
+        for (int i = 0; i < 3; ++i) {
+            pos[i] = m_orientWidgetZoomFocal[i] +
+                     vpn[i] * m_orientWidgetZoomDistance;
+        }
+        cam->SetFocalPoint(m_orientWidgetZoomFocal);
+        cam->SetPosition(pos);
+        cam->SetParallelScale(m_orientWidgetZoomParallelScale);
+        ren->ResetCameraClippingRange();
+    }
+}
+
 void VtkVis::ToggleCameraOrientationWidget(bool show) {
     vtkRenderer* renderer = getCurrentRenderer();
     vtkRenderWindowInteractor* interactor = getRenderWindowInteractor();
@@ -7432,6 +7521,15 @@ void VtkVis::ToggleCameraOrientationWidget(bool show) {
 
         // Create default representation if not already created
         m_cameraOrientationWidget->CreateDefaultRepresentation();
+
+        // Preserve zoom across gizmo clicks (VTK resets the camera after
+        // orienting it; see onOrientWidgetInteraction).
+        auto zoomObs = vtkSmartPointer<vtkMemberFunctionCommand<VtkVis>>::New();
+        zoomObs->SetCallback(*this, &VtkVis::onOrientWidgetInteraction);
+        m_cameraOrientationWidget->AddObserver(
+                vtkCommand::StartInteractionEvent, zoomObs);
+        m_cameraOrientationWidget->AddObserver(vtkCommand::EndInteractionEvent,
+                                               zoomObs);
 
         // Configure representation (ParaView defaults from
         // views_remotingviews.xml)
@@ -7603,6 +7701,10 @@ void VtkVis::RefreshOverlayWidgets() {
 
     rw->Modified();
     UpdateScreen();
+}
+
+vtkCameraOrientationWidget* VtkVis::getCameraOrientationWidget() const {
+    return m_cameraOrientationWidget;
 }
 
 bool VtkVis::IsCameraOrientationWidgetShown() const {

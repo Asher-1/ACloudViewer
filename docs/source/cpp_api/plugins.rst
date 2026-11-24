@@ -182,12 +182,53 @@ Available Standard Plugins
 
 **AI inference (AICore)**
 
-Both plugins require ``-DAICore_ENABLED=ON`` (builds ``libAICore.so`` with a single ggml copy). User-facing guides live in the repository at ``docs/guides/plugins/`` (synced into Sphinx at build time). The full developer README for each plugin is under ``plugins/core/Standard/``.
+Twenty-two plugins share one native inference library — ``libAICore.so``
+(``core/AICore/``), whose ggml runtime is vendored from llama.cpp. All require
+``-DAICore_ENABLED=ON``; quantized **GGUF** models run on CUDA / Vulkan / Metal /
+CPU with no Python or PyTorch at runtime, and results land directly in the DB
+tree. Plugins consume only the public ``aicore/`` C headers (``depth_capi.h``,
+``gaussian_capi.h``, ``image_view.h``, ``pipeline_timing.h``, ``runtime_capi.h``,
+``asset_digests.h`` and the per-task ``*_capi.h``); Qt, STL, OpenCV, exceptions
+and ggml types never cross the ABI. User-facing guides live in
+``docs/guides/plugins/`` (synced into Sphinx at build time); the full developer
+README for each plugin is under ``plugins/core/Standard/``.
 
-* **qDA3**: Depth Anything V3 — monocular/multiview depth, camera pose, GLB/COLMAP export, Automatic Reconstruction sparse/dense hooks. CMake: ``PLUGIN_STANDARD_QDA3``.
-* **qFreeSplatter**: FreeSplatter 3D Gaussian Splatting — uncalibrated images to per-pixel 3D Gaussians, PnP pose recovery, SIBR-compatible PLY export; optional in-app viewer when qSIBR is enabled. CMake: ``PLUGIN_STANDARD_QFREESPLATTER``.
+*Perception — depth, lines, matching, faces, text*
 
-See :doc:`../guides/plugins/qDA3` and :doc:`../guides/plugins/qFreeSplatter` for usage and build instructions.
+* **qDA3**: Depth Anything V3 — monocular/multiview depth, camera pose, GLB/COLMAP export, Automatic Reconstruction sparse/dense hooks. CMake: ``PLUGIN_STANDARD_QDA3``. Guide: :doc:`../guides/plugins/qDA3`.
+* **qDeepLSD**: DeepLSD wireframe — line-segment extraction from GGUF distance + angle fields with AFM-guided LSD post-processing. CMake: ``PLUGIN_STANDARD_QDEEPLSD``. Guide: :doc:`../guides/plugins/qDeepLSD`.
+* **qLightGlue**: SIFT/ALIKED LightGlue GGUF — sub-second sparse feature matching with live visualization. CMake: ``PLUGIN_STANDARD_QLIGHTGLUE``. Guide: :doc:`../guides/plugins/qLightGlue`.
+* **qFaceDetect**: face-detect.cpp GGUF packs — SCRFD/YuNet detection, ArcFace/SFace verification, identity registry, live multi-face video. CMake: ``PLUGIN_STANDARD_QFACEDETECT``. Guide: :doc:`../guides/plugins/qFaceDetect`.
+* **qOCR**: PP-OCRv4 GGUF (EN / JA / CH+EN recipes) — text recognition with opt-in SLANet_plus layout and table stages, PP-Structure style DB overlay. CMake: ``PLUGIN_STANDARD_QOCR``. Guide: :doc:`../guides/plugins/qOCR`.
+
+*Detection, segmentation & open-vocabulary understanding*
+
+* **qYOLO**: YOLOv8 / YOLO26 GGUF (63 models) — detection, instance segmentation, metric depth, pose, OBB, classification + open-vocab World / YOLOE prompts. CMake: ``PLUGIN_STANDARD_QYOLO``. Guide: :doc:`../guides/plugins/qYOLO`.
+* **qSAM3**: SAM2 / 2.1 / 3 GGUF (39 models) — point/box/text promptable segmentation plus video object tracking. CMake: ``PLUGIN_STANDARD_QSAM3``. Guide: :doc:`../guides/plugins/qSAM3`.
+* **qRFDetr**: RF-DETR GGUF (44 models) — real-time detection & instance masks, per-class allowlist, 13 ms GPU latency. CMake: ``PLUGIN_STANDARD_QRFDETR``. Guide: :doc:`../guides/plugins/qRFDetr`.
+* **qRMBG**: RMBG-2.0 (BiRefNet-Swin-L) GGUF — transparent background removal with raw alpha matte, image + live video. CMake: ``PLUGIN_STANDARD_QRMBG``. Guide: :doc:`../guides/plugins/qRMBG`.
+* **qRAM**: RAM / RAM++ / Tag2Text GGUF — open-set image tagging & captioning, all logits + thresholds, JSON/CSV/text export. CMake: ``PLUGIN_STANDARD_QRAM``. Guide: :doc:`../guides/plugins/qRAM`.
+* **qRelateAnything**: RelSGG ViT / ConvNeXt GGUF (24 models) — subject–predicate–object scene relation graphs over tracked objects (image & video). CMake: ``PLUGIN_STANDARD_QRELATEANYTHING``. Guide: :doc:`../guides/plugins/qRelateAnything`.
+* **qGKD**: GKDT-L GGUF (ECCV 2026) — open-world keypoint detection with text / visual 1-shot / multimodal / multi-object prompts. CMake: ``PLUGIN_STANDARD_QGKD``. Guide: :doc:`../guides/plugins/qGKD`.
+* **qVLXSeek**: VLX-Seek 1.5-10B GGUF — open-vocab grounding: detection, counting, VQA and region OCR via region retrieval. CMake: ``PLUGIN_STANDARD_QVLXSEEK``. Guide: :doc:`../guides/plugins/qVLXSeek`.
+
+*3D generation & reconstruction*
+
+* **qFreeSplatter**: FreeSplatter 3D Gaussian Splatting — uncalibrated images to per-pixel 3D Gaussians, PnP pose recovery, SIBR-compatible PLY export, guided Face Capture; optional in-app viewer when qSIBR is enabled. CMake: ``PLUGIN_STANDARD_QFREESPLATTER``. Guide: :doc:`../guides/plugins/qFreeSplatter`.
+* **qTrellis**: TRELLIS.2 GGUF (DINOv3 + flow-matching DiTs) — single image to PBR-textured 3D mesh & GLB. CMake: ``PLUGIN_STANDARD_QTRELLIS``. Guide: :doc:`../guides/plugins/qTrellis`.
+* **qInstantMesh**: InstantMesh GGUF (14 files) — Zero123++ 6-view diffusion to FlexiCubes mesh + UV atlas (GLB/OBJ). CMake: ``PLUGIN_STANDARD_QINSTANTMESH``. Guide: :doc:`../guides/plugins/qInstantMesh`.
+* **qSAM3D**: SAM 3D Objects GGUF — single image to Gaussian splat PLY + optional FlexiCubes mesh. CMake: ``PLUGIN_STANDARD_QSAM3D``. Guide: :doc:`../guides/plugins/qSAM3D`.
+* **qQuerySplat**: QuerySplat + VGGT-Omega GGUF — 2–16 unposed photos to a 3DGS scene (524 288 gaussians), optional test-time optimization. CMake: ``PLUGIN_STANDARD_QQUERYSPLAT``. Guide: :doc:`../guides/plugins/qQuerySplat`.
+* **qMapAnything**: VGGT-Omega / MapAnything / Pi3 / Pi3X / VGGT-1B / DUSt3R GGUF — feed-forward metric multi-view reconstruction, ETH3D benchmark anchoring. CMake: ``PLUGIN_STANDARD_QMAPANYTHING``. Guide: :doc:`../guides/plugins/qMapAnything`.
+* **qLingbotMap**: LingBot-Map GCT GGUF — streaming RGB-D reconstruction from image folders / video with live per-frame map, frustums and sky masking. CMake: ``PLUGIN_STANDARD_QLINGBOTMAP``. Guide: :doc:`../guides/plugins/qLingbotMap`.
+* **qOpenPCDet**: OpenPCDet GGUF (54 models) — PointPillars / SECOND / PV-RCNN LiDAR 3D detection on KITTI + nuScenes, wireframe boxes + CSV export. CMake: ``PLUGIN_STANDARD_QOPENPCDET``. Guide: :doc:`../guides/plugins/qOpenPCDet`.
+
+*Annotation workbench*
+
+* **qAnyLabeling**: X-AnyLabeling-style annotation workbench — shapes, brush, magic wand, video tracking + 3D cuboids; every AI assist runs locally through the AICore catalogs (YOLO, SAM3, RF-DETR, …). CMake: ``PLUGIN_STANDARD_QANYLABELING``. Guide: :doc:`../guides/plugins/qAnyLabeling`.
+
+See :doc:`../guides/plugins/README` for the complete overview and build
+prerequisites, and :doc:`overview` for the AICore module architecture.
 
 **Advanced Processing**
 
@@ -543,9 +584,49 @@ The catalog and build index is at ``plugins/README.md`` in the repository root.
 
    ../guides/plugins/README
    ../guides/plugins/qDA3
+   ../guides/plugins/qDeepLSD
+   ../guides/plugins/qFaceDetect
+   ../guides/plugins/qLightGlue
    ../guides/plugins/qFreeSplatter
+   ../guides/plugins/qSAM3
+   ../guides/plugins/qTrellis
+   ../guides/plugins/qYOLO
+   ../guides/plugins/qRFDetr
+   ../guides/plugins/qRMBG
+   ../guides/plugins/qGKD
+   ../guides/plugins/qInstantMesh
+   ../guides/plugins/qLingbotMap
+   ../guides/plugins/qMapAnything
+   ../guides/plugins/qOCR
+   ../guides/plugins/qOpenPCDet
+   ../guides/plugins/qQuerySplat
+   ../guides/plugins/qRAM
+   ../guides/plugins/qRelateAnything
+   ../guides/plugins/qSAM3D
+   ../guides/plugins/qVLXSeek
+   ../guides/plugins/qAnyLabeling
    ../plugins/qDA3/README
+   ../plugins/qDeepLSD/README
+   ../plugins/qFaceDetect/README
+   ../plugins/qLightGlue/README
    ../plugins/qFreeSplatter/README
+   ../plugins/qSAM3/README
+   ../plugins/qTrellis/README
+   ../plugins/qYOLO/README
+   ../plugins/qRFDetr/README
+   ../plugins/qRMBG/README
+   ../plugins/qGKD/README
+   ../plugins/qInstantMesh/README
+   ../plugins/qLingbotMap/README
+   ../plugins/qMapAnything/README
+   ../plugins/qOCR/README
+   ../plugins/qOpenPCDet/README
+   ../plugins/qQuerySplat/README
+   ../plugins/qRAM/README
+   ../plugins/qRelateAnything/README
+   ../plugins/qSAM3D/README
+   ../plugins/qVLXSeek/README
+   ../plugins/qAnyLabeling/README
 
 .. toctree::
    :maxdepth: 1

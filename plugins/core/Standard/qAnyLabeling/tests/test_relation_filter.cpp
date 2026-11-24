@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include <QtCompat.h>
+#include <gtest/gtest.h>
 
 #include <QApplication>
 #include <QComboBox>
@@ -16,16 +17,11 @@
 #include <QLineEdit>
 #include <QTableWidget>
 #include <QTemporaryDir>
-#include <cstdio>
+#include <memory>
 
 #include "RelationFilterWidget.h"
 
 namespace {
-bool check(bool condition, const char* message) {
-    if (!condition) std::fprintf(stderr, "%s\n", message);
-    return condition;
-}
-
 QJsonObject edge(int from,
                  int to,
                  const QString& subject,
@@ -41,126 +37,167 @@ QJsonObject edge(int from,
                        {QStringLiteral("score"), score},
                        {QStringLiteral("type"), type}};
 }
-}  // namespace
 
-int main(int argc, char** argv) {
-    QApplication app(argc, argv);
-    RelationFilterWidget widget;
-    widget.resize(600, 300);
-    auto* table = widget.findChild<QTableWidget*>(
-            QStringLiteral("AnnotationRelationTable"));
-    auto* type = widget.findChild<QComboBox*>();
-    auto* minScore = widget.findChild<QDoubleSpinBox*>();
-    auto* search = widget.findChild<QLineEdit*>();
-    if (!check(table && type && minScore && search,
-               "Relation filter controls are missing"))
-        return 1;
+class RelationFilterTest : public ::testing::Test {
+protected:
+    static void SetUpTestSuite() {
+        // QApplication must outlive every widget and every test in the suite.
+        static int argc = 1;
+        static char name[] = "test_qanylabeling_relation_filter";
+        static char* argv[] = {name, nullptr};
+        static QApplication app(argc, argv);
+    }
 
-    const QJsonArray edges{
-            edge(0, 1, QStringLiteral("person"), QStringLiteral("riding"),
-                 QStringLiteral("horse"), 0.59, QStringLiteral("semantic")),
-            edge(1, 2, QStringLiteral("horse"), QStringLiteral("on"),
-                 QStringLiteral("grass"), 0.80, QStringLiteral("spatial")),
-            // Hostile text: a comma, a quote and a leading formula character.
-            edge(2, 0, QStringLiteral("=cmd"), QStringLiteral("next to, left"),
-                 QStringLiteral("a\"b"), 0.52, QStringLiteral("spatial"))};
+    void SetUp() override {
+        widget = std::make_unique<RelationFilterWidget>();
+        widget->resize(600, 300);
+        table = widget->findChild<QTableWidget*>(
+                QStringLiteral("AnnotationRelationTable"));
+        type = widget->findChild<QComboBox*>();
+        minScore = widget->findChild<QDoubleSpinBox*>();
+        search = widget->findChild<QLineEdit*>();
+        ASSERT_NE(table, nullptr);
+        ASSERT_NE(type, nullptr);
+        ASSERT_NE(minScore, nullptr);
+        ASSERT_NE(search, nullptr);
 
+        edges = QJsonArray{
+                edge(0, 1, QStringLiteral("person"), QStringLiteral("riding"),
+                     QStringLiteral("horse"), 0.59, QStringLiteral("semantic")),
+                edge(1, 2, QStringLiteral("horse"), QStringLiteral("on"),
+                     QStringLiteral("grass"), 0.80, QStringLiteral("spatial")),
+                // Comma, quote, and spreadsheet-formula injection characters.
+                edge(2, 0, QStringLiteral("=cmd"),
+                     QStringLiteral("next to, left"), QStringLiteral("a\"b"),
+                     0.52, QStringLiteral("spatial"))};
+        QObject::connect(widget.get(), &RelationFilterWidget::filterChanged,
+                         widget.get(), [this](const QJsonArray& visible) {
+                             ++filterSignals;
+                             lastVisible = visible;
+                         });
+        widget->loadRelations(edges);
+    }
+
+    std::unique_ptr<RelationFilterWidget> widget;
+    QTableWidget* table = nullptr;
+    QComboBox* type = nullptr;
+    QDoubleSpinBox* minScore = nullptr;
+    QLineEdit* search = nullptr;
+    QJsonArray edges;
     int filterSignals = 0;
-    int lastVisible = -1;
-    QObject::connect(&widget, &RelationFilterWidget::filterChanged,
-                     [&](const QJsonArray& visible) {
-                         ++filterSignals;
-                         lastVisible = visible.size();
-                     });
+    QJsonArray lastVisible;
+};
+
+TEST_F(RelationFilterTest, LoadingShowsEveryRelationAndPublishesVisibleSet) {
+    EXPECT_EQ(table->rowCount(), 3);
+    EXPECT_EQ(widget->visibleRelations(), edges);
+    EXPECT_EQ(lastVisible, edges);
+    EXPECT_GT(filterSignals, 0);
+}
+
+TEST_F(RelationFilterTest, TypeAndScoreFiltersIntersectAndCanBeReset) {
+    const int spatial = type->findData(QStringLiteral("spatial"));
+    ASSERT_GE(spatial, 0);
+    type->setCurrentIndex(spatial);
+    EXPECT_EQ(table->rowCount(), 2);
+    EXPECT_EQ(lastVisible, (QJsonArray{edges[1], edges[2]}));
+
+    minScore->setValue(0.6);
+    ASSERT_EQ(table->rowCount(), 1);
+    ASSERT_NE(table->item(0, 1), nullptr);
+    EXPECT_EQ(table->item(0, 1)->text(), QStringLiteral("on"));
+    EXPECT_EQ(widget->visibleRelations(), (QJsonArray{edges[1]}));
+    EXPECT_EQ(lastVisible, widget->visibleRelations());
+
+    minScore->setValue(0.0);
+    const int all = type->findData(QStringLiteral("all"));
+    ASSERT_GE(all, 0);
+    type->setCurrentIndex(all);
+    EXPECT_EQ(table->rowCount(), 3);
+    EXPECT_EQ(widget->visibleRelations(), edges);
+}
+
+TEST_F(RelationFilterTest, ScoreFloorIncludesAnExactBoundaryScore) {
+    minScore->setValue(0.59);
+    EXPECT_EQ(widget->visibleRelations(), (QJsonArray{edges[0], edges[1]}));
+    minScore->setValue(0.60);
+    EXPECT_EQ(widget->visibleRelations(), (QJsonArray{edges[1]}));
+}
+
+TEST_F(RelationFilterTest, SearchMatchesSubjectObjectAndPredicateIgnoringCase) {
+    search->setText(QStringLiteral("HORSE"));
+    EXPECT_EQ(table->rowCount(), 2);
+    EXPECT_EQ(widget->visibleRelations(), (QJsonArray{edges[0], edges[1]}));
+    search->setText(QStringLiteral("RIDING"));
+    EXPECT_EQ(widget->visibleRelations(), (QJsonArray{edges[0]}));
+    search->clear();
+    EXPECT_EQ(table->rowCount(), 3);
+    EXPECT_EQ(widget->visibleRelations(), edges);
+}
+
+TEST_F(RelationFilterTest, RowClickReportsVisibleRowAndOriginalShapeIndices) {
     QJsonObject selected;
     int selections = 0;
-    QObject::connect(&widget, &RelationFilterWidget::relationSelected,
-                     [&](const QJsonObject& relation) {
+    QObject::connect(widget.get(), &RelationFilterWidget::relationSelected,
+                     widget.get(), [&](const QJsonObject& relation) {
                          ++selections;
                          selected = relation;
                      });
+    const int spatial = type->findData(QStringLiteral("spatial"));
+    ASSERT_GE(spatial, 0);
+    type->setCurrentIndex(spatial);
+    ASSERT_TRUE(QMetaObject::invokeMethod(table, "cellClicked", Q_ARG(int, 1),
+                                          Q_ARG(int, 0)));
+    EXPECT_EQ(selections, 1);
+    EXPECT_EQ(selected.value(QStringLiteral("row")).toInt(-1), 1);
+    EXPECT_EQ(selected.value(QStringLiteral("subject_index")).toInt(-1), 2);
+    EXPECT_EQ(selected.value(QStringLiteral("object_index")).toInt(-1), 0);
+}
 
-    widget.loadRelations(edges);
-    if (!check(table->rowCount() == 3 &&
-                       widget.visibleRelations().size() == 3 &&
-                       lastVisible == 3,
-               "Loading must show every relation and publish the visible set"))
-        return 1;
-
-    type->setCurrentIndex(type->findData(QStringLiteral("spatial")));
-    if (!check(table->rowCount() == 2 && lastVisible == 2,
-               "The type filter must keep only spatial relations"))
-        return 1;
-    minScore->setValue(0.6);
-    if (!check(table->rowCount() == 1 &&
-                       table->item(0, 1)->text() == QStringLiteral("on"),
-               "The score floor must drop relations below it"))
-        return 1;
-    minScore->setValue(0.0);
-    type->setCurrentIndex(type->findData(QStringLiteral("all")));
-    search->setText(QStringLiteral("HORSE"));
-    if (!check(table->rowCount() == 2,
-               "Search must match subject or object, ignoring case"))
-        return 1;
-    search->clear();
-    if (!check(table->rowCount() == 3, "Clearing the search restores rows"))
-        return 1;
-
-    // A click reports the row in the visible list, which is also the index of
-    // the edge in the canvas overlay, and keeps the shape indices.
-    type->setCurrentIndex(type->findData(QStringLiteral("spatial")));
-    QMetaObject::invokeMethod(table, "cellClicked", Q_ARG(int, 1),
-                              Q_ARG(int, 0));
-    if (!check(selections == 1 &&
-                       selected.value(QStringLiteral("row")).toInt(-1) == 1 &&
-                       selected.value(QStringLiteral("subject_index"))
-                                       .toInt(-1) == 2 &&
-                       selected.value(QStringLiteral("object_index"))
-                                       .toInt(-1) == 0,
-               "A row click must report its visible row and shape indices"))
-        return 1;
-    type->setCurrentIndex(type->findData(QStringLiteral("all")));
-
+TEST_F(RelationFilterTest, CsvFormatsScoresEscapesTextAndDefusesFormulas) {
     QTemporaryDir directory;
+    ASSERT_TRUE(directory.isValid());
     const QString path = directory.filePath(QStringLiteral("relations.csv"));
     QString error;
-    if (!check(widget.saveCsv(path, &error), "CSV export must succeed")) {
-        std::fprintf(stderr, "%s\n", error.toLocal8Bit().constData());
-        return 1;
-    }
+    ASSERT_TRUE(widget->saveCsv(path, &error)) << error.toStdString();
     QFile file(path);
-    if (!check(file.open(QIODevice::ReadOnly), "CSV must be readable"))
-        return 1;
+    ASSERT_TRUE(file.open(QIODevice::ReadOnly));
     const QStringList lines =
             QString::fromUtf8(file.readAll())
                     .split(QLatin1Char('\n'), QtCompat::SkipEmptyParts);
-    if (!check(lines.size() == 4 &&
-                       lines[0] ==
-                               QStringLiteral(
-                                       "Subject,Predicate,Object,Type,Score") &&
-                       lines[1] ==
-                               QStringLiteral("person,riding,horse,semantic,"
-                                              "0.590"),
-               "CSV header and first row are wrong"))
-        return 1;
-    if (!check(lines[3] == QStringLiteral("'=cmd,\"next to, left\",\"a\"\"b\","
-                                          "spatial,0.520"),
-               "CSV must quote commas and quotes and defuse formulas"))
-        return 1;
-
-    // A failed write must be reported, never silently accepted.
-    QString failure;
-    if (!check(!widget.saveCsv(
-                       directory.filePath(QStringLiteral("missing/x.csv")),
-                       &failure) &&
-                       !failure.isEmpty(),
-               "CSV export to an unwritable path must fail with a reason"))
-        return 1;
-
-    widget.clear();
-    if (!check(table->rowCount() == 0 && widget.visibleRelations().isEmpty(),
-               "clear() must empty the table"))
-        return 1;
-    if (!check(filterSignals > 0, "filterChanged was never emitted")) return 1;
-    return 0;
+    ASSERT_EQ(lines.size(), 4);
+    EXPECT_EQ(lines[0], QStringLiteral("Subject,Predicate,Object,Type,Score"));
+    EXPECT_EQ(lines[1], QStringLiteral("person,riding,horse,semantic,0.590"));
+    EXPECT_EQ(lines[3], QStringLiteral("'=cmd,\"next to, left\",\"a\"\"b\","
+                                       "spatial,0.520"));
 }
+
+TEST_F(RelationFilterTest, CsvExportsOnlyVisibleRelations) {
+    search->setText(QStringLiteral("RIDING"));
+    QTemporaryDir directory;
+    ASSERT_TRUE(directory.isValid());
+    const QString path = directory.filePath(QStringLiteral("filtered.csv"));
+    QString error;
+    ASSERT_TRUE(widget->saveCsv(path, &error)) << error.toStdString();
+    QFile file(path);
+    ASSERT_TRUE(file.open(QIODevice::ReadOnly));
+    EXPECT_EQ(file.readAll(),
+              QByteArray("Subject,Predicate,Object,Type,Score\n"
+                         "person,riding,horse,semantic,0.590\n"));
+}
+
+TEST_F(RelationFilterTest, CsvWriteFailureReportsAReason) {
+    QTemporaryDir directory;
+    ASSERT_TRUE(directory.isValid());
+    QString failure;
+    EXPECT_FALSE(widget->saveCsv(
+            directory.filePath(QStringLiteral("missing/x.csv")), &failure));
+    EXPECT_FALSE(failure.isEmpty());
+}
+
+TEST_F(RelationFilterTest, ClearEmptiesTableAndVisibleRelations) {
+    widget->clear();
+    EXPECT_EQ(table->rowCount(), 0);
+    EXPECT_TRUE(widget->visibleRelations().isEmpty());
+}
+}  // namespace

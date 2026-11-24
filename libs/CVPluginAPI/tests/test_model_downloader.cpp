@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <QCoreApplication>
 #include <QDir>
 #include <QElapsedTimer>
@@ -22,21 +24,16 @@
 #include "ecvModelDownloader.h"
 #include "ecvTestDataRepository.h"
 
-#define REQUIRE(condition)                                               \
-    do {                                                                 \
-        if (!(condition)) {                                              \
-            std::fprintf(stderr, "line %d: %s\n", __LINE__, #condition); \
-            return 1;                                                    \
-        }                                                                \
-    } while (false)
-
-int main(int argc, char** argv) {
+TEST(ModelDownloaderIntegration, LoopbackCacheResumeRetryAndCancellation) {
+    int argc = 1;
+    char program[] = "cvpluginapi-integration-test";
+    char* argv[] = {program, nullptr};
     QCoreApplication app(argc, argv);
     QTemporaryDir temporary;
-    REQUIRE(temporary.isValid());
+    ASSERT_TRUE(temporary.isValid());
     const QString root = temporary.filePath(
             QString::fromUtf8("cache \xe6\xa8\xa1\xe5\x9e\x8b"));
-    REQUIRE(QDir().mkpath(root));
+    ASSERT_TRUE(QDir().mkpath(root));
     const QByteArray model = QByteArray("GGUF") + QByteArray(96 * 1024, 'x');
     QByteArray served = model;
     int requests = 0;
@@ -46,7 +43,7 @@ int main(int argc, char** argv) {
     bool oversizeLength = false;
     qint64 dropAfter = -1;
     QTcpServer server;
-    REQUIRE(server.listen(QHostAddress::LocalHost));
+    ASSERT_TRUE(server.listen(QHostAddress::LocalHost));
     QObject::connect(&server, &QTcpServer::newConnection, &app, [&]() {
         while (auto* socket = server.nextPendingConnection()) {
             auto header = std::make_shared<QByteArray>();
@@ -191,13 +188,13 @@ int main(int argc, char** argv) {
             QCryptographicHash::Sha256,
             QCryptographicHash::hash(model, QCryptographicHash::Sha256)
                     .toHex()};
-    REQUIRE(transfer(request));
-    REQUIRE(requests == 1);
-    REQUIRE(ecvAssetIntegrity::isModelVerified(request.destPath));
-    REQUIRE(transfer(request));
-    REQUIRE(transfer(request));
-    REQUIRE(requests == 1);
-    REQUIRE(!QFile::exists(QDir(root).filePath("selected-f16.gguf")));
+    ASSERT_TRUE(transfer(request));
+    ASSERT_TRUE(requests == 1);
+    ASSERT_TRUE(ecvAssetIntegrity::isModelVerified(request.destPath));
+    ASSERT_TRUE(transfer(request));
+    ASSERT_TRUE(transfer(request));
+    ASSERT_TRUE(requests == 1);
+    ASSERT_TRUE(!QFile::exists(QDir(root).filePath("selected-f16.gguf")));
     // The shared hit must survive recreating the downloader (new
     // dialog/process).
     downloader.cancel();
@@ -206,45 +203,46 @@ int main(int argc, char** argv) {
     QObject::connect(&another, &ecvModelDownloader::finished, &app,
                      [&](bool ok, const QString&) { persistentHit = ok; });
     another.download(request);
-    REQUIRE(persistentHit && requests == 1);
+    ASSERT_TRUE(persistentHit && requests == 1);
     // A changed deployed file must be downloaded again, never stat-trusted.
     {
         QFile file(request.destPath);
-        REQUIRE(file.open(QIODevice::Append));
-        REQUIRE(file.write("changed") == 7);
+        ASSERT_TRUE(file.open(QIODevice::Append));
+        ASSERT_TRUE(file.write("changed") == 7);
     }
-    REQUIRE(!ecvAssetIntegrity::isModelVerified(request.destPath));
-    REQUIRE(transfer(request));
-    REQUIRE(requests == 2);
+    ASSERT_TRUE(!ecvAssetIntegrity::isModelVerified(request.destPath));
+    ASSERT_TRUE(transfer(request));
+    ASSERT_TRUE(requests == 2);
     // Failure must leave the downloader usable for the same selection.
     request.destPath = QDir(root).filePath("second-q8.gguf");
     served = QByteArray("GGUF") + QByteArray(96 * 1024, 'z');
-    REQUIRE(!transfer(request));
-    REQUIRE(lastTransferCompleted);  // Digest rejection must not be a timeout.
-    REQUIRE(!downloader.isBusy());
+    ASSERT_TRUE(!transfer(request));
+    ASSERT_TRUE(
+            lastTransferCompleted);  // Digest rejection must not be a timeout.
+    ASSERT_TRUE(!downloader.isBusy());
     served = model;
-    REQUIRE(transfer(request));
+    ASSERT_TRUE(transfer(request));
     const int afterRetry = requests;
-    REQUIRE(transfer(request) && requests == afterRetry);
+    ASSERT_TRUE(transfer(request) && requests == afterRetry);
     // Resume a partial selected model through the real Range transport.
     request.destPath = QDir(root).filePath("resumed-q8.gguf");
     {
         QFile part(request.destPath + ".part");
-        REQUIRE(part.open(QIODevice::WriteOnly));
-        REQUIRE(part.write(model.left(32768)) == 32768);
+        ASSERT_TRUE(part.open(QIODevice::WriteOnly));
+        ASSERT_TRUE(part.write(model.left(32768)) == 32768);
     }
-    REQUIRE(transfer(request));
-    REQUIRE(resumed == 1);
-    REQUIRE(transfer(request));
+    ASSERT_TRUE(transfer(request));
+    ASSERT_TRUE(resumed == 1);
+    ASSERT_TRUE(transfer(request));
     // An unpinned asset still uses its exact catalog size on first ingestion.
     request.destPath = QDir(root).filePath("sized.gguf");
     request.contentAnchor = {};
     request.ingestExactSize = model.size();
-    REQUIRE(transfer(request));
+    ASSERT_TRUE(transfer(request));
     const int afterSized = requests;
     request.url.clear();  // offline cache hit
-    REQUIRE(transfer(request));
-    REQUIRE(requests == afterSized);
+    ASSERT_TRUE(transfer(request));
+    ASSERT_TRUE(requests == afterSized);
     request.url = QString("http://127.0.0.1:%1/model").arg(server.serverPort());
     // [G2] A no-pin .part prefix is never content-proven: the digest is
     // the resume license, so the partial file is discarded and the
@@ -254,16 +252,16 @@ int main(int argc, char** argv) {
     request.ingestExactSize = model.size();
     {
         QFile part(request.destPath + ".part");
-        REQUIRE(part.open(QIODevice::WriteOnly));
-        REQUIRE(part.write(model.left(32768)) == 32768);
+        ASSERT_TRUE(part.open(QIODevice::WriteOnly));
+        ASSERT_TRUE(part.write(model.left(32768)) == 32768);
     }
     const int resumesBeforeUnpinned = resumed;
-    REQUIRE(transfer(request));
-    REQUIRE(resumed == resumesBeforeUnpinned);
+    ASSERT_TRUE(transfer(request));
+    ASSERT_TRUE(resumed == resumesBeforeUnpinned);
     {
         QFile done(request.destPath);
-        REQUIRE(done.open(QIODevice::ReadOnly));
-        REQUIRE(done.readAll() == model);
+        ASSERT_TRUE(done.open(QIODevice::ReadOnly));
+        ASSERT_TRUE(done.readAll() == model);
     }
     // [G3] A .part that already holds the complete pinned artifact
     // finalizes locally with zero transport.
@@ -275,22 +273,22 @@ int main(int argc, char** argv) {
     request.ingestExactSize = 0;
     {
         QFile part(request.destPath + ".part");
-        REQUIRE(part.open(QIODevice::WriteOnly));
-        REQUIRE(part.write(model) == model.size());
+        ASSERT_TRUE(part.open(QIODevice::WriteOnly));
+        ASSERT_TRUE(part.write(model) == model.size());
     }
     const int requestsBeforePrefinalized = requests;
-    REQUIRE(transfer(request));
-    REQUIRE(requests == requestsBeforePrefinalized);
-    REQUIRE(QFileInfo(request.destPath).size() == model.size());
-    REQUIRE(!QFile::exists(request.destPath + ".part"));
+    ASSERT_TRUE(transfer(request));
+    ASSERT_TRUE(requests == requestsBeforePrefinalized);
+    ASSERT_TRUE(QFileInfo(request.destPath).size() == model.size());
+    ASSERT_TRUE(!QFile::exists(request.destPath + ".part"));
     // [G3] An oversized .part draws 416; the part is dropped and the next
     // attempt restarts cleanly.
     request.destPath = QDir(root).filePath("oversized.gguf");
     {
         QFile part(request.destPath + ".part");
-        REQUIRE(part.open(QIODevice::WriteOnly));
-        REQUIRE(part.write(model) == model.size());
-        REQUIRE(part.write(QByteArray(4096, 'j')) == 4096);
+        ASSERT_TRUE(part.open(QIODevice::WriteOnly));
+        ASSERT_TRUE(part.write(model) == model.size());
+        ASSERT_TRUE(part.write(QByteArray(4096, 'j')) == 4096);
     }
     const int requestsBeforeOversized = requests;
     const int resumesBeforeOversized = resumed;
@@ -309,21 +307,21 @@ int main(int argc, char** argv) {
     // bound; request counts and the terminal state below define success.
     const bool oversizedCompleted = transfer(request, 30000);
     QObject::disconnect(oversizedConnection);
-    REQUIRE(oversizedCompleted);
-    REQUIRE(discardedOversized);
-    REQUIRE(requests == requestsBeforeOversized + 2);
-    REQUIRE(resumed == resumesBeforeOversized + 1);
-    REQUIRE(QFileInfo(request.destPath).size() == model.size());
-    REQUIRE(!QFile::exists(request.destPath + ".part"));
+    ASSERT_TRUE(oversizedCompleted);
+    ASSERT_TRUE(discardedOversized);
+    ASSERT_TRUE(requests == requestsBeforeOversized + 2);
+    ASSERT_TRUE(resumed == resumesBeforeOversized + 1);
+    ASSERT_TRUE(QFileInfo(request.destPath).size() == model.size());
+    ASSERT_TRUE(!QFile::exists(request.destPath + ".part"));
     // [G3] A rename failure retries the local finalize without destroying
     // the digest-proven part: a blocking directory at the destination
     // fails finalize once, then the retry completes after it is removed.
     request.destPath = QDir(root).filePath("blocked-finalize.gguf");
-    REQUIRE(QDir(root).mkdir(QStringLiteral("blocked-finalize.gguf")));
+    ASSERT_TRUE(QDir(root).mkdir(QStringLiteral("blocked-finalize.gguf")));
     {
         QFile part(request.destPath + ".part");
-        REQUIRE(part.open(QIODevice::WriteOnly));
-        REQUIRE(part.write(model) == model.size());
+        ASSERT_TRUE(part.open(QIODevice::WriteOnly));
+        ASSERT_TRUE(part.write(model) == model.size());
     }
     {
         QEventLoop blockedLoop;
@@ -335,28 +333,28 @@ int main(int argc, char** argv) {
                                 QStringLiteral("blocked-finalize.gguf"));
                     }
                 });
-        REQUIRE(transfer(request, 30000));
+        ASSERT_TRUE(transfer(request, 30000));
         QObject::disconnect(blockedConnection);
     }
-    REQUIRE(QFileInfo(request.destPath).isFile());
-    REQUIRE(QFileInfo(request.destPath).size() == model.size());
+    ASSERT_TRUE(QFileInfo(request.destPath).isFile());
+    ASSERT_TRUE(QFileInfo(request.destPath).size() == model.size());
     // [G4] A server that ignores the resume range answers 200 with the
     // full body; the downloader must restart from scratch instead of
     // appending the body onto the stale prefix.
     request.destPath = QDir(root).filePath("range-blind.gguf");
     {
         QFile part(request.destPath + ".part");
-        REQUIRE(part.open(QIODevice::WriteOnly));
-        REQUIRE(part.write(model.left(32768)) == 32768);
+        ASSERT_TRUE(part.open(QIODevice::WriteOnly));
+        ASSERT_TRUE(part.write(model.left(32768)) == 32768);
     }
     ignoreRange = true;
     const int resumesBeforeBlind = resumed;
-    REQUIRE(transfer(request));
-    REQUIRE(resumed == resumesBeforeBlind + 1);
+    ASSERT_TRUE(transfer(request));
+    ASSERT_TRUE(resumed == resumesBeforeBlind + 1);
     {
         QFile done(request.destPath);
-        REQUIRE(done.open(QIODevice::ReadOnly));
-        REQUIRE(done.readAll() == model);
+        ASSERT_TRUE(done.open(QIODevice::ReadOnly));
+        ASSERT_TRUE(done.readAll() == model);
     }
     ignoreRange = false;
     // [G1] Weak-network budget: every interrupted attempt delivers fresh
@@ -377,12 +375,12 @@ int main(int argc, char** argv) {
                     if (message.contains("attempt budget refreshed"))
                         refreshed = true;
                 });
-        REQUIRE(transfer(request, 120000));
+        ASSERT_TRUE(transfer(request, 120000));
         QObject::disconnect(weakConnection);
-        REQUIRE(refreshed);
+        ASSERT_TRUE(refreshed);
     }
     dropAfter = -1;
-    REQUIRE(QFileInfo(request.destPath).size() == served.size());
+    ASSERT_TRUE(QFileInfo(request.destPath).size() == served.size());
     served = model;
     // [Disk] A declared transfer larger than the volume must fail fast
     // with a clear message instead of streaming into a full disk.
@@ -407,11 +405,11 @@ int main(int argc, char** argv) {
         downloader.download(request);
         diskLoop.exec();
         QObject::disconnect(diskConnection);
-        REQUIRE(diskFail);
+        ASSERT_TRUE(diskFail);
     }
     downloader.cancel();
-    REQUIRE(!downloader.isBusy());
-    REQUIRE(!QFile::exists(request.destPath));
+    ASSERT_TRUE(!downloader.isBusy());
+    ASSERT_TRUE(!QFile::exists(request.destPath));
     oversizeLength = false;
     // A ZIP uses the same real HTTP transport and digest ledger. Extraction
     // is the repository service's responsibility; no plugin unzip code.
@@ -435,16 +433,16 @@ int main(int argc, char** argv) {
             QCryptographicHash::Sha256,
             QCryptographicHash::hash(served, QCryptographicHash::Sha256)
                     .toHex()};
-    REQUIRE(transfer(request));
+    ASSERT_TRUE(transfer(request));
     const int afterZip = requests;
-    REQUIRE(transfer(request));
-    REQUIRE(requests == afterZip);
+    ASSERT_TRUE(transfer(request));
+    ASSERT_TRUE(requests == afterZip);
     const QString extracted = QDir(root).filePath("extract");
-    REQUIRE(ecvTestDataRepository::zipEntryCount(request.destPath) == 1);
-    REQUIRE(ecvTestDataRepository::extractZip(request.destPath, extracted));
+    ASSERT_TRUE(ecvTestDataRepository::zipEntryCount(request.destPath) == 1);
+    ASSERT_TRUE(ecvTestDataRepository::extractZip(request.destPath, extracted));
     QFile member(QDir(extracted).filePath("examples/selected.txt"));
-    REQUIRE(member.open(QIODevice::ReadOnly));
-    REQUIRE(member.readAll() == "selected sample only");
+    ASSERT_TRUE(member.open(QIODevice::ReadOnly));
+    ASSERT_TRUE(member.readAll() == "selected sample only");
     // Backoff belongs to the original request: it is busy, cannot be
     // replaced by another download, and cancellation stops its timer.
     served = model;
@@ -471,8 +469,8 @@ int main(int argc, char** argv) {
     downloader.download(request);
     retryLoop.exec();
     QObject::disconnect(retryConnection);
-    REQUIRE(backoff && busyAtNotification);
-    REQUIRE(downloader.isBusy());
+    ASSERT_TRUE(backoff && busyAtNotification);
+    ASSERT_TRUE(downloader.isBusy());
     const int beforeCancel = requests;
     auto replacement = request;
     replacement.destPath = QDir(root).filePath("replacement.gguf");
@@ -485,20 +483,15 @@ int main(int argc, char** argv) {
                                      ++cancelled;
                              });
     downloader.cancel();
-    REQUIRE(cancelled == 1 && !downloader.isBusy());
+    ASSERT_TRUE(cancelled == 1 && !downloader.isBusy());
     QEventLoop cancelledLoop;
     QTimer::singleShot(4500, &cancelledLoop, &QEventLoop::quit);
     cancelledLoop.exec();
-    REQUIRE(requests == beforeCancel && cancelled == 1);
-    REQUIRE(!QFile::exists(replacement.destPath));
+    ASSERT_TRUE(requests == beforeCancel && cancelled == 1);
+    ASSERT_TRUE(!QFile::exists(replacement.destPath));
     QObject::disconnect(cancelConnection);
     serviceUnavailable = false;
-    REQUIRE(transfer(request));
-    REQUIRE(transfer(request));
-    REQUIRE(requests == beforeCancel + 1);
-    std::puts(
-            "model downloader: cache hits, selection isolation, corruption, "
-            "retry cancellation, resume, resume license, fast finalize, "
-            "weak-network budget, ZIP reuse and UTF-8 paths passed");
-    return 0;
+    ASSERT_TRUE(transfer(request));
+    ASSERT_TRUE(transfer(request));
+    ASSERT_TRUE(requests == beforeCancel + 1);
 }

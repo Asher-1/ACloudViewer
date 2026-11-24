@@ -45,7 +45,12 @@ class PQOriginalsTests(unittest.TestCase):
     def test_fixed_ids_and_approved_assets_are_unchanged(self):
         rows = json.loads(MANIFEST.read_text())['items']
         self.assertEqual([r['id'] for r in rows], list(range(1, 25)))
-        self.assertEqual([r['id'] for r in rows if r['status'] == 'approved-keep'], [15, 16, 19])
+        self.assertEqual([r['id'] for r in rows if r['status'] == 'approved-keep'], [15, 19])
+        redesigned = [r for r in rows if r['status'] == 'user-authorized-semantic-redesign']
+        self.assertEqual([r['id'] for r in redesigned], [16])
+        self.assertEqual(redesigned[0]['review_id'], 'ANN-01')
+        self.assertEqual(redesigned[0]['previous_sha256'],
+                         'a27bc2294e3414adca529adba474db5653c2c4855347f859bee73f97752ac0cc')
         for row in rows:
             self.assertEqual(hashlib.sha256(_loc(row).read_bytes()).hexdigest(), row['sha256'])
 

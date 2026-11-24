@@ -234,8 +234,8 @@ Unit tests live under [`core/AICore/tests/gaussian/`](../../../../core/AICore/te
 **Fast gate (no model assets):**
 
 ```bash
-ctest -LE model
-# Binaries under build/bin/aicore_tests/
+cmake -DBUILD_DIR=build -DJOBS=4 -P tests/Run.cmake
+# Root headless gate; focused binaries remain under build/bin/aicore_tests/
 ```
 
 **Full parity (needs model + fixtures):**

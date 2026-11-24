@@ -209,15 +209,45 @@ void ModelViewerWidget::Release() {
 
     ClearReconstruction();
 
-    if (cloud_sparse_) {
+    if (sparseCloud()) {
         delete cloud_sparse_;
         cloud_sparse_ = nullptr;
+        cloud_sparse_id_ = 0;
     }
 
-    if (main_sensors_) {
+    if (mainSensors()) {
         delete main_sensors_;
         main_sensors_ = nullptr;
+        main_sensors_id_ = 0;
     }
+}
+
+ccHObject* ModelViewerWidget::mainSensors() {
+    if (main_sensors_ && main_sensors_id_ && app_ &&
+        !app_->db()->find(static_cast<int>(main_sensors_id_))) {
+        // Deleted externally (DB tree / RPC); drop without double-free.
+        main_sensors_ = nullptr;
+        main_sensors_id_ = 0;
+    }
+    return main_sensors_;
+}
+
+ccPointCloud* ModelViewerWidget::sparseCloud() {
+    if (cloud_sparse_ && cloud_sparse_id_ && app_ &&
+        !app_->db()->find(static_cast<int>(cloud_sparse_id_))) {
+        cloud_sparse_ = nullptr;
+        cloud_sparse_id_ = 0;
+    }
+    return cloud_sparse_;
+}
+
+bool ModelViewerWidget::sensorAlive(ccCameraSensor* sensor) {
+    ccHObject* group = mainSensors();
+    if (!group || !sensor) return false;
+    for (unsigned ci = 0; ci < group->getChildrenNumber(); ++ci) {
+        if (group->getChild(ci) == sensor) return true;
+    }
+    return false;
 }
 
 QWidget* ModelViewerWidget::getMainWindow() { return app_; }
@@ -345,7 +375,7 @@ void ModelViewerWidget::ChangePointSize(const float delta) {
     point_size_ = std::max(kMinPointSize, std::min(kMaxPointSize, point_size_));
 
     StartRender();
-    if (cloud_sparse_) {
+    if (sparseCloud()) {
         cloud_sparse_->setPointSize(static_cast<unsigned>(point_size_));
     }
     EndRender(false);
@@ -391,7 +421,7 @@ void ModelViewerWidget::SelectObject(ccHObject* entity,
     }
 
     ccHObject* obj = entity;
-    if (!main_sensors_ || !cloud_sparse_) {
+    if (!mainSensors() || !sparseCloud()) {
         return;
     } else {
         if (obj->isKindOf(CV_TYPES::CAMERA_SENSOR)) {
@@ -472,14 +502,15 @@ void ModelViewerWidget::SelectObject(ccHObject* entity,
     EndRender(false);
 
     if (app_) {
+        ccHObject* group = mainSensors();
         if (selected_image_id_ == kInvalidImageId) {
-            app_->db()->expandElement(main_sensors_, false);
+            if (group) app_->db()->expandElement(group, false);
             ccHObject* obj = getSelectedCamera(last_selected_image_id);
             if (obj) {
                 app_->db()->unselectEntity(obj);
             }
         } else {
-            app_->db()->expandElement(main_sensors_, true);
+            if (group) app_->db()->expandElement(group, true);
             ccHObject* obj = getSelectedCamera(selected_image_id_);
             if (obj) {
                 app_->db()->selectEntity(obj);
@@ -558,7 +589,7 @@ void ModelViewerWidget::SetPointSize(const float point_size,
         StartRender();
     }
 
-    if (cloud_sparse_) {
+    if (sparseCloud()) {
         cloud_sparse_->setPointSize(static_cast<unsigned>(point_size_));
     }
 
@@ -647,8 +678,9 @@ void ModelViewerWidget::EndRender(bool autoZoom /* = true*/) {
 }
 
 void ModelViewerWidget::UploadPointData(const bool selection_mode) {
-    if (!cloud_sparse_) {
+    if (!sparseCloud()) {
         cloud_sparse_ = new ccPointCloud("sparseCloud");
+        cloud_sparse_id_ = 0;
         if (!cloud_sparse_) {
             CVLog::Warning(
                     "[ModelViewerWidget::UploadPointData] Not enough memory!");
@@ -825,13 +857,15 @@ void ModelViewerWidget::UploadImageData(const bool selection_mode) {
         ccCameraSensor* sensor = nullptr;
         if (cameraIndex < lastSensorNum) {
             sensor = sensors_[cameraIndex];
-        } else {
-            sensor = new ccCameraSensor();
-            sensors_.push_back(sensor);
+            if (sensor && !sensorAlive(sensor)) sensor = nullptr;
         }
-
         if (!sensor) {
-            return;
+            sensor = new ccCameraSensor();
+            if (cameraIndex < sensors_.size()) {
+                sensors_[cameraIndex] = sensor;
+            } else {
+                sensors_.push_back(sensor);
+            }
         }
 
         sensor->setName(QString::number(image_id));
@@ -966,13 +1000,15 @@ void ModelViewerWidget::UploadMovieGrabberData() {
             ccCameraSensor* sensor = nullptr;
             if (index < lastSensorNum) {
                 sensor = movie_grabber_sensors_[index];
-            } else {
-                sensor = new ccCameraSensor();
-                movie_grabber_sensors_.push_back(sensor);
+                if (sensor && !sensorAlive(sensor)) sensor = nullptr;
             }
-
             if (!sensor) {
-                return;
+                sensor = new ccCameraSensor();
+                if (index < movie_grabber_sensors_.size()) {
+                    movie_grabber_sensors_[index] = sensor;
+                } else {
+                    movie_grabber_sensors_.push_back(sensor);
+                }
             }
 
             sensor->setName(QString::number(image.ImageId()));
@@ -1001,7 +1037,7 @@ void ModelViewerWidget::drawPointCloud(ccPointCloud* cloud) {
     } else {
         if (app_ && !app_->db()->find(static_cast<int>(cloud->getUniqueID()))) {
             app_->addToDB(cloud);
-            cloud->setLocked(true);
+            cloud_sparse_id_ = cloud->getUniqueID();
         }
 
         cloud->setPointSize(static_cast<unsigned>(point_size_));
@@ -1019,9 +1055,9 @@ void ModelViewerWidget::resetPointCloud(ccPointCloud* cloud) {
     if (cloud) {
         cloud->clear();
         if (app_ && app_->db()->find(cloud->getUniqueID())) {
-            cloud->setLocked(false);
             app_->removeFromDB(cloud, false);
         }
+        if (cloud == cloud_sparse_) cloud_sparse_id_ = 0;
     }
 }
 
@@ -1067,9 +1103,9 @@ void ModelViewerWidget::resetLines(geometry::LineSet& lineset) {
 
 void ModelViewerWidget::drawCameraSensors(
         std::vector<ccCameraSensor*>& sensors) {
-    if (!main_sensors_) {
+    if (!mainSensors()) {
         main_sensors_ = new ccHObject("SensorsGroup");
-        main_sensors_->setLocked(true);
+        main_sensors_id_ = 0;
     }
 
     MainWindow::ccHObjectContext objContext;
@@ -1081,7 +1117,6 @@ void ModelViewerWidget::drawCameraSensors(
     for (std::size_t i = 0; i < sensors.size(); ++i) {
         if (!sensors[i]) continue;
         if (main_sensors_ && !main_sensors_->find(sensors[i]->getUniqueID())) {
-            sensors[i]->setLocked(true);
             main_sensors_->addChild(sensors[i]);
         }
         sensors[i]->setVisible(true);
@@ -1101,6 +1136,7 @@ void ModelViewerWidget::drawCameraSensors(
         !app_->db()->find(static_cast<int>(main_sensors_->getUniqueID()))) {
         if (main_sensors_->getChildrenNumber() > 0) {
             app_->addToDB(main_sensors_);
+            main_sensors_id_ = main_sensors_->getUniqueID();
             // just avoid duplicated rendering
             main_sensors_->setRedrawFlagRecursive(false);
         }
@@ -1115,9 +1151,13 @@ void ModelViewerWidget::resetCameraSensors(
 void ModelViewerWidget::clearSensors(std::vector<ccCameraSensor*>& sensors) {
     for (std::size_t i = 0; i < sensors.size(); ++i) {
         if (!sensors[i]) continue;
+        if (!sensorAlive(sensors[i])) {
+            // Already deleted externally; drop without double-free.
+            sensors[i] = nullptr;
+            continue;
+        }
         if (app_ &&
             app_->db()->find(static_cast<int>(sensors[i]->getUniqueID()))) {
-            sensors[i]->setLocked(false);
             if (sensors[i]->isSelected()) {
                 // must unselect this sensor to be deleted,
                 // otherwise will remain in rendering screen?
@@ -1128,12 +1168,12 @@ void ModelViewerWidget::clearSensors(std::vector<ccCameraSensor*>& sensors) {
         sensors[i] = nullptr;
     }
 
-    if (main_sensors_ && main_sensors_->getChildrenNumber() == 0) {
+    if (mainSensors() && main_sensors_->getChildrenNumber() == 0) {
         if (app_ &&
             app_->db()->find(static_cast<int>(main_sensors_->getUniqueID()))) {
-            main_sensors_->setLocked(false);
             app_->removeFromDB(main_sensors_, true);
             main_sensors_ = nullptr;
+            main_sensors_id_ = 0;
         }
     }
 
@@ -1148,6 +1188,10 @@ void ModelViewerWidget::updateSensors(
         std::vector<ccCameraSensor*> preserved;
         for (ccCameraSensor* sensor : sensors) {
             if (!sensor) {
+                continue;
+            }
+            if (!sensorAlive(sensor)) {
+                toBeDeleted.push_back(sensor);
                 continue;
             }
             colmap::image_t sensorId = sensor->getName().toUInt();
@@ -1171,9 +1215,10 @@ void ModelViewerWidget::updateSensors(
 }
 
 ccHObject* ModelViewerWidget::getSelectedCamera(colmap::image_t selected_id) {
-    if (main_sensors_ && main_sensors_->getChildrenNumber() > 0) {
-        for (unsigned ci = 0; ci != main_sensors_->getChildrenNumber(); ++ci) {
-            ccHObject* obj = main_sensors_->getChild(ci);
+    ccHObject* group = mainSensors();
+    if (group && group->getChildrenNumber() > 0) {
+        for (unsigned ci = 0; ci != group->getChildrenNumber(); ++ci) {
+            ccHObject* obj = group->getChild(ci);
             if (obj->getName().toUInt() == selected_id) {
                 return obj;
             }

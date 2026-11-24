@@ -899,6 +899,12 @@ public:
      *  @return View ID string or empty if not found
      */
     std::string getIdByActor(vtkProp* actor);
+    // Exact selection ownership; never infer identity from geometry sizes.
+    std::string selectionSourceId(vtkActor* actor, unsigned int blockIndex);
+    bool selectionRepresentation(const std::string& sourceId,
+                                 vtkActor*& actor,
+                                 vtkPolyData*& polyData,
+                                 unsigned int& blockIndex);
     /** Resolve cloud id when HW pick prop differs from registered actor
      * pointer. */
     std::string getIdByPolyData(vtkPolyData* polyData);
@@ -1311,6 +1317,9 @@ public:
      */
     bool IsCameraOrientationWidgetShown() const;
 
+    /// Access the orientation gizmo (nullptr until first toggled on).
+    vtkCameraOrientationWidget* getCameraOrientationWidget() const;
+
     /// Hit-test the Camera Orientation Widget in widget pixel coordinates.
     bool IsMouseOverCameraOrientationWidget(int qtX, int qtY) const;
 
@@ -1664,6 +1673,19 @@ protected:
 
     // Camera Orientation Widget (ParaView-style)
     vtkSmartPointer<vtkCameraOrientationWidget> m_cameraOrientationWidget;
+    // Zoom snapshot for orientation-widget clicks: VTK's EndSelectAction
+    // calls ParentRenderer->ResetCamera() after orienting the camera, which
+    // refits the scene and destroys the user's zoom. The snapshot is taken
+    // on StartInteractionEvent and restored on EndInteractionEvent so gizmo
+    // clicks preserve zoom like the view presets (see
+    // onOrientWidgetInteraction).
+    double m_orientWidgetZoomFocal[3] = {0.0, 0.0, 0.0};
+    double m_orientWidgetZoomDistance = 1.0;
+    double m_orientWidgetZoomParallelScale = 1.0;
+    bool m_orientWidgetZoomValid = false;
+    void onOrientWidgetInteraction(vtkObject* caller,
+                                   unsigned long eventId,
+                                   void* callData);
 
     // Camera undo / redo stack
     static constexpr int CAMERA_STACK_DEPTH = 20;

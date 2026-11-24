@@ -151,21 +151,15 @@ cpp_test_only() {
     echo "Running C++ Unit Tests"
     echo "======================================================================"
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
+    # Device-capable runners opt into a capability, never a module-name list.
+    local test_profile=ci
+    if [[ "${docker_run}" == *"--gpus all"* ]]; then
+        test_profile=ci,gpu
+    fi
     ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c " \
         export BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
      && cd build \
-     && ./bin/cloudviewer_test/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
-     && source ../util/ci_utils.sh \
-     && run_qpythonruntime_tests . native \
-     && cmake --build . --target reconstruction_oiio_parity_gate -j2 \
-     && cmake --build . --target reconstruction_camera_rig_parity_gate -j2 \
-     && if cmake -L -N . | grep -q '^RECONSTRUCTION_CASPAR_ENABLED:BOOL=ON$'; then \
-            cmake --build . --target reconstruction_caspar_parity_gate -j2; \
-        fi \
-     && cmake --build . --target reconstruction_cpp_tests_gate -j2 \
-     && if test -f bin/libAICore.so; then \
-            python ../util/check_aicore_runtime.py bin/libAICore.so; \
-        fi \
+     && GTEST_FILTER='-*Reduce*Sum*' GTEST_SHUFFLE=1 cmake -DBUILD_DIR=. -DCONFIG=Release -DPROFILE=${test_profile} -P ../tests/Run.cmake \
     "
 
     # Python unit tests (whole python/test tree). The CI image installs the
@@ -212,19 +206,14 @@ cpp_python_command_tools_test() {
     echo "Running C++ Unit Tests"
     echo "======================================================================"
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
+    # Device-capable runners opt into a capability, never a module-name list.
+    local test_profile=ci
+    if [[ "${docker_run}" == *"--gpus all"* ]]; then
+        test_profile=ci,gpu
+    fi
     ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c " \
         cd build \
-     && ./bin/cloudviewer_test/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
-     && source ../util/ci_utils.sh \
-     && run_qpythonruntime_tests . native \
-     && cmake --build . --target reconstruction_oiio_parity_gate -j2 \
-     && cmake --build . --target reconstruction_camera_rig_parity_gate -j2 \
-     && if cmake -L -N . | grep -q '^RECONSTRUCTION_CASPAR_ENABLED:BOOL=ON$'; then \
-            cmake --build . --target reconstruction_caspar_parity_gate -j2; \
-        fi \
-     && if test -f bin/libAICore.so; then \
-            python ../util/check_aicore_runtime.py bin/libAICore.so; \
-        fi \
+     && GTEST_FILTER='-*Reduce*Sum*' GTEST_SHUFFLE=1 cmake -DBUILD_DIR=. -DCONFIG=Release -DPROFILE=${test_profile} -P ../tests/Run.cmake \
     "
 
     # Python test (shared whole-tree runner; the wheel images install the

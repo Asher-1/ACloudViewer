@@ -7,6 +7,7 @@
 
 #include "qInstantMesh.h"
 
+#include <ecvAICoreUiHelper.h>
 #include <ecvMainAppInterface.h>
 #include <ecvMaterialSet.h>
 #include <ecvMesh.h>
@@ -105,6 +106,7 @@ void qInstantMesh::onNewAction() {
     if (!m_dialog) {
         m_dialog = new InstantMeshDialog(
                 static_cast<QWidget*>(m_app->getMainWindow()));
+        ecvAICoreUi::bindDialogAction(m_action, m_dialog);
         m_dialog->setWindowIcon(
                 QIcon(":/CC/plugin/qInstantMesh/images/qInstantMesh.svg"));
         m_dialog->setAppInterface(m_app);

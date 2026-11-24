@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -19,10 +21,6 @@
 #include "PointCloudDatasetImporter.h"
 
 namespace {
-bool check(bool value, const QString& message) {
-    if (!value) std::fprintf(stderr, "%s\n", qPrintable(message));
-    return value;
-}
 
 QByteArray read(const QString& path) {
     QFile file(path);
@@ -35,14 +33,13 @@ bool write(const QString& path, const QByteArray& bytes) {
 }
 }  // namespace
 
-int main(int argc, char** argv) {
-    QCoreApplication app(argc, argv);
-    if (argc == 4 && app.arguments().at(1) == QStringLiteral("--read")) {
+int readDatasetProbe(int argc, char** argv) {
+    const auto arguments = QCoreApplication::arguments();
+    if (argc == 4 && arguments.at(1) == QStringLiteral("--read")) {
         PointCloudDatasetImportResult result;
         QString error;
-        if (!importPointCloudDataset(app.arguments().at(2),
-                                     app.arguments().at(3), &result, {},
-                                     &error)) {
+        if (!importPointCloudDataset(arguments.at(2), arguments.at(3), &result,
+                                     {}, &error)) {
             std::fprintf(stderr, "%s\n", qPrintable(error));
             return 1;
         }
@@ -70,17 +67,21 @@ int main(int argc, char** argv) {
         std::fwrite(json.constData(), 1, size_t(json.size()), stdout);
         return 0;
     }
+    return 0;
+}
+
+TEST(PointCloudDatasetImporter, RoundTripFormatsAndAtomicApplyRollback) {
     QTemporaryDir scratch;
-    if (!check(scratch.isValid(),
-               QStringLiteral("temporary folder unavailable")))
-        return 1;
+    ASSERT_TRUE(scratch.isValid())
+            << (QStringLiteral("temporary folder unavailable")).toStdString();
     const bool fixture =
-            argc == 3 && app.arguments().at(1) == QStringLiteral("--fixture");
-    QDir temporary(fixture ? QFileInfo(app.arguments().at(2)).absoluteFilePath()
+            QCoreApplication::arguments().size() == 3 &&
+            QCoreApplication::arguments().at(1) == QStringLiteral("--fixture");
+    QDir temporary(fixture ? QFileInfo(QCoreApplication::arguments().at(2))
+                                     .absoluteFilePath()
                            : scratch.path());
-    if (!check(QDir().mkpath(temporary.path()),
-               QStringLiteral("fixture folder unavailable")))
-        return 1;
+    ASSERT_TRUE(QDir().mkpath(temporary.path()))
+            << (QStringLiteral("fixture folder unavailable")).toStdString();
 
     PointCloudFrame frame;
     frame.path = temporary.filePath(QStringLiteral("frame_01.bin"));
@@ -108,40 +109,40 @@ int main(int argc, char** argv) {
         options.outputPath =
                 temporary.filePath(format + QStringLiteral(".zip"));
         QString error;
-        if (!check(exportPointCloudDataset(options, {}, &error),
-                   QStringLiteral("%1 export failed: %2").arg(format, error)))
-            return 1;
+        ASSERT_TRUE(exportPointCloudDataset(options, {}, &error))
+                << (QStringLiteral("%1 export failed: %2").arg(format, error))
+                           .toStdString();
         PointCloudDatasetImportResult imported;
         PointCloudCuboid expectedCuboid = importedCuboid;
         if (format == QStringLiteral("kitti_raw"))
             expectedCuboid.locked = false;
         int lastProgress = -1;
-        if (!check(importPointCloudDataset(
-                           options.outputPath, format, &imported,
-                           [&](int current, int total) {
-                               if (total <= 0 || current < lastProgress ||
-                                   current > total)
-                                   return false;
-                               lastProgress = current;
-                               return true;
-                           },
-                           &error),
-                   QStringLiteral("%1 import failed: %2").arg(format, error)) ||
-            !check(imported.classes.size() == 1 &&
-                           imported.classes.at(0).name == QStringLiteral("car"),
-                   QStringLiteral("%1 class mismatch").arg(format)) ||
-            !check(imported.frames.size() == 1 &&
-                           imported.frames.at(0).name ==
-                                   QStringLiteral("frame_01"),
-                   QStringLiteral("%1 frame mismatch").arg(format)) ||
-            !check(imported.frames.at(0).cuboids.size() == 1 &&
-                           imported.frames.at(0).cuboids.at(0) ==
-                                   expectedCuboid,
-                   QStringLiteral("%1 cuboid mismatch: %2")
-                           .arg(format, error)) ||
-            !check(lastProgress >= 1,
-                   QStringLiteral("%1 progress missing").arg(format)))
-            return 1;
+        ASSERT_TRUE(importPointCloudDataset(
+                options.outputPath, format, &imported,
+                [&](int current, int total) {
+                    if (total <= 0 || current < lastProgress || current > total)
+                        return false;
+                    lastProgress = current;
+                    return true;
+                },
+                &error))
+                << (QStringLiteral("%1 import failed: %2").arg(format, error))
+                           .toStdString();
+        ASSERT_TRUE(imported.classes.size() == 1 &&
+                    imported.classes.at(0).name == QStringLiteral("car"))
+                << (QStringLiteral("%1 class mismatch").arg(format))
+                           .toStdString();
+        ASSERT_TRUE(imported.frames.size() == 1 &&
+                    imported.frames.at(0).name == QStringLiteral("frame_01"))
+                << (QStringLiteral("%1 frame mismatch").arg(format))
+                           .toStdString();
+        ASSERT_TRUE(imported.frames.at(0).cuboids.size() == 1 &&
+                    imported.frames.at(0).cuboids.at(0) == expectedCuboid)
+                << (QStringLiteral("%1 cuboid mismatch: %2").arg(format, error))
+                           .toStdString();
+        ASSERT_TRUE(lastProgress >= 1)
+                << (QStringLiteral("%1 progress missing").arg(format))
+                           .toStdString();
     }
 
     PointCloudDatasetExportOptions cancelledOptions;
@@ -151,18 +152,19 @@ int main(int argc, char** argv) {
     cancelledOptions.frames = {frame};
     cancelledOptions.classNames.insert(1, QStringLiteral("car"));
     QString error;
-    if (!check(exportPointCloudDataset(cancelledOptions, {}, &error),
-               QStringLiteral("cancelled fixture export failed: %1")
-                       .arg(error)))
-        return 1;
+    ASSERT_TRUE(exportPointCloudDataset(cancelledOptions, {}, &error))
+            << (QStringLiteral("cancelled fixture export failed: %1")
+                        .arg(error))
+                       .toStdString();
     PointCloudDatasetImportResult imported;
-    if (!check(!importPointCloudDataset(
-                       cancelledOptions.outputPath, cancelledOptions.format,
-                       &imported, [](int, int) { return false; }, &error),
-               QStringLiteral("import cancellation must fail")) ||
-        !check(error.contains(QStringLiteral("cancelled"), Qt::CaseInsensitive),
-               QStringLiteral("import cancellation error missing")))
-        return 1;
+    ASSERT_TRUE(!importPointCloudDataset(
+            cancelledOptions.outputPath, cancelledOptions.format, &imported,
+            [](int, int) { return false; }, &error))
+            << (QStringLiteral("import cancellation must fail")).toStdString();
+    ASSERT_TRUE(
+            error.contains(QStringLiteral("cancelled"), Qt::CaseInsensitive))
+            << (QStringLiteral("import cancellation error missing"))
+                       .toStdString();
 
     const QString labelPath =
             temporary.filePath(QStringLiteral("frame_01.label"));
@@ -172,12 +174,12 @@ int main(int argc, char** argv) {
     PointCloudCuboid oldCuboid = cuboid;
     oldCuboid.classId =
             40;  // Reserve an ID even if it has no class definition.
-    if (!check(write(frame.path, QByteArray("cloud input")) &&
-                       write(labelPath, QByteArray("segmentation input")) &&
-                       savePointCloudCuboids(cuboidPath, frame.path,
-                                             {oldCuboid}, &error),
-               QStringLiteral("import target fixtures failed: %1").arg(error)))
-        return 1;
+    ASSERT_TRUE(
+            write(frame.path, QByteArray("cloud input")) &&
+            write(labelPath, QByteArray("segmentation input")) &&
+            savePointCloudCuboids(cuboidPath, frame.path, {oldCuboid}, &error))
+            << (QStringLiteral("import target fixtures failed: %1").arg(error))
+                       .toStdString();
     const QByteArray beforeCuboids = read(cuboidPath);
     const QByteArray beforeLabels = read(labelPath);
     const QByteArray beforeCloud = read(frame.path);
@@ -198,26 +200,27 @@ int main(int argc, char** argv) {
                                        QJsonObject{{QStringLiteral("classes"),
                                                     segmentation}}}})
                     .toJson();
-    if (!check(write(configPath, beforeConfig),
-               QStringLiteral("class config fixture failed")))
-        return 1;
+    ASSERT_TRUE(write(configPath, beforeConfig))
+            << (QStringLiteral("class config fixture failed")).toStdString();
     const PointCloudDatasetImportTarget target{
             frame.path, labelPath, cuboidPath, {}, false};
     PointCloudDatasetImportPlan plan;
-    if (!check(preparePointCloudDatasetImport(
-                       cancelledOptions.outputPath, QStringLiteral("datumaro"),
-                       {target}, classes, configPath, &plan, {}, &error),
-               QStringLiteral("import preparation failed: %1").arg(error)) ||
-        !check(plan.changes.size() == 2 && plan.targets.size() == 1 &&
-                       plan.classes.size() == 2 && plan.previousObjects == 1 &&
-                       plan.newClasses == 1 &&
-                       plan.targets.at(0).cuboids.at(0).classId == 41,
-               QStringLiteral("class merge must preserve reserved IDs and "
-                              "count replaced objects")) ||
-        !check(read(cuboidPath) == beforeCuboids &&
-                       read(configPath) == beforeConfig,
-               QStringLiteral("preparation must not mutate files")))
-        return 1;
+    ASSERT_TRUE(preparePointCloudDatasetImport(
+            cancelledOptions.outputPath, QStringLiteral("datumaro"), {target},
+            classes, configPath, &plan, {}, &error))
+            << (QStringLiteral("import preparation failed: %1").arg(error))
+                       .toStdString();
+    ASSERT_TRUE(plan.changes.size() == 2 && plan.targets.size() == 1 &&
+                plan.classes.size() == 2 && plan.previousObjects == 1 &&
+                plan.newClasses == 1 &&
+                plan.targets.at(0).cuboids.at(0).classId == 41)
+            << (QStringLiteral("class merge must preserve reserved IDs and "
+                               "count replaced objects"))
+                       .toStdString();
+    ASSERT_TRUE(read(cuboidPath) == beforeCuboids &&
+                read(configPath) == beforeConfig)
+            << (QStringLiteral("preparation must not mutate files"))
+                       .toStdString();
     if (fixture) {
         QJsonArray definitions;
         QJsonArray changes;
@@ -239,92 +242,99 @@ int main(int argc, char** argv) {
                 {QStringLiteral("changes"), changes},
                 {QStringLiteral("previous_objects"), plan.previousObjects},
                 {QStringLiteral("new_classes"), plan.newClasses}};
-        if (!check(write(temporary.filePath(QStringLiteral("cpp-plan.json")),
-                         QJsonDocument(report).toJson()),
-                   QStringLiteral("could not write import-plan fixture")))
-            return 1;
+        ASSERT_TRUE(write(temporary.filePath(QStringLiteral("cpp-plan.json")),
+                          QJsonDocument(report).toJson()))
+                << (QStringLiteral("could not write import-plan fixture"))
+                           .toStdString();
     }
 
     // Cancel after the sidecar has been replaced, then after all replacements.
     for (int cancelAt : {1, 2}) {
-        if (!check(!applyPointCloudDatasetImport(
-                           plan,
-                           [cancelAt](int current, int) {
-                               return current < cancelAt;
-                           },
-                           &error),
-                   QStringLiteral("mid-commit cancellation must fail")) ||
-            !check(read(cuboidPath) == beforeCuboids &&
-                           read(configPath) == beforeConfig &&
-                           read(labelPath) == beforeLabels &&
-                           read(frame.path) == beforeCloud,
-                   QStringLiteral("cancelled import must roll back sidecar and "
-                                  "config")))
-            return 1;
+        ASSERT_TRUE(!applyPointCloudDatasetImport(
+                plan,
+                [cancelAt](int current, int) { return current < cancelAt; },
+                &error))
+                << (QStringLiteral("mid-commit cancellation must fail"))
+                           .toStdString();
+        ASSERT_TRUE(read(cuboidPath) == beforeCuboids &&
+                    read(configPath) == beforeConfig &&
+                    read(labelPath) == beforeLabels &&
+                    read(frame.path) == beforeCloud)
+                << (QStringLiteral(
+                            "cancelled import must roll back sidecar and "
+                            "config"))
+                           .toStdString();
         const QStringList leftovers =
                 QDir(temporary.path())
                         .entryList({QStringLiteral("*.import.*"),
                                     QStringLiteral("*.backup.*")},
                                    QDir::Files | QDir::Hidden);
-        if (!check(leftovers.isEmpty(),
-                   QStringLiteral("cancelled import leaked staged files")))
-            return 1;
+        ASSERT_TRUE(leftovers.isEmpty())
+                << (QStringLiteral("cancelled import leaked staged files"))
+                           .toStdString();
     }
-    if (!check(write(configPath, QByteArray("external edit")),
-               QStringLiteral("external edit fixture failed")) ||
-        !check(!applyPointCloudDatasetImport(plan, {}, &error),
-               QStringLiteral("stale import plan must be rejected")) ||
-        !check(read(cuboidPath) == beforeCuboids &&
-                       read(configPath) == QByteArray("external edit"),
-               QStringLiteral("stale plan must preserve external changes")) ||
-        !check(write(configPath, beforeConfig),
-               QStringLiteral("config restore failed")))
-        return 1;
+    ASSERT_TRUE(write(configPath, QByteArray("external edit")))
+            << (QStringLiteral("external edit fixture failed")).toStdString();
+    ASSERT_TRUE(!applyPointCloudDatasetImport(plan, {}, &error))
+            << (QStringLiteral("stale import plan must be rejected"))
+                       .toStdString();
+    ASSERT_TRUE(read(cuboidPath) == beforeCuboids &&
+                read(configPath) == QByteArray("external edit"))
+            << (QStringLiteral("stale plan must preserve external changes"))
+                       .toStdString();
+    ASSERT_TRUE(write(configPath, beforeConfig))
+            << (QStringLiteral("config restore failed")).toStdString();
     bool editedDuringCommit = false;
-    if (!check(!applyPointCloudDatasetImport(
-                       plan,
-                       [&](int current, int) {
-                           if (current == 1 && !editedDuringCommit)
-                               editedDuringCommit =
-                                       write(configPath,
-                                             QByteArray("concurrent edit"));
-                           return true;
-                       },
-                       &error),
-               QStringLiteral("concurrent file changes must be rejected")) ||
-        !check(editedDuringCommit && read(cuboidPath) == beforeCuboids &&
-                       read(configPath) == QByteArray("concurrent edit"),
-               QStringLiteral("concurrent edit must survive while prior "
-                              "sidecar is rolled back")) ||
-        !check(write(configPath, beforeConfig),
-               QStringLiteral("concurrent config restore failed")) ||
-        !check(applyPointCloudDatasetImport(plan, {}, &error),
-               QStringLiteral("import apply failed: %1").arg(error)))
-        return 1;
+    ASSERT_TRUE(!applyPointCloudDatasetImport(
+            plan,
+            [&](int current, int) {
+                if (current == 1 && !editedDuringCommit)
+                    editedDuringCommit =
+                            write(configPath, QByteArray("concurrent edit"));
+                return true;
+            },
+            &error))
+            << (QStringLiteral("concurrent file changes must be rejected"))
+                       .toStdString();
+    ASSERT_TRUE(editedDuringCommit && read(cuboidPath) == beforeCuboids &&
+                read(configPath) == QByteArray("concurrent edit"))
+            << (QStringLiteral("concurrent edit must survive while prior "
+                               "sidecar is rolled back"))
+                       .toStdString();
+    ASSERT_TRUE(write(configPath, beforeConfig))
+            << (QStringLiteral("concurrent config restore failed"))
+                       .toStdString();
+    ASSERT_TRUE(applyPointCloudDatasetImport(plan, {}, &error))
+            << (QStringLiteral("import apply failed: %1").arg(error))
+                       .toStdString();
     QVector<PointCloudCuboid> loaded;
     const QJsonObject savedConfig =
             QJsonDocument::fromJson(read(configPath)).object();
-    if (!check(loadPointCloudCuboids(cuboidPath, frame.path, &loaded, &error) &&
-                       loaded == plan.targets.at(0).cuboids,
-               QStringLiteral(
-                       "applied sidecar must load with remapped classes")) ||
-        !check(savedConfig.value(QStringLiteral("segmentation"))
-                               .toObject()
-                               .value(QStringLiteral("classes"))
-                               .toArray() == segmentation,
-               QStringLiteral("detection import must preserve segmentation "
-                              "classes")) ||
-        !check(savedConfig.value(QStringLiteral("detection"))
-                               .toObject()
-                               .value(QStringLiteral("classes"))
-                               .toArray()
-                               .size() == 2,
-               QStringLiteral("grouped detection class config missing")) ||
-        !check(read(labelPath) == beforeLabels &&
-                       read(frame.path) == beforeCloud,
-               QStringLiteral("import must preserve point payload and "
-                              "segmentation labels")))
-        return 1;
+    ASSERT_TRUE(
+            loadPointCloudCuboids(cuboidPath, frame.path, &loaded, &error) &&
+            loaded == plan.targets.at(0).cuboids)
+            << (QStringLiteral(
+                        "applied sidecar must load with remapped classes"))
+                       .toStdString();
+    ASSERT_TRUE(savedConfig.value(QStringLiteral("segmentation"))
+                        .toObject()
+                        .value(QStringLiteral("classes"))
+                        .toArray() == segmentation)
+            << (QStringLiteral("detection import must preserve segmentation "
+                               "classes"))
+                       .toStdString();
+    ASSERT_TRUE(savedConfig.value(QStringLiteral("detection"))
+                        .toObject()
+                        .value(QStringLiteral("classes"))
+                        .toArray()
+                        .size() == 2)
+            << (QStringLiteral("grouped detection class config missing"))
+                       .toStdString();
+    ASSERT_TRUE(read(labelPath) == beforeLabels &&
+                read(frame.path) == beforeCloud)
+            << (QStringLiteral("import must preserve point payload and "
+                               "segmentation labels"))
+                       .toStdString();
 
     // A plan with no existing destinations also removes newly created files on
     // rollback.
@@ -333,21 +343,21 @@ int main(int argc, char** argv) {
             temporary.filePath(QStringLiteral("new.cuboids.json"));
     const QString newConfig = temporary.filePath(QStringLiteral("new.json"));
     PointCloudDatasetImportPlan newPlan;
-    if (!check(preparePointCloudDatasetImport(
-                       cancelledOptions.outputPath, QStringLiteral("datumaro"),
-                       {newTarget}, classes, newConfig, &newPlan, {}, &error),
-               QStringLiteral("new destination preparation failed: %1")
-                       .arg(error)) ||
-        !check(!applyPointCloudDatasetImport(
-                       newPlan,
-                       [](int current, int total) { return current < total; },
-                       &error),
-               QStringLiteral("final cancellation must fail")) ||
-        !check(!QFile::exists(newTarget.cuboidPath) &&
-                       !QFile::exists(newConfig),
-               QStringLiteral(
-                       "rollback must remove newly created import files")))
-        return 1;
+    ASSERT_TRUE(preparePointCloudDatasetImport(
+            cancelledOptions.outputPath, QStringLiteral("datumaro"),
+            {newTarget}, classes, newConfig, &newPlan, {}, &error))
+            << (QStringLiteral("new destination preparation failed: %1")
+                        .arg(error))
+                       .toStdString();
+    ASSERT_TRUE(!applyPointCloudDatasetImport(
+            newPlan, [](int current, int total) { return current < total; },
+            &error))
+            << (QStringLiteral("final cancellation must fail")).toStdString();
+    ASSERT_TRUE(!QFile::exists(newTarget.cuboidPath) &&
+                !QFile::exists(newConfig))
+            << (QStringLiteral(
+                        "rollback must remove newly created import files"))
+                       .toStdString();
 
     auto duplicateClasses = classes;
     duplicateClasses.append(
@@ -356,63 +366,75 @@ int main(int argc, char** argv) {
     mismatch.path = temporary.filePath(QStringLiteral("unrelated.bin"));
     auto ambiguous = target;
     ambiguous.path = temporary.filePath(QStringLiteral("another/frame_01.ply"));
-    if (!check(!preparePointCloudDatasetImport(
-                       cancelledOptions.outputPath, QStringLiteral("datumaro"),
-                       {target}, duplicateClasses, configPath, &newPlan, {},
-                       &error),
-               QStringLiteral(
-                       "duplicate current class names must be rejected")) ||
-        !check(!preparePointCloudDatasetImport(
-                       cancelledOptions.outputPath, QStringLiteral("datumaro"),
-                       {mismatch}, classes, configPath, &newPlan, {}, &error),
-               QStringLiteral("unmatched frame must be rejected")) ||
-        !check(!preparePointCloudDatasetImport(
-                       cancelledOptions.outputPath, QStringLiteral("datumaro"),
-                       {target, ambiguous}, classes, configPath, &newPlan, {},
-                       &error),
-               QStringLiteral("ambiguous frame stem must be rejected")) ||
-        !check(!preparePointCloudDatasetImport(
-                       cancelledOptions.outputPath, QStringLiteral("datumaro"),
-                       {target}, classes, target.cuboidPath, &newPlan, {},
-                       &error),
-               QStringLiteral("duplicate sidecar/config destination must be "
-                              "rejected")) ||
-        !check(!preparePointCloudDatasetImport(
-                       cancelledOptions.outputPath, QStringLiteral("datumaro"),
-                       {target}, classes, configPath, &newPlan,
-                       [](int, int) { return false; }, &error),
-               QStringLiteral("preparation cancellation must fail")))
-        return 1;
+    ASSERT_TRUE(!preparePointCloudDatasetImport(
+            cancelledOptions.outputPath, QStringLiteral("datumaro"), {target},
+            duplicateClasses, configPath, &newPlan, {}, &error))
+            << (QStringLiteral(
+                        "duplicate current class names must be rejected"))
+                       .toStdString();
+    ASSERT_TRUE(!preparePointCloudDatasetImport(
+            cancelledOptions.outputPath, QStringLiteral("datumaro"), {mismatch},
+            classes, configPath, &newPlan, {}, &error))
+            << (QStringLiteral("unmatched frame must be rejected"))
+                       .toStdString();
+    ASSERT_TRUE(!preparePointCloudDatasetImport(
+            cancelledOptions.outputPath, QStringLiteral("datumaro"),
+            {target, ambiguous}, classes, configPath, &newPlan, {}, &error))
+            << (QStringLiteral("ambiguous frame stem must be rejected"))
+                       .toStdString();
+    ASSERT_TRUE(!preparePointCloudDatasetImport(
+            cancelledOptions.outputPath, QStringLiteral("datumaro"), {target},
+            classes, target.cuboidPath, &newPlan, {}, &error))
+            << (QStringLiteral("duplicate sidecar/config destination must be "
+                               "rejected"))
+                       .toStdString();
+    ASSERT_TRUE(!preparePointCloudDatasetImport(
+            cancelledOptions.outputPath, QStringLiteral("datumaro"), {target},
+            classes, configPath, &newPlan, [](int, int) { return false; },
+            &error))
+            << (QStringLiteral("preparation cancellation must fail"))
+                       .toStdString();
 
     auto knownClasses = classes;
     knownClasses.append({5, QStringLiteral("car"), QColor(Qt::green)});
-    if (!check(preparePointCloudDatasetImport(
-                       cancelledOptions.outputPath, QStringLiteral("datumaro"),
-                       {target}, knownClasses, QString(), &newPlan, {}, &error),
-               QStringLiteral("existing named class preparation failed: %1")
-                       .arg(error)) ||
-        !check(newPlan.newClasses == 0 &&
-                       newPlan.targets.at(0).cuboids.at(0).classId == 5,
-               QStringLiteral("matching class name must reuse its current ID")))
-        return 1;
+    ASSERT_TRUE(preparePointCloudDatasetImport(
+            cancelledOptions.outputPath, QStringLiteral("datumaro"), {target},
+            knownClasses, QString(), &newPlan, {}, &error))
+            << (QStringLiteral("existing named class preparation failed: %1")
+                        .arg(error))
+                       .toStdString();
+    ASSERT_TRUE(newPlan.newClasses == 0 &&
+                newPlan.targets.at(0).cuboids.at(0).classId == 5)
+            << (QStringLiteral("matching class name must reuse its current ID"))
+                       .toStdString();
     QByteArray corrupted = read(cancelledOptions.outputPath);
     const int central = corrupted.indexOf(QByteArray("PK\001\002", 4));
-    if (!check(central >= 0, QStringLiteral("ZIP central entry missing")))
-        return 1;
+    ASSERT_TRUE(central >= 0)
+            << (QStringLiteral("ZIP central entry missing")).toStdString();
     corrupted[central + 16] = char(quint8(corrupted.at(central + 16)) ^ 1);
     const QString corruptedPath =
             temporary.filePath(QStringLiteral("corrupted.zip"));
-    if (!check(write(corruptedPath, corrupted),
-               QStringLiteral("corrupted ZIP fixture failed")) ||
-        !check(!importPointCloudDataset(corruptedPath,
-                                        QStringLiteral("datumaro"), &imported,
-                                        {}, &error) &&
-                       error.contains(QStringLiteral("checksum")),
-               QStringLiteral("corrupted ZIP checksum must be rejected")))
-        return 1;
+    ASSERT_TRUE(write(corruptedPath, corrupted))
+            << (QStringLiteral("corrupted ZIP fixture failed")).toStdString();
+    ASSERT_TRUE(!importPointCloudDataset(corruptedPath,
+                                         QStringLiteral("datumaro"), &imported,
+                                         {}, &error) &&
+                error.contains(QStringLiteral("checksum")))
+            << (QStringLiteral("corrupted ZIP checksum must be rejected"))
+                       .toStdString();
+}
 
-    std::puts(
-            "PASS point-cloud Datumaro/KITTI/Sly import, frame/class merge, "
-            "atomic apply and rollback");
-    return 0;
+int main(int argc, char** argv) {
+    QCoreApplication app(argc, argv);
+    if (argc == 4 && app.arguments().at(1) == "--read")
+        return readDatasetProbe(argc, argv);
+    const bool fixture = argc == 3 && app.arguments().at(1) == "--fixture";
+    if (fixture) {
+        // Preserve the fixture generator command while the same assertions run
+        // under GoogleTest. Fixture consumers read files, not test-runner text.
+        int testArgc = 1;
+        ::testing::InitGoogleTest(&testArgc, argv);
+    } else
+        ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

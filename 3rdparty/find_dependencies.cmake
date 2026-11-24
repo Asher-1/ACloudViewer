@@ -715,11 +715,14 @@ function(import_shared_3rdparty_library name ext_target)
                 )
                 message(STATUS "install_name_tool -id @rpath/${library_filename} ${arg_LIB_DIR}/${library_filename}")
             else()
-                # deploy for debugging
+                # deploy for debugging: under DT_SONAME, never the ".so" symlink
                 add_custom_command(TARGET ${ext_target}
                     POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E
-                    copy_if_different ${arg_LIB_DIR}/${library_filename} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
+                    COMMAND ${CMAKE_COMMAND}
+                        -DLIBRARY=${arg_LIB_DIR}/${library_filename}
+                        -DDESTINATION_DIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                        -DREADELF=${CMAKE_READELF}
+                        -P ${CloudViewer_3RDPARTY_DIR}/CMake/DeploySharedLibrary.cmake
                 )
             endif()
 
@@ -747,7 +750,7 @@ function(import_shared_3rdparty_library name ext_target)
 endfunction()
 
 function(copy_shared_library ext_target)
-    cmake_parse_arguments(arg "PUBLIC;HEADER" "LIB_DIR" "LIBRARIES;SUFFIX" ${ARGN})
+    cmake_parse_arguments(arg "PUBLIC;HEADER" "LIB_DIR" "LIBRARIES" ${ARGN})
 
     if (arg_UNPARSED_ARGUMENTS)
         message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
@@ -755,10 +758,6 @@ function(copy_shared_library ext_target)
     endif ()
     if (NOT arg_LIB_DIR)
         set(arg_LIB_DIR "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
-    endif ()
-
-    if (NOT arg_SUFFIX)
-        set(arg_SUFFIX "")
     endif ()
 
     if (arg_LIBRARIES)
@@ -772,12 +771,15 @@ function(copy_shared_library ext_target)
                     COMMAND ${CMAKE_COMMAND} -E
                     copy_if_different ${arg_LIB_DIR}/${library_filename} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/${library_filename}"
                 )
-            elseif(arg_SUFFIX)
-                set(library_filename ${library_filename}${arg_SUFFIX})
-                    add_custom_command(TARGET ${ext_target}
+            else()
+                # deploy under DT_SONAME, never the ".so" symlink
+                add_custom_command(TARGET ${ext_target}
                     POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E
-                    copy_if_different ${arg_LIB_DIR}/${library_filename} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${library_filename}"
+                    COMMAND ${CMAKE_COMMAND}
+                        -DLIBRARY=${arg_LIB_DIR}/${library_filename}
+                        -DDESTINATION_DIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                        -DREADELF=${CMAKE_READELF}
+                        -P ${CloudViewer_3RDPARTY_DIR}/CMake/DeploySharedLibrary.cmake
                 )
             endif()
         endforeach ()
@@ -1616,31 +1618,29 @@ if(WITH_MINIZIP)
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_minizip)
 endif()
 
-# Googletest
-if (BUILD_UNIT_TESTS)
-    if (USE_SYSTEM_GOOGLETEST)
-        find_package_3rdparty_library(3rdparty_googletest
-                PACKAGE GTest
-                TARGETS GTest::gmock
-                )
-        if(NOT 3rdparty_googletest_FOUND)
+# GoogleTest is shared by every first-party test configuration. Keep the
+# historical interface target for existing suites, with one compiled framework.
+if(BUILD_UNIT_TESTS OR AICore_BUILD_TESTS OR VTKENGINE_BUILD_TESTS)
+    if(USE_SYSTEM_GOOGLETEST)
+        find_package(GTest QUIET)
+        if(NOT TARGET GTest::gtest OR NOT TARGET GTest::gtest_main OR
+           NOT TARGET GTest::gmock)
             set(USE_SYSTEM_GOOGLETEST OFF)
         endif()
-    endif ()
-    if (NOT USE_SYSTEM_GOOGLETEST)
+    endif()
+    if(NOT USE_SYSTEM_GOOGLETEST)
         include(${CloudViewer_3RDPARTY_DIR}/googletest/googletest.cmake)
-        build_3rdparty_library(3rdparty_googletest DIRECTORY ${GOOGLETEST_SOURCE_DIR}
-            SOURCES
-                googletest/src/gtest-all.cc
-                googlemock/src/gmock-all.cc
-            INCLUDE_DIRS
-                googletest/include/
-                googletest/
-                googlemock/include/
-                googlemock/
-        )
-    endif ()
-endif ()
+    else()
+        foreach(component gtest gtest_main gmock)
+            if(NOT TARGET ${component})
+                add_library(${component} ALIAS GTest::${component})
+            endif()
+        endforeach()
+    endif()
+    add_library(3rdparty_googletest INTERFACE)
+    target_link_libraries(3rdparty_googletest INTERFACE gtest gmock)
+    add_library(${PROJECT_NAME}::3rdparty_googletest ALIAS 3rdparty_googletest)
+endif()
 
 # Google benchmark
 if (BUILD_BENCHMARKS)

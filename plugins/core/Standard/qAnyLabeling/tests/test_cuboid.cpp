@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <QApplication>
 #include <QFile>
 #include <QJsonDocument>
@@ -17,7 +19,7 @@
 
 namespace {
 bool check(bool condition, const char* message) {
-    if (!condition) std::fprintf(stderr, "%s\n", message);
+    EXPECT_TRUE(condition) << message;
     return condition;
 }
 
@@ -318,10 +320,18 @@ bool interactions() {
 }
 }  // namespace
 
-int main(int argc, char** argv) {
+TEST(CuboidTest, CanvasInteractions) {
+    int argc = 1;
+    char name[] = "test_qanylabeling_cuboid";
+    char* argv[] = {name, nullptr};
     QApplication app(argc, argv);
+    ASSERT_TRUE(interactions());
+}
+
+int main(int argc, char** argv) {
     if (argc == 3 && QString::fromLocal8Bit(argv[1]) ==
                              QStringLiteral("--upstream-reference"))
         return upstreamReference(QString::fromLocal8Bit(argv[2])) ? 0 : 1;
-    return interactions() ? 0 : 1;
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

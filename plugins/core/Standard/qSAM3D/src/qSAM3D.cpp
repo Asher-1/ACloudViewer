@@ -8,6 +8,7 @@
 #include "qSAM3D.h"
 
 #include <FileIOFilter.h>
+#include <ecvAICoreUiHelper.h>
 #include <ecvGLMatrix.h>
 #include <ecvGlobalShiftManager.h>
 #include <ecvImage.h>
@@ -116,6 +117,7 @@ void qSAM3D::showDialog() {
     if (!m_dialog) {
         m_dialog =
                 new Sam3dDialog(static_cast<QWidget*>(m_app->getMainWindow()));
+        ecvAICoreUi::bindDialogAction(m_action, m_dialog);
         m_dialog->setAppInterface(m_app);
         connect(m_dialog, &Sam3dDialog::runRequested, this,
                 &qSAM3D::executeTask);

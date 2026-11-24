@@ -355,11 +355,6 @@ void VideoTab::setupUi() {
     m_modelCombo->setObjectName(QStringLiteral("SAM3VideoModel"));
     m_modelCombo->setMinimumWidth(ecvAICoreUi::dpiScaled(240));
     m_loadBtn = new QPushButton(tr("Load"));
-    m_loadBtn->setStyleSheet(
-            "QPushButton { background: #00897b; color: white; font-weight: "
-            "bold;"
-            "  border: none; border-radius: 4px; padding: 5px 14px; }"
-            "QPushButton:hover { background: #00796b; }");
     // No manual Load step: the model loads automatically on first use
     // (Play / Step / Reset / annotate), matching upstream main_video.cpp.
     // The button is kept hidden for the Browse fallback in onLoadModel().

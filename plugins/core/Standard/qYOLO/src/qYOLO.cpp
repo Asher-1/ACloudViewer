@@ -7,6 +7,7 @@
 
 #include "qYOLO.h"
 
+#include <ecvAICoreUiHelper.h>
 #include <ecvCommandLineInterface.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
@@ -211,6 +212,7 @@ void qYOLO::showDialog() {
     if (!m_dialog) {
         m_dialog =
                 new YOLODialog(static_cast<QWidget*>(m_app->getMainWindow()));
+        ecvAICoreUi::bindDialogAction(m_action, m_dialog);
         m_dialog->setAppInterface(m_app);
         connect(m_dialog, &YOLODialog::runRequested, this, &qYOLO::executeTask);
         connect(m_dialog, &YOLODialog::cancelRequested, this,

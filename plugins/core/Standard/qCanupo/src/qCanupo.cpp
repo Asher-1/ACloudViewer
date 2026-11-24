@@ -70,6 +70,7 @@ QList<QAction*> qCanupoPlugin::getActions() {
 
     if (!m_trainAction) {
         m_trainAction = new QAction(tr("Train classifier"), this);
+        m_trainAction->setObjectName("trainClassifier");
         m_trainAction->setToolTip(tr("Train classifier"));
         m_trainAction->setIcon(QIcon(QString::fromUtf8(
                 ":/CC/plugin/qCanupoPlugin/images/iconCreate.png")));
@@ -80,6 +81,7 @@ QList<QAction*> qCanupoPlugin::getActions() {
 
     if (!m_classifyAction) {
         m_classifyAction = new QAction(tr("Classify"), this);
+        m_classifyAction->setObjectName("classify");
         m_classifyAction->setToolTip(tr("Classify cloud"));
         m_classifyAction->setIcon(QIcon(QString::fromUtf8(
                 ":/CC/plugin/qCanupoPlugin/images/iconClassify.png")));

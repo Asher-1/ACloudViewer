@@ -723,6 +723,25 @@ Disable problematic plugins:
 
    git submodule update --init --recursive --force
 
+Running C++ Tests
+-----------------
+
+After configuring the normal platform options, enable tests and use the root
+entry point from the repository root:
+
+.. code-block:: bash
+
+   cmake -S . -B build_app -DBUILD_UNIT_TESTS=ON
+   cmake -DBUILD_DIR=build_app -DCONFIG=Release -DJOBS=4 -P tests/Run.cmake
+
+This builds prerequisites and runs the enabled first-party headless suites.
+GoogleTest supplies C++ unit assertions; modules retain their source ownership.
+Select ``-DPROFILE=graphics``, ``gpu``, ``model`` or ``all`` explicitly; profiles
+such as ``ci,gpu`` select a union. AICore suites also need ``AICore_BUILD_TESTS``;
+whitebox suites need ``AICore_BUILD_WHITEBOX_TESTS``. Python/package tests and
+strict real-model accuracy/performance validation retain separate gates.
+See `the unified testing contract <https://github.com/Asher-1/ACloudViewer/blob/main/tests/README.md>`_.
+
 Platform-Specific Notes
 -----------------------
 

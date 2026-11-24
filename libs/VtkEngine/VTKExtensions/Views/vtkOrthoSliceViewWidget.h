@@ -39,6 +39,7 @@ class QSlider;
 class QSpinBox;
 class QVTKOpenGLNativeWidget;
 class vtkRenderer;
+class vtkObject;
 class vtkGenericOpenGLRenderWindow;
 class vtkProp;
 class vtkCameraOrientationWidget;
@@ -130,6 +131,9 @@ private:
     void activate3DInteractor();
     bool forwardMouseToInteractor(QMouseEvent* me, QEvent::Type eventType);
     bool isInCameraOrientationWidget(const QPoint& pos) const;
+    void onOrientWidgetInteraction(vtkObject* caller,
+                                   unsigned long eventId,
+                                   void* callData);
     void mapWidgetToRendererDisplay(const QPoint& pos,
                                     vtkRenderer* ren,
                                     double outXY[2]) const;

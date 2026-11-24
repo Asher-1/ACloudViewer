@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <QCoreApplication>
 #include <QFile>
 #include <QProcess>
@@ -15,19 +17,12 @@
 
 #include "PointCloudDatasetExporter.h"
 
-namespace {
-bool check(bool value, const QString& message) {
-    if (!value) std::fprintf(stderr, "%s\n", qPrintable(message));
-    return value;
-}
-}  // namespace
+namespace {}  // namespace
 
-int main(int argc, char** argv) {
-    QCoreApplication app(argc, argv);
+TEST(PointCloudDatasetExporter, ExportsFormatsAndPreservesExistingArchives) {
     QTemporaryDir temporary;
-    if (!check(temporary.isValid(),
-               QStringLiteral("temporary folder unavailable")))
-        return 1;
+    ASSERT_TRUE(temporary.isValid())
+            << (QStringLiteral("temporary folder unavailable")).toStdString();
 
     PointCloudFrame frame;
     frame.path = temporary.filePath(QStringLiteral("frame_01.bin"));
@@ -56,33 +51,35 @@ int main(int argc, char** argv) {
                 temporary.filePath(format + QStringLiteral(".zip"));
         int progress = -1;
         QString error;
-        if (!check(exportPointCloudDataset(
-                           options,
-                           [&](int current, int total) {
-                               if (total != 1 || current < progress ||
-                                   current > total)
-                                   return false;
-                               progress = current;
-                               return true;
-                           },
-                           &error),
-                   QStringLiteral("%1 export failed: %2").arg(format, error)) ||
-            !check(progress == 1,
-                   QStringLiteral("%1 export progress missing").arg(format)) ||
-            !check(QFile::exists(options.outputPath),
-                   QStringLiteral("%1 archive missing").arg(format)))
-            return 1;
-        if (!unzip.isEmpty() &&
-            !check(QProcess::execute(unzip, {QStringLiteral("-tqq"),
-                                             options.outputPath}) == 0,
-                   QStringLiteral("%1 ZIP integrity failed").arg(format)))
-            return 1;
+        ASSERT_TRUE(exportPointCloudDataset(
+                options,
+                [&](int current, int total) {
+                    if (total != 1 || current < progress || current > total)
+                        return false;
+                    progress = current;
+                    return true;
+                },
+                &error))
+                << (QStringLiteral("%1 export failed: %2").arg(format, error))
+                           .toStdString();
+        ASSERT_TRUE(progress == 1)
+                << (QStringLiteral("%1 export progress missing").arg(format))
+                           .toStdString();
+        ASSERT_TRUE(QFile::exists(options.outputPath))
+                << (QStringLiteral("%1 archive missing").arg(format))
+                           .toStdString();
+        if (!unzip.isEmpty()) {
+            ASSERT_TRUE(QProcess::execute(unzip, {QStringLiteral("-tqq"),
+                                                  options.outputPath}) == 0)
+                    << (QStringLiteral("%1 ZIP integrity failed").arg(format))
+                               .toStdString();
+        }
         if (!unzip.isEmpty()) {
             QProcess listing;
             listing.start(unzip, {QStringLiteral("-l"), options.outputPath});
-            if (!check(listing.waitForFinished() && listing.exitCode() == 0,
-                       QStringLiteral("%1 ZIP listing failed").arg(format)))
-                return 1;
+            ASSERT_TRUE(listing.waitForFinished() && listing.exitCode() == 0)
+                    << (QStringLiteral("%1 ZIP listing failed").arg(format))
+                               .toStdString();
             const QString contents =
                     QString::fromLocal8Bit(listing.readAllStandardOutput());
             const QStringList expected =
@@ -104,10 +101,10 @@ int main(int argc, char** argv) {
                                       QStringLiteral(
                                               "ds0/pointcloud/frame_01.pcd")};
             for (const QString& entry : expected) {
-                if (!check(contents.contains(entry),
-                           QStringLiteral("%1 ZIP missing %2")
-                                   .arg(format, entry)))
-                    return 1;
+                ASSERT_TRUE(contents.contains(entry))
+                        << (QStringLiteral("%1 ZIP missing %2")
+                                    .arg(format, entry))
+                                   .toStdString();
             }
         }
     }
@@ -115,85 +112,83 @@ int main(int argc, char** argv) {
     options.format = QStringLiteral("datumaro");
     options.outputPath = temporary.filePath(QStringLiteral("cancelled.zip"));
     QString error;
-    if (!check(!exportPointCloudDataset(
-                       options, [](int, int) { return false; }, &error),
-               QStringLiteral("cancellation must fail")) ||
-        !check(!QFile::exists(options.outputPath),
-               QStringLiteral("cancelled archive was installed")))
-        return 1;
+    ASSERT_TRUE(!exportPointCloudDataset(
+            options, [](int, int) { return false; }, &error))
+            << (QStringLiteral("cancellation must fail")).toStdString();
+    ASSERT_TRUE(!QFile::exists(options.outputPath))
+            << (QStringLiteral("cancelled archive was installed"))
+                       .toStdString();
     QFile previous(options.outputPath);
     const QByteArray original("previous archive must survive");
-    if (!check(previous.open(QIODevice::WriteOnly) &&
-                       previous.write(original) == original.size(),
-               QStringLiteral("existing archive fixture failed")))
-        return 1;
+    ASSERT_TRUE(previous.open(QIODevice::WriteOnly) &&
+                previous.write(original) == original.size())
+            << (QStringLiteral("existing archive fixture failed"))
+                       .toStdString();
     previous.close();
     int callbacks = 0;
-    if (!check(!exportPointCloudDataset(
-                       options, [&](int, int) { return ++callbacks < 3; },
-                       &error),
-               QStringLiteral("ZIP writing cancellation must fail")) ||
-        !check(previous.open(QIODevice::ReadOnly) &&
-                       previous.readAll() == original,
-               QStringLiteral("cancellation must preserve the previous ZIP")))
-        return 1;
+    ASSERT_TRUE(!exportPointCloudDataset(
+            options, [&](int, int) { return ++callbacks < 3; }, &error))
+            << (QStringLiteral("ZIP writing cancellation must fail"))
+                       .toStdString();
+    ASSERT_TRUE(previous.open(QIODevice::ReadOnly) &&
+                previous.readAll() == original)
+            << (QStringLiteral("cancellation must preserve the previous ZIP"))
+                       .toStdString();
     previous.close();
     auto invalid = options;
     invalid.classNames.insert(2, QStringLiteral("car"));
-    if (!check(!exportPointCloudDataset(invalid, {}, &error),
-               QStringLiteral("duplicate class names must be rejected")))
-        return 1;
+    ASSERT_TRUE(!exportPointCloudDataset(invalid, {}, &error))
+            << (QStringLiteral("duplicate class names must be rejected"))
+                       .toStdString();
     invalid = options;
     invalid.frames[0].cuboids.append(cuboid);
-    if (!check(!exportPointCloudDataset(invalid, {}, &error),
-               QStringLiteral("duplicate cuboid IDs must be rejected")))
-        return 1;
+    ASSERT_TRUE(!exportPointCloudDataset(invalid, {}, &error))
+            << (QStringLiteral("duplicate cuboid IDs must be rejected"))
+                       .toStdString();
     invalid = options;
     invalid.frames[0].path = options.outputPath;
-    if (!check(!exportPointCloudDataset(invalid, {}, &error),
-               QStringLiteral("source overwrite must be rejected")))
-        return 1;
-    if (!check(previous.open(QIODevice::ReadOnly) &&
-                       previous.readAll() == original,
-               QStringLiteral("invalid export must preserve the previous ZIP")))
-        return 1;
+    ASSERT_TRUE(!exportPointCloudDataset(invalid, {}, &error))
+            << (QStringLiteral("source overwrite must be rejected"))
+                       .toStdString();
+    ASSERT_TRUE(previous.open(QIODevice::ReadOnly) &&
+                previous.readAll() == original)
+            << (QStringLiteral("invalid export must preserve the previous ZIP"))
+                       .toStdString();
     previous.close();
     // PLY permits intensity and RGB together. Both fields must survive PCD
     // export in the upstream order, with explicit little-endian records.
     options.frames[0].rgb = {QColor(1, 2, 3), QColor(4, 5, 6)};
-    if (!check(exportPointCloudDataset(options, {}, &error),
-               QStringLiteral("RGB/intensity export failed: %1").arg(error)))
-        return 1;
+    ASSERT_TRUE(exportPointCloudDataset(options, {}, &error))
+            << (QStringLiteral("RGB/intensity export failed: %1").arg(error))
+                       .toStdString();
     if (!unzip.isEmpty()) {
         QProcess payload;
         payload.start(unzip,
                       {QStringLiteral("-p"), options.outputPath,
                        QStringLiteral("point_clouds/default/frame_01.pcd")});
-        if (!check(payload.waitForFinished() && payload.exitCode() == 0,
-                   QStringLiteral("could not read RGB PCD payload")))
-            return 1;
+        ASSERT_TRUE(payload.waitForFinished() && payload.exitCode() == 0)
+                << (QStringLiteral("could not read RGB PCD payload"))
+                           .toStdString();
         const QByteArray pcd = payload.readAllStandardOutput();
         const QByteArray marker("DATA binary\n");
         const int start = pcd.indexOf(marker) + marker.size();
-        if (!check(pcd.contains("FIELDS x y z intensity rgb\n") &&
-                           pcd.contains("TYPE F F F F U\n") &&
-                           start >= marker.size() && pcd.size() - start == 40 &&
-                           qFromLittleEndian<quint32>(
-                                   reinterpret_cast<const uchar*>(
-                                           pcd.constData() + start)) ==
-                                   0x3f800000u &&
-                           qFromLittleEndian<quint32>(
-                                   reinterpret_cast<const uchar*>(
-                                           pcd.constData() + start + 12)) ==
-                                   0x3f000000u &&
-                           qFromLittleEndian<quint32>(
-                                   reinterpret_cast<const uchar*>(
-                                           pcd.constData() + start + 16)) ==
-                                   0x010203u,
-                   QStringLiteral(
-                           "RGB/intensity PCD binary contract mismatch")))
-            return 1;
+        ASSERT_TRUE(pcd.contains("FIELDS x y z intensity rgb\n") &&
+                    pcd.contains("TYPE F F F F U\n") &&
+                    start >= marker.size() && pcd.size() - start == 40 &&
+                    qFromLittleEndian<quint32>(reinterpret_cast<const uchar*>(
+                            pcd.constData() + start)) == 0x3f800000u &&
+                    qFromLittleEndian<quint32>(reinterpret_cast<const uchar*>(
+                            pcd.constData() + start + 12)) == 0x3f000000u &&
+                    qFromLittleEndian<quint32>(reinterpret_cast<const uchar*>(
+                            pcd.constData() + start + 16)) == 0x010203u)
+                << (QStringLiteral(
+                            "RGB/intensity PCD binary contract mismatch"))
+                           .toStdString();
     }
-    std::puts("PASS point-cloud Datumaro/KITTI/Sly dataset export");
-    return 0;
+}
+
+int main(int argc, char** argv) {
+    QCoreApplication app(argc, argv);
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

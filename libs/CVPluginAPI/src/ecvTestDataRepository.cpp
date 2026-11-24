@@ -259,21 +259,24 @@ constexpr const char* kLingbotMapUniversitySkyMasksExtractDir =
 constexpr const char* kLingbotMapUniversitySkyMasksSha256 =
         "fccfd832ea675d7b29708c80ed37504c1f5d1f5e6ab19bf8eb3cbf620498324e";
 
-// OpenPCDet detection sample (qOpenPCDet): one raw KITTI LiDAR frame
-// (kitti_000008.bin, 17238 x 4), its PointRCNN pre-sampled 16384 x 4
-// variant, one nuScenes 5-feature sweep (n015 scene) and the two
-// multi-modal scene bundles (scene_caddn single-camera, scene_bevfusion
-// 6-camera). The zip keeps a top-level "openpcdet_test_data" group
-// directory, so the dataset lands UNDER the extract group of the same
-// name (mirroring the LingBot-Map / MapAnything grouped layout).
-constexpr const char* kOpenPCDetZipName = "openpcdet_test_data.zip";
-constexpr const char* kOpenPCDetExtractDir = "openpcdet_test_data";
-constexpr const char* kOpenPCDetGroupDir = "openpcdet_test_data";
+// OpenPCDet detection samples (qOpenPCDet), v2 multi-frame bundle: every
+// selectable frame lives under frames/<id>/ with its unique original
+// basenames — the raw KITTI LiDAR frame (kitti_000008.bin, 17238 x 4) and
+// its PointRCNN pre-sampled 16384 x 4 variant, the nuScenes 5-feature
+// sweep (nuscenes_n015_lidar.bin) — each next to its calibrated scene/
+// directory (CaDDN single-camera / BEVFusion 6-camera). The recursive
+// basename lookup keeps the three readiness members unambiguous. The zip
+// keeps a top-level "openpcdet_test_data_v2" group directory, so the
+// dataset lands UNDER the extract group of the same name (mirroring the
+// LingBot-Map / MapAnything grouped layout).
+constexpr const char* kOpenPCDetZipName = "openpcdet_test_data_v2.zip";
+constexpr const char* kOpenPCDetExtractDir = "openpcdet_test_data_v2";
+constexpr const char* kOpenPCDetGroupDir = "openpcdet_test_data_v2";
 constexpr const char* kOpenPCDetDownloadUrl =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-        "OpenPCDet-GGUF/openpcdet_test_data.zip";
+        "OpenPCDet-GGUF/openpcdet_test_data_v2.zip";
 constexpr const char* kOpenPCDetSha256 =
-        "f1f185a385ddd0b440ed5699be47169eb89b7a0107e29fd26e33ed81a07939dd";
+        "9e60d9240b8f2f8cfdfc95da0d4cdc3990e7e9bb8375531fc0abfc8e91b89db5";
 
 }  // namespace
 
@@ -1468,6 +1471,56 @@ QStringList ecvTestDataRepository::getMapAnythingSceneImages(
     // directory (<zip stem>/<...>/frames), so the scan is recursive (same
     // contract as getLingbotMapImages).
     return getLingbotMapImages(bundleRoot);
+}
+
+QVector<ecvTestDataRepository::OpenPCDetFrame>
+ecvTestDataRepository::getOpenPCDetFrames(const QString& bundleRoot) {
+    if (bundleRoot.isEmpty()) return {};
+    const QDir framesDir(QDir(bundleRoot).filePath(QStringLiteral("frames")));
+    if (!framesDir.exists()) return {};
+
+    // One subdirectory per selectable frame, ordered by id so the combo
+    // fill is deterministic (kitti_* before nuscenes_*).
+    const QStringList ids =
+            framesDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+    QVector<OpenPCDetFrame> frames;
+    for (const QString& id : ids) {
+        const QDir frameDir(framesDir.filePath(id));
+        OpenPCDetFrame frame;
+        frame.id = id;
+        // KITTI frames keep <id>.bin; nuScenes sweeps <id>_lidar.bin.
+        const QString raw = frameDir.filePath(id + QStringLiteral(".bin"));
+        const QString sweep =
+                frameDir.filePath(id + QStringLiteral("_lidar.bin"));
+        if (QFileInfo::exists(raw)) {
+            frame.pointsFile = QFileInfo(raw).absoluteFilePath();
+        } else if (QFileInfo::exists(sweep)) {
+            frame.pointsFile = QFileInfo(sweep).absoluteFilePath();
+        } else {
+            continue;  // a frame without a LiDAR input is not selectable
+        }
+        const QString sampled =
+                frameDir.filePath(id + QStringLiteral("_sampled16384.bin"));
+        if (QFileInfo::exists(sampled)) {
+            frame.sampledFile = QFileInfo(sampled).absoluteFilePath();
+        }
+        const QString scene = frameDir.filePath(QStringLiteral("scene"));
+        if (QFileInfo::exists(
+                    QDir(scene).filePath(QStringLiteral("scene.json")))) {
+            frame.sceneDir = QFileInfo(scene).absoluteFilePath();
+        }
+        if (id.startsWith(QStringLiteral("kitti_"))) {
+            frame.displayName = QStringLiteral("KITTI ") +
+                                id.mid(QStringLiteral("kitti_").size());
+        } else if (id.startsWith(QStringLiteral("nuscenes_"))) {
+            frame.displayName = QStringLiteral("nuScenes ") +
+                                id.mid(QStringLiteral("nuscenes_").size());
+        } else {
+            frame.displayName = id;
+        }
+        frames.append(frame);
+    }
+    return frames;
 }
 
 QStringList ecvTestDataRepository::getSamImages(const QString& bundleRoot) {

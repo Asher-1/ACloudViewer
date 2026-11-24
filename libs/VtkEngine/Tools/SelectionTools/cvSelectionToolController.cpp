@@ -33,7 +33,6 @@
 #include <QAction>
 #include <QActionGroup>
 #include <QKeySequence>
-#include <QShortcut>
 #include <QWidget>
 
 //-----------------------------------------------------------------------------
@@ -93,32 +92,9 @@ cvSelectionToolController::~cvSelectionToolController() {
 }
 
 //-----------------------------------------------------------------------------
-void cvSelectionToolController::installModifierShortcuts() {
-    auto bind = [this](QAction* action, const QKeySequence& seq) {
-        if (!action || !m_parentWidget) return;
-        action->setShortcut(seq);
-        action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-        auto* shortcut = new QShortcut(seq, m_parentWidget);
-        shortcut->setContext(Qt::WidgetWithChildrenShortcut);
-        QObject::connect(shortcut, &QShortcut::activated, action,
-                         &QAction::trigger);
-        m_modifierShortcuts.push_back(shortcut);
-    };
-
-    for (QShortcut* s : m_modifierShortcuts) {
-        delete s;
-    }
-    m_modifierShortcuts.clear();
-
-    bind(m_addAction, QKeySequence(Qt::CTRL));
-    bind(m_subtractAction, QKeySequence(Qt::SHIFT));
-    bind(m_toggleAction, QKeySequence(Qt::CTRL | Qt::SHIFT));
-}
-
 //-----------------------------------------------------------------------------
 void cvSelectionToolController::initialize(QWidget* parent) {
     m_parentWidget = parent;
-    installModifierShortcuts();
 
     CVLog::PrintVerbose(
             "[cvSelectionToolController] Initialized with parent widget");
@@ -277,8 +253,6 @@ void cvSelectionToolController::registerModifierActions(QAction* addAction,
             }
         });
     }
-
-    installModifierShortcuts();
 
     CVLog::PrintVerbose(
             "[cvSelectionToolController] Registered modifier actions");
@@ -537,6 +511,7 @@ cvSelectionToolController::createActions(QWidget* parent) {
                          bool checkable) -> QAction* {
         auto* a = new QAction(QIcon(icon), text, parent);
         a->setObjectName(name);
+        a->setProperty("shortcutCategory", QObject::tr("Selection"));
         a->setToolTip(tip);
         a->setCheckable(checkable);
         return a;
@@ -546,23 +521,23 @@ cvSelectionToolController::createActions(QWidget* parent) {
     a.selectSurfaceCells =
             make("actionSelectSurfaceCells",
                  ":/Resources/images/svg/pq/pqSurfaceSelectionCell.svg",
-                 QObject::tr("Select Cells On (s)"),
-                 QObject::tr("Select Cells On (s)"), true);
+                 QObject::tr("Select Cells On"), QObject::tr("Select Cells On"),
+                 true);
     a.selectSurfacePoints =
             make("actionSelectSurfacePoints",
                  ":/Resources/images/svg/pq/pqSurfaceSelectionPoint.svg",
-                 QObject::tr("Select Points On (d)"),
-                 QObject::tr("Select Points On (d)"), true);
+                 QObject::tr("Select Points On"),
+                 QObject::tr("Select Points On"), true);
     a.selectFrustumCells =
             make("actionSelectFrustumCells",
                  ":/Resources/images/svg/pq/pqFrustumSelectionCell.svg",
-                 QObject::tr("Select Cells Through (f)"),
-                 QObject::tr("Select Cells Through (f)"), true);
+                 QObject::tr("Select Cells Through"),
+                 QObject::tr("Select Cells Through"), true);
     a.selectFrustumPoints =
             make("actionSelectFrustumPoints",
                  ":/Resources/images/svg/pq/pqFrustumSelectionPoint.svg",
-                 QObject::tr("Select Points Through (g)"),
-                 QObject::tr("Select Points Through (g)"), true);
+                 QObject::tr("Select Points Through"),
+                 QObject::tr("Select Points Through"), true);
     a.selectPolygonCells =
             make("actionSelectPolygonCells",
                  ":/Resources/images/svg/pq/pqPolygonSelectSurfaceCell.svg",
@@ -573,15 +548,14 @@ cvSelectionToolController::createActions(QWidget* parent) {
                  ":/Resources/images/svg/pq/pqPolygonSelectSurfacePoint.svg",
                  QObject::tr("Select Points With Polygon"),
                  QObject::tr("Select Points With Polygon"), true);
-    a.selectBlocks = make("actionSelectBlocks",
-                          ":/Resources/images/svg/pq/pqSelectBlock.svg",
-                          QObject::tr("Select Block (b)"),
-                          QObject::tr("Select Block (b)"), true);
+    a.selectBlocks = make(
+            "actionSelectBlocks", ":/Resources/images/svg/pq/pqSelectBlock.svg",
+            QObject::tr("Select Block"), QObject::tr("Select Block"), true);
     a.selectFrustumBlocks =
             make("actionSelectFrustumBlocks",
                  ":/Resources/images/svg/pq/pqFrustumSelectionBlock.svg",
-                 QObject::tr("Select Blocks Through (n)"),
-                 QObject::tr("Select Blocks Through (n)"), true);
+                 QObject::tr("Select Blocks Through"),
+                 QObject::tr("Select Blocks Through"), true);
     a.interactiveSelectCells = make(
             "actionInteractiveSelectCells",
             ":/Resources/images/svg/pq/pqSurfaceSelectionCellInteractive.svg",
@@ -623,21 +597,37 @@ cvSelectionToolController::createActions(QWidget* parent) {
 
     a.growSelection =
             make("actionGrowSelection", ":/Resources/images/svg/pq/pqPlus.svg",
-                 QObject::tr("Grow Selection"),
-                 QObject::tr("Grow selection (+)"), false);
+                 QObject::tr("Grow Selection"), QObject::tr("Grow selection"),
+                 false);
     a.shrinkSelection = make("actionShrinkSelection",
                              ":/Resources/images/svg/pq/pqMinus.svg",
                              QObject::tr("Shrink Selection"),
-                             QObject::tr("Shrink selection (-)"), false);
+                             QObject::tr("Shrink selection"), false);
     a.clearSelection = make("actionClearSelection",
                             ":/Resources/images/svg/pq/pqClearSort.svg",
                             QObject::tr("Clear Selection"),
-                            QObject::tr("Clear selection (Esc)"), false);
+                            QObject::tr("Clear selection"), false);
 
     a.zoomToBox = make("actionZoomToBox",
                        ":/Resources/images/svg/misc/zoom_to_selection.svg",
                        QObject::tr("Zoom to Box"),
                        QObject::tr("Zoom to selection"), false);
+    const QPair<QAction*, int> defaults[] = {
+            {a.selectSurfaceCells, Qt::Key_S},
+            {a.selectSurfacePoints, Qt::Key_D},
+            {a.selectFrustumCells, Qt::Key_F},
+            {a.selectFrustumPoints, Qt::Key_G},
+            {a.selectBlocks, Qt::Key_B},
+            {a.selectFrustumBlocks, Qt::Key_N},
+            {a.growSelection, Qt::Key_Plus},
+            {a.shrinkSelection, Qt::Key_Minus}};
+    for (const auto& entry : defaults)
+        entry.first->setProperty(
+                "shortcutDefault",
+                QVariant::fromValue(QKeySequence(entry.second)));
+    for (auto* modifier :
+         {a.addSelection, a.subtractSelection, a.toggleSelection})
+        modifier->setProperty("shortcutGesture", true);
     return a;
 }
 

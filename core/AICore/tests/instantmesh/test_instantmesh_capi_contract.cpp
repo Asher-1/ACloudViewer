@@ -9,6 +9,8 @@
 // ABI, options lifecycle, error paths, image preprocessing (real decode
 // path), model catalog and runtime plumbing.
 
+#include <gtest/gtest.h>
+
 #include <QFileInfo>
 #include <QImage>
 #include <QJsonArray>
@@ -19,14 +21,14 @@
 #include <cstdio>
 #include <cstring>
 #include <limits>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "aicore/asset_digests.h"
 #include "aicore/instantmesh_capi.h"
-#include "tests/common/test_macros.hpp"
 
-static int failures = 0;
+static const char* catalog_binary = nullptr;
 
 // A tiny valid PNG (16x16 solid red, RGBA) — same bytes as the trellis
 // contract fixture (real zlib stream, decoded by the Qt image path).
@@ -47,42 +49,43 @@ static void test_progress(void*, int, int, int) {}
 static const float kVerts[] = {0, 0, 0, 1, 0, 0, 0, 1, 0};
 static const int kTris[] = {0, 1, 2};
 
-static void test_versioned_load_errors() {
+TEST(InstantMeshCapi, VersionedLoadErrors) {
 #if defined(AICORE_INSTANTMESH_ABI_VERSION)
     char err[256] = {};
-    AICORE_CHECK(aicore_instantmesh_load_opts_ex(nullptr, nullptr, err,
-                                                 sizeof(err)) == nullptr);
-    AICORE_CHECK(std::strstr(err, "paths") != nullptr);
+    EXPECT_TRUE(aicore_instantmesh_load_opts_ex(nullptr, nullptr, err,
+                                                sizeof(err)) == nullptr);
+    EXPECT_TRUE(std::strstr(err, "paths") != nullptr);
     aicore_instantmesh_model_paths paths = AICORE_INSTANTMESH_MODEL_PATHS_INIT;
     paths.struct_size = sizeof(paths) - 1;
-    AICORE_CHECK(aicore_instantmesh_load_opts_ex(&paths, nullptr, err,
-                                                 sizeof(err)) == nullptr);
-    AICORE_CHECK(std::strstr(err, "struct_size") != nullptr);
+    EXPECT_TRUE(aicore_instantmesh_load_opts_ex(&paths, nullptr, err,
+                                                sizeof(err)) == nullptr);
+    EXPECT_TRUE(std::strstr(err, "struct_size") != nullptr);
     paths.struct_size = sizeof(paths);
     paths.abi_version = AICORE_INSTANTMESH_ABI_VERSION + 1;
-    AICORE_CHECK(aicore_instantmesh_load_opts_ex(&paths, nullptr, err,
-                                                 sizeof(err)) == nullptr);
-    AICORE_CHECK(std::strstr(err, "abi_version") != nullptr);
+    EXPECT_TRUE(aicore_instantmesh_load_opts_ex(&paths, nullptr, err,
+                                                sizeof(err)) == nullptr);
+    EXPECT_TRUE(std::strstr(err, "abi_version") != nullptr);
     paths.abi_version = AICORE_INSTANTMESH_ABI_VERSION;
     paths.dino_gguf = "missing-dino.gguf";
     paths.transformer_gguf = "missing-transformer.gguf";
     paths.synthesizer_gguf = "missing-synthesizer.gguf";
     paths.cond_gguf = "missing-cond.gguf";
-    AICORE_CHECK(aicore_instantmesh_load_opts_ex(&paths, nullptr, err,
-                                                 sizeof(err)) == nullptr);
-    AICORE_CHECK(std::strstr(err, "Zero123++") != nullptr);
+    EXPECT_TRUE(aicore_instantmesh_load_opts_ex(&paths, nullptr, err,
+                                                sizeof(err)) == nullptr);
+    EXPECT_TRUE(std::strstr(err, "Zero123++") != nullptr);
     paths.cond_gguf = nullptr;
     aicore_instantmesh_options* opts = aicore_instantmesh_options_new();
+    ASSERT_NE(opts, nullptr);
     aicore_instantmesh_options_set_device(opts, "cpu");
-    AICORE_CHECK(aicore_instantmesh_load_opts_ex(&paths, opts, err,
-                                                 sizeof(err)) == nullptr);
-    AICORE_CHECK(std::strstr(err, "load") != nullptr);
+    EXPECT_TRUE(aicore_instantmesh_load_opts_ex(&paths, opts, err,
+                                                sizeof(err)) == nullptr);
+    EXPECT_TRUE(std::strstr(err, "load") != nullptr);
     char tiny[1] = {'x'};
     aicore_instantmesh_load_opts_ex(nullptr, opts, tiny, sizeof(tiny));
-    AICORE_CHECK(tiny[0] == '\0');
+    EXPECT_TRUE(tiny[0] == '\0');
     aicore_instantmesh_options_set_device(opts, "cuda:9999");
     aicore_instantmesh_load_opts_ex(&paths, opts, err, sizeof(err));
-    AICORE_CHECK(std::strstr(err, "backend unavailable") != nullptr);
+    EXPECT_TRUE(std::strstr(err, "backend unavailable") != nullptr);
     aicore_instantmesh_options_set_device(opts, "cpu");
     // Capture-dir option contract: NULL clears to disabled, a path is
     // accepted; both only prove setter lifecycle safety here because the
@@ -92,43 +95,43 @@ static void test_versioned_load_errors() {
                                                "/tmp/im-capture-contract");
     aicore_instantmesh_options_set_steps(opts, 1);
     aicore_instantmesh_load_opts_ex(&paths, opts, err, sizeof(err));
-    AICORE_CHECK(std::strstr(err, "steps") != nullptr);
+    EXPECT_TRUE(std::strstr(err, "steps") != nullptr);
     aicore_instantmesh_options_free(opts);
 #else
     std::fprintf(stderr,
                  "Missing versioned structs and load entry point with returned "
                  "errors\n");
-    AICORE_CHECK(false);
+    EXPECT_TRUE(false);
 #endif
 }
 
-static void test_generate_parameter_versions() {
+TEST(InstantMeshCapi, GenerateParameterVersions) {
 #if defined(AICORE_INSTANTMESH_ABI_VERSION)
     aicore_instantmesh_generate_params params =
             AICORE_INSTANTMESH_GENERATE_PARAMS_INIT;
     char err[256] = {};
     params.struct_size = sizeof(params) - 1;
-    AICORE_CHECK(aicore_instantmesh_generate(nullptr, kPng1x1, sizeof(kPng1x1),
-                                             &params, nullptr, nullptr, err,
-                                             sizeof(err)) == nullptr);
-    AICORE_CHECK(std::strstr(err, "struct_size") != nullptr);
+    EXPECT_TRUE(aicore_instantmesh_generate(nullptr, kPng1x1, sizeof(kPng1x1),
+                                            &params, nullptr, nullptr, err,
+                                            sizeof(err)) == nullptr);
+    EXPECT_TRUE(std::strstr(err, "struct_size") != nullptr);
     params.struct_size = sizeof(params);
     params.abi_version++;
-    AICORE_CHECK(aicore_instantmesh_generate(nullptr, kPng1x1, sizeof(kPng1x1),
-                                             &params, nullptr, nullptr, err,
-                                             sizeof(err)) == nullptr);
-    AICORE_CHECK(std::strstr(err, "abi_version") != nullptr);
+    EXPECT_TRUE(aicore_instantmesh_generate(nullptr, kPng1x1, sizeof(kPng1x1),
+                                            &params, nullptr, nullptr, err,
+                                            sizeof(err)) == nullptr);
+    EXPECT_TRUE(std::strstr(err, "abi_version") != nullptr);
 #endif
 }
 
-static void test_invalid_numeric_parameters() {
+TEST(InstantMeshCapi, InvalidNumericParameters) {
     aicore_instantmesh_generate_params params =
             AICORE_INSTANTMESH_GENERATE_PARAMS_INIT;
     char err[256] = {};
     const auto rejected = [&](const char* field) {
         aicore_instantmesh_generate(nullptr, kPng1x1, sizeof(kPng1x1), &params,
                                     nullptr, nullptr, err, sizeof(err));
-        AICORE_CHECK(std::strstr(err, field) != nullptr);
+        EXPECT_TRUE(std::strstr(err, field) != nullptr);
     };
     params.steps = 1;
     rejected("steps");
@@ -155,7 +158,7 @@ static void test_invalid_numeric_parameters() {
     rejected("bake_texture");
 }
 
-static void test_decoded_formats_and_stride() {
+TEST(InstantMeshCapi, DecodedFormatsAndStride) {
 #if defined(AICORE_INSTANTMESH_ABI_VERSION)
     // Two real padded pixel rows; retain alpha until the white-compositing
     // boundary.
@@ -171,44 +174,44 @@ static void test_decoded_formats_and_stride() {
     for (int f = AICORE_IMAGE_RGB8; f <= AICORE_IMAGE_BGRA8; ++f) {
         aicore_image_view view{buffers[f - 1], 1, 2, strides[f - 1],
                                static_cast<aicore_image_format>(f)};
-        AICORE_CHECK(aicore_instantmesh_preprocess_image_view(
-                             &view, 1, out, err, sizeof(err)) == 0);
+        EXPECT_TRUE(aicore_instantmesh_preprocess_image_view(&view, 1, out, err,
+                                                             sizeof(err)) == 0);
         if (f == AICORE_IMAGE_GRAY8) {
-            AICORE_CHECK(out[0] == 91 && out[1] == 91 && out[2] == 91);
+            EXPECT_TRUE(out[0] == 91 && out[1] == 91 && out[2] == 91);
         } else {
-            AICORE_CHECK(out[0] == 255);
+            EXPECT_TRUE(out[0] == 255);
             const int expected =
                     (f == AICORE_IMAGE_RGBA8 || f == AICORE_IMAGE_BGRA8) ? 126
                                                                          : 0;
-            AICORE_CHECK(std::abs(int(out[1]) - expected) <= 1);
-            AICORE_CHECK(out[1] == out[2]);
+            EXPECT_TRUE(std::abs(int(out[1]) - expected) <= 1);
+            EXPECT_TRUE(out[1] == out[2]);
         }
         view.row_stride_bytes = 0;
-        AICORE_CHECK(aicore_instantmesh_preprocess_image_view(
-                             &view, 1, out, err, sizeof(err)) != 0);
-        AICORE_CHECK(std::strstr(err, "stride") != nullptr);
+        EXPECT_TRUE(aicore_instantmesh_preprocess_image_view(&view, 1, out, err,
+                                                             sizeof(err)) != 0);
+        EXPECT_TRUE(std::strstr(err, "stride") != nullptr);
     }
     aicore_image_view bad{rgb, 1, 2, std::numeric_limits<size_t>::max(),
                           AICORE_IMAGE_RGB8};
-    AICORE_CHECK(aicore_instantmesh_preprocess_image_view(&bad, 1, out, err,
-                                                          sizeof(err)) != 0);
+    EXPECT_TRUE(aicore_instantmesh_preprocess_image_view(&bad, 1, out, err,
+                                                         sizeof(err)) != 0);
     bad.row_stride_bytes = 4;
     bad.width = std::numeric_limits<int32_t>::max();
-    AICORE_CHECK(aicore_instantmesh_preprocess_image_view(&bad, 1, out, err,
-                                                          sizeof(err)) != 0);
+    EXPECT_TRUE(aicore_instantmesh_preprocess_image_view(&bad, 1, out, err,
+                                                         sizeof(err)) != 0);
     bad.width = -1;
-    AICORE_CHECK(aicore_instantmesh_preprocess_image_view(&bad, 1, out, err,
-                                                          sizeof(err)) != 0);
-    AICORE_CHECK(aicore_instantmesh_preprocess_image_view(nullptr, 1, out, err,
-                                                          sizeof(err)) != 0);
+    EXPECT_TRUE(aicore_instantmesh_preprocess_image_view(&bad, 1, out, err,
+                                                         sizeof(err)) != 0);
+    EXPECT_TRUE(aicore_instantmesh_preprocess_image_view(nullptr, 1, out, err,
+                                                         sizeof(err)) != 0);
     bad = {rgb, 1, 2, 4, static_cast<aicore_image_format>(99)};
-    AICORE_CHECK(aicore_instantmesh_preprocess_image_view(&bad, 1, out, err,
-                                                          sizeof(err)) != 0);
+    EXPECT_TRUE(aicore_instantmesh_preprocess_image_view(&bad, 1, out, err,
+                                                         sizeof(err)) != 0);
 #else
     std::fprintf(
             stderr,
             "Missing unified decoded image-view preprocessing entry point\n");
-    AICORE_CHECK(false);
+    EXPECT_TRUE(false);
 #endif
 }
 
@@ -217,7 +220,7 @@ static uint32_t read_u32(const uint8_t* p) {
            uint32_t(p[3]) << 24;
 }
 
-static void test_glb_texture_layout() {
+TEST(InstantMeshCapi, GlbTextureLayout) {
     // Two faces share vertices but seam corners have distinct UVs; expectations
     // are independently hand-specified.
     const float vertices[] = {0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0};
@@ -229,21 +232,38 @@ static void test_glb_texture_layout() {
     int len = 0;
     uint8_t* glb = aicore_instantmesh_bake_glb(vertices, 4, faces, 2, uv, rgba,
                                                2, 2, &len, err, sizeof(err));
-    AICORE_CHECK(glb && len > 20);
-    if (!glb) return;
-    AICORE_CHECK(read_u32(glb + 8) == uint32_t(len));
+    std::unique_ptr<uint8_t, decltype(&aicore_instantmesh_free_buffer)> owned(
+            glb, aicore_instantmesh_free_buffer);
+    ASSERT_NE(glb, nullptr);
+    ASSERT_GT(len, 20);
+    EXPECT_TRUE(read_u32(glb + 8) == uint32_t(len));
     const uint32_t json_len = read_u32(glb + 12);
-    AICORE_CHECK(json_len % 4 == 0 && json_len + 28 <= uint32_t(len));
+    ASSERT_EQ(json_len % 4, 0u);
+    ASSERT_GE(len, 28);
+    ASSERT_LE(json_len, uint32_t(len - 28));
     const auto json =
             QJsonDocument::fromJson(
                     QByteArray(reinterpret_cast<char*>(glb + 20), json_len))
                     .object();
     const auto acc = json["accessors"].toArray();
     const auto views = json["bufferViews"].toArray();
-    AICORE_CHECK(acc.size() == 3 && views.size() == 4);
+    ASSERT_EQ(acc.size(), 3);
+    ASSERT_EQ(views.size(), 4);
+    for (const auto& value : views) {
+        const auto view = value.toObject();
+        const int offset = view["byteOffset"].toInt();
+        const int length = view["byteLength"].toInt();
+        ASSERT_GE(offset, 0);
+        ASSERT_GE(length, 0);
+        ASSERT_LE(uint64_t(offset) + uint64_t(length),
+                  uint64_t(len - 28 - json_len));
+    }
+    ASSERT_GE(views[0].toObject()["byteLength"].toInt(), 72);
+    ASSERT_GE(views[1].toObject()["byteLength"].toInt(), 24);
+    ASSERT_GE(views[2].toObject()["byteLength"].toInt(), 48);
     if (acc.size() == 3 && views.size() == 4) {
-        AICORE_CHECK(acc[0].toObject()["count"].toInt() == 6);
-        AICORE_CHECK(acc[2].toObject()["count"].toInt() == 6);
+        EXPECT_TRUE(acc[0].toObject()["count"].toInt() == 6);
+        EXPECT_TRUE(acc[2].toObject()["count"].toInt() == 6);
         const uint8_t* bin = glb + 28 + json_len;
         const auto component = [&](int view, int element) {
             float value;
@@ -256,43 +276,47 @@ static void test_glb_texture_layout() {
         const uint8_t* indices =
                 bin + views[1].toObject()["byteOffset"].toInt();
         for (int i = 0; i < 6; ++i)
-            AICORE_CHECK(read_u32(indices + i * 4) == uint32_t(i));
-        AICORE_CHECK(component(0, 9) == 0 && component(0, 10) == 0 &&
-                     component(0, 11) == 0);
-        AICORE_CHECK(component(2, 0) == 0 && component(2, 1) == 1);
-        AICORE_CHECK(component(2, 6) == 0.25f && component(2, 7) == 0.25f);
+            EXPECT_TRUE(read_u32(indices + i * 4) == uint32_t(i));
+        EXPECT_TRUE(component(0, 9) == 0 && component(0, 10) == 0 &&
+                    component(0, 11) == 0);
+        EXPECT_TRUE(component(2, 0) == 0 && component(2, 1) == 1);
+        EXPECT_TRUE(component(2, 6) == 0.25f && component(2, 7) == 0.25f);
         const auto image_view = views[3].toObject();
         const QImage png =
                 QImage::fromData(bin + image_view["byteOffset"].toInt(),
                                  image_view["byteLength"].toInt(), "PNG");
-        AICORE_CHECK(png.size() == QSize(2, 2));
+        EXPECT_TRUE(png.size() == QSize(2, 2));
         if (!png.isNull()) {
-            AICORE_CHECK(png.pixel(0, 0) == qRgba(255, 0, 0, 255));
-            AICORE_CHECK(png.pixel(1, 0) == qRgba(0, 255, 0, 128));
-            AICORE_CHECK(png.pixel(0, 1) == qRgba(0, 0, 255, 64));
+            EXPECT_TRUE(png.pixel(0, 0) == qRgba(255, 0, 0, 255));
+            EXPECT_TRUE(png.pixel(1, 0) == qRgba(0, 255, 0, 128));
+            EXPECT_TRUE(png.pixel(0, 1) == qRgba(0, 0, 255, 64));
         }
     }
-    aicore_instantmesh_free_buffer(glb);
+    owned.reset();
     glb = aicore_instantmesh_bake_glb(vertices, 4, faces, 2, nullptr, nullptr,
                                       0, 0, &len, err, sizeof(err));
+    owned.reset(glb);
+    ASSERT_NE(glb, nullptr);
+    ASSERT_GE(len, 28);
+    ASSERT_LE(read_u32(glb + 12), uint32_t(len - 28));
     if (glb) {
         const auto untextured =
                 QJsonDocument::fromJson(
                         QByteArray(reinterpret_cast<char*>(glb + 20),
                                    read_u32(glb + 12)))
                         .object();
+        ASSERT_FALSE(untextured["materials"].toArray().isEmpty());
         const auto pbr = untextured["materials"]
                                  .toArray()[0]
                                  .toObject()["pbrMetallicRoughness"]
                                  .toObject();
-        AICORE_CHECK(!pbr.contains("baseColorTexture") &&
-                     !untextured.contains("textures"));
-        aicore_instantmesh_free_buffer(glb);
+        EXPECT_TRUE(!pbr.contains("baseColorTexture") &&
+                    !untextured.contains("textures"));
     } else
-        AICORE_CHECK(false);
+        EXPECT_TRUE(false);
 }
 
-static void test_glb_invalid_mesh() {
+TEST(InstantMeshCapi, GlbInvalidMesh) {
     char err[256] = {};
     int len = 123;
     int faces[] = {0, 1, 3};
@@ -302,7 +326,7 @@ static void test_glb_invalid_mesh() {
         len = 123;
         auto* glb = aicore_instantmesh_bake_glb(vertices, 3, faces, 1, uv, tex,
                                                 w, h, &len, err, sizeof(err));
-        AICORE_CHECK(glb == nullptr && len == 0 && std::strstr(err, field));
+        EXPECT_TRUE(glb == nullptr && len == 0 && std::strstr(err, field));
         aicore_instantmesh_free_buffer(glb);
     };
     reject(nullptr, nullptr, 0, 0, "index");
@@ -322,23 +346,26 @@ static void test_glb_invalid_mesh() {
     reject(uv, tex.data(), 1, 1, "finite");
 }
 
-static void test_catalog_digest_scope(const char* catalog_binary) {
+TEST(InstantMeshCapi, CatalogDigestScope) {
     // Same-named DINO files come from different conversions; Trellis basename
     // digests must not replace InstantMesh's.
     for (int i = 0; i < aicore_instantmesh_model_count(); ++i) {
         const auto* entry = aicore_instantmesh_model_at(i);
+        ASSERT_NE(entry, nullptr);
+        ASSERT_NE(entry->filename, nullptr);
+        ASSERT_NE(entry->sha256, nullptr);
         const auto key = std::string("instantmesh_models/") + entry->filename;
         const char* digest = aicore::AssetDigestForFile(key.c_str());
-        AICORE_CHECK(digest && std::strcmp(digest, entry->sha256) == 0);
+        EXPECT_TRUE(digest && std::strcmp(digest, entry->sha256) == 0);
     }
-    AICORE_CHECK(std::strcmp(aicore::AssetDigestForFile("dino_f16.gguf"),
-                             "385d8186a38a2328ec740fb2ac1f33f9194d8774efc7ccafd"
-                             "4aa2e51cf5f6450") == 0);
+    EXPECT_TRUE(std::strcmp(aicore::AssetDigestForFile("dino_f16.gguf"),
+                            "385d8186a38a2328ec740fb2ac1f33f9194d8774efc7ccafd"
+                            "4aa2e51cf5f6450") == 0);
     if (!catalog_binary) return;
     QProcess process;
     process.start(QString::fromUtf8(catalog_binary),
                   QStringList{QStringLiteral("--json")});
-    AICORE_CHECK(process.waitForFinished(30000) && process.exitCode() == 0);
+    EXPECT_TRUE(process.waitForFinished(30000) && process.exitCode() == 0);
     int count = 0;
     for (const auto& line : process.readAllStandardOutput().split('\n')) {
         const auto row = QJsonDocument::fromJson(line).object();
@@ -350,26 +377,19 @@ static void test_catalog_digest_scope(const char* catalog_binary) {
                         .toUtf8();
         const auto* entry =
                 aicore_instantmesh_model_by_filename(name.constData());
-        AICORE_CHECK(entry != nullptr);
+        EXPECT_TRUE(entry != nullptr);
         if (entry) {
-            AICORE_CHECK(row["sha256"].toString() ==
-                         QString::fromUtf8(entry->sha256));
-            AICORE_CHECK(row["size_bytes"].toDouble() ==
-                         double(entry->size_bytes));
+            EXPECT_TRUE(row["sha256"].toString() ==
+                        QString::fromUtf8(entry->sha256));
+            EXPECT_TRUE(row["size_bytes"].toDouble() ==
+                        double(entry->size_bytes));
         }
     }
-    AICORE_CHECK(count == 14);
+    EXPECT_TRUE(count == 14);
 }
 
-int main(int argc, char** argv) {
-    test_catalog_digest_scope(argc > 1 ? argv[1] : nullptr);
-    test_glb_texture_layout();
-    test_glb_invalid_mesh();
-    test_versioned_load_errors();
-    test_generate_parameter_versions();
-    test_invalid_numeric_parameters();
-    test_decoded_formats_and_stride();
-    AICORE_CHECK(aicore_instantmesh_abi_version() >= 1);
+TEST(InstantMeshCapi, NullLifecycleAndAccessors) {
+    EXPECT_TRUE(aicore_instantmesh_abi_version() >= 1);
 
     // Null-safe teardown / lifecycle.
     aicore_instantmesh_free(nullptr);
@@ -377,27 +397,29 @@ int main(int argc, char** argv) {
     aicore_instantmesh_free_buffer(nullptr);
     aicore_instantmesh_mesh_free(nullptr);
 
-    AICORE_CHECK(aicore_instantmesh_load_opts(nullptr, nullptr) == nullptr);
-    AICORE_CHECK(aicore_instantmesh_is_ready(nullptr) == 0);
-    AICORE_CHECK(aicore_instantmesh_last_error(nullptr) != nullptr);
-    AICORE_CHECK(aicore_instantmesh_has_multiview(nullptr) == 0);
-    AICORE_CHECK(aicore_instantmesh_backend(nullptr) != nullptr);
+    EXPECT_TRUE(aicore_instantmesh_load_opts(nullptr, nullptr) == nullptr);
+    EXPECT_TRUE(aicore_instantmesh_is_ready(nullptr) == 0);
+    EXPECT_TRUE(aicore_instantmesh_last_error(nullptr) != nullptr);
+    EXPECT_TRUE(aicore_instantmesh_has_multiview(nullptr) == 0);
+    EXPECT_TRUE(aicore_instantmesh_backend(nullptr) != nullptr);
 
     // Mesh accessors are null-safe.
-    AICORE_CHECK(aicore_instantmesh_mesh_n_verts(nullptr) == 0);
-    AICORE_CHECK(aicore_instantmesh_mesh_n_tris(nullptr) == 0);
-    AICORE_CHECK(aicore_instantmesh_mesh_verts(nullptr) == nullptr);
-    AICORE_CHECK(aicore_instantmesh_mesh_tris(nullptr) == nullptr);
-    AICORE_CHECK(aicore_instantmesh_mesh_vcolors(nullptr) == nullptr);
-    AICORE_CHECK(aicore_instantmesh_mesh_uvs(nullptr) == nullptr);
-    AICORE_CHECK(aicore_instantmesh_mesh_texture(nullptr) == nullptr);
-    AICORE_CHECK(aicore_instantmesh_mesh_texture_w(nullptr) == 0);
-    AICORE_CHECK(aicore_instantmesh_mesh_texture_h(nullptr) == 0);
+    EXPECT_TRUE(aicore_instantmesh_mesh_n_verts(nullptr) == 0);
+    EXPECT_TRUE(aicore_instantmesh_mesh_n_tris(nullptr) == 0);
+    EXPECT_TRUE(aicore_instantmesh_mesh_verts(nullptr) == nullptr);
+    EXPECT_TRUE(aicore_instantmesh_mesh_tris(nullptr) == nullptr);
+    EXPECT_TRUE(aicore_instantmesh_mesh_vcolors(nullptr) == nullptr);
+    EXPECT_TRUE(aicore_instantmesh_mesh_uvs(nullptr) == nullptr);
+    EXPECT_TRUE(aicore_instantmesh_mesh_texture(nullptr) == nullptr);
+    EXPECT_TRUE(aicore_instantmesh_mesh_texture_w(nullptr) == 0);
+    EXPECT_TRUE(aicore_instantmesh_mesh_texture_h(nullptr) == 0);
+}
 
+TEST(InstantMeshCapi, OptionsLifecycle) {
     // Options lifecycle: full setter sweep must not crash.
     {
         aicore_instantmesh_options* opts = aicore_instantmesh_options_new();
-        AICORE_CHECK(opts != nullptr);
+        ASSERT_NE(opts, nullptr);
         aicore_instantmesh_options_set_device(opts, "cpu");
         aicore_instantmesh_options_set_threads(opts, 2);
         aicore_instantmesh_options_set_rmbg_gguf(opts, "");
@@ -410,30 +432,32 @@ int main(int argc, char** argv) {
         aicore_instantmesh_options_set_bake_texture(opts, 0);
         aicore_instantmesh_options_free(opts);
     }
+}
 
+TEST(InstantMeshCapi, GenerateErrorPaths) {
     // Generate error paths (no models loaded).
     {
         char err[512] = {0};
-        AICORE_CHECK(aicore_instantmesh_generate(nullptr, nullptr, 0, nullptr,
-                                                 nullptr, nullptr, err,
-                                                 (int)sizeof(err)) == nullptr);
+        EXPECT_TRUE(aicore_instantmesh_generate(nullptr, nullptr, 0, nullptr,
+                                                nullptr, nullptr, err,
+                                                (int)sizeof(err)) == nullptr);
         // Observation accessors reject a null handle like the mesh
         // accessors above.
-        AICORE_CHECK(aicore_instantmesh_mesh_has_rmbg(nullptr) == 0);
-        AICORE_CHECK(aicore_instantmesh_mesh_rmbg_rgba(nullptr) == nullptr);
-        AICORE_CHECK(aicore_instantmesh_mesh_rmbg_w(nullptr) == 0);
-        AICORE_CHECK(aicore_instantmesh_mesh_rmbg_h(nullptr) == 0);
-        AICORE_CHECK(aicore_instantmesh_mesh_views_rgb(nullptr) == nullptr);
-        AICORE_CHECK(aicore_instantmesh_mesh_views_w(nullptr) == 0);
-        AICORE_CHECK(aicore_instantmesh_mesh_views_h(nullptr) == 0);
+        EXPECT_TRUE(aicore_instantmesh_mesh_has_rmbg(nullptr) == 0);
+        EXPECT_TRUE(aicore_instantmesh_mesh_rmbg_rgba(nullptr) == nullptr);
+        EXPECT_TRUE(aicore_instantmesh_mesh_rmbg_w(nullptr) == 0);
+        EXPECT_TRUE(aicore_instantmesh_mesh_rmbg_h(nullptr) == 0);
+        EXPECT_TRUE(aicore_instantmesh_mesh_views_rgb(nullptr) == nullptr);
+        EXPECT_TRUE(aicore_instantmesh_mesh_views_w(nullptr) == 0);
+        EXPECT_TRUE(aicore_instantmesh_mesh_views_h(nullptr) == 0);
         aicore_instantmesh_ctx* ctx = nullptr;
-        AICORE_CHECK(aicore_instantmesh_generate(ctx, kPng1x1,
-                                                 (int)sizeof(kPng1x1), nullptr,
-                                                 nullptr, nullptr, err,
-                                                 (int)sizeof(err)) == nullptr);
+        EXPECT_TRUE(aicore_instantmesh_generate(ctx, kPng1x1,
+                                                (int)sizeof(kPng1x1), nullptr,
+                                                nullptr, nullptr, err,
+                                                (int)sizeof(err)) == nullptr);
         // Missing-model load fails cleanly with a non-null last error.
         aicore_instantmesh_options* opts = aicore_instantmesh_options_new();
-        AICORE_CHECK(opts != nullptr);
+        ASSERT_NE(opts, nullptr);
         aicore_instantmesh_options_set_device(opts, "cpu");
 #if defined(AICORE_INSTANTMESH_ABI_VERSION)
         aicore_instantmesh_model_paths paths =
@@ -447,9 +471,11 @@ int main(int argc, char** argv) {
         aicore_instantmesh_ctx* bad =
                 aicore_instantmesh_load_opts(&paths, opts);
         aicore_instantmesh_options_free(opts);
-        AICORE_CHECK(bad == nullptr);
+        EXPECT_TRUE(bad == nullptr);
     }
+}
 
+TEST(InstantMeshCapi, ImagePreprocessing) {
     // Image preprocessing only (no models): decode + alpha-over-white +
     // resize into a solid 64 target.
     {
@@ -458,14 +484,16 @@ int main(int argc, char** argv) {
         char err[512] = {0};
         const int rc = aicore_instantmesh_preprocess_image_bytes(
                 kPng1x1, (int)sizeof(kPng1x1), 64, out, err, (int)sizeof(err));
-        AICORE_CHECK(rc == 0);
+        EXPECT_TRUE(rc == 0);
         bool nonwhite = false;
         for (size_t i = 0; i < sizeof(out); i += 3) {
             if (out[i] != 255 || out[i + 1] != 255) nonwhite = true;
         }
-        AICORE_CHECK(nonwhite);  // the red square must survive
+        EXPECT_TRUE(nonwhite);  // the red square must survive
     }
+}
 
+TEST(InstantMeshCapi, GlbContainer) {
     // GLB bake contract: a minimal triangle bakes to a valid GLB container.
     {
         char err[512] = {0};
@@ -473,32 +501,34 @@ int main(int argc, char** argv) {
         uint8_t* glb = aicore_instantmesh_bake_glb(kVerts, 3, kTris, 1, nullptr,
                                                    nullptr, 0, 0, &glb_len, err,
                                                    (int)sizeof(err));
-        AICORE_CHECK(glb != nullptr && glb_len > 12);
+        EXPECT_TRUE(glb != nullptr && glb_len > 12);
         if (glb) {
-            AICORE_CHECK(std::memcmp(glb, "glTF", 4) == 0);
+            EXPECT_TRUE(std::memcmp(glb, "glTF", 4) == 0);
             aicore_instantmesh_free_buffer(glb);
         }
     }
+}
 
+TEST(InstantMeshCapi, PublishedModelCatalog) {
     // Model catalog: 14 published entries, all roles present, stable lookup,
     // every URL on the pinned mirror, RMBG absent (single-owner rule).
     {
         const int n = aicore_instantmesh_model_count();
-        AICORE_CHECK(n == 14);
+        EXPECT_TRUE(n == 14);
         int roles_dino = 0, roles_transformer = 0, roles_synth = 0,
             roles_cond = 0, roles_unet = 0, roles_vae = 0;
         for (int i = 0; i < n; ++i) {
             const aicore_instantmesh_model_entry* e =
                     aicore_instantmesh_model_at(i);
-            AICORE_CHECK(e != nullptr);
-            AICORE_CHECK(e->filename && e->filename[0]);
-            AICORE_CHECK(e->download_url &&
-                         std::strstr(e->download_url,
-                                     "huggingface.co/Asher-1/"
-                                     "InstantMesh-GUFF") != nullptr);
-            AICORE_CHECK(e->sha256 && std::strlen(e->sha256) == 64);
-            AICORE_CHECK(e->size_bytes > 0);
-            AICORE_CHECK(e->role && e->role[0]);
+            ASSERT_NE(e, nullptr);
+            ASSERT_TRUE(e->filename && e->filename[0]);
+            EXPECT_TRUE(e->download_url &&
+                        std::strstr(e->download_url,
+                                    "huggingface.co/Asher-1/"
+                                    "InstantMesh-GUFF") != nullptr);
+            EXPECT_TRUE(e->sha256 && std::strlen(e->sha256) == 64);
+            EXPECT_TRUE(e->size_bytes > 0);
+            ASSERT_TRUE(e->role && e->role[0]);
             const char* r = e->role;
             if (!std::strcmp(r, "dino"))
                 ++roles_dino;
@@ -513,58 +543,64 @@ int main(int argc, char** argv) {
             else if (!std::strcmp(r, "vae"))
                 ++roles_vae;
             else
-                AICORE_CHECK(false);
+                EXPECT_TRUE(false);
             // by_filename round-trips.
-            AICORE_CHECK(aicore_instantmesh_model_by_filename(e->filename) ==
-                         e);
+            EXPECT_TRUE(aicore_instantmesh_model_by_filename(e->filename) == e);
         }
-        AICORE_CHECK(roles_dino == 3 && roles_transformer == 3 &&
-                     roles_synth == 3);
-        AICORE_CHECK(roles_cond == 1 && roles_unet == 2 && roles_vae == 2);
-        AICORE_CHECK(aicore_instantmesh_model_at(-1) == nullptr);
-        AICORE_CHECK(aicore_instantmesh_model_at(n) == nullptr);
-        AICORE_CHECK(aicore_instantmesh_model_by_filename("nope.gguf") ==
-                     nullptr);
-        AICORE_CHECK(aicore_instantmesh_model_by_filename("rmbg_q8.gguf") ==
-                     nullptr);
+        EXPECT_TRUE(roles_dino == 3 && roles_transformer == 3 &&
+                    roles_synth == 3);
+        EXPECT_TRUE(roles_cond == 1 && roles_unet == 2 && roles_vae == 2);
+        EXPECT_TRUE(aicore_instantmesh_model_at(-1) == nullptr);
+        EXPECT_TRUE(aicore_instantmesh_model_at(n) == nullptr);
+        EXPECT_TRUE(aicore_instantmesh_model_by_filename("nope.gguf") ==
+                    nullptr);
+        EXPECT_TRUE(aicore_instantmesh_model_by_filename("rmbg_q8.gguf") ==
+                    nullptr);
         const char* base = aicore_instantmesh_model_download_base();
-        AICORE_CHECK(base && std::strstr(base, "InstantMesh-GUFF") != nullptr);
+        EXPECT_TRUE(base && std::strstr(base, "InstantMesh-GUFF") != nullptr);
     }
+}
 
+TEST(InstantMeshCapi, CacheAndInfo) {
     // Cache dir + info JSON plumbing.
     {
         char* dir = aicore_instantmesh_model_cache_dir();
-        AICORE_CHECK(dir != nullptr && dir[0]);
+        EXPECT_TRUE(dir != nullptr && dir[0]);
         aicore_instantmesh_free_buffer(dir);
         char* json = aicore_instantmesh_info_json(nullptr);
-        AICORE_CHECK(json != nullptr);
+        EXPECT_TRUE(json != nullptr);
         aicore_instantmesh_free_buffer(json);
     }
+}
 
+TEST(InstantMeshCapi, NullTimings) {
     // Timings: no generate yet -> -1.
     {
         aicore_pipeline_timings t{};
-        AICORE_CHECK(aicore_instantmesh_last_pipeline_timings(nullptr, &t) ==
-                     -1);
+        EXPECT_TRUE(aicore_instantmesh_last_pipeline_timings(nullptr, &t) ==
+                    -1);
     }
+}
 
+TEST(InstantMeshCapi, ProgressCallback) {
     // Progress callback plumbing is accepted (never invoked without models).
     {
         char err[512] = {0};
         aicore_instantmesh_generate_params params{};
-        AICORE_CHECK(aicore_instantmesh_generate(nullptr, kPng1x1,
-                                                 (int)sizeof(kPng1x1), &params,
-                                                 test_progress, nullptr, err,
-                                                 (int)sizeof(err)) == nullptr);
+        EXPECT_TRUE(aicore_instantmesh_generate(nullptr, kPng1x1,
+                                                (int)sizeof(kPng1x1), &params,
+                                                test_progress, nullptr, err,
+                                                (int)sizeof(err)) == nullptr);
     }
+}
 
+TEST(InstantMeshCapi, ShutdownIsIdempotent) {
     aicore_instantmesh_shutdown();
     aicore_instantmesh_shutdown();
+}
 
-    if (failures == 0) {
-        std::printf("test_instantmesh_capi_contract: ALL PASS\n");
-        return 0;
-    }
-    std::printf("test_instantmesh_capi_contract: %d FAILURES\n", failures);
-    return 1;
+int main(int argc, char** argv) {
+    testing::InitGoogleTest(&argc, argv);
+    if (argc > 1) catalog_binary = argv[1];
+    return RUN_ALL_TESTS();
 }

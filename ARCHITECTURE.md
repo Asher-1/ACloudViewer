@@ -507,3 +507,14 @@ cat libs/cloudViewer/version.txt
 
 If a statement here conflicts with current CMake sources, **the CMake sources win** —
 then update this file.
+
+## Unified C++ Test Ownership
+
+The repository-root [tests module](tests/README.md) owns first-party C++
+registration, build prerequisites, capability profiles and CI execution through
+`tests/Run.cmake`. Production modules retain their test sources and dependencies.
+First-party C++ unit assertions use GoogleTest; each enabled suite registers
+with `cloudviewer_add_test()` and declares capabilities. The corresponding root
+profile automatically includes it without per-module CI lists. Third-party
+projects, standalone compiler fixtures, Python/package tests and strict model
+accuracy/performance validation remain distinct scopes.

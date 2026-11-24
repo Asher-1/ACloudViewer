@@ -61,14 +61,16 @@ class MainWindow;
 #include <vtkVector.h>
 
 // QT
+#include <Shortcuts/ecvKeySequences.h>
+#include <Shortcuts/ecvModalShortcut.h>
+
 #include <QActionGroup>
 #include <QApplication>
 #include <QClipboard>
 #include <QKeySequence>
-#include <QMainWindow>
 #include <QMessageBox>
 #include <QPixmap>
-#include <QShortcut>
+#include <QSignalBlocker>
 #include <QTimer>
 #include <QToolTip>
 #include <QWidget>
@@ -141,38 +143,8 @@ cvRenderViewSelectionReaction::cvRenderViewSelectionReaction(
     connect(&m_mouseMovingTimer, &QTimer::timeout, this,
             &cvRenderViewSelectionReaction::onMouseStop);
 
-    // Copy tooltip shortcut (ParaView-style)
-    // Reference: pqRenderViewSelectionReaction.cxx line 59, 118-120
-    // Use main window widget as parent (like ParaView's
-    // pqCoreUtilities::mainWidget()) ParaView uses
-    // pqCoreUtilities::mainWidget() which finds QMainWindow from top-level
-    // widgets
-    QWidget* parentWidget = nullptr;
-    // Find main window from top-level widgets (ParaView-style)
-    for (QWidget* widget : QApplication::topLevelWidgets()) {
-        if (widget->isWindow() && widget->isVisible() &&
-            qobject_cast<QMainWindow*>(widget)) {
-            parentWidget = widget;
-            break;
-        }
-    }
-    if (!parentWidget) {
-        // Fallback: find any main window (even if not visible)
-        for (QWidget* widget : QApplication::topLevelWidgets()) {
-            if (widget->isWindow() && qobject_cast<QMainWindow*>(widget)) {
-                parentWidget = widget;
-                break;
-            }
-        }
-    }
-    // If still no parent, use nullptr (shortcut will be application-wide)
-    m_copyTooltipShortcut = new QShortcut(parentWidget);
-    connect(m_copyTooltipShortcut, &QShortcut::activated, this, [this]() {
-        if (!m_plainTooltipText.isEmpty()) {
-            QApplication::clipboard()->setText(m_plainTooltipText);
-        }
-    });
-    m_copyTooltipShortcut->setEnabled(false);
+    // Tooltip copy is a transient, view-local gesture. Its shortcut is
+    // created with the actual hover widget when a tooltip becomes available.
 
     // Initial enable state update
     updateEnableState();
@@ -217,6 +189,9 @@ void cvRenderViewSelectionReaction::setVisualizer(
     m_viewer = viewer;
     m_interactor = nullptr;
     m_renderer = nullptr;
+    m_hoveredId = -1;
+    m_currentPolyData = nullptr;
+    m_mousePosition[0] = m_mousePosition[1] = -1;
 
     Visualization::VtkVis* pclVis = getVtkVis();
     if (pclVis) {
@@ -576,7 +551,6 @@ void cvRenderViewSelectionReaction::endSelection() {
     // Disable copy tooltip shortcut
     // Reference: pqRenderViewSelectionReaction.cxx line 930-931
     if (m_copyTooltipShortcut) {
-        m_copyTooltipShortcut->setKey(QKeySequence());
         m_copyTooltipShortcut->setEnabled(false);
     }
 
@@ -1067,10 +1041,8 @@ void cvRenderViewSelectionReaction::preSelection() {
         // Show highlight using highlightElement
         cvSelectionHighlighter* highlighter = getSelectionHighlighter();
         if (highlighter && info.polyData) {
-            // fieldAssociation: 0 for cells, 1 for points
-            int fieldAssociation = selectCells ? 0 : 1;
-            highlighter->highlightElement(info.polyData, info.attributeID,
-                                          fieldAssociation);
+            highlighter->highlightSelection(info.selection,
+                                            cvSelectionHighlighter::HOVER);
         }
     } else {
         m_hoveredId = -1;
@@ -1141,9 +1113,8 @@ void cvRenderViewSelectionReaction::fastPreSelection() {
 
         cvSelectionHighlighter* highlighter = getSelectionHighlighter();
         if (highlighter && info.polyData) {
-            int fieldAssociation = selectCells ? 0 : 1;
-            highlighter->highlightElement(info.polyData, info.attributeID,
-                                          fieldAssociation);
+            highlighter->highlightSelection(info.selection,
+                                            cvSelectionHighlighter::HOVER);
         }
     } else {
         if (m_hoveredId < 0 && !m_currentPolyData) {
@@ -1162,6 +1133,10 @@ void cvRenderViewSelectionReaction::fastPreSelection() {
 
 //-----------------------------------------------------------------------------
 void cvRenderViewSelectionReaction::updateTooltip() {
+    // Early exits (moving mouse / invalid hover data) must release ownership
+    // too; a hidden tooltip must never retain a stale clipboard command.
+    if (m_copyTooltipShortcut) m_copyTooltipShortcut->setEnabled(false);
+    m_plainTooltipText.clear();
     // Reference: pqRenderViewSelectionReaction::UpdateTooltip()
     // lines 891-935
 
@@ -1437,17 +1412,29 @@ void cvRenderViewSelectionReaction::updateTooltip() {
             // ParaView sets PlainTooltipText first, then enables shortcut and
             // sets key
             m_plainTooltipText = tooltipText;
-            if (m_copyTooltipShortcut) {
-                m_copyTooltipShortcut->setEnabled(true);
-                m_copyTooltipShortcut->setKey(QKeySequence::Copy);
+            if (!m_copyTooltipShortcut) {
+                m_copyTooltipShortcut =
+                        ecvKeySequences::instance().addModalShortcut(
+                                QKeySequence::Copy, nullptr, widget,
+                                Qt::WidgetWithChildrenShortcut);
+                m_copyTooltipShortcut->setParent(this);
+                m_copyTooltipShortcut->setObjectName("hover.copy");
+                connect(m_copyTooltipShortcut, &ecvModalShortcut::activated,
+                        this, [this]() {
+                            if (!m_plainTooltipText.isEmpty())
+                                QApplication::clipboard()->setText(
+                                        m_plainTooltipText);
+                        });
             }
+            m_copyTooltipShortcut->setContextWidget(
+                    widget, Qt::WidgetWithChildrenShortcut);
+            m_copyTooltipShortcut->setEnabled(true, false);
         }
     } else {
         QToolTip::hideText();
         // Disable copy tooltip shortcut when no tooltip
         // Reference: pqRenderViewSelectionReaction.cxx line 930-931
         if (m_copyTooltipShortcut) {
-            m_copyTooltipShortcut->setKey(QKeySequence());
             m_copyTooltipShortcut->setEnabled(false);
         }
     }
@@ -1726,25 +1713,11 @@ void cvRenderViewSelectionReaction::finalizeSelection(
 
     // Update source object from VtkVis for direct extraction
     Visualization::VtkVis* pclVis = getVtkVis();
+    manager->setSourceObject(nullptr);
     if (pclVis && combined.hasActorInfo()) {
-        vtkActor* primaryActor = combined.primaryActor();
-        if (primaryActor) {
-            primaryActor = cvSelectionHighlighter::resolveRegisteredMeshActor(
-                    pclVis, primaryActor);
-            std::string viewID = pclVis->getIdByActor(primaryActor);
-            if (viewID.empty() && combined.primaryPolyData()) {
-                viewID = pclVis->getIdByPolyData(combined.primaryPolyData());
-            }
-            if (!viewID.empty()) {
-                if (ccHObject* sourceObj = pclVis->getSourceObject(viewID)) {
-                    manager->setSourceObject(sourceObj);
-                } else {
-                    CVLog::Warning(
-                            QString("[finalizeSelection] No source object "
-                                    "found for viewID='%1'")
-                                    .arg(QString::fromStdString(viewID)));
-                }
-            }
+        const auto sourceId = combined.actorInfo(0).sourceId.toStdString();
+        if (!sourceId.empty()) {
+            manager->setSourceObject(pclVis->getSourceObject(sourceId));
         }
     }
 
@@ -1753,15 +1726,16 @@ void cvRenderViewSelectionReaction::finalizeSelection(
     // Highlight on the active view first, then publish selection state.
     // Avoids selectionChanged handlers re-highlighting with stripped actor
     // info.
-    manager->blockSignals(true);
-    if (highlighter && !combined.isEmpty()) {
-        highlighter->highlightSelection(combined,
-                                        cvSelectionHighlighter::SELECTED);
-    } else if (highlighter && combined.isEmpty()) {
-        highlighter->clearHighlights();
+    {
+        const QSignalBlocker blocker(manager);
+        if (highlighter && !combined.isEmpty()) {
+            highlighter->highlightSelection(combined,
+                                            cvSelectionHighlighter::SELECTED);
+        } else if (highlighter && combined.isEmpty()) {
+            highlighter->clearHighlights();
+        }
+        manager->setCurrentSelection(combined);
     }
-    manager->setCurrentSelection(combined);
-    manager->blockSignals(false);
 
     emit selectionFinished(combined);
 }

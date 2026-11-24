@@ -48,7 +48,9 @@ public slots:
 
 protected:
     //! Adds a pcl module
-    int addPclModule(BasePclModule* module, QList<QAction*>& actions);
+    int addPclModule(BasePclModule* module,
+                     QList<QAction*>& actions,
+                     const char* commandId);
 
     //! Loaded modules
     std::vector<BasePclModule*> m_modules;

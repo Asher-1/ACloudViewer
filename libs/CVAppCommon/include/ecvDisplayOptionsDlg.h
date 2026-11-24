@@ -9,6 +9,7 @@
 
 // LOCAL
 #include "CVAppCommon.h"
+#include "ecvApplicationBase.h"
 #include "ecvOptions.h"
 
 // CV_CORE_LIB
@@ -34,6 +35,7 @@ class CVAPPCOMMON_LIB_API ccDisplayOptionsDlg : public QDialog {
 public:
     explicit ccDisplayOptionsDlg(QWidget* parent);
     ~ccDisplayOptionsDlg() override;
+    void reject() override;
 
 signals:
     void aspectHasChanged();
@@ -77,7 +79,7 @@ protected slots:
 
     void doAccept();
     void doReject();
-    void apply();
+    bool apply();
     void reset();
 
 protected:
@@ -109,6 +111,7 @@ protected:
 
     //! Default application style index (for reset)
     int m_defaultAppStyleIndex;
+    ecvApplicationBase::AppearanceState m_oldAppearance;
 
 private:
     Ui::DisplayOptionsDlg* m_ui;

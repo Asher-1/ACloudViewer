@@ -9,14 +9,15 @@
 
 // LOCAL
 #include "Visualization/VtkVis.h"
+#include "cvSelectionHighlighter.h"
 #include "cvSelectionLabelPropertiesDialog.h"
+#include "cvSelectionPipeline.h"
 
 // CV_CORE_LIB
 #include <CVLog.h>
 
 // VTK
 #include <vtkActor.h>
-#include <vtkCell.h>
 #include <vtkCoordinate.h>
 #include <vtkPolyData.h>
 #include <vtkProperty.h>
@@ -83,32 +84,31 @@ QString cvSelectionAnnotationManager::addAnnotation(
     annotation.verticalJustification =
             m_defaultCellLabelProps.cellLabelVerticalJustification;
 
-    if (autoPosition && m_viewer) {
-        // Compute selection center from polyData (ParaView-style)
-        // Reference: ParaView's vtkSMSelectionHelper::ComputeSelectionBounds
-        double* center = computeSelectionCenter(selection, nullptr);
-
-        if (center) {
-            annotation.position[0] = center[0];
-            annotation.position[1] = center[1];
-            annotation.position[2] = center[2];
-
-            CVLog::PrintVerbose(
-                    QString("[cvSelectionAnnotationManager] Annotation "
-                            "position: [%1, %2, %3]")
-                            .arg(center[0])
-                            .arg(center[1])
-                            .arg(center[2]));
-            delete[] center;
-        } else {
-            // Fallback to origin
-            annotation.position[0] = 0.0;
-            annotation.position[1] = 0.0;
-            annotation.position[2] = 0.0;
-            CVLog::PrintVerbose(
-                    "[cvSelectionAnnotationManager] Using origin for "
-                    "annotation (no polyData available)");
+    if (autoPosition) {
+        // IDs belong to sources, not necessarily to this view's display data.
+        // Resolve first, then use the same actor-local -> world geometry as
+        // selection highlighting. Never guess another actor or use the origin
+        // when the selected source is not represented in the current view.
+        const auto resolved = cvSelectionPipeline::resolveSelectionForView(
+                selection, m_viewer);
+        auto worldSelection =
+                cvSelectionHighlighter::buildSelectionOverlay(resolved);
+        if (!worldSelection || worldSelection->GetNumberOfPoints() == 0) {
+            CVLog::Warning(
+                    "[cvSelectionAnnotationManager] Selected source is not "
+                    "represented in the current view");
+            return QString();
         }
+        double center[3];
+        worldSelection->GetCenter(center);
+        for (int axis = 0; axis < 3; ++axis) {
+            annotation.position[axis] = center[axis];
+        }
+        CVLog::PrintVerbose(QString("[cvSelectionAnnotationManager] Annotation "
+                                    "position: [%1, %2, %3]")
+                                    .arg(center[0])
+                                    .arg(center[1])
+                                    .arg(center[2]));
     }
 
     m_annotations[id] = annotation;
@@ -668,58 +668,6 @@ void cvSelectionAnnotationManager::removeTextActor(const QString& id) {
 
     // Smart pointer handles cleanup automatically
     m_textActors.remove(id);
-}
-
-//-----------------------------------------------------------------------------
-double* cvSelectionAnnotationManager::computeSelectionCenter(
-        const cvSelectionData& selection, vtkPolyData* polyData) {
-    static double center[3] = {0.0, 0.0, 0.0};
-
-    if (!polyData || selection.isEmpty()) {
-        return center;
-    }
-
-    QVector<qint64> ids = selection.ids();
-    double sum[3] = {0.0, 0.0, 0.0};
-    int count = 0;
-
-    if (selection.fieldAssociation() == cvSelectionData::POINTS) {
-        for (qint64 id : ids) {
-            if (id >= 0 && id < polyData->GetNumberOfPoints()) {
-                double pt[3];
-                polyData->GetPoint(id, pt);
-                sum[0] += pt[0];
-                sum[1] += pt[1];
-                sum[2] += pt[2];
-                ++count;
-            }
-        }
-    } else {
-        for (qint64 id : ids) {
-            if (id >= 0 && id < polyData->GetNumberOfCells()) {
-                vtkCell* cell = polyData->GetCell(id);
-                if (cell) {
-                    vtkIdType npts = cell->GetNumberOfPoints();
-                    for (vtkIdType i = 0; i < npts; ++i) {
-                        double pt[3];
-                        polyData->GetPoint(cell->GetPointId(i), pt);
-                        sum[0] += pt[0];
-                        sum[1] += pt[1];
-                        sum[2] += pt[2];
-                        ++count;
-                    }
-                }
-            }
-        }
-    }
-
-    if (count > 0) {
-        center[0] = sum[0] / count;
-        center[1] = sum[1] / count;
-        center[2] = sum[2] / count;
-    }
-
-    return center;
 }
 
 //-----------------------------------------------------------------------------

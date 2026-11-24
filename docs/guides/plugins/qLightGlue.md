@@ -1,5 +1,9 @@
 # qLightGlue — LightGlue Feature Matching Plugin
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qLightGlue/images/qLightGlue.png" width="72%" alt="qLightGlue — SIFT / ALIKED matching with live visualization">
+</p>
+
 Sparse feature matching in ACloudViewer via **SIFT / ALIKED LightGlue** on shared **`libAICore.so`** ([ggml](https://github.com/ggml-org/llama.cpp)) — no Python or PyTorch at runtime.
 
 ## Model families

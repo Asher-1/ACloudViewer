@@ -413,63 +413,11 @@ from the `SuperSplat Spirula Studio Gallery
 <https://superspl.at/explore/software/spirula-studio>`_.
 
 .. toctree::
-   :maxdepth: 1
-   :caption: AI Plugins (AICore)
+   :maxdepth: 2
+   :caption: Plugins
 
-   guides/plugins/README
-   guides/plugins/qDA3
-   guides/plugins/qDeepLSD
-   guides/plugins/qFaceDetect
-   guides/plugins/qLightGlue
-   guides/plugins/qFreeSplatter
-   guides/plugins/qSAM3
-   guides/plugins/qTrellis
-   guides/plugins/qYOLO
-   guides/plugins/qRFDetr
-   guides/plugins/qRMBG
-   guides/plugins/qGKD
-   guides/plugins/qInstantMesh
-   guides/plugins/qLingbotMap
-   guides/plugins/qMapAnything
-   guides/plugins/qOCR
-   guides/plugins/qOpenPCDet
-   guides/plugins/qQuerySplat
-   guides/plugins/qRAM
-   guides/plugins/qRelateAnything
-   guides/plugins/qSAM3D
-   guides/plugins/qVLXSeek
-   guides/plugins/qAnyLabeling
-   guides/plugins/qSpirula
-
-.. toctree::
-   :maxdepth: 1
-   :caption: AI Plugin Deep Dives (synced plugin READMEs)
-
-   plugins/qDA3/README
-   plugins/qDeepLSD/README
-   plugins/qFaceDetect/README
-   plugins/qLightGlue/README
-   plugins/qFreeSplatter/README
-   plugins/qSAM3/README
-   plugins/qTrellis/README
-   plugins/qYOLO/README
-   plugins/qRFDetr/README
-   plugins/qRMBG/README
-   plugins/qGKD/README
-   plugins/qInstantMesh/README
-   plugins/qLingbotMap/README
-   plugins/qMapAnything/README
-   plugins/qOCR/README
-   plugins/qOpenPCDet/README
-   plugins/qQuerySplat/README
-   plugins/qRAM/README
-   plugins/qRelateAnything/README
-   plugins/qSAM3D/README
-   plugins/qVLXSeek/README
-   plugins/qAnyLabeling/README
-   plugins/qSpirula/README
-   plugins/qBroom/README
-   plugins/qSIBR/README
+   User guides <guides/plugins/README>
+   Plugin reference <plugin_reference>
 
 .. toctree::
    :maxdepth: 1

@@ -10,25 +10,41 @@
 // trips. Proves the converter's metadata contract and the loader agree.
 #include <ggml.h>
 #include <gguf.h>
+#include <gtest/gtest.h>
 
-#include <cstdio>
+#include <chrono>
 #include <filesystem>
 #include <string>
 
 #include "tasks/gaussian/gguf_loader.h"
 
-static int failures = 0;
-#define CHECK(cond)                                                      \
-    do {                                                                 \
-        if (!(cond)) {                                                   \
-            std::fprintf(stderr, "FAIL %s:%d: %s\n", __FILE__, __LINE__, \
-                         #cond);                                         \
-            failures++;                                                  \
-        }                                                                \
-    } while (0)
+class GaussianLoader : public ::testing::Test {
+protected:
+    void SetUp() override {
+        const auto stamp =
+                std::chrono::steady_clock::now().time_since_epoch().count();
+        path = (std::filesystem::temp_directory_path() /
+                (std::string("free_splatter_") +
+                 ::testing::UnitTest::GetInstance()
+                         ->current_test_info()
+                         ->name() +
+                 "_" + std::to_string(stamp) + ".gguf"))
+                       .string();
+    }
 
-static std::string write_synth_gguf() {
+    void TearDown() override {
+        std::error_code error;
+        std::filesystem::remove(path, error);
+        EXPECT_FALSE(error)
+                << "Cannot remove synthetic GGUF: " << error.message();
+    }
+
+    std::string path;
+};
+
+TEST_F(GaussianLoader, RoundTripsSyntheticHyperparameters) {
     gguf_context* g = gguf_init_empty();
+    ASSERT_NE(g, nullptr);
     gguf_set_val_str(g, "general.architecture", "free-splatter");
     gguf_set_val_u32(g, "free-splatter.block_count", 24);
     gguf_set_val_u32(g, "free-splatter.embedding_length", 1024);
@@ -46,54 +62,38 @@ static std::string write_synth_gguf() {
     gguf_set_val_f32(g, "free-splatter.scale_min_act", 1e-4f);
     gguf_set_val_f32(g, "free-splatter.scale_max_act", 0.02f);
 
-    const std::string path = (std::filesystem::temp_directory_path() /
-                              "free_splatter_test_loader.gguf")
-                                     .string();
     gguf_write_to_file(g, path.c_str(), /*only_meta =*/true);
     gguf_free(g);
-    return path;
-}
-
-int main() {
-    const std::string path = write_synth_gguf();
+    ASSERT_TRUE(std::filesystem::is_regular_file(path)) << path;
 
     aicore::gaussian::model_file mf;
-    CHECK(mf.open(path, /*with_data =*/false));
-    if (!mf.error.empty())
-        std::fprintf(stderr, "open error: %s\n", mf.error.c_str());
+    ASSERT_TRUE(mf.open(path, /*with_data =*/false)) << mf.error;
 
     const aicore::gaussian::hparams& hp = mf.hp;
-    CHECK(hp.n_layer == 24);
-    CHECK(hp.n_embd == 1024);
-    CHECK(hp.n_ff == 4096);
-    CHECK(hp.n_head == 16);
-    CHECK(hp.head_dim == 64);
-    CHECK(hp.patch_size == 8);
-    CHECK(hp.image_size == 512);
-    CHECK(hp.in_channels == 3);
-    CHECK(hp.gaussian_channels == 23);
-    CHECK(hp.sh_degree == 1);
-    CHECK(hp.sh_residual == true);
-    CHECK(hp.use_2dgs == false);
-    CHECK(hp.ln_eps == 1e-5f);
-    CHECK(hp.tokens_per_view() == 4096);  // (512/8)^2
+    EXPECT_EQ(hp.n_layer, 24);
+    EXPECT_EQ(hp.n_embd, 1024);
+    EXPECT_EQ(hp.n_ff, 4096);
+    EXPECT_EQ(hp.n_head, 16);
+    EXPECT_EQ(hp.head_dim, 64);
+    EXPECT_EQ(hp.patch_size, 8);
+    EXPECT_EQ(hp.image_size, 512);
+    EXPECT_EQ(hp.in_channels, 3);
+    EXPECT_EQ(hp.gaussian_channels, 23);
+    EXPECT_EQ(hp.sh_degree, 1);
+    EXPECT_TRUE(hp.sh_residual);
+    EXPECT_FALSE(hp.use_2dgs);
+    EXPECT_EQ(hp.ln_eps, 1e-5f);
+    EXPECT_EQ(hp.tokens_per_view(), 4096);  // (512/8)^2
+}
 
-    // A wrong architecture string must be rejected.
-    {
-        gguf_context* g = gguf_init_empty();
-        gguf_set_val_str(g, "general.architecture", "not-free-splatter");
-        const std::string bad = (std::filesystem::temp_directory_path() /
-                                 "free_splatter_bad.gguf")
-                                        .string();
-        gguf_write_to_file(g, bad.c_str(), true);
-        gguf_free(g);
-        aicore::gaussian::model_file m2;
-        CHECK(!m2.open(bad, false));  // must fail
-        std::filesystem::remove(bad);
-    }
+TEST_F(GaussianLoader, RejectsWrongArchitecture) {
+    gguf_context* g = gguf_init_empty();
+    ASSERT_NE(g, nullptr);
+    gguf_set_val_str(g, "general.architecture", "not-free-splatter");
+    gguf_write_to_file(g, path.c_str(), /*only_meta =*/true);
+    gguf_free(g);
+    ASSERT_TRUE(std::filesystem::is_regular_file(path)) << path;
 
-    std::filesystem::remove(path);
-    std::printf(failures ? "test_loader: %d FAILURES\n" : "test_loader: ok\n",
-                failures);
-    return failures ? 1 : 0;
+    aicore::gaussian::model_file model;
+    EXPECT_FALSE(model.open(path, /*with_data =*/false));
 }

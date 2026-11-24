@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <QApplication>
 #include <QClipboard>
 #include <QFile>
@@ -28,14 +30,11 @@
 
 #include "PpocrTableEditor.h"
 #include "QtCompat.h"
-#define REQUIRE(condition)                                               \
-    do {                                                                 \
-        if (!(condition)) {                                              \
-            std::fprintf(stderr, "line %d: %s\n", __LINE__, #condition); \
-            return 1;                                                    \
-        }                                                                \
-    } while (false)
+#define REQUIRE(...) ASSERT_TRUE((__VA_ARGS__))
 namespace {
+int probeArgc = 0;
+char** probeArgv = nullptr;
+
 QJsonObject snapshot(QTableWidget* table) {
     QJsonArray states;
     for (int r = 0; r < table->rowCount(); ++r)
@@ -79,7 +78,9 @@ bool menu(QTableWidget* grid, const QString& action) {
     return triggered;
 }
 }  // namespace
-int main(int argc, char** argv) {
+TEST(PpocrTableTest, EditingAndSerialization) {
+    int argc = probeArgc;
+    char** argv = probeArgv;
     QApplication app(argc, argv);
     QStringList inputs{
             "",
@@ -392,5 +393,11 @@ int main(int argc, char** argv) {
     std::puts(
             "PASS: OCR table tokens/HTML/TSV, format/span/history, clipboard, "
             "structure");
-    return 0;
+}
+
+int main(int argc, char** argv) {
+    probeArgc = argc;
+    probeArgv = argv;
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

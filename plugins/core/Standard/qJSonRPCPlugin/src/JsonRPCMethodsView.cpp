@@ -212,11 +212,12 @@ JsonRPCResult JsonRPCPlugin::rpcViewSelectRegion(
     // own VtkVis, whose renderer is NOT the viewport's — binding that made
     // every hardware selection silently miss, even on dedicated actors.
     // MainWindow's rebindToolsToActiveView() does the same for the GUI path.
-    if (auto* glView = dynamic_cast<vtkGLView*>(view)) {
-        if (auto* vis = glView->getVisualizer3D()) {
-            mgr->setVisualizer(vis);
-        }
-    }
+    auto* activeView = dynamic_cast<vtkGLView*>(view);
+    auto* activeVisualizer =
+            activeView ? activeView->getVisualizer3D() : nullptr;
+    if (!activeVisualizer)
+        return JsonRPCResult::error(1, "active view has no selection renderer");
+    mgr->setVisualizer(activeVisualizer);
 
     const cvSelectionPipeline::SelectionType type =
             wantCells ? cvSelectionPipeline::SelectionType::SURFACE_CELLS
@@ -233,7 +234,8 @@ JsonRPCResult JsonRPCPlugin::rpcViewSelectRegion(
         sel = cvSelectionPipeline::convertToCvSelectionData(
                 vtkSel,
                 wantCells ? cvSelectionPipeline::FIELD_ASSOCIATION_CELLS
-                          : cvSelectionPipeline::FIELD_ASSOCIATION_POINTS);
+                          : cvSelectionPipeline::FIELD_ASSOCIATION_POINTS,
+                activeVisualizer);
         // Dump the PIPELINE's own selection nodes for comparison with the
         // raw pass above — any field that differs is what the converter
         // filters on.
@@ -276,6 +278,8 @@ JsonRPCResult JsonRPCPlugin::rpcViewSelectRegion(
             if (vtkRenderer* ren = vis->getCurrentRenderer()) {
                 cvHardwareSelector* raw = cvHardwareSelector::New();
                 raw->SetRenderer(ren);
+                raw->SetSelectableProps(
+                        cvSelectionPipeline::dataSelectionProps(vis));
                 raw->SetFieldAssociation(
                         wantCells ? vtkDataObject::FIELD_ASSOCIATION_CELLS
                                   : vtkDataObject::FIELD_ASSOCIATION_POINTS);
@@ -338,6 +342,7 @@ JsonRPCResult JsonRPCPlugin::rpcViewSelectRegion(
     QJsonArray infos;
     for (const auto& info : sel.actorInfos()) {
         QJsonObject o;
+        o["sourceId"] = info.sourceId;
         o["blockIndex"] = static_cast<qint64>(info.blockIndex);
         o["ids"] = static_cast<qint64>(info.selectedIds.size());
         o["hasPolyData"] = (info.polyData != nullptr);

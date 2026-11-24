@@ -19,6 +19,7 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QMimeData>
+#include <QSet>
 #include <QSettings>
 #include <QStandardItemModel>
 #include <QTimer>
@@ -29,6 +30,12 @@
 #include "ecvProgressDialog.h"
 #include "ecvPropertiesTreeDelegate.h"
 #include "ecvSelectChildrenDlg.h"
+
+#ifdef USE_VTK_BACKEND
+#include <Tools/SelectionTools/cvSelectionHighlighter.h>
+#include <Tools/SelectionTools/cvSelectionToolController.h>
+#include <Tools/SelectionTools/cvViewSelectionManager.h>
+#endif
 
 // CV_CORE_LIB
 #include <CVLog.h>
@@ -334,7 +341,12 @@ ccDBRoot::ccDBRoot(ccCustomQTreeView* dbTreeWidget,
     m_alignCameraWithEntity = new QAction(tr("Align camera"), this);
     m_alignCameraWithEntityReverse =
             new QAction(tr("Align camera (reverse)"), this);
-    m_enableBubbleViewMode = new QAction(tr("Bubble-view"), this);
+    m_enableBubbleViewMode = new QAction(
+            QIcon(QStringLiteral(
+                    ":/Resources/images/svg/view/viewSensorTools.svg")),
+            tr("Bubble-view"), this);
+    m_enableBubbleViewMode->setStatusTip(
+            tr("Open the selected sensor in bubble-view mode"));
     m_editLabelScalarValue = new QAction(tr("Edit scalar value"), this);
 
     m_contextMenuPos = QPoint(-1, -1);
@@ -717,6 +729,41 @@ void ccDBRoot::deleteSelectedEntities() {
         }
     }
 
+    // Invalidate before detaching: source/actor references must not outlive
+    // their DB owner, including when the undo command removes it again.
+    auto invalidateSelectionForRemoval = [](ccHObject* removed) {
+#ifdef USE_VTK_BACKEND
+        auto* window = MainWindow::TheInstance();
+        auto* manager = window ? window->getSelectionManager() : nullptr;
+        if (!removed || !manager) return;
+        auto* source = manager->getSourceObject();
+        bool affected =
+                source && (source == removed || removed->isAncestorOf(source));
+        QSet<QString> selectedSources;
+        for (const auto& info : manager->currentSelection().actorInfos()) {
+            selectedSources.insert(info.sourceId);
+        }
+        std::vector<ccHObject*> pending{removed};
+        while (!affected && !pending.empty()) {
+            auto* object = pending.back();
+            pending.pop_back();
+            affected = selectedSources.contains(object->getViewId());
+            for (unsigned i = 0; i < object->getChildrenNumber(); ++i) {
+                pending.push_back(object->getChild(i));
+            }
+        }
+        if (affected) {
+            manager->clearCurrentSelection();
+            auto* controller = window->getSelectionController();
+            if (controller && controller->highlighter()) {
+                controller->highlighter()->clearHighlights();
+            }
+        }
+#else
+        Q_UNUSED(removed);
+#endif
+    };
+
     qism->clear();
     std::vector<removeInfo> toBeDeletedInfos;
     auto* undoMgr = ecvViewManager::instance().undoManager();
@@ -739,6 +786,7 @@ void ccDBRoot::deleteSelectedEntities() {
         int childPos = parent->getChildIndex(object);
         assert(childPos >= 0);
 
+        invalidateSelectionForRemoval(object);
         beginRemoveRows(index(object).parent(), childPos, childPos);
         parent->detachChild(object);
         endRemoveRows();
@@ -748,11 +796,13 @@ void ccDBRoot::deleteSelectedEntities() {
                 par->addChild(ent);
                 addElement(ent, false);
             };
-            auto removeFunc = [this](ccHObject* ent) {
+            auto removeFunc = [this,
+                               invalidateSelectionForRemoval](ccHObject* ent) {
                 ccHObject* par = ent->getParent();
                 if (!par) return;
                 int pos = par->getChildIndex(ent);
                 if (pos < 0) return;
+                invalidateSelectionForRemoval(ent);
                 beginRemoveRows(index(ent).parent(), pos, pos);
                 par->detachChild(ent);
                 endRemoveRows();

@@ -40,6 +40,7 @@
 using namespace colmap;
 
 TEST(util_random, TestPRNGSeed) {
+  PRNG.reset();
   EXPECT_TRUE(PRNG == nullptr);
   SetPRNGSeed();
   EXPECT_TRUE(PRNG != nullptr);

@@ -43,6 +43,7 @@ static const QString THEME_NORD = ":/qss/nord.css";
 static const QString THEME_DRACULA = ":/qss/dracula.css";
 static const QString THEME_FLUENT = ":/qss/fluent.css";
 static const QString THEME_MACOS = ":/qss/macos.css";
+static const QString THEME_MACOS_DARK = ":/qss/macos-dark.css";
 static const QString THEME_ONEDARK = ":/qss/onedark.css";
 static const QString THEME_CATPPUCCIN = ":/qss/catppuccin.css";
 static const QString THEME_TOKYONIGHT = ":/qss/tokyonight.css";
@@ -86,6 +87,5 @@ static const QString APP_TITLE =
         TITLE + " " + versionLongStr(true, APP_VERSION);
 
 // theme style
-static bool UI_WRAPPER = false;
 static const QString DEFAULT_STYLE = Themes::THEME_DEFAULT;
 }  // namespace Settings

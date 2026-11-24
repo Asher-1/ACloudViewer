@@ -6,10 +6,9 @@
 // ----------------------------------------------------------------------------
 
 #include <Parallel.h>
+#include <gtest/gtest.h>
 
-#include <cstdio>
 #include <cstring>
-#include <stdexcept>
 #include <vector>
 
 #include "tasks/aliked/deform_conv.hpp"
@@ -18,9 +17,9 @@
 
 namespace {
 void equal(const std::vector<float>& a, const std::vector<float>& b) {
-    if (a.size() != b.size() ||
-        std::memcmp(a.data(), b.data(), a.size() * sizeof(float)) != 0)
-        throw std::runtime_error("Host kernel changed its per-cell arithmetic");
+    ASSERT_EQ(a.size(), b.size());
+    EXPECT_EQ(std::memcmp(a.data(), b.data(), a.size() * sizeof(float)), 0)
+            << "Host kernel changed its per-cell arithmetic";
 }
 
 void check_aliked() {
@@ -37,8 +36,8 @@ void check_aliked() {
     int h, w;
     ops::Conv2d(input, channels, height, width, weights, outputs, 3, 3, &bias,
                 1, 1, &conv, &h, &w);
-    if (h != height || w != width)
-        throw std::runtime_error("Invalid conv shape");
+    ASSERT_EQ(h, height);
+    ASSERT_EQ(w, width);
     std::vector<float> offsets(18 * height * width, 0.f);
     ops::DeformConv2d(input, channels, height, width, offsets, 1, weights,
                       outputs, 3, 3, &bias, 1, &deform, &h, &w);
@@ -80,14 +79,8 @@ void check_sparse_conv() {
 }
 }  // namespace
 
-int main() {
-    try {
-        check_aliked();
-        check_sparse_conv();
-        std::puts("ALIKED host kernels and deterministic sparse conv passed");
-        return 0;
-    } catch (const std::exception& error) {
-        std::fprintf(stderr, "%s\n", error.what());
-        return 1;
-    }
+TEST(HostParallelKernels, AlikedPreservesPerCellArithmetic) { check_aliked(); }
+
+TEST(HostParallelKernels, SparseConvolutionMatchesSerialFma) {
+    check_sparse_conv();
 }

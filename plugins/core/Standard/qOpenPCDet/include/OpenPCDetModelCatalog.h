@@ -8,6 +8,7 @@
 #pragma once
 
 #include <QImage>
+#include <QLineF>
 #include <QMetaType>
 #include <QString>
 #include <QStringList>
@@ -252,37 +253,99 @@ QImage sceneCameraPreview(const float* images,
  *  directory does not carry a readable scene payload. */
 bool readScenePreview(const QString& sceneDir, QImage* out, QString* error);
 
+/** One camera of a scene directory prepared for display and projection:
+ *  the decoded frame (RGB888; ImageNet-normalized payloads are
+ *  denormalized for display), its camera name and the two row-major 4x4
+ *  matrices the engine projection chain consumes (lidar_to_image.bin /
+ *  image_aug.bin verbatim). */
+struct OpenPCDetSceneCamera {
+    QImage image;
+    QString name;
+    float lidarToImage[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+    float imageAug[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+};
+
+/** Every camera of a scene directory plus the shared lidar_aug.bin
+ *  matrix (row-major 4x4). */
+struct OpenPCDetSceneView {
+    QVector<OpenPCDetSceneCamera> cameras;
+    float lidarAug[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+};
+
+/** Reads ALL camera frames and the projection calibration of a scene
+ *  directory (scene.json + images.bin + lidar_to_image.bin + image_aug.bin
+ *  + lidar_aug.bin — the same payload aicore_openpcdet_load_scene_dir
+ *  consumes). Camera names come from the optional scene.json
+ *  "camera_names" array; legacy scenes fall back to the dataset
+ *  convention (1 camera = KITTI CAM2, 6 = the nuScenes ring order,
+ *  otherwise "Camera N"). Frames stored ImageNet-normalized (the
+ *  BEVFusion payload convention) are denormalized for display; 0..1
+ *  frames (the CaDDN convention) pass through. UI preview only — never
+ *  an inference path. Returns false with \p error set on an unreadable
+ *  or inconsistent payload. */
+bool readSceneCameras(const QString& sceneDir,
+                      OpenPCDetSceneView* out,
+                      QString* error);
+
+/** Projects the 8 corners of one detection box (boxCorners() layout,
+ *  ORIGINAL LiDAR frame — detections are never back-projected through
+ *  the DB shift/scale) into clipped pixel segments of camera \p camera.
+ *  Replicates the engine chain (depth_lss project_depth): undo
+ *  lidar_aug, apply lidar_to_image, perspective divide, apply image_aug;
+ *  edges crossing the near plane are clipped in camera space first,
+ *  then every segment is clipped to the image rectangle. Empty when the
+ *  camera index is invalid or the box is fully behind the camera. Pure
+ *  math — unit tested without AICore. */
+QVector<QLineF> projectBoxEdges(const float* corners24,
+                                const OpenPCDetSceneView& scene,
+                                int camera);
+
+/** Paints the class-colored wireframe overlay of \p detections (2px
+ *  lines + class/score label at the topmost projected corner) onto a
+ *  copy of \p image, which is replaced by the annotated RGB888 result.
+ *  Detections stay verbatim in the LiDAR frame; the scene calibration
+ *  owns the projection. No-op on a null image or invalid camera. */
+void paintDetectionsOverlay(QImage* image,
+                            const QVector<OpenPCDetDetection>& detections,
+                            const OpenPCDetSceneView& scene,
+                            int camera);
+
 /** Test-data file mapping of one checkpoint for the "Use test data" fill
- *  (the shared openpcdet_test_data bundle). Bundle-relative names; empty
- *  members are not filled by the dialog. Pure mapping — unit tested
- *  without AICore. */
+ *  (the shared openpcdet_test_data_v2 bundle). Bundle-relative names under
+ *  frames/<id>/; empty members are not filled by the dialog. Pure mapping
+ *  — unit tested without AICore. */
 struct OpenPCDetTestDataFiles {
-    /** LiDAR .bin of the point-cloud panels (kitti_000008.bin, its
-     *  PointRCNN pre-sampled 16384-point variant, or the nuScenes
+    /** LiDAR .bin of the point-cloud panels (the frame's raw KITTI bin,
+     *  its PointRCNN pre-sampled 16384-point variant, or the nuScenes
      *  5-feature sweep). */
     QString pointsFile;
-    /** Scene directory of the multi-modal panels (scene_caddn /
-     *  scene_bevfusion). */
+    /** Scene directory of the multi-modal panels (frames/<id>/scene). */
     QString sceneDirName;
     /** LiDAR-branch point file of the multi-modal panels (required by
      *  BEVFusion and the focal VoxelRCNN). */
     QString scenePointsFile;
 };
 
-/** Bundle-relative test-data files the panel of \p checkpoint consumes:
- *  KITTI point panels take the raw 000008 frame (PointRCNN checkpoints its
- *  pre-sampled 16384-point variant), nuScenes point panels the n015
- *  sweep, KITTI scene panels (CaDDN + focal multimodal) the CaDDN scene
- *  with the raw frame as LiDAR branch, BEVFusion the 6-camera scene with
- *  the nuScenes sweep. Pure mapping — unit tested without AICore. */
-OpenPCDetTestDataFiles testDataFilesForCheckpoint(const QString& checkpoint);
+/** Bundle-relative test-data files the panel of \p checkpoint consumes on
+ *  frame \p frameId: KITTI point panels take the raw frame (PointRCNN
+ *  checkpoints its pre-sampled 16384-point variant), nuScenes point panels
+ *  the 5-feature sweep, scene panels (CaDDN + focal multimodal / BEVFusion)
+ *  the frame's scene/ directory with the raw frame as LiDAR branch. An
+ *  empty \p frameId keeps the deterministic default frame of the
+ *  checkpoint's dataset (kitti_000008 / nuscenes_n015); the dialog passes
+ *  the selected frame of the SAME dataset. Pure mapping — unit tested
+ *  without AICore. */
+OpenPCDetTestDataFiles testDataFilesForCheckpoint(
+        const QString& checkpoint, const QString& frameId = QString());
 
-/** Resolves the bundle-relative mapping of \p checkpoint into absolute
- *  paths under \p bundleRoot (the extracted openpcdet_test_data group
- *  directory). Returns false with \p error set when a needed member is
- *  missing — the dialog's error path. Unit tested without AICore. */
+/** Resolves the bundle-relative mapping of \p checkpoint on frame
+ *  \p frameId into absolute paths under \p bundleRoot (the extracted
+ *  openpcdet_test_data_v2 group directory). Returns false with \p error
+ *  set when a needed member is missing — the dialog's error path. Unit
+ *  tested without AICore. */
 bool resolveTestDataPaths(const QString& bundleRoot,
                           const QString& checkpoint,
+                          const QString& frameId,
                           OpenPCDetTestDataFiles* out,
                           QString* error);
 

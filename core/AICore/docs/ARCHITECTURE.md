@@ -862,9 +862,9 @@ intake checklist for new tasks/models/plugins is §13.1.
 ```bash
 # —— Build ——
 cmake --build build_app --target AICore -j4                    # the library itself
-cmake --build build_app --target aicore-contract-tests -j4     # contract test build
+cmake --build build_app --target aicore-contract-tests -j4     # build and run focused contracts
 # —— Tests ——
-ctest --test-dir build_app -L capi --output-on-failure -j1     # all C API contracts (no assets)
+ctest --test-dir build_app -L capi --output-on-failure -j1     # label selection; may require models/devices
 ctest --test-dir build_app -L parity --output-on-failure -j1   # backend parity (assets + GPU)
 ctest --test-dir build_app -L e2e   --output-on-failure -j1    # end-to-end (assets + GPU)
 cmake --build build_app --target aicore-validate-all -j1       # one-click gate (light tier)
@@ -957,3 +957,12 @@ inspection. Callers select the reference or dependency set; that module owns
 how the host implements the request. See
 [`WINDOWS_CI_PORTABILITY_AUDIT.md`](WINDOWS_CI_PORTABILITY_AUDIT.md) for evidence,
 intentional boundaries and native-platform validation still outstanding.
+
+## Unified Test Entry
+
+The root [tests module](../../../tests/README.md) owns first-party GoogleTest
+registration and CI execution. Run
+`cmake -DBUILD_DIR=build_app -DJOBS=4 -P tests/Run.cmake` from the repository
+root for the common headless gate. The focused CTest commands above assume
+their prerequisites are built; strict model accuracy/performance validation
+remains the separate `aicore-validate-all` contract.

@@ -70,6 +70,7 @@
 #include <vtkSelectionNode.h>
 #include <vtkTextProperty.h>
 #include <vtkTransform.h>
+#include <vtkTransformPolyDataFilter.h>
 #include <vtkUnsignedCharArray.h>
 #include <vtkUnstructuredGrid.h>
 
@@ -215,7 +216,11 @@ static vtkSmartPointer<vtkPolyData> extractSelectionPolyData(
 
     vtkSmartPointer<vtkExtractSelection> extractor =
             vtkSmartPointer<vtkExtractSelection>::New();
-    extractor->SetInputData(0, polyData);
+    // VTK may add/replace vtkOriginal*Ids on its input while extracting.
+    // Isolate the attribute containers without copying the large geometry.
+    vtkNew<vtkPolyData> selectionInput;
+    selectionInput->ShallowCopy(polyData);
+    extractor->SetInputData(0, selectionInput);
     extractor->SetInputData(1, vtkSel);
     extractor->Update();
 
@@ -402,6 +407,10 @@ void cvSelectionHighlighter::applySelectionOverlay(Visualization::VtkVis* vis,
                     "surface overlay");
             return;
         }
+        if (vtkActor* actor = vis->getActorById(id)) {
+            actor->GetProperty()->SetColor(cr, cg, cb);
+            actor->SetPickable(0);
+        }
     }
 }
 
@@ -547,9 +556,19 @@ cvSelectionHighlighter::~cvSelectionHighlighter() {
 
 //-----------------------------------------------------------------------------
 void cvSelectionHighlighter::setVisualizer(ecvGenericVisualizer3D* viewer) {
+    if (getVisualizer() == viewer) return;
+    // Preselection belongs to the old view, unlike source-qualified selection.
+    if (auto* oldVis = getVtkVis()) {
+        clearSelectionOverlay(oldVis, kHoverOverlayId);
+        clearSelectionOverlay(oldVis, kPreselectOverlayId);
+    }
     cvGenericSelectionTool::setVisualizer(viewer);
-    pruneSelectionOverlayRenderers(
-            getVtkVis() ? getVtkVis()->getCurrentRenderer() : nullptr);
+    auto* vis = getVtkVis();
+    pruneSelectionOverlayRenderers(vis ? vis->getCurrentRenderer() : nullptr);
+    if (vis) {
+        renderSelectionForView(
+                vis, cvViewSelectionManager::instance()->currentSelection());
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -799,102 +818,94 @@ bool cvSelectionHighlighter::highlightSelection(
 }
 
 //-----------------------------------------------------------------------------
+vtkSmartPointer<vtkPolyData> cvSelectionHighlighter::buildSelectionOverlay(
+        const cvSelectionData& resolvedSelection) {
+    const bool isPointSelection = (resolvedSelection.fieldAssociation() !=
+                                   cvSelectionData::FieldAssociation::CELLS);
+    vtkNew<vtkAppendPolyData> append;
+    bool anyBlock = false;
+    for (const auto& info : resolvedSelection.actorInfos()) {
+        if (!info.actor || !info.polyData || info.selectedIds.isEmpty())
+            continue;
+        vtkNew<vtkIdTypeArray> ids;
+        ids->SetNumberOfTuples(static_cast<vtkIdType>(info.selectedIds.size()));
+        for (vtkIdType k = 0; k < ids->GetNumberOfTuples(); ++k) {
+            ids->SetValue(k, static_cast<vtkIdType>(info.selectedIds[k]));
+        }
+        vtkSmartPointer<vtkPolyData> blockOverlay;
+        if (isPointSelection) {
+            blockOverlay = buildSelectionMarkerPolyData(
+                    info.polyData, ids,
+                    static_cast<int>(resolvedSelection.fieldAssociation()));
+        } else {
+            blockOverlay = extractSelectionPolyData(
+                    info.polyData, ids,
+                    static_cast<int>(resolvedSelection.fieldAssociation()));
+        }
+        if (blockOverlay && blockOverlay->GetNumberOfPoints() > 0) {
+            // Each selection node indexes its actor's LOCAL geometry.
+            // The merged overlay has no source actor transform, so bake
+            // each actor matrix before merging (composite actors normally
+            // have identity matrices and already-world-space blocks).
+            if (info.actor && !info.actor->GetIsIdentity()) {
+                vtkNew<vtkTransform> transform;
+                transform->SetMatrix(info.actor->GetMatrix());
+                vtkNew<vtkTransformPolyDataFilter> toWorld;
+                toWorld->SetTransform(transform);
+                toWorld->SetInputData(blockOverlay);
+                toWorld->Update();
+                blockOverlay = toWorld->GetOutput();
+            }
+            append->AddInputData(blockOverlay);
+            anyBlock = true;
+        }
+    }
+    if (!anyBlock) return {};
+    append->Update();
+    vtkSmartPointer<vtkPolyData> merged = append->GetOutput();
+    if (!merged || merged->GetNumberOfPoints() == 0) return {};
+    return merged;
+}
+
+vtkSmartPointer<vtkPolyData> cvSelectionHighlighter::renderSelectionForView(
+        Visualization::VtkVis* vis,
+        const cvSelectionData& selection,
+        HighlightMode mode) {
+    if (!vis) return {};
+    const char* id = overlayIdForMode(mode);
+    const auto resolved =
+            cvSelectionPipeline::resolveSelectionForView(selection, vis);
+    auto poly = buildSelectionOverlay(resolved);
+    if (!poly) {
+        clearSelectionOverlay(vis, id);
+        return {};
+    }
+    const auto kind = selection.fieldAssociation() == cvSelectionData::POINTS
+                              ? SelectionOverlayPoints
+                              : SelectionOverlaySurface;
+    applySelectionOverlay(vis, poly, kind, id,
+                          mode == HOVER || mode == PRESELECTED);
+    return poly;
+}
+
 bool cvSelectionHighlighter::highlightSelection(
         const cvSelectionData& selectionData, HighlightMode mode) {
-    // High-level interface that accepts cvSelectionData directly
-    // This keeps UI code (like MainWindow) free from VTK types
-
-    if (selectionData.isEmpty()) {
-        CVLog::Warning("[cvSelectionHighlighter] Selection data is empty");
-        return false;
+    if (!m_enabled || !m_viewer) return false;
+    if (mode == SELECTED) {
+        removeActorFromVisualizer(m_selectedActorId);
+        m_selectedActor = nullptr;
     }
-
-    // actorInfo IDs address the displayed polydata. Primary IDs may instead
-    // address the source object after vtkOriginal{Point,Cell}Ids remapping;
-    // using them to index the displayed polydata highlights unrelated points.
-    // Merge every available actor-local overlay, including a single actor.
-    const auto infos = selectionData.actorInfos();
-    const bool hasRenderableActorInfo = std::any_of(
-            infos.cbegin(), infos.cend(), [](const cvActorSelectionInfo& info) {
-                return info.polyData && !info.selectedIds.isEmpty();
-            });
-    if (hasRenderableActorInfo) {
-        Visualization::VtkVis* vis = getVtkVis();
-        if (!vis) return false;
-        const bool isPointSelection =
-                (selectionData.fieldAssociation() !=
-                 cvSelectionData::FieldAssociation::CELLS);
-        vtkNew<vtkAppendPolyData> append;
-        bool anyBlock = false;
-        for (const auto& info : infos) {
-            if (!info.polyData || info.selectedIds.isEmpty()) continue;
-            vtkNew<vtkIdTypeArray> ids;
-            ids->SetNumberOfTuples(
-                    static_cast<vtkIdType>(info.selectedIds.size()));
-            for (vtkIdType k = 0; k < ids->GetNumberOfTuples(); ++k) {
-                ids->SetValue(k, static_cast<vtkIdType>(info.selectedIds[k]));
-            }
-            vtkSmartPointer<vtkPolyData> blockOverlay;
-            if (isPointSelection) {
-                blockOverlay = buildSelectionMarkerPolyData(
-                        info.polyData, ids,
-                        static_cast<int>(selectionData.fieldAssociation()));
-            } else {
-                blockOverlay = extractSelectionPolyData(
-                        info.polyData, ids,
-                        static_cast<int>(selectionData.fieldAssociation()));
-            }
-            if (blockOverlay && blockOverlay->GetNumberOfPoints() > 0) {
-                append->AddInputData(blockOverlay);
-                anyBlock = true;
-            }
-        }
-        if (!anyBlock) return false;
-        append->Update();
-        vtkSmartPointer<vtkPolyData> merged = append->GetOutput();
-        if (!merged || merged->GetNumberOfPoints() == 0) return false;
-        const int kind = isPointSelection ? SelectionOverlayPoints
-                                          : SelectionOverlaySurface;
-        applySelectionOverlay(vis, merged,
-                              static_cast<SelectionOverlayKind>(kind),
-                              kSelectionOverlayId, false);
-        if (mode == SELECTED) {
-            removeActorFromVisualizer(m_selectedActorId);
-            m_selectedActor = nullptr;
-            emit selectionOverlayUpdated(merged, kind);
-            scheduleAllViewsUpdate();
-        } else if (mode == HOVER || mode == PRESELECTED) {
-            if (mode == HOVER) {
-                removeActorFromVisualizer(m_hoverActorId);
-                m_hoverActor = nullptr;
-            } else {
-                removeActorFromVisualizer(m_preselectedActorId);
-                m_preselectedActor = nullptr;
-            }
-            scheduleAllViewsUpdate();
-        }
-        return true;
+    auto poly = renderSelectionForView(getVtkVis(), selectionData, mode);
+    if (mode == SELECTED && !m_shuttingDown) {
+        const int kind =
+                !poly ? SelectionOverlayNone
+                : selectionData.fieldAssociation() == cvSelectionData::POINTS
+                        ? SelectionOverlayPoints
+                        : SelectionOverlaySurface;
+        emit selectionOverlayUpdated(poly, kind);
     }
-
-    vtkPolyData* polyData = getPolyDataForSelection(&selectionData);
-    if (!polyData && selectionData.primaryActor()) {
-        if (auto* mapper = selectionData.primaryActor()->GetMapper()) {
-            polyData = vtkPolyData::SafeDownCast(mapper->GetInput());
-        }
-    }
-    if (!polyData) {
-        return false;
-    }
-
-    Visualization::VtkVis* vis = getVtkVis();
-    m_highlightSourceActor =
-            resolveRegisteredMeshActor(vis, selectionData.primaryActor());
-
-    const bool ok = highlightSelection(
-            polyData, selectionData.vtkArray(),
-            static_cast<int>(selectionData.fieldAssociation()), mode);
-    m_highlightSourceActor = nullptr;
-    return ok;
+    scheduleAllViewsUpdate();
+    return poly != nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -951,7 +962,11 @@ bool cvSelectionHighlighter::highlightMultiColorSelections(
 
         vtkSmartPointer<vtkExtractSelection> extractor =
                 vtkSmartPointer<vtkExtractSelection>::New();
-        extractor->SetInputData(0, polyData);
+        // VTK may add/replace vtkOriginal*Ids on its input while extracting.
+        // Isolate the attribute containers without copying the large geometry.
+        vtkNew<vtkPolyData> selectionInput;
+        selectionInput->ShallowCopy(polyData);
+        extractor->SetInputData(0, selectionInput);
         extractor->SetInputData(1, vtkSel);
         extractor->Update();
 
@@ -1358,7 +1373,11 @@ vtkSmartPointer<vtkActor> cvSelectionHighlighter::createHighlightActor(
     // Extract selected elements
     vtkSmartPointer<vtkExtractSelection> extractor =
             vtkSmartPointer<vtkExtractSelection>::New();
-    extractor->SetInputData(0, polyData);
+    // VTK may add/replace vtkOriginal*Ids on its input while extracting.
+    // Isolate the attribute containers without copying the large geometry.
+    vtkNew<vtkPolyData> selectionInput;
+    selectionInput->ShallowCopy(polyData);
+    extractor->SetInputData(0, selectionInput);
     extractor->SetInputData(1, vtkSel);
 
     extractor->Update();

@@ -463,9 +463,11 @@ const char* ccPropertiesTreeDelegate::s_defaultPointSizeString =
 const char* ccPropertiesTreeDelegate::s_defaultPolyWidthSizeString =
         QT_TR_NOOP("Default Width");
 
-// Default separator colors
+// Section separators follow the active palette; fixed darkGray/white was
+// unreadable in the light Custom theme and inconsistent with Native mode.
 constexpr const char* SEPARATOR_STYLESHEET(
-        "QLabel { background-color : darkGray; color : white; }");
+        "QLabel { background-color: palette(alternate-base); "
+        "color: palette(text); font-weight: bold; }");
 
 // Shortcut to create a delegate item
 QStandardItem* ITEM(QString name,
@@ -537,6 +539,18 @@ QSize ccPropertiesTreeDelegate::sizeHint(const QStyleOptionViewItem& option,
 
     QStandardItem* item = m_model->itemFromIndex(index);
 
+    // Persistent editors own the cell, rather than the text sub-rectangle
+    // returned by a style. Their actual polished controls may be taller than
+    // legacy 24px rows (and matrix/tab editors have a composite size hint).
+    if (m_view) {
+        if (QWidget* editor = m_view->indexWidget(index)) {
+            editor->ensurePolished();
+            return editor->sizeHint()
+                    .expandedTo(editor->minimumSizeHint())
+                    .expandedTo(editor->minimumSize());
+        }
+    }
+
     if (item && item->data().isValid()) {
         switch (item->data().toInt()) {
             case OBJECT_CURRENT_DISPLAY:
@@ -564,7 +578,20 @@ QSize ccPropertiesTreeDelegate::sizeHint(const QStyleOptionViewItem& option,
         }
     }
 
-    return QStyledItemDelegate::sizeHint(option, index);
+    QSize hint = QStyledItemDelegate::sizeHint(option, index);
+    QString text = index.data(Qt::DisplayRole).toString();
+    text.replace(QChar(0x2028), QLatin1Char('\n'));
+    if (text.contains(QLatin1Char('\n'))) {
+        // Bounding-box values are explicit multiline data, not a word-wrapped
+        // one-line label. Some styles return their generic item height even
+        // though QStyledItemDelegate supplied a text layout with three lines.
+        hint.setHeight(
+                std::max(hint.height(),
+                         option.fontMetrics.lineSpacing() *
+                                         (text.count(QLatin1Char('\n')) + 1) +
+                                 4));
+    }
+    return hint;
 }
 
 void ccPropertiesTreeDelegate::unbind() {
@@ -632,7 +659,7 @@ void ccPropertiesTreeDelegate::fillModel(ccHObject* hObject) {
     // Per-view representation overrides
     fillWithPerViewProperties();
 
-    // View properties (ParaView-style) - added right after ECV Object section.
+    // View properties (ParaView-style) - added right after CV Object section.
     // ccImage is a pure 2D overlay with its own Alpha control;
     // Light/Opacity/AxesGrid do not apply (matching CloudCompare).
     if (m_currentObject->getViewId().length() > 0 &&
@@ -875,7 +902,7 @@ void ccPropertiesTreeDelegate::fillWithViewProperties() {
     appendRow(ITEM(tr("Light Intensity")),
               PERSISTENT_EDITOR(OBJECT_VIEW_LIGHT_KIT_INTENSITY), true);
 
-    // 2. Opacity - moved from ECV Object section (ParaView has this in View
+    // 2. Opacity - moved from CV Object section (ParaView has this in View
     // properties) Show for renderable objects and folders (to control all
     // children)
     if (m_currentObject) {
@@ -980,7 +1007,7 @@ void ccPropertiesTreeDelegate::clearModel() {
 void ccPropertiesTreeDelegate::fillWithHObject(ccHObject* _obj) {
     assert(_obj && m_model);
 
-    addSeparator(tr("ECV Object"));
+    addSeparator(tr("CV Object"));
 
     // name
     appendRow(ITEM(tr("Name")),
@@ -2216,7 +2243,9 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
             spinBox->setRange(0.0, 1.0);
             spinBox->setDecimals(2);
             spinBox->setSingleStep(0.01);
-            spinBox->setFixedWidth(60);
+            // Keep enough numeric space for the active style's text and
+            // spin-button geometry; the slider takes the remaining stretch.
+            spinBox->setMinimumWidth(60);
 
             // Synchronize slider and spinbox (visual sync only, no opacity
             // update)
@@ -2513,7 +2542,6 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
             // Edit button (compact style)
             QPushButton* editButton = new QPushButton(tr("Edit..."), container);
             editButton->setMinimumHeight(22);
-            editButton->setMaximumWidth(80);
             connect(editButton, &QPushButton::clicked, this,
                     &ccPropertiesTreeDelegate::dataAxesGridEditRequested);
 
@@ -2531,7 +2559,6 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
             connect(button, &QAbstractButton::clicked, this,
                     &ccPropertiesTreeDelegate::dataAxesGridEditRequested);
             button->setMinimumHeight(22);
-            button->setMaximumWidth(80);
             outputWidget = button;
         } break;
         case OBJECT_PERVIEW_OPACITY: {
@@ -2571,9 +2598,12 @@ void ccPropertiesTreeDelegate::updateEditorGeometry(
         QWidget* editor,
         const QStyleOptionViewItem& option,
         const QModelIndex& index) const {
-    QStyledItemDelegate::updateEditorGeometry(editor, option, index);
-
     if (!m_model || !editor) return;
+
+    // These property widgets are persistent cell editors, including empty-text
+    // headers and matrix tabs. SE_ItemViewItemText may legitimately be empty
+    // for such indexes; using it moves every editor to (0,0), overlapping Name.
+    editor->setGeometry(option.rect);
 
     QStandardItem* item = m_model->itemFromIndex(index);
 

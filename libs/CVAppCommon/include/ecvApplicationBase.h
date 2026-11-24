@@ -11,6 +11,8 @@
 
 // Qt
 #include <QApplication>
+#include <QFont>
+#include <QPalette>
 
 /**
  * @def ecvApp
@@ -41,7 +43,14 @@
  * @see QApplication
  */
 class CVAPPCOMMON_LIB_API ecvApplicationBase : public QApplication {
+    Q_OBJECT
 public:
+    // One effective state for startup, menus and Display Options. An empty
+    // styleKey selects the platform default; only "Custom" enables our chrome.
+    struct AppearanceState {
+        QString styleKey;
+        QString themeId = QStringLiteral(":/qss/paraview.css");
+    };
     /**
      * @brief Initialize OpenGL context
      *
@@ -96,19 +105,28 @@ public:
      * Qt native styles and custom themes.
      *
      * @param styleKey Style name, supported values:
-     *   - Qt native: "Fusion", "Windows", "macOS", "macintosh"
-     *   - Custom: "QDarkStyleSheet::Dark", "QDarkStyleSheet::Light"
+     *   - Qt native: empty (platform default), or a QStyleFactory key
+     *   - Custom: "Custom" (theme presets are selectable only in this mode)
+     * Legacy QDarkStyleSheet keys are interpreted only by restoreAppearance().
+     * @param persist Commit only after successful application; false previews
+     *        the state for Display Options, whose Cancel restores its snapshot.
      * @return true if style was applied successfully, false otherwise
      *
      * @note On macOS, native "macintosh" or "macOS" style provides
      *       platform-native appearance
      */
-    bool setAppStyle(const QString &styleKey);
+    bool setAppStyle(const QString &styleKey, bool persist = true);
+    const AppearanceState &appearance() const { return m_appearance; }
+    bool isCustomAppearance() const {
+        return m_appearance.styleKey == QStringLiteral("Custom");
+    }
+    bool applyAppearance(const AppearanceState &state, bool persist = true);
+    bool setCustomTheme(const QString &themeId);
+    bool restoreAppearance();
+    void commitAppearance();
 
-    // Apply the selected theme stylesheet followed by shared ParaView-style Qt
-    // component artwork. The theme key is the chosen name/resource path.
-    void setComponentTheme(const QString &baseStyleSheet,
-                           const QString &themeKey);
+signals:
+    void appearanceChanged();
 
 private:
     /**
@@ -126,4 +144,8 @@ private:
     QStringList m_PluginPaths;  ///< Paths to plugin directories
 
     const bool c_CommandLine;  ///< Command-line mode flag
+    AppearanceState m_appearance;
+    QString m_systemStyleKey;
+    QPalette m_systemPalette;
+    QFont m_systemFont;
 };

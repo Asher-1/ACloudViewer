@@ -276,16 +276,9 @@ void ecvCameraParamEditDlg::onItemPicked(const PickedItem& pi) {
     const CCVector3d pivot = CCVector3d::fromArray(pi.P3D.u);
     if (ecvGenericGLDisplay* view =
                 ecvViewManager::instance().getEffectiveView()) {
-        ecvViewportParameters vp = view->getViewportParameters();
-        vp.setPivotPoint(pivot, true);
-        view->setViewportParameters(vp);
-        view->invalidateViewport();
-        view->deprecate3DLayer();
-        { ecvRedrawScope scope; }
+        view->setPivotPoint(pivot, true, true);
     }
     updatePivotPoint(pivot);
-
-    reflectParamChange();
     pickPointAsPivot(false);
 }
 
@@ -304,16 +297,9 @@ void ecvCameraParamEditDlg::processPickedItem(
     const CCVector3d pivot = CCVector3d::fromArray(P.u);
     if (ecvGenericGLDisplay* view =
                 ecvViewManager::instance().getEffectiveView()) {
-        ecvViewportParameters vp = view->getViewportParameters();
-        vp.setPivotPoint(pivot, true);
-        view->setViewportParameters(vp);
-        view->invalidateViewport();
-        view->deprecate3DLayer();
-        { ecvRedrawScope scope; }
+        view->setPivotPoint(pivot, true, true);
     }
     updatePivotPoint(pivot);
-
-    reflectParamChange();
     pickPointAsPivot(false);
 }
 
@@ -380,6 +366,8 @@ void ecvCameraParamEditDlg::reflectParamChange() {
 }
 
 void ecvCameraParamEditDlg::updatePivotPoint(const CCVector3d& P) {
+    if (m_tool) m_tool->CurrentCameraParam.pivot = P;
+
     this->Internal->rcxDoubleSpinBox->blockSignals(true);
     this->Internal->rcyDoubleSpinBox->blockSignals(true);
     this->Internal->rczDoubleSpinBox->blockSignals(true);
@@ -527,14 +515,14 @@ void ecvCameraParamEditDlg::updateUi() {
 void ecvCameraParamEditDlg::pivotChanged() {
     if (!m_associatedWin) return;
 
-    m_associatedWin->blockSignals(true);
-    m_tool->CurrentCameraParam.pivot =
-            CCVector3d(this->Internal->rcxDoubleSpinBox->value(),
-                       this->Internal->rcyDoubleSpinBox->value(),
-                       this->Internal->rczDoubleSpinBox->value());
-    m_associatedWin->blockSignals(false);
-
-    reflectParamChange();
+    if (ecvGenericGLDisplay* view =
+                ecvViewManager::instance().getEffectiveView()) {
+        view->setPivotPoint(
+                CCVector3d(this->Internal->rcxDoubleSpinBox->value(),
+                           this->Internal->rcyDoubleSpinBox->value(),
+                           this->Internal->rczDoubleSpinBox->value()),
+                true, false);
+    }
 }
 
 void ecvCameraParamEditDlg::rotationFactorChanged(double val) {

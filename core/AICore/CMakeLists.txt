@@ -955,6 +955,7 @@ set_target_properties(anycalib_parity_probe PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/aicore_tests)
 cloudviewer_set_aicore_test_runtime_layout(anycalib_parity_probe)
 set_target_properties(test_ocr_runtime PROPERTIES
+    CLOUDVIEWER_TEST_KIND integration
     POSITION_INDEPENDENT_CODE ON CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
     # The backend .so modules (ggml-cuda/vulkan/cpu-*) live beside
     # libAICore.so; without $ORIGIN the DL loader cannot resolve them and
@@ -968,24 +969,23 @@ cloudviewer_set_aicore_test_runtime_layout(test_ocr_runtime)
 if(TARGET aicore-fast-tests)
     # The model-free graph contract reuses the same OCR interpreter target
     # instead of adding a second inference implementation.
-    add_dependencies(aicore-fast-tests test_ocr_runtime)
-    add_test(NAME test_paddle_program_io_contract COMMAND test_ocr_runtime --program-io-contract)
+    cloudviewer_add_test(NAME test_paddle_program_io_contract COMMAND test_ocr_runtime --program-io-contract)
     set_tests_properties(test_paddle_program_io_contract PROPERTIES LABELS "common;contract")
     cloudviewer_set_test_runtime_environment(test_paddle_program_io_contract)
-    add_test(NAME test_ocr_dw_bias_cpu COMMAND test_ocr_runtime
+    cloudviewer_add_test(NAME test_ocr_dw_bias_cpu COMMAND test_ocr_runtime
         --dw-bias-contract CPU "${GGML_MODULE_DIR}")
     set_tests_properties(test_ocr_dw_bias_cpu PROPERTIES LABELS "ocr;ggml"
         SKIP_RETURN_CODE 77)
     cloudviewer_set_test_runtime_environment(test_ocr_dw_bias_cpu)
     if(AICore_CUDA_ENABLED)
-        add_test(NAME test_ocr_dw_bias_cuda COMMAND test_ocr_runtime
+        cloudviewer_add_test(NAME test_ocr_dw_bias_cuda COMMAND test_ocr_runtime
             --dw-bias-contract CUDA0 "${GGML_MODULE_DIR}")
         set_tests_properties(test_ocr_dw_bias_cuda PROPERTIES LABELS "ocr;ggml;gpu"
             SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
         cloudviewer_set_test_runtime_environment(test_ocr_dw_bias_cuda)
     endif()
     if(AICore_VULKAN_ENABLED)
-        add_test(NAME test_ocr_dw_bias_vulkan COMMAND test_ocr_runtime
+        cloudviewer_add_test(NAME test_ocr_dw_bias_vulkan COMMAND test_ocr_runtime
             --dw-bias-contract Vulkan0 "${GGML_MODULE_DIR}")
         set_tests_properties(test_ocr_dw_bias_vulkan PROPERTIES LABELS "ocr;ggml;gpu"
             SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
@@ -994,7 +994,7 @@ if(TARGET aicore-fast-tests)
     if(APPLE)
         # Metal joins the same depthwise-bias contract (0030 patch): the
         # device name is the ggml dev_name "MTL0" (registry family "metal").
-        add_test(NAME test_ocr_dw_bias_metal COMMAND test_ocr_runtime
+        cloudviewer_add_test(NAME test_ocr_dw_bias_metal COMMAND test_ocr_runtime
             --dw-bias-contract MTL0 "${GGML_MODULE_DIR}")
         set_tests_properties(test_ocr_dw_bias_metal PROPERTIES LABELS "ocr;ggml;gpu"
             SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
@@ -1023,19 +1023,13 @@ target_compile_options(test_table_runtime PRIVATE
     $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:-fPIC>)
 aicore_apply_compile_definitions(test_table_runtime)
 set_target_properties(test_table_runtime PROPERTIES
+    CLOUDVIEWER_TEST_KIND integration
     POSITION_INDEPENDENT_CODE ON CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
     BUILD_RPATH "$ORIGIN"
     INSTALL_RPATH "$ORIGIN")
 cloudviewer_set_aicore_test_runtime_layout(test_table_runtime)
-# The probe_ocr_* / probe_table CTests (tests/CMakeLists.txt, labels
-# capi;model) run these binaries, but tests/ is configured before they
-# exist, so the label-derived tier DEPENDS cannot see them: attach here.
-if(TARGET aicore-model-tests)
-    add_dependencies(aicore-model-tests test_ocr_runtime test_table_runtime)
-endif()
-if(TARGET aicore-contract-tests AND AICORE_TEST_ENABLE_MODEL_TESTS)
-    add_dependencies(aicore-contract-tests test_ocr_runtime test_table_runtime)
-endif()
+# Root tests/ resolves the late-created OCR/table prerequisites after all
+# owner directories have registered their commands.
 if(TARGET AICore_capi_link)
     target_link_libraries(aicore_gguf_quantize PRIVATE AICore_capi_link)
 endif()

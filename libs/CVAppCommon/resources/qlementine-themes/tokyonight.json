@@ -1,0 +1,41 @@
+{
+  "base": "dark",
+  "overrides": {
+    "meta": {
+      "name": "tokyonight",
+      "version": "1",
+      "author": "ACloudViewer - palette migration"
+    },
+    "backgroundColorMain1": "#1A1B26",
+    "backgroundColorMain2": "#20212d",
+    "backgroundColorMain3": "#272836",
+    "backgroundColorMain4": "#2e303f",
+    "backgroundColorWorkspace": "#1A1B26",
+    "backgroundColorTabBar": "#20212d",
+    "neutralColor": "#282a38",
+    "neutralColorHovered": "#313342",
+    "neutralColorPressed": "#393c4d",
+    "neutralColorDisabled": "#232431",
+    "secondaryColor": "#A9B1D6",
+    "secondaryColorHovered": "#A9B1D6",
+    "secondaryColorPressed": "#A9B1D6",
+    "secondaryColorDisabled": "#53576c",
+    "secondaryAlternativeColor": "#7e84a1",
+    "secondaryAlternativeColorHovered": "#8c93b3",
+    "secondaryAlternativeColorPressed": "#A9B1D6",
+    "secondaryAlternativeColorDisabled": "#4c5064",
+    "borderColor": "#373949",
+    "borderColorHovered": "#4c5064",
+    "borderColorPressed": "#5a5e75",
+    "borderColorDisabled": "#282a38",
+    "primaryColor": "#7AA2F7",
+    "primaryColorHovered": "#7fa4f4",
+    "primaryColorPressed": "#698ad1",
+    "primaryColorDisabled": "#374465",
+    "primaryColorForeground": "#111111",
+    "primaryColorForegroundHovered": "#111111",
+    "primaryColorForegroundPressed": "#111111",
+    "primaryColorForegroundDisabled": "#53576c",
+    "focusColor": "#7AA2F766"
+  }
+}

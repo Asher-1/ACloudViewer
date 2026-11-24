@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include <ecvStdPluginInterface.h>
+#include <gtest/gtest.h>
 
 #include <QAction>
 #include <QApplication>
@@ -59,14 +60,10 @@
 #include "ChatServiceClient.h"
 #include "LocalChatEngine.h"
 
-#define REQUIRE(x)                                               \
-    do {                                                         \
-        if (!(x)) {                                              \
-            std::fprintf(stderr, "line %d: %s\n", __LINE__, #x); \
-            return 1;                                            \
-        }                                                        \
-    } while (false)
+#define REQUIRE(...) ASSERT_TRUE((__VA_ARGS__))
 namespace {
+int probeArgc = 0;
+char** probeArgv = nullptr;
 bool waitFor(const std::function<bool()>& predicate) {
     QElapsedTimer time;
     time.start();
@@ -80,7 +77,9 @@ QJsonObject readJson(const QString& path) {
     return QJsonDocument::fromJson(file.readAll()).object();
 }
 }  // namespace
-int main(int argc, char** argv) {
+TEST(ChatTest, ProviderAndWorkspaceWorkflows) {
+    int argc = probeArgc;
+    char** argv = probeArgv;
     QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs);
     QApplication app(argc, argv);
     QTemporaryDir temp;
@@ -2608,5 +2607,11 @@ int main(int argc, char** argv) {
             "legacy migration, selected/favorite flags, private permissions "
             "and "
             "malformed configuration preservation PASS");
-    return 0;
+}
+
+int main(int argc, char** argv) {
+    probeArgc = argc;
+    probeArgv = argv;
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

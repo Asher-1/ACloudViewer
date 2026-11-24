@@ -239,6 +239,8 @@ def analyze_releases(releases: List[Dict]) -> Dict:
                     'name': name,
                     'url': asset['browser_download_url'],
                     'size': round(asset['size'] / (1024 * 1024), 1),  # MB
+                    'created_at': asset.get('created_at', ''),
+                    'id': asset.get('id', 0),
                     **parsed
                 }
                 assets_data.append(asset_info)
@@ -271,7 +273,7 @@ def analyze_releases(releases: List[Dict]) -> Dict:
     return version_info
 
 
-def build_download_structure(version_info: Dict) -> Dict:
+def build_download_structure(version_info: Dict, source_sha: str = "") -> Dict:
     """Build the nested download data structure"""
     print("\n🏗️  Building download data structure...")
     
@@ -279,8 +281,15 @@ def build_download_structure(version_info: Dict) -> Dict:
     
     for tag, info in version_info.items():
         version_data = {}
-        
-        for asset in info['assets']:
+
+        # Slots are overwritten below: visit the preferred candidate last.
+        # Never depend on API order or let a late old-build upload beat main.
+        assets = sorted(info['assets'], key=lambda asset: (
+            tag == BETA_RELEASE_TAG and bool(
+                source_sha and '+' in asset['version'] and
+                source_sha.lower().startswith(asset['version'].split('+')[-1])),
+            asset.get('created_at', ''), asset.get('id', 0), asset['name']))
+        for asset in assets:
             platform = asset['platform']
             asset_type = asset['type']
             cuda = asset['cuda']
@@ -440,7 +449,8 @@ def main():
         version_info = analyze_releases(releases)
         
         # Build download structure
-        download_data = build_download_structure(version_info)
+        download_data = build_download_structure(
+            version_info, source_sha=os.environ.get('SOURCE_SHA', ''))
         
         # Generate version metadata
         version_metadata = generate_version_metadata(version_info)

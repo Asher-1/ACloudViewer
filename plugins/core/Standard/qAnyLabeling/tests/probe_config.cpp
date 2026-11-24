@@ -8,6 +8,7 @@
 #include <aicore/rfdetr_capi.h>
 #include <aicore/yolo_capi.h>
 #include <ecvStdPluginInterface.h>
+#include <gtest/gtest.h>
 
 #include <QAction>
 #include <QApplication>
@@ -31,11 +32,19 @@
 #include "AnnotationClassifierPrompt.h"
 #include "AnnotationConfig.h"
 
-int main(int argc, char** argv) {
+namespace {
+int probeArgc = 0;
+char** probeArgv = nullptr;
+}  // namespace
+
+TEST(AnnotationConfigContractTest, PluginDefaultsAndAppearance) {
+    int argc = probeArgc;
+    char** argv = probeArgv;
     QApplication app(argc, argv);
-    if (argc < 2 || argc > 4) return 2;
+    ASSERT_GE(argc, 2);
+    ASSERT_LE(argc, 4);
     QTemporaryDir settingsDir;
-    if (!settingsDir.isValid()) return 1;
+    if (!settingsDir.isValid()) FAIL();
     QCoreApplication::setOrganizationName(QStringLiteral("ACloudViewerTests"));
     QCoreApplication::setApplicationName(
             QStringLiteral("qAnyLabelingDefaults"));
@@ -47,7 +56,7 @@ int main(int argc, char** argv) {
     auto* plugin = qobject_cast<ccStdPluginInterface*>(loader.instance());
     if (!plugin) {
         std::fprintf(stderr, "%s\n", qPrintable(loader.errorString()));
-        return 1;
+        FAIL();
     }
     plugin->getActions().first()->trigger();
     QApplication::processEvents();
@@ -55,7 +64,7 @@ int main(int argc, char** argv) {
     for (QWidget* widget : QApplication::topLevelWidgets())
         if (widget->objectName() == QStringLiteral("qAnyLabelingWorkspace"))
             window = qobject_cast<QMainWindow*>(widget);
-    if (!window) return 1;
+    if (!window) FAIL();
     QJsonObject report, shortcuts, checks;
     for (QAction* action : window->findChildren<QAction*>()) {
         const QString id = action->property("qAnyShortcutId").toString();
@@ -88,7 +97,7 @@ int main(int argc, char** argv) {
             QStringLiteral("AnnotationConfidence"));
     auto* iou =
             window->findChild<QDoubleSpinBox*>(QStringLiteral("AnnotationIou"));
-    if (!model || !confidence || !iou) return 1;
+    if (!model || !confidence || !iou) FAIL();
     QJsonObject models;
     for (int i = 0; i < model->count(); ++i) {
         model->setCurrentIndex(i);
@@ -139,7 +148,7 @@ int main(int argc, char** argv) {
             window->findChild<QAction*>(QStringLiteral("AnnotationTheme_dark"));
     auto* light = window->findChild<QAction*>(
             QStringLiteral("AnnotationTheme_light"));
-    if (!dark || !light) return 1;
+    if (!dark || !light) FAIL();
     auto panelStyles = [&]() {
         QJsonObject styles;
         auto* dock =
@@ -171,7 +180,7 @@ int main(int argc, char** argv) {
         model->setCurrentIndex(0);
         window->resize(1280, 800);
         QApplication::processEvents();
-        if (!window->grab().save(QString::fromLocal8Bit(argv[3]))) return 1;
+        if (!window->grab().save(QString::fromLocal8Bit(argv[3]))) FAIL();
     }
     QJsonObject colors;
     const QPalette palette = window->palette();
@@ -217,16 +226,23 @@ int main(int argc, char** argv) {
         !checks.value(QStringLiteral("show_labels")).toBool()) {
         std::fprintf(stderr,
                      "Cold-start workspace configuration is incomplete\n");
-        return 1;
+        FAIL();
     }
     const QByteArray data = QJsonDocument(report).toJson();
     if (argc >= 3) {
         QFile file(QString::fromLocal8Bit(argv[2]));
         if (!file.open(QIODevice::WriteOnly) || file.write(data) != data.size())
-            return 1;
+            FAIL();
     }
     std::printf("Default probe: %d shortcuts, %d model families, %d docks\n",
                 shortcuts.size(), models.size(), docks.size());
     window->close();
-    return 0;
+}
+
+int main(int argc, char** argv) {
+    if (argc < 2 || argc > 4) return 2;
+    probeArgc = argc;
+    probeArgv = argv;
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

@@ -22,6 +22,8 @@
 #include <QWidget>
 // clang-format on
 
+#include <set>
+
 #include "cvSelectionData.h"
 #include "qVTK.h"
 
@@ -81,6 +83,10 @@ public:
         FIELD_ASSOCIATION_CELLS = 0,
         FIELD_ASSOCIATION_POINTS = 1
     };
+
+    // Resolve only mesh/cloud geometry owned by the scene DB. Attached
+    // annotations and transient helper meshes are not data-selection targets.
+    static std::set<vtkProp*> dataSelectionProps(Visualization::VtkVis* viewer);
 
     explicit cvSelectionPipeline(QObject* parent = nullptr);
     ~cvSelectionPipeline() override;
@@ -172,7 +178,18 @@ public:
      * selected.
      */
     static cvSelectionData convertToCvSelectionData(
-            vtkSelection* selection, FieldAssociation fieldAssociation);
+            vtkSelection* selection,
+            FieldAssociation fieldAssociation,
+            Visualization::VtkVis* viewer = nullptr);
+
+    static cvSelectionData resolveSelectionForView(
+            const cvSelectionData& selection, Visualization::VtkVis* viewer);
+    static cvSelectionData resolveSelectionForActor(
+            const cvSelectionData& selection,
+            const QString& sourceId,
+            vtkActor* actor,
+            vtkPolyData* polyData,
+            unsigned int blockIndex = 0);
 
     /**
      * @brief Remap VTK selection IDs to source object IDs.
@@ -323,6 +340,7 @@ public:
         vtkIdType attributeID;  // Element ID (point or cell) within the actor
         vtkProp* prop;          // The selected actor/prop
         vtkPolyData* polyData;  // PolyData from the selected actor
+        cvSelectionData selection;  // Source/block-qualified hover selection
 
         PixelSelectionInfo()
             : valid(false), attributeID(-1), prop(nullptr), polyData(nullptr) {}

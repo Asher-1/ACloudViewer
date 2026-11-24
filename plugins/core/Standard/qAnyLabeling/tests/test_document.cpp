@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <QBuffer>
 #include <QCoreApplication>
 #include <QDir>
@@ -24,101 +26,109 @@ bool write(const QString& path, const QJsonObject& json) {
 }
 }  // namespace
 
+class AnnotationDocumentTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        ASSERT_TRUE(temporary.isValid());
+        root = QDir(temporary.path());
+        ASSERT_TRUE(root.mkdir("images"));
+        ASSERT_TRUE(root.mkdir("labels"));
+        imagePath = root.filePath("images/scene.png");
+        labels = root.filePath("labels/scene.json");
+        image = QImage(37, 19, QImage::Format_RGB32);
+        image.fill(Qt::red);
+        ASSERT_TRUE(image.save(imagePath));
+        json = {{"shapes", QJsonArray()},
+                {"imagePath", "../images/scene.png"},
+                {"imageData", QJsonValue::Null},
+                {"custom", 42}};
+    }
+    QTemporaryDir temporary;
+    QDir root;
+    QString imagePath, labels;
+    QImage image;
+    QJsonObject json;
+};
+
+TEST_F(AnnotationDocumentTest, ResolvesRelativeAndAbsolutePaths) {
+    ASSERT_TRUE(write(labels, json));
+    const auto relative = loadAnnotationDocument(labels);
+    EXPECT_TRUE(relative.error.isEmpty()) << relative.error.toStdString();
+    EXPECT_EQ(relative.imagePath, imagePath);
+    EXPECT_EQ(relative.image.size(), image.size());
+    EXPECT_EQ(relative.json, json);
+    json.insert("imagePath", imagePath);
+    ASSERT_TRUE(write(labels, json));
+    EXPECT_TRUE(loadAnnotationDocument(labels).error.isEmpty());
+}
+
+TEST_F(AnnotationDocumentTest,
+       SupportsRelocatedImagesAndExplicitLabelDirectory) {
+    ASSERT_TRUE(image.save(root.filePath("labels/scene.png")));
+    json.insert("imagePath", "/old/machine/scene.png");
+    ASSERT_TRUE(write(labels, json));
+    const auto fallback = loadAnnotationDocument(labels);
+    EXPECT_TRUE(fallback.error.isEmpty());
+    EXPECT_EQ(fallback.imagePath, root.filePath("labels/scene.png"));
+    json.insert("imagePath", "/missing/original.png");
+    ASSERT_TRUE(write(labels, json));
+    const auto explicitImage =
+            loadAnnotationDocument(imagePath, root.filePath("labels"));
+    EXPECT_TRUE(explicitImage.error.isEmpty());
+    EXPECT_EQ(explicitImage.imagePath, imagePath);
+    EXPECT_EQ(explicitImage.labelPath, labels);
+    EXPECT_EQ(explicitImage.json, json);
+}
+
+TEST_F(AnnotationDocumentTest, EmbeddedPixelsTakePrecedenceAndRetainMetadata) {
+    QImage embeddedImage(11, 7, QImage::Format_RGB32);
+    embeddedImage.fill(Qt::blue);
+    QByteArray encoded;
+    QBuffer buffer(&encoded);
+    ASSERT_TRUE(buffer.open(QIODevice::WriteOnly));
+    ASSERT_TRUE(embeddedImage.save(&buffer, "PNG"));
+    json.insert("imageData", QString::fromLatin1(encoded.toBase64()));
+    ASSERT_TRUE(write(labels, json));
+    const auto embedded = loadAnnotationDocument(labels);
+    EXPECT_TRUE(embedded.error.isEmpty());
+    EXPECT_EQ(embedded.image.size(), embeddedImage.size());
+    EXPECT_EQ(embedded.json.value("custom").toInt(), 42);
+}
+
+TEST_F(AnnotationDocumentTest, RejectsMalformedImageDataShapesAndJson) {
+    json.insert("imageData", "broken pixels");
+    ASSERT_TRUE(write(labels, json));
+    EXPECT_FALSE(loadAnnotationDocument(labels).error.isEmpty());
+    json.insert("imageData", 123);
+    ASSERT_TRUE(write(labels, json));
+    EXPECT_FALSE(loadAnnotationDocument(labels).error.isEmpty());
+    json.insert("shapes", QJsonObject());
+    ASSERT_TRUE(write(labels, json));
+    EXPECT_FALSE(loadAnnotationDocument(labels).error.isEmpty());
+    QFile corrupt(labels);
+    ASSERT_TRUE(corrupt.open(QIODevice::WriteOnly));
+    ASSERT_EQ(corrupt.write("{"), 1);
+    corrupt.close();
+    EXPECT_FALSE(loadAnnotationDocument(imagePath, root.filePath("labels"))
+                         .error.isEmpty());
+}
+
 int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
-    if (argc >= 2) {
+    if (argc >= 2 && !QString::fromLocal8Bit(argv[1]).startsWith("--gtest")) {
         const auto loaded = loadAnnotationDocument(
                 QString::fromLocal8Bit(argv[1]),
                 argc >= 3 ? QString::fromLocal8Bit(argv[2]) : QString());
-        const QJsonObject result{
-                {QStringLiteral("ok"), loaded.error.isEmpty()},
-                {QStringLiteral("path"), loaded.imagePath},
-                {QStringLiteral("size"),
-                 QJsonArray{loaded.image.width(), loaded.image.height()}},
-                {QStringLiteral("error"), loaded.error}};
+        const QJsonObject result{{"ok", loaded.error.isEmpty()},
+                                 {"path", loaded.imagePath},
+                                 {"size", QJsonArray{loaded.image.width(),
+                                                     loaded.image.height()}},
+                                 {"error", loaded.error}};
         std::puts(QJsonDocument(result)
                           .toJson(QJsonDocument::Compact)
                           .constData());
         return 0;
     }
-    QTemporaryDir temporary;
-    if (!temporary.isValid()) return 1;
-    QDir root(temporary.path());
-    if (!root.mkdir(QStringLiteral("images")) ||
-        !root.mkdir(QStringLiteral("labels")))
-        return 1;
-    const auto imagePath = root.filePath(QStringLiteral("images/scene.png"));
-    const auto labels = root.filePath(QStringLiteral("labels/scene.json"));
-    QImage image(37, 19, QImage::Format_RGB32);
-    image.fill(Qt::red);
-    if (!image.save(imagePath)) return 1;
-    QJsonObject json{{QStringLiteral("shapes"), QJsonArray()},
-                     {QStringLiteral("imagePath"),
-                      QStringLiteral("../images/scene.png")},
-                     {QStringLiteral("imageData"), QJsonValue::Null},
-                     {QStringLiteral("custom"), 42}};
-    if (!write(labels, json)) return 1;
-    const auto relative = loadAnnotationDocument(labels);
-    if (!relative.error.isEmpty() || relative.imagePath != imagePath ||
-        relative.image.size() != image.size() || relative.json != json)
-        return 1;
-    json.insert(QStringLiteral("imagePath"), imagePath);
-    if (!write(labels, json) || !loadAnnotationDocument(labels).error.isEmpty())
-        return 1;
-    if (!image.save(root.filePath(QStringLiteral("labels/scene.png"))))
-        return 1;
-    json.insert(QStringLiteral("imagePath"),
-                QStringLiteral("/old/machine/scene.png"));
-    if (!write(labels, json)) return 1;
-    const auto fallback = loadAnnotationDocument(labels);
-    if (!fallback.error.isEmpty() ||
-        fallback.imagePath != root.filePath(QStringLiteral("labels/scene.png")))
-        return 1;
-    json.insert(QStringLiteral("imagePath"),
-                QStringLiteral("/missing/original.png"));
-    if (!write(labels, json)) return 1;
-    const auto overrideImage = loadAnnotationDocument(
-            imagePath, root.filePath(QStringLiteral("labels")));
-    if (!overrideImage.error.isEmpty() ||
-        overrideImage.imagePath != imagePath ||
-        overrideImage.labelPath != labels || overrideImage.json != json)
-        return 1;
-    // Embedded pixels have precedence even when disk dimensions differ or
-    // the stored path is no longer available. Metadata is retained verbatim.
-    QImage embeddedImage(11, 7, QImage::Format_RGB32);
-    embeddedImage.fill(Qt::blue);
-    QByteArray encoded;
-    QBuffer buffer(&encoded);
-    if (!buffer.open(QIODevice::WriteOnly) ||
-        !embeddedImage.save(&buffer, "PNG"))
-        return 1;
-    json.insert(QStringLiteral("imageData"),
-                QString::fromLatin1(encoded.toBase64()));
-    if (!write(labels, json)) return 1;
-    const auto embedded = loadAnnotationDocument(labels);
-    if (!embedded.error.isEmpty() ||
-        embedded.image.size() != embeddedImage.size() ||
-        embedded.json.value(QStringLiteral("custom")).toInt() != 42)
-        return 1;
-    json.insert(QStringLiteral("imageData"), QStringLiteral("broken pixels"));
-    if (!write(labels, json) || loadAnnotationDocument(labels).error.isEmpty())
-        return 1;
-    json.insert(QStringLiteral("imageData"), 123);
-    if (!write(labels, json) || loadAnnotationDocument(labels).error.isEmpty())
-        return 1;
-    json.insert(QStringLiteral("shapes"), QJsonObject());
-    if (!write(labels, json) || loadAnnotationDocument(labels).error.isEmpty())
-        return 1;
-    QFile corrupt(labels);
-    if (!corrupt.open(QIODevice::WriteOnly) || corrupt.write("{") != 1)
-        return 1;
-    corrupt.close();
-    if (loadAnnotationDocument(imagePath,
-                               root.filePath(QStringLiteral("labels")))
-                .error.isEmpty())
-        return 1;
-    std::puts(
-            "Document paths, embedded pixels, overrides and invalid input: "
-            "PASS");
-    return 0;
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

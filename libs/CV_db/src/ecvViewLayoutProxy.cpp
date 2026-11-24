@@ -45,11 +45,25 @@ void ecvViewLayoutProxy::ensureSize(int location) {
 }
 
 void ecvViewLayoutProxy::shrink() {
-    while (!m_tree.empty() && m_tree.back().direction == NONE &&
-           m_tree.back().view == nullptr &&
-           static_cast<int>(m_tree.size()) > 1) {
-        m_tree.pop_back();
+    // ParaView vtkSMViewLayoutProxy::Shrink: trim the array to the maximum
+    // index structurally reachable from the root (children of split cells).
+    // Popping trailing empty leaves instead would remove a required empty
+    // child of a split cell after a collapse, corrupting the tree: the
+    // missing child is rebuilt as an empty cell whose close button can never
+    // collapse it (location no longer valid).
+    int maxIndex = 0;
+    std::vector<int> pending{0};
+    while (!pending.empty()) {
+        const int location = pending.back();
+        pending.pop_back();
+        if (!isValidLocation(location)) continue;
+        maxIndex = std::max(maxIndex, location);
+        if (m_tree[location].direction != NONE) {
+            pending.push_back(firstChild(location));
+            pending.push_back(secondChild(location));
+        }
     }
+    m_tree.resize(maxIndex + 1);
 }
 
 void ecvViewLayoutProxy::moveSubtree(int dst, int src) {

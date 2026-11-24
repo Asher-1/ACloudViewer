@@ -8,6 +8,8 @@
 #include "ecvPythonView.h"
 
 #include <QtCompat.h>
+#include <Shortcuts/ecvKeySequences.h>
+#include <ecvGenericMesh.h>
 #include <ecvGenericPointCloud.h>
 #include <ecvHObject.h>
 #include <ecvHObjectCaster.h>
@@ -16,12 +18,15 @@
 #include <ecvViewTitleRegistry.h>
 
 #include <QAbstractItemView>
+#include <QAction>
 #include <QComboBox>
 #include <QCompleter>
 #include <QDir>
 #include <QFileDialog>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QMenu>
@@ -36,6 +41,7 @@
 #include <QStringListModel>
 #include <QTableWidget>
 #include <QTemporaryDir>
+#include <QTemporaryFile>
 #include <QTextStream>
 #include <QTimer>
 #include <QToolButton>
@@ -72,54 +78,50 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
     connect(m_sourceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &ecvPythonView::onSourceComboChanged);
 
-    auto btnSS = QStringLiteral(
-            "QPushButton { background: #4a86c8; color: #ffffff; border: 1px "
-            "solid #3a6fa8; border-radius: 3px; padding: 2px 8px; "
-            "font-weight: bold; }"
-            "QPushButton:hover { background: #5a96d8; }"
-            "QPushButton:pressed { background: #3a76b8; }");
-
     // === Row 2: Script toolbar ===
     auto* toolbar = new QWidget(this);
     auto* tbLayout = new QHBoxLayout(toolbar);
     tbLayout->setContentsMargins(4, 2, 4, 2);
     tbLayout->setSpacing(4);
-    toolbar->setStyleSheet("QWidget { background: #2b2b2b; }");
 
     auto* runBtn = new QPushButton(tr("Run"), toolbar);
-    runBtn->setStyleSheet(btnSS);
-    runBtn->setToolTip(tr("Execute Python script (Ctrl+Enter)"));
-    runBtn->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Return));
+    auto* runAction = new QAction(tr("Run Python Script"), this);
+    runAction->setObjectName("python.run");
+    runAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Return));
+    runAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    addAction(runAction);
+    ecvKeySequences::instance().registerCommand(runAction->objectName(),
+                                                runAction, tr("Python"));
+    connect(runAction, &QAction::triggered, runBtn, &QPushButton::click);
+    auto updateRunTip = [runAction, runBtn]() {
+        QStringList keys;
+        for (const auto& key : runAction->shortcuts())
+            keys.append(key.toString());
+        runBtn->setToolTip(keys.isEmpty() ? tr("Execute Python script")
+                                          : tr("Execute Python script") + " (" +
+                                                    keys.join("; ") + ")");
+    };
+    connect(runAction, &QAction::changed, runBtn, updateRunTip);
+    updateRunTip();
     tbLayout->addWidget(runBtn);
 
     auto* exportRunBtn = new QPushButton(tr("Export+Run"), toolbar);
-    exportRunBtn->setStyleSheet(btnSS);
     exportRunBtn->setToolTip(
             tr("Export selected entity to CSV, set DATA_FILE env var, then "
                "run script"));
     tbLayout->addWidget(exportRunBtn);
 
     auto* clearBtn = new QPushButton(tr("Clear"), toolbar);
-    clearBtn->setStyleSheet(btnSS);
     tbLayout->addWidget(clearBtn);
 
     auto* loadBtn = new QPushButton(tr("Load"), toolbar);
-    loadBtn->setStyleSheet(btnSS);
     tbLayout->addWidget(loadBtn);
 
     auto* saveBtn = new QPushButton(tr("Save"), toolbar);
-    saveBtn->setStyleSheet(btnSS);
     tbLayout->addWidget(saveBtn);
 
     m_snippetBtn = new QToolButton(toolbar);
     m_snippetBtn->setText(tr("Snippets"));
-    m_snippetBtn->setStyleSheet(
-            QStringLiteral("QToolButton { background: #4a86c8; color: #ffffff; "
-                           "border: 1px solid #3a6fa8; border-radius: 3px; "
-                           "padding: 2px 8px; font-weight: bold; }"
-                           "QToolButton:hover { background: #5a96d8; }"
-                           "QToolButton:pressed { background: #3a76b8; }"
-                           "QToolButton::menu-indicator { image: none; }"));
     m_snippetBtn->setToolTip(tr("Insert common code snippets"));
     m_snippetBtn->setPopupMode(QToolButton::InstantPopup);
     {
@@ -270,14 +272,6 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
     m_variableTable->setAlternatingRowColors(true);
     m_variableTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_variableTable->setMaximumHeight(150);
-    m_variableTable->setStyleSheet(
-            "QTableWidget { background: #252526; color: #d4d4d4; "
-            "font-family: monospace; font-size: 11px; "
-            "alternate-background-color: #2d2d30; "
-            "selection-background-color: #264f78; "
-            "selection-color: #ffffff; gridline-color: #3e3e42; }"
-            "QHeaderView::section { background: #3c3c3c; color: #e0e0e0; "
-            "border: 1px solid #555; padding: 2px; font-weight: bold; }");
     m_variableTable->verticalHeader()->setDefaultSectionSize(20);
     m_variableTable->setVisible(false);
     splitter->addWidget(m_variableTable);
@@ -306,6 +300,12 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
 }
 
 ecvPythonView::~ecvPythonView() {
+    if (m_process) {
+        m_process->disconnect(this);
+        m_process->kill();
+        m_process->waitForFinished(3000);
+    }
+
     if (!m_viewTypeKey.isEmpty() && !m_title.isEmpty()) {
         ecvViewTitleRegistry::instance().release(m_viewTypeKey, m_title);
     }
@@ -440,7 +440,23 @@ void ecvPythonView::onSourceComboChanged(int index) {
 }
 
 void ecvPythonView::setEntity(ccHObject* entity) {
+    if (m_entity != entity) {
+        if (m_process) {
+            m_process->disconnect(this);
+            m_process->kill();
+            m_process->deleteLater();
+            m_process = nullptr;
+        }
+        if (!m_lastExportPath.isEmpty()) QFile::remove(m_lastExportPath);
+        m_lastExportPath.clear();
+        m_variableTable->setRowCount(0);
+        m_imageLabel->clear();
+    }
     m_entity = entity;
+    const QSignalBlocker blocker(m_sourceCombo);
+    int sourceIndex = m_sourceCombo->findData(
+            QVariant::fromValue<quintptr>(reinterpret_cast<quintptr>(entity)));
+    m_sourceCombo->setCurrentIndex(sourceIndex >= 0 ? sourceIndex : 0);
     if (entity) {
         m_statusLabel->setText(tr("Entity: %1").arg(entity->getName()));
     } else {
@@ -456,14 +472,18 @@ QString ecvPythonView::exportEntityToTempCsv() {
     if (!m_entity) return {};
 
     auto* cloud = ccHObjectCaster::ToGenericPointCloud(m_entity);
+    if (!cloud) {
+        if (auto* mesh = ccHObjectCaster::ToGenericMesh(m_entity))
+            cloud = mesh->getAssociatedCloud();
+    }
     if (!cloud) return {};
 
-    auto* pc = ccHObjectCaster::ToPointCloud(m_entity);
+    auto* pc = ccHObjectCaster::ToPointCloud(cloud);
 
     QString tempDir = QDir::tempPath();
     QString csvPath =
             tempDir + QStringLiteral("/acv_entity_%1.csv")
-                              .arg(reinterpret_cast<quintptr>(m_entity), 0, 16);
+                              .arg(reinterpret_cast<quintptr>(this), 0, 16);
 
     QFile file(csvPath);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return {};
@@ -488,6 +508,11 @@ QString ecvPythonView::exportEntityToTempCsv() {
         headers << "R" << "G" << "B";
     }
 
+    for (QString& header : headers) {
+        header.replace('"', "\"\"");
+        header = '"' + header + '"';
+    }
+    out.setRealNumberPrecision(17);
     out << headers.join(",") << "\n";
 
     unsigned count = cloud->size();
@@ -519,6 +544,7 @@ QString ecvPythonView::exportEntityToTempCsv() {
 }
 
 void ecvPythonView::onExportEntityAndRun() {
+    if (m_process) return;
     clearErrorHighlights();
 
     QString csvPath = exportEntityToTempCsv();
@@ -532,10 +558,6 @@ void ecvPythonView::onExportEntityAndRun() {
     m_outputPanel->appendPlainText(tr("Exported entity to: %1").arg(csvPath));
     m_outputPanel->appendPlainText(
             tr("DATA_FILE env variable set. Running script...\n"));
-
-    QString plotPath = QDir::tempPath() +
-                       QStringLiteral("/acv_plot_%1.png")
-                               .arg(reinterpret_cast<quintptr>(this), 0, 16);
 
     QString script = m_scriptEditor->toPlainText().trimmed();
     if (script.isEmpty()) {
@@ -560,80 +582,11 @@ void ecvPythonView::onExportEntityAndRun() {
         m_scriptEditor->setPlainText(script);
     }
 
-    QString pyBin = findPythonBinary();
-    if (pyBin.isEmpty()) {
-        m_outputPanel->appendPlainText(
-                tr("Error: Python not found. Install python3."));
-        m_statusLabel->setText(tr("Python not found"));
-        return;
-    }
-
-    m_statusLabel->setText(tr("Running..."));
-    QFile::remove(plotPath);
-
-    QProcess proc;
-    proc.setProgram(pyBin);
-    proc.setArguments({"-c", script});
-
-    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    env.insert("DATA_FILE", csvPath);
-    env.insert("PLOT_FILE", plotPath);
-    proc.setProcessEnvironment(env);
-    proc.start();
-
-    if (!proc.waitForStarted(5000)) {
-        m_outputPanel->appendPlainText(
-                tr("Error: Could not start %1.").arg(pyBin));
-        m_statusLabel->setText(tr("Start failed"));
-        return;
-    }
-
-    if (!proc.waitForFinished(60000)) {
-        m_outputPanel->appendPlainText(
-                tr("Error: Script timed out (60s limit)"));
-        proc.kill();
-        m_statusLabel->setText(tr("Timeout"));
-        return;
-    }
-
-    QString stdOut = QString::fromUtf8(proc.readAllStandardOutput());
-    QString stdErr = QString::fromUtf8(proc.readAllStandardError());
-
-    if (!stdOut.isEmpty()) {
-        m_outputPanel->appendPlainText(stdOut);
-    }
-    if (!stdErr.isEmpty()) {
-        m_outputPanel->appendPlainText(tr("--- stderr ---"));
-        m_outputPanel->appendPlainText(stdErr);
-    }
-
-    int exitCode = proc.exitCode();
-    m_statusLabel->setText(exitCode == 0 ? tr("OK")
-                                         : tr("Exit: %1").arg(exitCode));
-
-    if (exitCode != 0 && !stdErr.isEmpty()) {
-        highlightErrorLine(stdErr);
-    }
-
-    if (QFile::exists(plotPath)) {
-        QPixmap pix(plotPath);
-        if (!pix.isNull() && m_imageLabel) {
-            m_imageLabel->setPixmap(pix.scaled(m_imageLabel->size(),
-                                               Qt::KeepAspectRatio,
-                                               Qt::SmoothTransformation));
-        }
-        if (!m_lastImagePath.isEmpty() && m_lastImagePath != plotPath) {
-            QFile::remove(m_lastImagePath);
-        }
-        m_lastImagePath = plotPath;
-    }
-
-    if (exitCode == 0) {
-        inspectVariables();
-    }
+    onRunScript();
 }
 
 void ecvPythonView::onRunScript() {
+    if (m_process) return;
     clearErrorHighlights();
 
     QString script = m_scriptEditor->toPlainText().trimmed();
@@ -675,74 +628,136 @@ void ecvPythonView::onRunScript() {
 
     m_outputPanel->clear();
     m_statusLabel->setText(tr("Running..."));
+    m_imageLabel->clear();
+    if (!m_lastImagePath.isEmpty()) {
+        QFile::remove(m_lastImagePath);
+        m_lastImagePath.clear();
+    }
 
     QString plotPath = QDir::tempPath() +
                        QStringLiteral("/acv_plot_%1.png")
                                .arg(reinterpret_cast<quintptr>(this), 0, 16);
     QFile::remove(plotPath);
 
-    QProcess proc;
-    proc.setProgram(pyBin);
-    proc.setArguments({"-c", script});
+    auto* proc = new QProcess(this);
+    m_process = proc;
+    auto* deadline = new QTimer(proc);
+    deadline->setSingleShot(true);
+    deadline->setInterval(60000);
+    proc->setProgram(pyBin);
+    auto* variables = new QTemporaryFile(proc);
+    if (!variables->open()) {
+        m_statusLabel->setText(tr("Cannot create variable result file"));
+        m_process = nullptr;
+        proc->deleteLater();
+        return;
+    }
+    variables->close();
+    proc->setArguments(
+            {"-c",
+             QStringLiteral(
+                     "import sys as __sys, os as __os, json as __json\n"
+                     "exec(compile(__sys.stdin.read(), '<string>', 'exec'))\n"
+                     "__result = []\n"
+                     "for __name, __val in dict(locals()).items():\n"
+                     "    if __name.startswith('_'): continue\n"
+                     "    __tp = type(__val).__name__\n"
+                     "    __sh = ''\n"
+                     "    try:\n"
+                     "        if hasattr(__val, 'shape'): __sh = "
+                     "str(__val.shape)\n"
+                     "        elif hasattr(__val, '__len__'): __sh = "
+                     "str(len(__val))\n"
+                     "    except: pass\n"
+                     "    try: __vl = repr(__val)[:80]\n"
+                     "    except: __vl = '<error>'\n"
+                     "    __result.append([__name, __tp, __sh, __vl])\n"
+                     "with open(__os.environ['ACV_VARIABLES_FILE'], 'w', "
+                     "encoding='utf-8') as __f:\n"
+                     "    __json.dump(__result, __f)\n")});
+    connect(proc, &QProcess::started, proc, [proc, script]() {
+        proc->write(script.toUtf8());
+        proc->closeWriteChannel();
+    });
 
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    if (!m_lastExportPath.isEmpty()) {
-        env.insert("DATA_FILE", m_lastExportPath);
-    }
+    env.remove("DATA_FILE");
+    if (!m_lastExportPath.isEmpty()) env.insert("DATA_FILE", m_lastExportPath);
     env.insert("PLOT_FILE", plotPath);
-    proc.setProcessEnvironment(env);
-    proc.start();
+    env.insert("ACV_VARIABLES_FILE", variables->fileName());
+    proc->setProcessEnvironment(env);
+    m_variableTable->clearContents();
+    m_variableTable->setRowCount(0);
+    connect(proc, &QProcess::errorOccurred, this,
+            [this, proc](QProcess::ProcessError error) {
+                if (error != QProcess::FailedToStart) return;
+                m_outputPanel->appendPlainText(proc->errorString());
+                m_statusLabel->setText(tr("Start failed"));
+                m_process = nullptr;
+                proc->deleteLater();
+            });
+    connect(proc, qOverload<int, QProcess::ExitStatus>(&QProcess::finished),
+            this,
+            [this, proc, plotPath, variables, deadline](
+                    int, QProcess::ExitStatus exitStatus) {
+                const bool timedOut = !deadline->isActive();
+                deadline->stop();
+                QString stdOut =
+                        QString::fromUtf8(proc->readAllStandardOutput());
+                QString stdErr =
+                        QString::fromUtf8(proc->readAllStandardError());
 
-    if (!proc.waitForStarted(5000)) {
-        m_outputPanel->appendPlainText(
-                tr("Error: Could not start %1.").arg(pyBin));
-        m_statusLabel->setText(tr("Start failed"));
-        return;
-    }
+                if (exitStatus == QProcess::NormalExit &&
+                    proc->exitCode() == 0) {
+                    QFile result(variables->fileName());
+                    if (result.open(QIODevice::ReadOnly))
+                        inspectVariables(QString::fromUtf8(result.readAll()));
+                }
+                if (!stdOut.isEmpty()) {
+                    m_outputPanel->appendPlainText(stdOut);
+                }
+                if (!stdErr.isEmpty()) {
+                    m_outputPanel->appendPlainText(tr("--- stderr ---"));
+                    m_outputPanel->appendPlainText(stdErr);
+                }
 
-    if (!proc.waitForFinished(60000)) {
-        m_outputPanel->appendPlainText(
-                tr("Error: Script timed out (60s limit)"));
-        proc.kill();
-        m_statusLabel->setText(tr("Timeout"));
-        return;
-    }
+                int exitCode = proc->exitCode();
+                m_statusLabel->setText(
+                        timedOut ? tr("Timed out")
+                        : exitStatus == QProcess::CrashExit ? tr("Crashed")
+                        : exitCode == 0 ? tr("OK")
+                                        : tr("Exit: %1").arg(exitCode));
 
-    QString stdOut = QString::fromUtf8(proc.readAllStandardOutput());
-    QString stdErr = QString::fromUtf8(proc.readAllStandardError());
+                if (exitCode != 0 && !stdErr.isEmpty()) {
+                    highlightErrorLine(stdErr);
+                }
 
-    if (!stdOut.isEmpty()) {
-        m_outputPanel->appendPlainText(stdOut);
-    }
-    if (!stdErr.isEmpty()) {
-        m_outputPanel->appendPlainText(tr("--- stderr ---"));
-        m_outputPanel->appendPlainText(stdErr);
-    }
+                if (QFile::exists(plotPath)) {
+                    QPixmap pix(plotPath);
+                    if (!pix.isNull() && m_imageLabel) {
+                        m_imageLabel->setPixmap(pix.scaled(
+                                m_imageLabel->size(), Qt::KeepAspectRatio,
+                                Qt::SmoothTransformation));
+                    }
+                    if (!m_lastImagePath.isEmpty() &&
+                        m_lastImagePath != plotPath) {
+                        QFile::remove(m_lastImagePath);
+                    }
+                    m_lastImagePath = plotPath;
+                }
 
-    int exitCode = proc.exitCode();
-    m_statusLabel->setText(exitCode == 0 ? tr("OK")
-                                         : tr("Exit: %1").arg(exitCode));
-
-    if (exitCode != 0 && !stdErr.isEmpty()) {
-        highlightErrorLine(stdErr);
-    }
-
-    if (QFile::exists(plotPath)) {
-        QPixmap pix(plotPath);
-        if (!pix.isNull() && m_imageLabel) {
-            m_imageLabel->setPixmap(pix.scaled(m_imageLabel->size(),
-                                               Qt::KeepAspectRatio,
-                                               Qt::SmoothTransformation));
+                m_process = nullptr;
+                proc->deleteLater();
+            });
+    connect(deadline, &QTimer::timeout, proc, [this, proc]() {
+        if (proc->state() != QProcess::NotRunning) {
+            m_outputPanel->appendPlainText(
+                    tr("Error: Script timed out (60s limit)"));
+            proc->kill();
         }
-        if (!m_lastImagePath.isEmpty() && m_lastImagePath != plotPath) {
-            QFile::remove(m_lastImagePath);
-        }
-        m_lastImagePath = plotPath;
-    }
-
-    if (exitCode == 0) {
-        inspectVariables();
-    }
+    });
+    deadline->start();
+    proc->start();
 }
 
 void ecvPythonView::onClear() {
@@ -798,10 +813,6 @@ bool ecvPythonView::eventFilter(QObject* obj, QEvent* event) {
         bool isShortcut = (ke->modifiers() & Qt::ControlModifier) &&
                           ke->key() == Qt::Key_Space;
 
-        if (!isShortcut) {
-            QWidget::eventFilter(obj, event);
-        }
-
         if (m_completer) {
             static const QString eow =
                     QStringLiteral("~!@#$%^&*()+{}|:\"<>?,/;'[]\\-=");
@@ -831,8 +842,9 @@ bool ecvPythonView::eventFilter(QObject* obj, QEvent* event) {
             }
         }
 
-        if (isShortcut) return true;
-        return true;
+        // Only explicit completion consumes the event. Normal editing must
+        // reach ecvPythonCodeEditor's keyPressEvent through Qt dispatch.
+        return isShortcut;
     }
     return QWidget::eventFilter(obj, event);
 }
@@ -849,84 +861,22 @@ void ecvPythonView::showSnippetMenu() {
     }
 }
 
-void ecvPythonView::inspectVariables() {
-    QString pyBin = findPythonBinary();
-    if (pyBin.isEmpty() || !m_variableTable) return;
-
-    QString script = m_scriptEditor->toPlainText().trimmed();
-    if (script.isEmpty()) return;
-
-    QString inspectScript =
-            script +
-            QStringLiteral(
-                    "\n\nimport sys as __sys\n"
-                    "__result = []\n"
-                    "for __name, __val in dict(locals()).items():\n"
-                    "    if __name.startswith('_'): continue\n"
-                    "    __tp = type(__val).__name__\n"
-                    "    __sh = ''\n"
-                    "    __vl = ''\n"
-                    "    try:\n"
-                    "        if hasattr(__val, 'shape'): __sh = "
-                    "str(__val.shape)\n"
-                    "        elif hasattr(__val, '__len__'): __sh = "
-                    "str(len(__val))\n"
-                    "    except: pass\n"
-                    "    try:\n"
-                    "        __vr = repr(__val)\n"
-                    "        __vl = __vr[:80] + ('...' if len(__vr)>80 else "
-                    "'')\n"
-                    "    except: __vl = '<error>'\n"
-                    "    "
-                    "__result.append(f'{__name}\\t{__tp}\\t{__sh}\\t{__vl}')\n"
-                    "print('__VARS_START__')\n"
-                    "for __r in __result: print(__r)\n"
-                    "print('__VARS_END__')\n");
-
-    QProcess proc;
-    proc.setProgram(pyBin);
-    proc.setArguments({"-c", inspectScript});
-
-    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    if (!m_lastExportPath.isEmpty()) env.insert("DATA_FILE", m_lastExportPath);
-    QString plotPath = QDir::tempPath() +
-                       QStringLiteral("/acv_varinspect_%1.png")
-                               .arg(reinterpret_cast<quintptr>(this), 0, 16);
-    env.insert("PLOT_FILE", plotPath);
-    proc.setProcessEnvironment(env);
-    proc.start();
-
-    if (!proc.waitForFinished(15000)) {
-        proc.kill();
-        return;
-    }
-
-    QString out = QString::fromUtf8(proc.readAllStandardOutput());
-    int startIdx = out.indexOf("__VARS_START__");
-    int endIdx = out.indexOf("__VARS_END__");
-    if (startIdx < 0 || endIdx < 0) {
-        m_variableTable->setVisible(false);
-        return;
-    }
-
-    QString varBlock = out.mid(startIdx + 15, endIdx - startIdx - 15).trimmed();
-    QStringList lines = varBlock.split('\n', QtCompat::SkipEmptyParts);
-
+void ecvPythonView::inspectVariables(const QString& out) {
+    if (!m_variableTable) return;
+    const auto variables = QJsonDocument::fromJson(out.toUtf8()).array();
     m_variableTable->setRowCount(0);
-    for (const auto& line : lines) {
-        QStringList parts = line.split('\t');
-        if (parts.size() < 4) continue;
-        int row = m_variableTable->rowCount();
+    for (const auto& variable : variables) {
+        const auto values = variable.toArray();
+        if (values.size() != 4) continue;
+        const int row = m_variableTable->rowCount();
         m_variableTable->insertRow(row);
-        for (int c = 0; c < 4; ++c) {
-            m_variableTable->setItem(row, c,
-                                     new QTableWidgetItem(parts.value(c)));
-        }
+        for (int c = 0; c < 4; ++c)
+            m_variableTable->setItem(
+                    row, c, new QTableWidgetItem(values[c].toString()));
     }
 
     m_variableTable->setVisible(m_variableTable->rowCount() > 0);
     m_variableTable->resizeColumnsToContents();
-    QFile::remove(plotPath);
 }
 
 void ecvPythonView::highlightErrorLine(const QString& stderrText) {

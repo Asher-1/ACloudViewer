@@ -207,3 +207,16 @@ ccPointCloud* BuildAnnotatedCloud(ccPointCloud* source,
     annotated->showColors(true);
     return annotated;
 }
+
+int DisableTaggedEntities(ccHObject* root, const QString& metaKey) {
+    if (!root) return 0;
+    int disabled = 0;
+    if (root->getMetaData(metaKey).isValid() && root->isEnabled()) {
+        root->setEnabled(false);
+        ++disabled;
+    }
+    for (unsigned i = 0; i < root->getChildrenNumber(); ++i) {
+        disabled += DisableTaggedEntities(root->getChild(i), metaKey);
+    }
+    return disabled;
+}

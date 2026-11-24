@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <cmath>
 #include <cstdlib>
 #include <string>
@@ -18,12 +20,13 @@
 // (saddle_balanced). Verifies (a) the internally-selected reference index b_idx
 // matches the dumped refsel_b_idx, and (b) per-view feat/cam parity in ORIGINAL
 // view order at 2e-3.
-int main() {
+TEST(DepthWhitebox, BackboneMv4) {
     const char* gguf = std::getenv("AICORE_TEST_DEPTH_GGUF");
     const char* base = std::getenv("AICORE_TEST_DEPTH_BASELINE_MV4");
-    if (!gguf || !base) return 77;
+    if (!gguf || !base)
+        GTEST_SKIP() << "Required model/reference environment is unset";
     aicore::depth::ModelLoader ml;
-    if (!ml.load(gguf)) return 1;
+    ASSERT_TRUE(ml.load(gguf));
 
     const float mean[3] = {0.485f, 0.456f, 0.406f},
                 std_[3] = {0.229f, 0.224f, 0.225f};
@@ -32,9 +35,9 @@ int main() {
     for (int v = 0; v < S; ++v) {
         std::vector<float> raw;
         std::vector<int64_t> s;  // raw_mv4_v stored HWC [224,224,3] (0..255)
-        if (!da_parity::load_baseline(
-                    base, std::string("raw_mv4_") + std::to_string(v), raw, s))
-            return 1;
+        ASSERT_TRUE(da_parity::load_baseline(
+                base, std::string("raw_mv4_") + std::to_string(v), raw, s));
+        ASSERT_EQ(raw.size(), static_cast<size_t>(3 * H * W));
         std::vector<float> chw((size_t)3 * H * W);
         for (int y = 0; y < H; ++y)
             for (int x = 0; x < W; ++x)
@@ -49,46 +52,51 @@ int main() {
     aicore::depth::DinoBackbone bb(ml, be);
     std::vector<std::vector<std::vector<float>>> feats, cams;
     int b_idx = -1;
-    if (!bb.forward_mv(views, H, W, feats, cams, &b_idx)) return 1;
+    ASSERT_TRUE(bb.forward_mv(views, H, W, feats, cams, &b_idx));
 
-    bool ok = true;
     // (a) reference-view index parity.
     std::vector<float> bref;
     std::vector<int64_t> bs;
-    if (!da_parity::load_baseline(base, "refsel_b_idx", bref, bs)) return 1;
+    ASSERT_TRUE(da_parity::load_baseline(base, "refsel_b_idx", bref, bs));
+    ASSERT_EQ(bref.size(), 1u);
     int ref_b = (int)std::lround(bref[0]);
     std::fprintf(stderr, "[refsel_b_idx] cpp=%d ref=%d -> %s\n", b_idx, ref_b,
                  (b_idx == ref_b) ? "OK" : "FAIL");
-    ok &= (b_idx == ref_b);
+    EXPECT_TRUE((b_idx == ref_b));
 
     // (b) per-view feat/cam parity in ORIGINAL view order.
+    ASSERT_EQ(feats.size(), 4u);
+    ASSERT_EQ(cams.size(), 4u);
     const int Ls[4] = {5, 7, 9, 11};
     const size_t feat_view = 256 * 1536, cam_view = 1536;
     for (int i = 0; i < 4; ++i) {
         std::vector<float> rf, rc;
         std::vector<int64_t> s;
-        da_parity::load_baseline(
-                base, std::string("feat_mv4_") + std::to_string(Ls[i]), rf, s);
-        da_parity::load_baseline(
-                base, std::string("cam_mv4_") + std::to_string(Ls[i]), rc, s);
+        ASSERT_TRUE(da_parity::load_baseline(
+                base, std::string("feat_mv4_") + std::to_string(Ls[i]), rf, s));
+        ASSERT_TRUE(da_parity::load_baseline(
+                base, std::string("cam_mv4_") + std::to_string(Ls[i]), rc, s));
+        ASSERT_EQ(rf.size(), static_cast<size_t>(S) * feat_view);
+        ASSERT_EQ(rc.size(), static_cast<size_t>(S) * cam_view);
+        ASSERT_EQ(feats[i].size(), static_cast<size_t>(S));
+        ASSERT_EQ(cams[i].size(), static_cast<size_t>(S));
         for (int v = 0; v < S; ++v) {
             std::vector<float> rf_v(rf.begin() + (size_t)v * feat_view,
                                     rf.begin() + (size_t)(v + 1) * feat_view);
             std::vector<float> rc_v(rc.begin() + (size_t)v * cam_view,
                                     rc.begin() + (size_t)(v + 1) * cam_view);
-            ok &= da_parity::compare(
+            EXPECT_TRUE(da_parity::compare(
                     feats[i][v], rf_v,
                     (std::string("feat_mv4_") + std::to_string(Ls[i]) + "_v" +
                      std::to_string(v))
                             .c_str(),
-                    2e-3f, 2e-3f);
-            ok &= da_parity::compare(
+                    2e-3f, 2e-3f));
+            EXPECT_TRUE(da_parity::compare(
                     cams[i][v], rc_v,
                     (std::string("cam_mv4_") + std::to_string(Ls[i]) + "_v" +
                      std::to_string(v))
                             .c_str(),
-                    2e-3f, 2e-3f);
+                    2e-3f, 2e-3f));
         }
     }
-    return ok ? 0 : 1;
 }

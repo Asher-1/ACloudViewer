@@ -2,6 +2,10 @@
 # (include/ecvAICoreUiHelper.h). Header-only: links Qt Widgets only, runs
 # headless (QT_QPA_PLATFORM=offscreen is forced inside the test binary).
 
+if(NOT TARGET gtest_main)
+    include(${CloudViewer_3RDPARTY_DIR}/googletest/googletest.cmake)
+endif()
+
 if(NOT TARGET Qt${QT_VERSION_MAJOR}::Widgets)
     find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui Widgets)
 endif()
@@ -12,7 +16,7 @@ function(_cvpluginapi_register_asset_test name)
         aicore_register_test(NAME ${name} TARGET ${name}
             LABELS "cvpluginapi;capi")
     else()
-        add_test(NAME ${name} COMMAND ${name})
+        cloudviewer_add_test(NAME ${name} COMMAND ${name})
         set_tests_properties(${name} PROPERTIES LABELS "cvpluginapi")
     endif()
     cloudviewer_set_plugin_test_env(${name})
@@ -29,6 +33,7 @@ target_link_libraries(test_cvpluginapi_ui_helpers PRIVATE
     Qt${QT_VERSION_MAJOR}::Core
     Qt${QT_VERSION_MAJOR}::Gui
     Qt${QT_VERSION_MAJOR}::Widgets
+    gtest
 )
 
 if(NOT MSVC)
@@ -41,7 +46,7 @@ if(NOT MSVC)
 endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_cvpluginapi_ui_helpers)
-add_test(NAME test_cvpluginapi_ui_helpers COMMAND test_cvpluginapi_ui_helpers)
+cloudviewer_add_test(NAME test_cvpluginapi_ui_helpers COMMAND test_cvpluginapi_ui_helpers)
 cloudviewer_set_plugin_test_env(test_cvpluginapi_ui_helpers)
 set_tests_properties(test_cvpluginapi_ui_helpers PROPERTIES LABELS "cvpluginapi")
 
@@ -51,7 +56,7 @@ target_include_directories(test_cvpluginapi_asset_integrity PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
     ${CMAKE_SOURCE_DIR}/core/AICore/include)
 target_link_libraries(test_cvpluginapi_asset_integrity PRIVATE
-    CVPluginAPI Qt${QT_VERSION_MAJOR}::Core)
+    CVPluginAPI Qt${QT_VERSION_MAJOR}::Core gtest_main)
 if(NOT MSVC)
     target_compile_options(test_cvpluginapi_asset_integrity PRIVATE -Wall -Wextra -fPIC)
     set_target_properties(test_cvpluginapi_asset_integrity PROPERTIES
@@ -68,7 +73,8 @@ add_executable(test_cvpluginapi_model_downloader test_model_downloader.cpp)
 target_include_directories(test_cvpluginapi_model_downloader PRIVATE
     ${CMAKE_SOURCE_DIR}/core/AICore/include)
 target_link_libraries(test_cvpluginapi_model_downloader PRIVATE
-    CVPluginAPI Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Network)
+    CVPluginAPI Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Network
+    gtest_main)
 if(NOT MSVC)
     target_compile_options(test_cvpluginapi_model_downloader PRIVATE -Wall -Wextra -fPIC)
     if(NOT APPLE)
@@ -84,7 +90,7 @@ target_include_directories(test_cvpluginapi_dataset_repository PRIVATE
     ${CMAKE_SOURCE_DIR}/core/AICore/include)
 target_link_libraries(test_cvpluginapi_dataset_repository PRIVATE
     CVPluginAPI Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui
-    Qt${QT_VERSION_MAJOR}::Network)
+    Qt${QT_VERSION_MAJOR}::Network gtest_main)
 if(NOT MSVC)
     target_compile_options(test_cvpluginapi_dataset_repository PRIVATE -Wall -Wextra -fPIC)
     if(NOT APPLE)
@@ -99,7 +105,7 @@ add_executable(test_cvpluginapi_dataset_lifecycle test_dataset_lifecycle.cpp)
 target_include_directories(test_cvpluginapi_dataset_lifecycle PRIVATE
     ${CMAKE_SOURCE_DIR}/core/AICore/include)
 target_link_libraries(test_cvpluginapi_dataset_lifecycle PRIVATE
-    CVPluginAPI Qt${QT_VERSION_MAJOR}::Core)
+    CVPluginAPI Qt${QT_VERSION_MAJOR}::Core gtest_main)
 if(NOT MSVC)
     target_compile_options(test_cvpluginapi_dataset_lifecycle PRIVATE -Wall -Wextra -fPIC)
     if(NOT APPLE)
@@ -121,6 +127,7 @@ target_include_directories(test_cvpluginapi_runtime_helpers PRIVATE
 
 target_link_libraries(test_cvpluginapi_runtime_helpers PRIVATE
     AICore
+    gtest_main
     Qt${QT_VERSION_MAJOR}::Core
     Qt${QT_VERSION_MAJOR}::Gui
 )
@@ -135,7 +142,7 @@ if(NOT MSVC)
 endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_cvpluginapi_runtime_helpers)
-add_test(NAME test_cvpluginapi_runtime_helpers COMMAND test_cvpluginapi_runtime_helpers)
+cloudviewer_add_test(NAME test_cvpluginapi_runtime_helpers COMMAND test_cvpluginapi_runtime_helpers)
 cloudviewer_set_plugin_test_env(test_cvpluginapi_runtime_helpers)
 set_tests_properties(test_cvpluginapi_runtime_helpers PROPERTIES LABELS "cvpluginapi")
 endif()

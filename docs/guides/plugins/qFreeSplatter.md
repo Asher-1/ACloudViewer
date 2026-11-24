@@ -110,8 +110,9 @@ Cache directory: `~/cloudViewer_data/extract/freesplatter_models` (override with
 
 ```bash
 cmake -B build -DAICore_ENABLED=ON -DAICore_BUILD_TESTS=ON ...
-cmake --build build --target test_loader test_parity
-ctest -LE model   # fast tests without GGUF assets
+cmake -DBUILD_DIR=build -DJOBS=4 -P tests/Run.cmake
+# Explicit model selection; missing assets may skip:
+cmake -DBUILD_DIR=build -DJOBS=4 -DPROFILE=model -P tests/Run.cmake
 ```
 
 ## Further reading

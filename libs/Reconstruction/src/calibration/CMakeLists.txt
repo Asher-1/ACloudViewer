@@ -18,7 +18,7 @@ if (TESTS_ENABLED)
     COLMAP_ADD_TEST(ray_fitting_test ray_fitting_test.cc)
     COLMAP_ADD_TEST(anycalib_test anycalib_test.cc)
     set_property(TEST calibration/anycalib_test APPEND PROPERTY LABELS model)
-    add_test(NAME calibration/anycalib_unit_test
+    cloudviewer_add_test(NAME calibration/anycalib_unit_test
         COMMAND $<TARGET_FILE:anycalib_test>
             "--gtest_filter=PrepareAnyCalibInputTest.*:CreateAnyCalibCalibratorTest.NullAnyCalibOptionsThrows:CreateAnyCalibCalibratorTest.MissingModelFileThrows")
     cloudviewer_set_test_runtime_environment(calibration/anycalib_unit_test

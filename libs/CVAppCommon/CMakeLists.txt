@@ -4,18 +4,23 @@ project(CVAppCommon)
 
 add_library(${PROJECT_NAME} SHARED)
 
+# One app-private Custom backend; the same pinned source selects Qt5 or Qt6.
+include(${CMAKE_CURRENT_LIST_DIR}/../../3rdparty/qlementine/qlementine.cmake)
+target_link_libraries(${PROJECT_NAME} PRIVATE qlementine::qlementine)
+
 add_subdirectory( devices )
 add_subdirectory(include)
 add_subdirectory(src)
 add_subdirectory(ui)
 
 target_link_libraries(${PROJECT_NAME}
+        PRIVATE
         CVPluginAPI
         )
 
 if (USE_VTK_BACKEND)
     include_directories(${QVTK_ENGINE_LIB_SOURCE_DIR})
-    target_link_libraries(${PROJECT_NAME} QVTK_ENGINE_LIB)
+    target_link_libraries(${PROJECT_NAME} PRIVATE QVTK_ENGINE_LIB)
 endif ()
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE CVAPPCOMMON_LIBRARY_BUILD)
@@ -25,12 +30,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
         CXX_VISIBILITY_PRESET hidden
         )
 
-# Add QDarkStyleSheet resources
-target_sources(${PROJECT_NAME}
-        PRIVATE
-        ${CMAKE_CURRENT_LIST_DIR}/QDarkStyleSheet/qdarkstyle/dark/darkstyle.qrc
-        ${CMAKE_CURRENT_LIST_DIR}/QDarkStyleSheet/qdarkstyle/light/lightstyle.qrc
-        ${CMAKE_CURRENT_LIST_DIR}/resources/component-icons.qrc
+# Color-only presets share the backend's widget geometry and state handling.
+target_sources(${PROJECT_NAME} PRIVATE
+        ${CMAKE_CURRENT_LIST_DIR}/resources/qlementine-themes.qrc
 )
 
 if (OPTION_SUPPORT_GAMEPADS)
@@ -47,7 +49,7 @@ if (OPTION_SUPPORT_GAMEPADS)
                 )
         # Note: Gamepad is Qt5-only, so we use Qt5::Gamepad directly
         # (no unified Qt::Gamepad alias exists since it's not in Qt6)
-        target_link_libraries(${PROJECT_NAME} Qt5::Gamepad)
+        target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Gamepad)
     endif()
 endif ()
 

@@ -71,6 +71,10 @@ public:
     void setSelectedIndices(const QSet<unsigned>& indices);
     void setSelectionOnly(bool on);
     bool selectionOnly() const { return m_selectionOnly; }
+    unsigned sourceRow(int row) const {
+        return m_selectionOnly ? m_sortedSelection.at(row)
+                               : static_cast<unsigned>(row);
+    }
 
     void setGenerateCellConnectivity(bool on);
     bool generateCellConnectivity() const { return m_cellConnectivity; }

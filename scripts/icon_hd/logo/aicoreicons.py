@@ -19,29 +19,44 @@ SOURCE_CAPTIONS={
  'RelateAnything':('SCENE RELATIONS',),'TRELLIS.2':('qTrellis',),'YOLO':('DEP',),
 }
 
+# Low-chroma identity surfaces, not independent saturated product logos.
+# The family label describes the verified operation; original captions and full
+# plugin names remain font-independent paths. Native toolbar art is unchanged.
+FAMILY={
+'DA3':('depth','#E8EFF4','#668699'),'DeepLSD':('lines','#EDF0E7','#7C8A61'),
+'FaceDetect':('identity','#F2ECE4','#9A846A'),'FreeSplatter':('splats','#E9EFE8','#73896C'),
+'GKD':('keypoints','#F1EEE3','#968D68'),'InstantMesh':('mesh','#E7EDF1','#758C9A'),
+'LightGlue':('matching','#EBEEF5','#7987A5'),'LingBot-Map':('trajectory','#E8F0EE','#6B8D83'),
+'MapAnything':('mapping','#E8EDF1','#6D899C'),'OCR':('text','#F1EEE5','#96896E'),
+'OpenPCDet':('boxes','#EDF0E5','#81916A'),'QuerySplat':('query','#EDEAF2','#8E809B'),
+'RAM++':('tags','#ECEEE5','#8B916B'),'RF-DETR':('detect','#E7EEEF','#6A8B91'),
+'RMBG':('matte','#EEEEEC','#888B85'),'RelateAnything':('relations','#F1EDE6','#998B73'),
+'SAM3':('mask','#E8F0E9','#718E77'),'SAM3D':('shape','#E7EEF0','#6D8A94'),
+'TRELLIS.2':('generation','#EDEAF0','#8A7E96'),'VLX-Seek':('search','#EBEDF4','#7A84A1'),
+'YOLO':('detect-depth','#EEEFE3','#8B9060')}
+
 def _tile(mark,name):
-    lines=NAME_LINES[name]
-    two=len(lines)==2
-    # Geometry is authored in 24 units, wordmarks in 64: independent, explicit boxes.
-    body=f'<title>{name} — AICore plugin</title><g stroke-width=".85" transform="translate({13 if two else 9} 1) scale({1.65 if two else 1.95})">{mark}</g>'
-    captions=SOURCE_CAPTIONS.get(name,())
-    if captions:
-        cy=35.2 if two else 42.9
-        span=54/len(captions)
-        body+='<g data-source-captions="true">'
-        for i,caption in enumerate(captions):
-            body+=P.rect(5+i*span,cy-4.6,span-1,5.6,P.BLUE_PALE,r=.6)
-            body+=label_path(caption,x=5.5+i*span,y=cy,width=span-2,height=3.7)
-        body+='</g>'
-    top=37.3 if two else 45.4
-    body+=P.rect(2.5,top,59,61.7-top,P.BLUE_PALE,r=1.3)
-    body+=f'<g data-plugin-name="{name}" data-name-lines="{len(lines)}">'
-    for i,line in enumerate(lines):
-        y=(47.5+i*11) if two else 58.2
-        height=8.5 if two else 10.4
-        body+=label_path(line,x=4.7,y=y,width=54.6,height=height).replace(f'fill="{P.INK}"','fill="#343C30"')
-    body+='</g>'
-    return P.svg(body,w=64,h=64,sw=1.35).replace('width="64" height="64"','width="128" height="128"',1)
+ family,base,accent=FAMILY[name]
+ b=f'<title>{name} — {family} plugin</title>'
+ # A low-chroma plate gives disabled/light surfaces a visual anchor without
+ # turning twenty-one commands into saturated app-store badges.
+ b+=f'<rect x="2" y="1" width="60" height="48" rx="5" fill="{base}" stroke="#ABB2B3" stroke-width=".65"/>'
+ b+=f'<path d="M 6 10 V 38" stroke="{accent}" stroke-width="2.3" stroke-linecap="round"/>'
+ b+=f'<g data-feature="{family}" transform="translate(8 0) scale(2)" stroke-width=".85">{mark}</g>'
+ b+='<rect x="2" y="48" width="60" height="15.5" rx="2" fill="#F2F4F2"/>'
+ captions=SOURCE_CAPTIONS.get(name,())
+ if captions:
+  span=60/len(captions)
+  b+='<g data-source-captions="true">'
+  for i,text in enumerate(captions):b+=label_path(text,x=2+i*span,y=49.7,width=span-1,height=2.5)
+  b+='</g>'
+ lines=NAME_LINES[name]
+ b+=f'<g data-plugin-name="{name}" data-name-lines="{len(lines)}">'
+ for i,text in enumerate(lines):
+  y=56.4+i*7.1 if len(lines)==2 else 62.2
+  b+=label_path(text,x=2,y=y,width=60,height=6.3 if len(lines)==2 else 9.0)
+ b+='</g>'
+ return P.svg(b,w=64,h=64,sw=1.35).replace('width="64" height="64"','width="128" height="128"',1)
 
 def _ptcloud(pts=None,color=None,r=.58):
     pts=pts or [(4,6),(8,4),(12,7),(17,4.5),(6,11),(11,10),(16,11),(4.5,16),(9,15),(14,17),(19,15)]

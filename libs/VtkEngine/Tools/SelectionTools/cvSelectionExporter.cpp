@@ -38,6 +38,7 @@
 #include <vtkFloatArray.h>
 #include <vtkGeometryFilter.h>
 #include <vtkIdTypeArray.h>
+#include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
@@ -685,7 +686,11 @@ vtkPolyData* cvSelectionExporter::extractSelection(
 
         vtkSmartPointer<vtkExtractSelection> extractor =
                 vtkSmartPointer<vtkExtractSelection>::New();
-        extractor->SetInputData(0, polyData);
+        // Extraction may replace vtkOriginal*Ids; do not mutate the source
+        // representation's mapping when exporting a selection.
+        vtkNew<vtkPolyData> selectionInput;
+        selectionInput->ShallowCopy(polyData);
+        extractor->SetInputData(0, selectionInput);
         extractor->SetInputData(1, selection);
         extractor->Update();
 

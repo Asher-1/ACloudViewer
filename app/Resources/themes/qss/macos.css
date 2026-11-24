@@ -195,15 +195,6 @@ border:2px solid #007AFF;
 background:#007AFF;
 }
 
-QRadioButton::indicator:checked:before{
-content:"";
-width:8px;
-height:8px;
-border-radius:4px;
-background:#FFFFFF;
-margin:3px;
-}
-
 /* Checkboxes */
 QCheckBox{
 color:#000000;

@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <new>
 
 #include "ecvCameraSensorDisplayUtils.h"
 
@@ -1616,22 +1617,38 @@ void ccCameraSensor::updateData() {
     m_sideLines.lines_.push_back(Eigen::Vector2i(0, 3));
     m_sideLines.lines_.push_back(Eigen::Vector2i(0, 4));
 
-    // Orientation indicator, COLMAP model-viewer style: a right triangle at
-    // the image plane's top-left corner, legs along the top edge (right) and
-    // the left edge (down), size = half the larger plane half-extent.
-    // "Up" is frame-dependent (see localUpSign): -Y in the OpenCV/VtkColmap
-    // frame, +Y in the OpenGL legacy frame.
+    // up arrow: sits just OUTSIDE the near plane's top edge and points
+    // further up. "Up" is frame-dependent (see localUpSign): -Y in the
+    // OpenCV/VtkColmap frame, +Y in the OpenGL legacy frame.
     const double up = localUpSign(m_poseFrame);
-    const double size = 0.5 * std::max(upperLeftPointd.x, upperLeftPointd.y);
-    const double topY = up * upperLeftPointd.y;
+    const double arrowHeight = up * 3 * upperLeftPointd.y / 2;
+    const double baseHeight = up * 6 * upperLeftPointd.y / 5;
+    const double arrowHalfWidth = 2 * upperLeftPointd.x / 5;
+    const double baseHalfWidth = 1 * upperLeftPointd.x / 5;
+    const double planeEdgeY = up * upperLeftPointd.y;
 
+    // arrow
     m_arrow.clear();
     m_arrow.points_.push_back(
-            Eigen::Vector3d(-upperLeftPointd.x, topY, planeZ));
+            Eigen::Vector3d(-baseHalfWidth, baseHeight, planeZ));
     m_arrow.points_.push_back(
-            Eigen::Vector3d(-upperLeftPointd.x + size, topY, planeZ));
+            Eigen::Vector3d(baseHalfWidth, baseHeight, planeZ));
     m_arrow.points_.push_back(
-            Eigen::Vector3d(-upperLeftPointd.x, topY - up * size, planeZ));
+            Eigen::Vector3d(baseHalfWidth, planeEdgeY, planeZ));
+    m_arrow.points_.push_back(
+            Eigen::Vector3d(-baseHalfWidth, planeEdgeY, planeZ));
+    m_arrow.lines_.push_back(Eigen::Vector2i(0, 1));
+    m_arrow.lines_.push_back(Eigen::Vector2i(1, 2));
+    m_arrow.lines_.push_back(Eigen::Vector2i(2, 3));
+    m_arrow.lines_.push_back(Eigen::Vector2i(3, 0));
+    m_arrow.points_.push_back(
+            Eigen::Vector3d(-arrowHalfWidth, baseHeight, planeZ));
+    m_arrow.points_.push_back(
+            Eigen::Vector3d(arrowHalfWidth, baseHeight, planeZ));
+    m_arrow.points_.push_back(Eigen::Vector3d(0, arrowHeight, planeZ));
+    m_arrow.lines_.push_back(Eigen::Vector2i(4, 5));
+    m_arrow.lines_.push_back(Eigen::Vector2i(5, 6));
+    m_arrow.lines_.push_back(Eigen::Vector2i(6, 4));
 }
 
 void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
@@ -1828,9 +1845,10 @@ bool ccCameraSensor::computeOrthoRectificationParams(
                     1.0 / norm,       1.0 / norm, 1.0 / norm, 1.0 / norm};
 
     // compute the A matrix and b vector
-    unsigned Neq = 2 * count;         // number of equations
-    double* A = new double[8 * Neq];  // 8 coefficients: a0 a1 a2 b0 b1 b2 c1 c2
-    double* b = new double[Neq];
+    unsigned Neq = 2 * count;  // number of equations
+    // 8 coefficients: a0 a1 a2 b0 b1 b2 c1 c2
+    double* A = new (std::nothrow) double[8 * Neq];
+    double* b = new (std::nothrow) double[Neq];
     if (!A || !b) {
         // not enough memory
         if (A) delete[] A;

@@ -6,15 +6,19 @@
 // ----------------------------------------------------------------------------
 
 #include <FileSystem.h>
+#include <gtest/gtest.h>
 
 #include <QApplication>
+#include <QCheckBox>
+#include <QComboBox>
 #include <QDir>
 #include <QFile>
+#include <QLineEdit>
 #include <QNetworkAccessManager>
 #include <QNetworkProxy>
+#include <QPushButton>
 #include <QSettings>
 #include <QTemporaryDir>
-#include <cstdio>
 
 #include "TrellisDialog.h"
 #include "TrellisWorker.h"
@@ -24,183 +28,234 @@
 #include <aicore/trellis_capi.h>
 #endif
 
-#define REQUIRE(condition)                                               \
-    do {                                                                 \
-        if (!(condition)) {                                              \
-            std::fprintf(stderr, "line %d: %s\n", __LINE__, #condition); \
-            return 1;                                                    \
-        }                                                                \
-    } while (false)
-
-int main(int argc, char** argv) {
-    qputenv("QT_QPA_PLATFORM", "offscreen");
-    QApplication app(argc, argv);
+class TrellisModelSelectionTest : public ::testing::Test {
+protected:
     QTemporaryDir temporary;
-    REQUIRE(temporary.isValid());
-    REQUIRE(cloudViewer::utility::filesystem::SetEnvVar(
-            "CLOUDVIEWER_DATA_ROOT", temporary.path().toUtf8().toStdString()));
-    QSettings::setDefaultFormat(QSettings::IniFormat);
-    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
-                       temporary.path());
-    app.setOrganizationName("ACloudViewerCacheTest");
-    app.setApplicationName("TrellisSelection");
+    const QByteArray previousDataRoot = qgetenv("CLOUDVIEWER_DATA_ROOT");
+    const bool hadDataRoot = qEnvironmentVariableIsSet("CLOUDVIEWER_DATA_ROOT");
+
+    void CacheRequiredModels(const QStringList& paths) {
+        for (const QString& path : paths.mid(0, 6)) {
+            if (path.isEmpty()) continue;
+            ASSERT_TRUE(QDir().mkpath(QFileInfo(path).absolutePath()));
+            QFile file(path);
+            ASSERT_TRUE(file.open(QIODevice::WriteOnly));
+            ASSERT_GT(
+                    file.write(QByteArray("GGUF") + QByteArray(80 * 1024, 'x')),
+                    0);
+            file.close();
+            ASSERT_TRUE(ecvAssetIntegrity::markVerified(
+                    path, {QCryptographicHash::Sha256,
+                           ecvAssetIntegrity::PinnedDigest(
+                                   QFileInfo(path).fileName())}));
+        }
+    }
+
+    void TearDown() override {
+        if (hadDataRoot) {
+            qputenv("CLOUDVIEWER_DATA_ROOT", previousDataRoot);
+        } else {
+            qunsetenv("CLOUDVIEWER_DATA_ROOT");
+        }
+    }
+
+    void SetUp() override {
+        ASSERT_TRUE(temporary.isValid());
+        ASSERT_TRUE(cloudViewer::utility::filesystem::SetEnvVar(
+                "CLOUDVIEWER_DATA_ROOT",
+                temporary.path().toUtf8().toStdString()));
+        QSettings::setDefaultFormat(QSettings::IniFormat);
+        QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
+                           temporary.path());
+        QSettings::setPath(QSettings::IniFormat, QSettings::SystemScope,
+                           temporary.path());
+        QCoreApplication::setOrganizationName("ACloudViewerCacheTest");
+        QCoreApplication::setApplicationName("TrellisSelection");
+    }
+};
+
+TEST_F(TrellisModelSelectionTest,
+       CachedGeometryRunsAndMissingModelsDoNotStart) {
     TrellisDialog dialog;
     auto* preset = dialog.findChild<QComboBox*>("pipelinePreset");
     auto* quant = dialog.findChild<QComboBox*>("quantization");
     auto* texture = dialog.findChild<QCheckBox*>("textureEnabled");
     auto* rmbg = dialog.findChild<QCheckBox*>("removeBackground");
     auto* image = dialog.findChild<QLineEdit*>("sourceImage");
-    REQUIRE(preset && quant && texture && rmbg && image);
+    ASSERT_TRUE(preset && quant && texture && rmbg && image);
     preset->setCurrentIndex(1);
     quant->setCurrentIndex(quant->findData("q8"));
     texture->setChecked(false);
     rmbg->setChecked(false);
     image->setText("ui-fixture.png");
-    // Inject UI-only ingestion evidence for geometry, leaving every texture
-    // weight and alternate quantization absent. No inference is performed.
     const auto paths = dialog.getSettings().modelPaths;
-    for (const QString& path : paths.mid(0, 6)) {
-        if (path.isEmpty()) continue;
-        REQUIRE(QDir().mkpath(QFileInfo(path).absolutePath()));
-        QFile file(path);
-        REQUIRE(file.open(QIODevice::WriteOnly));
-        REQUIRE(file.write(QByteArray("GGUF") + QByteArray(80 * 1024, 'x')) >
-                0);
-        file.close();
-        ecvAssetIntegrity::markVerified(
-                path,
-                {QCryptographicHash::Sha256,
-                 ecvAssetIntegrity::PinnedDigest(QFileInfo(path).fileName())});
-    }
+    ASSERT_NO_FATAL_FAILURE(CacheRequiredModels(paths));
     int runs = 0;
     TrellisRunMode emitted = TrellisRunMode::GeometryOnly;
-    QObject::connect(&dialog, &TrellisDialog::runRequested, &app,
+    QObject::connect(&dialog, &TrellisDialog::runRequested, &dialog,
                      [&](const TrellisDialog::Settings& settings) {
                          ++runs;
                          emitted = settings.runMode;
                      });
     dialog.runWithMode(TrellisRunMode::Full);
-    REQUIRE(runs == 1 && emitted == TrellisRunMode::Full);
-    REQUIRE(!dialog.findChild<ecvModelDownloader*>()->isBusy());
+    EXPECT_EQ(runs, 1);
+    EXPECT_EQ(emitted, TrellisRunMode::Full);
+    EXPECT_FALSE(dialog.findChild<ecvModelDownloader*>()->isBusy());
     dialog.runWithMode(TrellisRunMode::GeometryOnly);
-    REQUIRE(runs == 2 && emitted == TrellisRunMode::GeometryOnly);
-    REQUIRE(QMetaObject::invokeMethod(&dialog, "onDownloadModels"));
-    REQUIRE(!dialog.findChild<ecvModelDownloader*>()->isBusy());
+    EXPECT_EQ(runs, 2);
+    EXPECT_EQ(emitted, TrellisRunMode::GeometryOnly);
+    ASSERT_TRUE(QMetaObject::invokeMethod(&dialog, "onDownloadModels"));
+    EXPECT_FALSE(dialog.findChild<ecvModelDownloader*>()->isBusy());
     for (const QString& path : paths.mid(6)) {
-        if (!path.isEmpty()) REQUIRE(!QFile::exists(path));
+        if (!path.isEmpty()) EXPECT_FALSE(QFile::exists(path));
     }
-    // Missing one selected file: Full must remain Full after the download.
-    const QString selectedPath = paths.first();
-    dialog.findChild<ecvModelDownloader*>()
-            ->findChild<QNetworkAccessManager*>()
-            ->setProxy(QNetworkProxy(QNetworkProxy::HttpProxy,
-                                     QStringLiteral("127.0.0.1"), 9));
-    REQUIRE(QFile::remove(selectedPath));
-    dialog.runWithMode(TrellisRunMode::Full);
+}
+
+TEST_F(TrellisModelSelectionTest, DownloadCancellationRetryAndLateCompletion) {
+    TrellisDialog dialog;
+    auto* preset = dialog.findChild<QComboBox*>("pipelinePreset");
+    auto* quant = dialog.findChild<QComboBox*>("quantization");
+    auto* texture = dialog.findChild<QCheckBox*>("textureEnabled");
+    auto* rmbg = dialog.findChild<QCheckBox*>("removeBackground");
+    auto* image = dialog.findChild<QLineEdit*>("sourceImage");
+    ASSERT_TRUE(preset && quant && texture && rmbg && image);
+    image->setText("ui-fixture.png");
+    preset->setCurrentIndex(1);
+    quant->setCurrentIndex(quant->findData("q8"));
+    texture->setChecked(false);
+    rmbg->setChecked(false);
     auto* downloader = dialog.findChild<ecvModelDownloader*>();
-    REQUIRE(downloader->isBusy() && runs == 2);
-    auto* cancel = dialog.findChild<QPushButton*>("cancelTask");
-    REQUIRE(cancel && cancel->isEnabled() && !quant->isEnabled());
-    cancel->click();
-    REQUIRE(!downloader->isBusy() && runs == 2);
-    REQUIRE(quant->isEnabled() && !cancel->isEnabled());
+    ASSERT_NE(downloader, nullptr);
+    const auto paths = dialog.getSettings().modelPaths;
+    ASSERT_FALSE(paths.isEmpty());
+    ASSERT_NO_FATAL_FAILURE(CacheRequiredModels(paths));
+    const QString selectedPath = paths.first();
+    downloader->findChild<QNetworkAccessManager*>()->setProxy(QNetworkProxy(
+            QNetworkProxy::HttpProxy, QStringLiteral("127.0.0.1"), 9));
+    int runs = 0;
+    TrellisRunMode emitted = TrellisRunMode::GeometryOnly;
+    QObject::connect(&dialog, &TrellisDialog::runRequested, &dialog,
+                     [&](const TrellisDialog::Settings& settings) {
+                         ++runs;
+                         emitted = settings.runMode;
+                     });
+    ASSERT_TRUE(QFile::remove(selectedPath));
     dialog.runWithMode(TrellisRunMode::Full);
-    REQUIRE(downloader->isBusy());
+    ASSERT_TRUE(downloader->isBusy());
+    EXPECT_EQ(runs, 0);
+    auto* cancel = dialog.findChild<QPushButton*>("cancelTask");
+    ASSERT_TRUE(cancel && cancel->isEnabled());
+    EXPECT_FALSE(quant->isEnabled());
+    cancel->click();
+    EXPECT_FALSE(downloader->isBusy());
+    EXPECT_EQ(runs, 0);
+    EXPECT_TRUE(quant->isEnabled());
+    EXPECT_FALSE(cancel->isEnabled());
+
+    dialog.runWithMode(TrellisRunMode::Full);
+    ASSERT_TRUE(downloader->isBusy());
     downloader->blockSignals(true);
     downloader->cancel();
     downloader->blockSignals(false);
     {
         QFile file(selectedPath);
-        REQUIRE(file.open(QIODevice::WriteOnly));
-        file.write(QByteArray("GGUF") + QByteArray(80 * 1024, 'x'));
+        ASSERT_TRUE(file.open(QIODevice::WriteOnly));
+        ASSERT_GT(file.write(QByteArray("GGUF") + QByteArray(80 * 1024, 'x')),
+                  0);
         file.close();
-        REQUIRE(ecvAssetIntegrity::markVerified(
+        ASSERT_TRUE(ecvAssetIntegrity::markVerified(
                 selectedPath, {QCryptographicHash::Sha256,
                                ecvAssetIntegrity::PinnedDigest(
                                        QFileInfo(selectedPath).fileName())}));
     }
     downloader->finished(true, selectedPath);
-    REQUIRE(runs == 3 && emitted == TrellisRunMode::Full);
-    REQUIRE(!downloader->isBusy());
-    REQUIRE(QFile::remove(selectedPath));
+    EXPECT_EQ(runs, 1);
+    EXPECT_EQ(emitted, TrellisRunMode::Full);
+    EXPECT_FALSE(downloader->isBusy());
+
+    ASSERT_TRUE(QFile::remove(selectedPath));
     dialog.runWithMode(TrellisRunMode::Full);
-    REQUIRE(downloader->isBusy());
+    ASSERT_TRUE(downloader->isBusy());
     dialog.reject();
-    REQUIRE(!downloader->isBusy() && quant->isEnabled());
+    EXPECT_FALSE(downloader->isBusy());
+    EXPECT_TRUE(quant->isEnabled());
     {
         QFile file(selectedPath);
-        REQUIRE(file.open(QIODevice::WriteOnly));
-        file.write(QByteArray("GGUF") + QByteArray(80 * 1024, 'x'));
+        ASSERT_TRUE(file.open(QIODevice::WriteOnly));
+        ASSERT_GT(file.write(QByteArray("GGUF") + QByteArray(80 * 1024, 'x')),
+                  0);
         file.close();
-        REQUIRE(ecvAssetIntegrity::markVerified(
+        ASSERT_TRUE(ecvAssetIntegrity::markVerified(
                 selectedPath, {QCryptographicHash::Sha256,
                                ecvAssetIntegrity::PinnedDigest(
                                        QFileInfo(selectedPath).fileName())}));
     }
     downloader->finished(true, selectedPath);
-    REQUIRE(runs == 3);
+    EXPECT_EQ(runs, 1);
+
     dialog.runWithMode(TrellisRunMode::GeometryOnly);
-    REQUIRE(runs == 4 && emitted == TrellisRunMode::GeometryOnly);
+    EXPECT_EQ(runs, 2);
+    EXPECT_EQ(emitted, TrellisRunMode::GeometryOnly);
+
     int cancellations = 0;
-    QObject::connect(&dialog, &TrellisDialog::cancelRequested, &app,
+    QObject::connect(&dialog, &TrellisDialog::cancelRequested, &dialog,
                      [&]() { ++cancellations; });
     dialog.setRunning(true);
-    REQUIRE(cancel->isEnabled() && !quant->isEnabled());
+    EXPECT_TRUE(cancel->isEnabled());
+    EXPECT_FALSE(quant->isEnabled());
     cancel->click();
-    REQUIRE(cancellations == 1);
+    EXPECT_EQ(cancellations, 1);
     dialog.setRunning(false);
-    REQUIRE(!cancel->isEnabled() && quant->isEnabled());
+    EXPECT_FALSE(cancel->isEnabled());
+    EXPECT_TRUE(quant->isEnabled());
+}
 
-    // ── T2IMG01 preprocess preview: decode round-trip ──────────────────────
-    // The AICore preprocess stage streams the RMBG-matted RGBA image as a
-    // T2IMG01 blob; the worker must decode it to a full-resolution QImage
-    // with intact alpha (the chip's checker backdrop needs it) and reject
-    // damaged payload lengths.
-    {
-        const int w = 4, h = 3;
-        QByteArray payload;
-        payload.append("T2IMG01", 8);
-        const quint32 dims[2] = {(quint32)w, (quint32)h};
-        payload.append((const char*)dims, 8);
-        QByteArray px(w * h * 4, 0);
-        for (int i = 0; i < w * h; ++i) {
-            px[i * 4 + 0] = (quint8)(10 + i);
-            px[i * 4 + 1] = 20;
-            px[i * 4 + 2] = 30;
-            px[i * 4 + 3] = (i % 2) ? 255 : 0;  // mixed alpha on purpose
-        }
-        payload.append(px);
-
-        TrellisWorker worker(TrellisWorker::Settings{});
-        const QImage img = worker.renderPreviewBlob(payload.constData(),
-                                                    payload.size(), 256);
-        REQUIRE(img.width() == w && img.height() == h);
-        REQUIRE(img.format() == QImage::Format_RGBA8888);
-        REQUIRE(img.pixelColor(0, 0).alpha() == 0);
-        REQUIRE(img.pixelColor(1, 0).alpha() == 255);
-        REQUIRE(img.pixelColor(1, 0).red() == 11);
-        // A payload length inconsistent with the header must be rejected.
-        REQUIRE(worker.renderPreviewBlob(payload.constData(),
+TEST(TrellisWorkerPreview, DecodesT2img01AndRejectsInvalidLength) {
+    const int width = 4, height = 3;
+    QByteArray payload;
+    payload.append("T2IMG01", 8);
+    const quint32 dimensions[2] = {static_cast<quint32>(width),
+                                   static_cast<quint32>(height)};
+    payload.append(reinterpret_cast<const char*>(dimensions), 8);
+    QByteArray pixels(width * height * 4, 0);
+    for (int i = 0; i < width * height; ++i) {
+        pixels[i * 4] = static_cast<quint8>(10 + i);
+        pixels[i * 4 + 1] = 20;
+        pixels[i * 4 + 2] = 30;
+        pixels[i * 4 + 3] = (i % 2) ? 255 : 0;
+    }
+    payload.append(pixels);
+    TrellisWorker worker(TrellisWorker::Settings{});
+    const QImage image =
+            worker.renderPreviewBlob(payload.constData(), payload.size(), 256);
+    ASSERT_EQ(image.size(), QSize(width, height));
+    EXPECT_EQ(image.format(), QImage::Format_RGBA8888);
+    EXPECT_EQ(image.pixelColor(0, 0).alpha(), 0);
+    EXPECT_EQ(image.pixelColor(1, 0).alpha(), 255);
+    EXPECT_EQ(image.pixelColor(1, 0).red(), 11);
+    EXPECT_TRUE(worker.renderPreviewBlob(payload.constData(),
                                          payload.size() - 1, 256)
                         .isNull());
-        REQUIRE(worker.renderPreviewBlob(payload.constData(),
+    EXPECT_TRUE(worker.renderPreviewBlob(payload.constData(),
                                          payload.size() + 1, 256)
                         .isNull());
-    }
+}
 
-    // The live PREPROCESS stage maps onto the Preprocess chip (slot 1) and
-    // must not disturb the voxel/mesh slot mapping.
-    {
-        QImage chip(6, 5, QImage::Format_RGBA8888);
-        chip.fill(0);
-        chip.setPixel(0, 0, qRgba(1, 2, 3, 0));
-        TrellisStagePreview preview;
-        preview.stage = AICORE_TRELLIS_STAGE_PREPROCESS;
-        preview.image = chip;
-        preview.label = QStringLiteral("preprocess");
-        dialog.resetStageStrip(QImage(8, 8, QImage::Format_RGB32));
-        dialog.setStagePreview(preview);
-        std::puts("TRELLIS T2IMG01 preprocess preview round-trip passed");
-    }
-    return 0;
+TEST_F(TrellisModelSelectionTest, PreprocessStagePreviewCanBeApplied) {
+    TrellisDialog dialog;
+    QImage chip(6, 5, QImage::Format_RGBA8888);
+    chip.fill(0);
+    chip.setPixel(0, 0, qRgba(1, 2, 3, 0));
+    TrellisStagePreview preview;
+    preview.stage = AICORE_TRELLIS_STAGE_PREPROCESS;
+    preview.image = chip;
+    preview.label = QStringLiteral("preprocess");
+    dialog.resetStageStrip(QImage(8, 8, QImage::Format_RGB32));
+    dialog.setStagePreview(preview);
+}
+
+int main(int argc, char** argv) {
+    QApplication app(argc, argv);
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

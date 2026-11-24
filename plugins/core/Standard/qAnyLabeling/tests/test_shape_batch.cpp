@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -27,15 +29,103 @@ QJsonObject read(const QString& path) {
     if (!file.open(QIODevice::ReadOnly)) return {};
     return QJsonDocument::fromJson(file.readAll()).object();
 }
-bool check(bool passed, const char* message) {
-    if (!passed) std::fprintf(stderr, "FAIL: %s\n", message);
-    return passed;
-}
 }  // namespace
+
+class AnnotationShapeBatchTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        ASSERT_TRUE(work.isValid());
+        root = QDir(work.path());
+        ASSERT_TRUE(root.mkdir("images"));
+        ASSERT_TRUE(root.mkdir("labels"));
+        pixels = QImage(80, 60, QImage::Format_RGB32);
+        pixels.fill(Qt::white);
+        for (int i = 0; i < 3; ++i) {
+            images.append(
+                    root.filePath(QStringLiteral("images/%1.png").arg(i)));
+            ASSERT_TRUE(pixels.save(images.last()));
+        }
+        labels = root.filePath("labels");
+        a = root.filePath("labels/0.json");
+        b = root.filePath("labels/1.json");
+        shape = {{"label", "box"},
+                 {"shape_type", "rectangle"},
+                 {"points", QJsonArray{QJsonArray{0, 0}, QJsonArray{80, 60}}},
+                 {"custom", 17}};
+        selected = {shape};
+    }
+    QTemporaryDir work;
+    QDir root;
+    QStringList images;
+    QImage pixels;
+    QString labels, a, b;
+    QJsonObject shape;
+    QJsonArray selected;
+};
+
+TEST_F(AnnotationShapeBatchTest, CancellationStopsBeforeNextImage) {
+    const auto result = applyAnnotationShapeBatch(
+            images, labels, 1, 3, AnnotationShapeBatchOperation::AddSelected,
+            selected, [](int done, int) { return done < 1; });
+    EXPECT_TRUE(result.canceled);
+    EXPECT_EQ(result.shapes, 1);
+    EXPECT_TRUE(QFile::exists(a));
+    EXPECT_FALSE(QFile::exists(b));
+}
+
+TEST_F(AnnotationShapeBatchTest,
+       RemovalPreservesLockedShapeAndUnknownMetadata) {
+    auto locked = shape;
+    locked.insert("locked", true);
+    QJsonObject document{{"unknown_document", 71},
+                         {"shapes", QJsonArray{shape, locked}}};
+    ASSERT_TRUE(save(a, document));
+    const auto result = applyAnnotationShapeBatch(
+            images, labels, 1, 1, AnnotationShapeBatchOperation::RemoveSelected,
+            selected);
+    const auto retained = read(a);
+    EXPECT_EQ(result.shapes, 1);
+    EXPECT_EQ(retained.value("unknown_document").toInt(), 71);
+    EXPECT_EQ(retained.value("shapes").toArray(), QJsonArray{locked});
+}
+
+TEST_F(AnnotationShapeBatchTest, MalformedSidecarRemainsUntouched) {
+    QFile malformed(b);
+    ASSERT_TRUE(malformed.open(QIODevice::WriteOnly));
+    ASSERT_EQ(malformed.write("{"), 1);
+    malformed.close();
+    const auto result = applyAnnotationShapeBatch(
+            images, labels, 2, 2, AnnotationShapeBatchOperation::AddSelected,
+            selected);
+    EXPECT_EQ(result.errors.size(), 1);
+    ASSERT_TRUE(malformed.open(QIODevice::ReadOnly));
+    EXPECT_EQ(malformed.readAll(), QByteArray("{"));
+}
+
+TEST_F(AnnotationShapeBatchTest, TrashCollisionPreservesImageAndSidecar) {
+    ASSERT_TRUE(save(a, QJsonObject{{"shapes", selected}}));
+    ASSERT_TRUE(root.mkdir("_delete_"));
+    ASSERT_TRUE(pixels.save(root.filePath("_delete_/0.png")));
+    const auto result = applyAnnotationShapeBatch(
+            images, labels, 1, 1, AnnotationShapeBatchOperation::DeleteImages,
+            {});
+    EXPECT_EQ(result.errors.size(), 1);
+    EXPECT_TRUE(QFile::exists(images.first()));
+    EXPECT_TRUE(QFile::exists(a));
+}
+
+TEST_F(AnnotationShapeBatchTest, InvalidRangeDoesNotMutateFiles) {
+    ASSERT_TRUE(save(a, QJsonObject{{"shapes", selected}}));
+    const auto result = applyAnnotationShapeBatch(
+            images, labels, 2, 1,
+            AnnotationShapeBatchOperation::DeleteAnnotations, {});
+    EXPECT_FALSE(result.errors.isEmpty());
+    EXPECT_TRUE(QFile::exists(a));
+}
 
 int main(int argc, char** argv) {
     QCoreApplication application(argc, argv);
-    if (argc == 2) {
+    if (argc == 2 && !QString::fromLocal8Bit(argv[1]).startsWith("--gtest")) {
         const auto request = read(QString::fromLocal8Bit(argv[1]));
         QStringList images;
         for (const auto& image : request.value("images").toArray())
@@ -56,79 +146,6 @@ int main(int argc, char** argv) {
                         .constData());
         return result.errors.isEmpty() ? 0 : 1;
     }
-    QTemporaryDir work;
-    if (!work.isValid()) return 1;
-    QDir root(work.path());
-    if (!root.mkdir("images") || !root.mkdir("labels")) return 1;
-    QStringList images;
-    QImage pixels(80, 60, QImage::Format_RGB32);
-    pixels.fill(Qt::white);
-    for (int i = 0; i < 3; ++i) {
-        images.append(root.filePath(QStringLiteral("images/%1.png").arg(i)));
-        if (!pixels.save(images.last())) return 1;
-    }
-    const auto labels = root.filePath("labels");
-    const auto a = root.filePath("labels/0.json"),
-               b = root.filePath("labels/1.json");
-    const QJsonObject shape{
-            {"label", "box"},
-            {"shape_type", "rectangle"},
-            {"points", QJsonArray{QJsonArray{0, 0}, QJsonArray{80, 60}}},
-            {"custom", 17}};
-    const QJsonArray selected{shape};
-    auto result = applyAnnotationShapeBatch(
-            images, labels, 1, 3, AnnotationShapeBatchOperation::AddSelected,
-            selected, [](int done, int) { return done < 1; });
-    if (!check(result.canceled && result.shapes == 1 && QFile::exists(a) &&
-                       !QFile::exists(b),
-               "cancel must stop before changing the next image"))
-        return 1;
-    auto document = read(a);
-    document.insert("unknown_document", 71);
-    auto locked = shape;
-    locked.insert("locked", true);
-    document.insert("shapes", QJsonArray{shape, locked});
-    if (!save(a, document)) return 1;
-    result = applyAnnotationShapeBatch(
-            images, labels, 1, 1, AnnotationShapeBatchOperation::RemoveSelected,
-            selected);
-    const auto retained = read(a);
-    if (!check(result.shapes == 1 &&
-                       retained.value("unknown_document").toInt() == 71 &&
-                       retained.value("shapes").toArray() == QJsonArray{locked},
-               "remove must preserve locked shape and unknown document data"))
-        return 1;
-    QFile malformed(b);
-    if (!malformed.open(QIODevice::WriteOnly) || malformed.write("{") != 1)
-        return 1;
-    malformed.close();
-    result = applyAnnotationShapeBatch(
-            images, labels, 2, 2, AnnotationShapeBatchOperation::AddSelected,
-            selected);
-    if (!check(result.errors.size() == 1 &&
-                       malformed.open(QIODevice::ReadOnly) &&
-                       malformed.readAll() == "{",
-               "malformed sidecar must remain untouched"))
-        return 1;
-    malformed.close();
-    if (!root.mkdir("_delete_") ||
-        !pixels.save(root.filePath("_delete_/0.png")))
-        return 1;
-    result = applyAnnotationShapeBatch(
-            images, labels, 1, 1, AnnotationShapeBatchOperation::DeleteImages,
-            {});
-    if (!check(result.errors.size() == 1 && QFile::exists(images.first()) &&
-                       QFile::exists(a),
-               "trash collision must preserve both image and sidecar"))
-        return 1;
-    result = applyAnnotationShapeBatch(
-            images, labels, 2, 1,
-            AnnotationShapeBatchOperation::DeleteAnnotations, {});
-    if (!check(!result.errors.isEmpty() && QFile::exists(a),
-               "invalid range must not mutate files"))
-        return 1;
-    std::puts(
-            "Shape batch cancellation/locks/metadata/corruption/collision: "
-            "PASS");
-    return 0;
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

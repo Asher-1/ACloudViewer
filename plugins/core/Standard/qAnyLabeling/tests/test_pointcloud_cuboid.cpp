@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <QCoreApplication>
 #include <QFile>
 #include <QJsonArray>
@@ -22,8 +24,7 @@
         }                                                        \
     } while (false)
 
-int main(int argc, char** argv) {
-    QCoreApplication app(argc, argv);
+int runCuboidProbe(int argc, char** argv) {
     QString error;
     if (argc == 4 && QString::fromLocal8Bit(argv[1]) == "--mesh-probe") {
         QFile input(QString::fromLocal8Bit(argv[2]));
@@ -129,8 +130,13 @@ int main(int argc, char** argv) {
         output.write(QJsonDocument(results).toJson());
         return 0;
     }
+    return 0;
+}
+
+TEST(PointCloudCuboidDocument, TracksMixedUndoLocksAndSavedBaselines) {
+    QString error;
     QTemporaryDir dir;
-    REQUIRE(dir.isValid());
+    ASSERT_TRUE(dir.isValid());
     PointCloudFrame frame;
     frame.path = dir.filePath("sample.bin");
     frame.labelPath = dir.filePath("sample.label");
@@ -139,64 +145,73 @@ int main(int argc, char** argv) {
     PointCloudDocument doc;
     doc.setFrame(frame);
     PointCloudCuboid box;
-    REQUIRE(!doc.dirty() && doc.nextCuboidId() == 1);
-    REQUIRE(doc.setCuboid(box, &error) && doc.cuboidsDirty() &&
-            !doc.labelsDirty());
-    REQUIRE(doc.assign({0}, 2, 3));
+    ASSERT_TRUE(!doc.dirty() && doc.nextCuboidId() == 1);
+    ASSERT_TRUE(doc.setCuboid(box, &error) && doc.cuboidsDirty() &&
+                !doc.labelsDirty());
+    ASSERT_TRUE(doc.assign({0}, 2, 3));
     box.locked = true;
-    REQUIRE(doc.setCuboid(box, &error));
+    ASSERT_TRUE(doc.setCuboid(box, &error));
     auto illegal = box;
     illegal.center[0] = 2;
-    REQUIRE(!doc.setCuboid(illegal, &error));
-    REQUIRE(!doc.deleteCuboid(1, &error));
+    ASSERT_TRUE(!doc.setCuboid(illegal, &error));
+    ASSERT_TRUE(!doc.deleteCuboid(1, &error));
     box.locked = false;
-    REQUIRE(doc.setCuboid(box, &error));
-    REQUIRE(doc.undo() && doc.frame().cuboids[0].locked);
-    REQUIRE(doc.undo() && !doc.frame().cuboids[0].locked);
-    REQUIRE(doc.undo() && doc.frame().labels[0] == 0);
-    REQUIRE(doc.undo() && doc.frame().cuboids.isEmpty() && !doc.dirty());
-    REQUIRE(doc.redo() && doc.redo());
+    ASSERT_TRUE(doc.setCuboid(box, &error));
+    ASSERT_TRUE(doc.undo() && doc.frame().cuboids[0].locked);
+    ASSERT_TRUE(doc.undo() && !doc.frame().cuboids[0].locked);
+    ASSERT_TRUE(doc.undo() && doc.frame().labels[0] == 0);
+    ASSERT_TRUE(doc.undo() && doc.frame().cuboids.isEmpty() && !doc.dirty());
+    ASSERT_TRUE(doc.redo() && doc.redo());
     const auto path = dir.filePath("sample.cuboids.json");
-    REQUIRE(savePointCloudCuboids(path, frame.path, doc.frame().cuboids,
-                                  &error));
+    ASSERT_TRUE(savePointCloudCuboids(path, frame.path, doc.frame().cuboids,
+                                      &error));
     doc.markCuboidsSaved(path);
-    REQUIRE(!doc.cuboidsDirty() && doc.labelsDirty());
+    ASSERT_TRUE(!doc.cuboidsDirty() && doc.labelsDirty());
     QVector<PointCloudCuboid> loaded;
-    REQUIRE(loadPointCloudCuboids(path, frame.path, &loaded, &error));
-    REQUIRE(loaded == doc.frame().cuboids);
-    REQUIRE(!loadPointCloudCuboids(path, dir.filePath("other.bin"), &loaded,
-                                   &error));
-    REQUIRE(loaded == doc.frame().cuboids);
-    REQUIRE(!savePointCloudCuboids(path, frame.path, {box, box}, &error));
-    REQUIRE(!savePointCloudCuboids(frame.path, frame.path, {box}, &error));
+    ASSERT_TRUE(loadPointCloudCuboids(path, frame.path, &loaded, &error));
+    ASSERT_TRUE(loaded == doc.frame().cuboids);
+    ASSERT_TRUE(!loadPointCloudCuboids(path, dir.filePath("other.bin"), &loaded,
+                                       &error));
+    ASSERT_TRUE(loaded == doc.frame().cuboids);
+    ASSERT_TRUE(!savePointCloudCuboids(path, frame.path, {box, box}, &error));
+    ASSERT_TRUE(!savePointCloudCuboids(frame.path, frame.path, {box}, &error));
+    ASSERT_TRUE(doc.deleteCuboid(1, &error) && doc.cuboidsDirty());
+    ASSERT_TRUE(savePointCloudCuboids(path, frame.path, doc.frame().cuboids,
+                                      &error));
+    ASSERT_TRUE(loadPointCloudCuboids(path, frame.path, &loaded, &error) &&
+                loaded.isEmpty());
+    const auto labelsBeforeImport = doc.frame().labels;
+    ASSERT_TRUE(doc.replaceCuboids({box}, &error));
+    doc.markCuboidsSaved(path);
+    ASSERT_TRUE(doc.labelsDirty() && !doc.cuboidsDirty() &&
+                doc.frame().labels == labelsBeforeImport);
+    ASSERT_TRUE(!doc.replaceCuboids({box, box}, &error) &&
+                doc.frame().cuboids == QVector<PointCloudCuboid>{box});
+    ASSERT_TRUE(doc.undo() && doc.frame().cuboids.isEmpty() &&
+                doc.cuboidsDirty() && doc.labelsDirty());
+    ASSERT_TRUE(doc.redo() && !doc.cuboidsDirty() &&
+                doc.frame().labels == labelsBeforeImport);
+}
+
+TEST(PointCloudCuboidSchema, RejectsInvalidFieldTypesAndClassIds) {
+    QString error;
+    PointCloudCuboid box;
     auto invalid = box.toJson();
     invalid["locked"] = 1;
     PointCloudCuboid untouched;
-    REQUIRE(!PointCloudCuboid::fromJson(invalid, &untouched, &error));
+    ASSERT_TRUE(!PointCloudCuboid::fromJson(invalid, &untouched, &error));
     invalid = box.toJson();
     invalid["class_id"] = 0;
-    REQUIRE(!PointCloudCuboid::fromJson(invalid, &untouched, &error));
+    ASSERT_TRUE(!PointCloudCuboid::fromJson(invalid, &untouched, &error));
     invalid = box.toJson();
     invalid["extra"] = 1;
-    REQUIRE(!PointCloudCuboid::fromJson(invalid, &untouched, &error));
-    REQUIRE(doc.deleteCuboid(1, &error) && doc.cuboidsDirty());
-    REQUIRE(savePointCloudCuboids(path, frame.path, doc.frame().cuboids,
-                                  &error));
-    REQUIRE(loadPointCloudCuboids(path, frame.path, &loaded, &error) &&
-            loaded.isEmpty());
-    const auto labelsBeforeImport = doc.frame().labels;
-    REQUIRE(doc.replaceCuboids({box}, &error));
-    doc.markCuboidsSaved(path);
-    REQUIRE(doc.labelsDirty() && !doc.cuboidsDirty() &&
-            doc.frame().labels == labelsBeforeImport);
-    REQUIRE(!doc.replaceCuboids({box, box}, &error) &&
-            doc.frame().cuboids == QVector<PointCloudCuboid>{box});
-    REQUIRE(doc.undo() && doc.frame().cuboids.isEmpty() && doc.cuboidsDirty() &&
-            doc.labelsDirty());
-    REQUIRE(doc.redo() && !doc.cuboidsDirty() &&
-            doc.frame().labels == labelsBeforeImport);
-    std::puts(
-            "PASS point-cloud cuboid geometry, sidecars, mixed undo, lock and "
-            "saved baselines");
-    return 0;
+    ASSERT_TRUE(!PointCloudCuboid::fromJson(invalid, &untouched, &error));
+}
+
+int main(int argc, char** argv) {
+    QCoreApplication app(argc, argv);
+    if (argc > 1 && !QString::fromLocal8Bit(argv[1]).startsWith("--gtest"))
+        return runCuboidProbe(argc, argv);
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

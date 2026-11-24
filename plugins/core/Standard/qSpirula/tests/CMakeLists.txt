@@ -13,9 +13,11 @@ if(NOT SPIRULA_EXECUTABLE)
     return()
 endif()
 
-add_test(NAME spirula_smoke_version
-         COMMAND "${SPIRULA_EXECUTABLE}" --version)
-add_test(NAME spirula_smoke_train_help
-         COMMAND "${SPIRULA_EXECUTABLE}" train --help)
+cloudviewer_add_test(NAME spirula_smoke_version
+         COMMAND "${SPIRULA_EXECUTABLE}" --version
+         BUILD_TARGETS ext_spirula LABELS cpp)
+cloudviewer_add_test(NAME spirula_smoke_train_help
+         COMMAND "${SPIRULA_EXECUTABLE}" train --help
+         BUILD_TARGETS ext_spirula LABELS cpp)
 set_tests_properties(spirula_smoke_version spirula_smoke_train_help
                      PROPERTIES LABELS "spirula;smoke")

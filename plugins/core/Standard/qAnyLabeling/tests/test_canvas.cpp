@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <QApplication>
 #include <QCoreApplication>
 #include <QJsonArray>
@@ -44,14 +46,29 @@ void finish(AnnotationCanvas& canvas) {
     QCoreApplication::sendEvent(&canvas, &event);
 }
 
-bool check(bool condition, const char* message) {
-    if (!condition) std::fprintf(stderr, "%s\n", message);
-    return condition;
-}
 }  // namespace
 
-int main(int argc, char** argv) {
-    QApplication app(argc, argv);
+namespace {
+class AnnotationCanvasTest : public ::testing::Test {
+protected:
+    AnnotationCanvas editor;
+    AnnotationShape rectangle;
+    void SetUp() override {
+        editor.resize(400, 400);
+        editor.setImage(QImage(100, 100, QImage::Format_RGB32));
+        editor.show();
+        QCoreApplication::processEvents();
+        rectangle.type = QStringLiteral("rectangle");
+        rectangle.points = {QPointF(10, 10), QPointF(30, 10), QPointF(30, 30),
+                            QPointF(10, 30)};
+    }
+    static QPointF screen(double x, double y) {
+        return QPointF(12 + x * 3.76, 12 + y * 3.76);
+    }
+};
+}  // namespace
+
+TEST(AnnotationCanvas, NavigatorPreservesFractionalBoundaryCoordinates) {
     // A fractional click just outside the image must not navigate, even when
     // rounding it to an integer would land on the image border.
     AnnotationNavigator navigator;
@@ -67,27 +84,18 @@ int main(int argc, char** argv) {
     QMouseEvent outside(QEvent::MouseButtonPress, QPointF(9.75, 50.25),
                         Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
     QCoreApplication::sendEvent(&navigator, &outside);
-    if (!check(navigationCount == 0,
-               "Navigator must reject fractional clicks outside the image"))
-        return 1;
+    ASSERT_TRUE((navigationCount == 0))
+            << "Navigator must reject fractional clicks outside the image";
     QMouseEvent inside(QEvent::MouseButtonPress, QPointF(10.25, 50.25),
                        Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
     QCoreApplication::sendEvent(&navigator, &inside);
-    if (!check(navigationCount == 1 &&
-                       std::abs(navigation.x() - 0.25 / 180.0) < 1e-9 &&
-                       std::abs(navigation.y() - 40.25 / 180.0) < 1e-9,
-               "Navigator must normalize the original fractional coordinates"))
-        return 1;
-    AnnotationCanvas canvas;
-    canvas.resize(400, 400);
-    canvas.setImage(QImage(100, 100, QImage::Format_RGB32));
-    canvas.show();
-    QCoreApplication::processEvents();
-    canvas.setCurrentLabel(QStringLiteral("object"));
+    ASSERT_TRUE((navigationCount == 1 &&
+                 std::abs(navigation.x() - 0.25 / 180.0) < 1e-9 &&
+                 std::abs(navigation.y() - 40.25 / 180.0) < 1e-9))
+            << "Navigator must normalize the original fractional coordinates";
+}
 
-    // Display adjustments are cache-only. They follow the upstream 0..150
-    // slider mapping (50 is neutral), including the source 16-bit formula,
-    // while the source image remains untouched for inference and export.
+TEST(AnnotationCanvas, DisplayAdjustmentsPreserveSourcePixelsAndClampOpacity) {
     AnnotationCanvas display;
     // Format_Grayscale16 requires Qt 5.13+; images can never carry that
     // format on Qt 5.12 (Ubuntu focal), so skip the 16-bit cases there.
@@ -106,26 +114,23 @@ int main(int argc, char** argv) {
                 0.0, std::min(65535.0,
                               value * 2.0 * 1.5 + expectedMean * 2.0 * -0.5)));
     };
-    if (!check(adjusted[0] == expected(1000.0) &&
-                       adjusted[1] == expected(3000.0) &&
-                       reinterpret_cast<const quint16*>(
-                               gray16.constScanLine(0))[0] == 1000,
-               "Display adjustment must preserve source pixels and apply the "
-               "16-bit brightness/contrast formula"))
-        return 1;
+    ASSERT_TRUE((adjusted[0] == expected(1000.0) &&
+                 adjusted[1] == expected(3000.0) &&
+                 reinterpret_cast<const quint16*>(gray16.constScanLine(0))[0] ==
+                         1000))
+            << "Display adjustment must preserve source pixels and apply the "
+               "16-bit brightness/contrast formula";
     display.setBrightnessContrast(50, 50);
-    if (!check(display.displayImage().constBits() == gray16.constBits(),
-               "Neutral display adjustment must reuse the source image"))
-        return 1;
+    ASSERT_TRUE((display.displayImage().constBits() == gray16.constBits()))
+            << "Neutral display adjustment must reuse the source image";
 #endif
     QImage rgb(1, 1, QImage::Format_RGB32);
     rgb.setPixel(0, 0, qRgb(50, 75, 100));
     display.setImage(rgb);
     display.setBrightness(100);
-    if (!check(display.displayImage().pixel(0, 0) == qRgb(100, 150, 200) &&
-                       rgb.pixel(0, 0) == qRgb(50, 75, 100),
-               "RGB display brightness must not change the source pixel"))
-        return 1;
+    ASSERT_TRUE((display.displayImage().pixel(0, 0) == qRgb(100, 150, 200) &&
+                 rgb.pixel(0, 0) == qRgb(50, 75, 100)))
+            << "RGB display brightness must not change the source pixel";
     QImage rgbFixture(5, 1, QImage::Format_RGB32);
     const QRgb fixturePixels[] = {qRgb(1, 2, 3), qRgb(7, 29, 51),
                                   qRgb(50, 75, 100), qRgb(80, 120, 140),
@@ -138,18 +143,24 @@ int main(int argc, char** argv) {
                                    qRgb(255, 255, 255)};
     for (int x = 0; x < 5; ++x) {
         const QRgb actual = display.displayImage().pixel(x, 0);
-        if (!check(actual == expectedPillow[x],
-                   "RGB display adjustment must match Pillow integer blending"))
-            return 1;
+        ASSERT_TRUE((actual == expectedPillow[x]))
+                << "RGB display adjustment must match Pillow integer blending";
     }
     display.setShapeOpacity(-10);
-    if (!check(display.shapeOpacity() == 0,
-               "Shape opacity must clamp to the supported range"))
-        return 1;
+    ASSERT_TRUE((display.shapeOpacity() == 0))
+            << "Shape opacity must clamp to the supported range";
     display.setShapeOpacity(110);
-    if (!check(display.shapeOpacity() == 100,
-               "Shape opacity must clamp at 100 percent"))
-        return 1;
+    ASSERT_TRUE((display.shapeOpacity() == 100))
+            << "Shape opacity must clamp at 100 percent";
+}
+
+TEST(AnnotationCanvas, GeometryToolsCreateSerializableShapes) {
+    AnnotationCanvas canvas;
+    canvas.resize(400, 400);
+    canvas.setImage(QImage(100, 100, QImage::Format_RGB32));
+    canvas.show();
+    QCoreApplication::processEvents();
+    canvas.setCurrentLabel(QStringLiteral("object"));
 
     canvas.setTool(QStringLiteral("rectangle"));
     drag(canvas, QPointF(50, 50), QPointF(150, 150));
@@ -185,22 +196,22 @@ int main(int argc, char** argv) {
     finish(canvas);
 
     const auto& shapes = canvas.shapes();
-    if (!check(shapes.size() == 9,
-               "Nine geometry tools must create nine shapes"))
-        return 1;
-    if (!check(shapes[0].points.size() == 4,
-               "Rectangle must store four corners"))
-        return 1;
-    if (!check(shapes[5].points.size() == 8, "Cuboid must store eight corners"))
-        return 1;
+    ASSERT_TRUE((shapes.size() == 9))
+            << "Nine geometry tools must create nine shapes";
+    ASSERT_TRUE((shapes[0].points.size() == 4))
+            << "Rectangle must store four corners";
+    ASSERT_TRUE((shapes[5].points.size() == 8))
+            << "Cuboid must store eight corners";
     for (const AnnotationShape& shape : shapes) {
         const AnnotationShape roundTrip =
                 AnnotationShape::fromJson(shape.toJson());
-        if (!check(roundTrip.type == shape.type &&
-                           roundTrip.points.size() == shape.points.size(),
-                   "Shape JSON round-trip failed"))
-            return 1;
+        ASSERT_TRUE((roundTrip.type == shape.type &&
+                     roundTrip.points.size() == shape.points.size()))
+                << "Shape JSON round-trip failed";
     }
+}
+
+TEST(AnnotationCanvas, LegacyRectangleMetadataAndVisibilityRoundTrip) {
     QJsonObject source;
     source.insert(QStringLiteral("label"), QStringLiteral("person"));
     source.insert(QStringLiteral("shape_type"), QStringLiteral("rectangle"));
@@ -211,37 +222,22 @@ int main(int argc, char** argv) {
             QStringLiteral("attributes"),
             QJsonObject{{QStringLiteral("pose"), QStringLiteral("left")}});
     const QJsonObject restored = AnnotationShape::fromJson(source).toJson();
-    if (!check(restored.value(QStringLiteral("score")).toDouble() == 0.86 &&
-                       restored.value(QStringLiteral("attributes"))
-                                       .toObject() ==
-                               source.value(QStringLiteral("attributes"))
-                                       .toObject() &&
-                       restored.value(QStringLiteral("points"))
-                                       .toArray()
-                                       .size() == 4,
-               "Legacy rectangle and custom fields must survive JSON "
-               "round-trip"))
-        return 1;
+    ASSERT_TRUE(
+            (restored.value(QStringLiteral("score")).toDouble() == 0.86 &&
+             restored.value(QStringLiteral("attributes")).toObject() ==
+                     source.value(QStringLiteral("attributes")).toObject() &&
+             restored.value(QStringLiteral("points")).toArray().size() == 4))
+            << "Legacy rectangle and custom fields must survive JSON "
+               "round-trip";
     source.insert(QStringLiteral("visible"), false);
     const AnnotationShape hidden = AnnotationShape::fromJson(source);
-    if (!check(!hidden.visible && !hidden.toJson()
-                                           .value(QStringLiteral("visible"))
-                                           .toBool(true),
-               "Hidden shape visibility must survive JSON round-trip"))
-        return 1;
+    ASSERT_TRUE(
+            (!hidden.visible &&
+             !hidden.toJson().value(QStringLiteral("visible")).toBool(true)))
+            << "Hidden shape visibility must survive JSON round-trip";
+}
 
-    AnnotationCanvas editor;
-    editor.resize(400, 400);
-    editor.setImage(QImage(100, 100, QImage::Format_RGB32));
-    editor.show();
-    QCoreApplication::processEvents();
-    const auto screen = [](double x, double y) {
-        return QPointF(12 + x * 3.76, 12 + y * 3.76);
-    };
-    AnnotationShape rectangle;
-    rectangle.type = QStringLiteral("rectangle");
-    rectangle.points = {QPointF(10, 10), QPointF(30, 10), QPointF(30, 30),
-                        QPointF(10, 30)};
+TEST_F(AnnotationCanvasTest, GeometryEditsEmitUndoOnlyForChanges) {
     editor.setShapes({rectangle});
     int edits = 0;
     int changes = 0;
@@ -254,17 +250,14 @@ int main(int argc, char** argv) {
                      [&cancellations]() { ++cancellations; });
     mouse(editor, QEvent::MouseButtonPress, screen(10, 10));
     mouse(editor, QEvent::MouseButtonRelease, screen(10, 10));
-    if (!check(edits == 0 && changes == 0,
-               "A click without movement must not create an undo entry"))
-        return 1;
+    ASSERT_TRUE((edits == 0 && changes == 0))
+            << "A click without movement must not create an undo entry";
     drag(editor, screen(10, 10), screen(5, 6));
     const auto& corners = editor.shapes().first().points;
-    if (!check(edits == 1 && changes == 1 && corners[0] == QPointF(5, 6) &&
-                       corners[1] == QPointF(30, 6) &&
-                       corners[2] == QPointF(30, 30) &&
-                       corners[3] == QPointF(5, 30),
-               "Rectangle corner drag must preserve four right angles"))
-        return 1;
+    ASSERT_TRUE((edits == 1 && changes == 1 && corners[0] == QPointF(5, 6) &&
+                 corners[1] == QPointF(30, 6) &&
+                 corners[2] == QPointF(30, 30) && corners[3] == QPointF(5, 30)))
+            << "Rectangle corner drag must preserve four right angles";
 
     AnnotationShape rotation;
     rotation.type = QStringLiteral("rotation");
@@ -276,10 +269,9 @@ int main(int argc, char** argv) {
     const AnnotationShape turned = editor.shapes().first();
     const double angle =
             turned.toJson().value(QStringLiteral("direction")).toDouble();
-    if (!check(std::abs(angle - 1.5707963267948966) < 0.03 &&
-                       std::abs(turned.points[0].x() - 40) < 0.1,
-               "Rotation handle must turn geometry and update direction"))
-        return 1;
+    ASSERT_TRUE((std::abs(angle - 1.5707963267948966) < 0.03 &&
+                 std::abs(turned.points[0].x() - 40) < 0.1))
+            << "Rotation handle must turn geometry and update direction";
 
     AnnotationShape cuboid;
     cuboid.type = QStringLiteral("cuboid");
@@ -288,13 +280,12 @@ int main(int argc, char** argv) {
                      QPointF(35, 25), QPointF(15, 25)};
     const QJsonObject cuboidData =
             cuboid.toJson().value(QStringLiteral("cuboid3d")).toObject();
-    if (!check(cuboidData.value(QStringLiteral("depth_vector")).toArray() ==
-                               QJsonArray{5, -5} &&
-                       cuboidData.value(QStringLiteral("vertices2d_order"))
-                                       .toArray()
-                                       .size() == 8,
-               "Cuboid export must include upstream depth metadata"))
-        return 1;
+    ASSERT_TRUE((cuboidData.value(QStringLiteral("depth_vector")).toArray() ==
+                         QJsonArray{5, -5} &&
+                 cuboidData.value(QStringLiteral("vertices2d_order"))
+                                 .toArray()
+                                 .size() == 8))
+            << "Cuboid export must include upstream depth metadata";
 
     editor.setShapes({});
     editor.setTool(QStringLiteral("polygon"));
@@ -303,11 +294,13 @@ int main(int argc, char** argv) {
     mouse(editor, QEvent::MouseButtonRelease, screen(10, 10));
     QKeyEvent escape(QEvent::KeyPress, Qt::Key_Escape, Qt::NoModifier);
     QCoreApplication::sendEvent(&editor, &escape);
-    if (!check(editor.shapes().isEmpty() && cancellations == 1 &&
-                       changes == changesBeforeDraft,
-               "Canceling a draft must not mark the document changed"))
-        return 1;
+    ASSERT_TRUE((editor.shapes().isEmpty() && cancellations == 1 &&
+                 changes == changesBeforeDraft))
+            << "Canceling a draft must not mark the document changed";
+}
 
+TEST_F(AnnotationCanvasTest,
+       MagicWandAndBrushRespectConnectedRegionsUndoAndCancel) {
     QImage magicImage(100, 100, QImage::Format_RGB32);
     magicImage.fill(Qt::black);
     for (int y = 10; y < 30; ++y)
@@ -318,52 +311,51 @@ int main(int argc, char** argv) {
     mouse(editor, QEvent::MouseButtonPress, screen(20, 20));
     mouse(editor, QEvent::MouseButtonRelease, screen(20, 20));
     mouse(editor, QEvent::MouseButtonPress, screen(20, 20), Qt::RightButton);
-    if (!check(editor.shapes().size() == 1 &&
-                       editor.shapes()[0].type == QStringLiteral("polygon") &&
-                       editor.shapes()[0].points.size() == 4 &&
-                       editor.shapes()[0].points.contains(QPointF(10, 10)) &&
-                       editor.shapes()[0].points.contains(QPointF(29, 29)),
-               "Magic wand must extract only the seed-connected region"))
-        return 1;
+    ASSERT_TRUE((editor.shapes().size() == 1 &&
+                 editor.shapes()[0].type == QStringLiteral("polygon") &&
+                 editor.shapes()[0].points.size() == 4 &&
+                 editor.shapes()[0].points.contains(QPointF(10, 10)) &&
+                 editor.shapes()[0].points.contains(QPointF(29, 29))))
+            << "Magic wand must extract only the seed-connected region";
 
     editor.setTool(QStringLiteral("edit"));
     editor.selectShape(0);
     const QVector<QPointF> original = editor.shapes()[0].points;
     editor.setBrushRadius(8);
-    if (!check(editor.setBrushEditing(true),
-               "Selected polygon must enter brush mode"))
-        return 1;
+    ASSERT_TRUE((editor.setBrushEditing(true)))
+            << "Selected polygon must enter brush mode";
     drag(editor, screen(28, 20), screen(43, 20));
     editor.brushUndo();
     editor.setBrushEditing(false);
-    if (!check(editor.shapes()[0].points == original,
-               "Undoing a brush stroke must restore the original polygon"))
-        return 1;
+    ASSERT_TRUE((editor.shapes()[0].points == original))
+            << "Undoing a brush stroke must restore the original polygon";
     editor.setBrushEditing(true);
     drag(editor, screen(28, 20), screen(43, 20));
     editor.setBrushEditing(false);
     double rightmost = 0;
     for (const QPointF& point : editor.shapes()[0].points)
         rightmost = std::max(rightmost, point.x());
-    if (!check(rightmost > 45, "Brush addition must extend the saved polygon"))
-        return 1;
+    ASSERT_TRUE((rightmost > 45))
+            << "Brush addition must extend the saved polygon";
     const QVector<QPointF> expanded = editor.shapes()[0].points;
     editor.setBrushEditing(true);
     drag(editor, screen(43, 20), screen(43, 20), Qt::ControlModifier);
     editor.setBrushEditing(false, true);
-    if (!check(editor.shapes()[0].points == expanded,
-               "Canceling a brush erase must preserve saved geometry"))
-        return 1;
+    ASSERT_TRUE((editor.shapes()[0].points == expanded))
+            << "Canceling a brush erase must preserve saved geometry";
     editor.setBrushEditing(true);
     drag(editor, screen(48, 20), screen(48, 20), Qt::ControlModifier);
     editor.setBrushEditing(false);
     double erasedRightmost = 0;
     for (const QPointF& point : editor.shapes()[0].points)
         erasedRightmost = std::max(erasedRightmost, point.x());
-    if (!check(erasedRightmost < rightmost,
-               "Ctrl brush stroke must erase pixels"))
-        return 1;
+    ASSERT_TRUE((erasedRightmost < rightmost))
+            << "Ctrl brush stroke must erase pixels";
+}
 
+TEST_F(AnnotationCanvasTest,
+       InstanceBrushPreservesExactMaskHolesIslandsAndTinyObjects) {
+    editor.setBrushRadius(8);
     QImage exact(100, 100, QImage::Format_ARGB32);
     exact.fill(Qt::transparent);
     {
@@ -383,31 +375,28 @@ int main(int argc, char** argv) {
     editor.setShapes({ring});
     editor.selectShape(0);
     editor.setBrushLabel(QStringLiteral("ring"));
-    if (!check(editor.setBrushEditing(true),
-               "Exact mask must reopen in brush mode"))
-        return 1;
+    ASSERT_TRUE((editor.setBrushEditing(true)))
+            << "Exact mask must reopen in brush mode";
     editor.setBrushErase(true);
     drag(editor, screen(20, 20), screen(20, 20));
     editor.setBrushEditing(false);
     const AnnotationShape restoredMask =
             AnnotationShape::fromJson(editor.shapes().first().toJson());
-    if (!check(!restoredMask.mask.isNull() &&
-                       qAlpha(restoredMask.mask.pixel(40, 40)) == 0 &&
-                       qAlpha(restoredMask.mask.pixel(82, 82)) > 0 &&
-                       qAlpha(restoredMask.mask.pixel(20, 20)) == 0 &&
-                       qAlpha(restoredMask.mask.pixel(60, 60)) > 0,
-               "Brush save must retain holes, detached islands and erased "
-               "pixels"))
-        return 1;
+    ASSERT_TRUE((!restoredMask.mask.isNull() &&
+                 qAlpha(restoredMask.mask.pixel(40, 40)) == 0 &&
+                 qAlpha(restoredMask.mask.pixel(82, 82)) > 0 &&
+                 qAlpha(restoredMask.mask.pixel(20, 20)) == 0 &&
+                 qAlpha(restoredMask.mask.pixel(60, 60)) > 0))
+            << "Brush save must retain holes, detached islands and erased "
+               "pixels";
     editor.setBrushErase(false);
 
     editor.setShapes({ring});
     editor.selectShape(0);
     editor.setBrushRadius(3);
     editor.setBrushOperation(2);
-    if (!check(editor.setBrushEditing(true),
-               "Instance mask must enter invert brush mode"))
-        return 1;
+    ASSERT_TRUE((editor.setBrushEditing(true)))
+            << "Instance mask must enter invert brush mode";
     mouse(editor, QEvent::MouseButtonPress, screen(20, 20));
     mouse(editor, QEvent::MouseMove, screen(30, 30));
     mouse(editor, QEvent::MouseMove, screen(35, 35));
@@ -416,29 +405,25 @@ int main(int argc, char** argv) {
     editor.brushUndo();
     editor.brushRedo();
     editor.setBrushEditing(false);
-    if (!check(qAlpha(editor.shapes()[0].mask.pixel(20, 20)) == 0 &&
-                       qAlpha(editor.shapes()[0].mask.pixel(40, 40)) > 0 &&
-                       qAlpha(editor.shapes()[0].mask.pixel(60, 60)) > 0 &&
-                       qAlpha(editor.shapes()[0].mask.pixel(82, 82)) > 0,
-               "Invert stroke must toggle ring and hole pixels once without "
-               "losing islands"))
-        return 1;
+    ASSERT_TRUE((qAlpha(editor.shapes()[0].mask.pixel(20, 20)) == 0 &&
+                 qAlpha(editor.shapes()[0].mask.pixel(40, 40)) > 0 &&
+                 qAlpha(editor.shapes()[0].mask.pixel(60, 60)) > 0 &&
+                 qAlpha(editor.shapes()[0].mask.pixel(82, 82)) > 0))
+            << "Invert stroke must toggle ring and hole pixels once without "
+               "losing islands";
     editor.setBrushOperation(0);
 
     editor.setShapes({ring});
     editor.selectShape(0);
     editor.setBrushLabel(QStringLiteral("ring"));
-    if (!check(editor.setBrushEditing(true),
-               "Brush must enter before right-click exit test"))
-        return 1;
+    ASSERT_TRUE((editor.setBrushEditing(true)))
+            << "Brush must enter before right-click exit test";
     mouse(editor, QEvent::MouseButtonPress, screen(20, 20), Qt::RightButton);
-    if (!check(!editor.brushEditing(),
-               "Right press must exit brush mode immediately"))
-        return 1;
+    ASSERT_TRUE((!editor.brushEditing()))
+            << "Right press must exit brush mode immediately";
     mouse(editor, QEvent::MouseButtonRelease, screen(20, 20), Qt::RightButton);
-    if (!check(!editor.brushEditing(),
-               "Right release must keep brush mode closed"))
-        return 1;
+    ASSERT_TRUE((!editor.brushEditing()))
+            << "Right release must keep brush mode closed";
 
     QImage tiny(100, 100, QImage::Format_ARGB32);
     tiny.fill(Qt::transparent);
@@ -452,17 +437,18 @@ int main(int argc, char** argv) {
     editor.setShapes({tinyShape});
     editor.selectShape(0);
     editor.setBrushLabel(QStringLiteral("tiny-renamed"));
-    if (!check(editor.setBrushEditing(true),
-               "Single-pixel mask must enter brush mode"))
-        return 1;
+    ASSERT_TRUE((editor.setBrushEditing(true)))
+            << "Single-pixel mask must enter brush mode";
     editor.setBrushEditing(false);
-    if (!check(editor.shapes().size() == 1 &&
-                       editor.shapes().first().label ==
-                               QStringLiteral("tiny-renamed") &&
-                       qAlpha(editor.shapes().first().mask.pixel(50, 50)) > 0,
-               "Brush commit must retain a single-pixel instance"))
-        return 1;
+    ASSERT_TRUE(
+            (editor.shapes().size() == 1 &&
+             editor.shapes().first().label == QStringLiteral("tiny-renamed") &&
+             qAlpha(editor.shapes().first().mask.pixel(50, 50)) > 0))
+            << "Brush commit must retain a single-pixel instance";
+}
 
+TEST_F(AnnotationCanvasTest,
+       SemanticBrushKeepsClassesExclusiveAndHonorsBackgroundIdentity) {
     QImage background(100, 100, QImage::Format_ARGB32_Premultiplied);
     background.fill(qRgba(0, 180, 255, 110));
     QImage foreground(100, 100, QImage::Format_ARGB32_Premultiplied);
@@ -496,27 +482,23 @@ int main(int argc, char** argv) {
     editor.setBrushLabel(QStringLiteral("object"));
     editor.setBrushClassId(1);
     editor.setBrushRadius(2);
-    if (!check(editor.setBrushEditing(true),
-               "Semantic mask must enter brush mode"))
-        return 1;
+    ASSERT_TRUE((editor.setBrushEditing(true)))
+            << "Semantic mask must enter brush mode";
     drag(editor, screen(40, 40), screen(40, 40));
     editor.setBrushEditing(false);
-    if (!check(qAlpha(editor.shapes()[1].mask.pixel(40, 40)) > 0 &&
-                       qAlpha(editor.shapes()[0].mask.pixel(40, 40)) == 0 &&
-                       qAlpha(editor.shapes()[1].mask.pixel(22, 22)) == 0 &&
-                       qAlpha(editor.shapes()[0].mask.pixel(22, 22)) > 0,
-               "Semantic paint must clear other classes and retain holes"))
-        return 1;
+    ASSERT_TRUE((qAlpha(editor.shapes()[1].mask.pixel(40, 40)) > 0 &&
+                 qAlpha(editor.shapes()[0].mask.pixel(40, 40)) == 0 &&
+                 qAlpha(editor.shapes()[1].mask.pixel(22, 22)) == 0 &&
+                 qAlpha(editor.shapes()[0].mask.pixel(22, 22)) > 0))
+            << "Semantic paint must clear other classes and retain holes";
     editor.setBrushErase(true);
-    if (!check(editor.setBrushEditing(true),
-               "Semantic mask must reopen for reverse painting"))
-        return 1;
+    ASSERT_TRUE((editor.setBrushEditing(true)))
+            << "Semantic mask must reopen for reverse painting";
     drag(editor, screen(15, 15), screen(15, 15));
     editor.setBrushEditing(false);
-    if (!check(qAlpha(editor.shapes()[1].mask.pixel(15, 15)) == 0 &&
-                       qAlpha(editor.shapes()[0].mask.pixel(15, 15)) > 0,
-               "Semantic erase must restore the background class"))
-        return 1;
+    ASSERT_TRUE((qAlpha(editor.shapes()[1].mask.pixel(15, 15)) == 0 &&
+                 qAlpha(editor.shapes()[0].mask.pixel(15, 15)) > 0))
+            << "Semantic erase must restore the background class";
     editor.setBrushErase(false);
     AnnotationShape road = classZero;
     road.label = QStringLiteral("road");
@@ -525,61 +507,57 @@ int main(int argc, char** argv) {
     editor.setBrushLabel(QStringLiteral("object"));
     editor.setBrushClassId(1);
     editor.setBrushErase(true);
-    if (!check(editor.setBrushEditing(true),
-               "Non-background class map must enter brush mode"))
-        return 1;
+    ASSERT_TRUE((editor.setBrushEditing(true)))
+            << "Non-background class map must enter brush mode";
     drag(editor, screen(15, 15), screen(15, 15));
     editor.setBrushEditing(false);
-    if (!check(qAlpha(editor.shapes()[1].mask.pixel(15, 15)) == 0 &&
-                       qAlpha(editor.shapes()[0].mask.pixel(15, 15)) == 0,
-               "Erasing must not assume semantic class zero is background"))
-        return 1;
+    ASSERT_TRUE((qAlpha(editor.shapes()[1].mask.pixel(15, 15)) == 0 &&
+                 qAlpha(editor.shapes()[0].mask.pixel(15, 15)) == 0))
+            << "Erasing must not assume semantic class zero is background";
     editor.setBrushErase(false);
     editor.setBrushLabel(QStringLiteral("replacement"));
     editor.setBrushClassId(2);
-    if (!check(editor.setBrushEditing(true),
-               "Semantic class must reopen in brush mode"))
-        return 1;
+    ASSERT_TRUE((editor.setBrushEditing(true)))
+            << "Semantic class must reopen in brush mode";
     editor.setBrushEditing(false);
-    if (!check(editor.shapes()[1].label == QStringLiteral("replacement") &&
-                       editor.shapes()[1]
-                                       .extra.value(QStringLiteral("class_id"))
-                                       .toInt(-1) == 2,
-               "Changing brush target must update semantic class ID"))
-        return 1;
+    ASSERT_TRUE((editor.shapes()[1].label == QStringLiteral("replacement") &&
+                 editor.shapes()[1]
+                                 .extra.value(QStringLiteral("class_id"))
+                                 .toInt(-1) == 2))
+            << "Changing brush target must update semantic class ID";
+}
 
+TEST_F(AnnotationCanvasTest,
+       BrushCreatesClassAwareTargetsAndCancelsWithoutEmptyShapes) {
     editor.setShapes({});
     editor.setBrushLabel(QStringLiteral("new-class"));
     editor.setBrushClassId(7);
     editor.setBrushRadius(4);
-    if (!check(editor.setBrushEditing(true),
-               "Brush must start without a selected instance when a class is "
-               "set"))
-        return 1;
+    ASSERT_TRUE((editor.setBrushEditing(true)))
+            << "Brush must start without a selected instance when a class is "
+               "set";
     drag(editor, screen(35, 35), screen(55, 55));
     editor.setBrushEditing(false);
-    if (!check(editor.shapes().size() == 1 &&
-                       editor.shapes().first().label ==
-                               QStringLiteral("new-class") &&
-                       editor.shapes().first()
-                                       .extra.value(QStringLiteral("class_id"))
-                                       .toInt(-1) == 7 &&
-                       qAlpha(editor.shapes().first().mask.pixel(45, 45)) > 0,
-               "Brush must create a class-aware polygon when no instance is "
-               "selected"))
-        return 1;
+    ASSERT_TRUE((editor.shapes().size() == 1 &&
+                 editor.shapes().first().label == QStringLiteral("new-class") &&
+                 editor.shapes().first()
+                                 .extra.value(QStringLiteral("class_id"))
+                                 .toInt(-1) == 7 &&
+                 qAlpha(editor.shapes().first().mask.pixel(45, 45)) > 0))
+            << "Brush must create a class-aware polygon when no instance is "
+               "selected";
     editor.setShapes({});
     editor.setBrushLabel(QStringLiteral("cancelled"));
     editor.setBrushClassId(8);
-    if (!check(editor.setBrushEditing(true),
-               "New brush target must be cancellable"))
-        return 1;
+    ASSERT_TRUE((editor.setBrushEditing(true)))
+            << "New brush target must be cancellable";
     drag(editor, screen(35, 35), screen(55, 55));
     editor.setBrushEditing(false, true);
-    if (!check(editor.shapes().isEmpty(),
-               "Cancelling a new brush target must not create an empty shape"))
-        return 1;
+    ASSERT_TRUE((editor.shapes().isEmpty()))
+            << "Cancelling a new brush target must not create an empty shape";
+}
 
+TEST(AnnotationCanvas, MaskVisibilityAndOpacityAffectOnlyRenderedPixels) {
     // Mask visibility is an independent view layer. Hiding it must change
     // only the rendered pixels; the stored alpha mask must remain intact.
     AnnotationCanvas visibility;
@@ -611,46 +589,44 @@ int main(int argc, char** argv) {
     const QImage masksVisible = renderVisibility();
     visibility.setMaskOpacity(20);
     const QImage dimmedMasks = renderVisibility();
-    if (!check(dimmedMasks.pixelColor(88, 88).red() <
-                               masksVisible.pixelColor(88, 88).red() &&
-                       qAlpha(visibility.shapes().first().mask.pixel(20, 20)) ==
-                               180 &&
-                       visibility.shapeOpacity() == 100,
-               "Mask opacity must affect only the rendered mask"))
-        return 1;
+    ASSERT_TRUE(
+            (dimmedMasks.pixelColor(88, 88).red() <
+                     masksVisible.pixelColor(88, 88).red() &&
+             qAlpha(visibility.shapes().first().mask.pixel(20, 20)) == 180 &&
+             visibility.shapeOpacity() == 100))
+            << "Mask opacity must affect only the rendered mask";
     visibility.setMaskOpacity(72);
     visibility.setShowMasks(false);
     const QImage masksHidden = renderVisibility();
-    if (!check(masksVisible.pixelColor(88, 88).red() > 20 &&
-                       masksHidden.pixelColor(88, 88).red() < 5 &&
-                       qAlpha(visibility.shapes().first().mask.pixel(20, 20)) >
-                               0,
-               "Hiding masks must affect rendering without changing mask data"))
-        return 1;
+    ASSERT_TRUE((masksVisible.pixelColor(88, 88).red() > 20 &&
+                 masksHidden.pixelColor(88, 88).red() < 5 &&
+                 qAlpha(visibility.shapes().first().mask.pixel(20, 20)) > 0))
+            << "Hiding masks must affect rendering without changing mask data";
     visibility.setShowMasks(true);
     const QImage masksRestored = renderVisibility();
-    if (!check(masksRestored.pixelColor(88, 88).red() > 20,
-               "Re-enabling masks must restore the rendered overlay"))
-        return 1;
+    ASSERT_TRUE((masksRestored.pixelColor(88, 88).red() > 20))
+            << "Re-enabling masks must restore the rendered overlay";
     visibility.setShapeOpacity(0);
     const QImage transparentShapes = renderVisibility();
     visibility.setShowMasks(false);
     const QImage absentShapes = renderVisibility();
-    if (!check(transparentShapes.pixel(88, 88) == absentShapes.pixel(88, 88) &&
-                       qAlpha(visibility.shapes().first().mask.pixel(20, 20)) >
-                               0,
-               "Zero shape opacity must hide the overlay without erasing the "
-               "mask"))
-        return 1;
+    ASSERT_TRUE(
+            (transparentShapes.pixel(88, 88) == absentShapes.pixel(88, 88) &&
+             qAlpha(visibility.shapes().first().mask.pixel(20, 20)) > 0))
+            << "Zero shape opacity must hide the overlay without erasing the "
+               "mask";
     visibility.setShowLabels(true);
     const QImage labelAtZeroOpacity = renderVisibility();
     visibility.setShapeOpacity(100);
     const QImage labelAtFullOpacity = renderVisibility();
-    if (!check(labelAtZeroOpacity.copy(QRect(50, 25, 100, 25)) ==
-                       labelAtFullOpacity.copy(QRect(50, 25, 100, 25)),
-               "Annotation text must remain at full opacity"))
-        return 1;
+    ASSERT_TRUE((labelAtZeroOpacity.copy(QRect(50, 25, 100, 25)) ==
+                 labelAtFullOpacity.copy(QRect(50, 25, 100, 25))))
+            << "Annotation text must remain at full opacity";
+}
 
+TEST(AnnotationCanvas, MetadataOverlaysRemainViewOnlyAndRespectHiddenShapes) {
+    QImage visibilityImage(100, 100, QImage::Format_RGB32);
+    visibilityImage.fill(Qt::black);
     AnnotationCanvas overlays;
     overlays.resize(400, 400);
     overlays.setImage(visibilityImage);
@@ -687,43 +663,40 @@ int main(int argc, char** argv) {
     };
     const QImage plain = renderOverlays();
     overlays.setShowTexts(true);
-    if (!check(renderOverlays() != plain,
-               "Description visibility must change canvas pixels"))
-        return 1;
+    ASSERT_TRUE((renderOverlays() != plain))
+            << "Description visibility must change canvas pixels";
     overlays.setShowTexts(false);
     overlays.setShowAttributes(true);
-    if (!check(renderOverlays() != plain,
-               "Attribute visibility must change canvas pixels"))
-        return 1;
+    ASSERT_TRUE((renderOverlays() != plain))
+            << "Attribute visibility must change canvas pixels";
     overlays.setShowAttributes(false);
     overlays.setShowGroups(true);
-    if (!check(renderOverlays() != plain,
-               "Group visibility must change canvas pixels"))
-        return 1;
+    ASSERT_TRUE((renderOverlays() != plain))
+            << "Group visibility must change canvas pixels";
     overlays.setShowGroups(false);
     overlays.setShowDegrees(true);
-    if (!check(renderOverlays() != plain,
-               "Rotation degree visibility must change canvas pixels"))
-        return 1;
+    ASSERT_TRUE((renderOverlays() != plain))
+            << "Rotation degree visibility must change canvas pixels";
     overlays.setShowDegrees(false);
     overlays.setShowLinking(true);
-    if (!check(renderOverlays() != plain,
-               "KIE linking visibility must change canvas pixels"))
-        return 1;
+    ASSERT_TRUE((renderOverlays() != plain))
+            << "KIE linking visibility must change canvas pixels";
     overlays.setShowLinking(false);
-    if (!check(renderOverlays() == plain &&
-                       overlays.shapes().first().toJson() == key.toJson(),
-               "View toggles must restore pixels without modifying sidecar "
-               "data"))
-        return 1;
+    ASSERT_TRUE((renderOverlays() == plain &&
+                 overlays.shapes().first().toJson() == key.toJson()))
+            << "View toggles must restore pixels without modifying sidecar "
+               "data";
     key.visible = false;
     overlays.setShapes({key, value});
     const QImage withoutLink = renderOverlays();
     overlays.setShowLinking(true);
-    if (!check(renderOverlays() == withoutLink,
-               "Hidden source shapes must not draw KIE links"))
-        return 1;
+    ASSERT_TRUE((renderOverlays() == withoutLink))
+            << "Hidden source shapes must not draw KIE links";
+}
 
+TEST_F(AnnotationCanvasTest, GroupBoundsSelectAndMoveMembersOnlyWhenVisible) {
+    QImage visibilityImage(100, 100, QImage::Format_RGB32);
+    visibilityImage.fill(Qt::black);
     AnnotationCanvas groups;
     groups.resize(400, 400);
     groups.setImage(visibilityImage);
@@ -740,23 +713,22 @@ int main(int argc, char** argv) {
     groups.setShapes({left, right});
     groups.setShowGroups(true);
     mouse(groups, QEvent::MouseButtonPress, screen(30, 15));
-    if (!check(groups.selectedIndices() == QSet<int>({0, 1}),
-               "Clicking between grouped shapes must select the full group"))
-        return 1;
+    ASSERT_TRUE((groups.selectedIndices() == QSet<int>({0, 1})))
+            << "Clicking between grouped shapes must select the full group";
     mouse(groups, QEvent::MouseMove, screen(35, 20));
     mouse(groups, QEvent::MouseButtonRelease, screen(35, 20));
-    if (!check(groups.shapes()[0].points[0] == QPointF(15, 15) &&
-                       groups.shapes()[1].points[0] == QPointF(45, 15),
-               "Dragging empty group bounds must move every member"))
-        return 1;
+    ASSERT_TRUE((groups.shapes()[0].points[0] == QPointF(15, 15) &&
+                 groups.shapes()[1].points[0] == QPointF(45, 15)))
+            << "Dragging empty group bounds must move every member";
     groups.setShowGroups(false);
     groups.selectShape(-1);
     mouse(groups, QEvent::MouseButtonPress, screen(35, 20));
     mouse(groups, QEvent::MouseButtonRelease, screen(35, 20));
-    if (!check(groups.selectedIndices().isEmpty(),
-               "Hidden group bounds must not capture empty canvas clicks"))
-        return 1;
+    ASSERT_TRUE((groups.selectedIndices().isEmpty()))
+            << "Hidden group bounds must not capture empty canvas clicks";
+}
 
+TEST_F(AnnotationCanvasTest, SamPromptsAreTransientAndResetWithImages) {
     AnnotationCanvas prompts;
     prompts.resize(400, 400);
     prompts.setImage(QImage(100, 100, QImage::Format_RGB32));
@@ -768,22 +740,22 @@ int main(int argc, char** argv) {
     prompts.setTool(QStringLiteral("sam_box"));
     drag(prompts, screen(10, 12), screen(60, 64));
     const AnnotationPrompt prompt = prompts.prompt();
-    if (!check(prompts.shapes().isEmpty() && prompt.positive.size() == 1 &&
-                       prompt.negative.size() == 1 && prompt.useBox &&
-                       prompt.box == QRectF(QPointF(10, 12), QPointF(60, 64)),
-               "SAM prompts must stay transient and use image coordinates"))
-        return 1;
+    ASSERT_TRUE((prompts.shapes().isEmpty() && prompt.positive.size() == 1 &&
+                 prompt.negative.size() == 1 && prompt.useBox &&
+                 prompt.box == QRectF(QPointF(10, 12), QPointF(60, 64))))
+            << "SAM prompts must stay transient and use image coordinates";
     prompts.clearPrompt();
-    if (!check(prompts.prompt().isEmpty(),
-               "Clearing SAM prompts must remove all marks"))
-        return 1;
+    ASSERT_TRUE((prompts.prompt().isEmpty()))
+            << "Clearing SAM prompts must remove all marks";
     prompts.setTool(QStringLiteral("sam_point"));
     mouse(prompts, QEvent::MouseButtonPress, screen(25, 25));
     prompts.setImage(QImage(100, 100, QImage::Format_RGB32));
-    if (!check(prompts.prompt().isEmpty(),
-               "Changing images must clear SAM prompts"))
-        return 1;
+    ASSERT_TRUE((prompts.prompt().isEmpty()))
+            << "Changing images must clear SAM prompts";
+}
 
+TEST_F(AnnotationCanvasTest,
+       MultiSelectionMovesTogetherAndClampsToImageBounds) {
     AnnotationShape second = rectangle;
     second.points = {QPointF(60, 60), QPointF(80, 60), QPointF(80, 80),
                      QPointF(60, 80)};
@@ -796,32 +768,30 @@ int main(int argc, char** argv) {
           Qt::ControlModifier);
     mouse(editor, QEvent::MouseButtonRelease, screen(70, 70), Qt::LeftButton,
           Qt::ControlModifier);
-    if (!check(editor.selectedIndices().size() == 2 &&
-                       editor.selectedIndices().contains(0) &&
-                       editor.selectedIndices().contains(1),
-               "Ctrl click must select both shapes"))
-        return 1;
+    ASSERT_TRUE((editor.selectedIndices().size() == 2 &&
+                 editor.selectedIndices().contains(0) &&
+                 editor.selectedIndices().contains(1)))
+            << "Ctrl click must select both shapes";
     drag(editor, screen(70, 70), screen(80, 80));
     const auto grouped = editor.shapes();
-    if (!check(grouped[0].points[0] == QPointF(20, 20) &&
-                       grouped[1].points[0] == QPointF(70, 70),
-               "Dragging a multi-selection must move every selected shape by "
-               "the same delta"))
-        return 1;
+    ASSERT_TRUE((grouped[0].points[0] == QPointF(20, 20) &&
+                 grouped[1].points[0] == QPointF(70, 70)))
+            << "Dragging a multi-selection must move every selected shape by "
+               "the same delta";
     mouse(editor, QEvent::MouseButtonPress, screen(70, 70), Qt::LeftButton,
           Qt::ControlModifier);
     mouse(editor, QEvent::MouseButtonRelease, screen(70, 70), Qt::LeftButton,
           Qt::ControlModifier);
-    if (!check(editor.selectedIndices().size() == 1 &&
-                       editor.selectedIndices().contains(0),
-               "Ctrl click must toggle a selected shape off"))
-        return 1;
+    ASSERT_TRUE((editor.selectedIndices().size() == 1 &&
+                 editor.selectedIndices().contains(0)))
+            << "Ctrl click must toggle a selected shape off";
     drag(editor, screen(30, 30), screen(95, 95));
     const QVector<QPointF> moved = editor.shapes().first().points;
-    if (!check(moved[0] == QPointF(80, 80) && moved[2] == QPointF(100, 100),
-               "Dragging a shape must stop at the image boundary"))
-        return 1;
+    ASSERT_TRUE((moved[0] == QPointF(80, 80) && moved[2] == QPointF(100, 100)))
+            << "Dragging a shape must stop at the image boundary";
+}
 
+TEST(AnnotationCanvas, MaskCompositingBinarizesStoredAlphaAndRetainsHoles) {
     // Image-level mask compositing fixture: the source paints a binary
     // silhouette filled with the shape color at mask_opacity. Stored
     // semi-transparent alpha must not fade the fill, and holes stay
@@ -850,12 +820,14 @@ int main(int argc, char** argv) {
         const QRgb semi = rendered.pixel(8, 8);
         const QRgb solid = rendered.pixel(25, 25);
         const QRgb hole = rendered.pixel(15, 15);
-        if (!check(semi == solid && qRed(semi) > 0 &&
-                           hole == QColor(255, 255, 255).rgba(),
-                   "Mask compositing must binarize stored alpha and keep "
-                   "holes transparent"))
-            return 1;
+        ASSERT_TRUE((semi == solid && qRed(semi) > 0 &&
+                     hole == QColor(255, 255, 255).rgba()))
+                << "Mask compositing must binarize stored alpha and keep "
+                   "holes transparent";
     }
+}
+
+TEST(AnnotationCanvas, RelationOverlayRendersHighlightsAndRejectsStaleIndices) {
     {
         // RelateAnything overlay: transient, index based, never part of the
         // shapes or the sidecar, and cleared when the indices could go stale.
@@ -889,12 +861,11 @@ int main(int argc, char** argv) {
                 {QStringLiteral("score"), 0.59}}};
         relations.setRelations(edges);
         const QImage drawn = renderRelations();
-        if (!check(drawn != bare, "Relation edges must change canvas pixels"))
-            return 1;
+        ASSERT_TRUE((drawn != bare))
+                << "Relation edges must change canvas pixels";
         relations.setHighlightedRelation(0);
-        if (!check(renderRelations() != drawn,
-                   "A highlighted relation must render differently"))
-            return 1;
+        ASSERT_TRUE((renderRelations() != drawn))
+                << "A highlighted relation must render differently";
         relations.setHighlightedRelation(-1);
         // With shapes hidden the edges must disappear too: compare against
         // the same hidden-shapes frame rendered without any relations.
@@ -902,9 +873,8 @@ int main(int argc, char** argv) {
         const QImage hiddenWithEdges = renderRelations();
         relations.clearRelations();
         const QImage hiddenBare = renderRelations();
-        if (!check(hiddenWithEdges == hiddenBare,
-                   "Hiding shapes must hide the relation overlay"))
-            return 1;
+        ASSERT_TRUE((hiddenWithEdges == hiddenBare))
+                << "Hiding shapes must hide the relation overlay";
         relations.setShowShapes(true);
         relations.setRelations(edges);
         // An edge pointing at a missing shape is skipped, not drawn or fatal.
@@ -913,27 +883,27 @@ int main(int argc, char** argv) {
                             {QStringLiteral("object_index"), 7},
                             {QStringLiteral("predicate"), QStringLiteral("on")},
                             {QStringLiteral("score"), 0.9}}});
-        if (!check(renderRelations() == bare,
-                   "Edges with out-of-range shape indices must be skipped"))
-            return 1;
+        ASSERT_TRUE((renderRelations() == bare))
+                << "Edges with out-of-range shape indices must be skipped";
         relations.setRelations(edges);
         relations.setShapes({subject, object});
-        if (!check(renderRelations() == bare,
-                   "Replacing shapes must clear the relation overlay"))
-            return 1;
+        ASSERT_TRUE((renderRelations() == bare))
+                << "Replacing shapes must clear the relation overlay";
         relations.setRelations(edges);
         relations.setImage(relationImage);
         relations.setShapes({subject, object});
         relations.setRelations(edges);
         relations.setImage(relationImage);
         relations.setShapes({subject, object});
-        if (!check(renderRelations() == bare,
-                   "Loading an image must clear the relation overlay"))
-            return 1;
-        if (!check(relations.shapes().first().toJson() == subject.toJson(),
-                   "The relation overlay must not modify shape data"))
-            return 1;
+        ASSERT_TRUE((renderRelations() == bare))
+                << "Loading an image must clear the relation overlay";
+        ASSERT_TRUE((relations.shapes().first().toJson() == subject.toJson()))
+                << "The relation overlay must not modify shape data";
     }
+}
+
+TEST(AnnotationCanvas,
+     DoubleClickRemovesUnlockedVerticesButKeepsMinimumPolygon) {
     // Upstream f908db51: in edit mode a plain double click on a vertex of an
     // unlocked polygon removes it before any label editing (independent of
     // the Double Click Edit Label switch) and always keeps three vertices;
@@ -957,17 +927,15 @@ int main(int argc, char** argv) {
         QObject::connect(&editor, &AnnotationCanvas::shapeDoubleClicked,
                          [&](int) { ++labelEdits; });
         mouse(editor, QEvent::MouseButtonDblClick, square[0]);
-        if (!check(editor.shapes().size() == 1 &&
-                           editor.shapes().first().points.size() == 3 &&
-                           edits == 1 && labelEdits == 0,
-                   "Double-clicking a polygon vertex must remove it with an "
-                   "undo snapshot and no label editor"))
-            return 1;
+        ASSERT_TRUE((editor.shapes().size() == 1 &&
+                     editor.shapes().first().points.size() == 3 && edits == 1 &&
+                     labelEdits == 0))
+                << "Double-clicking a polygon vertex must remove it with an "
+                   "undo snapshot and no label editor";
         // Three vertices remain: another double click must keep the shape.
         mouse(editor, QEvent::MouseButtonDblClick, square[0]);
-        if (!check(editor.shapes().first().points.size() == 3 && edits == 1,
-                   "A polygon must keep at least three vertices"))
-            return 1;
+        ASSERT_TRUE((editor.shapes().first().points.size() == 3 && edits == 1))
+                << "A polygon must keep at least three vertices";
         // A locked polygon falls through to the label editor instead.
         editor.setTool(QStringLiteral("polygon"));
         for (const QPointF& point : square) {
@@ -980,10 +948,15 @@ int main(int argc, char** argv) {
         editor.setShapes(lockedShapes);
         editor.setTool(QStringLiteral("edit"));
         mouse(editor, QEvent::MouseButtonDblClick, square[0]);
-        if (!check(editor.shapes().last().points.size() == 4 && labelEdits == 1,
-                   "A locked polygon must open the label editor instead of "
-                   "losing vertices"))
-            return 1;
+        ASSERT_TRUE(
+                (editor.shapes().last().points.size() == 4 && labelEdits == 1))
+                << "A locked polygon must open the label editor instead of "
+                   "losing vertices";
     }
-    return 0;
+}
+
+int main(int argc, char** argv) {
+    QApplication app(argc, argv);
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

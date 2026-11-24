@@ -41,16 +41,20 @@ cmake --build build -j$(nproc)
 
 ## Running Tests
 
-The `tests` binary lands in a per-config subdirectory:
-`bin/cloudviewer_test/<Config>/tests` (e.g. `Release` for the usual
-`-DCMAKE_BUILD_TYPE=Release` build; a multi-config generator appends its
-active configuration the same way).
+CI invokes the repository-root `tests/Run.cmake` entry. CVViewer keeps its
+existing GoogleTest executable, source manifests, assertions, test data and
+dynamic download behavior. Registration changes must not rewrite test bodies,
+replace downloaded fixtures, rename cases or change the enabled source set.
 
-### Run All Tests
+On Unix, the `tests` binary is `bin/cloudviewer_test/tests`. MSVC uses
+`bin/cloudviewer_test/<Config>/tests.exe`. The root runner resolves targets
+through CMake and does not depend on these diagnostic paths.
+
+### Run the CVViewer Suite Directly
 
 ```bash
 cd build
-./bin/cloudviewer_test/<Config>/tests
+./bin/cloudviewer_test/tests
 ```
 
 ### Run with Options
@@ -192,9 +196,13 @@ TEST(MyGeometry, Operations) {
 }  // namespace cloudViewer
 ```
 
-### 2. The test will be automatically included
+### 2. Add the source to its component
 
-The `CMakeLists.txt` uses `GLOB_RECURSE` to automatically find all `*.cpp` files.
+Add the source to the owning component's `target_sources(tests PRIVATE ...)`
+list. Add a new component with `add_subdirectory()` when needed. The existing
+CVViewer executable registration then includes it automatically in root CI.
+Historical sources commented out for API incompatibilities stay disabled; a
+file existing in this directory does not mean it is compiled or executed.
 
 ### 3. Build and Run
 
@@ -205,7 +213,12 @@ cmake --build build
 
 ## CI/CD Integration
 
-Tests are integrated with CI/CD through `util/ci_utils.sh`:
+This directory owns CVViewer suite sources. The root
+[tests module](../../../tests/README.md) owns registration and execution of
+all enabled first-party C++ suites. The binary examples above are focused
+CVViewer diagnostics. From the repository root use
+`cmake -DBUILD_DIR=build -DJOBS=4 -P tests/Run.cmake`.
+CI/CD delegates to the same entry through `util/ci_utils.sh`:
 
 ```bash
 # From build directory

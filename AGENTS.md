@@ -9,6 +9,7 @@ Reference layout: Use this file when you need a **full-repo map** (build, module
 | AICore ABI, pipeline, plugin worker, performance, or ggml operator | `.agents/skills/acloudviewer-aicore-plugin/SKILL.md` |
 | ggml version upgrade and controlled A/B | `.agents/skills/ggml-upgrade/SKILL.md`, `docs/guides/ggml_upgrade_pipeline.md` |
 | General plugin structure and UI | `.agents/rules/acloudviewer-plugin-dev.mdc` |
+| Third-party dependency integration, Qt framework ports and dynamic Git patches | `.agents/rules/acloudviewer-plugin-dev.mdc` § Third-Party Dependencies; inspect `3rdparty/libpng/libpng.cmake` and the relevant existing patch recipe first |
 | ggml ExternalProject details | `.agents/rules/acloudviewer-ggml-aicore.mdc` |
 | Agent/RPC/CLI integration | `.agents/rules/acloudviewer-agent-dev.mdc`, `agent-integration/README.md` |
 | CLI harness deploy/operate (install, MCP client registration, headless batch, AICore batch) | `.agents/skills/acloudviewer-cli-agent/SKILL.md` |
@@ -622,4 +623,19 @@ Full table: [plugins/README.md](plugins/README.md) and [BUILD.md](BUILD.md).
 - Workflows: `.github/workflows/ubuntu.yml`, `macos.yml`, `windows.yml`, `documentation.yml`, `agent-integration.yml`, `codeql.yml`
 - Local CI helpers: `util/ci_utils.sh` (Linux), `util/ci_utils.ps1` (Windows)
 - Version: `libs/cloudViewer/version.txt`; changelog: `CHANGELOG.md`
+
+## Agent Token Economy
+
+Rules for agent sessions (dsh web / CLI) to keep per-request context small:
+
+- Build/test output enters context truncated: `cmake --build … 2>&1 | tail -n 40`,
+  `ctest --output-on-failure 2>&1 | tail -n 60`; full logs go to a file
+  (`> /tmp/build.log`) and only the tail is read on failure.
+- Batch independent shell commands into one call; poll background jobs once
+  after expected completion, never in tight loops.
+- Start a new session for a new task; do not resume sessions idle for hours
+  (prompt-cache expiry re-bills the entire context as fresh input).
+- Keep the tool surface minimal: unused bundles (browser / widget-board /
+  task-board) are disabled in the dsh web profile patch; do not re-enable them.
+- Prefer low reasoning effort for routine edits; reserve high/xhigh for hard problems.
 

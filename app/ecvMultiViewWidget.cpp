@@ -12,8 +12,10 @@
 #include "ecvSpreadSheetView.h"
 
 #ifdef USE_VTK_BACKEND
+#include <Tools/SelectionTools/cvSelectionData.h>
 #include <Tools/SelectionTools/cvSelectionHighlighter.h>
 #include <Tools/SelectionTools/cvSelectionToolController.h>
+#include <Tools/SelectionTools/cvViewSelectionManager.h>
 #include <VTKExtensions/Views/vtkChartView.h>
 #include <VTKExtensions/Views/vtkComparativeViewWidget.h>
 #include <VTKExtensions/Views/vtkOrthoSliceViewWidget.h>
@@ -89,6 +91,25 @@ QList<ccHObject*> collectDisplayableEntities() {
 
     return result;
 }
+#ifdef USE_VTK_BACKEND
+void publishSourceSelection(ccHObject* entity,
+                            const QVector<unsigned>& indices,
+                            bool cells) {
+    if (!entity) return;
+    QVector<qint64> ids;
+    ids.reserve(indices.size());
+    for (unsigned id : indices) ids.append(id);
+    cvSelectionData selection(
+            ids, cells ? cvSelectionData::CELLS : cvSelectionData::POINTS);
+    cvActorSelectionInfo info;
+    info.sourceId = entity->getViewId();
+    info.sourceIds = ids;
+    selection.addActorInfo(info);
+    auto* manager = cvViewSelectionManager::instance();
+    manager->setSourceObject(entity);
+    manager->setCurrentSelection(selection);
+}
+#endif
 }  // namespace
 
 ecvMultiViewWidget::ecvMultiViewWidget(QWidget* parent) : QWidget(parent) {
@@ -308,11 +329,6 @@ QWidget* ecvMultiViewWidget::buildCell(int location) {
         splitter->setChildrenCollapsible(false);
         splitter->setHandleWidth(SPLITTER_GAP);
         splitter->setOpaqueResize(true);
-        splitter->setStyleSheet(QStringLiteral(
-                "QSplitter::handle { background: palette(window); }"
-                "QSplitter::handle:hover { background: palette(mid); }"
-                "QSplitter::handle:pressed { background: palette(highlight); "
-                "}"));
         splitter->setProperty("CELL_INDEX", location);
 
         QWidget* left = buildCell(ecvViewLayoutProxy::firstChild(location));
@@ -639,11 +655,17 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
         }
 
         connect(spreadSheet, &ecvSpreadSheetView::tableSelectionChanged, this,
-                [](ccHObject* entity, const QVector<unsigned>& indices) {
-                    if (!entity || indices.isEmpty()) return;
-                    QSet<unsigned> idxSet = qtCompatQSetFromVector(indices);
-                    emit ecvViewManager::instance().pointIndicesSelected(
-                            entity, idxSet);
+                [spreadSheet](ccHObject* entity,
+                              const QVector<unsigned>& indices) {
+#ifdef USE_VTK_BACKEND
+                    publishSourceSelection(
+                            entity, indices,
+                            spreadSheet->getModel()->attributeType() ==
+                                    ecvSpreadSheetModel::CELL_DATA);
+#else
+                    if (entity) emit ecvViewManager::instance().pointIndicesSelected(
+                        entity, qtCompatQSetFromVector(indices));
+#endif
                 });
 
         QWidget* wrapped = spreadSheet;
@@ -735,11 +757,10 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
         chartView->setEntityListProvider(collectDisplayableEntities);
 
         connect(chartView, &vtkChartView::pointsHighlighted, this,
-                [](ccHObject* entity, const QVector<unsigned>& indices) {
-                    if (!entity || indices.isEmpty()) return;
-                    QSet<unsigned> idxSet = qtCompatQSetFromVector(indices);
-                    emit ecvViewManager::instance().pointIndicesSelected(
-                            entity, idxSet);
+                [chartView](ccHObject* entity,
+                            const QVector<unsigned>& indices) {
+                    publishSourceSelection(entity, indices,
+                                           chartView->usesCellData());
                 });
 
         ccHObject* initEntity = nullptr;
@@ -836,7 +857,7 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
                 edlLayout->addWidget(
                         new QLabel(QStringLiteral("<b>EDL</b>"), edlBar));
 
-                auto* radiusLabel = new QLabel(tr("Radius:"), edlBar);
+                auto* radiusLabel = new QLabel(tr("Low-res factor:"), edlBar);
                 edlLayout->addWidget(radiusLabel);
                 auto* radiusSpin = new QSpinBox(edlBar);
                 radiusSpin->setRange(1, 16);
@@ -909,11 +930,11 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
         }
 
         m_layout->assignView(location, view);
-        view->enableSliceMode(true);
 
         if (siblingView && siblingView != view) {
             copyRepresentationsOnSplit(siblingView, view);
         }
+        view->enableSliceMode(true);
 
         QWidget* oldWidget = m_cellFrames.value(location);
         QWidget* parentWidget = oldWidget ? oldWidget->parentWidget() : nullptr;

@@ -11,6 +11,8 @@
 // gen_db_box_score_golden.py); the mask must match bit-for-bit and the score
 // to double rounding of the summation order.
 
+#include <gtest/gtest.h>
+
 #include <cinttypes>
 #include <cmath>
 #include <cstdio>
@@ -20,9 +22,12 @@
 #include <vector>
 
 #include "tasks/ocr/ocr_box_score.hpp"
-#include "tests/common/test_macros.hpp"
 
-static int failures = 0;
+#ifdef AICORE_OCR_BOX_SCORE_GOLDEN
+static const char* golden_path = AICORE_OCR_BOX_SCORE_GOLDEN;
+#else
+static const char* golden_path = nullptr;
+#endif
 
 namespace {
 
@@ -46,23 +51,13 @@ uint64_t fnv1a64(const std::vector<uint8_t>& data) {
 
 }  // namespace
 
-int main(int argc, char** argv) {
-#ifdef AICORE_OCR_BOX_SCORE_GOLDEN
-    const char* golden = argc > 1 ? argv[1] : AICORE_OCR_BOX_SCORE_GOLDEN;
-#else
-    if (argc < 2) {
-        std::fprintf(stderr, "usage: %s db_box_score_golden.txt\n", argv[0]);
-        return 2;
-    }
-    const char* golden = argv[1];
-#endif
-    std::ifstream in(golden);
-    if (!in) {
-        std::fprintf(stderr, "cannot open %s\n", golden);
-        return 2;
-    }
+TEST(OcrBoxScore, MatchesUpstreamRasterizationAndScores) {
+    ASSERT_NE(golden_path, nullptr) << "Supply the golden fixture path as the "
+                                       "first positional argument";
+    std::ifstream in(golden_path);
+    ASSERT_TRUE(in.is_open()) << "Cannot open " << golden_path;
     std::string line;
-    int cases = 0, maskMismatch = 0;
+    int cases = 0;
     double worstScore = 0.0;
     while (std::getline(in, line)) {
         if (line.empty() || line[0] == '#') continue;
@@ -74,9 +69,9 @@ int main(int argc, char** argv) {
         row >> w >> h;
         for (auto& corner : quad) row >> corner[0] >> corner[1];
         row >> count >> hashHex >> score;
-        AICORE_CHECK(static_cast<bool>(row));
-        if (!row) break;
+        ASSERT_TRUE(static_cast<bool>(row)) << line;
         ++cases;
+        SCOPED_TRACE(testing::Message() << "Golden row " << cases);
 
         // Mask exactly as dbBoxScoreFast builds it.
         float minX = quad[0][0], maxX = quad[0][0];
@@ -106,28 +101,19 @@ int main(int argc, char** argv) {
         for (const uint8_t m : mask) got += m;
         char hex[17];
         std::snprintf(hex, sizeof(hex), "%016" PRIx64, fnv1a64(mask));
-        if (got != count || hashHex != hex) {
-            if (maskMismatch++ < 5)
-                std::fprintf(stderr,
-                             "mask mismatch (row %d): count %d vs %d, hash %s "
-                             "vs %s\n",
-                             cases, got, count, hex, hashHex.c_str());
-        }
+        EXPECT_EQ(got, count);
+        EXPECT_EQ(hashHex, hex);
 
         const auto map = probMap(w, h);
         const double s = aicore::ocr::dbBoxScoreFast(map.data(), w, h, quad);
         worstScore = std::fmax(worstScore, std::fabs(s - score));
     }
-    AICORE_CHECK(cases >= 600);
-    AICORE_CHECK(maskMismatch == 0);
-    AICORE_CHECK(worstScore <= 1e-12);
-    std::printf(
-            "db box score parity: %d cases, %d mask mismatches, worst "
-            "|score diff| %.3g\n",
-            cases, maskMismatch, worstScore);
-    if (failures) {
-        std::fprintf(stderr, "test_ocr_box_score: %d failure(s)\n", failures);
-        return 1;
-    }
-    return 0;
+    EXPECT_GE(cases, 600);
+    EXPECT_LE(worstScore, 1e-12);
+}
+
+int main(int argc, char** argv) {
+    testing::InitGoogleTest(&argc, argv);
+    if (argc > 1) golden_path = argv[1];
+    return RUN_ALL_TESTS();
 }

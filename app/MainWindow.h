@@ -102,7 +102,6 @@ class ecvShortcutDialog;
 
 class QSplitter;
 class QTreeWidgetItem;
-class QUIWidget;
 class ecvGenericGLDisplay;
 class vtkGLView;
 class ecvTabbedMultiViewWidget;
@@ -158,16 +157,12 @@ public:  // static method
     //! Deletes current main window instance
     static void DestroyInstance();
 
-    static void ChangeStyle(const QString& qssFile);
-
 public slots:
     // Picking opeations
     void enablePickingOperation(QString message);
     void cancelPreviousPickingOperation(bool aborted);
 
 public:
-    void setUiManager(QUIWidget* uiManager);
-
     //! Saves position and state of all GUI elements
     void saveGUIElementsPos();
 
@@ -848,7 +843,6 @@ private:
 #endif
 
     QVBoxLayout* m_layout;
-    QUIWidget* m_uiManager;
     QLabel* m_mousePosLabel;
     QLabel* m_systemInfoLabel;
 
@@ -860,10 +854,15 @@ private:
 
     // For full screen
     QWidget* m_currentFullWidget;
+    ecvGenericGLDisplay* m_fullScreenDisplay = nullptr;
+    bool m_formerOverlayEntitiesVisible = true;
     //! Wether exclusive full screen is enabled or not
     bool m_exclusiveFullscreen;
     //! Former geometry (for exclusive full-screen display)
     QByteArray m_formerGeometry;
+    Qt::WindowFlags m_formerFullScreenFlags;
+    Qt::WindowStates m_formerFullScreenState;
+    Qt::WindowStates m_formerMainWindowState;
 
     enum VIEWMODE { PERSPECTIVE, ORTHOGONAL };
     VIEWMODE m_lastViewMode;

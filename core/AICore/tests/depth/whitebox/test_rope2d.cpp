@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <cstdlib>
 #include <vector>
 
@@ -12,15 +14,16 @@
 #include "tasks/depth/rope2d.hpp"
 #include "tests/depth/whitebox/parity.hpp"
 
-int main() {
+TEST(DepthWhitebox, Rope2D) {
     const char* base = std::getenv("AICORE_TEST_DEPTH_BASELINE");
-    if (!base) return 77;
+    if (!base) GTEST_SKIP() << "Required model/reference environment is unset";
     std::vector<float> rin, rpos, rout;
     std::vector<int64_t> s;
-    if (!da_parity::load_baseline(base, "rope_in", rin, s)) return 77;
-    da_parity::load_baseline(base, "rope_pos", rpos, s);
-    da_parity::load_baseline(base, "rope_out", rout, s);
+    ASSERT_TRUE(da_parity::load_baseline(base, "rope_in", rin, s));
+    ASSERT_TRUE(da_parity::load_baseline(base, "rope_pos", rpos, s));
+    ASSERT_TRUE(da_parity::load_baseline(base, "rope_out", rout, s));
     const int hd = 64, tok = 4;
+    ASSERT_EQ(rin.size(), static_cast<size_t>(hd * tok));
     aicore::depth::RopeTables rt =
             aicore::depth::build_rope_tables(rpos, tok, hd, 100.f);
     aicore::depth::Backend be;
@@ -36,6 +39,5 @@ int main() {
                 return aicore::depth::apply_rope(ctx, x, cb, sb, hd);
             },
             got);
-    bool ok = da_parity::compare(got, rout, "rope2d", 1e-4f, 1e-4f);
-    return ok ? 0 : 1;
+    EXPECT_TRUE(da_parity::compare(got, rout, "rope2d", 1e-4f, 1e-4f));
 }

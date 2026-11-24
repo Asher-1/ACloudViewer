@@ -120,3 +120,32 @@ of their different relative directories (guides are copied into the Sphinx
 srcdir at build time, so relative paths would break there). `docs/source/_static/plugin-assets/`
 remains for Sphinx-owned pages such as the documentation landing page; it is
 not the image source for guides in this directory.
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+qDA3 <qDA3>
+qDeepLSD <qDeepLSD>
+qFaceDetect <qFaceDetect>
+qLightGlue <qLightGlue>
+qFreeSplatter <qFreeSplatter>
+qSAM3 <qSAM3>
+qTrellis <qTrellis>
+qYOLO <qYOLO>
+qRFDetr <qRFDetr>
+qRMBG <qRMBG>
+qGKD <qGKD>
+qInstantMesh <qInstantMesh>
+qLingbotMap <qLingbotMap>
+qMapAnything <qMapAnything>
+qOCR <qOCR>
+qOpenPCDet <qOpenPCDet>
+qQuerySplat <qQuerySplat>
+qRAM <qRAM>
+qRelateAnything <qRelateAnything>
+qSAM3D <qSAM3D>
+qVLXSeek <qVLXSeek>
+qAnyLabeling <qAnyLabeling>
+qSpirula <qSpirula>
+```

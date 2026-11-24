@@ -89,6 +89,9 @@ public:
      */
     bool isEnabled(const ccPluginInterface* plugin) const;
 
+    //! Stable, untranslated namespace for plugin-owned persistent commands.
+    QString pluginId(const ccPluginInterface* plugin) const;
+
     /**
      * @brief Enable or disable a plugin
      *

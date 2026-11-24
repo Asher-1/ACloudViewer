@@ -566,38 +566,44 @@ bool ecvDisplayTools::ProcessClickableItems(ecvViewContext& ctx, int x, int y) {
         } break;
 
         case ClickableItem::INCREASE_POINT_SIZE: {
-            SetPointSize(ctx.viewportParams.defaultPointSize + 1.0f);
-            RedrawDisplay();
+            SetPointSize(ctx, ctx.viewportParams.defaultPointSize + 1.0f);
+            RedrawDisplay(ctx);
         }
             return true;
 
         case ClickableItem::DECREASE_POINT_SIZE: {
-            SetPointSize(ctx.viewportParams.defaultPointSize - 1.0f);
-            RedrawDisplay();
+            SetPointSize(ctx, ctx.viewportParams.defaultPointSize - 1.0f);
+            RedrawDisplay(ctx);
         }
             return true;
 
         case ClickableItem::INCREASE_LINE_WIDTH: {
-            SetLineWidth(ctx.viewportParams.defaultLineWidth + 1.0f);
-            RedrawDisplay();
+            SetLineWidth(ctx, ctx.viewportParams.defaultLineWidth + 1.0f);
+            RedrawDisplay(ctx);
         }
             return true;
 
         case ClickableItem::DECREASE_LINE_WIDTH: {
-            SetLineWidth(ctx.viewportParams.defaultLineWidth - 1.0f);
-            RedrawDisplay();
+            SetLineWidth(ctx, ctx.viewportParams.defaultLineWidth - 1.0f);
+            RedrawDisplay(ctx);
         }
             return true;
 
         case ClickableItem::LEAVE_BUBBLE_VIEW_MODE: {
-            SetBubbleViewMode(false);
-            RedrawDisplay();
+            SetBubbleViewMode(ctx, false);
+            RedrawDisplay(ctx);
         }
             return true;
 
         case ClickableItem::LEAVE_FULLSCREEN_MODE: {
-            if (primaryDT()->m_win) {
-                emit primaryDT() -> exclusiveFullScreenToggled(false);
+            // The hot-zone belongs to the rendering view; the shared display
+            // tools need not have a legacy main-window pointer set.
+            if (!ctx.exclusiveFullscreen) return false;
+            if (auto* dt = primaryDT()) {
+                QMetaObject::invokeMethod(
+                        dt,
+                        [dt]() { emit dt->exclusiveFullScreenToggled(false); },
+                        Qt::QueuedConnection);
             }
         }
             return true;
@@ -1702,45 +1708,6 @@ ccGLMatrixd ecvDisplayTools::GenerateViewMat(CC_VIEW_ORIENTATION orientation) {
     }
 
     return ccGLMatrixd::FromViewDirAndUpDir(center - eye, top);
-}
-
-void ecvDisplayTools::SetView(CC_VIEW_ORIENTATION orientation, ccBBox* bbox) {
-    switch (orientation) {
-        case CC_TOP_VIEW:
-            SetCameraPosition(0, 0, 1, 0, 0, 0, 0, 1, 0);
-            UpdateConstellationCenterAndZoom(bbox, false);
-            break;
-        case CC_BOTTOM_VIEW:
-            SetCameraPosition(0, 0, -1, 0, 0, 0, 0, 1, 0);
-            UpdateConstellationCenterAndZoom(bbox, false);
-            break;
-        case CC_FRONT_VIEW:
-            SetCameraPosition(0, 1, 0, 0, 0, 0, 0, 0, 1);
-            UpdateConstellationCenterAndZoom(bbox, false);
-            break;
-        case CC_BACK_VIEW:
-            SetCameraPosition(0, -1, 0, 0, 0, 0, 0, 0, 1);
-            UpdateConstellationCenterAndZoom(bbox, false);
-            break;
-        case CC_LEFT_VIEW:
-            SetCameraPosition(-1, 0, 0, 0, 0, 0, 0, 0, 1);
-            UpdateConstellationCenterAndZoom(bbox, false);
-            break;
-        case CC_RIGHT_VIEW:
-            SetCameraPosition(1.0, 0.0, 0, 0, 0, 0, 0, 0, 1);
-            UpdateConstellationCenterAndZoom(bbox, false);
-            break;
-        case CC_ISO_VIEW_1:
-            SetCameraPosition(-1.0, -1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
-            UpdateConstellationCenterAndZoom(bbox, false);
-            break;
-        case CC_ISO_VIEW_2:
-            SetCameraPosition(1.0, 1.0, 1.0, 0.0, 0.0, 0.0, -1.0, -1.0, 1.0);
-            UpdateConstellationCenterAndZoom(bbox, false);
-            break;
-        default:
-            break;
-    }
 }
 
 void ecvDisplayTools::SetView(ecvViewContext& ctx,
@@ -4617,7 +4584,11 @@ bool ecvDisplayTools::getClick3DPos(int x, int y, CCVector3d& pos) {
 }
 
 void ecvDisplayTools::setView(CC_VIEW_ORIENTATION orientation) {
-    SetView(orientation, nullptr);
+    // Orientation-only switch: rotate around the current focal point while
+    // preserving zoom (camera distance / parallel scale). The former
+    // SetView(orientation, bbox) path refitted the whole scene (global zoom)
+    // and destroyed the user's zoom level.
+    SetView(orientation, /*forceRedraw=*/true);
 }
 
 CCVector3d ecvDisplayTools::getCurrentViewDir() const {

@@ -1,31 +1,14 @@
-# Qt5/Qt6 compatibility - Test module
-# Note: Qt6 does not have a separate Test module, it's part of Core
-# This test is only available when using Qt5
-if(NOT USE_QT6)
-    find_package( Qt5Test REQUIRED )
-
-    if ( OPTION_USE_SHAPE_LIB )
-        add_executable( TestShpFilter )
-
-        target_sources( TestShpFilter
-            PRIVATE
-                ${CMAKE_CURRENT_LIST_DIR}/TestShpFilter.cpp
-                ${CMAKE_CURRENT_LIST_DIR}/TestShpFilter.h
-                ${CMAKE_CURRENT_LIST_DIR}/TestData.qrc
-        )
-
-        # Note: Qt5::Test is Qt5-only, no unified alias needed
-        target_link_libraries( TestShpFilter
-            CV_IO_LIB
-            Qt5::Test
-        )
-
-        if ( WIN32 )
-            set_target_properties( TestShpFilter PROPERTIES
-                WIN32_EXECUTABLE False
-            )
-        endif()
-
-        add_test( NAME TestShpFilter COMMAND TestShpFilter )
+# The SHP fixture suite uses the repository's GoogleTest dependency and the
+# same Qt/production I/O libraries as its owner on both Qt 5 and Qt 6.
+if(OPTION_USE_SHAPE_LIB)
+    if(NOT TARGET gtest)
+        include(${CloudViewer_3RDPARTY_DIR}/googletest/googletest.cmake)
     endif()
+    cloudviewer_add_plugin_test(TestShpFilter
+        SOURCES TestShpFilter.cpp TestShpFilter.h TestData.qrc
+        LIBS CV_IO_LIB gtest Qt::Widgets)
+    set_target_properties(TestShpFilter PROPERTIES AUTORCC ON)
+    cloudviewer_add_test(NAME TestShpFilter COMMAND TestShpFilter
+        LABELS "unit;io;shp")
+    cloudviewer_set_plugin_test_env_offscreen(TestShpFilter)
 endif()

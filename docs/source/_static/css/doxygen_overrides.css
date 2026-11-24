@@ -1,0 +1,53 @@
+/* Shared Doxygen header layout for new builds and restored archives. */
+#titlearea table,
+#titlearea tbody {
+    display: block;
+    width: 100%;
+}
+
+#titlearea tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    height: auto !important;
+}
+
+#projectlogo {
+    flex: 0 1 24rem;
+    min-width: 0;
+}
+
+#projectlogo img {
+    display: block;
+    max-width: 100%;
+    max-height: 5rem;
+    width: auto;
+    height: auto;
+}
+
+#projectalign {
+    flex: 1 1 16rem;
+    min-width: 0;
+}
+
+#projectname,
+#projectbrief {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+/* The top navigation retains access to the API sections on narrow screens. */
+@media (max-width: 767px) {
+    #side-nav {
+        display: none;
+    }
+
+    #doc-content {
+        margin-left: 0 !important;
+    }
+}
+
+#doc-content .logo-section img {
+    width: 100%;
+    height: auto;
+}

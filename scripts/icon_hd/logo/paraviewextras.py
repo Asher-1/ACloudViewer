@@ -23,7 +23,17 @@ def paste():
 def preview():
  return P.svg('<title>Preview selected result</title>'+P.rect(2,3,20,17,P.GREY,r=.6)+P.rect(4,5,16,12,P.BLUE_PALE,r=.2)+P.fill('M 9 7 L 16 11 L 9 15 Z',P.GREEN)+P.stroke('M 8 22 H 16 M 12 20 V 22',sw=1))
 def side_set():
- return P.svg('<title>Representation side-set data</title>'+P.cube(12,12,10,top=P.GREY_LT,left=P.BLUE_PALE,right=P.GREEN)+P.stroke('M 12 12 L 20.66 7 M 12 17 L 20.66 12 M 16.33 9.5 V 19.5',sw=.65))
+  # ANN-02: editable bounding box plus the same exact annotation-tools overlay.
+  from .pqredesign import annotation_overlay
+  b=[P.fill('M 2.6 6.1 L 10.8 2.1 L 17.3 6.0 V 14.2 L 9.1 18.1 L 2.6 14.1 Z',P.BLUE_PALE,outline=None),
+     P.stroke('M 2.6 6.1 L 10.8 2.1 L 17.3 6 L 9.1 10 Z M 2.6 6.1 V 14.1 L 9.1 18.1 L 17.3 14.2 V 6 M 9.1 10 V 18.1',colour=P.INK,sw=1.05),
+     P.stroke('M 10.8 2.1 V 10.3 L 17.3 14.2 M 2.6 14.1 L 10.8 10.3',colour=P.GREY_DK,sw=.6).replace('/>',' stroke-dasharray="1.5 1.1"/>')]
+  for x,y in [(2.6,6.1),(10.8,2.1),(17.3,6),(9.1,10),(2.6,14.1),(9.1,18.1)]:
+    b.append(P.rect(x-.95,y-.95,1.9,1.9,P.GREEN_LT,r=.12))
+  b.append(annotation_overlay())
+  return P.svg('<title>ANN-02 — Bounding-box annotation with corner handles</title>'+''.join(b)).replace('width="24" height="24"','width="128" height="128"',1)
+
+
 def stream():
  b=[P.poly([(2,18),(9,14),(22,17),(15,22)],P.BLUE_PALE)]
  for x in [4,10,16]:

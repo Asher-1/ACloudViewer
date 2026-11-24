@@ -1,5 +1,9 @@
 # Recognize Anything (qRAM)
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRAM/images/ram_test.jpg" width="72%" alt="qRAM — Recognize Anything image tagging and captioning">
+</p>
+
 qRAM adds RAM, RAM++, and Tag2Text image tagging to ACloudViewer through the
 shared AICore runtime. It can score a single image or a batch, process video
 and camera frames, and export complete per-class results.

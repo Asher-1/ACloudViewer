@@ -1,0 +1,196 @@
+{
+  "upstream": "v1.5.2",
+  "patch_sha256": "7359fcd5411a671ad79e2c41717543de9d72e27700513be5fc5e3d1dcb76ab1c",
+  "files": [
+    {
+      "path": "CMakeLists.txt",
+      "before_sha256": "fe260358fac33595cfe2e216740ee831921798a9b04ee4cafe67c2f49b5f5228",
+      "after_sha256": "bd177ef423bbf6bcc00e4b6b33bdadce37cdea39e6529b1242ff080572918d61"
+    },
+    {
+      "path": "cmake/config.cmake.in",
+      "before_sha256": "30d84f971d4e5beb709c9e0b41e3514aacb977c2b1063a26fe02499fb0ce5b55",
+      "after_sha256": "5125e87ad135f22cdecbe98506d066c9ee21f3e3c81572fa67de3642e6d9f57a"
+    },
+    {
+      "path": "cmake/qlementine.pc.in",
+      "before_sha256": "4417cb62e35b993dd09b3b063d96d6c19787d9bdf3693f68adf3c488f39a5de9",
+      "after_sha256": "682e92b09719f3b60199f389ead1660d292980b407ad185bfae0ee8383852572"
+    },
+    {
+      "path": "lib/CMakeLists.txt",
+      "before_sha256": "3c4dbbc6b047335b051c0ce4ff91fbb97382b487a7d91176b5e070da5ed1e980",
+      "after_sha256": "8e18e5622a8068d86f16f13a2cd159a6cabf895e3fbb53bc940ae460d47ebb62"
+    },
+    {
+      "path": "lib/include/oclero/qlementine/animation/WidgetAnimationManager.hpp",
+      "before_sha256": "6a20cf6e12629b88367096af0ca47a64358a65e6bda4d24297a3ddb1e54bd842",
+      "after_sha256": "6ce5aae0dac57e67052c10000309fdac2bc2ae6be79a92e77dfbdd413d7c1d65"
+    },
+    {
+      "path": "lib/include/oclero/qlementine/style/Delegates.hpp",
+      "before_sha256": "89e4e6cb8cc895c19dcab619ab92f87e233d1df1f1e9f7a682009f0927c1e039",
+      "after_sha256": "acbb64afbd00e320af8223947657f1b7cd953bff9567cdb8eed449b400f00d6d"
+    },
+    {
+      "path": "lib/include/oclero/qlementine/style/QlementineStyleOption.hpp",
+      "before_sha256": "7abac6bf7bd9830a736d067f3f251c2ed36eb2242e96f2727a7f33c3251e848c",
+      "after_sha256": "442969488b8c4781debcba0ec816fd3e0386b225d0ac2cb2cd49c17cd88dbd26"
+    },
+    {
+      "path": "lib/include/oclero/qlementine/utils/MenuUtils.hpp",
+      "before_sha256": "91d174d9fe073e1fd530226f653471aca742fca701e11cefd47fcb8e5b5bfa93",
+      "after_sha256": "ebab3e73fa8d038eb33c4d94c101a22b88873f622c4367b35fe72850dfa9fa39"
+    },
+    {
+      "path": "lib/include/oclero/qlementine/utils/QtCompat.hpp",
+      "before_sha256": null,
+      "after_sha256": "0c0462d4c3561d854b0361747f49abd6187a55334420d6e2952582f22f7245d4"
+    },
+    {
+      "path": "lib/include/oclero/qlementine/utils/StyleUtils.hpp",
+      "before_sha256": "a34424934bc10cb86b7b3d925a93a192718d16a5a00e8433f92566c1cee2d137",
+      "after_sha256": "aaa003f5fc59c46d2ee2a86a20968ad49e207e1ce84f9f0da5e878bb702dd9de"
+    },
+    {
+      "path": "lib/include/oclero/qlementine/widgets/AboutDialog.hpp",
+      "before_sha256": "11064bdf79fc463638b4b549eb9327beff71a073942eb59dfc4168e9a8ff831e",
+      "after_sha256": "78fc0bb74eb4a474d929c8a78c0bffe9da3f379f6ef72f09333e317554c99bf0"
+    },
+    {
+      "path": "lib/include/oclero/qlementine/widgets/AbstractItemListWidget.hpp",
+      "before_sha256": "17c2f13b51187123fadbe6a1ee7f5f0730a121c0c43c3c4846d52b06d92c97bb",
+      "after_sha256": "19db6705316d3acb24bd1b5ace5b29f8fca4b40d4839a6de96e76fea6dcd175c"
+    },
+    {
+      "path": "lib/include/oclero/qlementine/widgets/Popover.hpp",
+      "before_sha256": "f2dcb414fad10eb0b372d88c70dd71d3edd5950e80df941cb82fd8873ad3e161",
+      "after_sha256": "798b350df95e8e4b43fc3c8dc1717692f65ab6696752095a2cd2992a8f736291"
+    },
+    {
+      "path": "lib/include/oclero/qlementine/widgets/Switch.hpp",
+      "before_sha256": "1444d94cf300384c61771afc053b1ef195939416e7e85fa768b83a6bcfbf4af2",
+      "after_sha256": "7c47b8df908afb12f4beaa39a3b236245d5a63150141e54b8924c63ddb77d316"
+    },
+    {
+      "path": "lib/src/animation/WidgetAnimationManager.cpp",
+      "before_sha256": "cd6a1b6cd03dae8106f0b0d2c48f578bc4ec2cb0328748b0274c23a614a69950",
+      "after_sha256": "5803980a00bca9e68c6c37a40580d818a89d137c76802dfbf5b71dfe2adac8dc"
+    },
+    {
+      "path": "lib/src/resources/ResourceInitialization.cpp",
+      "before_sha256": "df8c2122d721481e35acf4d3121e38487456fc2f2dd545865a1de278399c334c",
+      "after_sha256": "87b59e126f1eb44ca2c069512550389fd6b7abdb134a6dd6bf649e42a7c2b2cf"
+    },
+    {
+      "path": "lib/src/style/Delegates.cpp",
+      "before_sha256": "9ab0a4f0923589e2e579afd3e7649586bbaac94445825aeb0172da8f62c0cad9",
+      "after_sha256": "eb78a0e8d0c5e6938b3198e003ee832f446be34ebce066a32b09aeba494262ff"
+    },
+    {
+      "path": "lib/src/style/PolishUtils.cpp",
+      "before_sha256": "5946099c25b571762b0a1f5652e998b5b3c051d45a130118f5e44bf2a33cb1e4",
+      "after_sha256": "f03954cd3097324dc6211cf28403b93dae3f9ec41a12699b14dadd36e3a68d71"
+    },
+    {
+      "path": "lib/src/style/PolishUtils.hpp",
+      "before_sha256": "6890c510757e10b4e4156eba519d3c6310bbb5c914662c214cd6cfbe084e7663",
+      "after_sha256": "535ccaf65f29b4ef877eba0a9407e83282bf741df0f549786c1f92afce45b649"
+    },
+    {
+      "path": "lib/src/style/PolishedWidgetRegistry.cpp",
+      "before_sha256": "d0110b0c25719ad2ba42a21f2f2f1d9a7fd6da7c590328ded0e56f996b9af139",
+      "after_sha256": "41af360bd9dfd5fee17b93c6dc70f2ae7b12e196b887f002418243b3b6684216"
+    },
+    {
+      "path": "lib/src/style/PolishedWidgetRegistry.hpp",
+      "before_sha256": "3732af62d61f05fd1df6d28f4647bc6a8adaf4881b0fd0fb021abad2cc7f0d31",
+      "after_sha256": "18aaa6c594db527be33dff3f48a0ce327c90c556919b73b50670cdcc5c289583"
+    },
+    {
+      "path": "lib/src/style/QlementineStyle.cpp",
+      "before_sha256": "9178c206bc256abadae6a27da1d40400a2518d119da26cbf699b3f0134130570",
+      "after_sha256": "1b1160a403a99fb7aa4cefd02ed62d94f629211edf52314ace1c6616aa97f44b"
+    },
+    {
+      "path": "lib/src/style/Theme.cpp",
+      "before_sha256": "a4d359c02463a48fd14d0f67b716d358f64e22561326fb1702c85c39b7f48598",
+      "after_sha256": "fc35355ff36af4ce5986544ecc7ef2645bda1c3a1ac455ef9afc4ce5d7476896"
+    },
+    {
+      "path": "lib/src/style/eventFilters/ComboboxItemViewFilter.hpp",
+      "before_sha256": "8b6a5c75e7a5cc9045fec144cd232c80854bdf922c6368b650d2d6879be99142",
+      "after_sha256": "a57f51cc8f86dd391ef1f9de67dc15e35c13da4ea9adcde2046fcf3a32168cb3"
+    },
+    {
+      "path": "lib/src/style/eventFilters/MenuEventFilter.hpp",
+      "before_sha256": "da366d76771fcd3077b85fb5e74a8f80b57faa6715691d6b4ee32b7bcfe12199",
+      "after_sha256": "4cfe1d75ce3ffc2514aceeb8cdab65f874df3544f473c73c8af552f24396fd3c"
+    },
+    {
+      "path": "lib/src/style/eventFilters/WidgetWithFocusFrameEventFilter.hpp",
+      "before_sha256": "cdc42656c493be498792bdd753ee2bdc8c55550adb21548e415eb3540e388ab9",
+      "after_sha256": "2f0e49127c53dc6ac2a677b9e3fb494ef03f24ab1514add24b673f78c446cd81"
+    },
+    {
+      "path": "lib/src/tools/ThemeEditor.cpp",
+      "before_sha256": "9f3cb9c105831f941e24507f2908d1f94a55d11e06765ecd871df12cab8c3bdc",
+      "after_sha256": "ef46234d691706ca01e3e9bbcd88825d5aafa83034fe0a77c3da7cc680a91588"
+    },
+    {
+      "path": "lib/src/utils/BadgeUtils.cpp",
+      "before_sha256": "03260141ff6f0ab9736a6135038d674c1c56ab31538b144be8e0eb469a46e52f",
+      "after_sha256": "4d4a9629925d33dbf1b0da32032367fc043f5c0af76c3322e8ee6d46e0d35f61"
+    },
+    {
+      "path": "lib/src/utils/ColorUtils.cpp",
+      "before_sha256": "cad43c052a086ab57bd520fd63287df63965e4536b6dfaf41f39567a1fb4bb95",
+      "after_sha256": "400049db3aa5bbf2a35d677f5582405a66376a980c252d1c3e50ae97e8fcdbcb"
+    },
+    {
+      "path": "lib/src/utils/GeometryUtils.cpp",
+      "before_sha256": "12a41d71c2a6f94cf776d2d8c076143c916f0a7f8c65a8fc91bd79d89c55626b",
+      "after_sha256": "522931082ccacc44b58eaed9c52bbacdf13dddf82b39628d77159e9740425c23"
+    },
+    {
+      "path": "lib/src/utils/MenuUtils.cpp",
+      "before_sha256": "f161aa1af7c959289c04e8de0eb69eeb05582ff01053b5bcae32ff8292bbeb18",
+      "after_sha256": "9675c9b29aa9c02cd6552de344104bf73fd2883da45e21681248a42e309516bf"
+    },
+    {
+      "path": "lib/src/utils/PrimitiveUtils.cpp",
+      "before_sha256": "959f215362abe45f8a2e119e105dcb263f7fc740b8d39a7d88cbc1dda2766ac3",
+      "after_sha256": "8248f061b40e43456d005ebf91bdd70a13da7e068f5f5f08ef22113962e6750a"
+    },
+    {
+      "path": "lib/src/utils/StyleUtils.cpp",
+      "before_sha256": "519224281436f8c3f367befb8f1da98cf13740a0a2bee52da391ca7e515eaad2",
+      "after_sha256": "c18359bcbf42ee84f3911f055f70c955afe2e15016f7b2e469725feab6d3925b"
+    },
+    {
+      "path": "lib/src/utils/WidgetUtils.cpp",
+      "before_sha256": "1589e9f9c8abe49f03ec8446f1d5d983edb3108a34d260845ea778ba9ab32a42",
+      "after_sha256": "d9207428f31813431c2d0902f1c5fd8036e5f5000d6bbab56205c1c8fd4d8c6a"
+    },
+    {
+      "path": "lib/src/widgets/AboutDialog.cpp",
+      "before_sha256": "1750ac4250d00f6e3829fcc2e3fdc897d9b79e22376959b410c3f71113e72660",
+      "after_sha256": "5567bafe8175e3270c24b6e4237e656b4f1592ca2d9c2098f685340243390bcb"
+    },
+    {
+      "path": "lib/src/widgets/AbstractItemListWidget.cpp",
+      "before_sha256": "a9ce9b981ea7e1153567acbcee854a50eb3b413a7c78fc67bf601991314838f7",
+      "after_sha256": "d1fe30e5b2135c89758f2172decc5e50e0c23242ede59804991e6342a1603935"
+    },
+    {
+      "path": "lib/src/widgets/Popover.cpp",
+      "before_sha256": "dfc77522ad55963d36b7bbd79506b3e49655ce641c61a4ce6d0e67fa38ba9220",
+      "after_sha256": "26768331fae251cb15311c412a1723412f4f0870e164cf69408d7f4db8f91c8d"
+    },
+    {
+      "path": "lib/src/widgets/Switch.cpp",
+      "before_sha256": "769091bb8ae76ecf3cc4b5e0acf14bf55300621301a5cc0e80c38e5d95e76c13",
+      "after_sha256": "74a09570290070cd241c244b00bdabfd2175eb1eae7ac37607ea95364ea8bdc0"
+    }
+  ]
+}

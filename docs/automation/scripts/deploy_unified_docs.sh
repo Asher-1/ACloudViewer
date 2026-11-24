@@ -587,6 +587,21 @@ repair_archived_formulas
 for api_dir in "${DOC_ROOT}"/*/cpp_api/api; do
     [ -d "$api_dir" ] || continue
     python3 "$(dirname "${BASH_SOURCE[0]}")/install_qcp_doc_images.py" --api-root "$api_dir"
+    # Historical HTML already loads doxygen.css. Refresh the shared header
+    # layout through that stylesheet without rewriting archived API pages.
+    python3 - "$api_dir" "$(dirname "${BASH_SOURCE[0]}")/../../source/_static/css/doxygen_overrides.css" <<'PYSTYLE'
+from pathlib import Path
+import shutil
+import sys
+api, source = map(Path, sys.argv[1:])
+stylesheet = api / 'doxygen.css'
+if stylesheet.is_file():
+    shutil.copyfile(source, api / source.name)
+    content = stylesheet.read_text(encoding='utf-8')
+    directive = '@import url("doxygen_overrides.css");\n'
+    if directive not in content:
+        stylesheet.write_text(directive + content, encoding='utf-8')
+PYSTYLE
 done
 propagate_version_switcher "$LATEST_VERSION"
 fix_legacy_selector_markup

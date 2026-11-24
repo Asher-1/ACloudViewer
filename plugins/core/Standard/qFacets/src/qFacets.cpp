@@ -102,6 +102,7 @@ QList<QAction*> qFacets::getActions() {
     // actions
     if (!m_doFuseKdTreeCells) {
         m_doFuseKdTreeCells = new QAction(tr("Extract facets (Kd-tree)"), this);
+        m_doFuseKdTreeCells->setObjectName("extractKdTree");
         m_doFuseKdTreeCells->setToolTip(
                 tr("Detect planar facets by fusing Kd-tree cells"));
         m_doFuseKdTreeCells->setIcon(QIcon(
@@ -114,6 +115,7 @@ QList<QAction*> qFacets::getActions() {
     if (!m_fastMarchingExtraction) {
         m_fastMarchingExtraction =
                 new QAction(tr("Extract facets (Fast Marching)"), this);
+        m_fastMarchingExtraction->setObjectName("extractFastMarching");
         m_fastMarchingExtraction->setToolTip(
                 tr("Detect planar facets with Fast Marching"));
         m_fastMarchingExtraction->setIcon(QIcon(
@@ -125,6 +127,7 @@ QList<QAction*> qFacets::getActions() {
 
     if (!m_doExportFacets) {
         m_doExportFacets = new QAction(tr("Export facets (SHP)"), this);
+        m_doExportFacets->setObjectName("exportFacets");
         m_doExportFacets->setToolTip(
                 tr("Exports one or several facets to a shapefile"));
         m_doExportFacets->setIcon(QIcon(
@@ -137,6 +140,7 @@ QList<QAction*> qFacets::getActions() {
     if (!m_doExportFacetsInfo) {
         m_doExportFacetsInfo =
                 new QAction(tr("Export facets info (CSV)"), this);
+        m_doExportFacetsInfo->setObjectName("exportFacetInfo");
         m_doExportFacetsInfo->setToolTip(
                 tr("Exports various information on a set of facets (ASCII CSV "
                    "file)"));
@@ -150,6 +154,7 @@ QList<QAction*> qFacets::getActions() {
     if (!m_doClassifyFacetsByAngle) {
         m_doClassifyFacetsByAngle =
                 new QAction(tr("Classify facets by orientation"), this);
+        m_doClassifyFacetsByAngle->setObjectName("classifyOrientation");
         m_doClassifyFacetsByAngle->setToolTip(
                 tr("Classifies facets based on their orienation (dip & dip "
                    "direction)"));
@@ -162,6 +167,7 @@ QList<QAction*> qFacets::getActions() {
 
     if (!m_doShowStereogram) {
         m_doShowStereogram = new QAction(tr("Show stereogram"), this);
+        m_doShowStereogram->setObjectName("showStereogram");
         m_doShowStereogram->setToolTip(
                 tr("Computes and displays a stereogram (+ interactive "
                    "filtering)"));

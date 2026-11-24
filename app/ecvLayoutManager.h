@@ -48,13 +48,6 @@ public:  // Layout operations
      * based on screen resolution */
     void setupDefaultLayout();
 
-    //! Reposition the unified plugin toolbar to the end of the first row
-    void repositionUnifiedPluginToolbar();
-
-    //! Move the AI Core toolbar to the top row. A saved window state can
-    //! still record the old right-rail placement.
-    void placeAICoreToolbarOnTop();
-
     //! Hide additional plugin toolbars that have been merged into
     //! UnifiedPluginToolbar
     void hideAdditionalPluginToolbars();

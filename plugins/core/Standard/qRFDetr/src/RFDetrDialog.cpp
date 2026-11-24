@@ -133,10 +133,6 @@ void RFDetrDialog::setupUi() {
     m_classFilterToggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     m_classFilterToggle->setText(tr("Class Filter (optional)"));
     m_classFilterToggle->setCursor(Qt::PointingHandCursor);
-    m_classFilterToggle->setStyleSheet(
-            "QToolButton { border: none; font-weight: bold; padding: 4px 6px; "
-            "  border-radius: 3px; color: palette(text); }"
-            "QToolButton:hover { background: palette(midlight); }");
     imageLayout->addWidget(m_classFilterToggle, 0, Qt::AlignLeft);
 
     m_classFilterContent = new QWidget(m_imageTab);

@@ -5,7 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include <cstdio>
+#include <gtest/gtest.h>
+
 #include <cstring>
 #include <set>
 #include <string>
@@ -13,62 +14,57 @@
 #include "aicore/model_catalog_capi.h"
 
 namespace {
+class SharedModelCatalog : public testing::TestWithParam<aicore_model_family> {
+};
 
-int failures = 0;
-
-void expect(bool condition, const char* message) {
-    if (!condition) {
-        std::fprintf(stderr, "FAIL: %s\n", message);
-        ++failures;
+TEST_P(SharedModelCatalog, PublishedRowsHaveUniquePinnedHttpsAssets) {
+    const auto family = GetParam();
+    const int count = aicore_model_count(family);
+    ASSERT_GT(count, 0);
+    std::set<std::string> filenames;
+    for (int i = 0; i < count; ++i) {
+        SCOPED_TRACE(i);
+        const auto* entry = aicore_model_at(family, i);
+        ASSERT_NE(entry, nullptr);
+        ASSERT_NE(entry->filename, nullptr);
+        EXPECT_NE(*entry->filename, '\0');
+        ASSERT_NE(entry->display_name, nullptr);
+        EXPECT_NE(*entry->display_name, '\0');
+        ASSERT_NE(entry->download_url, nullptr);
+        EXPECT_EQ(std::strncmp(entry->download_url, "https://", 8), 0);
+        ASSERT_NE(entry->sha256, nullptr);
+        EXPECT_EQ(std::strlen(entry->sha256), 64u);
+        EXPECT_TRUE(filenames.insert(entry->filename).second);
     }
 }
 
+TEST_P(SharedModelCatalog, RejectsInvalidIndicesAndLooksUpFirstFilename) {
+    const auto family = GetParam();
+    const int count = aicore_model_count(family);
+    ASSERT_GT(count, 0);
+    EXPECT_EQ(aicore_model_at(family, -1), nullptr);
+    EXPECT_EQ(aicore_model_at(family, count), nullptr);
+    const auto* first = aicore_model_at(family, 0);
+    ASSERT_NE(first, nullptr);
+    ASSERT_NE(first->filename, nullptr);
+    const std::string filename = first->filename;
+    const auto* found = aicore_model_by_filename(family, filename.c_str());
+    ASSERT_NE(found, nullptr);
+    ASSERT_NE(found->filename, nullptr);
+    EXPECT_EQ(filename, found->filename);
+}
+
+INSTANTIATE_TEST_SUITE_P(Families,
+                         SharedModelCatalog,
+                         testing::Values(AICORE_MODEL_FAMILY_DEPTH,
+                                         AICORE_MODEL_FAMILY_DEEPLSD,
+                                         AICORE_MODEL_FAMILY_LIGHTGLUE,
+                                         AICORE_MODEL_FAMILY_GAUSSIAN,
+                                         AICORE_MODEL_FAMILY_ALIKED));
+
+TEST(SharedModelCatalogLookup, RejectsUnknownFilename) {
+    EXPECT_EQ(
+            aicore_model_by_filename(AICORE_MODEL_FAMILY_DEPTH, "missing.gguf"),
+            nullptr);
+}
 }  // namespace
-
-int main() {
-    const aicore_model_family families[] = {
-            AICORE_MODEL_FAMILY_DEPTH, AICORE_MODEL_FAMILY_DEEPLSD,
-            AICORE_MODEL_FAMILY_LIGHTGLUE, AICORE_MODEL_FAMILY_GAUSSIAN,
-            AICORE_MODEL_FAMILY_ALIKED};
-    for (aicore_model_family family : families) {
-        const int count = aicore_model_count(family);
-        expect(count > 0, "catalog family must not be empty");
-        std::set<std::string> filenames;
-        for (int i = 0; i < count; ++i) {
-            const aicore_model_entry* entry = aicore_model_at(family, i);
-            expect(entry != nullptr, "in-range catalog lookup must succeed");
-            if (!entry) continue;
-            expect(entry->filename && *entry->filename,
-                   "catalog filename must be non-empty");
-            expect(entry->display_name && *entry->display_name,
-                   "catalog display name must be non-empty");
-            expect(entry->download_url && std::strncmp(entry->download_url,
-                                                       "https://", 8) == 0,
-                   "catalog URL must use HTTPS");
-            expect(entry->sha256 && std::strlen(entry->sha256) == 64,
-                   "published catalog row must expose a pinned SHA-256");
-            if (entry->filename) {
-                expect(filenames.insert(entry->filename).second,
-                       "catalog filenames must be unique within a family");
-            }
-        }
-        expect(aicore_model_at(family, -1) == nullptr,
-               "negative catalog index must fail");
-        expect(aicore_model_at(family, count) == nullptr,
-               "past-end catalog index must fail");
-        const aicore_model_entry* first = aicore_model_at(family, 0);
-        const std::string firstFilename = first ? first->filename : "";
-        const aicore_model_entry* found =
-                aicore_model_by_filename(family, firstFilename.c_str());
-        expect(found && firstFilename == found->filename,
-               "filename lookup must return the requested row");
-    }
-    expect(aicore_model_by_filename(AICORE_MODEL_FAMILY_DEPTH,
-                                    "missing.gguf") == nullptr,
-           "unknown filename must fail");
-    if (failures == 0) {
-        std::printf("test_shared_model_catalog: all checks passed\n");
-        return 0;
-    }
-    return 1;
-}

@@ -20,6 +20,7 @@ class QCompleter;
 class QLabel;
 class QMenu;
 class QPlainTextEdit;
+class QProcess;
 class QPushButton;
 class QSplitter;
 class QTableWidget;
@@ -56,7 +57,7 @@ private:
 
     void setupCompleter();
     void insertCompletion(const QString& completion);
-    void inspectVariables();
+    void inspectVariables(const QString& output);
     void highlightErrorLine(const QString& stderrText);
     void clearErrorHighlights();
 
@@ -80,6 +81,7 @@ private:
     ecvPythonSyntaxHighlighter* m_highlighter = nullptr;
     QCompleter* m_completer = nullptr;
     ccHObject* m_entity = nullptr;
+    QProcess* m_process = nullptr;
     QString m_lastExportPath;
     QString m_lastImagePath;
     QString m_pythonBin;

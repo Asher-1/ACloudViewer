@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include "tasks/openpcdet/model_catalog.h"
+
 #include <cstring>
 #include <string>
 #include <vector>
@@ -161,3 +163,82 @@ aicore_openpcdet_model_by_filename(const char* filename) {
 AICORE_CAPI const char* aicore_openpcdet_model_download_base(void) {
     return kDownloadBase;
 }
+
+namespace openpcdet {
+
+namespace {
+
+// Per-checkpoint visualization defaults (score / rotated-NMS IoU). Grounding
+// per head family, referenced against the upstream OpenPCDet POST_PROCESSING
+// config (the mAP-optimal evaluation thresholds, also declared in the GGUF and
+// preserved by read_model_info / the accuracy probe):
+//  - NMS keeps the upstream mAP-optimal value where it already deduplicates
+//    (KITTI dense-anchor and SECOND-IoU 0.01, other two-stage / VoxelRCNN
+//    final 0.1). nuScenes heads tighten the upstream 0.2 to 0.1-0.15 because
+//    the looser eval NMS leaves visible overlaps on one object (verified on
+//    the test frames).
+//  - BEVFusion/TransFusion declare no IoU NMS (peak-picking only) and VoxelNeXt
+//    uses per-class center_nms_thresholds, so their NMS slider was inert; the
+//    value here drives a new final IoU-NMS stage (0.1 / 0.15) to remove the
+//    duplicate peaks.
+//  - KITTI keeps the official mAP-optimal score verbatim (0.1; VoxelRCNN's
+//    upstream SCORE_THRESH is itself 0.3) so its defaults match
+//    read_model_info. CenterPoint also keeps 0.1 for pedestrian recall; the
+//    remaining nuScenes heads use a higher visualization precision score
+//    (0.2) for a clean first-open view. The official recall thresholds (0.1,
+//    BEVFusion/TransFusion 0.0) remain available via read_model_info.
+struct VisRow {
+    const char* stem;
+    float score;
+    float nms;
+};
+
+constexpr VisRow kVisDefaults[] = {
+        // KITTI rows mirror the official GGUF / upstream POST_PROCESSING
+        // values verbatim (score 0.1, dense-anchor + SECOND-IoU NMS 0.01).
+        {"kitti_pointpillar", 0.10f, 0.01f},
+        {"second_7862", 0.10f, 0.01f},
+        {"kitti_caddn", 0.10f, 0.01f},
+        {"kitti_second_iou", 0.10f, 0.01f},
+        // Other two-stage heads: official score 0.1, final NMS 0.1 (the
+        // 0.7/0.8 values in their configs are intermediate RoI-proposal NMS).
+        {"kitti_pvrcnn", 0.10f, 0.10f},
+        {"kitti_parta2_anchor", 0.10f, 0.10f},
+        {"kitti_pointrcnn", 0.10f, 0.10f},
+        {"kitti_pointrcnn_iou", 0.10f, 0.10f},
+        // VoxelRCNN's upstream SCORE_THRESH is itself 0.3.
+        {"kitti_voxelrcnn_car", 0.30f, 0.10f},
+        {"kitti_voxelrcnn_focal_multimodal", 0.30f, 0.10f},
+        {"nuscenes_pointpillar_multihead", 0.20f, 0.15f},
+        {"nuscenes_second_multihead", 0.20f, 0.15f},
+        // CenterPoint keeps the official 0.1 score: pedestrian peaks are
+        // low-confidence and a 0.2 cutoff hid most of them on the test frame.
+        // NMS stays 0.1 (tighter than the official 0.2) to curb duplicates.
+        {"nuscenes_dynpillar_centerpoint", 0.10f, 0.10f},
+        {"nuscenes_centerpoint_voxel0075", 0.10f, 0.10f},
+        {"nuscenes_voxelnext", 0.20f, 0.15f},
+        {"nuscenes_voxelnext_doubleflip", 0.20f, 0.15f},
+        {"nuscenes_transfusion_lidar", 0.20f, 0.10f},
+        {"nuscenes_bevfusion", 0.20f, 0.10f},
+};
+
+}  // namespace
+
+bool openpcdet_visualization_defaults(const std::string& gguf_filename,
+                                      OpenPCDetVisDefaults* out) {
+    if (out == nullptr) return false;
+    for (const VisRow& row : kVisDefaults) {
+        for (const char* quant : kQuantSuffixes) {
+            const std::string filename =
+                    std::string(row.stem) + "." + quant + ".gguf";
+            if (gguf_filename == filename) {
+                out->score_thresh = row.score;
+                out->nms_thresh = row.nms;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+}  // namespace openpcdet

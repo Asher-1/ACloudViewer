@@ -219,6 +219,56 @@ def display_settings():
                  '\n'.join(body), defs=defs)
 
 
+def rpc_interface():
+    """RPC-01: local client/server request and reply; plugin-owned artwork.
+
+    JsonRPCPlugin::getActions/triggered toggles the WebSocket JSON-RPC server.
+    A workstation and server with opposing arrows communicate that contract;
+    neither a document-save glyph nor a cloud implies the actual operation.
+    """
+    from .iconlabels import label_path
+
+    defs = '\n'.join([
+        P.linear('rpcScreen', [(0, P.BLUE_PALE), (1, P.BLUE_MID)]),
+        P.linear('rpcServer', [(0, '#FAFAF6'), (1, P.GREY)]),
+        P.linear('rpcRequest', [(0, P.GREEN_LT), (1, P.GREEN)]),
+    ])
+    body = [
+        '<title>RPC-01 — JSON-RPC WebSocket client/server request and reply</title>',
+        # Left: external automation client, a recognisable workstation.
+        P.fill('M 4.5 12.5 H 6.6 V 15.4 H 8.6 V 16.5 H 2.5 V 15.4 H 4.5 Z',
+               P.GREY_MID,
+               sw=0.65),
+        P.rect(1.2, 4.2, 8.3, 9.0, 'url(#rpcServer)', r=0.75),
+        P.rect(2.5, 5.6, 5.7, 5.8, 'url(#rpcScreen)', r=0.25),
+        # Right: application RPC endpoint, neutral case + two service slots.
+        P.fill('M 16.2 3.1 L 18.2 1.8 L 22.8 3.0 V 14.6 L 21 16.0 H 16.2 Z',
+               P.GREY_MID,
+               sw=0.7),
+        P.rect(16.2, 3.1, 4.8, 12.9, 'url(#rpcServer)', r=0.45),
+        P.stroke('M 17.4 5.7 H 19.8 M 17.4 8.2 H 19.8',
+                 colour=P.GREY_DK,
+                 sw=0.8),
+        P.circle(18.6, 13.5, 0.8, P.GREEN),
+        # Request to the service, response back to the client. Filled arrows
+        # remain distinct at toolbar scale and use the shared ParaView palette.
+        P.fill('M 9.2 5.0 H 12.4 V 3.4 L 16.1 6.5 L 12.4 9.6 V 8.0 H 9.2 Z',
+               'url(#rpcRequest)',
+               sw=0.6),
+        P.fill(
+            'M 15.5 10.2 H 12.4 V 8.9 L 8.9 11.8 L 12.4 14.7 V 13.3 H 15.5 Z',
+            P.GREEN,
+            sw=0.6),
+        # Outlined label: no runtime font dependency, deliberately integrated
+        # into the base rather than a separate floating text tile.
+        P.rect(1.5, 17.0, 21.0, 6.2, P.BLUE_PALE, r=0.7),
+        label_path('RPC', x=3.2, y=22.1, width=17.6, height=4.25),
+    ]
+    return P.svg('\n'.join(body),
+                 defs=defs).replace('width="24" height="24"',
+                                    'width="128" height="128"', 1)
+
+
 ICONS = {
     'close.png': ('window/windowClose.svg', close_window, '关闭窗口 · 电源符号'),
     'max.png': ('window/windowMaximize.svg', maximize_window, '最大化窗口'),

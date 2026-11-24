@@ -95,9 +95,31 @@ int main(int argc, char** argv) {
     }
     const int32_t n_points = static_cast<int32_t>(points.size() / point_dim);
 
+    // Pin the official evaluation behavior so the upstream accuracy gate
+    // (mean BEV IoU >= 0.999) stays independent of the per-checkpoint
+    // visualization defaults: score 0.3 (the legacy product default the
+    // references were captured at), GGUF max boxes, and the GGUF NMS — except
+    // the heads that gained an optional final IoU-NMS stage
+    // (TransFusion/BEVFusion/VoxelNeXt), where NMS is pinned to 0 to preserve
+    // their original (no final IoU NMS) post-processing.
+    aicore_openpcdet_model_info minfo{};
+    minfo.struct_size = sizeof(minfo);
+    minfo.abi_version = AICORE_OPENPCDET_MODEL_INFO_ABI_VERSION;
+    if (aicore_openpcdet_read_model_info(argv[1], &minfo, nullptr) != 0) {
+        std::fprintf(stderr, "cannot read model info for threshold pinning\n");
+        return 2;
+    }
+    const bool final_nms_head =
+            std::strstr(minfo.arch, "transfusion") != nullptr ||
+            std::strstr(minfo.arch, "bevfusion") != nullptr ||
+            std::strstr(minfo.arch, "voxelnext") != nullptr;
     aicore_openpcdet_options* opts = aicore_openpcdet_options_new();
     aicore_openpcdet_options_set_device(opts, device);
     aicore_openpcdet_options_set_threads(opts, threads);
+    aicore_openpcdet_options_set_score_thresh(opts, 0.3f);
+    aicore_openpcdet_options_set_nms_thresh(
+            opts, final_nms_head ? 0.0f : minfo.nms_thresh);
+    aicore_openpcdet_options_set_max_boxes(opts, minfo.max_boxes);
     aicore_openpcdet_ctx* ctx = aicore_openpcdet_load_opts(argv[1], opts);
     aicore_openpcdet_options_free(opts);
     if (ctx == nullptr || !aicore_openpcdet_is_ready(ctx)) {

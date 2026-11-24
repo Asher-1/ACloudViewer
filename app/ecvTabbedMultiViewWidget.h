@@ -167,6 +167,7 @@ private:
     void setupTabButtons(int tabIndex);
     int tabButtonIndex(QWidget* button, QTabBar::ButtonPosition pos) const;
     void restoreTabWidgetToLayout();
+    void addFullScreenExitButton(QWidget* host);
     void refreshLayoutAfterFullScreen();
 
     static constexpr int TAB_BUTTON_PIXMAP_SIZE = 16;

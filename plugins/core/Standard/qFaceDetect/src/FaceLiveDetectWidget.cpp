@@ -9,6 +9,7 @@
 
 #include <QtCompat.h>
 #include <cvFileDialog.h>
+#include <ecvAICoreUiHelper.h>
 
 #include <QCoreApplication>
 #include <QDateTime>
@@ -302,16 +303,9 @@ void FaceLiveDetectWidget::setupUi() {
     main->addWidget(settingsGroup);
 
     // Sample-data button (independent row; visible in video-file mode).
-    m_testDataBtn = new QPushButton(tr("\U0001f9ea  Try sample data"), this);
+    m_testDataBtn = ecvAICoreUi::makeSampleDataBtn(this);
     m_testDataBtn->setToolTip(
             tr("Download FriendsFaces sample video and load it here."));
-    // Prominent teal accent — consistent with qFreeSplatter / batch tab.
-    m_testDataBtn->setStyleSheet(
-            "QPushButton { background: #00897b; color: white; font-weight: "
-            "bold; border: none; border-radius: 4px; padding: 5px 12px; }"
-            "QPushButton:hover { background: #00796b; }"
-            "QPushButton:pressed { background: #00695c; }"
-            "QPushButton:disabled { background: #b2dfdb; color: #e0f2f1; }");
     connect(m_testDataBtn, &QPushButton::clicked, this,
             &FaceLiveDetectWidget::testDataRequested);
     m_testDataBtn->setVisible(false);  // shown when video-file source active

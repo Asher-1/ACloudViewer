@@ -9,13 +9,13 @@ target_include_directories(test_qopenpcdet_dialog PRIVATE ../include)
 target_compile_definitions(test_qopenpcdet_dialog PRIVATE AICore_ENABLED)
 target_link_libraries(test_qopenpcdet_dialog PRIVATE AICore CVPluginAPI
     CVCoreLib CV_DB_LIB CV_IO_LIB Qt::Core Qt::Gui Qt::Widgets
-    Qt::Network Threads::Threads)
+    Qt::Network Threads::Threads gtest)
 if(NOT MSVC)
     target_compile_options(test_qopenpcdet_dialog PRIVATE -fPIC)
     target_link_options(test_qopenpcdet_dialog PRIVATE -no-pie)
 endif()
 cloudviewer_set_bin_runtime_output_directory(test_qopenpcdet_dialog)
-add_test(NAME test_qopenpcdet_dialog COMMAND test_qopenpcdet_dialog)
+cloudviewer_add_test(NAME test_qopenpcdet_dialog COMMAND test_qopenpcdet_dialog)
 cloudviewer_set_plugin_test_env_offscreen(test_qopenpcdet_dialog)
 set_tests_properties(test_qopenpcdet_dialog PROPERTIES LABELS "capi;openpcdet;cvpluginapi")
 
@@ -62,5 +62,5 @@ if(NOT MSVC)
 endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_qopenpcdet_helpers)
-add_test(NAME test_qopenpcdet_helpers COMMAND test_qopenpcdet_helpers)
+cloudviewer_add_test(NAME test_qopenpcdet_helpers COMMAND test_qopenpcdet_helpers)
 cloudviewer_set_plugin_test_env(test_qopenpcdet_helpers)

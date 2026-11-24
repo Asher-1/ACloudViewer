@@ -5,7 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include <cstdio>
+#include <gtest/gtest.h>
+
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -13,75 +15,50 @@
 #include "common/ggml_backend_utils.hpp"
 #include "tasks/facedetect/backend.hpp"
 
-namespace {
-
-int Fail(const char* message) {
-    std::fprintf(stderr, "backend registry: %s\n", message);
-    return 1;
+TEST(BackendRegistry, CompatibleSessionsShareBackendAndRetainPeerOwnership) {
+    std::string error;
+    auto first = aicore::runtime::acquire_backend_lease("cpu", 1, &error);
+    ASSERT_TRUE(first) << error;
+    EXPECT_EQ(ggml_common::flash_attention_sequence_limit(first.handle()),
+              INT64_MAX);
+    auto second = aicore::runtime::acquire_backend_lease("cpu", 1, &error);
+    ASSERT_TRUE(second) << error;
+    EXPECT_EQ(first.handle(), second.handle());
+    fd::Backend face_session(1, "cpu");
+    EXPECT_EQ(face_session.handle(), second.handle());
+    first.reset();
+    ASSERT_TRUE(second);
+    ASSERT_NE(second.handle(), nullptr);
+    const auto lock = second.lock();
+    EXPECT_TRUE(lock.owns_lock());
 }
 
-}  // namespace
-
-int main() {
+TEST(BackendRegistry,
+     ThreadConfigurationsRemainDistinctAndGroupLocksDeduplicate) {
     std::string error;
-    aicore::runtime::BackendLease first =
-            aicore::runtime::acquire_backend_lease("cpu", 1, &error);
-    if (!first)
-        return Fail(error.empty() ? "first lease failed" : error.c_str());
-
-    if (ggml_common::flash_attention_sequence_limit(first.handle()) !=
-        INT64_MAX) {
-        return Fail("CPU backend incorrectly inherits the GPU attention limit");
-    }
-
-    aicore::runtime::BackendLease second =
-            aicore::runtime::acquire_backend_lease("cpu", 1, &error);
-    if (!second)
-        return Fail(error.empty() ? "second lease failed" : error.c_str());
-    if (first.handle() != second.handle()) {
-        return Fail("compatible sessions did not share a backend");
-    }
-
-    fd::Backend face_session(1, "cpu");
-    if (face_session.handle() != second.handle()) {
-        return Fail("FaceDetect session did not share the physical backend");
-    }
-
-    first.reset();
-    if (!second || second.handle() == nullptr) {
-        return Fail("remaining lease lost its backend after peer release");
-    }
-    const auto lock = second.lock();
-    if (!lock.owns_lock())
-        return Fail("remaining lease could not lock backend");
-
-    aicore::runtime::BackendLease different_threads =
-            aicore::runtime::acquire_backend_lease("cpu", 2, &error);
-    if (!different_threads) {
-        return Fail(error.empty() ? "different-thread lease failed"
-                                  : error.c_str());
-    }
-    if (second.handle() == different_threads.handle()) {
-        return Fail("CPU thread configurations shared one backend");
-    }
-
-    aicore::runtime::BackendLease parallel_first =
-            aicore::runtime::acquire_parallel_backend_lease("cpu", 1, &error);
-    aicore::runtime::BackendLease parallel_second =
-            aicore::runtime::acquire_parallel_backend_lease("cpu", 1, &error);
-    if (!parallel_first || !parallel_second) {
-        return Fail(error.empty() ? "parallel CPU lease failed"
-                                  : error.c_str());
-    }
-    if (parallel_first.handle() == parallel_second.handle() ||
-        parallel_first.handle() == second.handle()) {
-        return Fail("parallel CPU workers shared a serialized backend");
-    }
-    const std::vector<aicore::runtime::BackendLease> group = {
-            second, different_threads, second};
+    auto first = aicore::runtime::acquire_backend_lease("cpu", 1, &error);
+    ASSERT_TRUE(first) << error;
+    const auto lock = first.lock();
+    ASSERT_TRUE(lock.owns_lock());
+    auto second = aicore::runtime::acquire_backend_lease("cpu", 2, &error);
+    ASSERT_TRUE(second) << error;
+    EXPECT_NE(first.handle(), second.handle());
+    const std::vector<aicore::runtime::BackendLease> group = {first, second,
+                                                              first};
     const auto group_lock = aicore::runtime::lock_backend_leases(group);
-    if (!group_lock.owns_lock()) {
-        return Fail("multi-backend lease group could not lock");
-    }
-    return 0;
+    EXPECT_TRUE(group_lock.owns_lock());
+}
+
+TEST(BackendRegistry, ParallelWorkersDoNotShareSerializedBackends) {
+    std::string error;
+    auto shared = aicore::runtime::acquire_backend_lease("cpu", 1, &error);
+    ASSERT_TRUE(shared) << error;
+    auto first =
+            aicore::runtime::acquire_parallel_backend_lease("cpu", 1, &error);
+    ASSERT_TRUE(first) << error;
+    auto second =
+            aicore::runtime::acquire_parallel_backend_lease("cpu", 1, &error);
+    ASSERT_TRUE(second) << error;
+    EXPECT_NE(first.handle(), second.handle());
+    EXPECT_NE(first.handle(), shared.handle());
 }

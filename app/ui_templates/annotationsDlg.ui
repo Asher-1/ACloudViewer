@@ -269,11 +269,7 @@
           <property name="statusTip">
            <string>class sets</string>
           </property>
-          <property name="styleSheet">
-           <string notr="true">font: 75 12pt &quot;Microsoft YaHei&quot;;
 
-</string>
-          </property>
           <property name="editable">
            <bool>true</bool>
           </property>

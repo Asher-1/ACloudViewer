@@ -1635,115 +1635,28 @@ void vtkComparativeViewWidget::connectExternalHighlighter(
     auto* hl = qobject_cast<cvSelectionHighlighter*>(highlighter);
     if (!hl) return;
 
-    auto cloneHighlightActor = [](vtkActor* src) -> vtkSmartPointer<vtkActor> {
-        if (!src) return {};
-        auto clone = vtkSmartPointer<vtkActor>::New();
-        clone->ShallowCopy(src);
-        if (auto* srcMapper =
-                    vtkDataSetMapper::SafeDownCast(src->GetMapper())) {
-            auto mapper = vtkSmartPointer<vtkDataSetMapper>::New();
-            mapper->ShallowCopy(srcMapper);
-            clone->SetMapper(mapper);
-        }
-        clone->SetPickable(0);
-        return clone;
-    };
-
-    auto safeUpdate = [this]() { scheduleSubViewRefresh(true); };
-
-    auto removeClones = [this](vtkActor* source) {
-        auto it = m_highlightClonesBySource.find(source);
-        if (it == m_highlightClonesBySource.end()) return;
-        int idx = 0;
-        for (auto* view : m_subViews) {
-            if (!view || idx >= it.value().size()) break;
-            vtkSmartPointer<vtkActor> clone = it.value()[idx++];
-            if (!clone) continue;
-            auto* vis = view->getVisualizer3D();
-            auto* ren = vis ? vis->getCurrentRenderer() : nullptr;
-            if (ren) ren->RemoveActor(clone);
-        }
-        m_highlightClonesBySource.erase(it);
-    };
-
-    // SELECTED uses selectionOverlayUpdated; highlightActorAdded is
-    // hover/preselect.
-    m_hlActorAddedConn = connect(
-            hl, &cvSelectionHighlighter::highlightActorAdded, this,
-            [this, cloneHighlightActor, safeUpdate,
-             removeClones](vtkActor* actor) {
-                if (m_closing || !actor) return;
-                removeClones(actor);
-                QList<vtkSmartPointer<vtkActor>> clones;
-                for (auto* view : m_subViews) {
-                    if (!view) continue;
-                    auto* vis = view->getVisualizer3D();
-                    auto* ren = vis ? vis->getCurrentRenderer() : nullptr;
-                    if (!ren) continue;
-                    auto clone = cloneHighlightActor(actor);
-                    if (clone) {
-                        ren->AddActor(clone);
-                        clones.append(clone);
-                    }
-                }
-                if (!clones.isEmpty())
-                    m_highlightClonesBySource.insert(actor, clones);
-                safeUpdate();
-            });
-    m_hlActorRemovedConn =
-            connect(hl, &cvSelectionHighlighter::highlightActorRemoved, this,
-                    [this, removeClones, safeUpdate](vtkActor* actor) {
-                        if (m_closing) return;
-                        removeClones(actor);
-                        safeUpdate();
-                    });
-    m_hlClearedConn = connect(
-            hl, &cvSelectionHighlighter::highlightsCleared, this, [this]() {
-                if (m_closing) return;
-                clearHighlightClones();
-                for (auto* view : m_subViews) {
-                    if (!view) continue;
-                    auto* vis = dynamic_cast<Visualization::VtkVis*>(
-                            view->getVisualizer3D());
-                    if (vis) {
-                        cvSelectionHighlighter::clearSelectionOverlay(vis);
-                    }
-                }
-                forceRenderAllSubViews();
-            });
-
-    auto applyOverlayToSubViews = [this](vtkPolyData* poly, int kind) {
+    auto applySelectionToSubViews = [this](const cvSelectionData& selection) {
         if (m_closing) return;
         for (auto* view : m_subViews) {
             if (!view) continue;
             auto* vis = dynamic_cast<Visualization::VtkVis*>(
                     view->getVisualizer3D());
-            if (!vis) continue;
-            if (kind == cvSelectionHighlighter::SelectionOverlayNone) {
-                cvSelectionHighlighter::clearSelectionOverlay(vis);
-            } else {
-                cvSelectionHighlighter::applySelectionOverlay(
-                        vis, poly,
-                        static_cast<
-                                cvSelectionHighlighter::SelectionOverlayKind>(
-                                kind));
+            if (vis) {
+                cvSelectionHighlighter::renderSelectionForView(vis, selection);
             }
         }
+        forceRenderAllSubViews();
     };
-
-    m_hlOverlayConn = connect(
-            hl, &cvSelectionHighlighter::selectionOverlayUpdated, this,
-            [this, applyOverlayToSubViews](vtkPolyData* poly, int kind) {
-                applyOverlayToSubViews(poly, kind);
-                if (!m_closing) forceRenderAllSubViews();
-            });
-
+    m_hlClearedConn = connect(hl, &cvSelectionHighlighter::highlightsCleared,
+                              this, [applySelectionToSubViews]() {
+                                  applySelectionToSubViews(cvSelectionData());
+                              });
+    // Hover is intentionally view-local. Only completed source-qualified
+    // selections propagate, and each view resolves its own representation.
     if (auto* ctrl = cvSelectionToolController::instance()) {
         m_hlSelectionFinishedConn =
                 connect(ctrl, &cvSelectionToolController::selectionFinished,
-                        this, [this](const cvSelectionData&) {
-                            if (!m_closing) forceRenderAllSubViews();
-                        });
+                        this, applySelectionToSubViews);
     }
 }
 
@@ -1779,6 +1692,7 @@ void vtkComparativeViewWidget::refreshEntityCombo() {
             preserved.insert(entity);
         }
     }
+    const bool selectionChanged = m_selectedEntities != preserved;
     m_selectedEntities = preserved;
 
     auto* noneItem = new QStandardItem(tr("None"));
@@ -1805,6 +1719,7 @@ void vtkComparativeViewWidget::refreshEntityCombo() {
     m_entityCombo->setCurrentIndex(0);
     m_updatingShowingCombo = false;
     updateShowingComboText();
+    if (m_type != RENDER && selectionChanged) applyShowingSelection(false);
 }
 
 QSet<ccHObject*> vtkComparativeViewWidget::selectedEntitiesFromCombo() const {
@@ -1933,28 +1848,21 @@ void vtkComparativeViewWidget::applySelectedEntitiesToRenderViews(
 }
 
 void vtkComparativeViewWidget::applySelectedEntitiesToChartViews() {
-    ccHObject* firstSelected = nullptr;
-    if (m_entityCombo) {
-        if (auto* model =
-                    qobject_cast<QStandardItemModel*>(m_entityCombo->model())) {
-            for (int row = 1; row < model->rowCount(); ++row) {
-                auto* item = model->item(row);
-                if (!item || item->checkState() != Qt::Checked) continue;
-                firstSelected = reinterpret_cast<ccHObject*>(
-                        item->data(COMPARATIVE_ENTITY_ROLE).value<quintptr>());
-                if (firstSelected) break;
-            }
-        }
-    }
-
+    ccHObject* entity = m_selectedEntities.isEmpty()
+                                ? nullptr
+                                : *m_selectedEntities.constBegin();
     for (auto* widget : m_subWidgets) {
-        auto* chart = qobject_cast<vtkChartView*>(widget);
-        if (chart) chart->setEntity(firstSelected);
+        if (auto* chart = qobject_cast<vtkChartView*>(widget))
+            chart->setEntity(entity);
     }
 }
 
 void vtkComparativeViewWidget::setInitialEntity(ccHObject* entity) {
-    m_initialEntity = entity;
+    m_selectedEntities.clear();
+    if (entity) m_selectedEntities.insert(entity);
+    refreshEntityCombo();
+    if (m_type != RENDER && !m_subWidgets.isEmpty())
+        applyShowingSelection(false);
 }
 
 void vtkComparativeViewWidget::createChartSubViews() {
@@ -1965,13 +1873,16 @@ void vtkComparativeViewWidget::createChartSubViews() {
     for (int r = 0; r < m_rows; ++r) {
         for (int c = 0; c < m_cols; ++c) {
             auto* chart = new vtkChartView(chartType, this);
+            // The Showing selector, not global DB-tree selection, owns the
+            // source of comparative chart panes.
+            disconnect(&ecvViewManager::instance(),
+                       &ecvViewManager::entitySelectionChanged, chart, nullptr);
             chart->setCompactMode(true);
             chart->setSizePolicy(QSizePolicy::Expanding,
                                  QSizePolicy::Expanding);
             if (m_entityListProvider) {
                 chart->setEntityListProvider(m_entityListProvider);
             }
-            chart->setCompactMode(true);
             m_gridLayout->addWidget(chart, r, c);
             m_gridLayout->setRowStretch(r, 1);
             m_gridLayout->setColumnStretch(c, 1);
@@ -1981,6 +1892,7 @@ void vtkComparativeViewWidget::createChartSubViews() {
     }
 
     refreshEntityCombo();
+    applyShowingSelection(false);
 }
 
 void vtkComparativeViewWidget::buildToolbar() {
@@ -2011,7 +1923,14 @@ void vtkComparativeViewWidget::buildToolbar() {
         lay->addWidget(showLabel);
         m_entityCombo = new QComboBox(m_toolbar);
         m_entityCombo->setMinimumWidth(120);
-        m_entityCombo->setToolTip(tr("Entities displayed in all sub-views"));
+        m_entityCombo->setToolTip(
+                m_type == RENDER
+                        ? tr("Entities displayed in all sub-views. This grid "
+                             "does not evaluate ParaView parameter Cues.")
+                        : tr("Choose one source for all chart sub-views. "
+                             "Each chart has independent field settings; "
+                             "parameter Cues and multi-source overlays are "
+                             "not supported."));
         m_entityCombo->setEditable(true);
         m_entityCombo->lineEdit()->setReadOnly(true);
         m_entityCombo->lineEdit()->setFrame(false);
@@ -2036,6 +1955,16 @@ void vtkComparativeViewWidget::buildToolbar() {
                             }
                         }
                     } else {
+                        if (m_type != RENDER && item->row() > 0 &&
+                            item->checkState() == Qt::Checked) {
+                            for (int row = 1; row < showingModel->rowCount();
+                                 ++row) {
+                                if (auto* other = showingModel->item(row)) {
+                                    if (other != item)
+                                        other->setCheckState(Qt::Unchecked);
+                                }
+                            }
+                        }
                         bool anyChecked = false;
                         for (int row = 1; row < showingModel->rowCount();
                              ++row) {

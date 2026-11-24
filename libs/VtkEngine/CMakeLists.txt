@@ -215,9 +215,9 @@ if (USE_VTK_BACKEND)
 
 endif ()
 
-# Composite aggregation regression gate (pure data-structure tests; no
-# renderer/window needed). Off by default — enable with -DVTKENGINE_BUILD_TESTS=ON.
+# Native data/selection regressions join the root C++ test catalog whenever
+# unit tests are enabled. The focused VTK switch still supports local builds.
 option(VTKENGINE_BUILD_TESTS "Build VtkEngine unit tests" OFF)
-if (VTKENGINE_BUILD_TESTS)
+if (BUILD_UNIT_TESTS OR VTKENGINE_BUILD_TESTS)
     add_subdirectory(tests)
 endif ()

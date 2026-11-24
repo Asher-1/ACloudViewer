@@ -34,31 +34,16 @@
 
 #include <ggml-backend.h>
 #include <ggml.h>
+#include <gtest/gtest.h>
 
-#include <cstdio>
-#include <cstring>
-#include <string>
 #include <vector>
 
 #include "tasks/rfdetr/backend.hpp"
 #include "tasks/rfdetr/model_loader.hpp"
 #include "tasks/rfdetr/trace.hpp"
 #include "tasks/rfdetr/two_stage.hpp"
-#include "tests/common/test_macros.hpp"
-
-static int failures = 0;
 
 namespace {
-
-int g_fail = 0;
-
-void report(const char* what, bool ok) {
-    std::fprintf(stderr, "  [%-44s] %s\n", what, ok ? "OK" : "FAIL");
-    if (!ok) {
-        ++g_fail;
-        ++failures;
-    }
-}
 
 bool is_border(int w, int h, int S) {
     return w == 0 || h == 0 || w == S - 1 || h == S - 1;
@@ -66,50 +51,39 @@ bool is_border(int w, int h, int S) {
 
 /* ---- Part A: compute_proposal_grid ------------------------------------- */
 
-/* Returns the number of fully-zeroed proposal rows; fails if any zeroed row
- * is not on the border ring, or any border row is not zeroed when
- * `expect_masked` is set, or any surviving row deviates from the analytic
- * formula. */
-void check_grid(int S, bool expect_masked) {
+class RfDetrProposalGrid : public ::testing::TestWithParam<int> {};
+
+TEST_P(RfDetrProposalGrid, MasksOnlyBorderAndPreservesAnalyticInterior) {
+    const int S = GetParam();
+    const bool expect_masked = S >= 50;
     const float wh = 0.05f;
     std::vector<float> grid((size_t)S * S * 4, -1.0f);
     rfdetr::compute_proposal_grid(S, S, wh, grid.data());
 
     const float fs = (float)S;
     int n_zeroed = 0;
-    bool ring_exact = true;
-    bool survivors_exact = true;
 
     for (int h = 0; h < S; ++h) {
         for (int w = 0; w < S; ++w) {
             const float* p = grid.data() + ((size_t)h * S + w) * 4;
             const bool zeroed = (p[0] == 0.0f && p[1] == 0.0f && p[2] == 0.0f &&
                                  p[3] == 0.0f);
+            SCOPED_TRACE(::testing::Message() << "cell " << w << "," << h);
+            EXPECT_EQ(zeroed, expect_masked && is_border(w, h, S));
             if (zeroed) {
                 ++n_zeroed;
-                if (!is_border(w, h, S)) ring_exact = false;
             } else {
-                /* Untouched rows must be bit-identical to the formula. */
-                if (p[0] != ((float)w + 0.5f) / fs) survivors_exact = false;
-                if (p[1] != ((float)h + 0.5f) / fs) survivors_exact = false;
-                if (p[2] != wh || p[3] != wh) survivors_exact = false;
-                if (expect_masked && is_border(w, h, S)) ring_exact = false;
+                // Untouched rows must be exactly equal to the analytic formula.
+                EXPECT_EQ(p[0], (static_cast<float>(w) + 0.5f) / fs);
+                EXPECT_EQ(p[1], (static_cast<float>(h) + 0.5f) / fs);
+                EXPECT_EQ(p[2], wh);
+                EXPECT_EQ(p[3], wh);
             }
         }
     }
 
     const int want_zeroed = expect_masked ? (4 * S - 4) : 0;
-    char label[96];
-    std::snprintf(label, sizeof(label), "grid %d: %d zeroed (want %d)", S,
-                  n_zeroed, want_zeroed);
-    report(label, n_zeroed == want_zeroed);
-
-    std::snprintf(label, sizeof(label), "grid %d: zeroed set == border ring",
-                  S);
-    report(label, ring_exact);
-
-    std::snprintf(label, sizeof(label), "grid %d: survivors bit-exact", S);
-    report(label, survivors_exact);
+    EXPECT_EQ(n_zeroed, want_zeroed);
 }
 
 /* ---- Part B: two_stage_forward ----------------------------------------- */
@@ -130,22 +104,43 @@ ggml_tensor* make(ggml_context* ctx,
                   int64_t ne1) {
     ggml_tensor* t = ne1 > 0 ? ggml_new_tensor_2d(ctx, GGML_TYPE_F32, ne0, ne1)
                              : ggml_new_tensor_1d(ctx, GGML_TYPE_F32, ne0);
-    AICORE_CHECK(t != nullptr);
+    if (!t) return nullptr;
     ggml_set_name(t, name);
     m.tensors[name] = t;
     return t;
 }
 
-void run_forward_case(int S, bool expect_masked) {
+class RfDetrTwoStageMask : public ::testing::TestWithParam<int> {
+protected:
+    void SetUp() override {
+        rfdetr_status status = RFDETR_OK;
+        bctx = rfdetr::init_backend_ctx(2, "cpu", &status);
+        ASSERT_EQ(status, RFDETR_OK);
+        ASSERT_NE(bctx.cpu, nullptr);
+    }
+
+    void TearDown() override {
+        if (gbuf) ggml_backend_buffer_free(gbuf);
+        if (wbuf) ggml_backend_buffer_free(wbuf);
+        if (gctx) ggml_free(gctx);
+        if (wctx) ggml_free(wctx);
+        rfdetr::free_backend_ctx(bctx);
+    }
+
+    rfdetr::BackendCtx bctx;
+    ggml_context* wctx = nullptr;
+    ggml_context* gctx = nullptr;
+    ggml_backend_buffer_t wbuf = nullptr;
+    ggml_backend_buffer_t gbuf = nullptr;
+};
+
+TEST_P(RfDetrTwoStageMask, MasksMemoryAndBoxesOnExactlyTheProposalBorder) {
+    const int S = GetParam();
+    const bool expect_masked = S >= 50;
     rfdetr::Model m;
     m.config.decoder.model_dim = kD;
     m.config.num_classes = kNC;
-
-    rfdetr_status st = RFDETR_OK;
-    rfdetr::BackendCtx bctx = rfdetr::init_backend_ctx(
-            /*n_threads*/ 2, /*device_request*/ "cpu", &st);
     ggml_backend_t backend = bctx.cpu;
-    AICORE_CHECK(backend != nullptr);
 
     const int64_t N = (int64_t)S * S;
 
@@ -154,8 +149,8 @@ void run_forward_case(int S, bool expect_masked) {
     wp.mem_size = ggml_tensor_overhead() * 64;
     wp.mem_buffer = nullptr;
     wp.no_alloc = true;
-    ggml_context* wctx = ggml_init(wp);
-    AICORE_CHECK(wctx != nullptr);
+    wctx = ggml_init(wp);
+    ASSERT_NE(wctx, nullptr);
 
     ggml_tensor* W_eo = make(wctx, m, "two_stage.enc_output.0.weight", kD, kD);
     ggml_tensor* b_eo = make(wctx, m, "two_stage.enc_output.0.bias", kD, 0);
@@ -180,68 +175,75 @@ void run_forward_case(int S, bool expect_masked) {
     ggml_tensor* b_b2 = make(
             wctx, m, "two_stage.enc_out_bbox_embed.0.layers.2.bias", kD, 0);
 
+    for (const ggml_tensor* tensor : {W_eo, b_eo, w_ln, b_ln, W_cls, b_cls,
+                                      W_b0, b_b0, W_b1, b_b1, W_b2, b_b2}) {
+        ASSERT_NE(tensor, nullptr);
+    }
+
     ggml_tensor* prop = ggml_new_tensor_2d(wctx, GGML_TYPE_F32, 4, N);
-    AICORE_CHECK(prop != nullptr);
+    ASSERT_NE(prop, nullptr);
     ggml_set_name(prop, "two_stage.proposals.grid");
     m.proposals_grid = prop;
 
-    ggml_backend_buffer_t wbuf = ggml_backend_alloc_ctx_tensors(wctx, backend);
-    AICORE_CHECK(wbuf != nullptr);
+    wbuf = ggml_backend_alloc_ctx_tensors(wctx, backend);
+    ASSERT_NE(wbuf, nullptr);
 
     auto fill = [](ggml_tensor* t, const std::vector<float>& v) {
-        AICORE_CHECK((int64_t)v.size() == ggml_nelements(t));
+        ASSERT_EQ(static_cast<int64_t>(v.size()), ggml_nelements(t));
         ggml_backend_tensor_set(t, v.data(), 0, v.size() * sizeof(float));
     };
 
     /* enc_output = identity, zero bias, so a zeroed memory row stays zero. */
     std::vector<float> ident((size_t)kD * kD, 0.0f);
     for (int i = 0; i < kD; ++i) ident[(size_t)i * kD + i] = 1.0f;
-    fill(W_eo, ident);
-    fill(b_eo, std::vector<float>(kD, 0.0f));
-    fill(w_ln, std::vector<float>(kD, 1.0f));
-    fill(b_ln, std::vector<float>(kBLn, kBLn + kD));
+    ASSERT_NO_FATAL_FAILURE(fill(W_eo, ident));
+    ASSERT_NO_FATAL_FAILURE(fill(b_eo, std::vector<float>(kD, 0.0f)));
+    ASSERT_NO_FATAL_FAILURE(fill(w_ln, std::vector<float>(kD, 1.0f)));
+    ASSERT_NO_FATAL_FAILURE(fill(b_ln, std::vector<float>(kBLn, kBLn + kD)));
 
     /* Class + bbox heads: arbitrary but nonzero and non-degenerate. */
     std::vector<float> wc((size_t)kD * kNC);
     for (size_t i = 0; i < wc.size(); ++i) wc[i] = 0.1f + 0.05f * (float)i;
-    fill(W_cls, wc);
-    fill(b_cls, std::vector<float>(kNC, 0.3f));
+    ASSERT_NO_FATAL_FAILURE(fill(W_cls, wc));
+    ASSERT_NO_FATAL_FAILURE(fill(b_cls, std::vector<float>(kNC, 0.3f)));
 
     std::vector<float> wb((size_t)kD * kD);
     for (size_t i = 0; i < wb.size(); ++i) wb[i] = 0.07f + 0.011f * (float)i;
-    fill(W_b0, wb);
-    fill(W_b1, wb);
-    fill(W_b2, wb);
-    fill(b_b0, std::vector<float>(kD, 0.2f));
-    fill(b_b1, std::vector<float>(kD, 0.2f));
-    fill(b_b2, std::vector<float>(kD, 0.2f));
+    ASSERT_NO_FATAL_FAILURE(fill(W_b0, wb));
+    ASSERT_NO_FATAL_FAILURE(fill(W_b1, wb));
+    ASSERT_NO_FATAL_FAILURE(fill(W_b2, wb));
+    ASSERT_NO_FATAL_FAILURE(fill(b_b0, std::vector<float>(kD, 0.2f)));
+    ASSERT_NO_FATAL_FAILURE(fill(b_b1, std::vector<float>(kD, 0.2f)));
+    ASSERT_NO_FATAL_FAILURE(fill(b_b2, std::vector<float>(kD, 0.2f)));
 
     std::vector<float> grid((size_t)N * 4);
     rfdetr::compute_proposal_grid(S, S, /*wh_value*/ 0.05f, grid.data());
-    fill(prop, grid);
+    ASSERT_NO_FATAL_FAILURE(fill(prop, grid));
 
     /* --- graph --- */
     ggml_init_params gp{};
     gp.mem_size = 64 * 1024 * 1024;
     gp.mem_buffer = nullptr;
     gp.no_alloc = true;
-    ggml_context* gctx = ggml_init(gp);
-    AICORE_CHECK(gctx != nullptr);
+    gctx = ggml_init(gp);
+    ASSERT_NE(gctx, nullptr);
 
     ggml_tensor* proj_in = ggml_new_tensor_4d(gctx, GGML_TYPE_F32, S, S, kD, 1);
+    ASSERT_NE(proj_in, nullptr);
     ggml_set_name(proj_in, "projector.output.in");
 
     rfdetr::TwoStageOutput ts = rfdetr::two_stage_forward(gctx, m, proj_in);
-    AICORE_CHECK(ts.enc_output_norm_out != nullptr);
-    AICORE_CHECK(ts.bbox_all != nullptr);
+    ASSERT_NE(ts.enc_output_norm_out, nullptr);
+    ASSERT_NE(ts.bbox_all, nullptr);
 
     ggml_cgraph* graph =
             ggml_new_graph_custom(gctx, /*size*/ 8192, /*grads*/ false);
+    ASSERT_NE(graph, nullptr);
     ggml_build_forward_expand(graph, ts.enc_output_norm_out);
     ggml_build_forward_expand(graph, ts.bbox_all);
 
-    ggml_backend_buffer_t gbuf = ggml_backend_alloc_ctx_tensors(gctx, backend);
-    AICORE_CHECK(gbuf != nullptr);
+    gbuf = ggml_backend_alloc_ctx_tensors(gctx, backend);
+    ASSERT_NE(gbuf, nullptr);
 
     std::vector<float> in((size_t)S * S * kD);
     for (int c = 0; c < kD; ++c)
@@ -250,19 +252,16 @@ void run_forward_case(int S, bool expect_masked) {
                 in[((size_t)c * S + h) * S + w] = input_at(w, h, c);
     ggml_backend_tensor_set(proj_in, in.data(), 0, in.size() * sizeof(float));
 
-    AICORE_CHECK(ggml_backend_graph_compute(backend, graph) ==
-                 GGML_STATUS_SUCCESS);
+    ASSERT_EQ(ggml_backend_graph_compute(backend, graph), GGML_STATUS_SUCCESS);
     ggml_backend_synchronize(backend);
 
     std::vector<float> mem = rfdetr::copy_tensor_to_f32(ts.enc_output_norm_out);
     std::vector<float> bbox = rfdetr::copy_tensor_to_f32(ts.bbox_all);
-    AICORE_CHECK((int64_t)mem.size() == N * kD);
-    AICORE_CHECK((int64_t)bbox.size() == N * 4);
+    ASSERT_EQ(static_cast<int64_t>(mem.size()), N * kD);
+    ASSERT_EQ(static_cast<int64_t>(bbox.size()), N * 4);
 
     int n_mem_masked = 0;
     int n_bbox_zero = 0;
-    bool mem_ring = true;
-    bool bbox_ring = true;
 
     for (int h = 0; h < S; ++h) {
         for (int w = 0; w < S; ++w) {
@@ -277,12 +276,9 @@ void run_forward_case(int S, bool expect_masked) {
                     is_bln = false;
                     break;
                 }
-            if (is_bln) {
-                ++n_mem_masked;
-                if (!border) mem_ring = false;
-            } else if (expect_masked && border) {
-                mem_ring = false;
-            }
+            SCOPED_TRACE(::testing::Message() << "cell " << w << "," << h);
+            EXPECT_EQ(is_bln, expect_masked && border) << "masked memory";
+            if (is_bln) ++n_mem_masked;
 
             bool bz = true;
             for (int c = 0; c < 4; ++c)
@@ -290,61 +286,24 @@ void run_forward_case(int S, bool expect_masked) {
                     bz = false;
                     break;
                 }
-            if (bz) {
-                ++n_bbox_zero;
-                if (!border) bbox_ring = false;
-            } else if (expect_masked && border) {
-                bbox_ring = false;
-            }
+            EXPECT_EQ(bz, expect_masked && border) << "zeroed boxes";
+            if (bz) ++n_bbox_zero;
         }
     }
 
     const int want = expect_masked ? (4 * S - 4) : 0;
-    char label[96];
-    std::snprintf(label, sizeof(label), "fwd %dx%d: memory masked %d (want %d)",
-                  S, S, n_mem_masked, want);
-    report(label, n_mem_masked == want);
-    std::snprintf(label, sizeof(label),
-                  "fwd %dx%d: masked memory == border ring", S, S);
-    report(label, mem_ring);
-    std::snprintf(label, sizeof(label), "fwd %dx%d: bbox zeroed %d (want %d)",
-                  S, S, n_bbox_zero, want);
-    report(label, n_bbox_zero == want);
-    std::snprintf(label, sizeof(label), "fwd %dx%d: zeroed bbox == border ring",
-                  S, S);
-    report(label, bbox_ring);
-
-    ggml_backend_buffer_free(gbuf);
-    ggml_backend_buffer_free(wbuf);
-    ggml_free(gctx);
-    ggml_free(wctx);
-    rfdetr::free_backend_ctx(bctx);
+    EXPECT_EQ(n_mem_masked, want);
+    EXPECT_EQ(n_bbox_zero, want);
 }
+
+// 40 and 49 are below the masking threshold; 50/52/64 mask one border ring.
+INSTANTIATE_TEST_SUITE_P(GridSizes,
+                         RfDetrProposalGrid,
+                         ::testing::Values(40, 49, 50, 52, 64),
+                         ::testing::PrintToStringParamName());
+INSTANTIATE_TEST_SUITE_P(GridSizes,
+                         RfDetrTwoStageMask,
+                         ::testing::Values(40, 52),
+                         ::testing::PrintToStringParamName());
 
 }  // namespace
-
-int main() {
-    std::fprintf(stderr,
-                 "[test_rfdetr_two_stage_mask] A. compute_proposal_grid\n");
-    /* Below the S >= 50 threshold: the mask must be a strict no-op. 40 is
-     * rfdetr-base / seg-nano territory, 49 is the last grid that survives. */
-    check_grid(40, /*expect_masked*/ false);
-    check_grid(49, /*expect_masked*/ false);
-    /* At and above the threshold: exactly the one-cell border ring. */
-    check_grid(50, /*expect_masked*/ true);
-    check_grid(52, /*expect_masked*/ true); /* seg-xlarge  — 204 tokens */
-    check_grid(64, /*expect_masked*/ true); /* seg-2xlarge — 252 tokens */
-
-    std::fprintf(stderr, "[test_rfdetr_two_stage_mask] B. two_stage_forward\n");
-    run_forward_case(40, /*expect_masked*/ false);
-    run_forward_case(52, /*expect_masked*/ true);
-
-    if (g_fail) {
-        std::fprintf(stderr,
-                     "[test_rfdetr_two_stage_mask] %d check(s) FAILED\n",
-                     g_fail);
-        return 1;
-    }
-    std::fprintf(stderr, "[test_rfdetr_two_stage_mask] all checks passed\n");
-    return 0;
-}

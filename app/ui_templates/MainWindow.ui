@@ -1084,6 +1084,9 @@ QTreeView#dbTreeView::item:selected:focus {
    <addaction name="actionSetViewIso2"/>
   </widget>
   <action name="actionOpen">
+    <property name="toolTip">
+     <string>Open data files (Ctrl+O) — point clouds, meshes, images and supported scene data</string>
+    </property>
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
      <normaloff>:/Resources/images/svg/main/toolMainOpen.svg</normaloff>:/Resources/images/svg/main/toolMainOpen.svg</iconset>

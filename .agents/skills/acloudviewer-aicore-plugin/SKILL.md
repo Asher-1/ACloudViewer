@@ -264,6 +264,40 @@ Do not claim coverage when any row is absent. A catalog model is incomplete
 until it is exposed by `test_catalog_dump_urls --json` and consumed by an
 expanded manifest scenario.
 
+## Unified C++ Test Integration
+
+The repository-root `tests` module is the single owner of C++ test registration,
+build closures, profiles, and execution policy. New modules add their CMake
+subdirectory, link their unit-test targets to GoogleTest, and register commands
+with `cloudviewer_add_test(NAME ... COMMAND ... [BUILD_TARGETS ...] [LABELS ...])`.
+AICore's existing registration helpers forward to that owner. CI calls
+`cmake -DBUILD_DIR=build_app -DCONFIG=Release -DJOBS=4 -P tests/Run.cmake`;
+adding a module must not require editing CI or maintaining another module list.
+Use capability labels for assets, graphics, GPU, network, benchmarks, and slow
+cases. Legacy `check-cpp*` and AICore group targets are forwarding interfaces,
+not additional execution-policy owners.
+
+Unit assertions must be actual GoogleTest cases. Linking `gtest` around a
+handwritten `main()` or testing only its final exit status does not complete a
+migration. C compiler/ABI fixtures and externally consumed process probes may
+retain their protocols and declare `CLOUDVIEWER_TEST_KIND integration`; audit
+their real script/manifest consumers before changing arguments, stdout, or exit
+codes. Missing prerequisites may return 77, but explicitly supplied corrupt
+assets must fail. A skip is not successful model inference or numeric coverage.
+
+Test-system consolidation changes registration and execution only. Preserve
+existing test implementations, assertions, names, fixture inputs, dynamic
+downloads and enabled source lists. In particular, CVViewer consolidation must
+not replace remote datasets with synthetic/offline fixtures, add asset skip
+gates, adjust tolerances, enable dormant sources or change production algorithms.
+Such repairs require a separate explicit request. Keep the original suite
+behind one registration; existing failures remain visible.
+
+Audit duplicate process registrations using the full command, environment,
+working directory, device and inputs; different quantizations/devices/oracles
+are separate coverage. Distinguish a selected CI pass from complete asset and
+backend acceptance. The registration contract lives in `tests/README.md`.
+
 ## Validation Ladder
 
 Run the narrowest relevant checks first, then the real matrix:

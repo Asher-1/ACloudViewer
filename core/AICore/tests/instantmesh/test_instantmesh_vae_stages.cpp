@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -96,7 +98,7 @@ ggml_status traceCompute(ggml_backend_t backend, ggml_cgraph* graph) {
 #undef ggml_backend_graph_compute
 #undef ggml_gallocr_alloc_graph
 
-int main(int argc, char** argv) {
+static int RunScenario(int argc, char** argv) {
     if (argc == 4 && std::string(argv[1]) == "weights-parking") {
         std::string error;
         auto device =
@@ -258,4 +260,25 @@ int main(int argc, char** argv) {
             instantmesh::vae_decode(model, latents.data(), 1, 80, 120, &h, &w),
             std::free);
     return output && !traceFailed && h == 640 && w == 960 ? 0 : 1;
+}
+
+namespace {
+int scenarioArgc;
+char** scenarioArgv;
+TEST(InstantMeshNumeric, BackendScenario) {
+    const int status = RunScenario(scenarioArgc, scenarioArgv);
+    if (status == 77) GTEST_SKIP() << "Scenario prerequisites unavailable";
+    EXPECT_EQ(status, 0);
+}
+}  // namespace
+
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    scenarioArgc = argc;
+    scenarioArgv = argv;
+    const int status = RUN_ALL_TESTS();
+    return status == 0 && ::testing::UnitTest::GetInstance()
+                                           ->skipped_test_count() > 0
+                   ? 77
+                   : status;
 }

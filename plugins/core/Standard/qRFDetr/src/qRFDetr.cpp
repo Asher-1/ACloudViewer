@@ -7,6 +7,7 @@
 
 #include "qRFDetr.h"
 
+#include <ecvAICoreUiHelper.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPluginDbNaming.h>
@@ -187,6 +188,7 @@ void qRFDetr::showDialog() {
     if (!m_dialog) {
         m_dialog =
                 new RFDetrDialog(static_cast<QWidget*>(m_app->getMainWindow()));
+        ecvAICoreUi::bindDialogAction(m_action, m_dialog);
         m_dialog->setAppInterface(m_app);
         connect(m_dialog, &RFDetrDialog::runRequested, this,
                 &qRFDetr::executeTask);

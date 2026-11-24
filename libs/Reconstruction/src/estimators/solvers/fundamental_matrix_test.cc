@@ -213,7 +213,10 @@ TEST(FundamentalMatrixEightPointEstimator, Reference) {
 }
 
 class FundamentalMatrixEightPointEstimatorTests
-    : public ::testing::TestWithParam<size_t> {};
+    : public ::testing::TestWithParam<size_t> {
+ protected:
+  void SetUp() override { SetPRNGSeed(0); }
+};
 
 TEST_P(FundamentalMatrixEightPointEstimatorTests, Nominal) {
   const size_t kNumPoints = GetParam();

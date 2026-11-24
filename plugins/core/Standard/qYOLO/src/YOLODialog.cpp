@@ -153,15 +153,6 @@ void YOLODialog::setupUi() {
     // task panels on small screens.
     m_taskList->setMinimumWidth(ecvAICoreUi::dpiScaled(120));
     m_taskList->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    m_taskList->setStyleSheet(
-            QStringLiteral("QListWidget { background: palette(base); border: "
-                           "1px solid palette(mid); border-radius: 3px; "
-                           "padding: 2px; }"
-                           "QListWidget::item { padding: 4px 6px; "
-                           "border-radius: 3px; }"
-                           "QListWidget::item:selected { background: "
-                           "palette(highlight); color: "
-                           "palette(highlighted-text); }"));
 
     m_taskStack = new QStackedWidget(this);
     m_bodySplitter->addWidget(m_taskList);

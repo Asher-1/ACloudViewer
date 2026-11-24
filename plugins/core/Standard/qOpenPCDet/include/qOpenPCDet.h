@@ -57,4 +57,8 @@ private:
     /** Set by cancelTask: late results after a cancel are logged but never
      *  exported into the DB tree. */
     bool m_runCancelled = false;
+    /** Task-panel index captured in executeTask: the result overlay targets
+     *  the panel that started the run, not whichever panel is current when
+     *  the queued result arrives. */
+    int m_runPanelIndex = -1;
 };

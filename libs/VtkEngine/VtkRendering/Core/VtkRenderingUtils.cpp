@@ -429,34 +429,17 @@ vtkSmartPointer<vtkPolyData> CreateCameraSensor(
             CreatePolyDataFromLineSet(cameraSensor->getSideLines());
     SetPolyDataColor(sideLinesData, lineColor, false);
 
-    // Orientation triangle (COLMAP style): filled, from the 3 raw corners.
-    vtkSmartPointer<vtkPolyData> arrowFaceData =
-            vtkSmartPointer<vtkPolyData>::New();
-    {
-        const auto& arrowPts = cameraSensor->getArrow().points_;
-        if (arrowPts.size() >= 3) {
-            auto points = vtkSmartPointer<vtkPoints>::New();
-            points->SetNumberOfPoints(3);
-            for (int i = 0; i < 3; ++i) {
-                points->SetPoint(i, arrowPts[static_cast<size_t>(i)].x(),
-                                 arrowPts[static_cast<size_t>(i)].y(),
-                                 arrowPts[static_cast<size_t>(i)].z());
-            }
-            arrowFaceData->SetPoints(points);
-            vtkSmartPointer<vtkCellArray> polys =
-                    vtkSmartPointer<vtkCellArray>::New();
-            const vtkIdType tri[3] = {0, 1, 2};
-            polys->InsertNextCell(3, tri);
-            arrowFaceData->SetPolys(polys);
-            SetPolyDataColor(arrowFaceData, lineColor, false);
-        }
-    }
+    // Orientation up-arrow (shaft + head outline), same LineSet source as the
+    // legacy GL path so reconstruction and plugins render identically.
+    vtkSmartPointer<vtkPolyData> arrowLinesData =
+            CreatePolyDataFromLineSet(cameraSensor->getArrow());
+    SetPolyDataColor(arrowLinesData, lineColor, false);
 
     vtkSmartPointer<vtkAppendPolyData> appendFilter =
             vtkSmartPointer<vtkAppendPolyData>::New();
     appendFilter->AddInputData(nearPlaneLinesData);
     appendFilter->AddInputData(sideLinesData);
-    appendFilter->AddInputData(arrowFaceData);
+    appendFilter->AddInputData(arrowLinesData);
     appendFilter->Update();
     if (planeFaceOut) {
         // Near-plane FACE from the RAW 4 corner points. The line-set

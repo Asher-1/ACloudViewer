@@ -21,6 +21,7 @@
 #include <ecvRepresentationManager.h>
 #include <ecvUndoManager.h>
 #include <ecvViewManager.h>
+#include <ecvViewRepresentation.h>
 #include <vtkActor.h>
 #include <vtkActorCollection.h>
 #include <vtkCallbackCommand.h>
@@ -30,6 +31,8 @@
 #include <vtkDataSet.h>
 #include <vtkDefaultPass.h>
 #include <vtkEDLShading.h>
+#include <vtkTransform.h>
+#include <vtkTransformFilter.h>
 
 class vtkEDLShadingCustom : public vtkEDLShading {
 public:
@@ -873,28 +876,24 @@ void vtkGLView::setEDLFXAAEnabled(bool enable) {
     }
 }
 
-static void SlicePlaneCallback(vtkObject* caller,
-                               unsigned long,
-                               void* clientData,
-                               void*) {
-    auto* widget = static_cast<vtkImplicitPlaneWidget2*>(caller);
-    auto* rep = static_cast<vtkImplicitPlaneRepresentation*>(
-            widget->GetRepresentation());
-    auto* renderer = static_cast<vtkRenderer*>(clientData);
-    if (!rep || !renderer) return;
-
-    vtkNew<vtkPlane> plane;
-    rep->GetPlane(plane);
-
-    auto* actors = renderer->GetActors();
-    actors->InitTraversal();
-    while (auto* actor = actors->GetNextActor()) {
-        if (auto* mapper = actor->GetMapper()) {
-            mapper->RemoveAllClippingPlanes();
-            mapper->AddClippingPlane(plane);
+void vtkGLView::updateSlicePlane() {
+    if (!m_slicePlaneWidget || !m_slicePlane || !m_visualizer3D) return;
+    auto* rep = vtkImplicitPlaneRepresentation::SafeDownCast(
+            m_slicePlaneWidget->GetRepresentation());
+    if (!rep) return;
+    rep->GetPlane(m_slicePlane);
+    for (auto* representation :
+         ecvRepresentationManager::instance().getRepresentationsForView(this)) {
+        auto* entity = representation->getEntity();
+        if (!entity) continue;
+        auto* actor =
+                m_visualizer3D->getActorById(entity->getViewId().toStdString());
+        if (actor && actor->GetMapper()) {
+            auto* mapper = actor->GetMapper();
+            mapper->RemoveClippingPlane(m_slicePlane);
+            mapper->AddClippingPlane(m_slicePlane);
         }
     }
-    renderer->GetRenderWindow()->Render();
 }
 
 void vtkGLView::enableSliceMode(bool enable) {
@@ -906,6 +905,7 @@ void vtkGLView::enableSliceMode(bool enable) {
     if (!renderer) return;
 
     if (enable) {
+        m_slicePlane = vtkSmartPointer<vtkPlane>::New();
         m_slicePlaneWidget = vtkSmartPointer<vtkImplicitPlaneWidget2>::New();
         vtkNew<vtkImplicitPlaneRepresentation> rep;
         rep->SetPlaceFactor(1.25);
@@ -934,8 +934,12 @@ void vtkGLView::enableSliceMode(bool enable) {
         m_slicePlaneWidget->SetRepresentation(rep);
 
         vtkNew<vtkCallbackCommand> callback;
-        callback->SetCallback(SlicePlaneCallback);
-        callback->SetClientData(renderer);
+        callback->SetCallback([](vtkObject*, unsigned long, void* data, void*) {
+            auto* view = static_cast<vtkGLView*>(data);
+            view->updateSlicePlane();
+            view->renderScene();
+        });
+        callback->SetClientData(this);
         m_slicePlaneWidget->AddObserver(vtkCommand::InteractionEvent, callback);
         m_slicePlaneWidget->On();
 
@@ -965,8 +969,8 @@ void vtkGLView::enableSliceMode(bool enable) {
         if (auto* lp2 = m_sliceCubeAxes->GetLabelTextProperty(2)) {
             lp2->SetColor(0.8, 0.8, 0.8);
         }
-        m_sliceCubeAxes->SetXTitle("Y");
-        m_sliceCubeAxes->SetYTitle("X");
+        m_sliceCubeAxes->SetXTitle("X");
+        m_sliceCubeAxes->SetYTitle("Y");
         m_sliceCubeAxes->SetZTitle("Z");
         renderer->AddViewProp(m_sliceCubeAxes);
     } else {
@@ -982,9 +986,10 @@ void vtkGLView::enableSliceMode(bool enable) {
         actors->InitTraversal();
         while (auto* actor = actors->GetNextActor()) {
             if (auto* mapper = actor->GetMapper()) {
-                mapper->RemoveAllClippingPlanes();
+                if (m_slicePlane) mapper->RemoveClippingPlane(m_slicePlane);
             }
         }
+        m_slicePlane = nullptr;
     }
     updateScene();
 }
@@ -993,7 +998,10 @@ void vtkGLView::setMultiSlicePositions(int axis,
                                        const std::vector<double>& positions) {
     if (axis < 0 || axis > 2) return;
     m_multiSlicePos[axis] = positions;
+    updateScene();
+}
 
+void vtkGLView::updateMultiSlices() {
     if (!m_visualizer3D) return;
     auto* renderer = m_visualizer3D->getCurrentRenderer();
     if (!renderer) return;
@@ -1002,49 +1010,75 @@ void vtkGLView::setMultiSlicePositions(int axis,
         if (a) renderer->RemoveActor(a);
     }
     m_multiSliceActors.clear();
+    if (m_multiSlicePos[0].empty() && m_multiSlicePos[1].empty() &&
+        m_multiSlicePos[2].empty())
+        return;
 
     double normal[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 
-    auto* actors = renderer->GetActors();
-    vtkActor* firstActor = nullptr;
-    if (actors) {
-        actors->InitTraversal();
-        firstActor = actors->GetNextActor();
-    }
-    if (!firstActor || !firstActor->GetMapper() ||
-        !firstActor->GetMapper()->GetInput())
-        return;
+    for (auto* representation :
+         ecvRepresentationManager::instance().getRepresentationsForView(this)) {
+        if (!representation->isVisible() || !representation->getEntity())
+            continue;
+        auto* sourceActor = m_visualizer3D->getActorById(
+                representation->getEntity()->getViewId().toStdString());
+        if (!sourceActor || !sourceActor->GetVisibility() ||
+            !sourceActor->GetMapper())
+            continue;
+        sourceActor->GetMapper()->Update();
+        if (!sourceActor->GetMapper()->GetInput()) continue;
+        vtkNew<vtkTransform> transform;
+        transform->SetMatrix(sourceActor->GetMatrix());
+        vtkNew<vtkTransformFilter> worldData;
+        worldData->SetTransform(transform);
+        worldData->SetInputData(sourceActor->GetMapper()->GetInput());
 
-    vtkDataSet* inputData = firstActor->GetMapper()->GetInput();
+        for (int ax = 0; ax < 3; ++ax) {
+            for (double pos : m_multiSlicePos[ax]) {
+                vtkNew<vtkPlane> plane;
+                plane->SetNormal(normal[ax]);
+                double origin[3] = {0, 0, 0};
+                origin[ax] = pos;
+                plane->SetOrigin(origin);
 
-    for (int ax = 0; ax < 3; ++ax) {
-        for (double pos : m_multiSlicePos[ax]) {
-            vtkNew<vtkPlane> plane;
-            plane->SetNormal(normal[ax]);
-            double origin[3] = {0, 0, 0};
-            origin[ax] = pos;
-            plane->SetOrigin(origin);
+                vtkNew<vtkCutter> cutter;
+                cutter->SetCutFunction(plane);
+                cutter->SetInputConnection(worldData->GetOutputPort());
+                cutter->Update();
 
-            vtkNew<vtkCutter> cutter;
-            cutter->SetCutFunction(plane);
-            cutter->SetInputData(inputData);
-            cutter->Update();
+                vtkNew<vtkPolyDataMapper> mapper;
+                mapper->SetInputConnection(cutter->GetOutputPort());
 
-            vtkNew<vtkPolyDataMapper> mapper;
-            mapper->SetInputConnection(cutter->GetOutputPort());
+                auto sliceActor = vtkSmartPointer<vtkActor>::New();
+                sliceActor->SetMapper(mapper);
+                sliceActor->GetProperty()->DeepCopy(sourceActor->GetProperty());
+                mapper->SetLookupTable(
+                        sourceActor->GetMapper()->GetLookupTable());
+                mapper->SetScalarRange(
+                        sourceActor->GetMapper()->GetScalarRange());
+                mapper->SetScalarVisibility(
+                        sourceActor->GetMapper()->GetScalarVisibility());
+                mapper->SetScalarMode(
+                        sourceActor->GetMapper()->GetScalarMode());
+                mapper->SetColorMode(sourceActor->GetMapper()->GetColorMode());
+                mapper->SetArrayAccessMode(
+                        sourceActor->GetMapper()->GetArrayAccessMode());
+                mapper->SetArrayId(sourceActor->GetMapper()->GetArrayId());
+                mapper->SetArrayName(sourceActor->GetMapper()->GetArrayName());
+                mapper->SetArrayComponent(
+                        sourceActor->GetMapper()->GetArrayComponent());
+                mapper->SetUseLookupTableScalarRange(
+                        sourceActor->GetMapper()
+                                ->GetUseLookupTableScalarRange());
+                mapper->SetInterpolateScalarsBeforeMapping(
+                        sourceActor->GetMapper()
+                                ->GetInterpolateScalarsBeforeMapping());
 
-            auto sliceActor = vtkSmartPointer<vtkActor>::New();
-            sliceActor->SetMapper(mapper);
-            double color[3] = {0.8, 0.8, 0.8};
-            color[ax] = 1.0;
-            sliceActor->GetProperty()->SetColor(color);
-            sliceActor->GetProperty()->SetLineWidth(2.0);
-
-            renderer->AddActor(sliceActor);
-            m_multiSliceActors.push_back(sliceActor);
+                renderer->AddActor(sliceActor);
+                m_multiSliceActors.push_back(sliceActor);
+            }
         }
     }
-    renderer->GetRenderWindow()->Render();
 }
 
 const std::vector<double>& vtkGLView::getMultiSlicePositions(int axis) const {
@@ -1794,6 +1828,8 @@ void vtkGLView::updateCamera() {
 }
 
 void vtkGLView::updateScene() {
+    updateSlicePlane();
+    updateMultiSlices();
     if (m_vtkWidget) {
         // updateScene() must call QVTKWidgetCustom::updateScene() to update
         // scale bar NOT QWidget::update() which only schedules a repaint
@@ -1928,6 +1964,7 @@ void vtkGLView::setPivotPoint(const CCVector3d& P,
                 dynamic_cast<Visualization::VtkVis*>(m_visualizer3D.get())) {
         vis->setCenterOfRotation(P.x, P.y, P.z);
     }
+    emit pivotPointChanged(P);
     if (autoRedraw) {
         redraw(false, false);
     }

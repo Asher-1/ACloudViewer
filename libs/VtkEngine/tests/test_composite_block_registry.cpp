@@ -11,20 +11,44 @@
 /// after delete, group teardown on the last leaf) so the DB-tree
 /// show/hide/delete/add pipes cannot silently regress again.
 
+#include <ecvMesh.h>
+#include <ecvPointCloud.h>
+#include <ecvViewManager.h>
 #include <gtest/gtest.h>
 #include <vtkActor.h>
+#include <vtkCamera.h>
 #include <vtkCellArray.h>
+#include <vtkCellData.h>
+#include <vtkDataObject.h>
 #include <vtkIdTypeArray.h>
+#include <vtkInformation.h>
+#include <vtkIntArray.h>
+#include <vtkMatrix4x4.h>
 #include <vtkNew.h>
+#include <vtkPointData.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkProperty.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkSelection.h>
+#include <vtkSelectionNode.h>
 #include <vtkSmartPointer.h>
+#include <vtkTransform.h>
 
 #include <QSet>
+#include <cmath>
+#include <cstdlib>
 #include <string>
 
 #include "CompositeBlockRegistry.h"
+#include "Tools/SelectionTools/cvHardwareSelector.h"
+#include "Tools/SelectionTools/cvSelectionHighlighter.h"
 #include "Tools/SelectionTools/cvSelectionPipeline.h"
+#include "Tools/SelectionTools/cvViewSelectionManager.h"
+#include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
+#include "Visualization/VtkVis.h"
 
 namespace {
 
@@ -40,6 +64,32 @@ vtkSmartPointer<vtkPolyData> MakeSingleVertexPolyData(double offset) {
     poly->SetPoints(points);
     poly->SetVerts(cells);
     return poly;
+}
+
+vtkSmartPointer<vtkActor> MakeSelectionActor(int kind, double z) {
+    vtkNew<vtkPoints> points;
+    points->InsertNextPoint(-0.5, -0.5, z);
+    points->InsertNextPoint(0.5, -0.5, z);
+    points->InsertNextPoint(0.0, 0.5, z);
+    vtkNew<vtkCellArray> cells;
+    const vtkIdType ids[] = {0, 1, 2};
+    cells->InsertNextCell(kind == 0 ? 1 : 3, ids);
+    vtkNew<vtkPolyData> poly;
+    poly->SetPoints(points);
+    if (kind == 0) {
+        poly->SetVerts(cells);
+    } else if (kind == 1) {
+        poly->SetLines(cells);
+    } else {
+        poly->SetPolys(cells);
+    }
+    vtkNew<vtkPolyDataMapper> mapper;
+    mapper->SetInputData(poly);
+    auto actor = vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(mapper);
+    actor->GetProperty()->SetPointSize(20);
+    actor->GetProperty()->SetLineWidth(8);
+    return actor;
 }
 
 cvSelectionData MakeSelection(const QVector<qint64>& sourceIds,
@@ -146,6 +196,792 @@ TEST(SelectionPipelineRegression, PreservesActorBlockBoundariesAndModifiers) {
                           {9}),
             cvSelectionPipeline::OPERATION_SUBTRACTION);
     EXPECT_EQ((QSet<qint64>{5}), LocalIds(subtracted, actor, firstPoly, 0));
+}
+
+// Real hardware-selection regression: run under Xvfb on headless Linux.
+TEST(SelectionPipelineRegression, HardwareSelectionExcludesAuxiliaryProps) {
+#if defined(__linux__)
+    if (!std::getenv("DISPLAY")) {
+        GTEST_SKIP() << "Hardware selection requires DISPLAY (use xvfb-run)";
+    }
+#endif
+    vtkNew<vtkRenderer> renderer;
+    vtkNew<vtkRenderWindow> window;
+    window->SetSize(200, 200);
+    window->SetMultiSamples(0);
+    window->SetOffScreenRendering(1);
+    window->AddRenderer(renderer);
+
+    auto source = MakeSelectionActor(2, 0.0);
+    renderer->AddActor(source);
+    auto neverPickable = MakeSelectionActor(2, 0.8);
+    neverPickable->PickableOff();
+    renderer->AddActor(neverPickable);
+    auto invisible = MakeSelectionActor(2, 0.9);
+    invisible->VisibilityOff();
+    renderer->AddActor(invisible);
+    auto* camera = renderer->GetActiveCamera();
+    camera->SetPosition(0, 0, 5);
+    camera->SetFocalPoint(0, 0, 0);
+    camera->ParallelProjectionOn();
+    camera->SetParallelScale(1.0);
+    renderer->ResetCameraClippingRange();
+    window->Render();
+
+    vtkNew<cvHardwareSelector> selector;
+    selector->SetRenderer(renderer);
+    // Inclusion must not make an originally non-pickable prop pickable.
+    selector->SetSelectableProps(
+            {source.GetPointer(), neverPickable.GetPointer()});
+    int region[] = {10, 10, 189, 189};
+    int polygon[] = {10, 10, 189, 10, 189, 189, 10, 189};
+    auto selectedIds = [&](int association, bool usePolygon) {
+        selector->SetFieldAssociation(association);
+        selector->InvalidateCachedSelection();
+        vtkSmartPointer<vtkSelection> selection;
+        selection.TakeReference(usePolygon ? selector->PolygonSelect(polygon, 8)
+                                           : selector->Select(region));
+        QSet<qint64> ids;
+        EXPECT_NE(nullptr, selection.GetPointer());
+        if (!selection) return ids;
+        for (unsigned int i = 0; i < selection->GetNumberOfNodes(); ++i) {
+            auto* node = selection->GetNode(i);
+            EXPECT_EQ(source.GetPointer(),
+                      node->GetProperties()->Get(vtkSelectionNode::PROP()));
+            auto* values =
+                    vtkIdTypeArray::SafeDownCast(node->GetSelectionList());
+            EXPECT_NE(nullptr, values);
+            if (values) {
+                for (vtkIdType j = 0; j < values->GetNumberOfTuples(); ++j) {
+                    ids.insert(values->GetValue(j));
+                }
+            }
+        }
+        EXPECT_EQ(1, source->GetPickable());
+        EXPECT_EQ(0, neverPickable->GetPickable());
+        EXPECT_EQ(1, source->GetVisibility());
+        EXPECT_EQ(1, neverPickable->GetVisibility());
+        EXPECT_EQ(0, invisible->GetVisibility());
+        return ids;
+    };
+
+    for (int association : {vtkDataObject::FIELD_ASSOCIATION_POINTS,
+                            vtkDataObject::FIELD_ASSOCIATION_CELLS}) {
+        for (bool usePolygon : {false, true}) {
+            SCOPED_TRACE(::testing::Message() << "association=" << association
+                                              << " polygon=" << usePolygon);
+            const auto baseline = selectedIds(association, usePolygon);
+            const QSet<qint64> expected =
+                    association == vtkDataObject::FIELD_ASSOCIATION_POINTS
+                            ? QSet<qint64>{0, 1, 2}
+                            : QSet<qint64>{0};
+            ASSERT_EQ(expected, baseline);
+            for (int kind : {0, 1, 2}) {
+                SCOPED_TRACE(::testing::Message() << "helper kind=" << kind);
+                auto helper = MakeSelectionActor(kind, 0.5);
+                renderer->AddActor(helper);
+                EXPECT_EQ(baseline, selectedIds(association, usePolygon));
+                EXPECT_EQ(1, helper->GetPickable());
+                EXPECT_EQ(1, helper->GetVisibility());
+                renderer->RemoveActor(helper);
+                EXPECT_EQ(baseline, selectedIds(association, usePolygon));
+            }
+            selector->SetSelectableProps({});
+            EXPECT_TRUE(selectedIds(association, usePolygon).isEmpty());
+            selector->SetSelectableProps(
+                    {source.GetPointer(), neverPickable.GetPointer()});
+        }
+    }
+}
+
+TEST(SelectionPipelineRegression,
+     DbBackedSelectionExcludesRegisteredLabelGeometry) {
+#if defined(__linux__)
+    if (!std::getenv("DISPLAY")) GTEST_SKIP() << "Use xvfb-run";
+#endif
+    vtkNew<vtkRenderer> renderer;
+    vtkNew<vtkRenderWindow> window;
+    window->SetSize(200, 200);
+    window->SetMultiSamples(0);
+    window->SetOffScreenRendering(1);
+    window->AddRenderer(renderer);
+    vtkNew<VTKExtensions::vtkCustomInteractorStyle> style;
+    Visualization::VtkVis vis(renderer, window, style);
+    ccHObject root("selection-test");
+    ccPointCloud cloud("source");
+    ASSERT_TRUE(cloud.reserve(13));
+    for (int i = 0; i < 13; ++i) {
+        cloud.addPoint(i == 2   ? CCVector3(-0.5, -0.5, 0)
+                       : i == 7 ? CCVector3(0.5, -0.5, 0)
+                                : CCVector3(0, 0.5, 0));
+    }
+    ccMesh mesh(&cloud);
+    ASSERT_TRUE(mesh.reserve(5));
+    for (int i = 0; i < 5; ++i) mesh.addTriangle(2, 7, 12);
+    root.addChild(&cloud, ccHObject::DP_NONE);
+    root.addChild(&mesh, ccHObject::DP_NONE);
+    struct RestoreRoot {
+        ccHObject& root;
+        ccHObject* previous = ecvViewManager::instance().globalDBRoot();
+        ~RestoreRoot() {
+            ecvViewManager::instance().setGlobalDBRoot(previous);
+            root.removeAllChildren();  // DP_NONE: do not own stack entities.
+        }
+    } restore{root};
+    ecvViewManager::instance().setGlobalDBRoot(&root);
+
+    auto geometry = MakeSelectionActor(2, 0.0);
+    auto* poly = vtkPolyData::SafeDownCast(geometry->GetMapper()->GetInput());
+    vtkNew<vtkIdTypeArray> pointIds;
+    pointIds->SetName("vtkOriginalPointIds");
+    for (vtkIdType id : {2, 7, 12}) pointIds->InsertNextValue(id);
+    poly->GetPointData()->AddArray(pointIds);
+    vtkNew<vtkIdTypeArray> cellIds;
+    cellIds->SetName("vtkOriginalCellIds");
+    cellIds->InsertNextValue(4);
+    poly->GetCellData()->AddArray(cellIds);
+    const auto sourceId = mesh.getViewId().toStdString();
+    ASSERT_TRUE(vis.addPointCloud(poly, sourceId));
+    vis.setCurrentSourceObject(&mesh, sourceId);
+    auto* source = vis.getActorById(sourceId);
+    ASSERT_NE(nullptr, source);
+    // Non-identity geometry must be tested in world space by through-selection.
+    source->SetPosition(0.1, 0.1, 0.0);
+    auto* camera = renderer->GetActiveCamera();
+    camera->SetPosition(0, 0, 5);
+    camera->SetFocalPoint(0, 0, 0);
+    camera->ParallelProjectionOn();
+    camera->SetParallelScale(1.0);
+    camera->SetClippingRange(0.1, 10.0);
+    window->Render();
+
+    // Like a label's facet: ordinary registered mesh, but NOT a DB child.
+    ccMesh temporaryMesh(&cloud);
+    const auto helperId = temporaryMesh.getViewId().toStdString();
+    auto helperGeometry = MakeSelectionActor(2, 0.5);
+    auto* helperPoly =
+            vtkPolyData::SafeDownCast(helperGeometry->GetMapper()->GetInput());
+    cvSelectionPipeline pipeline;
+    pipeline.setVisualizer(&vis);
+    int region[] = {10, 10, 189, 189};
+    vtkNew<vtkIntArray> polygon;
+    polygon->SetNumberOfComponents(2);
+    for (int xy : {10, 10, 189, 10, 189, 189, 10, 189}) {
+        polygon->InsertNextValue(xy);
+    }
+    for (bool attached : {false, true, false}) {
+        if (attached) {
+            ASSERT_TRUE(vis.addPointCloud(helperPoly, helperId));
+            vis.setCurrentSourceObject(&temporaryMesh, helperId);
+        } else {
+            vis.removePointCloud(helperId);
+            vis.removeSourceObject(helperId);
+        }
+        const auto props = cvSelectionPipeline::dataSelectionProps(&vis);
+        ASSERT_EQ(1u, props.size());
+        EXPECT_EQ(1u, props.count(source));
+        for (bool cells : {false, true}) {
+            for (int mode : {0, 1, 2}) {
+                SCOPED_TRACE(::testing::Message()
+                             << "helper=" << attached << " cells=" << cells
+                             << " mode=" << mode);
+                cvSelectionData selected;
+                if (mode == 0) {
+                    selected = cells ? pipeline.selectCellsOnSurface(region)
+                                     : pipeline.selectPointsOnSurface(region);
+                } else if (mode == 1) {
+                    selected = cells ? pipeline.selectCellsInPolygon(polygon)
+                                     : pipeline.selectPointsInPolygon(polygon);
+                } else {
+                    selected = cells ? pipeline.selectCellsInFrustum(region)
+                                     : pipeline.selectPointsInFrustum(region);
+                }
+                ASSERT_EQ(1, selected.actorInfos().size());
+                EXPECT_EQ(source, selected.primaryActor());
+                EXPECT_EQ((cells ? QSet<qint64>{0} : QSet<qint64>{0, 1, 2}),
+                          LocalIds(selected, source, poly, 0));
+                QSet<qint64> sourceIds;
+                for (qint64 id : selected.ids()) sourceIds.insert(id);
+                EXPECT_EQ((cells ? QSet<qint64>{4} : QSet<qint64>{2, 7, 12}),
+                          sourceIds);
+                if (attached) {
+                    EXPECT_EQ(1, vis.getActorById(helperId)->GetVisibility());
+                    EXPECT_EQ(1, vis.getActorById(helperId)->GetPickable());
+                }
+            }
+        }
+    }
+    // Only the translated top vertex is in this small world-space region.
+    int translatedVertex[] = {105, 155, 120, 170};
+    auto throughPoint = pipeline.selectPointsInFrustum(translatedVertex);
+    EXPECT_EQ((QSet<qint64>{2}), LocalIds(throughPoint, source, poly, 0));
+    EXPECT_EQ((QVector<qint64>{12}), throughPoint.ids());
+    auto throughCell = pipeline.selectCellsInFrustum(translatedVertex);
+    EXPECT_EQ((QSet<qint64>{0}), LocalIds(throughCell, source, poly, 0));
+    EXPECT_EQ((QVector<qint64>{4}), throughCell.ids());
+}
+
+TEST(SelectionPipelineRegression,
+     HighlightActorLocalGeometryInWorldCoordinates) {
+    vtkNew<vtkRenderer> renderer;
+    vtkNew<vtkRenderWindow> window;
+    window->AddRenderer(renderer);
+    vtkNew<VTKExtensions::vtkCustomInteractorStyle> style;
+    Visualization::VtkVis vis(renderer, window, style);
+    cvSelectionHighlighter highlighter;
+    highlighter.setVisualizer(&vis);
+    vtkSmartPointer<vtkPolyData> output;
+    QObject::connect(&highlighter,
+                     &cvSelectionHighlighter::selectionOverlayUpdated,
+                     [&](vtkPolyData* poly, int) {
+                         output = vtkSmartPointer<vtkPolyData>::New();
+                         output->DeepCopy(poly);
+                     });
+    auto first = MakeSelectionActor(2, 0.0);
+    first->SetPosition(3, 4, 5);
+    first->SetScale(2, 3, 1);
+    auto second = MakeSelectionActor(2, 1.0);
+    vtkNew<vtkTransform> transform;
+    transform->Translate(-4, 2, 1);
+    transform->RotateZ(90);
+    second->SetUserTransform(transform);
+    // Identity actor stands for a composite block already baked to world space.
+    auto world = MakeSelectionActor(2, 7.0);
+    for (auto actor : {first, second, world}) renderer->AddActor(actor);
+    for (auto association : {cvSelectionData::POINTS, cvSelectionData::CELLS}) {
+        cvSelectionData selected({99}, association);
+        for (auto actor : {first, second, world}) {
+            cvActorSelectionInfo info;
+            info.actor = actor;
+            info.polyData =
+                    vtkPolyData::SafeDownCast(actor->GetMapper()->GetInput());
+            info.selectedIds = association == cvSelectionData::POINTS
+                                       ? QVector<qint64>{0, 1, 2}
+                                       : QVector<qint64>{0};
+            info.sourceIds = info.selectedIds;
+            selected.addActorInfo(info);
+        }
+        output = nullptr;
+        ASSERT_TRUE(highlighter.highlightSelection(
+                selected, cvSelectionHighlighter::SELECTED));
+        ASSERT_NE(nullptr, output.GetPointer());
+        ASSERT_EQ(9, output->GetNumberOfPoints());
+        // Compare sets rather than depending on vtkExtractSelection point
+        // order.
+        for (auto actor : {first, second, world}) {
+            for (vtkIdType i = 0; i < 3; ++i) {
+                double local[4] = {0, 0, 0, 1}, expected[4];
+                actor->GetMapper()->GetInput()->GetPoint(i, local);
+                actor->GetMatrix()->MultiplyPoint(local, expected);
+                bool found = false;
+                for (vtkIdType j = 0; j < output->GetNumberOfPoints(); ++j) {
+                    double actual[3];
+                    output->GetPoint(j, actual);
+                    if (std::abs(actual[0] - expected[0]) < 1e-5 &&
+                        std::abs(actual[1] - expected[1]) < 1e-5 &&
+                        std::abs(actual[2] - expected[2]) < 1e-5)
+                        found = true;
+                }
+                EXPECT_TRUE(found)
+                        << "actor=" << actor.GetPointer() << " point=" << i;
+            }
+        }
+    }
+}
+
+// Source IDs, not integer equality or actor pointers, define global selection.
+TEST(SelectionPipelineRegression, PrimarySourceIdsMatchTheirActor) {
+    vtkNew<vtkSelection> selection;
+    vtkNew<vtkActor> actors[2];
+    vtkNew<vtkPolyDataMapper> mappers[2];
+    for (int i = 0; i < 2; ++i) {
+        auto poly = MakeSingleVertexPolyData(i);
+        vtkNew<vtkIdTypeArray> original;
+        original->SetName("vtkOriginalPointIds");
+        original->InsertNextValue(100 + i);
+        poly->GetPointData()->AddArray(original);
+        mappers[i]->SetInputData(poly);
+        actors[i]->SetMapper(mappers[i]);
+        vtkNew<vtkSelectionNode> node;
+        node->SetContentType(vtkSelectionNode::INDICES);
+        node->SetFieldType(vtkSelectionNode::POINT);
+        node->GetProperties()->Set(vtkSelectionNode::PROP(), actors[i]);
+        vtkNew<vtkIdTypeArray> ids;
+        ids->InsertNextValue(0);
+        node->SetSelectionList(ids);
+        selection->AddNode(node);
+    }
+    auto result = cvSelectionPipeline::convertToCvSelectionData(
+            selection, cvSelectionPipeline::FIELD_ASSOCIATION_POINTS);
+    ASSERT_EQ(2, result.actorCount());
+    const qint64 expected =
+            result.primaryActor() == actors[0].GetPointer() ? 100 : 101;
+    ASSERT_FALSE(result.ids().isEmpty());
+    EXPECT_EQ(expected, result.ids().front());
+    EXPECT_EQ(result.ids(), result.actorInfo().sourceIds);
+}
+
+cvSelectionData QualifiedSelection(vtkActor* actor,
+                                   vtkPolyData* poly,
+                                   const QString& source,
+                                   qint64 sourceId,
+                                   qint64 localId = 0) {
+    auto selection = MakeSelection({sourceId}, cvSelectionData::POINTS, actor,
+                                   poly, 0, {localId});
+    auto info = selection.actorInfo();
+    info.sourceId = source;
+    info.sourceIds = {sourceId};
+    selection.clearActorInfo();
+    selection.addActorInfo(info);
+    return selection;
+}
+
+TEST(SelectionPipelineRegression, EqualIdsOnDifferentSourcesRemainIndependent) {
+    vtkNew<vtkActor> a, b;
+    auto pa = MakeSingleVertexPolyData(0);
+    auto pb = MakeSingleVertexPolyData(1);
+    auto first = QualifiedSelection(a, pa, "source-a", 7);
+    auto second = QualifiedSelection(b, pb, "source-b", 7);
+    auto subtracted = cvSelectionPipeline::combineSelections(
+            first, second, cvSelectionPipeline::OPERATION_SUBTRACTION);
+    EXPECT_FALSE(subtracted.isEmpty());
+    EXPECT_EQ(a.GetPointer(), subtracted.primaryActor());
+    EXPECT_EQ((QSet<qint64>{0}), LocalIds(subtracted, a, pa, 0));
+    auto toggled = cvSelectionPipeline::combineSelections(
+            first, second, cvSelectionPipeline::OPERATION_TOGGLE);
+    EXPECT_FALSE(toggled.isEmpty());
+    EXPECT_EQ(2, toggled.actorCount());
+    EXPECT_EQ((QSet<qint64>{0}), LocalIds(toggled, a, pa, 0));
+    EXPECT_EQ((QSet<qint64>{0}), LocalIds(toggled, b, pb, 0));
+    // A second view of the SAME source is not a second object.
+    auto sameSource = QualifiedSelection(b, pb, "source-a", 7);
+    EXPECT_TRUE(
+            cvSelectionPipeline::combineSelections(
+                    first, sameSource, cvSelectionPipeline::OPERATION_TOGGLE)
+                    .isEmpty());
+}
+
+TEST(SelectionPipelineRegression, PublishesCompleteIdentityAwareSelection) {
+    auto* manager = cvViewSelectionManager::instance();
+    manager->clearSelection();
+    vtkNew<vtkActor> a, b;
+    auto pa = MakeSingleVertexPolyData(0);
+    auto pb = MakeSingleVertexPolyData(1);
+    QVector<cvSelectionData> published;
+    auto connection = QObject::connect(
+            manager,
+            QOverload<const cvSelectionData&>::of(
+                    &cvViewSelectionManager::selectionChanged),
+            [&](const cvSelectionData& value) {
+                published.append(value);
+                EXPECT_EQ(value.actorCount(),
+                          manager->currentSelection().actorCount());
+            });
+    manager->setCurrentSelection(QualifiedSelection(a, pa, "source-a", 17));
+    manager->setCurrentSelection(QualifiedSelection(b, pb, "source-b", 17));
+    QObject::disconnect(connection);
+    ASSERT_EQ(2, published.size());
+    ASSERT_EQ(1, published[0].actorCount());
+    EXPECT_EQ(a.GetPointer(), published[0].primaryActor());
+    EXPECT_EQ(QString("source-a"), published[0].actorInfo().sourceId);
+    EXPECT_EQ((QVector<qint64>{17}), published[0].actorInfo().sourceIds);
+    EXPECT_EQ(b.GetPointer(), published[1].primaryActor());
+    EXPECT_EQ(QString("source-b"), published[1].actorInfo().sourceId);
+    manager->clearCurrentSelection();
+    EXPECT_TRUE(manager->currentSelection().isEmpty());
+    EXPECT_EQ(nullptr, manager->getSourceObject());
+}
+
+TEST(SelectionPipelineRegression,
+     NonPickableWhitelistedPointDoesNotOccludeSource) {
+#if defined(__linux__)
+    if (!std::getenv("DISPLAY")) GTEST_SKIP() << "Use xvfb-run";
+#endif
+    vtkNew<vtkRenderer> renderer;
+    vtkNew<vtkRenderWindow> window;
+    window->AddRenderer(renderer);
+    window->SetSize(200, 200);
+    window->SetMultiSamples(0);
+    window->SetOffScreenRendering(1);
+    auto source = MakeSelectionActor(2, 0);
+    auto helper = MakeSelectionActor(0, 0.5);
+    renderer->AddActor(source);
+    renderer->AddActor(helper);
+    helper->PickableOff();
+    helper->VisibilityOff();
+    auto* camera = renderer->GetActiveCamera();
+    camera->SetPosition(0, 0, 5);
+    camera->SetFocalPoint(0, 0, 0);
+    camera->ParallelProjectionOn();
+    camera->SetParallelScale(1);
+    camera->SetClippingRange(0.1, 10);
+    window->Render();
+    vtkNew<cvHardwareSelector> selector;
+    selector->SetRenderer(renderer);
+    selector->SetFieldAssociation(vtkDataObject::FIELD_ASSOCIATION_POINTS);
+    auto pick = [&]() {
+        selector->SetSelectableProps(
+                {source.GetPointer(), helper.GetPointer()});
+        int region[] = {10, 10, 189, 189};
+        vtkSmartPointer<vtkSelection> selection;
+        selection.TakeReference(selector->Select(region));
+        QSet<qint64> result;
+        EXPECT_NE(nullptr, selection.GetPointer());
+        if (!selection) return result;
+        for (unsigned i = 0; i < selection->GetNumberOfNodes(); ++i) {
+            auto* node = selection->GetNode(i);
+            EXPECT_EQ(source.GetPointer(),
+                      node->GetProperties()->Get(vtkSelectionNode::PROP()));
+            auto* ids = vtkIdTypeArray::SafeDownCast(node->GetSelectionList());
+            if (ids)
+                for (vtkIdType j = 0; j < ids->GetNumberOfTuples(); ++j)
+                    result.insert(ids->GetValue(j));
+        }
+        return result;
+    };
+    const auto baseline = pick();
+    ASSERT_EQ((QSet<qint64>{0, 1, 2}), baseline);
+    helper->VisibilityOn();
+    EXPECT_EQ(baseline, pick());
+    EXPECT_EQ(0, helper->GetPickable());
+    EXPECT_EQ(1, helper->GetVisibility());
+}
+
+TEST(SelectionPipelineRegression, ResolvesSourceIdsInEachViewsRepresentation) {
+    vtkNew<vtkRenderer> ra, rb;
+    vtkNew<vtkRenderWindow> wa, wb;
+    wa->AddRenderer(ra);
+    wb->AddRenderer(rb);
+    vtkNew<VTKExtensions::vtkCustomInteractorStyle> sa, sb;
+    Visualization::VtkVis va(ra, wa, sa), vb(rb, wb, sb);
+    auto ga = MakeSelectionActor(2, 0);
+    auto gb = MakeSelectionActor(2, 2);
+    auto* pa = vtkPolyData::SafeDownCast(ga->GetMapper()->GetInput());
+    auto* pb = vtkPolyData::SafeDownCast(gb->GetMapper()->GetInput());
+    auto originals = [](vtkPolyData* poly, const QVector<qint64>& values) {
+        vtkNew<vtkIdTypeArray> ids;
+        ids->SetName("vtkOriginalPointIds");
+        for (auto value : values) ids->InsertNextValue(value);
+        poly->GetPointData()->AddArray(ids);
+    };
+    originals(pa, {11, 22, 33});
+    originals(pb, {33, 22, 11});
+    ASSERT_TRUE(va.addPointCloud(pa, "shared-source"));
+    ASSERT_TRUE(vb.addPointCloud(pb, "shared-source"));
+    auto* a = va.getActorById("shared-source");
+    auto* b = vb.getActorById("shared-source");
+    a->SetPosition(-9, -8, -7);
+    b->SetPosition(4, 5, 6);
+    b->SetScale(2, 3, 4);
+    auto selected = QualifiedSelection(a, pa, "shared-source", 11);
+    const auto resolved =
+            cvSelectionPipeline::resolveSelectionForView(selected, &vb);
+    ASSERT_EQ(1, resolved.actorCount());
+    EXPECT_EQ(b, resolved.primaryActor());
+    EXPECT_EQ((QSet<qint64>{2}), LocalIds(resolved, b, pb, 0));
+    auto overlay =
+            cvSelectionHighlighter::renderSelectionForView(&vb, selected);
+    ASSERT_NE(nullptr, overlay.GetPointer());
+    ASSERT_EQ(1, overlay->GetNumberOfPoints());
+    double local[4] = {0, 0, 0, 1}, expected[4], actual[3];
+    pb->GetPoint(2, local);
+    b->GetMatrix()->MultiplyPoint(local, expected);
+    overlay->GetPoint(0, actual);
+    for (int axis = 0; axis < 3; ++axis)
+        EXPECT_NEAR(expected[axis], actual[axis], 1e-6);
+
+    // Faces obey the same source-qualified/world-transform contract.
+    for (auto* poly : {pa, pb}) {
+        vtkNew<vtkIdTypeArray> cellIds;
+        cellIds->SetName("vtkOriginalCellIds");
+        cellIds->InsertNextValue(99);
+        poly->GetCellData()->AddArray(cellIds);
+    }
+    auto faces = MakeSelection({99}, cvSelectionData::CELLS, a, pa, 0, {0});
+    auto faceInfo = faces.actorInfo();
+    faceInfo.sourceId = "shared-source";
+    faceInfo.sourceIds = {99};
+    faces.clearActorInfo();
+    faces.addActorInfo(faceInfo);
+    const auto resolvedFaces =
+            cvSelectionPipeline::resolveSelectionForView(faces, &vb);
+    EXPECT_EQ((QSet<qint64>{0}), LocalIds(resolvedFaces, b, pb, 0));
+    auto faceOverlay =
+            cvSelectionHighlighter::renderSelectionForView(&vb, faces);
+    ASSERT_NE(nullptr, faceOverlay.GetPointer());
+    EXPECT_EQ(1, faceOverlay->GetNumberOfCells());
+    EXPECT_EQ(3, faceOverlay->GetNumberOfPoints());
+    double expectedBounds[6], actualBounds[6];
+    b->GetBounds(expectedBounds);
+    faceOverlay->GetBounds(actualBounds);
+    for (int bound = 0; bound < 6; ++bound)
+        EXPECT_NEAR(expectedBounds[bound], actualBounds[bound], 1e-6);
+
+    // HOVER uses a separate overlay and clearing it cannot erase SELECTED.
+    auto* selectedActor = vb.getActorById("__highlight_selected_overlay__");
+    ASSERT_NE(nullptr, selectedActor);
+    auto hovered = QualifiedSelection(a, pa, "shared-source", 22, 1);
+    ASSERT_EQ(1, b->GetVisibility());
+    ASSERT_EQ(1, b->GetPickable());
+    ASSERT_TRUE(rb->HasViewProp(b));
+    auto* mapping = pb->GetPointData()->GetArray("vtkOriginalPointIds");
+    ASSERT_NE(nullptr, mapping);
+    ASSERT_EQ(22, mapping->GetComponent(1, 0));
+    const auto resolvedHover =
+            cvSelectionPipeline::resolveSelectionForView(hovered, &vb);
+    ASSERT_EQ(1, resolvedHover.actorCount());
+    EXPECT_EQ((QSet<qint64>{1}), LocalIds(resolvedHover, b, pb, 0));
+    ASSERT_NE(nullptr, cvSelectionHighlighter::renderSelectionForView(
+                               &vb, hovered, cvSelectionHighlighter::HOVER)
+                               .GetPointer());
+    EXPECT_EQ(selectedActor, vb.getActorById("__highlight_selected_overlay__"));
+    EXPECT_NE(nullptr, vb.getActorById("__highlight_hover_overlay__"));
+    auto foreign = QualifiedSelection(a, pa, "absent-source", 11);
+    EXPECT_TRUE(cvSelectionPipeline::resolveSelectionForView(foreign, &vb)
+                        .isEmpty());
+    EXPECT_EQ(nullptr, cvSelectionHighlighter::renderSelectionForView(
+                               &vb, foreign, cvSelectionHighlighter::HOVER)
+                               .GetPointer());
+    EXPECT_EQ(selectedActor, vb.getActorById("__highlight_selected_overlay__"));
+
+    b->VisibilityOff();
+    EXPECT_TRUE(cvSelectionPipeline::resolveSelectionForView(selected, &vb)
+                        .isEmpty());
+    b->VisibilityOn();
+    ASSERT_TRUE(vb.removePointCloud("shared-source"));
+    EXPECT_TRUE(cvSelectionPipeline::resolveSelectionForView(selected, &vb)
+                        .isEmpty());
+    // Source-space state survives actor rebuild and a different render order.
+    auto rebuilt = MakeSelectionActor(2, 9);
+    auto* rebuiltPoly =
+            vtkPolyData::SafeDownCast(rebuilt->GetMapper()->GetInput());
+    originals(rebuiltPoly, {22, 11, 33});
+    ASSERT_TRUE(vb.addPointCloud(rebuiltPoly, "shared-source"));
+    const auto rebound =
+            cvSelectionPipeline::resolveSelectionForView(selected, &vb);
+    ASSERT_EQ(1, rebound.actorCount());
+    EXPECT_EQ((QSet<qint64>{1}),
+              LocalIds(rebound, vb.getActorById("shared-source"), rebuiltPoly,
+                       0));
+    EXPECT_EQ((QVector<qint64>{11}), rebound.actorInfo().sourceIds);
+}
+
+TEST(SelectionPipelineRegression, ExpiredLegacyActorsFailClosed) {
+    vtkNew<vtkRenderer> renderer;
+    vtkNew<vtkRenderWindow> window;
+    window->AddRenderer(renderer);
+    vtkNew<VTKExtensions::vtkCustomInteractorStyle> style;
+    Visualization::VtkVis vis(renderer, window, style);
+    cvSelectionData legacy;
+    {
+        auto actor = MakeSelectionActor(2, 0);
+        auto* poly = vtkPolyData::SafeDownCast(actor->GetMapper()->GetInput());
+        legacy = MakeSelection({0}, cvSelectionData::POINTS, actor, poly, 0,
+                               {0});
+        renderer->AddActor(actor);
+        EXPECT_FALSE(cvSelectionPipeline::resolveSelectionForView(legacy, &vis)
+                             .isEmpty());
+        renderer->RemoveActor(actor);
+    }
+    EXPECT_EQ(nullptr, legacy.primaryActor());
+    EXPECT_EQ(nullptr, legacy.primaryPolyData());
+    EXPECT_TRUE(cvSelectionPipeline::resolveSelectionForView(legacy, &vis)
+                        .isEmpty());
+    EXPECT_EQ(
+            nullptr,
+            cvSelectionHighlighter::buildSelectionOverlay(legacy).GetPointer());
+}
+
+TEST(SelectionPipelineRegression,
+     HardwarePicksStayInTheirSourceAndRenderWindow) {
+#if defined(__linux__)
+    if (!std::getenv("DISPLAY")) GTEST_SKIP() << "Use xvfb-run";
+#endif
+    vtkNew<vtkRenderer> ra, rb;
+    vtkNew<vtkRenderWindow> wa, wb;
+    vtkNew<VTKExtensions::vtkCustomInteractorStyle> sa, sb;
+    wa->AddRenderer(ra);
+    wb->AddRenderer(rb);
+    for (auto* window : {wa.GetPointer(), wb.GetPointer()}) {
+        window->SetSize(200, 200);
+        window->SetMultiSamples(0);
+        window->SetOffScreenRendering(1);
+    }
+    Visualization::VtkVis va(ra, wa, sa), vb(rb, wb, sb);
+    ccHObject root("two-window-selection-test");
+    ccPointCloud cloudA("cloud-a"), cloudB("mesh-b-vertices");
+    ASSERT_TRUE(cloudA.reserve(3));
+    ASSERT_TRUE(cloudB.reserve(3));
+    cloudA.addPoint(CCVector3(-0.5, -0.5, 0));
+    cloudA.addPoint(CCVector3(0.5, -0.5, 0));
+    cloudA.addPoint(CCVector3(0, 0.5, 0));
+    cloudB.addPoint(CCVector3(0.5, -0.5, 0));
+    cloudB.addPoint(CCVector3(0, 0.5, 0));
+    cloudB.addPoint(CCVector3(-0.5, -0.5, 0));
+    ccMesh meshB(&cloudB);
+    ASSERT_TRUE(meshB.reserve(1));
+    meshB.addTriangle(2, 0, 1);
+    root.addChild(&cloudA, ccHObject::DP_NONE);
+    root.addChild(&cloudB, ccHObject::DP_NONE);
+    root.addChild(&meshB, ccHObject::DP_NONE);
+    struct RestoreRoot {
+        ccHObject& root;
+        ccHObject* previous = ecvViewManager::instance().globalDBRoot();
+        ~RestoreRoot() {
+            ecvViewManager::instance().setGlobalDBRoot(previous);
+            root.removeAllChildren();
+        }
+    } restore{root};
+    ecvViewManager::instance().setGlobalDBRoot(&root);
+
+    auto geometryA = MakeSelectionActor(2, 0);
+    auto geometryB = MakeSelectionActor(2, 0);
+    auto* pa = vtkPolyData::SafeDownCast(geometryA->GetMapper()->GetInput());
+    auto* pb = vtkPolyData::SafeDownCast(geometryB->GetMapper()->GetInput());
+    // Point clouds need one vertex CELL for every point, not triangle topology.
+    vtkNew<vtkCellArray> vertices;
+    for (vtkIdType i = 0; i < 3; ++i) vertices->InsertNextCell(1, &i);
+    pa->SetPolys(nullptr);
+    pa->SetVerts(vertices);
+    vtkNew<vtkIdTypeArray> originalA, originalB;
+    originalA->SetName("vtkOriginalPointIds");
+    originalB->SetName("vtkOriginalPointIds");
+    for (vtkIdType i : {0, 1, 2}) originalA->InsertNextValue(i);
+    for (vtkIdType i : {2, 0, 1}) originalB->InsertNextValue(i);
+    pa->GetPointData()->AddArray(originalA);
+    pb->GetPointData()->AddArray(originalB);
+    const auto sourceA = cloudA.getViewId().toStdString();
+    const auto sourceB = meshB.getViewId().toStdString();
+    ASSERT_TRUE(va.addPointCloud(pa, sourceA));
+    ASSERT_TRUE(vb.addPointCloud(pb, sourceB));
+    va.setCurrentSourceObject(&cloudA, sourceA);
+    vb.setCurrentSourceObject(&meshB, sourceB);
+    auto* actorA = va.getActorById(sourceA);
+    auto* actorB = vb.getActorById(sourceB);
+    ASSERT_NE(nullptr, actorA);
+    ASSERT_NE(nullptr, actorB);
+    actorB->SetPosition(0.1, 0.1, 0);
+    for (auto* renderer : {ra.GetPointer(), rb.GetPointer()}) {
+        auto* camera = renderer->GetActiveCamera();
+        camera->SetPosition(0, 0, 5);
+        camera->SetFocalPoint(0, 0, 0);
+        camera->ParallelProjectionOn();
+        camera->SetParallelScale(1);
+        camera->SetClippingRange(0.1, 10);
+    }
+    // A transient label-like marker directly covers B's selected vertex.
+    auto helper = MakeSelectionActor(0, 0.5);
+    helper->SetPosition(0.1, 0.1, 0);
+    rb->AddActor(helper);
+    wa->Render();
+    wb->Render();
+    cvSelectionPipeline pipelineA, pipelineB;
+    pipelineA.setVisualizer(&va);
+    pipelineB.setVisualizer(&vb);
+    int topA[] = {96, 146, 104, 154};
+    int bottomLeftB[] = {56, 56, 64, 64};
+    const auto pickedA = pipelineA.selectPointsOnSurface(topA);
+    const auto pickedB = pipelineB.selectPointsOnSurface(bottomLeftB);
+    ASSERT_EQ(1, pickedA.actorCount());
+    ASSERT_EQ(1, pickedB.actorCount());
+    EXPECT_EQ(QString::fromStdString(sourceA), pickedA.actorInfo().sourceId);
+    EXPECT_EQ(QString::fromStdString(sourceB), pickedB.actorInfo().sourceId);
+    EXPECT_EQ((QVector<qint64>{2}), pickedA.actorInfo().sourceIds);
+    EXPECT_EQ((QVector<qint64>{2}), pickedB.actorInfo().sourceIds);
+    EXPECT_EQ((QSet<qint64>{2}), LocalIds(pickedA, actorA, pa, 0));
+    EXPECT_EQ((QSet<qint64>{0}), LocalIds(pickedB, actorB, pb, 0));
+    EXPECT_EQ(1, helper->GetVisibility());
+    EXPECT_EQ(1, helper->GetPickable());
+    auto combined = cvSelectionPipeline::combineSelections(
+            pickedA, pickedB, cvSelectionPipeline::OPERATION_ADDITION);
+    ASSERT_EQ(2, combined.actorCount());
+    EXPECT_EQ(2, combined.count());
+    auto overlayA =
+            cvSelectionHighlighter::renderSelectionForView(&va, combined);
+    auto overlayB =
+            cvSelectionHighlighter::renderSelectionForView(&vb, combined);
+    ASSERT_NE(nullptr, overlayA.GetPointer());
+    ASSERT_NE(nullptr, overlayB.GetPointer());
+    ASSERT_EQ(1, overlayA->GetNumberOfPoints());
+    ASSERT_EQ(1, overlayB->GetNumberOfPoints());
+    double pointA[3], pointB[3];
+    overlayA->GetPoint(0, pointA);
+    overlayB->GetPoint(0, pointB);
+    const double expectedA[] = {0, 0.5, 0};
+    const double expectedB[] = {-0.4, -0.4, 0};
+    for (int axis = 0; axis < 3; ++axis) {
+        EXPECT_NEAR(expectedA[axis], pointA[axis], 1e-6);
+        EXPECT_NEAR(expectedB[axis], pointB[axis], 1e-6);
+    }
+    const auto faces = pipelineB.selectCellsOnSurface(bottomLeftB);
+    ASSERT_EQ(1, faces.actorCount());
+    EXPECT_EQ(cvSelectionData::CELLS, faces.fieldAssociation());
+    EXPECT_EQ(QString::fromStdString(sourceB), faces.actorInfo().sourceId);
+    EXPECT_EQ((QSet<qint64>{0}), LocalIds(faces, actorB, pb, 0));
+    cvSelectionHighlighter highlighter;
+    highlighter.setVisualizer(&vb);
+    vtkSmartPointer<vtkPolyData> faceOverlay;
+    int overlayKind = cvSelectionHighlighter::SelectionOverlayNone;
+    QObject::connect(&highlighter,
+                     &cvSelectionHighlighter::selectionOverlayUpdated,
+                     [&](vtkPolyData* poly, int kind) {
+                         faceOverlay = poly;
+                         overlayKind = kind;
+                     });
+    ASSERT_TRUE(highlighter.highlightSelection(faces));
+    EXPECT_EQ(cvSelectionHighlighter::SelectionOverlaySurface, overlayKind);
+    ASSERT_NE(nullptr, faceOverlay.GetPointer());
+    EXPECT_EQ(1, faceOverlay->GetNumberOfPolys());
+    EXPECT_EQ(0, faceOverlay->GetNumberOfVerts());
+    EXPECT_EQ(1, helper->GetVisibility());
+    EXPECT_EQ(1, helper->GetPickable());
+}
+
+TEST(SelectionPipelineRegression, ClosingViewUnbindsAllSelectionConsumers) {
+    vtkNew<vtkRenderer> renderer;
+    vtkNew<vtkRenderWindow> window;
+    window->AddRenderer(renderer);
+    vtkNew<VTKExtensions::vtkCustomInteractorStyle> style;
+    Visualization::VtkVis vis(renderer, window, style);
+    auto* manager = cvViewSelectionManager::instance();
+    manager->clearSelection();
+    manager->setVisualizer(&vis);
+    EXPECT_EQ(&vis, manager->getHighlighter()->getVisualizer());
+    manager->setVisualizer(nullptr);
+    EXPECT_EQ(nullptr, manager->getVisualizer());
+    EXPECT_EQ(nullptr, manager->getHighlighter()->getVisualizer());
+    int region[] = {0, 0, 10, 10};
+    EXPECT_EQ(nullptr,
+              manager->getPipeline()
+                      ->executeRectangleSelection(
+                              region, cvSelectionPipeline::SURFACE_POINTS)
+                      .GetPointer());
+}
+
+TEST(SelectionPipelineRegression, RemovedSourceIsNotDereferenced) {
+    ccHObject root("source-lifetime-test");
+    struct RestoreRoot {
+        ccHObject* previous = ecvViewManager::instance().globalDBRoot();
+        ~RestoreRoot() { ecvViewManager::instance().setGlobalDBRoot(previous); }
+    } restore;
+    ecvViewManager::instance().setGlobalDBRoot(&root);
+    auto* source = new ccPointCloud("removed-source");
+    root.addChild(source, ccHObject::DP_NONE);
+    cvSelectionData selected(QVector<qint64>{0}, cvSelectionData::POINTS);
+    cvActorSelectionInfo info;
+    info.sourceId = source->getViewId();
+    info.sourceIds = {0};
+    selected.addActorInfo(info);
+    auto* manager = cvViewSelectionManager::instance();
+    manager->clearSelection();
+    manager->setSourceObject(source);
+    manager->setCurrentSelection(selected);
+    EXPECT_EQ(source, manager->getSourcePointCloud());
+    root.detachChild(source);
+    delete source;
+    EXPECT_FALSE(manager->isSourceObjectValid());
+    EXPECT_EQ(nullptr, manager->getSourceObject());
+    manager->clearCurrentSelection();
 }
 
 TEST_F(CompositeBlockRegistryTest, RegisterAndReverseLookup) {

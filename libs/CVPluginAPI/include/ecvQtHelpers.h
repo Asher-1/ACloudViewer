@@ -16,12 +16,21 @@ public:
     //! Sets a button background color
     inline static void SetButtonColor(QAbstractButton* button,
                                       const QColor& col) {
-        if (button)
+        if (button) {
+            // This is a data-color swatch, not application chrome. Keep its
+            // text contrast explicit so a prior dark QSS palette cannot leak
+            // into a white swatch after returning to a native window style.
+            const int luminance =
+                    col.red() * 299 + col.green() * 587 + col.blue() * 114;
             button->setStyleSheet(
-                    QString("* { background-color: rgb(%1,%2,%3) }")
+                    QString("QAbstractButton { background-color: "
+                            "rgb(%1,%2,%3); "
+                            "color: %4; }")
                             .arg(col.red())
                             .arg(col.green())
-                            .arg(col.blue()));
+                            .arg(col.blue())
+                            .arg(luminance >= 128000 ? "black" : "white"));
+        }
     }
 
     //! Returns the ideal number of threads/cores

@@ -84,7 +84,7 @@ cmakeWhlOptions=(-DDEVELOPER_BUILD=OFF
 )
 cmake "/opt/ACloudViewer/ACloudViewer" \
       "${cmakeWhlOptions[@]}" \
-      -DCMAKE_INSTALL_PREFIX=/opt/ACloudViewer/install
+      -DCMAKE_INSTALL_PREFIX=/opt/ACloudViewer/install || exit $?
 
 # compile ACloudViewer pip-package
 make "-j$(nproc)" pip-package
@@ -188,11 +188,18 @@ cmakeGuiOptions=(
 
 cmake "/opt/ACloudViewer/ACloudViewer" \
       "${cmakeGuiOptions[@]}" \
-      -DCMAKE_INSTALL_PREFIX=/opt/ACloudViewer/install
+      -DCMAKE_INSTALL_PREFIX=/opt/ACloudViewer/install || exit $?
 
-make "-j$(nproc)"
-cmake --build . --target aicore-contract-tests "-j$(nproc)"
-make install "-j$(nproc)"
+BUILD_JOBS=${BUILD_JOBS:-4}
+if ! [[ "$BUILD_JOBS" =~ ^[1-9][0-9]*$ ]] || (( BUILD_JOBS > 12 )); then
+    echo "BUILD_JOBS must be an integer between 1 and 12" >&2
+    exit 1
+fi
+export CMAKE_BUILD_PARALLEL_LEVEL="$BUILD_JOBS" NPROC="$BUILD_JOBS" BUILD_JOBS
+cmake --build . --parallel "$BUILD_JOBS" || exit $?
+cmake -DBUILD_DIR="$PWD" -DJOBS="$BUILD_JOBS" \
+    -P /opt/ACloudViewer/ACloudViewer/tests/Run.cmake || exit $?
+cmake --build . --target install --parallel "$BUILD_JOBS"
 
 DBUS_SYSTEM_BUS_ADDRESS=unix:path=/host/run/dbus/system_bus_socket \
     USER=ubuntu \

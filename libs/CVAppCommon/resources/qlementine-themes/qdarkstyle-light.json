@@ -1,0 +1,10 @@
+{
+  "base": "light",
+  "overrides": {
+    "meta": {
+      "name": "qdarkstyle-light",
+      "version": "1",
+      "author": "ACloudViewer"
+    }
+  }
+}

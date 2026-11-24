@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include <FileSystem.h>
+#include <gtest/gtest.h>
 
 #include <QCoreApplication>
 #include <QDir>
@@ -18,24 +19,19 @@
 #include "ecvAssetIntegrity.h"
 #include "ecvTestDataRepository.h"
 
-#define REQUIRE(condition)                                               \
-    do {                                                                 \
-        if (!(condition)) {                                              \
-            std::fprintf(stderr, "line %d: %s\n", __LINE__, #condition); \
-            return 1;                                                    \
-        }                                                                \
-    } while (false)
-
-int main(int argc, char** argv) {
+TEST(DatasetRepositoryIntegration, CachedPreparationReentryRepairAndRetry) {
+    int argc = 1;
+    char program[] = "cvpluginapi-integration-test";
+    char* argv[] = {program, nullptr};
     QCoreApplication app(argc, argv);
     QTemporaryDir temporary;
-    REQUIRE(temporary.isValid());
+    ASSERT_TRUE(temporary.isValid());
     const QString cacheRoot =
             QDir(temporary.path())
                     .filePath(QString::fromUtf8(
                             u8"cache \u6a21\u578b-\U0001f9e0"));
-    REQUIRE(QDir().mkpath(cacheRoot));
-    REQUIRE(cloudViewer::utility::filesystem::SetEnvVar(
+    ASSERT_TRUE(QDir().mkpath(cacheRoot));
+    ASSERT_TRUE(cloudViewer::utility::filesystem::SetEnvVar(
             "CLOUDVIEWER_DATA_ROOT", cacheRoot.toUtf8().toStdString()));
     using Repository = ecvTestDataRepository;
     using Dataset = Repository::Dataset;
@@ -51,7 +47,8 @@ int main(int argc, char** argv) {
         return ecvAssetIntegrity::markVerified(
                 path, Repository::getDatasetInfo(kind).anchor);
     };
-    REQUIRE(fixture(Dataset::Monstree,
+    ASSERT_TRUE(
+            fixture(Dataset::Monstree,
                     QByteArray::fromHex("504b0304140000000000d664695d6fc811d914"
                                         "0000001400000020000000646174617365"
                                         "745f6d6f6e73747265652f6d696e69332f6672"
@@ -65,7 +62,8 @@ int main(int argc, char** argv) {
                                         "0000")));
     // Store real PNG contents: Qt 5.12 does not decode PPM bytes through a
     // .png path, unlike newer Qt versions that sniff the contents again.
-    REQUIRE(fixture(Dataset::Image2Mesh,
+    ASSERT_TRUE(
+            fixture(Dataset::Image2Mesh,
                     QByteArray::fromHex("504b0304140000000000d664495d510fda0245"
                                         "000000450000002d000000696d6167655f"
                                         "746f5f6d6573685f646174612f6578616d706c"
@@ -120,30 +118,31 @@ int main(int argc, char** argv) {
     // A cached ZIP prepares without transport; its callback may start the
     // next dataset immediately, exactly as a multi-stage plugin does.
     repository.ensureDatasetReady(Dataset::Monstree);
-    REQUIRE(completions == 2 && failures == 0 && extracts == 2);
-    REQUIRE(!Repository::getMonstreeImages(
-                     Repository::extractPath(Dataset::Monstree))
-                     .isEmpty());
+    ASSERT_TRUE(completions == 2 && failures == 0 && extracts == 2);
+    ASSERT_TRUE(!Repository::getMonstreeImages(
+                         Repository::extractPath(Dataset::Monstree))
+                         .isEmpty());
     repository.ensureDatasetReady(Dataset::Monstree);
     repository.ensureDatasetReady(Dataset::Image2Mesh);
-    REQUIRE(completions == 4 && extracts == 2);
+    ASSERT_TRUE(completions == 4 && extracts == 2);
     // An interrupted extract missing one consumer's subtree is recovered
     // from the cached ZIP, without another download.
-    REQUIRE(QDir(QDir(Repository::extractPath(Dataset::Image2Mesh))
-                         .filePath("sam3d_images"))
-                    .removeRecursively());
+    ASSERT_TRUE(QDir(QDir(Repository::extractPath(Dataset::Image2Mesh))
+                             .filePath("sam3d_images"))
+                        .removeRecursively());
     repository.ensureDatasetReady(Dataset::Image2Mesh);
-    REQUIRE(completions == 5 && extracts == 3 && failures == 0);
-    REQUIRE(!Repository::getSam3dObjectImages(
-                     Repository::extractPath(Dataset::Image2Mesh))
-                     .isEmpty());
+    ASSERT_TRUE(completions == 5 && extracts == 3 && failures == 0);
+    ASSERT_TRUE(!Repository::getSam3dObjectImages(
+                         Repository::extractPath(Dataset::Image2Mesh))
+                         .isEmpty());
     // Extraction failure settles once and releases the service for retry.
-    REQUIRE(QDir(Repository::extractPath(Dataset::Monstree))
-                    .removeRecursively());
-    REQUIRE(fixture(Dataset::Monstree, "invalid zip fixture"));
+    ASSERT_TRUE(QDir(Repository::extractPath(Dataset::Monstree))
+                        .removeRecursively());
+    ASSERT_TRUE(fixture(Dataset::Monstree, "invalid zip fixture"));
     repository.ensureDatasetReady(Dataset::Monstree);
-    REQUIRE(completions == 6 && extracts == 4 && failures == 1);
-    REQUIRE(fixture(Dataset::Monstree,
+    ASSERT_TRUE(completions == 6 && extracts == 4 && failures == 1);
+    ASSERT_TRUE(
+            fixture(Dataset::Monstree,
                     QByteArray::fromHex("504b0304140000000000d664695d6fc811d914"
                                         "0000001400000020000000646174617365"
                                         "745f6d6f6e73747265652f6d696e69332f6672"
@@ -156,24 +155,24 @@ int main(int argc, char** argv) {
                                         "0600000000010001004e00000052000000"
                                         "0000")));
     repository.ensureDatasetReady(Dataset::Monstree);
-    REQUIRE(completions == 7 && extracts == 5 && failures == 1);
-    REQUIRE(!repository.isDownloadInProgress());
+    ASSERT_TRUE(completions == 7 && extracts == 5 && failures == 1);
+    ASSERT_TRUE(!repository.isDownloadInProgress());
     // Single-file assets materialize at extractPath(), not inside it.
     const auto video = Dataset::LingbotMapDriveVideo;
-    REQUIRE(fixture(video, "synthetic verified video"));
-    REQUIRE(Repository::findDatasetFile(
-                    video, Repository::getDatasetInfo(video).zipFileName)
-                    .isEmpty());
+    ASSERT_TRUE(fixture(video, "synthetic verified video"));
+    ASSERT_TRUE(Repository::findDatasetFile(
+                        video, Repository::getDatasetInfo(video).zipFileName)
+                        .isEmpty());
     repository.ensureDatasetReady(video);
-    REQUIRE(completions == 8 && extracts == 6 && failures == 1);
-    REQUIRE(!Repository::findDatasetFile(
-                     video, Repository::getDatasetInfo(video).zipFileName)
-                     .isEmpty());
+    ASSERT_TRUE(completions == 8 && extracts == 6 && failures == 1);
+    ASSERT_TRUE(!Repository::findDatasetFile(
+                         video, Repository::getDatasetInfo(video).zipFileName)
+                         .isEmpty());
     repository.ensureDatasetReady(video);
-    REQUIRE(completions == 9 && extracts == 6);
-    REQUIRE(QFile::remove(Repository::extractPath(video)));
+    ASSERT_TRUE(completions == 9 && extracts == 6);
+    ASSERT_TRUE(QFile::remove(Repository::extractPath(video)));
     repository.ensureDatasetReady(video);
-    REQUIRE(completions == 10 && extracts == 7 && failures == 1);
+    ASSERT_TRUE(completions == 10 && extracts == 7 && failures == 1);
     // Cancel may synchronously start another preparation. Force transport
     // through loopback; no external connection or event loop is needed.
     const QNetworkProxy savedProxy = QNetworkProxy::applicationProxy();
@@ -186,17 +185,13 @@ int main(int argc, char** argv) {
                     repository.ensureDatasetReady(Dataset::RelateAnything);
             });
     repository.ensureDatasetReady(Dataset::RAM);
-    REQUIRE(repository.isDownloadInProgress());
+    ASSERT_TRUE(repository.isDownloadInProgress());
     repository.cancelDownload();
-    REQUIRE(completions == 11 && failures == 2);
-    REQUIRE(repository.isDownloadInProgress());
+    ASSERT_TRUE(completions == 11 && failures == 2);
+    ASSERT_TRUE(repository.isDownloadInProgress());
     QObject::disconnect(retry);
     repository.cancelDownload();
-    REQUIRE(completions == 12 && failures == 3);
-    REQUIRE(!repository.isDownloadInProgress());
+    ASSERT_TRUE(completions == 12 && failures == 3);
+    ASSERT_TRUE(!repository.isDownloadInProgress());
     QNetworkProxy::setApplicationProxy(savedProxy);
-    std::puts(
-            "dataset repository: cached preparation, reentry, repair and retry "
-            "passed");
-    return 0;
 }

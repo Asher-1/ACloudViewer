@@ -625,19 +625,6 @@ void SAM3Dialog::setupUi() {
     m_pageList = new QListWidget(this);
     m_pageList->setFixedWidth(ecvAICoreUi::dpiScaled(132));
     m_pageList->setSpacing(ecvAICoreUi::dpiScaled(2));
-    // Palette-based list styling lifted from YOLODialog::setupUi: tracks
-    // light/dark themes without hardcoded colors. Four short-titled pages
-    // never overflow, so a fixed-width list (TrellisDialog rendition) needs
-    // no draggable splitter / persisted splitter state.
-    m_pageList->setStyleSheet(
-            QStringLiteral("QListWidget { background: palette(base); border: "
-                           "1px solid palette(mid); border-radius: 3px; "
-                           "padding: 2px; }"
-                           "QListWidget::item { padding: 4px 6px; "
-                           "border-radius: 3px; }"
-                           "QListWidget::item:selected { background: "
-                           "palette(highlight); color: "
-                           "palette(highlighted-text); }"));
     m_pageStack = new QStackedWidget(this);
 
     // Model-switch hint: the new model loads lazily on the next Segment /
@@ -690,12 +677,6 @@ void SAM3Dialog::setupUi() {
                     &SAM3Dialog::onRunSegment);
             u.segmentBtn = new QPushButton(tr("Segment"));
             u.segmentBtn->setEnabled(false);
-            u.segmentBtn->setStyleSheet(
-                    "QPushButton { background: #00897b; color: white; "
-                    "font-weight: bold;"
-                    "  border: none; border-radius: 4px; padding: 5px 14px; }"
-                    "QPushButton:hover { background: #00796b; }"
-                    "QPushButton:disabled { background: #555; color: #999; }");
             connect(u.segmentBtn, &QPushButton::clicked, this,
                     &SAM3Dialog::onRunSegment);
         }
@@ -749,11 +730,6 @@ void SAM3Dialog::setupUi() {
         u.modelCombo = new QComboBox();
         u.modelCombo->setMinimumWidth(ecvAICoreUi::dpiScaled(240));
         u.loadBtn = new QPushButton(tr("Load"));
-        u.loadBtn->setStyleSheet(
-                "QPushButton { background: #00897b; color: white; "
-                "font-weight: bold;"
-                "  border: none; border-radius: 4px; padding: 5px 14px; }"
-                "QPushButton:hover { background: #00796b; }");
         // No manual Load step: the model loads lazily on the first Segment /
         // click / box. The button stays wired for the Browse fallback but
         // is hidden so the UI matches the upstream flow.

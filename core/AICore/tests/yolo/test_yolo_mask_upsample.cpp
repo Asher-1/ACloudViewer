@@ -13,6 +13,8 @@
 //       more closely than nearest blocks and never writes outside the box;
 // The C API option plumbing lives in test_yolo_mask_upsample_capi.cpp.
 
+#include <gtest/gtest.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -23,15 +25,6 @@
 #include "tasks/yolo/yolo_postprocess.hpp"
 
 namespace {
-
-#define CHECK(cond)                                                      \
-    do {                                                                 \
-        if (!(cond)) {                                                   \
-            std::fprintf(stderr, "FAIL %s:%d: %s\n", __FILE__, __LINE__, \
-                         #cond);                                         \
-            return 1;                                                    \
-        }                                                                \
-    } while (0)
 
 inline float sigmoidRef(float x) { return 1.0f / (1.0f + std::exp(-x)); }
 
@@ -140,7 +133,7 @@ bool sameMask(const yolo::SegMask& a, const yolo::SegMask& b) {
 }
 
 // (a) default path == reference on random data, several geometries.
-int runDefaultIdentical() {
+TEST(YoloMaskUpsample, DefaultAndDisabledModesMatchOriginalAlgorithm) {
     struct Geo {
         int pw, ph, cw, ch;
     };
@@ -155,6 +148,8 @@ int runDefaultIdentical() {
     yolo::ModelMeta meta = makeMeta(nm);
 
     for (const Geo& g : geos) {
+        SCOPED_TRACE(testing::Message()
+                     << g.pw << "x" << g.ph << " -> " << g.cw << "x" << g.ch);
         std::vector<float> proto((size_t)nm * g.pw * g.ph);
         for (float& v : proto) v = nd(rng);
         std::vector<std::vector<float>> mcs(na, std::vector<float>(nm));
@@ -195,17 +190,17 @@ int runDefaultIdentical() {
                                             g.ph, g.cw, g.ch);
         auto offMasks = yolo::compose_masks(dets, raw, na, meta, proto, g.pw,
                                             g.ph, g.cw, g.ch, false);
-        CHECK(ref.size() == defMasks.size() && ref.size() == offMasks.size());
+        ASSERT_TRUE(ref.size() == defMasks.size() &&
+                    ref.size() == offMasks.size());
         size_t set = 0;
         for (size_t i = 0; i < ref.size(); i++) {
-            CHECK(sameMask(ref[i], defMasks[i]));
-            CHECK(sameMask(ref[i], offMasks[i]));
+            ASSERT_TRUE(sameMask(ref[i], defMasks[i]));
+            ASSERT_TRUE(sameMask(ref[i], offMasks[i]));
             for (uint8_t b : ref[i].bits) set += b;
         }
-        CHECK(set > 0);  // the comparison is not vacuous
+        ASSERT_GT(set, 0);  // the comparison is not vacuous
     }
     std::printf("(a) default path bit-identical to reference: OK\n");
-    return 0;
 }
 
 // (b) analytic disc. Logit v(X,Y) = R^2 - |(X,Y)-C|^2 is linear in the proto
@@ -215,18 +210,18 @@ struct DiscResult {
     long mismatchNearest = 0, mismatchBilinear = 0;
 };
 
-int runDisc(int pw,
-            int ph,
-            int cw,
-            int ch,
-            float cx,
-            float cy,
-            float R,
-            float bx1,
-            float by1,
-            float bx2,
-            float by2,
-            DiscResult* out) {
+void runDisc(int pw,
+             int ph,
+             int cw,
+             int ch,
+             float cx,
+             float cy,
+             float R,
+             float bx1,
+             float by1,
+             float bx2,
+             float by2,
+             DiscResult* out) {
     const int nm = 4;
     yolo::ModelMeta meta = makeMeta(nm);
     std::vector<float> proto((size_t)nm * pw * ph);
@@ -256,15 +251,15 @@ int runDisc(int pw,
                                        ch, false);
     auto bilin = yolo::compose_masks(dets, raw, 1, meta, proto, pw, ph, cw, ch,
                                      true);
-    CHECK(nearest.size() == 1 && bilin.size() == 1);
+    ASSERT_TRUE(nearest.size() == 1 && bilin.size() == 1);
 
     // Window contract: identical window, inside the canvas, bits sized w*h.
-    CHECK(sameMask(nearest[0], nearest[0]));
-    CHECK(bilin[0].x == nearest[0].x && bilin[0].y == nearest[0].y);
-    CHECK(bilin[0].w == nearest[0].w && bilin[0].h == nearest[0].h);
-    CHECK(bilin[0].x >= 0 && bilin[0].y >= 0);
-    CHECK(bilin[0].x + bilin[0].w <= cw && bilin[0].y + bilin[0].h <= ch);
-    CHECK(bilin[0].bits.size() == (size_t)bilin[0].w * bilin[0].h);
+    ASSERT_EQ(nearest[0].bits.size(), size_t(nearest[0].w) * nearest[0].h);
+    ASSERT_TRUE(bilin[0].x == nearest[0].x && bilin[0].y == nearest[0].y);
+    ASSERT_TRUE(bilin[0].w == nearest[0].w && bilin[0].h == nearest[0].h);
+    ASSERT_TRUE(bilin[0].x >= 0 && bilin[0].y >= 0);
+    ASSERT_TRUE(bilin[0].x + bilin[0].w <= cw && bilin[0].y + bilin[0].h <= ch);
+    ASSERT_EQ(bilin[0].bits.size(), (size_t)bilin[0].w * bilin[0].h);
 
     auto evaluate = [&](const yolo::SegMask& m, double& maxErr, long& mism) {
         for (int j = 0; j < m.h; j++)
@@ -286,64 +281,38 @@ int runDisc(int pw,
             }
         return true;
     };
-    CHECK(evaluate(nearest[0], out->maxErrNearest, out->mismatchNearest));
-    CHECK(evaluate(bilin[0], out->maxErrBilinear, out->mismatchBilinear));
-    return 0;
+    ASSERT_TRUE(evaluate(nearest[0], out->maxErrNearest, out->mismatchNearest));
+    ASSERT_TRUE(evaluate(bilin[0], out->maxErrBilinear, out->mismatchBilinear));
 }
 
-int runBilinearDisc() {
-    // Full disc inside a generous box: 640/160 (4 px cells), R = 50 px.
+TEST(YoloMaskUpsample, BilinearDiscBoundaryBeatsNearestOnSquareGrid) {
     DiscResult r1;
-    if (runDisc(160, 160, 640, 640, 321.3f, 287.9f, 50.0f, 240.0f, 200.0f,
-                400.0f, 380.0f, &r1))
-        return 1;
-    std::printf(
-            "(b) disc 640/160 R=50: max boundary err nearest=%.3f px "
-            "(mismatch %ld), bilinear=%.3f px (mismatch %ld)\n",
-            r1.maxErrNearest, r1.mismatchNearest, r1.maxErrBilinear,
-            r1.mismatchBilinear);
-    CHECK(r1.maxErrBilinear < 0.5);
-    CHECK(r1.maxErrBilinear * 2.0 < r1.maxErrNearest);
-    CHECK(r1.maxErrNearest > 1.0);
+    ASSERT_NO_FATAL_FAILURE(runDisc(160, 160, 640, 640, 321.3f, 287.9f, 50.0f,
+                                    240.0f, 200.0f, 400.0f, 380.0f, &r1));
+    EXPECT_LT(r1.maxErrBilinear, 0.5);
+    EXPECT_LT(r1.maxErrBilinear * 2.0, r1.maxErrNearest);
+    EXPECT_GT(r1.maxErrNearest, 1.0);
+}
 
-    // Non-square, coarser grid (8 px cells horizontally 640/80, 6 px
-    // vertically).
+TEST(YoloMaskUpsample, BilinearDiscBoundaryBeatsNearestOnCoarseRectangle) {
     DiscResult r2;
-    if (runDisc(80, 80, 640, 480, 301.7f, 233.2f, 70.0f, 200.0f, 140.0f, 420.0f,
-                330.0f, &r2))
-        return 1;
-    std::printf(
-            "(b) disc 640x480/80x80 R=70: nearest=%.3f px, bilinear=%.3f "
-            "px\n",
-            r2.maxErrNearest, r2.maxErrBilinear);
-    CHECK(r2.maxErrBilinear < 0.5);
-    CHECK(r2.maxErrBilinear < r2.maxErrNearest);
+    ASSERT_NO_FATAL_FAILURE(runDisc(80, 80, 640, 480, 301.7f, 233.2f, 70.0f,
+                                    200.0f, 140.0f, 420.0f, 330.0f, &r2));
+    EXPECT_LT(r2.maxErrBilinear, 0.5);
+    EXPECT_LT(r2.maxErrBilinear, r2.maxErrNearest);
+}
 
-    // Box cuts the disc (tight crop) and touches the canvas border: window
-    // must stay inside the canvas, nothing set outside the box.
+TEST(YoloMaskUpsample, ClipsDiscToCanvasAndFractionalBox) {
     DiscResult r3;
-    if (runDisc(160, 160, 640, 640, 20.4f, 600.6f, 60.0f, -15.0f, 520.5f,
-                70.25f, 700.0f, &r3))
-        return 1;
-    std::printf(
-            "(b) disc clipped at canvas border + box crop: nearest=%.3f "
-            "px, bilinear=%.3f px\n",
-            r3.maxErrNearest, r3.maxErrBilinear);
-    CHECK(r3.maxErrBilinear < 0.5);
+    ASSERT_NO_FATAL_FAILURE(runDisc(160, 160, 640, 640, 20.4f, 600.6f, 60.0f,
+                                    -15.0f, 520.5f, 70.25f, 700.0f, &r3));
+    EXPECT_LT(r3.maxErrBilinear, 0.5);
+}
 
-    // Degenerate sub-cell box must not crash and stays within bounds.
+TEST(YoloMaskUpsample, HandlesDegenerateSubCellBoxWithinBounds) {
     DiscResult r4;
-    if (runDisc(160, 160, 640, 640, 100.5f, 50.5f, 30.0f, 100.3f, 50.2f, 101.1f,
-                51.0f, &r4))
-        return 1;
-    return 0;
+    ASSERT_NO_FATAL_FAILURE(runDisc(160, 160, 640, 640, 100.5f, 50.5f, 30.0f,
+                                    100.3f, 50.2f, 101.1f, 51.0f, &r4));
 }
 
 }  // namespace
-
-int main() {
-    if (runDefaultIdentical()) return 1;
-    if (runBilinearDisc()) return 1;
-    std::printf("PASS test_yolo_mask_upsample\n");
-    return 0;
-}

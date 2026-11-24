@@ -769,3 +769,21 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for build requirements and development gu
 - Enable Unity builds for faster compilation
 - Use `ccache` or `sccache` for incremental builds
 - Disable unused plugins to reduce build time
+
+## Unified C++ Tests
+
+After configuring your normal platform options, enable and run tests from the
+repository root:
+
+```bash
+cmake -S . -B build_app -DBUILD_UNIT_TESTS=ON
+cmake -DBUILD_DIR=build_app -DCONFIG=Release -DJOBS=4 -P tests/Run.cmake
+```
+
+For AICore suites enable `AICore_BUILD_TESTS`; whitebox suites additionally need
+`AICore_BUILD_WHITEBOX_TESTS`. The root [tests module](tests/README.md) derives
+prerequisites and runs all enabled headless registrations. Select
+`-DPROFILE=graphics`, `gpu`, `model`, `all`, or a union such as `ci,gpu` explicitly.
+New modules register tests in CMake without CI execution lists. GoogleTest is
+the first-party C++ unit framework; third-party suites, standalone compiler
+fixtures, Python/package tests and strict model validation retain their scope.

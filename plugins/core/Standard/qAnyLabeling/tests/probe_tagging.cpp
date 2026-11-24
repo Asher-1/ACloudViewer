@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <QCoreApplication>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -14,20 +16,27 @@
 #include "AnnotationTagging.h"
 #include "QtCompat.h"
 
-int main(int argc, char** argv) {
+namespace {
+int probeArgc = 0;
+char** probeArgv = nullptr;
+}  // namespace
+
+TEST(AnnotationTaggingContractTest, VocabularyAndFilterScenarios) {
+    int argc = probeArgc;
+    char** argv = probeArgv;
     QCoreApplication app(argc, argv);
     QFile vocabulary(QStringLiteral(
             ":/CC/plugin/qAnyLabeling/resources/ram/ram_tag_list.txt"));
-    if (!vocabulary.open(QIODevice::ReadOnly)) return 1;
+    ASSERT_TRUE(vocabulary.open(QIODevice::ReadOnly));
     const auto names =
             QString::fromUtf8(vocabulary.readAll()).split(QLatin1Char('\n'));
-    if (names.size() != 4585 || annotationRamTranslations().size() != 4585 ||
-        annotationRamTag(names[0], QStringLiteral("zh")) !=
-                QStringLiteral("三维CG渲染 ") ||
-        annotationRamTag(QStringLiteral("unregistered"),
-                         QStringLiteral("zh")) !=
-                QStringLiteral("unregistered"))
-        return 1;
+    ASSERT_EQ(names.size(), 4585);
+    ASSERT_EQ(annotationRamTranslations().size(), 4585);
+    EXPECT_EQ(annotationRamTag(names[0], QStringLiteral("zh")),
+              QStringLiteral("三维CG渲染 "));
+    EXPECT_EQ(annotationRamTag(QStringLiteral("unregistered"),
+                               QStringLiteral("zh")),
+              QStringLiteral("unregistered"));
     QJsonArray scenarios;
     for (const QString mode : {QStringLiteral("en"), QStringLiteral("zh"),
                                QStringLiteral("invalid"), QString()}) {
@@ -51,7 +60,7 @@ int main(int argc, char** argv) {
             const int expected = filter == 1 || filter == 3 ? 4583
                                  : filter == 2              ? 5
                                                             : 4585;
-            if (tags.size() != expected) return 1;
+            ASSERT_EQ(tags.size(), expected);
             scenarios.append(QJsonObject{
                     {"mode", mode},
                     {"delete_tags", QJsonArray::fromStringList(deleted)},
@@ -63,12 +72,18 @@ int main(int argc, char** argv) {
     }
     if (argc == 2) {
         QFile output(QString::fromLocal8Bit(argv[1]));
-        if (!output.open(QIODevice::WriteOnly) ||
-            output.write(QJsonDocument(scenarios).toJson()) < 0)
-            return 1;
+        ASSERT_TRUE(output.open(QIODevice::WriteOnly));
+        const auto bytes = QJsonDocument(scenarios).toJson();
+        ASSERT_EQ(output.write(bytes), bytes.size());
     }
     std::printf(
             "RAM presentation: 4585 bilingual labels, 16 language/filter "
             "scenarios PASS\n");
-    return 0;
+}
+
+int main(int argc, char** argv) {
+    probeArgc = argc;
+    probeArgv = argv;
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

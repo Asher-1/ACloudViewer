@@ -323,18 +323,21 @@ Run-PythonTests -wheel_path $wheelPath.FullName   # Python only
 ### Unit tests from CMake
 
 ```powershell
-cd build
-cmake -DBUILD_UNIT_TESTS=ON ..
-cmake --build . --config Release --parallel $env:NPROC
-.\bin\Release\tests.exe
+# From the repository root; retain your configured platform options.
+cmake -S . -B build -DBUILD_UNIT_TESTS=ON
+cmake -DBUILD_DIR=build -DCONFIG=Release -DJOBS=4 -P tests/Run.cmake
 ```
+
+The root [tests module](../../../tests/README.md) builds prerequisites and runs
+all enabled first-party headless suites. Use `-DPROFILE=graphics`, `gpu`,
+`model`, or `all` for explicit capabilities; `ci,gpu` selects the union.
 
 ### Python unit tests
 
 ```powershell
 pip install pytest
-cmake --build . --config Release --target install-pip-package
-pytest ..\python\test
+cmake --build build --config Release --target install-pip-package
+pytest python\test
 ```
 
 ---

@@ -12,7 +12,10 @@ class ReconstructionMediaTests(unittest.TestCase):
  def test_33_icons_have_stable_128_intrinsic_views_and_no_rasters(self):
   ledger=json.loads(LEDGER.read_text());self.assertEqual(len(ledger['icons']),33)
   self.assertEqual([r['id'] for r in ledger['icons']],list(range(1,34)))
-  self.assertEqual(sum(r['source_kind']=='paraView-svg-root-size-only' for r in ledger['icons']),4)
+  self.assertEqual(sum(r['source_kind']=='paraView-svg-root-size-only' for r in ledger['icons']),3)
+  overlays=[r for r in ledger['icons'] if r.get('source_kind')=='user-requested-camera-workflow-cue']
+  self.assertEqual([r['id'] for r in overlays],[19])
+  self.assertIn('User explicitly requested',overlays[0]['authorization'])
   for row in ledger['icons']:
    with self.subTest(icon=row['name']):
     path=Path(row['after']);self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),row['after_sha256'])

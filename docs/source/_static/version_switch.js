@@ -109,13 +109,14 @@
 
     function switchVersion(versionId) {
         var relativePath = getRelativePath();
+        var position = window.location.search + window.location.hash;
+        var target = versionUrl(versionId, relativePath) + position;
 
         if (!relativePath) {
-            window.location.href = versionUrl(versionId, '');
+            window.location.href = target;
             return;
         }
 
-        var target = versionUrl(versionId, relativePath);
         exists(target).then(function (ok) {
             window.location.href = ok ? target : versionUrl(versionId, '');
         });
@@ -211,7 +212,15 @@
                 var docCell = document.createElement('td');
                 docCell.className = 'version-cell';
                 var docLink = document.createElement('a');
-                docLink.href = dir + 'index.html';
+                docLink.href = versionUrl(v.id, getRelativePath()) +
+                    window.location.search + window.location.hash;
+                docLink.addEventListener('click', function (event) {
+                    // Keep normal links usable for new tabs and copy-link.
+                    if (event.button || event.ctrlKey || event.metaKey ||
+                            event.shiftKey || event.altKey) { return; }
+                    event.preventDefault();
+                    switchVersion(v.id);
+                });
                 docLink.textContent = versionLabel(v);
                 docCell.appendChild(docLink);
 
@@ -325,5 +334,6 @@
         init: init
     };
 
+    window.addEventListener('hashchange', renderVersionTable);
     init();
 })();

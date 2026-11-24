@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -43,7 +45,11 @@ double maxError(const std::vector<float>& actual,
 }
 }  // namespace
 
-int main(int argc, char** argv) {
+namespace {
+
+std::vector<std::vector<float>> refs;
+
+int load_reference(int argc, char** argv) {
     if (argc < 2 || !argv[1][0]) {
         std::fprintf(stderr,
                      "INCOMPLETE: missing pinned diffusers scheduler reference "
@@ -71,7 +77,6 @@ int main(int argc, char** argv) {
     const int status =
             instantmesh_reference::authenticate(root, identity, files);
     if (status) return status;
-    std::vector<std::vector<float>> refs;
     for (const auto& file : files) {
         const auto path = root / file.first;
         if (!std::filesystem::is_regular_file(path)) {
@@ -88,6 +93,11 @@ int main(int argc, char** argv) {
         }
         refs.push_back(std::move(data));
     }
+    return 0;
+}
+
+TEST(InstantMeshScheduler, MatchesPinnedDiffusers75StepReference) {
+    constexpr int steps = 75, n = 4 * 80 * 120;
     EulerAncestralScheduler scheduler;
     scheduler.set_alphas_cumprod(refs[2].data(), 1000);
     scheduler.set_timesteps(steps);
@@ -106,21 +116,29 @@ int main(int argc, char** argv) {
         current.swap(output);
     }
     const double walkError = maxError(current, refs[9]);
-    // Original executable gates; historical measurements or candidate results
-    // must not relax them.
-    const bool passed = timestepError < 1e-6 && sigmaError < 1e-6 &&
-                        noiseError < 1e-5 && scaleError < 1e-5 &&
-                        walkError < 1e-4;
-    if (!std::isfinite(timestepError + sigmaError + noiseError + scaleError +
-                       walkError)) {
-        std::fprintf(stderr,
-                     "FAIL: scheduler output contains nonfinite errors\n");
-        return 1;
-    }
+    // Preserve the original strict executable gates.
+    EXPECT_TRUE(std::isfinite(timestepError + sigmaError + noiseError +
+                              scaleError + walkError));
+    EXPECT_LT(timestepError, 1e-6);
+    EXPECT_LT(sigmaError, 1e-6);
+    EXPECT_LT(noiseError, 1e-5);
+    EXPECT_LT(scaleError, 1e-5);
+    EXPECT_LT(walkError, 1e-4);
     std::printf(
             "{\"timesteps_max_abs\":%.9g,\"sigmas_max_abs\":%.9g,"
             "\"add_noise_max_abs\":%.9g,\"scale_input_max_abs\":%.9g,"
             "\"walk75_max_abs\":%.9g,\"steps\":75}\n",
             timestepError, sigmaError, noiseError, scaleError, walkError);
-    return passed ? 0 : 1;
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+    testing::InitGoogleTest(&argc, argv);
+    if (testing::GTEST_FLAG(list_tests)) return RUN_ALL_TESTS();
+    // Keep reference authentication and exit-77 preflight semantics for CLI
+    // users.
+    const int status = load_reference(argc, argv);
+    if (status) return status;
+    return RUN_ALL_TESTS();
 }

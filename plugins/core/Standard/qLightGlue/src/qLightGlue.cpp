@@ -7,6 +7,8 @@
 
 #include "qLightGlue.h"
 
+#include <ecvAICoreUiHelper.h>
+
 #include "LightGlueBatchCommand.h"
 
 #ifdef AICore_ENABLED
@@ -104,6 +106,7 @@ void qLightGlue::showDialog() {
     if (!m_app) return;
     if (!m_dialog) {
         m_dialog = new LightGlueDialog(m_app->getMainWindow());
+        ecvAICoreUi::bindDialogAction(m_action, m_dialog);
         m_dialog->setAppInterface(m_app);
         connect(m_dialog, &LightGlueDialog::runRequested, this,
                 &qLightGlue::executeTask);

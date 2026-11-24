@@ -750,7 +750,6 @@ build_gui_app() {
 
     echo "Build & install ACloudViewer..."
     make -j"$NPROC"
-    cmake --build . --target aicore-contract-tests -j "$NPROC"
     make install -j"$NPROC"
     ls -hal $CLOUDVIEWER_INSTALL_DIR
     echo
@@ -775,13 +774,13 @@ check_ninja_build_graph() {
     echo "Checking the Ninja build graph in ${graph_dir}..."
     rm -rf "${graph_dir}"
     # Both configurations: some link paths carry a $<CONFIG:Debug> suffix.
-    # Besides the default target, the CI also builds these two explicitly.
+    # Check installation and the registry-derived native CI build closure.
     if ! cmake -S "${source_dir}" -B "${graph_dir}" -G "Ninja Multi-Config" \
             "$@" "-DCMAKE_CONFIGURATION_TYPES=Release;Debug"; then
         echo "Ninja Multi-Config configure failed"
         status=1
     elif ! python "${source_dir}/util/check_ninja_graph.py" "${graph_dir}" \
-            --target aicore-contract-tests --target install; then
+            --target cpp-tests-ci --target install; then
         status=1
     fi
     rm -rf "${graph_dir}"
@@ -1126,83 +1125,19 @@ run_python_tests() {
     return $pytest_result
 }
 
-# Run optional plugin gates; an enabled plugin may not silently omit registrations.
-run_qpythonruntime_tests() {
-    local build_dir="${1:-build}"
-    local scope="${2:-all}"
-    local cache="${build_dir}/CMakeCache.txt"
-    if [[ ! -f "$cache" ]]; then
-        echo "qPythonRuntime: CMake cache not found at $cache" >&2
-        return 1
-    fi
-    if ! grep -Eq '^PLUGIN_PYTHON:BOOL=(ON|TRUE|1)$' "$cache" ||
-       ! grep -Eq '^BUILD_PYTHON_MODULE:BOOL=(ON|TRUE|1)$' "$cache" ||
-       ! grep -Eq '^BUILD_UNIT_TESTS:BOOL=(ON|TRUE|1)$' "$cache"; then
-        echo "qPythonRuntime: plugin, Python modules or unit tests disabled in this build"
-        return 0
-    fi
-    local pattern='^test_qpythonruntime_'
-    if [[ "$scope" == native ]]; then
-        pattern='^test_qpythonruntime_(binding_types|plugin_loading)$'
-    fi
-    local listing
-    listing=$(ctest --test-dir "$build_dir" -C Release --show-only=json-v1 -R "$pattern") || return $?
-    printf '%s' "$listing" | "${PYTHON_EXECUTABLE:-python3}" -c '
-import json, sys
-required = {"test_qpythonruntime_binding_types", "test_qpythonruntime_plugin_loading"}
-if sys.argv[1] != "native":
-    required.add("test_qpythonruntime_binding_contracts")
-missing = required - {test["name"] for test in json.load(sys.stdin)["tests"]}
-if missing:
-    sys.exit("qPythonRuntime: missing CTest registrations: " + ", ".join(sorted(missing)))
-' "$scope" || return $?
-    ctest --test-dir "$build_dir" -C Release -R "$pattern" --no-tests=error --output-on-failure -j1
-}
-
-# Run C++ unit tests
-# Usage: run_cpp_unit_tests
-# Should be run from the build directory
+# CMake owns the configured C++ catalog, build closure and execution policy.
 run_cpp_unit_tests() {
-    echo "======================================================================"
-    echo "Running C++ Unit Tests"
-    echo "======================================================================"
-    
-    pushd build
-    # Check if tests executable exists
-    if [ ! -f "./bin/cloudviewer_test/tests" ]; then
-        echo "Error: tests executable not found at ./bin/cloudviewer_test/tests"
-        echo "Please build with -DBUILD_UNIT_TESTS=ON"
-        return 1
+    local build_dir="${1:-${CLOUDVIEWER_SOURCE_ROOT}/build}"
+    if [[ $# -eq 0 && -f CMakeCache.txt ]]; then
+        build_dir=.
     fi
-    
-    # Set test flags
-    unitTestFlags="--gtest_shuffle"
-    if [ "${LOW_MEM_USAGE-}" = "ON" ]; then
-        unitTestFlags="$unitTestFlags --gtest_filter=-*Reduce*Sum*"
+    local gtest_filter="${GTEST_FILTER-*}"
+    if [[ "${LOW_MEM_USAGE-}" == "ON" ]]; then
+        gtest_filter="-*Reduce*Sum*"
     fi
-    
-    echo "Test flags: $unitTestFlags"
-    echo "Tip: Run './bin/cloudviewer_test/tests $unitTestFlags --gtest_random_seed=SEED' to repeat this test sequence."
-    echo ""
-    
-    # Run the tests
-    ./bin/cloudviewer_test/tests $unitTestFlags
-    test_result=$?
-    
-    echo ""
-    if [ $test_result -eq 0 ]; then
-        echo "======================================================================"
-        echo "C++ Unit Tests: PASSED"
-        echo "======================================================================"
-    else
-        echo "======================================================================"
-        echo "C++ Unit Tests: FAILED (exit code: $test_result)"
-        echo "======================================================================"
-        return $test_result
-    fi
-    echo ""
-    run_qpythonruntime_tests . native || { local result=$?; popd; return "$result"; }
-    popd # build directory
+    GTEST_FILTER="$gtest_filter" GTEST_SHUFFLE="${GTEST_SHUFFLE:-1}" \
+        cmake -DBUILD_DIR="$build_dir" -DCONFIG=Release \
+        -P "${CLOUDVIEWER_SOURCE_ROOT}/tests/Run.cmake"
 }
 
 # Run all tests (C++ and Python)

@@ -573,3 +573,18 @@ If you find ACloudViewer useful, please consider supporting its development:
 For more information, see our [Support page](https://asher-1.github.io/ACloudViewer/documentation/resources/support.html).
 
 Thanks for your support!
+
+## C++ Testing
+
+The root [tests module](tests/README.md) owns first-party C++ registration, build
+prerequisites and CI execution. Unit assertions use GoogleTest; sources remain
+beside their production owners. After configuring `BUILD_UNIT_TESTS=ON`, run
+from the repository root:
+
+```bash
+cmake -DBUILD_DIR=build_app -DJOBS=4 -P tests/Run.cmake
+```
+
+The default profile is headless. Graphics, GPU and model tests need explicit
+capability selection. Python/package tests and strict model acceptance remain
+separate.

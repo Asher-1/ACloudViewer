@@ -10,6 +10,8 @@
 // and NULL-context accessors. Real-asset accuracy/performance runs live in
 // bench_sam3d_backend_acceptance (validation runner).
 
+#include <gtest/gtest.h>
+
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -17,15 +19,6 @@
 #include "aicore/sam3d_capi.h"
 
 namespace {
-
-int failures = 0;
-
-void check(bool ok, const char* what) {
-    if (!ok) {
-        std::fprintf(stderr, "FAIL: %s\n", what);
-        ++failures;
-    }
-}
 
 bool looks_like_sha256(const char* text) {
     if (text == nullptr || std::strlen(text) != 64) return false;
@@ -38,13 +31,15 @@ bool looks_like_sha256(const char* text) {
 
 }  // namespace
 
-int main() {
-    check(aicore_sam3d_abi_version() >= 1, "abi version");
-    check(std::strcmp(aicore_sam3d_backend(nullptr), "none") == 0,
-          "backend(NULL) == none");
-    check(aicore_sam3d_backend_note(nullptr) == nullptr,
-          "backend_note(NULL) == NULL");
+TEST(Sam3dCApiContract, AbiAndNullBackendQueries) {
+    EXPECT_GE(aicore_sam3d_abi_version(), 1) << "abi version";
+    EXPECT_EQ(std::strcmp(aicore_sam3d_backend(nullptr), "none"), 0)
+            << "backend(NULL) == none";
+    EXPECT_EQ(aicore_sam3d_backend_note(nullptr), nullptr)
+            << "backend_note(NULL) == NULL";
+}
 
+TEST(Sam3dCApiContract, OptionsLifecycleAndNullSetters) {
     // NULL-safe option setters and lifecycle.
     aicore_sam3d_options_set_models_dir(nullptr, "x");
     aicore_sam3d_options_set_dtype(nullptr, AICORE_SAM3D_DTYPE_Q8_0);
@@ -64,37 +59,42 @@ int main() {
     aicore_sam3d_options_free(nullptr);
 
     aicore_sam3d_options* options = aicore_sam3d_options_new();
-    check(options != nullptr, "options_new");
+    EXPECT_NE(options, nullptr) << "options_new";
     aicore_sam3d_options_free(options);
+}
 
+TEST(Sam3dCApiContract, MissingModelsCreateLazyContext) {
     // load_opts contract errors.
     char err[256] = {0};
-    check(aicore_sam3d_load_opts(nullptr, err, sizeof(err)) == nullptr,
-          "load_opts(NULL options) rejected");
-    options = aicore_sam3d_options_new();
+    EXPECT_EQ(aicore_sam3d_load_opts(nullptr, err, sizeof(err)), nullptr)
+            << "load_opts(NULL options) rejected";
+    auto* options = aicore_sam3d_options_new();
     aicore_sam3d_options_set_models_dir(options,
                                         "/nonexistent-sam3d-models-dir");
     aicore_sam3d_options_set_device(options, "cpu");
     aicore_sam3d_ctx* lazy_ctx =
             aicore_sam3d_load_opts(options, err, sizeof(err));
-    check(lazy_ctx != nullptr,
-          "load_opts with missing models still constructs (lazy weights)");
+    EXPECT_NE(lazy_ctx, nullptr)
+            << "load_opts with missing models still constructs (lazy weights)";
     aicore_sam3d_free(lazy_ctx);
     aicore_sam3d_options_free(options);
+}
 
+TEST(Sam3dCApiContract, CpuPbrRejectionNamesCuda) {
+    char err[256] = {0};
     // PBR runtime gate: a non-CUDA session must reject the official PBR
     // assembly with the explicit interchange guidance before any weight IO
     // (model-free). On a CUDA-PBR build the resolved "cpu" backend hits the
     // session gate; on builds without the license-gated PBR vendors the C API
     // caps pre-check rejects first. Both explicit errors name CUDA.
-    options = aicore_sam3d_options_new();
+    auto* options = aicore_sam3d_options_new();
     aicore_sam3d_options_set_models_dir(options,
                                         "/nonexistent-sam3d-models-dir");
     aicore_sam3d_options_set_device(options, "cpu");
     aicore_sam3d_options_set_pbr(options, 1, 0, 0);
     aicore_sam3d_ctx* pbr_ctx =
             aicore_sam3d_load_opts(options, err, sizeof(err));
-    check(pbr_ctx != nullptr, "PBR lazy context constructs");
+    EXPECT_NE(pbr_ctx, nullptr) << "PBR lazy context constructs";
     if (pbr_ctx != nullptr) {
         const uint8_t pixels[2 * 2 * 3] = {0};
         aicore_image_view view{};
@@ -105,80 +105,80 @@ int main() {
         view.format = AICORE_IMAGE_RGB8;
         aicore_sam3d_result* pbr_result = aicore_sam3d_generate(
                 pbr_ctx, &view, nullptr, "unused.ply", 0, nullptr, nullptr);
-        check(pbr_result == nullptr, "PBR on a non-CUDA session is rejected");
+        EXPECT_EQ(pbr_result, nullptr)
+                << "PBR on a non-CUDA session is rejected";
         const char* pbr_error = aicore_sam3d_last_error(pbr_ctx);
-        check(pbr_error != nullptr && std::strstr(pbr_error, "CUDA") != nullptr,
-              "PBR rejection names the CUDA requirement");
+        EXPECT_TRUE(pbr_error != nullptr &&
+                    std::strstr(pbr_error, "CUDA") != nullptr)
+                << "PBR rejection names the CUDA requirement";
         aicore_sam3d_result_free(pbr_result);
         aicore_sam3d_free(pbr_ctx);
     }
     aicore_sam3d_options_free(options);
+}
 
+TEST(Sam3dCApiContract, NullContextResultsTimingsAndRelease) {
     // NULL-context accessors.
-    check(aicore_sam3d_is_ready(nullptr) == 0, "is_ready(NULL) == 0");
-    check(aicore_sam3d_caps(nullptr) == 0, "caps(NULL) == 0");
-    check(aicore_sam3d_result_mesh_normals(nullptr) == nullptr,
-          "mesh_normals(NULL) == NULL");
-    check(aicore_sam3d_result_voxel_count(nullptr) == 0,
-          "voxel_count(NULL) == 0");
-    check(aicore_sam3d_result_pbr_texture_width(nullptr) == 0 &&
-                  aicore_sam3d_result_pbr_texture_height(nullptr) == 0,
-          "Empty results must not report PBR texture sizes");
-    check(aicore_sam3d_result_pbr_texture_rgba(nullptr) == nullptr &&
-                  aicore_sam3d_result_pbr_uv(nullptr) == nullptr,
-          "Empty results must not borrow PBR texture/UV storage");
+    EXPECT_EQ(aicore_sam3d_is_ready(nullptr), 0) << "is_ready(NULL) == 0";
+    EXPECT_EQ(aicore_sam3d_caps(nullptr), 0) << "caps(NULL) == 0";
+    EXPECT_EQ(aicore_sam3d_result_mesh_normals(nullptr), nullptr)
+            << "mesh_normals(NULL) == NULL";
+    EXPECT_EQ(aicore_sam3d_result_voxel_count(nullptr), 0)
+            << "voxel_count(NULL) == 0";
+    EXPECT_TRUE(aicore_sam3d_result_pbr_texture_width(nullptr) == 0 &&
+                aicore_sam3d_result_pbr_texture_height(nullptr) == 0)
+            << "Empty results must not report PBR texture sizes";
+    EXPECT_TRUE(aicore_sam3d_result_pbr_texture_rgba(nullptr) == nullptr &&
+                aicore_sam3d_result_pbr_uv(nullptr) == nullptr)
+            << "Empty results must not borrow PBR texture/UV storage";
     aicore_pipeline_timings timings{};
-    check(aicore_sam3d_last_pipeline_timings(nullptr, &timings) == -1,
-          "timings(NULL ctx) rejected");
+    EXPECT_EQ(aicore_sam3d_last_pipeline_timings(nullptr, &timings), -1)
+            << "timings(NULL ctx) rejected";
     aicore_sam3d_free(nullptr);
     aicore_sam3d_result_free(nullptr);
     aicore_sam3d_free_buffer(nullptr);
     aicore_sam3d_shutdown();  // idempotent, must not destroy anything live
+}
 
+TEST(Sam3dCApiContract, PublishedCatalogAndBuildCapabilityMetadata) {
     // Runtime model catalog: published inventory with verifiable digests.
-    check(aicore_sam3d_model_count() >= 21,
-          "model count covers the raw matrix");
-    check(aicore_sam3d_model_by_filename("does-not-exist.gguf") == nullptr,
-          "unknown filename rejected");
-    check(aicore_sam3d_model_by_filename(nullptr) == nullptr,
-          "NULL filename rejected");
+    EXPECT_GE(aicore_sam3d_model_count(), 21)
+            << "model count covers the raw matrix";
+    EXPECT_EQ(aicore_sam3d_model_by_filename("does-not-exist.gguf"), nullptr)
+            << "unknown filename rejected";
+    EXPECT_EQ(aicore_sam3d_model_by_filename(nullptr), nullptr)
+            << "NULL filename rejected";
     for (int i = 0; i < aicore_sam3d_model_count(); ++i) {
         const aicore_sam3d_model_entry* e = aicore_sam3d_model_at(i);
-        check(e != nullptr, "model_at valid index");
+        EXPECT_NE(e, nullptr) << "model_at valid index";
         if (e == nullptr) continue;
-        check(e->filename != nullptr && *e->filename != '\0',
-              "filename present");
-        check(e->download_url != nullptr &&
-                      std::strstr(e->download_url, "https://") ==
-                              e->download_url,
-              "download url present");
-        check(looks_like_sha256(e->sha256), "sha256 present");
-        check(e->size_bytes > 0, "size present");
-        check(e->role != nullptr, "role present");
+        EXPECT_TRUE(e->filename != nullptr && *e->filename != '\0')
+                << "filename present";
+        EXPECT_TRUE(e->download_url != nullptr &&
+                    std::strstr(e->download_url, "https://") == e->download_url)
+                << "download url present";
+        EXPECT_TRUE(looks_like_sha256(e->sha256)) << "sha256 present";
+        EXPECT_GT(e->size_bytes, 0) << "size present";
+        EXPECT_NE(e->role, nullptr) << "role present";
         const aicore_sam3d_model_entry* round_trip =
                 aicore_sam3d_model_by_filename(e->filename);
-        check(round_trip != nullptr &&
-                      std::strcmp(round_trip->filename, e->filename) == 0,
-              "by_filename round trip");
+        EXPECT_TRUE(round_trip != nullptr &&
+                    std::strcmp(round_trip->filename, e->filename) == 0)
+                << "by_filename round trip";
     }
-    check(std::strcmp(aicore_sam3d_model_download_base(),
-                      "https://huggingface.co/Asher-1/SAM_3D_OBJECTS_GGUF/"
-                      "resolve/main/") == 0,
-          "download base");
-    check(aicore_sam3d_model_cache_dir() != nullptr, "cache dir");
-    check(std::strstr(aicore_sam3d_info_json(), "\"task\":\"sam3d\"") !=
-                  nullptr,
-          "info json");
+    EXPECT_EQ(std::strcmp(aicore_sam3d_model_download_base(),
+                          "https://huggingface.co/Asher-1/SAM_3D_OBJECTS_GGUF/"
+                          "resolve/main/"),
+              0)
+            << "download base";
+    const char* cache_dir = aicore_sam3d_model_cache_dir();
+    EXPECT_NE(cache_dir, nullptr) << "cache dir";
+    EXPECT_NE(std::strstr(aicore_sam3d_info_json(), "\"task\":\"sam3d\""),
+              nullptr)
+            << "info json";
     // Build capability field (compile-scoped, same gate as the caps bit):
     // UI consumers default their PBR controls from it. The value is
     // build-dependent, so only the field presence is asserted here.
-    check(std::strstr(aicore_sam3d_info_json(), "\"pbr\":") != nullptr,
-          "info json carries the pbr build capability");
-
-    if (failures == 0) {
-        std::printf("sam3d capi contract: all checks passed\n");
-        return 0;
-    }
-    std::printf("sam3d capi contract: %d failures\n", failures);
-    return 1;
+    EXPECT_NE(std::strstr(aicore_sam3d_info_json(), "\"pbr\":"), nullptr)
+            << "info json carries the pbr build capability";
 }

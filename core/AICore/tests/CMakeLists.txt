@@ -1,12 +1,6 @@
-# AICore unit tests — mirrors src/ layout: common/, depth/, gaussian/
-#
-# Tiers (selection is purely LABELS-driven):
-#   fast   — no GGUF assets (default ctest -LE model)
-#   model  — requires AICORE_TEST_DEPTH_GGUF / AICORE_TEST_GAUSSIAN_GGUF
-#   capi   — links libAICore.so (exported C API contract)
-# Every add_test below is captured by the registry override; the tier DEPENDS
-# lists at the bottom of this file are DERIVED from the registry + LABELS, so
-# adding a test never requires touching a tier list.
+# AICore tests mirror src/ layout: common/, depth/, gaussian/, and task suites.
+# Root tests/ derives capability labels and build closures from registration.
+# Model probes keep their asset prerequisites and exit-77 skip contracts.
 
 set(AICORE_TEST_RUNTIME_DIR ${CMAKE_BINARY_DIR}/bin/aicore_tests)
 set(AICORE_TEST_INC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -88,7 +82,7 @@ function(_aicore_test_common name)
     if(_aicore_no_ctest)
         return()
     endif()
-    add_test(NAME ${name} COMMAND ${name})
+    aicore_add_registered_test(NAME ${name} COMMAND ${name})
     if(AICORE_TEST_ENV_EXTRA)
         set_tests_properties(${name} PROPERTIES SKIP_RETURN_CODE 77
             ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
@@ -102,12 +96,10 @@ function(_aicore_test_common name)
     cloudviewer_set_test_runtime_environment(${name})
 endfunction()
 
-# --- Tier filters (single source of truth) ---------------------------------
-# Byte-identical to the ctest label arguments in the tier targets below; the
-# derived DEPENDS lists and aicore_register_test route on these. CACHE INTERNAL
-# so plugin directories (processed later) see the same values.
-set(AICORE_TIER_FAST_EXCLUDE "model|gpu|e2e|cvpluginapi" CACHE INTERNAL
-    "Labels that exclude a test from the fast tier")
+# Tier predicates are consumed by root tests/ when it derives labels and build
+# dependencies from the common registration records.
+set(AICORE_TIER_FAST_EXCLUDE "model|gpu|e2e|cvpluginapi|network|graphics|benchmark|slow" CACHE INTERNAL
+    "Labels that exclude a test from the fast tier" FORCE)
 set(AICORE_TIER_CONTRACT_LABEL "capi" CACHE INTERNAL
     "Label that selects a test into the contract tier")
 set(AICORE_TIER_CONTRACT_MODEL_EXCLUDE "model|gpu|e2e" CACHE INTERNAL
@@ -115,48 +107,18 @@ set(AICORE_TIER_CONTRACT_MODEL_EXCLUDE "model|gpu|e2e" CACHE INTERNAL
 set(AICORE_TIER_MODEL_LABEL "model" CACHE INTERNAL
     "Label that selects a test into the model tier")
 
-# --- Test registration registry (self-adapting tier attachment) -------------
-# Every add_test() call in this directory is intercepted below and recorded
-# into a global registry: the test name plus — when the COMMAND invokes a
-# buildable target directly — that target. The derivation block at the bottom
-# of this file combines the registry with each test's LABELS property to build
-# the tier DEPENDS lists, replicating the exact ctest filters, so a newly
-# registered test is attached to the right tier automatically and the
-# historical "Could not find executable / Not Run" (ctest exit 8) failure
-# mode cannot recur. Outside this directory the override is a passthrough.
-set(AICORE_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-function(add_test)
+# Runtime setup stays with AICore; registration and build closures belong to
+# root tests/. Script wrappers retain their native CTest result semantics.
+function(aicore_add_registered_test)
     cmake_parse_arguments(_aicore_at "" "NAME" "COMMAND" ${ARGN})
-    if(_aicore_at_NAME
-            AND "${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${AICORE_TESTS_DIR}")
-        set_property(GLOBAL APPEND PROPERTY AICORE_TEST_NAMES
-            "${_aicore_at_NAME}")
-        set(_aicore_at_tgt "")
-        if(_aicore_at_COMMAND)
-            list(GET _aicore_at_COMMAND 0 _aicore_at_cmd0)
-            if(TARGET "${_aicore_at_cmd0}")
-                set(_aicore_at_tgt "${_aicore_at_cmd0}")
-            endif()
-        endif()
-        set_property(GLOBAL PROPERTY "AICORE_TEST_TGT_${_aicore_at_NAME}"
-            "${_aicore_at_tgt}")
-    endif()
-    _add_test(${ARGN})
-    if(_aicore_at_NAME AND
-       "${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${AICORE_TESTS_DIR}")
-        # Python validation rows and wrapper tests can launch C API binaries
-        # indirectly. Apply the same Windows multi-config DLL contract to
-        # those rows as to target-backed tests.
+    cloudviewer_add_test(${ARGN})
+    if(_aicore_at_NAME)
         cloudviewer_set_test_runtime_environment(${_aicore_at_NAME})
     endif()
 endfunction()
 
-# External (plugin-directory) registration for tests that belong to an AICore
-# tier: plugins are processed after this directory, so their add_test calls
-# cannot flow through the registry override. One call registers the ctest
-# entry and attaches the binary to the matching tier target — there is no
-# cross-directory dependency list to maintain (this replaces the manual
-# add_dependencies(aicore-fast-tests ...) contract).
+# Plugin consumers declare tier membership; root tests/ derives every build
+# dependency from the same records used by CTest selection.
 #   aicore_register_test(NAME <test> TARGET <binary> [LABELS <l1;...>])
 function(aicore_register_test)
     cmake_parse_arguments(AIRT "" "NAME;TARGET" "LABELS" ${ARGN})
@@ -166,39 +128,9 @@ function(aicore_register_test)
     if(NOT TARGET ${AIRT_TARGET})
         message(FATAL_ERROR "aicore_register_test: unknown target ${AIRT_TARGET}")
     endif()
-    add_test(NAME ${AIRT_NAME} COMMAND ${AIRT_TARGET})
+    cloudviewer_add_test(NAME ${AIRT_NAME} COMMAND ${AIRT_TARGET}
+        LABELS suite-aicore ${AIRT_LABELS})
     cloudviewer_set_test_runtime_environment(${AIRT_NAME})
-    if(AIRT_LABELS)
-        set_tests_properties(${AIRT_NAME} PROPERTIES LABELS "${AIRT_LABELS}")
-    endif()
-    set(_airt_model FALSE)
-    set(_airt_fast FALSE)
-    set(_airt_contract FALSE)
-    if(AIRT_LABELS)
-        if(AIRT_LABELS MATCHES "${AICORE_TIER_MODEL_LABEL}")
-            set(_airt_model TRUE)
-        endif()
-        if(AIRT_LABELS MATCHES "${AICORE_TIER_CONTRACT_LABEL}"
-                AND (AICORE_TEST_ENABLE_MODEL_TESTS
-                    OR NOT AIRT_LABELS MATCHES
-                        "${AICORE_TIER_CONTRACT_MODEL_EXCLUDE}"))
-            set(_airt_contract TRUE)
-        endif()
-        if(NOT AIRT_LABELS MATCHES "${AICORE_TIER_FAST_EXCLUDE}")
-            set(_airt_fast TRUE)
-        endif()
-    else()
-        set(_airt_fast TRUE)
-    endif()
-    if(_airt_fast AND TARGET aicore-fast-tests)
-        add_dependencies(aicore-fast-tests ${AIRT_TARGET})
-    endif()
-    if(_airt_contract AND TARGET aicore-contract-tests)
-        add_dependencies(aicore-contract-tests ${AIRT_TARGET})
-    endif()
-    if(_airt_model AND TARGET aicore-model-tests)
-        add_dependencies(aicore-model-tests ${AIRT_TARGET})
-    endif()
 endfunction()
 
 # Propagate the configure-time Qt runtime into every test environment so the
@@ -270,7 +202,7 @@ endif()
 function(aicore_add_capi_test name dir)
     cmake_parse_arguments(ACT "" "" "LIBS;LABELS" ${ARGN})
     add_executable(${name} ${dir}/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore)
+    target_link_libraries(${name} PRIVATE AICore gtest_main)
     foreach(_aicore_lib IN LISTS ACT_LIBS)
         target_link_libraries(${name} PRIVATE ${_aicore_lib})
     endforeach()
@@ -329,7 +261,7 @@ function(aicore_add_whitebox_test name dir)
         set(_aicore_src "${dir}/${name}.cpp")
     endif()
     add_executable(${name} ${_aicore_src})
-    target_link_libraries(${name} PRIVATE AICore_test)
+    target_link_libraries(${name} PRIVATE AICore_test gtest_main)
     foreach(_aicore_inc IN LISTS AWT_INCLUDE_DIRS)
         target_include_directories(${name} PRIVATE ${_aicore_inc})
     endforeach()
@@ -355,7 +287,7 @@ endfunction()
 
 function(aicore_add_gaussian_test name)
     add_executable(${name} gaussian/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore_test)
+    target_link_libraries(${name} PRIVATE AICore_test gtest_main)
     _aicore_test_common(${name})
 endfunction()
 
@@ -383,7 +315,7 @@ endfunction()
 
 # Manual perf probe (NOT a ctest — needs a local GGUF, run by hand):
 #   bench_rfdetr_perf <model.gguf> [device] [threads] [srcW] [srcH] [iters]
-# Same whitebox linking rules as the tests above, minus add_test().
+# Same whitebox linking rules as the tests above, minus aicore_add_registered_test().
 function(aicore_add_rfdetr_perf_bench)
     if(NOT TARGET AICore_test)
         return()
@@ -464,15 +396,15 @@ if(TARGET AICore_test)
 endif()
 
 # --- depth (C API / libAICore) ---
-aicore_add_capi_test(test_runtime_capi_contract common LIBS Threads::Threads)
-aicore_add_capi_test(test_pipeline_timing_contract common LIBS Threads::Threads)
+aicore_add_capi_test(test_runtime_capi_contract common LIBS Threads::Threads gtest_main)
+aicore_add_capi_test(test_pipeline_timing_contract common LIBS Threads::Threads gtest_main)
 # Shared GGUF open helper (F-06): synthetic-file unit coverage for both
 # no_alloc modes, ownership round-trip, and the failure-message shape.
 # Links AICore_test (not the AICore shared lib) because the helper header
 # includes ggml's gguf.h, which only the static-test target propagates.
 if(TARGET AICore_test)
     add_executable(test_gguf_file_io common/test_gguf_file_io.cpp)
-    target_link_libraries(test_gguf_file_io PRIVATE AICore_test)
+    target_link_libraries(test_gguf_file_io PRIVATE AICore_test gtest_main)
     _aicore_test_common(test_gguf_file_io)
     if(NOT MSVC)
         target_compile_options(test_gguf_file_io PRIVATE -fPIC)
@@ -481,7 +413,8 @@ if(TARGET AICore_test)
     set_tests_properties(test_gguf_file_io PROPERTIES LABELS "capi")
 endif()
 aicore_add_capi_test(test_depth_capi_contract depth)
-aicore_add_capi_test(test_image_depth depth)
+aicore_add_capi_test(test_depth_capi_model_contract depth LABELS capi;model)
+aicore_add_capi_test(test_image_depth depth LIBS gtest_main)
 aicore_add_capi_test(test_depth_capi_load depth LABELS capi;model)
 aicore_add_capi_test(test_depth_capi_backend_parity depth LABELS capi;model;gpu;parity)
 
@@ -510,7 +443,7 @@ add_executable(test_host_parallel common/test_host_parallel.cpp
     ../src/tasks/aliked/deform_conv.cpp
     ../src/tasks/openpcdet/extensions/deterministic_sparse_conv.cpp
     ../src/tasks/openpcdet/extensions/sparse_ops.cpp)
-target_link_libraries(test_host_parallel PRIVATE CVCoreLib ${GGML_DEPENDENCY_TARGET})
+target_link_libraries(test_host_parallel PRIVATE CVCoreLib ${GGML_DEPENDENCY_TARGET} gtest_main)
 target_include_directories(test_host_parallel PRIVATE ${GGML_INCLUDE_DIRS})
 add_dependencies(test_host_parallel ${GGML_DEPENDENCY_TARGET})
 if(TARGET OpenMP::OpenMP_CXX)
@@ -533,7 +466,7 @@ aicore_add_capi_test(test_querysplat_capi querysplat LABELS capi;model)
 # npz export writer contract (store-ZIP + .npy layout; no model needed).
 # The writer is a task-internal header: the include dir points at the real
 # src/tasks/querysplat directory (same whitebox convention as rfdetr).
-aicore_add_capi_test(test_querysplat_npz querysplat LIBS CVCoreLib)
+aicore_add_capi_test(test_querysplat_npz querysplat LIBS CVCoreLib gtest_main)
 target_include_directories(test_querysplat_npz PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/querysplat
     ${CMAKE_CURRENT_SOURCE_DIR}/../src)
@@ -580,6 +513,7 @@ set_target_properties(test_ocr_box_score PROPERTIES
     CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 target_compile_definitions(test_ocr_box_score PRIVATE
     AICORE_OCR_BOX_SCORE_GOLDEN="${CMAKE_CURRENT_SOURCE_DIR}/ocr/db_box_score_golden.txt")
+target_link_libraries(test_ocr_box_score PRIVATE gtest)
 _aicore_test_common(test_ocr_box_score)
 set_tests_properties(test_ocr_box_score PROPERTIES LABELS "capi;ocr")
 # Model-free rec crop parity (minAreaRect re-fit + cubic warpPerspective)
@@ -600,6 +534,7 @@ add_executable(test_ocr_db_postprocess ocr/test_ocr_db_postprocess.cpp
     ${_ocr_geom_dir}/ocr_db_postprocess.cpp ${_ocr_geom_dir}/ocr_rec_crop.cpp
     ${_ocr_geom_dir}/ocr_box_score.cpp)
 foreach(_t test_ocr_rec_crop test_ocr_db_postprocess)
+    target_link_libraries(${_t} PRIVATE gtest)
     target_include_directories(${_t} PRIVATE ${_ocr_geom_dir}
         ${CMAKE_CURRENT_SOURCE_DIR}/../src ${CMAKE_CURRENT_SOURCE_DIR}/../include
         ${CMAKE_CURRENT_SOURCE_DIR}/..)
@@ -628,7 +563,7 @@ target_include_directories(test_table_postprocess PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/ocr
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/table
     ${JSONCPP_INCLUDE_DIRS})
-target_link_libraries(test_table_postprocess PRIVATE ${GGML_DEPENDENCY_TARGET} 3rdparty_jsoncpp)
+target_link_libraries(test_table_postprocess PRIVATE ${GGML_DEPENDENCY_TARGET} 3rdparty_jsoncpp gtest_main)
 set_target_properties(test_table_postprocess PROPERTIES
     CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 _aicore_test_common(test_table_postprocess)
@@ -696,7 +631,7 @@ _aicore_test_common(test_vlx_probe NO_CTEST)
 # Manual parity dump tool (NOT a ctest): writes upstream-compatible LBF3
 # per-frame binaries for the compare_lingbot_parity.py A/B against
 # lingbot-map-cli --stream-dir. Same compile setup as the capi tests, minus
-# add_test() so the ctest tiers never select a missing binary.
+# aicore_add_registered_test() so the ctest tiers never select a missing binary.
 aicore_add_capi_tool(dump_lingbot_frames lingbot/dump_lingbot_frames.cpp)
 
 aicore_add_capi_tool(test_lingbot_reset_freshness
@@ -817,7 +752,7 @@ add_executable(test_image_png test_image_png.cpp
     ${AICORE_COMMON_SRC_DIR}/image_utils.cpp ${AICORE_COMMON_SRC_DIR}/capi_utils.cpp)
 target_include_directories(test_image_png PRIVATE
     ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../src ${GGML_INCLUDE_DIRS})
-target_link_libraries(test_image_png PRIVATE Qt::Core Qt::Gui Threads::Threads)
+target_link_libraries(test_image_png PRIVATE Qt::Core Qt::Gui Threads::Threads gtest_main)
 _aicore_test_common(test_image_png)
 set_tests_properties(test_image_png PROPERTIES LABELS "capi;image;export")
 
@@ -828,12 +763,12 @@ add_executable(test_instantmesh_scheduler instantmesh/test_instantmesh_scheduler
 target_include_directories(test_instantmesh_scheduler PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src)
 _aicore_test_common(test_instantmesh_scheduler NO_CTEST)
-target_link_libraries(test_instantmesh_scheduler PRIVATE Qt::Core)
+target_link_libraries(test_instantmesh_scheduler PRIVATE Qt::Core gtest)
 set(AICORE_INSTANTMESH_SCHEDULER_REFERENCE "${CMAKE_BINARY_DIR}/instantmesh_reference/scheduler"
     CACHE PATH "Transient pinned diffusers scheduler reference directory")
-add_test(NAME test_instantmesh_scheduler COMMAND test_instantmesh_scheduler
+aicore_add_registered_test(NAME test_instantmesh_scheduler COMMAND test_instantmesh_scheduler
     "${AICORE_INSTANTMESH_SCHEDULER_REFERENCE}")
-set_tests_properties(test_instantmesh_scheduler PROPERTIES LABELS "instantmesh;numeric;reference"
+set_tests_properties(test_instantmesh_scheduler PROPERTIES LABELS "instantmesh;numeric;reference;e2e"
     SKIP_RETURN_CODE 77)
 if(AICORE_TEST_ENV_EXTRA)
     set_tests_properties(test_instantmesh_scheduler PROPERTIES ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
@@ -853,6 +788,8 @@ target_include_directories(test_instantmesh_components PRIVATE
     ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../src ${GGML_INCLUDE_DIRS})
 target_link_libraries(test_instantmesh_components PRIVATE
     ${GGML_DEPENDENCY_TARGET} CVCoreLib Qt::Core ${CMAKE_DL_LIBS})
+# CLI component/reference probe; Python validates exported tensors.
+set_property(TARGET test_instantmesh_components PROPERTY CLOUDVIEWER_TEST_KIND integration)
 _aicore_test_common(test_instantmesh_components NO_CTEST)
 # ELF section collection isolates real private preprocessing without exporting test-only APIs or linking a second task runtime.
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
@@ -862,26 +799,31 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Cla
         ${AICORE_INC_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../src ${GGML_INCLUDE_DIRS})
     target_compile_options(test_instantmesh_preprocessing PRIVATE -ffunction-sections -fdata-sections)
     target_link_options(test_instantmesh_preprocessing PRIVATE -Wl,--gc-sections)
-    target_link_libraries(test_instantmesh_preprocessing PRIVATE ${GGML_DEPENDENCY_TARGET} CVCoreLib Qt::Core Qt::Gui ${CMAKE_DL_LIBS})
+    target_link_libraries(test_instantmesh_preprocessing PRIVATE ${GGML_DEPENDENCY_TARGET} CVCoreLib Qt::Core Qt::Gui ${CMAKE_DL_LIBS} gtest)
     _aicore_test_common(test_instantmesh_preprocessing)
     set_tests_properties(test_instantmesh_preprocessing PROPERTIES LABELS "instantmesh;numeric;preprocess")
     set(AICORE_INSTANTMESH_E2E_REFERENCE "${CMAKE_BINARY_DIR}/reference/full-official-f32-v1/e2e/T"
         CACHE PATH "Transient authenticated independent 75-step diffusion reference directory")
-    add_test(NAME test_instantmesh_noise_reference COMMAND test_instantmesh_preprocessing
+    aicore_add_registered_test(NAME test_instantmesh_noise_reference COMMAND test_instantmesh_preprocessing
         noise-reference "${AICORE_INSTANTMESH_E2E_REFERENCE}")
     set_tests_properties(test_instantmesh_noise_reference PROPERTIES
-        LABELS "instantmesh;numeric;reference" SKIP_RETURN_CODE 77)
+        LABELS "instantmesh;numeric;reference;e2e" SKIP_RETURN_CODE 77)
     add_dependencies(test_instantmesh_components test_instantmesh_preprocessing)
 endif()
-foreach(_im_backend cpu backend)
+# CPU is a distinct matrix row only when the requested device differs.
+set(_im_test_backends cpu)
+if(NOT AICORE_TEST_DEVICE STREQUAL "cpu")
+    list(APPEND _im_test_backends backend)
+endif()
+foreach(_im_backend IN LISTS _im_test_backends)
     if(_im_backend STREQUAL "cpu")
         set(_im_device cpu)
     else()
         set(_im_device "${AICORE_TEST_DEVICE}")
     endif()
-    add_test(NAME test_instantmesh_synthesizer_load_${_im_backend}
+    aicore_add_registered_test(NAME test_instantmesh_synthesizer_load_${_im_backend}
         COMMAND test_instantmesh_components synth-load-contract "${_im_device}")
-    add_test(NAME test_instantmesh_synthesizer_layout_${_im_backend}
+    aicore_add_registered_test(NAME test_instantmesh_synthesizer_layout_${_im_backend}
         COMMAND test_instantmesh_components synth-layout-contract "${_im_device}")
     set_tests_properties(test_instantmesh_synthesizer_load_${_im_backend}
         PROPERTIES LABELS "instantmesh;contract;model-load" RESOURCE_LOCK gpu)
@@ -904,14 +846,23 @@ target_include_directories(test_instantmesh_dino_convolution PRIVATE
 target_link_libraries(test_instantmesh_dino_convolution PRIVATE
     ${GGML_DEPENDENCY_TARGET} CVCoreLib ${CMAKE_DL_LIBS})
 _aicore_test_common(test_instantmesh_dino_convolution NO_CTEST)
-add_test(NAME test_instantmesh_dino_convolution_cpu COMMAND test_instantmesh_dino_convolution cpu)
-add_test(NAME test_instantmesh_dino_convolution_backend COMMAND test_instantmesh_dino_convolution "${AICORE_TEST_DEVICE}")
-set_tests_properties(test_instantmesh_dino_convolution_cpu PROPERTIES LABELS "instantmesh;numeric")
-set_tests_properties(test_instantmesh_dino_convolution_backend PROPERTIES LABELS "instantmesh;numeric;gpu" RESOURCE_LOCK gpu)
-if(AICORE_TEST_ENV_EXTRA)
-    set_tests_properties(test_instantmesh_dino_convolution_cpu test_instantmesh_dino_convolution_backend
-        PROPERTIES ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
-endif()
+foreach(_im_backend IN LISTS _im_test_backends)
+    if(_im_backend STREQUAL "cpu")
+        set(_im_device cpu)
+        set(_im_labels "instantmesh;numeric")
+    else()
+        set(_im_device "${AICORE_TEST_DEVICE}")
+        set(_im_labels "instantmesh;numeric;gpu")
+    endif()
+    aicore_add_registered_test(NAME test_instantmesh_dino_convolution_${_im_backend}
+        COMMAND test_instantmesh_dino_convolution "${_im_device}")
+    set_tests_properties(test_instantmesh_dino_convolution_${_im_backend} PROPERTIES
+        LABELS "${_im_labels}" RESOURCE_LOCK gpu)
+    if(AICORE_TEST_ENV_EXTRA)
+        set_tests_properties(test_instantmesh_dino_convolution_${_im_backend} PROPERTIES
+            ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
+    endif()
+endforeach()
 
 # Model-free independent double convolution oracles cover real VAE F32/mixed-im2col paths.
 add_executable(test_instantmesh_vae_convolution instantmesh/test_instantmesh_vae_convolution.cpp
@@ -923,14 +874,23 @@ target_include_directories(test_instantmesh_vae_convolution PRIVATE
 target_link_libraries(test_instantmesh_vae_convolution PRIVATE
     ${GGML_DEPENDENCY_TARGET} CVCoreLib ${CMAKE_DL_LIBS})
 _aicore_test_common(test_instantmesh_vae_convolution NO_CTEST)
-add_test(NAME test_instantmesh_vae_convolution_cpu COMMAND test_instantmesh_vae_convolution cpu)
-add_test(NAME test_instantmesh_vae_convolution_backend COMMAND test_instantmesh_vae_convolution "${AICORE_TEST_DEVICE}")
-set_tests_properties(test_instantmesh_vae_convolution_cpu PROPERTIES LABELS "instantmesh;numeric")
-set_tests_properties(test_instantmesh_vae_convolution_backend PROPERTIES LABELS "instantmesh;numeric;gpu" RESOURCE_LOCK gpu)
-if(AICORE_TEST_ENV_EXTRA)
-    set_tests_properties(test_instantmesh_vae_convolution_cpu test_instantmesh_vae_convolution_backend
-        PROPERTIES ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
-endif()
+foreach(_im_backend IN LISTS _im_test_backends)
+    if(_im_backend STREQUAL "cpu")
+        set(_im_device cpu)
+        set(_im_labels "instantmesh;numeric")
+    else()
+        set(_im_device "${AICORE_TEST_DEVICE}")
+        set(_im_labels "instantmesh;numeric;gpu")
+    endif()
+    aicore_add_registered_test(NAME test_instantmesh_vae_convolution_${_im_backend}
+        COMMAND test_instantmesh_vae_convolution "${_im_device}")
+    set_tests_properties(test_instantmesh_vae_convolution_${_im_backend} PROPERTIES
+        LABELS "${_im_labels}" RESOURCE_LOCK gpu)
+    if(AICORE_TEST_ENV_EXTRA)
+        set_tests_properties(test_instantmesh_vae_convolution_${_im_backend} PROPERTIES
+            ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
+    endif()
+endforeach()
 # The same independent convolution oracle compiles real UNet helpers, without copied expectations or a new ggml owner.
 add_executable(test_instantmesh_unet_convolution instantmesh/test_instantmesh_vae_convolution.cpp
     ../src/tasks/instantmesh/gguf_io.cpp
@@ -942,14 +902,23 @@ target_include_directories(test_instantmesh_unet_convolution PRIVATE
 target_link_libraries(test_instantmesh_unet_convolution PRIVATE
     ${GGML_DEPENDENCY_TARGET} CVCoreLib ${CMAKE_DL_LIBS})
 _aicore_test_common(test_instantmesh_unet_convolution NO_CTEST)
-add_test(NAME test_instantmesh_unet_convolution_cpu COMMAND test_instantmesh_unet_convolution cpu)
-add_test(NAME test_instantmesh_unet_convolution_backend COMMAND test_instantmesh_unet_convolution "${AICORE_TEST_DEVICE}")
-set_tests_properties(test_instantmesh_unet_convolution_cpu PROPERTIES LABELS "instantmesh;numeric")
-set_tests_properties(test_instantmesh_unet_convolution_backend PROPERTIES LABELS "instantmesh;numeric;gpu" RESOURCE_LOCK gpu)
-if(AICORE_TEST_ENV_EXTRA)
-    set_tests_properties(test_instantmesh_unet_convolution_cpu test_instantmesh_unet_convolution_backend
-        PROPERTIES ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
-endif()
+foreach(_im_backend IN LISTS _im_test_backends)
+    if(_im_backend STREQUAL "cpu")
+        set(_im_device cpu)
+        set(_im_labels "instantmesh;numeric")
+    else()
+        set(_im_device "${AICORE_TEST_DEVICE}")
+        set(_im_labels "instantmesh;numeric;gpu")
+    endif()
+    aicore_add_registered_test(NAME test_instantmesh_unet_convolution_${_im_backend}
+        COMMAND test_instantmesh_unet_convolution "${_im_device}")
+    set_tests_properties(test_instantmesh_unet_convolution_${_im_backend} PROPERTIES
+        LABELS "${_im_labels}" RESOURCE_LOCK gpu)
+    if(AICORE_TEST_ENV_EXTRA)
+        set_tests_properties(test_instantmesh_unet_convolution_${_im_backend} PROPERTIES
+            ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
+    endif()
+endforeach()
 # Manual node-level diagnostics; no asset-dependent default CTest or second validation runner.
 add_executable(test_instantmesh_vae_stages instantmesh/test_instantmesh_vae_stages.cpp
     ../src/tasks/instantmesh/gguf_io.cpp
@@ -961,23 +930,19 @@ target_link_libraries(test_instantmesh_vae_stages PRIVATE
     ${GGML_DEPENDENCY_TARGET} CVCoreLib ${CMAKE_DL_LIBS})
 _aicore_test_common(test_instantmesh_vae_stages NO_CTEST)
 foreach(_im_vae_stage encode decode)
-    add_test(NAME test_instantmesh_vae_allocation_failure_${_im_vae_stage}
+    aicore_add_registered_test(NAME test_instantmesh_vae_allocation_failure_${_im_vae_stage}
         COMMAND test_instantmesh_vae_stages allocation-failure
         "${AICORE_TEST_ASSET_ROOT}/instantmesh_models/zero123pp_vae_f16.gguf" "${_im_vae_stage}")
     set_tests_properties(test_instantmesh_vae_allocation_failure_${_im_vae_stage} PROPERTIES
         LABELS "instantmesh;contract;model" SKIP_RETURN_CODE 77 ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
-    set_property(GLOBAL PROPERTY AICORE_TEST_TGT_test_instantmesh_vae_allocation_failure_${_im_vae_stage}
-        test_instantmesh_vae_stages)
 endforeach()
 foreach(_im_parking_model zero123pp_cond_f32 zero123pp_vae_f16 dino_q8)
-    add_test(NAME test_instantmesh_weights_parking_${_im_parking_model}
+    aicore_add_registered_test(NAME test_instantmesh_weights_parking_${_im_parking_model}
         COMMAND test_instantmesh_vae_stages weights-parking "${AICORE_TEST_DEVICE}"
         "${AICORE_TEST_ASSET_ROOT}/instantmesh_models/${_im_parking_model}.gguf")
     set_tests_properties(test_instantmesh_weights_parking_${_im_parking_model} PROPERTIES
         LABELS "instantmesh;contract;model;gpu" SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu
         ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
-    set_property(GLOBAL PROPERTY AICORE_TEST_TGT_test_instantmesh_weights_parking_${_im_parking_model}
-        test_instantmesh_vae_stages)
 endforeach()
 set(AICORE_INSTANTMESH_COMPONENT_REFERENCE "${CMAKE_BINARY_DIR}/instantmesh_reference"
     CACHE PATH "Transient pinned CLIP/VAE/UNet component reference root")
@@ -992,7 +957,7 @@ foreach(_im_component clip vae unet)
         set(_im_model zero123pp_unet_f16.gguf)
         set(_im_ref unet)
     endif()
-    add_test(NAME test_instantmesh_${_im_component}_reference COMMAND test_instantmesh_components
+    aicore_add_registered_test(NAME test_instantmesh_${_im_component}_reference COMMAND test_instantmesh_components
         "${_im_component}" "${AICORE_TEST_ASSET_ROOT}/instantmesh_models/${_im_model}"
         "${AICORE_INSTANTMESH_COMPONENT_REFERENCE}/${_im_ref}" "${AICORE_TEST_DEVICE}" 4)
     set_tests_properties(test_instantmesh_${_im_component}_reference PROPERTIES
@@ -1013,7 +978,7 @@ foreach(_im_component dino lrm)
         set(_im_stem lrm_transformer)
     endif()
     foreach(_im_quant f32 f16 q8)
-        add_test(NAME test_instantmesh_${_im_component}_${_im_quant}_reference COMMAND test_instantmesh_components
+        aicore_add_registered_test(NAME test_instantmesh_${_im_component}_${_im_quant}_reference COMMAND test_instantmesh_components
             "${_im_component}" "${AICORE_TEST_ASSET_ROOT}/instantmesh_models/${_im_stem}_${_im_quant}.gguf"
             "${AICORE_INSTANTMESH_GEOMETRY_REFERENCE}" "${AICORE_TEST_DEVICE}" 4
             "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/validation_manifest.json" "${AICORE_INSTANTMESH_GEOMETRY_BASELINE}")
@@ -1031,13 +996,13 @@ set(AICORE_INSTANTMESH_SYNTH_BASELINE "${CMAKE_BINARY_DIR}/reference/synth-basel
 set(AICORE_INSTANTMESH_WEIGHT_REFERENCE "${CMAKE_BINARY_DIR}/reference/weight-quantization-reference-v1"
     CACHE PATH "Independent correct corner-major same-weight reference root")
 foreach(_im_quant f32 f16 q8)
-    foreach(_im_backend cpu backend)
+    foreach(_im_backend IN LISTS _im_test_backends)
         if(_im_backend STREQUAL "cpu")
             set(_im_device cpu)
         else()
             set(_im_device "${AICORE_TEST_DEVICE}")
         endif()
-        add_test(NAME test_instantmesh_synth_${_im_quant}_reference_${_im_backend}
+        aicore_add_registered_test(NAME test_instantmesh_synth_${_im_quant}_reference_${_im_backend}
             COMMAND test_instantmesh_components synth
                 "${AICORE_TEST_ASSET_ROOT}/instantmesh_models/synthesizer_${_im_quant}.gguf"
                 "${AICORE_INSTANTMESH_SYNTH_REFERENCE}" "${_im_device}" 4
@@ -1057,25 +1022,29 @@ set_target_properties(test_instantmesh_c_header PROPERTIES
     C_STANDARD 11 C_STANDARD_REQUIRED ON LINKER_LANGUAGE CXX)
 target_link_libraries(test_instantmesh_c_header PRIVATE AICore)
 _aicore_capi_link(test_instantmesh_c_header)
+# C compiler/ABI probe intentionally has no C++ testing dependency.
+set_property(TARGET test_instantmesh_c_header PROPERTY CLOUDVIEWER_TEST_KIND integration)
 _aicore_test_common(test_instantmesh_c_header)
 set_tests_properties(test_instantmesh_c_header PROPERTIES LABELS "capi;instantmesh")
 
 add_executable(test_instantmesh_lifecycle instantmesh/test_instantmesh_lifecycle.cpp)
 target_link_libraries(test_instantmesh_lifecycle PRIVATE AICore)
 _aicore_capi_link(test_instantmesh_lifecycle)
+# Model lifecycle executable consumed by end-to-end/reference gates.
+set_property(TARGET test_instantmesh_lifecycle PROPERTY CLOUDVIEWER_TEST_KIND integration)
 _aicore_test_common(test_instantmesh_lifecycle NO_CTEST)
-add_test(NAME test_instantmesh_lifecycle COMMAND test_instantmesh_lifecycle
+aicore_add_registered_test(NAME test_instantmesh_lifecycle COMMAND test_instantmesh_lifecycle
     "${AICORE_TEST_ASSET_ROOT}" "${AICORE_TEST_DEVICE}")
 set_tests_properties(test_instantmesh_lifecycle PROPERTIES
     LABELS "capi;instantmesh;model;e2e" SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
-add_test(NAME test_instantmesh_full_lifecycle COMMAND test_instantmesh_lifecycle
+aicore_add_registered_test(NAME test_instantmesh_full_lifecycle COMMAND test_instantmesh_lifecycle
     "${AICORE_TEST_ASSET_ROOT}" "${AICORE_TEST_DEVICE}" full)
-add_test(NAME test_instantmesh_no_cfg_lifecycle COMMAND test_instantmesh_lifecycle
+aicore_add_registered_test(NAME test_instantmesh_no_cfg_lifecycle COMMAND test_instantmesh_lifecycle
     "${AICORE_TEST_ASSET_ROOT}" "${AICORE_TEST_DEVICE}" full guidance1)
-add_test(NAME test_instantmesh_timing_boundary COMMAND test_instantmesh_lifecycle
+aicore_add_registered_test(NAME test_instantmesh_timing_boundary COMMAND test_instantmesh_lifecycle
     "${AICORE_TEST_ASSET_ROOT}" "${AICORE_TEST_DEVICE}" timing)
 foreach(_im_rmbg_quant f32 f16 q8)
-    add_test(NAME test_instantmesh_rmbg_${_im_rmbg_quant} COMMAND test_instantmesh_lifecycle
+    aicore_add_registered_test(NAME test_instantmesh_rmbg_${_im_rmbg_quant} COMMAND test_instantmesh_lifecycle
         "${AICORE_TEST_ASSET_ROOT}" "${AICORE_TEST_DEVICE}" rmbg "rmbg_${_im_rmbg_quant}.gguf")
     set_tests_properties(test_instantmesh_rmbg_${_im_rmbg_quant} PROPERTIES
         LABELS "capi;instantmesh;model;e2e" SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
@@ -1096,7 +1065,7 @@ endif()
 # SAM 3D C API contract test (model-free) plus the real-asset acceptance
 # probe consumed by the aicore-validate-all runner.
 aicore_add_capi_test(test_sam3d_capi_contract sam3d)
-aicore_add_capi_test(test_sam3d_scene_assemble sam3d)
+aicore_add_capi_test(test_sam3d_scene_assemble sam3d LIBS gtest_main)
 
 aicore_add_capi_tool(bench_sam3d_backend_acceptance
     sam3d/bench_sam3d_backend_acceptance.cpp
@@ -1164,7 +1133,7 @@ aicore_add_yolo_capi_test(test_yolo_with_classes LABELS capi;model)
 # numeric parity for every YOLO task and f32/f16/q8_0. Missing assets skip;
 # partial assets or a missing requested backend fail with an explicit report.
 if(Python3_EXECUTABLE)
-    add_test(NAME test_yolo_model_matrix
+    aicore_add_registered_test(NAME test_yolo_model_matrix
         COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/yolo/run_yolo_model_matrix.py
             --benchmark $<TARGET_FILE:test_yolo_capi_performance>
@@ -1172,14 +1141,12 @@ if(Python3_EXECUTABLE)
             --report ${CMAKE_BINARY_DIR}/Testing/yolo_model_matrix.json)
     set_tests_properties(test_yolo_model_matrix PROPERTIES
         SKIP_RETURN_CODE 77
-        LABELS "matrix;performance;parity")
+        LABELS "matrix;performance;parity;aicore-yolo-matrix")
     add_custom_target(aicore-yolo-model-matrix
-        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-tests=error
-                -R "^test_yolo_model_matrix$" -C $<CONFIG>
-        DEPENDS test_yolo_capi_performance test_yolo_capi_parity
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        COMMENT "Running YOLO task/quant/backend model matrix"
-        VERBATIM)
+        COMMAND "${CMAKE_COMMAND}" -DBUILD_DIR=${CMAKE_BINARY_DIR}
+            -DCONFIG=$<CONFIG> -DGROUP=aicore-yolo-matrix
+            -P "${PROJECT_SOURCE_DIR}/tests/Run.cmake"
+        USES_TERMINAL VERBATIM)
 endif()
 
 # YOLO C API contract test (no GGUF assets: ABI, options, catalog, null
@@ -1262,7 +1229,7 @@ if(TARGET AICore_test)
     _aicore_test_common(reid_diag NO_CTEST)
 endif()
 
-add_test(
+aicore_add_registered_test(
     NAME test_aicore_public_headers
     COMMAND ${CMAKE_COMMAND}
             -DAICORE_PUBLIC_INCLUDE_DIR=${AICORE_INC_DIR}/aicore
@@ -1311,7 +1278,7 @@ function(aicore_configure_model_test_assets)
     if(AICORE_TEST_AUTO_DOWNLOAD)
         # This fixture is only selected by asset-dependent CTests. It is not a
         # build dependency, so compiling ACloudViewer cannot trigger I/O.
-        add_test(
+        aicore_add_registered_test(
             NAME aicore_fetch_test_assets
             COMMAND ${CMAKE_COMMAND}
                     -DAICORE_TEST_ASSET_ROOT=${AICORE_TEST_ASSET_ROOT}
@@ -1359,7 +1326,7 @@ function(aicore_configure_model_test_assets)
     # scripts/gen_ocr_fixtures.py; see the manifest accuracy_gate prose for
     # the measured tolerance rationale). The probe exits 77 when the
     # fixtures or the f32 models have not been fetched into the asset root.
-    add_test(
+    aicore_add_registered_test(
         NAME probe_ocr_rec
         COMMAND $<TARGET_FILE:test_ocr_runtime>
                 ${_root}/ocr_fixtures
@@ -1373,7 +1340,7 @@ function(aicore_configure_model_test_assets)
         TIMEOUT 1800
         LABELS "capi;model;ocr"
         ENVIRONMENT "${_env}")
-    add_test(
+    aicore_add_registered_test(
         NAME probe_ocr_det
         COMMAND $<TARGET_FILE:test_ocr_runtime>
                 ${_root}/ocr_fixtures
@@ -1387,7 +1354,7 @@ function(aicore_configure_model_test_assets)
         TIMEOUT 1800
         LABELS "capi;model;ocr"
         ENVIRONMENT "${_env}")
-    add_test(
+    aicore_add_registered_test(
         NAME probe_ocr_rec_en
         COMMAND $<TARGET_FILE:test_ocr_runtime>
                 ${_root}/ocr_fixtures
@@ -1403,7 +1370,7 @@ function(aicore_configure_model_test_assets)
         ENVIRONMENT "${_env}")
     # Layout heads (PicoDet CDLA) against the official Paddle inference
     # fixtures; fetches are contiguous and the fixtures may be Fortran order.
-    add_test(
+    aicore_add_registered_test(
         NAME probe_ocr_layout
         COMMAND $<TARGET_FILE:test_ocr_runtime>
                 ${_root}/ocr_fixtures
@@ -1414,7 +1381,7 @@ function(aicore_configure_model_test_assets)
                 0.02)
     # SLANet_plus structure probs/loc on three official table crops
     # (table_fixtures.json); token argmax must match the fixture exactly.
-    add_test(
+    aicore_add_registered_test(
         NAME probe_table
         COMMAND $<TARGET_FILE:test_table_runtime>
                 ${_root}/ocr_fixtures
@@ -1436,7 +1403,7 @@ function(aicore_configure_model_test_assets)
     # It is a separately supported C API model and must meet the same strict
     # CPU/GPU parity gate whenever model tests are explicitly enabled.
     if(TEST test_aliked_capi_parity)
-        add_test(
+        aicore_add_registered_test(
             NAME test_aliked_capi_parity_512
             COMMAND $<TARGET_FILE:test_aliked_capi_parity>
                     ${_root}/lightglue_models/aliked-n16rot-f16.gguf
@@ -1451,7 +1418,7 @@ function(aicore_configure_model_test_assets)
                 FIXTURES_REQUIRED aicore_model_assets)
         endif()
 
-        add_test(
+        aicore_add_registered_test(
             NAME test_aliked_capi_parity_q8
             COMMAND $<TARGET_FILE:test_aliked_capi_parity>
                     ${_root}/lightglue_models/aliked-n16rot-q8_0.gguf
@@ -1472,7 +1439,7 @@ aicore_configure_model_test_assets()
 
 # --- ABI hygiene: no da_capi_* / fs_capi_* in exported symbols ---
 if(UNIX AND NOT APPLE)
-    add_test(
+    aicore_add_registered_test(
         NAME test_no_legacy_symbols
         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/check_no_legacy_symbols.sh
                 $<TARGET_FILE:AICore> ${AICORE_INC_DIR}/aicore
@@ -1485,7 +1452,7 @@ endif()
 # Linux run it fine, but Windows has no .sh launcher (CTest BAD_COMMAND),
 # so register it only on non-Windows platforms.
 if(NOT WIN32)
-    add_test(
+    aicore_add_registered_test(
         NAME test_no_env_getenv
         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/check_no_env_getenv.sh
                 ${CMAKE_CURRENT_SOURCE_DIR}/../src
@@ -1493,40 +1460,13 @@ if(NOT WIN32)
     set_tests_properties(test_no_env_getenv PROPERTIES LABELS "capi")
 endif()
 
-# Contract tier: ctest -L capi, with -LE model|gpu|e2e when model tests are
-# disabled. The DEPENDS list is derived at the bottom of this file from the
-# registration registry + LABELS (the exact predicate ctest applies), so a
-# newly registered capi test needs no list edit here. Every tier passes
-# --no-tests=error: ctest exits 0 on an empty selection, which would turn a
-# relabeled or unregistered tier into a green no-op.
-set(_aicore_contract_model_exclude)
-if(NOT AICORE_TEST_ENABLE_MODEL_TESTS)
-    list(APPEND _aicore_contract_model_exclude -LE "model|gpu|e2e")
-endif()
+# Compatibility target: execution policy belongs to root tests/Run.cmake.
 add_custom_target(aicore-contract-tests
-    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-tests=error -L capi
-            ${_aicore_contract_model_exclude}
-            # -j4 matches the 4-core Windows CI runner; -j1 serial execution
-            # pushed the contract stage past the job timeout (232 min serial
-            # ctest + 95 min build = 327 min > 330 min cap). Contract tests
-            # are independent processes with no shared GPU/resource state.
-            -j4
-            # --progress forces ctest to emit per-test start/finish lines
-            # even when Ninja buffers custom-command output; without this the
-            # CI log stays silent for the entire stage and hides the test
-            # that hangs (if any) behind a 254-minute wall of nothing.
-            --progress
-            # Per-test timeout (seconds). If a single test hangs (e.g. Vulkan
-            # backend initialization on a GPU-less runner), kill it instead
-            # of letting it consume the entire job time budget.
-            --timeout 300
-            -C $<CONFIG>
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMENT "Running AICore public contract tests"
-    # USES_TERMINAL tells Ninja not to buffer this command's output, so
-    # --progress lines reach the CI log in real time.
-    VERBATIM USES_TERMINAL
-)
+    COMMAND "${CMAKE_COMMAND}" -DBUILD_DIR=${CMAKE_BINARY_DIR}
+        -DCONFIG=$<CONFIG> -DGROUP=aicore-contract
+        -P "${PROJECT_SOURCE_DIR}/tests/Run.cmake"
+    USES_TERMINAL VERBATIM)
+
 
 # --- Catalog vs release asset consistency (network; CI only) ---------------
 # The catalog can be self-consistent while individual entries 404 on the
@@ -1538,10 +1478,13 @@ add_custom_target(aicore-contract-tests
 # out of the "capi" label so offline/contract runs stay network-free.
 add_executable(test_catalog_dump_urls catalog_dump_urls.cpp)
 target_link_libraries(test_catalog_dump_urls PRIVATE AICore)
+# CLI catalog exporter consumed by Python reference/asset gates.
+set_property(TARGET test_catalog_dump_urls PROPERTY CLOUDVIEWER_TEST_KIND integration)
 _aicore_capi_link(test_catalog_dump_urls)
 _aicore_test_common(test_catalog_dump_urls)
 add_dependencies(test_instantmesh_capi_contract test_catalog_dump_urls)
-add_test(NAME test_instantmesh_catalog_consistency COMMAND test_instantmesh_capi_contract
+aicore_add_registered_test(NAME test_instantmesh_catalog_consistency COMMAND test_instantmesh_capi_contract
+    --gtest_filter=InstantMeshCapi.CatalogDigestScope
     "$<TARGET_FILE:test_catalog_dump_urls>")
 set_tests_properties(test_instantmesh_catalog_consistency PROPERTIES LABELS "capi;instantmesh;catalog"
     ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
@@ -1552,49 +1495,35 @@ endif()
 
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
+    # Runtime ABI/device discovery is registered here, including its library
+    # prerequisite, instead of being dispatched separately by Docker.
+    aicore_add_registered_test(NAME test_packaged_aicore_runtime
+        COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_SOURCE_DIR}/util/check_aicore_runtime.py $<TARGET_FILE:AICore>)
+    set_tests_properties(test_packaged_aicore_runtime PROPERTIES LABELS "capi;runtime")
     # The checker spawns test_catalog_dump_urls directly, so propagate the
     # configure-time Qt runtime (same rationale as AICORE_TEST_ENV_EXTRA and
     # the validation runner below): on a mixed Qt stack the spawned binary
     # would otherwise resolve a system Qt and fail on versioned operator
     # delete (exit 127).
-    add_test(
+    aicore_add_registered_test(
         NAME test_catalog_remote_assets
         COMMAND ${CMAKE_COMMAND} -E env ${AICORE_TEST_ENV_EXTRA}
                 ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/check_catalog_assets.py
                 $<TARGET_FILE:test_catalog_dump_urls>)
     set_tests_properties(test_catalog_remote_assets PROPERTIES
-        LABELS "catalog-remote" TIMEOUT 600)
+        LABELS "catalog-remote;network" TIMEOUT 600)
 endif()
 
-# --- Fast tier: no GGUF assets (whitebox/common/gaussian units + no-asset
-# capi subset + catalog URL dump). Mirror entry point of aicore-contract-tests
-# so CI can address the tier by name. DEPENDS derived at the bottom of this
-# file: fast-classified binaries plus the contract-tier set (the fast ctest
-# -LE also runs the no-asset capi subset).
-add_custom_target(aicore-fast-tests
-    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-tests=error
-            -LE "model|gpu|e2e|cvpluginapi"
-            -j2
-            -C $<CONFIG>
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMENT "Running AICore fast-tier tests (no GGUF assets)"
-    VERBATIM
-)
-
-# --- Model tier: needs GGUF assets (AICORE_TEST_ENABLE_MODEL_TESTS=ON +
-# asset root). Tests without assets skip (SKIP_RETURN_CODE 77), so this
-# target never fails on missing assets — it only executes them. Mirror of
-# the fast/contract entry points; the ctest -L "model" selection also covers
-# the two parity variants that reuse the test_aliked_capi_parity binary.
-add_custom_target(aicore-model-tests
-    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --no-tests=error -L "model"
-            -j1
-            -C $<CONFIG>
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMENT "Running AICore model-tier tests (skips without GGUF assets)"
-    VERBATIM
-)
+# Preserve existing command names as thin forwarders into the common runner.
+foreach(tier fast model)
+    add_custom_target(aicore-${tier}-tests
+        COMMAND "${CMAKE_COMMAND}" -DBUILD_DIR=${CMAKE_BINARY_DIR}
+            -DCONFIG=$<CONFIG> -DGROUP=aicore-${tier}
+            -P "${PROJECT_SOURCE_DIR}/tests/Run.cmake"
+        USES_TERMINAL VERBATIM)
+endforeach()
 
 # Complete real-model/task regression gate. The runner discovers every model,
 # executes task-specific probes serially, and rejects missing coverage.
@@ -1687,20 +1616,20 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
         USES_TERMINAL
         VERBATIM)
 
-    add_test(NAME test_capi_coverage_audit
+    aicore_add_registered_test(NAME test_capi_coverage_audit
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/common/test_capi_coverage_audit.py)
     set_tests_properties(test_capi_coverage_audit PROPERTIES LABELS "fast;validation")
 
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        add_test(NAME test_aicore_linux_cuda_bundle
+        aicore_add_registered_test(NAME test_aicore_linux_cuda_bundle
             COMMAND ${Python3_EXECUTABLE} -m pytest -q
                 ${CMAKE_SOURCE_DIR}/agent-integration/tests/test_bundle_cuda_runtime.py)
         set_tests_properties(test_aicore_linux_cuda_bundle PROPERTIES
             LABELS "fast;validation;packaging" TIMEOUT 120)
     endif()
 
-    add_test(NAME test_aicore_validation_runner
+    aicore_add_registered_test(NAME test_aicore_validation_runner
         COMMAND ${CMAKE_COMMAND} -E env
                 "AICORE_BUILD_CONFIG=$<CONFIG>"
                 ${_aicore_validation_runtime_env}
@@ -1709,149 +1638,142 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
     set_tests_properties(test_aicore_validation_runner PROPERTIES
         LABELS "fast;validation")
 
-    add_test(NAME test_aicore_runtime_environment
+    aicore_add_registered_test(NAME test_aicore_runtime_environment
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_runtime_environment.py)
     set_tests_properties(test_aicore_runtime_environment PROPERTIES
         LABELS "fast;validation")
 
-    add_test(NAME test_yolo_parity_launcher
+    aicore_add_registered_test(NAME test_yolo_parity_launcher
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/yolo/test_run_upstream_parity.py)
     set_tests_properties(test_yolo_parity_launcher PROPERTIES
         LABELS "fast;validation;yolo")
 
-    add_test(NAME test_upstream_inventory
+    aicore_add_registered_test(NAME test_upstream_inventory
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/test_upstream_inventory.py)
     set_tests_properties(test_upstream_inventory PROPERTIES
         LABELS "fast;validation;upstream" TIMEOUT 120)
 
-    add_test(NAME test_instantmesh_reference_contract COMMAND ${Python3_EXECUTABLE}
+    aicore_add_registered_test(NAME test_instantmesh_reference_contract BUILD_TARGETS test_instantmesh_scheduler COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/instantmesh/test_instantmesh_references.py)
     set_tests_properties(test_instantmesh_reference_contract PROPERTIES
         LABELS "instantmesh;reference;validation" SKIP_RETURN_CODE 77
         ENVIRONMENT "${AICORE_TEST_ENV_EXTRA};AICORE_TEST_SCHEDULER_BINARY=$<TARGET_FILE:test_instantmesh_scheduler>;AICORE_TEST_SCHEDULER_REFERENCE=${AICORE_INSTANTMESH_SCHEDULER_REFERENCE}")
     # Real binaries consumed by Python subprocesses also enter the automatically derived tier build closure.
-    set_property(GLOBAL PROPERTY AICORE_TEST_TGT_test_instantmesh_reference_contract
-        test_instantmesh_scheduler)
     if(TARGET test_instantmesh_preprocessing)
-        add_test(NAME test_instantmesh_preprocess_reference_contract COMMAND ${Python3_EXECUTABLE}
+        aicore_add_registered_test(NAME test_instantmesh_preprocess_reference_contract BUILD_TARGETS test_instantmesh_preprocessing COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/instantmesh/test_instantmesh_references.py --preprocess)
         set_tests_properties(test_instantmesh_preprocess_reference_contract PROPERTIES
             LABELS "instantmesh;reference;validation"
             ENVIRONMENT "${AICORE_TEST_ENV_EXTRA};AICORE_TEST_PREPROCESS_BINARY=$<TARGET_FILE:test_instantmesh_preprocessing>")
-        set_property(GLOBAL PROPERTY AICORE_TEST_TGT_test_instantmesh_preprocess_reference_contract test_instantmesh_preprocessing)
     endif()
-    add_test(NAME test_instantmesh_component_reference_contract COMMAND ${Python3_EXECUTABLE}
+    aicore_add_registered_test(NAME test_instantmesh_component_reference_contract BUILD_TARGETS test_instantmesh_components COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/instantmesh/test_instantmesh_references.py --components)
     set_tests_properties(test_instantmesh_component_reference_contract PROPERTIES
         LABELS "instantmesh;reference;validation" SKIP_RETURN_CODE 77
         ENVIRONMENT "${AICORE_TEST_ENV_EXTRA};AICORE_TEST_COMPONENTS_BINARY=$<TARGET_FILE:test_instantmesh_components>;AICORE_TEST_COMPONENT_REFERENCE=${AICORE_INSTANTMESH_COMPONENT_REFERENCE}")
-    set_property(GLOBAL PROPERTY AICORE_TEST_TGT_test_instantmesh_component_reference_contract
-        test_instantmesh_components)
 
-    add_test(NAME test_instantmesh_geometry_reference_contract COMMAND ${Python3_EXECUTABLE}
+    aicore_add_registered_test(NAME test_instantmesh_geometry_reference_contract BUILD_TARGETS test_instantmesh_components COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/instantmesh/test_instantmesh_references.py --geometry)
     set_tests_properties(test_instantmesh_geometry_reference_contract PROPERTIES
         LABELS "instantmesh;reference;validation" SKIP_RETURN_CODE 77
         ENVIRONMENT "${AICORE_TEST_ENV_EXTRA};AICORE_TEST_COMPONENTS_BINARY=$<TARGET_FILE:test_instantmesh_components>;AICORE_TEST_GEOMETRY_REFERENCE=${AICORE_INSTANTMESH_GEOMETRY_REFERENCE};AICORE_TEST_GEOMETRY_BASELINE=${AICORE_INSTANTMESH_GEOMETRY_BASELINE}")
-    set_property(GLOBAL PROPERTY AICORE_TEST_TGT_test_instantmesh_geometry_reference_contract test_instantmesh_components)
-add_test(NAME test_instantmesh_synth_reference_contract COMMAND ${Python3_EXECUTABLE}
+aicore_add_registered_test(NAME test_instantmesh_synth_reference_contract BUILD_TARGETS test_instantmesh_components COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_CURRENT_SOURCE_DIR}/instantmesh/test_instantmesh_references.py --synth)
 set_tests_properties(test_instantmesh_synth_reference_contract PROPERTIES
         LABELS "instantmesh;reference;validation" SKIP_RETURN_CODE 77
         ENVIRONMENT "${AICORE_TEST_ENV_EXTRA};AICORE_TEST_COMPONENTS_BINARY=$<TARGET_FILE:test_instantmesh_components>;AICORE_TEST_SYNTH_REFERENCE=${AICORE_INSTANTMESH_SYNTH_REFERENCE};AICORE_TEST_SYNTH_BASELINE=${AICORE_INSTANTMESH_SYNTH_BASELINE};AICORE_TEST_WEIGHT_REFERENCE=${AICORE_INSTANTMESH_WEIGHT_REFERENCE};AICORE_TEST_GEOMETRY_REFERENCE=${AICORE_INSTANTMESH_GEOMETRY_REFERENCE}")
-set_property(GLOBAL PROPERTY AICORE_TEST_TGT_test_instantmesh_synth_reference_contract test_instantmesh_components)
 
-    add_test(NAME test_attribute_probe_contract
+    aicore_add_registered_test(NAME test_attribute_probe_contract
         COMMAND ${CMAKE_COMMAND} -E env ${_aicore_validation_runtime_env}
                 ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/attribute/test_attribute_probe_contract.py
                 --library $<TARGET_FILE:AICore>)
     set_tests_properties(test_attribute_probe_contract PROPERTIES LABELS "model;attribute;validation" TIMEOUT 120)
 
-    add_test(NAME test_tagging_timing_audit
+    aicore_add_registered_test(NAME test_tagging_timing_audit
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/tagging/test_upstream_metrics_probe.py)
     set_tests_properties(test_tagging_timing_audit PROPERTIES
         LABELS "fast;validation")
 
-    add_test(NAME test_relation_upstream_audit
+    aicore_add_registered_test(NAME test_relation_upstream_audit
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/relation/test_upstream_probe.py)
     set_tests_properties(test_relation_upstream_audit PROPERTIES
         LABELS "fast;validation")
 
-    add_test(NAME test_relation_accuracy_gate
+    aicore_add_registered_test(NAME test_relation_accuracy_gate
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/relation/test_accuracy.py)
     set_tests_properties(test_relation_accuracy_gate PROPERTIES
         LABELS "fast;validation")
 
-    add_test(NAME test_relation_dependency_closure
+    aicore_add_registered_test(NAME test_relation_dependency_closure
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/relation/test_dependency_closure.py
                 --root ${CMAKE_SOURCE_DIR})
     set_tests_properties(test_relation_dependency_closure PROPERTIES
         LABELS "fast;validation")
-    add_test(NAME test_map_anything_upstream_parity_runner
+    aicore_add_registered_test(NAME test_map_anything_upstream_parity_runner
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_run_map_anything_upstream_parity.py)
     set_tests_properties(test_map_anything_upstream_parity_runner PROPERTIES
         LABELS "fast;validation" SKIP_RETURN_CODE 77)
 
-    add_test(NAME test_ocr_gt_eval
+    aicore_add_registered_test(NAME test_ocr_gt_eval
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_ocr_gt_eval.py)
     set_tests_properties(test_ocr_gt_eval PROPERTIES
         LABELS "fast;validation;ocr")
 
-    add_test(NAME test_ocr_layout_gt_eval
+    aicore_add_registered_test(NAME test_ocr_layout_gt_eval
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_layout_gt_eval.py)
     set_tests_properties(test_ocr_layout_gt_eval PROPERTIES
         LABELS "fast;validation;ocr" SKIP_RETURN_CODE 77)
 
-    add_test(NAME test_ocr_paddle_stored_weights
+    aicore_add_registered_test(NAME test_ocr_paddle_stored_weights
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../tools/test_export_paddle_ocr_stored_weights.py)
     set_tests_properties(test_ocr_paddle_stored_weights PROPERTIES
         LABELS "fast;validation;ocr")
 
-    add_test(NAME test_ocr_probability_gate
+    aicore_add_registered_test(NAME test_ocr_probability_gate
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_ocr_onnx_probe.py)
-    add_test(NAME test_ocr_gpu_measurement_audit
+    aicore_add_registered_test(NAME test_ocr_gpu_measurement_audit
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_gpu_audit.py)
-    add_test(NAME test_ocr_paddle_page_reference
+    aicore_add_registered_test(NAME test_ocr_paddle_page_reference
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_ocr_paddle_pipeline.py)
-    add_test(NAME test_ocr_paddle_graph_reference
+    aicore_add_registered_test(NAME test_ocr_paddle_graph_reference
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_ocr_paddle_probe.py)
-    add_test(NAME test_ocr_paddle_layout_reference
+    aicore_add_registered_test(NAME test_ocr_paddle_layout_reference
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_ocr_paddle_layout_probe.py)
-    add_test(NAME test_ocr_paddle_reference_device
+    aicore_add_registered_test(NAME test_ocr_paddle_reference_device
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_paddle_reference_device.py)
-    add_test(NAME test_table_paddle_graph_reference
+    aicore_add_registered_test(NAME test_table_paddle_graph_reference
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_table_paddle_probe.py)
-    add_test(NAME test_table_capi_measurement
+    aicore_add_registered_test(NAME test_table_capi_measurement
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_table_capi_probe.py)
     # Hermetic sibling tests discovered by the script-level consumer audit:
     # same stdlib-only shape as the rows above, so they run in every env.
-    add_test(NAME test_ocr_text_compare
+    aicore_add_registered_test(NAME test_ocr_text_compare
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_compare_ocr_text.py)
-    add_test(NAME test_ocr_thread_protocol
+    aicore_add_registered_test(NAME test_ocr_thread_protocol
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_ocr_thread_counts.py)
-    add_test(NAME test_paddle_source_models
+    aicore_add_registered_test(NAME test_paddle_source_models
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_paddle_source_models.py)
     set_tests_properties(test_ocr_probability_gate test_ocr_gpu_measurement_audit
@@ -1868,7 +1790,7 @@ set_property(GLOBAL PROPERTY AICORE_TEST_TGT_test_instantmesh_synth_reference_co
         test_ocr_paddle_page_reference
         PROPERTIES SKIP_RETURN_CODE 77)
 
-    add_test(NAME test_aicore_plugin_boundaries
+    aicore_add_registered_test(NAME test_aicore_plugin_boundaries
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/check_plugin_aicore_boundaries.py
                 --root ${CMAKE_SOURCE_DIR}
@@ -1876,60 +1798,30 @@ set_property(GLOBAL PROPERTY AICORE_TEST_TGT_test_instantmesh_synth_reference_co
     set_tests_properties(test_aicore_plugin_boundaries PROPERTIES
         LABELS "fast;validation")
 
-    add_test(NAME test_aicore_plugin_boundary_scanner
+    aicore_add_registered_test(NAME test_aicore_plugin_boundary_scanner
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/test_check_plugin_aicore_boundaries.py)
     set_tests_properties(test_aicore_plugin_boundary_scanner PROPERTIES
         LABELS "fast;validation")
 endif()
 
-# --- Tier DEPENDS derivation (KEEP LAST) ------------------------------------
-# Runs after every add_test and LABELS assignment above. Combines the registry
-# captured by the add_test override with each test's final LABELS property,
-# using the same unanchored label regexes ctest applies, so every tier builds
-# exactly the binaries its ctest selection will run. Registering a test here
-# can never again miss its tier.
-get_property(_aicore_registry_tests GLOBAL PROPERTY AICORE_TEST_NAMES)
-set(_aicore_fast_bins "")
-set(_aicore_contract_bins "")
-set(_aicore_model_bins "")
-foreach(_aicore_t IN LISTS _aicore_registry_tests)
-    # Apply the loader contract to script-only rows too.  They may launch a
-    # C API executable or ctypes-loaded library even when no target is owned
-    # by the row itself.
-    cloudviewer_set_test_runtime_environment(${_aicore_t})
-    get_property(_aicore_tgt GLOBAL PROPERTY "AICORE_TEST_TGT_${_aicore_t}")
-    if(NOT _aicore_tgt)
-        continue() # script / cmake -P / multi-binary commands: nothing to build
-    endif()
-    # Some model-free and reference rows are registered directly with
-    # add_test() after their executable was prepared with NO_CTEST.  Apply the
-    # same loader contract to those rows here, after the registry has captured
-    # the test, instead of relying on the order of individual declarations.
-    get_test_property(${_aicore_t} LABELS _aicore_labels)
-    if(NOT _aicore_labels OR _aicore_labels MATCHES "NOTFOUND")
-        set(_aicore_labels "")
-    endif()
-    if(_aicore_labels MATCHES "${AICORE_TIER_MODEL_LABEL}")
-        list(APPEND _aicore_model_bins ${_aicore_tgt})
-    endif()
-    if(_aicore_labels MATCHES "${AICORE_TIER_CONTRACT_LABEL}"
-            AND (AICORE_TEST_ENABLE_MODEL_TESTS
-                OR NOT _aicore_labels MATCHES
-                    "${AICORE_TIER_CONTRACT_MODEL_EXCLUDE}"))
-        list(APPEND _aicore_contract_bins ${_aicore_tgt})
-    endif()
-    if(NOT _aicore_labels MATCHES "${AICORE_TIER_FAST_EXCLUDE}")
-        list(APPEND _aicore_fast_bins ${_aicore_tgt})
+# Tier labels and build closures are finalized by root tests/.
+
+foreach(unit test_instantmesh_dino_convolution test_instantmesh_vae_convolution
+        test_instantmesh_unet_convolution test_instantmesh_vae_stages)
+    if(TARGET ${unit})
+        target_link_libraries(${unit} PRIVATE gtest)
     endif()
 endforeach()
-foreach(_aicore_list _aicore_fast_bins _aicore_contract_bins _aicore_model_bins)
-    if(${_aicore_list})
-        list(REMOVE_DUPLICATES ${_aicore_list})
-    endif()
-endforeach()
-# The fast tier also runs the no-asset subset of the capi contract suite, so
-# its graph carries the contract binaries too (same union as before).
-add_dependencies(aicore-contract-tests ${_aicore_contract_bins})
-add_dependencies(aicore-fast-tests ${_aicore_fast_bins} ${_aicore_contract_bins})
-add_dependencies(aicore-model-tests ${_aicore_model_bins})
+
+# Diagnostic exporters belong beside the private implementation they exercise.
+# Their Python consumers use the stable target names, not plugin-private headers.
+if(TARGET AICore_test)
+    foreach(tool glb_parity_dump colmap_parity_dump)
+        add_executable(${tool} depth/whitebox/${tool}.cpp)
+        target_link_libraries(${tool} PRIVATE AICore_test)
+        target_include_directories(${tool} PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/depth")
+        cloudviewer_set_bin_runtime_output_directory(${tool})
+    endforeach()
+endif()

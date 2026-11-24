@@ -337,18 +337,21 @@ lldb python3
 ### Unit tests from CMake
 
 ```bash
-cd build
-cmake -DBUILD_UNIT_TESTS=ON ..
-make -j"$(sysctl -n hw.logicalcpu)"
-./bin/cloudviewer_test/tests
+# From the repository root; retain your configured platform options.
+cmake -S . -B build -DBUILD_UNIT_TESTS=ON
+cmake -DBUILD_DIR=build -DJOBS=4 -P tests/Run.cmake
 ```
+
+The root [tests module](../../../tests/README.md) builds prerequisites and runs every enabled first-party headless suite.
+Use `-DPROFILE=graphics`, `gpu`, `model`, or `all` for explicit capabilities;
+`ci,gpu` selects the union. Test sources stay with their production owner.
 
 ### Python unit tests
 
 ```bash
 pip install pytest
-make install-pip-package
-pytest ../python/test
+cmake --build build --target install-pip-package
+pytest python/test
 ```
 
 ---

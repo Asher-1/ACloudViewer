@@ -188,7 +188,6 @@ private:
     SubViewInitCallback m_subViewInitCb;
     SubViewShutdownHook m_subViewShutdownHook;
     EntityListProvider m_entityListProvider;
-    ccHObject* m_initialEntity = nullptr;
     QPointer<vtkGLView> m_sourceView;
     bool m_cameraLinkEnabled = true;
     bool m_syncingCameras = false;

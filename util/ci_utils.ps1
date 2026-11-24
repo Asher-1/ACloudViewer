@@ -684,18 +684,6 @@ function Build-GuiApp {
         throw "cmake --build failed with exit code $LASTEXITCODE"
     }
 
-    # The aicore-contract-tests target only exists when AICore tests are built
-    # (core/AICore/CMakeLists.txt guards add_subdirectory(tests)).
-    if ($AICORE_BUILD_TESTS -eq "ON") {
-        Invoke-CMakeStage -Name "app-$BUILD_CUDA_MODULE-contract-tests" -CMakeArgs @("--build", ".", "--target", "aicore-contract-tests", "--config", "Release", "--parallel", "$env:NPROC")
-        if ($LASTEXITCODE -ne 0) {
-            Pop-Location
-            throw "AICore contract tests failed with exit code $LASTEXITCODE"
-        }
-    } else {
-        Write-Host "Skipping AICore contract tests (AICore_BUILD_TESTS=$AICORE_BUILD_TESTS)"
-    }
-
     Invoke-CMakeStage -Name "app-$BUILD_CUDA_MODULE-install-and-package" -CMakeArgs @("--install", ".", "--config", "Release", "--verbose")
     if ($LASTEXITCODE -ne 0) {
         Pop-Location
@@ -1110,138 +1098,25 @@ function Run-PythonTests {
     return $pytestResult
 }
 
-function Run-QPythonRuntimeNativeTests {
-    param ([string]$BuildDir, [string]$Config = "Release")
-    $cache = Join-Path $BuildDir "CMakeCache.txt"
-    if (-not (Test-Path $cache)) {
-        throw "qPythonRuntime: CMake cache not found at $cache"
-    }
-    $settings = Get-Content $cache
-    if (-not ($settings -match '^PLUGIN_PYTHON:BOOL=(ON|TRUE|1)$') -or
-        -not ($settings -match '^BUILD_PYTHON_MODULE:BOOL=(ON|TRUE|1)$') -or
-        -not ($settings -match '^BUILD_UNIT_TESTS:BOOL=(ON|TRUE|1)$')) {
-        Write-Host "qPythonRuntime: plugin, Python modules or unit tests disabled in this build"
-        return
-    }
-    $pattern = '^test_qpythonruntime_(binding_types|plugin_loading)$'
-    $listing = & ctest --test-dir $BuildDir -C $Config --show-only=json-v1 -R $pattern
-    if ($LASTEXITCODE -ne 0) { throw "qPythonRuntime: cannot enumerate CTest registrations" }
-    $names = (($listing -join "`n") | ConvertFrom-Json).tests.name
-    foreach ($name in @("test_qpythonruntime_binding_types", "test_qpythonruntime_plugin_loading")) {
-        if ($name -notin $names) { throw "qPythonRuntime: missing CTest registration: $name" }
-    }
-    & ctest --test-dir $BuildDir -C $Config -R $pattern --no-tests=error --output-on-failure -j1
-    if ($LASTEXITCODE -ne 0) { throw "qPythonRuntime: native CTest gate failed" }
-}
-
 function Run-CppUnitTests {
-    param (
-        [Parameter(Mandatory=$false)]
-        [string]$Config = "Release",
-        # gtest exclude filter appended to --gtest_shuffle when LOW_MEM_USAGE
-        # is not set (the Windows CI lane passes the ReduceSum64bit2D cases;
-        # LOW_MEM_USAGE keeps its broader -*Reduce*Sum* rule and wins).
-        [Parameter(Mandatory=$false)]
-        [string]$GtestExclude = ""
-    )
-
-    Write-Host "======================================================================"
-    Write-Host "Running C++ Unit Tests"
-    Write-Host "======================================================================"
-    
-    $originalLocation = Get-Location
+    param ([string]$Config = "Release", [string]$GtestExclude = "")
     $buildDir = Join-Path $CLOUDVIEWER_SOURCE_ROOT "build"
-    
-    if (-not (Test-Path $buildDir)) {
-        Write-Host "Error: build directory not found at $buildDir"
-        Write-Host "Please build the project first"
-        throw "Run-CppUnitTests: build directory not found at $buildDir"
-    }
-    
-    Push-Location $buildDir
-    
-    # Check if tests executable exists. Two layouts exist depending on the
-    # generator: multi-config generators (Ninja Multi-Config on the CI, MSVC)
-    # honor the per-config RUNTIME_OUTPUT_DIRECTORY_<CONFIG> set by
-    # libs/CVViewer/tests/CMakeLists.txt -> bin/cloudviewer_test/<Config>/,
-    # while single-config Makefile/Ninja trees with a generic
-    # RUNTIME_OUTPUT_DIRECTORY land at bin/<Config>/. Probe both so the test
-    # step cannot go silently green just because it looked in the wrong
-    # directory (a bare `return 1` does not set $LASTEXITCODE, so callers
-    # comparing $LASTEXITCODE never saw the failure).
-    $testExe = @(
-        (Join-Path $buildDir "bin\cloudviewer_test\$Config\tests.exe"),
-        (Join-Path $buildDir "bin\$Config\tests.exe")
-    ) | Where-Object { Test-Path $_ } | Select-Object -First 1
-    if (-not $testExe) {
-        Write-Host "Error: tests executable not found (probed:"
-        Write-Host "  bin\cloudviewer_test\$Config\tests.exe"
-        Write-Host "  bin\$Config\tests.exe )"
-        Write-Host "Please build with -DBUILD_UNIT_TESTS=ON"
-        Pop-Location
-        throw "Run-CppUnitTests: tests executable not found for config '$Config'"
-    }
-    Write-Host "Tests executable: $testExe"
-
-    # tests.exe lives under bin\cloudviewer_test\ (or bin\<Config>\) but the
-    # shared DLLs are centralized in bin\<CONFIG>\; Windows has no RPATH, so
-    # prepend the DLL directory before launching.
-    $dllDir = Join-Path $buildDir "bin\$Config"
-    if (Test-Path $dllDir) {
-        $env:PATH = "$dllDir;$env:PATH"
-    }
-
-    # Set test flags
-    $unitTestFlags = @("--gtest_shuffle")
-    if ($env:LOW_MEM_USAGE -eq "ON") {
-        $unitTestFlags += "--gtest_filter=-*Reduce*Sum*"
-    } elseif ($GtestExclude) {
-        $unitTestFlags += "--gtest_filter=-$GtestExclude"
-    }
-    
-    $flagsString = $unitTestFlags -join " "
-    Write-Host "Test flags: $flagsString"
-    Write-Host "Tip: Run '$testExe $flagsString --gtest_random_seed=SEED' to repeat this test sequence."
-    Write-Host ""
-    
-    # Run the tests
-    & $testExe $unitTestFlags
-    $testResult = $LASTEXITCODE
-    
-    Write-Host ""
-    if ($testResult -eq 0) {
-        Write-Host "======================================================================"
-        Write-Host "C++ Unit Tests: PASSED"
-        Write-Host "======================================================================"
-    } else {
-        Write-Host "======================================================================"
-        Write-Host "C++ Unit Tests: FAILED (exit code: $testResult)"
-        Write-Host "======================================================================"
-    }
-    
-    # Standalone foundation portability executables (test_filesystem /
-    # test_parallel / test_host_parallel — Unicode I/O and host loop
-    # fallbacks, outside tests.exe and the AICore C ABI selection). Part of
-    # this entry unconditionally: core/tests registers them under
-    # BUILD_UNIT_TESTS, which every caller of this function enables. Same
-    # ordering and stop-on-failure semantics as the consolidated workflow
-    # step: a failure here skips the qPythonRuntime chain below.
-    if ($testResult -eq 0) {
-        Write-Host "Running foundation portability tests (test_filesystem / test_parallel / test_host_parallel)..."
-        & ctest --test-dir $buildDir -C $Config -R '^test_(filesystem|parallel|host_parallel)$' --no-tests=error --output-on-failure -j1
-        $testResult = $LASTEXITCODE
-        if ($testResult -eq 0) {
-            Write-Host "Foundation portability tests: PASSED"
-        } else {
-            Write-Host "Foundation portability tests: FAILED (exit code: $testResult)"
+    $entry = Join-Path $CLOUDVIEWER_SOURCE_ROOT "tests/Run.cmake"
+    $previousFilter = $env:GTEST_FILTER
+    $previousShuffle = $env:GTEST_SHUFFLE
+    try {
+        if (-not $env:GTEST_SHUFFLE) { $env:GTEST_SHUFFLE = "1" }
+        if ($env:LOW_MEM_USAGE -eq "ON") {
+            $env:GTEST_FILTER = "-*Reduce*Sum*"
+        } elseif ($GtestExclude) {
+            $env:GTEST_FILTER = "-$GtestExclude"
         }
+        & cmake "-DBUILD_DIR=$buildDir" "-DCONFIG=$Config" -P $entry
+        if ($LASTEXITCODE -ne 0) { throw "Unified C++ test gate failed" }
+    } finally {
+        $env:GTEST_FILTER = $previousFilter
+        $env:GTEST_SHUFFLE = $previousShuffle
     }
-
-    Pop-Location
-    if ($testResult -eq 0) {
-        Run-QPythonRuntimeNativeTests -BuildDir $buildDir -Config $Config
-    }
-    return $testResult
 }
 
 function Run-AllTests {

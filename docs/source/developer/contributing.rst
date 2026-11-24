@@ -48,9 +48,16 @@ Before submitting your changes, run the test suite:
 
 .. code-block:: bash
 
-   cd build
-   make tests -j$(nproc)
-   ctest
+   # From the repository root, retaining your configured platform options.
+   cmake -S . -B build -DBUILD_UNIT_TESTS=ON
+   cmake -DBUILD_DIR=build -DJOBS=4 -P tests/Run.cmake
+
+The repository-root ``tests`` module builds prerequisites and runs every enabled
+first-party headless suite. Unit assertions use GoogleTest; sources remain with
+their production owner and register with ``cloudviewer_add_test()``. No per-module
+CI execution list is needed. Select ``-DPROFILE=graphics``, ``gpu``, ``model`` or
+``all`` explicitly; comma-separated profiles such as ``ci,gpu`` form a union.
+See `the unified testing contract <https://github.com/Asher-1/ACloudViewer/blob/main/tests/README.md>`_.
 
 For Python tests:
 

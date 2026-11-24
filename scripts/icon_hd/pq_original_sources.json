@@ -124,10 +124,15 @@
     {
       "id": 16,
       "name": "pqFaceSetData.svg",
-      "status": "approved-keep",
+      "status": "user-authorized-semantic-redesign",
       "source": "/home/ludahai/develop/code/github/ACloudViewer/app/Resources/images/svg/pq/pqFaceSetData.svg",
       "source_sha256": "a27bc2294e3414adca529adba474db5653c2c4855347f859bee73f97752ac0cc",
-      "sha256": "a27bc2294e3414adca529adba474db5653c2c4855347f859bee73f97752ac0cc"
+      "sha256": "5ea5c5de798a3f8ab3afbb27ce364f43941982df502ef2c12fc58df9df3393cc",
+      "previous_sha256": "a27bc2294e3414adca529adba474db5653c2c4855347f859bee73f97752ac0cc",
+      "review_id": "ANN-01",
+      "authorization": "User explicitly corrected ANN-01 to point-cloud plus mesh semantics with exact annotationTools overlay and removal of FACE",
+      "canonical": "scripts/icon_hd/logo/pqredesign.py:faceset",
+      "superseded_redesign_sha256": "e2e89bfbc7f03b70b612f4d1ef68e48d4e3ec9ff7faea01dda893b8fa5ba0252"
     },
     {
       "id": 17,

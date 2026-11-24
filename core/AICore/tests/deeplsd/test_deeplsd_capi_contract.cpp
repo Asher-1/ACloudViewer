@@ -5,48 +5,55 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
 #include "aicore/deeplsd_capi.h"
-#include "tests/common/test_macros.hpp"
 
-static int failures = 0;
-
-int main() {
-    AICORE_CHECK(aicore_deeplsd_abi_version() >= 1);
+TEST(DeeplsdCApiContract, AbiAndNullReleaseLoadQueries) {
+    EXPECT_GE(aicore_deeplsd_abi_version(), 1);
 
     aicore_deeplsd_free(nullptr);
     aicore_deeplsd_options_free(nullptr);
     aicore_deeplsd_free_buffer(nullptr);
 
-    AICORE_CHECK(aicore_deeplsd_load_opts(nullptr, nullptr) == nullptr);
-    AICORE_CHECK(aicore_deeplsd_is_ready(nullptr) == 0);
-    AICORE_CHECK(aicore_deeplsd_info_json(nullptr) != nullptr);
+    EXPECT_EQ(aicore_deeplsd_load_opts(nullptr, nullptr), nullptr);
+    EXPECT_EQ(aicore_deeplsd_is_ready(nullptr), 0);
+    EXPECT_NE(aicore_deeplsd_info_json(nullptr), nullptr);
+}
 
+TEST(DeeplsdCApiContract, OptionsLifecycle) {
     aicore_deeplsd_options* opts = aicore_deeplsd_options_new();
-    AICORE_CHECK(opts != nullptr);
+    EXPECT_NE(opts, nullptr);
     aicore_deeplsd_options_set_device(opts, "cpu");
     aicore_deeplsd_options_set_threads(opts, 1);
     aicore_deeplsd_options_free(opts);
+}
 
+TEST(DeeplsdCApiContract, NullGrayAndImageViewExtractionFails) {
     float* df = nullptr;
     float* ang = nullptr;
     int32_t w = 0;
     int32_t h = 0;
-    AICORE_CHECK(aicore_deeplsd_extract_gray(nullptr, nullptr, 0, 0, 0, &df,
-                                             &ang, &w, &h) != 0);
+    EXPECT_NE(aicore_deeplsd_extract_gray(nullptr, nullptr, 0, 0, 0, &df, &ang,
+                                          &w, &h),
+              0);
     /* F-01 batch A: image_view entry is NULL-safe. */
-    AICORE_CHECK(aicore_deeplsd_extract_image_view(nullptr, nullptr, &df, &ang,
-                                                   &w, &h) != 0);
+    EXPECT_NE(aicore_deeplsd_extract_image_view(nullptr, nullptr, &df, &ang, &w,
+                                                &h),
+              0);
+}
 
-    AICORE_CHECK(aicore_deeplsd_quantize(nullptr, nullptr, nullptr) != 0);
-    AICORE_CHECK(aicore_deeplsd_warmup_backend("cpu") == 0);
+TEST(DeeplsdCApiContract, NullQuantizationAndCpuWarmup) {
+    EXPECT_NE(aicore_deeplsd_quantize(nullptr, nullptr, nullptr), 0);
+    EXPECT_EQ(aicore_deeplsd_warmup_backend("cpu"), 0);
+}
 
+TEST(DeeplsdCApiContract, OwnedModelCacheDirectory) {
     char* dir = aicore_deeplsd_model_cache_dir();
-    AICORE_CHECK(dir != nullptr && std::strlen(dir) > 0);
+    EXPECT_TRUE(dir != nullptr && std::strlen(dir) > 0);
     aicore_deeplsd_free_buffer(dir);
-
-    return failures;
 }

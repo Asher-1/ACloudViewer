@@ -45,7 +45,7 @@ if( PLUGIN_STANDARD_QLINGBOTMAP )
         target_compile_definitions(${PROJECT_NAME} PRIVATE _USE_MATH_DEFINES)
     endif()
 
-    if( QLINGBOTMAP_BUILD_TESTS )
+    if(QLINGBOTMAP_BUILD_TESTS)
         add_executable( test_lingbot_window_stitch
             tests/test_lingbot_window_stitch.cpp
             src/LingbotWindowStitcher.cpp
@@ -55,7 +55,8 @@ if( PLUGIN_STANDARD_QLINGBOTMAP )
                 ${CMAKE_CURRENT_SOURCE_DIR}/include
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests
         )
-        add_test( NAME test_lingbot_window_stitch
+        target_link_libraries(test_lingbot_window_stitch PRIVATE gtest_main)
+        cloudviewer_add_test( NAME test_lingbot_window_stitch
                   COMMAND test_lingbot_window_stitch )
 cloudviewer_set_plugin_test_env(test_lingbot_window_stitch)
     endif()

@@ -5,16 +5,18 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include <cstdio>
+#include <gtest/gtest.h>
+
 #include <vector>
 
 #include "ggml.h"
 #include "tasks/depth/backend.hpp"
-int main() {
+
+TEST(DepthBackend, ComputesElementwiseAddition) {
     aicore::depth::Backend be;
     aicore::depth::GraphInputPool pool;
     std::vector<float> a = {1, 2, 3, 4}, b = {10, 20, 30, 40}, out;
-    bool ok = be.compute(
+    ASSERT_TRUE(be.compute(
             [&](ggml_context* ctx) -> ggml_tensor* {
                 ggml_tensor* ta =
                         be.add_graph_input(ctx, pool, a.data(), a.size());
@@ -22,8 +24,8 @@ int main() {
                         be.add_graph_input(ctx, pool, b.data(), b.size());
                 return ggml_add(ctx, ta, tb);
             },
-            out);
-    ok = ok && out.size() == 4 && out[0] == 11 && out[3] == 44;
-    std::fprintf(stderr, "backend add -> %s\n", ok ? "OK" : "FAIL");
-    return ok ? 0 : 1;
+            out));
+    ASSERT_EQ(out.size(), 4u);
+    EXPECT_EQ(out[0], 11);
+    EXPECT_EQ(out[3], 44);
 }

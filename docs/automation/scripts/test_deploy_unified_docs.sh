@@ -92,6 +92,8 @@ for image in AbstractionLayers.png MainUI.png ICP-registration.png Reconstructio
 done
 # Existing archive content must win even when another same-version source exists.
 echo existing-history > "$archive/cpp_api/api/MainUI.png"
+printf '/* archived Doxygen theme */\n' > "$archive/cpp_api/api/doxygen.css"
+printf '/* dev Doxygen theme */\n' > "$d/docs-output/cpp_api/api/doxygen.css"
 run_deploy "$d" false "" ""
 for image in AbstractionLayers.png ICP-registration.png Reconstruction.png SemanticAnnotation.png; do
     check "same-release $image restored without dev substitution" \
@@ -101,6 +103,24 @@ check "existing archive mainpage picture is never overwritten" \
     "grep -qx existing-history '$d/unified-deploy/documentation/v3.9.4/cpp_api/api/MainUI.png'"
 check "archived mainpage HTML is unchanged by image repair" \
     "cmp -s '$archive/cpp_api/api/index.html' '$d/unified-deploy/documentation/v3.9.4/cpp_api/api/index.html'"
+
+for version in dev v3.9.4; do
+    api="$d/unified-deploy/documentation/$version/cpp_api/api"
+    check "$version gets current Doxygen layout" \
+        "cmp -s '$REPO_ROOT/docs/source/_static/css/doxygen_overrides.css' '$api/doxygen_overrides.css'"
+    check "$version loads the Doxygen layout from its existing stylesheet" \
+        "grep -q '^@import.*doxygen_overrides.css' '$api/doxygen.css'"
+done
+check "historical Doxygen theme is retained" \
+    "grep -q 'archived Doxygen theme' '$d/unified-deploy/documentation/v3.9.4/cpp_api/api/doxygen.css'"
+
+previous_archive="$d/unified-deploy/documentation/v3.9.4"
+d=$(new_case c2b-repeat)
+mkdir -p "$d/preserved-versions/documentation/v3.9.4"
+cp -a "$previous_archive/." "$d/preserved-versions/documentation/v3.9.4/"
+run_deploy "$d" false "" ""
+check "redeploy adds no duplicate Doxygen imports" \
+    "[ \"\$(grep -c '^@import' '$d/unified-deploy/documentation/v3.9.4/cpp_api/api/doxygen.css')\" = 1 ]"
 
 echo "═══ Case 2c: only the matching release tag can supply omitted assets ═══"
 for fault in none unavailable; do

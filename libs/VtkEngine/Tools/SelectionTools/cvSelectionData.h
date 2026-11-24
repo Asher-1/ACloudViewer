@@ -23,7 +23,10 @@
 #include <QtCore/QVector>
 
 // VTK
+#include <vtkActor.h>
+#include <vtkPolyData.h>
 #include <vtkSmartPointer.h>
+#include <vtkWeakPointer.h>
 
 // Forward declarations (VTK types - not exposed in public API)
 class vtkIdTypeArray;
@@ -113,8 +116,10 @@ inline uint qHash(SelectionModifier key, uint seed = 0) noexcept {
  * selection sources.
  */
 struct QVTK_ENGINE_LIB_API cvActorSelectionInfo {
-    vtkActor* actor;        ///< The selected actor (weak pointer)
-    vtkPolyData* polyData;  ///< The associated polyData (weak pointer)
+    vtkWeakPointer<vtkActor> actor;        ///< View-local, expires on rebuild
+    vtkWeakPointer<vtkPolyData> polyData;  ///< View-local display geometry
+    QString sourceId;                      ///< Stable DB entity view ID
+    QVector<qint64> sourceIds;             ///< IDs in that source entity
     double zValue;  ///< Z-buffer depth value (for front-to-back ordering)
     int propId;     ///< Unique prop ID (from hardware selector)
     unsigned int blockIndex;      ///< Block index for composite datasets
@@ -201,7 +206,7 @@ public:
     FieldAssociation fieldAssociation() const { return m_fieldAssociation; }
 
     /**
-     * @brief Get selected IDs as a vector (copy)
+     * @brief Get primary-source IDs (copy); other sources live in actorInfos.
      */
     QVector<qint64> ids() const;
 
@@ -265,7 +270,7 @@ public:
      * @param index Index in the list (0 = front-most)
      * @return Actor info, or empty struct if index out of range
      *
-     * Note: List is sorted by Z-value (front to back)
+     * Note: Primary source order is preserved, independent of camera depth.
      */
     cvActorSelectionInfo actorInfo(int index = 0) const;
 

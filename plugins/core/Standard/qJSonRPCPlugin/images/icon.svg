@@ -1,45 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges">
-<!-- Lossless pixel-exact transcription v8 (16x16, 42 rects): every source pixel preserved, crisp at any scale -->
-<rect x="0" y="0" width="4" height="1" fill="#ffffff"/>
-<rect x="4" y="0" width="8" height="1" fill="#000000"/>
-<rect x="12" y="0" width="4" height="1" fill="#ffffff"/>
-<rect x="0" y="1" width="3" height="1" fill="#ffffff"/>
-<rect x="3" y="1" width="1" height="1" fill="#000000"/>
-<rect x="4" y="1" width="6" height="1" fill="#0032fd"/>
-<rect x="10" y="1" width="2" height="1" fill="#0000aa"/>
-<rect x="12" y="1" width="1" height="1" fill="#000000"/>
-<rect x="13" y="1" width="3" height="1" fill="#ffffff"/>
-<rect x="0" y="2" width="2" height="1" fill="#ffffff"/>
-<rect x="2" y="2" width="1" height="1" fill="#000000"/>
-<rect x="3" y="2" width="8" height="1" fill="#0032fd"/>
-<rect x="11" y="2" width="2" height="1" fill="#0000aa"/>
-<rect x="13" y="2" width="1" height="1" fill="#000000"/>
-<rect x="14" y="2" width="2" height="1" fill="#ffffff"/>
-<rect x="0" y="3" width="1" height="1" fill="#ffffff"/>
-<rect x="1" y="3" width="14" height="1" fill="#000000"/>
-<rect x="15" y="3" width="1" height="1" fill="#ffffff"/>
-<rect x="0" y="4" width="1" height="10" fill="#000000"/>
-<rect x="1" y="4" width="12" height="2" fill="#eeeeee"/>
-<rect x="13" y="4" width="1" height="9" fill="#bbbbbb"/>
-<rect x="14" y="4" width="1" height="9" fill="#888888"/>
-<rect x="15" y="4" width="1" height="10" fill="#000000"/>
-<rect x="1" y="6" width="4" height="6" fill="#eeeeee"/>
-<rect x="5" y="6" width="8" height="1" fill="#000000"/>
-<rect x="5" y="7" width="1" height="7" fill="#000000"/>
-<rect x="6" y="7" width="6" height="1" fill="#555555"/>
-<rect x="12" y="7" width="1" height="7" fill="#000000"/>
-<rect x="6" y="8" width="6" height="7" fill="#ffffff"/>
-<rect x="1" y="12" width="1" height="1" fill="#eeeeee"/>
-<rect x="2" y="12" width="3" height="1" fill="#bbbbbb"/>
-<rect x="1" y="13" width="4" height="1" fill="#888888"/>
-<rect x="13" y="13" width="2" height="1" fill="#888888"/>
-<rect x="0" y="14" width="1" height="2" fill="#ffffff"/>
-<rect x="1" y="14" width="4" height="1" fill="#000000"/>
-<rect x="5" y="14" width="1" height="1" fill="#555555"/>
-<rect x="12" y="14" width="1" height="1" fill="#555555"/>
-<rect x="13" y="14" width="2" height="1" fill="#000000"/>
-<rect x="15" y="14" width="1" height="2" fill="#ffffff"/>
-<rect x="1" y="15" width="4" height="1" fill="#555555"/>
-<rect x="5" y="15" width="8" height="1" fill="#ffffff"/>
-<rect x="13" y="15" width="2" height="1" fill="#555555"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<defs><linearGradient id="rpcScreen" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#D0E5F6"/><stop offset="1.000" stop-color="#9AC1E0"/></linearGradient>
+<linearGradient id="rpcServer" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#FAFAF6"/><stop offset="1.000" stop-color="#CDCDCD"/></linearGradient>
+<linearGradient id="rpcRequest" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#A7D28C"/><stop offset="1.000" stop-color="#72BE44"/></linearGradient></defs>
+<title>RPC-01 — JSON-RPC WebSocket client/server request and reply</title>
+  <path d="M 4.5 12.5 H 6.6 V 15.4 H 8.6 V 16.5 H 2.5 V 15.4 H 4.5 Z" fill="#A4A6A6" stroke="#6F6F59" stroke-width="0.65"/>
+  <rect x="1.2" y="4.2" width="8.3" height="9.0" rx="0.75" fill="url(#rpcServer)" stroke="#6F6F59"/>
+  <rect x="2.5" y="5.6" width="5.7" height="5.8" rx="0.25" fill="url(#rpcScreen)" stroke="#6F6F59"/>
+  <path d="M 16.2 3.1 L 18.2 1.8 L 22.8 3.0 V 14.6 L 21 16.0 H 16.2 Z" fill="#A4A6A6" stroke="#6F6F59" stroke-width="0.7"/>
+  <rect x="16.2" y="3.1" width="4.8" height="12.9" rx="0.45" fill="url(#rpcServer)" stroke="#6F6F59"/>
+  <path d="M 17.4 5.7 H 19.8 M 17.4 8.2 H 19.8" fill="none" stroke="#787878" stroke-width="0.8"/>
+  <circle cx="18.6" cy="13.5" r="0.8" fill="#72BE44" stroke="#6F6F59"/>
+  <path d="M 9.2 5.0 H 12.4 V 3.4 L 16.1 6.5 L 12.4 9.6 V 8.0 H 9.2 Z" fill="url(#rpcRequest)" stroke="#6F6F59" stroke-width="0.6"/>
+  <path d="M 15.5 10.2 H 12.4 V 8.9 L 8.9 11.8 L 12.4 14.7 V 13.3 H 15.5 Z" fill="#72BE44" stroke="#6F6F59" stroke-width="0.6"/>
+  <rect x="1.5" y="17.0" width="21.0" height="6.2" rx="0.7" fill="#D0E5F6" stroke="#6F6F59"/>
+<path data-label="RPC" d="M735 -831Q856 -831 908.5 -876.0Q961 -921 961 -1024Q961 -1126 908.5 -1170.0Q856 -1214 735 -1214H573V-831ZM573 -565V0H188V-1493H776Q1071 -1493 1208.5 -1394.0Q1346 -1295 1346 -1081Q1346 -933 1274.5 -838.0Q1203 -743 1059 -698Q1138 -680 1200.5 -616.5Q1263 -553 1327 -424L1536 0H1126L944 -371Q889 -483 832.5 -524.0Q776 -565 682 -565ZM1765 -1493H2404Q2689 -1493 2841.5 -1366.5Q2994 -1240 2994 -1006Q2994 -771 2841.5 -644.5Q2689 -518 2404 -518H2150V0H1765ZM2150 -1214V-797H2363Q2475 -797 2536.0 -851.5Q2597 -906 2597 -1006Q2597 -1106 2536.0 -1160.0Q2475 -1214 2363 -1214ZM4450 -82Q4344 -27 4229.0 1.0Q4114 29 3989 29Q3616 29 3398.0 -179.5Q3180 -388 3180 -745Q3180 -1103 3398.0 -1311.5Q3616 -1520 3989 -1520Q4114 -1520 4229.0 -1492.0Q4344 -1464 4450 -1409V-1100Q4343 -1173 4239.0 -1207.0Q4135 -1241 4020 -1241Q3814 -1241 3696.0 -1109.0Q3578 -977 3578 -745Q3578 -514 3696.0 -382.0Q3814 -250 4020 -250Q4135 -250 4239.0 -284.0Q4343 -318 4450 -391Z" transform="translate(5.63735 22.02043) scale(0.002744)" fill="#6F6F59" stroke="none"/>
 </svg>

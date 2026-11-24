@@ -14,14 +14,16 @@
 // outputs suffer cancellation: the absolute floor must scale with the OUTPUT
 // magnitude, not the input magnitude. atol 4e-2 + rtol 3e-3 bounds that noise
 // with >4x margin (measured: max|d| 2.8e-2 on the |y|<=34 tail).
+#include <gtest/gtest.h>
+
+#include <cmath>
 #include <random>
 #include <vector>
 
 #include "tasks/depth/backend.hpp"
 #include "tasks/depth/winograd.hpp"
-#include "tests/depth/whitebox/parity.hpp"
 
-int main() {
+TEST(DepthWinograd, MatchesDirectConvolutionWithinAccumulationTolerance) {
     const int W = 128, H = 96, IC = 64, OC = 64, N = 1, pad = 1;
 
     std::mt19937 rng(1234);
@@ -61,12 +63,18 @@ int main() {
             },
             got_direct);
 
-    if (!ok1 || !ok2) {
-        std::fprintf(stderr, "[winograd] compute failed\n");
-        return 1;
+    ASSERT_TRUE(ok1) << "Winograd graph computation failed";
+    ASSERT_TRUE(ok2) << "Direct convolution graph computation failed";
+    ASSERT_FALSE(got_wino.empty());
+    ASSERT_EQ(got_wino.size(), got_direct.size());
+    for (size_t i = 0; i < got_wino.size(); ++i) {
+        const double tolerance =
+                static_cast<double>(4e-2f) +
+                static_cast<double>(3e-3f) *
+                        std::fabs(static_cast<double>(got_direct[i]));
+        ASSERT_LE(std::fabs(static_cast<double>(got_wino[i]) - got_direct[i]),
+                  tolerance)
+                << "element " << i << ": Winograd=" << got_wino[i]
+                << ", direct=" << got_direct[i];
     }
-
-    bool ok = da_parity::compare(got_wino, got_direct, "winograd_vs_direct",
-                                 4e-2f, 3e-3f);
-    return ok ? 0 : 1;
 }

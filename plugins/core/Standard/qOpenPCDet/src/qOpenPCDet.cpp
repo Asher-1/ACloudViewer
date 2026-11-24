@@ -7,6 +7,7 @@
 
 #include "qOpenPCDet.h"
 
+#include <ecvAICoreUiHelper.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPluginDbNaming.h>
 #include <ecvPointCloud.h>
@@ -92,6 +93,7 @@ void qOpenPCDet::showDialog() {
     if (!m_dialog) {
         m_dialog = new OpenPCDetDialog(
                 static_cast<QWidget*>(m_app->getMainWindow()));
+        ecvAICoreUi::bindDialogAction(m_action, m_dialog);
         m_dialog->setAppInterface(m_app);
         connect(m_dialog, &OpenPCDetDialog::runRequested, this,
                 &qOpenPCDet::executeTask);
@@ -168,6 +170,7 @@ void qOpenPCDet::executeTask(const OpenPCDetDialog::Settings& settings) {
     ws.sceneDir = settings.sceneDir;
 
     m_currentSettings = settings;
+    m_runPanelIndex = m_dialog ? m_dialog->currentPanelIndex() : -1;
     // Fixed Run-time source snapshot (plan §4): a value clone taken now
     // survives user edits/deletions of the DB entity mid-run; the worker
     // additionally snapshots its own inference inputs at construction.
@@ -210,6 +213,20 @@ void qOpenPCDet::onResultReady(const OpenPCDetRunResult& result) {
                     .arg(result.detections.size())
                     .arg(result.runtimeMs, 0, 'f', 1));
     m_dialog->showDetectionSummary(result);
+    // Camera-grid overlay on the panel that started this run (detections
+    // verbatim in the LiDAR frame; the scene calibration owns projection).
+    m_dialog->applyResultOverlays(m_runPanelIndex, result);
+    // Show only the latest run: hide the previous result group / annotated
+    // cloud (tagged OpenPCDet/Model) before adding the new ones, then refresh
+    // the DB tree and the render windows.
+    if (m_app && !result.detections.isEmpty() &&
+        (m_currentSettings.addBoxesToDb ||
+         m_currentSettings.annotatedCloudToDb)) {
+        DisableTaggedEntities(m_app->dbRootObject(),
+                              QStringLiteral("OpenPCDet/Model"));
+        m_app->updateUI();
+        m_app->redrawAll();
+    }
     if (m_currentSettings.addBoxesToDb) {
         addBoxesToDb(result);
     }

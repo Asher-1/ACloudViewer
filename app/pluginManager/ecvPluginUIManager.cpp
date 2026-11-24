@@ -7,6 +7,8 @@
 
 #include "ecvPluginUIManager.h"
 
+#include <Shortcuts/ecvKeySequences.h>
+
 #include <QAction>
 #include <QMenu>
 #include <QToolBar>
@@ -50,6 +52,32 @@ QList<QAction *> filterValidActions(const QString &owner,
                                .arg(target));
     }
     return valid;
+}
+void registerPluginCommands(const QString &owner,
+                            const QList<QAction *> &actions,
+                            bool primary = false) {
+    if (owner.isEmpty()) return;
+    for (auto *action : actions) {
+        if (!action || action->isSeparator() ||
+            action->property("shortcutTransient").toBool())
+            continue;
+        if (action->menu()) {
+            registerPluginCommands(owner, action->menu()->actions());
+            continue;
+        }
+        if (!action->property("shortcutCommandId").toString().isEmpty())
+            continue;
+        QString id = action->objectName();
+        if (id.isEmpty() && primary && actions.size() == 1) id = "primary";
+        if (id.isEmpty()) {
+            CVLog::Warning(QString("[Shortcuts] Plugin %1 must give command "
+                                   "'%2' a stable objectName")
+                                   .arg(owner, action->text()));
+            continue;
+        }
+        ecvKeySequences::instance().registerCommand(
+                "plugin/" + owner + "/" + id, action, QObject::tr("Plugins"));
+    }
 }
 }  // namespace
 
@@ -237,6 +265,8 @@ void ccPluginUIManager::init() {
 
         for (int i = 0; i < moduleNames.size(); ++i) {
             addActionsToMenu(moduleNames[i], allModuleActions[i]);
+            registerPluginCommands(ccPluginManager::get().pluginId(plugin),
+                                   allModuleActions[i]);
             addActionsToToolBar(moduleNames[i], allModuleActions[i]);
         }
         plugin->onNewSelection(m_appInterface->getSelectedEntities());
@@ -253,6 +283,8 @@ void ccPluginUIManager::init() {
 
             for (int i = 0; i < moduleNames.size(); ++i) {
                 addActionsToMenu(moduleNames[i], allModuleActions[i]);
+                registerPluginCommands(ccPluginManager::get().pluginId(plugin),
+                                       allModuleActions[i]);
                 addActionsToToolBar(moduleNames[i], allModuleActions[i]);
             }
 
@@ -424,6 +456,8 @@ void ccPluginUIManager::addActionsToMenu(ccStdPluginInterface *stdPlugin,
     {
         m_pluginMenu->addAction(valid.at(0));
     }
+    registerPluginCommands(ccPluginManager::get().pluginId(stdPlugin), valid,
+                           true);
 }
 
 void ccPluginUIManager::addActionsToToolBar(ccStdPluginInterface *stdPlugin,

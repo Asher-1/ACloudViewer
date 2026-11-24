@@ -7,6 +7,7 @@
 
 #include "qRMBG.h"
 
+#include <ecvAICoreUiHelper.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPluginDbNaming.h>
@@ -190,6 +191,7 @@ void qRMBG::showDialog() {
     if (!m_dialog) {
         m_dialog =
                 new RMBGDialog(static_cast<QWidget*>(m_app->getMainWindow()));
+        ecvAICoreUi::bindDialogAction(m_action, m_dialog);
         m_dialog->setAppInterface(m_app);
         connect(m_dialog, &RMBGDialog::runRequested, this, &qRMBG::executeTask);
         connect(m_dialog, &RMBGDialog::cancelRequested, this,

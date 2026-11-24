@@ -91,9 +91,32 @@ def calculator():
         for x in [7.1,12,16.9]:b.append(P.rect(x-1.35,y-1.2,2.7,2.4,P.GREEN_LT if x==16.9 else P.GREY_LT,r=.4))
     return P.svg('<title>Scalar field arithmetic calculator</title>'+''.join(b))
 
+def annotation_overlay():
+    """Exact annotationTools.svg paths/transform, composed as a scaled overlay.
+
+    User selected the existing label-tag shape explicitly; never replace it with
+    an invented pencil. Outer placement changes, source geometry stays intact.
+    """
+    return '''<g data-source="annotation/annotationTools.svg" transform="translate(12.0 11.7) scale(.49)">
+<g transform="translate(-0.0482,-0.5523) scale(1.00822)">
+<defs><linearGradient id="tag" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#F3C017"/><stop offset="1.000" stop-color="#C1A561"/></linearGradient></defs>
+<path d="M 4.5 5.2 C 1.2 4.2 1.2 15 4.8 15.4" fill="none" stroke-width="0.7"/>
+<path d="M 3 2 H 9.2 L 22.5 15.3 L 14.5 23 L 1.5 10 V 3.5 Q 1.5 2 3 2 Z M 6.8 6 A 1.5 1.5 0 1 0 3.8 6 A 1.5 1.5 0 1 0 6.8 6 Z" fill="url(#tag)" stroke="#6F6F59" fill-rule="evenodd"/>
+</g></g>'''
+
+
 def faceset():
-    b=[P.cube(11,11,8.5,top=P.GREEN_LT,left=P.BLUE_MID,right=P.BLUE_PALE),P.stroke('M 3.7 6.75 L 11 11 L 18.3 6.75 M 11 11 V 19.5',sw=.75),P.rect(11.8,15.2,10.5,7.5,P.GREY_LT,r=.8),label_path('FACE',x=12.5,y=20.7,width=9,height=3.1)]
-    return P.svg('<title>Face set semantic annotation</title>'+''.join(b))
+    # ANN-01: semantic annotation supports both point clouds and meshes.
+    # FACE lettering is intentionally removed by the user's explicit correction.
+    b = [P.fill('M 2.2 3.4 L 9 1.8 L 14 5 L 10.8 11 L 3.2 10.2 Z', P.BLUE_PALE, sw=.85),
+         P.stroke('M 2.2 3.4 L 10.8 11 M 9 1.8 L 7.4 6.8 L 14 5 M 3.2 10.2 L 7.4 6.8', colour=P.BLUE_STRONG, sw=.7)]
+    for x, y, color in [(3.4,14.2,P.GREEN),(7.3,13.4,P.BLUE_STRONG),
+                         (10.6,15.7,P.GREEN),(3.4,18.7,P.BLUE_STRONG),
+                         (7.2,20.3,P.GREEN),(10.8,19.7,P.BLUE_STRONG)]:
+        b.append(P.circle(x,y,1.35,color,outline=P.INK))
+    b.append(annotation_overlay())
+    return _preview_svg('<title>ANN-01 — Point-cloud and mesh semantic annotation</title>'+''.join(b))
+
 
 def probe():
     b=[P.cube(10.2,12,8.8,top=P.BLUE_PALE,left=P.BLUE_MID,right=P.GREY_LT),P.circle(12.2,11.6,2.2,P.GREEN_LT),P.stroke('M 12.2 7.5 V 15.7 M 8 11.6 H 16.4',colour=P.BLUE_STRONG,sw=.9),P.fill('M 18 2 L 20.5 4.5 L 14.6 10.4 L 12.7 11.2 L 13.5 9.3 Z',P.YELLOW,sw=.65)]

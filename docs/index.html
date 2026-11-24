@@ -166,14 +166,14 @@
                         <i class="fas fa-atom"></i>
                     </div>
                     <h3 data-i18n="features.gaussian.title">3D Gaussian Splatting</h3>
-                    <p data-i18n="features.gaussian.desc">Real-time CUDA-accelerated 3DGS rendering, remote training viewer, and novel view synthesis via the SIBR plugin</p>
+                    <p data-i18n="features.gaussian.desc">Real-time CUDA-accelerated 3DGS rendering and novel view synthesis via the SIBR plugin, plus 3DGS training from photos / 360° video with the bundled Spirula Studio trainer (qSpirula)</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <i class="fas fa-microchip"></i>
                     </div>
                     <h3 data-i18n="features.aicore.title">AICore AI Plugins</h3>
-                    <p data-i18n="features.aicore.desc">Native GGUF inference for depth (DA3), detection & segmentation (YOLO / RF-DETR / SAM3), background removal (RMBG), matching (LightGlue), and 3D generation (Trellis / FreeSplatter) — no Python runtime</p>
+                    <p data-i18n="features.aicore.desc">22 native GGUF plugins — depth, matching, faces, OCR, detection, segmentation, open-vocab understanding, background removal, tagging, 3D generation, reconstruction, LiDAR detection & annotation — no Python runtime</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
@@ -190,9 +190,10 @@
     <section id="aicore" class="aicore-showcase">
         <div class="container">
             <h2 class="section-title" data-i18n="aicore.title">AICore AI Plugins</h2>
-            <p class="section-subtitle" data-i18n="aicore.subtitle">Depth, detection, segmentation, matching, background removal, and 3D generation — powered by libAICore.so and GGUF models, fully integrated into the GUI</p>
+            <p class="section-subtitle" data-i18n="aicore.subtitle">Twenty-two GUI plugins spanning perception, detection, segmentation, open-vocabulary understanding, 3D generation, reconstruction and annotation — powered by libAICore.so and GGUF models, fully integrated into the GUI</p>
 
             <div class="aicore-badges">
+                <span class="aicore-badge"><i class="fas fa-plug"></i> <span data-i18n="aicore.badge.count">22 GUI plugins</span></span>
                 <span class="aicore-badge"><i class="fas fa-bolt"></i> <span data-i18n="aicore.badge.gpu">CUDA / Vulkan / Metal</span></span>
                 <span class="aicore-badge"><i class="fas fa-box"></i> <span data-i18n="aicore.badge.gguf">Compact GGUF models</span></span>
                 <span class="aicore-badge"><i class="fas fa-code"></i> <span data-i18n="aicore.badge.native">No Python runtime</span></span>
@@ -353,6 +354,192 @@
                         <ul class="aicore-plugin-points">
                             <li>Wireframe (indoor) / MegaDepth (outdoor) variants</li>
                             <li>Export detected segments as ccPolyline entities</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin">
+                    <div class="aicore-plugin-media">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qOCR/images/ocr_test1.jpg" alt="qOCR text recognition">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qOCR/images/table_test1.jpg" alt="qOCR table recognition">
+                        </div>
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3>OCR Text, Layout &amp; Tables (qOCR)</h3>
+                        <p>PP-OCRv4 GGUF text detection and recognition with English / Japanese / Chinese+English recipes, plus opt-in SLANet_plus layout analysis and table structure recognition — results overlaid PP-Structure style.</p>
+                        <ul class="aicore-plugin-points">
+                            <li>EN / JA / CH+EN recognition recipes</li>
+                            <li>Opt-in layout + table stages with DB-tree overlay</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin aicore-plugin-reverse">
+                    <div class="aicore-plugin-media">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qGKD/images/text_prompts_with_chair_skeleton.jpg" alt="qGKD text prompt keypoints">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qGKD/images/multi-objects.jpg" alt="qGKD multi-object keypoints">
+                        </div>
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3>Open-World Keypoint Detection (qGKD)</h3>
+                        <p>GKDT-L (ECCV 2026) GGUF detects semantically meaningful keypoints from text, visual 1-shot, multimodal or multi-object prompts — no fixed category set, no Python at runtime.</p>
+                        <ul class="aicore-plugin-points">
+                            <li>Four prompt modes: text / visual 1-shot / multimodal / multi-object</li>
+                            <li>Multi-object mode reuses qYOLO World boxes, then GKD per box</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin">
+                    <div class="aicore-plugin-media">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRAM/images/ram_test.jpg" alt="qRAM image tagging">
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3>Image Tagging &amp; Captioning (qRAM)</h3>
+                        <p>Recognize Anything / RAM++ / Tag2Text GGUF for open-set image tagging and captioning over batches, DB images and camera/video streams.</p>
+                        <ul class="aicore-plugin-points">
+                            <li>All logits and thresholds exposed for tuning</li>
+                            <li>JSON / CSV / text export of tags and captions</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin aicore-plugin-reverse">
+                    <div class="aicore-plugin-media">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRelateAnything/images/relate_anything_test.jpg" alt="qRelateAnything scene graph">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRelateAnything/images/relate_anything_video_test.jpg" alt="qRelateAnything video relations">
+                        </div>
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3>Scene Relation Graphs (qRelateAnything)</h3>
+                        <p>RelSGG ViT / ConvNeXt GGUF (24 models) builds subject–predicate–object relation graphs over detected objects, with Kalman-tracked smoothing for video.</p>
+                        <ul class="aicore-plugin-points">
+                            <li>Interchangeable detector: YOLOE / YOLO-World / RF-DETR</li>
+                            <li>Relation edges on images and tracked video objects</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin">
+                    <div class="aicore-plugin-media">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qVLXSeek/images/detection.jpg" alt="qVLXSeek open-vocab detection">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qVLXSeek/images/region_ocr.jpg" alt="qVLXSeek region OCR">
+                        </div>
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3>Open-Vocab Grounding &amp; Region QA (qVLXSeek)</h3>
+                        <p>VLX-Seek 1.5-10B GGUF retrieves candidate regions instead of generating coordinates — detection, counting, reasoning detection, VQA, region captions and region OCR stay stable and reject absent targets explicitly.</p>
+                        <ul class="aicore-plugin-points">
+                            <li>Seven upstream tasks with EN / ZH prompt templates</li>
+                            <li>Region OCR reads text at target indexes via PP-OCR proposals</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin aicore-plugin-reverse">
+                    <div class="aicore-plugin-media">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qInstantMesh/images/instantmesh_test.jpg" alt="qInstantMesh textured mesh">
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3>InstantMesh Image-to-3D (qInstantMesh)</h3>
+                        <p>Single photo to a textured 3D mesh: Zero123++ 6-view diffusion, FlexiCubes mesh extraction and UV atlas — 14 GGUF files, fully in-process on ggml.</p>
+                        <ul class="aicore-plugin-points">
+                            <li>Zero123++ multi-view diffusion → FlexiCubes mesh</li>
+                            <li>xatlas UV atlas with GLB / OBJ export</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin">
+                    <div class="aicore-plugin-media">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSAM3D/images/sam3_seg_with_prompt.jpg" alt="qSAM3D image-to-3D object">
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3>SAM 3D Objects Image-to-3D (qSAM3D)</h3>
+                        <p>SAM 3D Objects GGUF reconstructs a 3D object from one photo — a Gaussian splat PLY plus an optional FlexiCubes mesh, with optional RMBG matting for the object mask.</p>
+                        <ul class="aicore-plugin-points">
+                            <li>Gaussian splat PLY + optional FlexiCubes mesh</li>
+                            <li>Shared RMBG model for automatic object-mask matting</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin aicore-plugin-reverse">
+                    <div class="aicore-plugin-media">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qQuerySplat/images/querysplat_test.jpg" alt="qQuerySplat 3DGS prediction">
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3>QuerySplat Unposed Photos to 3DGS (qQuerySplat)</h3>
+                        <p>QuerySplat + VGGT-Omega GGUF predicts a full 3D Gaussian Splatting scene from 2–16 unposed photos — 524 288 gaussians feed-forward, with a built-in CPU rasterizer rendering the predicted views.</p>
+                        <ul class="aicore-plugin-points">
+                            <li>Optional test-time optimization (TTO) against the input pixels</li>
+                            <li>Point cloud, camera sensors, depth and renders into the DB tree</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin">
+                    <div class="aicore-plugin-media">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qMapAnything/images/courtyard_reconstruction.png" alt="qMapAnything courtyard reconstruction">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qMapAnything/images/relief_reconstruction.png" alt="qMapAnything relief reconstruction">
+                        </div>
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3>MapAnything Metric Reconstruction (qMapAnything)</h3>
+                        <p>Universal feed-forward metric multi-view reconstruction across six model families — VGGT-Omega / MapAnything / Pi3 / Pi3X / VGGT-1B / DUSt3R GGUF, routed by the GGUF architecture key.</p>
+                        <ul class="aicore-plugin-points">
+                            <li>ETH3D benchmark anchoring with Sim3 alignment</li>
+                            <li>Pointmaps, depth and camera poses from images alone</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin aicore-plugin-reverse">
+                    <div class="aicore-plugin-media">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qLingbotMap/images/courthouse_reconstruction.png" alt="qLingbotMap courthouse reconstruction">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qLingbotMap/images/loop_reconstruction.png" alt="qLingbotMap indoor loop reconstruction">
+                        </div>
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3>LingBot-Map Streaming RGB-D (qLingbotMap)</h3>
+                        <p>LingBot-Map GCT GGUF streams ordered image folders or video into a live 3D map — per-frame updates, camera frustums and native sky masking, fully in-process.</p>
+                        <ul class="aicore-plugin-points">
+                            <li>Live per-frame map + camera frustums in the DB tree</li>
+                            <li>Native sky masking; video input via OpenCV</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin">
+                    <div class="aicore-plugin-media">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qOpenPCDet/images/pointpillar_test.jpg" alt="qOpenPCDet LiDAR detection">
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3>OpenPCDet LiDAR 3D Detection (qOpenPCDet)</h3>
+                        <p>OpenPCDet GGUF (54 models) runs PointPillars / SECOND / PV-RCNN style detectors on KITTI and nuScenes point clouds — native ggml inference, no Python runtime.</p>
+                        <ul class="aicore-plugin-points">
+                            <li>18 KITTI / nuScenes checkpoints × 3 quantizations</li>
+                            <li>Per-class wireframe boxes + CSV export</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin aicore-plugin-reverse">
+                    <div class="aicore-plugin-media">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qAnyLabeling/docs/images/overview.png" alt="qAnyLabeling annotation workbench">
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3>AnyLabeling Annotation Workbench (qAnyLabeling)</h3>
+                        <p>X-AnyLabeling-style workbench for image and 3D annotation — shapes, brush, magic wand, video tracking and 3D cuboids, with every AI assist running locally through the shared AICore catalogs.</p>
+                        <ul class="aicore-plugin-points">
+                            <li>YOLO / SAM3 / RF-DETR assists from the AICore catalogs</li>
+                            <li>Fully local annotation — no cloud service required</li>
                         </ul>
                     </div>
                 </article>
@@ -714,6 +901,20 @@ make -j$(nproc)">
                         </div>
                     </div>
                     <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSpirula/images/spirula_outdoor_scene.jpg" alt="Spirula Studio photo training" data-i18n-alt="gallery.spirula_photos.title">
+                        <div class="gallery-overlay">
+                            <h3 data-i18n="gallery.spirula_photos.title">Spirula Studio — Photo Training</h3>
+                            <p data-i18n="gallery.spirula_photos.desc">Train 3D Gaussian splats from photos with the bundled Spirula Studio trainer — Parish Church of Saint Maurice (746 photos, 9.97M splats); import splat PLY &amp; textured mesh into the DB tree</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSpirula/images/spirula_360_reconstruction.jpg" alt="Spirula Studio 360 reconstruction" data-i18n-alt="gallery.spirula_360.title">
+                        <div class="gallery-overlay">
+                            <h3 data-i18n="gallery.spirula_360.title">Spirula Studio — 360° Reconstruction</h3>
+                            <p data-i18n="gallery.spirula_360.desc">Native 360° panorama support — Panorama Torunia (14.9M splats); headless training with live logs, graceful cancel and device selection</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
                         <img src="images/real-time-3D-Reconstruction.png" alt="Real-time 3D Reconstruction" data-i18n-alt="gallery.realtime.title">
                         <div class="gallery-overlay">
                             <h3 data-i18n="gallery.realtime.title">Real-time 3D Reconstruction</h3>
@@ -801,6 +1002,90 @@ make -j$(nproc)">
                         <div class="gallery-overlay">
                             <h3>Background Removal</h3>
                             <p>RMBG-2.0 (BiRefNet-Swin-L) transparent background removal with raw alpha matte — image and live video</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qOCR/images/ocr_test1.jpg" alt="qOCR text recognition">
+                        <div class="gallery-overlay">
+                            <h3>OCR Text, Layout &amp; Tables</h3>
+                            <p>PP-OCRv4 text recognition with SLANet layout &amp; table reconstruction — EN / JA / CH+EN recipes</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qGKD/images/text_prompts_with_chair_skeleton.jpg" alt="qGKD open-world keypoints">
+                        <div class="gallery-overlay">
+                            <h3>Open-World Keypoints (GKDT)</h3>
+                            <p>Text, visual 1-shot, multimodal and multi-object keypoint prompts (GKDT-L, ECCV 2026)</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRAM/images/ram_test.jpg" alt="qRAM image tagging">
+                        <div class="gallery-overlay">
+                            <h3>Image Tagging &amp; Captioning</h3>
+                            <p>Recognize Anything / RAM++ / Tag2Text open-set tags and captions with JSON / CSV / text export</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRelateAnything/images/relate_anything_test.jpg" alt="qRelateAnything scene relation graph">
+                        <div class="gallery-overlay">
+                            <h3>Scene Relation Graphs</h3>
+                            <p>Subject–predicate–object edges over tracked objects — image &amp; video (RelSGG ViT / ConvNeXt)</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qVLXSeek/images/detection.jpg" alt="qVLXSeek open-vocab grounding">
+                        <div class="gallery-overlay">
+                            <h3>Open-Vocab Grounding &amp; Region QA</h3>
+                            <p>VLX-Seek 1.5-10B: detection, counting, VQA and region OCR via region retrieval</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qInstantMesh/images/instantmesh_test.jpg" alt="qInstantMesh textured mesh">
+                        <div class="gallery-overlay">
+                            <h3>InstantMesh Image-to-3D</h3>
+                            <p>Single image → textured 3D mesh — Zero123++ 6-view diffusion + FlexiCubes + UV atlas</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSAM3D/images/sam3_seg_with_prompt.jpg" alt="qSAM3D image-to-3D object">
+                        <div class="gallery-overlay">
+                            <h3>SAM 3D Objects</h3>
+                            <p>One photo → Gaussian splat PLY + optional FlexiCubes mesh, with optional RMBG matting</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qQuerySplat/images/querysplat_test.jpg" alt="qQuerySplat 3DGS prediction">
+                        <div class="gallery-overlay">
+                            <h3>QuerySplat 3DGS</h3>
+                            <p>2–16 unposed photos → a 3D Gaussian Splatting scene (524 288 gaussians), optional TTO</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qMapAnything/images/courtyard_reconstruction.png" alt="qMapAnything metric reconstruction">
+                        <div class="gallery-overlay">
+                            <h3>MapAnything Metric Reconstruction</h3>
+                            <p>Multi-view feed-forward metric reconstruction — VGGT-Omega &amp; five more families, ETH3D anchoring</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qLingbotMap/images/courthouse_reconstruction.png" alt="qLingbotMap streaming RGB-D reconstruction">
+                        <div class="gallery-overlay">
+                            <h3>LingBot-Map Streaming RGB-D</h3>
+                            <p>Streaming RGB-D 3D reconstruction from image folders / video — live map, frustums &amp; sky masking</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qOpenPCDet/images/pointpillar_test.jpg" alt="qOpenPCDet LiDAR detection">
+                        <div class="gallery-overlay">
+                            <h3>OpenPCDet LiDAR Detection</h3>
+                            <p>PointPillars / SECOND / PV-RCNN on KITTI + nuScenes — 54 GGUF models, wireframe boxes + CSV</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qAnyLabeling/docs/images/overview.png" alt="qAnyLabeling annotation workbench">
+                        <div class="gallery-overlay">
+                            <h3>AnyLabeling Workbench</h3>
+                            <p>X-AnyLabeling-style annotation with fully local AI assist — video tracking + 3D cuboids</p>
                         </div>
                     </div>
                 </div>

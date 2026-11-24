@@ -59,6 +59,7 @@ QList<QAction*> q3DMASCPlugin::getActions() {
 
     if (!m_trainAction) {
         m_trainAction = new QAction("Train classifier", this);
+        m_trainAction->setObjectName("trainClassifier");
         m_trainAction->setToolTip("Train classifier");
         m_trainAction->setIcon(QIcon(QString::fromUtf8(
                 ":/CC/plugin/q3DMASCPlugin/3DMASC TRAIN.png")));
@@ -69,6 +70,7 @@ QList<QAction*> q3DMASCPlugin::getActions() {
 
     if (!m_classifyAction) {
         m_classifyAction = new QAction("Classify", this);
+        m_classifyAction->setObjectName("classify");
         m_classifyAction->setToolTip("Classify cloud");
         m_classifyAction->setIcon(QIcon(QString::fromUtf8(
                 ":/CC/plugin/q3DMASCPlugin/3DMASC CLASSIFY.png")));

@@ -1952,7 +1952,6 @@ public:  // visualization matrix transformation
     //! Returns the current interaction flags
     static INTERACTION_FLAGS GetInteractionMode();
 
-    static void SetView(CC_VIEW_ORIENTATION orientation, ccBBox* bbox);
     static void SetView(CC_VIEW_ORIENTATION orientation,
                         bool forceRedraw = false);
 

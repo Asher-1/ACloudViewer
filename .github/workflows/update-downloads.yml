@@ -120,7 +120,7 @@ jobs:
           fi
           
           # Run scan script
-          python3 docs/automation/scripts/scan_releases.py
+          SOURCE_SHA="$(git rev-parse HEAD)" python3 docs/automation/scripts/scan_releases.py
           
           # Check if generation succeeded
           if [ -f "docs/downloads_data.json" ]; then

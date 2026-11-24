@@ -5,16 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// Focused qOCR workspace contract test: bilingual model selection, the
-// device/threads runtime row, the shared progress section, the DB-export
-// switch, the unified download entry, the checkable multi-image input list
-// (one-click official test data — the real-document table pages for tables
-// mode, the PaddleOCR demo images otherwise — with the mode's recommended
-// images checked, user images preserved), the shared-console logging
-// contract (no private log widget), the table view (span-aware grid,
-// HTML/CSV export), and - when the f32 models and the PaddleOCR test data
-// are cached - real headless table reconstruction through recognizeImage
-// and a two-image OCRWorker run (one model load, one result per image).
+// Workspace, sample-selection and optional real-model contracts for qOCR.
+// Pass --require-e2e to enable the cached f32 CPU table/worker cases. Missing
+// required assets produce CTest's exit-77 skip after all selected tests finish.
+
+#include <gtest/gtest.h>
 
 #include <QApplication>
 #include <QAtomicInt>
@@ -24,6 +19,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QImage>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
@@ -34,14 +30,19 @@
 #include <QSpinBox>
 #include <QTabWidget>
 #include <QTableWidget>
-#include <cstdio>
+#include <QTemporaryDir>
+#include <memory>
 
 #include "OCRDialog.h"
 #include "OCRWorker.h"
 #include "aicore/ocr_capi.h"
 #include "aicore/table_capi.h"
+#include "ecvTestDataRepository.h"
 
 namespace {
+
+bool requireE2E = false;
+bool missingE2EAssets = false;
 
 QString cachedModel(const QString& name) {
     char* dir = aicore_ocr_model_cache_dir();
@@ -51,9 +52,283 @@ QString cachedModel(const QString& name) {
     return QFileInfo(path).isFile() ? path : QString();
 }
 
-// 2 x 3 grid: a colspan-2 header and a rowspan-2 cell (the span layout the
-// AICore post-process emits for a colspan + rowspan structure).
-int checkTableGrid() {
+class QOCRWorkspace : public ::testing::Test {
+protected:
+    void SetUp() override {
+        // Each case starts without images or options persisted by another case
+        // or by a GUI session on the developer's machine.
+        QSettings settings;
+        settings.beginGroup(QStringLiteral("qOCR"));
+        settings.remove(QStringLiteral(""));
+        settings.endGroup();
+        dialog = std::make_unique<OCRDialog>();
+        model = dialog->findChild<QComboBox*>(QStringLiteral("qOCRModel"));
+        quant = dialog->findChild<QComboBox*>(QStringLiteral("qOCRQuant"));
+        device = dialog->findChild<QComboBox*>(QStringLiteral("qOCRDevice"));
+        threads = dialog->findChild<QSpinBox*>(QStringLiteral("qOCRThreads"));
+        imageList = dialog->findChild<QListWidget*>(
+                QStringLiteral("qOCRImageList"));
+        testData = dialog->findChild<QPushButton*>(
+                QStringLiteral("qOCRUseTestData"));
+        download =
+                dialog->findChild<QPushButton*>(QStringLiteral("qOCRDownload"));
+        run = dialog->findChild<QPushButton*>(QStringLiteral("qOCRRun"));
+        cancel = dialog->findChild<QPushButton*>(QStringLiteral("qOCRCancel"));
+        addDb = dialog->findChild<QCheckBox*>(QStringLiteral("qOCRAddToDb"));
+        results =
+                dialog->findChild<QTableWidget*>(QStringLiteral("qOCRResults"));
+        textFilter =
+                dialog->findChild<QLineEdit*>(QStringLiteral("qOCRTextFilter"));
+        copyText =
+                dialog->findChild<QPushButton*>(QStringLiteral("qOCRTextCopy"));
+        saveText =
+                dialog->findChild<QPushButton*>(QStringLiteral("qOCRTextSave"));
+        progress = dialog->findChild<QProgressBar*>(
+                QStringLiteral("qOCRProgress"));
+        ASSERT_NE(model, nullptr);
+        ASSERT_NE(quant, nullptr);
+        ASSERT_NE(device, nullptr);
+        ASSERT_NE(threads, nullptr);
+        ASSERT_NE(imageList, nullptr);
+        ASSERT_NE(testData, nullptr);
+        ASSERT_NE(download, nullptr);
+        ASSERT_NE(run, nullptr);
+        ASSERT_NE(cancel, nullptr);
+        ASSERT_NE(addDb, nullptr);
+        ASSERT_NE(results, nullptr);
+        ASSERT_NE(textFilter, nullptr);
+        ASSERT_NE(copyText, nullptr);
+        ASSERT_NE(saveText, nullptr);
+        ASSERT_NE(progress, nullptr);
+    }
+
+    std::unique_ptr<OCRDialog> dialog;
+    QComboBox *model = nullptr, *quant = nullptr, *device = nullptr;
+    QSpinBox* threads = nullptr;
+    QListWidget* imageList = nullptr;
+    QPushButton *testData = nullptr, *download = nullptr, *run = nullptr,
+                *cancel = nullptr, *copyText = nullptr, *saveText = nullptr;
+    QCheckBox* addDb = nullptr;
+    QTableWidget* results = nullptr;
+    QLineEdit* textFilter = nullptr;
+    QProgressBar* progress = nullptr;
+};
+
+TEST_F(QOCRWorkspace, UsesSharedConsoleAndSingleOutputChoice) {
+    EXPECT_EQ(dialog->findChild<QPlainTextEdit*>(QStringLiteral("qOCRLog")),
+              nullptr);
+    EXPECT_EQ(dialog->findChild<QCheckBox*>(QStringLiteral("qOCRShowInWindow")),
+              nullptr);
+}
+
+TEST_F(QOCRWorkspace, RecognitionCatalogOwnsLanguageAndQuantization) {
+    EXPECT_EQ(dialog->findChild<QComboBox*>(QStringLiteral("qOCRLanguage")),
+              nullptr);
+    ASSERT_GE(model->count(), 2);
+    EXPECT_EQ(model->itemData(0).toString(), QStringLiteral("ppocr-v4-ch"));
+    EXPECT_EQ(model->itemData(1).toString(), QStringLiteral("ppocr-v4-en"));
+    EXPECT_EQ(quant->count(), 3);
+}
+
+TEST_F(QOCRWorkspace, ResultsExposeLayoutAndClipboardExport) {
+    ASSERT_EQ(results->columnCount(), 6);
+    ASSERT_NE(results->horizontalHeaderItem(0), nullptr);
+    ASSERT_NE(results->horizontalHeaderItem(5), nullptr);
+    EXPECT_EQ(results->horizontalHeaderItem(0)->text(), QStringLiteral("#"));
+    EXPECT_EQ(results->horizontalHeaderItem(5)->text(),
+              QStringLiteral("Layout"));
+    EXPECT_EQ(results->contextMenuPolicy(), Qt::CustomContextMenu);
+    EXPECT_FALSE(copyText->isEnabled());
+    EXPECT_FALSE(saveText->isEnabled());
+}
+
+TEST_F(QOCRWorkspace, RuntimeDefaultsAndActionsRequireStagedInput) {
+    ASSERT_GE(device->count(), 1);
+    EXPECT_FALSE(device->itemData(0).toString().isEmpty());
+    EXPECT_EQ(threads->value(), 0);
+    EXPECT_FALSE(run->isEnabled());
+    EXPECT_FALSE(cancel->isEnabled());
+}
+
+TEST_F(QOCRWorkspace, RecognitionSwitchReportsDetectionAndRecognitionState) {
+    model->setCurrentIndex(1);
+    auto* status = dialog->findChild<QLabel*>(QStringLiteral("qOCRStatus"));
+    ASSERT_NE(status, nullptr);
+    EXPECT_TRUE(status->text().contains(QStringLiteral("det:")));
+    EXPECT_TRUE(status->text().contains(QStringLiteral("rec:")));
+}
+
+TEST_F(QOCRWorkspace, ImageListDeduplicatesAndTracksChecks) {
+    const QString own = QDir::temp().filePath(QStringLiteral("qocr-own.png"));
+    EXPECT_EQ(dialog->addImages({own, own}, true), 1);
+    EXPECT_EQ(dialog->addImages(
+                      {QDir::temp().filePath(QStringLiteral("qocr-b.png"))},
+                      false),
+              1);
+    EXPECT_EQ(imageList->count(), 2);
+    EXPECT_EQ(dialog->checkedImages(),
+              QStringList{QFileInfo(own).absoluteFilePath()});
+}
+
+TEST(QOCRSamples, ModesAndFamiliesRecommendOfficialImagesFromOwningBundle) {
+    const QString root = ecvTestDataRepository::extractPath(
+            ecvTestDataRepository::Dataset::Ppocr);
+    const QString tablesRoot = ecvTestDataRepository::extractPath(
+            ecvTestDataRepository::Dataset::PpocrTables);
+    const QStringList families = {QStringLiteral("zh"), QStringLiteral("en"),
+                                  QStringLiteral("ja")};
+    for (const bool table : {false, true}) {
+        for (const bool layout : {false, true}) {
+            for (const QString& family : families) {
+                SCOPED_TRACE(::testing::Message()
+                             << "table=" << table << ", layout=" << layout
+                             << ", family=" << family.toStdString());
+                const QStringList recommended =
+                        OCRDialog::recommendedTestImages(table, layout, family);
+                ASSERT_FALSE(recommended.isEmpty());
+                const auto expectedKind =
+                        (table && family != QStringLiteral("en"))
+                                ? ecvTestDataRepository::Dataset::PpocrTables
+                                : ecvTestDataRepository::Dataset::Ppocr;
+                EXPECT_EQ(OCRDialog::datasetForMode(table, family),
+                          expectedKind);
+                for (const QString& relative : recommended) {
+                    EXPECT_FALSE(OCRDialog::isSyntheticTestImage(relative))
+                            << relative.toStdString();
+                }
+                const QString& modeRoot =
+                        expectedKind == ecvTestDataRepository::Dataset::Ppocr
+                                ? root
+                                : tablesRoot;
+                if (!QDir(modeRoot).exists()) continue;
+                const QStringList all = OCRDialog::testDataImages(
+                        modeRoot, table, layout, family);
+                for (int i = 0; i < recommended.size(); ++i) {
+                    EXPECT_EQ(all.value(i),
+                              QDir(modeRoot).absoluteFilePath(recommended[i]));
+                }
+            }
+        }
+    }
+}
+
+TEST_F(QOCRWorkspace, TableStageIsOptInAndResolvesSelectedTier) {
+    auto* table = dialog->findChild<QCheckBox*>(QStringLiteral("qOCRTable"));
+    auto* tabs =
+            dialog->findChild<QTabWidget*>(QStringLiteral("qOCRResultTabs"));
+    auto* selector =
+            dialog->findChild<QComboBox*>(QStringLiteral("qOCRTableSelect"));
+    auto* grid =
+            dialog->findChild<QTableWidget*>(QStringLiteral("qOCRTableGrid"));
+    auto* saveHtml = dialog->findChild<QPushButton*>(
+            QStringLiteral("qOCRTableSaveHtml"));
+    auto* saveCsv =
+            dialog->findChild<QPushButton*>(QStringLiteral("qOCRTableSaveCsv"));
+    auto* status = dialog->findChild<QLabel*>(QStringLiteral("qOCRStatus"));
+    ASSERT_NE(table, nullptr);
+    ASSERT_NE(tabs, nullptr);
+    ASSERT_NE(selector, nullptr);
+    ASSERT_NE(grid, nullptr);
+    ASSERT_NE(saveHtml, nullptr);
+    ASSERT_NE(saveCsv, nullptr);
+    ASSERT_NE(status, nullptr);
+    EXPECT_EQ(tabs->count(), 2);
+    EXPECT_FALSE(table->isChecked());
+    EXPECT_FALSE(saveHtml->isEnabled());
+    EXPECT_FALSE(saveCsv->isEnabled());
+    quant->setCurrentIndex(1);
+    table->setChecked(true);
+    EXPECT_TRUE(status->text().contains(QStringLiteral("table:")));
+    EXPECT_TRUE(dialog->runSettings().tablePath.endsWith(
+            QStringLiteral("slanet-plus-table-f16.gguf")));
+    table->setChecked(false);
+    EXPECT_TRUE(dialog->runSettings().tablePath.isEmpty());
+}
+
+TEST_F(QOCRWorkspace, CachedSampleFillRetargetsChecksAndPreservesUserRows) {
+    auto* table = dialog->findChild<QCheckBox*>(QStringLiteral("qOCRTable"));
+    auto* layout = dialog->findChild<QCheckBox*>(QStringLiteral("qOCRLayout"));
+    ASSERT_NE(table, nullptr);
+    ASSERT_NE(layout, nullptr);
+    const QString root = ecvTestDataRepository::extractPath(
+            ecvTestDataRepository::Dataset::Ppocr);
+    const QString tablesRoot = ecvTestDataRepository::extractPath(
+            ecvTestDataRepository::Dataset::PpocrTables);
+    if (!QDir(root).exists() || !QDir(tablesRoot).exists()) {
+        GTEST_SKIP()
+                << "PaddleOCR demo and real-document table caches required";
+    }
+    const QString own = QDir::temp().filePath(QStringLiteral("qocr-own.png"));
+    ASSERT_EQ(dialog->addImages({own, own}, true), 1);
+    ASSERT_EQ(dialog->addImages(
+                      {QDir::temp().filePath(QStringLiteral("qocr-b.png"))},
+                      false),
+              1);
+    const QStringList zhTableRecs =
+            OCRDialog::recommendedTestImages(true, false, QStringLiteral("zh"));
+    const int tablesCount = OCRDialog::testDataImages(tablesRoot, true, false,
+                                                      QStringLiteral("zh"))
+                                    .size();
+    const int demoCount =
+            OCRDialog::testDataImages(root, false, false, QStringLiteral("zh"))
+                    .size();
+    table->setChecked(true);
+    layout->setChecked(false);
+    testData->click();
+    QStringList checked = dialog->checkedImages();
+    EXPECT_EQ(imageList->count(), tablesCount + 2);
+    ASSERT_EQ(checked.size(), 1 + zhTableRecs.size());
+    EXPECT_EQ(checked.first(), QFileInfo(own).absoluteFilePath());
+    for (const QString& relative : zhTableRecs) {
+        EXPECT_TRUE(
+                checked.contains(QDir(tablesRoot).absoluteFilePath(relative)))
+                << relative.toStdString();
+    }
+    // A user check on a carried table row must survive recommendation changes.
+    QListWidgetItem* userRow = nullptr;
+    for (int i = 0; i < imageList->count() && !userRow; ++i) {
+        QListWidgetItem* item = imageList->item(i);
+        if (item->data(Qt::UserRole)
+                    .toString()
+                    .endsWith(QStringLiteral("zh_val_30.jpg")))
+            userRow = item;
+    }
+    ASSERT_NE(userRow, nullptr);
+    userRow->setCheckState(Qt::Checked);
+    table->setChecked(false);
+    layout->setChecked(true);
+    testData->click();
+    checked = dialog->checkedImages();
+    const QStringList layoutRecs =
+            OCRDialog::recommendedTestImages(false, true, QStringLiteral("zh"));
+    EXPECT_EQ(imageList->count(), tablesCount + demoCount + 2);
+    EXPECT_EQ(checked.size(), 1 + 1 + layoutRecs.size());
+    for (const QString& relative : layoutRecs) {
+        EXPECT_TRUE(checked.contains(QDir(root).absoluteFilePath(relative)))
+                << relative.toStdString();
+    }
+    for (const QString& relative : zhTableRecs) {
+        EXPECT_FALSE(
+                checked.contains(QDir(tablesRoot).absoluteFilePath(relative)))
+                << relative.toStdString();
+    }
+    EXPECT_TRUE(checked.contains(
+            QDir(tablesRoot)
+                    .absoluteFilePath(QStringLiteral("zh_val_30.jpg"))));
+    model->setCurrentIndex(1);
+    layout->setChecked(false);
+    testData->click();
+    checked = dialog->checkedImages();
+    const QStringList enRecs = OCRDialog::recommendedTestImages(
+            false, false, QStringLiteral("en"));
+    EXPECT_EQ(checked.size(), 1 + 1 + enRecs.size());
+    for (const QString& relative : enRecs) {
+        EXPECT_TRUE(checked.contains(QDir(root).absoluteFilePath(relative)))
+                << relative.toStdString();
+    }
+}
+
+TEST(QOCRTableGrid, PlacesCellsWithColumnAndRowSpans) {
     OCRTableResult table;
     table.rows = 2;
     table.cols = 3;
@@ -72,18 +347,18 @@ int checkTableGrid() {
     table.cells = {head, tall, a, b};
     QTableWidget grid;
     OCRDialog::fillTableGrid(&grid, table);
-    if (grid.rowCount() != 2 || grid.columnCount() != 3 ||
-        grid.columnSpan(0, 0) != 2 || grid.rowSpan(0, 2) != 2 ||
-        !grid.item(1, 1) || grid.item(1, 1)->text() != QStringLiteral("b") ||
-        !grid.item(0, 2) || grid.item(0, 2)->text() != QStringLiteral("tall")) {
-        std::fprintf(stderr, "qOCR table grid must place cells with spans\n");
-        return 1;
-    }
-    return 0;
+    EXPECT_EQ(grid.rowCount(), 2);
+    EXPECT_EQ(grid.columnCount(), 3);
+    EXPECT_EQ(grid.columnSpan(0, 0), 2);
+    EXPECT_EQ(grid.rowSpan(0, 2), 2);
+    ASSERT_NE(grid.item(1, 1), nullptr);
+    EXPECT_EQ(grid.item(1, 1)->text(), QStringLiteral("b"));
+    ASSERT_NE(grid.item(0, 2), nullptr);
+    EXPECT_EQ(grid.item(0, 2)->text(), QStringLiteral("tall"));
 }
 
-// JPEG copy of \p source tagged EXIF Orientation 6 (rotate 90 CW): an APP1
-// segment (big-endian TIFF, one SHORT entry) spliced in after SOI.
+// JPEG copy tagged EXIF Orientation 6 (rotate 90 CW): an APP1 segment
+// (big-endian TIFF, one SHORT entry) spliced in after SOI.
 bool writeRotatedExifJpeg(const QString& source, const QString& target) {
     QByteArray jpeg;
     QBuffer buffer(&jpeg);
@@ -104,548 +379,187 @@ bool writeRotatedExifJpeg(const QString& source, const QString& target) {
     return file.open(QIODevice::WriteOnly) && file.write(jpeg) == jpeg.size();
 }
 
-// Real models: PaddleOCR table.jpg through det/rec + SLANet_plus on CPU,
-// whole image as one table (the AICore e2e anchor: 4 x 4, 13 cells,
-// colspan-4 header "CRuncover").
-int checkHeadlessTable() {
-    const QString det = cachedModel(QStringLiteral("ppocr-det-ch-f32.gguf"));
-    const QString rec = cachedModel(QStringLiteral("ppocr-rec-ch-f32.gguf"));
-    const QString tableModel =
-            cachedModel(QStringLiteral("slanet-plus-table-f32.gguf"));
-    const QString image = ecvTestDataRepository::findDatasetFile(
-            ecvTestDataRepository::Dataset::Ppocr, QStringLiteral("table.jpg"));
-    if (det.isEmpty() || rec.isEmpty() || tableModel.isEmpty() ||
-        image.isEmpty()) {
-        std::printf(
-                "qOCR headless table: models/test data not cached, "
-                "skipped\n");
-        return 77;
-    }
-    const QByteArray detBytes = QFile::encodeName(det);
-    const QByteArray recBytes = QFile::encodeName(rec);
-    const QByteArray tableBytes = QFile::encodeName(tableModel);
-    aicore_ocr_options o{};
-    o.struct_size = sizeof(o);
-    o.abi_version = AICORE_OCR_ABI_VERSION;
-    o.det_model_path = detBytes.constData();
-    o.rec_model_path = recBytes.constData();
-    o.device = "cpu";
-    o.det_limit_type = 1;
-    o.det_max_side = 960;
-    aicore_table_options t{};
-    t.struct_size = sizeof(t);
-    t.abi_version = AICORE_TABLE_ABI_VERSION;
-    t.model_path = tableBytes.constData();
-    t.device = "cpu";
-    aicore_ocr_ctx* ocr = aicore_ocr_context_create(&o);
-    aicore_table_ctx* tableCtx = aicore_table_context_create(&t);
-    int failures = 0;
-    if (!ocr || !tableCtx) {
-        std::fprintf(stderr, "qOCR headless table: context create failed\n");
-        failures = 1;
-    } else {
-        OCRWorker::Settings settings;
+class QOCRE2E : public ::testing::Test {
+protected:
+    void SetUp() override {
+        if (!requireE2E) GTEST_SKIP() << "enable with --require-e2e";
+        det = cachedModel(QStringLiteral("ppocr-det-ch-f32.gguf"));
+        rec = cachedModel(QStringLiteral("ppocr-rec-ch-f32.gguf"));
+        tableModel = cachedModel(QStringLiteral("slanet-plus-table-f32.gguf"));
+        image = ecvTestDataRepository::findDatasetFile(
+                ecvTestDataRepository::Dataset::Ppocr,
+                QStringLiteral("table.jpg"));
+        if (det.isEmpty() || rec.isEmpty() || tableModel.isEmpty() ||
+            image.isEmpty()) {
+            missingE2EAssets = true;
+            GTEST_SKIP() << "f32 models/PaddleOCR table test data not cached";
+        }
         settings.detPath = det;
         settings.recPath = rec;
         settings.tablePath = tableModel;
         settings.imagePath = image;
-        OCRRunResult result;
-        QString error;
-        if (!OCRWorker::recognizeImage(ocr, tableCtx, settings, nullptr,
-                                       &result, &error)) {
-            std::fprintf(stderr, "qOCR headless table: %s\n",
-                         error.toUtf8().constData());
-            failures = 1;
-        } else if (result.tables.size() != 1 || result.tables[0].rows != 4 ||
-                   result.tables[0].cols != 4 ||
-                   result.tables[0].cells.size() != 13 ||
-                   result.tables[0].cells[0].colSpan != 4 ||
-                   result.tables[0].cells[0].text !=
-                           QStringLiteral("CRuncover") ||
-                   !result.tables[0].csv.startsWith("CRuncover,,,\r\n") ||
-                   result.tableModel.isEmpty() || result.tableMs <= 0.0) {
-            std::fprintf(stderr,
-                         "qOCR headless table: unexpected reconstruction\n");
-            failures = 1;
-        } else {
-            // The DB overlay preserves source geometry; the exported preview
-            // follows PaddleOCR draw_ocr and appends a 600-px text panel.
-            const QImage overlay = OCRRender::overlayVisualization(result);
-            const QImage official = OCRRender::officialVisualization(result);
-            if (overlay.size() != result.sourceImage.size() ||
-                official.isNull() || official.width() <= 600 ||
-                official.height() > 600 ||
-                official.size() == result.sourceImage.size())
-                failures = 1;
-            std::printf("qOCR headless table: 4 x 4, 13 cells, %.0f ms\n",
-                        result.tableMs);
-        }
-        // EXIF orientation: OCR runs on the upright image ecvImage shows,
-        // so box coordinates match the DB image.
-        const QString rotated =
-                QDir::temp().filePath(QStringLiteral("qocr-exif-rot90.jpg"));
-        OCRWorker::Settings exif = settings;
-        exif.imagePath = rotated;
-        OCRRunResult upright;
-        if (!failures &&
-            (!writeRotatedExifJpeg(image, rotated) ||
-             !OCRWorker::recognizeImage(ocr, nullptr, exif, nullptr, &upright,
-                                        &error) ||
-             upright.sourceImage.size() !=
-                     result.sourceImage.size().transposed() ||
-             upright.boxes.isEmpty())) {
-            std::fprintf(stderr,
-                         "qOCR must apply EXIF orientation before OCR\n");
-            failures = 1;
-        }
-        QFile::remove(rotated);
     }
-    if (tableCtx) aicore_table_context_destroy(tableCtx);
-    if (ocr) aicore_ocr_context_destroy(ocr);
-    if (failures) return failures;
 
-    // The dialog's batch path: one OCRWorker, two images, one model load,
-    // one result per image in list order.
-    const QString crop = ecvTestDataRepository::findDatasetFile(
-            ecvTestDataRepository::Dataset::Ppocr,
-            QStringLiteral("border_bottom_18508_NC47FH2P0Z0HWA248FL3.jpg"));
-    if (crop.isEmpty()) {
-        std::printf("qOCR worker batch: crop test image not cached, skipped\n");
-        return 77;
+    bool createContexts() {
+        const QByteArray detBytes = QFile::encodeName(det);
+        const QByteArray recBytes = QFile::encodeName(rec);
+        const QByteArray tableBytes = QFile::encodeName(tableModel);
+        aicore_ocr_options options{};
+        options.struct_size = sizeof(options);
+        options.abi_version = AICORE_OCR_ABI_VERSION;
+        options.det_model_path = detBytes.constData();
+        options.rec_model_path = recBytes.constData();
+        options.device = "cpu";
+        options.det_limit_type = 1;
+        options.det_max_side = 960;
+        aicore_table_options tableOptions{};
+        tableOptions.struct_size = sizeof(tableOptions);
+        tableOptions.abi_version = AICORE_TABLE_ABI_VERSION;
+        tableOptions.model_path = tableBytes.constData();
+        tableOptions.device = "cpu";
+        ocr.reset(aicore_ocr_context_create(&options));
+        table.reset(aicore_table_context_create(&tableOptions));
+        return ocr && table;
     }
-    OCRWorker::Settings batch;
-    batch.detPath = det;
-    batch.recPath = rec;
-    batch.tablePath = tableModel;
-    batch.device = QStringLiteral("cpu");
-    batch.imagePaths = QStringList{image, crop};
-    OCRWorker worker(batch);
+
+    bool setBatchImages() {
+        const QString crop = ecvTestDataRepository::findDatasetFile(
+                ecvTestDataRepository::Dataset::Ppocr,
+                QStringLiteral("border_bottom_18508_NC47FH2P0Z0HWA248FL3.jpg"));
+        if (crop.isEmpty()) {
+            missingE2EAssets = true;
+            return false;
+        }
+        settings.device = QStringLiteral("cpu");
+        settings.imagePaths = QStringList{image, crop};
+        return true;
+    }
+
+    QString det, rec, tableModel, image;
+    OCRWorker::Settings settings;
+    std::unique_ptr<aicore_ocr_ctx, decltype(&aicore_ocr_context_destroy)> ocr{
+            nullptr, aicore_ocr_context_destroy};
+    std::unique_ptr<aicore_table_ctx, decltype(&aicore_table_context_destroy)>
+            table{nullptr, aicore_table_context_destroy};
+};
+
+TEST_F(QOCRE2E, ReconstructsReferenceTableAndRendersSourceAndOfficialPreviews) {
+    ASSERT_TRUE(createContexts()) << "OCR/table context creation failed";
+    OCRRunResult result;
+    QString error;
+    ASSERT_TRUE(OCRWorker::recognizeImage(ocr.get(), table.get(), settings,
+                                          nullptr, &result, &error))
+            << error.toStdString();
+    ASSERT_EQ(result.tables.size(), 1);
+    const OCRTableResult& reconstructed = result.tables[0];
+    EXPECT_EQ(reconstructed.rows, 4);
+    EXPECT_EQ(reconstructed.cols, 4);
+    ASSERT_EQ(reconstructed.cells.size(), 13);
+    EXPECT_EQ(reconstructed.cells[0].colSpan, 4);
+    EXPECT_EQ(reconstructed.cells[0].text, QStringLiteral("CRuncover"));
+    EXPECT_TRUE(reconstructed.csv.startsWith("CRuncover,,,\r\n"));
+    EXPECT_FALSE(result.tableModel.isEmpty());
+    EXPECT_GT(result.tableMs, 0.0);
+    // DB overlays preserve source geometry; official exports append a
+    // 600-pixel text panel using PaddleOCR's draw_ocr layout.
+    const QImage overlay = OCRRender::overlayVisualization(result);
+    const QImage official = OCRRender::officialVisualization(result);
+    EXPECT_EQ(overlay.size(), result.sourceImage.size());
+    EXPECT_FALSE(official.isNull());
+    EXPECT_GT(official.width(), 600);
+    EXPECT_LE(official.height(), 600);
+    EXPECT_NE(official.size(), result.sourceImage.size());
+}
+
+TEST_F(QOCRE2E, AppliesExifOrientationBeforeRecognition) {
+    ASSERT_TRUE(createContexts()) << "OCR/table context creation failed";
+    QTemporaryDir temporary;
+    ASSERT_TRUE(temporary.isValid());
+    const QString rotated =
+            QDir(temporary.path()).filePath(QStringLiteral("rot90.jpg"));
+    ASSERT_TRUE(writeRotatedExifJpeg(image, rotated));
+    OCRRunResult source;
+    QString error;
+    ASSERT_TRUE(OCRWorker::recognizeImage(ocr.get(), nullptr, settings, nullptr,
+                                          &source, &error))
+            << error.toStdString();
+    settings.imagePath = rotated;
+    OCRRunResult upright;
+    ASSERT_TRUE(OCRWorker::recognizeImage(ocr.get(), nullptr, settings, nullptr,
+                                          &upright, &error))
+            << error.toStdString();
+    EXPECT_EQ(upright.sourceImage.size(),
+              source.sourceImage.size().transposed());
+    EXPECT_FALSE(upright.boxes.isEmpty());
+}
+
+TEST_F(QOCRE2E, WorkerReturnsOneTablePerImageInInputOrder) {
+    if (!setBatchImages()) GTEST_SKIP() << "worker crop test image not cached";
+    OCRWorker worker(settings);
     QStringList order;
     QVector<int> tables;
     QAtomicInt finished(-1);
     QObject::connect(
             &worker, &OCRWorker::resultReady, &worker,
-            [&](const OCRRunResult& r) {
-                order << r.imagePath;
-                tables << r.tables.size();
+            [&](const OCRRunResult& result) {
+                order << result.imagePath;
+                tables << result.tables.size();
             },
             Qt::DirectConnection);
     QObject::connect(
             &worker, &OCRWorker::taskFinished, &worker,
             [&](bool ok) { finished = ok ? 1 : 0; }, Qt::DirectConnection);
     worker.start();
-    worker.wait();
-    if (finished.loadAcquire() != 1 || order != batch.imagePaths ||
-        tables != QVector<int>{1, 1}) {
-        std::fprintf(stderr,
-                     "qOCR worker batch: expected 2 ordered results with one "
-                     "table each (finished=%d, results=%d)\n",
-                     finished.loadAcquire(), static_cast<int>(order.size()));
-        return 1;
-    }
-    std::printf("qOCR worker batch: 2 images, 2 tables, one model load\n");
+    ASSERT_TRUE(worker.wait());
+    EXPECT_EQ(finished.loadAcquire(), 1);
+    EXPECT_EQ(order, settings.imagePaths);
+    EXPECT_EQ(tables, (QVector<int>{1, 1}));
+}
 
-    // Cancellation requested before start still loads and tears down contexts
-    // on the worker thread, then reports a non-successful completion once.
-    QAtomicInt cancelledFinished(-1);
-    OCRWorker cancelledWorker(batch);
+TEST_F(QOCRE2E, CancellationBeforeStartReportsUnsuccessfulCompletionOnce) {
+    if (!setBatchImages()) GTEST_SKIP() << "worker crop test image not cached";
+    QAtomicInt finished(-1);
+    QAtomicInt completions(0);
+    OCRWorker worker(settings);
     QObject::connect(
-            &cancelledWorker, &OCRWorker::taskFinished, &cancelledWorker,
-            [&](bool ok) { cancelledFinished = ok ? 1 : 0; },
+            &worker, &OCRWorker::taskFinished, &worker,
+            [&](bool ok) {
+                finished = ok ? 1 : 0;
+                completions.fetchAndAddOrdered(1);
+            },
             Qt::DirectConnection);
-    cancelledWorker.requestTaskCancel();
-    cancelledWorker.start();
-    cancelledWorker.wait();
-    if (cancelledFinished.loadAcquire() != 0) {
-        std::fprintf(stderr,
-                     "qOCR worker cancellation must finish exactly once as "
-                     "unsuccessful\n");
-        return 1;
-    }
-    return 0;
+    worker.requestTaskCancel();
+    worker.start();
+    ASSERT_TRUE(worker.wait());
+    EXPECT_EQ(finished.loadAcquire(), 0);
+    EXPECT_EQ(completions.loadAcquire(), 1);
 }
 
 }  // namespace
 
 int main(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        if (QString::fromLocal8Bit(argv[i]) ==
+            QStringLiteral("--require-e2e")) {
+            requireE2E = true;
+            for (int j = i; j + 1 < argc; ++j) argv[j] = argv[j + 1];
+            --argc;
+            --i;
+        }
+    }
+    argv[argc] = nullptr;
+    ::testing::InitGoogleTest(&argc, argv);
+    QTemporaryDir settingsDirectory;
+    if (!settingsDirectory.isValid()) return 1;
     QApplication app(argc, argv);
-
-    // Isolate from the developer machine's persisted qOCR state (a staged
-    // image from a GUI session would enable Run before the test stages it).
-    {
-        QSettings settings;
-        settings.beginGroup(QStringLiteral("qOCR"));
-        settings.remove(QStringLiteral(""));
-        settings.endGroup();
-    }
-
-    OCRDialog dialog;
-    auto* model = dialog.findChild<QComboBox*>(QStringLiteral("qOCRModel"));
-    auto* quant = dialog.findChild<QComboBox*>(QStringLiteral("qOCRQuant"));
-    auto* device = dialog.findChild<QComboBox*>(QStringLiteral("qOCRDevice"));
-    auto* threads = dialog.findChild<QSpinBox*>(QStringLiteral("qOCRThreads"));
-    auto* imageList =
-            dialog.findChild<QListWidget*>(QStringLiteral("qOCRImageList"));
-    auto* testData =
-            dialog.findChild<QPushButton*>(QStringLiteral("qOCRUseTestData"));
-    auto* download =
-            dialog.findChild<QPushButton*>(QStringLiteral("qOCRDownload"));
-    auto* run = dialog.findChild<QPushButton*>(QStringLiteral("qOCRRun"));
-    auto* cancel = dialog.findChild<QPushButton*>(QStringLiteral("qOCRCancel"));
-    auto* addDb = dialog.findChild<QCheckBox*>(QStringLiteral("qOCRAddToDb"));
-    auto* results =
-            dialog.findChild<QTableWidget*>(QStringLiteral("qOCRResults"));
-    auto* textFilter =
-            dialog.findChild<QLineEdit*>(QStringLiteral("qOCRTextFilter"));
-    auto* copyText =
-            dialog.findChild<QPushButton*>(QStringLiteral("qOCRTextCopy"));
-    auto* saveText =
-            dialog.findChild<QPushButton*>(QStringLiteral("qOCRTextSave"));
-    auto* progress =
-            dialog.findChild<QProgressBar*>(QStringLiteral("qOCRProgress"));
-    if (!model || !quant || !device || !threads || !imageList || !testData ||
-        !download || !run || !cancel || !addDb || !results || !textFilter ||
-        !copyText || !saveText || !progress) {
-        std::fprintf(stderr, "qOCR workspace is missing a core widget\n");
-        return 1;
-    }
-
-    // Shared-console logging contract: the private log widget is gone; all
-    // messages route through aicore_inference_log -> the application console.
-    if (dialog.findChild<QPlainTextEdit*>(QStringLiteral("qOCRLog"))) {
-        std::fprintf(stderr,
-                     "qOCR must not embed a private log widget (use the "
-                     "shared console)\n");
-        return 1;
-    }
-
-    // One recognition-model combo over the catalog recipes: the script
-    // family is part of the entry, so a contradictory language-vs-model
-    // choice can no longer be expressed (the retired language combo must
-    // not linger either).
-    if (dialog.findChild<QComboBox*>(QStringLiteral("qOCRLanguage"))) {
-        std::fprintf(stderr,
-                     "qOCR must own one recognition-model selection, not a "
-                     "separate language combo\n");
-        return 1;
-    }
-    if (model->count() < 2 ||
-        model->itemData(0).toString() != QStringLiteral("ppocr-v4-ch") ||
-        model->itemData(1).toString() != QStringLiteral("ppocr-v4-en")) {
-        std::fprintf(stderr,
-                     "qOCR model combo must expose the catalog recipes in "
-                     "order\n");
-        return 1;
-    }
-    if (quant->count() != 3) {
-        std::fprintf(stderr, "qOCR must expose the F32/F16/Q8_0 tiers\n");
-        return 1;
-    }
-    if (results->columnCount() != 6 ||
-        results->horizontalHeaderItem(0)->text() != QStringLiteral("#") ||
-        results->horizontalHeaderItem(5)->text() != QStringLiteral("Layout")) {
-        std::fprintf(
-                stderr,
-                "qOCR results table must expose index and layout columns\n");
-        return 1;
-    }
-    // Clipboard-first results: filter + copy/save with a context menu.
-    if (results->contextMenuPolicy() != Qt::CustomContextMenu ||
-        copyText->isEnabled() || saveText->isEnabled()) {
-        std::fprintf(stderr,
-                     "qOCR text tab must ship filter/copy/save but keep "
-                     "them disabled until a result\n");
-        return 1;
-    }
-    if (dialog.findChild<QCheckBox*>(QStringLiteral("qOCRShowInWindow"))) {
-        std::fprintf(stderr,
-                     "qOCR must expose one DB/output choice, not a duplicate "
-                     "render-window checkbox\n");
-        return 1;
-    }
-
-    // Device selection follows the shared runtime row: at least the
-    // synthetic "auto" entry, plus a threads spinner defaulting to auto.
-    if (device->count() < 1 || device->itemData(0).toString().isEmpty()) {
-        std::fprintf(stderr, "qOCR device combo must offer the auto entry\n");
-        return 1;
-    }
-    if (threads->value() != 0) {
-        std::fprintf(stderr, "qOCR threads must default to 0 (= auto)\n");
-        return 1;
-    }
-
-    // The run starts disabled until models and an image are staged; the
-    // cancel button mirrors the running state.
-    if (run->isEnabled()) {
-        std::fprintf(stderr,
-                     "qOCR Run must start disabled until models and an "
-                     "image are staged\n");
-        return 1;
-    }
-    if (cancel->isEnabled()) {
-        std::fprintf(stderr, "qOCR Cancel must start disabled\n");
-        return 1;
-    }
-
-    // Switching the recognition model retargets the rec model (the recipe
-    // owns the script family; the det file is shared and script-agnostic)
-    // and keeps the state line informative.
-    model->setCurrentIndex(1);
-    auto* status = dialog.findChild<QLabel*>(QStringLiteral("qOCRStatus"));
-    if (!status || !status->text().contains(QStringLiteral("det:")) ||
-        !status->text().contains(QStringLiteral("rec:"))) {
-        std::fprintf(stderr, "qOCR status line missing model state\n");
-        return 1;
-    }
-    model->setCurrentIndex(0);  // the fill tests below assume the default
-
-    // The input is a checkable list: duplicates are skipped and only checked
-    // rows run.
-    const QString own = QDir::temp().filePath(QStringLiteral("qocr-own.png"));
-    if (dialog.addImages({own, own}, true) != 1 ||
-        dialog.addImages({QDir::temp().filePath(QStringLiteral("qocr-b.png"))},
-                         false) != 1 ||
-        imageList->count() != 2 ||
-        dialog.checkedImages() !=
-                QStringList{QFileInfo(own).absoluteFilePath()}) {
-        std::fprintf(stderr, "qOCR image list must dedupe and track checks\n");
-        return 1;
-    }
-    // Every mode and recognition family recommends official images, and
-    // the recommendations exist in their owning bundle once extracted
-    // (en table mode demos from the PaddleOCR bundle — its dictionaries
-    // cannot read the zh/ja real-document pages — every other table fill
-    // from the dedicated real-document table pages bundle). No
-    // recommendation may be a synthetic image.
-    const QString root = ecvTestDataRepository::extractPath(
-            ecvTestDataRepository::Dataset::Ppocr);
-    const QString tablesRoot = ecvTestDataRepository::extractPath(
-            ecvTestDataRepository::Dataset::PpocrTables);
-    const QStringList families = {QStringLiteral("zh"), QStringLiteral("en"),
-                                  QStringLiteral("ja")};
-    for (const bool t : {false, true}) {
-        for (const bool l : {false, true}) {
-            for (const QString& fam : families) {
-                const QStringList rec =
-                        OCRDialog::recommendedTestImages(t, l, fam);
-                if (rec.isEmpty()) {
-                    std::fprintf(stderr, "qOCR mode without test images\n");
-                    return 1;
-                }
-                const auto expectedKind =
-                        (t && fam != QStringLiteral("en"))
-                                ? ecvTestDataRepository::Dataset::PpocrTables
-                                : ecvTestDataRepository::Dataset::Ppocr;
-                if (OCRDialog::datasetForMode(t, fam) != expectedKind) {
-                    std::fprintf(stderr,
-                                 "qOCR datasetForMode must route the %s "
-                                 "table fill to the owning bundle\n",
-                                 fam.toUtf8().constData());
-                    return 1;
-                }
-                for (const QString& rel : rec) {
-                    if (OCRDialog::isSyntheticTestImage(rel)) {
-                        std::fprintf(stderr,
-                                     "qOCR recommends a synthetic image: %s\n",
-                                     rel.toUtf8().constData());
-                        return 1;
-                    }
-                }
-                const QString& modeRoot =
-                        expectedKind == ecvTestDataRepository::Dataset::Ppocr
-                                ? root
-                                : tablesRoot;
-                if (!QDir(modeRoot).exists()) continue;
-                const QStringList all =
-                        OCRDialog::testDataImages(modeRoot, t, l, fam);
-                for (int i = 0; i < rec.size(); ++i) {
-                    if (all.value(i) !=
-                        QDir(modeRoot).absoluteFilePath(rec[i])) {
-                        std::fprintf(stderr,
-                                     "qOCR recommended test image missing or "
-                                     "not listed first: %s\n",
-                                     rec[i].toUtf8().constData());
-                        return 1;
-                    }
-                }
-            }
-        }
-    }
-
-    // Table mode: an opt-in stage with its own status entry and a Tables
-    // tab (selector, span grid, HTML/CSV export) disabled until a result.
-    auto* table = dialog.findChild<QCheckBox*>(QStringLiteral("qOCRTable"));
-    auto* tabs =
-            dialog.findChild<QTabWidget*>(QStringLiteral("qOCRResultTabs"));
-    auto* tableSelect =
-            dialog.findChild<QComboBox*>(QStringLiteral("qOCRTableSelect"));
-    auto* grid =
-            dialog.findChild<QTableWidget*>(QStringLiteral("qOCRTableGrid"));
-    auto* saveHtml =
-            dialog.findChild<QPushButton*>(QStringLiteral("qOCRTableSaveHtml"));
-    auto* saveCsv =
-            dialog.findChild<QPushButton*>(QStringLiteral("qOCRTableSaveCsv"));
-    if (!table || !tabs || !tableSelect || !grid || !saveHtml || !saveCsv ||
-        tabs->count() != 2 || table->isChecked() || saveHtml->isEnabled() ||
-        saveCsv->isEnabled()) {
-        std::fprintf(stderr, "qOCR table view contract violated\n");
-        return 1;
-    }
-    quant->setCurrentIndex(1);
-    table->setChecked(true);
-    if (!status->text().contains(QStringLiteral("table:")) ||
-        !dialog.runSettings().tablePath.endsWith(
-                QStringLiteral("slanet-plus-table-f16.gguf"))) {
-        std::fprintf(stderr,
-                     "qOCR table mode must resolve the catalog pack of the "
-                     "selected tier\n");
-        return 1;
-    }
-    table->setChecked(false);
-    if (!dialog.runSettings().tablePath.isEmpty()) {
-        std::fprintf(stderr, "qOCR table stage must be opt-in\n");
-        return 1;
-    }
-
-    // Use test data (bundles extracted): every test image of the current
-    // mode+family's bundle listed after the user's rows, the measured
-    // recommendation checked; tables mode fills from the real-document
-    // table pages bundle (zh/ja) or the PaddleOCR bundle (en), the other
-    // modes from the PaddleOCR demo bundle. Re-pressing after a mode or
-    // model switch re-targets the checks and RETIRES the previous
-    // recommendations (they were the plugin's suggestion, not user data),
-    // while genuinely user-checked rows keep their state.
-    auto* layoutCheck =
-            dialog.findChild<QCheckBox*>(QStringLiteral("qOCRLayout"));
-    if (layoutCheck && QDir(tablesRoot).exists() && QDir(root).exists()) {
-        const QStringList zhTableRecs = OCRDialog::recommendedTestImages(
-                true, false, QStringLiteral("zh"));
-        const int tablesCount =
-                OCRDialog::testDataImages(tablesRoot, true, false,
-                                          QStringLiteral("zh"))
-                        .size();
-        const int demoCount = OCRDialog::testDataImages(root, false, false,
-                                                        QStringLiteral("zh"))
-                                      .size();
-        table->setChecked(true);
-        layoutCheck->setChecked(false);
-        testData->click();
-        QStringList checked = dialog.checkedImages();
-        // own(2) + the tables bundle; the measured zh pages checked after
-        // the user's checked row.
-        if (imageList->count() != tablesCount + 2 ||
-            checked.size() != 1 + zhTableRecs.size() ||
-            checked.first() != QFileInfo(own).absoluteFilePath()) {
-            std::fprintf(stderr,
-                         "qOCR test data (table pages): %d rows, %d checked\n",
-                         imageList->count(), static_cast<int>(checked.size()));
-            return 1;
-        }
-        for (const QString& rel : zhTableRecs) {
-            if (!checked.contains(QDir(tablesRoot).absoluteFilePath(rel))) {
-                std::fprintf(stderr,
-                             "qOCR table fill must check the measured page: "
-                             "%s\n",
-                             rel.toUtf8().constData());
-                return 1;
-            }
-        }
-        // A user check on a carried tables row is user data, not a
-        // recommendation.
-        QListWidgetItem* userRow = nullptr;
-        for (int i = 0; i < imageList->count() && !userRow; ++i) {
-            QListWidgetItem* it = imageList->item(i);
-            if (it->data(Qt::UserRole)
-                        .toString()
-                        .endsWith(QStringLiteral("zh_val_30.jpg")))
-                userRow = it;
-        }
-        if (!userRow) {
-            std::fprintf(stderr, "qOCR table fill must list zh_val_30.jpg\n");
-            return 1;
-        }
-        userRow->setCheckState(Qt::Checked);
-        // Layout-only mode re-fills from the PaddleOCR demo bundle: the
-        // previous tables-mode recommendations are retired (unchecked),
-        // the user's own check survives, and the new mode's measured
-        // recommendations are checked (membership assertions only, the
-        // carried rows shift positions).
-        table->setChecked(false);
-        layoutCheck->setChecked(true);
-        testData->click();
-        checked = dialog.checkedImages();
-        const QStringList layoutRecs = OCRDialog::recommendedTestImages(
-                false, true, QStringLiteral("zh"));
-        if (imageList->count() != tablesCount + demoCount + 2 ||
-            checked.size() != 1 + 1 + layoutRecs.size()) {
-            std::fprintf(stderr,
-                         "qOCR test data must follow the mode and retire "
-                         "stale recommendations\n");
-            return 1;
-        }
-        for (const QString& rel : layoutRecs) {
-            if (!checked.contains(QDir(root).absoluteFilePath(rel))) {
-                std::fprintf(stderr,
-                             "qOCR test data must check the mode's "
-                             "recommendation: %s\n",
-                             rel.toUtf8().constData());
-                return 1;
-            }
-        }
-        for (const QString& rel : zhTableRecs) {
-            if (checked.contains(QDir(tablesRoot).absoluteFilePath(rel))) {
-                std::fprintf(stderr,
-                             "qOCR test data must retire the previous "
-                             "recommendation: %s\n",
-                             rel.toUtf8().constData());
-                return 1;
-            }
-        }
-        if (!checked.contains(QDir(tablesRoot)
-                                      .absoluteFilePath(QStringLiteral(
-                                              "zh_val_30.jpg")))) {
-            std::fprintf(stderr,
-                         "qOCR test data must keep user-checked rows\n");
-            return 1;
-        }
-        // Switching the recognition model to the en recipe re-targets the
-        // plain fill to the measured English showcases (the zh recs retire).
-        model->setCurrentIndex(1);
-        layoutCheck->setChecked(false);
-        testData->click();
-        checked = dialog.checkedImages();
-        const QStringList enRecs = OCRDialog::recommendedTestImages(
-                false, false, QStringLiteral("en"));
-        if (checked.size() != 1 + 1 + enRecs.size()) {
-            std::fprintf(stderr,
-                         "qOCR test data must follow the recognition "
-                         "family\n");
-            return 1;
-        }
-        for (const QString& rel : enRecs) {
-            if (!checked.contains(QDir(root).absoluteFilePath(rel))) {
-                std::fprintf(stderr,
-                             "qOCR en-family fill must check its measured "
-                             "showcase: %s\n",
-                             rel.toUtf8().constData());
-                return 1;
-            }
-        }
-        model->setCurrentIndex(0);
-        std::printf(
-                "qOCR test data: %d tables + %d demo images, mode/family "
-                "checks OK\n",
-                tablesCount, demoCount);
-        table->setChecked(false);
-        layoutCheck->setChecked(false);
-    }
-    if (checkTableGrid() != 0) return 1;
-    if (app.arguments().contains(QStringLiteral("--require-e2e"))) {
-        const int status = checkHeadlessTable();
-        if (status != 0) return status;
-    }
-
-    std::printf("qOCR workspace contract OK\n");
-    return 0;
+    QCoreApplication::setOrganizationName(QStringLiteral("ACloudViewerTests"));
+    QCoreApplication::setApplicationName(QStringLiteral("qOCR"));
+    QSettings::setDefaultFormat(QSettings::IniFormat);
+    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
+                       settingsDirectory.path());
+    QSettings::setPath(QSettings::IniFormat, QSettings::SystemScope,
+                       settingsDirectory.path());
+    const int result = RUN_ALL_TESTS();
+    if (result != 0) return result;
+    return requireE2E && missingE2EAssets ? 77 : 0;
 }

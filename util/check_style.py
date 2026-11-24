@@ -26,6 +26,7 @@ JUPYTER_FORMAT_DIRS = [
 
 # Note: also modify CPP_FORMAT_DIRS in check_cpp_style.cmake.
 CPP_FORMAT_DIRS = [
+    "tests",
     "core",
     "libs",
     "app",

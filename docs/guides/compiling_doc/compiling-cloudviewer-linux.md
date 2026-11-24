@@ -164,7 +164,7 @@ python -m pip install -r \
 #   Ubuntu apt (qtbase5-dev): /usr            (configs at
 #       /usr/lib/<arch>/cmake/Qt5 — NOT /usr/lib/x86_64-linux-gnu/qt5, which
 #       only holds plugins/qml)
-#   Qt online installer:      /opt/Qt/5.15.2/gcc_64  (or /opt/Qt5.14.2/5.14.2/gcc_64)
+#   Qt online installer:      /opt/Qt/5.15.2/gcc_64  (or /opt/Qt5.14.2/5.14.2/gcc_64 or /opt/qt515)
 QT_DIR="/opt/Qt5.14.2/5.14.2/gcc_64"
 
 mkdir -p build_app && cd build_app
@@ -650,18 +650,21 @@ gdb python3
 ### Unit tests from CMake
 
 ```bash
-cd build
-cmake -DBUILD_UNIT_TESTS=ON ..
-make -j"$(nproc)"
-./bin/cloudviewer_test/tests
+# From the repository root; retain your configured platform options.
+cmake -S . -B build -DBUILD_UNIT_TESTS=ON
+cmake -DBUILD_DIR=build -DJOBS=4 -P tests/Run.cmake
 ```
+
+The root [tests module](../../../tests/README.md) builds prerequisites and runs every enabled first-party headless suite.
+Use `-DPROFILE=graphics`, `gpu`, `model`, or `all` for explicit capabilities;
+`ci,gpu` selects the union. Test sources stay with their production owner.
 
 ### Python unit tests
 
 ```bash
 pip install pytest
-make install-pip-package
-pytest ../python/test
+cmake --build build --target install-pip-package
+pytest python/test
 ```
 
 ---

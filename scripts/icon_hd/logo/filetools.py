@@ -19,11 +19,16 @@ def disk(binary=False):
 
 
 def open_file():
-    defs=P.linear('folder',[(0,P.BLUE_PALE),(1,P.BLUE_STRONG)])
-    return P.svg('<title>Open file</title>\n'+'\n'.join([
-        P.fill('M 2 4 H 10 L 12 6 H 22 V 21 H 2 Z','url(#folder)'),
-        P.fill('M 5 9 H 22 L 19 21 H 2 Z',P.BLUE_MID),
-        P.fill('M 12 9 H 18 V 13 H 20 L 15 18 L 10 13 H 12 Z',P.YELLOW,sw=0.7)]),defs=defs)
+    # OPEN-01: user-directed folder-plus, with no data-paper or download arrow.
+    defs = P.linear('openFolder', [(0, '#FFE28A'), (1, P.YELLOW)])
+    body = [
+        P.fill('M 1.4 5 H 8.8 L 10.7 7 H 20.5 V 21 H 1.4 Z', P.TAN, sw=.8),
+        P.fill('M 4.1 11.4 H 22.5 L 19.6 22 H 1.2 Z', 'url(#openFolder)', sw=.85),
+        P.stroke('M 4.8 13.2 H 19.9', colour='#FFF0B8', sw=.8),
+        # Large top-right plus is part of the main action, not a tiny project badge.
+        P.fill('M 15.7 1.1 H 19.2 V 4.4 H 22.5 V 7.9 H 19.2 V 11.2 H 15.7 V 7.9 H 12.4 V 4.4 H 15.7 Z', P.GREEN, sw=.85),
+    ]
+    return P.svg('<title>OPEN-01 — Open data files: folder plus</title>'+''.join(body), defs=defs).replace('width="24" height="24"', 'width="128" height="128"', 1)
 
 
 def colorize():
@@ -56,4 +61,8 @@ ICONS={
 }
 
 def built(old):
+    # OPEN-01 is already composed and sized canonically; fitting again changes
+    # its bytes/root dimensions and would undo the authorized in-place artwork.
+    if old == 'open.png':
+        return open_file()
     return fit(ICONS[old][1]())

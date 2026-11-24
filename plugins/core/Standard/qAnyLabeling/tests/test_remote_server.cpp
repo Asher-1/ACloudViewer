@@ -10,6 +10,8 @@
 // must round-trip the upstream protocol (data-URI frame in, shapes out,
 // session id in, SSE propagation stream back) without any external service.
 
+#include <gtest/gtest.h>
+
 #include <QApplication>
 #include <QEventLoop>
 #include <QHostAddress>
@@ -25,26 +27,9 @@
 
 namespace {
 
-int failures = 0;
 bool cleanupSeen = false;
 bool predictResetTracker = false;
 bool promptCarriedObjId = false;
-
-void expect(bool ok, const char* what) {
-    if (!ok) {
-        std::fprintf(stderr, "FAILED: %s\n", what);
-        ++failures;
-    }
-}
-
-void expectMsg(bool ok, const char* what, const QString& error) {
-    if (!ok) {
-        std::fprintf(stderr, "FAILED: %s (%s)\n", what,
-                     error.toLocal8Bit().constData());
-        ++failures;
-    }
-}
-
 void writeJson(QTcpSocket* socket, const QByteArray& body) {
     // Keep-alive: QNetworkAccessManager reuses the connection for follow-up
     // requests, so the mock answers repeatedly on one socket.
@@ -137,30 +122,30 @@ void handleConnection(QTcpSocket* socket) {
 
 }  // namespace
 
-int main(int argc, char** argv) {
-    QApplication app(argc, argv);
-
+class RemoteServerTest : public ::testing::Test {
+protected:
     QTcpServer server;
-    if (!server.listen(QHostAddress::LocalHost)) {
-        std::fprintf(stderr, "mock server failed to listen\n");
-        return 1;
-    }
-    QObject::connect(&server, &QTcpServer::newConnection, &server, [&]() {
-        QTcpSocket* socket = server.nextPendingConnection();
-        QObject::connect(socket, &QTcpSocket::readyRead, socket,
-                         [socket]() { handleConnection(socket); });
-        QObject::connect(socket, &QTcpSocket::disconnected, socket,
-                         &QTcpSocket::deleteLater);
-    });
-
     RemoteServerClient client;
-    RemoteServerClient::Settings settings;
-    settings.serverUrl =
-            QStringLiteral("http://127.0.0.1:%1").arg(server.serverPort());
-    settings.apiKey = QStringLiteral("test-key");
-    settings.timeoutSec = 10;
-    client.applySettings(settings);
+    void SetUp() override {
+        cleanupSeen = predictResetTracker = promptCarriedObjId = false;
+        ASSERT_TRUE(server.listen(QHostAddress::LocalHost));
+        QObject::connect(&server, &QTcpServer::newConnection, &server, [&]() {
+            QTcpSocket* socket = server.nextPendingConnection();
+            QObject::connect(socket, &QTcpSocket::readyRead, socket,
+                             [socket]() { handleConnection(socket); });
+            QObject::connect(socket, &QTcpSocket::disconnected, socket,
+                             &QTcpSocket::deleteLater);
+        });
+        RemoteServerClient::Settings settings;
+        settings.serverUrl =
+                QStringLiteral("http://127.0.0.1:%1").arg(server.serverPort());
+        settings.apiKey = QStringLiteral("test-key");
+        settings.timeoutSec = 10;
+        client.applySettings(settings);
+    }
+};
 
+TEST_F(RemoteServerTest, ModelListRoundTrips) {
     // /v1/models round trip.
     QJsonObject modelData;
     QString modelError;
@@ -174,10 +159,12 @@ int main(int argc, char** argv) {
     client.fetchModels();
     QTimer::singleShot(5000, &modelsLoop, &QEventLoop::quit);
     modelsLoop.exec();
-    expect(modelError.isEmpty(), "model list must succeed");
-    expect(modelData.contains(QStringLiteral("demo-det")),
-           "model list must carry demo-det");
+    EXPECT_TRUE((modelError.isEmpty())) << "model list must succeed";
+    EXPECT_TRUE((modelData.contains(QStringLiteral("demo-det"))))
+            << "model list must carry demo-det";
+}
 
+TEST_F(RemoteServerTest, PredictionRoundTripsShapeFields) {
     // /v1/predict round trip with a real image payload.
     const QImage frame(64, 48, QImage::Format_RGB888);
     QJsonArray shapes;
@@ -194,22 +181,25 @@ int main(int argc, char** argv) {
                    QVariantMap{{QStringLiteral("conf_threshold"), 0.25}});
     QTimer::singleShot(5000, &predictLoop, &QEventLoop::quit);
     predictLoop.exec();
-    expect(predictError.isEmpty(), "prediction must succeed");
-    expect(shapes.size() == 1, "prediction must return one shape");
+    EXPECT_TRUE((predictError.isEmpty())) << "prediction must succeed";
+    EXPECT_TRUE((shapes.size() == 1)) << "prediction must return one shape";
     if (shapes.size() == 1) {
         const QJsonObject shape = shapes.at(0).toObject();
-        expect(shape.value(QStringLiteral("label")).toString() ==
-                       QStringLiteral("cat"),
-               "shape label must round-trip");
-        expect(shape.value(QStringLiteral("shape_type")).toString() ==
-                       QStringLiteral("rectangle"),
-               "shape type must round-trip");
-        expect(shape.value(QStringLiteral("points")).toArray().size() == 2,
-               "shape points must round-trip");
-        expect(shape.value(QStringLiteral("score")).toDouble() > 0.89,
-               "shape score must round-trip");
+        EXPECT_TRUE((shape.value(QStringLiteral("label")).toString() ==
+                     QStringLiteral("cat")))
+                << "shape label must round-trip";
+        EXPECT_TRUE((shape.value(QStringLiteral("shape_type")).toString() ==
+                     QStringLiteral("rectangle")))
+                << "shape type must round-trip";
+        EXPECT_TRUE(
+                (shape.value(QStringLiteral("points")).toArray().size() == 2))
+                << "shape points must round-trip";
+        EXPECT_TRUE((shape.value(QStringLiteral("score")).toDouble() > 0.89))
+                << "shape score must round-trip";
     }
+}
 
+TEST_F(RemoteServerTest, VideoSessionPromptsSseAndCleanupRoundTrip) {
     // /v1/video/init + prompt + SSE propagation + cleanup round trip.
     QString sessionId;
     QString initError;
@@ -224,10 +214,11 @@ int main(int argc, char** argv) {
                      QStringLiteral("demo-video"));
     QTimer::singleShot(5000, &initLoop, &QEventLoop::quit);
     initLoop.exec();
-    expectMsg(initError.isEmpty(), "video init must succeed", initError);
-    expect(sessionId == QStringLiteral("sess-1"),
-           "video init must carry the session id");
-    expect(client.hasVideoSession(), "video session must be tracked");
+    EXPECT_TRUE((initError.isEmpty()))
+            << "video init must succeed" << ": " << initError.toStdString();
+    EXPECT_TRUE((sessionId == QStringLiteral("sess-1")))
+            << "video init must carry the session id";
+    EXPECT_TRUE((client.hasVideoSession())) << "video session must be tracked";
 
     QJsonArray masks;
     QString promptError;
@@ -244,9 +235,9 @@ int main(int argc, char** argv) {
             QVariantMap{{QStringLiteral("conf_threshold"), 0.25}});
     QTimer::singleShot(5000, &promptLoop, &QEventLoop::quit);
     promptLoop.exec();
-    expectMsg(promptError.isEmpty(), "video text prompt must succeed",
-              promptError);
-    expect(masks.size() == 1, "video prompt must return one mask");
+    EXPECT_TRUE((promptError.isEmpty())) << "video text prompt must succeed"
+                                         << ": " << promptError.toStdString();
+    EXPECT_TRUE((masks.size() == 1)) << "video prompt must return one mask";
 
     // Point prompt carries the upstream obj_id sentinel.
     QEventLoop pointLoop;
@@ -258,7 +249,7 @@ int main(int argc, char** argv) {
                              QVariantMap{});
     QTimer::singleShot(5000, &pointLoop, &QEventLoop::quit);
     pointLoop.exec();
-    expect(promptCarriedObjId, "point prompt must carry obj_id 10000");
+    EXPECT_TRUE((promptCarriedObjId)) << "point prompt must carry obj_id 10000";
 
     // SSE propagation: started/progress/completed events, results keyed by
     // frame index.
@@ -279,20 +270,33 @@ int main(int argc, char** argv) {
     client.videoPropagate(QStringLiteral("demo-video"), 0, -1);
     QTimer::singleShot(5000, &propagateLoop, &QEventLoop::quit);
     propagateLoop.exec();
-    expectMsg(propagateError.isEmpty(), "propagation must succeed",
-              propagateError);
-    expect(propagateTotal == 2, "propagation must report total frames");
-    expect(propagateResults.contains(QStringLiteral("0")),
-           "propagation results must carry frame 0");
+    EXPECT_TRUE((propagateError.isEmpty()))
+            << "propagation must succeed" << ": "
+            << propagateError.toStdString();
+    EXPECT_TRUE((propagateTotal == 2))
+            << "propagation must report total frames";
+    EXPECT_TRUE((propagateResults.contains(QStringLiteral("0"))))
+            << "propagation results must carry frame 0";
     if (propagateResults.contains(QStringLiteral("0"))) {
         const QJsonArray frameMasks =
                 propagateResults.value(QStringLiteral("0"))
                         .toObject()
                         .value(QStringLiteral("masks"))
                         .toArray();
-        expect(frameMasks.size() == 1, "frame 0 must carry one mask");
+        EXPECT_TRUE((frameMasks.size() == 1)) << "frame 0 must carry one mask";
     }
+    // Cleanup resets the local session and notifies the server.
+    QEventLoop cleanupLoop;
+    QTimer::singleShot(300, &cleanupLoop, &QEventLoop::quit);
+    client.resetVideoSession();
+    cleanupLoop.exec();
+    EXPECT_TRUE((!client.hasVideoSession()))
+            << "cleanup must clear the local session";
+    EXPECT_TRUE((cleanupSeen)) << "cleanup must reach the server";
+}
 
+TEST_F(RemoteServerTest, TrackerResetIsConsumedByOnePrediction) {
+    const QImage frame(64, 48, QImage::Format_RGB888);
     // One-shot tracker reset rides the next predict params and clears —
     // the second predict must NOT carry the flag again.
     QEventLoop resetLoop;
@@ -303,26 +307,16 @@ int main(int argc, char** argv) {
     client.predict(frame, QString(), QStringLiteral("demo-det"), QVariantMap{});
     QTimer::singleShot(5000, &resetLoop, &QEventLoop::quit);
     resetLoop.exec();
-    expect(predictResetTracker,
-           "reset_tracker must ride the next predict params");
+    EXPECT_TRUE((predictResetTracker))
+            << "reset_tracker must ride the next predict params";
     client.predict(frame, QString(), QStringLiteral("demo-det"), QVariantMap{});
     QTimer::singleShot(5000, &resetLoop, &QEventLoop::quit);
     resetLoop.exec();
-    expect(!predictResetTracker, "reset_tracker must be one-shot");
+    EXPECT_TRUE((!predictResetTracker)) << "reset_tracker must be one-shot";
+}
 
-    // Cleanup resets the local session and notifies the server.
-    QEventLoop cleanupLoop;
-    QTimer::singleShot(300, &cleanupLoop, &QEventLoop::quit);
-    client.resetVideoSession();
-    cleanupLoop.exec();
-    expect(!client.hasVideoSession(), "cleanup must clear the local session");
-    expect(cleanupSeen, "cleanup must reach the server");
-
-    if (failures != 0) {
-        std::fprintf(stderr, "test_qanylabeling_remote: %d failure(s)\n",
-                     failures);
-        return 1;
-    }
-    std::printf("test_qanylabeling_remote: ok\n");
-    return 0;
+int main(int argc, char** argv) {
+    QApplication app(argc, argv);
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

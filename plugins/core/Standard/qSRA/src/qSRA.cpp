@@ -57,6 +57,7 @@ QList<QAction*> qSRA::getActions() {
     // actions
     if (!m_doLoadProfile) {
         m_doLoadProfile = new QAction(tr("Load profile"), this);
+        m_doLoadProfile->setObjectName("loadProfile");
         m_doLoadProfile->setToolTip(
                 tr("Loads the 2D profile of a Surface of Revolution (from a "
                    "dedicated ASCII file)"));
@@ -69,6 +70,7 @@ QList<QAction*> qSRA::getActions() {
     if (!m_doCompareCloudToProfile) {
         m_doCompareCloudToProfile =
                 new QAction(tr("Cloud-SurfRev radial distance"), this);
+        m_doCompareCloudToProfile->setObjectName("compareCloudToProfile");
         m_doCompareCloudToProfile->setToolTip(tr(
                 "Computes the radial distances between a cloud and a Surface "
                 "of Revolution (polyline/profile, cone or cylinder)"));
@@ -81,6 +83,7 @@ QList<QAction*> qSRA::getActions() {
 
     if (!m_doProjectCloudDists) {
         m_doProjectCloudDists = new QAction(tr("2D distance map"), this);
+        m_doProjectCloudDists->setObjectName("projectCloudDistances");
         m_doProjectCloudDists->setToolTip(
                 tr("Creates the 2D deviation map (radial distances) from a "
                    "Surface or Revolution (unroll)"));

@@ -290,7 +290,15 @@ hosts a DeepSeek-mascot family: `aoi-shark-maid` (DeepSeek酱 maid form,
 POPULAR/LOVED on petdex.dev), `deepseek-goldwhale-v1` (绣金鲸 refined whale),
 `deepseek-2`, `deepseek-drool`, `spritesheet-64` (Whale-Chan). Installed
 2026-11-19: 9 pets in `~/.dsh/desktop-pet/pets/`, active =
-`deepseek-goldwhale-v1` @ petScale 0.5.
+`deepseek-goldwhale-v1` @ petScale 0.5. **2026-11-24: ALL pets removed per user request.** Desktop pet:
+`dsh plugin --profile web remove dsh-desktop-pet` + delete the `desktop-pet`
+patch row (neutralino child killed, never respawns). In-window whale pet
+(`web-ui-pet`, nested in web-all so not uninstallable alone): user patch row
+`- id: web-ui-pet, disabled: true` — a disabled entry never activates its
+settings card, so the whole-config-writeback trap cannot flip it back.
+claude-style's two mascots (Deepy `.deepy-*` and pixel crab `.crab-*`) hidden
+via `~/.dsh/custom-css/custom.css` (hot-reload). `wallpaper-engine-pet-link`
+kept with `linkEnabled: false` (inert link, not a pet).
 
 **State-distinguishability is measurable** (PIL): open each
 `spritesheet.webp`, slice the 9 state rows, mean pairwise pixel distance of
@@ -397,6 +405,49 @@ sessions leaning on MCP/browser/task-board/SSH tools (must activate per
 namespace) and for GPT/Claude models (the alignment argument is
 DeepSeek-specific). Toggle: the slot-machine lever next to the model picker,
 or the preset selector.
+
+## Token Economy (2026-11-24, session-86259233 post-mortem: 294M tokens)
+
+cost ≈ Σ_steps(context); output was 0.1%. That session hit 620K context with no
+compaction because model entries without `contextWindow` fall back to `dsh-llm-pi-ai`
+`DEFAULT_CONTEXT_WINDOW = 1e6`, and `compaction-basic` fires at 0.8×window − output
+reserve − 65536 ≈ 700K. Both profiles declare `contextWindow: 196608` (192K *compaction
+budget*; model capability stays 256K/1M) on every entry: web 21/21, dsh-tui 51/51 incl.
+deepseek-v4-pro/v4-flash/v4.1-flash. Measured threshold = min(0.8×W, W−65536) because
+reserved output ≈0 and headroom 65536 is preset-nested (unpatchable): 256K→196.6K (too
+rich in practice), 192K→131K, 128K→65.5K; retain = 16%×W. Per-model overrides: web 设置 → 上下文长度
+(`dsh-context-length`, writes the same patch on 保存; 「恢复默认」 clears the override
+back to the 1e6 fallback, NOT to 256K); tui has no UI — edit its patch or `--patch`. `subagent_fork` children are seeded with the
+whole parent log (`isSeeded: true`) and re-sent 500–600K per step (8 forks = 118M,
+40% of the tree); the fork backend is disabled via `- id: subagent-fork-in-process,
+disabled: true` — patches only hit top-level ids, so patching the preset-nested
+`tool-subagent-fork` row is a no-op (the tool mounts only while the `fork` provider
+exists). Unused tool families are disabled the same way (browser/widget/task-board/
+squads; 119 → ~63 tools, each ~1K chars of schema per step). Behavioural rules live
+in `~/.dsh/AGENTS.md` (user-global instruction chain): fresh `subagent` only, handoff
+summary + new session on goal change, never edit AGENTS.md or install skills mid-session
+(catalog "replace" is really an append, and the mid-context MNEMON retire busts the
+prompt cache). Diagnose any session by decompressing
+`~/.dsh/sessions/<slug>/<id>/session.v4.jsonl.zstd` (python `zstandard`) and summing
+`assistant/message[].data.usage` (`ctx = inputTokens + cacheReadTokens`); count forked
+children only from their own `createdAt` onward or you double-count inherited events.
+Old sessions need no migration: `dsh-agent-loop` re-emits `request/context` whenever the
+resolved `contextWindow` differs from the session's last record, so after a server
+restart the next message in any resumed session adopts the new budget and (history
+already over threshold) auto-compacts on that first step. Two caveats verified on the 620K legacy
+session: the details-rail denominator is the session's LAST `request/context` record,
+so it keeps showing the old window until a normal request runs (manual `/compact`
+does not emit one); and a legacy session whose history already exceeds the declared
+window can NEVER compact — every `compaction/end` fails with `pi-ai detected context
+overflow`, because the summarizer request itself must fit the declared window
+(prune still shaves tool results: 620K→535K). Rescue: temporarily raise that model's
+`contextWindow` above the current history (600000 worked: threshold ≈471K < 535K,
+summary input ≈450K < 600K), compact once, restore 262144. New sessions never hit
+this: at the ≈140K trigger the summary input is ≈108K < 256K. Manual compaction is already in the UI:
+`dsh-claude-style`'s right-side 「对话详情」 rail (`sessionPanel: true`, wide window)
+has a 「压缩会话」 button under 上下文 plus a "距离自动压缩还有 N" indicator; the footer
+context ring (`statsFooterContext`) opens it; `/compact` works in the composer
+(`dsh-command-compact`, mounted by preset-standard, refuses while a turn is open).
 
 ## Security (from the doc, non-negotiable)
 

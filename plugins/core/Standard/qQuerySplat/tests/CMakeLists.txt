@@ -33,5 +33,5 @@ if( NOT MSVC )
 endif()
 
 cloudviewer_set_bin_runtime_output_directory( test_qquerysplat_helpers )
-add_test( NAME test_qquerysplat_helpers COMMAND test_qquerysplat_helpers )
+cloudviewer_add_test( NAME test_qquerysplat_helpers COMMAND test_qquerysplat_helpers )
 cloudviewer_set_plugin_test_env(test_qquerysplat_helpers)

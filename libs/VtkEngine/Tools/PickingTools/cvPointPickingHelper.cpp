@@ -63,24 +63,11 @@ cvPointPickingHelper::cvPointPickingHelper(const QKeySequence& keySequence,
     // the same key sequence is active at a time, automatically disabling
     // siblings when a new one is enabled.
     m_shortcut = ecvKeySequences::instance().addModalShortcut(
-            keySequence, /* action */ nullptr, parent);
+            keySequence, /* action */ nullptr, parent,
+            Qt::WidgetWithChildrenShortcut);
 
-    // CRITICAL: Set context widget to ApplicationShortcut for global shortcuts
-    // This must be done AFTER addModalShortcut() because addModalShortcut()
-    // initially creates the shortcut with default context (WindowShortcut).
-    // We need to explicitly set ApplicationShortcut context so the shortcut
-    // works globally, especially for "Ctrl+C" which may conflict with system
-    // shortcuts or other application shortcuts.
-    m_shortcut->setContextWidget(parent, Qt::ApplicationShortcut);
-
-    // Verify the shortcut was created and context is set correctly
-    CVLog::PrintDebug(
-            QString("[cvPointPickingHelper] Created shortcut: %1, context: %2, "
-                    "enabled: %3")
-                    .arg(keySequence.toString())
-                    .arg(m_shortcut->isEnabled() ? "ApplicationShortcut"
-                                                 : "unknown")
-                    .arg(m_shortcut->isEnabled() ? "yes" : "no"));
+    // Picking keys belong to the render view, not the entire application.
+    m_shortcut->setContextWidget(parent, Qt::WidgetWithChildrenShortcut);
 
     connect(m_shortcut, &ecvModalShortcut::activated, this,
             &cvPointPickingHelper::pickPoint);
@@ -110,20 +97,12 @@ void cvPointPickingHelper::setRenderer(vtkRenderer* renderer) {
 //-----------------------------------------------------------------------------
 void cvPointPickingHelper::setContextWidget(QWidget* widget) {
     m_contextWidget = widget;
-    // Update the modal shortcut's context widget if needed
-    // Note: The shortcut's parent remains the VTK render window widget for
-    // proper focus handling, but we can update the context widget for
-    // visibility checks
+    // The helper can outlive a floating tool panel; key ownership remains
+    // with the actual render widget created by the helper's owner.
     if (m_shortcut) {
-        // Get the current parent widget (VTK render window widget)
-        QWidget* parentWidget = qobject_cast<QWidget*>(m_shortcut->parent());
-        if (parentWidget) {
-            // Keep ApplicationShortcut context for global shortcuts
-            // Use the parent widget (VTK widget) as context, not the tool
-            // dialog This ensures shortcuts work globally while still being
-            // associated with the VTK render window
-            m_shortcut->setContextWidget(parentWidget, Qt::ApplicationShortcut);
-        }
+        auto* renderWidget = qobject_cast<QWidget*>(parent());
+        m_shortcut->setContextWidget(renderWidget,
+                                     Qt::WidgetWithChildrenShortcut);
     }
 }
 

@@ -7,6 +7,7 @@
 
 #include "qRelateAnything.h"
 
+#include <ecvAICoreUiHelper.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPluginDbNaming.h>
@@ -77,6 +78,7 @@ void qRelateAnything::showDialog() {
     if (!m_app) return;
     if (!m_dialog) {
         m_dialog = new RelateAnythingDialog(m_app->getMainWindow());
+        ecvAICoreUi::bindDialogAction(m_action, m_dialog);
         connect(m_dialog, &RelateAnythingDialog::addToDbRequested, this,
                 [this](const RelateAnythingResult& result) {
                     const QString name = ecvPluginDbNaming::makeUnique(

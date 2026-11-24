@@ -297,9 +297,9 @@ Launch an interactive shell for development:
    
    # Inside container
    mkdir build && cd build
-   cmake .. -DCMAKE_BUILD_TYPE=Release
+   cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIT_TESTS=ON
    make -j$(nproc)
-   ctest --output-on-failure
+   cmake -DBUILD_DIR=. -DJOBS=4 -P ../tests/Run.cmake
 
 **With GPU support**:
 
@@ -332,7 +332,7 @@ Run the complete test suite in Docker:
        -v $(pwd):/workspace \
        -w /workspace/build \
        acloudviewer-ci:cpu-static \
-       bash -c "ctest --output-on-failure"
+       bash -c "cmake -DBUILD_DIR=. -DJOBS=4 -P ../tests/Run.cmake"
 
 **Python Tests**:
 
@@ -352,7 +352,7 @@ Run the complete test suite in Docker:
        -v $(pwd):/workspace \
        -w /workspace/build \
        acloudviewer-ci:cuda-ml \
-       bash -c "ctest --output-on-failure -R GPU"
+       bash -c "cmake -DBUILD_DIR=. -DJOBS=4 -DPROFILE=ci,gpu -P ../tests/Run.cmake"
 
 **Using Test Script**:
 
@@ -663,8 +663,8 @@ The ``docker_test.sh`` script runs comprehensive tests:
 
 **Test Workflow**:
 
-1. Build C++ unit tests
-2. Run C++ tests with gtest
+1. Invoke the root ``tests/Run.cmake`` gate for native tests
+2. Build prerequisites and execute registered headless tests (plus GPU tests in GPU containers)
 3. Build Python package
 4. Install Python package
 5. Run Python tests with pytest
@@ -681,7 +681,7 @@ Run specific test suites:
 
    # C++ tests only
    docker run --rm acloudviewer-ci:cpu-static \
-       bash -c "cd build && ./bin/tests"
+       bash -c "cd build && cmake -DBUILD_DIR=. -DJOBS=4 -P ../tests/Run.cmake"
    
    # Python tests only
    docker run --rm acloudviewer-ci:cpu-static \
@@ -693,7 +693,7 @@ Run specific test suites:
    
    # With GPU
    docker run --rm --gpus all acloudviewer-ci:cuda-ml \
-       bash -c "cd build && ./bin/tests --gtest_filter=*CUDA*"
+       bash -c "cd build && cmake -DBUILD_DIR=. -DJOBS=4 -DPROFILE=ci,gpu -P ../tests/Run.cmake"
 
 Troubleshooting
 ---------------
@@ -965,7 +965,7 @@ Quick Reference
    
    # Manual
    docker run --rm acloudviewer-ci:cpu \
-       bash -c "cd build && ctest --output-on-failure"
+       bash -c "cd build && cmake -DBUILD_DIR=. -DJOBS=4 -P ../tests/Run.cmake"
 
 **Build Wheels**:
 
@@ -987,3 +987,14 @@ Quick Reference
    
    # Check space
    docker system df
+
+Unified C++ Test Ownership
+--------------------------
+
+Configure ``BUILD_UNIT_TESTS=ON`` before running these examples. The root
+``tests/Run.cmake`` entry builds prerequisites and selects registered suites.
+The default headless profile excludes model/GPU/graphics/e2e/network/benchmark/slow
+requirements. Select ``-DPROFILE=ci,gpu`` for CPU plus GPU, or ``graphics``,
+``model`` or ``all`` explicitly. Direct CTest filters are focused diagnostics
+after building prerequisites; package/Python tests remain separate.
+See `the unified testing contract <https://github.com/Asher-1/ACloudViewer/blob/main/tests/README.md>`_.

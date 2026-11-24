@@ -220,8 +220,9 @@ option(ENABLE_AVX512 "Enable AVX-512 instructions (requires compatible CPU)"    
 
 # AICore: all AICore_* options — see cmake/AICoreOptions.cmake
 include(cmake/AICoreOptions.cmake)
+include(tests/Testing.cmake)
 # Foundation tests must also be discoverable when the AI runtime is disabled.
-if(BUILD_UNIT_TESTS)
+if(BUILD_UNIT_TESTS OR AICore_BUILD_TESTS OR VTKENGINE_BUILD_TESTS)
     enable_testing()
 endif()
 
@@ -1132,6 +1133,11 @@ endif()
 # call cmake script to deploy
 install(SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/cmake/PostInstall.cmake")
 install(CODE "MESSAGE(\"${MAIN_APP_NAME}\.${CLOUDVIEWER_VERSION} install successfully.\")")
+
+# Finalize first-party test build/run groups after every component is known.
+if(BUILD_UNIT_TESTS OR AICore_BUILD_TESTS OR VTKENGINE_BUILD_TESTS)
+    add_subdirectory(tests)
+endif()
 
 # Make compile_commands.json discoverable at the repo root so clangd (and
 # other C++ language servers) work out of the box on every platform, even

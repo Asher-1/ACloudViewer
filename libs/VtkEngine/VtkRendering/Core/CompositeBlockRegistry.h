@@ -107,6 +107,7 @@ public:
     /// Effective visibility of a block (composite display attributes +
     /// group default); CPU picking must skip invisible blocks.
     bool blockVisible(const std::string& groupId, vtkIdType flatIndex) const;
+    bool blockPickable(const std::string& groupId, vtkIdType flatIndex) const;
 
     /// Reverse lookup for picking: composite group actor -> group id (empty
     /// when the actor is not a group of this registry).

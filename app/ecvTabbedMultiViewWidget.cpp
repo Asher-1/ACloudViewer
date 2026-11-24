@@ -9,21 +9,26 @@
 
 #include <CVLog.h>
 #include <QtCompat.h>
+#include <Shortcuts/ecvKeySequences.h>
 #include <Visualization/vtkGLView.h>
 #include <ecvViewLayoutProxy.h>
 #include <ecvViewManager.h>
 
+#include <QAction>
+#include <QApplication>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QInputDialog>
 #include <QJsonArray>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QMenu>
 #include <QMouseEvent>
-#include <QShortcut>
 #include <QTabBar>
 #include <QTimer>
+#include <QToolButton>
 #include <QVBoxLayout>
+#include <QWindow>
 
 #include "ecvMultiViewWidget.h"
 
@@ -94,38 +99,35 @@ ecvTabbedMultiViewWidget::ecvTabbedMultiViewWidget(QWidget* parent)
 
     addNewTabWidget();
 
-    {
-        auto* prevTab =
-                new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_PageUp), this,
-                              nullptr, nullptr, Qt::WindowShortcut);
-        connect(prevTab, &QShortcut::activated, this, [this]() {
-            int cur = m_tabWidget->currentIndex();
-            int count = tabCount();
-            if (count > 1 && cur > 0) setCurrentTab(cur - 1);
-        });
-
-        auto* nextTab =
-                new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_PageDown), this,
-                              nullptr, nullptr, Qt::WindowShortcut);
-        connect(nextTab, &QShortcut::activated, this, [this]() {
-            int cur = m_tabWidget->currentIndex();
-            int count = tabCount();
-            if (count > 1 && cur < count - 1) setCurrentTab(cur + 1);
-        });
-
-        auto* newTab =
-                new QShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_T),
-                              this, nullptr, nullptr, Qt::WindowShortcut);
-        connect(newTab, &QShortcut::activated, this, [this]() { createTab(); });
-
-        auto* closeCurrentTab =
-                new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_W), this, nullptr,
-                              nullptr, Qt::WindowShortcut);
-        connect(closeCurrentTab, &QShortcut::activated, this, [this]() {
-            if (!m_readOnly && tabCount() > 0)
-                closeTab(m_tabWidget->currentIndex());
-        });
-    }
+    auto command = [this](const QString& id, const QString& label,
+                          const QKeySequence& key, auto trigger) {
+        auto* action = new QAction(label, this);
+        action->setObjectName(id);
+        action->setShortcut(key);
+        action->setShortcutContext(Qt::WindowShortcut);
+        addAction(action);
+        ecvKeySequences::instance().registerCommand(id, action, tr("Layout"));
+        connect(action, &QAction::triggered, this, trigger);
+    };
+    command("actionPreviousTab", tr("Previous Tab"),
+            QKeySequence(Qt::CTRL | Qt::Key_PageUp), [this]() {
+                int cur = m_tabWidget->currentIndex();
+                if (tabCount() > 1 && cur > 0) setCurrentTab(cur - 1);
+            });
+    command("actionNextTab", tr("Next Tab"),
+            QKeySequence(Qt::CTRL | Qt::Key_PageDown), [this]() {
+                int cur = m_tabWidget->currentIndex();
+                if (tabCount() > 1 && cur < tabCount() - 1)
+                    setCurrentTab(cur + 1);
+            });
+    command("actionNewTab", tr("New Tab"),
+            QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_T),
+            [this]() { createTab(); });
+    command("actionCloseTab", tr("Close Tab"),
+            QKeySequence(Qt::CTRL | Qt::Key_W), [this]() {
+                if (!m_readOnly && tabCount() > 0)
+                    closeTab(m_tabWidget->currentIndex());
+            });
 
     connect(m_tabWidget, &QTabWidget::currentChanged, this,
             &ecvTabbedMultiViewWidget::onCurrentTabChanged);
@@ -389,9 +391,56 @@ QStyle::StandardPixmap ecvTabbedMultiViewWidget::popoutPixmap(bool poppedOut) {
                      : QStyle::SP_TitleBarMaxButton;
 }
 
+static bool belongsToWindowHost(QObject* object, QWidget* host) {
+    if (!object || !host) return false;
+    auto* hostWindow = host->windowHandle();
+    if (object == host || object == hostWindow) return true;
+    if (auto* widget = qobject_cast<QWidget*>(object)) {
+        for (auto* parent = widget; parent; parent = parent->parentWidget())
+            if (parent == host) return true;
+        object = widget->window()->windowHandle();
+    }
+    auto* window = qobject_cast<QWindow*>(object);
+    for (auto* current = window; current;) {
+        if (current == hostWindow) return true;
+        current = current->parent() ? current->parent()
+                                    : current->transientParent();
+    }
+    return false;
+}
+
 bool ecvTabbedMultiViewWidget::eventFilter(QObject* obj, QEvent* evt) {
+    if (m_fullScreenWindow && (evt->type() == QEvent::ShortcutOverride ||
+                               evt->type() == QEvent::KeyPress)) {
+        auto* host = m_fullScreenWindow.data();
+        QWidget* popup = QApplication::activePopupWidget();
+        if (popup && belongsToWindowHost(popup, host)) return false;
+        QWidget* modal = QApplication::activeModalWidget();
+        if (modal && belongsToWindowHost(modal, host)) return false;
+        if (belongsToWindowHost(obj, host)) {
+            auto* key = static_cast<QKeyEvent*>(evt);
+            // Escape is contextual cancellation. Configurable fullscreen
+            // toggles (including chords) are dispatched by their QActions.
+            if (key->key() == Qt::Key_Escape &&
+                key->modifiers() == Qt::NoModifier) {
+                key->accept();
+                if (evt->type() == QEvent::KeyPress && !key->isAutoRepeat()) {
+                    const QPointer<QWidget> exiting(host);
+                    QTimer::singleShot(0, this, [this, exiting]() {
+                        if (!exiting || m_fullScreenWindow != exiting) return;
+                        if (m_fullScreenActiveFrame)
+                            toggleFullScreenActiveView();
+                        else
+                            toggleFullScreen();
+                    });
+                }
+                return true;
+            }
+        }
+    }
     if (evt->type() == QEvent::MouseButtonRelease &&
-        qobject_cast<QLabel*>(obj)) {
+        qobject_cast<QLabel*>(obj) &&
+        static_cast<QWidget*>(obj)->parentWidget() == m_tabWidget->tabBar()) {
         auto* me = dynamic_cast<QMouseEvent*>(evt);
         if (me && me->button() == Qt::LeftButton) {
             int closeIdx = tabButtonIndex(qobject_cast<QWidget*>(obj),
@@ -530,6 +579,10 @@ void ecvTabbedMultiViewWidget::lockViewSize(const QSize& size) {
 
 void ecvTabbedMultiViewWidget::exitFullScreenIfActive() {
     if (!m_fullScreenWindow) return;
+    qApp->removeEventFilter(this);
+    // Hide the old hierarchy first so style focus frames detach before
+    // reparenting.
+    m_fullScreenWindow->hide();
 
     if (m_fullScreenActiveFrame) {
         auto widgets = m_fullScreenWindow->findChildren<QWidget*>(
@@ -593,6 +646,38 @@ void ecvTabbedMultiViewWidget::refreshLayoutAfterFullScreen() {
     update();
 }
 
+void ecvTabbedMultiViewWidget::addFullScreenExitButton(QWidget* host) {
+    // Reparenting a render widget changes Qt's shortcut window. Associate
+    // the existing command objects with this host instead of cloning keys.
+    QWidget* mainWindow = window();
+    for (auto* action : mainWindow->actions())
+        if (action->property("shortcutViewCommand").toBool())
+            host->addAction(action);
+    if (m_fullScreenActiveFrame && m_fullScreenActiveFrame->parentWidget()) {
+        for (auto* action : m_fullScreenActiveFrame->parentWidget()->actions())
+            host->addAction(action);
+    }
+    auto* button = new QToolButton(host);
+    button->setObjectName(QStringLiteral("FullScreenExitButton"));
+    button->setIcon(QIcon(
+            QStringLiteral(":/Resources/images/svg/main/toolMainExit.svg")));
+    button->setToolTip(tr("Exit full screen (Esc)"));
+    button->setAccessibleName(tr("Exit full screen"));
+    button->setAutoRaise(false);
+    button->move(8, 8);
+    button->show();
+    button->raise();
+    connect(
+            button, &QToolButton::clicked, this,
+            [this]() {
+                if (m_fullScreenActiveFrame)
+                    toggleFullScreenActiveView();
+                else
+                    toggleFullScreen();
+            },
+            Qt::QueuedConnection);
+}
+
 void ecvTabbedMultiViewWidget::toggleFullScreen() {
     if (m_fullScreenWindow && !m_fullScreenActiveFrame) {
         exitFullScreenIfActive();
@@ -604,21 +689,18 @@ void ecvTabbedMultiViewWidget::toggleFullScreen() {
         auto* fsw = new QWidget(this, Qt::Window);
         m_fullScreenWindow = fsw;
         fsw->setObjectName("FullScreenWindow");
+        m_tabWidget->hide();
         layout()->removeWidget(m_tabWidget);
 
         auto* gl = new QGridLayout(fsw);
         gl->setSpacing(0);
         gl->setContentsMargins(0, 0, 0, 0);
         gl->addWidget(m_tabWidget, 0, 0);
+        m_tabWidget->show();
+        qApp->installEventFilter(this);
         fsw->showFullScreen();
-        fsw->show();
-
-        auto* esc = new QShortcut(Qt::Key_Escape, fsw);
-        connect(esc, &QShortcut::activated, this,
-                &ecvTabbedMultiViewWidget::toggleFullScreen);
-        auto* f11 = new QShortcut(QKeySequence(Qt::Key_F11), fsw);
-        connect(f11, &QShortcut::activated, this,
-                &ecvTabbedMultiViewWidget::toggleFullScreen);
+        fsw->activateWindow();
+        addFullScreenExitButton(fsw);
         emit fullScreenEnabled(true);
     }
 
@@ -627,6 +709,7 @@ void ecvTabbedMultiViewWidget::toggleFullScreen() {
 
 void ecvTabbedMultiViewWidget::toggleFullScreenActiveView() {
     if (m_fullScreenWindow) {
+        qApp->removeEventFilter(this);
         auto widgets = m_fullScreenWindow->findChildren<QWidget*>(
                 QString(), Qt::FindDirectChildrenOnly);
         if (m_fullScreenActiveFrame) {
@@ -686,15 +769,10 @@ void ecvTabbedMultiViewWidget::toggleFullScreenActiveView() {
         return;
     }
 
+    qApp->installEventFilter(this);
     fsw->showFullScreen();
-    fsw->show();
-
-    auto* esc = new QShortcut(Qt::Key_Escape, fsw);
-    connect(esc, &QShortcut::activated, this,
-            &ecvTabbedMultiViewWidget::toggleFullScreenActiveView);
-    auto* ctrlF11 = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_F11), fsw);
-    connect(ctrlF11, &QShortcut::activated, this,
-            &ecvTabbedMultiViewWidget::toggleFullScreenActiveView);
+    fsw->activateWindow();
+    addFullScreenExitButton(fsw);
     emit fullScreenActiveViewEnabled(true);
 }
 

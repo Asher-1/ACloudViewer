@@ -219,7 +219,7 @@ patches in `3rdparty/llama/llama-patches/manifest.yaml`. Extracted sources under
 # Fast public ABI/runtime contracts, no model assets
 cmake --build build_app --target aicore-contract-tests -j4
 
-# All C API tests selected by their CTest label
+# Focused C API selection; assets/device requirements follow each test label
 ctest --test-dir build_app -L capi --output-on-failure -j1
 
 # Real-asset matrix for one backend (default light tier; add --full for the
@@ -232,3 +232,16 @@ python3 core/AICore/scripts/validate_all.py \
 Missing assets use exit 77 only in tests configured to skip. A complete
 validation claim must reject missing task/model/quantization/backend rows. See
 [`tests/TESTING.md`](tests/TESTING.md) for the evidence and benchmark protocol.
+
+## Unified C++ CI
+
+The root [tests module](../../tests/README.md) owns registration, prerequisites
+and CI profiles. Run the common headless gate from the repository root:
+
+```bash
+cmake -DBUILD_DIR=build_app -DJOBS=4 -P tests/Run.cmake
+```
+
+`aicore-contract-tests` remains an AICore-only developer target. Direct CTest
+examples assume prerequisites are built; they do not cover every repository
+module or replace strict real-model numeric validation.

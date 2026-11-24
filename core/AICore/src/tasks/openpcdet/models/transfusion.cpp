@@ -16,6 +16,7 @@
 #include <numeric>
 
 #include "tasks/openpcdet/models/voxel_backbone_runner.h"
+#include "tasks/openpcdet/ops/nms_3d.h"
 
 namespace openpcdet {
 namespace {
@@ -781,6 +782,32 @@ bool transfusion::forward_spatial(const std::vector<float> &spatial_features,
               [](const detection &left, const detection &right) {
                   return left.score > right.score;
               });
+    // Final rotated-IoU NMS deduplicates residual overlapping peaks: the
+    // max-pool peak picking alone can leave several boxes on one object.
+    // Gated on nms_thresh > 0 — these heads declare GGUF nms 0 and the
+    // accuracy probe pins 0, so the official upstream behavior is unchanged
+    // unless the caller opts into a visualization NMS threshold.
+    if (hp.nms_thresh > 0.0f && detections.size() > 1) {
+        std::vector<float> boxes(detections.size() * 7);
+        std::vector<float> scores(detections.size());
+        for (size_t i = 0; i < detections.size(); ++i) {
+            const detection &d = detections[i];
+            boxes[i * 7 + 0] = d.x;
+            boxes[i * 7 + 1] = d.y;
+            boxes[i * 7 + 2] = d.z;
+            boxes[i * 7 + 3] = d.dx;
+            boxes[i * 7 + 4] = d.dy;
+            boxes[i * 7 + 5] = d.dz;
+            boxes[i * 7 + 6] = d.heading;
+            scores[i] = d.score;
+        }
+        const std::vector<int32_t> keep =
+                nms_3d(boxes, scores, hp.nms_thresh, hp.max_boxes);
+        std::vector<detection> filtered;
+        filtered.reserve(keep.size());
+        for (int32_t idx : keep) filtered.push_back(detections[idx]);
+        detections.swap(filtered);
+    }
     lap("decode_boxes");
     if (!hm_dump && tf_cache_on) {
         if (!g_tf_hm_cache.valid) {
