@@ -1101,20 +1101,17 @@ async function loadDownloadsData() {
     }
 }
 
-function hasAvailableDownload(version) {
-    const visit = node => {
-        if (!node || typeof node !== 'object') return false;
-        if (typeof node.url === 'string' && node.url.trim()) return true;
-        return Object.values(node).some(visit);
-    };
-    return visit(downloadsData && downloadsData[version]);
+function hasAvailableDownload(node) {
+    if (!node || typeof node !== 'object') return false;
+    if (typeof node.url === 'string' && node.url.trim()) return true;
+    return Object.values(node).some(hasAvailableDownload);
 }
 
 function initializeVersionSelector() {
     versionSelector.innerHTML = '';
     currentSelection.version = null;
     const versionsToShow = versionMetadata
-        .filter(version => hasAvailableDownload(version.value))
+        .filter(version => hasAvailableDownload(downloadsData?.[version.value]))
         .sort((a, b) => {
             // Keep the beta channel first when it has actual downloads.
             if (a.value === 'main-devel') return -1;
@@ -1127,8 +1124,6 @@ function initializeVersionSelector() {
         const btn = document.createElement('button');
         btn.className = 'selector-btn';
         btn.dataset.value = version.value;
-        btn.dataset.pythonVersions = version.python_versions.join(',');
-        btn.dataset.ubuntuVersions = version.ubuntu_versions.join(',');
         btn.textContent = version.display_name;
         
         if (version === defaultVersion) {
@@ -1142,274 +1137,74 @@ function initializeVersionSelector() {
             // Set active only on clicked button
             btn.classList.add('active');
             currentSelection.version = btn.dataset.value;
-            updatePythonVersions(btn);
-            updateUbuntuVersions(btn);
             updateAvailableOptions();
         });
         
         versionSelector.appendChild(btn);
     });
-    
-    // Initialize with first active version
-    const firstBtn = versionSelector.querySelector('.selector-btn.active');
-    if (firstBtn) {
-        updatePythonVersions(firstBtn);
-        updateUbuntuVersions(firstBtn);
-    }
-}
-
-function setInitialSelection(selector, value) {
-    selector.querySelectorAll('.selector-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.value === value);
-    });
 }
 
 function initializeSelectors() {
-    // Reflect the same defaults used by updateDownloadLink before any click.
-    setInitialSelection(osSelector, currentSelection.os);
-    setInitialSelection(packageSelector, currentSelection.package);
-    setInitialSelection(cudaSelector, currentSelection.cuda);
-    setInitialSelection(archSelector, currentSelection.arch);
-    linuxVersionRow.style.display = currentSelection.os === 'linux' ? 'flex' : 'none';
-    pythonRow.style.display = currentSelection.package === 'wheel' ? 'flex' : 'none';
-    // OS selector
-    osSelector.querySelectorAll('.selector-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            osSelector.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentSelection.os = btn.dataset.value;
-            
-            // Show/hide Linux version selector
-            if (btn.dataset.value === 'linux') {
-                linuxVersionRow.style.display = 'flex';
-                const currentVersionBtn = versionSelector.querySelector('.selector-btn.active');
-                if (currentVersionBtn) {
-                    updateUbuntuVersions(currentVersionBtn);
-                }
-            } else {
-                linuxVersionRow.style.display = 'none';
-            }
-            
-            updateAvailableOptions();
-            updateDownloadLink();
+    // All clicks enter the same dependency reconciliation; no synthetic clicks
+    // or partially updated active states can bypass availability checks.
+    for (const [selector, key] of [
+        [osSelector, 'os'], [linuxVersionSelector, 'linuxVersion'],
+        [packageSelector, 'package'], [cudaSelector, 'cuda'], [archSelector, 'arch']
+    ]) {
+        selector.querySelectorAll('.selector-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentSelection[key] = btn.dataset.value;
+                updateAvailableOptions();
+            });
         });
-    });
-    
-    // Linux version selector
-    linuxVersionSelector.querySelectorAll('.selector-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            linuxVersionSelector.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentSelection.linuxVersion = btn.dataset.value;
-            updateAvailableOptions();
-        });
-    });
-    
-    // Package selector
-    packageSelector.querySelectorAll('.selector-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            packageSelector.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentSelection.package = btn.dataset.value;
-            
-            // Show/hide Python selector
-            if (btn.dataset.value === 'wheel') {
-                pythonRow.style.display = 'flex';
-                
-                // Update available Python versions
-                const currentVersionBtn = versionSelector.querySelector('.selector-btn.active');
-                if (currentVersionBtn) {
-                    updatePythonVersions(currentVersionBtn);
-                }
-                
-                if (!currentSelection.python) {
-                    const firstAvailable = pythonSelector.querySelector('.selector-btn:not([disabled])');
-                    if (firstAvailable) {
-                        firstAvailable.click();
-                    }
-                }
-            } else {
-                pythonRow.style.display = 'none';
-                currentSelection.python = null;
-            }
-            
-            updateAvailableOptions();
-        });
-    });
-    
-    // CUDA selector
-    cudaSelector.querySelectorAll('.selector-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            cudaSelector.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentSelection.cuda = btn.dataset.value;
-            updateAvailableOptions();
-        });
-    });
-    
-    // Architecture selector
-    archSelector.querySelectorAll('.selector-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            archSelector.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentSelection.arch = btn.dataset.value;
-            updateDownloadLink();
-        });
-    });
+    }
 }
 
-function updatePythonVersions(versionBtn) {
-    const supportedVersions = versionBtn.dataset.pythonVersions.split(',');
-    
-    // Sort Python versions numerically (e.g., 3.8, 3.9, 3.10, 3.11, 3.12)
-    supportedVersions.sort((a, b) => {
-        const [aMajor, aMinor] = a.split('.').map(Number);
-        const [bMajor, bMinor] = b.split('.').map(Number);
-        if (aMajor !== bMajor) return aMajor - bMajor;
-        return aMinor - bMinor;
+function selectAvailableOption(selector, key, data, preferred = null) {
+    const buttons = Array.from(selector.querySelectorAll('.selector-btn'));
+    buttons.forEach(btn => {
+        btn.disabled = !hasAvailableDownload(data?.[btn.dataset.value]);
     });
-    
-    // Clear and rebuild Python selector
+    const selected = buttons.find(btn => !btn.disabled && btn.dataset.value === currentSelection[key]) ||
+        buttons.find(btn => !btn.disabled && btn.dataset.value === preferred) ||
+        buttons.find(btn => !btn.disabled);
+    currentSelection[key] = selected ? selected.dataset.value : null;
+    buttons.forEach(btn => btn.classList.toggle('active', btn === selected));
+    return data?.[currentSelection[key]];
+}
+
+function updatePythonVersions(data) {
+    // Metadata lists a version-wide union, not the Python wheels available for
+    // this platform/package/CUDA/architecture. Render the actual branch instead.
+    const versions = Object.keys(data || {}).sort((a, b) =>
+        a.localeCompare(b, undefined, { numeric: true }));
     pythonSelector.innerHTML = '';
-    
-    supportedVersions.forEach((ver, index) => {
+    versions.forEach(version => {
         const btn = document.createElement('button');
         btn.className = 'selector-btn';
-        btn.dataset.value = ver;
-        btn.textContent = ver;
-        
-        if (index === 0 || ver === currentSelection.python) {
-            btn.classList.add('active');
-            currentSelection.python = ver;
-        }
-        
+        btn.dataset.value = version;
+        btn.textContent = version;
         btn.addEventListener('click', () => {
-            pythonSelector.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
             currentSelection.python = btn.dataset.value;
-            updateDownloadLink();
+            updateAvailableOptions();
         });
-        
         pythonSelector.appendChild(btn);
     });
-    
-    // If current selection is not available, select first
-    if (!supportedVersions.includes(currentSelection.python)) {
-        const firstBtn = pythonSelector.querySelector('.selector-btn');
-        if (firstBtn) {
-            firstBtn.classList.add('active');
-            currentSelection.python = firstBtn.dataset.value;
-        }
-    }
-}
-
-function updateUbuntuVersions(versionBtn) {
-    const supportedVersions = versionBtn.dataset.ubuntuVersions.split(',').filter(v => v);
-    
-    linuxVersionSelector.querySelectorAll('.selector-btn').forEach(btn => {
-        const ubuntuVer = btn.dataset.value;
-        if (supportedVersions.includes(ubuntuVer)) {
-            btn.style.display = 'inline-block';
-            btn.disabled = false;
-        } else {
-            btn.style.display = 'none';
-            btn.disabled = true;
-        }
-    });
-    
-    // If current selection is not available, select the first available one
-    if (!supportedVersions.includes(currentSelection.linuxVersion)) {
-        const firstAvailable = Array.from(linuxVersionSelector.querySelectorAll('.selector-btn')).find(btn => 
-            supportedVersions.includes(btn.dataset.value)
-        );
-        if (firstAvailable) {
-            linuxVersionSelector.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
-            firstAvailable.classList.add('active');
-            currentSelection.linuxVersion = firstAvailable.dataset.value;
-        }
-    }
+    selectAvailableOption(pythonSelector, 'python', data);
 }
 
 function updateAvailableOptions() {
-    if (!downloadsData || !currentSelection.version) return;
-    
-    const versionData = downloadsData[currentSelection.version];
-    if (!versionData) return;
-    
-    // Handle macOS - hide CUDA options
-    if (currentSelection.os === 'macos') {
-        cudaRow.style.display = 'none';
-        currentSelection.cuda = 'cpu';
-    } else {
-        cudaRow.style.display = 'flex';
-    }
-    
-    // Get available options for current configuration
-    let availableData = versionData[currentSelection.os];
-    
-    // For Linux, both app and wheel are organized by Ubuntu version
-    // (wheel packages use different manylinux versions for different Ubuntu versions)
-    if (currentSelection.os === 'linux' && currentSelection.linuxVersion) {
-        availableData = versionData.linux?.[currentSelection.linuxVersion];
-    }
-    
-    if (!availableData) {
-        updateDownloadLink();
-        return;
-    }
-    
-    // Update available CUDA options
-    const packageData = availableData[currentSelection.package];
-    if (packageData && currentSelection.os !== 'macos') {
-        const availableCuda = Object.keys(packageData);
-        cudaSelector.querySelectorAll('.selector-btn').forEach(btn => {
-            const cudaValue = btn.dataset.value;
-            if (availableCuda.includes(cudaValue)) {
-                btn.style.display = 'inline-block';
-                btn.disabled = false;
-            } else {
-                btn.style.display = 'none';
-                btn.disabled = true;
-            }
-        });
-        
-        // If current CUDA selection is not available, select first available
-        if (!availableCuda.includes(currentSelection.cuda)) {
-            const firstAvailable = cudaSelector.querySelector('.selector-btn:not([disabled])');
-            if (firstAvailable) {
-                cudaSelector.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
-                firstAvailable.classList.add('active');
-                currentSelection.cuda = firstAvailable.dataset.value;
-            }
-        }
-    }
-    
-    // Update available Architecture options
-    const cudaData = packageData?.[currentSelection.cuda];
-    if (cudaData) {
-        const availableArch = Object.keys(cudaData);
-        archSelector.querySelectorAll('.selector-btn').forEach(btn => {
-            const archValue = btn.dataset.value;
-            if (availableArch.includes(archValue)) {
-                btn.style.display = 'inline-block';
-                btn.disabled = false;
-            } else {
-                btn.style.display = 'none';
-                btn.disabled = true;
-            }
-        });
-        
-        // If current arch selection is not available, select first available
-        if (!availableArch.includes(currentSelection.arch)) {
-            const firstAvailable = archSelector.querySelector('.selector-btn:not([disabled])');
-            if (firstAvailable) {
-                archSelector.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
-                firstAvailable.classList.add('active');
-                currentSelection.arch = firstAvailable.dataset.value;
-            }
-        }
-    }
-    
+    const versionData = downloadsData?.[currentSelection.version];
+    const osData = selectAvailableOption(osSelector, 'os', versionData, 'windows');
+    const linuxData = selectAvailableOption(linuxVersionSelector, 'linuxVersion', versionData?.linux);
+    const platformData = currentSelection.os === 'linux' ? linuxData : osData;
+    const packageData = selectAvailableOption(packageSelector, 'package', platformData, 'app');
+    const cudaData = selectAvailableOption(cudaSelector, 'cuda', packageData, 'cpu');
+    const archData = selectAvailableOption(archSelector, 'arch', cudaData, 'amd64');
+    updatePythonVersions(currentSelection.package === 'wheel' ? archData : null);
+    linuxVersionRow.style.display = currentSelection.os === 'linux' ? 'flex' : 'none';
+    pythonRow.style.display = currentSelection.package === 'wheel' ? 'flex' : 'none';
+    cudaRow.style.display = currentSelection.os === 'macos' ? 'none' : 'flex';
     updateDownloadLink();
 }
 
@@ -1439,7 +1234,7 @@ function updateDownloadLink() {
         console.error('Error finding download:', e);
     }
     
-    if (download) {
+    if (typeof download?.url === 'string' && download.url.trim()) {
         const downloadBtn = translations[currentLang]?.['footer.download_btn'] || 'Download';
         downloadOutput.innerHTML = `
             <a href="${download.url}" class="download-link">

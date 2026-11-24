@@ -43,6 +43,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -102,6 +103,55 @@ def uploader_states(repo: str, sha: str) -> dict[str, str]:
     return {name: latest.get(name, "absent") for name in UPLOADERS}
 
 
+def successful_states(repo: str, sha: str,
+                      require_docs: bool) -> dict[str, str]:
+    """Strict publication gate: the latest exact-SHA main push must succeed."""
+    if not re.fullmatch(r"[0-9a-f]{40}", sha):
+        raise RuntimeError("publication requires a full 40-character SHA")
+    required = UPLOADERS + (("Documentation",) if require_docs else ())
+    latest = {}
+    for page in range(1, 21):
+        payload = gh_api(
+            f"repos/{repo}/actions/runs?head_sha={sha}&per_page=100&page={page}"
+        )
+        runs = payload.get("workflow_runs")
+        if not isinstance(runs, list):
+            raise RuntimeError("invalid workflow run inventory")
+        for run in runs:
+            if not isinstance(run, dict):
+                raise RuntimeError("invalid workflow run entry")
+            name = run.get("name")
+            if (name not in required or run.get("head_sha") != sha or
+                    run.get("head_branch") != "main" or
+                    run.get("event") != "push"):
+                continue
+            run_id, attempt = run.get("id"), run.get("run_attempt")
+            if not isinstance(run_id, int) or not isinstance(attempt, int):
+                raise RuntimeError("invalid workflow run identity")
+            if name not in latest or (run_id,
+                                      attempt) > (latest[name]["id"],
+                                                  latest[name]["run_attempt"]):
+                latest[name] = run
+        if len(runs) < 100:
+            break
+    else:
+        raise RuntimeError("workflow run pagination exceeded safe bound")
+    states = {}
+    for name in required:
+        run = latest.get(name)
+        if run is None:
+            states[name] = "missing"
+        elif run.get("status") == "completed":
+            states[name] = "success" if run.get(
+                "conclusion") == "success" else "failed"
+        elif run.get("status") in ("queued", "in_progress", "waiting",
+                                   "pending", "requested"):
+            states[name] = "pending"
+        else:
+            states[name] = "invalid"
+    return states
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(
         description=
@@ -118,7 +168,15 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--quiet",
                         action="store_true",
                         help="print only the verdict, not per-workflow detail")
+    parser.add_argument("--require-success",
+                        action="store_true",
+                        help="require all five main push uploaders to succeed")
+    parser.add_argument("--require-docs",
+                        action="store_true",
+                        help="also wait for native main push Documentation")
     args = parser.parse_args(argv[1:])
+    if args.require_docs and not args.require_success:
+        parser.error("--require-docs requires --require-success")
 
     if not args.sha or not args.repo:
         print(
@@ -128,13 +186,32 @@ def main(argv: list[str]) -> int:
         return 1
 
     try:
-        states = uploader_states(args.repo, args.sha)
+        states = (successful_states(args.repo, args.sha, args.require_docs)
+                  if args.require_success else uploader_states(
+                      args.repo, args.sha))
     except ShaLookupError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
     except (RuntimeError, json.JSONDecodeError) as exc:
         print(f"error: could not query workflow runs: {exc}", file=sys.stderr)
         return 1
+
+    if args.require_success:
+        if not args.quiet:
+            for name, state in states.items():
+                print(f"  {name}: {state}")
+        blocked = [
+            name for name, state in states.items()
+            if state not in ("success", "pending")
+        ]
+        if blocked:
+            print("publication blocked: " + ", ".join(blocked), file=sys.stderr)
+            return 1
+        if "pending" in states.values():
+            print("waiting for successful platform and documentation builds")
+            return 2
+        print("all required main push builds succeeded")
+        return 0
 
     pending = [
         name for name, state in states.items()

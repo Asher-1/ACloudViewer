@@ -7,6 +7,11 @@ on:
         description: 'Set to OFF for Release documentation'
         required: false
         default: 'ON'
+      reuse_docs:
+        description: 'Publish fresh download data with verified same-SHA native docs'
+        type: boolean
+        required: false
+        default: false
   push:
     branches:
       - main
@@ -79,6 +84,12 @@ jobs:
       - name: Documentation site behaviour
         run: python3 docs/automation/scripts/verify_docs_site.py
 
+      - name: Pages artifact visibility contracts
+        run: node --test docs/automation/scripts/test_wait_pages_artifact.cjs
+
+      - name: Same-SHA documentation publication contracts
+        run: python3 docs/automation/scripts/test_restore_same_sha_docs.py
+
       - name: Workflow size limits
         run: python3 docs/automation/scripts/check_workflow_limits.py
 
@@ -98,6 +109,7 @@ jobs:
     needs: docs-guards
     runs-on: ubuntu-latest
     permissions:
+      actions: read          # Verify the same-SHA native run and artifact
       contents: write        # For uploading artifacts and releases
       pull-requests: write   # For commenting on pull requests
       issues: write          # For creating issue comments
@@ -121,11 +133,17 @@ jobs:
           EVENT_REF: ${{ github.ref }}
           EVENT_RELEASE_TAG: ${{ github.event.release.tag_name || '' }}
           SOURCE_SHA: ${{ github.sha }}
+          REUSE_DOCS: ${{ inputs.reuse_docs || false }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📋 Build Configuration"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
+
+          if [ "$REUSE_DOCS" = true ] && { [ "$EVENT_NAME" != workflow_dispatch ] || [ "$EVENT_REF" != refs/heads/main ] || [ "$DEVELOPER_BUILD" != ON ]; }; then
+            echo "Same-SHA documentation reuse requires a main developer-build workflow_dispatch" >&2
+            exit 1
+          fi
 
           IS_RELEASE=false
           RELEASE_VERSION=""
@@ -177,6 +195,7 @@ jobs:
           python-version: '3.11'
       
       - name: Fetch or generate downloads_data.json
+        if: inputs.reuse_docs != true
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -221,7 +240,30 @@ jobs:
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
       
+      - name: Fetch current release catalogue for reuse publication
+        if: inputs.reuse_docs == true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          from pathlib import Path
+          sys.path.insert(0, 'docs/automation/scripts')
+          from fetch_downloads_data import fetch_existing
+          path = Path('docs/downloads_data.json')
+          source = fetch_existing(path, token=os.environ['GH_TOKEN'])
+          if source != 'main-devel release asset' or not json.loads(path.read_text())['version_metadata']:
+              raise SystemExit('Reuse publication requires the current nonempty release catalogue')
+          PY
+
+      - name: Restore verified same-SHA native documentation
+        if: inputs.reuse_docs == true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 docs/automation/scripts/restore_same_sha_docs.py --sha "${{ github.sha }}" --output docs-output
+
       - name: Maximize build space
+        if: inputs.reuse_docs != true
         run: |
           echo "🧹 Cleaning up disk space..."
           df -h
@@ -232,9 +274,11 @@ jobs:
           df -h
       
       - name: Set up Docker Buildx
+        if: inputs.reuse_docs != true
         uses: docker/setup-buildx-action@v3
       
       - name: Build documentation Docker image
+        if: inputs.reuse_docs != true
         run: |
           echo "🐳 Building documentation Docker image..."
           echo "Build parameters:"
@@ -255,6 +299,7 @@ jobs:
           docker images | grep acloudviewer-ci
       
       - name: Extract documentation from Docker
+        if: inputs.reuse_docs != true
         env:
           IS_RELEASE: ${{ steps.config.outputs.is_release }}
           RELEASE_VERSION: ${{ steps.config.outputs.release_version }}
@@ -325,6 +370,7 @@ jobs:
           ls -la docs-output/
       
       - name: Upload documentation artifact
+        if: inputs.reuse_docs != true
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.config.outputs.artifact_name }}
@@ -363,7 +409,7 @@ jobs:
           retention-days: 1
       
       - name: Update main-devel release
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && inputs.reuse_docs != true
         env:
           GH_TOKEN: ${{ github.token }}
           SOURCE_SHA: ${{ github.sha }}
@@ -539,6 +585,7 @@ jobs:
         uses: actions/configure-pages@v4
       
       - name: Upload Pages artifact
+        id: pages_artifact
         uses: actions/upload-pages-artifact@v3
         with:
           # A rerun can leave an artifact from the preceding attempt under the
@@ -548,6 +595,26 @@ jobs:
           # Note: This uploads the entire unified-deploy directory as a single artifact
           # No git objects are created - deployment uses GitHub's artifact storage
       
+      - name: Set up Node for Pages visibility check
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install Pages visibility client
+        run: |
+          set -euo pipefail
+          # Match the official client locked by deploy-pages@v4.
+          npm install --prefix "${RUNNER_TEMP:?}/pages-artifact-client" \
+            --ignore-scripts --no-audit --no-fund --no-package-lock --no-save \
+            @actions/artifact@2.1.3
+
+      - name: Wait for exact uploaded Pages artifact
+        uses: ./.github/actions/wait-pages-artifact
+        env:
+          NODE_PATH: ${{ runner.temp }}/pages-artifact-client/node_modules
+          PAGES_ARTIFACT_ID: ${{ steps.pages_artifact.outputs.artifact_id }}
+          PAGES_ARTIFACT_NAME: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

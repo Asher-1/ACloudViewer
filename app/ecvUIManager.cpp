@@ -500,7 +500,7 @@ uchar QUIWidget::getCheckCode(const QByteArray &data) {
     int len = data.length();
     uchar temp = 0;
 
-    for (uchar i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++) {
         temp += data.at(i);
     }
 

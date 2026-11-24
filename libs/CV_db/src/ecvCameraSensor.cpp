@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <new>
 
 #include "ecvCameraSensorDisplayUtils.h"
 
@@ -1828,9 +1829,10 @@ bool ccCameraSensor::computeOrthoRectificationParams(
                     1.0 / norm,       1.0 / norm, 1.0 / norm, 1.0 / norm};
 
     // compute the A matrix and b vector
-    unsigned Neq = 2 * count;         // number of equations
-    double* A = new double[8 * Neq];  // 8 coefficients: a0 a1 a2 b0 b1 b2 c1 c2
-    double* b = new double[Neq];
+    unsigned Neq = 2 * count;  // number of equations
+    // 8 coefficients: a0 a1 a2 b0 b1 b2 c1 c2
+    double* A = new (std::nothrow) double[8 * Neq];
+    double* b = new (std::nothrow) double[Neq];
     if (!A || !b) {
         // not enough memory
         if (A) delete[] A;

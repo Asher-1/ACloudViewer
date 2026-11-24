@@ -38,6 +38,8 @@ PAGE = """<!DOCTYPE html><html><head><title>{title}</title>
 <script src="{rel}_static/version_switch.js"></script></head><body>
 <h1>{title}</h1>
 <select id="sel" data-docs-version></select>
+<div data-docs-version-table></div>
+<h2 id="reading-position" style="margin-top:1200px">API details</h2>
 </body></html>"""
 
 # A page present in BOTH versions (deep-link rewriting must preserve it).
@@ -228,6 +230,179 @@ def options(page):
         "#sel option", "els => els.map(e => [e.value, e.textContent.trim(), e.selected])")
 
 
+def verify_download_availability(context, base, rec):
+    """Exercise rolling assets whose OS/package branches are only partly ready."""
+    def asset(name):
+        return {"url": "https://github.com/Asher-1/ACloudViewer/releases/download/"
+                       "main-devel/cloudviewer-3.9.5%2B19fae648-" + name,
+                "size": "374.3 MB"}
+
+    fixture = {
+        "version_metadata": [
+            {"value": version, "display_name": version, "is_default": version == "main-devel",
+             "python_versions": ["3.10", "3.11", "3.12", "3.13"],
+             "ubuntu_versions": ["ubuntu20.04", "ubuntu22.04", "ubuntu24.04"]}
+            for version in ["main-devel", "v3.9.4", "linux-only"]],
+        "download_data": {
+            "main-devel": {
+                # Exact production failure shape: Windows has wheels, no App.
+                "windows": {"wheel": {
+                    "cpu": {"amd64": {"3.10": {}, "3.11": {"url": ""},
+                                       "3.12": asset("windows-cpu-cp312.whl"),
+                                       "3.13": asset("windows-cpu-cp313.whl")},
+                            "arm64": {"3.11": asset("windows-arm64-cp311.whl")}},
+                    "cuda": {"amd64": {"3.11": asset("windows-cuda-cp311.whl")},
+                             "arm64": {}}}},
+                "macos": {"app": {}, "wheel": {"cpu": {"arm64": {}}}},
+                "linux": {
+                    "ubuntu20.04": {"app": {"cpu": {"amd64": asset("linux-app.run")}},
+                                    "wheel": {}},
+                    "ubuntu22.04": {"app": {}, "wheel": {
+                        "cuda": {"amd64": {"3.11": asset("linux-cuda-cp311.whl")}}}},
+                    "ubuntu24.04": {"app": {"cpu": {"amd64": {}}}, "wheel": {
+                        "cpu": {"amd64": {"3.13": {"size": "0 MB"}}}}}}},
+            "v3.9.4": {
+                "windows": {"app": {"cpu": {"amd64": asset("stable-app.exe")},
+                                    "cuda": {"amd64": {"size": "missing URL"}}},
+                            "wheel": {"cpu": {"amd64": {"3.12": asset("stable-cp312.whl")},
+                                              "arm64": {}}}},
+                "macos": {"app": {"cpu": {"arm64": asset("stable-macos.dmg")}},
+                          "wheel": {"cpu": {"arm64": {"3.11": asset("macos-cp311.whl")}}}},
+                "linux": {"ubuntu20.04": {"app": {"cpu": {"amd64": asset("stable-linux.run")}}}}},
+            "linux-only": {"windows": {}, "linux": {"ubuntu20.04": {
+                "app": {"cpu": {"amd64": asset("linux-only.run")}}}}}},
+    }
+
+    def snapshot(page):
+        return page.evaluate("""() => ({
+            state: {...currentSelection},
+            groups: Object.fromEntries(['os', 'linux-version', 'package', 'cuda', 'arch', 'python'].map(id =>
+                [id, [...document.querySelectorAll('#' + id + '-selector .selector-btn')].map(b => ({
+                    value: b.dataset.value, active: b.classList.contains('active'), disabled: b.disabled
+                }))])),
+            pythonVisible: getComputedStyle(document.querySelector('#python-row')).display !== 'none',
+            linuxVisible: getComputedStyle(document.querySelector('#linux-version-row')).display !== 'none',
+            href: document.querySelector('#download-output a.download-link')?.getAttribute('href'),
+            unavailable: !!document.querySelector('#download-output .not-available')
+        })""")
+
+    def disabled(state, group, value):
+        return any(row["value"] == value and row["disabled"]
+                   for row in state["groups"][group])
+
+    def click(page, group, value):
+        page.locator(f'#{group}-selector .selector-btn[data-value="{value}"]').click()
+        state = snapshot(page)
+        # Every rendered active value must agree with the actual resolver state.
+        fields = {"os": "os", "linux-version": "linuxVersion", "package": "package",
+                  "cuda": "cuda", "arch": "arch", "python": "python"}
+        rec.check(f"selection stays synchronized after {group}={value}", all(
+            [row["value"] for row in state["groups"][name] if row["active"]] ==
+            ([state["state"][field]] if state["state"][field] is not None else [])
+            for name, field in fields.items()), str(state))
+        return state
+
+    page = context.new_page()
+    page.set_default_timeout(5000)
+    try:
+        page.route("https://**/*", lambda route: route.abort())
+        page.route("**/downloads_data.json*", lambda route: route.fulfill(json=fixture))
+        page.goto(base + "/", wait_until="domcontentloaded")
+        page.wait_for_selector('#version-selector .selector-btn.active')
+        state = snapshot(page)
+        rec.check("wheel-only Windows keeps beta and Windows, falls back to a real wheel",
+                  state["state"] == {"version": "main-devel", "os": "windows", "package": "wheel",
+                                     "linuxVersion": "ubuntu20.04", "python": "3.12",
+                                     "cuda": "cpu", "arch": "amd64"} and state["pythonVisible"] and
+                  state.get("href", "").endswith("windows-cpu-cp312.whl"), str(state))
+        rec.check("unavailable App and empty OS/distro branches are disabled",
+                  disabled(state, "package", "app") and disabled(state, "os", "macos") and
+                  disabled(state, "linux-version", "ubuntu24.04"), str(state))
+        rec.check("Python empty or URL-less leaves are not available",
+                  disabled(state, "python", "3.10") and disabled(state, "python", "3.11"), str(state))
+        state = click(page, "python", "3.13")
+        rec.check("valid Python click changes the actual download leaf",
+                  state["href"].endswith("windows-cpu-cp313.whl"), str(state))
+        state = click(page, "arch", "arm64")
+        rec.check("architecture change reconciles Python availability",
+                  state["state"]["python"] == "3.11" and
+                  state["href"].endswith("windows-arm64-cp311.whl"), str(state))
+        state = click(page, "cuda", "cuda")
+        rec.check("CUDA change rejects an empty architecture and updates Python",
+                  state["state"]["arch"] == "amd64" and disabled(state, "arch", "arm64") and
+                  state["state"]["python"] == "3.11" and
+                  state["href"].endswith("windows-cuda-cp311.whl"), str(state))
+        state = click(page, "os", "linux")
+        rec.check("Linux App-only distro falls back from Wheel and clears Python",
+                  state["state"]["package"] == "app" and state["state"]["python"] is None and
+                  not state["pythonVisible"] and disabled(state, "package", "wheel") and
+                  state["href"].endswith("linux-app.run"), str(state))
+        state = click(page, "linux-version", "ubuntu22.04")
+        rec.check("distro change selects its real Wheel CUDA branch",
+                  state["state"]["package"] == "wheel" and state["state"]["cuda"] == "cuda" and
+                  state["pythonVisible"] and disabled(state, "package", "app") and
+                  disabled(state, "cuda", "cpu") and state["href"].endswith("linux-cuda-cp311.whl"), str(state))
+        page.locator('#version-selector .selector-btn[data-value="v3.9.4"]').click()
+        state = snapshot(page)
+        rec.check("version change reconciles stale distro and package without switching OS",
+                  state["state"]["os"] == "linux" and state["state"]["linuxVersion"] == "ubuntu20.04" and
+                  state["state"]["package"] == "app" and state["href"].endswith("stable-linux.run"), str(state))
+        state = click(page, "os", "windows")
+        rec.check("available App remains preferred on an App-capable Windows version",
+                  state["state"]["package"] == "app" and not state["pythonVisible"] and
+                  disabled(state, "cuda", "cuda") and state["href"].endswith("stable-app.exe"), str(state))
+        click(page, "package", "wheel")
+        page.locator('#version-selector .selector-btn[data-value="main-devel"]').click()
+        state = snapshot(page)
+        rec.check("valid Wheel choice and Python survive a version change",
+                  state["state"]["os"] == "windows" and state["state"]["package"] == "wheel" and
+                  state["state"]["python"] == "3.12" and state["href"].endswith("windows-cpu-cp312.whl"), str(state))
+        page.locator('#version-selector .selector-btn[data-value="v3.9.4"]').click()
+        state = snapshot(page)
+        rec.check("App reappearing does not discard a still-valid user Wheel choice",
+                  state["state"]["package"] == "wheel" and state["href"].endswith("stable-cp312.whl"), str(state))
+        state = click(page, "os", "macos")
+        rec.check("macOS preserves valid Wheel choice and selects its CPU ARM Python leaf",
+                  state["state"]["package"] == "wheel" and state["state"]["cuda"] == "cpu" and
+                  state["state"]["arch"] == "arm64" and state["state"]["python"] == "3.11" and
+                  state["href"].endswith("macos-cp311.whl") and
+                  not page.locator('#cuda-row').is_visible(), str(state))
+        state = click(page, "package", "app")
+        rec.check("switching back to App clears Python and restores its download",
+                  state["state"]["python"] is None and not state["pythonVisible"] and
+                  state["href"].endswith("stable-macos.dmg"), str(state))
+        state = click(page, "os", "windows")
+        rec.check("returning to Windows keeps the valid App and reconciles architecture",
+                  state["state"]["package"] == "app" and state["state"]["arch"] == "amd64" and
+                  state["href"].endswith("stable-app.exe"), str(state))
+        page.locator('#version-selector .selector-btn[data-value="linux-only"]').click()
+        state = snapshot(page)
+        rec.check("an entirely unavailable OS is disabled and a real OS remains selected",
+                  state["state"]["os"] == "linux" and disabled(state, "os", "windows") and
+                  state["href"].endswith("linux-only.run"), str(state))
+    except Exception as error:
+        rec.check("download dependency transitions complete", False, str(error))
+    finally:
+        page.close()
+
+    page = context.new_page()
+    try:
+        empty = {"version_metadata": [fixture["version_metadata"][0]],
+                 "download_data": {"main-devel": {"windows": {"app": {"cpu": {"amd64": {}}},
+                                                                          "wheel": {}}}}}
+        page.route("https://**/*", lambda route: route.abort())
+        page.route("**/downloads_data.json*", lambda route: route.fulfill(json=empty))
+        page.goto(base + "/", wait_until="domcontentloaded")
+        page.wait_for_function('downloadsData !== null')
+        state = snapshot(page)
+        rec.check("no URL leaves keeps a genuine unavailable state with disabled choices",
+                  state["unavailable"] and not state.get("href") and
+                  all(row["disabled"] and not row["active"] for rows in state["groups"].values() for row in rows) and
+                  page.locator('#version-selector .selector-btn').count() == 0, str(state))
+    finally:
+        page.close()
+
+
 def main() -> int:
     root = Path(tempfile.mkdtemp())
     try:
@@ -349,6 +524,9 @@ def main() -> int:
                           "main-devel-linux.run" in home.locator("#download-output a.download-link").get_attribute("href"))
                 home.close()
 
+                print("═══ actual download-leaf dependency transitions ═══")
+                verify_download_availability(ctx, base, rec)
+
                 print("═══ switcher population ═══")
                 page = goto("/documentation/dev/")
                 page.wait_for_selector("#sel:not([disabled])", timeout=5000)
@@ -375,6 +553,38 @@ def main() -> int:
                 rec.check("deep page maps to the same deep page",
                           page.url.endswith("/documentation/v3.9.4/" + DEEP), page.url)
                 rec.check("landed on the archive content", "v3.9.4 python api" in page.content())
+
+                print("═══ query, anchor and sidebar position ═══")
+                position = "?highlight=point%20cloud#reading-position"
+                page.goto(base + "/documentation/dev/" + DEEP + position)
+                page.wait_for_selector("#sel:not([disabled])")
+                page.select_option("#sel", "v3.9.4")
+                page.wait_for_url(base + "/documentation/v3.9.4/" + DEEP + position)
+                rec.check("dropdown preserves path, query and anchor",
+                          page.url.endswith("/v3.9.4/" + DEEP + position))
+                rec.check("target anchor restores reading location",
+                          0 <= page.locator("#reading-position").bounding_box()["y"] < 900)
+                changed_position = "?highlight=point%20cloud#changed-after-load"
+                page.evaluate("window.location.hash = 'changed-after-load'")
+                page.wait_for_function("document.querySelector('.version-cell a').hash === '#changed-after-load'")
+                rec.check("copy/new-tab link tracks anchors changed after page load",
+                          page.locator(".version-cell a").first.get_attribute("href").endswith(changed_position))
+                page.locator(".version-cell a").filter(has_text="Development").click()
+                page.wait_for_url(base + "/documentation/dev/" + DEEP + changed_position)
+                rec.check("sidebar version link preserves path, query and anchor",
+                          page.url.endswith("/dev/" + DEEP + changed_position))
+                page.goto(base + "/documentation/dev/" + position)
+                page.wait_for_selector("#sel:not([disabled])")
+                page.select_option("#sel", "v3.9.4")
+                page.wait_for_url(base + "/documentation/v3.9.4/" + position)
+                rec.check("version-root switch retains query and anchor",
+                          page.url.endswith("/v3.9.4/" + position))
+                page.goto(base + "/documentation/v3.9.4/" + ARCHIVE_ONLY + position)
+                page.wait_for_selector("#sel:not([disabled])")
+                page.locator(".version-cell a").filter(has_text="Development").click()
+                page.wait_for_url(base + "/documentation/dev/")
+                rec.check("sidebar missing page falls back without stale query or anchor",
+                          page.url.endswith("/documentation/dev/"))
 
                 print("═══ missing-page fallback ═══")
                 page.goto(base + "/documentation/v3.9.4/" + ARCHIVE_ONLY,
