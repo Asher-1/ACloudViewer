@@ -723,9 +723,9 @@ void ecvPythonView::onRunScript() {
 
                 int exitCode = proc->exitCode();
                 m_statusLabel->setText(
-                        timedOut ? tr("Timed out")
+                        timedOut                            ? tr("Timed out")
                         : exitStatus == QProcess::CrashExit ? tr("Crashed")
-                        : exitCode == 0 ? tr("OK")
+                        : exitCode == 0                     ? tr("OK")
                                         : tr("Exit: %1").arg(exitCode));
 
                 if (exitCode != 0 && !stdErr.isEmpty()) {
