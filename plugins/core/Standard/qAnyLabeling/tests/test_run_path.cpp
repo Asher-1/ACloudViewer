@@ -295,7 +295,7 @@ int runOcr(QMainWindow* window,
     selected.insert("difficult", true);
     selected.insert("flags", QJsonObject{{"verified", true}});
     selected.insert("attributes", QJsonObject{{"kind", "invoice"}});
-    selected.insert("kie_linking", QJsonArray{QJsonArray{91, 92}});
+    selected.insert("kie_linking", QJsonArray{QJsonValue(QJsonArray{91, 92})});
     selected.insert("fixture_extra", 99);
     QJsonObject kept = detected.last().toObject();
     kept.insert("label", "manual");

@@ -64,6 +64,12 @@ endif ()
 get_property(COLMAP_SOURCES GLOBAL PROPERTY COLMAP_SOURCES)
 COLMAP_ADD_STATIC_LIBRARY(${COLMAP_LIB_NAME} ${COLMAP_SOURCES})
 
+if(TESTS_ENABLED)
+    # Preserve upstream's per-case PRNG isolation, including shuffled suites.
+    add_library(colmap_gtest_main STATIC util/gtest_main.cc)
+    target_link_libraries(colmap_gtest_main PUBLIC ${COLMAP_LIB_NAME} gmock)
+endif()
+
 # NOTE: the COLMAP-subtree ISA contract lives in ONE place: the root
 # CMakeLists.txt USE_SIMD branch appends -march=x86-64 LAST to the global
 # CMAKE_CXX_FLAGS for every TU when BUILD_RECONSTRUCTION is on, overriding

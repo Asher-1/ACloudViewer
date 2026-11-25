@@ -913,7 +913,7 @@ def filter_unavailable_specs(
             path for path in spec.model_paths if path.resolve() in blocked_paths)
         if blocked:
             relative = ", ".join(
-                str(path.resolve().relative_to(root)) for path in blocked)
+                str(path.resolve().relative_to(root.resolve())) for path in blocked)
             skipped.append(f"{spec.key}: unavailable model(s): {relative}")
         else:
             runnable.append(spec)
@@ -1179,7 +1179,8 @@ def parse_references(items: list[str]) -> dict[str, str]:
             raise ValueError(f"--reference expects NAME=PATH, got {item!r}")
         # A venv's python is often a symlink to the base interpreter. Resolving
         # it changes sys.prefix and silently discards the selected packages.
-        references[name] = str(Path(path).expanduser().absolute())
+        executable = Path(path).expanduser().absolute()
+        references[name] = str(executable.parent.resolve() / executable.name)
     return references
 
 
@@ -1428,7 +1429,7 @@ def expand_specs(manifest: dict[str, Any], args: argparse.Namespace,
     for task in selected:
         for path in sorted(owned[task] - covered[task]):
             diagnostics["uncovered_assets"].append(
-                f"{task}: {path.relative_to(args.assets)}")
+                f"{task}: {path.relative_to(args.assets.resolve())}")
     return specs, diagnostics
 
 

@@ -158,8 +158,9 @@ cpp_test_only() {
     fi
     ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c " \
         export BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
+     && source util/ci_utils.sh \
      && cd build \
-     && GTEST_FILTER='-*Reduce*Sum*' GTEST_SHUFFLE=1 cmake -DBUILD_DIR=. -DCONFIG=Release -DPROFILE=${test_profile} -P ../tests/Run.cmake \
+     && GTEST_FILTER='-*Reduce*Sum*' GTEST_SHUFFLE=1 run_cpp_unit_tests . ${test_profile} \
     "
 
     # Python unit tests (whole python/test tree). The CI image installs the
@@ -212,8 +213,9 @@ cpp_python_command_tools_test() {
         test_profile=ci,gpu
     fi
     ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c " \
-        cd build \
-     && GTEST_FILTER='-*Reduce*Sum*' GTEST_SHUFFLE=1 cmake -DBUILD_DIR=. -DCONFIG=Release -DPROFILE=${test_profile} -P ../tests/Run.cmake \
+        source util/ci_utils.sh \
+     && cd build \
+     && GTEST_FILTER='-*Reduce*Sum*' GTEST_SHUFFLE=1 run_cpp_unit_tests . ${test_profile} \
     "
 
     # Python test (shared whole-tree runner; the wheel images install the

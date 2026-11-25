@@ -207,6 +207,20 @@ index 95ba502..3d99c9f 100644
 +    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/qt${QT_VERSION_MAJOR}/plugins/styles"
 +    RUNTIME DESTINATION "${CMAKE_INSTALL_LIBDIR}/qt${QT_VERSION_MAJOR}/plugins/styles")
 +endif()
+diff --git a/lib/include/oclero/qlementine/animation/WidgetAnimation.hpp b/lib/include/oclero/qlementine/animation/WidgetAnimation.hpp
+--- a/lib/include/oclero/qlementine/animation/WidgetAnimation.hpp
++++ b/lib/include/oclero/qlementine/animation/WidgetAnimation.hpp
+@@ -9,2 +9,3 @@
+ #include <QVariant>
++#include <cassert>
+ #include <QVariantAnimation>
+diff --git a/lib/include/oclero/qlementine/animation/WidgetAnimator.hpp b/lib/include/oclero/qlementine/animation/WidgetAnimator.hpp
+--- a/lib/include/oclero/qlementine/animation/WidgetAnimator.hpp
++++ b/lib/include/oclero/qlementine/animation/WidgetAnimator.hpp
+@@ -12,2 +12,3 @@
+ #include <QWidget>
++#include <memory>
+ #include <QColor>
 diff --git a/lib/include/oclero/qlementine/animation/WidgetAnimationManager.hpp b/lib/include/oclero/qlementine/animation/WidgetAnimationManager.hpp
 index ec0f7b9..0e2b71f 100644
 --- a/lib/include/oclero/qlementine/animation/WidgetAnimationManager.hpp

@@ -641,7 +641,7 @@ TEST(AnnotationCanvas, MetadataOverlaysRemainViewOnlyAndRespectHiddenShapes) {
             QStringLiteral("attributes"),
             QJsonObject{{QStringLiteral("role"), QStringLiteral("key")}});
     key.extra.insert(QStringLiteral("kie_linking"),
-                     QJsonArray{QJsonArray{1, 2}});
+                     QJsonArray{QJsonValue(QJsonArray{1, 2})});
     AnnotationShape value = key;
     value.points = {QPointF(60, 30), QPointF(80, 30), QPointF(80, 50),
                     QPointF(60, 50)};

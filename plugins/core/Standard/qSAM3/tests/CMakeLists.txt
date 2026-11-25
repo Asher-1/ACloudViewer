@@ -1,3 +1,8 @@
+# The archive test is built even when the optional test suites are disabled.
+if(NOT TARGET gtest)
+    include("${CloudViewer_3RDPARTY_DIR}/googletest/googletest.cmake")
+endif()
+
 add_executable(test_sam3_video_mask_archive
     test_video_mask_archive.cpp ../src/VideoMaskArchive.cpp)
 target_include_directories(test_sam3_video_mask_archive PRIVATE

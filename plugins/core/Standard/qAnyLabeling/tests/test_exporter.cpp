@@ -49,7 +49,8 @@ protected:
                 {QStringLiteral("shape_type"), QStringLiteral("quadrilateral")},
                 {QStringLiteral("group_id"), 3},
                 {QStringLiteral("difficult"), true},
-                {QStringLiteral("kie_linking"), QJsonArray{QJsonArray{3, 4}}},
+                {QStringLiteral("kie_linking"),
+                 QJsonArray{QJsonValue(QJsonArray{3, 4})}},
                 {QStringLiteral("points"),
                  QJsonArray{QJsonArray{1, 2}, QJsonArray{30, 2},
                             QJsonArray{30, 10}, QJsonArray{1, 10}}}};
@@ -83,7 +84,8 @@ protected:
         nose = {{QStringLiteral("label"), QStringLiteral("nose")},
                 {QStringLiteral("shape_type"), QStringLiteral("point")},
                 {QStringLiteral("group_id"), 4},
-                {QStringLiteral("points"), QJsonArray{QJsonArray{20.9, 30.2}}}};
+                {QStringLiteral("points"),
+                 QJsonArray{QJsonValue(QJsonArray{20.9, 30.2})}}};
         cat = {{QStringLiteral("label"), QStringLiteral("cat")},
                {QStringLiteral("shape_type"), QStringLiteral("polygon")},
                {QStringLiteral("points"),
@@ -197,7 +199,7 @@ TEST_F(AnnotationExporterTest,
     ASSERT_EQ(exportedEntities[0].toObject()["transcription"],
               QStringLiteral("姓名？"));
     ASSERT_EQ(exportedEntities[1].toObject()["linking"].toArray(),
-              (QJsonArray{QJsonArray{3, 4}}));
+              (QJsonArray{QJsonValue(QJsonArray{3, 4})}));
     ASSERT_TRUE(exportedEntities[2].toObject()["id"].isNull());
     ASSERT_EQ(exportedEntities[3].toObject()["id"].toInt(-1), 0);
     ASSERT_EQ(reexport.text, linkedKie.text);
@@ -1023,7 +1025,7 @@ TEST_F(AnnotationExporterTest,
     ASSERT_TRUE(mots.detections.isEmpty());
     QJsonObject invalidPolygon = trackedPolygon;
     invalidPolygon.insert(QStringLiteral("points"),
-                          QJsonArray{QJsonArray{1, 2}});
+                          QJsonArray{QJsonValue(QJsonArray{1, 2})});
     const QVector<MotImage> invalidMots{
             {QStringLiteral("frame_000001.png"),
              QSize(100, 100),

@@ -604,6 +604,7 @@ The catalog and build index is at ``plugins/README.md`` in the repository root.
    ../guides/plugins/qRelateAnything
    ../guides/plugins/qSAM3D
    ../guides/plugins/qVLXSeek
+   ../guides/plugins/qWeVisOne
    ../guides/plugins/qAnyLabeling
    ../plugins/qDA3/README
    ../plugins/qDeepLSD/README

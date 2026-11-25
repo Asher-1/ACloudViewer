@@ -124,9 +124,10 @@ function(cloudviewer_set_test_runtime_environment test_name)
         set(_cv_loader_var LD_LIBRARY_PATH)
     endif()
     set(_cv_runtime_modifications "")
-    if (NOT MSVC AND _cv_python_lib_dir)
-        list(APPEND _cv_runtime_modifications
-            "${_cv_loader_var}=path_list_prepend:${_cv_python_lib_dir}")
+    if(APPLE AND IS_DIRECTORY "$ENV{TMPDIR}")
+        # macOS exposes /var through /private/var, while getcwd is physical.
+        file(REAL_PATH "$ENV{TMPDIR}" _cv_tmp_dir)
+        list(APPEND _cv_runtime_modifications "TMPDIR=set:${_cv_tmp_dir}")
     endif()
     foreach (_cv_runtime_directory IN LISTS ARGN)
         list(APPEND _cv_runtime_modifications
@@ -146,6 +147,12 @@ function(cloudviewer_set_test_runtime_environment test_name)
     else()
         list(APPEND _cv_runtime_modifications
             "${_cv_loader_var}=path_list_prepend:${CMAKE_BINARY_DIR}/bin")
+    endif()
+    # Prepend Python last so it wins over same-SONAME distro libraries in
+    # the Qt directory (often /usr/lib/<arch>). CTest applies these in order.
+    if (NOT MSVC AND _cv_python_lib_dir)
+        list(APPEND _cv_runtime_modifications
+            "${_cv_loader_var}=path_list_prepend:${_cv_python_lib_dir}")
     endif()
     get_property(_cv_existing_modifications TEST ${test_name}
         PROPERTY ENVIRONMENT_MODIFICATION)

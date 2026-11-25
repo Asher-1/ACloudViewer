@@ -159,12 +159,12 @@ def main() -> int:
         print(f"[wevisone-upstream] llama submodule sha256 "
               f"{sha256(llama_archive)}")
         with tarfile.open(repo_archive) as tf:
-            tf.extractall(src)
+            tf.extractall(src, filter="data")
         extracted = next(src.glob("WeVisOne-VL-GGML-*"))
         extracted.rename(src / "repo")
         sub = src / "repo" / "cpp_ggml" / "third_party" / "llama.cpp"
         with tarfile.open(llama_archive) as tf:
-            tf.extractall(sub.parent)
+            tf.extractall(sub.parent, filter="data")
         llama_extracted = next(sub.parent.glob("llama.cpp-*"))
         llama_extracted.rename(sub)
 

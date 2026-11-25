@@ -1132,12 +1132,22 @@ run_cpp_unit_tests() {
     if [[ $# -eq 0 && -f CMakeCache.txt ]]; then
         build_dir=.
     fi
+    # The unified C++ catalog also contains Python contracts, independently of
+    # BUILD_PYTORCH_OPS. Keep an existing CUDA installation unchanged.
+    python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_test.txt" || return
+    if ! python -c 'import torch' >/dev/null 2>&1; then
+        local torch_package="torch==${TORCH_VER}"
+        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            torch_package+="+cpu"
+        fi
+        python -m pip install "$torch_package" -f "$TORCH_REPO_URL" || return
+    fi
     local gtest_filter="${GTEST_FILTER-*}"
     if [[ "${LOW_MEM_USAGE-}" == "ON" ]]; then
         gtest_filter="-*Reduce*Sum*"
     fi
     GTEST_FILTER="$gtest_filter" GTEST_SHUFFLE="${GTEST_SHUFFLE:-1}" \
-        cmake -DBUILD_DIR="$build_dir" -DCONFIG=Release \
+        cmake -DBUILD_DIR="$build_dir" -DCONFIG=Release -DPROFILE="${2:-ci}" \
         -P "${CLOUDVIEWER_SOURCE_ROOT}/tests/Run.cmake"
 }
 

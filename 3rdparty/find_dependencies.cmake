@@ -2079,7 +2079,6 @@ if (USE_BLAS)
                         "due to the large number of spurious warnings that are generated. If you "
                         "need to see link warnings please build with -DCMAKE_BUILD_TYPE=Debug.")
                     target_link_options(3rdparty_blas INTERFACE "-Wl,-w")
-                    target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
                 endif()
             endif()
         elseif (UNIX AND NOT APPLE)

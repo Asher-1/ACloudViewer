@@ -59,6 +59,21 @@ function(assert_selected build_dir test_name label expected_count)
     endif()
 endfunction()
 
+# CTest applies ENVIRONMENT first, then each ENVIRONMENT_MODIFICATION in order.
+# A shared Qt directory must not shadow the configured Python runtime, and
+# applying the helper twice must not prepend duplicate entries.
+if(UNIX AND NOT APPLE)
+    configure_case(runtime-order TRUE "")
+    set(runtime_dir "${OUTPUT_DIR}/runtime-order")
+    execute_process(COMMAND "${CTEST_EXECUTABLE}" --test-dir "${runtime_dir}" -V
+        RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE error)
+    set(expected "LD_LIBRARY_PATH=${runtime_dir}/python:${runtime_dir}/bin:${runtime_dir}/qt:${runtime_dir}/external/lib:${runtime_dir}/caller:${runtime_dir}/inherited")
+    string(FIND "${output}" "${expected}\n" position)
+    if(NOT result EQUAL 0 OR position EQUAL -1)
+        message(FATAL_ERROR "CTest runtime order mismatch; expected ${expected}:\n${output}\n${error}")
+    endif()
+endif()
+
 configure_case(valid TRUE "")
 set(valid_dir "${OUTPUT_DIR}/valid")
 execute_process(COMMAND "${CMAKE_COMMAND}" --build "${valid_dir}" --target cpp-tests

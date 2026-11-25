@@ -1,6 +1,6 @@
 {
   "upstream": "v1.5.2",
-  "patch_sha256": "7359fcd5411a671ad79e2c41717543de9d72e27700513be5fc5e3d1dcb76ab1c",
+  "patch_sha256": "b8b2d19fd20ad1c0b237d7a4555ca8fe307a1248f16dd192c9fbc2982c61c022",
   "files": [
     {
       "path": "CMakeLists.txt",
@@ -23,9 +23,19 @@
       "after_sha256": "8e18e5622a8068d86f16f13a2cd159a6cabf895e3fbb53bc940ae460d47ebb62"
     },
     {
+      "path": "lib/include/oclero/qlementine/animation/WidgetAnimation.hpp",
+      "before_sha256": "f4761517159b7e7efd06cc9c9ed8ddf128bd84a25ee47ca9c4fd6af99815b92f",
+      "after_sha256": "3cf547fe8899c83f9b4d87708a4821dd68571b6dbdaa9d93455a39a0725ac29e"
+    },
+    {
       "path": "lib/include/oclero/qlementine/animation/WidgetAnimationManager.hpp",
       "before_sha256": "6a20cf6e12629b88367096af0ca47a64358a65e6bda4d24297a3ddb1e54bd842",
       "after_sha256": "6ce5aae0dac57e67052c10000309fdac2bc2ae6be79a92e77dfbdd413d7c1d65"
+    },
+    {
+      "path": "lib/include/oclero/qlementine/animation/WidgetAnimator.hpp",
+      "before_sha256": "1131c970fbb1cbd4eaa98c39448080e76f9985d2cb4bbf2c71481d9b87c3e810",
+      "after_sha256": "8f52b3fe4dfc2d0ca6cda7dbe206580ae9003c4e9b8b22fa2948b86e9f6201a9"
     },
     {
       "path": "lib/include/oclero/qlementine/style/Delegates.hpp",

@@ -829,7 +829,7 @@ double VtkVis::getGLDepth(int x, int y) {
     int y1 = std::min(sz[1] - 1, y + radius);
     int w = x1 - x0 + 1;
     int h = y1 - y0 + 1;
-    std::vector<float> buf(w * h, 1.0f);
+    std::vector<float> buf(static_cast<size_t>(w) * h, 1.0f);
     if (rw->GetZbufferData(x0, y0, x1, y1, buf.data()) == 0) {
         return 1.0;
     }
@@ -1667,8 +1667,8 @@ void VtkVis::drawPointCloud(const CC_DRAW_CONTEXT& context,
                                 .count();
     if (pcMs > 200.0 && CVLog::diagnosticsEnabled()) {
         CVLog::Print("[draw] point cloud '%s' (%zu pts) drew in %.1f ms",
-                     cloud->getName().toLatin1().constData(), cloud->size(),
-                     pcMs);
+                     cloud->getName().toLatin1().constData(),
+                     static_cast<size_t>(cloud->size()), pcMs);
     }
 }
 
@@ -2162,9 +2162,10 @@ bool VtkVis::aggregateCameraSensor(const CC_DRAW_CONTEXT& context,
         return false;
     }
     if (!sensor || !sensor->isA(CV_TYPES::CAMERA_SENSOR)) return false;
-    const auto* camera = reinterpret_cast<const ccCameraSensor*>(sensor);
+    const auto* camera = dynamic_cast<const ccCameraSensor*>(sensor);
+    if (!camera) return false;
     if (CVLog::diagnosticsEnabled()) {
-        CVLog::Print("[agg] '%s' enter containsLeaf=%d geomKey=%d",
+        CVLog::Print("[agg] '%s' enter containsLeaf=%d geomKey=%zu",
                      viewID.c_str(),
                      m_compositeRegistry.containsLeaf(viewID) ? 1 : 0,
                      m_leafGeometryKey.count(viewID));
@@ -2325,16 +2326,20 @@ bool VtkVis::aggregateLineEntity(const CC_DRAW_CONTEXT& context,
         }
         return false;
     }
-    const bool isPolyline = entity->isA(CV_TYPES::POLY_LINE);
-    const bool isLineSet = entity->isA(CV_TYPES::LINESET);
-    if (!isPolyline && !isLineSet) return false;
+    auto* polyline = entity->isA(CV_TYPES::POLY_LINE)
+                             ? dynamic_cast<ccPolyline*>(entity)
+                             : nullptr;
+    auto* lineset =
+            entity->isA(CV_TYPES::LINESET)
+                    ? dynamic_cast<cloudViewer::geometry::LineSet*>(entity)
+                    : nullptr;
+    if (!polyline && !lineset) return false;
 
     unsigned keyCount = 0;
     bool closed = false;
     bool hasColors = false;
     ecvColor::Rgb resolvedColor = context.defaultPolylineColor;
-    if (isPolyline) {
-        ccPolyline* polyline = static_cast<ccPolyline*>(entity);
+    if (polyline) {
         // 2D-mode lines back-project their points through the LIVE view
         // camera on every conversion (Cc2Vtk::PolylineToPolyData): baking
         // them into a block would freeze camera-dependent geometry.
@@ -2345,7 +2350,6 @@ bool VtkVis::aggregateLineEntity(const CC_DRAW_CONTEXT& context,
         keyCount = polyline->size();
         closed = polyline->isClosed();
     } else {
-        auto* lineset = static_cast<cloudViewer::geometry::LineSet*>(entity);
         if (lineset->is2DMode()) return false;
         keyCount = lineset->segmentCount();
         if (lineset->isColorOverridden()) {
@@ -2413,12 +2417,10 @@ bool VtkVis::aggregateLineEntity(const CC_DRAW_CONTEXT& context,
     }
 
     vtkSmartPointer<vtkPolyData> linesData;
-    if (isPolyline) {
-        linesData = Converters::Cc2Vtk::PolylineToPolyData(
-                static_cast<ccPolyline*>(entity));
+    if (polyline) {
+        linesData = Converters::Cc2Vtk::PolylineToPolyData(polyline);
     } else {
-        linesData = VtkRendering::CreatePolyDataFromLineSet(
-                *static_cast<cloudViewer::geometry::LineSet*>(entity), false);
+        linesData = VtkRendering::CreatePolyDataFromLineSet(*lineset, false);
     }
     if (!linesData) return false;
 
@@ -2494,16 +2496,14 @@ void VtkVis::drawSensor(const CC_DRAW_CONTEXT& context,
     if (sensor->isA(CV_TYPES::CAMERA_SENSOR)) {
         // the sensor to draw
         const ccCameraSensor* camera =
-                reinterpret_cast<const ccCameraSensor*>(sensor);
+                dynamic_cast<const ccCameraSensor*>(sensor);
         if (!camera) return;
         linesData = VtkRendering::CreateCameraSensor(
                 camera, context.defaultPolylineColor, context.defaultMeshColor,
                 &planeFaceData);
     } else if (sensor->isA(CV_TYPES::GBL_SENSOR)) {
         // the sensor to draw
-        const ccGBLSensor* camera =
-                reinterpret_cast<const ccGBLSensor*>(sensor);
-        ;
+        const ccGBLSensor* camera = dynamic_cast<const ccGBLSensor*>(sensor);
         if (!camera) return;
         linesData = VtkRendering::CreateGBLSensor(camera);
     } else {

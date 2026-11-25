@@ -13,6 +13,7 @@ dependencies:
   - pcl=1.14.0 # will auto install required dependencies like vtk-9.2.6 and qt-5.15.8
   - qt=5.15.*
   - cgal=5.*
+  - libcxx<23 # jsoncpp 1.9.5 (VTK/PCL) requires the legacy vector ABI.
   - llvm-openmp # AppleClang does not ship OpenMP runtime; required by reconstruction/CVCoreLib
   - ffmpeg=6.1.*
   - mpv # libmpv: audio + hardware decode for video_base
