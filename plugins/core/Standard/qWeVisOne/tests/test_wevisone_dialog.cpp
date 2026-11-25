@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include <FileSystem.h>
+#include <gtest/gtest.h>
 
 #include <QApplication>
 #include <QComboBox>
@@ -24,19 +25,10 @@
 #include "ecvAssetIntegrity.h"
 #include "ecvTestDataRepository.h"
 
-#define REQUIRE(condition)                                               \
-    do {                                                                 \
-        if (!(condition)) {                                              \
-            std::fprintf(stderr, "line %d: %s\n", __LINE__, #condition); \
-            return 1;                                                    \
-        }                                                                \
-    } while (false)
-
-int main(int argc, char** argv) {
-    QApplication app(argc, argv);
+TEST(WeVisOneDialog, CachedSamplesAndLateCompletion) {
     QTemporaryDir temporary;
-    REQUIRE(temporary.isValid());
-    REQUIRE(cloudViewer::utility::filesystem::SetEnvVar(
+    ASSERT_TRUE(temporary.isValid());
+    ASSERT_TRUE(cloudViewer::utility::filesystem::SetEnvVar(
             "CLOUDVIEWER_DATA_ROOT", temporary.path().toUtf8().toStdString()));
     using Repository = ecvTestDataRepository;
     constexpr auto kind = Repository::Dataset::WeVisOne;
@@ -63,14 +55,14 @@ int main(int argc, char** argv) {
             "6e655f766c5f746573745f646174612f646f67732e6a7067504b050600000000"
             "03000300ef000000e90000000000");
     const QString archive = Repository::zipPath(kind);
-    REQUIRE(QDir().mkpath(QFileInfo(archive).absolutePath()));
+    ASSERT_TRUE(QDir().mkpath(QFileInfo(archive).absolutePath()));
     QFile file(archive);
-    REQUIRE(file.open(QIODevice::WriteOnly));
-    REQUIRE(file.write(bytes) == bytes.size());
+    ASSERT_TRUE(file.open(QIODevice::WriteOnly));
+    ASSERT_TRUE(file.write(bytes) == bytes.size());
     file.close();
-    REQUIRE(ecvAssetIntegrity::markVerified(
+    ASSERT_TRUE(ecvAssetIntegrity::markVerified(
             archive, Repository::getDatasetInfo(kind).anchor));
-    REQUIRE(!QDir(Repository::extractPath(kind)).exists());
+    ASSERT_TRUE(!QDir(Repository::extractPath(kind)).exists());
 
     WeVisOneDialog dialog;
     auto* input = dialog.findChild<QLineEdit*>("inputImage");
@@ -78,9 +70,9 @@ int main(int argc, char** argv) {
     auto* task = dialog.findChild<QComboBox*>("taskMode");
     auto* query = dialog.findChild<QPlainTextEdit*>("queryText");
     auto* refBoxes = dialog.findChild<QLineEdit*>("refBoxes");
-    REQUIRE(input && sample && task && query && refBoxes);
+    ASSERT_TRUE(input && sample && task && query && refBoxes);
     int completions = 0;
-    QObject::connect(&repository, &Repository::datasetReady, &app,
+    QObject::connect(&repository, &Repository::datasetReady, &dialog,
                      [&](bool, Repository::Dataset readyKind) {
                          if (readyKind == kind) ++completions;
                      });
@@ -88,57 +80,62 @@ int main(int argc, char** argv) {
     // manifest-verbatim newline-separated category list.
     sample->click();
     const QString demo = Repository::findDatasetFile(kind, "livingroom.jpg");
-    REQUIRE(!demo.isEmpty() && input->text() == demo);
-    REQUIRE(query->toPlainText() == "sofa\npillow\nlamp");
-    REQUIRE(completions == 1 && sample->isEnabled());
+    ASSERT_TRUE(!demo.isEmpty() && input->text() == demo);
+    ASSERT_TRUE(query->toPlainText() == "sofa\npillow\nlamp");
+    ASSERT_TRUE(completions == 1 && sample->isEnabled());
     input->clear();
     sample->click();
-    REQUIRE(input->text() == demo && completions == 1);
+    ASSERT_TRUE(input->text() == demo && completions == 1);
 
     // Task switch re-fills the task-optimal demo member and its query.
     task->setCurrentIndex(task->findText("referring"));
     sample->click();
     const QString dogs = Repository::findDatasetFile(kind, "dogs.jpg");
-    REQUIRE(!dogs.isEmpty() && input->text() == dogs);
-    REQUIRE(query->toPlainText() == "the dog closest to the camera");
+    ASSERT_TRUE(!dogs.isEmpty() && input->text() == dogs);
+    ASSERT_TRUE(query->toPlainText() == "the dog closest to the camera");
 
     // visual_prompt: the seabreeze demo carries the manifest reference box.
     task->setCurrentIndex(task->findText("visual_prompt"));
     sample->click();
     const QString seabreeze =
             Repository::findDatasetFile(kind, "seabreeze.jpg");
-    REQUIRE(!seabreeze.isEmpty() && input->text() == seabreeze);
-    REQUIRE(refBoxes->text() == "880,120,1500,1070");
+    ASSERT_TRUE(!seabreeze.isEmpty() && input->text() == seabreeze);
+    ASSERT_TRUE(refBoxes->text() == "880,120,1500,1070");
     // Back to detection: the previous task's boxes must not leak.
     task->setCurrentIndex(task->findText("detection"));
     sample->click();
-    REQUIRE(input->text() == demo && refBoxes->text().isEmpty());
+    ASSERT_TRUE(input->text() == demo && refBoxes->text().isEmpty());
 
     // Idle broadcasts cannot overwrite an explicit user input.
     input->setText("user-selected-image.png");
     emit repository.datasetReady(true, kind);
-    REQUIRE(input->text() == "user-selected-image.png");
+    ASSERT_TRUE(input->text() == "user-selected-image.png");
 
     // Close a pending cold request, then deliver a late completion.
-    REQUIRE(QFile::remove(archive));
-    REQUIRE(QDir(Repository::extractPath(kind)).removeRecursively());
+    ASSERT_TRUE(QFile::remove(archive));
+    ASSERT_TRUE(QDir(Repository::extractPath(kind)).removeRecursively());
     auto* manager = repository.findChild<QNetworkAccessManager*>();
-    REQUIRE(manager);
+    ASSERT_TRUE(manager);
     manager->setProxy(QNetworkProxy(QNetworkProxy::HttpProxy, "127.0.0.1", 9));
     sample->click();
-    REQUIRE(!sample->isEnabled());
+    ASSERT_TRUE(!sample->isEnabled());
     dialog.reject();
-    REQUIRE(sample->isEnabled());
-    REQUIRE(QDir().mkpath(QFileInfo(demo).absolutePath()));
+    ASSERT_TRUE(sample->isEnabled());
+    ASSERT_TRUE(QDir().mkpath(QFileInfo(demo).absolutePath()));
     QFile lateDemo(demo);
-    REQUIRE(lateDemo.open(QIODevice::WriteOnly));
-    REQUIRE(lateDemo.write("P6\n1 1\n255\n\xff\0\0", 14) == 14);
+    ASSERT_TRUE(lateDemo.open(QIODevice::WriteOnly));
+    ASSERT_TRUE(lateDemo.write("P6\n1 1\n255\n\xff\0\0", 14) == 14);
     lateDemo.close();
     emit repository.datasetReady(true, kind);
-    REQUIRE(input->text() == "user-selected-image.png");
+    ASSERT_TRUE(input->text() == "user-selected-image.png");
     repository.cancelDownload();
     std::puts(
             "WeVisOne: cached ZIP fill, task demos, warm reuse and stale "
             "callbacks passed");
-    return 0;
+}
+
+int main(int argc, char** argv) {
+    QApplication app(argc, argv);
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

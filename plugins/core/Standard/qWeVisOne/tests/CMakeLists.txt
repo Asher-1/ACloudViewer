@@ -15,18 +15,10 @@ if(NOT MSVC)
     endif()
 endif()
 cloudviewer_set_bin_runtime_output_directory(test_qwevisone_dialog)
-if(COMMAND aicore_register_test)
-    aicore_register_test(NAME test_qwevisone_dialog
-        TARGET test_qwevisone_dialog LABELS "cvpluginapi;wevisone;capi")
-else()
-    add_test(NAME test_qwevisone_dialog COMMAND test_qwevisone_dialog)
-endif()
+target_link_libraries(test_qwevisone_dialog PRIVATE 3rdparty_googletest)
+cloudviewer_add_test(NAME test_qwevisone_dialog COMMAND test_qwevisone_dialog
+    LABELS cvpluginapi wevisone capi)
 cloudviewer_set_plugin_test_env_offscreen(test_qwevisone_dialog)
-
-if(NOT TARGET 3rdparty_googletest)
-    message(STATUS "qWeVisOne tests: googletest not available — skipping")
-    return()
-endif()
 
 add_executable(test_qwevisone_helpers test_wevisone_helpers.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/WeVisOneModelCatalog.cpp
@@ -58,7 +50,8 @@ if(NOT MSVC)
 endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_qwevisone_helpers)
-add_test(NAME test_qwevisone_helpers COMMAND test_qwevisone_helpers)
+cloudviewer_add_test(NAME test_qwevisone_helpers COMMAND test_qwevisone_helpers
+    LABELS wevisone)
 cloudviewer_set_plugin_test_env(test_qwevisone_helpers)
 
 # Cold-start evidence for the shared WeVisOne test-data chain (download ->
@@ -93,5 +86,6 @@ if(NOT MSVC)
 endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_qwevisone_testdata)
-add_test(NAME test_qwevisone_testdata COMMAND test_qwevisone_testdata)
+cloudviewer_add_test(NAME test_qwevisone_testdata COMMAND test_qwevisone_testdata
+    LABELS wevisone network)
 cloudviewer_set_plugin_test_env(test_qwevisone_testdata)

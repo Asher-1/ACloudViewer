@@ -27,8 +27,10 @@ void set_log_level(LogLevel level);
 LogLevel log_level();
 
 // printf-style logging through the level gate; prefixes [wwv:debug] etc.
-void logf(LogLevel level, const char* fmt, ...)
-        __attribute__((format(printf, 2, 3)));
+#if defined(__GNUC__) || defined(__clang__)
+__attribute__((format(printf, 2, 3)))
+#endif
+void logf(LogLevel level, const char* fmt, ...);
 
 // Monotonic wall clock in milliseconds.
 double now_ms();

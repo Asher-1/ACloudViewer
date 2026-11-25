@@ -17,6 +17,7 @@
 #include <glob.h>
 #endif
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
