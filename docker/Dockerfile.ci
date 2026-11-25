@@ -120,8 +120,6 @@ RUN apt-get clean \
         libpng-dev \
         libtiff-dev \
         libhdf5-dev \
-        # for colmap
-        libatlas-base-dev \
         # for package
         zip \
         unzip \
@@ -166,7 +164,14 @@ RUN apt-get clean \
         libxcb-keysyms1 \
         libxcb-xinerama0 \
         libxkbcommon-x11-0 \
-        libxcb-render-util0
+        libxcb-render-util0 \
+    # for colmap: ATLAS was dropped from Ubuntu 26.04 (resolute); fall back to
+    # reference BLAS/LAPACK when the package has no installation candidate.
+    && if apt-cache policy libatlas-base-dev 2>/dev/null | grep -q 'Candidate: [0-9]'; then \
+        cloudviewer-apt-install -q libatlas-base-dev; \
+    else \
+        cloudviewer-apt-install -q libblas-dev liblapack-dev; \
+    fi
 
 # Install Qt (major version selected by QT_MAJOR).
 # Qt5: system default Qt5 packages (Qt 5.12+ on Ubuntu 20.04, Qt 5.15+ on 22.04+).

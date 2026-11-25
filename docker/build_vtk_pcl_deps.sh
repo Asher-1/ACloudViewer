@@ -132,8 +132,8 @@ build_all_deps() {
     cmake -DCMAKE_BUILD_TYPE=RELEASE \
         -DVTK_GROUP_ENABLE_Qt=YES \
         -DVTK_MODULE_ENABLE_VTK_GUISupportQt=YES \
-        -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=YES \
-        -DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL=YES \
+        -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=NO \
+        -DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL=NO \
         -DVTK_MODULE_ENABLE_VTK_RenderingQt=YES \
         -DVTK_MODULE_ENABLE_VTK_ViewsQt=YES \
         -DVTK_QT_VERSION:STRING=${QT_MAJOR} \
