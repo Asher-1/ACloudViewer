@@ -55,7 +55,8 @@ QT_MAJOR="${6:-5}"
 # find_package(Qt6) resolves via the multiarch lib/<arch>/cmake search path.
 if [ "${QT_MAJOR}" = "6" ]; then
     QT_QMAKE="${QT_DIR}/bin/qmake6"
-    QT_CMAKE_PREFIX="${QT_DIR}"
+    # Keep the locally built Eigen ahead of the distro config under /usr.
+    QT_CMAKE_PREFIX="/usr/local;${QT_DIR}"
 else
     QT_QMAKE="${QT_DIR}/bin/qmake"
     QT_CMAKE_PREFIX="${QT_DIR}/lib/cmake"
