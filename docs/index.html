@@ -173,7 +173,7 @@
                         <i class="fas fa-microchip"></i>
                     </div>
                     <h3 data-i18n="features.aicore.title">AICore AI Plugins</h3>
-                    <p data-i18n="features.aicore.desc">22 native GGUF plugins — depth, matching, faces, OCR, detection, segmentation, open-vocab understanding, background removal, tagging, 3D generation, reconstruction, LiDAR detection & annotation — no Python runtime</p>
+                    <p data-i18n="features.aicore.desc">23 native GGUF plugins — depth, matching, faces, OCR, detection, segmentation, open-vocab understanding, background removal, tagging, 3D generation, reconstruction, LiDAR detection & annotation — no Python runtime</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
@@ -190,10 +190,10 @@
     <section id="aicore" class="aicore-showcase">
         <div class="container">
             <h2 class="section-title" data-i18n="aicore.title">AICore AI Plugins</h2>
-            <p class="section-subtitle" data-i18n="aicore.subtitle">Twenty-two GUI plugins spanning perception, detection, segmentation, open-vocabulary understanding, 3D generation, reconstruction and annotation — powered by libAICore.so and GGUF models, fully integrated into the GUI</p>
+            <p class="section-subtitle" data-i18n="aicore.subtitle">Twenty-three GUI plugins spanning perception, detection, segmentation, open-vocabulary understanding, 3D generation, reconstruction and annotation — powered by libAICore.so and GGUF models, fully integrated into the GUI</p>
 
             <div class="aicore-badges">
-                <span class="aicore-badge"><i class="fas fa-plug"></i> <span data-i18n="aicore.badge.count">22 GUI plugins</span></span>
+                <span class="aicore-badge"><i class="fas fa-plug"></i> <span data-i18n="aicore.badge.count">23 GUI plugins</span></span>
                 <span class="aicore-badge"><i class="fas fa-bolt"></i> <span data-i18n="aicore.badge.gpu">CUDA / Vulkan / Metal</span></span>
                 <span class="aicore-badge"><i class="fas fa-box"></i> <span data-i18n="aicore.badge.gguf">Compact GGUF models</span></span>
                 <span class="aicore-badge"><i class="fas fa-code"></i> <span data-i18n="aicore.badge.native">No Python runtime</span></span>
@@ -436,6 +436,23 @@
                         <ul class="aicore-plugin-points">
                             <li>Seven upstream tasks with EN / ZH prompt templates</li>
                             <li>Region OCR reads text at target indexes via PP-OCR proposals</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin aicore-plugin-reverse">
+                    <div class="aicore-plugin-media">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qWeVisOne/images/detection.jpg" alt="qWeVisOne unified perception detection">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qWeVisOne/images/matting.jpg" alt="qWeVisOne alpha matting">
+                        </div>
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3>Unified Visual Perception (qWeVisOne)</h3>
+                        <p>WeVisOne-VL 2B/4B (Qwen3-VL) GGUF answers with structured box tokens — eleven tasks from detection and counting to OCR, segmentation and matting, with a pixel decoder for per-object alpha mattes and explicit None rejection.</p>
+                        <ul class="aicore-plugin-points">
+                            <li>Eleven upstream tasks on one model, 2B / 4B families</li>
+                            <li>Pixel decoder alpha mattes; headless -WEVISONE_RUN batch</li>
                         </ul>
                     </div>
                 </article>
@@ -1037,6 +1054,13 @@ make -j$(nproc)">
                         <div class="gallery-overlay">
                             <h3>Open-Vocab Grounding &amp; Region QA</h3>
                             <p>VLX-Seek 1.5-10B: detection, counting, VQA and region OCR via region retrieval</p>
+                        </div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qWeVisOne/images/detection.jpg" alt="qWeVisOne unified visual perception">
+                        <div class="gallery-overlay">
+                            <h3>Unified Visual Perception</h3>
+                            <p>WeVisOne-VL 2B/4B: 11 tasks — detection, counting, OCR, segmentation &amp; matting via box tokens + pixel decoder</p>
                         </div>
                     </div>
                     <div class="gallery-item">

@@ -14,7 +14,7 @@ ACloudViewer provides the following core features:
 - **Interactive Visualization**: Qt-based 3D viewer with rich interaction
 - **Comprehensive I/O**: Support for PCD, PLY, LAS, E57, OBJ, STL, and many other formats
 - **Plugin System**: Extensible architecture for custom algorithms
-- **AICore AI Inference**: Native GGUF inference (``libAICore``) for 22 AI plugins — depth, matching, detection, segmentation, 3D generation and annotation, no Python runtime
+- **AICore AI Inference**: Native GGUF inference (``libAICore``) for 23 AI plugins — depth, matching, detection, segmentation, 3D generation and annotation, no Python runtime
 - **PCL Integration**: Seamless interoperability with Point Cloud Library
 - **Cross-Platform**: Linux, macOS, and Windows support
 
@@ -123,8 +123,8 @@ Monolithic native AI inference runtime (``libAICore``, ``core/AICore/``):
 - **Shared Model Catalog**: SHA-256 verified downloads and cache resolution (``asset_digests.h``)
 - **DB-tree Integration**: depth clouds, match lines, Gaussian PLY and camera frustums become first-class entities
 
-**AI Plugins (22)**: qDA3, qDeepLSD, qLightGlue, qFaceDetect, qOCR, qYOLO, qSAM3,
-qRFDetr, qRMBG, qRAM, qRelateAnything, qGKD, qVLXSeek, qFreeSplatter, qTrellis,
+**AI Plugins (23)**: qDA3, qDeepLSD, qLightGlue, qFaceDetect, qOCR, qYOLO, qSAM3,
+qRFDetr, qRMBG, qRAM, qRelateAnything, qGKD, qVLXSeek, qWeVisOne, qFreeSplatter, qTrellis,
 qInstantMesh, qSAM3D, qQuerySplat, qMapAnything, qLingbotMap, qOpenPCDet,
 qAnyLabeling — see :doc:`plugins` for the full catalog with tasks, models and
 CMake flags, and :doc:`../guides/plugins/README` for the user guides.
@@ -158,7 +158,7 @@ ACloudViewer includes many standard plugins:
 - **QPoisson_Recon**: Poisson surface reconstruction
 - **QCSF**: Cloth Simulation Filtering for ground extraction
 - **QAnimation**: Animation and video export
-- **AICore AI plugins (22)**: qDA3, qYOLO, qSAM3, qTrellis, qFreeSplatter, qRFDetr, qRMBG, qLightGlue, qDeepLSD, qFaceDetect, qOCR, qGKD, qRAM, qRelateAnything, qVLXSeek, qInstantMesh, qSAM3D, qQuerySplat, qMapAnything, qLingbotMap, qOpenPCDet, qAnyLabeling — native GGUF inference via ``libAICore`` (full catalog in :doc:`plugins`)
+- **AICore AI plugins (23)**: qDA3, qYOLO, qSAM3, qTrellis, qFreeSplatter, qRFDetr, qRMBG, qLightGlue, qDeepLSD, qFaceDetect, qOCR, qGKD, qRAM, qRelateAnything, qVLXSeek, qWeVisOne, qInstantMesh, qSAM3D, qQuerySplat, qMapAnything, qLingbotMap, qOpenPCDet, qAnyLabeling — native GGUF inference via ``libAICore`` (full catalog in :doc:`plugins`)
 - And 20+ more...
 
 Application Layer

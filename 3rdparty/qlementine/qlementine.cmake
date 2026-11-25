@@ -6,13 +6,18 @@ set(_qlementine_archive_hash e59107e4ea2d70393dddec0c246d59fe30bd4b20360255ae56c
 set(_qlementine_patch "${CMAKE_CURRENT_LIST_DIR}/patches/0001-qt5-qt6-compatibility.patch")
 set(_qlementine_manifest "${CMAKE_CURRENT_LIST_DIR}/port-manifest.json")
 set(_qlementine_runner "${CMAKE_CURRENT_LIST_DIR}/patches/apply_qlementine_patch.cmake")
+# The patched sources include the application's unified QtCompat.h; its content
+# is part of the verified source identity, so edits select fresh EP sources.
+set(_qlementine_qtcompat "${CMAKE_SOURCE_DIR}/core/include/QtCompat.h")
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
-    "${_qlementine_patch}" "${_qlementine_manifest}" "${_qlementine_runner}")
+    "${_qlementine_patch}" "${_qlementine_manifest}" "${_qlementine_runner}"
+    "${_qlementine_qtcompat}")
 file(SHA256 "${_qlementine_patch}" _qlementine_patch_hash)
 file(SHA256 "${_qlementine_manifest}" _qlementine_manifest_hash)
 file(SHA256 "${_qlementine_runner}" _qlementine_runner_hash)
+file(SHA256 "${_qlementine_qtcompat}" _qlementine_qtcompat_hash)
 string(SHA256 _qlementine_source_id
-    "${_qlementine_version}:${_qlementine_archive_hash}:${_qlementine_patch_hash}:${_qlementine_manifest_hash}:${_qlementine_runner_hash}:Qt6=${USE_QT6}")
+    "${_qlementine_version}:${_qlementine_archive_hash}:${_qlementine_patch_hash}:${_qlementine_manifest_hash}:${_qlementine_runner_hash}:${_qlementine_qtcompat_hash}:Qt6=${USE_QT6}")
 string(SUBSTRING "${_qlementine_source_id}" 0 16 _qlementine_source_id)
 
 # cmake/CMakeExternalLibs.cmake is the single owner of the Qt major and imported
@@ -72,6 +77,7 @@ ExternalProject_Add(ext_qlementine
         -DCMAKE_POLICY_DEFAULT_CMP0063:STRING=NEW
         -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON
         "-DUSE_QT6:BOOL=${USE_QT6}"
+        "-DQLEMENTINE_QTCOMPAT_INCLUDE_DIR:PATH=${CMAKE_SOURCE_DIR}/core/include"
         -DQLEMENTINE_BUILD_STATIC:BOOL=ON
         -DQLEMENTINE_BUILD_SHARED:BOOL=OFF
         -DQLEMENTINE_BUILD_STYLE_PLUGIN:BOOL=OFF

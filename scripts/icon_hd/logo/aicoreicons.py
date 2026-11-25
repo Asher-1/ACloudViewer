@@ -10,7 +10,8 @@ NAME_LINES={
  'MapAnything':('MAP','ANYTHING'),'OCR':('OCR',),'OpenPCDet':('Open','PCDet'),
  'QuerySplat':('QUERY','SPLAT'),'RAM++':('RAM++',),'RF-DETR':('RF-DETR',),
  'RMBG':('RMBG',),'RelateAnything':('Relate','Anything'),'SAM3':('SAM3',),
- 'SAM3D':('Sam3D',),'TRELLIS.2':('TRELLIS.2',),'VLX-Seek':('VLX-Seek',),'YOLO':('YOLO',),
+ 'SAM3D':('Sam3D',),'TRELLIS.2':('TRELLIS.2',),'VLX-Seek':('VLX-Seek',),
+ 'WeVisOne':('WeVisOne',),'YOLO':('YOLO',),
 }
 SOURCE_CAPTIONS={
  'DA3':('Depth',),'DeepLSD':('Deep LSD',),'FreeSplatter':('FS',),
@@ -33,7 +34,7 @@ FAMILY={
 'RMBG':('matte','#EEEEEC','#888B85'),'RelateAnything':('relations','#F1EDE6','#998B73'),
 'SAM3':('mask','#E8F0E9','#718E77'),'SAM3D':('shape','#E7EEF0','#6D8A94'),
 'TRELLIS.2':('generation','#EDEAF0','#8A7E96'),'VLX-Seek':('search','#EBEDF4','#7A84A1'),
-'YOLO':('detect-depth','#EEEFE3','#8B9060')}
+'WeVisOne':('perception','#EDEAF2','#8E809B'),'YOLO':('detect-depth','#EEEFE3','#8B9060')}
 
 def _tile(mark,name):
  family,base,accent=FAMILY[name]
@@ -140,6 +141,10 @@ def build(name):
   marks=P.rect(1,4,7,7,P.BLUE_PALE,r=.5)+P.poly([(1.5,10),(4,6),(7.5,10)],P.GREEN_LT)+P.arrow(9,8,13,8,P.GREEN,head=1.1,sw=.8)+P.circle(17.5,11,5.3,P.BLUE_PALE)+P.stroke('M 12.5 9 Q 17.5 5 22.5 9 M 12.5 13 Q 17.5 17 22.5 13 M 17.5 5.7 C 13 10 13 12 17.5 16.3 C 22 12 22 10 17.5 5.7',colour=P.INK,sw=.5)
  elif name=='VLX-Seek':
   marks=_frame(3,3,18,14,P.BLUE_STRONG)+P.rect(8,6,13,10,P.GREEN_LT,r=.7)+P.circle(9.5,8.5,5,'none',outline=P.GREY_DK)+P.line(13,12,19,18,P.GREY_DK,1.8)+P.rect(6,14,16,5,'#FAFAF6',r=.3)+label_path('<objN>',x=6.4,y=18,width=15.2,height=3.2)
+ elif name=='WeVisOne':
+  # One eye over the scene plus the three output families of the unified
+  # model: detection box, green alpha matte and point marker.
+  marks=P.stroke('M 2 8 Q 12 1 22 8 Q 12 15 2 8 Z',sw=.9)+P.circle(12,8,3.4,P.BLUE_MID)+P.circle(12,8,1.3,P.INK,outline=None)+_frame(2,15,8,7,P.BLUE_STRONG)+P.fill('M 11 21 Q 12.5 15.5 15.5 17 Q 19 18.5 17.5 21 Q 14 22.5 11 21 Z',P.GREEN_LT,sw=.7)+P.circle(21,18,1.1,P.YELLOW)+P.circle(21,18,2,'none',outline=P.TAN_DK)
  elif name=='YOLO':
   marks='<defs>'+P.linear('depth',[(i/5,c) for i,c in enumerate(P.FIELD)])+'</defs>'+_ptcloud()+_frame(3,3,9,8,P.GREEN)+_frame(10,11,8,8,P.YELLOW)+P.rect(20.3,2.5,2,18,'url(#depth)',r=.35)
  else:raise KeyError(name)
@@ -153,4 +158,5 @@ NAMES={
 'qGKD':'GKD','qInstantMesh':'InstantMesh','qLightGlue':'LightGlue','qLingbotMap':'LingBot-Map',
 'qMapAnything':'MapAnything','qOCR':'OCR','qOpenPCDet':'OpenPCDet','qQuerySplat':'QuerySplat',
 'qRAM':'RAM++','qRFDetr':'RF-DETR','qRMBG':'RMBG','qRelateAnything':'RelateAnything',
-'qSAM3':'SAM3','qSAM3D':'SAM3D','qTrellis':'TRELLIS.2','qVLXSeek':'VLX-Seek','qYOLO':'YOLO'}
+'qSAM3':'SAM3','qSAM3D':'SAM3D','qTrellis':'TRELLIS.2','qVLXSeek':'VLX-Seek',
+'qWeVisOne':'WeVisOne','qYOLO':'YOLO'}

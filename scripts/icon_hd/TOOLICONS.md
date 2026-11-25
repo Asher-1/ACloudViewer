@@ -189,8 +189,8 @@ requirement, live text, embedded raster or filter. SVG intrinsic dimensions are
 
 The verifier compiles each plugin QRC into an isolated bundle, checks the
 metadata's effective icon URL and canonical bytes, and renders normal/disabled
-states at 16/24/32/48/64/128/384/1024 px. It then checks all 21 bundles together.
-Review output uses fixed `AI-01`–`AI-21` identifiers and retains actual originals.
+states at 16/24/32/48/64/128/384/1024 px. It then checks all 22 bundles together.
+Review output uses fixed `AI-01`–`AI-22` identifiers and retains actual originals.
 At very small toolbar sizes the full long names are physically limited; the
 128px name-glyph bounds are measured independently, and no 16px readability or
 visual approval is inferred from a successful render. No inference ABI, workers,

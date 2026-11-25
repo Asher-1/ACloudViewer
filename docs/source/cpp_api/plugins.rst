@@ -182,7 +182,7 @@ Available Standard Plugins
 
 **AI inference (AICore)**
 
-Twenty-two plugins share one native inference library — ``libAICore.so``
+Twenty-three plugins share one native inference library — ``libAICore.so``
 (``core/AICore/``), whose ggml runtime is vendored from llama.cpp. All require
 ``-DAICore_ENABLED=ON``; quantized **GGUF** models run on CUDA / Vulkan / Metal /
 CPU with no Python or PyTorch at runtime, and results land directly in the DB
@@ -211,6 +211,7 @@ README for each plugin is under ``plugins/core/Standard/``.
 * **qRelateAnything**: RelSGG ViT / ConvNeXt GGUF (24 models) — subject–predicate–object scene relation graphs over tracked objects (image & video). CMake: ``PLUGIN_STANDARD_QRELATEANYTHING``. Guide: :doc:`../guides/plugins/qRelateAnything`.
 * **qGKD**: GKDT-L GGUF (ECCV 2026) — open-world keypoint detection with text / visual 1-shot / multimodal / multi-object prompts. CMake: ``PLUGIN_STANDARD_QGKD``. Guide: :doc:`../guides/plugins/qGKD`.
 * **qVLXSeek**: VLX-Seek 1.5-10B GGUF — open-vocab grounding: detection, counting, VQA and region OCR via region retrieval. CMake: ``PLUGIN_STANDARD_QVLXSEEK``. Guide: :doc:`../guides/plugins/qVLXSeek`.
+* **qWeVisOne**: WeVisOne-VL 2B/4B (Qwen3-VL) GGUF — unified perception: detection, referring, pointing, counting, OCR, segmentation, matting and visual-prompt grounding via structured box tokens plus a pixel decoder for alpha mattes. CMake: ``PLUGIN_STANDARD_QWEVISONE``. Guide: :doc:`../guides/plugins/qWeVisOne`.
 
 *3D generation & reconstruction*
 

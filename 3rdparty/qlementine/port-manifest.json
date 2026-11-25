@@ -1,6 +1,6 @@
 {
   "upstream": "v1.5.2",
-  "patch_sha256": "b8b2d19fd20ad1c0b237d7a4555ca8fe307a1248f16dd192c9fbc2982c61c022",
+  "patch_sha256": "d58177f8b855fb27b555c4c070f5663b9c73e06ef54ebdfef6440ef85f1c55c9",
   "files": [
     {
       "path": "CMakeLists.txt",
@@ -20,7 +20,7 @@
     {
       "path": "lib/CMakeLists.txt",
       "before_sha256": "3c4dbbc6b047335b051c0ce4ff91fbb97382b487a7d91176b5e070da5ed1e980",
-      "after_sha256": "8e18e5622a8068d86f16f13a2cd159a6cabf895e3fbb53bc940ae460d47ebb62"
+      "after_sha256": "fb29cd23fb15caff2cc5745e421117b7d09a27eba64b7c55ed295b1316c81b91"
     },
     {
       "path": "lib/include/oclero/qlementine/animation/WidgetAnimation.hpp",
@@ -54,8 +54,8 @@
     },
     {
       "path": "lib/include/oclero/qlementine/utils/QtCompat.hpp",
-      "before_sha256": null,
-      "after_sha256": "0c0462d4c3561d854b0361747f49abd6187a55334420d6e2952582f22f7245d4"
+      "before_sha256": "",
+      "after_sha256": "f92daf3c2b2990e58c2901062c46389ed00a4cb29f84ecc586207f0a68f5be11"
     },
     {
       "path": "lib/include/oclero/qlementine/utils/StyleUtils.hpp",
@@ -120,7 +120,7 @@
     {
       "path": "lib/src/style/QlementineStyle.cpp",
       "before_sha256": "9178c206bc256abadae6a27da1d40400a2518d119da26cbf699b3f0134130570",
-      "after_sha256": "1b1160a403a99fb7aa4cefd02ed62d94f629211edf52314ace1c6616aa97f44b"
+      "after_sha256": "e1dc7fcc9db79c618ac52b02f0ae761f224939b6e94ed88b4f5236bcae9f1802"
     },
     {
       "path": "lib/src/style/Theme.cpp",
@@ -136,6 +136,11 @@
       "path": "lib/src/style/eventFilters/MenuEventFilter.hpp",
       "before_sha256": "da366d76771fcd3077b85fb5e74a8f80b57faa6715691d6b4ee32b7bcfe12199",
       "after_sha256": "4cfe1d75ce3ffc2514aceeb8cdab65f874df3544f473c73c8af552f24396fd3c"
+    },
+    {
+      "path": "lib/src/style/eventFilters/TabBarEventFilter.hpp",
+      "before_sha256": "960c1a3b41ea9311f4c874564d8db038c32c0465c03f23e7ec1fbdbe2d73df5f",
+      "after_sha256": "c3f2f76649556603c26c8afa345da29db338e7d01bb1976f023c53f58776b3c8"
     },
     {
       "path": "lib/src/style/eventFilters/WidgetWithFocusFrameEventFilter.hpp",
@@ -161,6 +166,11 @@
       "path": "lib/src/utils/GeometryUtils.cpp",
       "before_sha256": "12a41d71c2a6f94cf776d2d8c076143c916f0a7f8c65a8fc91bd79d89c55626b",
       "after_sha256": "522931082ccacc44b58eaed9c52bbacdf13dddf82b39628d77159e9740425c23"
+    },
+    {
+      "path": "lib/src/utils/IconUtils.cpp",
+      "before_sha256": "16cc36659f3f2d52f93e8515049d953c01da863d9e1ed088d16ec925f46ac159",
+      "after_sha256": "cf69c8a4bb713f027080b54fd3f976849a28f1a2d90673a2afbdcda0e8dc0c5c"
     },
     {
       "path": "lib/src/utils/MenuUtils.cpp",

@@ -7,6 +7,10 @@
 
 // Qt5/Qt6 Compatibility Layer
 //
+// Supported Qt range: every release from Qt 5.12 through Qt 6 (all 6.x
+// minors). Version-dependent APIs must resolve through QT_VERSION guards
+// here, never through a customized Qt installation.
+//
 // This header provides compatibility wrappers for APIs that differ between Qt5
 // and Qt6. Include this header instead of directly using Qt headers for
 // compatibility-sensitive APIs.
@@ -131,6 +135,19 @@
 //    - QFontDatabase::families() is an instance method on Qt5 and a static
 //      member on Qt6 (the constructor was removed)
 //    - Function: qtCompatFontFamilies()
+//
+// 23. Tab Bar Tab Visibility:
+//    - QTabBar::isTabVisible() (Qt5.15+/Qt6); older Qt5 cannot hide tabs
+//    - Function: qtCompatTabBarIsTabVisible()
+//
+// 24. Push Button Bevel Sub-Element:
+//    - QStyle::SE_PushButtonBevel (Qt6.7+); older Qt keeps a private value
+//      above SE_CustomBase for styles that handle it themselves
+//    - Function: qtCompatPushButtonBevelSubElement()
+//
+// Module boundary: this header only includes QtCore/QtWidgets headers, which
+// every consumer already links. Helpers needing another Qt module (e.g. Svg)
+// belong to the consuming library's own compatibility surface, not here.
 //
 // USAGE EXAMPLES:
 //
@@ -1535,5 +1552,44 @@ inline QPixmap qtCompatLabelPixmap(const QLabel* label) {
 #else
     const QPixmap* pm = label->pixmap();
     return pm ? *pm : QPixmap();
+#endif
+}
+
+// ----------------------------------------------------------------------------
+// QTabBar::isTabVisible() Compatibility
+// ----------------------------------------------------------------------------
+// Qt5.0-5.14: isTabVisible() does not exist; tabs cannot be hidden, so every
+// valid tab is visible.
+// Qt5.15+/Qt6: isTabVisible() reports the per-tab visibility flag.
+// ----------------------------------------------------------------------------
+
+#include <QTabBar>
+
+inline bool qtCompatTabBarIsTabVisible(const QTabBar* tabBar, int index) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    return tabBar && tabBar->isTabVisible(index);
+#else
+    Q_UNUSED(tabBar);
+    Q_UNUSED(index);
+    return true;
+#endif
+}
+
+// ----------------------------------------------------------------------------
+// QStyle::SE_PushButtonBevel Compatibility
+// ----------------------------------------------------------------------------
+// Qt6.7+ exposes SE_PushButtonBevel. Older Qt has no such enumerator; a style
+// that handles the bevel rect in its own subElementRect() override can use a
+// private value above SE_CustomBase. Keep that value out of switch labels on
+// older Qt (-Wswitch rejects out-of-range case values).
+// ----------------------------------------------------------------------------
+
+#include <QStyle>
+
+constexpr QStyle::SubElement qtCompatPushButtonBevelSubElement() noexcept {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+    return QStyle::SE_PushButtonBevel;
+#else
+    return static_cast<QStyle::SubElement>(QStyle::SE_CustomBase + 1);
 #endif
 }

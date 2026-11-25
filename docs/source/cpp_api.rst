@@ -27,7 +27,7 @@ Core Documentation
 - **AICore AI Inference**: :doc:`AICore module & AI plugins <cpp_api/plugins>`
 
   Native ``libAICore`` GGUF inference runtime (public ``aicore/`` C ABI) and the
-  22 AICore plugins — depth, matching, detection, segmentation, open-vocabulary
+  23 AICore plugins — depth, matching, detection, segmentation, open-vocabulary
   understanding, 3D generation, reconstruction and annotation
 
 Getting Started

@@ -286,7 +286,7 @@ def review(out):
         chunk = rows[group_index*5:group_index*5+5]
         canvas = Image.new('RGB', (1600, 100+len(chunk)*235), '#F5F6F8')
         draw = ImageDraw.Draw(canvas)
-        draw.text((24, 15), f'AICore plugin icons {group_index+1}/{groups} — stable AI-01..21', font=_font(24), fill='#253342')
+        draw.text((24, 15), f'AICore plugin icons {group_index+1}/{groups} — stable AI-01..{len(rows):02d}', font=_font(24), fill='#253342')
         for j, row in enumerate(chunk):
             y = 75+j*235
             draw.rounded_rectangle((14,y,1586,y+220),radius=8,fill='white')
@@ -307,7 +307,7 @@ def review(out):
         canvas.save(out/f'comparison-{group_index+1:02}.png')
     overview = Image.new('RGB',(1450,70+((len(rows)+3)//4)*255),'#F5F6F8')
     draw = ImageDraw.Draw(overview)
-    draw.text((22,14),'AICore — 21 named ParaView plugin icons; AnyLabeling excluded',font=_font(23),fill='#253342')
+    draw.text((22,14),f'AICore — {len(rows)} named ParaView plugin icons; AnyLabeling excluded',font=_font(23),fill='#253342')
     for i,row in enumerate(rows):
         x=12+i%4*360;y=65+i//4*255
         draw.rounded_rectangle((x,y,x+347,y+241),radius=7,fill='white')
@@ -320,7 +320,7 @@ def review(out):
     for group_index in range((len(rows)+2)//3):
         chunk=rows[group_index*3:group_index*3+3]
         canvas=Image.new('RGB',(1380,90+len(chunk)*440),'#F5F6F8');draw=ImageDraw.Draw(canvas)
-        draw.text((22,15),f'AICore original / final — direct 384px SVG render {group_index+1}/7',font=_font(23),fill='#253342')
+        draw.text((22,15),f'AICore original / final — direct 384px SVG render {group_index+1}/{(len(rows)+2)//3}',font=_font(23),fill='#253342')
         for j,row in enumerate(chunk):
             y=70+j*440;draw.text((25,y+10),f'AI-{row["id"]:02}\n{row["plugin"]}',font=_font(18),fill='#253342')
             for x,path in [(350,Path(row['original'])),(915,ROOT/row['icon'])]:
@@ -331,12 +331,12 @@ def review(out):
             image.verify()
     page=['<!doctype html><html lang="en"><meta charset="utf-8"><title>AICore named SVGs</title>',
           '<style>body{font:16px sans-serif;background:#f5f6f8;color:#253342;margin:24px}main{display:flex;flex-wrap:wrap;gap:20px}section{background:white;padding:16px;border:1px solid #d6dde3;border-radius:8px}svg{width:128px;height:128px}.dark{background:#303640}button{padding:8px;margin:8px}</style>',
-          '<h1>AICore icons AI-01..21 — live SVG preview</h1><p>AnyLabeling is not part of this set. Native 128px preview; use browser zoom for vector detail.</p><main>']
+          f'<h1>AICore icons AI-01..{len(rows):02d} — live SVG preview</h1><p>AnyLabeling is not part of this set. Native 128px preview; use browser zoom for vector detail.</p><main>']
     for row in rows:
         page.append(f'<section><h2>AI-{row["id"]:02} {row["plugin"]}</h2>'+ (ROOT/row['icon']).read_text()+'<div class="dark">'+(ROOT/row['icon']).read_text()+'</div></section>')
     page.append('</main></html>')
     (out/'live-svg-preview.html').write_text('\n'.join(page)+'\n')
-    print('PASS: 21 stable IDs; 5 detailed groups, 7 zoom boards, 168 direct vector renders; original/name lettering and 128px glyph height verified')
+    print(f'PASS: {len(rows)} stable IDs; {(len(rows)+4)//5} detailed groups, {(len(rows)+2)//3} zoom boards, {len(rows)*8} direct vector renders; original/name lettering and 128px glyph height verified')
 
 
 def main(argv=None):

@@ -1,5 +1,7 @@
 # qWeVisOne — WeVisOne-VL unified visual perception
 
+![Plugin icon](images/qWeVisOne.svg)
+
 Eleven perception tasks on images through one model, powered by
 **WeVisOne-VL** (2B / 4B, Qwen3-VL based) running through AICore's native
 GGML task (`wevisone`):
@@ -17,6 +19,8 @@ The model generates normalized coordinate tokens instead of proposal
 retrieval, and absent targets are rejected with an explicit `None` answer
 instead of a hallucinated box. Segmentation and matting answers carry
 `<OBJ>` markers whose hidden states drive the pixel decoder.
+
+**User guide:** [docs/guides/plugins/qWeVisOne.md](../../../../docs/guides/plugins/qWeVisOne.md)
 
 ## Actions
 

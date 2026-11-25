@@ -25,7 +25,14 @@ outer `find_package`. Only the independent ExternalProject CMake process perform
 its own `find_package` for Qt, constrained to the exact parent-selected package
 paths forwarded below. The same public application appearance API and saved theme identifiers are used for
 both majors; this is not binary compatibility between Qt 5 and Qt 6. The library
-requires Qt Core, Widgets and Svg, C++17. Parent toolchains, deployment targets
+requires Qt Core, Widgets and Svg, C++17.
+
+**Supported Qt range: every release from Qt 5.12 through Qt 6 (all 6.x
+minors).** Qt 5.12 is the source floor; no Qt installation with backported
+APIs or enumerators is required. Version-dependent APIs resolve through
+version guards in the compatibility patch and the application's unified
+`core/include/QtCompat.h`, so stock SDKs across the whole range compile the
+same pinned source. Parent toolchains, deployment targets
 and bounded build concurrency remain authoritative. Qt autogen is capped at four
 jobs. ACloudViewer links one private static copy into CVAppCommon and does not
 install the standalone style plugin into the platform-style search path.
@@ -56,8 +63,23 @@ the port compile.
   app-state restoration and asynchronous menu callback ownership.
 - Application custom delegates without Q_OBJECT remain custom; Qt metadata alone
   cannot distinguish such subclasses from their Qt base.
+- Cross-version API shims for `QTabBar::isTabVisible` (Qt5.15+) and
+  `QStyle::SE_PushButtonBevel` (Qt6.7+) are owned by the application's unified
+  `core/include/QtCompat.h` (`qtCompatTabBarIsTabVisible`,
+  `qtCompatPushButtonBevelSubElement`), not by this port; they only use
+  QtCore/QtWidgets headers every consumer already links. The recipe forwards
+  `QLEMENTINE_QTCOMPAT_INCLUDE_DIR` and folds the header's SHA-256 into the
+  ExternalProject source identity; the private `QtCompat.hpp` bridges to it.
+  The `QSvgRenderer::setAspectRatioMode` (Qt6.7+) shim stays in that private
+  header because Qt Svg is a port-only dependency and the unified header must
+  not impose it on its other consumers. The pre-6.7 bevel value stays out of
+  switch labels (`-Wswitch`).
+  Compilation is additionally verified against stock Qt5.14.2, so the port no
+  longer requires a Qt installation with backported enumerators.
 
-Compatibility and lifecycle corrections are isolated in the pinned library.
+Compatibility and lifecycle corrections are isolated in the pinned library,
+except the cross-version API shims above, which the unified application
+compatibility header owns for every Qt consumer.
 There is no second application ThemeManager, no global old-QSS overlay and no
 per-task or per-plugin rendering backend.
 
@@ -88,7 +110,10 @@ windows, popup/menu/tab/dock input, fractional DPI, disabled rendering, animatio
 switches and Native/Custom round trips. Keep all Qt diagnostics; offscreen
 limitations must not be misreported as zero warnings.
 
-Local evidence is Linux Qt5.15.2. Qt5.12, Qt6, Windows/macOS and real multi-monitor
+Local evidence is Linux Qt5.15.2. A full application build (GUI, plugins,
+pybind) plus the focused UI/shortcut ctest rows also pass on stock Linux
+Qt5.14.2, exercising the pre-5.15 and pre-6.7 shim branches. Qt5.12, Qt6,
+Windows/macOS and real multi-monitor
 transitions still require their own SDK/runtime matrix. Do not turn the shared
 source path into an untested promise of regression-free or binary-seamless
 upgrades. Visual approval of the application-specific density and colors remains

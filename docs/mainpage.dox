@@ -34,7 +34,7 @@ ACloudViewer includes the following core features:
 - **Point cloud I/O**: Support for PCD, PLY, LAS, E57, and many other formats
 - **Mesh I/O**: Support for OBJ, STL, OFF, and more
 - **Plugin system**: Extensible architecture for custom algorithms
-- **AICore AI inference**: One native libAICore runtime (ggml) powering 22 AI plugins — depth, matching, detection, segmentation, open-vocabulary understanding, 3D generation and annotation from quantized GGUF models, no Python runtime
+- **AICore AI inference**: One native libAICore runtime (ggml) powering 23 AI plugins — depth, matching, detection, segmentation, open-vocabulary understanding, 3D generation and annotation from quantized GGUF models, no Python runtime
 - **Integration with PCL**: Seamless interoperability with Point Cloud Library
 - **Cross-platform**: Available on Linux, macOS, and Windows
 - **Available in C++ and Python**: Full API for both languages
@@ -118,7 +118,7 @@ ACloudViewer is organized into several key modules that work together to provide
 │  └────────────────────────────────────────────────────────────────────────┘ │
 │  ┌────────────────────────────────────────────────────────────────────────┐ │
 │  │                    <b>AICore Module (libAICore)</b>                    │ │
-│  │   • GGUF Inference (ggml)  • CUDA/Vulkan/Metal/CPU  • 22 AI Plugins    │ │
+│  │   • GGUF Inference (ggml)  • CUDA/Vulkan/Metal/CPU  • 23 AI Plugins    │ │
 │  └────────────────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────────────┘
                                   │
@@ -180,7 +180,7 @@ Here's a brief overview of the different components and how they fit together to
   - ccPclPluginInterface - PCL plugin interface
 
 - **Plugins**: Standard plugin implementations for various algorithms
-- **AICore plugins**: 22 AI plugins sharing libAICore — see \ref aicore_sec
+- **AICore plugins**: 23 AI plugins sharing libAICore — see \ref aicore_sec
 
 \subsection app_layer Application Layer
 
@@ -189,7 +189,7 @@ Here's a brief overview of the different components and how they fit together to
 
 \section aicore_sec AICore AI Inference
 
-Twenty-two GUI plugins share one native inference library — **libAICore**
+Twenty-three GUI plugins share one native inference library — **libAICore**
 (`core/AICore/`), whose ggml runtime is vendored from
 [llama.cpp](https://github.com/ggml-org/llama.cpp). Quantized **GGUF** models run
 on **CUDA / Vulkan (Linux/Windows) / Metal (macOS) / CPU** with **no Python or
@@ -213,7 +213,7 @@ Each context owns its model/session/cache state; physical backend handles may be
 shared through `BackendLease`. Task behavior is configured through options, never
 task-local environment variables.
 
-\subsection aicore_plugins AICore Plugins (22)
+\subsection aicore_plugins AICore Plugins (23)
 
 **Perception — depth, lines, matching, faces, text**
 
@@ -237,6 +237,7 @@ task-local environment variables.
 | [qRelateAnything](../../guides/plugins/qRelateAnything.html) | Scene relation graphs | RelSGG ViT / ConvNeXt GGUF (24 models) | `PLUGIN_STANDARD_QRELATEANYTHING` |
 | [qGKD](../../guides/plugins/qGKD.html) | Open-world keypoint detection | GKDT-L GGUF (ECCV 2026) | `PLUGIN_STANDARD_QGKD` |
 | [qVLXSeek](../../guides/plugins/qVLXSeek.html) | Open-vocab grounding & region QA | VLX-Seek 1.5-10B GGUF | `PLUGIN_STANDARD_QVLXSEEK` |
+| [qWeVisOne](../../guides/plugins/qWeVisOne.html) | Unified visual perception (11 tasks) | WeVisOne-VL 2B/4B GGUF (Qwen3-VL) | `PLUGIN_STANDARD_QWEVISONE` |
 
 **3D generation & reconstruction**
 

@@ -149,6 +149,7 @@ qRAM <qRAM>
 qRelateAnything <qRelateAnything>
 qSAM3D <qSAM3D>
 qVLXSeek <qVLXSeek>
+qWeVisOne <qWeVisOne>
 qAnyLabeling <qAnyLabeling>
 qSpirula <qSpirula>
 ```
