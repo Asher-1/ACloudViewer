@@ -151,7 +151,7 @@ if (OPENMP_ENABLED)
     find_package(OpenMP QUIET)
 endif ()
 
-# Boost: the compiled Boost libraries (filesystem/program_options/graph/system)
+# Boost: the compiled Boost libraries (filesystem/program_options/graph)
 # stay on the system / ext_boost version — the Boost 1.92 library upgrade was
 # reverted because the fork's CGAL dependency requires boost/mpl/if_c.hpp and
 # the legacy boost::filesystem API, both removed in 1.92, and the compiled
@@ -166,7 +166,10 @@ endif ()
 # BOOST_ROOT. The compiled libraries carry no numeric contract for the
 # COLMAP subtree; the only header-only special case is the vendored
 # boost::unordered subset for patch_match.cc (see src/CMakeLists.txt).
-set(COLMAP_BOOST_COMPONENTS graph filesystem program_options system)
+# Boost.System is header-only since 1.69 and Boost 1.90 (Ubuntu 26.04) removed
+# the compiled library and its CMake component outright; every Boost this
+# fork supports (>= 1.71) needs no system component or link entry.
+set(COLMAP_BOOST_COMPONENTS graph filesystem program_options)
 if (TESTS_ENABLED)
     list(APPEND COLMAP_BOOST_COMPONENTS unit_test_framework)
 endif ()
@@ -487,7 +490,6 @@ if (WIN32)
         ${CMAKE_DL_LIBS}
         Boost::boost
         Boost::graph
-        Boost::system
         Boost::filesystem
         Boost::program_options
         3rdparty_openimageio
@@ -497,7 +499,6 @@ else()
         ${CMAKE_DL_LIBS}
         ${Boost_FILESYSTEM_LIBRARY}
         ${Boost_PROGRAM_OPTIONS_LIBRARY}
-        ${Boost_SYSTEM_LIBRARY}
         3rdparty_openimageio
         # ${GLOG_LIBRARIES}
         # ${CERES_LIBRARIES}

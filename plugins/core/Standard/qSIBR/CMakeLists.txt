@@ -44,8 +44,10 @@ if(PLUGIN_STANDARD_QSIBR)
     endif()
     # Boost comes from the platform package (apt/conda) like every other
     # consumer; the bundled 3rdparty_boost target was removed together with
-    # the ext_boost source build.
-    find_package(Boost REQUIRED COMPONENTS system chrono filesystem date_time)
+    # the ext_boost source build. No `system` component: Boost.System is
+    # header-only since 1.69 and Boost 1.90 (Ubuntu 26.04) dropped the
+    # compiled library and its CMake component.
+    find_package(Boost REQUIRED COMPONENTS chrono filesystem date_time)
     set(SIBR_BOOST_LIBS ${Boost_LIBRARIES})
 
     # OpenCV
