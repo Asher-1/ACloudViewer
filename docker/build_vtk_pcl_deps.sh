@@ -87,6 +87,12 @@ build_all_deps() {
     cmake ..
     make install "-j${BUILD_JOBS}"
     ldconfig
+    # The apt libeigen3-dev CMake config (/usr/lib/cmake/eigen3) survives the
+    # move-aside and its Eigen3::Eigen target keeps referencing
+    # /usr/include/eigen3. Downstream consumers (app build, FetchContent
+    # subprojects like PoseLib) find that config and fail on the missing path,
+    # so keep it valid and resolving to the 3.4.0 headers.
+    ln -sfn /usr/local/include/eigen3 /usr/include/eigen3
     rm -rf /opt/eigen-3.4.0 /opt/eigen-3.4.0.tar.gz
 
     # metslib (PCL dependency)
@@ -202,6 +208,10 @@ case "${MODE}" in
             mv -f /usr/include/eigen3 /usr/include/eigen337.bak || true
             tar -xzf /tmp/vtk-pcl-deps.tar.gz -C /
             ldconfig || true
+            # Same invariant as build_all_deps: the system Eigen3 CMake config
+            # still references /usr/include/eigen3, so keep that path valid and
+            # resolving to the prebuilt 3.4.0 headers for every consumer.
+            ln -sfn /usr/local/include/eigen3 /usr/include/eigen3
             rm -f /tmp/vtk-pcl-deps.tar.gz
             echo "[vtk-pcl-deps] used prebuilt deps: ${URL}"
         else
