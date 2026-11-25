@@ -338,7 +338,11 @@ inline QRegExp qtCompatRegExp(const QString& pattern) {
 inline QStringList qtCompatSplit(
         const QString& str,
         const QRegExp& regex,
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+        Qt::SplitBehavior behavior = Qt::KeepEmptyParts) {
+#else
         QString::SplitBehavior behavior = QString::KeepEmptyParts) {
+#endif
     return str.split(regex, behavior);
 }
 #endif
@@ -420,40 +424,33 @@ inline QtCompatStringRefList qtCompatSplitRef(const QString& str, QChar sep) {
 // ----------------------------------------------------------------------------
 // QString::SplitBehavior / Qt::SplitBehavior Compatibility
 // ----------------------------------------------------------------------------
-// Qt5: QString::SkipEmptyParts, QString::KeepEmptyParts
-// Qt6: Qt::SkipEmptyParts, Qt::KeepEmptyParts (moved to Qt namespace)
+// Qt5.0-5.14: QString::SkipEmptyParts, QString::KeepEmptyParts
+// Qt5.15+/Qt6: Qt::SkipEmptyParts, Qt::KeepEmptyParts
 // ----------------------------------------------------------------------------
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-// Qt6: Use Qt namespace
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 namespace QtCompat {
 constexpr Qt::SplitBehavior SkipEmptyParts = Qt::SkipEmptyParts;
 constexpr Qt::SplitBehavior KeepEmptyParts = Qt::KeepEmptyParts;
 }  // namespace QtCompat
-
-// Helper function for QString::split with regex pattern
-// This is the most common pattern in the codebase
-inline QStringList qtCompatSplitRegex(
-        const QString& str,
-        const QString& pattern,
-        Qt::SplitBehavior behavior = Qt::KeepEmptyParts) {
-    return str.split(QRegularExpression(pattern), behavior);
-}
 #else
-// Qt5: Use QString namespace
 namespace QtCompat {
 constexpr QString::SplitBehavior SkipEmptyParts = QString::SkipEmptyParts;
 constexpr QString::SplitBehavior KeepEmptyParts = QString::KeepEmptyParts;
 }  // namespace QtCompat
+#endif
 
-// Helper function for QString::split with regex pattern
+// Reuse the version-specific regex and split owners without changing engines.
 inline QStringList qtCompatSplitRegex(
         const QString& str,
         const QString& pattern,
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+        Qt::SplitBehavior behavior = Qt::KeepEmptyParts) {
+#else
         QString::SplitBehavior behavior = QString::KeepEmptyParts) {
-    return str.split(QRegExp(pattern), behavior);
-}
 #endif
+    return qtCompatSplit(str, qtCompatRegExp(pattern), behavior);
+}
 
 // ----------------------------------------------------------------------------
 // QFontMetrics::width() / horizontalAdvance() Compatibility
@@ -889,13 +886,16 @@ inline double qtCompatWheelEventDelta(const QWheelEvent* event) noexcept {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     return static_cast<double>(event->angleDelta().y());
 #else
-    return static_cast<double>(event->delta());
+    const QPoint delta = event->angleDelta();
+    return static_cast<double>(qAbs<qint64>(delta.x()) > qAbs<qint64>(delta.y())
+                                       ? delta.x()
+                                       : delta.y());
 #endif
 }
 
 // Compatibility function for QWheelEvent::pos() - returns QPointF
 inline QPointF qtCompatWheelEventPos(const QWheelEvent* event) noexcept {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     return event->position();
 #else
     return event->posF();
@@ -1548,6 +1548,8 @@ inline void qtCompatSetHeadingLevel(QTextBlockFormat& format, int level) {
 inline QPixmap qtCompatLabelPixmap(const QLabel* label) {
     if (!label) return QPixmap();
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    return label->pixmap();
+#elif QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     return label->pixmap(Qt::ReturnByValue);
 #else
     const QPixmap* pm = label->pixmap();

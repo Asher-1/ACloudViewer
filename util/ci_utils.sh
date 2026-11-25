@@ -313,9 +313,6 @@ install_python_dependencies() {
 
     python -m pip install -U pip=="$PIP_VER" $SPEED_CMD
     python -m pip install -U -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_build.txt" $SPEED_CMD
-    if [[ "with-unit-test" =~ ^($options)$ ]]; then
-        python -m pip install -U -r python/requirements_test.txt $SPEED_CMD
-    fi
     if [[ "with-cuda" =~ ^($options)$ ]]; then
         TF_ARCH_NAME=tensorflow
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
@@ -389,6 +386,9 @@ install_python_dependencies() {
             echo "unknown OS $OSTYPE"
             exit 1
         fi
+    fi
+    if [[ "with-unit-test" =~ ^($options)$ ]]; then
+        install_python_test_deps -U $SPEED_CMD || return
     fi
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] || [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
         python -m pip install -U -c "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_build.txt" yapf $SPEED_CMD
@@ -550,6 +550,7 @@ build_gui_app() {
     else
         echo "Skipping Python release deps (PLUGIN_PYTHON/minimal env disabled)"
     fi
+    install_python_test_deps || return
     
     echo "Using cmake: $(command -v cmake)"
     cmake --version
@@ -1126,21 +1127,24 @@ run_python_tests() {
     return $pytest_result
 }
 
-# CMake owns the configured C++ catalog, build closure and execution policy.
-run_cpp_unit_tests() {
-    local build_dir="${1:-${CLOUDVIEWER_SOURCE_ROOT}/build}"
-    if [[ $# -eq 0 && -f CMakeCache.txt ]]; then
-        build_dir=.
-    fi
+install_python_test_deps() {
     # The unified C++ catalog also contains Python contracts, independently of
     # BUILD_PYTORCH_OPS. Keep an existing CUDA installation unchanged.
-    python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_test.txt" || return
+    python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_test.txt" "$@" || return
     if ! python -c 'import torch' >/dev/null 2>&1; then
         local torch_package="torch==${TORCH_VER}"
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
             torch_package+="+cpu"
         fi
-        python -m pip install "$torch_package" -f "$TORCH_REPO_URL" || return
+        python -m pip install "$torch_package" -f "$TORCH_REPO_URL" "$@" || return
+    fi
+}
+
+# CMake owns the configured C++ catalog, build closure and execution policy.
+run_cpp_unit_tests() {
+    local build_dir="${1:-${CLOUDVIEWER_SOURCE_ROOT}/build}"
+    if [[ $# -eq 0 && -f CMakeCache.txt ]]; then
+        build_dir=.
     fi
     local gtest_filter="${GTEST_FILTER-*}"
     if [[ "${LOW_MEM_USAGE-}" == "ON" ]]; then

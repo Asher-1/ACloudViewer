@@ -157,7 +157,7 @@ def handler(site):
                 if not path.endswith('/'):
                     parts = urlsplit(self.path)
                     self.send_response(301)
-                    self.send_header('Location', quote(path + '/' + ('?' + parts.query if parts.query else ''), safe="/:?#[]@!$&'()*+,;=%"))
+                    self.send_header('Location', quote((path + '/' + ('?' + parts.query if parts.query else '')).replace('\r', '%0D').replace('\n', '%0A'), safe="/:?#[]@!$&'()*+,;=%"))
                     self.end_headers()
                     return
                 target = target / 'index.html'
