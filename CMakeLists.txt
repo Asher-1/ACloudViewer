@@ -752,8 +752,14 @@ if (USE_SIMD)
         # when binaries are compiled on newer CPUs but run on older ones
         # AVX and AVX2 are widely supported and should be kept enabled
         # AVX512 variants - disable all to ensure compatibility
-        # Include all AVX512 variants: f, cd, vl, bw, dq, ifma, pf, er, vbmi, vbmi2, vnni, bitalg, vpopcntdq
-        set(AVX512_DISABLE_FLAGS "-mno-avx512f -mno-avx512cd -mno-avx512vl -mno-avx512bw -mno-avx512dq -mno-avx512ifma -mno-avx512pf -mno-avx512er -mno-avx512vbmi -mno-avx512vbmi2 -mno-avx512vnni -mno-avx512bitalg -mno-avx512vpopcntdq")
+        # Include all AVX512 variants: f, cd, vl, bw, dq, ifma, vbmi, vbmi2, vnni, bitalg, vpopcntdq.
+        # Do NOT add -mno-avx512er/-mno-avx512pf: GCC 15 removed Xeon Phi
+        # (KNL/KNM) support and rejects those switches outright, which poisons
+        # CMAKE_C/CXX_FLAGS so every later try_compile (hardening probes,
+        # FindOpenMP, ...) fails. ER/PF are KNL-only extensions that no
+        # -march we emit can enable, so dropping the two switches is a no-op
+        # on every supported compiler.
+        set(AVX512_DISABLE_FLAGS "-mno-avx512f -mno-avx512cd -mno-avx512vl -mno-avx512bw -mno-avx512dq -mno-avx512ifma -mno-avx512vbmi -mno-avx512vbmi2 -mno-avx512vnni -mno-avx512bitalg -mno-avx512vpopcntdq")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${AVX512_DISABLE_FLAGS}")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${AVX512_DISABLE_FLAGS}")
         message(STATUS "Disabled AVX512 for compatibility (AVX/AVX2 remain enabled)")

@@ -161,7 +161,10 @@ if(USE_QT6)
     # fix nvcc fatal : Unknown option 'fPIC'
     if ( BUILD_CUDA_MODULE AND NOT WIN32)
         get_property(core_options TARGET Qt6::Core PROPERTY INTERFACE_COMPILE_OPTIONS)
-        string(REPLACE "-fPIC" "" new_core_options ${core_options})
+        # Quote: Qt 6.10 expresses -fPIC via INTERFACE_POSITION_INDEPENDENT_CODE,
+        # leaving INTERFACE_COMPILE_OPTIONS empty; unquoted expansion would drop
+        # the fourth string(REPLACE) argument and error out.
+        string(REPLACE "-fPIC" "" new_core_options "${core_options}")
         set_property(TARGET Qt6::Core PROPERTY INTERFACE_COMPILE_OPTIONS ${new_core_options})
         set_property(TARGET Qt6::Core PROPERTY INTERFACE_POSITION_INDEPENDENT_CODE "ON")
     endif()
