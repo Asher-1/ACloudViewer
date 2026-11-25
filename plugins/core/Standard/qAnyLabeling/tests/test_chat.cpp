@@ -402,8 +402,8 @@ TEST(ChatTest, ProviderAndWorkspaceWorkflows) {
     client.fetchModels(settings);
     REQUIRE(waitFor([&]() { return models == 1; }) && error.isEmpty());
     REQUIRE(headers.startsWith("GET /anthropic/v1/models ") &&
-            headers.contains("x-api-key: test-key") &&
-            headers.contains("anthropic-version: 2023-06-01") &&
+            headers.toLower().contains("x-api-key: test-key") &&
+            headers.toLower().contains("anthropic-version: 2023-06-01") &&
             !headers.toLower().contains("authorization:"));
     settings.baseUrl.setPath("/v1/");
     settings.apiKey = "test-key";

@@ -147,3 +147,49 @@ Each entry: **Symptom → Essence → Fix (owner) → Verification**. Append new
   downstream TUs (single-target build is not proof).
 - **Verification**: ColmapLib builds on Qt 5.14.2 and Qt 6.5.3; net -63 lines, zero
   `QT_VERSION` branches; GPU resources provably released on both.
+
+## 12. Qt 6.10 `QJsonValueRef == QJsonArray` ambiguous overload
+
+- **Symptom**: `test_run_path.cpp` `readJson(sidecar)["shapes"] == detected` fails to
+  compile on Qt 6.10.2: "ambiguous overload for operator== (QJsonValueRef and const
+  QJsonArray)". Compiles fine on Qt 5.x / 6.5.3.
+- **Essence**: Qt 6.10 added `Q_DECLARE_EQUALITY_COMPARABLE` overloads
+  (`QJsonValueConstRef==QJsonValue` and `QJsonArray==QJsonValue`). A non-const
+  `QJsonObject::operator[]` yields `QJsonValueRef`; comparing it to a concrete
+  `QJsonArray` now has two viable conversion paths → ambiguity. Older Qt had fewer
+  overloads so it resolved.
+- **Fix (version-neutral)**: compare concrete arrays —
+  `readJson(sidecar)["shapes"].toArray() == detected` (and `.toArray()` on both sides
+  when both are refs). `QJsonArray==QJsonArray` is unambiguous on every Qt version and
+  semantically identical (the value IS an array). Do NOT add `#if QT_VERSION` casts.
+- **Verification**: builds + passes on Qt 5.14.2 / 6.5.3 / 6.4.2 / 6.10.2.
+
+## 13. Qt 6.10 canonicalizes HTTP header names (case)
+
+- **Symptom**: `test_chat.cpp` asserts `headers.contains("x-api-key: test-key")` on the
+  raw request captured by a local QTcpServer; passes on 6.5.3, fails on 6.10.2.
+- **Essence**: Qt 6.10's `QNetworkAccessManager` (QHttpHeaders) normalizes header NAMES
+  to canonical title-case: `setRawHeader("x-api-key",...)` is sent as `X-Api-Key`,
+  `anthropic-version` as `Anthropic-Version`. Header VALUES are unchanged. HTTP header
+  names are case-insensitive (RFC 7230), so the test's case-sensitive name match was
+  always fragile.
+- **Fix (version-neutral)**: match header names case-insensitively —
+  `headers.toLower().contains("x-api-key: test-key")`. Keep request-line/path checks
+  case-sensitive; value-only substrings (e.g. `Bearer test-key`) are unaffected.
+- **Diagnosis tip**: dump the captured `headers` QByteArray (fprintf %s) — grep shows
+  only the first line because the buffer embeds `\r\n`; use `grep -A15`.
+- **Verification**: chat test passes on Qt 5.14.2 / 6.5.3 / 6.4.2 / 6.10.2.
+
+## 14. Concurrent builds sharing `3rdparty_downloads` truncate a fetch
+
+- **Symptom**: two app build trees configured/building in parallel both fetch the same
+  ExternalProject archive (e.g. spirula) into the shared `3rdparty_downloads/` cache;
+  one writes a truncated tar → other's extraction misses files (`Languages.h` missing,
+  `cmake -E tar: Truncated tar archive`).
+- **Essence**: the download cache is a shared mutable resource with no lock; concurrent
+  writers race. Not a Qt issue.
+- **Fix**: after the race, the cached tar is usually complete (`gzip -t` OK). Remove the
+  affected build tree's `<dep>/` ExternalProject dir entirely and RE-CONFIGURE (deleting
+  only the stamp dir breaks ninja's generated rule graph: "patch-info.txt missing, no
+  known rule"). Then rebuild. Avoid by serializing fetch-heavy phases or per-tree caches.
+- **Verification**: reconfigure + rebuild extracts cleanly; build proceeds.

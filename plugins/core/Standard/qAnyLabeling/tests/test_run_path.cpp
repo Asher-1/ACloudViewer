@@ -351,7 +351,8 @@ int runOcr(QMainWindow* window,
                "undo OCR transcription"))
         return 1;
     redo->trigger();
-    if (!check(readJson(sidecar)["shapes"] == updated["shapes"],
+    if (!check(readJson(sidecar)["shapes"].toArray() ==
+                       updated["shapes"].toArray(),
                "redo OCR transcription")) {
         std::fprintf(stderr, "redo enabled=%d expected=%s actual=%s\n",
                      redo->isEnabled(),
@@ -364,7 +365,7 @@ int runOcr(QMainWindow* window,
         return 1;
     }
     if (!check(runAndWait(window, &status, &elapsed) &&
-                       readJson(sidecar)["shapes"] == detected,
+                       readJson(sidecar)["shapes"].toArray() == detected,
                "normal Run after skip performs detection and replaces the old "
                "objects"))
         return 1;
@@ -386,7 +387,7 @@ int runOcr(QMainWindow* window,
     if (!check(regions > 0, "explicit layout stage produces regions")) return 1;
     layout->setCurrentIndex(0);
     if (!check(runAndWait(window, &status, &elapsed) &&
-                       readJson(sidecar)["shapes"] == detected,
+                       readJson(sidecar)["shapes"].toArray() == detected,
                "turning layout off invalidates the resident OCR session"))
         return 1;
     std::fprintf(stdout,
