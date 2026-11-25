@@ -1,0 +1,176 @@
+Backport Ceres commit 084b3e3b835bb13c42c0658f033826ffa8e0f373.
+https://github.com/ceres-solver/ceres-solver/commit/084b3e3b835bb13c42c0658f033826ffa8e0f373
+
+Keep the pinned 2.2.0 ABI and use its StringPrintf instead of the newer
+absl::StrFormat. Include the unchanged upstream ordering regression test.
+
+diff --git a/include/ceres/ordered_groups.h b/include/ceres/ordered_groups.h
+--- a/include/ceres/ordered_groups.h
++++ b/include/ceres/ordered_groups.h
+@@ -182,7 +182,9 @@ class OrderedGroups {
+     return group_to_elements_;
+   }
+
+-  const std::map<T, int>& element_to_group() const { return element_to_group_; }
++  const std::unordered_map<T, int>& element_to_group() const {
++    return element_to_group_;
++  }
+
+  private:
+   std::map<int, std::set<T>> group_to_elements_;
+diff --git a/internal/ceres/reorder_program.cc b/internal/ceres/reorder_program.cc
+--- a/internal/ceres/reorder_program.cc
++++ b/internal/ceres/reorder_program.cc
+@@ -36,6 +36,7 @@
+ #include <numeric>
+ #include <set>
+ #include <string>
++#include <unordered_map>
+ #include <vector>
+
+ #include "Eigen/SparseCore"
+@@ -228,28 +229,49 @@ bool ApplyOrdering(const ProblemImpl::ParameterMap& parameter_map,
+     return false;
+   }
+
++  const std::unordered_map<double*, int>& element_to_group =
++      ordering.element_to_group();
++
++  // Check that all the elements in the ordering are in the problem.
++  for (const auto& p : element_to_group) {
++    auto it = parameter_map.find(p.first);
++    if (it == parameter_map.end()) {
++      *error = StringPrintf(
++          "User specified ordering contains a pointer "
++          "to a double that is not a parameter block in "
++          "the problem. The invalid double is in group: %d",
++          p.second);
++      return false;
++    }
++  }
++
++  // Add the parameter blocks to the new ordering, while maintaining the
++  // original ordering of the parameter blocks within each group.
++  const std::vector<ParameterBlock*> old_parameter_blocks =
++      program->parameter_blocks();
+   std::vector<ParameterBlock*>* parameter_blocks =
+       program->mutable_parameter_blocks();
+-  parameter_blocks->clear();
+-
+-  // TODO(sameeragarwal): Investigate whether this should be a set or an
+-  // unordered_set.
+-  const std::map<int, std::set<double*>>& groups = ordering.group_to_elements();
+-  for (const auto& p : groups) {
+-    const std::set<double*>& group = p.second;
+-    for (double* parameter_block_ptr : group) {
+-      auto it = parameter_map.find(parameter_block_ptr);
+-      if (it == parameter_map.end()) {
+-        *error = StringPrintf(
+-            "User specified ordering contains a pointer "
+-            "to a double that is not a parameter block in "
+-            "the problem. The invalid double is in group: %d",
+-            p.first);
+-        return false;
+-      }
+-      parameter_blocks->push_back(it->second);
++  const std::map<int, std::set<double*>>& group_to_elements =
++      ordering.group_to_elements();
++  std::map<int, int> group_to_index;
++  int group_cursor = 0;
++  for (const auto& p : group_to_elements) {
++    group_to_index[p.first] = group_cursor;
++    group_cursor += p.second.size();
++  }
++  for (ParameterBlock* block : old_parameter_blocks) {
++    const auto it = element_to_group.find(block->mutable_user_state());
++    if (it == element_to_group.end()) {
++      *error = StringPrintf("No ordering specified for parameter block: %d",
++                               block->index());
++      return false;
+     }
++    const int group = it->second;
++    int& index = group_to_index[group];
++    (*parameter_blocks)[index] = block;
++    index++;
+   }
++
+   return true;
+ }
+
+diff --git a/internal/ceres/reorder_program_test.cc b/internal/ceres/reorder_program_test.cc
+--- a/internal/ceres/reorder_program_test.cc
++++ b/internal/ceres/reorder_program_test.cc
+@@ -171,6 +171,73 @@ TEST(_, ApplyOrderingNormal) {
+   EXPECT_EQ(parameter_blocks[2]->user_state(), &y);
+ }
+
++// Test that ApplyOrdering preserves the original program order within each
++// group. This is essential for deterministic behavior - without preserving
++// the original order, the ordering would depend on pointer addresses which
++// can vary between runs due to ASLR or different memory allocation patterns.
++TEST(_, ApplyOrderingPreservesOrderWithinGroups) {
++  // Use heap-allocated parameter blocks to ensure pointer addresses are
++  // not in any predictable order (simulating what happens in real usage).
++  std::vector<std::unique_ptr<double[]>> params;
++  std::vector<double*> param_ptrs;
++  const int kNumParams = 10;
++
++  for (int i = 0; i < kNumParams; ++i) {
++    params.push_back(std::make_unique<double[]>(3));
++    param_ptrs.push_back(params.back().get());
++  }
++
++  // Shuffle the parameter pointers to generate non-deterministic addresses
++  // in case the allocator happens to return addresses in a specific order.
++  // We add them to the problem in a specific order, which
++  // should be preserved within each group after ApplyOrdering.
++  std::mt19937 rng(42);  // Fixed seed for reproducibility
++  std::shuffle(param_ptrs.begin(), param_ptrs.end(), rng);
++
++  ProblemImpl problem;
++
++  // Add parameter blocks in the order of their index (0, 1, 2, ..., 9)
++  // but use the original param_ptrs which may have any address ordering.
++  for (int i = 0; i < kNumParams; ++i) {
++    problem.AddParameterBlock(param_ptrs[i], 3);
++  }
++
++  // Assign parameters to groups:
++  // Group 0: params 0, 2, 4, 6, 8 (evens)
++  // Group 1: params 1, 3, 5, 7, 9 (odds)
++  ParameterBlockOrdering linear_solver_ordering;
++  for (int i = 0; i < kNumParams; ++i) {
++    linear_solver_ordering.AddElementToGroup(param_ptrs[i], i % 2);
++  }
++
++  Program* program = problem.mutable_program();
++  std::string message;
++
++  EXPECT_TRUE(ApplyOrdering(
++      problem.parameter_map(), linear_solver_ordering, program, &message));
++
++  const std::vector<ParameterBlock*>& parameter_blocks =
++      program->parameter_blocks();
++
++  EXPECT_EQ(parameter_blocks.size(), kNumParams);
++
++  // Check that group 0 elements (evens) come first and
++  // maintain their original relative order.
++  EXPECT_EQ(parameter_blocks[0]->user_state(), param_ptrs[0]);
++  EXPECT_EQ(parameter_blocks[1]->user_state(), param_ptrs[2]);
++  EXPECT_EQ(parameter_blocks[2]->user_state(), param_ptrs[4]);
++  EXPECT_EQ(parameter_blocks[3]->user_state(), param_ptrs[6]);
++  EXPECT_EQ(parameter_blocks[4]->user_state(), param_ptrs[8]);
++
++  // Check that group 1 elements (odds) come second and
++  // maintain their original relative order.
++  EXPECT_EQ(parameter_blocks[5]->user_state(), param_ptrs[1]);
++  EXPECT_EQ(parameter_blocks[6]->user_state(), param_ptrs[3]);
++  EXPECT_EQ(parameter_blocks[7]->user_state(), param_ptrs[5]);
++  EXPECT_EQ(parameter_blocks[8]->user_state(), param_ptrs[7]);
++  EXPECT_EQ(parameter_blocks[9]->user_state(), param_ptrs[9]);
++}
++
+ #ifndef CERES_NO_SUITESPARSE
+ class ReorderProgramForSparseCholeskyUsingSuiteSparseTest
+     : public ::testing::Test {
