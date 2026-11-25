@@ -17,7 +17,8 @@ from upstream_metrics_probe import (active_graphics_processes,
                                     candidate_runtime_path,
                                     gpu_overlap_pids, include_graphics_audit,
                                     metrics_for_backend, probability_alignment,
-                                    truth_cache, upstream_backend_env)
+                                    truth_cache, upstream_backend_env,
+                                    loader_variable)
 
 
 class IndependentAccuracyTests(unittest.TestCase):
@@ -317,12 +318,13 @@ class TimingAuditTests(unittest.TestCase):
             self.assertEqual(os.environ["RAM_TEST_ENV"], "candidate")
 
     def test_baseline_uses_its_own_ggml_libraries(self):
-        with patch.dict(os.environ, {"LD_LIBRARY_PATH": "/candidate/bin",
+        variable = loader_variable()
+        with patch.dict(os.environ, {variable: "/candidate/bin",
                                      "GGML_BACKEND_PATH": "/candidate/backends"}):
             env = upstream_backend_env(Path("/reference"), "cuda")
         self.assertNotIn("GGML_BACKEND_PATH", env)
         if os.name != "nt":
-            self.assertTrue(env.get("LD_LIBRARY_PATH", env.get("DYLD_LIBRARY_PATH", "")).startswith(
+            self.assertTrue(env[variable].startswith(
                 "/reference/cpp_ggml/build-cuda/third_party/ggml/src"))
 
     def test_alternate_baseline_build_does_not_load_default_build_libraries(self):
