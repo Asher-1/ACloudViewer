@@ -1435,7 +1435,7 @@ inline QDataStream::Version qtCompatDataStreamVersion() noexcept {
 // QTextDocument Markdown / QTextBlockFormat Heading Compatibility
 // ----------------------------------------------------------------------------
 // QTextDocument Markdown and heading metadata were added in Qt 5.14.
-// Older Qt keeps plain-text import but must not discard basic format edits.
+// Older Qt imports the basic editable formats and fenced code below.
 #include <QRegularExpression>
 #include <QTextBlock>
 #include <QTextBlockFormat>
@@ -1448,12 +1448,80 @@ inline void qtCompatSetMarkdown(QTextDocument& document, const QString& text) {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     document.setMarkdown(text);
 #else
-    // Shared export may return faithful HTML; ordinary Markdown retains the
-    // legacy plain-text boundary.
-    if (Qt::mightBeRichText(text))
+    // Preserve the HTML fidelity boundary used by qtCompatToMarkdown().
+    if (Qt::mightBeRichText(text)) {
         document.setHtml(text);
-    else
-        document.setPlainText(text);
+        return;
+    }
+    // Qt < 5.14 has no Markdown importer. Render the basic formats exported
+    // below, plus chat code fences; insert text, never unescaped generated
+    // HTML.
+    document.clear();
+    QTextCursor cursor(&document);
+    static const QRegularExpression fence("^ {0,3}(`{3,}|~{3,})(.*)$");
+    static const QRegularExpression heading("^ {0,3}(#{1,6}) +(.+)$");
+    static const QRegularExpression span(
+            "(`+)(.+?)\\1|(\\*{1,3})(\\S(?:.*?\\S)?)\\3");
+    QString codeFence;
+    bool first = true;
+    for (QString line : text.split(QLatin1Char('\n'))) {
+        const auto marker = fence.match(line);
+        if (marker.hasMatch()) {
+            if (codeFence.isEmpty()) {
+                codeFence = marker.captured(1);
+                continue;
+            }
+            if (marker.captured(1).startsWith(codeFence) &&
+                marker.captured(2).trimmed().isEmpty()) {
+                codeFence.clear();
+                continue;
+            }
+        }
+        QTextBlockFormat block;
+        QTextCharFormat format;
+        if (!codeFence.isEmpty()) {
+            format.setFontFamily(QStringLiteral("monospace"));
+            format.setFontFixedPitch(true);
+            block.setNonBreakableLines(true);
+        } else {
+            const auto title = heading.match(line);
+            if (title.hasMatch()) {
+                block.setProperty(QTextFormat::UserProperty + 1,
+                                  title.capturedLength(1));
+                format.setFontWeight(QFont::Bold);
+                line = title.captured(2);
+            }
+        }
+        if (!first) cursor.insertBlock();
+        first = false;
+        cursor.setBlockFormat(block);
+        if (!codeFence.isEmpty()) {
+            cursor.insertText(line, format);
+            continue;
+        }
+        int position = 0;
+        auto matches = span.globalMatch(line);
+        while (matches.hasNext()) {
+            const auto match = matches.next();
+            cursor.insertText(
+                    line.mid(position, match.capturedStart() - position),
+                    format);
+            auto emphasis = format;
+            if (!match.captured(1).isEmpty()) {
+                emphasis.setFontFamily(QStringLiteral("monospace"));
+                emphasis.setFontFixedPitch(true);
+            } else {
+                const int count = match.capturedLength(3);
+                if (count >= 2) emphasis.setFontWeight(QFont::Bold);
+                if (count != 2) emphasis.setFontItalic(true);
+            }
+            cursor.insertText(
+                    match.captured(match.captured(1).isEmpty() ? 4 : 2),
+                    emphasis);
+            position = match.capturedEnd();
+        }
+        cursor.insertText(line.mid(position), format);
+    }
 #endif
 }
 
@@ -1490,8 +1558,7 @@ inline QString qtCompatToMarkdown(const QTextDocument& document) {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     return document.toMarkdown();
 #else
-    // Linear export of the editable basic formats. This is not a full Markdown
-    // parser: plain-text import on older Qt remains an explicit limitation.
+    // Linear export of the basic formats handled by the older Qt importer.
     QString result;
     for (auto block = document.begin(); block.isValid(); block = block.next()) {
         if (block != document.begin()) result += QLatin1Char('\n');

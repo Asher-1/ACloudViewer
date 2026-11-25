@@ -82,8 +82,12 @@ protected:
         static int argc = 1;
         static char name[] = "test_qanylabeling_relate_options";
         static char* argv[] = {name, nullptr};
-        static QApplication app(argc, argv);
+        app = std::make_unique<QApplication>(argc, argv);
     }
+
+    // Qt's platform integration must be destroyed before static teardown.
+    static void TearDownTestSuite() { app.reset(); }
+    inline static std::unique_ptr<QApplication> app;
 
     void SetUp() override {
         reel = RelateOptions::forProfile(RelateOptions::Profile::VideoReel);

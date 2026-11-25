@@ -45,8 +45,12 @@ protected:
         static int argc = 1;
         static char name[] = "test_qanylabeling_relation_filter";
         static char* argv[] = {name, nullptr};
-        static QApplication app(argc, argv);
+        app = std::make_unique<QApplication>(argc, argv);
     }
+
+    // Qt's platform integration must be destroyed before static teardown.
+    static void TearDownTestSuite() { app.reset(); }
+    inline static std::unique_ptr<QApplication> app;
 
     void SetUp() override {
         widget = std::make_unique<RelationFilterWidget>();
