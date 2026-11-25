@@ -1,6 +1,6 @@
 {
   "upstream": "v1.5.2",
-  "patch_sha256": "d58177f8b855fb27b555c4c070f5663b9c73e06ef54ebdfef6440ef85f1c55c9",
+  "patch_sha256": "690d6b8af80efc1eb5f983d9ed6913e1c82f84786c40c63df12106169c1c9da6",
   "files": [
     {
       "path": "CMakeLists.txt",
@@ -120,7 +120,7 @@
     {
       "path": "lib/src/style/QlementineStyle.cpp",
       "before_sha256": "9178c206bc256abadae6a27da1d40400a2518d119da26cbf699b3f0134130570",
-      "after_sha256": "e1dc7fcc9db79c618ac52b02f0ae761f224939b6e94ed88b4f5236bcae9f1802"
+      "after_sha256": "82ba95d592c48c2708e429f78c334e1baaf2af3b7ab3b4ad420481122b8931b9"
     },
     {
       "path": "lib/src/style/Theme.cpp",
@@ -180,7 +180,7 @@
     {
       "path": "lib/src/utils/PrimitiveUtils.cpp",
       "before_sha256": "959f215362abe45f8a2e119e105dcb263f7fc740b8d39a7d88cbc1dda2766ac3",
-      "after_sha256": "8248f061b40e43456d005ebf91bdd70a13da7e068f5f5f08ef22113962e6750a"
+      "after_sha256": "e14227f095f55474b2768d78c48b827ddccd860e26681fc222424645ee3a843f"
     },
     {
       "path": "lib/src/utils/StyleUtils.cpp",
@@ -200,12 +200,12 @@
     {
       "path": "lib/src/widgets/AbstractItemListWidget.cpp",
       "before_sha256": "a9ce9b981ea7e1153567acbcee854a50eb3b413a7c78fc67bf601991314838f7",
-      "after_sha256": "d1fe30e5b2135c89758f2172decc5e50e0c23242ede59804991e6342a1603935"
+      "after_sha256": "4315f4d037b5edf85fe5f83c1b3a540df51b36e9a864d7277eed33ad9d516235"
     },
     {
       "path": "lib/src/widgets/Popover.cpp",
       "before_sha256": "dfc77522ad55963d36b7bbd79506b3e49655ce641c61a4ce6d0e67fa38ba9220",
-      "after_sha256": "26768331fae251cb15311c412a1723412f4f0870e164cf69408d7f4db8f91c8d"
+      "after_sha256": "5abcd9a21330ebb400ad9826dda227ce0871ba147324d40cb720f726169c85b2"
     },
     {
       "path": "lib/src/widgets/Switch.cpp",
