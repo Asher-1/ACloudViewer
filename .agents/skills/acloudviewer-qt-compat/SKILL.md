@@ -80,5 +80,9 @@ Official version evidence + environment recipes: [`references/qt-version-matrix.
 ## CI / Ubuntu 26.04
 
 See [`references/qt-version-matrix.md`](references/qt-version-matrix.md) for the apt
-version facts and the prebuild-deps Qt6 recipe. Ubuntu 26.04 ships Qt 6.10.2 natively
+version facts and the landed CI wiring. Ubuntu 26.04 ships Qt 6.10.2 natively
 (`qt6-base-dev`) and Qt 5.15.18 (`qtbase5-dev`) — no aqt layer needed there.
+Linux CI is unified on one `QT_MAJOR` knob derived from the Ubuntu release in
+`docker_build.sh` (`set_qt_vars`); never add a parallel Qt6 Dockerfile/script.
+`cuda-resolute` uses CUDA 13.x + gcc-14 (NVIDIA has no 12.6.3 ubuntu26.04 image);
+wheels build on noble/Qt6 (`manylinux_2_39`, test runner ≥ 24.04).

@@ -207,15 +207,15 @@ CI/CD Build Image
    # Build CUDA variant with ML
    ./docker_build.sh cuda-ml-shared-jammy
    
-   # Build Qt6 variant
-   ./docker_build_qt6.sh qt6-cpu-static
+   # Build Qt6 variant (Ubuntu 24.04/26.04 default to Qt6)
+   ./docker_build.sh cpu-noble
 
 Qt6 Build Image
 ^^^^^^^^^^^^^^^
 
-**Dockerfile**: ``docker/Dockerfile.ci.qt6``
+**Dockerfile**: ``docker/Dockerfile.ci`` with ``QT_MAJOR=6``
 
-**Purpose**: Build with Qt6 support (Ubuntu 24.04+).
+**Purpose**: Build with Qt6 support (Ubuntu 24.04+, apt Qt 6.4.2 / 6.10.2).
 
 **Features**:
 
@@ -224,13 +224,22 @@ Qt6 Build Image
 - Qt6 networking
 - Modern CMake (3.28+)
 
+``docker_build.sh`` derives ``QT_MAJOR`` from the Ubuntu release
+(``cpu-noble`` / ``cpu-resolute`` / ``cuda-noble`` / ``cuda-resolute``);
+there is no separate Qt6 Dockerfile.
+
 **Build**:
 
 .. code-block:: bash
 
+   ./docker_build.sh cpu-noble
+
+   # or manually:
    docker build \
-       -f docker/Dockerfile.ci.qt6 \
+       -f docker/Dockerfile.ci \
        --build-arg BASE_IMAGE=ubuntu:24.04 \
+       --build-arg QT_MAJOR=6 \
+       --build-arg QT_BASE_DIR=/usr \
        --build-arg DEVELOPER_BUILD=ON \
        -t acloudviewer-ci:qt6 .
 
@@ -239,8 +248,8 @@ Wheel Building Image
 
 **Dockerfiles**: 
 
-- ``docker/Dockerfile.wheel`` (Qt5, Ubuntu 20.04/22.04)
-- ``docker/Dockerfile.wheel.qt6`` (Qt6, Ubuntu 24.04)
+- ``docker/Dockerfile.wheel`` (``QT_MAJOR=5`` on Ubuntu 20.04/22.04,
+  ``QT_MAJOR=6`` on 24.04+; the ``cuda_wheel_*`` configs target 24.04/Qt6)
 
 **Purpose**: Build manylinux-compatible Python wheels.
 
@@ -366,8 +375,8 @@ Run the complete test suite in Docker:
    # Test CUDA build
    ./docker_test.sh cuda-ml-shared-jammy
    
-   # Test Qt6 build
-   ./docker_test.sh qt6-cpu-static
+   # Test Qt6 build (Ubuntu 24.04)
+   ./docker_test.sh cpu-noble
 
 Building Wheels
 ^^^^^^^^^^^^^^^
@@ -658,8 +667,8 @@ The ``docker_test.sh`` script runs comprehensive tests:
    # Run CUDA tests
    ./docker_test.sh cuda-ml-shared-jammy
    
-   # Run Qt6 tests
-   ./docker_test.sh qt6-cpu-static
+   # Run Qt6 tests (Ubuntu 26.04)
+   ./docker_test.sh cpu-resolute
 
 **Test Workflow**:
 
@@ -948,8 +957,11 @@ Quick Reference
        --build-arg BASE_IMAGE=nvidia/cuda:12.1.0-devel-ubuntu22.04 \
        -f docker/Dockerfile.ci .
    
-   # Qt6
-   docker build -t acloudviewer-ci:qt6 -f docker/Dockerfile.ci.qt6 .
+   # Qt6 (Ubuntu 24.04/26.04)
+   docker build -t acloudviewer-ci:qt6 \
+       --build-arg BASE_IMAGE=ubuntu:24.04 \
+       --build-arg QT_MAJOR=6 \
+       -f docker/Dockerfile.ci .
    
    # Wheel
    docker build -t acloudviewer-wheel:py311 \

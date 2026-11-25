@@ -171,6 +171,10 @@ jobs:
           rm -f /tmp/ccache-restore.tar.gz
       # Be verbose and explicit here such that a developer can directly copy the
       # `docker/docker_build.sh xxx` command to execute locally.
+      # cuda_wheel_* targets Ubuntu 24.04 (noble) / Qt6 in docker_build.sh:
+      # apt Qt 6.4.2 and the nvidia/cuda 12.6.3 ubuntu24.04 base image. The
+      # wheel's manylinux tag follows the build glibc (python/setup.py), so
+      # the artifact is manylinux_2_39 and test-wheel below runs on 24.04.
       - name: Docker build
         run: |
           set -o pipefail
@@ -309,7 +313,10 @@ jobs:
     name: Test wheel
     permissions:
       contents: read
-    runs-on: ubuntu-22.04
+    # Wheels are built on noble (glibc 2.39 -> manylinux_2_39 tag, see
+    # python/setup.py); pip on a 22.04 runner (glibc 2.35) refuses to install
+    # them, so the test runner must be >= the build release.
+    runs-on: ubuntu-24.04
     needs: [build-wheel]
     strategy:
       fail-fast: false

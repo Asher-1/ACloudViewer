@@ -99,9 +99,9 @@ Example test commands:
 ./docker/docker_test.sh cpu-jammy-release
 ./docker/docker_test.sh cuda-jammy-release
 
-# Test Qt6 builds
-./docker/docker_test.sh qt6-cpu
-./docker/docker_test.sh qt6-cuda
+# Test Qt6 CI builds (Ubuntu 24.04/26.04 default to Qt6)
+./docker/docker_test.sh cpu-noble
+./docker/docker_test.sh cuda-resolute
 ```
 
 **Note**: The test script automatically detects whether ML ops are available in the Docker image by checking the installed `cloudViewer` package's build configuration. You don't need to manually specify whether ML ops are enabled.

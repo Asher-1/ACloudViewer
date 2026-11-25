@@ -14,6 +14,9 @@ ARG PACKAGE
 ARG QT_BASE_DIR
 ARG CI
 ARG PREBUILD_DEPS_ONLY=OFF
+# Qt major version the whole image targets (5 or 6). Derived from the Ubuntu
+# codename in docker_build.sh: focal/jammy=5, noble(24.04)/resolute(26.04)=6.
+ARG QT_MAJOR=5
 
 RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
  && if [ -z "${CMAKE_VERSION}"        ]; then echo "Error: ARG CMAKE_VERSION        not specified."; exit 1; fi \
@@ -36,7 +39,10 @@ ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
 ENV PACKAGE=${PACKAGE}
 ENV QT_BASE_DIR=${QT_BASE_DIR}
 ENV PREBUILD_DEPS_ONLY=${PREBUILD_DEPS_ONLY}
+ENV QT_MAJOR=${QT_MAJOR}
 
+# Qt5 dep versions (default). The deps build step below overrides these to the
+# Qt6-validated pair (VTK 9.4.2 / PCL 1.15.1) when QT_MAJOR=6.
 ENV VTK_VERSION=9.3.1
 ENV PCL_VERSION=1.14.1
 
@@ -162,14 +168,38 @@ RUN apt-get clean \
         libxkbcommon-x11-0 \
         libxcb-render-util0
 
-# Install Qt5
-# Uses system default Qt5 packages (Qt 5.12+ on Ubuntu 20.04, Qt 5.15+ on Ubuntu 22.04+)
-# All versions meet the minimum requirement of Qt 5.12+
-RUN cloudviewer-apt-install -q \
-      libqt5svg5-dev libqt5opengl5-dev qtbase5-dev qttools5-dev qttools5-dev-tools qml-module-qtquick* \
-      libqt5websockets5-dev libqt5xmlpatterns5-dev libqt5x11extras5-dev qt5-image-formats-plugins \
-      qttranslations5-l10n qtdeclarative5-dev qtdeclarative5-dev-tools libqt5quickcontrols2-5 libqt5networkauth5-dev && \
+# Install Qt (major version selected by QT_MAJOR).
+# Qt5: system default Qt5 packages (Qt 5.12+ on Ubuntu 20.04, Qt 5.15+ on 22.04+).
+# Qt6: system Qt6 packages on Ubuntu 24.04+ (noble=6.4.2, resolute=6.10.2); the
+#      app build auto-detects Qt6 via qmake6 / Qt6Config.cmake (build_gui_app.sh).
+RUN if [ "${QT_MAJOR}" = "6" ]; then \
+      cloudviewer-apt-install -q \
+        qt6-base-dev qt6-base-dev-tools qt6-declarative-dev qt6-svg-dev \
+        qt6-websockets-dev qt6-wayland-dev qt6-tools-dev qt6-shadertools-dev \
+        qml6-module-qtquick qml6-module-qtquick-controls qml6-module-qtquick-layouts \
+        qml6-module-qtquick-window qml6-module-qtqml-workerscript \
+        libqt6opengl6-dev libgl1-mesa-dev libglx-dev \
+      && echo 'export QT_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/qt6/plugins' > /etc/profile.d/qt6.sh; \
+    else \
+      cloudviewer-apt-install -q \
+        libqt5svg5-dev libqt5opengl5-dev qtbase5-dev qttools5-dev qttools5-dev-tools qml-module-qtquick* \
+        libqt5websockets5-dev libqt5xmlpatterns5-dev libqt5x11extras5-dev qt5-image-formats-plugins \
+        qttranslations5-l10n qtdeclarative5-dev qtdeclarative5-dev-tools libqt5quickcontrols2-5 libqt5networkauth5-dev; \
+    fi && \
     ldconfig && rm -rf /var/lib/apt/lists/*
+
+# CUDA 13 (the resolute/26.04 base image) supports host GCC up to 14, but
+# Ubuntu 26.04 defaults to gcc-15. Shadow the default compiler through
+# /usr/local/bin (ahead of /usr/bin in PATH) so CMake and nvcc both pick
+# gcc-14 without touching dpkg-managed symlinks. Other releases keep their
+# default toolchain (focal gcc-9, jammy gcc-11, noble gcc-13).
+RUN if [ "${BUILD_CUDA_MODULE}" = "ON" ] && [ "$(lsb_release -cs)" = "resolute" ]; then \
+        cloudviewer-apt-install -q gcc-14 g++-14 \
+        && ln -sf /usr/bin/gcc-14 /usr/local/bin/gcc \
+        && ln -sf /usr/bin/gcc-14 /usr/local/bin/cc \
+        && ln -sf /usr/bin/g++-14 /usr/local/bin/g++ \
+        && ln -sf /usr/bin/g++-14 /usr/local/bin/c++; \
+    fi
 
 CMD ["/bin/bash", "-c", "source /root/.bashrc && exec bash"]
 RUN echo "QT_BASE_DIR=${QT_BASE_DIR}"
@@ -255,10 +285,12 @@ RUN ACLOUDVIEWER_UPDATE_BASHRC=0 ./util/install_deps_ubuntu.sh assume-yes
 # - PREBUILD_DEPS_ONLY=ON  : build from source + package /out/<tarball> (prebuild job)
 # - PREBUILD_DEPS_ONLY=OFF : download the prebuilt tarball; fall back to source if not published
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
-RUN if [ "${PREBUILD_DEPS_ONLY}" = "ON" ]; then \
-        bash ./docker/build_vtk_pcl_deps.sh prebuild "${BUILD_JOBS}" "${QT_DIR}" "${VTK_VERSION}" "${PCL_VERSION}"; \
+RUN if [ "${QT_MAJOR}" = "6" ]; then VTK_VERSION=9.4.2; PCL_VERSION=1.15.1; \
+    else VTK_VERSION=9.3.1; PCL_VERSION=1.14.1; fi; \
+    if [ "${PREBUILD_DEPS_ONLY}" = "ON" ]; then \
+        bash ./docker/build_vtk_pcl_deps.sh prebuild "${BUILD_JOBS}" "${QT_DIR}" "${VTK_VERSION}" "${PCL_VERSION}" "${QT_MAJOR}"; \
     else \
-        bash ./docker/build_vtk_pcl_deps.sh consume "${BUILD_JOBS}" "${QT_DIR}" "${VTK_VERSION}" "${PCL_VERSION}"; \
+        bash ./docker/build_vtk_pcl_deps.sh consume "${BUILD_JOBS}" "${QT_DIR}" "${VTK_VERSION}" "${PCL_VERSION}" "${QT_MAJOR}"; \
     fi
 
 # save disk space

@@ -15,7 +15,7 @@ __usage_docker_test="USAGE:
     $(basename $0) [OPTION]
 
 OPTION:
-    # CUDA wheels (Dockerfile.ci)
+    # CUDA wheels (Dockerfile.wheel)
     cuda_wheel_py310_dev        : CUDA Python 3.10 wheel, developer mode
     cuda_wheel_py311_dev        : CUDA Python 3.11 wheel, developer mode
     cuda_wheel_py312_dev        : CUDA Python 3.12 wheel, developer mode
@@ -25,23 +25,23 @@ OPTION:
     cuda_wheel_py312            : CUDA Python 3.12 wheel, release mode
     cuda_wheel_py313            : CUDA Python 3.13 wheel, release mode
 
-    # Qt6 builds (Dockerfile.ci.qt6)
-    qt6-cpu                     : Qt6 CPU build
-    qt6-cuda                    : Qt6 CUDA build
-
     # CI builds (Dockerfile.ci) - matches CI_CONFIG from GitHub Actions
     cpu-focal                   : CPU Ubuntu 20.04 CI build
     cpu-jammy                   : CPU Ubuntu 22.04 CI build
-    cpu-noble                   : CPU Ubuntu 24.04 CI build
+    cpu-noble                   : CPU Ubuntu 24.04 CI build (Qt6)
+    cpu-resolute                : CPU Ubuntu 26.04 CI build (Qt6)
     cpu-focal-release           : CPU Ubuntu 20.04 CI build, release mode
     cpu-jammy-release           : CPU Ubuntu 22.04 CI build, release mode
-    cpu-noble-release           : CPU Ubuntu 24.04 CI build, release mode
+    cpu-noble-release           : CPU Ubuntu 24.04 CI build, release mode (Qt6)
+    cpu-resolute-release        : CPU Ubuntu 26.04 CI build, release mode (Qt6)
     cuda-focal                  : CUDA Ubuntu 20.04 CI build
     cuda-jammy                  : CUDA Ubuntu 22.04 CI build
-    cuda-noble                  : CUDA Ubuntu 24.04 CI build
+    cuda-noble                  : CUDA Ubuntu 24.04 CI build (Qt6)
+    cuda-resolute               : CUDA Ubuntu 26.04 CI build (Qt6, CUDA 13.x)
     cuda-focal-release          : CUDA Ubuntu 20.04 CI build, release mode
     cuda-jammy-release          : CUDA Ubuntu 22.04 CI build, release mode
-    cuda-noble-release          : CUDA Ubuntu 24.04 CI build, release mode
+    cuda-noble-release          : CUDA Ubuntu 24.04 CI build, release mode (Qt6)
+    cuda-resolute-release       : CUDA Ubuntu 26.04 CI build, release mode (Qt6, CUDA 13.x)
 "
 
 HOST_ACLOUDVIEWER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -252,8 +252,6 @@ echo "[$(basename $0)] testing $1"
 # Try to source docker_build.sh to get environment settings
 if [ -f "${HOST_ACLOUDVIEWER_ROOT}/docker/docker_build.sh" ]; then
     source "${HOST_ACLOUDVIEWER_ROOT}/docker/docker_build.sh"
-elif [ -f "${HOST_ACLOUDVIEWER_ROOT}/docker/docker_build_qt6.sh" ]; then
-    source "${HOST_ACLOUDVIEWER_ROOT}/docker/docker_build_qt6.sh"
 else
     echo "Warning: docker_build.sh not found, using default settings"
 fi
@@ -334,26 +332,6 @@ cuda_wheel_py313)
     cpp_python_command_tools_test
     ;;
 
-# Qt6 builds
-qt6-cpu)
-    export DOCKER_TAG="acloudviewer-qt6-cpu:latest"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="OFF"
-    export BUILD_PYTORCH_OPS="OFF"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_python_command_tools_test
-    ;;
-qt6-cuda)
-    export DOCKER_TAG="acloudviewer-qt6-cuda:latest"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="ON"
-    export BUILD_PYTORCH_OPS="OFF"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_python_command_tools_test
-    ;;
-
 # CI builds (matches CI_CONFIG from GitHub Actions)
 cpu-focal)
     export DOCKER_TAG="cloudviewer-ci:cpu-focal"
@@ -377,6 +355,16 @@ cpu-jammy)
     ;;
 cpu-noble)
     export DOCKER_TAG="cloudviewer-ci:cpu-noble"
+    export DEVELOPER_BUILD="ON"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="OFF"
+    export BUILD_PYTORCH_OPS="OFF"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_test_only
+    ;;
+cpu-resolute)
+    export DOCKER_TAG="cloudviewer-ci:cpu-resolute"
     export DEVELOPER_BUILD="ON"
     export BUILD_SHARED_LIBS="OFF"
     export BUILD_CUDA_MODULE="OFF"
@@ -415,6 +403,16 @@ cpu-noble-release)
     ci_print_env
     cpp_test_only
     ;;
+cpu-resolute-release)
+    export DOCKER_TAG="cloudviewer-ci:cpu-resolute"
+    export DEVELOPER_BUILD="OFF"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="OFF"
+    export BUILD_PYTORCH_OPS="OFF"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_test_only
+    ;;
 cuda-focal)
     export DOCKER_TAG="cloudviewer-ci:cuda-focal"
     export DEVELOPER_BUILD="ON"
@@ -445,6 +443,16 @@ cuda-noble)
     ci_print_env
     cpp_test_only
     ;;
+cuda-resolute)
+    export DOCKER_TAG="cloudviewer-ci:cuda-resolute"
+    export DEVELOPER_BUILD="ON"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="ON"
+    export BUILD_PYTORCH_OPS="OFF"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_test_only
+    ;;
 cuda-focal-release)
     export DOCKER_TAG="cloudviewer-ci:cuda-focal"
     export DEVELOPER_BUILD="OFF"
@@ -467,6 +475,16 @@ cuda-jammy-release)
     ;;
 cuda-noble-release)
     export DOCKER_TAG="cloudviewer-ci:cuda-noble"
+    export DEVELOPER_BUILD="OFF"
+    export BUILD_SHARED_LIBS="OFF"
+    export BUILD_CUDA_MODULE="ON"
+    export BUILD_PYTORCH_OPS="OFF"
+    export BUILD_TENSORFLOW_OPS="OFF"
+    ci_print_env
+    cpp_test_only
+    ;;
+cuda-resolute-release)
+    export DOCKER_TAG="cloudviewer-ci:cuda-resolute"
     export DEVELOPER_BUILD="OFF"
     export BUILD_SHARED_LIBS="OFF"
     export BUILD_CUDA_MODULE="ON"
