@@ -151,6 +151,11 @@ build_all_deps() {
     wget -q https://github.com/PointCloudLibrary/pcl/releases/download/pcl-${PCL_VERSION}/source.zip -O "/opt/pcl-${PCL_VERSION}.zip"
     unzip pcl-${PCL_VERSION}.zip
     cd pcl
+    # Boost 1.90 (Ubuntu 26.04) dropped the compiled Boost.System library and
+    # its Boost::system CMake target; PCL 1.15 still links it unconditionally
+    # in outofcore. Boost.System is header-only since 1.69, so dropping the
+    # link is safe on every supported Boost version.
+    sed -i 's/ Boost::system//' outofcore/CMakeLists.txt
     mkdir -p build && cd build
     cmake -DCMAKE_BUILD_TYPE=RELEASE \
         -DBUILD_GPU=OFF \
