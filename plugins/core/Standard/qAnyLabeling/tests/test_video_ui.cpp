@@ -7,6 +7,7 @@
 
 #include <gtest/gtest.h>
 
+#include <QAction>
 #include <QApplication>
 #include <QDialogButtonBox>
 #include <QDir>
@@ -22,7 +23,7 @@
 #include <QMouseEvent>
 #include <QPlainTextEdit>
 #include <QPushButton>
-#include <QShortcut>
+#include <QSettings>
 #include <QTableWidget>
 #include <QTemporaryDir>
 #include <QTimer>
@@ -218,22 +219,19 @@ TEST_F(VideoWorkspaceTest, LabelTimelineExportsSplitHistoryAndDropRoundTrip) {
     auto* shortcuts =
             dialog.findChild<QPushButton*>(QStringLiteral("VideoShortcuts"));
     ASSERT_FALSE((!shortcuts)) << "video shortcuts action is unavailable\n";
-    QShortcut* labelShortcut = nullptr;
-    QShortcut* resetShortcut = nullptr;
-    for (QShortcut* shortcut : dialog.findChildren<QShortcut*>()) {
-        if (shortcut->key() == QKeySequence(Qt::Key_1)) {
-            labelShortcut = shortcut;
-        } else if (shortcut->key() == QKeySequence(Qt::Key_0)) {
-            resetShortcut = shortcut;
-        }
-    }
-    ASSERT_FALSE((!labelShortcut || !resetShortcut ||
-                  !QMetaObject::invokeMethod(labelShortcut, "activated") ||
-                  labels->currentRow() != 1))
-            << "digit shortcut did not select the label\n";
-    ASSERT_FALSE((!QMetaObject::invokeMethod(resetShortcut, "activated") ||
-                  labels->currentRow() != 0))
-            << "zero shortcut did not restore the first label\n";
+    auto* labelAction = dialog.findChild<QAction*>(
+            QStringLiteral("VideoAnnotation_label-slot-1"));
+    auto* resetAction = dialog.findChild<QAction*>(
+            QStringLiteral("VideoAnnotation_label-slot-0"));
+    ASSERT_TRUE(labelAction && resetAction);
+    EXPECT_TRUE(labelAction->shortcuts().contains(QKeySequence(Qt::Key_1)));
+    EXPECT_TRUE(resetAction->shortcuts().contains(QKeySequence(Qt::Key_0)));
+    labelAction->trigger();
+    ASSERT_EQ(labels->currentRow(), 1)
+            << "digit command did not select the label";
+    resetAction->trigger();
+    ASSERT_EQ(labels->currentRow(), 0)
+            << "zero command did not restore the first label";
     QElapsedTimer timer;
     timer.start();
     while (timer.elapsed() < 250 && !timeline->isVisible())
@@ -409,6 +407,15 @@ TEST_F(VideoWorkspaceTest, LabelTimelineExportsSplitHistoryAndDropRoundTrip) {
 }
 
 int main(int argc, char** argv) {
+    QTemporaryDir settingsDir;
+    if (!settingsDir.isValid()) return 1;
+    QSettings::setDefaultFormat(QSettings::IniFormat);
+    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
+                       settingsDir.path());
+    QSettings::setPath(QSettings::IniFormat, QSettings::SystemScope,
+                       settingsDir.path());
+    QCoreApplication::setOrganizationName(QStringLiteral("ACloudViewerTests"));
+    QCoreApplication::setApplicationName(QStringLiteral("test_video_ui"));
     QApplication::setAttribute(Qt::AA_DontUseNativeDialogs);
     QApplication app(argc, argv);
     ::testing::InitGoogleTest(&argc, argv);

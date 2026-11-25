@@ -70,6 +70,7 @@ public:
      * @param changeFocus If true and enabling, move focus to context widget
      */
     void setEnabled(bool shouldEnable, bool changeFocus = true);
+    bool isRequestedEnabled() const { return m_requestedEnabled; }
 
     /**
      * Get the key sequence this shortcut responds to.
@@ -77,22 +78,19 @@ public:
     QKeySequence keySequence() const;
 
 Q_SIGNALS:
+    // Owner intent/context changed, independently of temporary suspension.
+    void ownershipChanged(bool claimPriority);
+
     /**
-     * Called from setEnabled() whenever it is passed true.
-     *
-     * This is used by ecvKeySequences to disable any sibling shortcuts
-     * with the same keysequence.
-     *
-     * This may also be used by widgets to update their visual state, indicating
-     * they are now accepting shortcuts.
+     * Emitted once when effective shortcut ownership becomes enabled.
+     * Suspension/restoration may change this without changing owner intent.
+     * Widgets may use this to update their visual state.
      */
     void enabled();
 
     /**
-     * Called from setEnabled() whenever it is passed false.
-     *
-     * This may be used by widgets to update their visual state, indicating
-     * they are no longer accepting shortcuts.
+     * Emitted once when effective shortcut ownership becomes disabled.
+     * Observers must not turn temporary suspension into owner deactivation.
      */
     void disabled();
 
@@ -110,6 +108,8 @@ Q_SIGNALS:
 
 protected:
     friend class ecvKeySequences;
+    // Registry-only arbitration; never changes the owner's requested state.
+    void setSuspended(bool suspended);
 
     /**
      * Constructor (protected - use ecvKeySequences::addModalShortcut()).
@@ -121,6 +121,8 @@ protected:
     QKeySequence m_key;
     QPointer<QShortcut> m_shortcut;
     QPointer<QAction> m_action;
+    bool m_requestedEnabled = false;
+    bool m_suspended = false;
 };
 
 #endif  // ecvModalShortcut_h

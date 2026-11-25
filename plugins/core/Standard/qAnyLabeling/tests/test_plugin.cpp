@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include <QtCompat.h>
+#include <Shortcuts/ecvKeySequences.h>
 #include <aicore/ocr_capi.h>
 #include <ecvStdPluginInterface.h>
 
@@ -166,6 +167,15 @@ bool reviewStatusRoundTrip(QMainWindow* window) {
 }  // namespace
 
 int main(int argc, char** argv) {
+    QTemporaryDir settingsDir;
+    if (!settingsDir.isValid()) return 1;
+    qputenv("XDG_CONFIG_HOME", settingsDir.path().toUtf8());
+    QSettings::setDefaultFormat(QSettings::IniFormat);
+    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
+                       settingsDir.path());
+    QSettings::setPath(QSettings::IniFormat, QSettings::SystemScope,
+                       settingsDir.path());
+    QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs);
     QApplication app(argc, argv);
     QTimer::singleShot(30000, &app, []() {
         if (auto* modal = QApplication::activeModalWidget()) {
@@ -178,13 +188,17 @@ int main(int argc, char** argv) {
         }
         std::exit(1);
     });
-    QTemporaryDir settingsDir;
-    if (!settingsDir.isValid()) return 1;
     QCoreApplication::setOrganizationName(QStringLiteral("ACloudViewerTests"));
     QCoreApplication::setApplicationName(QStringLiteral("qAnyLabelingPlugin"));
-    QSettings::setDefaultFormat(QSettings::IniFormat);
-    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
-                       settingsDir.path());
+    QSettings startupShortcuts;
+    startupShortcuts.setValue(QStringLiteral("qAnyLabeling/shortcuts/open"),
+                              QStringLiteral("Ctrl+Alt+3"));
+    startupShortcuts.setValue(QStringLiteral("qAnyLabeling/shortcuts/save"),
+                              QStringLiteral("Ctrl+Alt+8"));
+    startupShortcuts.setValue(QStringLiteral("qAnyLabeling/shortcuts/save_as"),
+                              QStringLiteral("Ctrl+Alt+8"));
+    startupShortcuts.sync();
+    if (startupShortcuts.status() != QSettings::NoError) return 1;
     const bool reviewOnly = argc == 3 && QByteArray(argv[2]) == "--review-only";
     if (argc != 2 && !reviewOnly) return 2;
     // QPluginLoader's metadata pass rejects a non-normalized relative path
@@ -267,6 +281,31 @@ int main(int argc, char** argv) {
                      QApplication::topLevelWidgets().size());
         return 1;
     }
+    // This invalid saved batch uses two keys from the same old plugin profile.
+    // The central registry must keep both defaults and refuse the whole batch.
+    for (QAction* action : window->findChildren<QAction*>()) {
+        if (action->property("qAnyShortcutId").toString().isEmpty()) continue;
+        const QString source = action->property("qAnyShortcutId").toString();
+        const QString id = action->property("shortcutCommandId").toString();
+        if (source == QStringLiteral("save") ||
+            source == QStringLiteral("save_as")) {
+            const auto configured =
+                    ecvKeySequences::instance().bindings().value(id);
+            if (configured != action->property("qAnyShortcutDefaults")
+                                      .value<QList<QKeySequence>>()) {
+                std::fprintf(stderr,
+                             "Conflicting shortcut batch partially applied\n");
+                return 1;
+            }
+        }
+    }
+    if (startupShortcuts.value(QStringLiteral("qAnyLabeling/shortcuts/open")) !=
+        QStringLiteral("Ctrl+Alt+3")) {
+        std::fprintf(stderr, "Atomic migration modified stored shortcuts\n");
+        return 1;
+    }
+    startupShortcuts.remove(QStringLiteral("qAnyLabeling/shortcuts"));
+    startupShortcuts.sync();
     if (reviewOnly) return reviewStatusRoundTrip(window) ? 0 : 1;
     const QStringList expectedMenus = {
             QStringLiteral("File"),     QStringLiteral("Edit"),
@@ -1384,117 +1423,97 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "Recent image menu was not initialized\n");
         return 1;
     }
+    auto& shortcuts = ecvKeySequences::instance();
     QMainWindow hostWindow;
-    auto* hostGlobal = new QAction(QStringLiteral("Host global"), &hostWindow);
-    hostGlobal->setShortcut(QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_9));
-    hostGlobal->setShortcutContext(Qt::ApplicationShortcut);
-    hostWindow.addAction(hostGlobal);
-    auto* hostSave = new QAction(QStringLiteral("Host save"), &hostWindow);
-    hostSave->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_S));
-    hostSave->setShortcutContext(Qt::ApplicationShortcut);
-    hostWindow.addAction(hostSave);
+    QAction hostGlobal(QStringLiteral("Host global"), &hostWindow);
+    hostWindow.addAction(&hostGlobal);
+    hostGlobal.setShortcut(QKeySequence("Ctrl+Alt+F12"));
+    hostGlobal.setShortcutContext(Qt::ApplicationShortcut);
+    if (!shortcuts.registerCommand("tests.qany.host-global", &hostGlobal,
+                                   "Host")) {
+        std::fprintf(stderr, "Unable to register host-global test action\\n");
+        return 1;
+    }
     hostWindow.show();
     window->activateWindow();
-    // A bare Xvfb display has no window manager, so show/activation events
-    // arrive asynchronously and may interleave; re-assert activation until
-    // the suspension has survived a full settling window of event processing
-    // (a late deactivate event must not silently restore the host action).
-    int stable = 0;
-    for (int i = 0; i < 400 && stable < 20; ++i) {
-        if (QApplication::activeWindow() != window) {
-            window->activateWindow();
-            stable = 0;
-        } else if (hostSave->isEnabled()) {
-            stable = 0;
-        } else {
-            ++stable;
-        }
-        QCoreApplication::processEvents();
-        QThread::msleep(10);
+    QCoreApplication::processEvents();
+    if (hostGlobal.shortcutContext() != Qt::ApplicationShortcut) {
+        std::fprintf(stderr, "Host action shortcut context changed\\n");
+        return 1;
     }
-    if (hostSave->isEnabled()) {
-        std::fprintf(stderr, "Host default shortcut was not suspended\n");
+    const QString saveId = save->property("shortcutCommandId").toString();
+    const auto originalBindings = shortcuts.bindings();
+    auto candidate = originalBindings;
+    candidate[saveId] = {QKeySequence("Ctrl+Alt+F12")};
+    QStringList shortcutErrors;
+    if (shortcuts.applyBindings(candidate, &shortcutErrors, false) ||
+        shortcuts.bindings() != originalBindings) {
+        std::fprintf(stderr, "Central plugin/host conflict was not atomic\n");
+        return 1;
+    }
+    candidate[saveId] = {QKeySequence("Ctrl+Alt+8")};
+    if (!shortcuts.applyBindings(candidate, &shortcutErrors)) {
+        std::fprintf(stderr, "Central plugin remap rejected: %s\n",
+                     shortcutErrors.join("; ").toUtf8().constData());
         return 1;
     }
     bool settingsDialogReady = false;
+    QString requestedPlugin;
+    const auto requestConnection = QObject::connect(
+            &shortcuts, &ecvKeySequences::shortcutSettingsRequested, window,
+            [&requestedPlugin](const QString& plugin) {
+                requestedPlugin = plugin;
+            });
     QTimer::singleShot(0, window, [&settingsDialogReady] {
         for (QWidget* widget : QApplication::topLevelWidgets()) {
             auto* dialog = qobject_cast<QDialog*>(widget);
-            if (!dialog || dialog->objectName() !=
-                                   QStringLiteral("AnnotationSettingsDialog"))
+            if (!dialog || dialog->objectName() != "AnnotationSettingsDialog")
                 continue;
             auto* radius = dialog->findChild<QSpinBox*>(
-                    QStringLiteral("AnnotationSettingsBrushRadius"));
+                    "AnnotationSettingsBrushRadius");
             auto* opacity = dialog->findChild<QSlider*>(
-                    QStringLiteral("AnnotationSettingsMaskOpacity"));
-            auto* showScores = dialog->findChild<QCheckBox*>(
-                    QStringLiteral("AnnotationSettingsShowScores"));
-            auto* fileEditable = dialog->findChild<QCheckBox*>(
-                    QStringLiteral("AnnotationSettingsFileListEditable"));
-            auto* shortcuts = dialog->findChild<QTableWidget*>(
-                    QStringLiteral("AnnotationShortcutTable"));
+                    "AnnotationSettingsMaskOpacity");
+            auto* scores = dialog->findChild<QCheckBox*>(
+                    "AnnotationSettingsShowScores");
+            auto* files = dialog->findChild<QCheckBox*>(
+                    "AnnotationSettingsFileListEditable");
+            auto* configure = dialog->findChild<QPushButton*>(
+                    "AnnotationConfigureShortcuts");
             auto* navigation = dialog->findChild<QListWidget*>(
-                    QStringLiteral("AnnotationSettingsNavigation"));
-            auto* saveShortcut = dialog->findChild<QKeySequenceEdit*>(
-                    QStringLiteral("AnnotationShortcutEditor_save"));
+                    "AnnotationSettingsNavigation");
             auto* buttons = dialog->findChild<QDialogButtonBox*>();
-            if (!radius || !opacity || !showScores || !fileEditable ||
-                fileEditable->isChecked() || !showScores->isChecked() ||
-                !shortcuts || shortcuts->rowCount() == 0 || !navigation ||
-                !saveShortcut || !buttons || navigation->count() != 4 ||
-                navigation->currentItem()->text() !=
-                        QStringLiteral("Shortcuts")) {
+            if (!radius || !opacity || !scores || !files || !configure ||
+                !navigation || navigation->count() != 4 || !buttons ||
+                dialog->findChild<QTableWidget*>("AnnotationShortcutTable")) {
                 dialog->reject();
                 return;
             }
-            saveShortcut->setKeySequence(
-                    QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_9));
-            if (buttons->button(QDialogButtonBox::Ok)->isEnabled()) {
-                std::fprintf(
-                        stderr,
-                        "Host global shortcut conflict was not detected\n");
-                dialog->reject();
-                return;
-            }
-            saveShortcut->setKeySequence(
-                    QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_8));
-            if (!buttons->button(QDialogButtonBox::Ok)->isEnabled()) {
-                std::fprintf(stderr, "Unique shortcut remained blocked\n");
-                dialog->reject();
-                return;
-            }
-            const QByteArray screenshot =
-                    qgetenv("QANYLABELING_SETTINGS_SCREENSHOT");
-            if (!screenshot.isEmpty())
-                dialog->grab().save(QString::fromLocal8Bit(screenshot));
-            settingsDialogReady = true;
+            configure->click();
             radius->setValue(33);
             opacity->setValue(61);
-            showScores->setChecked(false);
-            fileEditable->setChecked(true);
+            scores->setChecked(false);
+            files->setChecked(true);
+            settingsDialogReady = true;
             buttons->button(QDialogButtonBox::Ok)->click();
         }
     });
     settingsAction->trigger();
-    auto* configuredRadius = window->findChild<QSpinBox*>(
-            QStringLiteral("AnnotationBrushRadius"));
-    auto* configuredOpacity =
-            window->findChild<QSlider*>(QStringLiteral("AnnotationOpacity"));
-    if (!settingsDialogReady || !configuredRadius ||
-        configuredRadius->value() != 33 || !configuredOpacity ||
-        configuredOpacity->value() != 100 ||
-        QSettings().value(QStringLiteral("qAnyLabeling/brushRadius")) != 33 ||
-        QSettings().value(QStringLiteral("qAnyLabeling/maskOpacity")) != 61 ||
-        QSettings().value(QStringLiteral("qAnyLabeling/showScores")).toBool() ||
-        !QSettings()
-                 .value(QStringLiteral("qAnyLabeling/fileListCheckboxEditable"))
-                 .toBool() ||
-        save->shortcut() != QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_8) ||
-        QSettings().value(QStringLiteral("qAnyLabeling/shortcuts/save")) !=
-                QStringLiteral("Ctrl+Alt+8") ||
-        !hostSave->isEnabled()) {
-        std::fprintf(stderr,
-                     "Settings dialog did not apply persisted values\n");
+    QObject::disconnect(requestConnection);
+    auto* configuredRadius =
+            window->findChild<QSpinBox*>("AnnotationBrushRadius");
+    auto* configuredOpacity = window->findChild<QSlider*>("AnnotationOpacity");
+    if (!settingsDialogReady ||
+        requestedPlugin != "cvcorp.cloudviewer.plugin.qAnyLabeling" ||
+        !configuredRadius || configuredRadius->value() != 33 ||
+        !configuredOpacity || configuredOpacity->value() != 100 ||
+        QSettings().value("qAnyLabeling/brushRadius") != 33 ||
+        QSettings().value("qAnyLabeling/maskOpacity") != 61 ||
+        QSettings().value("qAnyLabeling/showScores").toBool() ||
+        !QSettings().value("qAnyLabeling/fileListCheckboxEditable").toBool() ||
+        shortcuts.bindings().value(saveId) != candidate.value(saveId) ||
+        hostGlobal.shortcutContext() != Qt::ApplicationShortcut ||
+        QSettings().contains("qAnyLabeling/shortcuts/save")) {
+        std::fprintf(stderr, "Unified shortcut/settings integration failed\n");
         return 1;
     }
     QAction* showScoresAction = nullptr;
@@ -1525,14 +1544,33 @@ int main(int argc, char** argv) {
             auto* showScores = dialog->findChild<QCheckBox*>(
                     QStringLiteral("AnnotationSettingsShowScores"));
             restoredDisplayState = showScores && showScores->isChecked();
-            dialog->reject();
+            dialog->accept();
         }
     });
     settingsAction->trigger();
-    if (!restoredDisplayState) {
-        std::fprintf(stderr, "Canvas display setting was not restored\n");
+    if (!restoredDisplayState) return 1;
+    const QString blockedSettingsPath =
+            settingsDir.path() + QStringLiteral("/not-a-directory");
+    QFile blockedSettings(blockedSettingsPath);
+    if (!blockedSettings.open(QIODevice::WriteOnly)) return 1;
+    blockedSettings.close();
+    const auto beforeFailedSave = shortcuts.bindings();
+    const auto persistedBindings = QSettings().value("Shortcuts/commands-v2");
+    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
+                       blockedSettingsPath);
+    candidate = beforeFailedSave;
+    candidate[saveId] = {QKeySequence("Ctrl+Alt+6")};
+    const bool rejectedWrite =
+            !shortcuts.applyBindings(candidate, &shortcutErrors);
+    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
+                       settingsDir.path());
+    if (!rejectedWrite || shortcuts.bindings() != beforeFailedSave ||
+        QSettings().value("Shortcuts/commands-v2") != persistedBindings) {
+        std::fprintf(stderr,
+                     "Failed central settings write changed bindings\n");
         return 1;
     }
+    if (!shortcuts.applyBindings(originalBindings, &shortcutErrors)) return 1;
     auto* flagList = window->findChild<QListWidget*>(
             QStringLiteral("AnnotationImageFlags"));
     auto* flagsDock =
@@ -2705,6 +2743,39 @@ int main(int argc, char** argv) {
     // Exercise the real window snapshot/undo/redo and sidecar path, beyond
     // the geometry-only cuboid tests. Unknown metadata survives all edits.
     save->trigger();
+    // Drawing and shape history share one registered Undo command. The menu
+    // proxy can be enabled while drawing, but must never own a second binding.
+    QAction* undoPoint = nullptr;
+    for (auto* action : window->findChildren<QAction*>())
+        if (action->property("qAnyShortcutId").toString() ==
+            QStringLiteral("undo_last_point"))
+            undoPoint = action;
+    if (!undoPoint || undoPoint->isEnabled() ||
+        !undoPoint->property("shortcutProxy").toBool() ||
+        !undoPoint->shortcuts().isEmpty() ||
+        undoPoint->property("shortcutCommandId") !=
+                undo->property("shortcutCommandId"))
+        return 1;
+    const bool hadUndo = undo->isEnabled();
+    fitImage->trigger();
+    QCoreApplication::processEvents();
+    polygonTool->trigger();
+    QMouseEvent beginPolygon(QEvent::MouseButtonPress,
+                             QPointF(canvasWidget->rect().center()),
+                             Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(canvasWidget, &beginPolygon);
+    if (!undo->isEnabled() || !undoPoint->isEnabled() ||
+        !undoPoint->shortcuts().isEmpty()) {
+        std::fprintf(stderr,
+                     "Drawing lost the single Undo command/proxy contract\n");
+        return 1;
+    }
+    QKeyEvent cancelPolygon(QEvent::KeyPress, Qt::Key_Escape, Qt::NoModifier);
+    QApplication::sendEvent(canvasWidget, &cancelPolygon);
+    if (undoPoint->isEnabled() || undo->isEnabled() != hadUndo) {
+        std::fprintf(stderr, "Cancel did not restore the Undo owner\n");
+        return 1;
+    }
     QImage cuboidImage(400, 400, QImage::Format_RGB32);
     cuboidImage.fill(Qt::black);
     const QString cuboidImagePath =
@@ -2748,6 +2819,11 @@ int main(int argc, char** argv) {
     cuboidMouse(QEvent::MouseButtonPress, QPointF(80, 100));
     cuboidMouse(QEvent::MouseMove, QPointF(60, 80));
     cuboidMouse(QEvent::MouseButtonRelease, QPointF(60, 80));
+    if (!undo->isEnabled() || undoPoint->isEnabled()) {
+        std::fprintf(stderr,
+                     "Move did not retain the shape-history Undo owner\n");
+        return 1;
+    }
     const auto savedCuboid = [&]() {
         save->trigger();
         if (!cuboidSidecar.open(QIODevice::ReadOnly)) return QJsonObject();

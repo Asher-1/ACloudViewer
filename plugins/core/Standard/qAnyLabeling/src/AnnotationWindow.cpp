@@ -46,7 +46,6 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QKeyEvent>
-#include <QKeySequenceEdit>
 #include <QLabel>
 #include <QLineEdit>
 #include <QLineF>
@@ -106,6 +105,7 @@
 #include "RelateOptionsDialog.h"
 #include "RemoteServerClient.h"
 #include "RemoteServerDialog.h"
+#include "Shortcuts/ecvKeySequences.h"
 #include "VideoAnnotationDialog.h"
 #include "VideoFrameExtraction.h"
 #include "VideoMaskImport.h"
@@ -584,6 +584,7 @@ AnnotationWindow::AnnotationWindow(QWidget* parent) : QMainWindow(parent) {
     settings.endGroup();
     createUi();
     createActions();
+    restoreShortcuts();
     connect(m_canvas, &AnnotationCanvas::shapeFinished, this, [this](int) {
         if (!m_autoSwitchToEditMode || !m_tools) return;
         m_canvas->setTool(QStringLiteral("edit"));
@@ -711,10 +712,6 @@ void AnnotationWindow::setAppInterface(ecvMainAppInterface* app) {
 
 AnnotationWindow::~AnnotationWindow() {
     qApp->removeEventFilter(this);
-    for (auto it = m_suspendedHostActions.constBegin();
-         it != m_suspendedHostActions.constEnd(); ++it)
-        it.key()->setEnabled(it.value());
-    m_suspendedHostActions.clear();
     m_runAfterDownload = false;
     if (m_downloader && m_downloader->isBusy()) m_downloader->cancel();
     if (m_thread) {
@@ -3123,13 +3120,13 @@ void AnnotationWindow::editLabels() {
     auto* fromLabel = new QLabel(tr("From:"), &dialog);
     auto* from = new QSpinBox(&dialog);
     from->setObjectName(QStringLiteral("AnnotationLabelFrom"));
-    from->setRange(1, std::max(1, int(imageFiles.size())));
+    from->setRange(1, std::max(1, qtCompatSizeInt(imageFiles)));
     from->setValue(1);
     auto* toLabel = new QLabel(tr("To:"), &dialog);
     auto* to = new QSpinBox(&dialog);
     to->setObjectName(QStringLiteral("AnnotationLabelTo"));
-    to->setRange(1, std::max(1, int(imageFiles.size())));
-    to->setValue(std::max(1, int(imageFiles.size())));
+    to->setRange(1, std::max(1, qtCompatSizeInt(imageFiles)));
+    to->setValue(std::max(1, qtCompatSizeInt(imageFiles)));
     auto* go = new QPushButton(tr("Go"), &dialog);
     go->setObjectName(QStringLiteral("AnnotationLabelApplyRange"));
     auto* rangeLayout = new QHBoxLayout;
@@ -3343,6 +3340,38 @@ void AnnotationWindow::editLabels() {
     connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
     connect(go, &QPushButton::clicked, &dialog, applyAndAccept);
     dialog.exec();
+}
+
+void AnnotationWindow::restoreShortcuts() {
+    auto& registry = ecvKeySequences::instance();
+    QMap<QString, QString> legacyIds;
+    const QString owner =
+            QStringLiteral("cvcorp.cloudviewer.plugin.qAnyLabeling");
+    for (QAction* action : findChildren<QAction*>()) {
+        const QString source = action->property("qAnyShortcutId").toString();
+        if (source.isEmpty() || action->property("shortcutProxy").toBool())
+            continue;
+        registry.registerPluginCommand(
+                owner, "annotation/" + source, action,
+                tr("Annotation") + " / " +
+                        action->property("qAnyShortcutCategory").toString(),
+                tr("X-AnyLabeling Annotation"));
+        legacyIds[source] = action->property("shortcutCommandId").toString();
+    }
+    // Drawing vertices and annotation history are one semantic Undo command.
+    // The menu button remains a proxy; it no longer owns a competing Ctrl+Z.
+    const QString undoId =
+            m_undoAction->property("shortcutCommandId").toString();
+    legacyIds[QStringLiteral("undo_last_point")] = undoId;
+    m_undoLastPointAction->setProperty("shortcutCommandId", undoId);
+    QStringList errors;
+    if (!registry.migrateLegacyBindings(
+                QStringLiteral("qAnyLabeling/shortcuts"), legacyIds, &errors))
+        qWarning("qAnyLabeling: legacy shortcut migration rejected: %s",
+                 qPrintable(errors.join("; ")));
+    connect(&registry, &ecvKeySequences::commandsChanged, this,
+            &AnnotationWindow::updateInstruction);
+    updateInstruction();
 }
 
 void AnnotationWindow::openSettings() {
@@ -3787,80 +3816,25 @@ void AnnotationWindow::openSettings() {
 
     auto* shortcuts = new QWidget(tabs);
     auto* shortcutsLayout = new QVBoxLayout(shortcuts);
-    auto* shortcutFilter = new QComboBox(shortcuts);
-    shortcutFilter->setObjectName(QStringLiteral("AnnotationShortcutCategory"));
-    shortcutFilter->addItems({tr("All"), tr("AI"), tr("Dialog"), tr("File"),
-                              tr("Shape"), tr("View")});
-    shortcutsLayout->addWidget(shortcutFilter);
-    auto* shortcutTable = new QTableWidget(shortcuts);
-    shortcutTable->setObjectName(QStringLiteral("AnnotationShortcutTable"));
-    shortcutTable->setColumnCount(3);
-    shortcutTable->setHorizontalHeaderLabels(
-            {tr("Action"), tr("Category"), tr("Shortcut")});
-    shortcutTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    shortcutTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    shortcutTable->verticalHeader()->hide();
-    shortcutTable->horizontalHeader()->setSectionResizeMode(
-            0, QHeaderView::Stretch);
-    shortcutTable->horizontalHeader()->setSectionResizeMode(
-            1, QHeaderView::ResizeToContents);
-    shortcutTable->horizontalHeader()->setSectionResizeMode(2,
-                                                            QHeaderView::Fixed);
-    shortcutTable->setColumnWidth(2, 190);
-    QList<QAction*> actions = findChildren<QAction*>();
-    std::sort(actions.begin(), actions.end(),
-              [](const QAction* lhs, const QAction* rhs) {
-                  return lhs->text().localeAwareCompare(rhs->text()) < 0;
-              });
-    QHash<QString, QKeySequenceEdit*> shortcutEditors;
-    QHash<QString, QAction*> shortcutActions;
-    QHash<QString, QString> shortcutCategories;
-    QHash<QString, QKeySequence> shortcutDefaults;
-    for (QAction* action : actions) {
-        if (!action || action->text().isEmpty() || action->isSeparator() ||
-            action->property("qAnyShortcutId").toString().isEmpty())
-            continue;
-        const QString id = action->property("qAnyShortcutId").toString();
-        if (shortcutActions.contains(id)) continue;
-        const int row = shortcutTable->rowCount();
-        shortcutTable->insertRow(row);
-        shortcutTable->setItem(row, 0, new QTableWidgetItem(action->text()));
-        const QString category =
-                action->property("qAnyShortcutCategory").toString();
-        shortcutTable->setItem(row, 1, new QTableWidgetItem(category));
-        auto* editor = new QKeySequenceEdit(action->shortcut(), shortcutTable);
-        editor->setObjectName(
-                QStringLiteral("AnnotationShortcutEditor_%1").arg(id));
-        shortcutTable->setCellWidget(row, 2, editor);
-        editor->setProperty("qAnyShortcutId", id);
-        shortcutEditors.insert(id, editor);
-        shortcutActions.insert(id, action);
-        shortcutCategories.insert(id, category);
-        shortcutDefaults.insert(
-                id,
-                action->property("qAnyShortcutDefault").value<QKeySequence>());
-    }
-    shortcutsLayout->addWidget(shortcutTable);
-    auto* resetShortcuts = new QPushButton(tr("Reset to defaults"), shortcuts);
-    resetShortcuts->setObjectName(QStringLiteral("AnnotationResetShortcuts"));
-    shortcutsLayout->addWidget(resetShortcuts, 0, Qt::AlignRight);
-    connect(shortcutFilter, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            &dialog, [shortcutFilter, shortcutTable](int index) {
-                const QString category = shortcutFilter->itemText(index);
-                for (int row = 0; row < shortcutTable->rowCount(); ++row) {
-                    const auto* item = shortcutTable->item(row, 1);
-                    shortcutTable->setRowHidden(
-                            row,
-                            index > 0 && (!item || item->text() != category));
-                }
-            });
-    connect(resetShortcuts, &QPushButton::clicked, &dialog,
-            [shortcutEditors, shortcutDefaults]() {
-                for (auto it = shortcutEditors.constBegin();
-                     it != shortcutEditors.constEnd(); ++it)
-                    it.value()->setKeySequence(
-                            shortcutDefaults.value(it.key()));
-            });
+    auto* shortcutNote = new QLabel(
+            tr("All annotation and plugin command bindings are managed in the "
+               "central shortcut settings. Filter by plugin and feature to "
+               "edit every alternative, check conflicts or restore defaults. "
+               "Changes there take effect immediately and are independent of "
+               "this dialog's OK and Cancel buttons."),
+            shortcuts);
+    shortcutNote->setWordWrap(true);
+    shortcutsLayout->addWidget(shortcutNote);
+    auto* configureShortcuts =
+            new QPushButton(tr("Open central shortcut settings"), shortcuts);
+    configureShortcuts->setObjectName(
+            QStringLiteral("AnnotationConfigureShortcuts"));
+    shortcutsLayout->addWidget(configureShortcuts, 0, Qt::AlignLeft);
+    shortcutsLayout->addStretch();
+    connect(configureShortcuts, &QPushButton::clicked, &dialog, []() {
+        ecvKeySequences::instance().requestShortcutSettings(
+                QStringLiteral("cvcorp.cloudviewer.plugin.qAnyLabeling"));
+    });
     tabs->insertWidget(0, shortcuts);
     connect(navigation, &QListWidget::currentRowChanged, tabs,
             &QStackedWidget::setCurrentIndex);
@@ -3874,98 +3848,9 @@ void AnnotationWindow::openSettings() {
     auto* buttons = new QDialogButtonBox(
             QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
     root->addWidget(buttons);
-    QPushButton* acceptButton = buttons->button(QDialogButtonBox::Ok);
-    auto updateShortcutConflicts = [shortcutEditors, shortcutActions,
-                                    shortcutCategories, shortcutDefaults,
-                                    acceptButton]() {
-        QHash<QString, QStringList> conflicts;
-        for (auto it = shortcutEditors.constBegin();
-             it != shortcutEditors.constEnd(); ++it) {
-            const QKeySequence sequence = it.value()->keySequence();
-            if (sequence.isEmpty()) continue;
-            for (auto other = shortcutEditors.constBegin();
-                 other != shortcutEditors.constEnd(); ++other) {
-                if (other.key() == it.key() ||
-                    other.value()->keySequence() != sequence)
-                    continue;
-                if ((it.key() == QStringLiteral("undo") &&
-                     other.key() == QStringLiteral("undo_last_point")) ||
-                    (it.key() == QStringLiteral("undo_last_point") &&
-                     other.key() == QStringLiteral("undo")))
-                    continue;
-                conflicts[it.key()].append(
-                        shortcutActions.value(other.key())->text());
-            }
-            QList<QAction*> globalActions =
-                    QApplication::instance()->findChildren<QAction*>();
-            for (QWidget* topLevel : QApplication::topLevelWidgets())
-                globalActions.append(topLevel->findChildren<QAction*>());
-            for (QAction* other : globalActions) {
-                if (!other || shortcutActions.values().contains(other) ||
-                    other->shortcutContext() != Qt::ApplicationShortcut ||
-                    other->isSeparator())
-                    continue;
-                // Official defaults can overlap ACloudViewer's application
-                // shortcuts. syncHostShortcuts suspends those host actions
-                // only while the annotation workspace has focus.
-                if (other->shortcut() == sequence &&
-                    sequence != shortcutDefaults.value(it.key())) {
-                    QString name = other->text();
-                    name.remove(QLatin1Char('&'));
-                    conflicts[it.key()].append(
-                            tr("ACloudViewer: %1").arg(name));
-                }
-            }
-        }
-        bool hasConflict = false;
-        for (auto it = shortcutEditors.constBegin();
-             it != shortcutEditors.constEnd(); ++it) {
-            const QStringList names = conflicts.value(it.key());
-            it.value()->setStyleSheet(
-                    names.isEmpty()
-                            ? QString()
-                            : QStringLiteral("QKeySequenceEdit { border: 1px "
-                                             "solid #d43f3a; }"));
-            it.value()->setToolTip(
-                    names.isEmpty()
-                            ? tr("This shortcut is scoped to the active "
-                                 "annotation workspace.")
-                            : tr("Conflicts with: %1")
-                                      .arg(names.join(QStringLiteral(", "))));
-            hasConflict = hasConflict || !names.isEmpty();
-        }
-        acceptButton->setEnabled(!hasConflict);
-        Q_UNUSED(shortcutCategories);
-    };
-    for (QKeySequenceEdit* editor : shortcutEditors)
-        connect(editor, &QKeySequenceEdit::keySequenceChanged, &dialog,
-                [updateShortcutConflicts](const QKeySequence&) {
-                    updateShortcutConflicts();
-                });
-    updateShortcutConflicts();
     connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
     connect(buttons, &QDialogButtonBox::accepted, &dialog, [&]() {
         QSettings settings;
-        settings.beginGroup(QStringLiteral("qAnyLabeling/shortcuts"));
-        for (auto it = shortcutEditors.constBegin();
-             it != shortcutEditors.constEnd(); ++it) {
-            const QKeySequence sequence = it.value()->keySequence();
-            QAction* action = shortcutActions.value(it.key());
-            if (sequence == shortcutDefaults.value(it.key())) {
-                if (action)
-                    action->setShortcuts(
-                            action->property("qAnyShortcutDefaults")
-                                    .value<QList<QKeySequence>>());
-                settings.remove(it.key());
-            } else {
-                if (action) action->setShortcut(sequence);
-                settings.setValue(
-                        it.key(),
-                        sequence.toString(QKeySequence::PortableText));
-            }
-        }
-        settings.endGroup();
-        syncHostShortcuts();
         if (m_keepBrightnessAction)
             m_keepBrightnessAction->setChecked(keepBrightness->isChecked());
         if (m_keepContrastAction)
@@ -4357,7 +4242,6 @@ void AnnotationWindow::createActions() {
                     .toObject()
                     .contains(sourceKey))
             action->setShortcuts(annotationConfig::shortcuts(sourceKey));
-        const QKeySequence defaultSequence = action->shortcut();
         if (action->objectName().isEmpty())
             action->setObjectName(
                     QStringLiteral("qAnyShortcut_%1").arg(sourceKey));
@@ -4366,19 +4250,11 @@ void AnnotationWindow::createActions() {
         action->setProperty("qAnyShortcutDefaults",
                             QVariant::fromValue(action->shortcuts()));
         action->setProperty("qAnyShortcutDefault",
-                            QVariant::fromValue(defaultSequence));
+                            QVariant::fromValue(action->shortcut()));
         // Every annotation command is scoped to this top-level workspace.
         // Qt activates WindowShortcut only while this window is active, so
         // the host viewer keeps ownership of its own window shortcuts.
         action->setShortcutContext(Qt::WindowShortcut);
-        QSettings settings;
-        const QString key =
-                QStringLiteral("qAnyLabeling/shortcuts/%1").arg(sourceKey);
-        if (settings.contains(key)) {
-            action->setShortcut(
-                    QKeySequence::fromString(settings.value(key).toString(),
-                                             QKeySequence::PortableText));
-        }
     };
     QMenu* fileMenu = menuBar()->addMenu(tr("File"));
     QMenu* editMenu = menuBar()->addMenu(tr("Edit"));
@@ -5171,10 +5047,9 @@ void AnnotationWindow::createActions() {
     m_redoAction = editMenu->addAction(
             QIcon(iconPath(QStringLiteral("redo.svg"))), tr("Redo"), this,
             &AnnotationWindow::redo, QKeySequence::Redo);
-    // X-AnyLabeling has one Ctrl+Z action which undoes a drawing vertex first
-    // and an annotation edit otherwise. Keep redo available from the menu so
-    // it does not steal the upstream Ctrl+Y action.
-    m_redoAction->setShortcut(QKeySequence());
+    // Keep Ctrl+Y for Auto use last label; redo has its own unambiguous key.
+    m_redoAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Z));
+    registerShortcut(m_redoAction, QStringLiteral("redo"), tr("Shape"));
     QAction* deleteAction = editMenu->addAction(
             QIcon(iconPath(QStringLiteral("delete.png"))), tr("Delete object"),
             m_canvas, &AnnotationCanvas::deleteSelected, QKeySequence::Delete);
@@ -5382,13 +5257,26 @@ void AnnotationWindow::createActions() {
             editMenu, tr("Undo last point"), QStringLiteral("undo_last_point"),
             QKeySequence::Undo, tr("Shape"),
             [this]() { m_canvas->undoLastPoint(); });
+    m_undoLastPointAction->setShortcuts({});
+    m_undoLastPointAction->setProperty("shortcutProxy", true);
     m_undoLastPointAction->setEnabled(false);
-    connect(m_canvas, &AnnotationCanvas::editStarted, this,
-            [this]() { m_undoLastPointAction->setEnabled(true); });
+    const auto updateUndoActions = [this]() {
+        const bool creating = m_canvas->creating();
+        m_undoLastPointAction->setEnabled(creating);
+        if (!m_canvas->brushEditing())
+            m_undoAction->setEnabled(creating || !m_undo.isEmpty());
+    };
+    // editStarted also covers moves/deletes and precedes creating(). Observe
+    // the canvas state after selection/shape changes instead of enabling both
+    // owners of the default Undo binding during a polygon creation.
+    connect(m_canvas, &AnnotationCanvas::shapeSelected, this,
+            [updateUndoActions](int) { updateUndoActions(); });
+    connect(m_canvas, &AnnotationCanvas::shapesChanged, this,
+            updateUndoActions);
     connect(m_canvas, &AnnotationCanvas::shapeFinished, this,
             [this](int) { m_undoLastPointAction->setEnabled(false); });
     connect(m_canvas, &AnnotationCanvas::creationCanceled, this,
-            [this]() { m_undoLastPointAction->setEnabled(false); });
+            updateUndoActions);
     QAction* addPointAction = addShortcutAction(
             editMenu, tr("Add point to edge"),
             QStringLiteral("add_point_to_edge"),
@@ -5776,9 +5664,11 @@ void AnnotationWindow::createActions() {
         });
     }
     for (int digit = 0; digit <= 9; ++digit) {
-        QAction* shortcut = new QAction(QString::number(digit), this);
+        QAction* shortcut =
+                new QAction(tr("Activate digit preset %1").arg(digit), this);
         shortcut->setShortcut(QKeySequence(QString::number(digit)));
-        shortcut->setShortcutContext(Qt::WindowShortcut);
+        registerShortcut(shortcut, QStringLiteral("digit_%1").arg(digit),
+                         tr("Shape / Digit presets"));
         m_canvas->addAction(shortcut);
         connect(shortcut, &QAction::triggered, this,
                 [this, digit]() { activateDigitShortcut(digit); });
@@ -7179,9 +7069,6 @@ void AnnotationWindow::dropEvent(QDropEvent* event) {
 }
 
 bool AnnotationWindow::eventFilter(QObject* watched, QEvent* event) {
-    if (event && (event->type() == QEvent::WindowActivate ||
-                  event->type() == QEvent::WindowDeactivate))
-        QTimer::singleShot(0, this, &AnnotationWindow::syncHostShortcuts);
     if (watched == m_tagInput && event) {
         if (event->type() == QEvent::KeyPress) {
             auto* keyEvent = static_cast<QKeyEvent*>(event);
@@ -7213,54 +7100,6 @@ bool AnnotationWindow::eventFilter(QObject* watched, QEvent* event) {
         }
     }
     return QMainWindow::eventFilter(watched, event);
-}
-
-void AnnotationWindow::syncHostShortcuts() {
-    QWidget* active = QApplication::activeWindow();
-    bool annotationActive = false;
-    for (QWidget* widget = active; widget; widget = widget->parentWidget()) {
-        if (widget == this) {
-            annotationActive = true;
-            break;
-        }
-    }
-    if (!annotationActive) {
-        for (auto it = m_suspendedHostActions.constBegin();
-             it != m_suspendedHostActions.constEnd(); ++it)
-            it.key()->setEnabled(it.value());
-        m_suspendedHostActions.clear();
-        return;
-    }
-    QSet<QKeySequence> pluginKeys;
-    for (QAction* action : findChildren<QAction*>()) {
-        if (action->isEnabled() && !action->shortcut().isEmpty() &&
-            !action->property("qAnyShortcutId").toString().isEmpty())
-            pluginKeys.insert(action->shortcut());
-    }
-    for (auto it = m_suspendedHostActions.begin();
-         it != m_suspendedHostActions.end();) {
-        if (pluginKeys.contains(it.key()->shortcut())) {
-            ++it;
-            continue;
-        }
-        it.key()->setEnabled(it.value());
-        it = m_suspendedHostActions.erase(it);
-    }
-    for (QWidget* topLevel : QApplication::topLevelWidgets()) {
-        if (topLevel == this || isAncestorOf(topLevel)) continue;
-        for (QAction* action : topLevel->findChildren<QAction*>()) {
-            if (!action ||
-                action->shortcutContext() != Qt::ApplicationShortcut ||
-                !pluginKeys.contains(action->shortcut()) ||
-                m_suspendedHostActions.contains(action) || !action->isEnabled())
-                continue;
-            m_suspendedHostActions.insert(action, true);
-            connect(action, &QObject::destroyed, this, [this, action]() {
-                m_suspendedHostActions.remove(action);
-            });
-            action->setEnabled(false);
-        }
-    }
 }
 
 void AnnotationWindow::refreshFileList() {
@@ -9844,6 +9683,10 @@ void AnnotationWindow::snapshot() {
 }
 
 void AnnotationWindow::undo() {
+    if (m_canvas->creating()) {
+        m_canvas->undoLastPoint();
+        return;
+    }
     if (m_canvas->brushEditing()) {
         m_canvas->brushUndo();
         return;

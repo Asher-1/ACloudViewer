@@ -25,54 +25,10 @@ Original ZIP package is copyrighted by Gilles Vollant, see
 quazip/(un)zip.h files for details, basically it's zlib license.
  **/
 
+#include <QtCompat.h>
+
 #include <QString>
 #include <QStringList>
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-// Use project's QtCompat.h for QTextCodec compatibility
-#include <QtCompat.h>
-#include <QHash>
-// QTextCodec compatibility wrapper using QtCompat's implementation
-// This wrapper delegates to QtCompatTextCodec from QtCompat.h
-class QTextCodec {
-private:
-    QtCompatTextCodec* m_codec;
-
-    // Private constructor - use static factory methods
-    QTextCodec(QtCompatTextCodec* codec) : m_codec(codec) {}
-
-public:
-    static QTextCodec* codecForLocale() {
-        // QtCompat returns static instances, so we can safely wrap them
-        static QTextCodec* instance = new QTextCodec(qtCompatCodecForLocale());
-        return instance;
-    }
-
-    static QTextCodec* codecForName(const char* name) {
-        // QtCompat returns static instances, so we can safely wrap them
-        // Use QtCompat's codecForName to get the appropriate codec
-        static QHash<QString, QTextCodec*> codecCache;
-        QString key = name ? QString::fromLatin1(name) : QString();
-        if (!codecCache.contains(key)) {
-            codecCache[key] = new QTextCodec(qtCompatCodecForName(name));
-        }
-        return codecCache[key];
-    }
-
-    QByteArray fromUnicode(const QString& str) const {
-        return m_codec->fromUnicode(str);
-    }
-
-    QString toUnicode(const QByteArray& ba) const {
-        return m_codec->toUnicode(ba);
-    }
-
-    QString toUnicode(const char* chars, int len = -1) const {
-        return m_codec->toUnicode(chars, len);
-    }
-};
-#else
-#include <QTextCodec>
-#endif
 
 #include "quazip_global.h"
 #include "quazipfileinfo.h"
@@ -270,27 +226,27 @@ public:
      * example, file names with cyrillic letters will be in \c IBM866
      * encoding.
      **/
-    void setFileNameCodec(QTextCodec* fileNameCodec);
+    void setFileNameCodec(QtCompatQTextCodec* fileNameCodec);
     /// Sets the codec used to encode/decode file names inside archive.
     /** \overload
      * Equivalent to calling
-     *setFileNameCodec(QTextCodec::codecForName(codecName));
+     *setFileNameCodec(QtCompatQTextCodec::codecForName(codecName));
      **/
     void setFileNameCodec(const char* fileNameCodecName);
     /// Returns the codec used to encode/decode comments inside archive.
-    QTextCodec* getFileNameCodec() const;
+    QtCompatQTextCodec* getFileNameCodec() const;
     /// Sets the codec used to encode/decode comments inside archive.
     /** This codec defaults to locale codec, which is probably ok.
      **/
-    void setCommentCodec(QTextCodec* commentCodec);
+    void setCommentCodec(QtCompatQTextCodec* commentCodec);
     /// Sets the codec used to encode/decode comments inside archive.
     /** \overload
      * Equivalent to calling
-     *setCommentCodec(QTextCodec::codecForName(codecName));
+     *setCommentCodec(QtCompatQTextCodec::codecForName(codecName));
      **/
     void setCommentCodec(const char* commentCodecName);
     /// Returns the codec used to encode/decode comments inside archive.
-    QTextCodec* getCommentCodec() const;
+    QtCompatQTextCodec* getCommentCodec() const;
     /// Returns the name of the ZIP file.
     /** Returns null string if no ZIP file name has been set, for
      * example when the QuaZip instance is set up to use a QIODevice
@@ -587,8 +543,8 @@ public:
      * won't affect the QuaZip instances already created at that moment.
      *
      * The codec specified here can be overriden by calling setFileNameCodec().
-     * If neither function is called, QTextCodec::codecForLocale() will be used
-     * to decode or encode file names. Use this function with caution if
+     * If neither function is called, QtCompatQTextCodec::codecForLocale() will
+     * be used to decode or encode file names. Use this function with caution if
      * the application uses other libraries that depend on QuaZIP. Those
      * libraries can either call this function by themselves, thus overriding
      * your setting or can rely on the default encoding, thus failing
@@ -611,11 +567,11 @@ public:
      *
      * @param codec The codec to use by default. If NULL, resets to default.
      */
-    static void setDefaultFileNameCodec(QTextCodec* codec);
+    static void setDefaultFileNameCodec(QtCompatQTextCodec* codec);
     /**
      * @overload
      * Equivalent to calling
-     * setDefltFileNameCodec(QTextCodec::codecForName(codecName)).
+     * setDefltFileNameCodec(QtCompatQTextCodec::codecForName(codecName)).
      */
     static void setDefaultFileNameCodec(const char* codecName);
 };

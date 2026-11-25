@@ -31,3 +31,17 @@ endif()
 cloudviewer_add_test(NAME test_parallel COMMAND test_parallel)
 set_tests_properties(test_parallel PROPERTIES LABELS "fast;common;parallel")
 cloudviewer_set_test_runtime_environment(test_parallel)
+
+# Exercise QtCompat's parser boundaries without the application or AI runtime.
+if(TARGET Qt::Widgets)
+    add_executable(test_qt_compat test_qt_compat.cpp)
+    target_include_directories(test_qt_compat PRIVATE "${CMAKE_SOURCE_DIR}/core/include")
+    target_link_libraries(test_qt_compat PRIVATE
+        Qt::Widgets gtest_main ${QT_COMPAT_PLATFORM_LIBRARIES})
+    if(NOT MSVC)
+        target_compile_options(test_qt_compat PRIVATE -fPIC)
+    endif()
+    cloudviewer_add_test(NAME test_qt_compat COMMAND test_qt_compat)
+    set_tests_properties(test_qt_compat PROPERTIES LABELS "fast;common;qt-compat")
+    cloudviewer_set_test_runtime_environment(test_qt_compat)
+endif()

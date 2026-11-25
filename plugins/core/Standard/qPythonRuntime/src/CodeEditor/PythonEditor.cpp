@@ -8,6 +8,7 @@
 #include "PythonEditor.h"
 #include "CodeEditor.h"
 #include "PythonInterpreter.h"
+#include <Shortcuts/ecvKeySequences.h>
 
 // qCC
 #include "ecvMainAppInterface.h"
@@ -33,7 +34,6 @@ PythonEditor::PythonEditor(PythonInterpreter *interpreter)
     updateMenus();
 
     readSettings();
-    QCoreApplication::instance()->installEventFilter(this);
 
     connect(this, &PythonEditor::executionCalled, interpreter, &PythonInterpreter::executeCode);
     connect(
@@ -54,7 +54,6 @@ void PythonEditor::closeEvent(QCloseEvent *event)
     {
         writeSettings();
         event->accept();
-        QCoreApplication::instance()->removeEventFilter(this);
     }
 }
 
@@ -221,32 +220,6 @@ void PythonEditor::openRecentFile()
     {
         openFile(action->data().toString());
     }
-}
-
-bool PythonEditor::eventFilter(QObject *obj, QEvent *e)
-{
-    switch (e->type())
-    {
-    case QEvent::Shortcut:
-    {
-        auto *sev = static_cast<QShortcutEvent *>(e);
-        if (sev->isAmbiguous())
-        {
-            for (const auto &action : actions())
-            {
-                if (action->shortcut() == sev->key())
-                {
-                    action->trigger(); // Trigger the action that matches the ambiguous shortcut
-                                       // event.
-                    return true;
-                }
-            }
-        }
-    }
-    default:
-        break;
-    }
-    return false;
 }
 
 void PythonEditor::save()
@@ -441,7 +414,8 @@ void PythonEditor::createActions()
 
     menuBar()->addSeparator();
 
-    addAction(actionNew); // Actions must be added to be able to find shortcuts in event filter
+    // Associate editor shortcuts with this window and its children.
+    addAction(actionNew);
     addAction(actionSave);
     addAction(actionOpen);
     addAction(actionSaveAs);
@@ -451,6 +425,31 @@ void PythonEditor::createActions()
     addAction(actionUncomment);
     addAction(actionIndentMore);
     addAction(actionIndentLess);
+
+    const auto registerCommand = [this](QAction *action, const QString &id, const QString &category)
+    {
+        addAction(action);
+        action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        ecvKeySequences::instance().registerPluginCommand(
+            QStringLiteral("cvcorp.cloudviewer.plugin.PythonRuntime"),
+            "editor/" + id,
+            action,
+            category,
+            tr("Python Runtime"));
+    };
+    for (auto *action :
+         {actionNew, actionOpen, actionOpenFolder, actionSave, actionSaveAs, actionClose})
+        registerCommand(action, action->objectName(), tr("Editor / File"));
+    registerCommand(actionRun, actionRun->objectName(), tr("Editor / Run"));
+    for (auto *action : {actionComment, actionUncomment, actionIndentMore, actionIndentLess})
+        registerCommand(action, action->objectName(), tr("Editor / Code"));
+    registerCommand(actionSettings, actionSettings->objectName(), tr("Editor / Settings"));
+    registerCommand(m_nextAct, "window/next", tr("Editor / Window"));
+    registerCommand(m_previousAct, "window/previous", tr("Editor / Window"));
+    registerCommand(m_closeAct, "window/close", tr("Editor / Window"));
+    registerCommand(m_closeAllAct, "window/close-all", tr("Editor / Window"));
+    registerCommand(m_tileAct, "window/tile", tr("Editor / Window"));
+    registerCommand(m_cascadeAct, "window/cascade", tr("Editor / Window"));
 }
 
 void PythonEditor::updateMenus()

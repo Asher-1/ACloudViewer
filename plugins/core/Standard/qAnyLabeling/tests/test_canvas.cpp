@@ -13,6 +13,8 @@
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QSettings>
+#include <QTemporaryDir>
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -912,6 +914,8 @@ TEST(AnnotationCanvas,
         AnnotationCanvas editor;
         editor.setImage(QImage(400, 400, QImage::Format_RGB32));
         editor.setTool(QStringLiteral("polygon"));
+        editor.show();
+        QCoreApplication::processEvents();
         const QPointF square[4] = {QPointF(100, 100), QPointF(200, 100),
                                    QPointF(200, 200), QPointF(100, 200)};
         for (const QPointF& point : square) {
@@ -956,6 +960,15 @@ TEST(AnnotationCanvas,
 }
 
 int main(int argc, char** argv) {
+    QTemporaryDir settingsDir;
+    if (!settingsDir.isValid()) return 1;
+    QSettings::setDefaultFormat(QSettings::IniFormat);
+    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
+                       settingsDir.path());
+    QSettings::setPath(QSettings::IniFormat, QSettings::SystemScope,
+                       settingsDir.path());
+    QCoreApplication::setOrganizationName(QStringLiteral("ACloudViewerTests"));
+    QCoreApplication::setApplicationName(QStringLiteral("test_canvas"));
     QApplication app(argc, argv);
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

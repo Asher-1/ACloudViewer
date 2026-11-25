@@ -1952,8 +1952,13 @@ public:  // visualization matrix transformation
     //! Returns the current interaction flags
     static INTERACTION_FLAGS GetInteractionMode();
 
+    //! Change orientation without refitting; use
+    //! UpdateConstellationCenterAndZoom explicitly when a bounding-box fit is
+    //! required.
     static void SetView(CC_VIEW_ORIENTATION orientation,
                         bool forceRedraw = false);
+    // Reject legacy bounding-box calls rather than silently converting to bool.
+    static void SetView(CC_VIEW_ORIENTATION, const ccBBox*) = delete;
 
     //! Returns a 4x4 'OpenGL' matrix corresponding to a default 'view'
     //! orientation

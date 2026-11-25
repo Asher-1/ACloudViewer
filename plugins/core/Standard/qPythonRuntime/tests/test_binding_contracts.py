@@ -10,6 +10,19 @@ import pytest
 
 
 CASES = {
+    "set_view_orientation_only_signature": """
+method = pycc.ccDisplayTools.setView
+assert "redraw: bool = True" in method.__doc__, method.__doc__
+assert "preserving zoom" in method.__doc__, method.__doc__
+# Reject former box arguments before touching a display/camera.
+for legacy_box in (pycc.ccBBox(), None):
+    try:
+        method(pycc.CC_VIEW_ORIENTATION.CC_TOP_VIEW, legacy_box)
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("setView accepted a non-boolean redraw argument")
+""",
     "histogram_returns_independent_list": """
 cloud = pycc.ccPointCloud("histogram")
 index = cloud.addScalarField("values")

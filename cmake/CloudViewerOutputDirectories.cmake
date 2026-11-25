@@ -114,10 +114,14 @@ endfunction()
 # ALIASED_TARGET (same caveat as the AICore layout's Qt5/6::Gui chain).
 function(cloudviewer_resolve_qt_lib_dir out_var)
     set(_qt_core_target "")
-    if (TARGET Qt5::Core)
-        set(_qt_core_target Qt5::Core)
+    # Qt6 also provides compatibility Qt5::* interface targets without LOCATION.
+    # Resolve the selected real target before considering compatibility aliases.
+    if (QT_PREFIX AND TARGET "${QT_PREFIX}::Core")
+        set(_qt_core_target "${QT_PREFIX}::Core")
     elseif (TARGET Qt6::Core)
         set(_qt_core_target Qt6::Core)
+    elseif (TARGET Qt5::Core)
+        set(_qt_core_target Qt5::Core)
     elseif (TARGET Qt::Core)
         get_target_property(_qt_core_alias Qt::Core ALIASED_TARGET)
         if (_qt_core_alias)

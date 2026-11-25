@@ -153,7 +153,7 @@ void ReconstructionWidget::CreateWidgets() {
     feature_extraction_widget_ = new FeatureExtractionWidget(this, &options_);
     feature_matching_widget_ = new FeatureMatchingWidget(this, &options_);
     database_management_widget_ = new DatabaseManagementWidget(this, &options_);
-    automatic_reconstruction_widget_ = new AutomaticReconstructionWidget(this);
+    automatic_reconstruction_widget_ = nullptr;
     reconstruction_options_widget_ =
             new ReconstructionOptionsWidget(this, &options_);
     bundle_adjustment_widget_ = new BundleAdjustmentWidget(this, &options_);
@@ -1096,6 +1096,11 @@ void ReconstructionWidget::DatabaseManagement() {
 }
 
 void ReconstructionWidget::AutomaticReconstruction() {
+    // Device discovery belongs to the requested workflow, not GUI startup.
+    if (!automatic_reconstruction_widget_) {
+        automatic_reconstruction_widget_ =
+                new AutomaticReconstructionWidget(this);
+    }
     automatic_reconstruction_widget_->show();
     automatic_reconstruction_widget_->raise();
 }

@@ -241,14 +241,15 @@ void SAM3Canvas::clearPointsKeepBox() {
 }
 
 QPointF SAM3Canvas::screenToImage(const QPointF& screen) const {
-    const QPixmap pm = qtCompatLabelPixmap(this);
-    if (pm.isNull() || m_original.isNull()) return QPointF(-1, -1);
+    const QPixmap pixmap = qtCompatLabelPixmap(this);
+    if (pixmap.isNull() || m_original.isNull()) return QPointF(-1, -1);
     // The pixmap is centered inside the QLabel (Qt::AlignCenter); its top-left
     // corner is offset from the widget origin by half the letterbox margin.
-    const double offX = (width() - pm.width()) / 2.0;
-    const double offY = (height() - pm.height()) / 2.0;
-    const double ix = (screen.x() - offX) / pm.width() * m_original.width();
-    const double iy = (screen.y() - offY) / pm.height() * m_original.height();
+    const double offX = (width() - pixmap.width()) / 2.0;
+    const double offY = (height() - pixmap.height()) / 2.0;
+    const double ix = (screen.x() - offX) / pixmap.width() * m_original.width();
+    const double iy =
+            (screen.y() - offY) / pixmap.height() * m_original.height();
     return QPointF(ix, iy);
 }
 
@@ -664,7 +665,7 @@ void SAM3Dialog::setupUi() {
         modeGroup->addButton(u.modePoints, 0);
         modeGroup->addButton(u.modeBox, 1);
         if (u.modeExemplar) modeGroup->addButton(u.modeExemplar, 2);
-        connect(modeGroup, qtCompatButtonGroupClicked(), this,
+        connect(modeGroup, qtCompatButtonGroupIdClicked(), this,
                 &SAM3Dialog::onModeChanged);
 
         if (isFull) {

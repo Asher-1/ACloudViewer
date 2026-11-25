@@ -62,6 +62,13 @@ acloudviewer install --wheel           # alternative: install the Python cloudVi
 - **Qt** 5.12+ or Qt 6.2+
 - **C++17** compliant compiler
 
+Qt6 builds do not require **Core5Compat**, which is an optional Qt Add-On.
+Regular expressions use QtCore; named legacy codecs use native Windows services
+or the system iconv implementation (provided by libc on Linux and libiconv on
+macOS). The central compatibility API covers Qt6.0/6.1;
+Qt6.2+ above remains the recommended full-application dependency baseline, not
+an API lower bound or a claim of full Qt6 application acceptance.
+
 **Recommended:**
 - **Conda/Miniconda** (for dependency management)
 - **CUDA** 12.0+ (for GPU acceleration)
@@ -765,6 +772,37 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for build requirements and development gu
 - Universal binaries (ARM64) supported
 - Code signing required for distribution
 - Homebrew or Conda for dependency management
+
+### Qt Serialization Compatibility
+
+Binary archives containing persistent object metadata use DB format **5.9 (59)**
+and the **Qt 5.12 QDataStream wire format** on both Qt majors. Metadata-free
+objects and `.nosave` metadata retain their previous minimum file version.
+Older application builds that support at most format 58 cannot read the new
+metadata archives.
+
+Format 58 and earlier retain their original compiled-SDK stream interpretation;
+those files did not record the Qt stream version, so historical cross-major
+readability is not guaranteed. The legacy LAS fallback still uses ABI-specific
+raw records; this change does not make that payload architecture-independent.
+
+### CloudCompare Qt6 Migration Reference
+
+The local CloudCompare reference at commit
+`c7d5bb7eb9187203c17fb557bc7bf372638a31d4` uses Qt6 directly and
+`QRegularExpression` in the matrix dialogs and filename validation. ACloudViewer
+uses the same regex API through its existing `core/include/QtCompat.h` owner,
+while retaining Qt 5.12 support and explicit whole-string matching where needed.
+
+CloudCompare's bundled QuaZIP still optionally discovers Core5Compat. Without
+it, its `QuazipTextCodec` uses `QStringEncoder`/`QStringDecoder`, reduces the
+available encodings, and defaults unrecognized names to UTF-8. ACloudViewer does
+not copy that fallback: Qt6 Unicode conversion uses QtCore, legacy named codecs
+use platform services, and unavailable names return `nullptr`. This preserves
+the declared archive encoding rather than silently changing it. Platform codec
+availability and malformed-input behavior still require platform-specific tests.
+The format-59 and bounded LAS restoration rules above are independent of this
+migration and must not be reverted to CloudCompare's unconditional LAS skip.
 
 ### Build Performance Tips
 

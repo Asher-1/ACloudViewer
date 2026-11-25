@@ -1812,7 +1812,7 @@ void cvSelectionHighlighter::updateLabelActor(bool isPointLabels) {
 
     // Remove existing label actor
     if (labelActor) {
-        renderer->RemoveActor2D(labelActor);
+        renderer->RemoveViewProp(labelActor);
         labelActor = nullptr;
     }
 
@@ -1953,7 +1953,7 @@ void cvSelectionHighlighter::updateLabelActor(bool isPointLabels) {
     labelActor->SetMapper(labelMapper);
 
     // Add to renderer
-    renderer->AddActor2D(labelActor);
+    renderer->AddViewProp(labelActor);
 
     scheduleAllViewsUpdate();
 }
@@ -2027,7 +2027,7 @@ QString cvTooltipFormatter::getPlainTooltipInfo(vtkPolyData* polyData,
 
     // Simple HTML tag removal
     QString plainText = htmlTooltip;
-    plainText.remove(QtCompatRegExp("<[^>]*>"));
+    qtCompatReplace(plainText, qtCompatRegExp("<[^>]*>"), QString());
     plainText.replace("&nbsp;", " ");
 
     return plainText;

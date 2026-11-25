@@ -213,7 +213,9 @@ endif ()
 target_link_libraries(${PROJECT_NAME}
         PUBLIC
         Qt::Widgets
+        ${QT_COMPAT_PLATFORM_LIBRARIES}
         )
+
 # QT (optional)
 if (CVCORELIB_USE_QT_CONCURRENT)
     # Qt5/Qt6 compatibility

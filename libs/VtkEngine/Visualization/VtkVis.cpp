@@ -4839,7 +4839,11 @@ void VtkVis::setPointGaussianRendering(bool enabled,
         if (existingPG) {
             existingPG->SetScaleFactor(gaussianRadius);
             existingPG->SetSplatShaderCode(preset.shaderCode);
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 4, 0)
+            existingPG->SetBoundScale(preset.triangleScale);
+#else
             existingPG->SetTriangleScale(preset.triangleScale);
+#endif
             // Per-point splat size from a point-data array (e.g. the "Scale"
             // field of imported gaussian splats); only set when non-empty —
             // VTK stores the name in a std::string, so nullptr is UB. When
@@ -4866,7 +4870,11 @@ void VtkVis::setPointGaussianRendering(bool enabled,
         }
         pgMapper->SetScaleFactor(gaussianRadius);
         pgMapper->SetSplatShaderCode(preset.shaderCode);
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 4, 0)
+        pgMapper->SetBoundScale(preset.triangleScale);
+#else
         pgMapper->SetTriangleScale(preset.triangleScale);
+#endif
         if (scaleArray && *scaleArray) {
             pgMapper->SetScaleArray(scaleArray);
         }
@@ -5534,6 +5542,41 @@ vtkActor* VtkVis::getActorById(const std::string& viewId) {
     return actor;
 }
 
+std::vector<VtkVis::RepresentationActor> VtkVis::representationActors(
+        const std::string& viewId) {
+    if (m_compositeRegistry.containsLeaf(viewId)) {
+        const auto group = m_compositeRegistry.groupOfLeaf(viewId);
+        auto* block = m_compositeRegistry.leafBlock(viewId);
+        auto* actor = m_compositeRegistry.groupActor(group);
+        return actor && block ? std::vector<RepresentationActor>{{actor, block}}
+                              : std::vector<RepresentationActor>{};
+    }
+    std::vector<RepresentationActor> result;
+    if (contains(viewId)) {
+        if (auto* actor = getActorById(viewId))
+            result.push_back({actor, nullptr});
+    }
+    for (const auto& group : m_compositeRegistry.groupIdsWithPrefix(viewId)) {
+        if (auto* actor = m_compositeRegistry.groupActor(group))
+            result.push_back({actor, nullptr});
+    }
+    return result;
+}
+
+std::vector<VtkVis::RepresentationActor> VtkVis::sourceRepresentationActors() {
+    std::vector<RepresentationActor> result;
+    for (const auto& entry : m_sourceObjectMap) {
+        if (!entry.second || !entry.second->isVisible()) continue;
+        const auto actors = representationActors(entry.first);
+        result.insert(result.end(), actors.begin(), actors.end());
+    }
+    for (const auto& group : m_compositeRegistry.groupIds()) {
+        if (auto* actor = m_compositeRegistry.groupActor(group))
+            result.push_back({actor, nullptr});
+    }
+    return result;
+}
+
 vtkAbstractWidget* VtkVis::getWidgetById(const std::string& viewId) {
     // Extra step: check if there is a widget with the same ID
     WidgetActorMap::iterator wa_it = getWidgetActorMap()->find(viewId);
@@ -6060,7 +6103,7 @@ vtkActor* VtkVis::actorForRenderingProperties(const std::string& viewID) {
 }
 
 // VTK version guard: the composite pipeline needs VTK >= 9
-// (vtkCompositePolyDataMapper2 + composite selection attributes). On older
+// (composite polydata mapper + composite selection attributes). On older
 // VTK the aggregation gate falls back to the pre-aggregation all-dedicated
 // rendering — identical visuals, O(leaves) frame cost.
 bool VtkVis::compositeRenderingSupported() {
@@ -6526,9 +6569,9 @@ std::string VtkVis::nearestCameraFaceUnderPixel(double x, double y) {
         // pickable — GetVisibility reflects the reconciled actor state.
         if (!faceActor || !faceActor->GetVisibility()) continue;
         auto* mapper = faceActor->GetMapper();
-        auto* poly =
-                mapper ? vtkPolyData::SafeDownCast(mapper->GetInputAsDataSet())
-                       : nullptr;
+        auto* poly = mapper ? vtkPolyData::SafeDownCast(
+                                      mapper->GetInputDataObject(0, 0))
+                            : nullptr;
         if (!poly) continue;
         vtkMatrix4x4* actorMat = faceActor->GetMatrix();
 

@@ -77,12 +77,12 @@ bool VideoCanvas::isInsideImage(const QPointF& p) const {
 }
 
 QPointF VideoCanvas::screenToImage(const QPointF& screen) const {
-    const QPixmap pm = qtCompatLabelPixmap(this);
-    if (pm.isNull() || m_frame.isNull()) return QPointF(-1, -1);
-    const double offX = (width() - pm.width()) / 2.0;
-    const double offY = (height() - pm.height()) / 2.0;
-    const double ix = (screen.x() - offX) / pm.width() * m_frame.width();
-    const double iy = (screen.y() - offY) / pm.height() * m_frame.height();
+    const QPixmap pixmap = qtCompatLabelPixmap(this);
+    if (pixmap.isNull() || m_frame.isNull()) return QPointF(-1, -1);
+    const double offX = (width() - pixmap.width()) / 2.0;
+    const double offY = (height() - pixmap.height()) / 2.0;
+    const double ix = (screen.x() - offX) / pixmap.width() * m_frame.width();
+    const double iy = (screen.y() - offY) / pixmap.height() * m_frame.height();
     return QPointF(ix, iy);
 }
 

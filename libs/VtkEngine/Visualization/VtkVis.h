@@ -886,6 +886,20 @@ public:
      *  @return VTK actor or nullptr
      */
     vtkActor* getActorById(const std::string& viewId);
+
+    struct RepresentationActor {
+        vtkActor* actor;
+        // nullptr means the whole mapper input, otherwise exactly this
+        // registered leaf (never its siblings in the shared group actor).
+        vtkDataObject* block;
+    };
+    /// Borrowed sources from the native actor/block owners, not renderer
+    /// auxiliaries. Visibility and renderer membership are checked by callers.
+    std::vector<RepresentationActor> representationActors(
+            const std::string& viewId);
+    /// Live registered entity sources and native groups can render without
+    /// property-edited representations. Never enumerate auxiliary props.
+    std::vector<RepresentationActor> sourceRepresentationActors();
     /** @param viewId Prop view ID
      *  @return VTK prop or nullptr
      */
@@ -1152,8 +1166,8 @@ public:
      *  semantics). The one-time rebuild is user-edit cost only.
      */
     vtkActor* evictCompositeLeaf(const std::string& viewID, int viewport);
-    /** VTK version guard for the composite pipeline: vtkCompositePolyData
-     *  Mapper2 + the composite selection attributes require VTK >= 9. On
+    /** VTK version guard for the composite pipeline: a composite polydata
+     *  mapper + the composite selection attributes require VTK >= 9. On
      *  older VTK the aggregation gate falls back to the pre-aggregation
      *  all-dedicated rendering (identical visuals, O(leaves) frame cost),
      *  keeping behavior consistent across versions.

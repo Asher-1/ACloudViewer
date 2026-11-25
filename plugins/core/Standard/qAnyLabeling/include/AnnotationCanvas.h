@@ -277,6 +277,7 @@ public:
     QSize minimumSizeHint() const override { return QSize(440, 320); }
 
 signals:
+    void toolChanged();
     void editStarted();
     void shapesChanged();
     void shapeSelected(int index);

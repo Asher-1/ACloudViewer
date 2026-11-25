@@ -10,6 +10,7 @@
 #include <QHash>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QKeySequence>
 #include <QMainWindow>
 #include <QPair>
 #include <QPointer>
@@ -253,7 +254,7 @@ private:
     void openSettings();
     void updateInstruction();
     void applyTheme(const QString& mode);
-    void syncHostShortcuts();
+    void restoreShortcuts();
     void configureDigitShortcuts();
     void activateDigitShortcut(int digit);
     void updateActionState();
@@ -506,7 +507,6 @@ private:
     QHash<QString, QString> m_compareFiles;
     QHash<int, QPair<QString, QString>> m_digitShortcuts;
     QHash<QString, QPair<int, int>> m_displayAdjustments;
-    QHash<QAction*, bool> m_suspendedHostActions;
     bool m_keepPreviousBrightness = false;
     bool m_keepPreviousContrast = false;
     bool m_keepPreviousScale = false;

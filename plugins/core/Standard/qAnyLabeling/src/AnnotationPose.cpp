@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <QtCompat.h>
+
 #include <QHash>
 #include <QJsonArray>
 #include <QPointF>
@@ -188,7 +190,7 @@ YoloConversion convertYoloPose(const QJsonObject& document,
     if (!output.error.isEmpty()) return output;
     int maxKeypoints = 0;
     for (const PoseClass& item : config.classes)
-        maxKeypoints = std::max(maxKeypoints, int(item.keypoints.size()));
+        maxKeypoints = std::max(maxKeypoints, qtCompatSizeInt(item.keypoints));
     for (const PoseGroup& group : groups) {
         if (group.box.isEmpty()) {
             output.error = QStringLiteral("Missing pose rectangle in group %1")

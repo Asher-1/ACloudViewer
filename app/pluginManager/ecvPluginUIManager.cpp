@@ -55,19 +55,26 @@ QList<QAction *> filterValidActions(const QString &owner,
 }
 void registerPluginCommands(const QString &owner,
                             const QList<QAction *> &actions,
-                            bool primary = false) {
+                            bool primary = false,
+                            const QString &pluginName = QString(),
+                            const QString &category = QString()) {
     if (owner.isEmpty()) return;
     for (auto *action : actions) {
         if (!action || action->isSeparator() ||
-            action->property("shortcutTransient").toBool())
+            action->property("shortcutTransient").toBool() ||
+            action->property("shortcutProxy").toBool() ||
+            action->property("shortcutGesture").toBool())
             continue;
         if (action->menu()) {
-            registerPluginCommands(owner, action->menu()->actions());
+            QString path = action->menu()->title();
+            path.remove('&');
+            if (!category.isEmpty()) path.prepend(category + " / ");
+            registerPluginCommands(owner, action->menu()->actions(), false,
+                                   pluginName, path);
             continue;
         }
-        if (!action->property("shortcutCommandId").toString().isEmpty())
-            continue;
         QString id = action->objectName();
+        if (id.isEmpty()) id = action->property("shortcutCommandId").toString();
         if (id.isEmpty() && primary && actions.size() == 1) id = "primary";
         if (id.isEmpty()) {
             CVLog::Warning(QString("[Shortcuts] Plugin %1 must give command "
@@ -75,8 +82,11 @@ void registerPluginCommands(const QString &owner,
                                    .arg(owner, action->text()));
             continue;
         }
-        ecvKeySequences::instance().registerCommand(
-                "plugin/" + owner + "/" + id, action, QObject::tr("Plugins"));
+        QString feature = action->property("shortcutCategory").toString();
+        if (feature.isEmpty())
+            feature = category.isEmpty() ? QObject::tr("Commands") : category;
+        ecvKeySequences::instance().registerPluginCommand(owner, id, action,
+                                                          feature, pluginName);
     }
 }
 }  // namespace
@@ -266,7 +276,8 @@ void ccPluginUIManager::init() {
         for (int i = 0; i < moduleNames.size(); ++i) {
             addActionsToMenu(moduleNames[i], allModuleActions[i]);
             registerPluginCommands(ccPluginManager::get().pluginId(plugin),
-                                   allModuleActions[i]);
+                                   allModuleActions[i], false,
+                                   plugin->getName(), moduleNames[i]);
             addActionsToToolBar(moduleNames[i], allModuleActions[i]);
         }
         plugin->onNewSelection(m_appInterface->getSelectedEntities());
@@ -284,7 +295,8 @@ void ccPluginUIManager::init() {
             for (int i = 0; i < moduleNames.size(); ++i) {
                 addActionsToMenu(moduleNames[i], allModuleActions[i]);
                 registerPluginCommands(ccPluginManager::get().pluginId(plugin),
-                                       allModuleActions[i]);
+                                       allModuleActions[i], false,
+                                       plugin->getName(), moduleNames[i]);
                 addActionsToToolBar(moduleNames[i], allModuleActions[i]);
             }
 
@@ -457,7 +469,7 @@ void ccPluginUIManager::addActionsToMenu(ccStdPluginInterface *stdPlugin,
         m_pluginMenu->addAction(valid.at(0));
     }
     registerPluginCommands(ccPluginManager::get().pluginId(stdPlugin), valid,
-                           true);
+                           true, stdPlugin->getName());
 }
 
 void ccPluginUIManager::addActionsToToolBar(ccStdPluginInterface *stdPlugin,

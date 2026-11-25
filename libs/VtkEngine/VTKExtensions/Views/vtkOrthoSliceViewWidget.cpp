@@ -20,6 +20,7 @@
 #include <VTKExtensions/Views/vtkPVAxesWidget.h>
 #include <VTKExtensions/Views/vtkPVCenterAxesActor.h>
 #include <Visualization/VtkVis.h>
+#include <Visualization/vtkGLView.h>
 #include <ecvDisplayCoordinates.h>
 #include <ecvGenericMesh.h>
 #include <ecvGenericPointCloud.h>
@@ -32,6 +33,7 @@
 #include <vtkActorCollection.h>
 #include <vtkAlgorithmOutput.h>
 #include <vtkAreaPicker.h>
+#include <vtkBoundingBox.h>
 #include <vtkCamera.h>
 #include <vtkCameraOrientationRepresentation.h>
 #include <vtkCameraOrientationWidget.h>
@@ -44,6 +46,7 @@
 #include <vtkDataSetMapper.h>
 #include <vtkExtractCells.h>
 #include <vtkExtractSelectedFrustum.h>
+#include <vtkFieldData.h>
 #include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkGeometryFilter.h>
 #include <vtkIdList.h>
@@ -66,6 +69,7 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <vtkSmartPointer.h>
+#include <vtkStringArray.h>
 #include <vtkTextActor.h>
 #include <vtkTextProperty.h>
 #include <vtkTriangleFilter.h>
@@ -315,6 +319,11 @@ vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
     m_sourceCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     m_sourceCombo->addItem(tr("None"), QVariant::fromValue<quintptr>(0));
     decLayout->addWidget(m_sourceCombo, 1);
+    auto* refresh = new QPushButton(tr("Refresh"), decoratorBar);
+    refresh->setObjectName(QStringLiteral("orthoRefresh"));
+    decLayout->addWidget(refresh);
+    connect(refresh, &QPushButton::clicked, this,
+            [this]() { onSourceComboChanged(m_sourceCombo->currentIndex()); });
     decLayout->addStretch(1);
     layout->addWidget(decoratorBar);
 
@@ -435,6 +444,17 @@ vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
     dispLayout->setContentsMargins(2, 1, 2, 1);
     dispLayout->setSpacing(4);
 
+    m_inheritSourceStyle = new QCheckBox(tr("Source appearance"), dispBar);
+    m_inheritSourceStyle->setObjectName(
+            QStringLiteral("orthoSourceAppearance"));
+    m_inheritSourceStyle->setToolTip(
+            tr("Preserve each representation/block's appearance and scalar "
+               "mapping. "
+               "Editing a style control switches to uniform view styling."));
+    m_inheritSourceStyle->setChecked(true);
+    dispLayout->addWidget(m_inheritSourceStyle);
+    connect(m_inheritSourceStyle, &QCheckBox::toggled, this,
+            [this]() { applyDisplayProperties(); });
     dispLayout->addWidget(new QLabel(tr("Repr:"), dispBar));
     m_reprCombo = new QComboBox(dispBar);
     m_reprCombo->addItems({tr("Slices"), tr("Surface"), tr("Wireframe"),
@@ -690,7 +710,7 @@ vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
                 ->GetPositionCoordinate()
                 ->SetCoordinateSystemToNormalizedViewport();
         d->annotations[i]->GetPositionCoordinate()->SetValue(0.01, 0.02);
-        d->renderers[i]->AddActor2D(d->annotations[i]);
+        d->renderers[i]->AddViewProp(d->annotations[i]);
 
         d->subAnnotations[i] = vtkSmartPointer<vtkTextActor>::New();
         d->subAnnotations[i]->SetInput("");
@@ -702,7 +722,7 @@ vtkOrthoSliceViewWidget::vtkOrthoSliceViewWidget(QWidget* parent)
                 ->SetCoordinateSystemToNormalizedViewport();
         d->subAnnotations[i]->GetPositionCoordinate()->SetValue(0.01, 0.08);
         d->subAnnotations[i]->SetVisibility(0);
-        d->renderers[i]->AddActor2D(d->subAnnotations[i]);
+        d->renderers[i]->AddViewProp(d->subAnnotations[i]);
     }
 
     // Viewports (ParaView quad pattern)
@@ -1937,26 +1957,68 @@ void vtkOrthoSliceViewWidget::setAnnotationsVisible(bool visible) {
     render();
 }
 
-void vtkOrthoSliceViewWidget::populateFromRenderer(
-        vtkRenderer* sourceRenderer) {
-    if (!sourceRenderer) return;
-
-    double bounds[6];
-    sourceRenderer->ComputeVisiblePropBounds(bounds);
-    bool hasBounds = (bounds[0] <= bounds[1] && bounds[2] <= bounds[3] &&
-                      bounds[4] <= bounds[5]);
-    if (hasBounds) {
-        setGeometryBounds(bounds);
-        double cx = (bounds[0] + bounds[1]) * 0.5;
-        double cy = (bounds[2] + bounds[3]) * 0.5;
-        double cz = (bounds[4] + bounds[5]) * 0.5;
-        setSlicePosition(cx, cy, cz);
+void vtkOrthoSliceViewWidget::populateFromView(vtkGLView* sourceView) {
+    m_sourceView = sourceView;
+    refreshSourceCombo();
+    const int index = m_sourceCombo->findData(QVariant::fromValue<quintptr>(2));
+    if (index >= 0) {
+        m_sourceCombo->blockSignals(true);
+        m_sourceCombo->setCurrentIndex(index);
+        m_sourceCombo->blockSignals(false);
     }
-
-    resetCameras();
+    loadRepresentationActors(
+            sourceView ? sourceView->createVisibleRepresentationActors()
+                       : std::vector<vtkSmartPointer<vtkActor>>{});
 }
 
 void vtkOrthoSliceViewWidget::applyDisplayProperties() {
+    // The explicit source-style option owns inheritance. An actual style edit
+    // transfers control to this view; reloads and representation visibility do
+    // not.
+    if (m_inheritSourceStyle && sender() &&
+        (sender() == m_opacitySlider || sender() == m_pointSizeSpin ||
+         sender() == m_lineWidthSpin || sender() == m_coloringCombo ||
+         sender() == m_mapScalarsCheck || sender() == m_interpScalarsCheck ||
+         sender() == m_renderTubesCheck || sender() == m_renderSpheresCheck ||
+         sender() == m_disableLightingCheck || sender() == m_diffuseSlider ||
+         sender() == m_interpCombo || sender() == m_specularSlider ||
+         sender() == m_specPowerSpin || sender() == m_luminositySpin ||
+         sender() == m_specColorCheck || sender() == m_useNanColorCheck)) {
+        m_inheritSourceStyle->blockSignals(true);
+        m_inheritSourceStyle->setChecked(false);
+        m_inheritSourceStyle->blockSignals(false);
+    }
+    if (m_inheritSourceStyle && m_inheritSourceStyle->isChecked()) {
+        const int mode = m_reprCombo ? m_reprCombo->currentIndex() : 0;
+        for (const auto& rep : d->sliceRepresentations) {
+            rep->restoreSourceAppearance();
+            for (int axis = 0; axis < 3; ++axis) {
+                const auto plane =
+                        static_cast<vtkOrthoSliceRepresentation::PlaneIndex>(
+                                axis);
+                if (auto* actor = rep->sliceActor3D(plane))
+                    actor->SetVisibility(mode == 0 &&
+                                         rep->hasValidSlice(plane));
+            }
+            if (auto* surface = rep->surfaceActor3D()) {
+                surface->SetVisibility(mode >= 1 && mode <= 5);
+                auto* property = surface->GetProperty();
+                if (mode == 1 || mode == 4)
+                    property->SetRepresentationToSurface();
+                if (mode == 2 || mode == 5)
+                    property->SetRepresentationToWireframe();
+                if (mode == 3) property->SetRepresentationToPoints();
+                if (mode >= 1)
+                    property->SetEdgeVisibility(mode == 4 || mode == 5);
+            }
+            if (auto* outline = rep->outlineActor3D())
+                outline->SetVisibility(mode == 6 ||
+                                       (m_showOutlineCheck &&
+                                        m_showOutlineCheck->isChecked()));
+        }
+        render();
+        return;
+    }
     double opacity = m_opacitySlider ? m_opacitySlider->value() / 100.0 : 1.0;
     int ptSize = m_pointSizeSpin ? m_pointSizeSpin->value() : 2;
     double lineW = m_lineWidthSpin ? m_lineWidthSpin->value() : 1.0;
@@ -1991,39 +2053,33 @@ void vtkOrthoSliceViewWidget::applyDisplayProperties() {
             a->GetProperty()->SetColor(0.85, 0.85, 0.85);
         } else {
             mapper->ScalarVisibilityOn();
-            mapper->SetScalarModeToUsePointFieldData();
-            if (mapScalars)
-                mapper->SetColorModeToMapScalars();
+            const int association = m_coloringCombo->currentData().toInt();
+            if (association == vtkDataObject::FIELD_ASSOCIATION_CELLS)
+                mapper->SetScalarModeToUseCellFieldData();
             else
-                mapper->SetColorModeToDirectScalars();
+                mapper->SetScalarModeToUsePointFieldData();
+            mapper->SetColorMode(mapScalars ? VTK_COLOR_MODE_MAP_SCALARS
+                                            : VTK_COLOR_MODE_DIRECT_SCALARS);
             mapper->SetInterpolateScalarsBeforeMapping(interpScalars);
-
-            QString colorName = m_coloringCombo ? m_coloringCombo->currentText()
-                                                : QString();
-            QByteArray nameBytes;
-            const char* arrayName = nullptr;
-            if (colorName == tr("Points")) {
-                arrayName = nullptr;
-                mapper->SetScalarModeToUsePointData();
-            } else if (colorName == tr("Normals")) {
-                arrayName = "Normals";
-            } else if (colorName == tr("TCoords")) {
-                arrayName = "TCoords";
-            } else {
-                nameBytes = colorName.toUtf8();
-                arrayName = nameBytes.constData();
-            }
-            if (arrayName) {
-                mapper->SelectColorArray(arrayName);
-                auto* pd = vtkPolyData::SafeDownCast(mapper->GetInput());
-                if (pd && pd->GetPointData()) {
-                    auto* arr = pd->GetPointData()->GetArray(arrayName);
-                    if (arr) {
-                        double range[2];
-                        arr->GetRange(range, -1);
-                        mapper->SetScalarRange(range);
-                    }
-                }
+            const QByteArray name =
+                    m_coloringCombo->currentData(Qt::UserRole + 1)
+                            .toString()
+                            .toUtf8();
+            mapper->SelectColorArray(name.constData());
+            auto* data = mapper->GetInput();
+            auto* fields =
+                    data ? (association == vtkDataObject::
+                                                    FIELD_ASSOCIATION_CELLS
+                                    ? static_cast<vtkDataSetAttributes*>(
+                                              data->GetCellData())
+                                    : static_cast<vtkDataSetAttributes*>(
+                                              data->GetPointData()))
+                         : nullptr;
+            if (auto* array =
+                        fields ? fields->GetArray(name.constData()) : nullptr) {
+                double range[2];
+                array->GetRange(range, -1);
+                mapper->SetScalarRange(range);
             }
         }
     };
@@ -2364,7 +2420,7 @@ void vtkOrthoSliceViewWidget::setEntityListProvider(
 }
 
 void vtkOrthoSliceViewWidget::refreshSourceCombo() {
-    if (!m_entityListProvider || !m_sourceCombo) return;
+    if (!m_sourceCombo || (!m_entityListProvider && !m_sourceView)) return;
 
     int curIdx = m_sourceCombo->currentIndex();
     quintptr curPtr =
@@ -2375,11 +2431,15 @@ void vtkOrthoSliceViewWidget::refreshSourceCombo() {
     m_sourceCombo->clear();
     m_sourceCombo->addItem(tr("None"), QVariant::fromValue<quintptr>(0));
 
-    auto entities = m_entityListProvider();
+    if (m_sourceView)
+        m_sourceCombo->addItem(tr("Visible representations"),
+                               QVariant::fromValue<quintptr>(2));
+    auto entities =
+            m_entityListProvider ? m_entityListProvider() : QList<ccHObject*>{};
     if (entities.size() > 1) {
         m_sourceCombo->addItem(tr("All"), QVariant::fromValue<quintptr>(1));
     }
-    int newIdx = 0;
+    int newIdx = curPtr == 2 && m_sourceView ? 1 : 0;
     for (int i = 0; i < entities.size(); ++i) {
         ccHObject* e = entities[i];
         if (!e) continue;
@@ -2515,9 +2575,13 @@ void vtkOrthoSliceViewWidget::performRubberBandSelection() {
 void vtkOrthoSliceViewWidget::onSourceComboChanged(int index) {
     if (index < 0) return;
     quintptr ptr = m_sourceCombo->itemData(index).value<quintptr>();
-    if (ptr == 1 && m_entityListProvider) {
-        auto entities = m_entityListProvider();
-        loadEntitiesIntoView(entities);
+    if (ptr == 2) {
+        loadRepresentationActors(
+                m_sourceView ? m_sourceView->createVisibleRepresentationActors()
+                             : std::vector<vtkSmartPointer<vtkActor>>{});
+    } else if (ptr == 1) {
+        loadEntitiesIntoView(m_entityListProvider ? m_entityListProvider()
+                                                  : QList<ccHObject*>{});
     } else {
         auto* entity = reinterpret_cast<ccHObject*>(ptr);
         loadEntityIntoView(entity);
@@ -2579,288 +2643,12 @@ void vtkOrthoSliceViewWidget::clearEntityDisplay() {
 }
 
 void vtkOrthoSliceViewWidget::loadEntityIntoView(ccHObject* entity) {
-    clearEntityDisplay();
-
-    if (!entity) {
-        if (m_statusLabel) m_statusLabel->setText(tr("No data"));
-        render();
-        return;
-    }
-
-    auto* mesh = ccHObjectCaster::ToMesh(entity);
-    auto* genericMesh = ccHObjectCaster::ToGenericMesh(entity);
-    auto* cloud = ccHObjectCaster::ToGenericPointCloud(entity);
-    if (!cloud && genericMesh) {
-        cloud = ccHObjectCaster::ToGenericPointCloud(
-                genericMesh->getAssociatedCloud());
-    }
-    for (unsigned ci = 0;
-         (!genericMesh || !cloud) && ci < entity->getChildrenNumber(); ++ci) {
-        auto* child = entity->getChild(ci);
-        if (!genericMesh) {
-            genericMesh = ccHObjectCaster::ToGenericMesh(child);
-            if (!mesh) mesh = ccHObjectCaster::ToMesh(child);
-        }
-        if (!cloud) cloud = ccHObjectCaster::ToGenericPointCloud(child);
-    }
-    if (genericMesh && !cloud) {
-        cloud = ccHObjectCaster::ToGenericPointCloud(
-                genericMesh->getAssociatedCloud());
-    }
-    if (!mesh && genericMesh) mesh = ccHObjectCaster::ToMesh(genericMesh);
-
-    if (!cloud) {
-        if (m_statusLabel)
-            m_statusLabel->setText(
-                    tr("%1 - no point data").arg(entity->getName()));
-        render();
-        return;
-    }
-
-    auto* pcCloud = ccHObjectCaster::ToPointCloud(entity);
-    if (!pcCloud && genericMesh) {
-        pcCloud = ccHObjectCaster::ToPointCloud(
-                genericMesh->getAssociatedCloud());
-    }
-    if (!pcCloud && mesh) {
-        pcCloud = ccHObjectCaster::ToPointCloud(mesh->getAssociatedCloud());
-    }
-    if (!pcCloud) pcCloud = ccHObjectCaster::ToPointCloud(cloud);
-    for (unsigned ci = 0; !pcCloud && ci < entity->getChildrenNumber(); ++ci) {
-        pcCloud = ccHObjectCaster::ToPointCloud(entity->getChild(ci));
-    }
-
-    d->entityPolyData = nullptr;
-    d->hasMeshCells = false;
-
-    ccGenericMesh* meshForConvert = genericMesh ? genericMesh : mesh;
-    if (meshForConvert && pcCloud) {
-        d->entityPolyData =
-                Converters::Cc2Vtk::MeshToPolyData(pcCloud, meshForConvert);
-    }
-    if (d->entityPolyData && d->entityPolyData->GetNumberOfPoints() == 0 &&
-        pcCloud) {
-        d->entityPolyData = nullptr;
-    }
-    if (!d->entityPolyData && pcCloud) {
-        d->entityPolyData = Converters::Cc2Vtk::PointCloudToPolyData(pcCloud);
-    }
-
-    ccBBox box = entity->getOwnBB();
-    double cx = 0, cy = 0, cz = 0;
-    if (box.isValid()) {
-        cx = (box.minCorner().x + box.maxCorner().x) * 0.5;
-        cy = (box.minCorner().y + box.maxCorner().y) * 0.5;
-        cz = (box.minCorner().z + box.maxCorner().z) * 0.5;
-    }
-
-    if (d->entityPolyData) {
-        d->hasMeshCells = (d->entityPolyData->GetNumberOfCells() > 0 &&
-                           d->entityPolyData->GetNumberOfPolys() > 0);
-
-        {
-            vtkNew<vtkPolyDataMapper> mapper;
-            mapper->SetInputData(d->entityPolyData);
-            if (d->entityPolyData->GetPointData() &&
-                d->entityPolyData->GetPointData()->GetScalars()) {
-                mapper->ScalarVisibilityOn();
-            } else {
-                mapper->ScalarVisibilityOff();
-            }
-            mapper->Update();
-            d->fullModelActor = vtkSmartPointer<vtkActor>::New();
-            d->fullModelActor->SetMapper(mapper);
-            bool hasScalars = d->entityPolyData->GetPointData() &&
-                              d->entityPolyData->GetPointData()->GetScalars();
-            if (d->hasMeshCells) {
-                d->fullModelActor->GetProperty()->SetRepresentationToSurface();
-                d->fullModelActor->GetProperty()->SetAmbient(0.2);
-                d->fullModelActor->GetProperty()->SetDiffuse(0.8);
-                d->fullModelActor->GetProperty()->LightingOn();
-                d->fullModelActor->GetProperty()->SetInterpolationToPhong();
-                if (!hasScalars) {
-                    d->fullModelActor->GetProperty()->SetColor(0.8, 0.8, 0.8);
-                }
-            } else {
-                d->fullModelActor->GetProperty()->SetRepresentationToPoints();
-                d->fullModelActor->GetProperty()->SetPointSize(2.0);
-                d->fullModelActor->GetProperty()->SetAmbient(1.0);
-                d->fullModelActor->GetProperty()->SetDiffuse(0.0);
-                d->fullModelActor->GetProperty()->LightingOff();
-                if (!hasScalars) {
-                    d->fullModelActor->GetProperty()->SetColor(0.8, 0.8, 0.8);
-                }
-            }
-            d->fullModelActor->SetVisibility(1);
-            d->renderers[PERSPECTIVE_VIEW]->AddActor(d->fullModelActor);
-            cvActorSelectionInfo source;
-            source.sourceId = meshForConvert && d->hasMeshCells
-                                      ? meshForConvert->getViewId()
-                                      : pcCloud->getViewId();
-            source.actor = d->fullModelActor;
-            source.polyData = d->entityPolyData;
-            d->selectionSources.append(source);
-
-            createOutlineActor();
-        }
-
-        const double normals[3][3] = {{0, 1, 0}, {1, 0, 0}, {0, 0, 1}};
-        const double origins[3][3] = {{cx, cy, cz}, {cx, cy, cz}, {cx, cy, cz}};
-        for (int i = 0; i < 3; ++i) {
-            d->slicePlanes[i] = vtkSmartPointer<vtkPlane>::New();
-            d->slicePlanes[i]->SetNormal(normals[i]);
-            d->slicePlanes[i]->SetOrigin(origins[i]);
-
-            d->sliceClippers[i] =
-                    createSliceClipper(d->entityPolyData, d->slicePlanes[i]);
-            d->sliceCutters[i] = vtkSmartPointer<vtkCutter>::New();
-            d->sliceCutters[i]->SetCutFunction(d->slicePlanes[i]);
-            d->sliceCutters[i]->SetInputData(d->entityPolyData);
-            d->sliceCutters[i]->Update();
-
-            vtkPolyData* slice2D =
-                    getSliceDisplayPolyData(d->sliceClippers[i].GetPointer(),
-                                            d->sliceCutters[i].GetPointer());
-            const bool hasSliceSurface = hasValidSliceGeometry(slice2D);
-
-            vtkNew<vtkPolyDataMapper> mapper;
-            assignSliceMapperInput(mapper, slice2D);
-            mapper->ScalarVisibilityOn();
-
-            d->sliceActors[i] = vtkSmartPointer<vtkActor>::New();
-            d->sliceActors[i]->SetMapper(mapper);
-            d->sliceActors[i]->SetVisibility(hasSliceSurface ? 1 : 0);
-            if (hasSliceSurface) {
-                d->sliceActors[i]->GetProperty()->SetRepresentationToSurface();
-                d->sliceActors[i]->GetProperty()->EdgeVisibilityOff();
-            } else {
-                d->sliceActors[i]->GetProperty()->SetColor(0.9, 0.9, 0.9);
-                d->sliceActors[i]->GetProperty()->SetPointSize(3);
-                d->sliceActors[i]->GetProperty()->SetRepresentationToPoints();
-            }
-            d->sliceActors[i]->GetProperty()->SetAmbient(1.0);
-            d->sliceActors[i]->GetProperty()->SetDiffuse(0.0);
-            d->sliceActors[i]->GetProperty()->LightingOff();
-            d->renderers[i]->AddActor(d->sliceActors[i]);
-
-            vtkNew<vtkPolyDataMapper> mapper3D;
-            assignSliceMapperInput(mapper3D, slice2D);
-            mapper3D->ScalarVisibilityOn();
-
-            double sliceContourColors[3][3] = {
-                    {1.0, 0.0, 0.0}, {0.0, 0.8, 0.0}, {0.0, 0.0, 1.0}};
-            d->sliceActors3D[i] = vtkSmartPointer<vtkActor>::New();
-            d->sliceActors3D[i]->SetMapper(mapper3D);
-            d->sliceActors3D[i]->SetVisibility(hasSliceSurface ? 1 : 0);
-            if (hasSliceSurface) {
-                d->sliceActors3D[i]
-                        ->GetProperty()
-                        ->SetRepresentationToSurface();
-                d->sliceActors3D[i]->GetProperty()->EdgeVisibilityOff();
-                d->sliceActors3D[i]->GetProperty()->SetOpacity(0.9);
-            } else {
-                d->sliceActors3D[i]->GetProperty()->SetColor(
-                        sliceContourColors[i]);
-                d->sliceActors3D[i]->GetProperty()->SetPointSize(2);
-                d->sliceActors3D[i]->GetProperty()->SetRepresentationToPoints();
-            }
-            d->sliceActors3D[i]->GetProperty()->SetAmbient(1.0);
-            d->sliceActors3D[i]->GetProperty()->SetDiffuse(0.0);
-            d->sliceActors3D[i]->GetProperty()->LightingOff();
-            d->renderers[PERSPECTIVE_VIEW]->AddActor(d->sliceActors3D[i]);
-        }
-    }
-
-    for (int i = 0; i < 3; ++i) {
-        if (d->planeIndicators[i]) {
-            d->renderers[PERSPECTIVE_VIEW]->RemoveActor(d->planeIndicators[i]);
-            d->planeIndicators[i] = nullptr;
-            d->planeSources[i] = nullptr;
-        }
-    }
-    if (box.isValid()) {
-        double bounds[6] = {box.minCorner().x, box.maxCorner().x,
-                            box.minCorner().y, box.maxCorner().y,
-                            box.minCorner().z, box.maxCorner().z};
-        setGeometryBounds(bounds);
-
-        d->planeInitCenter[0] = cx;
-        d->planeInitCenter[1] = cy;
-        d->planeInitCenter[2] = cz;
-
-        createPlaneIndicators(bounds);
-
-        setSlicePosition(cx, cy, cz);
-
-        double sx = bounds[1] - bounds[0];
-        double sy = bounds[3] - bounds[2];
-        double sz = bounds[5] - bounds[4];
-        double stepX = sx * 0.1;
-        double stepY = sy * 0.1;
-        double stepZ = sz * 0.1;
-        double step = std::max({stepX, stepY, stepZ});
-        if (step < 1e-6) step = 1.0;
-        m_sliceIncrements[0] = stepX > 1e-6 ? stepX : step;
-        m_sliceIncrements[1] = stepY > 1e-6 ? stepY : step;
-        m_sliceIncrements[2] = stepZ > 1e-6 ? stepZ : step;
-        if (m_stepSpin) m_stepSpin->setValue(step);
-        for (int i = 0; i < 3; ++i) {
-            if (m_sliceSpin[i])
-                m_sliceSpin[i]->setSingleStep(m_sliceIncrements[i]);
-        }
-    }
-
-    if (m_coloringCombo && d->entityPolyData) {
-        m_coloringCombo->blockSignals(true);
-        int oldIdx = m_coloringCombo->currentIndex();
-        m_coloringCombo->clear();
-        m_coloringCombo->addItem(tr("Solid Color"));
-        auto* pd = d->entityPolyData->GetPointData();
-        if (pd) {
-            if (pd->GetScalars()) m_coloringCombo->addItem(tr("Points"));
-            if (pd->GetNormals()) m_coloringCombo->addItem(tr("Normals"));
-            if (pd->GetTCoords()) m_coloringCombo->addItem(tr("TCoords"));
-            for (int i = 0; i < pd->GetNumberOfArrays(); ++i) {
-                QString name = pd->GetArrayName(i);
-                if (name == "Normals" || name == "TCoords" || name.isEmpty())
-                    continue;
-                if (pd->GetScalars() &&
-                    QString(pd->GetScalars()->GetName()) == name)
-                    continue;
-                m_coloringCombo->addItem(name);
-            }
-        }
-        if (oldIdx >= 0 && oldIdx < m_coloringCombo->count())
-            m_coloringCombo->setCurrentIndex(oldIdx);
-        m_coloringCombo->blockSignals(false);
-    }
-
-    if (m_statusLabel)
-        m_statusLabel->setText(
-                tr("%1 (%2 pts)").arg(entity->getName()).arg(cloud->size()));
-
-    applyDisplayProperties();
-    resetCameras();
-
-    QTimer::singleShot(100, this, [this]() {
-        resetCameras();
-        render();
-    });
+    loadEntitiesIntoView(entity ? QList<ccHObject*>{entity}
+                                : QList<ccHObject*>{});
 }
 
 void vtkOrthoSliceViewWidget::loadEntitiesIntoView(
         const QList<ccHObject*>& entities) {
-    if (entities.isEmpty()) {
-        loadEntityIntoView(nullptr);
-        return;
-    }
-    if (entities.size() == 1) {
-        loadEntityIntoView(entities.first());
-        return;
-    }
-
-    clearEntityDisplay();
-
     auto entityToPolyData =
             [](ccHObject* entity,
                QString& sourceId) -> vtkSmartPointer<vtkPolyData> {
@@ -2911,108 +2699,140 @@ void vtkOrthoSliceViewWidget::loadEntitiesIntoView(
         return polyData;
     };
 
-    vtkRenderer* orthoRenderers[3] = {d->renderers[TOP_VIEW].GetPointer(),
-                                      d->renderers[SIDE_VIEW].GetPointer(),
-                                      d->renderers[FRONT_VIEW].GetPointer()};
-    auto* perspectiveRenderer = d->renderers[PERSPECTIVE_VIEW].GetPointer();
-
-    d->entityPolyData = nullptr;
-    for (ccHObject* entity : entities) {
-        QString sourceId;
-        auto polyData = entityToPolyData(entity, sourceId);
-        if (!polyData) continue;
-
-        auto rep = std::make_shared<vtkOrthoSliceRepresentation>();
-        rep->setInputPolyData(polyData);
-        rep->setSliceOrigin(d->slicePos[0], d->slicePos[1], d->slicePos[2]);
-        rep->addToRenderers(orthoRenderers, perspectiveRenderer);
-        d->sliceRepresentations.append(rep);
-        cvActorSelectionInfo source;
-        source.sourceId = sourceId;
-        source.actor = rep->surfaceActor3D();
-        source.polyData = polyData;
-        d->selectionSources.append(source);
-
-        if (!d->entityPolyData) d->entityPolyData = polyData;
-    }
-
-    if (m_statusLabel)
-        m_statusLabel->setText(tr("All (%1 objects)").arg(entities.size()));
-
-    ccBBox globalBox = mergeEntitiesBounds(entities);
-    if (globalBox.isValid()) {
-        double bounds[6] = {globalBox.minCorner().x, globalBox.maxCorner().x,
-                            globalBox.minCorner().y, globalBox.maxCorner().y,
-                            globalBox.minCorner().z, globalBox.maxCorner().z};
-        setGeometryBounds(bounds);
-
-        double cx = (bounds[0] + bounds[1]) * 0.5;
-        double cy = (bounds[2] + bounds[3]) * 0.5;
-        double cz = (bounds[4] + bounds[5]) * 0.5;
-        double sx = bounds[1] - bounds[0];
-        double sy = bounds[3] - bounds[2];
-        double sz = bounds[5] - bounds[4];
-
-        for (int i = 0; i < 3; ++i) {
-            if (d->planeIndicators[i]) {
-                d->renderers[PERSPECTIVE_VIEW]->RemoveActor(
-                        d->planeIndicators[i]);
-                d->planeIndicators[i] = nullptr;
-                d->planeSources[i] = nullptr;
+    std::vector<vtkSmartPointer<vtkActor>> actors;
+    for (auto* entity : entities) {
+        if (!entity) continue;
+        if (m_sourceView) {
+            auto native = m_sourceView->createVisibleRepresentationActors(
+                    {entity->getViewId()});
+            if (!native.empty()) {
+                actors.insert(actors.end(), native.begin(), native.end());
+                continue;
             }
         }
-
-        createPlaneIndicators(bounds);
-
-        double stepX = sx * 0.1;
-        double stepY = sy * 0.1;
-        double stepZ = sz * 0.1;
-        double step = std::max({stepX, stepY, stepZ});
-        if (step < 1e-6) step = 1.0;
-        m_sliceIncrements[0] = stepX > 1e-6 ? stepX : step;
-        m_sliceIncrements[1] = stepY > 1e-6 ? stepY : step;
-        m_sliceIncrements[2] = stepZ > 1e-6 ? stepZ : step;
-        if (m_stepSpin) m_stepSpin->setValue(step);
-        for (int i = 0; i < 3; ++i) {
-            if (m_sliceSpin[i])
-                m_sliceSpin[i]->setSingleStep(m_sliceIncrements[i]);
-        }
-
-        setSlicePosition(cx, cy, cz);
+        // Entities with no rendered representation still use the existing CV
+        // conversion. Both native and converted inputs share one Ortho owner.
+        QString sourceId;
+        auto poly = entityToPolyData(entity, sourceId);
+        if (!poly) continue;
+        vtkNew<vtkStringArray> identity;
+        identity->SetName("__acv_source_id");
+        identity->InsertNextValue(sourceId.toStdString());
+        poly->GetFieldData()->AddArray(identity);
+        vtkNew<vtkPolyDataMapper> mapper;
+        mapper->SetInputData(poly);
+        auto actor = vtkSmartPointer<vtkActor>::New();
+        actor->SetMapper(mapper);
+        actors.push_back(actor);
     }
+    loadRepresentationActors(actors);
+}
 
-    if (m_coloringCombo && d->entityPolyData) {
+void vtkOrthoSliceViewWidget::loadRepresentationActors(
+        const std::vector<vtkSmartPointer<vtkActor>>& actors) {
+    clearEntityDisplay();
+    vtkBoundingBox bounds;
+    vtkRenderer* orthogonal[3] = {d->renderers[TOP_VIEW],
+                                  d->renderers[SIDE_VIEW],
+                                  d->renderers[FRONT_VIEW]};
+    for (const auto& actor : actors) {
+        auto* mapper = actor ? actor->GetMapper() : nullptr;
+        auto* data = mapper ? vtkDataSet::SafeDownCast(
+                                      mapper->GetInputDataObject(0, 0))
+                            : nullptr;
+        if (!data || data->GetNumberOfPoints() == 0) continue;
+        auto rep = std::make_shared<vtkOrthoSliceRepresentation>();
+        rep->setInputData(data, actor);
+        rep->setSliceOrigin(d->slicePos[0], d->slicePos[1], d->slicePos[2]);
+        rep->addToRenderers(orthogonal, d->renderers[PERSPECTIVE_VIEW]);
+        d->sliceRepresentations.append(rep);
+        bounds.AddBounds(data->GetBounds());
+        auto* surface = rep->surfaceActor3D();
+        auto* surfaceMapper =
+                surface ? vtkPolyDataMapper::SafeDownCast(surface->GetMapper())
+                        : nullptr;
+        auto* poly = surfaceMapper ? surfaceMapper->GetInput() : nullptr;
+        if (!poly) continue;
+        cvActorSelectionInfo source;
+        if (auto* identity = vtkStringArray::SafeDownCast(
+                    data->GetFieldData()->GetAbstractArray("__acv_source_id")))
+            if (identity->GetNumberOfValues() > 0)
+                source.sourceId = QString::fromStdString(identity->GetValue(0));
+        source.actor = surface;
+        source.polyData = poly;
+        d->selectionSources.append(source);
+        if (!d->entityPolyData) {
+            d->entityPolyData = poly;
+            d->fullModelActor = surface;
+            d->hasMeshCells = poly->GetNumberOfPolys() > 0;
+        }
+    }
+    if (bounds.IsValid()) {
+        double box[6];
+        bounds.GetBounds(box);
+        setGeometryBounds(box);
+        for (int axis = 0; axis < 3; ++axis) {
+            if (d->planeIndicators[axis])
+                d->renderers[PERSPECTIVE_VIEW]->RemoveActor(
+                        d->planeIndicators[axis]);
+            d->planeIndicators[axis] = nullptr;
+            d->planeSources[axis] = nullptr;
+            const double length = box[2 * axis + 1] - box[2 * axis];
+            m_sliceIncrements[axis] = length > 1e-6 ? length * 0.1 : 1.0;
+            if (m_sliceSpin[axis])
+                m_sliceSpin[axis]->setSingleStep(m_sliceIncrements[axis]);
+        }
+        createPlaneIndicators(box);
+        setSlicePosition((box[0] + box[1]) * 0.5, (box[2] + box[3]) * 0.5,
+                         (box[4] + box[5]) * 0.5);
+    }
+    if (m_coloringCombo) {
+        const QString selected = m_coloringCombo->currentText();
         m_coloringCombo->blockSignals(true);
-        int oldIdx = m_coloringCombo->currentIndex();
         m_coloringCombo->clear();
         m_coloringCombo->addItem(tr("Solid Color"));
-        auto* pd = d->entityPolyData->GetPointData();
-        if (pd) {
-            if (pd->GetScalars()) m_coloringCombo->addItem(tr("Points"));
-            if (pd->GetNormals()) m_coloringCombo->addItem(tr("Normals"));
-            if (pd->GetTCoords()) m_coloringCombo->addItem(tr("TCoords"));
-            for (int i = 0; i < pd->GetNumberOfArrays(); ++i) {
-                QString name = pd->GetArrayName(i);
-                if (name == "Normals" || name == "TCoords" || name.isEmpty())
-                    continue;
-                if (pd->GetScalars() &&
-                    QString(pd->GetScalars()->GetName()) == name)
-                    continue;
-                m_coloringCombo->addItem(name);
+        for (int association : {vtkDataObject::FIELD_ASSOCIATION_POINTS,
+                                vtkDataObject::FIELD_ASSOCIATION_CELLS}) {
+            QSet<QString> names;
+            for (const auto& actor : actors) {
+                auto* data = vtkDataSet::SafeDownCast(
+                        actor->GetMapper()->GetInputDataObject(0, 0));
+                auto* fields =
+                        data ? (association == vtkDataObject::
+                                                        FIELD_ASSOCIATION_CELLS
+                                        ? static_cast<vtkDataSetAttributes*>(
+                                                  data->GetCellData())
+                                        : static_cast<vtkDataSetAttributes*>(
+                                                  data->GetPointData()))
+                             : nullptr;
+                for (int i = 0; fields && i < fields->GetNumberOfArrays();
+                     ++i) {
+                    const QString name =
+                            QString::fromUtf8(fields->GetArrayName(i));
+                    if (name.isEmpty() || name.startsWith("vtkOriginal") ||
+                        names.contains(name))
+                        continue;
+                    names.insert(name);
+                    m_coloringCombo->addItem(
+                            association == vtkDataObject::
+                                                    FIELD_ASSOCIATION_CELLS
+                                    ? tr("Cell: %1").arg(name)
+                                    : name,
+                            association);
+                    m_coloringCombo->setItemData(m_coloringCombo->count() - 1,
+                                                 name, Qt::UserRole + 1);
+                }
             }
         }
-        if (oldIdx >= 0 && oldIdx < m_coloringCombo->count())
-            m_coloringCombo->setCurrentIndex(oldIdx);
+        const int index = m_coloringCombo->findText(selected);
+        m_coloringCombo->setCurrentIndex(index < 0 ? 0 : index);
         m_coloringCombo->blockSignals(false);
     }
-
+    if (m_statusLabel)
+        m_statusLabel->setText(
+                tr("%1 representations").arg(d->sliceRepresentations.size()));
     applyDisplayProperties();
     resetCameras();
-
-    QTimer::singleShot(100, this, [this]() {
-        resetCameras();
-        render();
-    });
 }
 
 void vtkOrthoSliceViewWidget::onSourceComboAboutToShow() {

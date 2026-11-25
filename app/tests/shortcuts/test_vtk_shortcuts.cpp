@@ -37,12 +37,6 @@
 using cloudviewer::tests::pressSequence;
 
 TEST(VtkShortcuts, ProductionOperationRemappingAndViewLifetime) {
-    QTemporaryDir settings;
-    QCoreApplication::setOrganizationName("ShortcutVtkIntegration");
-    QCoreApplication::setApplicationName("Isolated");
-    QSettings::setDefaultFormat(QSettings::IniFormat);
-    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
-                       settings.path());
     QMainWindow window;
     QVTKWidgetCustom widget(&window, nullptr);
     vtkNew<vtkGenericOpenGLRenderWindow> renderWindow;
@@ -203,6 +197,18 @@ TEST(VtkShortcuts, OrientationGizmoObserverPreservesZoom) {
 int main(int argc, char** argv) {
     QSurfaceFormat::setDefaultFormat(QVTKOpenGLNativeWidget::defaultFormat());
     QApplication app(argc, argv);
+    QTemporaryDir settings;
+    if (!settings.isValid()) return 1;
+    QCoreApplication::setOrganizationName("ShortcutVtkIntegration");
+    QCoreApplication::setApplicationName("Isolated");
+    QSettings::setDefaultFormat(QSettings::IniFormat);
+    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
+                       settings.path());
+    QSettings::setPath(QSettings::IniFormat, QSettings::SystemScope,
+                       settings.path());
+    QSettings checker;
+    checker.setFallbacksEnabled(false);
+    if (!checker.fileName().startsWith(settings.path() + "/")) return 1;
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

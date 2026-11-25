@@ -12,6 +12,8 @@
 #include <QJsonDocument>
 #include <QLineF>
 #include <QMouseEvent>
+#include <QSettings>
+#include <QTemporaryDir>
 #include <cmath>
 #include <cstdio>
 
@@ -329,6 +331,15 @@ TEST(CuboidTest, CanvasInteractions) {
 }
 
 int main(int argc, char** argv) {
+    QTemporaryDir settingsDir;
+    if (!settingsDir.isValid()) return 1;
+    QSettings::setDefaultFormat(QSettings::IniFormat);
+    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
+                       settingsDir.path());
+    QSettings::setPath(QSettings::IniFormat, QSettings::SystemScope,
+                       settingsDir.path());
+    QCoreApplication::setOrganizationName(QStringLiteral("ACloudViewerTests"));
+    QCoreApplication::setApplicationName(QStringLiteral("test_cuboid"));
     if (argc == 3 && QString::fromLocal8Bit(argv[1]) ==
                              QStringLiteral("--upstream-reference"))
         return upstreamReference(QString::fromLocal8Bit(argv[2])) ? 0 : 1;

@@ -19,12 +19,15 @@
 #include <VTKExtensions/Views/vtkChartView.h>
 #include <VTKExtensions/Views/vtkComparativeViewWidget.h>
 #include <VTKExtensions/Views/vtkOrthoSliceViewWidget.h>
+#include <VTKExtensions/Views/vtkPVLODActor.h>
 #include <VTKExtensions/Views/vtkSliceViewWidget.h>
 #include <VTKExtensions/Widgets/QVTKWidgetCustom.h>
 #include <Visualization/VtkVis.h>
 #include <Visualization/vtkGLView.h>
 #include <vtkActor.h>
 #include <vtkActorCollection.h>
+#include <vtkDataObject.h>
+#include <vtkMapper.h>
 #include <vtkProp.h>
 #include <vtkPropCollection.h>
 #include <vtkRenderer.h>
@@ -92,6 +95,18 @@ QList<ccHObject*> collectDisplayableEntities() {
     return result;
 }
 #ifdef USE_VTK_BACKEND
+QList<ccHObject*> collectChartImages() {
+    QList<ccHObject*> result;
+    auto* mw = MainWindow::TheInstance();
+    auto* root = mw ? mw->dbRootObject() : nullptr;
+    if (!root) return result;
+    ccHObject::Container images;
+    root->filterChildren(images, true, CV_TYPES::IMAGE, false);
+    for (auto* image : images)
+        if (image && image->isEnabled()) result.append(image);
+    return result;
+}
+
 void publishSourceSelection(ccHObject* entity,
                             const QVector<unsigned>& indices,
                             bool cells) {
@@ -676,6 +691,7 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
 
         wrapped->setProperty("CELL_INDEX", location);
         m_cellFrames[location] = wrapped;
+        makeActive(wrapped);
 
         if (parentSplitter && splitterIdx >= 0) {
             parentSplitter->insertWidget(splitterIdx, wrapped);
@@ -701,6 +717,48 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
                 parentSplitter ? parentSplitter->indexOf(oldWidget) : -1;
 
         auto* pyView = new ecvPythonView(this);
+#ifdef USE_VTK_BACKEND
+        const QPointer<vtkGLView> sourceView = dynamic_cast<vtkGLView*>(
+                ecvViewManager::instance().getActiveView());
+        pyView->setDataObjectProvider([sourceView](ccHObject* entity) {
+            QList<vtkSmartPointer<vtkDataObject>> result;
+            auto* vis = sourceView ? dynamic_cast<Visualization::VtkVis*>(
+                                             sourceView->getVisualizer3D())
+                                   : nullptr;
+            if (!vis) return result;
+            const auto sources =
+                    entity ? vis->representationActors(
+                                     entity->getViewId().toStdString())
+                           : vis->sourceRepresentationActors();
+            QSet<vtkDataObject*> seen;
+            for (const auto& source : sources) {
+                if (!source.actor || !source.actor->GetVisibility()) continue;
+                // A native aggregate and its registered leaves are one input,
+                // not duplicate visible data objects. Explicit leaf scopes keep
+                // their original data object rather than widening to the group.
+                if (source.block &&
+                    std::any_of(sources.begin(), sources.end(),
+                                [&](const auto& candidate) {
+                                    return candidate.actor == source.actor &&
+                                           !candidate.block;
+                                }))
+                    continue;
+                auto* mapper = source.actor->GetMapper();
+                if (auto* lod = vtkPVLODActor::SafeDownCast(source.actor))
+                    if (lod->GetFullResolutionMapper())
+                        mapper = lod->GetFullResolutionMapper();
+                if (!mapper) continue;
+                mapper->Update();
+                auto* data = source.block ? source.block
+                                          : mapper->GetInputDataObject(0, 0);
+                if (data && !seen.contains(data)) {
+                    seen.insert(data);
+                    result.append(data);
+                }
+            }
+            return result;
+        });
+#endif
         pyView->setEntityListProvider([]() -> QList<ccHObject*> {
             QList<ccHObject*> result;
             auto* mw = MainWindow::TheInstance();
@@ -728,6 +786,7 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
 
         wrapped->setProperty("CELL_INDEX", location);
         m_cellFrames[location] = wrapped;
+        makeActive(wrapped);
 
         if (parentSplitter && splitterIdx >= 0) {
             parentSplitter->insertWidget(splitterIdx, wrapped);
@@ -754,23 +813,21 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
                 parentSplitter ? parentSplitter->indexOf(oldWidget) : -1;
 
         auto* chartView = new vtkChartView(type, this);
-        chartView->setEntityListProvider(collectDisplayableEntities);
-
-        connect(chartView, &vtkChartView::pointsHighlighted, this,
-                [chartView](ccHObject* entity,
-                            const QVector<unsigned>& indices) {
-                    publishSourceSelection(entity, indices,
-                                           chartView->usesCellData());
-                });
+        auto provider = type == vtkChartView::IMAGE_CHART
+                                ? collectChartImages
+                                : collectDisplayableEntities;
+        chartView->setEntityListProvider(provider);
 
         ccHObject* initEntity = nullptr;
-        auto& sel = MainWindow::TheInstance()->getSelectedEntities();
-        if (!sel.empty()) {
-            initEntity = sel.front();
-        } else {
-            auto entities = collectDisplayableEntities();
-            if (!entities.empty()) initEntity = entities.front();
+        const auto eligible = provider();
+        for (auto* selected :
+             MainWindow::TheInstance()->getSelectedEntities()) {
+            if (eligible.contains(selected)) {
+                initEntity = selected;
+                break;
+            }
         }
+        if (!initEntity && !eligible.isEmpty()) initEntity = eligible.front();
         if (initEntity) {
             QTimer::singleShot(0, chartView, [chartView, initEntity]() {
                 chartView->setEntity(initEntity);
@@ -785,6 +842,7 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
 
         wrapped->setProperty("CELL_INDEX", location);
         m_cellFrames[location] = wrapped;
+        makeActive(wrapped);
 
         if (parentSplitter && splitterIdx >= 0) {
             parentSplitter->insertWidget(splitterIdx, wrapped);
@@ -967,6 +1025,7 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
 
         wrapped->setProperty("CELL_INDEX", location);
         m_cellFrames[location] = wrapped;
+        makeActive(wrapped);
         m_viewFrames[view] = wrapped;
         if (m_frameWiredCallback) {
             m_frameWiredCallback(wrapped, view);
@@ -1057,6 +1116,7 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
 
                 wrapped->setProperty("CELL_INDEX", location);
                 m_cellFrames[location] = wrapped;
+                makeActive(wrapped);
 
                 connect(compView, &vtkComparativeViewWidget::clicked, this,
                         [this, wrapped]() { makeActive(wrapped); });
@@ -1104,15 +1164,7 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
 
         auto* activeView = dynamic_cast<vtkGLView*>(
                 ecvViewManager::instance().getActiveView());
-        if (activeView && activeView->getVtkWidget()) {
-            auto* rw = activeView->getVtkWidget()->renderWindow();
-            if (rw && rw->GetRenderers()) {
-                auto* srcRen = rw->GetRenderers()->GetFirstRenderer();
-                if (srcRen) {
-                    orthoView->populateFromRenderer(srcRen);
-                }
-            }
-        }
+        orthoView->populateFromView(activeView);
 
         QWidget* wrapped = orthoView;
         if (m_frameFactory) {
@@ -1122,6 +1174,7 @@ QWidget* ecvMultiViewWidget::createEmptyCellWidget(int location) {
 
         wrapped->setProperty("CELL_INDEX", location);
         m_cellFrames[location] = wrapped;
+        makeActive(wrapped);
 
         connect(orthoView, &vtkOrthoSliceViewWidget::clicked, this,
                 [this, wrapped]() { makeActive(wrapped); });

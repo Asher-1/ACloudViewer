@@ -38,4 +38,34 @@ if(USE_VTK_BACKEND AND TARGET QVTK_ENGINE_LIB)
     cloudviewer_set_plugin_test_env(test_layout_close)
     set_tests_properties(test_layout_close PROPERTIES
         LABELS "layout;integration;graphics" TIMEOUT 120)
+
+    # Component tests above intentionally stub MainWindow. Exercise real factory
+    # wiring and the application selection coordinator in a separate binary.
+    get_target_property(view_linkage_sources ${MAIN_APP_NAME} SOURCES)
+    list(FILTER view_linkage_sources EXCLUDE REGEX "(^|/)main\\.cpp$")
+    cloudviewer_add_plugin_test(test_view_linkage
+        SOURCES test_view_linkage.cpp ${view_linkage_sources}
+        LIBS "$<TARGET_PROPERTY:${MAIN_APP_NAME},LINK_LIBRARIES>" gtest
+        INCLUDES "$<TARGET_PROPERTY:${MAIN_APP_NAME},INCLUDE_DIRECTORIES>"
+        DEFINES "$<TARGET_PROPERTY:${MAIN_APP_NAME},COMPILE_DEFINITIONS>")
+    set_target_properties(test_view_linkage PROPERTIES AUTOMOC ON)
+    target_compile_options(test_view_linkage PRIVATE
+        "$<TARGET_PROPERTY:${MAIN_APP_NAME},COMPILE_OPTIONS>")
+    target_link_options(test_view_linkage PRIVATE
+        "$<TARGET_PROPERTY:${MAIN_APP_NAME},LINK_OPTIONS>")
+    target_link_directories(test_view_linkage PRIVATE
+        "$<TARGET_PROPERTY:${MAIN_APP_NAME},LINK_DIRECTORIES>")
+    # The production target owns generated UI/resources shared by the binaries.
+    add_dependencies(test_view_linkage ${MAIN_APP_NAME})
+    if(LAYOUT_XVFB_RUN)
+        cloudviewer_add_test(NAME test_view_linkage
+            COMMAND ${LAYOUT_XVFB_RUN} -a $<TARGET_FILE:test_view_linkage>)
+        set_tests_properties(test_view_linkage PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=xcb")
+    else()
+        cloudviewer_add_test(NAME test_view_linkage COMMAND test_view_linkage)
+    endif()
+    cloudviewer_set_plugin_test_env(test_view_linkage)
+    set_tests_properties(test_view_linkage PROPERTIES
+        LABELS "layout;selection;integration;graphics" TIMEOUT 240)
 endif()

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Shortcuts/ecvKeySequences.h>
 #include <ecvModelDownloader.h>
 
 #include <QCheckBox>
@@ -735,22 +736,47 @@ void AnnotationWindow::openImageClassifier() {
                 }
                 refresh();
             });
-    auto shortcut = [&](const QString& key,
-                        const std::function<void()>& handler) {
-        auto* action = new QShortcut(QKeySequence(key), &dialog);
-        connect(action, &QShortcut::activated, &dialog, handler);
+    const auto registerCommand = [&](const QString& id, const QString& label,
+                                     const QString& category,
+                                     const QKeySequence& key,
+                                     Qt::ShortcutContext context,
+                                     const std::function<void()>& handler) {
+        auto* action = new QAction(label, &dialog);
+        action->setObjectName(QStringLiteral("AnnotationClassifier_") + id);
+        action->setShortcut(key);
+        action->setShortcutContext(context);
+        dialog.addAction(action);
+        connect(action, &QAction::triggered, &dialog, handler);
+        ecvKeySequences::instance().registerPluginCommand(
+                QStringLiteral("cvcorp.cloudviewer.plugin.qAnyLabeling"),
+                "annotation/classifier/" + id, action,
+                tr("Annotation / Classifier / ") + category,
+                tr("X-AnyLabeling Annotation"));
     };
-    shortcut(QStringLiteral("A"),
-             [&]() { activate(m_files->currentRow() - 1); });
-    shortcut(QStringLiteral("D"),
-             [&]() { activate(m_files->currentRow() + 1); });
-    shortcut(QStringLiteral("Ctrl+A"), [&]() { unlabeled(-1); });
-    shortcut(QStringLiteral("Ctrl+D"), [&]() { unlabeled(1); });
-    for (int digit = 0; digit < 10; ++digit)
-        shortcut(QString::number(digit), [&, digit]() {
-            if (digit < boxes.size() && boxes[digit]->isEnabled())
-                boxes[digit]->toggle();
-        });
+    registerCommand("previous-file", tr("Previous classifier image"),
+                    tr("Navigation"), QKeySequence("A"),
+                    Qt::WidgetWithChildrenShortcut,
+                    [&]() { activate(m_files->currentRow() - 1); });
+    registerCommand("next-file", tr("Next classifier image"), tr("Navigation"),
+                    QKeySequence("D"), Qt::WidgetWithChildrenShortcut,
+                    [&]() { activate(m_files->currentRow() + 1); });
+    registerCommand("previous-unlabeled", tr("Previous unlabeled image"),
+                    tr("Navigation / Unlabeled"), QKeySequence("Ctrl+A"),
+                    Qt::WidgetWithChildrenShortcut, [&]() { unlabeled(-1); });
+    registerCommand("next-unlabeled", tr("Next unlabeled image"),
+                    tr("Navigation / Unlabeled"), QKeySequence("Ctrl+D"),
+                    Qt::WidgetWithChildrenShortcut, [&]() { unlabeled(1); });
+    for (int digit = 0; digit < 10; ++digit) {
+        registerCommand(
+                QStringLiteral("category-slot-%1").arg(digit),
+                tr("Toggle classifier category slot %1").arg(digit),
+                tr("Categories / Slots"), QKeySequence(Qt::Key_0 + digit),
+                Qt::WidgetWithChildrenShortcut, [&, digit]() {
+                    if (digit < boxes.size() && boxes[digit]->isEnabled())
+                        boxes[digit]->toggle();
+                });
+    }
+
     rebuild();
     refresh();
     dialog.exec();

@@ -70,7 +70,6 @@ class MainWindow;
 #include <QKeySequence>
 #include <QMessageBox>
 #include <QPixmap>
-#include <QSignalBlocker>
 #include <QTimer>
 #include <QToolTip>
 #include <QWidget>
@@ -1723,19 +1722,15 @@ void cvRenderViewSelectionReaction::finalizeSelection(
 
     cvSelectionHighlighter* highlighter = getSelectionHighlighter();
 
-    // Highlight on the active view first, then publish selection state.
-    // Avoids selectionChanged handlers re-highlighting with stripped actor
-    // info.
-    {
-        const QSignalBlocker blocker(manager);
-        if (highlighter && !combined.isEmpty()) {
-            highlighter->highlightSelection(combined,
-                                            cvSelectionHighlighter::SELECTED);
-        } else if (highlighter && combined.isEmpty()) {
-            highlighter->clearHighlights();
-        }
-        manager->setCurrentSelection(combined);
+    // Commit the complete qualified selection once. The manager's existing
+    // typed notification owns publication to all views and the controller.
+    if (highlighter && !combined.isEmpty()) {
+        highlighter->highlightSelection(combined,
+                                        cvSelectionHighlighter::SELECTED);
+    } else if (highlighter && combined.isEmpty()) {
+        highlighter->clearHighlights();
     }
+    manager->setCurrentSelection(combined);
 
     emit selectionFinished(combined);
 }

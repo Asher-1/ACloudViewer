@@ -1516,11 +1516,9 @@ void ecvSpreadSheetView::copyToClipboard() {
     auto selModel = m_tableView->selectionModel();
     QModelIndexList selectedRows = selModel->selectedRows();
     if (selectedRows.isEmpty()) {
-        auto table = m_model->getRowsAsString();
-        if (!table.isEmpty()) {
-            QApplication::clipboard()->setText(table);
-        }
-        return;
+        // Copy the visible, sorted view, just like the selected-row path.
+        for (int row = 0; row < m_proxyModel->rowCount(); ++row)
+            selectedRows.append(m_proxyModel->index(row, 0));
     }
 
     int cols = m_proxyModel->columnCount();

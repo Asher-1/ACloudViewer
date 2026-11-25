@@ -8,6 +8,8 @@
 #include "ecvObject.h"
 
 // Qt
+#include <QtCompat.h>
+
 #include <QSettings>
 
 #ifdef USE_VLD
@@ -60,10 +62,11 @@
     v5.6 - 02/18/2025 - Circle entity
     v5.7 - 10/01/2025 - Disc entity
     v5.8 - 07/06/2026 - PBR material parameters and multi-texture map serialization for ccMaterial
+    v5.9 - 11/25/2026 - Object metadata uses the fixed Qt 5.12 stream format
 **/
 // clang-format on
 
-const unsigned c_currentDBVersion = 58;  // 5.8
+const unsigned c_currentDBVersion = 59;  // 5.9
 
 //! Default unique ID generator (using the system persistent settings as we did
 //! previously proved to be not reliable)
@@ -141,22 +144,25 @@ bool ccObject::toFile(QFile& out, short dataVersion) const {
     // class ID (dataVersion>=20)
     // DGM: on 64 bits since version 34
     uint64_t classID = static_cast<uint64_t>(getClassID());
-    if (out.write((const char*)&classID, 8) < 0) return WriteError();
+    if (out.write((const char*)&classID, 8) != 8) return WriteError();
 
     // unique ID (dataVersion>=20)
     // DGM: this ID will be useful to recreate dynamic links between entities!
     uint32_t uniqueID = (uint32_t)m_uniqueID;
-    if (out.write((const char*)&uniqueID, 4) < 0) return WriteError();
+    if (out.write((const char*)&uniqueID, 4) != 4) return WriteError();
 
     // name (dataVersion>=22)
     {
         QDataStream outStream(&out);
+        if (dataVersion >= 59)
+            outStream.setVersion(qtCompatDataStreamVersion());
         outStream << m_name;
+        if (outStream.status() != QDataStream::Ok) return WriteError();
     }
 
     // flags (dataVersion>=20)
     uint32_t objFlags = (uint32_t)m_flags;
-    if (out.write((const char*)&objFlags, 4) < 0) return WriteError();
+    if (out.write((const char*)&objFlags, 4) != 4) return WriteError();
 
     // meta data (dataVersion>=30)
     {
@@ -172,11 +178,13 @@ bool ccObject::toFile(QFile& out, short dataVersion) const {
         }
 
         // count
-        if (out.write((const char*)&validMetaDataCount, 4) < 0)
+        if (out.write((const char*)&validMetaDataCount, 4) != 4)
             return WriteError();
 
         //"key + value" pairs
         QDataStream outStream(&out);
+        if (dataVersion >= 59)
+            outStream.setVersion(qtCompatDataStreamVersion());
         for (QVariantMap::const_iterator it = m_metaData.begin();
              it != m_metaData.end(); ++it) {
             if (!it.key().contains(".nosave")) {
@@ -184,12 +192,20 @@ bool ccObject::toFile(QFile& out, short dataVersion) const {
                 outStream << it.value();
             }
         }
+        if (outStream.status() != QDataStream::Ok) return WriteError();
     }
 
     return true;
 }
 
-short ccObject::minimumFileVersion() const { return 34; }
+short ccObject::minimumFileVersion() const {
+    // Only persisted metadata needs the new format. Keep metadata-free files
+    // and transient .nosave entries compatible with the old minimum version.
+    for (auto it = m_metaData.cbegin(); it != m_metaData.cend(); ++it) {
+        if (!it.key().contains(".nosave")) return 59;
+    }
+    return 34;
+}
 
 CV_CLASS_ENUM ccObject::ReadClassIDFromFile(QFile& in, short dataVersion) {
     assert(in.isOpen() && (in.openMode() & QIODevice::ReadOnly));
@@ -199,11 +215,11 @@ CV_CLASS_ENUM ccObject::ReadClassIDFromFile(QFile& in, short dataVersion) {
     CV_CLASS_ENUM classID = CV_TYPES::OBJECT;
     if (dataVersion < 34) {
         uint32_t _classID = 0;
-        if (in.read((char*)&_classID, 4) < 0) return ReadError();
+        if (in.read((char*)&_classID, 4) != 4) return ReadError();
         classID = static_cast<CV_CLASS_ENUM>(_classID);
     } else {
         uint64_t _classID = 0;
-        if (in.read((char*)&_classID, 8) < 0) return ReadError();
+        if (in.read((char*)&_classID, 8) != 8) return ReadError();
         classID = static_cast<CV_CLASS_ENUM>(_classID);
     }
 
@@ -253,7 +269,7 @@ bool ccObject::fromFile(QFile& in,
 
     // unique ID (dataVersion>=20)
     uint32_t uniqueID = 0;
-    if (in.read((char*)&uniqueID, 4) < 0) return ReadError();
+    if (in.read((char*)&uniqueID, 4) != 4) return ReadError();
     // DGM: this ID will be useful to recreate dynamic links between entities
     // later!
     if (oldToNewIDMap.contains(uniqueID)) {
@@ -267,57 +283,114 @@ bool ccObject::fromFile(QFile& in,
     if (dataVersion < 22)  // old style
     {
         char name[256];
-        if (in.read(name, 256) < 0) return ReadError();
+        if (in.read(name, 256) != 256) return ReadError();
         setName(name);
     } else  //(dataVersion>=22)
     {
         QDataStream inStream(&in);
+        if (dataVersion >= 59) inStream.setVersion(qtCompatDataStreamVersion());
         inStream >> m_name;
+        if (inStream.status() != QDataStream::Ok) return ReadError();
     }
 
     // flags (dataVersion>=20)
     uint32_t objFlags = 0;
-    if (in.read((char*)&objFlags, 4) < 0) return ReadError();
+    if (in.read((char*)&objFlags, 4) != 4) return ReadError();
     m_flags = (unsigned)objFlags;
 
     // meta data (dataVersion>=30)
     if (dataVersion >= 30) {
         // count
         uint32_t metaDataCount = 0;
-        if (in.read((char*)&metaDataCount, 4) < 0) return ReadError();
+        if (in.read((char*)&metaDataCount, 4) != 4) return ReadError();
 
         //"key + value" pairs
+        QDataStream inStream(&in);
+        if (dataVersion >= 59) inStream.setVersion(qtCompatDataStreamVersion());
         for (uint32_t i = 0; i < metaDataCount; ++i) {
-            QDataStream inStream(&in);
             QString key;
             QVariant value;
             inStream >> key;
-#if 1  // patch to overcome the issue with LAS vlrs not being readable anymore
-       // as QVariant object with Qt 6
-            if (key == "LAS.vlrs") {
-                inStream.skipRawData(
-                        16);  // size of a partial QVariant object on Windows
-                quint64 vlrSize = 0;
-                inStream >> vlrSize;
-                for (quint64 i = 0; i < vlrSize; ++i) {
-                    inStream.skipRawData(sizeof(uint16_t));
-                    inStream.skipRawData(16 * sizeof(char));
-                    inStream.skipRawData(sizeof(uint16_t));
-                    uint16_t record_length_after_header;
-                    inStream >> record_length_after_header;
-                    inStream.skipRawData(32 * sizeof(char));
-                    inStream.skipRawData(record_length_after_header);
+            if (inStream.status() != QDataStream::Ok) return ReadError();
+            const qint64 valuePosition = in.pos();
+            inStream >> value;
+            if (inStream.status() == QDataStream::Ok && !value.isValid()) {
+                // Qt5 can silently turn a foreign user tag into an invalid
+                // QVariant without setting an error. Only wire tag 0 denotes
+                // a genuinely invalid QVariant; preserve that ordinary value.
+                const qint64 valueEnd = in.pos();
+                if (!in.seek(valuePosition)) return ReadError();
+                quint32 storedType = 0;
+                inStream >> storedType;
+                if (storedType != 0) {
+                    inStream.setStatus(QDataStream::ReadCorruptData);
+                } else if (!in.seek(valueEnd)) {
+                    return ReadError();
                 }
-
-                quint64 extraScalarFieldCount = 0;
-                inStream >> extraScalarFieldCount;
-                inStream.skipRawData(272 * extraScalarFieldCount);
-            } else
-#endif
-            {
-                inStream >> value;
-                setMetaData(key, value);
             }
+            if (inStream.status() == QDataStream::Ok) {
+                // Registered LasVlr stream operators work on both Qt majors.
+                // Do not discard them, or an ordinary value with this key.
+                setMetaData(key, value);
+                continue;
+            }
+
+            // A missing LAS plugin cannot construct its historical user type.
+            // Retain the old ability to open such files, but validate the
+            // actual QVariant header and every length rather than skipping 16
+            // bytes.
+            if (key != "LAS.vlrs" ||
+                QMetaType::isRegistered(value.userType()) ||
+                !in.seek(valuePosition)) {
+                return ReadError();
+            }
+            inStream.resetStatus();
+            quint32 typeId = 0;
+            quint8 isNull = 0;
+            quint32 typeNameSize = 0;
+            inStream >> typeId >> isNull >> typeNameSize;
+            const char expectedTypeName[] = "LasVlr";
+            char typeName[sizeof(expectedTypeName)] = {};
+            // Historical Qt4/Qt5/Qt6 user-type wire tags.
+            if (inStream.status() != QDataStream::Ok ||
+                (typeId != 127 && typeId != 1024 && typeId != 65536) ||
+                isNull > 1 || typeNameSize != sizeof(typeName) ||
+                inStream.readRawData(typeName, sizeof(typeName)) !=
+                        sizeof(typeName) ||
+                QByteArray(typeName, sizeof(typeName)) !=
+                        QByteArray(expectedTypeName,
+                                   sizeof(expectedTypeName))) {
+                return CorruptError();
+            }
+
+            quint64 vlrCount = 0;
+            inStream >> vlrCount;
+            // Each VLR needs a 54-byte header even when its payload is empty.
+            if (inStream.status() != QDataStream::Ok ||
+                vlrCount > quint64(in.size() - in.pos()) / 54) {
+                return CorruptError();
+            }
+            for (quint64 j = 0; j < vlrCount; ++j) {
+                if (inStream.skipRawData(20) != 20) return ReadError();
+                quint16 payloadSize = 0;
+                inStream >> payloadSize;
+                const int remainingRecord = 32 + int(payloadSize);
+                if (inStream.status() != QDataStream::Ok ||
+                    remainingRecord > in.size() - in.pos() ||
+                    inStream.skipRawData(remainingRecord) != remainingRecord) {
+                    return ReadError();
+                }
+            }
+            quint64 extraFieldCount = 0;
+            inStream >> extraFieldCount;
+            // The existing legacy fallback describes 272-byte raw ABI records.
+            // This is not a new portable LAS serialization format.
+            if (inStream.status() != QDataStream::Ok ||
+                extraFieldCount > quint64(in.size() - in.pos()) / 272 ||
+                !in.seek(in.pos() + qint64(extraFieldCount * 272))) {
+                return CorruptError();
+            }
+            CVLog::Warning("LAS VLR metadata skipped: its type is unavailable");
         }
     }
 

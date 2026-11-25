@@ -10,18 +10,16 @@
  * @brief Implementation of selection pipeline and VTK selection handling.
  */
 
-// VTK's composite mapper includes the GL loader; it must precede Qt OpenGL
-// headers. VTK 9.4 replaced GLEW with glad.
-#include "cvSelectionPipeline.h"
-
+// VTK's GL loader must precede Qt's OpenGL headers.
 #include <vtkVersion.h>
-#if VTK_MAJOR_VERSION > 9 || (VTK_MAJOR_VERSION == 9 && VTK_MINOR_VERSION >= 4)
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 4, 0)
 #include <vtk_glad.h>
 #else
 #include <vtk_glew.h>
 #endif
 
 #include "cvHardwareSelector.h"
+#include "cvSelectionPipeline.h"
 
 // LOCAL
 #include <ecvDisplayTools.h>
@@ -53,7 +51,11 @@
 #include <vtkCell.h>
 #include <vtkCellData.h>
 #include <vtkCompositeDataDisplayAttributes.h>
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 5, 0)
+#include <vtkCompositePolyDataMapper.h>
+#else
 #include <vtkCompositePolyDataMapper2.h>
+#endif
 #include <vtkDataObject.h>
 #include <vtkDataSet.h>
 #include <vtkExtractSelectedFrustum.h>
@@ -82,9 +84,10 @@ namespace {
 
 // Expand thin/single-pixel rubber bands so HW selection captures sub-pixel
 // points.
-void normalizeSelectionRegion(int region[4],
+bool normalizeSelectionRegion(int region[4],
                               bool forPoints,
-                              unsigned int pointPickingRadius) {
+                              unsigned int pointPickingRadius,
+                              vtkRenderer* renderer) {
     int x0 = std::min(region[0], region[2]);
     int x1 = std::max(region[0], region[2]);
     int y0 = std::min(region[1], region[3]);
@@ -115,10 +118,15 @@ void normalizeSelectionRegion(int region[4],
         }
     }
 
-    region[0] = x0;
-    region[1] = y0;
-    region[2] = x1;
-    region[3] = y1;
+    // VTK's capture and generation APIs take unsigned coordinates. Intersect
+    // after padding so a border pick cannot wrap a negative origin to UINT_MAX.
+    const int* origin = renderer->GetOrigin();
+    const int* size = renderer->GetSize();
+    region[0] = std::max(x0, origin[0]);
+    region[1] = std::max(y0, origin[1]);
+    region[2] = std::min(x1, origin[0] + size[0] - 1);
+    region[3] = std::min(y1, origin[1] + size[1] - 1);
+    return region[0] <= region[2] && region[1] <= region[3];
 }
 
 }  // namespace
@@ -277,8 +285,10 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
 
     FieldAssociation fieldAssoc = getFieldAssociation(type);
     int bbox[4] = {minX, minY, maxX, maxY};
-    normalizeSelectionRegion(bbox, fieldAssoc == FIELD_ASSOCIATION_POINTS,
-                             m_pointPickingRadius);
+    if (!normalizeSelectionRegion(bbox, fieldAssoc == FIELD_ASSOCIATION_POINTS,
+                                  m_pointPickingRadius, m_renderer)) {
+        return vtkSmartPointer<vtkSelection>::New();
+    }
     minX = bbox[0];
     minY = bbox[1];
     maxX = bbox[2];
@@ -651,9 +661,11 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
     // NO coordinate conversion needed here!
 
     int vtk_region[4] = {region[0], region[1], region[2], region[3]};
-    normalizeSelectionRegion(vtk_region,
-                             fieldAssociation == FIELD_ASSOCIATION_POINTS,
-                             m_pointPickingRadius);
+    if (!normalizeSelectionRegion(vtk_region,
+                                  fieldAssociation == FIELD_ASSOCIATION_POINTS,
+                                  m_pointPickingRadius, m_renderer)) {
+        return vtkSmartPointer<vtkSelection>::New();
+    }
 
     // ParaView-style: Disable buffer swapping during selection to avoid
     // clobbering the user's view (BUG #16042 in ParaView)
@@ -904,8 +916,9 @@ cvSelectionData cvSelectionPipeline::convertToCvSelectionData(
             compositeIndex =
                     properties->Get(vtkSelectionNode::COMPOSITE_INDEX());
             auto* mb = vtkMultiBlockDataSet::SafeDownCast(
-                    actor->GetMapper() ? actor->GetMapper()->GetInput()
-                                       : nullptr);
+                    actor->GetMapper()
+                            ? actor->GetMapper()->GetInputDataObject(0, 0)
+                            : nullptr);
             if (mb && compositeIndex >= 1 &&
                 compositeIndex <= mb->GetNumberOfBlocks()) {
                 polyData = vtkPolyData::SafeDownCast(
@@ -1204,10 +1217,16 @@ cvSelectionData cvSelectionPipeline::performFrustumSelection(
         if (!actor || !selectableProps.count(actor) || !actor->GetPickable() ||
             !actor->GetVisibility() || !actor->GetMapper())
             continue;
-        auto* input = actor->GetMapper()->GetInput();
+        // The typed GetInput() rejects composites on both mapper generations.
+        auto* input = actor->GetMapper()->GetInputDataObject(0, 0);
         if (auto* blocks = vtkMultiBlockDataSet::SafeDownCast(input)) {
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 5, 0)
+            auto* mapper = vtkCompositePolyDataMapper::SafeDownCast(
+                    actor->GetMapper());
+#else
             auto* mapper = vtkCompositePolyDataMapper2::SafeDownCast(
                     actor->GetMapper());
+#endif
             auto* attributes =
                     mapper ? mapper->GetCompositeDataDisplayAttributes()
                            : nullptr;

@@ -155,7 +155,6 @@ target_link_libraries(${PROJECT_NAME}
         CVAppCommon
         QCustomPlot
         Qt::Network
-        Qt::WebSockets
         Qt::PrintSupport
         )
 
@@ -194,6 +193,7 @@ if (TARGET Qt::Concurrent)
 endif()
 
 if(BUILD_GUI AND BUILD_UNIT_TESTS)
+    add_subdirectory(tests/console)
     add_subdirectory(tests/shortcuts)
     add_subdirectory(tests/layout)
     add_subdirectory(tests/spreadsheet)

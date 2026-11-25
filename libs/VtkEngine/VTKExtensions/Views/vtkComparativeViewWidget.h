@@ -18,6 +18,7 @@
 
 #include <QHash>
 #include <QList>
+#include <QMap>
 #include <QMetaObject>
 #include <QPointer>
 #include <QSet>
@@ -31,6 +32,7 @@ class QGridLayout;
 class QComboBox;
 class QLabel;
 class ccHObject;
+class vtkActor;
 class vtkGLView;
 class vtkChartView;
 class vtkCallbackCommand;
@@ -77,6 +79,41 @@ public:
     void setEntityListProvider(EntityListProvider provider);
     void setInitialEntity(ccHObject* entity);
 
+    // Cues evaluate real filter parameters at each grid position, without
+    // changing the shared source. Chart thresholds use named point/cell fields;
+    // Render cues use per-view representation properties and world slices.
+    // Time means a chart timestamp field, or a Render frame entity's numeric
+    // metadata key, not a fabricated global ServerManager time controller.
+    enum CueProperty {
+        ThresholdMinimum,
+        ThresholdMaximum,
+        SliceX,
+        SliceY,
+        SliceZ,
+        Opacity,
+        PointSize,
+        LineWidth,
+        Time,
+        XScale,
+        YScale
+    };
+    enum CueDirection { AcrossColumns, AcrossRows, RowMajor, ColumnMajor };
+    struct ParameterCue {
+        CueProperty property = ThresholdMinimum;
+        QString field;
+        CueDirection direction = RowMajor;
+        double minimum = 0.0;
+        double maximum = 1.0;
+        // Row-major grid index -> explicit value, overriding the range.
+        QMap<int, double> cellValues;
+    };
+    bool setCues(const QList<ParameterCue>& cues);
+    const QList<ParameterCue>& cues() const { return m_cues; }
+    double cueValue(int cueIndex, int column, int row) const;
+
+    bool setDimensions(int rows, int columns);
+    void setOverlayAllComparisons(bool enabled);
+    bool overlayAllComparisons() const { return m_overlayAllComparisons; }
     int rows() const { return m_rows; }
     int cols() const { return m_cols; }
 
@@ -127,6 +164,9 @@ signals:
 
 private:
     void createRenderSubViews();
+    void destroyRenderSubViews(const QList<vtkGLView*>& views);
+    void layoutSubViews();
+    void clearComparisonOverlay();
     void createChartSubViews();
     void buildToolbar();
     void refreshEntityCombo();
@@ -166,6 +206,8 @@ private:
     void applyShowingSelection(bool resetCamera = true);
     void applySelectedEntitiesToRenderViews(bool resetCamera);
     void applySelectedEntitiesToChartViews();
+    void applyParameterCues();
+    void editCues();
     QSet<ccHObject*> selectedEntitiesFromCombo() const;
     void updateShowingComboText();
 
@@ -174,12 +216,15 @@ private:
     QString m_title;
     int m_rows = 2;
     int m_cols = 2;
+    bool m_overlayAllComparisons = false;
+    std::vector<vtkSmartPointer<vtkActor>> m_comparisonOverlayActors;
     QWidget* m_toolbar = nullptr;
     QLabel* m_statusLabel = nullptr;
     QComboBox* m_entityCombo = nullptr;
     bool m_updatingShowingCombo = false;
     bool m_applyingShowingSelection = false;
     QSet<ccHObject*> m_selectedEntities;
+    QList<ParameterCue> m_cues;
     QHash<vtkGLView*, QSet<ccHObject*>> m_showingEntitiesByView;
     QGridLayout* m_gridLayout = nullptr;
     QList<QWidget*> m_subWidgets;

@@ -381,10 +381,6 @@ bool cvViewSelectionManager::isCompatible(SelectionMode mode1,
 
 //-----------------------------------------------------------------------------
 const cvSelectionData& cvViewSelectionManager::currentSelection() const {
-    static cvSelectionData emptySelection;
-    if (!m_currentSelection || m_currentSelection->GetNumberOfTuples() == 0) {
-        return emptySelection;
-    }
     return m_storedSelectionData;
 }
 

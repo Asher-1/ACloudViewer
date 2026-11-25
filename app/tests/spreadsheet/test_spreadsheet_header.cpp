@@ -11,6 +11,7 @@
 // (model headerData, TSV export, grouping) stays byte-for-byte unchanged.
 
 #include <ecvPointCloud.h>
+#include <ecvScalarField.h>
 #include <gtest/gtest.h>
 
 #include <QApplication>
@@ -18,9 +19,12 @@
 #include <QCoreApplication>
 #include <QFontMetrics>
 #include <QHeaderView>
+#include <QLabel>
 #include <QMenu>
 #include <QMouseEvent>
+#include <QSortFilterProxyModel>
 #include <QTableView>
+#include <limits>
 
 #include "ecvSpreadSheetView.h"
 
@@ -181,6 +185,61 @@ TEST(SpreadSheetModel, SelectedOnlyKeepsSourceIdsAndEmptyMeansEmpty) {
     ASSERT_GE(column, 0);
     EXPECT_DOUBLE_EQ(
             model.data(model.index(2, column), Qt::UserRole).toDouble(), 3.0);
+}
+
+TEST(SpreadSheetModel, StatisticsUseFiniteRawValuesAndVisibleRows) {
+    ccPointCloud cloud("statistics");
+    ASSERT_TRUE(cloud.reserve(5));
+    for (int i = 0; i < 5; ++i) cloud.addPoint(CCVector3(i, 0, 0));
+    const int field = cloud.addScalarField("signal");
+    ASSERT_GE(field, 0);
+    const double values[] = {1.25, 2.75, 4.5,
+                             std::numeric_limits<double>::quiet_NaN(),
+                             std::numeric_limits<double>::infinity()};
+    for (int i = 0; i < 5; ++i)
+        cloud.getScalarField(field)->setValue(i, values[i]);
+
+    ecvSpreadSheetView view;
+    view.setEntity(&cloud);
+    auto* model = view.getModel();
+    model->setDecimalPrecision(0);
+    model->setFixedRepresentation(true);
+    auto* table = view.findChild<QTableView*>();
+    ASSERT_NE(table, nullptr);
+    auto* proxy = qobject_cast<QSortFilterProxyModel*>(table->model());
+    ASSERT_NE(proxy, nullptr);
+    const int column = columnByName(model, "signal");
+    ASSERT_GE(column, 0);
+    EXPECT_DOUBLE_EQ(
+            model->data(model->index(0, column), Qt::UserRole).toDouble(),
+            1.25);
+    auto statistics = [&]() {
+        const bool invoked = QMetaObject::invokeMethod(
+                &view, "onStatColumnSelected", Qt::DirectConnection,
+                Q_ARG(int, column));
+        EXPECT_TRUE(invoked);
+        for (auto* label : view.findChildren<QLabel*>())
+            if (label->text().startsWith("[signal]")) return label->text();
+        return QString();
+    };
+    const auto all = statistics();
+    EXPECT_TRUE(all.contains("Count: 3")) << all.toStdString();
+    EXPECT_TRUE(all.contains("Mean: 2.83333")) << all.toStdString();
+    EXPECT_TRUE(all.contains("StdDev: 1.6266")) << all.toStdString();
+    proxy->setFilterKeyColumn(0);
+    proxy->setFilterFixedString("2");
+    ASSERT_EQ(proxy->rowCount(), 1);
+    const auto filtered = statistics();
+    EXPECT_TRUE(filtered.contains("Count: 1")) << filtered.toStdString();
+    EXPECT_TRUE(filtered.contains("Mean: 4.5")) << filtered.toStdString();
+    EXPECT_TRUE(filtered.contains("StdDev: 0")) << filtered.toStdString();
+    proxy->setFilterFixedString({});
+    model->setSelectedIndices({0, 2});
+    model->setSelectionOnly(true);
+    const auto selected = statistics();
+    EXPECT_TRUE(selected.contains("Count: 2")) << selected.toStdString();
+    EXPECT_TRUE(selected.contains("Mean: 2.875")) << selected.toStdString();
+    EXPECT_TRUE(selected.contains("StdDev: 2.2981")) << selected.toStdString();
 }
 
 int main(int argc, char** argv) {

@@ -31,7 +31,6 @@ if(USE_QT6)
             OpenGLWidgets
             Widgets
             Network
-            WebSockets
             Concurrent
             PrintSupport
             Sql
@@ -39,6 +38,14 @@ if(USE_QT6)
         REQUIRED
     )
     
+    # Named legacy archive codecs use OS services, never Qt Core5Compat.
+    if(WIN32)
+        set(QT_COMPAT_PLATFORM_LIBRARIES ole32 oleaut32 uuid)
+    else()
+        find_package(Iconv REQUIRED)
+        set(QT_COMPAT_PLATFORM_LIBRARIES Iconv::Iconv)
+    endif()
+
     # Set Qt6 as the active Qt version
     set(QT_PREFIX Qt6)
     
@@ -177,7 +184,7 @@ if(USE_QT6)
     # Create unified Qt:: aliases pointing to Qt6:: targets
     # This allows code to use Qt::Core instead of Qt6::Core or Qt5::Core
     # Also create Qt5:: aliases for backward compatibility
-    set(QT_COMPONENTS Core Gui Widgets OpenGL Svg Network WebSockets Concurrent PrintSupport Sql)
+    set(QT_COMPONENTS Core Gui Widgets OpenGL Svg Network Concurrent PrintSupport Sql)
     foreach(COMPONENT ${QT_COMPONENTS})
         # Create unified Qt:: alias
         if(NOT TARGET Qt::${COMPONENT})
@@ -196,12 +203,14 @@ if(USE_QT6)
     endforeach()
     
     # Qt6-specific components (not available in Qt5)
-    if(NOT TARGET Qt::OpenGLWidgets)
-        add_library(Qt::OpenGLWidgets INTERFACE IMPORTED)
-        set_target_properties(Qt::OpenGLWidgets PROPERTIES
-            INTERFACE_LINK_LIBRARIES Qt6::OpenGLWidgets
-        )
-    endif()
+    foreach(COMPONENT OpenGLWidgets)
+        if(NOT TARGET Qt::${COMPONENT})
+            add_library(Qt::${COMPONENT} INTERFACE IMPORTED)
+            set_target_properties(Qt::${COMPONENT} PROPERTIES
+                INTERFACE_LINK_LIBRARIES Qt6::${COMPONENT}
+            )
+        endif()
+    endforeach()
     
     # Create unified Qt::qmake alias
     if(NOT TARGET Qt::qmake)
@@ -237,7 +246,6 @@ else()
             OpenGL
             Widgets
             Network
-            WebSockets
             Concurrent
             PrintSupport
             Sql
@@ -285,7 +293,7 @@ else()
     
     # Create unified Qt:: aliases pointing to Qt5:: targets
     # This allows code to use Qt::Core instead of Qt5::Core or Qt6::Core
-    set(QT_COMPONENTS Core Gui Widgets OpenGL Svg Network WebSockets Concurrent PrintSupport Sql)
+    set(QT_COMPONENTS Core Gui Widgets OpenGL Svg Network Concurrent PrintSupport Sql)
     foreach(COMPONENT ${QT_COMPONENTS})
         # Create unified Qt:: alias
         if(NOT TARGET Qt::${COMPONENT})

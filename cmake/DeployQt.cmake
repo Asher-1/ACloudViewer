@@ -52,6 +52,21 @@ function( DeployQt )
 	
 	message( STATUS "Installing ${DEPLOY_QT_TARGET} to ${deploy_path}" )
 	
+	# The deploy step consumes the plugin binaries (macOS copies them into
+	# the bundle before macdeployqt; Windows scans them below), so they must
+	# be built before this target's POST_BUILD runs. Filter by TARGET: this
+	# function also runs for CloudViewer before plugins/ is processed, where
+	# the cached plugin list may still name targets from a previous configure.
+	set( _deploy_qt_plugins "" )
+	foreach( _plugin_target ${CV_PLUGIN_TARGET_LIST} )
+		if( TARGET ${_plugin_target} )
+			list( APPEND _deploy_qt_plugins ${_plugin_target} )
+		endif()
+	endforeach()
+	if( _deploy_qt_plugins )
+		add_dependencies( ${DEPLOY_QT_TARGET} ${_deploy_qt_plugins} )
+	endif()
+	
 	get_target_property( name ${DEPLOY_QT_TARGET} NAME )
 		
 	if ( APPLE )
@@ -130,6 +145,18 @@ function( DeployQt )
 		endif()
 	elseif( WIN32 )
 		set( app_name "${name}.exe" )
+		set( _deploy_qt_plugin_commands "" )
+		foreach( _plugin_target ${_deploy_qt_plugins} )
+			list( APPEND _deploy_qt_plugin_commands
+					COMMAND "${win_deploy_qt}"
+						$<TARGET_FILE:${_plugin_target}>
+						--dir ${temp_app_path}
+						--no-angle
+						--no-opengl-sw
+						--no-quick-import
+						--no-system-d3d-compiler
+						--verbose=1 )
+		endforeach()
 		if( CMAKE_CONFIGURATION_TYPES )
 			set( app_path "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${app_name}" )
 			set( temp_dir "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/deployqt" )
@@ -154,6 +181,11 @@ function( DeployQt )
 				--no-system-d3d-compiler
 				--concurrent
 				--verbose=1
+			# windeployqt only scans the main executable, so Qt modules linked
+			# exclusively by plugins (e.g. WebSockets for qJSONRPC) would be
+			# missing from the deploy tree. Scan every plugin dll into the same
+			# directory so the tree stays self-contained without IFW packaging.
+			${_deploy_qt_plugin_commands}
 			VERBATIM
 		)
 	

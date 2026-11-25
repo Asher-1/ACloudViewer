@@ -32,7 +32,7 @@ cloudviewer_add_plugin_test(test_qanylabeling_ppocr_document
         ${QAL_DIR}/include/PpocrTableEditor.h
         ${QAL_DIR}/include/PpocrRichTextEditor.h
     INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/core/include
-    LIBS ${QAL_ARCHIVE_ZLIB} Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network)
+    LIBS CV_DB_LIB ${QAL_ARCHIVE_ZLIB} Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network)
 cloudviewer_add_test(NAME test_qanylabeling_ppocr_document COMMAND test_qanylabeling_ppocr_document)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_ppocr_document)
 
@@ -59,7 +59,7 @@ cloudviewer_add_plugin_test(test_qanylabeling_ppocr_table
         ${QAL_DIR}/src/PpocrTableEditor.cpp
         ${QAL_DIR}/include/PpocrTableEditor.h
     INCLUDES ${QAL_DIR}/include
-    LIBS Qt${QT_VERSION_MAJOR}::Widgets)
+    LIBS CV_DB_LIB Qt${QT_VERSION_MAJOR}::Widgets)
 cloudviewer_add_test(NAME test_qanylabeling_ppocr_table COMMAND test_qanylabeling_ppocr_table)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_ppocr_table)
 
@@ -68,7 +68,7 @@ cloudviewer_add_plugin_test(test_qanylabeling_ppocr_rich
         ${QAL_DIR}/src/PpocrRichTextEditor.cpp
         ${QAL_DIR}/include/PpocrRichTextEditor.h
     INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/core/include
-    LIBS Qt${QT_VERSION_MAJOR}::Widgets)
+    LIBS CV_DB_LIB Qt${QT_VERSION_MAJOR}::Widgets)
 cloudviewer_add_test(NAME test_qanylabeling_ppocr_rich COMMAND test_qanylabeling_ppocr_rich)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_ppocr_rich)
 
@@ -189,7 +189,7 @@ if(TARGET 3rdparty_opencv)
             ${QAL_DIR}/qAnyLabeling.qrc
         INCLUDES ${QAL_DIR}/include)
     target_link_libraries(test_qanylabeling_video_ui PRIVATE
-        video_base ${QAL_ARCHIVE_ZLIB} Qt${QT_VERSION_MAJOR}::Widgets)
+        video_base CV_DB_LIB ${QAL_ARCHIVE_ZLIB} Qt${QT_VERSION_MAJOR}::Widgets)
     # NO_LINK: the shared helper links with the PLAIN signature (it also
     # serves all-plain targets), while cloudviewer_add_plugin_test already
     # linked this target with the KEYWORD signature — CMake forbids mixing,
@@ -344,8 +344,8 @@ cloudviewer_add_plugin_test(test_qanylabeling_canvas
         ${QAL_DIR}/src/AnnotationCanvas.cpp
         ${QAL_DIR}/src/MaskPolygon.cpp
         ${QAL_DIR}/include/AnnotationCanvas.h
-    INCLUDES ${QAL_DIR}/include
-    LIBS Qt${QT_VERSION_MAJOR}::Widgets)
+    INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/libs/CV_db/include
+    LIBS CV_DB_LIB Qt${QT_VERSION_MAJOR}::Widgets)
 cloudviewer_add_test(NAME test_qanylabeling_canvas COMMAND test_qanylabeling_canvas)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_canvas)
 
@@ -370,7 +370,8 @@ cloudviewer_add_plugin_test(test_qanylabeling_inference
         ${QAL_DIR}/include/AnnotationWorker.h
         ${QAL_DIR}/include/AnnotationCanvas.h
     INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/core/include
-    LIBS AICore Qt${QT_VERSION_MAJOR}::Widgets)
+        ${CMAKE_SOURCE_DIR}/libs/CV_db/include
+    LIBS AICore CV_DB_LIB Qt${QT_VERSION_MAJOR}::Widgets)
 
 cloudviewer_add_plugin_test(test_qanylabeling_semantic
     SOURCES test_semantic.cpp
@@ -406,8 +407,8 @@ cloudviewer_add_plugin_test(probe_qanylabeling_render
     SOURCES probe_render.cpp ${QAL_DIR}/src/AnnotationCanvas.cpp
         ${QAL_DIR}/src/AnnotationCuboid.cpp ${QAL_DIR}/src/MaskPolygon.cpp
         ${QAL_DIR}/include/AnnotationCanvas.h
-    INCLUDES ${QAL_DIR}/include
-    LIBS Qt${QT_VERSION_MAJOR}::Widgets)
+    INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/libs/CV_db/include
+    LIBS CV_DB_LIB Qt${QT_VERSION_MAJOR}::Widgets)
 
 target_sources(test_qanylabeling_inference PRIVATE ${QAL_DIR}/src/AnnotationCuboid.cpp)
 
@@ -509,8 +510,8 @@ cloudviewer_add_plugin_test(test_qanylabeling_cuboid
         ${QAL_DIR}/src/MaskPolygon.cpp
         ${QAL_DIR}/include/AnnotationCanvas.h
     INCLUDES ${QAL_DIR}/include ${QAL_DIR}/../qRelateAnything/include
-        ${CMAKE_SOURCE_DIR}/core/AICore/include
-    LIBS Qt${QT_VERSION_MAJOR}::Widgets)
+        ${CMAKE_SOURCE_DIR}/core/AICore/include ${CMAKE_SOURCE_DIR}/libs/CV_db/include
+    LIBS CV_DB_LIB Qt${QT_VERSION_MAJOR}::Widgets)
 cloudviewer_add_test(NAME test_qanylabeling_cuboid COMMAND test_qanylabeling_cuboid)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_cuboid)
 

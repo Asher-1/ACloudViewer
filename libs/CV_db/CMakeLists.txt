@@ -75,3 +75,7 @@ if (NOT APPLE) # no need to copy targets on macos due to rpath
 endif ()
 
 include(cmake/InstallCGALDependencies.cmake)
+
+if(BUILD_UNIT_TESTS)
+    add_subdirectory(tests)
+endif()

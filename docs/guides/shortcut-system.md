@@ -72,6 +72,34 @@ ctest --test-dir build_app -R '^test_(shortcuts|vtk_shortcuts)$' --output-on-fai
 ctest --test-dir build_app -R '^test_vtk_shortcuts_graphics$' --no-tests=error --output-on-failure
 ```
 
+## Lifecycle and settings follow-up (2026-11-25)
+
+Temporary shortcuts retain the tool owner's requested activation separately from
+its effective Qt listener. Explicit activation takes priority; releasing or
+removing that owner restores the most recently requested overlapping owner,
+never a tool that was explicitly stopped. Window merges, splits, context changes,
+visibility and availability changes reconcile ownership without a settings write.
+Decorators observe suspension without cancelling the owner's request. Disabled
+persistent QActions retain their configured keys but do not block live owners.
+
+The settings table separates configured bindings from the union of effective
+bindings across loaded instances; that union is not a claim about every instance
+or the focused window. Factory defaults remain visible in tooltips. Conflict and
+save failures keep the editor open with its complete draft. Tooltip/status hints
+append an explicit current shortcut line rather than replacing key-shaped text
+inside descriptions; clearing a binding displays Unbound.
+
+The Python plugin editor no longer intercepts ambiguous shortcuts application-wide.
+Its editor actions use widget-with-children scope and normal Qt dispatch.
+qAnyLabeling reuses central sequence validity and symmetric prefix checks, including
+alternative bindings. Its settings save checks QSettings synchronization before
+changing live actions, and startup validates the complete saved batch before
+applying any override. Invalid startup batches retain factory bindings and leave
+the stored configuration untouched. Annotation-workspace ownership narrows host
+shortcut context rather than changing the host action's semantic enabled state.
+The plugin still owns its settings namespace and primary-binding editor; this is
+not a migration of its entire command catalog into the central settings table.
+
 ## Default shortcut reference for new users
 
 This section records **factory declarations**, not your saved configuration.
@@ -613,8 +641,8 @@ centrally rebindable here. Exported plugin menu commands are a separate surface.
 These are the remaining explicitly bound first-party Designer controls outside
 the main window and Trace Polyline. They belong to the named plugin window;
 they are not evidence of central application shortcut registration. Runtime
-code can replace them, so the CSV preserves the distinction "declared in
-Designer". Controls without a Designer key are retained in the CSV.
+code can replace them, so the table below distinguishes Designer declarations
+from central registration. Controls without a Designer key are not listed.
 
 | Source | Object ID | Command / control | Designer binding | Central status |
 | --- | --- | --- | --- | --- |

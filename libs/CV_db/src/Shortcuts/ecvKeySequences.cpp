@@ -14,6 +14,7 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QEvent>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -24,6 +25,7 @@
 #include <QSet>
 #include <QSettings>
 #include <QShortcut>
+#include <QSignalBlocker>
 
 namespace {
 
@@ -34,13 +36,6 @@ namespace {
 struct Shortcuts {
     /// All shortcuts (siblings) that share the same key sequence
     QSet<ecvModalShortcut*> Siblings;
-
-    /// Most recently used shortcut (for reordering)
-    ecvModalShortcut* mruShortcut = nullptr;
-
-    // TODO: Allow a key-sequence to be "default to last" when a shortcut is
-    //       removed/disabled as an option?
-    // TODO: Hold tooltip or preference name?
 };
 
 /**
@@ -99,17 +94,40 @@ bool contextsOverlap(const QList<QWidget*>& a,
     return false;
 }
 
+// Broad owners remain available outside a narrower owner's actual focus scope.
+bool inactiveAgainst(const QList<QWidget*>& widgets,
+                     Qt::ShortcutContext context,
+                     Qt::ShortcutContext competingContext) {
+    if (context == Qt::ApplicationShortcut ||
+        (context == Qt::WindowShortcut &&
+         competingContext != Qt::ApplicationShortcut))
+        return false;
+    auto* focus = QApplication::focusWidget();
+    for (auto* widget : widgets)
+        if (widget && focus &&
+            (widget == focus ||
+             (context == Qt::WindowShortcut &&
+              shortcutWindow(widget) == shortcutWindow(focus)) ||
+             (context == Qt::WidgetWithChildrenShortcut &&
+              widget->isAncestorOf(focus))))
+            return false;
+    return true;
+}
+
 bool contextsOverlap(const QAction* first, const QAction* second) {
     return contextsOverlap(shortcutWidgets(first), first->shortcutContext(),
                            shortcutWidgets(second), second->shortcutContext());
 }
 
-bool sequencesOverlap(const QKeySequence& a, const QKeySequence& b) {
+}  // namespace
+
+bool ecvKeySequences::sequencesOverlap(const QKeySequence& a,
+                                       const QKeySequence& b) {
     return a.matches(b) != QKeySequence::NoMatch ||
            b.matches(a) != QKeySequence::NoMatch;
 }
 
-bool validSequence(const QKeySequence& sequence) {
+bool ecvKeySequences::isValidSequence(const QKeySequence& sequence) {
     if (sequence.isEmpty()) return false;
     for (int i = 0; i < sequence.count(); ++i) {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
@@ -125,6 +143,7 @@ bool validSequence(const QKeySequence& sequence) {
     return true;
 }
 
+namespace {
 QByteArray encodeBindingFile(const ecvKeySequences::Bindings& bindings,
                              QJsonDocument::JsonFormat format) {
     QJsonObject object;
@@ -194,7 +213,8 @@ bool decodeBindingFile(const QByteArray& data,
         for (const auto& value : values) {
             const QKeySequence sequence(value.toString(),
                                         QKeySequence::PortableText);
-            if (!value.isString() || !validSequence(sequence))
+            if (!value.isString() ||
+                !ecvKeySequences::isValidSequence(sequence))
                 problems.append(
                         QObject::tr("Invalid binding: %1").arg(it.key()));
             else
@@ -206,11 +226,63 @@ bool decodeBindingFile(const QByteArray& data,
     return problems.isEmpty();
 }
 
+int pluginContextRank(const QAction* action) {
+    if (action->property("shortcutPluginId").toString().isEmpty()) return 0;
+    switch (action->shortcutContext()) {
+        case Qt::WidgetShortcut:
+            return 3;
+        case Qt::WidgetWithChildrenShortcut:
+            return 2;
+        case Qt::WindowShortcut:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+bool pluginContextShadows(const QAction* narrow, const QAction* broad) {
+    const QString owner = narrow->property("shortcutPluginId").toString();
+    return !owner.isEmpty() &&
+           owner == broad->property("shortcutPluginId").toString() &&
+           pluginContextRank(narrow) >= 2 && pluginContextRank(broad) <= 1;
+}
+
+// Stable plugin identity groups its scopes. Narrow editor commands precede
+// workspace commands; inactive scopes never participate in runtime exclusion.
+QList<QPair<QString, QPointer<QAction>>> commandListeners(
+        const QMap<QString, ecvKeySequences::Command>& commands) {
+    QList<QPair<QString, QPointer<QAction>>> listeners;
+    for (const auto& command : commands)
+        for (const auto& action : command.actions)
+            if (action) listeners.append({command.id, action.data()});
+    std::stable_sort(
+            listeners.begin(), listeners.end(),
+            [&commands](const auto& a, const auto& b) {
+                const auto& first = commands.constFind(a.first).value();
+                const auto& second = commands.constFind(b.first).value();
+                const QString firstGroup = first.pluginId.isEmpty()
+                                                   ? first.id
+                                                   : "plugin/" + first.pluginId;
+                const QString secondGroup =
+                        second.pluginId.isEmpty() ? second.id
+                                                  : "plugin/" + second.pluginId;
+                if (firstGroup != secondGroup) return firstGroup < secondGroup;
+                const int firstRank = pluginContextRank(a.second),
+                          secondRank = pluginContextRank(b.second);
+                if (firstRank != secondRank) return firstRank > secondRank;
+                return a.first < b.first;
+            });
+    return listeners;
+}
+
 bool commandsOverlap(const ecvKeySequences::Command& a,
                      const ecvKeySequences::Command& b) {
     for (const auto& first : a.actions)
         for (const auto& second : b.actions)
-            if (first && second && contextsOverlap(first, second)) return true;
+            if (first && second && contextsOverlap(first, second) &&
+                !pluginContextShadows(first, second) &&
+                !pluginContextShadows(second, first))
+                return true;
     return false;
 }
 
@@ -227,11 +299,37 @@ ecvKeySequences::ecvKeySequences(QObject* parent)
     : QObject(parent), m_silence(false) {
     CVLog::PrintVerbose("[ecvKeySequences] Modal shortcut manager initialized");
     if (auto* app = qobject_cast<QApplication*>(QCoreApplication::instance())) {
+        app->installEventFilter(this);
         connect(app, &QApplication::focusChanged, this,
                 [this](QWidget*, QWidget*) {
-                    if (!g_keys.Data.isEmpty()) refreshCommandShortcuts();
+                    if (!g_keys.Data.isEmpty() || !m_commands.isEmpty()) {
+                        reconcileModalShortcuts();
+                        refreshCommandShortcuts();
+                    }
                 });
     }
+}
+
+bool ecvKeySequences::eventFilter(QObject* watched, QEvent* event) {
+    // QWidget ownership and QAction associations can change without a binding
+    // transaction (dock, fullscreen and plugin lifecycles). Qt still owns key
+    // dispatch; reconcile scope and availability before subsequent key events.
+    switch (event->type()) {
+        case QEvent::ParentChange:
+        case QEvent::ActionAdded:
+        case QEvent::ActionRemoved:
+        case QEvent::Show:
+        case QEvent::Hide:
+        case QEvent::EnabledChange:
+            if (qobject_cast<QWidget*>(watched)) {
+                reconcileModalShortcuts();
+                refreshCommandShortcuts();
+            }
+            break;
+        default:
+            break;
+    }
+    return QObject::eventFilter(watched, event);
 }
 
 bool ecvKeySequences::registerCommand(const QString& id,
@@ -240,12 +338,18 @@ bool ecvKeySequences::registerCommand(const QString& id,
     if (id.isEmpty() || !action) return false;
     const QString previousId = action->property("shortcutCommandId").toString();
     if (!previousId.isEmpty()) return previousId == id;
+    // Registration validation may refresh this newly appended instance before
+    // its changed() connection is installed. Capture owner text first.
+    action->setProperty("shortcutOriginalToolTip", action->toolTip());
+    action->setProperty("shortcutOriginalStatusTip", action->statusTip());
     auto it = m_commands.find(id);
     const bool newCommand = it == m_commands.end();
     if (newCommand) {
         Command command;
         command.id = id;
         command.category = category;
+        command.pluginId = action->property("shortcutPluginId").toString();
+        command.pluginName = action->property("shortcutPluginName").toString();
         command.label = action->text().isEmpty() ? id : action->text();
         command.defaults = action->shortcuts();
         it = m_commands.insert(id, command);
@@ -295,20 +399,26 @@ bool ecvKeySequences::registerCommand(const QString& id,
         }
     }
     action->setProperty("shortcutCommandId", id);
-    connect(action, &QAction::changed, this, [this, id, action]() {
+    connect(action, &QAction::changed, this, [this, action]() {
         if (m_rebindingCommands || m_silence) return;
-        // Enabled/text changes remain cheap. Registered command keys can only
-        // change through the validator, never a second QAction setter path.
-        if (action->shortcuts() != effectiveBindings(id, action)) {
-            CVLog::Warning(tr("Use the shortcut registry to change command %1")
-                                   .arg(id));
-            refreshCommandShortcuts();
-        }
+        // External text updates become the base, never our generated suffix.
+        if (action->toolTip() !=
+            action->property("shortcutRenderedToolTip").toString())
+            action->setProperty("shortcutOriginalToolTip", action->toolTip());
+        if (action->statusTip() !=
+            action->property("shortcutRenderedStatusTip").toString())
+            action->setProperty("shortcutOriginalStatusTip",
+                                action->statusTip());
+        // Context and availability changes reconcile both persistent and modal
+        // owners before Qt processes the next key event.
+        reconcileModalShortcuts();
+        refreshCommandShortcuts();
     });
     connect(action, &QObject::destroyed, this, [this, id]() {
         auto& actions = m_commands[id].actions;
         for (int i = actions.size() - 1; i >= 0; --i)
             if (!actions[i]) actions.removeAt(i);
+        refreshCommandShortcuts();
         emit commandsChanged();
     });
     refreshCommandShortcuts();
@@ -316,9 +426,69 @@ bool ecvKeySequences::registerCommand(const QString& id,
     return true;
 }
 
+bool ecvKeySequences::registerPluginCommand(const QString& pluginId,
+                                            const QString& command,
+                                            QAction* action,
+                                            const QString& category,
+                                            const QString& pluginName) {
+    if (!action || pluginId.isEmpty() || command.isEmpty()) return false;
+    const auto previousOwner = action->property("shortcutPluginId").toString();
+    if (!previousOwner.isEmpty() && previousOwner != pluginId) return false;
+    action->setProperty("shortcutPluginId", pluginId);
+    const QString name =
+            pluginName.isEmpty() ? pluginId.section('.', -1) : pluginName;
+    action->setProperty("shortcutPluginName", name);
+    QString id = action->property("shortcutCommandId").toString();
+    if (id.isEmpty()) id = QStringLiteral("plugin/") + pluginId + "/" + command;
+    if (!registerCommand(id, action, category)) return false;
+    auto& entry = m_commands[id];
+    if (entry.pluginId != pluginId || entry.pluginName != name ||
+        entry.category != category) {
+        entry.pluginId = pluginId;
+        entry.pluginName = name;
+        entry.category = category;
+        emit commandsChanged();
+    }
+    return true;
+}
+
 QList<QKeySequence> ecvKeySequences::effectiveBindings(
-        const QString& id, const QAction* action) const {
+        const QString& id,
+        const QAction* action,
+        const QList<QPair<QString, QPointer<QAction>>>& listeners) const {
+    if (!action) return {};
     auto effective = m_bindings.value(id);
+    if (effective.isEmpty()) return effective;
+    // Reparenting may merge previously disjoint scopes. Keep the committed
+    // configuration intact and suspend only ambiguous effective keys, using
+    // stable command-ID order then instance registration order. Splitting the
+    // scopes again restores the keys without a settings write.
+    for (const auto& listener : listeners) {
+        const auto earlier = listener.second;
+        if (earlier == action) break;
+        if (!earlier || !earlier->isEnabled() || !earlier->isVisible() ||
+            earlier->shortcuts().isEmpty() || !contextsOverlap(earlier, action))
+            continue;
+        const auto earlierWidgets = shortcutWidgets(earlier);
+        bool dispatchable = false;
+        for (QWidget* widget : earlierWidgets)
+            if (widget && widget->isVisible() && widget->isEnabled()) {
+                dispatchable = true;
+                break;
+            }
+        if (!dispatchable) continue;
+        if (inactiveAgainst(earlierWidgets, earlier->shortcutContext(),
+                            action->shortcutContext()) ||
+            inactiveAgainst(shortcutWidgets(action), action->shortcutContext(),
+                            earlier->shortcutContext()))
+            continue;
+        // Earlier instances have already been reconciled in this pass;
+        // a suspended key must not suppress another disjoint instance.
+        for (const auto& key : earlier->shortcuts())
+            for (int i = effective.size() - 1; i >= 0; --i)
+                if (ecvKeySequences::sequencesOverlap(effective[i], key))
+                    effective.removeAt(i);
+    }
     for (auto it = g_keys.Data.constBegin(); it != g_keys.Data.constEnd();
          ++it) {
         for (const auto* modal : it->Siblings) {
@@ -340,7 +510,7 @@ QList<QKeySequence> ecvKeySequences::effectiveBindings(
                                  action->shortcutContext(), {widget}, context))
                 continue;
             for (int i = effective.size() - 1; i >= 0; --i)
-                if (sequencesOverlap(effective[i], it.key()))
+                if (ecvKeySequences::sequencesOverlap(effective[i], it.key()))
                     effective.removeAt(i);
         }
     }
@@ -348,24 +518,122 @@ QList<QKeySequence> ecvKeySequences::effectiveBindings(
 }
 
 void ecvKeySequences::refreshCommandShortcuts() {
-    if (m_silence || m_rebindingCommands) return;
-    QScopedValueRollback<bool> rebinding(m_rebindingCommands, true);
-    // Snapshot instance lists: changed() observers can destroy another view.
-    // Only effective Qt keys are suspended; configured keys and enabled state
-    // survive transient-tool ownership and are restored when it ends.
-    const auto commands = m_commands.values();
-    for (const auto& command : commands) {
-        for (const auto& action : command.actions) {
+    if (m_rebindingCommands || m_silence) return;
+    bool changed = false;
+    {
+        QScopedValueRollback<bool> rebinding(m_rebindingCommands, true);
+        // One ordered snapshot per reconciliation, not one sort per action.
+        const auto listeners = commandListeners(m_commands);
+        for (const auto& listener : listeners) {
+            const auto action = listener.second;
             if (!action) continue;
-            const auto effective = effectiveBindings(command.id, action);
-            if (action->shortcuts() != effective)
-                action->setShortcuts(effective);
+            const auto effective =
+                    effectiveBindings(listener.first, action, listeners);
+            changed |= action->shortcuts() != effective;
+            action->setShortcuts(effective);
+            if (!action) continue;
+            QStringList keys;
+            for (const auto& key : effective)
+                keys.append(key.toString(QKeySequence::NativeText));
+            const auto configured = m_bindings.value(listener.first);
+            const QString state = !action->isEnabled() || !action->isVisible()
+                                          ? tr("Unavailable")
+                                  : configured.isEmpty() ? tr("Unbound")
+                                  : effective.isEmpty()  ? tr("Suspended")
+                                                         : keys.join("; ");
+            changed |= action->property("shortcutRenderedState").toString() !=
+                       state;
+            action->setProperty("shortcutRenderedState", state);
+            auto updateHint = [&](const char* original, const char* rendered,
+                                  bool status) {
+                const QString base = action->property(original).toString();
+                const QString hint = base +
+                                     (base.isEmpty() ? QString() : "\n") +
+                                     tr("Shortcut: %1").arg(state);
+                action->setProperty(rendered, hint);
+                if (status)
+                    action->setStatusTip(hint);
+                else
+                    action->setToolTip(hint);
+            };
+            updateHint("shortcutOriginalToolTip", "shortcutRenderedToolTip",
+                       false);
+            updateHint("shortcutOriginalStatusTip", "shortcutRenderedStatusTip",
+                       true);
         }
     }
+    QStringList conflictsNow;
+    for (const auto& conflict : conflicts(m_bindings))
+        conflictsNow.append(
+                conflict.first + "\n" + conflict.second + "\n" +
+                conflict.sequence.toString(QKeySequence::PortableText));
+    changed |= conflictsNow != m_runtimeConflicts;
+    m_runtimeConflicts = conflictsNow;
+    if (changed) emit commandsChanged();
+}
+
+void ecvKeySequences::reconcileModalShortcuts(ecvModalShortcut* preferred) {
+    if (m_silence) return;
+    QScopedValueRollback<bool> silence(m_silence, true);
+    if (preferred) {
+        m_modalPriority.removeAll(preferred);
+        m_modalPriority.prepend(preferred);
+    }
+    m_modalPriority.removeAll(nullptr);
+    const auto ordered = m_modalPriority;
+    QList<ecvModalShortcut*> accepted;
+    for (const auto& guarded : ordered) {
+        auto* candidate = guarded.data();
+        if (!candidate || !candidate->isRequestedEnabled() ||
+            !candidate->m_shortcut)
+            continue;
+        auto* owner = qobject_cast<QWidget*>(candidate->m_shortcut->parent());
+        if (!owner || !owner->isEnabled() || !owner->isVisible() ||
+            (candidate->m_action && (!candidate->m_action->isEnabled() ||
+                                     !candidate->m_action->isVisible())))
+            continue;
+        bool conflict = false;
+        for (auto* winner : accepted) {
+            if (!sequencesOverlap(candidate->keySequence(),
+                                  winner->keySequence()))
+                continue;
+            auto* other = qobject_cast<QWidget*>(winner->m_shortcut->parent());
+            if (inactiveAgainst({owner}, candidate->m_shortcut->context(),
+                                winner->m_shortcut->context()) ||
+                inactiveAgainst({other}, winner->m_shortcut->context(),
+                                candidate->m_shortcut->context()))
+                continue;
+            if (contextsOverlap({owner}, candidate->m_shortcut->context(),
+                                {other}, winner->m_shortcut->context())) {
+                conflict = true;
+                break;
+            }
+        }
+        if (!conflict) accepted.append(candidate);
+    }
+    // Retain owner intent and activation order through suspension and scope
+    // changes. Disable displaced listeners before enabling their replacements.
+    for (const auto& sibling : ordered)
+        if (sibling && !accepted.contains(sibling)) sibling->setSuspended(true);
+    for (const auto& sibling : ordered)
+        if (sibling && accepted.contains(sibling)) sibling->setSuspended(false);
 }
 
 QList<ecvKeySequences::Command> ecvKeySequences::commands() const {
     return m_commands.values();
+}
+
+QList<QKeySequence> ecvKeySequences::effectiveBindings(
+        const QString& id) const {
+    QList<QKeySequence> result;
+    const auto it = m_commands.constFind(id);
+    if (it == m_commands.constEnd()) return result;
+    for (const auto& action : it->actions) {
+        if (!action || !action->isEnabled() || !action->isVisible()) continue;
+        for (const auto& sequence : action->shortcuts())
+            if (!result.contains(sequence)) result.append(sequence);
+    }
+    return result;
 }
 
 ecvKeySequences::Bindings ecvKeySequences::defaultBindings() const {
@@ -393,7 +661,9 @@ QList<ecvKeySequences::Conflict> ecvKeySequences::conflicts(
                     buckets[QKeySequence(sequence[0])
                                     .toString(QKeySequence::PortableText)];
             for (const auto& previous : bucket) {
-                if (!sequencesOverlap(sequence, previous.sequence)) continue;
+                if (!ecvKeySequences::sequencesOverlap(sequence,
+                                                       previous.sequence))
+                    continue;
                 if (commandsOverlap(m_commands.value(previous.id),
                                     m_commands.value(it.key())))
                     result.append({previous.id, it.key(), sequence});
@@ -421,7 +691,7 @@ bool ecvKeySequences::applyBindings(const Bindings& candidate,
         if (!m_commands.contains(it.key()))
             problems.append(tr("Unknown shortcut command: %1").arg(it.key()));
         for (const auto& sequence : it.value()) {
-            if (!validSequence(sequence))
+            if (!ecvKeySequences::isValidSequence(sequence))
                 problems.append(
                         tr("Invalid binding in command: %1").arg(it.key()));
         }
@@ -466,7 +736,12 @@ bool ecvKeySequences::applyBindings(const Bindings& candidate,
         m_savedBindings = saved;
     }
     m_bindings = candidate;
-    refreshCommandShortcuts();
+    {
+        // A transaction has one public notification, including effective scope
+        // changes. Runtime-only refreshes still notify independently.
+        QSignalBlocker blocker(this);
+        refreshCommandShortcuts();
+    }
     emit commandsChanged();
     if (errors) errors->clear();
     return true;
@@ -539,6 +814,59 @@ bool ecvKeySequences::importBindings(const QByteArray& data,
     m_bindingsRestored = true;
     if (unavailable) *unavailable = missing;
     return true;
+}
+
+bool ecvKeySequences::migrateLegacyBindings(
+        const QString& group,
+        const QMap<QString, QString>& commandIds,
+        QStringList* errors) {
+    if (!m_bindingsRestored && !restoreBindings(errors)) return false;
+    QSettings settings;
+    settings.beginGroup(group);
+    QJsonObject imported;
+    for (auto it = commandIds.constBegin(); it != commandIds.constEnd(); ++it) {
+        if (m_savedBindings.contains(it.value()) ||
+            !settings.contains(it.key()))
+            continue;
+        const auto value = settings.value(it.key());
+        if (value.type() != QVariant::String &&
+            value.type() != QVariant::StringList) {
+            if (errors)
+                *errors = QStringList{
+                        tr("Invalid legacy plugin shortcut: %1").arg(it.key())};
+            return false;
+        }
+        const QStringList keys = value.type() == QVariant::StringList
+                                         ? value.toStringList()
+                                         : QStringList{value.toString()};
+        QJsonArray array;
+        for (const auto& key : keys)
+            if (!key.isEmpty()) array.append(key);
+        if (imported.contains(it.value()) &&
+            imported.value(it.value()).toArray() != array) {
+            if (errors)
+                *errors = QStringList{
+                        tr("Conflicting legacy aliases for command: %1")
+                                .arg(it.value())};
+            return false;
+        }
+        imported[it.value()] = array;
+    }
+    settings.endGroup();
+    if (settings.status() != QSettings::NoError) {
+        if (errors)
+            *errors = QStringList{
+                    tr("Cannot read legacy plugin shortcut settings.")};
+        return false;
+    }
+    if (imported.isEmpty()) {
+        if (errors) errors->clear();
+        return true;
+    }
+    return importBindings(
+            QJsonDocument(QJsonObject{{"version", 2}, {"bindings", imported}})
+                    .toJson(),
+            errors);
 }
 
 bool ecvKeySequences::restoreBindings(QStringList* errors) {
@@ -627,17 +955,22 @@ ecvModalShortcut* ecvKeySequences::addModalShortcut(
     shortcut->setEnabled(false);
     shortcut->setContextWidget(parent, context);
 
-    // Connect signals
-    QObject::connect(shortcut, &ecvModalShortcut::enabled, this,
-                     &ecvKeySequences::disableSiblings);
-    QObject::connect(shortcut, &ecvModalShortcut::enabled, this,
-                     &ecvKeySequences::refreshCommandShortcuts);
-    QObject::connect(shortcut, &ecvModalShortcut::disabled, this,
-                     &ecvKeySequences::refreshCommandShortcuts);
-    QObject::connect(shortcut, &ecvModalShortcut::unregister, this,
-                     &ecvKeySequences::removeModalShortcut);
+    m_modalPriority.prepend(shortcut);
+    connect(shortcut, &ecvModalShortcut::ownershipChanged, this,
+            [this, shortcut](bool claimPriority) {
+                if (m_silence) return;
+                reconcileModalShortcuts(claimPriority ? shortcut : nullptr);
+                refreshCommandShortcuts();
+            });
+    connect(shortcut, &ecvModalShortcut::unregister, this,
+            &ecvKeySequences::removeModalShortcut);
+    if (action)
+        connect(action, &QAction::changed, shortcut, [this]() {
+            reconcileModalShortcuts();
+            refreshCommandShortcuts();
+        });
 
-    // Enable (this will trigger disableSiblings() to ensure only one is active)
+    // Claim priority over overlapping, currently executable temporary owners.
     shortcut->setEnabled(true);
 
     CVLog::PrintVerbose(
@@ -652,40 +985,10 @@ ecvModalShortcut* ecvKeySequences::addModalShortcut(
 
 //-----------------------------------------------------------------------------
 void ecvKeySequences::reorder(ecvModalShortcut* target) {
-    if (!target) {
-        return;
+    if (target && target->isRequestedEnabled()) {
+        reconcileModalShortcuts(target);
+        refreshCommandShortcuts();
     }
-
-    // Find the key sequence for this shortcut
-    QMap<QKeySequence, Shortcuts>::iterator iter =
-            g_keys.Data.find(target->keySequence());
-    if (iter == g_keys.Data.end()) {
-        return;
-    }
-
-    // Check if any sibling of target is currently active
-    bool hasActiveSibling = false;
-    for (auto& sibling : iter->Siblings) {
-        if (sibling != target && sibling && sibling->isEnabled()) {
-            hasActiveSibling = true;
-            break;
-        }
-    }
-
-    // If no sibling is active, reorder has no effect (as per ParaView
-    // documentation)
-    if (!hasActiveSibling) {
-        return;
-    }
-
-    // Mark target as the most recently used shortcut
-    // This allows enableNextSibling() to activate it when the current
-    // shortcut is disabled
-    iter->mruShortcut = target;
-
-    CVLog::PrintVerbose(
-            QString("[ecvKeySequences] Reordered shortcut: %1 (MRU set)")
-                    .arg(target->keySequence().toString()));
 }
 
 //-----------------------------------------------------------------------------
@@ -738,128 +1041,6 @@ QMap<QString, QStringList> ecvKeySequences::allRegisteredSequences() const {
 }
 
 //-----------------------------------------------------------------------------
-void ecvKeySequences::disableSiblings() {
-    if (m_silence) {
-        return;
-    }
-
-    auto* shortcut = qobject_cast<ecvModalShortcut*>(this->sender());
-    if (!shortcut) {
-        return;
-    }
-
-    QMap<QKeySequence, Shortcuts>::iterator iter =
-            g_keys.Data.find(shortcut->keySequence());
-    if (iter == g_keys.Data.end()) {
-        return;
-    }
-
-    iter->mruShortcut = shortcut;
-    if (!shortcut->m_shortcut) return;
-    auto* owner = qobject_cast<QWidget*>(shortcut->m_shortcut->parent());
-    // Equal keys are only ambiguous in overlapping contexts. Prefix-related
-    // chords need the same arbitration as exact matches, while disjoint views
-    // may keep their own listeners enabled.
-    m_silence = true;
-    int disabledCount = 0;
-    for (auto entry = g_keys.Data.begin(); entry != g_keys.Data.end();
-         ++entry) {
-        if (!sequencesOverlap(entry.key(), shortcut->keySequence())) continue;
-        for (auto* sibling : entry->Siblings) {
-            if (!sibling || sibling == shortcut || !sibling->isEnabled() ||
-                !sibling->m_shortcut)
-                continue;
-            auto* other = qobject_cast<QWidget*>(sibling->m_shortcut->parent());
-            if (owner && other &&
-                contextsOverlap({owner}, shortcut->m_shortcut->context(),
-                                {other}, sibling->m_shortcut->context())) {
-                sibling->setEnabled(false);
-                ++disabledCount;
-            }
-        }
-    }
-    m_silence = false;
-
-    if (disabledCount > 0) {
-        CVLog::PrintVerbose(
-                QString("[ecvKeySequences] Disabled %1 sibling(s) for %2")
-                        .arg(disabledCount)
-                        .arg(shortcut->keySequence().toString()));
-    }
-}
-
-//-----------------------------------------------------------------------------
-void ecvKeySequences::enableNextSibling() {
-    if (m_silence) {
-        return;
-    }
-
-    auto* shortcut = qobject_cast<ecvModalShortcut*>(this->sender());
-    if (!shortcut) {
-        return;
-    }
-
-    // Find the key sequence for this shortcut
-    QMap<QKeySequence, Shortcuts>::iterator iter =
-            g_keys.Data.find(shortcut->keySequence());
-    if (iter == g_keys.Data.end()) {
-        return;
-    }
-
-    // Activate the most-recently-used sibling if available
-    // This implements the reordering behavior: when a shortcut is disabled,
-    // the MRU shortcut (set via reorder()) becomes the next one to activate
-    if (iter->mruShortcut && iter->mruShortcut != shortcut) {
-        // Check if the MRU shortcut's parent widget is still valid and enabled
-        QWidget* parentWidget =
-                qobject_cast<QWidget*>(iter->mruShortcut->parent());
-        if (parentWidget && parentWidget->isEnabled() &&
-            parentWidget->isVisible()) {
-            iter->mruShortcut->setEnabled(true);
-            CVLog::PrintVerbose(
-                    QString("[ecvKeySequences] Enabled next sibling (MRU): %1")
-                            .arg(shortcut->keySequence().toString()));
-        } else {
-            // MRU shortcut's widget is disabled/hidden, try to find another
-            // enabled sibling
-            for (auto& sibling : iter->Siblings) {
-                if (sibling != shortcut && sibling) {
-                    QWidget* siblingParent =
-                            qobject_cast<QWidget*>(sibling->parent());
-                    if (siblingParent && siblingParent->isEnabled() &&
-                        siblingParent->isVisible()) {
-                        sibling->setEnabled(true);
-                        CVLog::PrintVerbose(QString("[ecvKeySequences] Enabled "
-                                                    "next sibling: "
-                                                    "%1")
-                                                    .arg(shortcut->keySequence()
-                                                                 .toString()));
-                        break;
-                    }
-                }
-            }
-        }
-    } else {
-        // No MRU shortcut set, try to find any enabled sibling
-        for (auto& sibling : iter->Siblings) {
-            if (sibling != shortcut && sibling) {
-                QWidget* siblingParent =
-                        qobject_cast<QWidget*>(sibling->parent());
-                if (siblingParent && siblingParent->isEnabled() &&
-                    siblingParent->isVisible()) {
-                    sibling->setEnabled(true);
-                    CVLog::PrintVerbose(
-                            QString("[ecvKeySequences] Enabled next sibling: "
-                                    "%1")
-                                    .arg(shortcut->keySequence().toString()));
-                    break;
-                }
-            }
-        }
-    }
-}
-
-//-----------------------------------------------------------------------------
 void ecvKeySequences::removeModalShortcut() {
     auto* shortcut = qobject_cast<ecvModalShortcut*>(this->sender());
     if (!shortcut) {
@@ -874,6 +1055,7 @@ void ecvKeySequences::removeModalShortcut() {
 
     // Remove the shortcut from the key sequence list
     iter->Siblings.remove(shortcut);
+    m_modalPriority.removeAll(shortcut);
     QObject::disconnect(shortcut);
 
     CVLog::PrintVerbose(
@@ -884,5 +1066,6 @@ void ecvKeySequences::removeModalShortcut() {
     if (iter->Siblings.empty()) {
         g_keys.Data.erase(iter);
     }
+    reconcileModalShortcuts();
     refreshCommandShortcuts();
 }

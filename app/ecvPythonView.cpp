@@ -8,6 +8,13 @@
 #include "ecvPythonView.h"
 
 #include <QtCompat.h>
+#ifdef USE_VTK_BACKEND
+#include <Converters/Cc2Vtk.h>
+#include <vtkDataObject.h>
+#include <vtkGenericDataObjectWriter.h>
+#include <vtkNew.h>
+#include <vtkPolyData.h>
+#endif
 #include <Shortcuts/ecvKeySequences.h>
 #include <ecvGenericMesh.h>
 #include <ecvGenericPointCloud.h>
@@ -38,6 +45,7 @@
 #include <QScrollBar>
 #include <QSignalBlocker>
 #include <QSplitter>
+#include <QStandardPaths>
 #include <QStringListModel>
 #include <QTableWidget>
 #include <QTemporaryDir>
@@ -46,6 +54,7 @@
 #include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
+#include <memory>
 
 #include "ecvPythonCodeEditor.h"
 #include "ecvPythonSyntaxHighlighter.h"
@@ -69,6 +78,7 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
     decLayout->addWidget(showingLabel);
 
     m_sourceCombo = new QComboBox(decoratorBar);
+    m_sourceCombo->setObjectName(QStringLiteral("pythonSource"));
     m_sourceCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     m_sourceCombo->addItem(tr("None"));
     decLayout->addWidget(m_sourceCombo);
@@ -126,6 +136,21 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
     m_snippetBtn->setPopupMode(QToolButton::InstantPopup);
     {
         auto* menu = new QMenu(m_snippetBtn);
+        menu->addAction(tr("VTK setup/render callbacks"), this, [this]() {
+            insertSnippet(
+                    "def setup_data(view):\n"
+                    "    view.EnableAllAttributeArrays()\n\n"
+                    "def render(view, width, height):\n"
+                    "    figure = python_view.matplotlib_figure(width, "
+                    "height)\n"
+                    "    axes = figure.add_subplot(111)\n"
+                    "    for i in "
+                    "range(view.GetNumberOfVisibleDataObjects()):\n"
+                    "        data = view.GetVisibleDataObjectForRendering(i)\n"
+                    "        axes.text(0.05, 0.9 - i * 0.1, "
+                    "data.GetClassName())\n"
+                    "    return python_view.figure_to_image(figure)\n");
+        });
         menu->addAction(tr("Basic Plot"), this, [this]() {
             insertSnippet(
                     "import matplotlib\nmatplotlib.use('Agg')\n"
@@ -295,8 +320,6 @@ ecvPythonView::ecvPythonView(QWidget* parent) : QWidget(parent) {
     connect(&ecvViewManager::instance(),
             &ecvViewManager::entitySelectionChanged, this,
             &ecvPythonView::onEntitySelectionChanged);
-
-    QTimer::singleShot(500, this, &ecvPythonView::checkPythonEnvironment);
 }
 
 ecvPythonView::~ecvPythonView() {
@@ -318,77 +341,12 @@ ecvPythonView::~ecvPythonView() {
 }
 
 QString ecvPythonView::findPythonBinary() {
-    if (!m_pythonBin.isEmpty()) return m_pythonBin;
-
     for (const auto& candidate :
          {QStringLiteral("python3"), QStringLiteral("python")}) {
-        QProcess test;
-        test.setProgram(candidate);
-        test.setArguments({"--version"});
-        test.start();
-        if (test.waitForFinished(3000) && test.exitCode() == 0) {
-            m_pythonBin = candidate;
-            return m_pythonBin;
-        }
+        const QString executable = QStandardPaths::findExecutable(candidate);
+        if (!executable.isEmpty()) return executable;
     }
     return {};
-}
-
-void ecvPythonView::checkPythonEnvironment() {
-    if (m_pythonChecked) return;
-    m_pythonChecked = true;
-
-    QString pyBin = findPythonBinary();
-    if (pyBin.isEmpty()) {
-        m_statusLabel->setText(tr("Python not found"));
-        m_outputPanel->setPlainText(
-                tr("Warning: Python interpreter not found in PATH.\n"
-                   "Install python3 to use this view.\n"
-                   "Tip: sudo apt install python3 python3-matplotlib "
-                   "python3-numpy"));
-        return;
-    }
-
-    QProcess check;
-    check.setProgram(pyBin);
-    check.setArguments(
-            {"-c",
-             "import sys; v=sys.version_info; print(f'Python "
-             "{v.major}.{v.minor}.{v.micro}')\n"
-             "try:\n"
-             "  import numpy; print(f'numpy {numpy.__version__}')\n"
-             "except Exception as e: print(f'numpy: ERROR ({e})')\n"
-             "try:\n"
-             "  import matplotlib; print(f'matplotlib "
-             "{matplotlib.__version__}')\n"
-             "except Exception as e: print(f'matplotlib: ERROR ({e})')\n"});
-    check.start();
-    if (check.waitForFinished(5000)) {
-        QString out =
-                QString::fromUtf8(check.readAllStandardOutput()).trimmed();
-        QString err = QString::fromUtf8(check.readAllStandardError()).trimmed();
-        if (!out.isEmpty()) {
-            m_statusLabel->setText(out.section('\n', 0, 0));
-        }
-        bool hasMissing =
-                out.contains("NOT INSTALLED") || out.contains("ERROR");
-        bool hasNumpyConflict = err.contains("_ARRAY_API") ||
-                                err.contains("numpy.core.multiarray");
-        if (hasNumpyConflict) {
-            m_outputPanel->appendPlainText(
-                    tr("Warning: numpy/matplotlib version conflict detected.\n"
-                       "Fix with: pip3 install --upgrade numpy matplotlib\n"
-                       "Or: pip3 install 'numpy<2' matplotlib"));
-        } else if (hasMissing) {
-            m_outputPanel->appendPlainText(
-                    tr("Warning: Missing packages detected.\n%1\n"
-                       "Install with: pip3 install numpy matplotlib")
-                            .arg(out));
-        }
-        if (!err.isEmpty() && !hasNumpyConflict) {
-            m_outputPanel->appendPlainText(err);
-        }
-    }
 }
 
 void ecvPythonView::setEntityListProvider(EntityListProvider provider) {
@@ -402,11 +360,28 @@ void ecvPythonView::setEntityListProvider(EntityListProvider provider) {
     }
 }
 
+#ifdef USE_VTK_BACKEND
+void ecvPythonView::setDataObjectProvider(DataObjectProvider provider) {
+    m_dataObjectProvider = std::move(provider);
+    refreshSourceCombo();
+}
+#endif
+
 void ecvPythonView::refreshSourceCombo() {
     if (!m_sourceCombo) return;
+    const bool visibleScope =
+            m_sourceCombo->currentData().value<quintptr>() == 1;
     QSignalBlocker blocker(m_sourceCombo);
     m_sourceCombo->clear();
     m_sourceCombo->addItem(tr("None"));
+#ifdef USE_VTK_BACKEND
+    if (m_dataObjectProvider)
+        m_sourceCombo->addItem(tr("Visible representations"),
+                               QVariant::fromValue<quintptr>(1));
+#endif
+    if (visibleScope && !m_entity)
+        m_sourceCombo->setCurrentIndex(qMax(
+                0, m_sourceCombo->findData(QVariant::fromValue<quintptr>(1))));
 
     if (m_entityListProvider) {
         auto entities = m_entityListProvider();
@@ -431,6 +406,20 @@ void ecvPythonView::refreshSourceCombo() {
 }
 
 void ecvPythonView::onSourceComboChanged(int index) {
+    if (m_process) {
+        m_process->disconnect(this);
+        m_process->kill();
+        m_process->deleteLater();
+        m_process = nullptr;
+    }
+    if (index > 0 && m_sourceCombo->itemData(index).value<quintptr>() == 1) {
+        setEntity(nullptr);
+        const QSignalBlocker blocker(m_sourceCombo);
+        m_sourceCombo->setCurrentIndex(
+                m_sourceCombo->findData(QVariant::fromValue<quintptr>(1)));
+        m_statusLabel->setText(tr("Visible representations"));
+        return;
+    }
     if (index <= 0) {
         setEntity(nullptr);
         return;
@@ -440,7 +429,8 @@ void ecvPythonView::onSourceComboChanged(int index) {
 }
 
 void ecvPythonView::setEntity(ccHObject* entity) {
-    if (m_entity != entity) {
+    if (m_entity != entity ||
+        m_sourceCombo->currentData().value<quintptr>() == 1) {
         if (m_process) {
             m_process->disconnect(this);
             m_process->kill();
@@ -653,29 +643,260 @@ void ecvPythonView::onRunScript() {
         return;
     }
     variables->close();
+    QJsonArray vtkPaths;
+    auto vtkInputs = std::make_shared<QTemporaryDir>();
+    if (!vtkInputs->isValid()) {
+        m_statusLabel->setText(tr("Cannot create VTK input directory"));
+        m_process = nullptr;
+        proc->deleteLater();
+        return;
+    }
+#ifdef USE_VTK_BACKEND
+    QList<vtkSmartPointer<vtkDataObject>> objects;
+    const bool visibleScope =
+            m_sourceCombo->currentData().value<quintptr>() == 1;
+    if (m_dataObjectProvider && (m_entity || visibleScope))
+        objects = m_dataObjectProvider(m_entity);
+    if (objects.isEmpty() && m_entity) {
+        if (auto* mesh = ccHObjectCaster::ToGenericMesh(m_entity))
+            objects.append(Converters::Cc2Vtk::MeshToPolyData(
+                    ccHObjectCaster::ToPointCloud(mesh->getAssociatedCloud()),
+                    mesh));
+        else if (auto* cloud = ccHObjectCaster::ToPointCloud(m_entity))
+            objects.append(Converters::Cc2Vtk::PointCloudToPolyData(cloud));
+    }
+    for (const auto& object : objects) {
+        if (!object) continue;
+        vtkSmartPointer<vtkDataObject> snapshot;
+        snapshot.TakeReference(object->NewInstance());
+        snapshot->DeepCopy(object);
+        const QString path = vtkInputs->filePath(
+                QStringLiteral("input_%1.vtk").arg(vtkPaths.size()));
+        vtkNew<vtkGenericDataObjectWriter> writer;
+        writer->SetInputData(snapshot);
+        writer->SetFileName(path.toUtf8().constData());
+        writer->SetFileTypeToBinary();
+        if (!writer->Write()) {
+            m_statusLabel->setText(tr("Cannot serialize VTK input"));
+            m_process = nullptr;
+            proc->deleteLater();
+            return;
+        }
+        vtkPaths.append(path);
+    }
+#endif
     proc->setArguments(
             {"-c",
-             QStringLiteral(
-                     "import sys as __sys, os as __os, json as __json\n"
-                     "exec(compile(__sys.stdin.read(), '<string>', 'exec'))\n"
-                     "__result = []\n"
-                     "for __name, __val in dict(locals()).items():\n"
-                     "    if __name.startswith('_'): continue\n"
-                     "    __tp = type(__val).__name__\n"
-                     "    __sh = ''\n"
-                     "    try:\n"
-                     "        if hasattr(__val, 'shape'): __sh = "
-                     "str(__val.shape)\n"
-                     "        elif hasattr(__val, '__len__'): __sh = "
-                     "str(len(__val))\n"
-                     "    except: pass\n"
-                     "    try: __vl = repr(__val)[:80]\n"
-                     "    except: __vl = '<error>'\n"
-                     "    __result.append([__name, __tp, __sh, __vl])\n"
-                     "with open(__os.environ['ACV_VARIABLES_FILE'], 'w', "
-                     "encoding='utf-8') as __f:\n"
-                     "    __json.dump(__result, __f)\n")});
-    connect(proc, &QProcess::started, proc, [proc, script]() {
+             QString::fromUtf8(
+                     R"ACVPY(import sys as __sys, os as __os, json as __json, inspect as __inspect
+from types import SimpleNamespace as __Namespace
+
+
+def __numpy_to_image(array):
+    import numpy as np
+    from vtkmodules.vtkCommonDataModel import vtkImageData
+    from vtkmodules.util.numpy_support import numpy_to_vtk
+    array = np.asarray(array)
+    if array.ndim not in (2, 3):
+        raise ValueError('Image arrays must have shape (height, width[, channels])')
+    height, width = array.shape[:2]
+    channels = array.shape[2] if array.ndim == 3 else 1
+    image = vtkImageData()
+    image.SetDimensions(width, height, 1)
+    pixels = np.ascontiguousarray(array.reshape(height * width, channels))
+    image.GetPointData().SetScalars(numpy_to_vtk(pixels, deep=True))
+    return image
+
+
+def __matplotlib_figure(width, height):
+    from matplotlib.backends.backend_agg import FigureCanvasAgg
+    from matplotlib.figure import Figure
+    figure = Figure(figsize=(width / 72.0, height / 72.0), dpi=72)
+    FigureCanvasAgg(figure)
+    return figure
+
+
+def __figure_to_image(figure):
+    import numpy as np
+    figure.canvas.draw()
+    return __numpy_to_image(np.asarray(figure.canvas.buffer_rgba())[::-1].copy())
+
+
+python_view = __Namespace(numpy_to_image=__numpy_to_image,
+                         matplotlib_figure=__matplotlib_figure,
+                         figure_to_image=__figure_to_image)
+
+
+class __PythonView:
+    def __init__(self, objects):
+        self._setup = objects
+        self._render = {}
+        self._status = {}
+        self._default = 0
+        self._image = None
+
+    def _object(self, index):
+        return self._setup[index] if 0 <= index < len(self._setup) else None
+
+    def _walk(self, data):
+        if data is None:
+            return
+        yield data
+        if data.IsA('vtkCompositeDataSet'):
+            iterator = data.NewIterator()
+            iterator.InitTraversal()
+            while not iterator.IsDoneWithTraversal():
+                child = iterator.GetCurrentDataObject()
+                if child is not None:
+                    yield child
+                iterator.GoToNextItem()
+
+    def _fields(self, data, association):
+        return data.GetFieldData() if association == 2 else data.GetAttributesAsFieldData(association)
+
+    def _names(self, index, association):
+        names = []
+        for data in self._walk(self._object(index)):
+            fields = self._fields(data, association)
+            for number in range(fields.GetNumberOfArrays() if fields else 0):
+                name = fields.GetArrayName(number)
+                if name is not None and name not in names:
+                    names.append(name)
+        return names
+
+    def GetNumberOfVisibleDataObjects(self):
+        return len(self._setup)
+
+    def GetVisibleDataObjectForSetup(self, index):
+        return self._object(index)
+
+    def GetNumberOfAttributeArrays(self, index, association):
+        return len(self._names(index, association))
+
+    def GetAttributeArrayName(self, index, association, number):
+        names = self._names(index, association)
+        return names[number] if 0 <= number < len(names) else None
+
+    def SetAttributeArrayStatus(self, index, association, name, status):
+        self._status[index, association, name] = int(bool(status))
+        self._render.clear()
+
+    def GetAttributeArrayStatus(self, index, association, name):
+        return self._status.get((index, association, name), self._default)
+
+    def EnableAllAttributeArrays(self):
+        self._default = 1
+        self._status.clear()
+        self._render.clear()
+
+    def DisableAllAttributeArrays(self):
+        self._default = 0
+        self._status.clear()
+        self._render.clear()
+
+    def GetVisibleDataObjectForRendering(self, index):
+        source = self._object(index)
+        if source is None:
+            return None
+        if index not in self._render:
+            result = source.NewInstance()
+            result.DeepCopy(source)
+            for data in self._walk(result):
+                for association in (0, 1, 2, 4, 5, 6):
+                    fields = self._fields(data, association)
+                    if fields is None:
+                        continue
+                    for number in reversed(range(fields.GetNumberOfArrays())):
+                        name = fields.GetArrayName(number)
+                        if not self.GetAttributeArrayStatus(index, association, name):
+                            fields.RemoveArray(number)
+            self._render[index] = result
+        return self._render[index]
+
+    def SetImageData(self, image):
+        self._image = image
+
+
+exec(compile(__sys.stdin.read(), '<string>', 'exec'))
+__setup = globals().get('setup_data')
+__render = globals().get('render')
+if callable(__setup) or callable(__render):
+    from vtkmodules.vtkIOLegacy import vtkGenericDataObjectReader as __Reader
+    from vtkmodules.vtkIOImage import vtkPNGWriter as __PNGWriter
+    from vtkmodules.vtkCommonCore import VTK_UNSIGNED_CHAR as __U8, VTK_UNSIGNED_SHORT as __U16
+    __objects = []
+    for __path in __json.loads(__os.environ['ACV_VTK_INPUTS']):
+        __reader = __Reader()
+        __reader.SetFileName(__path)
+        __reader.ReadAllScalarsOn()
+        __reader.ReadAllVectorsOn()
+        __reader.ReadAllNormalsOn()
+        __reader.ReadAllTensorsOn()
+        __reader.ReadAllTCoordsOn()
+        __reader.ReadAllFieldsOn()
+        __reader.ReadAllColorScalarsOn()
+        __reader.Update()
+        __data = __reader.GetOutputDataObject(0)
+        if __reader.GetErrorCode() or __data is None:
+            raise RuntimeError('Cannot read VTK input: ' + __path)
+        __owned = __data.NewInstance()
+        __owned.DeepCopy(__data)
+        __objects.append(__owned)
+    __view = __PythonView(__objects)
+    if callable(__setup):
+        __setup(__view)
+    if callable(__render):
+        __width = int(__os.environ['ACV_PLOT_WIDTH'])
+        __height = int(__os.environ['ACV_PLOT_HEIGHT'])
+        __signature = __inspect.signature(__render)
+        try:
+            __signature.bind(__view, __width, __height)
+        except TypeError:
+            __signature.bind(__view, None)
+            __figure = __matplotlib_figure(__width, __height)
+            __render(__view, __figure)
+            __image = __figure_to_image(__figure)
+        else:
+            __image = __render(__view, __width, __height)
+        if __image is None:
+            __image = __view._image
+        if __image is not None:
+            if not hasattr(__image, 'IsA'):
+                __image = __numpy_to_image(__image)
+            if not __image.IsA('vtkImageData'):
+                raise TypeError('render() must return vtkImageData, a numpy image, or None')
+            if (__image.GetScalarType() not in (__U8, __U16) or
+                    not 1 <= __image.GetNumberOfScalarComponents() <= 4):
+                raise TypeError('PNG output requires uint8/uint16 image data with 1 to 4 channels')
+            __writer = __PNGWriter()
+            __writer.SetFileName(__os.environ['PLOT_FILE'])
+            __writer.SetInputData(__image)
+            __writer.Write()
+            if __writer.GetErrorCode():
+                raise RuntimeError('Cannot write callback image')
+__result = []
+for __name, __val in dict(locals()).items():
+    if __name.startswith('_') or __name == 'python_view':
+        continue
+    __tp = type(__val).__name__
+    __sh = ''
+    try:
+        if hasattr(__val, 'shape'):
+            __sh = str(__val.shape)
+        elif hasattr(__val, '__len__'):
+            __sh = str(len(__val))
+    except Exception:
+        pass
+    try:
+        __vl = repr(__val)[:80]
+    except Exception:
+        __vl = '<error>'
+    __result.append([__name, __tp, __sh, __vl])
+with open(__os.environ['ACV_VARIABLES_FILE'], 'w', encoding='utf-8') as __f:
+    __json.dump(__result, __f)
+)ACVPY")});
+    // Retain composite transport child files until QProcess destruction.
+    connect(proc, &QProcess::started, proc, [proc, script, vtkInputs]() {
         proc->write(script.toUtf8());
         proc->closeWriteChannel();
     });
@@ -684,6 +905,13 @@ void ecvPythonView::onRunScript() {
     env.remove("DATA_FILE");
     if (!m_lastExportPath.isEmpty()) env.insert("DATA_FILE", m_lastExportPath);
     env.insert("PLOT_FILE", plotPath);
+    env.insert("ACV_VTK_INPUTS",
+               QString::fromUtf8(
+                       QJsonDocument(vtkPaths).toJson(QJsonDocument::Compact)));
+    env.insert("ACV_PLOT_WIDTH",
+               QString::number(qMax(1, m_imageLabel->width())));
+    env.insert("ACV_PLOT_HEIGHT",
+               QString::number(qMax(1, m_imageLabel->height())));
     env.insert("ACV_VARIABLES_FILE", variables->fileName());
     proc->setProcessEnvironment(env);
     m_variableTable->clearContents();

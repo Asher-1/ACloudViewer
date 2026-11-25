@@ -24,6 +24,10 @@ public:
     QList<QKeySequence> keySequences() const;
     void setKeySequences(const QList<QKeySequence>& sequences);
     int exec() override;
+    void accept() override;
+
+signals:
+    void applyRequested();
 
 private:
     void storeCurrentBinding();
@@ -44,6 +48,7 @@ public:
     void restoreShortcutsFromQSettings() const;
     QStringList detectAllConflicts() const;
     void refreshCommands();
+    void selectPlugin(const QString& pluginId);
 
 protected:
     void showEvent(QShowEvent* event) override;
@@ -62,5 +67,6 @@ private:
     Ui_ShortcutDialog* m_ui;
     ecvShortcutEditDialog* m_editDialog;
     QComboBox* m_categoryCombo;
+    QComboBox* m_pluginCombo;
     QLabel* m_conflictLabel;
 };

@@ -7,6 +7,9 @@
 
 #include "AnnotationCanvas.h"
 
+#include <Shortcuts/ecvKeySequences.h>
+
+#include <QAction>
 #include <QApplication>
 #include <QBuffer>
 #include <QHash>
@@ -23,6 +26,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <functional>
 #include <limits>
 
 #include "AnnotationConfig.h"
@@ -763,6 +767,60 @@ AnnotationCanvas::AnnotationCanvas(QWidget* parent) : QWidget(parent) {
                     .toArray();
     m_cuboidDepthVector =
             QPointF(depth.at(0).toDouble(), depth.at(1).toDouble());
+    const auto command = [this](const QString& id, const QString& label,
+                                const QList<QKeySequence>& keys,
+                                const std::function<void()>& callback) {
+        auto* action = new QAction(label, this);
+        action->setObjectName("AnnotationCanvas_" + id);
+        action->setShortcuts(keys);
+        action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        action->setEnabled(false);
+        addAction(action);
+        connect(action, &QAction::triggered, this, callback);
+        ecvKeySequences::instance().registerPluginCommand(
+                QStringLiteral("cvcorp.cloudviewer.plugin.qAnyLabeling"),
+                "annotation/canvas/" + id, action, tr("Annotation / Canvas"),
+                tr("X-AnyLabeling Annotation"));
+        return action;
+    };
+    auto* finish =
+            command("finish", tr("Finish shape"),
+                    {QKeySequence(Qt::Key_Return), QKeySequence(Qt::Key_Enter)},
+                    [this]() { finishShape(); });
+    auto* brushOperation = command(
+            "brush-operation", tr("Toggle brush paint / erase"),
+            {QKeySequence(Qt::Key_R)},
+            [this]() { setBrushOperation(m_brushOperation == 1 ? 0 : 1); });
+    QList<QAction*> rotations;
+    const Qt::Key keys[] = {Qt::Key_Z, Qt::Key_X, Qt::Key_C, Qt::Key_V};
+    const QStringList ids = {"rotate-large-positive", "rotate-small-positive",
+                             "rotate-small-negative", "rotate-large-negative"};
+    const QStringList labels = {tr("Rotate counterclockwise (large)"),
+                                tr("Rotate counterclockwise (small)"),
+                                tr("Rotate clockwise (small)"),
+                                tr("Rotate clockwise (large)")};
+    for (int i = 0; i < 4; ++i)
+        rotations.append(command(
+                ids[i], labels[i], {QKeySequence(keys[i])}, [this, i]() {
+                    const double step = (i == 0 || i == 3)
+                                                ? m_rotationLargeIncrement
+                                                : m_rotationSmallIncrement;
+                    rotateSelectedBy(i < 2 ? step : -step);
+                }));
+    const auto updateCommands = [this, finish, brushOperation, rotations]() {
+        finish->setEnabled(m_creating);
+        brushOperation->setEnabled(m_brushEditing);
+        for (auto* rotation : rotations)
+            rotation->setEnabled(m_tool == QStringLiteral("edit") &&
+                                 !m_selectedIndices.isEmpty());
+    };
+    connect(this, &AnnotationCanvas::shapeSelected, this, updateCommands);
+    connect(this, &AnnotationCanvas::shapesChanged, this, updateCommands);
+    connect(this, &AnnotationCanvas::shapeFinished, this, updateCommands);
+    connect(this, &AnnotationCanvas::creationCanceled, this, updateCommands);
+    connect(this, &AnnotationCanvas::brushEditingChanged, this, updateCommands);
+    connect(this, &AnnotationCanvas::toolChanged, this, updateCommands);
+    updateCommands();
 }
 
 void AnnotationCanvas::rebuildDisplayImage() {
@@ -1351,6 +1409,7 @@ void AnnotationCanvas::setTool(const QString& type) {
     if (m_creating) cancelShape();
     clearMagicWand();
     m_tool = type;
+    emit toolChanged();
     setCursor(type == QStringLiteral("edit") ? Qt::ArrowCursor
                                              : Qt::CrossCursor);
     update();
@@ -3380,24 +3439,8 @@ void AnnotationCanvas::wheelEvent(QWheelEvent* event) {
 }
 
 void AnnotationCanvas::keyPressEvent(QKeyEvent* event) {
-    if (m_brushEditing && event->key() == Qt::Key_R &&
-        event->modifiers() == Qt::NoModifier) {
-        setBrushOperation(m_brushOperation == 1 ? 0 : 1);
-        event->accept();
-        return;
-    }
     if (m_brushEditing && event->key() == Qt::Key_Escape) {
         setBrushEditing(false, true);
-        event->accept();
-        return;
-    }
-    if (m_brushEditing && (event->modifiers() & Qt::ControlModifier) &&
-        (event->key() == Qt::Key_Z || event->key() == Qt::Key_Y)) {
-        if (event->key() == Qt::Key_Y ||
-            (event->modifiers() & Qt::ShiftModifier))
-            brushRedo();
-        else
-            brushUndo();
         event->accept();
         return;
     }
@@ -3426,34 +3469,6 @@ void AnnotationCanvas::keyPressEvent(QKeyEvent* event) {
             clearPrompt();
         else
             setTool(QStringLiteral("edit"));
-        event->accept();
-        return;
-    }
-    if (m_tool == QStringLiteral("edit") && !m_selectedIndices.isEmpty() &&
-        event->modifiers() == Qt::NoModifier) {
-        double degrees = 0.0;
-        if (event->key() == Qt::Key_Z)
-            degrees = m_rotationLargeIncrement;
-        else if (event->key() == Qt::Key_X)
-            degrees = m_rotationSmallIncrement;
-        else if (event->key() == Qt::Key_C)
-            degrees = -m_rotationSmallIncrement;
-        else if (event->key() == Qt::Key_V)
-            degrees = -m_rotationLargeIncrement;
-        if (degrees != 0.0) {
-            rotateSelectedBy(degrees);
-            event->accept();
-            return;
-        }
-    }
-    if ((event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) &&
-        m_creating) {
-        finishShape();
-        event->accept();
-        return;
-    }
-    if (event->key() == Qt::Key_Delete && m_tool == QStringLiteral("edit")) {
-        deleteSelected();
         event->accept();
         return;
     }

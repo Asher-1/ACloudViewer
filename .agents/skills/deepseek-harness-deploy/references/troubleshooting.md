@@ -87,6 +87,7 @@ evidence. Scripts: `scripts/bootstrap-remote.sh` / `verify-remote.sh` /
 | `[: 0\n0: integer expression expected` on the permission-presence check | `grep -c` prints `0` AND exits 1 on zero matches, so `$(grep -c ... \|\| echo 0)` yields two lines | `$(... \|\| true)` then `head -1` + `${var:-0}` |
 | After container rebuild, forward prints a token that 401s / local-forward finds no URL | the committed image carries the OLD `/var/log/dsh-web.log`; wait_url can match the stale token before boot.sh truncates it | wait past the restart script's own sleeps (2+12+2) + dsh boot (~20 s) after `docker run` before reading the token log |
 | In a LOCAL dsh session with an ssh-remote "remote workspace", asking the agent `whoami` returns the LOCAL user, not remote root | ssh-remote mode registers a LOCAL mirror dir (`~/.dsh/remote-workspaces/<id>/`) as the workspace; only the explicit `remote_ssh_*` / `ssh_*` tools run on the remote host (as the SSH user). The agent's NATIVE bash runs where the dsh server runs — locally. Session ownership is visible in `~/.dsh/storages/workspace.json` + `~/.dsh/sessions/--<mirror-path>--/` | Not a bug; NO restart changes it — native context follows the server process, not the workspace label. For native root@remote (VSCode Remote-SSH semantics) open the REMOTE dsh instance via the Path A local-forward URL; there the server itself runs as root in the container. In the local session, remote work must go through `remote_ssh_exec` explicitly |
+| Remote-workspace session's skill catalog misses the dev machine's project skills (`<remotePath>/.agents/skills` exists on the remote, yet only local user-level skills are injected) | Skill discovery (`dsh-skill-filesystem`) scans the LOCAL mirror's `.agents/skills`; the mirror starts with only `README.md` + `.remote-ssh.json`. The `@zhangfengshun/dsh-remote-ssh` FS read bridge (issue #29, local-first/remote-fallback) should cover the missing dir, but empirically did NOT deliver remote project skills (2026-11-25: three fresh discoveries tracked local skill changes yet remote-only skills stayed absent; exact in-process failure point undetermined — no log/RPC access) | Sync the remote `.agents` into the mirror so the local scan hits directly: `remote_ssh_sync` with `paths:[".agents"]`, or manually `ssh <host> 'tar -C <remotePath> -cf - .agents' \| tar -C <mirrorPath> -xf -` (partial update, deletes nothing). Verified 2026-11-25 on huoshan (49 skills) + sem2d (50); closed loop: after sync, the next user turn's catalog went 62→70 entries with all 5 remote-only skills present. Mirror copy is a snapshot — re-sync after remote skill edits. Diagnosis evidence: `skill-catalog` events in `session.v4.jsonl.zstd` (entries = frontmatter names, not dir names); compare a remote-only skill set, not name overlaps |
 | First tool calls in a danger-full-access session fail with `invalid justification: expected a non-empty sentence` / `invalid escalation: sandbox_permissions requires a justification` (`SANDBOX_ESCALATION_INVALID_ARGUMENT`), then a retry succeeds | Argument validation, NOT a permission denial: the bash/fs tool schema still advertises the escalation pair `sandbox_permissions` + `justification` (must travel together, justification a non-empty sentence — `dsh-sandbox/lib/index.js` `validateEscalationArgs`). The model sometimes emits a malformed/empty escalation ask even though full access needs none; the call is rejected before execution | Self-heals in-turn, zero human clicks: the error returns to the model, which retries the plain call and it executes under danger-full-access + approval=never (observed 2026-11-20 remote UI e2e: errored retries then success, 19 s total). No config/restart change. Intervene ONLY if retries loop or a real denial marker `[sandbox: file access denied under <mode> mode]` appears — that means the SESSION's effective mode was switched narrower than the composition default; check the session mode, not the patch |
 
 ## Known Limitations (upstream feature gaps, not misconfiguration)
@@ -120,3 +121,24 @@ grep -c 'pet-link' <dsh-log>                                  # flood?
 curl -s -o /dev/null -w '%{http_code} %{time_total}s\n' http://127.0.0.1:<port>/   # 401 w/o token is normal; expect ms
 time git status --porcelain | wc -l                           # workspace git path cost
 ```
+
+## Subagent "child LLM `provider` must be non-empty" (2026-11-24)
+
+Gateway models (gpt-6.1-sol) habitually send `""` for the optional
+`provider`/`model`/`reasoning_effort` subagent fields instead of omitting
+them; `dsh-tool-subagent` `assertNonEmpty` rejects `""` (undefined is legal).
+704 failed calls over 5 days; each wastes a full LLM step. Prose rules in
+`~/.dsh/AGENTS.md` ARE injected into the instruction baseline (verified in
+`user/message` events with `source.kind=agent-instructions`) but the model
+still violates them — behavioral rules alone do not fix this.
+
+Deterministic fix (owner = tool JSON boundary): normalize `""` → omission at
+the top of `requestedAgentOptions` in
+`~/.npm-global/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-tool-subagent/lib/index.js`
+(mark `ACV-PATCH`): spread `request` with each empty-string route field set to
+`void 0` before `hasDelegationModelRequest`. All-empty then inherits child
+defaults; explicit routes still validate. Backup under `~/.dsh-backup/`.
+Requires dsh restart (module cached in the running process); a dsh upgrade
+overwrites node_modules — re-apply the patch afterwards. The `~/.npm/_npx/`
+copy is a separate older cache, unused by `~/.npm-global/bin/dsh web`.
+

@@ -7,7 +7,10 @@
 
 #include "VideoAnnotationDialog.h"
 
+#include <Shortcuts/ecvKeySequences.h>
+
 #include <QAbstractItemView>
+#include <QAction>
 #include <QCheckBox>
 #include <QCloseEvent>
 #include <QColorDialog>
@@ -39,20 +42,6 @@
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QSet>
-#include <QShortcut>
-
-#include "QtCompat.h"
-
-// Qt 5.14 compatibility: the QShortcut(QKeySequence, QObject*, Functor)
-// overload only exists from Qt 5.15. Route every shortcut through this
-// helper, which connects activated() to the functor explicitly.
-static QShortcut* addShortcut(QWidget* parent,
-                              const QKeySequence& key,
-                              std::function<void()> fn) {
-    QShortcut* sc = new QShortcut(key, parent);
-    QObject::connect(sc, &QShortcut::activated, parent, std::move(fn));
-    return sc;
-}
 #include <QSpinBox>
 #include <QSplitter>
 #include <QTableWidget>
@@ -65,6 +54,7 @@ static QShortcut* addShortcut(QWidget* parent,
 #include <cmath>
 #include <functional>
 
+#include "QtCompat.h"
 #include "VideoDatasetExporter.h"
 #include "VideoPlaybackWidget.h"
 
@@ -370,12 +360,13 @@ protected:
                     24,
                     int(std::llround(double(track.height()) * first.width() /
                                      std::max(1, first.height()))));
+            const int lastThumbnail = qtCompatSizeInt(m_thumbnails) - 1;
             for (int x = track.left(); x <= track.right(); x += tileWidth) {
                 const qint64 center = timeAt(track, x + tileWidth / 2);
                 const int index = std::clamp(
                         int(std::llround(double(center) / m_data.durationMs *
-                                         (m_thumbnails.size() - 1))),
-                        0, int(m_thumbnails.size()) - 1);
+                                         lastThumbnail)),
+                        0, lastThumbnail);
                 const QImage& image = m_thumbnails[index];
                 if (image.isNull()) continue;
                 const QRect target(x, track.top(), tileWidth + 1,
@@ -1256,53 +1247,83 @@ VideoAnnotationDialog::VideoAnnotationDialog(QWidget* parent)
         m_timelineUndoActive = false;
         refreshSegments();
     };
-    addShortcut(this, QKeySequence::Save, [this]() { save(); });
-    addShortcut(this, QKeySequence(Qt::Key_I), [markIn]() { markIn->click(); });
-    addShortcut(this, QKeySequence(Qt::Key_O),
-                [markOut]() { markOut->click(); });
-    addShortcut(this, QKeySequence(Qt::Key_N), [add]() { add->click(); });
-    addShortcut(this, QKeySequence(Qt::Key_Space),
-                [playPause]() { playPause->click(); });
-    addShortcut(this, QKeySequence(Qt::Key_Delete), [remove]() {
-        if (remove->isEnabled()) remove->click();
-    });
-    addShortcut(this, QKeySequence(Qt::Key_Backspace), [remove]() {
-        if (remove->isEnabled()) remove->click();
-    });
-    addShortcut(this, QKeySequence(Qt::Key_Return), [add]() { add->click(); });
-    addShortcut(this, QKeySequence(Qt::Key_Enter), [add]() { add->click(); });
-    addShortcut(this, QKeySequence(Qt::CTRL | Qt::Key_Z),
-                [this]() { undoLastEdit(); });
-    addShortcut(this, QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Z),
-                [this]() { redoLastEdit(); });
-    addShortcut(this, QKeySequence(Qt::Key_Right), [this]() {
-        if (m_player->totalVideoFrames() <= 0) return;
-        m_player->seekToFrame(
-                std::min(m_player->totalVideoFrames() - 1,
-                         videoFrameAt(m_currentMs, m_data.fps) + 1));
-    });
-    addShortcut(this, QKeySequence(Qt::Key_Left), [this]() {
-        if (m_player->totalVideoFrames() <= 0) return;
-        m_player->seekToFrame(
-                std::max(0, videoFrameAt(m_currentMs, m_data.fps) - 1));
-    });
-    addShortcut(this, QKeySequence(Qt::SHIFT | Qt::Key_Right),
-                [this]() { seek(m_currentMs + 1000); });
-    addShortcut(this, QKeySequence(Qt::SHIFT | Qt::Key_Left),
-                [this]() { seek(std::max<qint64>(0, m_currentMs - 1000)); });
-    addShortcut(this, QKeySequence(Qt::Key_Comma), [this]() {
-        const int row = m_segments->currentRow();
-        if (row > 0) m_segments->setCurrentRow(row - 1);
-    });
-    addShortcut(this, QKeySequence(Qt::Key_Period), [this]() {
-        const int row = m_segments->currentRow();
-        if (row + 1 < m_segments->count()) m_segments->setCurrentRow(row + 1);
-    });
-    for (int digit = 0; digit <= 9; ++digit) {
-        addShortcut(this, QKeySequence(Qt::Key_0 + digit), [this, digit]() {
-            if (digit < m_labels->count()) m_labels->setCurrentRow(digit);
-        });
-    }
+    const auto command = [this](const QString& id, const QString& label,
+                                const QString& category,
+                                const QList<QKeySequence>& keys,
+                                const std::function<void()>& callback) {
+        auto* action = new QAction(label, this);
+        action->setObjectName(QStringLiteral("VideoAnnotation_") + id);
+        action->setShortcuts(keys);
+        action->setShortcutContext(Qt::WindowShortcut);
+        addAction(action);
+        connect(action, &QAction::triggered, this, callback);
+        ecvKeySequences::instance().registerPluginCommand(
+                QStringLiteral("cvcorp.cloudviewer.plugin.qAnyLabeling"),
+                "annotation/video/" + id, action,
+                tr("Annotation / Video / ") + category,
+                tr("X-AnyLabeling Annotation"));
+    };
+    command("save", tr("Save video annotations"), tr("File"),
+            {QKeySequence::Save}, [this]() { save(); });
+    command("mark-in", tr("Mark video in point"), tr("Timeline"),
+            {QKeySequence(Qt::Key_I)}, [markIn]() { markIn->click(); });
+    command("mark-out", tr("Mark video out point"), tr("Timeline"),
+            {QKeySequence(Qt::Key_O)}, [markOut]() { markOut->click(); });
+    command("add-segment", tr("Add video segment"), tr("Segments"),
+            {QKeySequence(Qt::Key_N), QKeySequence(Qt::Key_Return),
+             QKeySequence(Qt::Key_Enter)},
+            [add]() { add->click(); });
+    command("play-pause", tr("Play or pause video"), tr("Playback"),
+            {QKeySequence(Qt::Key_Space)},
+            [playPause]() { playPause->click(); });
+    command("remove-segment", tr("Remove selected segment"), tr("Segments"),
+            {QKeySequence(Qt::Key_Delete), QKeySequence(Qt::Key_Backspace)},
+            [remove]() {
+                if (remove->isEnabled()) remove->click();
+            });
+    command("undo", tr("Undo video annotation edit"), tr("History"),
+            {QKeySequence(Qt::CTRL | Qt::Key_Z)}, [this]() { undoLastEdit(); });
+    command("redo", tr("Redo video annotation edit"), tr("History"),
+            {QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Z)},
+            [this]() { redoLastEdit(); });
+    command("next-frame", tr("Next video frame"), tr("Playback / Frames"),
+            {QKeySequence(Qt::Key_Right)}, [this]() {
+                if (m_player->totalVideoFrames() > 0)
+                    m_player->seekToFrame(std::min(
+                            m_player->totalVideoFrames() - 1,
+                            videoFrameAt(m_currentMs, m_data.fps) + 1));
+            });
+    command("previous-frame", tr("Previous video frame"),
+            tr("Playback / Frames"), {QKeySequence(Qt::Key_Left)}, [this]() {
+                if (m_player->totalVideoFrames() > 0)
+                    m_player->seekToFrame(std::max(
+                            0, videoFrameAt(m_currentMs, m_data.fps) - 1));
+            });
+    command("next-second", tr("Seek forward one second"), tr("Playback / Seek"),
+            {QKeySequence(Qt::SHIFT | Qt::Key_Right)},
+            [this]() { seek(m_currentMs + 1000); });
+    command("previous-second", tr("Seek backward one second"),
+            tr("Playback / Seek"), {QKeySequence(Qt::SHIFT | Qt::Key_Left)},
+            [this]() { seek(std::max<qint64>(0, m_currentMs - 1000)); });
+    command("previous-segment", tr("Select previous video segment"),
+            tr("Segments"), {QKeySequence(Qt::Key_Comma)}, [this]() {
+                const int row = m_segments->currentRow();
+                if (row > 0) m_segments->setCurrentRow(row - 1);
+            });
+    command("next-segment", tr("Select next video segment"), tr("Segments"),
+            {QKeySequence(Qt::Key_Period)}, [this]() {
+                const int row = m_segments->currentRow();
+                if (row + 1 < m_segments->count())
+                    m_segments->setCurrentRow(row + 1);
+            });
+    for (int digit = 0; digit <= 9; ++digit)
+        command(QStringLiteral("label-slot-%1").arg(digit),
+                tr("Select video label slot %1").arg(digit),
+                tr("Labels / Slots"), {QKeySequence(Qt::Key_0 + digit)},
+                [this, digit]() {
+                    if (digit < m_labels->count())
+                        m_labels->setCurrentRow(digit);
+                });
     refreshLabels();
     refreshSegments();
     selectSegment(-1);

@@ -134,8 +134,9 @@ void ccApplyTransformationDlg::onMatrixTextChange() {
     if (text.contains("[")) {
         // automatically remove anything between square brackets
         // Use QtCompat for Qt5/Qt6 compatibility
-        static const QtCompatRegExp squareBracketsFilter("\\[([^]]+)\\]");
-        text.replace(squareBracketsFilter, "");
+        static const auto squareBracketsFilter =
+                qtCompatRegExp("\\[([^]]+)\\]");
+        qtCompatReplace(text, squareBracketsFilter, "");
         matrixTextEdit->blockSignals(true);
         matrixTextEdit->setPlainText(text);
         matrixTextEdit->blockSignals(false);

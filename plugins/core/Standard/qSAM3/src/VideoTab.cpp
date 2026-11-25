@@ -280,7 +280,7 @@ void VideoTab::setupUi() {
     modeGroup->addButton(m_modeText, 0);
     modeGroup->addButton(m_modeBox, 1);
     modeGroup->addButton(m_modePoints, 2);
-    connect(modeGroup, qtCompatButtonGroupClicked(), this,
+    connect(modeGroup, qtCompatButtonGroupIdClicked(), this,
             &VideoTab::onModeChanged);
 
     m_textPrompt = new QLineEdit();

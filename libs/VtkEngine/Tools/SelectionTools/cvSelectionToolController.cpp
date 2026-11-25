@@ -403,16 +403,8 @@ void cvSelectionToolController::setSelectionPropertiesActive(bool active) {
 //-----------------------------------------------------------------------------
 void cvSelectionToolController::onSelectionFinished(
         const cvSelectionData& selectionData) {
-    // CRITICAL: Block manager's signal to prevent double emission of
-    // selectionFinished The manager's selectionChanged is connected to emit
-    // selectionFinished, and we're already inside onSelectionFinished called
-    // from reaction's emit. This prevents:
-    // reaction->selectionFinished->here->manager->selectionChanged->selectionFinished(again!)
-    if (m_manager) {
-        m_manager->blockSignals(true);
-        m_manager->setCurrentSelection(selectionData);
-        m_manager->blockSignals(false);
-    }
+    // The reaction has committed through the manager; its typed relay has
+    // already published completion. Only update reaction-specific UI here.
 
     // Update manipulation action states
     bool hasSelection = !selectionData.isEmpty();
@@ -430,9 +422,6 @@ void cvSelectionToolController::onSelectionFinished(
     if (m_selectionToolsActive) {
         emit selectionPropertiesUpdateRequested(selectionData);
     }
-
-    // Emit signal
-    emit selectionFinished(selectionData);
 
     CVLog::PrintVerbose(
             QString("[cvSelectionToolController] Selection finished: %1 %2")

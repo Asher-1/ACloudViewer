@@ -83,6 +83,12 @@ void ecvShortcutDecorator::onShortcutEnabled() {
         return;
     }
 
+    if (qobject_cast<ecvModalShortcut*>(sender())) {
+        auto* frame = decoratedFrame();
+        if (frame) markFrame(true, frame->palette().link().color());
+        return;
+    }
+
     // One shortcut was just enabled... but to mark ourselves
     // as active, we must activate all of them.
     m_silent = true;
@@ -104,6 +110,12 @@ void ecvShortcutDecorator::onShortcutEnabled() {
 //-----------------------------------------------------------------------------
 void ecvShortcutDecorator::onShortcutDisabled() {
     if (m_silent) {
+        return;
+    }
+
+    if (qobject_cast<ecvModalShortcut*>(sender())) {
+        // Suspension does not mean the tool owner requested deactivation.
+        markFrame(false, QColor(0, 0, 0, 0));
         return;
     }
 

@@ -1085,7 +1085,7 @@ QTreeView#dbTreeView::item:selected:focus {
   </widget>
   <action name="actionOpen">
     <property name="toolTip">
-     <string>Open data files (Ctrl+O) — point clouds, meshes, images and supported scene data</string>
+     <string>Open data files — point clouds, meshes, images and supported scene data</string>
     </property>
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
@@ -1101,7 +1101,7 @@ QTreeView#dbTreeView::item:selected:focus {
     <string>Ctrl+O</string>
    </property>
    <property name="shortcutContext">
-    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+    <enum>Qt::ShortcutContext::WindowShortcut</enum>
    </property>
    <property name="priority">
     <enum>QAction::NormalPriority</enum>
@@ -1122,7 +1122,7 @@ QTreeView#dbTreeView::item:selected:focus {
     <string>Ctrl+S</string>
    </property>
    <property name="shortcutContext">
-    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
+    <enum>Qt::ShortcutContext::WindowShortcut</enum>
    </property>
   </action>
   <action name="actionSaveProject">
@@ -1462,10 +1462,10 @@ QTreeView#dbTreeView::item:selected:focus {
     <string>Reset registered settings</string>
    </property>
    <property name="toolTip">
-    <string>Clear saved plugin settings (browse paths, etc.) to defaults (Ctrl+Shift+R)</string>
+    <string>Clear saved plugin settings (browse paths, etc.) to defaults</string>
    </property>
    <property name="statusTip">
-    <string>Clear saved plugin settings (browse paths, etc.) to defaults (Ctrl+Shift+R)</string>
+    <string>Clear saved plugin settings (browse paths, etc.) to defaults</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+R</string>
@@ -1768,7 +1768,7 @@ QTreeView#dbTreeView::item:selected:focus {
     <string>Zoom to Box</string>
    </property>
    <property name="toolTip">
-    <string>Zoom to Box - Draw a rubber band to zoom into a region (Alt+Z)</string>
+    <string>Zoom to Box - Draw a rubber band to zoom into a region</string>
    </property>
    <property name="statusTip">
     <string>Zoom to Box - Draw a rubber band to zoom into a region</string>
@@ -2183,7 +2183,7 @@ QTreeView#dbTreeView::item:selected:focus {
     <string>Trace Polyline</string>
    </property>
    <property name="toolTip">
-    <string>Trace a polyline by point picking (Ctrl+Shift+P)</string>
+    <string>Trace a polyline by point picking</string>
    </property>
    <property name="statusTip">
     <string>Trace a polyline by point picking</string>
@@ -3961,7 +3961,7 @@ QTreeView#dbTreeView::item:selected:focus {
     <string>Paste from clipboard</string>
    </property>
    <property name="toolTip">
-    <string>Paste from ASCII/text data stored in the clipboard (Ctrl+Shift+V)</string>
+    <string>Paste from ASCII/text data stored in the clipboard</string>
    </property>
    <property name="statusTip">
     <string>Paste from ASCII/text data stored in the clipboard</string>

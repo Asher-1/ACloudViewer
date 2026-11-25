@@ -116,7 +116,7 @@ option(WITH_MINIZIP               "Enable MiniZIP"                              
 option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering"            OFF)
 option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"             OFF)
 option(GLIBCXX_USE_CXX11_ABI "Set -D_GLIBCXX_USE_CXX11_ABI=1"                   ON )
-option(USE_QT6 "Use Qt6 instead of Qt5 (requires Qt6 >= 6.2.0)"                OFF)
+option(USE_QT6 "Use Qt6 instead of Qt5"                                        OFF)
 if(BUILD_GUI AND (WIN32 OR UNIX AND NOT LINUX_AARCH64 AND NOT APPLE_AARCH64))
     option(BUILD_WEBRTC           "Build WebRTC visualizer"                     ON )
 else()

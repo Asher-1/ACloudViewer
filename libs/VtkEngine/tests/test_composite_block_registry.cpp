@@ -11,20 +11,44 @@
 /// after delete, group teardown on the last leaf) so the DB-tree
 /// show/hide/delete/add pipes cannot silently regress again.
 
+#include <vtkVersion.h>
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 4, 0)
+#include <vtk_glad.h>
+#else
+#include <vtk_glew.h>
+#endif
+
+#include <QVTKOpenGLNativeWidget.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
+#include <ecvRepresentationManager.h>
 #include <ecvViewManager.h>
+#include <ecvViewRepresentation.h>
 #include <gtest/gtest.h>
 #include <vtkActor.h>
+#include <vtkActorCollection.h>
 #include <vtkCamera.h>
 #include <vtkCellArray.h>
 #include <vtkCellData.h>
+#include <vtkCompositeDataDisplayAttributes.h>
+#include <vtkCompositePolyDataMapper.h>
+#if VTK_VERSION_NUMBER < VTK_VERSION_CHECK(9, 5, 0)
+#include <vtkCompositePolyDataMapper2.h>
+#endif
+#include <vtkCubeSource.h>
 #include <vtkDataObject.h>
+#include <vtkDoubleArray.h>
 #include <vtkIdTypeArray.h>
 #include <vtkInformation.h>
 #include <vtkIntArray.h>
+#include <vtkLookupTable.h>
 #include <vtkMatrix4x4.h>
+#include <vtkMultiBlockDataSet.h>
 #include <vtkNew.h>
+#include <vtkPartitionedDataSet.h>
+#include <vtkPartitionedDataSetCollection.h>
+#include <vtkPlane.h>
+#include <vtkPlaneCollection.h>
 #include <vtkPointData.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
@@ -35,11 +59,18 @@
 #include <vtkSelection.h>
 #include <vtkSelectionNode.h>
 #include <vtkSmartPointer.h>
+#include <vtkTable.h>
 #include <vtkTransform.h>
+#include <vtkVersion.h>
 
+#include <QApplication>
+#include <QMainWindow>
 #include <QSet>
+#include <QSurfaceFormat>
 #include <cmath>
 #include <cstdlib>
+#include <memory>
+#include <set>
 #include <string>
 
 #include "CompositeBlockRegistry.h"
@@ -48,7 +79,9 @@
 #include "Tools/SelectionTools/cvSelectionPipeline.h"
 #include "Tools/SelectionTools/cvViewSelectionManager.h"
 #include "VTKExtensions/InteractionStyle/vtkCustomInteractorStyle.h"
+#include "Visualization/VtkDisplayTools.h"
 #include "Visualization/VtkVis.h"
+#include "Visualization/vtkGLView.h"
 
 namespace {
 
@@ -419,6 +452,38 @@ TEST(SelectionPipelineRegression,
     auto throughCell = pipeline.selectCellsInFrustum(translatedVertex);
     EXPECT_EQ((QSet<qint64>{0}), LocalIds(throughCell, source, poly, 0));
     EXPECT_EQ((QVector<qint64>{4}), throughCell.ids());
+
+    // Composite input is a data object, not a dataset. Cover both mapper
+    // generations and keep hidden/unpickable blocks out of through-selection.
+    vtkNew<vtkMultiBlockDataSet> blocks;
+    blocks->SetBlock(0, poly);
+    vtkNew<vtkCompositeDataDisplayAttributes> attributes;
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 5, 0)
+    vtkNew<vtkCompositePolyDataMapper> composite;
+#else
+    vtkNew<vtkCompositePolyDataMapper2> composite;
+#endif
+    composite->SetInputDataObject(blocks);
+    composite->SetCompositeDataDisplayAttributes(attributes);
+    source->SetMapper(composite);
+    for (bool cells : {false, true}) {
+        auto select = [&]() {
+            return cells ? pipeline.selectCellsInFrustum(region)
+                         : pipeline.selectPointsInFrustum(region);
+        };
+        attributes->SetBlockVisibility(poly, false);
+        EXPECT_TRUE(select().isEmpty());
+        attributes->SetBlockVisibility(poly, true);
+        attributes->SetBlockPickability(poly, false);
+        EXPECT_TRUE(select().isEmpty());
+        attributes->SetBlockPickability(poly, true);
+        const auto selected = select();
+        ASSERT_EQ(1, selected.actorInfos().size());
+        EXPECT_EQ((cells ? QSet<qint64>{0} : QSet<qint64>{0, 1, 2}),
+                  LocalIds(selected, source, poly, 0));
+        EXPECT_EQ((cells ? QVector<qint64>{4} : QVector<qint64>{2, 7, 12}),
+                  selected.ids());
+    }
 }
 
 TEST(SelectionPipelineRegression,
@@ -1110,6 +1175,236 @@ TEST_F(CompositeBlockRegistryTest, LineFamilyGroupIsolatedFromSensorFamily) {
     EXPECT_FALSE(registry_.containsLeaf(leaves_[0]));
     EXPECT_FALSE(registry_.hasGroup("container#plw2"));
     EXPECT_FALSE(registry_.hasGroup("container#lw1"));
+}
+
+TEST_F(CompositeBlockRegistryTest, LeafBlockTracksReplacementAndRemoval) {
+    auto first = MakeSingleVertexPolyData(0);
+    auto replacement = MakeSingleVertexPolyData(1);
+    registry_.setLeafBlock(leaves_[0], group_, first);
+    EXPECT_EQ(first.GetPointer(), registry_.leafBlock(leaves_[0]));
+    registry_.setLeafBlock(leaves_[0], group_, replacement);
+    EXPECT_EQ(replacement.GetPointer(), registry_.leafBlock(leaves_[0]));
+    registry_.removeLeaf(leaves_[0]);
+    EXPECT_EQ(nullptr, registry_.leafBlock(leaves_[0]));
+    EXPECT_EQ(nullptr, registry_.leafBlock("unregistered"));
+}
+
+// This is deliberately in the existing gate: real view/source resolution,
+// not a second test-only cutter. Run under xvfb-run on Linux.
+TEST(CompositeSliceRegression, NestedAndPartitionedRepresentationState) {
+#if defined(__linux__)
+    if (!std::getenv("DISPLAY")) GTEST_SKIP() << "Use xvfb-run";
+#endif
+    int argc = 1;
+    char name[] = "composite-slice";
+    char* argv[] = {name, nullptr};
+    std::unique_ptr<QApplication> app;
+    if (!QCoreApplication::instance()) {
+        QSurfaceFormat::setDefaultFormat(
+                QVTKOpenGLNativeWidget::defaultFormat());
+        app = std::make_unique<QApplication>(argc, argv);
+    }
+    ASSERT_NE(nullptr,
+              qobject_cast<QApplication*>(QCoreApplication::instance()));
+    if (ecvViewManager::instance().displayTools())
+        GTEST_SKIP() << "Requires isolated display tools";
+    ccPointCloud entity("composite source");
+    entity.setVisible(true);
+    struct ViewFixture {
+        QMainWindow window;
+        ccHObject* previousRoot = ecvViewManager::instance().globalDBRoot();
+        std::unique_ptr<vtkGLView> view;
+        ViewFixture() {
+            ecvViewManager::instance().initDisplayTools(
+                    new Visualization::VtkDisplayTools(), &window, false);
+            view.reset(vtkGLView::Create(&window, false, false));
+        }
+        ~ViewFixture() {
+            view.reset();
+            ecvViewManager::instance().releaseDisplayTools();
+            ecvViewManager::instance().setGlobalDBRoot(previousRoot);
+        }
+    } fixture;
+    auto* view = fixture.view.get();
+    auto* vis = view->getVisualizer3D();
+    auto* renderer = vis->getCurrentRenderer();
+    const auto id = entity.getViewId().toStdString();
+    vtkNew<vtkCubeSource> cube;
+    cube->Update();
+    vtkNew<vtkPolyData> first, second;
+    first->ShallowCopy(cube->GetOutput());
+    second->DeepCopy(first);
+    for (vtkIdType i = 0; i < second->GetNumberOfPoints(); ++i) {
+        double point[3];
+        second->GetPoint(i, point);
+        point[0] += 3;
+        second->GetPoints()->SetPoint(i, point);
+    }
+    vtkNew<vtkDoubleArray> heat;
+    heat->SetName("heat");
+    heat->SetNumberOfTuples(first->GetNumberOfPoints());
+    heat->FillComponent(0, 15);
+    first->GetPointData()->SetScalars(heat);
+    second->GetPointData()->SetScalars(heat);
+    ASSERT_TRUE(vis->addPointCloud(first, id));
+    vis->setCurrentSourceObject(&entity, id);
+    auto* source = vis->getActorById(id);
+    ASSERT_NE(nullptr, source);
+    source->SetPosition(2, 0, 0);
+    source->GetProperty()->SetOpacity(0.8);
+    vtkNew<vtkPlane> otherPlane;
+    otherPlane->SetNormal(0, 1, 0);
+    vtkNew<vtkLookupTable> table;
+    table->SetRange(10, 20);
+    table->Build();
+
+    for (bool partitioned : {false, true}) {
+        SCOPED_TRACE(partitioned ? "partitioned" : "nested multiblock");
+        vtkSmartPointer<vtkCompositeDataSet> root;
+        vtkSmartPointer<vtkDataObject> branch;
+        if (partitioned) {
+            vtkNew<vtkPartitionedDataSetCollection> collection;
+            vtkNew<vtkPartitionedDataSet> partitions;
+            partitions->SetPartition(0, first);
+            partitions->SetPartition(1, second);
+            partitions->SetNumberOfPartitions(3);  // empty leaf
+            collection->SetPartitionedDataSet(0, partitions);
+            root = collection;
+            branch = partitions;
+        } else {
+            vtkNew<vtkMultiBlockDataSet> blocks, nested;
+            nested->SetBlock(0, first);
+            nested->SetBlock(1, second);
+            vtkNew<vtkTable> nonGeometry;
+            nested->SetBlock(2, nonGeometry);
+            blocks->SetBlock(0, nested);
+            root = blocks;
+            branch = nested;
+        }
+        vtkNew<vtkCompositeDataDisplayAttributes> attrs;
+        attrs->SetBlockVisibility(branch, false);
+        attrs->SetBlockVisibility(first, true);
+        attrs->SetBlockVisibility(second, true);
+        attrs->SetBlockOpacity(branch, 0.4);
+        attrs->SetBlockOpacity(first, 0.25);
+        const double red[3] = {1, 0, 0};
+        attrs->SetBlockColor(first, red);
+        vtkSmartPointer<vtkMapper> mapper;
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 3, 0)
+        if (partitioned) {
+            vtkNew<vtkCompositePolyDataMapper> composite;
+            composite->SetCompositeDataDisplayAttributes(attrs);
+            attrs->SetBlockArrayName(branch, "heat");
+            attrs->SetBlockScalarMode(branch,
+                                      VTK_SCALAR_MODE_USE_POINT_FIELD_DATA);
+            mapper = composite;
+        } else
+#endif
+        {
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 5, 0)
+            vtkNew<vtkCompositePolyDataMapper> composite;
+#else
+            vtkNew<vtkCompositePolyDataMapper2> composite;
+#endif
+            composite->SetCompositeDataDisplayAttributes(attrs);
+            mapper = composite;
+        }
+        mapper->SetInputDataObject(root);
+        mapper->SetLookupTable(table);
+        mapper->SetScalarRange(10, 20);
+        mapper->AddClippingPlane(otherPlane);
+        source->SetMapper(mapper);
+        // No manager representation is needed for a canonical source object.
+        auto* lod = vtkPVLODActor::SafeDownCast(source);
+        vtkNew<vtkPolyDataMapper> lowResolution;
+        if (lod) {
+            lowResolution->SetInputData(first);  // deliberately omits leaf 2
+            lod->SetLODMapper(lowResolution);
+            lod->SetEnableLOD(1);
+        }
+        view->enableSliceMode(true);
+        auto local = vtkSmartPointer<vtkMapper>(
+                lod ? lod->GetFullResolutionMapper() : source->GetMapper());
+        if (lod) {
+            EXPECT_EQ(0, lowResolution->GetNumberOfClippingPlanes());
+            EXPECT_EQ(1, lod->GetLODMapper()->GetNumberOfClippingPlanes());
+        }
+        EXPECT_NE(mapper.GetPointer(), local.GetPointer());
+        EXPECT_EQ(1, mapper->GetNumberOfClippingPlanes());
+        EXPECT_EQ(2, local->GetNumberOfClippingPlanes());
+        std::set<vtkActor*> original;
+        auto* actors = renderer->GetActors();
+        actors->InitTraversal();
+        while (auto* actor = actors->GetNextActor()) original.insert(actor);
+        auto cuts = [&]() {
+            std::vector<vtkActor*> result;
+            actors = renderer->GetActors();
+            actors->InitTraversal();
+            while (auto* actor = actors->GetNextActor())
+                if (!original.count(actor)) result.push_back(actor);
+            return result;
+        };
+        view->setMultiSlicePositions(2, {0});  // world Z, not camera XY enum
+        ASSERT_EQ(2, cuts().size());
+        bool firstSeen = false, secondSeen = false;
+        for (auto* cut : cuts()) {
+            EXPECT_FALSE(cut->GetPickable());
+            EXPECT_EQ(2, cut->GetMapper()->GetNumberOfClippingPlanes());
+            EXPECT_NE(table.GetPointer(), cut->GetMapper()->GetLookupTable());
+            if (cut->GetBounds()[0] < 3) {
+                firstSeen = true;
+                EXPECT_NEAR(1.5, cut->GetBounds()[0], 1e-6);
+                EXPECT_DOUBLE_EQ(0.25, cut->GetProperty()->GetOpacity());
+                EXPECT_DOUBLE_EQ(1, cut->GetProperty()->GetDiffuseColor()[0]);
+                if (!partitioned)
+                    EXPECT_FALSE(cut->GetMapper()->GetScalarVisibility());
+            } else {
+                secondSeen = true;
+                EXPECT_NEAR(4.5, cut->GetBounds()[0], 1e-6);
+                EXPECT_DOUBLE_EQ(0.4, cut->GetProperty()->GetOpacity());
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 3, 0)
+                if (partitioned) {
+                    EXPECT_STREQ("heat", cut->GetMapper()->GetArrayName());
+                    EXPECT_EQ(VTK_SCALAR_MODE_USE_POINT_FIELD_DATA,
+                              cut->GetMapper()->GetScalarMode());
+                }
+#endif
+            }
+        }
+        EXPECT_TRUE(firstSeen && secondSeen);
+        attrs->SetBlockVisibility(second, false);
+        source->SetPosition(3, 0, 0);
+        view->updateScene();
+        ASSERT_EQ(1, cuts().size());
+        EXPECT_NEAR(2.5, cuts()[0]->GetBounds()[0], 1e-6);
+        auto* representation =
+                ecvRepresentationManager::instance().ensureRepresentation(
+                        &entity, view);
+        representation->setVisible(false);
+        view->updateScene();
+        EXPECT_TRUE(cuts().empty());
+        representation->setVisible(true);
+        view->updateScene();
+        ASSERT_EQ(1, cuts().size());
+        source->VisibilityOff();
+        view->updateScene();
+        EXPECT_TRUE(cuts().empty());
+        EXPECT_EQ(1, local->GetNumberOfClippingPlanes());
+        view->enableSliceMode(false);
+        if (lod) {
+            EXPECT_EQ(0, lod->GetLODMapper()->GetNumberOfClippingPlanes());
+            lod->SetEnableLOD(0);
+            lod->SetLODMapper(nullptr);
+        }
+        EXPECT_EQ(1, local->GetNumberOfClippingPlanes());
+        EXPECT_EQ(otherPlane.GetPointer(),
+                  local->GetClippingPlanes()->GetItem(0));
+        EXPECT_DOUBLE_EQ(10, table->GetRange()[0]);
+        EXPECT_DOUBLE_EQ(20, table->GetRange()[1]);
+        view->clearMultiSlicePositions();
+        source->VisibilityOn();
+        source->SetPosition(2, 0, 0);
+    }
 }
 
 }  // namespace

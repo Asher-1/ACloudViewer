@@ -370,14 +370,9 @@ static bool IsValidFileName(QString filename) {
             "\\|<>\\. ]))?$");
 #endif
 
-    // Use QtCompat for Qt5/Qt6 compatibility
-    QtCompatRegExp regex(sPattern);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    QRegularExpressionMatch match = regex.match(filename);
-    return match.hasMatch();
-#else
-    return regex.exactMatch(filename);
-#endif
+    const auto regex =
+            qtCompatRegExp(QRegularExpression::anchoredPattern(sPattern));
+    return regex.match(filename).hasMatch();
 }
 
 QWidget* MainWindow::getActiveGLWidget() const {
@@ -615,6 +610,14 @@ MainWindow::MainWindow()
 
         m_shortcutDlg = new ecvShortcutDialog(m_actions, this);
         m_shortcutDlg->restoreShortcutsFromQSettings();
+        connect(&ecvKeySequences::instance(),
+                &ecvKeySequences::shortcutSettingsRequested, this,
+                [](const QString& pluginId) {
+                    // A plugin may request this from its own modal dialog.
+                    ecvShortcutDialog dialog({}, QApplication::activeWindow());
+                    dialog.selectPlugin(pluginId);
+                    dialog.exec();
+                });
 
         connect(m_ui->actionShortcutSettings, &QAction::triggered, this,
                 &MainWindow::showShortcutDialog);
@@ -11731,7 +11734,14 @@ void MainWindow::doActionRegister() {
         summary << overlapString;
 
         summary << "----------------";
-        summary << tr("This report has been output to Console (F8)");
+        QStringList consoleKeys;
+        for (const auto& key : ecvKeySequences::instance().effectiveBindings(
+                     QStringLiteral("actionConsole")))
+            consoleKeys.append(key.toString(QKeySequence::NativeText));
+        summary << tr("This report has been output to Console (%1)")
+                           .arg(consoleKeys.isEmpty()
+                                        ? tr("no effective shortcut")
+                                        : consoleKeys.join("; "));
 
         // cloud to move
         ccGenericPointCloud* pc = nullptr;

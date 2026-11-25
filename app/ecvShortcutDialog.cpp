@@ -29,6 +29,8 @@
 namespace {
 constexpr int IdRole = Qt::UserRole;
 constexpr int CategoryRole = Qt::UserRole + 1;
+constexpr int PluginRole = Qt::UserRole + 2;
+constexpr int PluginNameRole = Qt::UserRole + 3;
 
 QString menuPath(QMenu* menu, QAction* target) {
     for (QAction* action : menu->actions()) {
@@ -130,6 +132,8 @@ void ecvShortcutEditDialog::setKeySequences(
     m_bindingsList->setCurrentRow(0);
 }
 
+void ecvShortcutEditDialog::accept() { emit applyRequested(); }
+
 int ecvShortcutEditDialog::exec() {
     m_ui->keySequenceEdit->setFocus();
     return QDialog::exec();
@@ -141,20 +145,30 @@ ecvShortcutDialog::ecvShortcutDialog(const QList<QAction*>& actions,
       m_ui(new Ui_ShortcutDialog),
       m_editDialog(new ecvShortcutEditDialog(this)),
       m_categoryCombo(new QComboBox(this)),
+      m_pluginCombo(new QComboBox(this)),
       m_conflictLabel(new QLabel(this)) {
     m_ui->setupUi(this);
     m_ui->tableWidget->setAlternatingRowColors(true);
+    m_ui->tableWidget->setHorizontalHeaderLabels(
+            {tr("Action"), tr("Configured"), tr("Effective")});
     m_ui->tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
     auto* layout = m_ui->verticalLayout;
     auto* filters = new QHBoxLayout;
     layout->removeWidget(m_ui->searchLineEdit);
     filters->addWidget(m_ui->searchLineEdit);
+    m_pluginCombo->setObjectName("shortcutPluginFilter");
+    m_categoryCombo->setObjectName("shortcutCategoryFilter");
+    m_pluginCombo->setAccessibleName(tr("Plugin"));
+    m_categoryCombo->setAccessibleName(tr("Feature category"));
+    filters->addWidget(m_pluginCombo);
     filters->addWidget(m_categoryCombo);
     layout->insertLayout(0, filters);
     m_ui->tableWidget->horizontalHeader()->setSectionResizeMode(
             0, QHeaderView::Stretch);
     m_ui->tableWidget->horizontalHeader()->setSectionResizeMode(
             1, QHeaderView::ResizeToContents);
+    m_ui->tableWidget->horizontalHeader()->setSectionResizeMode(
+            2, QHeaderView::ResizeToContents);
     m_conflictLabel->setWordWrap(true);
     layout->insertWidget(layout->count() - 1, m_conflictLabel);
     auto* buttons = new QHBoxLayout;
@@ -183,6 +197,8 @@ ecvShortcutDialog::ecvShortcutDialog(const QList<QAction*>& actions,
     connect(m_categoryCombo,
             QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &ecvShortcutDialog::applyFilters);
+    connect(m_pluginCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &ecvShortcutDialog::refreshCommands);
     registerActions(actions);
     connect(&ecvKeySequences::instance(), &ecvKeySequences::commandsChanged,
             this, [this]() {
@@ -242,6 +258,7 @@ QStringList ecvShortcutDialog::detectAllConflicts() const {
 
 void ecvShortcutDialog::refreshCommands() {
     const QString selectedCategory = m_categoryCombo->currentData().toString();
+    const QString selectedPlugin = m_pluginCombo->currentData().toString();
     QString selectedId;
     if (auto* item = m_ui->tableWidget->currentItem())
         selectedId = m_ui->tableWidget->item(item->row(), 0)
@@ -251,6 +268,7 @@ void ecvShortcutDialog::refreshCommands() {
     const auto bindings = registry.bindings();
     const auto commands = registry.commands();
     QSet<QString> categories, conflicting;
+    QMap<QString, QString> plugins;
     const auto conflicts = registry.conflicts(bindings);
     for (const auto& conflict : conflicts) {
         conflicting.insert(conflict.first);
@@ -268,17 +286,46 @@ void ecvShortcutDialog::refreshCommands() {
         QString name = action ? action->text() : command.label;
         name.remove('&');
         if (!action) name += tr(" [not currently loaded]");
+        const auto configured = bindings.value(command.id);
+        const auto effective = registry.effectiveBindings(command.id);
+        const auto defaults = bindingText(command.defaults).join("; ");
+        const auto configuredText = bindingText(configured).join("; ");
+        const auto effectiveText = bindingText(effective).join("; ");
         auto* nameItem =
                 new QTableWidgetItem(action ? action->icon() : QIcon(), name);
         nameItem->setData(IdRole, command.id);
         nameItem->setData(CategoryRole, command.category);
-        nameItem->setToolTip(command.id + "\n" +
-                             (action ? action->toolTip()
-                                     : tr("Applied when this command's window "
-                                          "is created.")));
+        const QString provider = command.pluginId.isEmpty()
+                                         ? QStringLiteral("application")
+                                         : command.pluginId;
+        nameItem->setData(PluginRole, provider);
+        nameItem->setData(PluginNameRole, command.pluginName);
+        if (!command.pluginId.isEmpty())
+            plugins[command.pluginId] = command.pluginName;
+        nameItem->setToolTip(
+                command.id + "\n" + (action ? action->toolTip() : QString()) +
+                tr("\nFactory default: %1\nConfigured: %2\nEffective "
+                   "union across loaded instances: %3")
+                        .arg(defaults.isEmpty() ? tr("Unbound") : defaults,
+                             configuredText.isEmpty() ? tr("Unbound")
+                                                      : configuredText,
+                             effectiveText.isEmpty() ? tr("Suspended / none")
+                                                     : effectiveText));
         auto* keyItem = new QTableWidgetItem(
-                bindingText(bindings.value(command.id)).join("; "));
-        for (auto* item : {nameItem, keyItem}) {
+                configuredText.isEmpty() ? tr("Unbound") : configuredText);
+        auto* effectiveItem = new QTableWidgetItem(
+                !action                ? tr("Pending")
+                : configured.isEmpty() ? tr("Unbound")
+                : effective.isEmpty()  ? tr("Suspended")
+                                       : tr("Available in loaded "
+                                             "instances"));
+        effectiveItem->setToolTip(
+                tr("Effective union across loaded instances: %1\n"
+                   "Each sequence is available in at least one instance, not "
+                   "necessarily every instance or the current window.")
+                        .arg(effectiveText.isEmpty() ? tr("None")
+                                                     : effectiveText));
+        for (auto* item : {nameItem, keyItem, effectiveItem}) {
             item->setFlags(item->flags() & ~Qt::ItemIsEditable);
             if (conflicting.contains(command.id)) {
                 const bool dark = palette().base().color().lightness() < 128;
@@ -288,9 +335,22 @@ void ecvShortcutDialog::refreshCommands() {
         }
         m_ui->tableWidget->setItem(row, 0, nameItem);
         m_ui->tableWidget->setItem(row, 1, keyItem);
+        m_ui->tableWidget->setItem(row, 2, effectiveItem);
         if (command.id == selectedId) m_ui->tableWidget->selectRow(row);
-        categories.insert(command.category);
+        if (selectedPlugin.isEmpty() || selectedPlugin == provider)
+            categories.insert(command.category);
         ++row;
+    }
+    {
+        QSignalBlocker blocker(m_pluginCombo);
+        m_pluginCombo->clear();
+        m_pluginCombo->addItem(tr("All Plugins and Application"), QString());
+        m_pluginCombo->addItem(tr("Application"),
+                               QStringLiteral("application"));
+        for (auto it = plugins.constBegin(); it != plugins.constEnd(); ++it)
+            m_pluginCombo->addItem(it.value(), it.key());
+        const int index = m_pluginCombo->findData(selectedPlugin);
+        if (index >= 0) m_pluginCombo->setCurrentIndex(index);
     }
     {
         QSignalBlocker blocker(m_categoryCombo);
@@ -315,7 +375,10 @@ bool ecvShortcutDialog::apply(const ecvKeySequences::Bindings& bindings) {
     QStringList errors;
     if (ecvKeySequences::instance().applyBindings(bindings, &errors))
         return true;
-    QMessageBox::warning(this, tr("Shortcut configuration rejected"),
+    QWidget* warningParent = m_editDialog->isVisible()
+                                     ? static_cast<QWidget*>(m_editDialog)
+                                     : this;
+    QMessageBox::warning(warningParent, tr("Shortcut configuration rejected"),
                          errors.join("\n"));
     return false;
 }
@@ -324,11 +387,17 @@ void ecvShortcutDialog::handleDoubleClick(QTableWidgetItem* item) {
     if (!item) return;
     const QString id =
             m_ui->tableWidget->item(item->row(), 0)->data(IdRole).toString();
-    auto bindings = ecvKeySequences::instance().bindings();
-    m_editDialog->setKeySequences(bindings.value(id));
-    if (m_editDialog->exec() != QDialog::Accepted) return;
-    bindings[id] = m_editDialog->keySequences();
-    apply(bindings);
+    m_editDialog->setKeySequences(
+            ecvKeySequences::instance().bindings().value(id));
+    const auto connection =
+            connect(m_editDialog, &ecvShortcutEditDialog::applyRequested, this,
+                    [this, id]() {
+                        auto bindings = ecvKeySequences::instance().bindings();
+                        bindings[id] = m_editDialog->keySequences();
+                        if (apply(bindings)) m_editDialog->QDialog::accept();
+                    });
+    m_editDialog->exec();
+    disconnect(connection);
 }
 
 void ecvShortcutDialog::onResetSelected() {
@@ -393,16 +462,29 @@ void ecvShortcutDialog::onImportShortcuts() {
                         .arg(unavailable.join("\n")));
 }
 
+void ecvShortcutDialog::selectPlugin(const QString& pluginId) {
+    refreshCommands();
+    const int index = m_pluginCombo->findData(pluginId);
+    if (index >= 0) m_pluginCombo->setCurrentIndex(index);
+}
+
 void ecvShortcutDialog::applyFilters() {
     const auto category = m_categoryCombo->currentData().toString();
+    const auto plugin = m_pluginCombo->currentData().toString();
     const auto search = m_ui->searchLineEdit->text();
     for (int row = 0; row < m_ui->tableWidget->rowCount(); ++row) {
         const auto* item = m_ui->tableWidget->item(row, 0);
         const QString text = item->text() + " " + item->toolTip() + " " +
+                             item->data(PluginRole).toString() + " " +
+                             item->data(PluginNameRole).toString() + " " +
+                             item->data(CategoryRole).toString() + " " +
                              m_ui->tableWidget->item(row, 1)->text();
         m_ui->tableWidget->setRowHidden(
-                row, (!category.isEmpty() &&
-                      item->data(CategoryRole).toString() != category) ||
-                             !text.contains(search, Qt::CaseInsensitive));
+                row,
+                (!plugin.isEmpty() &&
+                 item->data(PluginRole).toString() != plugin) ||
+                        (!category.isEmpty() &&
+                         item->data(CategoryRole).toString() != category) ||
+                        !text.contains(search, Qt::CaseInsensitive));
     }
 }

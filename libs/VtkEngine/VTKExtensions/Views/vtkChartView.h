@@ -15,6 +15,7 @@
 #include "qVTK.h"
 
 class QCheckBox;
+class QAction;
 class QComboBox;
 class QDoubleSpinBox;
 class QLineEdit;
@@ -28,10 +29,12 @@ class QToolButton;
 class ccHObject;
 class ccGenericMesh;
 class ccMesh;
+class ccImage;
 class ccPointCloud;
 class cvSelectionData;
 
 class vtkChart;
+class vtkAnnotationLink;
 class vtkContextView;
 
 class QVTK_ENGINE_LIB_API vtkChartView : public QWidget {
@@ -57,6 +60,20 @@ public:
     ChartType chartType() const { return m_chartType; }
     bool usesCellData() const { return m_useCellData; }
 
+    enum QuartileRole {
+        Minimum,
+        LowerQuartile,
+        Median,
+        UpperQuartile,
+        Maximum,
+        Average,
+        Sum,
+        MinMaxBand,
+        QuartileBand
+    };
+    void setQuartileRoleVisible(QuartileRole role, bool visible);
+    bool quartileRoleVisible(QuartileRole role) const;
+
     unsigned maxChartPoints() const { return m_maxChartPoints; }
     void setMaxChartPoints(unsigned max);
 
@@ -64,6 +81,28 @@ public:
     void setEntityListProvider(EntityListProvider provider);
 
     void setCompactMode(bool compact);
+    // Comparative input owner. Primary source supplies field controls; other
+    // sources resolve those fields by name, not by scalar-field position.
+    void setEntities(const QList<ccHObject*>& entities);
+    struct ComparisonParameters {
+        QString label;
+        QMap<QString, QPair<double, double>> filters;
+        double xScale = 1.0;
+        double yScale = 1.0;
+        double opacity = 1.0;
+        double lineWidth = 0.0;  // zero retains the series editor setting
+        double markerSize = 0.0;
+        bool operator==(const ComparisonParameters& other) const {
+            return label == other.label && filters == other.filters &&
+                   xScale == other.xScale && yScale == other.yScale &&
+                   opacity == other.opacity && lineWidth == other.lineWidth &&
+                   markerSize == other.markerSize;
+        }
+    };
+    void setRowFilters(const QMap<QString, QPair<double, double>>& filters);
+    // Each comparison owns derived tables; source entities/arrays stay
+    // read-only.
+    void setComparisons(const QList<ComparisonParameters>& comparisons);
 
     void setRectSelectionActive(bool active);
     void setPolySelectionActive(bool active);
@@ -112,12 +151,21 @@ private:
 
     void rebuildChart();
     void applySourceSelection(const cvSelectionData& selection);
-    float fieldValue(int fieldIdx, unsigned sourceId) const;
+    void setPrimaryEntity(ccHObject* entity);
+    float fieldValue(int fieldIdx,
+                     unsigned sourceId,
+                     ccHObject* entity = nullptr,
+                     const QVector<float>* normals = nullptr) const;
+    bool acceptsRow(unsigned id,
+                    const FieldValueFn& value,
+                    const QMap<QString, QPair<double, double>>& filters) const;
     QPair<double, double> histogramRange(int fieldIdx, unsigned count) const;
     void rebuildXYChart(const QList<int>& selectedFields,
-                        unsigned sampleCount,
-                        unsigned pointCount,
-                        const FieldValueFn& getFieldValue);
+                        ccHObject* entity,
+                        int sourceIndex,
+                        const QVector<unsigned>& sourceIds,
+                        const FieldValueFn& getFieldValue,
+                        const ComparisonParameters& comparison);
     void rebuildHistogram(const QList<int>& selectedFields,
                           unsigned pointCount,
                           const FieldValueFn& getFieldValue);
@@ -137,10 +185,9 @@ private:
                               unsigned sampleCount,
                               unsigned pointCount,
                               const FieldValueFn& getFieldValue);
-    void rebuildImageChart(const QList<int>& selectedFields,
-                           unsigned sampleCount,
-                           unsigned pointCount,
-                           const FieldValueFn& getFieldValue);
+    void rebuildImageChart();
+    void setChartSelectionAction(int action);
+    vtkAnnotationLink* chartSelectionLink() const;
     void setupChartSelectionCallback();
     void onChartAnnotationChanged();
     QColor seriesColor(int index) const;
@@ -203,6 +250,7 @@ private:
     void onSeriesTableCellClicked(int row, int col);
 
     QTableWidget* m_seriesTable = nullptr;
+    QMap<QuartileRole, QAction*> m_quartileRoleActions;
     QMap<int, QColor> m_customSeriesColors;
     struct SeriesProps {
         float lineThickness = 2.0f;
@@ -216,9 +264,12 @@ private:
     vtkContextView* m_contextView = nullptr;
     vtkChart* m_chart = nullptr;
 
+    QList<ccHObject*> m_entities;
+    QList<ComparisonParameters> m_comparisons{ComparisonParameters{}};
     ccHObject* m_currentEntity = nullptr;
     ccHObject* currentEntity() const { return m_currentEntity; }
     ccPointCloud* m_cloud = nullptr;
+    ccImage* m_image = nullptr;
     ccMesh* m_mesh = nullptr;
     ccGenericMesh* m_genericMesh = nullptr;
     QVector<FieldDef> m_fields;

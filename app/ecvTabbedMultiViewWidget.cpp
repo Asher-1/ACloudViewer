@@ -154,9 +154,11 @@ int ecvTabbedMultiViewWidget::createTab() {
     QSet<int> usedNumbers;
     for (int i = 0; i < m_tabWidget->count(); ++i) {
         QString text = m_tabWidget->tabText(i);
-        QtCompatRegExpWrapper rx(qtCompatRegExp("^Layout #(\\d+)$"));
-        if (rx.indexIn(text) >= 0) {
-            usedNumbers.insert(rx.cap(1).toInt());
+        const auto rx = qtCompatRegExp(
+                QRegularExpression::anchoredPattern("Layout #(\\d+)"));
+        const auto match = rx.match(text);
+        if (match.hasMatch()) {
+            usedNumbers.insert(match.captured(1).toInt());
         }
     }
     int nextNum = 1;

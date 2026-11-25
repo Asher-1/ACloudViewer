@@ -81,7 +81,6 @@ class PythonEditor final : public QMainWindow, public Ui::PythonEditor
     void saveAs();
     void updateRecentFileActions();
     void openRecentFile();
-    bool eventFilter(QObject *obj, QEvent *e) override;
     // Loads the double clicked item from the project view
     // if its a file
     void projectTreeDoubleClicked(const QModelIndex &index);

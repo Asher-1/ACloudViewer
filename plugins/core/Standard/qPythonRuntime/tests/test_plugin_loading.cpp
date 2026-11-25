@@ -10,6 +10,7 @@
 #include <QApplication>
 #include <QPluginLoader>
 #include <QSettings>
+#include <QShortcutEvent>
 #include <QTemporaryDir>
 #include <ecvStdPluginInterface.h>
 #include <gtest/gtest.h>
@@ -102,6 +103,51 @@ TEST_F(PythonPluginLoading, DiscoversStableActionsAndImportsProductionModules)
                   0);
     }
 #endif
+}
+
+TEST_F(PythonPluginLoading, HiddenEditorDoesNotInterceptForeignAmbiguousShortcuts)
+{
+    standard->getActions();
+    auto *showEditor = object->findChild<QAction *>(QStringLiteral("showEditor"));
+    ASSERT_NE(showEditor, nullptr);
+    QWidget *editor = nullptr;
+    for (auto *window : QApplication::topLevelWidgets())
+    {
+        if (qstrcmp(window->metaObject()->className(), "PythonEditor") == 0)
+        {
+            editor = window;
+            break;
+        }
+    }
+    ASSERT_NE(editor, nullptr);
+    ASSERT_FALSE(editor->isVisible());
+    auto *newFile = editor->findChild<QAction *>(QStringLiteral("actionNew"));
+    ASSERT_NE(newFile, nullptr);
+    ASSERT_FALSE(newFile->shortcut().isEmpty());
+    EXPECT_EQ(newFile->shortcutContext(), Qt::WidgetWithChildrenShortcut);
+
+    QObject receiver;
+    int editorTriggers = 0;
+    QObject::connect(newFile, &QAction::triggered, &receiver, [&]() { ++editorTriggers; });
+    QShortcutEvent foreignShortcut(newFile->shortcut(), 1, true);
+    QApplication::sendEvent(&receiver, &foreignShortcut);
+    EXPECT_EQ(editorTriggers, 0);
+
+    // Keep normal action wiring and the persistent editor's close/reopen path.
+    showEditor->trigger();
+    ASSERT_TRUE(editor->isVisible());
+    QShortcutEvent visibleForeignShortcut(newFile->shortcut(), 2, true);
+    QApplication::sendEvent(&receiver, &visibleForeignShortcut);
+    EXPECT_EQ(editorTriggers, 0);
+    newFile->trigger();
+    EXPECT_EQ(editorTriggers, 1);
+    EXPECT_TRUE(editor->close());
+    EXPECT_FALSE(editor->isVisible());
+    showEditor->trigger();
+    EXPECT_TRUE(editor->isVisible());
+    newFile->trigger();
+    EXPECT_EQ(editorTriggers, 2);
+    EXPECT_TRUE(editor->close());
 }
 } // namespace
 

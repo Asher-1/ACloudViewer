@@ -13,6 +13,7 @@
 #include "vtkCustomInteractorStyle.h"
 
 #include <FileSystem.h>
+#include <Shortcuts/ecvKeySequences.h>
 #include <ecvCameraSensor.h>
 
 #include <cctype>
@@ -1141,6 +1142,30 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
                 return true;
             }
             case 'm': {
+                QStringList restoreKeys;
+                const auto restoreBindings =
+                        m_qtShortcutDispatch
+                                ? ecvKeySequences::instance().effectiveBindings(
+                                          QStringLiteral("vtk_restore_camera"))
+                                : QList<QKeySequence>{
+                                          QKeySequence(Qt::CTRL | Qt::Key_R)};
+                for (const auto& binding : restoreBindings)
+                    restoreKeys.append(
+                            binding.toString(QKeySequence::NativeText));
+                const QString restoreHint =
+                        restoreKeys.isEmpty()
+                                ? QObject::tr(
+                                          "Restore Camera has no effective "
+                                          "shortcut.")
+                                : (m_qtShortcutDispatch
+                                           ? QObject::tr(
+                                                     "Restore Camera "
+                                                     "shortcuts (union "
+                                                     "across loaded views): "
+                                                     "%1.")
+                                           : QObject::tr("Restore Camera "
+                                                         "shortcut: %1."))
+                                          .arg(restoreKeys.join("; "));
                 if (camera_file_.empty()) {
                     vtkRenderer* ren = iren->GetRenderWindow()
                                                ->GetRenderers()
@@ -1153,17 +1178,18 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
                             cam->GetViewUp(saved_cam_viewup_);
                             cam->GetClippingRange(saved_cam_clip_);
                             camera_saved_ = true;
-                            CVLog::Print(
-                                    "Camera parameters saved, you can press "
-                                    "CTRL + R to restore.");
+                            CVLog::Print(QObject::tr("Camera parameters saved. "
+                                                     "%1")
+                                                 .arg(restoreHint));
                         }
                     }
                 } else {
                     if (saveCameraParameters(camera_file_)) {
-                        CVLog::Print(
-                                "Save camera parameters to %s, you can press "
-                                "CTRL + R to restore.",
-                                camera_file_.c_str());
+                        CVLog::Print(QObject::tr("Save camera parameters to "
+                                                 "%1. %2")
+                                             .arg(QString::fromStdString(
+                                                          camera_file_),
+                                                  restoreHint));
                     } else {
                         CVLog::Error(
                                 "[vtkCustomInteractorStyle] Can't save camera "

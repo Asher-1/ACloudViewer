@@ -23,10 +23,12 @@
 #include <QEvent>
 #include <QHash>
 #include <QList>
+#include <QPointer>
 #include <QRubberBand>
 #include <QSet>
 #include <QWidget>
 #include <functional>
+#include <vector>
 
 #include "qVTK.h"
 
@@ -39,6 +41,8 @@ class QSlider;
 class QSpinBox;
 class QVTKOpenGLNativeWidget;
 class vtkRenderer;
+class vtkGLView;
+class vtkActor;
 class vtkObject;
 class vtkGenericOpenGLRenderWindow;
 class vtkProp;
@@ -91,7 +95,7 @@ public:
     bool annotationsVisible() const { return m_annotationsVisible; }
     void setAnnotationsVisible(bool visible);
 
-    void populateFromRenderer(vtkRenderer* sourceRenderer);
+    void populateFromView(vtkGLView* sourceView);
 
     void connectExternalHighlighter(QObject* highlighter);
 
@@ -120,6 +124,8 @@ private:
     Impl* d;
     void loadEntityIntoView(ccHObject* entity);
     void loadEntitiesIntoView(const QList<ccHObject*>& entities);
+    void loadRepresentationActors(
+            const std::vector<vtkSmartPointer<vtkActor>>& actors);
     void updateSliceSpinners();
 
     void applyDisplayProperties();
@@ -156,6 +162,8 @@ private:
     QCheckBox* m_annotCheck = nullptr;
     QLabel* m_statusLabel = nullptr;
     EntityListProvider m_entityListProvider;
+    QPointer<vtkGLView> m_sourceView;
+    QCheckBox* m_inheritSourceStyle = nullptr;
     double m_sliceStep = 1.0;
     double m_sliceIncrements[3] = {1.0, 1.0, 1.0};
     bool m_annotationsVisible = true;
