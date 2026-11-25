@@ -568,7 +568,7 @@ std::vector<int32_t> SimpleTokenizer::encode(
     std::vector<int32_t> out;
     size_t i = 0;
     std::string byte_seq;  // byte-encoded current token
-    auto emit = [&](const std::string& tok) {
+    auto emitToken = [&](const std::string& tok) {
         if (tok.empty()) return;
         byte_seq.clear();
         for (unsigned char b : tok) byte_seq += byte_encoder_[b];
@@ -591,7 +591,7 @@ std::vector<int32_t> SimpleTokenizer::encode(
             for (const char* c : contr) {
                 size_t len = std::strlen(c);
                 if (collapsed.compare(start, len, c) == 0) {
-                    emit(collapsed.substr(start, len));
+                    emitToken(collapsed.substr(start, len));
                     i = start + len;
                     matched = true;
                     break;
@@ -605,12 +605,12 @@ std::vector<int32_t> SimpleTokenizer::encode(
                 if (category(utf8_next(collapsed, j)) != Cat::Letter) break;
                 i = j;
             }
-            emit(collapsed.substr(start, i - start));
+            emitToken(collapsed.substr(start, i - start));
             continue;
         }
         if (cat == Cat::Digit) {
             // [\p{N}] matches exactly ONE numeric character
-            emit(collapsed.substr(start, i - start));
+            emitToken(collapsed.substr(start, i - start));
             continue;
         }
         if (cat == Cat::Other) {
@@ -621,7 +621,7 @@ std::vector<int32_t> SimpleTokenizer::encode(
                     break;
                 i = j;
             }
-            emit(collapsed.substr(start, i - start));
+            emitToken(collapsed.substr(start, i - start));
             continue;
         }
         // Space: skipped by the regex

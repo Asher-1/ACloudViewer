@@ -117,6 +117,26 @@ cloudviewer_add_test(NAME test_qanylabeling_review_status
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_review_status)
 set_tests_properties(test_qanylabeling_review_status PROPERTIES
     TIMEOUT 60 LABELS "ui;regression")
+# Qt6's offscreen platform has no QOpenGLWidget support (Qt5's does); the
+# plugin workspace embeds GL widgets, so on Qt6 run under a virtual X server
+# exactly like test_qanylabeling_pointcloud_ui.
+find_program(QANYLABELING_XVFB_RUN xvfb-run)
+if(QT_VERSION_MAJOR GREATER_EQUAL 6 AND QANYLABELING_XVFB_RUN)
+    set_property(TEST test_qanylabeling_plugin PROPERTY
+        COMMAND ${QANYLABELING_XVFB_RUN} -a
+            $<TARGET_FILE:test_qanylabeling_plugin> $<TARGET_FILE:QANYLABELING_PLUGIN>)
+    set_property(TEST test_qanylabeling_review_status PROPERTY
+        COMMAND ${QANYLABELING_XVFB_RUN} -a
+            $<TARGET_FILE:test_qanylabeling_plugin> $<TARGET_FILE:QANYLABELING_PLUGIN> --review-only)
+    foreach(_qal_xcb_test test_qanylabeling_plugin test_qanylabeling_review_status)
+        cloudviewer_set_plugin_test_env(${_qal_xcb_test})
+        get_test_property(${_qal_xcb_test} ENVIRONMENT _qal_env)
+        list(REMOVE_ITEM _qal_env "QT_QPA_PLATFORM=offscreen")
+        set_property(TEST ${_qal_xcb_test} PROPERTY ENVIRONMENT "${_qal_env}")
+        set_property(TEST ${_qal_xcb_test} APPEND PROPERTY
+            ENVIRONMENT "QT_QPA_PLATFORM=xcb")
+    endforeach()
+endif()
 
 # Reflection-based probe that bypasses QPluginLoader metadata validation and
 # pins the toast placement end to end (open-time hidden, centered at 100
@@ -280,8 +300,10 @@ cloudviewer_add_plugin_test(test_qanylabeling_pointcloud_camera
         ${QAL_DIR}/include/PointCloudCamera.h
         ${QAL_DIR}/src/PointCloudCuboid.cpp
         ${QAL_DIR}/include/PointCloudCuboid.h
-    INCLUDES ${QAL_DIR}/include
-    LIBS Qt${QT_VERSION_MAJOR}::Gui gtest)
+    # core/include: QtCompat.h (QList->QSet conversion); it pulls in
+    # QtWidgets headers, hence Widgets rather than Gui.
+    INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/core/include
+    LIBS Qt${QT_VERSION_MAJOR}::Widgets gtest)
 cloudviewer_add_test(NAME test_qanylabeling_pointcloud_camera
     COMMAND test_qanylabeling_pointcloud_camera)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_pointcloud_camera)
@@ -539,12 +561,22 @@ cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_llm_batch_schema)
 set_tests_properties(test_qanylabeling_llm_batch_schema PROPERTIES
     TIMEOUT 60 LABELS "contract;cvpluginapi")
 
-# The external test environment provides pinned text/vision/projector assets; no automatic download or skip.
+# Real pinned text/vision/projector assets resolve from the AICore catalog
+# cache root (the same AICORE_TEST_ASSET_ROOT the AICore model tests use);
+# filenames mirror core/AICore/src/tasks/llm/model_catalog.cpp. Missing
+# assets fail rather than skip or substitute synthetic generation.
 cloudviewer_add_test(NAME test_qanylabeling_llm_batch_models
     COMMAND test_qanylabeling_attribute_batch $<TARGET_FILE:QANYLABELING_PLUGIN> --llm-model)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_llm_batch_models)
 set_tests_properties(test_qanylabeling_llm_batch_models PROPERTIES
     TIMEOUT 600 LABELS "model;e2e;cvpluginapi")
+if(AICORE_TEST_ASSET_ROOT)
+    set_property(TEST test_qanylabeling_llm_batch_models APPEND PROPERTY
+        ENVIRONMENT
+            "AICORE_TEST_LLM_TEXT_MODEL=${AICORE_TEST_ASSET_ROOT}/llm_models/qwen2.5-0.5b-instruct-q8_0.gguf"
+            "AICORE_TEST_LLM_VISION_MODEL=${AICORE_TEST_ASSET_ROOT}/llm_models/SmolVLM-500M-Instruct-Q8_0.gguf"
+            "AICORE_TEST_LLM_MMPROJ=${AICORE_TEST_ASSET_ROOT}/llm_models/mmproj-SmolVLM-500M-Instruct-Q8_0.gguf")
+endif()
 
 cloudviewer_add_test(NAME test_qanylabeling_lightglue_bridge COMMAND test_qanylabeling_loma_bridge)
 set_property(TEST test_qanylabeling_lightglue_bridge APPEND PROPERTY LABELS "model;e2e")

@@ -306,7 +306,7 @@ void drawDetections(QImage* image,
         // off-canvas text would simply be invisible).
         QRect labelRect(static_cast<int>(d.x1),
                         static_cast<int>(d.y1) - font.pixelSize() - 6,
-                        std::max(20, label.size() * font.pixelSize()),
+                        std::max(20, int(label.size()) * font.pixelSize()),
                         font.pixelSize() + 6);
         labelRect.setWidth(
                 std::min(labelRect.width(), std::max(20, image->width() - 4)));

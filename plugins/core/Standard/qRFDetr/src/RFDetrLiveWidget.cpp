@@ -528,7 +528,7 @@ void RFDetrLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
         // the box top when the box hugs the top edge.
         QRect labelRect(static_cast<int>(d.x1 * sx),
                         static_cast<int>(d.y1 * sy) - font.pixelSize() - 6,
-                        std::max(20, label.size() * font.pixelSize()),
+                        std::max(20, int(label.size()) * font.pixelSize()),
                         font.pixelSize() + 6);
         labelRect.setWidth(std::min(labelRect.width(),
                                     std::max(20, displaySize.width() - 4)));

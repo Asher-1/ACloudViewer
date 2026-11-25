@@ -3123,13 +3123,13 @@ void AnnotationWindow::editLabels() {
     auto* fromLabel = new QLabel(tr("From:"), &dialog);
     auto* from = new QSpinBox(&dialog);
     from->setObjectName(QStringLiteral("AnnotationLabelFrom"));
-    from->setRange(1, std::max(1, imageFiles.size()));
+    from->setRange(1, std::max(1, int(imageFiles.size())));
     from->setValue(1);
     auto* toLabel = new QLabel(tr("To:"), &dialog);
     auto* to = new QSpinBox(&dialog);
     to->setObjectName(QStringLiteral("AnnotationLabelTo"));
-    to->setRange(1, std::max(1, imageFiles.size()));
-    to->setValue(std::max(1, imageFiles.size()));
+    to->setRange(1, std::max(1, int(imageFiles.size())));
+    to->setValue(std::max(1, int(imageFiles.size())));
     auto* go = new QPushButton(tr("Go"), &dialog);
     go->setObjectName(QStringLiteral("AnnotationLabelApplyRange"));
     auto* rangeLayout = new QHBoxLayout;
@@ -4475,7 +4475,7 @@ void AnnotationWindow::createActions() {
     };
     QAction* openImageAction = addCommand(
             tr("Open File"), QStringLiteral("file.png"),
-            QKeySequence(Qt::CTRL + Qt::Key_I), QStringLiteral("open"),
+            QKeySequence(Qt::CTRL | Qt::Key_I), QStringLiteral("open"),
             [this]() {
                 const QString file = QFileDialog::getOpenFileName(
                         this, tr("Open image or annotation"), m_directory,
@@ -4484,10 +4484,10 @@ void AnnotationWindow::createActions() {
             });
     QAction* openVideo = addCommand(
             tr("Open Video"), QStringLiteral("video.png"),
-            QKeySequence(Qt::CTRL + Qt::Key_O), QStringLiteral("open_video"),
+            QKeySequence(Qt::CTRL | Qt::Key_O), QStringLiteral("open_video"),
             [this]() { openVideoTracking(); });
     QAction* openDir = addCommand(tr("Open Dir"), QStringLiteral("folder.svg"),
-                                  QKeySequence(Qt::CTRL + Qt::Key_U),
+                                  QKeySequence(Qt::CTRL | Qt::Key_U),
                                   QStringLiteral("open_dir"),
                                   [this]() { openDirectory(); });
     m_recentMenu = new QMenu(tr("Open Recent"), this);
@@ -4499,7 +4499,7 @@ void AnnotationWindow::createActions() {
     updateRecentMenu();
     QAction* videoClassifier =
             addCommand(tr("Video Classifier"), QStringLiteral("cavy.png"),
-                       QKeySequence(Qt::CTRL + Qt::Key_5),
+                       QKeySequence(Qt::CTRL | Qt::Key_5),
                        QStringLiteral("open_video_classifier"), [this]() {
                            auto* dialog = new VideoAnnotationDialog(this);
                            dialog->setAttribute(Qt::WA_DeleteOnClose);
@@ -4510,29 +4510,29 @@ void AnnotationWindow::createActions() {
                               QKeySequence::Save, QStringLiteral("save"),
                               [this]() { saveDocument(); });
     m_saveAsAction = addCommand(tr("Save As"), QStringLiteral("save-as.png"),
-                                QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_S),
+                                QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_S),
                                 QStringLiteral("save_as"),
                                 [this]() { saveDocumentAs(); });
     QAction* saveAsAction = m_saveAsAction;
     m_autoRunAction =
             addCommand(tr("Auto Run"), QStringLiteral("auto-run.png"),
-                       QKeySequence(Qt::CTRL + Qt::Key_B),
+                       QKeySequence(Qt::CTRL | Qt::Key_B),
                        QStringLiteral("auto_run"), [this]() { runBatch(); });
     QAction* autoRunAction = m_autoRunAction;
     fileMenu->removeAction(autoRunAction);
     m_closeAction =
             addCommand(tr("Close"), QStringLiteral("cancel.png"),
-                       QKeySequence(Qt::CTRL + Qt::Key_W),
+                       QKeySequence(Qt::CTRL | Qt::Key_W),
                        QStringLiteral("close"), [this]() { closeImage(); });
     QAction* closeAction = m_closeAction;
     m_deleteLabelFileAction = addCommand(
             tr("Delete File"), QStringLiteral("delete.png"),
-            QKeySequence(Qt::CTRL + Qt::Key_Delete),
+            QKeySequence(Qt::CTRL | Qt::Key_Delete),
             QStringLiteral("delete_file"), [this]() { deleteLabelFile(); });
     QAction* deleteLabelAction = m_deleteLabelFileAction;
     QAction* deleteImageAction =
             addCommand(tr("Delete Image File"), QStringLiteral("delete.png"),
-                       QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_Delete),
+                       QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Delete),
                        QStringLiteral("delete_image_file"),
                        [this]() { deleteImageFile(); });
     QAction* previousAction = addCommand(
@@ -4571,7 +4571,7 @@ void AnnotationWindow::createActions() {
                });
     QAction* previousUncheckedAction =
             addCommand(tr("Prev Unchecked Image"), QStringLiteral("prev.png"),
-                       QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_A),
+                       QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_A),
                        QStringLiteral("open_prev_unchecked"), [this]() {
                            if (!confirmSave()) return;
                            const int row = m_files->currentRow();
@@ -4586,7 +4586,7 @@ void AnnotationWindow::createActions() {
     m_previousUncheckedAction = previousUncheckedAction;
     QAction* nextUncheckedAction =
             addCommand(tr("Next Unchecked Image"), QStringLiteral("next.png"),
-                       QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_D),
+                       QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_D),
                        QStringLiteral("open_next_unchecked"), [this]() {
                            if (!confirmSave()) return;
                            const int row = m_files->currentRow();
@@ -4604,7 +4604,7 @@ void AnnotationWindow::createActions() {
                         tr("Mark as Checked"), this);
     m_toggleCheckedAction = toggleChecked;
     toggleChecked->setCheckable(true);
-    toggleChecked->setShortcut(QKeySequence(Qt::CTRL + Qt::ALT + Qt::Key_K));
+    toggleChecked->setShortcut(QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_K));
     registerShortcut(toggleChecked, QStringLiteral("toggle_annotation_checked"),
                      tr("Edit"));
     connect(toggleChecked, &QAction::triggered, this,
@@ -4616,7 +4616,7 @@ void AnnotationWindow::createActions() {
     m_clearCheckedAction = new QAction(tr("Clear Check State"), this);
     m_clearCheckedAction->setCheckable(true);
     m_clearCheckedAction->setShortcut(
-            QKeySequence(Qt::CTRL + Qt::ALT + Qt::Key_U));
+            QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_U));
     registerShortcut(m_clearCheckedAction,
                      QStringLiteral("clear_annotation_checked"), tr("Edit"));
     connect(m_clearCheckedAction, &QAction::triggered, this,
@@ -4625,7 +4625,7 @@ void AnnotationWindow::createActions() {
     m_failCheckedAction = new QAction(tr("Mark as Failed"), this);
     m_failCheckedAction->setCheckable(true);
     m_failCheckedAction->setShortcut(
-            QKeySequence(Qt::CTRL + Qt::ALT + Qt::Key_J));
+            QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_J));
     registerShortcut(m_failCheckedAction,
                      QStringLiteral("fail_annotation_checked"), tr("Edit"));
     connect(m_failCheckedAction, &QAction::triggered, this,
@@ -4643,7 +4643,7 @@ void AnnotationWindow::createActions() {
     m_tagsAction = viewMenu->addAction(tr("Image Tags"));
     m_tagsAction->setCheckable(true);
     m_tagsAction->setChecked(true);
-    m_tagsAction->setShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_T));
+    m_tagsAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_T));
     registerShortcut(m_tagsAction, QStringLiteral("toggle_image_tags"),
                      tr("View"));
     connect(m_tagsAction, &QAction::toggled, this, [this](bool visible) {
@@ -4654,7 +4654,7 @@ void AnnotationWindow::createActions() {
     // to a second container would duplicate the entry and its shortcut.
     m_compareAction = new QAction(tr("Compare View"), this);
     m_compareAction->setCheckable(true);
-    m_compareAction->setShortcut(QKeySequence(Qt::CTRL + Qt::ALT + Qt::Key_C));
+    m_compareAction->setShortcut(QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_C));
     registerShortcut(m_compareAction, QStringLiteral("toggle_compare_view"),
                      tr("View"));
     connect(m_compareAction, &QAction::triggered, this,
@@ -4758,7 +4758,7 @@ void AnnotationWindow::createActions() {
     autoLabelPanel->setIcon(QIcon(iconPath(QStringLiteral("brain.png"))));
     autoLabelPanel->setCheckable(true);
     autoLabelPanel->setChecked(m_modelPanel && m_modelPanel->isVisible());
-    autoLabelPanel->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_A));
+    autoLabelPanel->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_A));
     registerShortcut(autoLabelPanel, QStringLiteral("auto_label"), tr("AI"));
     connect(autoLabelPanel, &QAction::toggled, m_modelPanel,
             &QWidget::setVisible);
@@ -4768,7 +4768,7 @@ void AnnotationWindow::createActions() {
     m_zoomOriginalAction = viewMenu->addAction(tr("Original Size"));
     QAction* zoomOriginal = m_zoomOriginalAction;
     zoomOriginal->setIcon(QIcon(iconPath(QStringLiteral("zoom.png"))));
-    zoomOriginal->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Equal));
+    zoomOriginal->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Equal));
     registerShortcut(zoomOriginal, QStringLiteral("zoom_to_original"),
                      tr("View"));
     connect(zoomOriginal, &QAction::triggered, m_canvas,
@@ -4777,7 +4777,7 @@ void AnnotationWindow::createActions() {
     m_fitWidthAction = viewMenu->addAction(tr("Fit Width"));
     QAction* fitWidth = m_fitWidthAction;
     fitWidth->setIcon(QIcon(iconPath(QStringLiteral("fit-width.png"))));
-    fitWidth->setShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_F));
+    fitWidth->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_F));
     registerShortcut(fitWidth, QStringLiteral("fit_width"), tr("View"));
     connect(fitWidth, &QAction::triggered, m_canvas,
             &AnnotationCanvas::fitWidth);
@@ -4850,7 +4850,7 @@ void AnnotationWindow::createActions() {
     });
     QAction* toggleKeepPrevious =
             viewMenu->addAction(tr("Toggle keep previous image adjustments"));
-    toggleKeepPrevious->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_P));
+    toggleKeepPrevious->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_P));
     registerShortcut(toggleKeepPrevious,
                      QStringLiteral("toggle_keep_prev_mode"), tr("View"));
     connect(toggleKeepPrevious, &QAction::triggered, this, [this]() {
@@ -4862,7 +4862,7 @@ void AnnotationWindow::createActions() {
     m_autoUseLastLabelAction = viewMenu->addAction(tr("Auto use last label"));
     m_autoUseLastLabelAction->setCheckable(true);
     m_autoUseLastLabelAction->setChecked(m_autoUseLastLabel);
-    m_autoUseLastLabelAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Y));
+    m_autoUseLastLabelAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Y));
     registerShortcut(m_autoUseLastLabelAction,
                      QStringLiteral("toggle_auto_use_last_label"), tr("View"));
     connect(m_autoUseLastLabelAction, &QAction::toggled, this,
@@ -4882,7 +4882,7 @@ void AnnotationWindow::createActions() {
                                annotationConfig::value("show_shapes"))
                         .toBool());
     }
-    m_showShapesAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_H));
+    m_showShapesAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_H));
     registerShortcut(m_showShapesAction,
                      QStringLiteral("toggle_visibility_shapes"), tr("View"));
     connect(m_showShapesAction, &QAction::toggled, this, [this](bool visible) {
@@ -4899,7 +4899,7 @@ void AnnotationWindow::createActions() {
                                annotationConfig::value("show_masks"))
                         .toBool());
     }
-    m_showMasksAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_M));
+    m_showMasksAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_M));
     registerShortcut(m_showMasksAction, QStringLiteral("show_masks"),
                      tr("View"));
     connect(m_showMasksAction, &QAction::toggled, this, [this](bool visible) {
@@ -4916,7 +4916,7 @@ void AnnotationWindow::createActions() {
                                annotationConfig::value("show_labels"))
                         .toBool());
     }
-    m_showLabelsAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_L));
+    m_showLabelsAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_L));
     registerShortcut(m_showLabelsAction, QStringLiteral("show_labels"),
                      tr("View"));
     connect(m_showLabelsAction, &QAction::toggled, this, [this](bool visible) {
@@ -4956,7 +4956,7 @@ void AnnotationWindow::createActions() {
             addDisplayAction(tr("Show Texts"), QStringLiteral("showTexts"),
                              annotationConfig::value("show_texts").toBool(),
                              &AnnotationCanvas::setShowTexts);
-    m_showTextsAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_T));
+    m_showTextsAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_T));
     registerShortcut(m_showTextsAction, QStringLiteral("show_texts"),
                      tr("View"));
     m_showAttributesAction = addDisplayAction(
@@ -4964,7 +4964,7 @@ void AnnotationWindow::createActions() {
             annotationConfig::value("show_attributes").toBool(),
             &AnnotationCanvas::setShowAttributes);
     m_showAttributesAction->setShortcut(
-            QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_L));
+            QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_L));
     registerShortcut(m_showAttributesAction, QStringLiteral("show_attributes"),
                      tr("View"));
     m_showDegreesAction =
@@ -4975,7 +4975,7 @@ void AnnotationWindow::createActions() {
             tr("Show KIE Linking"), QStringLiteral("showLinking"),
             annotationConfig::value("show_linking").toBool(),
             &AnnotationCanvas::setShowLinking);
-    m_showLinkingAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_K));
+    m_showLinkingAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_K));
     registerShortcut(m_showLinkingAction, QStringLiteral("show_linking"),
                      tr("View"));
     QAction* closeCompare = m_compareBar->addAction(
@@ -4985,7 +4985,7 @@ void AnnotationWindow::createActions() {
             [this]() { closeCompareView(); });
     m_settingsAction = viewMenu->addAction(tr("Settings"));
     m_settingsAction->setObjectName(QStringLiteral("AnnotationSettings"));
-    m_settingsAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_0));
+    m_settingsAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_0));
     registerShortcut(m_settingsAction, QStringLiteral("open_settings"),
                      tr("Dialog"));
     connect(m_settingsAction, &QAction::triggered, this,
@@ -5196,12 +5196,12 @@ void AnnotationWindow::createActions() {
     QAction* editLabel = editMenu->addAction(
             QIcon(iconPath(QStringLiteral("edit.png"))), tr("Edit label"), this,
             &AnnotationWindow::editSelectedLabel,
-            QKeySequence(Qt::CTRL + Qt::Key_E));
+            QKeySequence(Qt::CTRL | Qt::Key_E));
     registerShortcut(editLabel, QStringLiteral("edit_label"), tr("Dialog"));
     QAction* labelManager = editMenu->addAction(
             QIcon(iconPath(QStringLiteral("labels.png"))), tr("Label Manager"),
             this, &AnnotationWindow::editLabels,
-            QKeySequence(Qt::ALT + Qt::Key_L));
+            QKeySequence(Qt::ALT | Qt::Key_L));
     labelManager->setObjectName(QStringLiteral("AnnotationLabelManager"));
     registerShortcut(labelManager, QStringLiteral("edit_labels"), tr("Dialog"));
     QAction* duplicate = editMenu->addAction(
@@ -5211,7 +5211,7 @@ void AnnotationWindow::createActions() {
                 copyShapes();
                 pasteShapes();
             },
-            QKeySequence(Qt::CTRL + Qt::Key_D));
+            QKeySequence(Qt::CTRL | Qt::Key_D));
     registerShortcut(duplicate, QStringLiteral("duplicate_polygon"),
                      tr("Shape"));
     // Source Edit-menu entries: copy the selected shape's coordinates and
@@ -5349,17 +5349,17 @@ void AnnotationWindow::createActions() {
             editMenu->addAction(QIcon(iconPath(QStringLiteral("union.png"))),
                                 tr("Union selected objects"), this,
                                 &AnnotationWindow::unionSelectedShapes,
-                                QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_M));
+                                QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_M));
     registerShortcut(unionAction, QStringLiteral("union_selected_shapes"),
                      tr("Shape"));
     QAction* digitSettings =
             editMenu->addAction(tr("Digit Shortcut Manager"), this,
                                 &AnnotationWindow::configureDigitShortcuts);
-    digitSettings->setShortcut(QKeySequence(Qt::ALT + Qt::Key_D));
+    digitSettings->setShortcut(QKeySequence(Qt::ALT | Qt::Key_D));
     registerShortcut(digitSettings, QStringLiteral("edit_digit_shortcut"),
                      tr("Dialog"));
     QAction* overviewAction = new QAction(tr("Overview"), this);
-    overviewAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_G));
+    overviewAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_G));
     registerShortcut(overviewAction, QStringLiteral("show_overview"),
                      tr("View"));
     connect(overviewAction, &QAction::triggered, this, [this]() {
@@ -5392,7 +5392,7 @@ void AnnotationWindow::createActions() {
     QAction* addPointAction = addShortcutAction(
             editMenu, tr("Add point to edge"),
             QStringLiteral("add_point_to_edge"),
-            QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_P), tr("Shape"),
+            QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_P), tr("Shape"),
             [this]() { m_canvas->addPointToEdge(); });
     QAction* removePointAction =
             addShortcutAction(editMenu, tr("Remove selected point"),
@@ -5407,7 +5407,7 @@ void AnnotationWindow::createActions() {
             [removePointAction](int) { removePointAction->setEnabled(false); });
     QAction* gidManager = addShortcutAction(
             editMenu, tr("Group ID Manager"), QStringLiteral("edit_group_id"),
-            QKeySequence(Qt::ALT + Qt::Key_G), tr("Dialog"), [this]() {
+            QKeySequence(Qt::ALT | Qt::Key_G), tr("Dialog"), [this]() {
                 const QVector<int> selected =
                         m_canvas->selectedIndices().values().toVector();
                 if (selected.isEmpty()) return;
@@ -5428,7 +5428,7 @@ void AnnotationWindow::createActions() {
             });
     QAction* shapeManager = addShortcutAction(
             editMenu, tr("Shape Manager"), QStringLiteral("edit_shapes"),
-            QKeySequence(Qt::ALT + Qt::Key_S), tr("Dialog"),
+            QKeySequence(Qt::ALT | Qt::Key_S), tr("Dialog"),
             [this]() { editShapes(); });
     shapeManager->setEnabled(false);
     toolMenu->addAction(overviewAction);
@@ -5450,7 +5450,7 @@ void AnnotationWindow::createActions() {
             QIcon(iconPath(QStringLiteral("cartesian.png"))),
             tr("Point cloud annotation"), this,
             &AnnotationWindow::openPointCloudAnnotation,
-            QKeySequence(Qt::CTRL + Qt::Key_6));
+            QKeySequence(Qt::CTRL | Qt::Key_6));
     registerShortcut(pointCloudAction, QStringLiteral("open_pointcloud"),
                      tr("Tool"));
     pointCloudAction->setToolTip(
@@ -5464,7 +5464,7 @@ void AnnotationWindow::createActions() {
     QAction* autoUseLastGidAction = addShortcutAction(
             viewMenu, tr("Toggle auto use last group ID"),
             QStringLiteral("toggle_auto_use_last_gid"),
-            QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_G), tr("View"),
+            QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_G), tr("View"),
             [this]() {
                 QSettings settings;
                 const bool enabled =
@@ -5480,7 +5480,7 @@ void AnnotationWindow::createActions() {
     QAction* loopThroughLabels = addShortcutAction(
             viewMenu, tr("Loop Through Labels"),
             QStringLiteral("loop_thru_labels"),
-            QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_N), tr("View"),
+            QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_N), tr("View"),
             [this]() {
                 // Source review loop: the list is snapshotted on the
                 // first trigger, each step zooms to the shape, and
@@ -5530,7 +5530,7 @@ void AnnotationWindow::createActions() {
     QAction* loopSelectLabels = addShortcutAction(
             viewMenu, tr("Loop Select Labels"),
             QStringLiteral("loop_select_labels"),
-            QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_C), tr("View"),
+            QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_C), tr("View"),
             [this]() {
                 // Source semantics: walk the object list; reaching
                 // the end clears the selection and restarts.
@@ -5632,7 +5632,7 @@ void AnnotationWindow::createActions() {
     });
     paddleOcr->setObjectName(QStringLiteral("AnnotationOpenPaddleOCR"));
     paddleOcr->setIcon(QIcon(iconPath(QStringLiteral("paddlepaddle.png"))));
-    paddleOcr->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_4));
+    paddleOcr->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_4));
     registerShortcut(paddleOcr, QStringLiteral("open_paddleocr"), tr("Dialog"));
     paddleOcr->setStatusTip(tr("Open PaddleOCR dialog"));
     paddleOcr->setProperty("qAnyToolbarId", QStringLiteral("open_paddleocr"));
@@ -5728,17 +5728,17 @@ void AnnotationWindow::createActions() {
             {"sam_box", "rectangle.png", "SAM box"},
             {"cuboid", "cuboid.png", "Cuboid"}};
     const QHash<QString, QKeySequence> toolShortcuts = {
-            {QStringLiteral("edit"), QKeySequence(Qt::CTRL + Qt::Key_J)},
+            {QStringLiteral("edit"), QKeySequence(Qt::CTRL | Qt::Key_J)},
             {QStringLiteral("polygon"), QKeySequence(Qt::Key_P)},
             {QStringLiteral("rectangle"), QKeySequence(Qt::Key_R)},
             {QStringLiteral("rotation"), QKeySequence(Qt::Key_O)},
             {QStringLiteral("quadrilateral"), QKeySequence(Qt::Key_T)},
-            {QStringLiteral("circle"), QKeySequence(Qt::SHIFT + Qt::Key_C)},
-            {QStringLiteral("line"), QKeySequence(Qt::SHIFT + Qt::Key_L)},
-            {QStringLiteral("point"), QKeySequence(Qt::SHIFT + Qt::Key_P)},
-            {QStringLiteral("linestrip"), QKeySequence(Qt::SHIFT + Qt::Key_S)},
-            {QStringLiteral("magic_wand"), QKeySequence(Qt::SHIFT + Qt::Key_W)},
-            {QStringLiteral("cuboid"), QKeySequence(Qt::CTRL + Qt::Key_R)}};
+            {QStringLiteral("circle"), QKeySequence(Qt::SHIFT | Qt::Key_C)},
+            {QStringLiteral("line"), QKeySequence(Qt::SHIFT | Qt::Key_L)},
+            {QStringLiteral("point"), QKeySequence(Qt::SHIFT | Qt::Key_P)},
+            {QStringLiteral("linestrip"), QKeySequence(Qt::SHIFT | Qt::Key_S)},
+            {QStringLiteral("magic_wand"), QKeySequence(Qt::SHIFT | Qt::Key_W)},
+            {QStringLiteral("cuboid"), QKeySequence(Qt::CTRL | Qt::Key_R)}};
     const QHash<QString, QString> toolShortcutIds = {
             {QStringLiteral("edit"), QStringLiteral("edit_polygon")},
             {QStringLiteral("polygon"), QStringLiteral("create_polygon")},
@@ -5796,7 +5796,7 @@ void AnnotationWindow::createActions() {
     brush->setProperty("qAnyToolbarId", QStringLiteral("edit_brush_mode"));
     toolbarActions.insert(QStringLiteral("edit_brush_mode"), brush);
     brush->setCheckable(true);
-    brush->setShortcut(QKeySequence(Qt::SHIFT + Qt::Key_B));
+    brush->setShortcut(QKeySequence(Qt::SHIFT | Qt::Key_B));
     registerShortcut(brush, QStringLiteral("edit_brush_mode"), tr("Shape"));
     m_canvas->addAction(brush);
     brush->setToolTip(tr("Refine a mask; Ctrl erases, R switches paint/erase"));
@@ -5888,7 +5888,7 @@ void AnnotationWindow::createActions() {
     QAction* createBrush =
             editMenu->addAction(QIcon(iconPath(QStringLiteral("brush.png"))),
                                 tr("Create brush polygon"));
-    createBrush->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_N));
+    createBrush->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_N));
     createBrush->setProperty("qAnyToolbarId",
                              QStringLiteral("create_brush_polygon"));
     toolbarActions.insert(QStringLiteral("create_brush_polygon"), createBrush);
@@ -5933,7 +5933,7 @@ void AnnotationWindow::createActions() {
     m_fitWindowAction = fit;
     fit->setProperty("qAnyToolbarId", QStringLiteral("fit_image"));
     toolbarActions.insert(QStringLiteral("fit_image"), fit);
-    fit->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_F));
+    fit->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_F));
     registerShortcut(fit, QStringLiteral("fit_window"), tr("View"));
     m_canvas->addAction(fit);
     connect(fit, &QAction::triggered, m_canvas, &AnnotationCanvas::fitImage);
@@ -5943,7 +5943,7 @@ void AnnotationWindow::createActions() {
     m_zoomInAction = zoomIn;
     zoomIn->setProperty("qAnyToolbarId", QStringLiteral("zoom_in"));
     toolbarActions.insert(QStringLiteral("zoom_in"), zoomIn);
-    zoomIn->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Plus));
+    zoomIn->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Plus));
     registerShortcut(zoomIn, QStringLiteral("zoom_in"), tr("View"));
     m_canvas->addAction(zoomIn);
     connect(zoomIn, &QAction::triggered, this,
@@ -5954,7 +5954,7 @@ void AnnotationWindow::createActions() {
     m_zoomOutAction = zoomOut;
     zoomOut->setProperty("qAnyToolbarId", QStringLiteral("zoom_out"));
     toolbarActions.insert(QStringLiteral("zoom_out"), zoomOut);
-    zoomOut->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Minus));
+    zoomOut->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Minus));
     registerShortcut(zoomOut, QStringLiteral("zoom_out"), tr("View"));
     m_canvas->addAction(zoomOut);
     connect(zoomOut, &QAction::triggered, this,
@@ -6267,7 +6267,7 @@ void AnnotationWindow::createActions() {
     // The source registers Ctrl+Q as the quit shortcut; the annotation
     // workspace routes it through the confirm-on-close path.
     QAction* quitAction = new QAction(tr("Quit"), this);
-    quitAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
+    quitAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Q));
     registerShortcut(quitAction, QStringLiteral("quit"), tr("File"));
     connect(quitAction, &QAction::triggered, this, [this]() { close(); });
     addAction(quitAction);

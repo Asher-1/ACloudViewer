@@ -8,6 +8,7 @@
 #include "VideoTab.h"
 
 #include <CVLog.h>
+#include <QtCompat.h>
 #include <aicore/backend_capi.h>
 #include <aicore/sam3_capi.h>
 #include <ecvAICoreDeviceUiHelper.h>
@@ -279,7 +280,7 @@ void VideoTab::setupUi() {
     modeGroup->addButton(m_modeText, 0);
     modeGroup->addButton(m_modeBox, 1);
     modeGroup->addButton(m_modePoints, 2);
-    connect(modeGroup, QOverload<int>::of(&QButtonGroup::buttonClicked), this,
+    connect(modeGroup, qtCompatButtonGroupClicked(), this,
             &VideoTab::onModeChanged);
 
     m_textPrompt = new QLineEdit();

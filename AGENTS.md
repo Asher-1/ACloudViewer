@@ -12,6 +12,7 @@ Reference layout: Use this file when you need a **full-repo map** (build, module
 | Third-party dependency integration, Qt framework ports and dynamic Git patches | `.agents/rules/acloudviewer-plugin-dev.mdc` § Third-Party Dependencies; inspect `3rdparty/libpng/libpng.cmake` and the relevant existing patch recipe first |
 | ggml ExternalProject details | `.agents/rules/acloudviewer-ggml-aicore.mdc` |
 | Agent/RPC/CLI integration | `.agents/rules/acloudviewer-agent-dev.mdc`, `agent-integration/README.md` |
+| Qt 5.12+/Qt6 dual-compat, GL/VTK porting, Qt6 CI / Ubuntu 26.04 | `.agents/skills/acloudviewer-qt-compat/SKILL.md`, `core/include/QtCompat.h` |
 | CLI harness deploy/operate (install, MCP client registration, headless batch, AICore batch) | `.agents/skills/acloudviewer-cli-agent/SKILL.md` |
 | GitHub Actions runner failures | `.agents/skills/github-ci-runner-debugging/SKILL.md`, `.agents/rules/acloudviewer-ci-debugging.mdc` |
 

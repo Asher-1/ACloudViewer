@@ -1,6 +1,6 @@
 {
   "upstream": "v1.5.2",
-  "patch_sha256": "690d6b8af80efc1eb5f983d9ed6913e1c82f84786c40c63df12106169c1c9da6",
+  "patch_sha256": "2808b2b608e69caa75dceedbb2083b862f5e1d2a42996f445a474a757891f578",
   "files": [
     {
       "path": "CMakeLists.txt",
@@ -120,7 +120,7 @@
     {
       "path": "lib/src/style/QlementineStyle.cpp",
       "before_sha256": "9178c206bc256abadae6a27da1d40400a2518d119da26cbf699b3f0134130570",
-      "after_sha256": "82ba95d592c48c2708e429f78c334e1baaf2af3b7ab3b4ad420481122b8931b9"
+      "after_sha256": "aca0393f6c563d26bed174c9516b680af646c3bd23f4c983cbb60b90d519081c"
     },
     {
       "path": "lib/src/style/Theme.cpp",

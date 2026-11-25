@@ -7,6 +7,7 @@
 
 #include "VideoCanvas.h"
 
+#include <QtCompat.h>
 #include <ecvAICoreUiHelper.h>
 
 #include <QMouseEvent>
@@ -76,12 +77,12 @@ bool VideoCanvas::isInsideImage(const QPointF& p) const {
 }
 
 QPointF VideoCanvas::screenToImage(const QPointF& screen) const {
-    const QPixmap* pm = pixmap();
-    if (!pm || pm->isNull() || m_frame.isNull()) return QPointF(-1, -1);
-    const double offX = (width() - pm->width()) / 2.0;
-    const double offY = (height() - pm->height()) / 2.0;
-    const double ix = (screen.x() - offX) / pm->width() * m_frame.width();
-    const double iy = (screen.y() - offY) / pm->height() * m_frame.height();
+    const QPixmap pm = qtCompatLabelPixmap(this);
+    if (pm.isNull() || m_frame.isNull()) return QPointF(-1, -1);
+    const double offX = (width() - pm.width()) / 2.0;
+    const double offY = (height() - pm.height()) / 2.0;
+    const double ix = (screen.x() - offX) / pm.width() * m_frame.width();
+    const double iy = (screen.y() - offY) / pm.height() * m_frame.height();
     return QPointF(ix, iy);
 }
 

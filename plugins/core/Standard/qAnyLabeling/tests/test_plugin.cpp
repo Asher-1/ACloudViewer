@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <QtCompat.h>
 #include <aicore/ocr_capi.h>
 #include <ecvStdPluginInterface.h>
 
@@ -58,6 +59,7 @@
 #include <QSplitter>
 #include <QTableWidget>
 #include <QTemporaryDir>
+#include <QThread>
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
@@ -311,7 +313,7 @@ int main(int argc, char** argv) {
         !toolMenu->actions().at(11)->isEnabled() ||
         !toolMenu->actions().at(12)->isEnabled() ||
         toolMenu->actions().at(12)->shortcut() !=
-                QKeySequence(Qt::CTRL + Qt::Key_6) ||
+                QKeySequence(Qt::CTRL | Qt::Key_6) ||
         toolMenu->actions().at(12)->property("qAnyShortcutId").toString() !=
                 QStringLiteral("open_pointcloud")) {
         std::fprintf(stderr,
@@ -970,7 +972,7 @@ int main(int argc, char** argv) {
     }
     Q_UNUSED(loopThrough);
     if (!reviewPopup || !loopThrough || !quitAction ||
-        quitAction->shortcut() != QKeySequence(Qt::CTRL + Qt::Key_Q)) {
+        quitAction->shortcut() != QKeySequence(Qt::CTRL | Qt::Key_Q)) {
         std::fprintf(stderr,
                      "Review popup or quit action missing: popup=%p loop=%p "
                      "quit=%p\n",
@@ -1036,7 +1038,7 @@ int main(int argc, char** argv) {
         imageFlagsAction->toolTip() !=
                 QStringLiteral("Upload Custom Image Flags File") ||
         !settingsAction ||
-        settingsAction->shortcut() != QKeySequence(Qt::CTRL + Qt::Key_0) ||
+        settingsAction->shortcut() != QKeySequence(Qt::CTRL | Qt::Key_0) ||
         !keepPreviousBrightness->isCheckable() ||
         !keepPreviousContrast->isCheckable() || !menuHasIcons(uploadMenu) ||
         !menuHasIcons(exportMenu) ||
@@ -1384,17 +1386,32 @@ int main(int argc, char** argv) {
     }
     QMainWindow hostWindow;
     auto* hostGlobal = new QAction(QStringLiteral("Host global"), &hostWindow);
-    hostGlobal->setShortcut(QKeySequence(Qt::CTRL + Qt::ALT + Qt::Key_9));
+    hostGlobal->setShortcut(QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_9));
     hostGlobal->setShortcutContext(Qt::ApplicationShortcut);
     hostWindow.addAction(hostGlobal);
     auto* hostSave = new QAction(QStringLiteral("Host save"), &hostWindow);
-    hostSave->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_S));
+    hostSave->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_S));
     hostSave->setShortcutContext(Qt::ApplicationShortcut);
     hostWindow.addAction(hostSave);
     hostWindow.show();
     window->activateWindow();
-    QCoreApplication::processEvents();
-    QCoreApplication::processEvents();
+    // A bare Xvfb display has no window manager, so show/activation events
+    // arrive asynchronously and may interleave; re-assert activation until
+    // the suspension has survived a full settling window of event processing
+    // (a late deactivate event must not silently restore the host action).
+    int stable = 0;
+    for (int i = 0; i < 400 && stable < 20; ++i) {
+        if (QApplication::activeWindow() != window) {
+            window->activateWindow();
+            stable = 0;
+        } else if (hostSave->isEnabled()) {
+            stable = 0;
+        } else {
+            ++stable;
+        }
+        QCoreApplication::processEvents();
+        QThread::msleep(10);
+    }
     if (hostSave->isEnabled()) {
         std::fprintf(stderr, "Host default shortcut was not suspended\n");
         return 1;
@@ -1431,7 +1448,7 @@ int main(int argc, char** argv) {
                 return;
             }
             saveShortcut->setKeySequence(
-                    QKeySequence(Qt::CTRL + Qt::ALT + Qt::Key_9));
+                    QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_9));
             if (buttons->button(QDialogButtonBox::Ok)->isEnabled()) {
                 std::fprintf(
                         stderr,
@@ -1440,7 +1457,7 @@ int main(int argc, char** argv) {
                 return;
             }
             saveShortcut->setKeySequence(
-                    QKeySequence(Qt::CTRL + Qt::ALT + Qt::Key_8));
+                    QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_8));
             if (!buttons->button(QDialogButtonBox::Ok)->isEnabled()) {
                 std::fprintf(stderr, "Unique shortcut remained blocked\n");
                 dialog->reject();
@@ -1472,7 +1489,7 @@ int main(int argc, char** argv) {
         !QSettings()
                  .value(QStringLiteral("qAnyLabeling/fileListCheckboxEditable"))
                  .toBool() ||
-        save->shortcut() != QKeySequence(Qt::CTRL + Qt::ALT + Qt::Key_8) ||
+        save->shortcut() != QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_8) ||
         QSettings().value(QStringLiteral("qAnyLabeling/shortcuts/save")) !=
                 QStringLiteral("Ctrl+Alt+8") ||
         !hostSave->isEnabled()) {
@@ -1538,8 +1555,7 @@ int main(int argc, char** argv) {
         for (QWidget* widget : QApplication::topLevelWidgets()) {
             auto* dialog = qobject_cast<QFileDialog*>(widget);
             if (!dialog) continue;
-            dialog->selectFile(imageFlagsPath);
-            QMetaObject::invokeMethod(dialog, "accept", Qt::DirectConnection);
+            qtCompatFileDialogSelectAndAccept(dialog, imageFlagsPath);
         }
     });
     imageFlagsAction->trigger();
@@ -1663,18 +1679,18 @@ int main(int argc, char** argv) {
                     dialog->reject();
                     return;
                 }
-                QTimer::singleShot(0, dialog, [exportPath, dialog] {
+                QTimer::singleShot(0, dialog, [exportPath] {
                     if (auto* chooser = qobject_cast<QFileDialog*>(
                                 QApplication::activeModalWidget())) {
                         chooser->setDirectory(exportPath);
-                        chooser->selectFile(exportPath);
-                        QTimer::singleShot(0, dialog, [] {
-                            if (auto* message = qobject_cast<QMessageBox*>(
-                                        QApplication::activeModalWidget()))
-                                message->accept();
-                        });
-                        QMetaObject::invokeMethod(chooser, "accept",
-                                                  Qt::DirectConnection);
+                        qtCompatFileDialogSelectAndAccept(
+                                chooser, exportPath, [] {
+                                    if (auto* message = qobject_cast<
+                                                QMessageBox*>(
+                                                QApplication::
+                                                        activeModalWidget()))
+                                        message->accept();
+                                });
                     }
                 });
                 auto* exportButton = dialog->findChild<QPushButton*>(
@@ -1754,7 +1770,7 @@ int main(int argc, char** argv) {
     if (!tags || !tagInput || !addTag || !editTag || !deleteTags || !copyTags ||
         !batchTags || !imageTags->isChecked() || !tags->isVisible() ||
         imageTags->shortcut() !=
-                QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_T) ||
+                QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_T) ||
         tags->count() != 2 ||
         tags->item(0)->text() != QStringLiteral("machine") ||
         tags->item(1)->text() != QStringLiteral("camera")) {
@@ -1918,36 +1934,36 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "Image tag reorder was not saved\n");
         return 1;
     }
-    if (editLabel->shortcut() != QKeySequence(Qt::CTRL + Qt::Key_E) ||
+    if (editLabel->shortcut() != QKeySequence(Qt::CTRL | Qt::Key_E) ||
         editLabel->shortcutContext() != Qt::WindowShortcut ||
-        labelManager->shortcut() != QKeySequence(Qt::ALT + Qt::Key_L) ||
+        labelManager->shortcut() != QKeySequence(Qt::ALT | Qt::Key_L) ||
         labelManager->shortcutContext() != Qt::WindowShortcut ||
-        openImage->shortcut() != QKeySequence(Qt::CTRL + Qt::Key_I) ||
-        openVideo->shortcut() != QKeySequence(Qt::CTRL + Qt::Key_O) ||
-        openFolder->shortcut() != QKeySequence(Qt::CTRL + Qt::Key_U) ||
-        autoLabel->shortcut() != QKeySequence(Qt::CTRL + Qt::Key_B) ||
-        duplicate->shortcut() != QKeySequence(Qt::CTRL + Qt::Key_D) ||
+        openImage->shortcut() != QKeySequence(Qt::CTRL | Qt::Key_I) ||
+        openVideo->shortcut() != QKeySequence(Qt::CTRL | Qt::Key_O) ||
+        openFolder->shortcut() != QKeySequence(Qt::CTRL | Qt::Key_U) ||
+        autoLabel->shortcut() != QKeySequence(Qt::CTRL | Qt::Key_B) ||
+        duplicate->shortcut() != QKeySequence(Qt::CTRL | Qt::Key_D) ||
         hideSelected->shortcut() != QKeySequence(Qt::Key_S) ||
         showHidden->shortcut() != QKeySequence(Qt::Key_W) ||
         polygonTool->shortcut() != QKeySequence(Qt::Key_P) ||
-        brushTool->shortcut() != QKeySequence(Qt::SHIFT + Qt::Key_B) ||
-        fitImage->shortcut() != QKeySequence(Qt::CTRL + Qt::Key_F) ||
+        brushTool->shortcut() != QKeySequence(Qt::SHIFT | Qt::Key_B) ||
+        fitImage->shortcut() != QKeySequence(Qt::CTRL | Qt::Key_F) ||
         compareView->shortcut() !=
-                QKeySequence(Qt::CTRL + Qt::ALT + Qt::Key_C) ||
-        saveAs->shortcut() != QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_S) ||
-        closeImage->shortcut() != QKeySequence(Qt::CTRL + Qt::Key_W) ||
+                QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_C) ||
+        saveAs->shortcut() != QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_S) ||
+        closeImage->shortcut() != QKeySequence(Qt::CTRL | Qt::Key_W) ||
         deleteLabelFile->shortcut() !=
-                QKeySequence(Qt::CTRL + Qt::Key_Delete) ||
+                QKeySequence(Qt::CTRL | Qt::Key_Delete) ||
         deleteImageFile->shortcut() !=
-                QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_Delete) ||
-        autoLabelPanel->shortcut() != QKeySequence(Qt::CTRL + Qt::Key_A) ||
-        zoomOriginal->shortcut() != QKeySequence(Qt::CTRL + Qt::Key_Equal) ||
+                QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Delete) ||
+        autoLabelPanel->shortcut() != QKeySequence(Qt::CTRL | Qt::Key_A) ||
+        zoomOriginal->shortcut() != QKeySequence(Qt::CTRL | Qt::Key_Equal) ||
         fitWidth->shortcut() !=
-                QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_F) ||
-        showShapes->shortcut() != QKeySequence(Qt::CTRL + Qt::Key_H) ||
-        showLabels->shortcut() != QKeySequence(Qt::CTRL + Qt::Key_L) ||
-        autoUseLastLabel->shortcut() != QKeySequence(Qt::CTRL + Qt::Key_Y) ||
-        createBrush->shortcut() != QKeySequence(Qt::CTRL + Qt::Key_N) ||
+                QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_F) ||
+        showShapes->shortcut() != QKeySequence(Qt::CTRL | Qt::Key_H) ||
+        showLabels->shortcut() != QKeySequence(Qt::CTRL | Qt::Key_L) ||
+        autoUseLastLabel->shortcut() != QKeySequence(Qt::CTRL | Qt::Key_Y) ||
+        createBrush->shortcut() != QKeySequence(Qt::CTRL | Qt::Key_N) ||
         polygonTool->shortcutContext() != Qt::WindowShortcut ||
         brushTool->shortcutContext() != Qt::WindowShortcut ||
         openVideo->shortcutContext() != Qt::WindowShortcut ||

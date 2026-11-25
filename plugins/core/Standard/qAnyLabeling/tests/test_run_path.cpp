@@ -896,6 +896,13 @@ int runAttribute(QMainWindow* window,
         if (action->property("qAnyToolbarId").toString() == "auto_run")
             autoRun = action;
     if (!check(autoRun, "Real Auto Run entry point")) return 1;
+    // Auto Run is only enabled while the AI panel is open, and Qt6
+    // QAction::trigger() honors the enabled state (Qt5 fired disabled
+    // actions too), so toggle the panel on the way the user does.
+    for (auto* action : window->findChildren<QAction*>())
+        if (action->property("qAnyToolbarId").toString() == "auto_label")
+            action->setChecked(true);
+    QApplication::processEvents();
     const auto launchBatch = [&]() {
         bool selected = false;
         QTimer::singleShot(0, window, [&]() {
@@ -1595,6 +1602,13 @@ int main(int argc, char** argv) {
     auto* statusLabel =
             window->findChild<QLabel*>(QStringLiteral("AnnotationStatus"));
     if (!check(autoRun && statusLabel, "Auto Run action not found")) return 1;
+    // Auto Run is only enabled while the AI panel is open (Qt6 trigger
+    // honors the enabled state), so show it the way the user does.
+    for (auto* action : window->findChildren<QAction*>())
+        if (action->property("qAnyToolbarId").toString() ==
+            QStringLiteral("auto_label"))
+            action->setChecked(true);
+    QApplication::processEvents();
     statusLabel->setText(QString());
     autoRun->trigger();
     QApplication::processEvents();

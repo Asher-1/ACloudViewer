@@ -1142,7 +1142,7 @@ index b1e4034..84ad57b 100644
  };
  } // namespace oclero::qlementine
 diff --git a/lib/src/style/QlementineStyle.cpp b/lib/src/style/QlementineStyle.cpp
-index 153308f..3c586e9 100644
+index 153308f..ad8bd47 100644
 --- a/lib/src/style/QlementineStyle.cpp
 +++ b/lib/src/style/QlementineStyle.cpp
 @@ -43,7 +43,7 @@
@@ -2067,7 +2067,37 @@ index 153308f..3c586e9 100644
        }
        break;
      case CT_ComboBox:
-@@ -4058,7 +4096,7 @@ QSize QlementineStyle::sizeFromContents(
+@@ -4011,15 +4049,20 @@ QSize QlementineStyle::sizeFromContents(
+         }
+ 
+         // Add space to compute correct sizeHint.
+-        if (!isTabCellEditor) {
+-          // Add space for indicator (NB: this is the arrow on the right, not the icon).
+-          const auto indicatorSize = _impl->theme.iconSize;
+-          w += _impl->theme.spacing + indicatorSize.width();
+-
+-          // Add space for padding.
+-          const auto framePadding = pixelMetric(PM_ComboBoxFrameWidth, optComboBox, widget);
+-          const auto horizontalMargin = pixelMetric(PM_ButtonMargin, opt, widget);
+-          w += horizontalMargin + framePadding * 2;
++        // Add space for indicator (NB: this is the arrow on the right, not the icon).
++        const auto indicatorSize = _impl->theme.iconSize;
++        w += _impl->theme.spacing + indicatorSize.width();
++
++        // Add space for padding.
++        const auto framePadding = pixelMetric(PM_ComboBoxFrameWidth, optComboBox, widget);
++        const auto horizontalMargin = pixelMetric(PM_ButtonMargin, opt, widget);
++        w += horizontalMargin + framePadding * 2;
++
++        // A cell editor must not widen its column, but a hint equal to the current cell
++        // width also keeps ResizeToContents from ever shrinking it (and starts at the
++        // default width of an editor that is not laid out yet). Cap instead of replace.
++        if (isTabCellEditor) {
++          w = std::min(w, optComboBox->rect.width());
+         }
+ 
+         return QSize{ w, h };
+@@ -4058,7 +4101,7 @@ QSize QlementineStyle::sizeFromContents(
            const auto spacing = _impl->theme.spacing;
            const auto& fm = optMenuItem->fontMetrics;
            const auto [label, shortcut] = getMenuLabelAndShortcut(optMenuItem->text);
@@ -2076,7 +2106,7 @@ index 153308f..3c586e9 100644
  
            // Submenu arrow.
            const auto hasArrow = optMenuItem->menuItemType == QStyleOptionMenuItem::SubMenu;
-@@ -4066,23 +4104,25 @@ QSize QlementineStyle::sizeFromContents(
+@@ -4066,23 +4109,25 @@ QSize QlementineStyle::sizeFromContents(
  
            // Shortcut. NB: Some difficulties to understand what's going on. Qt changes the width so here's a hack.
            const auto hasShortcut = shortcut.length() > 0;
@@ -2112,7 +2142,7 @@ index 153308f..3c586e9 100644
            return { w, h };
          }
          return QSize{};
-@@ -4090,11 +4130,8 @@ QSize QlementineStyle::sizeFromContents(
+@@ -4090,11 +4135,8 @@ QSize QlementineStyle::sizeFromContents(
        break;
      case CT_MenuBarItem: {
        const auto hPadding = _impl->theme.spacing;
@@ -2125,7 +2155,7 @@ index 153308f..3c586e9 100644
      } break;
      case CT_MenuBar:
        return contentSize;
-@@ -4102,11 +4139,14 @@ QSize QlementineStyle::sizeFromContents(
+@@ -4102,11 +4144,14 @@ QSize QlementineStyle::sizeFromContents(
        return contentSize;
      case CT_TabBarTab:
        if (const auto* optTab = qstyleoption_cast<const QStyleOptionTab*>(opt)) {
@@ -2141,7 +2171,7 @@ index 153308f..3c586e9 100644
  
          auto w = spacing * 2;
  
-@@ -4127,7 +4167,7 @@ QSize QlementineStyle::sizeFromContents(
+@@ -4127,7 +4172,7 @@ QSize QlementineStyle::sizeFromContents(
  
          // Text.
          if (!optTab->text.isEmpty()) {
@@ -2150,7 +2180,7 @@ index 153308f..3c586e9 100644
          }
  
          // Clamp tab size.
-@@ -4234,7 +4274,7 @@ QSize QlementineStyle::sizeFromContents(
+@@ -4234,7 +4279,7 @@ QSize QlementineStyle::sizeFromContents(
        }
        break;
      case CT_MdiControls:
@@ -2159,7 +2189,7 @@ index 153308f..3c586e9 100644
      case CT_ItemViewItem:
        if (const auto* optItem = qstyleoption_cast<const QStyleOptionViewItem*>(opt)) {
          const auto& features = optItem->features;
-@@ -4245,7 +4285,19 @@ QSize QlementineStyle::sizeFromContents(
+@@ -4245,7 +4290,19 @@ QSize QlementineStyle::sizeFromContents(
          const auto& iconSize = hasIcon ? optItem->decorationSize : QSize{ 0, 0 };
  
          const auto hasText = features.testFlag(QStyleOptionViewItem::HasDisplay) && !optItem->text.isEmpty();
@@ -2180,7 +2210,7 @@ index 153308f..3c586e9 100644
  
          const auto hasCheck = features.testFlag(QStyleOptionViewItem::HasCheckIndicator);
          const auto& checkSize = hasCheck ? _impl->theme.iconSize : QSize{ 0, 0 };
-@@ -4277,7 +4329,7 @@ QSize QlementineStyle::sizeFromContents(
+@@ -4277,7 +4334,7 @@ QSize QlementineStyle::sizeFromContents(
            const auto gridSize = listView ? listView->gridSize() : QSize{ 0, 0 };
            w = qMax(gridSize.width(), w);
            h = qMax(gridSize.height(), h);
@@ -2189,7 +2219,7 @@ index 153308f..3c586e9 100644
          } else {
            const auto sideBySideIconWidth = (iconSize.width() > 0 ? iconSize.width() + spacing : 0);
            const auto sideBySideCheckWidth = (checkSize.width() > 0 ? checkSize.width() + spacing : 0);
-@@ -4287,7 +4339,7 @@ QSize QlementineStyle::sizeFromContents(
+@@ -4287,7 +4344,7 @@ QSize QlementineStyle::sizeFromContents(
              textH + spacing,
              defaultH,
            });
@@ -2198,7 +2228,7 @@ index 153308f..3c586e9 100644
          }
        }
        break;
-@@ -4319,10 +4371,12 @@ int QlementineStyle::pixelMetric(PixelMetric m, const QStyleOption* opt, const Q
+@@ -4319,10 +4376,12 @@ int QlementineStyle::pixelMetric(PixelMetric m, const QStyleOption* opt, const Q
        return _impl->theme.iconSize.height();
  
      // LineEdit.
@@ -2211,7 +2241,7 @@ index 153308f..3c586e9 100644
  
      // Frame.
      case PM_DefaultFrameWidth:
-@@ -4371,9 +4425,9 @@ int QlementineStyle::pixelMetric(PixelMetric m, const QStyleOption* opt, const Q
+@@ -4371,9 +4430,9 @@ int QlementineStyle::pixelMetric(PixelMetric m, const QStyleOption* opt, const Q
      case PM_TabBarTabOverlap:
        return static_cast<int>(_impl->theme.borderRadius);
      case PM_TabBarTabHSpace:
@@ -2223,7 +2253,7 @@ index 153308f..3c586e9 100644
      case PM_TabBarBaseHeight:
        return _impl->theme.controlHeightLarge + _impl->theme.spacing;
      case PM_TabBarBaseOverlap:
-@@ -4401,11 +4455,9 @@ int QlementineStyle::pixelMetric(PixelMetric m, const QStyleOption* opt, const Q
+@@ -4401,11 +4460,9 @@ int QlementineStyle::pixelMetric(PixelMetric m, const QStyleOption* opt, const Q
        return 1;
      // TitleBar.
      case PM_TitleBarHeight:
@@ -2236,7 +2266,7 @@ index 153308f..3c586e9 100644
  
      // Menu.
      case PM_MenuScrollerHeight:
-@@ -4418,8 +4470,8 @@ int QlementineStyle::pixelMetric(PixelMetric m, const QStyleOption* opt, const Q
+@@ -4418,8 +4475,8 @@ int QlementineStyle::pixelMetric(PixelMetric m, const QStyleOption* opt, const Q
        return _impl->theme.spacing / 2 + borderW;
      }
      case PM_MenuPanelWidth:
@@ -2247,7 +2277,7 @@ index 153308f..3c586e9 100644
      case PM_MenuTearoffHeight:
        // Tear off is the part of the menu that is clickable to detach the menu.
        return _impl->theme.controlHeightSmall;
-@@ -4453,23 +4505,18 @@ int QlementineStyle::pixelMetric(PixelMetric m, const QStyleOption* opt, const Q
+@@ -4453,23 +4510,18 @@ int QlementineStyle::pixelMetric(PixelMetric m, const QStyleOption* opt, const Q
  
      // Mdi.
      case PM_MdiSubWindowFrameWidth:
@@ -2275,7 +2305,7 @@ index 153308f..3c586e9 100644
      case PM_ToolBarIconSize:
        return _impl->theme.iconSize.height();
  
-@@ -4570,7 +4617,9 @@ int QlementineStyle::styleHint(StyleHint sh, const QStyleOption* opt, const QWid
+@@ -4570,7 +4622,9 @@ int QlementineStyle::styleHint(StyleHint sh, const QStyleOption* opt, const QWid
  
      // Workspace
      case SH_Workspace_FillSpaceOnMaximize:
@@ -2286,7 +2316,7 @@ index 153308f..3c586e9 100644
  
      // ScrollBar
      case SH_ScrollBar_MiddleClickAbsolutePosition:
-@@ -4833,7 +4882,7 @@ int QlementineStyle::styleHint(StyleHint sh, const QStyleOption* opt, const QWid
+@@ -4833,7 +4887,7 @@ int QlementineStyle::styleHint(StyleHint sh, const QStyleOption* opt, const QWid
  
      // ToolBar
      case SH_ToolBar_Movable:
@@ -2295,7 +2325,7 @@ index 153308f..3c586e9 100644
      case SH_ToolButtonStyle:
        return Qt::ToolButtonStyle::ToolButtonIconOnly;
      case SH_ToolButton_PopupDelay:
-@@ -4875,6 +4924,30 @@ int QlementineStyle::styleHint(StyleHint sh, const QStyleOption* opt, const QWid
+@@ -4875,6 +4929,30 @@ int QlementineStyle::styleHint(StyleHint sh, const QStyleOption* opt, const QWid
  
  QIcon QlementineStyle::standardIcon(StandardPixmap sp, const QStyleOption* opt, const QWidget* w) const {
    switch (sp) {
@@ -2326,7 +2356,7 @@ index 153308f..3c586e9 100644
      case SP_MessageBoxQuestion:
      case SP_MessageBoxInformation:
      case SP_MessageBoxCritical:
-@@ -4918,6 +4991,14 @@ void QlementineStyle::polish(QPalette& palette) {
+@@ -4918,6 +4996,14 @@ void QlementineStyle::polish(QPalette& palette) {
  
  void QlementineStyle::polish(QApplication* app) {
    QCommonStyle::polish(app);
@@ -2341,7 +2371,7 @@ index 153308f..3c586e9 100644
    app->setFont(_impl->theme.fontRegular);
  
    QCoreApplication::setAttribute(Qt::AA_DontShowIconsInMenus, false);
-@@ -4931,6 +5012,15 @@ void QlementineStyle::polish(QApplication* app) {
+@@ -4931,6 +5017,15 @@ void QlementineStyle::polish(QApplication* app) {
  }
  
  void QlementineStyle::unpolish(QApplication* app) {
@@ -2357,7 +2387,7 @@ index 153308f..3c586e9 100644
    QCommonStyle::unpolish(app);
  }
  
-@@ -4944,6 +5034,7 @@ void QlementineStyle::polish(QWidget* w) {
+@@ -4944,6 +5039,7 @@ void QlementineStyle::polish(QWidget* w) {
    // end up with multiple event filters on the same widget.
    auto& polishedWidgetInfo = _impl->polishedWidgets.ensure(w);
    const auto eventFiltersInstalled = !polishedWidgetInfo.eventFilters.empty();
@@ -2365,7 +2395,7 @@ index 153308f..3c586e9 100644
  
    // Not yet ideal, but still better than a huge fonction.
    polishToolTip(w);
-@@ -4951,10 +5042,10 @@ void QlementineStyle::polish(QWidget* w) {
+@@ -4951,10 +5047,10 @@ void QlementineStyle::polish(QWidget* w) {
    polishCommonWidget(w);
    polishExternalFocusFrame(w, _impl->polishedWidgets, polishedWidgetInfo, eventFiltersInstalled);
    polishMenu(w, _impl->polishedWidgets, polishedWidgetInfo, eventFiltersInstalled);
@@ -2378,7 +2408,7 @@ index 153308f..3c586e9 100644
    polishTabBar(w, _impl->polishedWidgets, polishedWidgetInfo, eventFiltersInstalled);
  
    if (auto* label = qobject_cast<QLabel*>(w)) {
-@@ -4965,7 +5056,7 @@ void QlementineStyle::polish(QWidget* w) {
+@@ -4965,7 +5061,7 @@ void QlementineStyle::polish(QWidget* w) {
      }
    }
  
@@ -2387,7 +2417,7 @@ index 153308f..3c586e9 100644
    polishScrollArea(w);
    polishSlider(w);
    polishTextEditors(w, _impl->polishedWidgets, polishedWidgetInfo, eventFiltersInstalled);
-@@ -4982,7 +5073,7 @@ void QlementineStyle::unpolish(QWidget* w) {
+@@ -4982,7 +5078,7 @@ void QlementineStyle::unpolish(QWidget* w) {
  
  void QlementineStyle::drawPrimitiveExt(
    PrimitiveElementExt pe, const QStyleOption* opt, QPainter* p, const QWidget* w) const {
@@ -2396,7 +2426,7 @@ index 153308f..3c586e9 100644
    p->setRenderHint(QPainter::SmoothPixmapTransform, true);
    const auto* optButton = buttonStyleOption(opt);
    const auto* optCommandButton = qstyleoption_cast<const QStyleOptionCommandLinkButton*>(opt);
-@@ -5138,7 +5229,7 @@ QSize QlementineStyle::sizeFromContentsExt(
+@@ -5138,7 +5234,7 @@ QSize QlementineStyle::sizeFromContentsExt(
  
  void QlementineStyle::drawControlExt(
    ControlElementExt ce, const QStyleOption* opt, QPainter* p, const QWidget* w) const {
@@ -2405,7 +2435,7 @@ index 153308f..3c586e9 100644
    p->setRenderHint(QPainter::SmoothPixmapTransform, true);
    const auto* optButton = buttonStyleOption(opt);
    const auto* optCommandButton = qstyleoption_cast<const QStyleOptionCommandLinkButton*>(opt);
-@@ -5444,20 +5535,19 @@ QColor QlementineStyle::listItemBackgroundColor(MouseState const mouse, Selectio
+@@ -5444,20 +5540,19 @@ QColor QlementineStyle::listItemBackgroundColor(MouseState const mouse, Selectio
        case MouseState::Hovered:
          return isSelected ? _impl->theme.neutralColor : _impl->theme.neutralColorDisabled;
        case MouseState::Disabled:
@@ -3270,7 +3300,7 @@ index d68e5e8..138bdc7 100644
    const auto fm = QFontMetrics(font);
 -  const auto parts = shortcutStr.split('+', Qt::SkipEmptyParts, Qt::CaseInsensitive);
 +  const auto parts = shortcutStr.split('+', QtCompat::SkipEmptyParts, Qt::CaseInsensitive);
-
+ 
    const auto spacing = theme.spacing / 2;
    const auto paddingV = theme.spacing / 4;
 @@ -1396,14 +1396,18 @@ QPixmap getPixmap(
@@ -3376,7 +3406,7 @@ index 235a132..c4812a2 100644
    const auto badgeH = badgeFm.height() + badgePadding.top() + badgePadding.bottom();
    const auto badgeRadius = badgeH / 2;
 @@ -916,7 +916,7 @@ void AbstractItemListWidget::drawItemForeground(QPainter& p, const Item& item) c
-
+ 
    // Text.
    if (showText) {
 -    const auto fm = QFontMetrics(labelFont(), this);
@@ -3504,7 +3534,7 @@ index 897f19e..3283a6e 100644
      std::min(screenGeometry.width(), popoverSize.width()),
      std::min(screenGeometry.height(), popoverSize.height()),
 @@ -856,7 +882,7 @@ QRect Popover::getGeometryForPosition(Position const position, Alignment const a
-
+ 
  QRect Popover::getFallbackGeometry() const {
    const auto popoverSize = _frame->sizeHint();
 -  const auto screenGeometry = screen()->availableGeometry().marginsRemoved(_screenPadding);

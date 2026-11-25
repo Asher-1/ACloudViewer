@@ -222,8 +222,9 @@ TEST(TrellisCatalog, IntegrityAnchorVerification) {
         f.close();
     }
     const QByteArray good =
-            QCryptographicHash::hash(QByteArray("GGUF") + QByteArray(4096, 'x'),
-                                     QCryptographicHash::Sha256)
+            QCryptographicHash::hash(
+                    QByteArray(QByteArray("GGUF") + QByteArray(4096, 'x')),
+                    QCryptographicHash::Sha256)
                     .toHex();
     const QByteArray bad =
             QByteArray("00").repeated(32);  // valid hex, wrong value
@@ -252,8 +253,9 @@ TEST(TrellisCatalog, IntegrityLedgerStatTrust) {
     }
     const ecvAssetIntegrity::Anchor anchor{
             QCryptographicHash::Sha256,
-            QCryptographicHash::hash(QByteArray("GGUF") + QByteArray(4096, 'x'),
-                                     QCryptographicHash::Sha256)
+            QCryptographicHash::hash(
+                    QByteArray(QByteArray("GGUF") + QByteArray(4096, 'x')),
+                    QCryptographicHash::Sha256)
                     .toHex()};
     // Ledger miss + DeepVerify self-heals and records the state.
     EXPECT_TRUE(ecvAssetIntegrity::isVerified(
@@ -287,8 +289,9 @@ TEST(TrellisCatalog, IntegrityLedgerPinBump) {
     }
     const ecvAssetIntegrity::Anchor oldPin{
             QCryptographicHash::Sha256,
-            QCryptographicHash::hash(QByteArray("GGUF") + QByteArray(4096, 'x'),
-                                     QCryptographicHash::Sha256)
+            QCryptographicHash::hash(
+                    QByteArray(QByteArray("GGUF") + QByteArray(4096, 'x')),
+                    QCryptographicHash::Sha256)
                     .toHex()};
     ASSERT_TRUE(ecvAssetIntegrity::markVerified(path, oldPin));
     EXPECT_TRUE(ecvAssetIntegrity::isVerified(path, oldPin));
@@ -320,8 +323,9 @@ TEST(TrellisCatalog, IntegrityLedgerEmptyPinPreservesPinnedEntry) {
     }
     const ecvAssetIntegrity::Anchor pin{
             QCryptographicHash::Sha256,
-            QCryptographicHash::hash(QByteArray("GGUF") + QByteArray(4096, 'x'),
-                                     QCryptographicHash::Sha256)
+            QCryptographicHash::hash(
+                    QByteArray(QByteArray("GGUF") + QByteArray(4096, 'x')),
+                    QCryptographicHash::Sha256)
                     .toHex()};
     ASSERT_TRUE(ecvAssetIntegrity::markVerified(path, pin));
     // Empty-pin presence query: trusted from the pinned evidence.

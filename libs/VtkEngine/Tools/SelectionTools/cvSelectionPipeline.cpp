@@ -10,10 +10,16 @@
  * @brief Implementation of selection pipeline and VTK selection handling.
  */
 
-// VTK's composite mapper includes GLEW; it must precede Qt OpenGL headers.
+// VTK's composite mapper includes the GL loader; it must precede Qt OpenGL
+// headers. VTK 9.4 replaced GLEW with glad.
 #include "cvSelectionPipeline.h"
 
+#include <vtkVersion.h>
+#if VTK_MAJOR_VERSION > 9 || (VTK_MAJOR_VERSION == 9 && VTK_MINOR_VERSION >= 4)
+#include <vtk_glad.h>
+#else
 #include <vtk_glew.h>
+#endif
 
 #include "cvHardwareSelector.h"
 

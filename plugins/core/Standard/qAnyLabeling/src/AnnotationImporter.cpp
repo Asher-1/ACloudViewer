@@ -146,7 +146,8 @@ YoloImport importYolo(const QByteArray& labels,
         QJsonArray shapes;
         int maxKeypoints = 0;
         for (const PoseClass& poseClass : poseConfig->classes)
-            maxKeypoints = std::max(maxKeypoints, poseClass.keypoints.size());
+            maxKeypoints =
+                    std::max(maxKeypoints, int(poseClass.keypoints.size()));
         const int stride = poseConfig->hasVisible ? 3 : 2;
         const QStringList lines =
                 QString::fromUtf8(labels).split(QLatin1Char('\n'));

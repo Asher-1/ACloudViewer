@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <QtCompat.h>
 #include <ecvStdPluginInterface.h>
 #include <gtest/gtest.h>
 
@@ -2046,7 +2047,9 @@ TEST(ChatTest, ProviderAndWorkspaceWorkflows) {
     auto* renderedAnswer =
             messageWidgets()[1]->findChild<QLabel*>("ChatMessageContent");
     REQUIRE(renderedAnswer->textFormat() == Qt::RichText &&
-            renderedAnswer->text().contains("font-weight:600") &&
+            renderedAnswer->text().contains(
+                    QString("font-weight:%1")
+                            .arg(qtCompatMarkdownBoldWeight())) &&
             renderedAnswer->text().contains("int x = 1;"));
     messageButton(1, "ChatMessageCopy")->click();
     REQUIRE(QApplication::clipboard()->text() == editedAnswer);

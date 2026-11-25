@@ -585,11 +585,10 @@ QSize ccPropertiesTreeDelegate::sizeHint(const QStyleOptionViewItem& option,
         // Bounding-box values are explicit multiline data, not a word-wrapped
         // one-line label. Some styles return their generic item height even
         // though QStyledItemDelegate supplied a text layout with three lines.
-        hint.setHeight(
-                std::max(hint.height(),
-                         option.fontMetrics.lineSpacing() *
-                                         (text.count(QLatin1Char('\n')) + 1) +
-                                 4));
+        hint.setHeight(std::max(
+                hint.height(), int(option.fontMetrics.lineSpacing() *
+                                           (text.count(QLatin1Char('\n')) + 1) +
+                                   4)));
     }
     return hint;
 }

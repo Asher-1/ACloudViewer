@@ -375,7 +375,7 @@ protected:
                 const int index = std::clamp(
                         int(std::llround(double(center) / m_data.durationMs *
                                          (m_thumbnails.size() - 1))),
-                        0, m_thumbnails.size() - 1);
+                        0, int(m_thumbnails.size()) - 1);
                 const QImage& image = m_thumbnails[index];
                 if (image.isNull()) continue;
                 const QRect target(x, track.top(), tileWidth + 1,

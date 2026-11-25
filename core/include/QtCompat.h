@@ -145,6 +145,26 @@
 //      above SE_CustomBase for styles that handle it themselves
 //    - Function: qtCompatPushButtonBevelSubElement()
 //
+// 25. Enter Event Argument Type:
+//    - QWidget::enterEvent(QEvent*) (Qt5) / enterEvent(QEnterEvent*) (Qt6)
+//    - Type alias: QtCompatEnterEvent (use in override signatures)
+//
+// 26. Button Group Integer Clicked Signal:
+//    - QButtonGroup::buttonClicked(int) (Qt5.0-5.14) / idClicked(int)
+//      (Qt5.15+, Qt6; the int overload is removed in Qt6)
+//    - Function: qtCompatButtonGroupClicked() (member pointer for connect())
+//
+// 27. Markdown Bold HTML Export Weight:
+//    - QTextDocument::toHtml() serializes markdown bold as font-weight:600
+//      on Qt5 and font-weight:700 on Qt6 (QFont weight scale change)
+//    - Function: qtCompatMarkdownBoldWeight()
+//
+// 28. File Dialog Select-and-Accept Timing:
+//    - QFileDialog::selectFile() is synchronous on Qt5 but only takes effect
+//      once the directory model loaded on Qt6; until then selectedFiles()
+//      reports the stale directory and accept() validates the selection
+//    - Function: qtCompatFileDialogSelectAndAccept()
+//
 // Module boundary: this header only includes QtCore/QtWidgets headers, which
 // every consumer already links. Helpers needing another Qt module (e.g. Svg)
 // belong to the consuming library's own compatibility surface, not here.
@@ -1660,5 +1680,116 @@ constexpr QStyle::SubElement qtCompatPushButtonBevelSubElement() noexcept {
     return QStyle::SE_PushButtonBevel;
 #else
     return static_cast<QStyle::SubElement>(QStyle::SE_CustomBase + 1);
+#endif
+}
+
+// ----------------------------------------------------------------------------
+// QWidget::enterEvent() Argument Type Compatibility
+// ----------------------------------------------------------------------------
+// Qt5: enterEvent(QEvent*)
+// Qt6: enterEvent(QEnterEvent*)
+// Use this alias in override declarations/definitions so one signature
+// compiles on every supported Qt version. Only the pointer type is needed
+// here; consumers dereferencing the event include its real header.
+// ----------------------------------------------------------------------------
+
+#include <QEvent>
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+class QEnterEvent;
+using QtCompatEnterEvent = QEnterEvent;
+#else
+using QtCompatEnterEvent = QEvent;
+#endif
+
+// ----------------------------------------------------------------------------
+// QButtonGroup Integer Clicked Signal Compatibility
+// ----------------------------------------------------------------------------
+// Qt5.0-5.14: buttonClicked(int) (overloaded with the QAbstractButton* one)
+// Qt5.15+/Qt6: idClicked(int); the int buttonClicked overload is deprecated
+//              in 5.15 and removed in Qt6.
+// Returns the member pointer for the pointer-to-member connect() overload.
+// ----------------------------------------------------------------------------
+
+#include <QButtonGroup>
+
+inline void (QButtonGroup::*qtCompatButtonGroupClicked())(int) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    return &QButtonGroup::idClicked;
+#else
+    return QOverload<int>::of(&QButtonGroup::buttonClicked);
+#endif
+}
+
+// ----------------------------------------------------------------------------
+// QTextDocument Markdown Bold HTML Export Weight Compatibility
+// ----------------------------------------------------------------------------
+// Qt5 maps QFont::Bold to CSS font-weight:600 in toHtml(); Qt6 uses the CSS
+// weight scale directly (QFont::Bold == 700). Consumers pinning the exported
+// HTML must expect the version's value.
+// ----------------------------------------------------------------------------
+
+constexpr int qtCompatMarkdownBoldWeight() noexcept {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    return 700;
+#else
+    return 600;
+#endif
+}
+
+// ----------------------------------------------------------------------------
+// QFileDialog Select-and-Accept Timing Compatibility
+// ----------------------------------------------------------------------------
+// Qt5: selectFile() updates the selection synchronously, so accept() right
+// afterwards closes the dialog.
+// Qt6: selectFile() only takes effect once the directory model has loaded;
+// until then selectedFiles() still reports the previous directory, and
+// accept() validates selectedFiles() and refuses to close while it is empty.
+// qtCompatFileDialogSelectAndAccept() selects the path and accepts as soon as
+// the selection matches the requested path, on every Qt version. The optional
+// afterAccept callback runs queued right after the accept (application-scoped,
+// so it survives the file dialog's destruction) to drive follow-up modal
+// dialogs.
+// ----------------------------------------------------------------------------
+
+#include <QCoreApplication>
+#include <QDir>
+#include <QFileDialog>
+#include <QTimer>
+#include <functional>
+
+inline void qtCompatFileDialogSelectAndAccept(
+        QFileDialog* dialog,
+        const QString& path,
+        const std::function<void()>& afterAccept = std::function<void()>()) {
+    if (!dialog) return;
+    dialog->selectFile(path);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    const QString wanted = QDir::cleanPath(path);
+    auto* timer = new QTimer(dialog);
+    timer->setInterval(20);
+    QObject::connect(
+            timer, &QTimer::timeout, dialog,
+            [dialog, timer, wanted, afterAccept] {
+                if (!dialog->isVisible()) {
+                    timer->stop();
+                    timer->deleteLater();
+                    return;
+                }
+                if (QDir::cleanPath(dialog->selectedFiles().value(0)) != wanted)
+                    return;
+                timer->stop();
+                timer->deleteLater();
+                QMetaObject::invokeMethod(dialog, "accept",
+                                          Qt::DirectConnection);
+                if (afterAccept)
+                    QTimer::singleShot(0, QCoreApplication::instance(),
+                                       afterAccept);
+            });
+    timer->start();
+#else
+    QMetaObject::invokeMethod(dialog, "accept", Qt::DirectConnection);
+    if (afterAccept)
+        QTimer::singleShot(0, QCoreApplication::instance(), afterAccept);
 #endif
 }

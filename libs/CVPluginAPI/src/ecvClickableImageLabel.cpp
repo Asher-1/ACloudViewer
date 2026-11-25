@@ -320,7 +320,7 @@ void ecvClickableImageLabel::mousePressEvent(QMouseEvent* event) {
     QLabel::mousePressEvent(event);
 }
 
-void ecvClickableImageLabel::enterEvent(QEvent* event) {
+void ecvClickableImageLabel::enterEvent(QtCompatEnterEvent* event) {
     if (!m_fullImage.isNull()) {
         setToolTip(tr("Click to enlarge"));
     }

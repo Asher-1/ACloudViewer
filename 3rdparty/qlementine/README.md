@@ -59,6 +59,11 @@ the port compile.
   Restore combo delegates and message-document margins symmetrically as well.
 - No forced combo AdjustToContents or slider-orientation changes: styles must
   not override application layout policy or business orientation.
+- A combo acting as an item-view cell editor/index widget reports the same
+  content-based size hint as any other combo, capped at its current cell width.
+  Upstream returned the cell width itself, which pinned
+  `resizeColumnsToContents()` to the provisional column width (and to the default
+  width of an editor that is not laid out yet), e.g. in the ASCII open dialog.
 - Safe animation-manager iteration/teardown, idempotent resource/font setup,
   app-state restoration and asynchronous menu callback ownership.
 - Application custom delegates without Q_OBJECT remain custom; Qt metadata alone

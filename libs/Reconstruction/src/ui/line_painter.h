@@ -29,7 +29,6 @@ public:
     };
 
     void Setup();
-    void Release();
     void Upload(const std::vector<LinePainter::Data>& data);
     void Render(const QMatrix4x4& pmv_matrix,
                 const int width,

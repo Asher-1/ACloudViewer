@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <QtCompat.h>
 #include <gtest/gtest.h>
 
 #include <QCoreApplication>
@@ -321,7 +322,7 @@ TEST_F(PointCloudCameraTest, ListsImagesAndRejectsAmbiguousBasenames) {
     const QSet<QString> expectedStems = QSet<QString>()
                                         << QStringLiteral("000001")
                                         << QStringLiteral("000002");
-    ASSERT_TRUE(imagePaths.keys().toSet() == expectedStems);
+    ASSERT_TRUE(qtCompatQSetFromList(imagePaths.keys()) == expectedStems);
     PointCloudCameraSource source;
     ASSERT_TRUE(loadPointCloudCameraSource(imageDirectory, calibrationPath,
                                            &source, &error));
