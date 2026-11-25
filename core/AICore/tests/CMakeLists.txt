@@ -1584,17 +1584,9 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
         if(TARGET ${_aicore_qt_core_target})
             list(APPEND _aicore_validation_runtime_env
                  "AICORE_QT_LIBRARY_DIR=$<TARGET_FILE_DIR:${_aicore_qt_core_target}>")
-            # The python probes dlopen libAICore directly through ctypes, so
-            # the loader must resolve the indirect Qt dependencies (for
-            # example libQt5Concurrent) from the configured Qt tree instead
-            # of falling back to a mismatched host system library. Windows
-            # uses PATH and the Python runner adds the target/configuration
-            # directories itself; exporting a POSIX LD_LIBRARY_PATH there is
-            # both ineffective and misleading.
-            if(NOT MSVC)
-                list(APPEND _aicore_validation_runtime_env
-                     "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:${_aicore_qt_core_target}>:$ENV{LD_LIBRARY_PATH}")
-            endif()
+            # Keep a scalar hint: CTest owns loader-path ordering, and the
+            # runner prepares the native subprocess environments. Replacing
+            # that path here can load a distro libpython into a pyenv Python.
             break()
         endif()
     endforeach()
