@@ -22,7 +22,12 @@ ExternalProject_Add(ext_dlib
         # dlib 19.22 uses std::uint8_t/int8_t in serialize.h and vectorstream.h
         # without including <cstdint>; GCC 15's libstdc++ no longer pulls it in
         # transitively, so force-include it for every dlib translation unit.
-        -DCMAKE_CXX_FLAGS:STRING=-include cstdint)
+        # The whole -D argument must be quoted: ExternalProject writes cache
+        # values into the initial-cache script unquoted, so an unquoted
+        # "-include cstdint" is re-parsed as two tokens and only "-include"
+        # survives, breaking the compiler test with "missing filename after
+        # '-include'". Quoting keeps the flag and its header together.
+        "-DCMAKE_CXX_FLAGS:STRING=-include cstdint")
 
 ExternalProject_Get_Property(ext_dlib SOURCE_DIR)
 ExternalProject_Get_Property(ext_dlib INSTALL_DIR)

@@ -33,8 +33,16 @@ endforeach()
 file(MAKE_DIRECTORY "${OUTPUT_DIR}")
 
 function(configure_case case_name expected_success expected_text)
+    # The fixture exercises registration/label logic, which is generator- and
+    # config-independent. Pin a single-config Ninja generator with an explicit
+    # build type so the bare `ctest -N` / `cmake --build` calls below (no -C /
+    # --config) select tests deterministically. On Windows the inherited default
+    # generator is Ninja Multi-Config, whose CTestTestfile guards every add_test
+    # behind CTEST_CONFIGURATION_TYPE; without a config those branches all fall
+    # through to NOT_AVAILABLE and `ctest -N` reports "Total Tests: 0".
     execute_process(
         COMMAND "${CMAKE_COMMAND}" -S "${SOURCE_DIR}" -B "${OUTPUT_DIR}/${case_name}"
+            -G Ninja -DCMAKE_BUILD_TYPE=Release
             -DCASE=${case_name}
         RESULT_VARIABLE result
         OUTPUT_VARIABLE stdout
@@ -151,7 +159,7 @@ if(result EQUAL 0)
 endif()
 
 execute_process(COMMAND "${CMAKE_COMMAND}" -S "${SOURCE_DIR}/run_vtk_only"
-    -B "${OUTPUT_DIR}/run-vtk-only"
+    -B "${OUTPUT_DIR}/run-vtk-only" -G Ninja -DCMAKE_BUILD_TYPE=Release
     RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE error)
 if(NOT result EQUAL 0)
     message(FATAL_ERROR "VTK-only fixture configure failed:\n${output}\n${error}")

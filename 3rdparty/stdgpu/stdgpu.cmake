@@ -4,6 +4,8 @@
 
 include(ExternalProject)
 
+find_package(Git QUIET REQUIRED)
+
 # CUDAToolkit_INCLUDE_DIRS is a list. Since CUDA 13.0 the CCCL headers
 # (thrust/cub/libcudacxx) moved under <toolkit>/include/cccl, so nvcc reports
 # both "include" and "include/cccl". Passing the whole list as a single
@@ -20,6 +22,22 @@ foreach(_stdgpu_inc IN LISTS CUDAToolkit_INCLUDE_DIRS)
     endif()
 endforeach()
 
+# CCCL 3.x (CUDA 13.0+) removed thrust::detail::is_proxy_reference, which the
+# pinned stdgpu specializes for its insert-iterator proxies; the trait is now
+# is_wrapped_reference. Rename the three specializations so stdgpu compiles
+# against CUDA 13. CUDA 11.8/12.x still provide is_proxy_reference, so the
+# patch is applied only for CUDA 13+ (same approach as Open3D's stdgpu recipe).
+set(STDGPU_PATCH_COMMAND "")
+if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "13.0")
+    set(STDGPU_PATCH_COMMAND
+        ${CMAKE_COMMAND} -E chdir <SOURCE_DIR> ${GIT_EXECUTABLE} init
+        COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR> ${GIT_EXECUTABLE} add -A
+        COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR> ${GIT_EXECUTABLE} apply
+            --ignore-space-change --ignore-whitespace
+            ${CMAKE_CURRENT_LIST_DIR}/fix-thrust-is-proxy-reference.patch
+    )
+endif()
+
 ExternalProject_Add(
     ext_stdgpu
     PREFIX stdgpu
@@ -27,6 +45,7 @@ ExternalProject_Add(
     URL_HASH SHA256=86e50789bbe21c57f64358c6acbd4481d56c1e45ce9ba1fb5c5c8482c3973215
     DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/stdgpu"
     UPDATE_COMMAND ""
+    PATCH_COMMAND ${STDGPU_PATCH_COMMAND}
     CMAKE_ARGS
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
