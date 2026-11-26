@@ -7,6 +7,7 @@
 
 #include <gtest/gtest.h>
 
+#include <QAction>
 #include <QApplication>
 #include <QClipboard>
 #include <QFile>
@@ -22,7 +23,6 @@
 #include <QRandomGenerator>
 #include <QScrollArea>
 #include <QScrollBar>
-#include <QShortcut>
 #include <QTableWidget>
 #include <QTimer>
 #include <QToolButton>
@@ -215,10 +215,12 @@ TEST(PpocrTableTest, EditingAndSerialization) {
             REQUIRE(view.grab().save(QString::fromLocal8Bit(argv[1]) +
                                      (dark ? "/ppocr-table-dark.png"
                                            : "/ppocr-table-light.png")));
-        auto binding = [&view](const QKeySequence& sequence) -> QShortcut* {
-            QShortcut* found = nullptr;
-            for (auto* item : view.findChildren<QShortcut*>())
-                if (item->key() == sequence) {
+        // Bindings are QActions registered with the shortcut catalog (the
+        // editor migrated off QShortcut); uniqueness per sequence still holds.
+        auto binding = [&view](const QKeySequence& sequence) -> QAction* {
+            QAction* found = nullptr;
+            for (auto* item : view.findChildren<QAction*>())
+                if (item->shortcuts().contains(sequence)) {
                     if (found) return nullptr;  // An ambiguous duplicate.
                     found = item;
                 }
@@ -232,17 +234,17 @@ TEST(PpocrTableTest, EditingAndSerialization) {
             REQUIRE(binding(sequence));
         table->setCurrentCell(0, 0);
         REQUIRE(QMetaObject::invokeMethod(binding(QKeySequence("Ctrl+B")),
-                                          "activated", Qt::DirectConnection));
+                                          "triggered", Qt::DirectConnection));
         REQUIRE(table->item(0, 0)->font().bold());
         REQUIRE(QMetaObject::invokeMethod(
-                binding(QKeySequence(QKeySequence::Undo)), "activated",
+                binding(QKeySequence(QKeySequence::Undo)), "triggered",
                 Qt::DirectConnection));
         REQUIRE(!table->item(0, 0)->font().bold());
         bool requested = false;
         QObject::connect(&view, &PpocrTableEditor::saveRequested,
                          [&requested]() { requested = true; });
         REQUIRE(QMetaObject::invokeMethod(binding(QKeySequence("Ctrl+S")),
-                                          "activated", Qt::DirectConnection));
+                                          "triggered", Qt::DirectConnection));
         REQUIRE(requested && !view.isWindow());
     }
     QJsonArray heightCases;

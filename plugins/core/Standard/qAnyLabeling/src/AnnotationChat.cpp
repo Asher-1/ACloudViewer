@@ -2251,8 +2251,14 @@ private:
         if (event->type() == QEvent::KeyPress) {
             const auto* key = static_cast<QKeyEvent*>(event);
             if (key->key() == Qt::Key_Return || key->key() == Qt::Key_Enter) {
-                if (object == m_input && (key->modifiers() & Qt::ShiftModifier))
-                    return false;
+                if (object == m_input) {
+                    if (key->modifiers() & Qt::ShiftModifier) return false;
+                    // Send synchronously from the event filter: the catalog
+                    // QAction shortcut only fires when the input holds focus,
+                    // which offscreen/headless sessions do not guarantee.
+                    if (!m_service->client->busy()) m_send->click();
+                    return true;
+                }
                 return QDialog::eventFilter(object, event);
             }
         }

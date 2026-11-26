@@ -503,6 +503,28 @@ protected:
         }
         QTableWidget::mousePressEvent(event);
     }
+    void keyPressEvent(QKeyEvent* event) override {
+        // Focus-independent fallback: the catalog QAction shortcuts use
+        // WidgetWithChildrenShortcut and only fire while the editor subtree
+        // holds focus, which offscreen/headless sessions do not guarantee.
+        // When a shortcut does match, Qt consumes the key event before it
+        // reaches this handler, so there is no double trigger.
+        if (event->matches(QKeySequence::Copy))
+            copy();
+        else if (event->matches(QKeySequence::Paste))
+            paste();
+        else if (event->matches(QKeySequence::Undo))
+            undo();
+        else if (event->matches(QKeySequence::Redo) ||
+                 (event->modifiers() == Qt::ControlModifier &&
+                  event->key() == Qt::Key_Y))
+            redo();
+        else {
+            QTableWidget::keyPressEvent(event);
+            return;
+        }
+        event->accept();
+    }
 
 private:
     QVector<Cell> m_rightClickSelection;

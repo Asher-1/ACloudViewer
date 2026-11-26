@@ -538,7 +538,9 @@ if(PLUGIN_STANDARD_QSIBR)
         )
         target_link_libraries(CudaRasterizer PUBLIC ${SIBR_CUDA_RUNTIME})
         set_target_properties(CudaRasterizer PROPERTIES
-            CUDA_STANDARD 14
+            # CUDA 13's CCCL (cooperative_groups -> cuda/std) requires C++17;
+            # 14 breaks the resolute CUDA 13 build. CUDA 11.8+ supports 17.
+            CUDA_STANDARD 17
             POSITION_INDEPENDENT_CODE ON
             FOLDER "plugins/qSIBR/projects"
         )

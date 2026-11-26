@@ -124,8 +124,16 @@ TEST(GlobalPipeline, SfMWithRandomSeedStability) {
         run_mapper(/*num_threads=*/1, /*random_seed=*/kRandomSeed);
     auto reconstruction_manager1 =
         run_mapper(/*num_threads=*/1, /*random_seed=*/kRandomSeed);
+    // Same tolerance contract as the multi-threaded case below: bit-exact
+    // reproducibility depends on the toolchain's FMA/vectorization behavior
+    // (macOS arm64 drifts ~1e-13 between runs even single-threaded).
     EXPECT_THAT(reconstruction_manager0->Get(0),
-                ReconstructionEq(reconstruction_manager1->Get(0)));
+                ReconstructionNear(reconstruction_manager1->Get(0),
+                                   /*max_rotation_error_deg=*/1e-6,
+                                   /*max_proj_center_error=*/1e-6,
+                                   /*max_scale_error=*/std::nullopt,
+                                   /*num_obs_tolerance=*/0.01,
+                                   /*align=*/false));
   }
 
   // Multi-threaded execution.

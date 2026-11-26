@@ -43,8 +43,21 @@ if(USE_VTK_BACKEND AND TARGET QVTK_ENGINE_LIB)
     # wiring and the application selection coordinator in a separate binary.
     get_target_property(view_linkage_sources ${MAIN_APP_NAME} SOURCES)
     list(FILTER view_linkage_sources EXCLUDE REGEX "(^|/)main\\.cpp$")
+    # The app target's SOURCES are relative to its own source dir (e.g. the
+    # Windows Resources/images/icon/ecv_icon.rc); this test lives in a
+    # subdirectory, so rebase them before reuse or configure fails on the
+    # missing relative path. Generator expressions pass through untouched.
+    get_target_property(app_source_dir ${MAIN_APP_NAME} SOURCE_DIR)
+    set(view_linkage_sources_abs "")
+    foreach(src IN LISTS view_linkage_sources)
+        if(src MATCHES "^\\$<" OR IS_ABSOLUTE "${src}")
+            list(APPEND view_linkage_sources_abs "${src}")
+        else()
+            list(APPEND view_linkage_sources_abs "${app_source_dir}/${src}")
+        endif()
+    endforeach()
     cloudviewer_add_plugin_test(test_view_linkage
-        SOURCES test_view_linkage.cpp ${view_linkage_sources}
+        SOURCES test_view_linkage.cpp ${view_linkage_sources_abs}
         LIBS "$<TARGET_PROPERTY:${MAIN_APP_NAME},LINK_LIBRARIES>" gtest
         INCLUDES "$<TARGET_PROPERTY:${MAIN_APP_NAME},INCLUDE_DIRECTORIES>"
         DEFINES "$<TARGET_PROPERTY:${MAIN_APP_NAME},COMPILE_DEFINITIONS>")
