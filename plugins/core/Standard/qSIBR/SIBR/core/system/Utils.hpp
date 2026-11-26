@@ -13,11 +13,27 @@
 #pragma once
 
 # include <vector>
+# include <boost/filesystem.hpp>
 # include "core/system/Config.hpp"
 # include "core/system/String.hpp"
 
 namespace sibr
 {
+        /** Copy a file, overwriting the destination if it exists.
+         * Boost 1.90 removed the deprecated copy_option enum; copy_options
+         * (its replacement) exists since Boost 1.74, so select by version to
+         * keep older distro Boost (e.g. focal's 1.71) building too.
+         */
+        inline void copyFileOverwrite(const boost::filesystem::path& src,
+                                      const boost::filesystem::path& dst)
+        {
+#if BOOST_VERSION >= 107400
+            boost::filesystem::copy_file(src, dst, boost::filesystem::copy_options::overwrite_existing);
+#else
+            boost::filesystem::copy_file(src, dst, boost::filesystem::copy_option::overwrite_if_exists);
+#endif
+        }
+
 	/**
 	* \addtogroup sibr_system
 	* @{

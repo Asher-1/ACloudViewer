@@ -512,6 +512,11 @@ def _setup_linux_libraries():
 if _build_config["BUILD_GUI"] and not (find_library('c++abi') or
                                        find_library('c++')):
     try:  # Preload libc++.so and libc++abi.so (required by filament)
+        try:  # LLVM >= 12 libc++abi NEEDs libunwind.so.1; preload the bundled
+            # copy first so it resolves locally (absent for LLVM 11 wheels).
+            load_cdll(str(next((Path(__file__).parent).glob('libunwind.*'))))
+        except StopIteration:
+            pass
         load_cdll(str(next((Path(__file__).parent).glob('*c++abi.*'))))
         load_cdll(str(next((Path(__file__).parent).glob('*c++.*'))))
     except StopIteration:  # Not found: check system paths while loading

@@ -27,6 +27,9 @@ endforeach()
 # is_wrapped_reference. Rename the three specializations so stdgpu compiles
 # against CUDA 13. CUDA 11.8/12.x still provide is_proxy_reference, so the
 # patch is applied only for CUDA 13+ (same approach as Open3D's stdgpu recipe).
+# CUDA 13 also removed cudaDeviceProp::clockRate, which device.cpp prints;
+# fix-cuda13-clock-rate.patch queries cudaDeviceGetAttribute instead (the
+# attribute API exists on every supported toolkit, verified against 12.6).
 set(STDGPU_PATCH_COMMAND "")
 if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "13.0")
     set(STDGPU_PATCH_COMMAND
@@ -35,6 +38,7 @@ if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "13.0")
         COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR> ${GIT_EXECUTABLE} apply
             --ignore-space-change --ignore-whitespace
             ${CMAKE_CURRENT_LIST_DIR}/fix-thrust-is-proxy-reference.patch
+            ${CMAKE_CURRENT_LIST_DIR}/fix-cuda13-clock-rate.patch
     )
 endif()
 

@@ -140,6 +140,11 @@ set_target_properties(pybind PROPERTIES
 set(PYTHON_EXTRA_LIBRARIES $<TARGET_FILE:TBB::tbb>)
 if (BUILD_GUI AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
+    # LLVM >= 12 libc++abi NEEDs libunwind.so.1; ship it alongside so the
+    # wheel imports on hosts without LLVM (absent for LLVM 11 builds).
+    if (UNWIND_LIBRARY)
+        list(APPEND PYTHON_EXTRA_LIBRARIES ${UNWIND_LIBRARY})
+    endif()
 endif ()
 
 # Use `make python-package` to create the python package in the build directory

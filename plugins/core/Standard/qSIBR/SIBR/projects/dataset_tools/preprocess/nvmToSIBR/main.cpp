@@ -80,10 +80,8 @@ int main(const int argc, const char** argv) {
         ssZeroPad << std::setw(8) << std::setfill('0') << camIm.id();
         std::string newFileName = ssZeroPad.str() + extensionFile;
 
-        boost::filesystem::copy_file(
-                pathScene + "/nvm/" + camIm.name(),
-                pathScene + "/images/" + newFileName,
-                boost::filesystem::copy_option::overwrite_if_exists);
+        copyFileOverwrite(pathScene + "/nvm/" + camIm.name(),
+                          pathScene + "/images/" + newFileName);
         outputBundleCam << camIm.toBundleString();
         outputListIm << newFileName << " " << camIm.w() << " " << camIm.h()
                      << std::endl;

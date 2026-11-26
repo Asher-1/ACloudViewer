@@ -1852,6 +1852,15 @@ if(BUILD_GUI)
             find_library(CPP_LIBRARY    c++    PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
             find_library(CPPABI_LIBRARY c++abi PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
 
+            # LLVM >= 12 links libc++abi against libunwind.so.1 (LLVM 11 built
+            # it in statically). The wheel must bundle that libunwind next to
+            # libc++abi or importing cloudViewer fails on systems without LLVM.
+            # Optional: absent for LLVM 11, where libc++abi has no such NEEDED.
+            find_library(UNWIND_LIBRARY unwind PATHS ${CLANG_LIBDIR} NO_DEFAULT_PATH)
+            if (UNWIND_LIBRARY)
+                message(STATUS "Filament unwind library: ${UNWIND_LIBRARY}")
+            endif()
+
             # Ensure that libstdc++ gets linked first.
             target_link_libraries(3rdparty_filament INTERFACE -lstdc++
                                   ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
