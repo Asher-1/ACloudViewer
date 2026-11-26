@@ -182,7 +182,8 @@ int main(const int argc, const char** argv) {
             srcImage = pathScene + "/images/" + camIm.name();
         }
         if (boost::filesystem::exists(srcImage)) {
-            copyFileOverwrite(srcImage, pathScene + "/sfm_mvs_cm/" + newFileName);
+            copyFileOverwrite(srcImage,
+                              pathScene + "/sfm_mvs_cm/" + newFileName);
         } else {
             std::cerr << "[prepareColmap4Sibr] Warning: image not found: "
                       << camIm.name() << std::endl;
