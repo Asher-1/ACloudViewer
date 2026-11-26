@@ -22,7 +22,7 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 # Enable thread composability manager to coordinate Intel OpenMP and TBB threads. Only works with Intel OpenMP.
 # TBB must not be already loaded.
 os.environ["TCM_ENABLE"] = "1"
-from ctypes import CDLL
+from ctypes import CDLL, RTLD_GLOBAL
 from ctypes.util import find_library
 from pathlib import Path
 import warnings
@@ -435,10 +435,13 @@ def _setup_linux_libraries():
     # Core Qt libraries
     core_libs = ['Core', 'Gui', 'Widgets', 'Concurrent', 'Svg']
     _load_qt_libraries(core_libs)
-    # Qt6-specific OpenGL libraries (Qt5 uses OpenGL from Widgets)
+    # Qt6-specific OpenGL libraries (Qt5 uses OpenGL from Widgets).
+    # Exact patterns in dependency order: the glob 'libQt6OpenGL*' also
+    # matches libQt6OpenGLWidgets, and filesystem order may pick the widget
+    # library first, whose NEEDED libQt6OpenGL.so.6 is not loaded yet.
     if qt_version == 6:
-        _load_qt_library('OpenGL', required=False)
-        _load_qt_library('OpenGLWidgets', required=False)
+        try_load_cdll('libQt6OpenGL.so*')
+        try_load_cdll('libQt6OpenGLWidgets*')
 
     # 4. Load X11/XCB libraries (must be before QtXcbQpa)
     # fix symbol lookup error: libQt5XcbQpa.so.5 / libQt6XcbQpa.so.6:
@@ -505,16 +508,19 @@ def _setup_linux_libraries():
     try_load_cdll('libcrypto*')
     try_load_cdll('libssl*')
 
-    # 8. Load remaining libraries
-    load_cdll(str(next(MAIN_LIB_PATH.glob('lib*'))))
-
 
 if _build_config["BUILD_GUI"] and not (find_library('c++abi') or
                                        find_library('c++')):
     try:  # Preload libc++.so and libc++abi.so (required by filament)
         try:  # LLVM >= 12 libc++abi NEEDs libunwind.so.1; preload the bundled
-            # copy first so it resolves locally (absent for LLVM 11 wheels).
-            load_cdll(str(next((Path(__file__).parent).glob('libunwind.*'))))
+            # copy first (absent for LLVM 11 wheels). It must be RTLD_GLOBAL:
+            # with the default RTLD_LOCAL the later CUDA pybind dlopen
+            # segfaults (reproduced on a GPU-less noble runner); global scope
+            # lets its _Unwind_* symbols resolve consistently. libgcc_s is
+            # already in the global scope ahead of it, so GCC unwinding is
+            # not interposed.
+            CDLL(str(next((Path(__file__).parent).glob('libunwind.*'))),
+                 mode=RTLD_GLOBAL)
         except StopIteration:
             pass
         load_cdll(str(next((Path(__file__).parent).glob('*c++abi.*'))))

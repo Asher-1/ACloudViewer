@@ -984,9 +984,9 @@ test_wheel() {
         python -m pip uninstall --yes cloudviewer cloudviewer-cpu 2>/dev/null || true
     fi
     python -m pip install "$wheel_path"
-    python -W default -c "import cloudViewer; print('Installed:', cloudViewer); print('BUILD_CUDA_MODULE: ', cloudViewer._build_config['BUILD_CUDA_MODULE'])"
-    python -W default -c "import cloudViewer; print('CUDA available: ', cloudViewer.core.cuda.is_available())"
-    python -W default -c "import cloudViewer as cv; enabled=cv._build_config.get('AICore_ENABLED', False); devices=cv.reconstruction.sfm.aicore_devices() if enabled else []; ids={d['id'] for d in devices}; assert not enabled or (cv.reconstruction.sfm.is_aicore_available() and 'cpu' in ids and 'blas' not in ids); print('AICore devices:', devices)"
+    python -X faulthandler -W default -c "import cloudViewer; print('Installed:', cloudViewer); print('BUILD_CUDA_MODULE: ', cloudViewer._build_config['BUILD_CUDA_MODULE'])"
+    python -X faulthandler -W default -c "import cloudViewer; print('CUDA available: ', cloudViewer.core.cuda.is_available())"
+    python -X faulthandler -W default -c "import cloudViewer as cv; enabled=cv._build_config.get('AICore_ENABLED', False); devices=cv.reconstruction.sfm.aicore_devices() if enabled else []; ids={d['id'] for d in devices}; assert not enabled or (cv.reconstruction.sfm.is_aicore_available() and 'cpu' in ids and 'blas' not in ids); print('AICore devices:', devices)"
     python -W default -c "
 import pathlib, cloudViewer as cv
 root = pathlib.Path(cv.__file__).resolve().parent / 'lib'
