@@ -17,7 +17,12 @@ ExternalProject_Add(ext_dlib
     PATCH_COMMAND ${CMAKE_COMMAND} -DINPUT_DIR=<SOURCE_DIR> -P ${CMAKE_CURRENT_LIST_DIR}/fix_all_cmake_minimum.cmake
     CMAKE_ARGS
         -DCMAKE_POLICY_VERSION_MINIMUM=3.10
-        -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>)
+        -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+    CMAKE_CACHE_ARGS
+        # dlib 19.22 uses std::uint8_t/int8_t in serialize.h and vectorstream.h
+        # without including <cstdint>; GCC 15's libstdc++ no longer pulls it in
+        # transitively, so force-include it for every dlib translation unit.
+        -DCMAKE_CXX_FLAGS:STRING=-include cstdint)
 
 ExternalProject_Get_Property(ext_dlib SOURCE_DIR)
 ExternalProject_Get_Property(ext_dlib INSTALL_DIR)

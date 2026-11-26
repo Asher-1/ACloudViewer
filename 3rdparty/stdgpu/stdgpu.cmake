@@ -4,6 +4,22 @@
 
 include(ExternalProject)
 
+# CUDAToolkit_INCLUDE_DIRS is a list. Since CUDA 13.0 the CCCL headers
+# (thrust/cub/libcudacxx) moved under <toolkit>/include/cccl, so nvcc reports
+# both "include" and "include/cccl". Passing the whole list as a single
+# -DTHRUST_INCLUDE_DIR splits it on the semicolon: CMake keeps only the first
+# entry ("include", which no longer holds thrust/version.h) and drops the cccl
+# path as an "extra path", so stdgpu's Findthrust fails. Select the one
+# directory that actually contains thrust/version.h ("include/cccl" on CUDA 13+,
+# "include" on older toolkits).
+set(STDGPU_THRUST_INCLUDE_DIR "")
+foreach(_stdgpu_inc IN LISTS CUDAToolkit_INCLUDE_DIRS)
+    if(EXISTS "${_stdgpu_inc}/thrust/version.h")
+        set(STDGPU_THRUST_INCLUDE_DIR "${_stdgpu_inc}")
+        break()
+    endif()
+endforeach()
+
 ExternalProject_Add(
     ext_stdgpu
     PREFIX stdgpu
@@ -20,7 +36,7 @@ ExternalProject_Add(
         -DSTDGPU_BUILD_TESTS=OFF
         -DSTDGPU_BUILD_BENCHMARKS=OFF
         -DSTDGPU_ENABLE_CONTRACT_CHECKS=OFF
-        -DTHRUST_INCLUDE_DIR=${CUDAToolkit_INCLUDE_DIRS}
+        -DTHRUST_INCLUDE_DIR=${STDGPU_THRUST_INCLUDE_DIR}
         ${ExternalProject_CMAKE_ARGS_hidden}
     CMAKE_CACHE_ARGS    # Lists must be passed via CMAKE_CACHE_ARGS
         -DCMAKE_CUDA_ARCHITECTURES:STRING=${CMAKE_CUDA_ARCHITECTURES}
