@@ -22,11 +22,14 @@ Complete guide for building ACloudViewer from source code on different platforms
 
 **CMake 3.24+** (the repository-pinned toolchain is 3.31.8)
 
-- Ubuntu 20.04+:
+- Ubuntu 20.04/22.04 default repositories provide CMake 3.16/3.22,
+  below the required 3.24. Use a newer CMake, for example:
   ```bash
-  # Use default OS repository
-  sudo apt-get install cmake
+  python3 -m pip install --user --upgrade "cmake>=3.24,<4"
+  export PATH="$HOME/.local/bin:$PATH"
+  cmake --version  # Verify 3.24 or newer before configuring
   ```
+- Ubuntu 24.04: `sudo apt-get install cmake` provides a suitable version.
 
 - macOS:
   ```bash

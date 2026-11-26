@@ -24,8 +24,8 @@ Quick Start
 
 .. code-block:: bash
 
-   utils/install_deps_ubuntu.sh assume-yes
-   ./scripts/build_ubuntu.sh
+   util/install_deps_ubuntu.sh assume-yes
+   # Continue with the Linux configuration and build instructions below.
 
 **macOS:**
 
@@ -49,7 +49,7 @@ Minimum Requirements
 - **CPU**: 8+ cores recommended
 - **RAM**: 16 GB+ recommended
 - **Disk**: 20 GB free space
-- **CMake**: 3.19 or higher
+- **CMake**: 3.24 or higher
 
 Recommended
 ~~~~~~~~~~~
@@ -135,7 +135,7 @@ Install dependencies automatically:
 .. code-block:: bash
 
    # Install all dependencies
-   utils/install_deps_ubuntu.sh assume-yes
+   util/install_deps_ubuntu.sh assume-yes
 
 Or install manually:
 
@@ -773,7 +773,7 @@ Additional Resources
 
 **Build Scripts:**
 
-- Linux: ``scripts/build_ubuntu.sh``
+- Linux dependencies: ``util/install_deps_ubuntu.sh``
 - macOS: ``scripts/build_macos.sh``
 - Windows: ``scripts/build_win.py``
 - Docker: ``docker/build-release.sh``

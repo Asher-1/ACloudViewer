@@ -43,7 +43,7 @@
 | ---------------- | ------------------------------------------------- |
 | **OS**           | macOS 13+ (Intel or Apple Silicon)                |
 | **Xcode CLI**    | `xcode-select --install`                          |
-| **CMake**        | ≥ 3.20 (`brew install cmake`)                     |
+| **CMake**        | ≥ 3.24 (`brew install cmake`)                     |
 | **Python**       | 3.10 – 3.12 (via Conda)                           |
 | **Conda**        | Miniconda or Anaconda                              |
 | **AICore GPU (default)** | **Metal → CPU** (Vulkan is not supported on macOS) |
