@@ -513,12 +513,18 @@ if _build_config["BUILD_GUI"] and not (find_library('c++abi') or
                                        find_library('c++')):
     try:  # Preload libc++.so and libc++abi.so (required by filament)
         try:  # LLVM >= 12 libc++abi NEEDs libunwind.so.1; preload the bundled
-            # copy first (absent for LLVM 11 wheels). It must be RTLD_GLOBAL:
-            # with the default RTLD_LOCAL the later CUDA pybind dlopen
-            # segfaults (reproduced on a GPU-less noble runner); global scope
-            # lets its _Unwind_* symbols resolve consistently. libgcc_s is
-            # already in the global scope ahead of it, so GCC unwinding is
-            # not interposed.
+            # copy first (absent for LLVM 11 wheels). Both loads must be
+            # RTLD_GLOBAL and libgcc_s must come first: a C extension loaded
+            # earlier (numpy, psutil, torch, ...) keeps its NEEDED libgcc_s in
+            # its own RTLD_LOCAL scope, so without an explicit global preload
+            # the bundled LLVM libunwind becomes the only global _Unwind_*
+            # provider and the GCC-built pybind dlopen segfaults (reproduced
+            # on a GPU-less noble runner under pytest). Global libgcc_s keeps
+            # every _Unwind_* reference bound to the GCC unwinder.
+            try:
+                CDLL('libgcc_s.so.1', mode=RTLD_GLOBAL)
+            except OSError:
+                pass
             CDLL(str(next((Path(__file__).parent).glob('libunwind.*'))),
                  mode=RTLD_GLOBAL)
         except StopIteration:
