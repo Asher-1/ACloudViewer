@@ -711,6 +711,11 @@ void AnnotationWindow::setAppInterface(ecvMainAppInterface* app) {
 }
 
 AnnotationWindow::~AnnotationWindow() {
+    // Tearing down child QActions re-enters the shortcut registry, which
+    // emits commandsChanged while this window's children are already
+    // freed. Sever the instruction refresh before QWidget deletes them.
+    disconnect(&ecvKeySequences::instance(), &ecvKeySequences::commandsChanged,
+               this, nullptr);
     qApp->removeEventFilter(this);
     m_runAfterDownload = false;
     if (m_downloader && m_downloader->isBusy()) m_downloader->cancel();

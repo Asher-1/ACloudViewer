@@ -419,7 +419,13 @@ bool ecvKeySequences::registerCommand(const QString& id,
         for (int i = actions.size() - 1; i >= 0; --i)
             if (!actions[i]) actions.removeAt(i);
         refreshCommandShortcuts();
-        emit commandsChanged();
+        // Action teardown runs inside QWidget::deleteChildren, while the
+        // owner's child list is mid-mutation. Notify observers after the
+        // teardown unwinds so they never traverse a half-deleted tree;
+        // queued events to a dying receiver are dropped by QObject.
+        QMetaObject::invokeMethod(
+                this, [this]() { emit commandsChanged(); },
+                Qt::QueuedConnection);
     });
     refreshCommandShortcuts();
     emit commandsChanged();

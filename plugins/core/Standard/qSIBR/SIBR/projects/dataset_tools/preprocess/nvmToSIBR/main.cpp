@@ -75,7 +75,8 @@ int main(const int argc, const char** argv) {
     for (int c = minCam; c < maxCam; c++) {
         InputCamera& camIm = *cams[c];
 
-        std::string extensionFile = boost::filesystem::extension(camIm.name());
+        std::string extensionFile =
+                boost::filesystem::path(camIm.name()).extension().string();
         std::ostringstream ssZeroPad;
         ssZeroPad << std::setw(8) << std::setfill('0') << camIm.id();
         std::string newFileName = ssZeroPad.str() + extensionFile;

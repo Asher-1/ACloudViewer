@@ -1108,14 +1108,20 @@ TEST_F(ShortcutTests, hintsPreserveProseAndTrackAlternativesAndClearing) {
     ASSERT_TRUE(registry.applyBindings(candidate, nullptr, false));
     EXPECT_TRUE(action.toolTip().startsWith("Select Some Samples\n"))
             << action.toolTip().toStdString();
-    EXPECT_TRUE(action.toolTip().contains("Meta+6"));
-    EXPECT_TRUE(action.toolTip().contains("Ctrl+Alt+6"));
+    // Hints render alternatives with QKeySequence::NativeText, which uses
+    // modifier symbols on macOS instead of the portable "Meta+6" prose.
+    const QString metaNative =
+            QKeySequence("Meta+6").toString(QKeySequence::NativeText);
+    const QString ctrlAltNative =
+            QKeySequence("Ctrl+Alt+6").toString(QKeySequence::NativeText);
+    EXPECT_TRUE(action.toolTip().contains(metaNative));
+    EXPECT_TRUE(action.toolTip().contains(ctrlAltNative));
     action.setToolTip("Changed description");
     EXPECT_TRUE(action.toolTip().startsWith("Changed description\n"));
     candidate["hint.command"] = {};
     ASSERT_TRUE(registry.applyBindings(candidate, nullptr, false));
     EXPECT_TRUE(action.toolTip().contains("Unbound"));
-    EXPECT_FALSE(action.toolTip().contains("Ctrl+Alt+6"));
+    EXPECT_FALSE(action.toolTip().contains(ctrlAltNative));
     EXPECT_TRUE(action.toolTip().startsWith("Changed description\n"));
 }
 

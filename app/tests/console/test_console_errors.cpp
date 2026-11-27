@@ -44,7 +44,11 @@ TEST_F(ConsoleErrors, MainThreadErrorKeepsSynchronousModalDialog) {
             EXPECT_FALSE(returned);
             EXPECT_TRUE(dialog->isModal());
             EXPECT_EQ(dialog->parentWidget(), &parent);
+#ifndef Q_OS_MACOS
+            // macOS renders QMessageBox as a native alert without a window
+            // title, so the "Error" caption is not observable there.
             EXPECT_EQ(dialog->windowTitle(), QStringLiteral("Error"));
+#endif
             EXPECT_EQ(dialog->text(), message);
             EXPECT_EQ(dialog->icon(), QMessageBox::Warning);
             dialog->done(QMessageBox::Ok);

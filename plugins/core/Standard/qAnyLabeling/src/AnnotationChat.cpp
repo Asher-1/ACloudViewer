@@ -2264,6 +2264,18 @@ private:
         }
         return QDialog::eventFilter(object, event);
     }
+    void keyPressEvent(QKeyEvent* event) override {
+        // Qt 5's QDialog clicks the first autoDefault button when Return
+        // propagates from a child (e.g. the settings line edits), which
+        // here would navigate images or open import dialogs. Enter actions
+        // in this dialog are explicit (input send shortcut / event filter),
+        // so consume the propagated key instead of synthesizing a click.
+        if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
+            event->accept();
+            return;
+        }
+        QDialog::keyPressEvent(event);
+    }
     void resizeEvent(QResizeEvent* event) override {
         QDialog::resizeEvent(event);
         updatePreview();
