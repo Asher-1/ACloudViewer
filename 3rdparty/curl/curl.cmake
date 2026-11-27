@@ -53,6 +53,11 @@ ExternalProject_Add(
         # libcurl silently gains ZSTD_* references that no Windows consumer
         # links, failing the pybind wheel with LNK2001.
         -DCURL_ZSTD=OFF
+        # USE_NGHTTP2 defaults to ON with auto-detection: whenever
+        # libnghttp2-dev is visible (e.g. Ubuntu 26.04), the static libcurl
+        # gains nghttp2_* references that consumers do not link, failing
+        # every executable with undefined references. HTTP/2 is not needed.
+        -DUSE_NGHTTP2=OFF
         -DZLIB_ROOT=${CMAKE_BINARY_DIR}/zlib
         ${curl_cmake_extra_args}
         ${ExternalProject_CMAKE_ARGS_hidden}

@@ -30,6 +30,13 @@ endforeach()
 # CUDA 13 also removed cudaDeviceProp::clockRate, which device.cpp prints;
 # fix-cuda13-clock-rate.patch queries cudaDeviceGetAttribute instead (the
 # attribute API exists on every supported toolkit, verified against 12.6).
+# CCCL 3.x eagerly instantiates std::iterator_traits<thrust::pointer<void>>
+# through its type traits; the pinned stdgpu's std::iterator_traits
+# specializations then form std::iterator_traits<void*>::reference (void&),
+# a hard error on GCC 15. fix-cuda13-iterator-traits.patch removes those
+# specializations (upstream stdgpu 025465a77b "Add CUDA 13 support").
+# CUDA 11.8/12.x thrust has no own std traits for thrust::pointer, so the
+# removal stays gated to CUDA 13+ like the other two patches.
 set(STDGPU_PATCH_COMMAND "")
 if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "13.0")
     set(STDGPU_PATCH_COMMAND
@@ -39,6 +46,7 @@ if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "13.0")
             --ignore-space-change --ignore-whitespace
             ${CMAKE_CURRENT_LIST_DIR}/fix-thrust-is-proxy-reference.patch
             ${CMAKE_CURRENT_LIST_DIR}/fix-cuda13-clock-rate.patch
+            ${CMAKE_CURRENT_LIST_DIR}/fix-cuda13-iterator-traits.patch
     )
 endif()
 
