@@ -62,7 +62,7 @@ Required for CUDA builds and GPU testing:
    sudo systemctl restart docker
    
    # Verify GPU access
-   docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi
+   docker run --rm --gpus all nvidia/cuda:12.6.3-base-ubuntu22.04 nvidia-smi
 
 ARM64 Support (Optional)
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -154,43 +154,56 @@ CI/CD Build Image
    * - Variant
      - Base Image
      - Use Case
-   * - CPU Static
-     - ``ubuntu:22.04``
-     - Static libraries, minimal dependencies
-   * - CPU Shared
-     - ``ubuntu:22.04``
-     - Shared libraries with ML support
-   * - CUDA Shared
-     - ``nvidia/cuda:12.1.0-devel-ubuntu22.04``
+   * - CPU Qt5 (``cpu-focal`` / ``cpu-jammy``)
+     - ``ubuntu:20.04`` / ``ubuntu:22.04``
+     - CPU CI, static libraries, Qt5
+   * - CPU Qt6 (``cpu-noble`` / ``cpu-resolute``)
+     - ``ubuntu:24.04`` / ``ubuntu:26.04``
+     - CPU CI, Qt6-based GUI builds
+   * - CUDA Qt5 (``cuda-focal`` / ``cuda-jammy``)
+     - ``nvidia/cuda:12.6.3-cudnn-devel-ubuntu20.04`` / ``...22.04``
      - GPU-accelerated builds
-   * - Qt6 CPU
-     - ``ubuntu:24.04``
-     - Qt6-based GUI builds
-   * - Qt6 CUDA
-     - ``nvidia/cuda:12.1.0-devel-ubuntu24.04``
-     - Qt6 + GPU builds
+   * - CUDA Qt6 (``cuda-noble`` / ``cuda-resolute``)
+     - ``nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04`` / ``13.5.0-cudnn-devel-ubuntu26.04``
+     - Qt6 + GPU builds (resolute uses CUDA 13.x)
 
 **Build Examples**:
 
 .. code-block:: bash
 
-   # CPU static build
+   # CPU static build (same environment as ./docker_build.sh cpu-jammy;
+   # Dockerfile.ci rejects missing required build args and forces
+   # BUILD_SHARED_LIBS=OFF)
    docker build \
        -f docker/Dockerfile.ci \
        --build-arg BASE_IMAGE=ubuntu:22.04 \
        --build-arg DEVELOPER_BUILD=ON \
+       --build-arg CMAKE_VERSION=cmake-3.31.8-linux-x86_64 \
+       --build-arg PYTHON_VERSION=3.12 \
        --build-arg BUILD_SHARED_LIBS=OFF \
-       -t acloudviewer-ci:cpu-static .
+       --build-arg BUILD_CUDA_MODULE=OFF \
+       --build-arg BUILD_TENSORFLOW_OPS=OFF \
+       --build-arg BUILD_PYTORCH_OPS=OFF \
+       --build-arg PACKAGE=ON \
+       --build-arg QT_MAJOR=5 \
+       --build-arg QT_BASE_DIR=/usr/lib/x86_64-linux-gnu/qt5 \
+       -t cloudviewer-ci:cpu-jammy .
    
-   # CUDA shared build with ML
+   # CUDA build (same environment as ./docker_build.sh cuda-jammy)
    docker build \
        -f docker/Dockerfile.ci \
-       --build-arg BASE_IMAGE=nvidia/cuda:12.1.0-devel-ubuntu22.04 \
+       --build-arg BASE_IMAGE=nvidia/cuda:12.6.3-cudnn-devel-ubuntu22.04 \
        --build-arg DEVELOPER_BUILD=ON \
-       --build-arg BUILD_SHARED_LIBS=ON \
+       --build-arg CMAKE_VERSION=cmake-3.31.8-linux-x86_64 \
+       --build-arg PYTHON_VERSION=3.12 \
+       --build-arg BUILD_SHARED_LIBS=OFF \
        --build-arg BUILD_CUDA_MODULE=ON \
-       --build-arg BUILD_PYTORCH_OPS=ON \
-       -t acloudviewer-ci:cuda-ml .
+       --build-arg BUILD_TENSORFLOW_OPS=OFF \
+       --build-arg BUILD_PYTORCH_OPS=OFF \
+       --build-arg PACKAGE=ON \
+       --build-arg QT_MAJOR=5 \
+       --build-arg QT_BASE_DIR=/usr/lib/x86_64-linux-gnu/qt5 \
+       -t cloudviewer-ci:cuda-jammy .
 
 **Using Build Scripts**:
 
@@ -198,14 +211,14 @@ CI/CD Build Image
 
    cd docker
    
-   # See all available configurations
-   ./docker_build.sh --help
+   # See all available configurations (no argument prints usage)
+   ./docker_build.sh
    
    # Build CPU variant
-   ./docker_build.sh cpu-static
+   ./docker_build.sh cpu-jammy
    
-   # Build CUDA variant with ML
-   ./docker_build.sh cuda-ml-shared-jammy
+   # Build CUDA variant
+   ./docker_build.sh cuda-jammy
    
    # Build Qt6 variant (Ubuntu 24.04/26.04 default to Qt6)
    ./docker_build.sh cpu-noble
@@ -241,7 +254,14 @@ there is no separate Qt6 Dockerfile.
        --build-arg QT_MAJOR=6 \
        --build-arg QT_BASE_DIR=/usr \
        --build-arg DEVELOPER_BUILD=ON \
-       -t acloudviewer-ci:qt6 .
+       --build-arg CMAKE_VERSION=cmake-3.31.8-linux-x86_64 \
+       --build-arg PYTHON_VERSION=3.12 \
+       --build-arg BUILD_SHARED_LIBS=OFF \
+       --build-arg BUILD_CUDA_MODULE=OFF \
+       --build-arg BUILD_TENSORFLOW_OPS=OFF \
+       --build-arg BUILD_PYTORCH_OPS=OFF \
+       --build-arg PACKAGE=ON \
+       -t cloudviewer-ci:cpu-noble .
 
 Wheel Building Image
 ^^^^^^^^^^^^^^^^^^^^
@@ -260,18 +280,27 @@ Wheel Building Image
 
 .. code-block:: bash
 
-   # Build wheel with CUDA support
+   # Build wheel with CUDA support (noble/Qt6, as docker_build.sh
+   # cuda_wheel_noble_py311 does)
    docker build \
        -f docker/Dockerfile.wheel \
-       --build-arg BASE_IMAGE=ubuntu:22.04 \
+       --build-arg BASE_IMAGE=nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04 \
+       --build-arg QT_MAJOR=6 \
+       --build-arg QT_BASE_DIR=/usr \
+       --build-arg DEVELOPER_BUILD=ON \
+       --build-arg CMAKE_VERSION=cmake-3.31.8-linux-x86_64 \
        --build-arg PYTHON_VERSION=3.11 \
+       --build-arg BUILD_SHARED_LIBS=OFF \
        --build-arg BUILD_CUDA_MODULE=ON \
+       --build-arg BUILD_TENSORFLOW_OPS=OFF \
        --build-arg BUILD_PYTORCH_OPS=ON \
-       -t acloudviewer-wheel:cuda-py311 .
+       --build-arg PACKAGE=OFF \
+       -t cloudviewer-ci:wheel .
    
-   # Extract wheel
-   docker run -v $(pwd):/opt/mount --rm acloudviewer-wheel:cuda-py311 \
-       bash -c "cp /root/ACloudViewer/build/lib/python_package/pip_package/*.whl /opt/mount/"
+   # Extract wheel (build_cloudviewer_whl.sh moves it to /root/install
+   # and the image wipes the build tree afterwards)
+   docker run -v $(pwd):/opt/mount --rm cloudviewer-ci:wheel \
+       bash -c "cp /root/install/cloudviewer*.whl /opt/mount/"
 
 **Using Build Scripts**:
 
@@ -302,7 +331,7 @@ Launch an interactive shell for development:
    docker run -it --rm \
        -v $(pwd):/workspace \
        -w /workspace \
-       acloudviewer-ci:cpu-static \
+       cloudviewer-ci:cpu-jammy \
        bash
    
    # Inside container
@@ -318,7 +347,7 @@ Launch an interactive shell for development:
    docker run -it --rm --gpus all \
        -v $(pwd):/workspace \
        -w /workspace \
-       acloudviewer-ci:cuda-ml \
+       cloudviewer-ci:cuda-jammy \
        bash
    
    # Build with CUDA
@@ -341,7 +370,7 @@ Run the complete test suite in Docker:
    docker run --rm \
        -v $(pwd):/workspace \
        -w /workspace/build \
-       acloudviewer-ci:cpu-static \
+       cloudviewer-ci:cpu-jammy \
        bash -c "cmake -DBUILD_DIR=. -DJOBS=4 -P ../tests/Run.cmake"
 
 **Python Tests**:
@@ -351,7 +380,7 @@ Run the complete test suite in Docker:
    docker run --rm \
        -v $(pwd):/workspace \
        -w /workspace \
-       acloudviewer-ci:cpu-static \
+       cloudviewer-ci:cpu-jammy \
        bash -c "source util/ci_utils.sh && run_python_tests path/to/wheel.whl"
 
 **GPU Tests**:
@@ -361,7 +390,7 @@ Run the complete test suite in Docker:
    docker run --rm --gpus all \
        -v $(pwd):/workspace \
        -w /workspace/build \
-       acloudviewer-ci:cuda-ml \
+       cloudviewer-ci:cuda-jammy \
        bash -c "cmake -DBUILD_DIR=. -DJOBS=4 -DPROFILE=ci,gpu -P ../tests/Run.cmake"
 
 **Using Test Script**:
@@ -371,10 +400,10 @@ Run the complete test suite in Docker:
    cd docker
    
    # Test CPU build
-   ./docker_test.sh cpu-static
+   ./docker_test.sh cpu-jammy
    
    # Test CUDA build
-   ./docker_test.sh cuda-ml-shared-jammy
+   ./docker_test.sh cuda-jammy
    
    # Test Qt6 build (Ubuntu 24.04)
    ./docker_test.sh cpu-noble
@@ -390,11 +419,12 @@ Build Python wheels inside Docker:
    docker run --rm \
        -v $(pwd):/workspace \
        -w /workspace \
-       acloudviewer-wheel:cuda-py311 \
+       cloudviewer-ci:wheel \
        bash -c "source util/ci_utils.sh && build_pip_package"
    
-   # Extract wheel
-   docker cp $(docker ps -lq):/root/ACloudViewer/dist ./
+   # Extract wheel (build_pip_package output directory)
+   docker run --rm -v $(pwd):/opt/mount cloudviewer-ci:wheel \
+       bash -c "cp /root/ACloudViewer/build/lib/python_package/pip_package/*.whl /opt/mount/"
 
 **Test wheel installation**:
 
@@ -420,51 +450,59 @@ Common Build Arguments
      - Default
      - Description
    * - ``BASE_IMAGE``
-     - ``ubuntu:22.04``
+     - (required)
      - Base Docker image
    * - ``DEVELOPER_BUILD``
-     - ``ON``
+     - (required)
      - Enable dev features (git hash in version)
    * - ``PYTHON_VERSION``
-     - ``3.11``
+     - (required)
      - Python version (3.10-3.13)
    * - ``CMAKE_VERSION``
-     - ``3.28.1``
-     - CMake version
+     - (required)
+     - CMake distribution name (``cmake-3.31.8-linux-x86_64``)
    * - ``BUILD_SHARED_LIBS``
-     - ``OFF``
-     - Build shared libraries
+     - (required)
+     - Must be ``OFF``; the image forces static libraries
    * - ``BUILD_CUDA_MODULE``
-     - ``OFF``
+     - (required)
      - Enable CUDA support
    * - ``BUILD_PYTORCH_OPS``
-     - ``OFF``
+     - (required)
      - Build PyTorch operators
    * - ``BUILD_TENSORFLOW_OPS``
-     - ``OFF``
+     - (required)
      - Build TensorFlow operators
-   * - ``BUILD_GUI``
-     - ``ON``
-     - Build GUI components
-   * - ``CCACHE_TAR_NAME``
+   * - ``PACKAGE``
+     - (required)
+     - ``ON`` for CI installers, ``OFF`` for wheels
+   * - ``QT_MAJOR``
+     - ``5``
+     - Qt major version; noble/resolute targets use ``6``
+   * - ``QT_BASE_DIR``
      - (none)
-     - ccache archive for faster rebuilds
+     - Qt prefix: ``/usr`` for apt Qt6, versioned path for Qt5
+
+Required arguments are enforced by ``Dockerfile.ci`` / ``Dockerfile.wheel``
+(missing values abort the build); ``docker_build.sh`` supplies them all.
 
 **Example with all arguments**:
 
 .. code-block:: bash
 
    docker build \
-       --build-arg BASE_IMAGE=nvidia/cuda:12.1.0-devel-ubuntu22.04 \
+       --build-arg BASE_IMAGE=nvidia/cuda:12.6.3-cudnn-devel-ubuntu22.04 \
        --build-arg DEVELOPER_BUILD=OFF \
-       --build-arg PYTHON_VERSION=3.11 \
-       --build-arg CMAKE_VERSION=3.28.1 \
-       --build-arg BUILD_SHARED_LIBS=ON \
+       --build-arg PYTHON_VERSION=3.12 \
+       --build-arg CMAKE_VERSION=cmake-3.31.8-linux-x86_64 \
+       --build-arg BUILD_SHARED_LIBS=OFF \
        --build-arg BUILD_CUDA_MODULE=ON \
-       --build-arg BUILD_PYTORCH_OPS=ON \
+       --build-arg BUILD_PYTORCH_OPS=OFF \
        --build-arg BUILD_TENSORFLOW_OPS=OFF \
-       --build-arg BUILD_GUI=ON \
-       -t acloudviewer:custom \
+       --build-arg PACKAGE=ON \
+       --build-arg QT_MAJOR=5 \
+       --build-arg QT_BASE_DIR=/usr/lib/x86_64-linux-gnu/qt5 \
+       -t cloudviewer-ci:cuda-jammy \
        -f docker/Dockerfile.ci .
 
 Dockerfile Structure
@@ -539,15 +577,15 @@ Use Docker BuildKit for advanced caching:
    
    # Build with cache
    docker build \
-       --cache-from acloudviewer-ci:cpu-static \
-       -t acloudviewer-ci:cpu-static \
+       --cache-from cloudviewer-ci:cpu-jammy \
+       -t cloudviewer-ci:cpu-jammy \
        -f docker/Dockerfile.ci .
    
    # Use GitHub Actions cache
    docker build \
        --cache-from type=gha \
        --cache-to type=gha,mode=max \
-       -t acloudviewer-ci:cpu-static \
+       -t cloudviewer-ci:cpu-jammy \
        -f docker/Dockerfile.ci .
 
 ccache Integration
@@ -564,13 +602,13 @@ Leverage ccache for C++ compilation:
    docker run --rm \
        -v ccache-vol:/root/.cache/ccache \
        -v $(pwd):/workspace \
-       acloudviewer-ci:cpu-static \
+       cloudviewer-ci:cpu-jammy \
        bash -c "ccache -M 5G && cd /workspace/build && make -j$(nproc)"
    
    # Check ccache statistics
    docker run --rm \
        -v ccache-vol:/root/.cache/ccache \
-       acloudviewer-ci:cpu-static \
+       cloudviewer-ci:cpu-jammy \
        ccache -s
 
 **Benefits**:
@@ -597,7 +635,15 @@ For multi-container development setups:
          args:
            BASE_IMAGE: ubuntu:22.04
            DEVELOPER_BUILD: 'ON'
+           CMAKE_VERSION: cmake-3.31.8-linux-x86_64
+           PYTHON_VERSION: '3.12'
            BUILD_SHARED_LIBS: 'OFF'
+           BUILD_CUDA_MODULE: 'OFF'
+           BUILD_TENSORFLOW_OPS: 'OFF'
+           BUILD_PYTORCH_OPS: 'OFF'
+           PACKAGE: 'ON'
+           QT_MAJOR: '5'
+           QT_BASE_DIR: /usr/lib/x86_64-linux-gnu/qt5
        volumes:
          - .:/workspace
          - ccache-vol:/root/.cache/ccache
@@ -611,9 +657,17 @@ For multi-container development setups:
          context: .
          dockerfile: docker/Dockerfile.ci
          args:
-           BASE_IMAGE: nvidia/cuda:12.1.0-devel-ubuntu22.04
+           BASE_IMAGE: nvidia/cuda:12.6.3-cudnn-devel-ubuntu22.04
            DEVELOPER_BUILD: 'ON'
+           CMAKE_VERSION: cmake-3.31.8-linux-x86_64
+           PYTHON_VERSION: '3.12'
+           BUILD_SHARED_LIBS: 'OFF'
            BUILD_CUDA_MODULE: 'ON'
+           BUILD_TENSORFLOW_OPS: 'OFF'
+           BUILD_PYTORCH_OPS: 'OFF'
+           PACKAGE: 'ON'
+           QT_MAJOR: '5'
+           QT_BASE_DIR: /usr/lib/x86_64-linux-gnu/qt5
        deploy:
          resources:
            reservations:
@@ -663,10 +717,10 @@ The ``docker_test.sh`` script runs comprehensive tests:
    ./docker_test.sh
    
    # Run CPU tests
-   ./docker_test.sh cpu-static
+   ./docker_test.sh cpu-jammy
    
    # Run CUDA tests
-   ./docker_test.sh cuda-ml-shared-jammy
+   ./docker_test.sh cuda-jammy
    
    # Run Qt6 tests (Ubuntu 26.04)
    ./docker_test.sh cpu-resolute
@@ -675,12 +729,9 @@ The ``docker_test.sh`` script runs comprehensive tests:
 
 1. Invoke the root ``tests/Run.cmake`` gate for native tests
 2. Build prerequisites and execute registered headless tests (plus GPU tests in GPU containers)
-3. Build Python package
-4. Install Python package
-5. Run Python tests with pytest
-6. Test command-line tools
-7. Test CMake integration
-8. Test uninstall process
+3. Assemble the Python package when the image did not install it
+4. Run Python tests with pytest
+5. Test command-line tools (wheel images)
 
 Custom Test Runs
 ^^^^^^^^^^^^^^^^
@@ -690,19 +741,19 @@ Run specific test suites:
 .. code-block:: bash
 
    # C++ tests only
-   docker run --rm acloudviewer-ci:cpu-static \
+   docker run --rm cloudviewer-ci:cpu-jammy \
        bash -c "cd build && cmake -DBUILD_DIR=. -DJOBS=4 -P ../tests/Run.cmake"
    
    # Python tests only
-   docker run --rm acloudviewer-ci:cpu-static \
+   docker run --rm cloudviewer-ci:cpu-jammy \
        bash -c "cd python/test && pytest -v"
    
    # Specific test file
-   docker run --rm acloudviewer-ci:cpu-static \
+   docker run --rm cloudviewer-ci:cpu-jammy \
        bash -c "cd python/test && pytest test_pointcloud.py -v"
    
    # With GPU
-   docker run --rm --gpus all acloudviewer-ci:cuda-ml \
+   docker run --rm --gpus all cloudviewer-ci:cuda-jammy \
        bash -c "cd build && cmake -DBUILD_DIR=. -DJOBS=4 -DPROFILE=ci,gpu -P ../tests/Run.cmake"
 
 Troubleshooting
@@ -718,7 +769,7 @@ Run Docker as current user to avoid permission issues:
    docker run --rm \
        --user $(id -u):$(id -g) \
        -v $(pwd):/workspace \
-       acloudviewer-ci:cpu-static
+       cloudviewer-ci:cpu-jammy
 
 **Fix existing permission issues**:
 
@@ -742,7 +793,7 @@ Limit parallel builds and memory usage:
        -m 8g \
        --cpus 4 \
        -v $(pwd):/workspace \
-       acloudviewer-ci:cpu-static \
+       cloudviewer-ci:cpu-jammy \
        bash -c "make -j4"
    
    # Monitor memory usage
@@ -788,7 +839,7 @@ Use host network for better connectivity:
 .. code-block:: bash
 
    docker build --network=host \
-       -t acloudviewer-ci:cpu-static \
+       -t cloudviewer-ci:cpu-jammy \
        -f docker/Dockerfile.ci .
 
 **Proxy configuration**:
@@ -799,7 +850,7 @@ Use host network for better connectivity:
        --build-arg http_proxy=$http_proxy \
        --build-arg https_proxy=$https_proxy \
        --build-arg no_proxy=$no_proxy \
-       -t acloudviewer-ci:cpu-static \
+       -t cloudviewer-ci:cpu-jammy \
        -f docker/Dockerfile.ci .
 
 GPU Not Available
@@ -813,7 +864,7 @@ GPU Not Available
    nvidia-smi
    
    # Check NVIDIA Docker runtime
-   docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi
+   docker run --rm --gpus all nvidia/cuda:12.6.3-base-ubuntu22.04 nvidia-smi
    
    # Restart Docker daemon
    sudo systemctl restart docker
@@ -950,34 +1001,22 @@ Quick Reference
    # Documentation
    docker build -t acloudviewer-ci:docs -f docker/Dockerfile.docs .
    
-   # CPU CI
-   docker build -t acloudviewer-ci:cpu -f docker/Dockerfile.ci .
-   
-   # CUDA CI
-   docker build -t acloudviewer-ci:cuda \
-       --build-arg BASE_IMAGE=nvidia/cuda:12.1.0-devel-ubuntu22.04 \
-       -f docker/Dockerfile.ci .
-   
-   # Qt6 (Ubuntu 24.04/26.04)
-   docker build -t acloudviewer-ci:qt6 \
-       --build-arg BASE_IMAGE=ubuntu:24.04 \
-       --build-arg QT_MAJOR=6 \
-       -f docker/Dockerfile.ci .
-   
-   # Wheel
-   docker build -t acloudviewer-wheel:py311 \
-       --build-arg PYTHON_VERSION=3.11 \
-       -f docker/Dockerfile.wheel .
+   # CPU / CUDA / Qt6 / wheel images: docker_build.sh supplies the required
+   # build args enforced by Dockerfile.ci / Dockerfile.wheel
+   ./docker/docker_build.sh cpu-jammy
+   ./docker/docker_build.sh cuda-jammy
+   ./docker/docker_build.sh cpu-noble
+   ./docker/docker_build.sh cuda_wheel_noble_py311
 
 **Run Tests**:
 
 .. code-block:: bash
 
    # Using test script
-   cd docker && ./docker_test.sh cpu-static
+   cd docker && ./docker_test.sh cpu-jammy
    
    # Manual
-   docker run --rm acloudviewer-ci:cpu \
+   docker run --rm cloudviewer-ci:cpu-jammy \
        bash -c "cd build && cmake -DBUILD_DIR=. -DJOBS=4 -P ../tests/Run.cmake"
 
 **Build Wheels**:
@@ -988,8 +1027,8 @@ Quick Reference
    cd docker && ./build_cloudviewer_whl.sh 3.11
    
    # Manual
-   docker run --rm -v $(pwd):/opt/mount acloudviewer-wheel:py311 \
-       bash -c "cp /root/ACloudViewer/dist/*.whl /opt/mount/"
+   docker run --rm -v $(pwd):/opt/mount cloudviewer-ci:wheel \
+       bash -c "cp /root/install/cloudviewer*.whl /opt/mount/"
 
 **Clean Up**:
 
