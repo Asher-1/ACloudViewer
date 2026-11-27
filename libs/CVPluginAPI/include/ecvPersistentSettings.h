@@ -14,7 +14,10 @@
 #include "CVPluginAPI.h"
 
 //! Persistent settings keys and QSettings helpers (app + plugins).
-class CVPLUGIN_LIB_API ecvPS {
+//! No class-wide export macro: MSVC would mark the inline key helpers
+//! dllimport and fail to resolve them at link time. Only the out-of-line
+//! members below carry CVPLUGIN_LIB_API.
+class ecvPS {
 public:
     static inline const QString LoadFile() {
         return QStringLiteral("LoadFile");
@@ -110,10 +113,11 @@ public:
 
     /** Register a QSettings group prefix (e.g. "qDA3") for
      * resetAllRegistered(). */
-    static void registerSettingsGroup(const QString& groupPrefix);
+    static CVPLUGIN_LIB_API void registerSettingsGroup(
+            const QString& groupPrefix);
 
     /** Clear every group registered via registerSettingsGroup(). */
-    static void resetAllRegistered();
+    static CVPLUGIN_LIB_API void resetAllRegistered();
 
     static inline QString settingsKey(const QString& groupPrefix,
                                       const QString& key) {

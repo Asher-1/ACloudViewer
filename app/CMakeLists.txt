@@ -197,6 +197,8 @@ if(BUILD_GUI AND BUILD_UNIT_TESTS)
     add_subdirectory(tests/shortcuts)
     add_subdirectory(tests/layout)
     add_subdirectory(tests/spreadsheet)
+    add_subdirectory(tests/geometry)
+    add_subdirectory(tests/recentfiles)
 endif()
 
 # running gui app from the build folder needs tbb.dll to be in the same folder.
