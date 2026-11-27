@@ -181,7 +181,8 @@ jobs:
           rm -f /tmp/ccache-restore.tar.gz
       # Be verbose and explicit here such that a developer can directly copy the
       # `docker/docker_build.sh xxx` command to execute locally.
-      # cuda_wheel_* targets follow the app CI Ubuntu spread in docker_build.sh:
+      # cuda_wheel_<codename>_* targets follow the app CI Ubuntu spread in
+      # docker_build.sh:
       # jammy=22.04/apt Qt5 + CUDA 12.6.3, noble=24.04/apt Qt 6.4.2 + CUDA 12.6.3,
       # resolute=26.04/apt Qt 6.10.2 + CUDA 13.x. The wheel's manylinux tag
       # follows the build glibc (python/setup.py): 2_35 / 2_39 / 2_4x, and
@@ -197,12 +198,7 @@ jobs:
           if [ "${DEVELOPER_BUILD}" = "ON" ]; then
             PY_TAG="${PY_TAG}_dev"
           fi
-          # noble keeps the legacy target name (cuda_wheel_py31x[_dev]).
-          if [ "${UBUNTU_CODENAME}" = "noble" ]; then
-            docker/docker_build.sh "cuda_wheel_${PY_TAG}" 2>&1 | tee /tmp/ubuntu-wheel-build.log
-          else
-            docker/docker_build.sh "cuda_wheel_${UBUNTU_CODENAME}_${PY_TAG}" 2>&1 | tee /tmp/ubuntu-wheel-build.log
-          fi
+          docker/docker_build.sh "cuda_wheel_${UBUNTU_CODENAME}_${PY_TAG}" 2>&1 | tee /tmp/ubuntu-wheel-build.log
           PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/cloudviewer-[0-9]*.whl)"
           PIP_CPU_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/cloudviewer_cpu*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV

@@ -249,8 +249,9 @@ Wheel Building Image
 **Dockerfiles**: 
 
 - ``docker/Dockerfile.wheel`` (``QT_MAJOR=5`` on Ubuntu 20.04/22.04,
-  ``QT_MAJOR=6`` on 24.04+; ``cuda_wheel_*`` targets 24.04/Qt6,
-  ``cuda_wheel_jammy_*`` 22.04/Qt5, ``cuda_wheel_resolute_*`` 26.04/Qt6 + CUDA 13)
+  ``QT_MAJOR=6`` on 24.04+; ``cuda_wheel_noble_*`` targets 24.04/Qt6,
+  ``cuda_wheel_jammy_*`` 22.04/Qt5, ``cuda_wheel_resolute_*`` 26.04/Qt6 + CUDA 13;
+  the bare ``cuda_wheel_py31x`` names are legacy aliases of noble)
 
 **Purpose**: Build manylinux-compatible Python wheels.
 

@@ -44,8 +44,17 @@ OPTION:
     cuda-resolute-release      : CUDA CI, Ubuntu 26.04, release mode (Qt6, CUDA 13.x)
 
     # CUDA wheels (Dockerfile.wheel). Codename picks the Ubuntu/Qt/CUDA triple
-    # like the app CI: jammy=22.04/Qt5/12.6.3, noble (default)=24.04/Qt6/12.6.3,
+    # like the app CI: jammy=22.04/Qt5/12.6.3, noble=24.04/Qt6/12.6.3,
     # resolute=26.04/Qt6/13.x. The manylinux tag follows the build glibc.
+    # The bare cuda_wheel_py31x[_dev] names are legacy aliases of noble.
+    cuda_wheel_noble_py310_dev : CUDA Python 3.10 wheel, Ubuntu 24.04 (Qt6), developer mode
+    cuda_wheel_noble_py311_dev : CUDA Python 3.11 wheel, Ubuntu 24.04 (Qt6), developer mode
+    cuda_wheel_noble_py312_dev : CUDA Python 3.12 wheel, Ubuntu 24.04 (Qt6), developer mode
+    cuda_wheel_noble_py313_dev : CUDA Python 3.13 wheel, Ubuntu 24.04 (Qt6), developer mode
+    cuda_wheel_noble_py310     : CUDA Python 3.10 wheel, Ubuntu 24.04 (Qt6), release mode
+    cuda_wheel_noble_py311     : CUDA Python 3.11 wheel, Ubuntu 24.04 (Qt6), release mode
+    cuda_wheel_noble_py312     : CUDA Python 3.12 wheel, Ubuntu 24.04 (Qt6), release mode
+    cuda_wheel_noble_py313     : CUDA Python 3.13 wheel, Ubuntu 24.04 (Qt6), release mode
     cuda_wheel_py310_dev       : CUDA Python 3.10 wheel, noble, developer mode
     cuda_wheel_py311_dev       : CUDA Python 3.11 wheel, noble, developer mode
     cuda_wheel_py312_dev       : CUDA Python 3.12 wheel, noble, developer mode
@@ -126,6 +135,8 @@ cuda_wheel_build() {
     options="$(echo "$@" | tr ' ' '|')"
     if [[ "jammy" =~ ^($options)$ ]]; then
         UBUNTU_VERSION=${UBUNTU_JAMMY}
+    elif [[ "noble" =~ ^($options)$ ]]; then
+        UBUNTU_VERSION=${UBUNTU_NOBLE}
     elif [[ "resolute" =~ ^($options)$ ]]; then
         UBUNTU_VERSION=${UBUNTU_RESOLUTE}
         WHEEL_CUDA_VERSION=${CUDA_VERSION_RESOLUTE}
@@ -591,6 +602,30 @@ function main() {
         ;;
     cuda_wheel_py313)
         cuda_wheel_build py313
+        ;;
+    cuda_wheel_noble_py310_dev)
+        cuda_wheel_build noble py310 dev
+        ;;
+    cuda_wheel_noble_py311_dev)
+        cuda_wheel_build noble py311 dev
+        ;;
+    cuda_wheel_noble_py312_dev)
+        cuda_wheel_build noble py312 dev
+        ;;
+    cuda_wheel_noble_py313_dev)
+        cuda_wheel_build noble py313 dev
+        ;;
+    cuda_wheel_noble_py310)
+        cuda_wheel_build noble py310
+        ;;
+    cuda_wheel_noble_py311)
+        cuda_wheel_build noble py311
+        ;;
+    cuda_wheel_noble_py312)
+        cuda_wheel_build noble py312
+        ;;
+    cuda_wheel_noble_py313)
+        cuda_wheel_build noble py313
         ;;
     cuda_wheel_jammy_py310_dev)
         cuda_wheel_build jammy py310 dev
