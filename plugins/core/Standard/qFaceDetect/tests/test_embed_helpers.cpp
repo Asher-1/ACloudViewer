@@ -7,8 +7,8 @@
 
 #include <gtest/gtest.h>
 
-#include <QFile>
 #include <QCoreApplication>
+#include <QFile>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QTemporaryDir>
