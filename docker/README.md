@@ -66,10 +66,10 @@ For example:
 cd docker
 
 # Build Docker.
-./docker_build.sh cuda_wheel_py312_dev
+./docker_build.sh cuda_wheel_noble_py312_dev
 
 # Test Docker image.
-./docker_test.sh cuda_wheel_py312_dev
+./docker_test.sh cuda_wheel_noble_py312_dev
 ```
 
 See `./docker_build.sh` and `./docker_test.sh` for all available options.
@@ -90,8 +90,8 @@ Example test commands:
 
 ```bash
 # Test CUDA wheel builds (includes ML ops)
-./docker/docker_test.sh cuda_wheel_py312_dev
-./docker/docker_test.sh cuda_wheel_py312
+./docker/docker_test.sh cuda_wheel_noble_py312_dev
+./docker/docker_test.sh cuda_wheel_noble_py312
 
 # Test CI builds (matches GitHub Actions CI_CONFIG)
 ./docker/docker_test.sh cpu-jammy
@@ -184,9 +184,10 @@ This guide walks you through installing Docker Desktop, setting up Windows Subsy
 4. **Run the Docker build script**:
 
    Available build options:
-   - **CPU builds**: `cpu-focal`, `cpu-jammy`, `cpu-noble` (Ubuntu 20.04, 22.04, 24.04)
-   - **CUDA builds**: `cuda-focal`, `cuda-jammy`, `cuda-noble` (requires NVIDIA GPU support)
-   - **CUDA wheels**: `cuda_wheel_py310_dev`, `cuda_wheel_py311_dev`, `cuda_wheel_py312_dev`, `cuda_wheel_py313_dev`
+   - **CPU builds**: `cpu-focal`, `cpu-jammy`, `cpu-noble`, `cpu-resolute` (Ubuntu 20.04, 22.04, 24.04, 26.04)
+   - **CUDA builds**: `cuda-focal`, `cuda-jammy`, `cuda-noble`, `cuda-resolute` (requires NVIDIA GPU support)
+   - **CUDA wheels**: `cuda_wheel_{jammy,noble,resolute}_py{310,311,312,313}[_dev]`
+     (jammy=22.04/Qt5, noble=24.04/Qt6, resolute=26.04/Qt6+CUDA 13.x)
    - Add `-release` suffix for release mode builds (e.g., `cpu-jammy-release`)
 
    Example for CPU build:
@@ -198,7 +199,7 @@ This guide walks you through installing Docker Desktop, setting up Windows Subsy
    Example for CUDA wheel build (ML ops are automatically enabled for wheel builds):
 
    ```bash
-   ./docker_build.sh cuda_wheel_py312_dev
+   ./docker_build.sh cuda_wheel_noble_py312_dev
    ```
 
    Check the log of the build. After the build completes, you will have an ACloudViewer Docker image ready to use, and the artifacts (binaries, documentation and Python package) will have been copied back to the host.

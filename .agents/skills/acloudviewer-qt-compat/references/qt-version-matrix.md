@@ -99,10 +99,11 @@ names and mislabeled 26.04 as oracular).
   CUDA 13 caps host GCC at 14 while resolute defaults to gcc-15 → `Dockerfile.ci`
   installs gcc-14/g++-14 and shadows gcc/cc/g++/c++ via `/usr/local/bin` symlinks
   (only when `BUILD_CUDA_MODULE=ON` and codename=resolute).
-- `ubuntu-wheel.yml`: `cuda_wheel_*` now builds on **noble/Qt6** (12.6.3 CUDA image
-  exists for 24.04). Wheel tag follows build glibc (`python/setup.py`), so the
-  artifact is `manylinux_2_39` and `test-wheel` runs on `ubuntu-24.04` (pip on a
-  22.04 runner would refuse the wheel).
+- `ubuntu-wheel.yml`: `cuda_wheel_{jammy,noble,resolute}_py31x[_dev]` mirrors the
+  app CI Ubuntu spread (jammy=22.04/Qt5/12.6.3, noble=24.04/Qt6/12.6.3,
+  resolute=26.04/Qt6/13.x). Wheel tag follows build glibc (`python/setup.py`):
+  `manylinux_2_35` / `2_39` / `2_4x`; `test-wheel` runs on the matching hosted
+  release (ubuntu-22.04/24.04/26.04) and filters wheels by the runner glibc.
 - Qt6 install branch (both Dockerfiles): `qt6-base-dev qt6-base-dev-tools
   qt6-declarative-dev qt6-svg-dev qt6-websockets-dev qt6-wayland-dev qt6-tools-dev
   qt6-shadertools-dev qml6-module-qtquick* libqt6opengl6-dev libgl1-mesa-dev

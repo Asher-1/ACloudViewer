@@ -46,7 +46,6 @@ OPTION:
     # CUDA wheels (Dockerfile.wheel). Codename picks the Ubuntu/Qt/CUDA triple
     # like the app CI: jammy=22.04/Qt5/12.6.3, noble=24.04/Qt6/12.6.3,
     # resolute=26.04/Qt6/13.x. The manylinux tag follows the build glibc.
-    # The bare cuda_wheel_py31x[_dev] names are legacy aliases of noble.
     cuda_wheel_noble_py310_dev : CUDA Python 3.10 wheel, Ubuntu 24.04 (Qt6), developer mode
     cuda_wheel_noble_py311_dev : CUDA Python 3.11 wheel, Ubuntu 24.04 (Qt6), developer mode
     cuda_wheel_noble_py312_dev : CUDA Python 3.12 wheel, Ubuntu 24.04 (Qt6), developer mode
@@ -55,14 +54,6 @@ OPTION:
     cuda_wheel_noble_py311     : CUDA Python 3.11 wheel, Ubuntu 24.04 (Qt6), release mode
     cuda_wheel_noble_py312     : CUDA Python 3.12 wheel, Ubuntu 24.04 (Qt6), release mode
     cuda_wheel_noble_py313     : CUDA Python 3.13 wheel, Ubuntu 24.04 (Qt6), release mode
-    cuda_wheel_py310_dev       : CUDA Python 3.10 wheel, noble, developer mode
-    cuda_wheel_py311_dev       : CUDA Python 3.11 wheel, noble, developer mode
-    cuda_wheel_py312_dev       : CUDA Python 3.12 wheel, noble, developer mode
-    cuda_wheel_py313_dev       : CUDA Python 3.13 wheel, noble, developer mode
-    cuda_wheel_py310           : CUDA Python 3.10 wheel, noble, release mode
-    cuda_wheel_py311           : CUDA Python 3.11 wheel, noble, release mode
-    cuda_wheel_py312           : CUDA Python 3.12 wheel, noble, release mode
-    cuda_wheel_py313           : CUDA Python 3.13 wheel, noble, release mode
     cuda_wheel_jammy_py310_dev : CUDA Python 3.10 wheel, Ubuntu 22.04 (Qt5), developer mode
     cuda_wheel_jammy_py311_dev : CUDA Python 3.11 wheel, Ubuntu 22.04 (Qt5), developer mode
     cuda_wheel_jammy_py312_dev : CUDA Python 3.12 wheel, Ubuntu 22.04 (Qt5), developer mode
@@ -125,12 +116,11 @@ print_usage_and_exit_docker_build() {
 
 cuda_wheel_build() {
     # Codename picks the Ubuntu/Qt/CUDA triple, mirroring the app CI matrix:
-    # jammy=22.04/Qt5/CUDA 12.6.3, noble (default)=24.04/Qt6/12.6.3,
+    # jammy=22.04/Qt5/CUDA 12.6.3, noble=24.04/Qt6/12.6.3,
     # resolute=26.04/Qt6/CUDA 13.x (NVIDIA publishes no 12.6.3 for 26.04).
     # The wheel's manylinux tag follows the build glibc (python/setup.py):
     # jammy=2_35, noble=2_39, resolute=2_4x; test-wheel runs on the matching
     # Ubuntu release so pip accepts the tag.
-    UBUNTU_VERSION=${UBUNTU_NOBLE}
     WHEEL_CUDA_VERSION=${CUDA_VERSION}
     options="$(echo "$@" | tr ' ' '|')"
     if [[ "jammy" =~ ^($options)$ ]]; then
@@ -140,6 +130,9 @@ cuda_wheel_build() {
     elif [[ "resolute" =~ ^($options)$ ]]; then
         UBUNTU_VERSION=${UBUNTU_RESOLUTE}
         WHEEL_CUDA_VERSION=${CUDA_VERSION_RESOLUTE}
+    else
+        echo "Invalid ubuntu codename."
+        print_usage_and_exit_docker_build
     fi
     set_qt_vars
     BASE_IMAGE=nvidia/cuda:${WHEEL_CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
@@ -579,30 +572,6 @@ function main() {
         ;;
 
     # CUDA wheels
-    cuda_wheel_py310_dev)
-        cuda_wheel_build py310 dev
-        ;;
-    cuda_wheel_py311_dev)
-        cuda_wheel_build py311 dev
-        ;;
-    cuda_wheel_py312_dev)
-        cuda_wheel_build py312 dev
-        ;;
-    cuda_wheel_py313_dev)
-        cuda_wheel_build py313 dev
-        ;;
-    cuda_wheel_py310)
-        cuda_wheel_build py310
-        ;;
-    cuda_wheel_py311)
-        cuda_wheel_build py311
-        ;;
-    cuda_wheel_py312)
-        cuda_wheel_build py312
-        ;;
-    cuda_wheel_py313)
-        cuda_wheel_build py313
-        ;;
     cuda_wheel_noble_py310_dev)
         cuda_wheel_build noble py310 dev
         ;;
