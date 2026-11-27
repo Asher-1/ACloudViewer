@@ -43,15 +43,33 @@ OPTION:
     cuda-noble-release         : CUDA CI, Ubuntu 24.04, release mode (Qt6)
     cuda-resolute-release      : CUDA CI, Ubuntu 26.04, release mode (Qt6, CUDA 13.x)
 
-    # CUDA wheels (Dockerfile.wheel, Ubuntu 24.04 / Qt6)
-    cuda_wheel_py310_dev       : CUDA Python 3.10 wheel, developer mode
-    cuda_wheel_py311_dev       : CUDA Python 3.11 wheel, developer mode
-    cuda_wheel_py312_dev       : CUDA Python 3.12 wheel, developer mode
-    cuda_wheel_py313_dev       : CUDA Python 3.13 wheel, developer mode
-    cuda_wheel_py310           : CUDA Python 3.10 wheel, release mode
-    cuda_wheel_py311           : CUDA Python 3.11 wheel, release mode
-    cuda_wheel_py312           : CUDA Python 3.12 wheel, release mode
-    cuda_wheel_py313           : CUDA Python 3.13 wheel, release mode
+    # CUDA wheels (Dockerfile.wheel). Codename picks the Ubuntu/Qt/CUDA triple
+    # like the app CI: jammy=22.04/Qt5/12.6.3, noble (default)=24.04/Qt6/12.6.3,
+    # resolute=26.04/Qt6/13.x. The manylinux tag follows the build glibc.
+    cuda_wheel_py310_dev       : CUDA Python 3.10 wheel, noble, developer mode
+    cuda_wheel_py311_dev       : CUDA Python 3.11 wheel, noble, developer mode
+    cuda_wheel_py312_dev       : CUDA Python 3.12 wheel, noble, developer mode
+    cuda_wheel_py313_dev       : CUDA Python 3.13 wheel, noble, developer mode
+    cuda_wheel_py310           : CUDA Python 3.10 wheel, noble, release mode
+    cuda_wheel_py311           : CUDA Python 3.11 wheel, noble, release mode
+    cuda_wheel_py312           : CUDA Python 3.12 wheel, noble, release mode
+    cuda_wheel_py313           : CUDA Python 3.13 wheel, noble, release mode
+    cuda_wheel_jammy_py310_dev : CUDA Python 3.10 wheel, Ubuntu 22.04 (Qt5), developer mode
+    cuda_wheel_jammy_py311_dev : CUDA Python 3.11 wheel, Ubuntu 22.04 (Qt5), developer mode
+    cuda_wheel_jammy_py312_dev : CUDA Python 3.12 wheel, Ubuntu 22.04 (Qt5), developer mode
+    cuda_wheel_jammy_py313_dev : CUDA Python 3.13 wheel, Ubuntu 22.04 (Qt5), developer mode
+    cuda_wheel_jammy_py310     : CUDA Python 3.10 wheel, Ubuntu 22.04 (Qt5), release mode
+    cuda_wheel_jammy_py311     : CUDA Python 3.11 wheel, Ubuntu 22.04 (Qt5), release mode
+    cuda_wheel_jammy_py312     : CUDA Python 3.12 wheel, Ubuntu 22.04 (Qt5), release mode
+    cuda_wheel_jammy_py313     : CUDA Python 3.13 wheel, Ubuntu 22.04 (Qt5), release mode
+    cuda_wheel_resolute_py310_dev : CUDA Python 3.10 wheel, Ubuntu 26.04 (Qt6, CUDA 13.x), developer mode
+    cuda_wheel_resolute_py311_dev : CUDA Python 3.11 wheel, Ubuntu 26.04 (Qt6, CUDA 13.x), developer mode
+    cuda_wheel_resolute_py312_dev : CUDA Python 3.12 wheel, Ubuntu 26.04 (Qt6, CUDA 13.x), developer mode
+    cuda_wheel_resolute_py313_dev : CUDA Python 3.13 wheel, Ubuntu 26.04 (Qt6, CUDA 13.x), developer mode
+    cuda_wheel_resolute_py310  : CUDA Python 3.10 wheel, Ubuntu 26.04 (Qt6, CUDA 13.x), release mode
+    cuda_wheel_resolute_py311  : CUDA Python 3.11 wheel, Ubuntu 26.04 (Qt6, CUDA 13.x), release mode
+    cuda_wheel_resolute_py312  : CUDA Python 3.12 wheel, Ubuntu 26.04 (Qt6, CUDA 13.x), release mode
+    cuda_wheel_resolute_py313  : CUDA Python 3.13 wheel, Ubuntu 26.04 (Qt6, CUDA 13.x), release mode
 "
 
 HOST_CLOUDVIEWER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -97,14 +115,25 @@ print_usage_and_exit_docker_build() {
 }
 
 cuda_wheel_build() {
-    # Wheels target noble (24.04): apt Qt 6.4.2 and the nvidia/cuda 12.6.3
-    # ubuntu24.04 base image both exist; jammy would pin the wheel to Qt5.
+    # Codename picks the Ubuntu/Qt/CUDA triple, mirroring the app CI matrix:
+    # jammy=22.04/Qt5/CUDA 12.6.3, noble (default)=24.04/Qt6/12.6.3,
+    # resolute=26.04/Qt6/CUDA 13.x (NVIDIA publishes no 12.6.3 for 26.04).
+    # The wheel's manylinux tag follows the build glibc (python/setup.py):
+    # jammy=2_35, noble=2_39, resolute=2_4x; test-wheel runs on the matching
+    # Ubuntu release so pip accepts the tag.
     UBUNTU_VERSION=${UBUNTU_NOBLE}
+    WHEEL_CUDA_VERSION=${CUDA_VERSION}
+    options="$(echo "$@" | tr ' ' '|')"
+    if [[ "jammy" =~ ^($options)$ ]]; then
+        UBUNTU_VERSION=${UBUNTU_JAMMY}
+    elif [[ "resolute" =~ ^($options)$ ]]; then
+        UBUNTU_VERSION=${UBUNTU_RESOLUTE}
+        WHEEL_CUDA_VERSION=${CUDA_VERSION_RESOLUTE}
+    fi
     set_qt_vars
-    BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
+    BASE_IMAGE=nvidia/cuda:${WHEEL_CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
     export BUILD_SHARED_LIBS=OFF
 
-    options="$(echo "$@" | tr ' ' '|')"
     echo "[cuda_wheel_build()] options: ${options}"
     if [[ "py310" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.10
@@ -562,6 +591,54 @@ function main() {
         ;;
     cuda_wheel_py313)
         cuda_wheel_build py313
+        ;;
+    cuda_wheel_jammy_py310_dev)
+        cuda_wheel_build jammy py310 dev
+        ;;
+    cuda_wheel_jammy_py311_dev)
+        cuda_wheel_build jammy py311 dev
+        ;;
+    cuda_wheel_jammy_py312_dev)
+        cuda_wheel_build jammy py312 dev
+        ;;
+    cuda_wheel_jammy_py313_dev)
+        cuda_wheel_build jammy py313 dev
+        ;;
+    cuda_wheel_jammy_py310)
+        cuda_wheel_build jammy py310
+        ;;
+    cuda_wheel_jammy_py311)
+        cuda_wheel_build jammy py311
+        ;;
+    cuda_wheel_jammy_py312)
+        cuda_wheel_build jammy py312
+        ;;
+    cuda_wheel_jammy_py313)
+        cuda_wheel_build jammy py313
+        ;;
+    cuda_wheel_resolute_py310_dev)
+        cuda_wheel_build resolute py310 dev
+        ;;
+    cuda_wheel_resolute_py311_dev)
+        cuda_wheel_build resolute py311 dev
+        ;;
+    cuda_wheel_resolute_py312_dev)
+        cuda_wheel_build resolute py312 dev
+        ;;
+    cuda_wheel_resolute_py313_dev)
+        cuda_wheel_build resolute py313 dev
+        ;;
+    cuda_wheel_resolute_py310)
+        cuda_wheel_build resolute py310
+        ;;
+    cuda_wheel_resolute_py311)
+        cuda_wheel_build resolute py311
+        ;;
+    cuda_wheel_resolute_py312)
+        cuda_wheel_build resolute py312
+        ;;
+    cuda_wheel_resolute_py313)
+        cuda_wheel_build resolute py313
         ;;
     *)
         echo "Error: invalid argument: ${1}." >&2
