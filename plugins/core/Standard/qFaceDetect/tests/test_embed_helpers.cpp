@@ -8,6 +8,7 @@
 #include <gtest/gtest.h>
 
 #include <QFile>
+#include <QCoreApplication>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QTemporaryDir>
@@ -256,4 +257,12 @@ TEST(FaceDetectEmbedHelpers, RegistryIgnoresMalformedBlob) {
     FaceRegistryStore store(dbPath);
     EXPECT_TRUE(store.open());
     EXPECT_TRUE(store.entries().empty());
+}
+
+// QSqlDatabase requires a live QCoreApplication; construct it on the stack in
+// a custom main so it is destroyed before Qt's own statics at exit.
+int main(int argc, char** argv) {
+    QCoreApplication app(argc, argv);
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

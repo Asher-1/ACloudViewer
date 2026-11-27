@@ -894,6 +894,19 @@ if (WITH_OPENMP)
             message(STATUS "AppleClang OpenMP: libomp not found; install it with 'conda install -c conda-forge libomp' or 'brew install libomp' to enable OpenMP")
         endif()
     endif()
+    if (MSVC)
+        # Use the LLVM OpenMP runtime (/openmp:llvm -> libomp140) everywhere,
+        # including vendored subprojects (faiss) that run their own
+        # find_package(OpenMP) against this same cache. conda's Qt5Concurrent
+        # already imports libomp140.x86_64.dll; mixing it with the default
+        # MSVC vcomp runtime in one process corrupts the heap inside faiss
+        # nested parallel regions. Presetting the FindOpenMP flag variables
+        # (the documented extension point, as on AppleClang above) makes every
+        # consumer agree on a single runtime instead of appending a flag that
+        # the imported target's own -openmp overrides (last-wins = vcomp).
+        set(OpenMP_C_FLAGS "/openmp:llvm" CACHE STRING "OpenMP C flags" FORCE)
+        set(OpenMP_CXX_FLAGS "/openmp:llvm" CACHE STRING "OpenMP CXX flags" FORCE)
+    endif()
     find_package_3rdparty_library(3rdparty_openmp
             PACKAGE OpenMP
             PACKAGE_VERSION_VAR OpenMP_CXX_VERSION
@@ -905,14 +918,6 @@ if (WITH_OPENMP)
             list(APPEND CloudViewer_3RDPARTY_EXTERNAL_MODULES "OpenMP")
         endif ()
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_openmp)
-        
-        # On MSVC, use LLVM-based OpenMP to support modern OpenMP features like atomic write
-        if (MSVC)
-            # Add -openmp:llvm flag to use LLVM OpenMP runtime instead of default MSVC OpenMP
-            # This is required for features like '#pragma omp atomic write'
-            target_compile_options(3rdparty_openmp INTERFACE $<$<COMPILE_LANGUAGE:CXX>:/openmp:llvm>)
-            message(STATUS "Using LLVM-based OpenMP on MSVC")
-        endif()
     else()
         set(WITH_OPENMP OFF)
     endif ()

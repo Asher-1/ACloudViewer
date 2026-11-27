@@ -193,6 +193,9 @@ bool FaceRegistryStore::migrateLegacyJson(bool databaseExisted) const {
     QFile f(jsonPath);
     if (!f.open(QIODevice::ReadOnly)) return false;
     const QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
+    // Release the read handle before renaming the source below: Windows blocks
+    // QFile::rename while any handle to the source is still open.
+    f.close();
     if (!doc.isObject()) return false;
 
     const QString conn = connectionNameForPath(m_path);

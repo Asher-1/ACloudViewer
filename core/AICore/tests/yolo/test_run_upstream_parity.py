@@ -52,7 +52,7 @@ class ParityLauncherTests(unittest.TestCase):
                     mock.patch.object(runner.subprocess, "run", side_effect=execute):
                 self.assertEqual(runner.run(args), 0)
             self.assertEqual(len(processes), 4)
-            self.assertTrue(all(command == [str(binary)] for command, _ in processes))
+            self.assertTrue(all(command == [str(binary.resolve())] for command, _ in processes))
             self.assertEqual([env["AICORE_TEST_YOLO_THREADS"] for _, env in processes],
                              ["8", "8", "32", "32"])
             self.assertEqual((args.out_dir / "aicore-all.jsonl").read_bytes(),

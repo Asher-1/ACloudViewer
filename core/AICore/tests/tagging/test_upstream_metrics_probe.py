@@ -149,7 +149,7 @@ class TimingAuditTests(unittest.TestCase):
             probe.write_bytes(b"probe")
             runtime.write_bytes(b"runtime")
             with patch("runtime_environment.aicore_library_names", return_value=("AICore.dll",)):
-                self.assertEqual(candidate_runtime_path(probe), runtime)
+                self.assertEqual(candidate_runtime_path(probe), runtime.resolve())
 
     def test_candidate_runtime_resolution_supports_flat_unix_layout(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -161,7 +161,7 @@ class TimingAuditTests(unittest.TestCase):
             probe.write_bytes(b"probe")
             runtime.write_bytes(b"runtime")
             with patch("runtime_environment.aicore_library_names", return_value=("libAICore.so",)):
-                self.assertEqual(candidate_runtime_path(probe), runtime)
+                self.assertEqual(candidate_runtime_path(probe), runtime.resolve())
 
     def test_aicore_latency_uses_typed_pipeline_timing_not_caller_decode_wall(self):
         self.assertEqual(aicore_latency_ms({"latency_ms": 12.0,
@@ -203,7 +203,7 @@ class TimingAuditTests(unittest.TestCase):
             self.assertIn(("--threads", "5"), tuple(zip(command, command[1:])))
             self.assertIn(("--repeat", "2"), tuple(zip(command, command[1:])))
             self.assertIn(("--resize-mode", "0"), tuple(zip(command, command[1:])))
-            self.assertEqual(command[-2:], ["--reference-dir", str(cache.resolve())])
+            self.assertEqual(command[-2:], ["--reference-dir", str(cache)])
             compatibility = run.call_args_list[1].args[0]
             self.assertIn(("--cpu-precision", "1"), tuple(zip(compatibility, compatibility[1:])))
             self.assertIn(("--repeat", "1"), tuple(zip(compatibility, compatibility[1:])))
@@ -330,7 +330,10 @@ class TimingAuditTests(unittest.TestCase):
     def test_alternate_baseline_build_does_not_load_default_build_libraries(self):
         env = upstream_backend_env(Path("/reference"), "cpu", Path("/matched-flags"))
         variable = "PATH" if os.name == "nt" else "DYLD_LIBRARY_PATH" if sys.platform == "darwin" else "LD_LIBRARY_PATH"
-        self.assertTrue(env[variable].startswith("/matched-flags/third_party/ggml/src"))
+        # Mirror the producer's lexical Path rendering: Windows drives and
+        # separators differ, the relative layout below the root does not.
+        self.assertTrue(env[variable].startswith(
+            str(Path("/matched-flags") / "third_party" / "ggml" / "src")))
 
 
 if __name__ == "__main__":

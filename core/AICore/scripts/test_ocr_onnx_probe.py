@@ -10,6 +10,12 @@ import hashlib
 import os
 import sys
 
+import numpy
+# numpy.testing's module init probes CPU features through subprocess.run;
+# import it eagerly so the lazy attribute import inside a test can never hit
+# a patched subprocess.run (Windows SVE check).
+import numpy.testing  # noqa: F401
+
 from run_ocr_onnx_probe import (accuracy_crops, accuracy_inputs,
     aggregate_fixtures, detector_input_limit, native_exit_is_diagnostic,
     probability_command, probability_gate, source_performance_pass)

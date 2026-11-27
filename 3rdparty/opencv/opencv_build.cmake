@@ -255,12 +255,22 @@ if(WIN32)
     set(OpenCV_LIB_DIR ${OPENCV_INTALL_PREFIX}/lib)
 
     # for debugging
+    set(_opencv_deploy_libs opencv_world${CV_LIB_SUFFIX})
+    set(_opencv_install_files ${OPENCV_INTALL_PREFIX}/bin/${CMAKE_SHARED_LIBRARY_PREFIX}opencv_world${CV_LIB_SUFFIX}${CMAKE_SHARED_LIBRARY_SUFFIX})
+    if(_opencv_videoio_ffmpeg)
+        # The videoio FFmpeg wrapper is a runtime-loaded plugin DLL (no
+        # import lib): without it next to opencv_world, VideoCapture
+        # silently fails to open any container file. Its name carries the
+        # plain version + arch, never the Debug 'd' suffix.
+        set(OPENCV_FFMPEG_PLUGIN opencv_videoio_ffmpeg${OPENCV_MAJOR_VERSION}${OPENCV_MINOR_VERSION}${OPENCV_PATCH_VERSION}_64)
+        list(APPEND _opencv_deploy_libs ${OPENCV_FFMPEG_PLUGIN})
+        list(APPEND _opencv_install_files ${OPENCV_INTALL_PREFIX}/bin/${OPENCV_FFMPEG_PLUGIN}.dll)
+    endif()
     copy_shared_library(ext_opencv
                         LIB_DIR      ${OPENCV_INTALL_PREFIX}/bin
-                        LIBRARIES    opencv_world${CV_LIB_SUFFIX})
+                        LIBRARIES    ${_opencv_deploy_libs})
 
-    set(library_filename ${CMAKE_SHARED_LIBRARY_PREFIX}opencv_world${CV_LIB_SUFFIX}${CMAKE_SHARED_LIBRARY_SUFFIX})
-    cloudViewer_install_ext( FILES ${OPENCV_INTALL_PREFIX}/bin/${library_filename} ${INSTALL_DESTINATIONS} "")
+    cloudViewer_install_ext( FILES ${_opencv_install_files} ${INSTALL_DESTINATIONS} "")
 else()
     set(CV_LIB_SUFFIX "")
     set(OPENCV_CMAKE_FLAGS -DOpenCV_DIR=${INSTALL_DIR}/lib/cmake/opencv4 -DOPENCV_DIR=${INSTALL_DIR}/lib/cmake/opencv4)

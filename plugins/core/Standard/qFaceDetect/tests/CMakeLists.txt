@@ -16,7 +16,7 @@ target_include_directories(test_qfacedetect_embed_helpers PRIVATE
 find_package(Threads REQUIRED)
 
 target_link_libraries(test_qfacedetect_embed_helpers PRIVATE
-    CVCoreLib gtest_main
+    CVCoreLib gtest
     AICore
     Qt${QT_VERSION_MAJOR}::Core
     Qt${QT_VERSION_MAJOR}::Gui

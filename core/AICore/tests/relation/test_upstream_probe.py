@@ -134,6 +134,11 @@ class UpstreamProbeTests(unittest.TestCase):
     def test_cuda_uses_recorded_runtime_without_candidate_ggml_paths(self):
         with tempfile.TemporaryDirectory() as name:
             root=Path(name);library=root/'toolkit';library.mkdir()
+            # A real candidate runtime directory: Windows filters PATH entries
+            # by the AICore/ggml DLLs they contain (nonexistent entries are
+            # retained), Unix drops the loader override entirely.
+            candidate_bin=root/'candidate-bin';candidate_bin.mkdir()
+            (candidate_bin/'AICore.dll').touch()
             names=('cudart','cublas','cublasLt')
             for item in names:(library/('lib'+item+'.so')).touch()
             (root/'CMakeCache.txt').write_text(''.join(
@@ -141,10 +146,10 @@ class UpstreamProbeTests(unittest.TestCase):
                 for item in names))
             variable=probe.loader_variable()
             candidate,native=probe.runtime_environments(
-                {variable:'/candidate/bin','GGML_BACKEND_PATH':'/candidate/bin'},root,'cuda')
-            self.assertEqual(native[variable],str(library))
+                {variable:str(candidate_bin),'GGML_BACKEND_PATH':str(candidate_bin)},root,'cuda')
+            self.assertEqual(native[variable],str(library.resolve()))
             self.assertNotIn('GGML_BACKEND_PATH',native)
-            self.assertEqual(candidate[variable],str(library)+probe.os.pathsep+'/candidate/bin')
+            self.assertEqual(candidate[variable],str(library.resolve())+probe.os.pathsep+str(candidate_bin))
 
     def test_summary_keeps_worst_error_drop_and_agreement(self):
         rows=[dict(latency_ms=10, native_max_diff=0,

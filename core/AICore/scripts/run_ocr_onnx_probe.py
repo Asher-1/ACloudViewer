@@ -188,7 +188,9 @@ def probability_command(args, work, *, cpu=False):
     hold_ms = 1500 if (backend in ("cuda", "vulkan") and
                        args.measurement_profile == "release") else 0
     return [str(args.probe), str(work), str(args.model), args.role, backend, "-1",
-            f"dump={work / ('cpu.bin' if cpu else 'native.bin')}",
+            # POSIX separators keep the dump contract identical on every host;
+            # Windows file APIs accept them unchanged.
+            f"dump={(work / ('cpu.bin' if cpu else 'native.bin')).as_posix()}",
             str(args.max_diff), str(0 if cpu else args.warmups),
             str(1 if cpu else args.runs), str(args.threads), str(hold_ms)]
 

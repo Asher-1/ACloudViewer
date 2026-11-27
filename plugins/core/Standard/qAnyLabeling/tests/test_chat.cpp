@@ -530,9 +530,13 @@ TEST(ChatTest, ProviderAndWorkspaceWorkflows) {
                             .value("settings")
                             .toObject()
                             .value("temperature") == 10);
+#ifndef Q_OS_WIN
+    // POSIX permission bits only: Windows ACLs map group/other bits to the
+    // owning user, so the owner-only invariant is not observable there.
     REQUIRE((QFileInfo(providerConfig).permissions() &
              (QFileDevice::ReadGroup | QFileDevice::WriteGroup |
               QFileDevice::ReadOther | QFileDevice::WriteOther)) == 0);
+#endif
     if (argc == 3) {
         QFile defaults(QDir(QString::fromLocal8Bit(argv[2]))
                                .filePath("chat-config-defaults-native.json"));

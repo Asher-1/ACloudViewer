@@ -12,5 +12,6 @@ if(TARGET CV_DB_LIB AND TARGET CVCoreLib AND TARGET gtest)
         INCLUDES ${CMAKE_SOURCE_DIR}/app)
     cloudviewer_add_test(NAME test_inner_rect COMMAND test_inner_rect
         LABELS geometry unit)
+    cloudviewer_set_plugin_test_env(test_inner_rect)
     set_tests_properties(test_inner_rect PROPERTIES TIMEOUT 30)
 endif()

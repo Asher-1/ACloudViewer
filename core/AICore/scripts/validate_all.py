@@ -913,7 +913,8 @@ def filter_unavailable_specs(
             path for path in spec.model_paths if path.resolve() in blocked_paths)
         if blocked:
             relative = ", ".join(
-                str(path.resolve().relative_to(root.resolve())) for path in blocked)
+                path.resolve().relative_to(root.resolve()).as_posix()
+                for path in blocked)
             skipped.append(f"{spec.key}: unavailable model(s): {relative}")
         else:
             runnable.append(spec)
@@ -1429,7 +1430,7 @@ def expand_specs(manifest: dict[str, Any], args: argparse.Namespace,
     for task in selected:
         for path in sorted(owned[task] - covered[task]):
             diagnostics["uncovered_assets"].append(
-                f"{task}: {path.relative_to(args.assets.resolve())}")
+                f"{task}: {path.relative_to(args.assets.resolve()).as_posix()}")
     return specs, diagnostics
 
 
@@ -1690,7 +1691,7 @@ def prune_consumed_model_cache(task: str, model_paths,
             print(f"model-cache cleanup could not remove {relative}: {error}",
                   file=sys.stderr, flush=True)
             continue
-        removed.append(str(relative))
+        removed.append(relative.as_posix())
     return removed
 
 
@@ -2122,7 +2123,9 @@ def execution_artifacts(specs: list[RunSpec], build: Path) -> dict[str, Any]:
                                    path.is_relative_to(binary_dir)):
                 # A model cache/report in build/Testing is not executable code.
                 if index == 0 or path.suffix != ".gguf":
-                    paths.add(path)
+                    # Resolved keys keep the artifact identity stable across
+                    # 8.3 short-name temp roots and symlinked staging trees.
+                    paths.add(path.resolve())
     return {str(path): {**file_identity(path), "resolved_path": str(path.resolve())}
             for path in sorted(paths)}
 

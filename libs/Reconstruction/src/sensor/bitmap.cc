@@ -219,7 +219,7 @@ bool Bitmap::Read(const std::filesystem::path& path,
   // across OIIO versions (no double rotation where reorient works).
   config["oiio:reorient"] = 0;
   config["oiio:UnassociatedAlpha"] = 1;
-  auto input = OIIO::ImageInput::open(path.string(), &config);
+  auto input = OIIO::ImageInput::open(path.u8string(), &config);
   if (!input) {
     // OIIO stores failures in thread-local pending state; consume it before
     // returning so a later operation does not observe this stale error.
@@ -321,13 +321,13 @@ bool Bitmap::Read(const std::filesystem::path& path,
 bool Bitmap::Write(const std::filesystem::path& path,
                    const bool delinearize_colorspace) const {
   if (!data_) return false;
-  const std::string filename = path.string();
+  const std::string filename = path.u8string();
   OIIO::ImageSpec spec = data_->image_spec;
   spec.width = width_;
   spec.height = height_;
   spec.nchannels = channels_;
   spec.format = OIIO::TypeDesc::UINT8;
-  const std::string extension = path.extension().string();
+  const std::string extension = path.extension().u8string();
   const bool is_jpeg = extension == ".jpg" || extension == ".jpeg" ||
                        extension == ".JPG" || extension == ".JPEG";
   // Upstream parity (sensor/bitmap.cc "Save JPEG in superb quality by

@@ -32,6 +32,8 @@
 #define TEST_NAME "util/misc"
 #include "util/testing.h"
 
+#include <filesystem>
+
 #include "util/misc.h"
 
 using namespace colmap;
@@ -102,8 +104,12 @@ TEST(util_misc, TestGetPathBaseName) {
   EXPECT_EQ(GetPathBaseName("/test1/test2/"), "test2");
   EXPECT_EQ(GetPathBaseName("/test1/test2/"), "test2");
   EXPECT_EQ(GetPathBaseName("\\test1/test2/"), "test2");
-  // Upstream parity: backslashes are not separators on POSIX.
-  EXPECT_EQ(GetPathBaseName("\\test1\\test2\\"), "\\test1\\test2\\");
+  // Upstream parity: backslashes are separators only on Windows.
+  if constexpr (std::filesystem::path::preferred_separator == '\\') {
+    EXPECT_EQ(GetPathBaseName("\\test1\\test2\\"), "test2");
+  } else {
+    EXPECT_EQ(GetPathBaseName("\\test1\\test2\\"), "\\test1\\test2\\");
+  }
   EXPECT_EQ(GetPathBaseName("/test1/test2/test3.ext"), "test3.ext");
 }
 

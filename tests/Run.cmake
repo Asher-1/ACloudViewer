@@ -75,6 +75,13 @@ endif()
 # their explicit xcb/Xvfb environment and never enter the default ci profile.
 if(NOT "graphics" IN_LIST profiles AND NOT "all" IN_LIST profiles)
     set(ENV{QT_QPA_PLATFORM} offscreen)
+    # The Windows offscreen QPA uses QFreeTypeFontDatabase, which only scans
+    # QT_QPA_FONTDIR (or <Qt>/lib/fonts) and never reads the system font store.
+    # Point it at the real Windows fonts so QFontInfo/QFontMetrics resolve real
+    # faces (bold detection, text bounding boxes) instead of an empty database.
+    if(WIN32 AND DEFINED ENV{SystemRoot})
+        set(ENV{QT_QPA_FONTDIR} "$ENV{SystemRoot}/Fonts")
+    endif()
     set(graphics_filter -LE "^graphics$")
 endif()
 find_program(CTEST_EXECUTABLE ctest REQUIRED)

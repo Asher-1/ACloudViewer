@@ -6,6 +6,11 @@
 # with "patch does not apply" (see 3rdparty/ggml/patches/apply_ggml_patches.py).
 *.patch     text eol=lf
 
+# RAM grounding prompts are consumed verbatim and SHA-256 pinned by the
+# qAnyLabeling tagging/review tests; CRLF checkout would change the bytes and
+# break the pins and trailing-token assertions.
+plugins/core/Standard/qAnyLabeling/resources/ram/*.txt text eol=lf
+
 *.ipynb     filter=jupyter_clear_output
 
 # Custom for Visual Studio

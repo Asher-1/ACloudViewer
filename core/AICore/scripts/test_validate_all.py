@@ -48,7 +48,7 @@ class CandidateAssetsTests(unittest.TestCase):
         catalog = self.apply([self.row])
         self.assertEqual(catalog[0].sha256, self.row["sha256"])
         self.assertEqual(catalog[0].size_bytes, 15)
-        self.assertEqual(catalog[0].url, self.path.as_uri())
+        self.assertEqual(catalog[0].url, self.path.resolve().as_uri())
         self.assertEqual(self.original.sha256, "a" * 64)
         self.assertEqual(self.original.url, "https://example.org/original.gguf")
         summary, failures = VALIDATE_ALL.ensure_model_assets(
@@ -280,7 +280,7 @@ class ValidateAllTests(unittest.TestCase):
             consumers = [s for s in specs if s.model_id == name]
             self.assertEqual(len(consumers), 1, name)
             self.assertEqual(consumers[0].scenario_id, "facedetect-bnkps")
-            self.assertEqual(Path(consumers[0].command[0]).name,
+            self.assertEqual(Path(consumers[0].command[0]).stem,
                              "test_facedetect_detect_only")
 
     def test_execution_artifacts_identify_commands_runtime_and_build_options(self):
@@ -298,10 +298,10 @@ class ValidateAllTests(unittest.TestCase):
             model.write_bytes(b"model is recorded separately")
             spec = SimpleNamespace(command=(str(expected[0]), str(expected[4]), str(model)))
             artifacts = VALIDATE_ALL.execution_artifacts([spec], build)
-            self.assertTrue({str(p) for p in expected} <= artifacts.keys())
-            self.assertNotIn(str(model), artifacts)
+            self.assertTrue({str(p.resolve()) for p in expected} <= artifacts.keys())
+            self.assertNotIn(str(model.resolve()), artifacts)
             for path in expected:
-                self.assertEqual(artifacts[str(path)]["sha256"], hashlib.sha256(path.read_bytes()).hexdigest())
+                self.assertEqual(artifacts[str(path.resolve())]["sha256"], hashlib.sha256(path.read_bytes()).hexdigest())
 
     def test_execution_artifact_changes_fail_even_with_successful_probe_outputs(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -612,7 +612,7 @@ class ValidateAllTests(unittest.TestCase):
                                  {f"{i:03d}.jpg" for i in range(50)})
                 combined = hashlib.sha256()
                 for item in labels:
-                    self.assertTrue(label_path.endswith(str(Path(item["relative_path"]).parent)))
+                    self.assertTrue(label_path.endswith(str(VALIDATE_ALL.PurePosixPath(item["relative_path"]).parent)))
                     combined.update(Path(item["relative_path"]).name.encode() + b"\0")
                     combined.update(bytes.fromhex(item["sha256"]))
                 self.assertEqual(digest, combined.hexdigest())
@@ -679,12 +679,17 @@ class ValidateAllTests(unittest.TestCase):
 
     def test_runtime_library_path_preserves_configured_qt_directory(self):
         env = {"AICORE_QT_LIBRARY_DIR": "/opt/qt/lib"}
-        VALIDATE_ALL.add_runtime_library_path(env, Path("/tmp/aicore-build"))
+        build = Path("/tmp/aicore-build")
+        VALIDATE_ALL.add_runtime_library_path(env, build)
         variable = ("PATH" if VALIDATE_ALL.os.name == "nt" else
                     "DYLD_LIBRARY_PATH" if VALIDATE_ALL.sys.platform == "darwin"
                     else "LD_LIBRARY_PATH")
+        # The Windows fallback resolves the nonexistent build root; POSIX
+        # keeps the lexical bin entry.
+        bin_dir = (str(build.resolve() / "bin") if VALIDATE_ALL.os.name == "nt"
+                   else str(build / "bin"))
         self.assertEqual(env[variable].split(VALIDATE_ALL.os.pathsep),
-                         ["/tmp/aicore-build/bin", "/opt/qt/lib"])
+                         [bin_dir, "/opt/qt/lib"])
 
     def test_ram_dataset_and_caption_metrics_enforce_structured_gates(self):
         report = {
@@ -909,7 +914,9 @@ class ValidateAllTests(unittest.TestCase):
                         if VALIDATE_ALL.sys.platform == "darwin"
                         else "LD_LIBRARY_PATH")
             self.assertEqual(env[variable].split(VALIDATE_ALL.os.pathsep),
-                             [str(build / "bin"), str(expected.resolve())])
+                             [str(build.resolve() / "bin")
+                              if VALIDATE_ALL.os.name == "nt" else str(build / "bin"),
+                              str(expected.resolve())])
 
     def test_windows_runtime_layout_finds_configured_exe_and_prepends_config_dir(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -2179,7 +2186,7 @@ class ValidateAllTests(unittest.TestCase):
             actual = subprocess.check_output(
                 [references["python"], "-c", "import sys; print(sys.prefix)"],
                 text=True).strip()
-            self.assertEqual(Path(actual), root)
+            self.assertEqual(Path(actual), root.resolve())
 
     def test_reference_row_without_reference_is_a_gate_failure(self):
         spec = VALIDATE_ALL.RunSpec(
@@ -2933,7 +2940,7 @@ class ValidateAllTests(unittest.TestCase):
         _, specs, _ = self.expand_relation(full=True)
         by_id = {s.scenario_id: s for s in specs}
         tracker = by_id["relation-temporal-tracker"]
-        self.assertEqual(Path(tracker.command[0]).name,
+        self.assertEqual(Path(tracker.command[0]).stem,
                          "test_relate_temporal")
         self.assertEqual(tracker.model_paths, ())
         self.assertEqual(tracker.accuracy["reference"], "probe_invariant")
@@ -3030,7 +3037,7 @@ class WeVisOneManifestRowTests(unittest.TestCase):
                          if any(p.name == name for p in s.model_paths)]
             self.assertTrue(consumers, name)
             for spec in consumers:
-                self.assertEqual(Path(spec.command[0]).name,
+                self.assertEqual(Path(spec.command[0]).stem,
                                  "test_wevisone_probe")
 
     def test_light_tier_keeps_only_the_recommended_set_anchors(self):
@@ -3446,8 +3453,12 @@ class InstantMeshProbeTests(unittest.TestCase):
                         "libAICore.dylib" if sys.platform == "darwin" else "libAICore.so")
             library = root / "bin" / filename
             library.write_bytes(b"path resolution only, never loaded")
-            self.assertEqual(self.probe.resolve_library(root), library.resolve())
-            self.assertEqual(self.probe.resolve_library(library), library.resolve())
+            # resolve_aicore_library keeps the lexical (abspath) identity so
+            # symlinked backend staging stays discoverable; it must not
+            # resolve symlinks or 8.3 short names.
+            lexical = Path(os.path.abspath(library))
+            self.assertEqual(self.probe.resolve_library(root), lexical)
+            self.assertEqual(self.probe.resolve_library(library), lexical)
             with self.assertRaises(FileNotFoundError):
                 self.probe.resolve_library(root / "absent")
 

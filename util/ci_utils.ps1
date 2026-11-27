@@ -1099,13 +1099,74 @@ function Run-PythonTests {
     return $pytestResult
 }
 
+function Install-MesaSoftwareGL {
+    param ([string]$Destination)
+    # Headless Windows runners expose no GPU OpenGL 3.2, so VTK Render() in the
+    # hardware-selection tests access-violates. Deploy a pinned Mesa3D llvmpipe
+    # opengl32.dll (+ its sole dependency libgallium_wgl.dll) next to the test
+    # binaries. The import closure was verified: opengl32.dll -> libgallium_wgl.dll
+    # -> system DLLs only; the d3d12 compiler DLLs are not needed for llvmpipe.
+    $version = "26.3.1"
+    $sha256 = "64e84cf13d67dd354640bf443ed0445e6a83afd06a5729f0750b3744d633b3f1"
+    $url = "https://github.com/pal1000/mesa-dist-win/releases/download/$version/mesa3d-$version-release-msvc.7z"
+    $gl = Join-Path $Destination "opengl32.dll"
+    $gallium = Join-Path $Destination "libgallium_wgl.dll"
+    if ((Test-Path $gl) -and (Test-Path $gallium)) { return }
+    $cacheRoot = if ($env:ACLOUDVIEWER_LOCAL_ROOT) { $env:ACLOUDVIEWER_LOCAL_ROOT } else { Join-Path $env:LOCALAPPDATA "acloudviewer" }
+    $cache = Join-Path $cacheRoot "mesa-$version"
+    New-Item -ItemType Directory -Force -Path $cache | Out-Null
+    $archive = Join-Path $cache "mesa3d-$version-release-msvc.7z"
+    if (-not (Test-Path $archive)) {
+        Write-Host "Downloading Mesa3D $version software OpenGL"
+        Invoke-WebRequest -Uri $url -OutFile $archive -UseBasicParsing
+    }
+    $hash = (Get-FileHash -Algorithm SHA256 $archive).Hash.ToLower()
+    if ($hash -ne $sha256) { throw "Mesa3D archive SHA-256 mismatch: $hash" }
+    $sevenZip = "C:\Program Files\7-Zip\7z.exe"
+    if (-not (Test-Path $sevenZip)) { $sevenZip = (Get-Command 7z -ErrorAction SilentlyContinue).Source }
+    if (-not $sevenZip) { throw "7-Zip not found for Mesa3D extraction" }
+    & $sevenZip x -y "-o$cache" $archive x64/opengl32.dll x64/libgallium_wgl.dll | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Mesa3D extraction failed" }
+    New-Item -ItemType Directory -Force -Path $Destination | Out-Null
+    Copy-Item (Join-Path $cache "x64/opengl32.dll") $gl -Force
+    Copy-Item (Join-Path $cache "x64/libgallium_wgl.dll") $gallium -Force
+}
+
 function Run-CppUnitTests {
     param ([string]$Config = "Release", [string]$GtestExclude = "")
     $buildDir = Join-Path $CLOUDVIEWER_SOURCE_ROOT "build"
     $entry = Join-Path $CLOUDVIEWER_SOURCE_ROOT "tests/Run.cmake"
     $previousFilter = $env:GTEST_FILTER
     $previousShuffle = $env:GTEST_SHUFFLE
+    $previousTmp = $env:TMP
+    $previousTemp = $env:TEMP
+    $previousGallium = $env:GALLIUM_DRIVER
     try {
+        # GitHub runners expose TMP as an 8.3 short path (RUNNER~1). Python's
+        # Path.resolve() expands it to the long form, so tempfile-based contract
+        # tests mismatch their own expectations. Normalize TMP/TEMP to the long
+        # path once so every child process agrees on a single spelling.
+        $fso = New-Object -ComObject Scripting.FileSystemObject
+        if ($env:TMP) { $env:TMP = $fso.GetFolder($env:TMP).Path }
+        if ($env:TEMP) { $env:TEMP = $fso.GetFolder($env:TEMP).Path }
+        # The unified gate includes Python contract tests; provide their declared
+        # dependencies with the same interpreter CMake configured. torch comes
+        # from the CPU index to avoid the multi-GB CUDA wheel on this CPU cell.
+        $py = "python"
+        $cacheFile = Join-Path $buildDir "CMakeCache.txt"
+        if (Test-Path $cacheFile) {
+            $m = Select-String -Path $cacheFile -Pattern '^Python3_EXECUTABLE:FILEPATH=(.+)$' | Select-Object -First 1
+            if ($m) { $py = $m.Matches[0].Groups[1].Value }
+        }
+        & $py -m pip install -r (Join-Path $CLOUDVIEWER_SOURCE_ROOT "python/requirements_test.txt")
+        if ($LASTEXITCODE -ne 0) { throw "Python test dependency install failed" }
+        & $py -m pip install "torch==$TORCH_VER" --index-url https://download.pytorch.org/whl/cpu
+        if ($LASTEXITCODE -ne 0) { throw "torch CPU install failed" }
+        # The Render()-exercising regression tests live in bin/plugin_test/<cfg>
+        # (cloudviewer_set_bin_runtime_output_directory); opengl32.dll must sit
+        # next to the test executable to win the loader search.
+        Install-MesaSoftwareGL -Destination (Join-Path $buildDir "bin/plugin_test/$Config")
+        $env:GALLIUM_DRIVER = "llvmpipe"
         if (-not $env:GTEST_SHUFFLE) { $env:GTEST_SHUFFLE = "1" }
         if ($env:LOW_MEM_USAGE -eq "ON") {
             $env:GTEST_FILTER = "-*Reduce*Sum*"
@@ -1117,6 +1178,9 @@ function Run-CppUnitTests {
     } finally {
         $env:GTEST_FILTER = $previousFilter
         $env:GTEST_SHUFFLE = $previousShuffle
+        $env:TMP = $previousTmp
+        $env:TEMP = $previousTemp
+        $env:GALLIUM_DRIVER = $previousGallium
     }
 }
 
