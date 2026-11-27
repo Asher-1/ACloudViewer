@@ -117,6 +117,22 @@ else()
         INSTALL_COMMAND ""
         BUILD_BYPRODUCTS ${lib_byproducts}
     )
+    if(UNIX AND NOT APPLE)
+        # bluegl ships real GL entry points (glGetString, ...) as global
+        # symbols in its precompiled assembly object. Linked into an
+        # executable they interpose Qt's own GL resolution: Qt 6.4 Gui binds
+        # glGetString to the still-uninitialized bluegl pointer table and
+        # segfaults at QApplication init (Qt >= 6.5 resolves GL itself and
+        # is unaffected). Localize them, mirroring the GLEW hidden-visibility
+        # fix; internal references still resolve at static-link time.
+        ExternalProject_Add_Step(ext_filament localize-bluegl
+            COMMAND ${CMAKE_COMMAND}
+                -DBLUEGL_ARCHIVE=<SOURCE_DIR>/${lib_dir}/libbluegl.a
+                -DWORK_DIR=<BINARY_DIR>
+                -P "${CMAKE_CURRENT_LIST_DIR}/localize_bluegl.cmake"
+            DEPENDEES download
+        )
+    endif()
     ExternalProject_Get_Property(ext_filament SOURCE_DIR)
     set(FILAMENT_ROOT ${SOURCE_DIR})
 endif()

@@ -193,3 +193,45 @@ Each entry: **Symptom → Essence → Fix (owner) → Verification**. Append new
   only the stamp dir breaks ninja's generated rule graph: "patch-info.txt missing, no
   known rule"). Then rebuild. Avoid by serializing fetch-heavy phases or per-tree caches.
 - **Verification**: reconfigure + rebuild extracts cleanly; build proceeds.
+## 15. Startup SIGSEGV on Qt 6.4 + new Mesa: precompiled bluegl symbol hijack
+
+- **Symptom**: the installed `.run` binary segfaults at `QApplication` init
+  (`QOpenGLContext::create()` → `libqxcb-glx-integration.so` → call to `0x0`)
+  on Ubuntu 24.04/26.04 runners with Mesa ≥ 25.2; Qt5 and Qt ≥ 6.5 builds pass
+  on the same host. `LD_DEBUG=bindings` shows `libQt6Gui.so.6` binding
+  `glGetString` to the **ACloudViewer executable itself**, not libGL.
+- **Essence**: same class as entry 1, different owner: the precompiled filament
+  archive `libbluegl.a` ships real GL entry points (`glGetString`, …, ~2574
+  symbols) as globals in its assembly object. When the link pulls that member
+  in, the executable exports them and interposes Qt 6.4 Gui's direct
+  `glGetString` reference; bluegl's pointer table is still uninitialized →
+  jump to NULL. Qt ≥ 6.5 resolves GL through its own dispatch and never binds
+  the exe symbol, which is why only the 6.4-generation build crashes. Mesa
+  version is a red herring — the container's llvmpipe stack was healthy
+  (`glxinfo` OK).
+- **Fix**: `3rdparty/filament/filament_download.cmake` adds a `localize-bluegl`
+  ExternalProject step running `3rdparty/filament/localize_bluegl.cmake`
+  (nm + `objcopy --localize-symbols` on `libbluegl.a`, Linux only, idempotent —
+  binutils objcopy rejects an empty symbol list). Local symbols still resolve
+  filament-internal references at static-link time; they just stop being
+  exported. Do NOT use `--exclude-libs,ALL`: plugins legitimately consume
+  exe-exported LZ4 symbols.
+- **Diagnosis tip**: `nm -D <exe> | grep " T gl"` — any hit is a hijack risk;
+  `LD_DEBUG=bindings` proves which object Qt bound to. Decisive runtime proof:
+  gdb-rewrite the exe's leaked GL wrappers to jump into real libGL → crash
+  disappears and the same CLI command produces its output file.
+- **Verification**: negative control relink with `-Wl,--whole-archive
+  libbluegl.a`: original archive exports 2574 gl* symbols, localized archive
+  exports 0 (curl/LZ4 exports intact). Qt 6.10 tree: 50/50 binding contracts +
+  headless PCV rc=0; CI noble artifact + gdb redirect → PCV output produced.
+
+## 16. Qt ≥ 6.5 forces C.UTF-8: C-locale child assertions must accept both
+
+- **Symptom**: `test_binding_contracts.py` unicode-path cases assert the
+  embedded-Python child's `LC_CTYPE == "C"`; fails only on Qt ≥ 6.5 builds
+  (`C.UTF-8` observed), passes on Qt5 / Qt 6.4.
+- **Essence**: Qt ≥ 6.5 switches a C/POSIX `LC_CTYPE` to `C.UTF-8` at
+  `QCoreApplication` init ("Qt depends on a UTF-8 locale"); libQt6Core strings
+  contain the message, 6.4/Qt5 do not. Not glibc, not Python (isolated config).
+- **Fix**: accept `("C", "C.UTF-8")` for `child_locale`; keep the strict
+  `filesystem_encoding == "utf-8"` assertion — that is the real Unicode guard.

@@ -43,6 +43,7 @@ Official version evidence + environment recipes: [`references/qt-version-matrix.
 | Symptom | Essence | Fix owner |
 |---|---|---|
 | Startup `0x0` call in `libqxcb-glx-integration.so` | GLEW static symbols hijack Qt's GL resolution | `3rdparty/glew/CMakeLists.txt` `*_VISIBILITY_PRESET hidden` |
+| Same crash only on Qt 6.4-generation builds (Qt5/6.5+ pass) | Precompiled filament `libbluegl.a` GL symbols hijack Qt 6.4 Gui | `3rdparty/filament/localize_bluegl.cmake` step in `filament_download.cmake` |
 | Qt6/VTK libs not found at runtime | DT_RUNPATH not transitive to indirect deps | `--disable-new-dtags` (DT_RPATH) + shared-lib rpath; `tests/Runtime.cmake`, `libs/Reconstruction/cmake/CMakeHelper.cmake` |
 | VTK 9.4 GL header / `VTK::opengl` missing | 9.4 loads GL at runtime via glad | VTK-version macro gating in VtkEngine |
 | Qt6 offscreen test: no GL context | offscreen platform has no `QOpenGLWidget` GL | `xvfb-run -a` + `QT_QPA_PLATFORM=xcb` (qAnyLabeling tests CMake) |
