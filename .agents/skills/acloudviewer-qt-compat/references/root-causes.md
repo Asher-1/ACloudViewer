@@ -209,21 +209,36 @@ Each entry: **Symptom → Essence → Fix (owner) → Verification**. Append new
   the exe symbol, which is why only the 6.4-generation build crashes. Mesa
   version is a red herring — the container's llvmpipe stack was healthy
   (`glxinfo` OK).
-- **Fix**: `3rdparty/filament/filament_download.cmake` adds a `localize-bluegl`
-  ExternalProject step running `3rdparty/filament/localize_bluegl.cmake`
-  (nm + `objcopy --localize-symbols` on `libbluegl.a`, Linux only, idempotent —
-  binutils objcopy rejects an empty symbol list). Local symbols still resolve
-  filament-internal references at static-link time; they just stop being
-  exported. Do NOT use `--exclude-libs,ALL`: plugins legitimately consume
+- **Fix**: `3rdparty/find_dependencies.cmake`, right after
+  `import_3rdparty_library(3rdparty_filament ...)`, adds
+  `target_link_options(3rdparty_filament INTERFACE "LINKER:--exclude-libs,libbluegl.a")`
+  for GNU on Linux — the repo's existing `import_3rdparty_library` HIDDEN
+  idiom, covering both the download and the source-build branch. Only the
+  dynamic export stops; `libbackend.a`'s references (`glInsertEventMarkerEXT`,
+  `glPushGroupMarkerEXT`, `glPopGroupMarkerEXT`) keep resolving to bluegl
+  statically. Do NOT use `--exclude-libs,ALL`: plugins legitimately consume
   exe-exported LZ4 symbols.
+- **Failed attempt (lesson)**: `objcopy --localize-symbols` on the archive
+  (`localize-bluegl` ExternalProject step, reverted) made bluegl's symbols
+  STB_LOCAL, and a local symbol cannot satisfy references from another
+  object: CI cpu-noble/cuda-noble/cuda-resolute failed to link `CloudViewerApp`
+  with `undefined reference to glInsertEventMarkerEXT` from
+  `libbackend.a(OpenGLDriver.cpp.o)`. The dev trees passed only because the
+  host link line also carries `/usr/lib/x86_64-linux-gnu/libGL.so` (mesa
+  exports those EXT functions). A CI-equivalent check must (a) link
+  `CloudViewerApp` — the executable CI actually links; `CloudViewer` is a
+  static lib — and (b) drop the system `libGL.so` from the link line.
 - **Diagnosis tip**: `nm -D <exe> | grep " T gl"` — any hit is a hijack risk;
   `LD_DEBUG=bindings` proves which object Qt bound to. Decisive runtime proof:
   gdb-rewrite the exe's leaked GL wrappers to jump into real libGL → crash
   disappears and the same CLI command produces its output file.
-- **Verification**: negative control relink with `-Wl,--whole-archive
-  libbluegl.a`: original archive exports 2574 gl* symbols, localized archive
-  exports 0 (curl/LZ4 exports intact). Qt 6.10 tree: 50/50 binding contracts +
-  headless PCV rc=0; CI noble artifact + gdb redirect → PCV output produced.
+- **Verification**: CI-equivalent relink of the Qt 6.4 `CloudViewerApp` without
+  system libGL: with `--exclude-libs` rc=0 and 0 gl* dynamic exports; without
+  it rc=0 and 2574 exports (the leak condition, reproduced). Three trees
+  (Qt 5.15.2 / 6.4.2 / 6.10.2): both executables export 0 gl* symbols, LZ4
+  exports intact, headless PCV rc=0 (1875-byte output), binding contracts
+  50/50. Earlier decisive proof: CI noble artifact + gdb redirect of the
+  leaked GL wrappers → PCV output produced.
 
 ## 16. Qt ≥ 6.5 forces C.UTF-8: C-locale child assertions must accept both
 
@@ -235,3 +250,44 @@ Each entry: **Symptom → Essence → Fix (owner) → Verification**. Append new
   contain the message, 6.4/Qt5 do not. Not glibc, not Python (isolated config).
 - **Fix**: accept `("C", "C.UTF-8")` for `child_locale`; keep the strict
   `filesystem_encoding == "utf-8"` assertion — that is the real Unicode guard.
+
+## 17. Windows install: `cloudViewer_install_ext` takes ONE file per call
+
+- **Symptom**: Windows Release build compiles for ~72 min (exit 0) then the
+  install step fails with `file cannot create directory:
+  .../build/external/bin/opencv_videoio_ffmpeg470_64.dllC:/dev/cloudViewer_install/bin/ACloudViewer`.
+- **Essence**: `cloudViewer_install_ext` (`cmake/CMakeInclude.cmake`) is
+  positional: `ARGV1` = the single source file, `ARGV2` = the destination,
+  `ARGV3` = the suffix. `opencv_build.cmake` passed a two-element file list
+  (`opencv_world470.dll` + the ffmpeg plugin DLL), so the second path became
+  the destination. Not a compile error — the main job log is silent because
+  `Tee-Object` buffers; the real error is at the end of the
+  `windows-diagnostics-<Config>-cuda<ON|OFF>` artifact's `_temp/windows-build.log`
+  and `_temp/build-timings.jsonl` (`app-ON-build` exit 0,
+  `app-ON-install-and-package` exit 1).
+- **Fix**: loop `foreach(_opencv_install_file ${_opencv_install_files})`
+  with one `cloudViewer_install_ext( FILES ${_opencv_install_file}
+  ${INSTALL_DESTINATIONS} "")` per file — the form used before the ffmpeg DLL
+  was appended, and the same shape as `suitesparse_build.cmake`.
+- **Verification**: Windows-only path; no local Windows build — CI is the gate.
+
+## 18. Wheel on CUDA 13.x: `torch==<pin>+cu<toolkit>` does not exist
+
+- **Symptom**: wheel resolute (CUDA 13.5 image) `pip install` fails with
+  `No matching distribution found for torch==2.7.1+cu135`.
+- **Essence**: PyTorch publishes a fixed, version-dependent CUDA build set
+  (2.7.1: cu118/cu126/cu128; cu13x only from 2.9.0 on). Bumping the tag alone
+  is not enough: `torch.utils.cpp_extension._check_cuda_version` raises when
+  the toolkit CUDA **major** differs from the one torch was built with (a
+  minor mismatch only warns), so CUDA 13.x needs a torch with a cu13x build.
+- **Fix**: `util/ci_utils.sh` `resolve_torch_cuda_build` reads the same pip
+  index (`TORCH_REPO_URL`) and picks the lowest torch ≥ `TORCH_VER` with a
+  same-major `+cuNNN` not above the toolkit (else the lowest same-major tag);
+  unreachable index → pinned version + raw tag (old behavior). Callers that
+  only use `+cpu` (`test_wheel`, tiered unit-test lane) are unaffected.
+- **Verification**: resolver cases (118/121/126/128/129/130/132/135/112,
+  unreachable, empty) pass; `util/tests/test_ci_utils.sh` 22/22. The CUDA
+  13.5 container itself is not buildable locally (image pull blocked) — CI is
+  the gate for `CloudViewer-ML` building against the resolved torch.
+- **Open**: `util/ci_utils.ps1` still builds the raw tag; Windows CI is on
+  CUDA 12.6 (`+cu126` exists), so port the resolver when its CUDA is bumped.

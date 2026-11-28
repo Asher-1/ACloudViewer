@@ -1804,6 +1804,18 @@ if(BUILD_GUI)
         )
         set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
         target_link_libraries(3rdparty_filament INTERFACE 3rdparty_threads ${CMAKE_DL_LIBS})
+        if(UNIX AND NOT APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+            # bluegl ships real GL entry points (glGetString, ...) as global
+            # symbols in its precompiled assembly object. Exported from the
+            # executable they interpose Qt's own GL resolution: Qt 6.4 Gui
+            # binds glGetString to bluegl's pointer table before filament
+            # initializes it and segfaults at QApplication init (Qt >= 6.5
+            # resolves GL itself and is unaffected). --exclude-libs (the
+            # import_3rdparty_library HIDDEN option) only stops the dynamic
+            # export; libbackend's references keep resolving to bluegl
+            # statically, which objcopy --localize-symbols would break.
+            target_link_options(3rdparty_filament INTERFACE "LINKER:--exclude-libs,libbluegl.a")
+        endif()
         if(UNIX AND NOT APPLE)
             # For ubuntu, llvm libs are located in /usr/lib/llvm-{version}/lib.
             # We first search for these paths, and then search CMake's default

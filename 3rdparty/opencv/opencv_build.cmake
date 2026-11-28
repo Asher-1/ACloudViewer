@@ -270,7 +270,10 @@ if(WIN32)
                         LIB_DIR      ${OPENCV_INTALL_PREFIX}/bin
                         LIBRARIES    ${_opencv_deploy_libs})
 
-    cloudViewer_install_ext( FILES ${_opencv_install_files} ${INSTALL_DESTINATIONS} "")
+    # cloudViewer_install_ext takes one file per call (ARGV2 is the destination).
+    foreach(_opencv_install_file ${_opencv_install_files})
+        cloudViewer_install_ext( FILES ${_opencv_install_file} ${INSTALL_DESTINATIONS} "")
+    endforeach()
 else()
     set(CV_LIB_SUFFIX "")
     set(OPENCV_CMAKE_FLAGS -DOpenCV_DIR=${INSTALL_DIR}/lib/cmake/opencv4 -DOPENCV_DIR=${INSTALL_DIR}/lib/cmake/opencv4)

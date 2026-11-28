@@ -248,6 +248,50 @@ TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 PIP_VER="24.3.1"
 PROTOBUF_VER="4.25.3"  # Changed from 4.24.0 due to tensorboard 2.19.0 incompatibility
 
+# PyTorch publishes a fixed, version-dependent set of CUDA builds (2.7.1:
+# cu118/cu126/cu128; cu13x only from 2.9 on) and torch.utils.cpp_extension
+# refuses to build ops when the toolkit CUDA major differs from the one torch
+# was built with, so "+cu${CUDA_VER}" of the single pinned TORCH_VER fails on
+# newer toolkits (CUDA 13.5: "No matching distribution found for
+# torch==2.7.1+cu135"). Read the index pip resolves against and take the
+# lowest torch version >= TORCH_VER that publishes a +cuNNN sharing the
+# toolkit's CUDA major and not above its version; if none is that old, the
+# lowest same-major one (cpp_extension only warns on a minor mismatch).
+# Sets TORCH_RESOLVED_VERSION / TORCH_RESOLVED_TAG; an unreachable index
+# falls back to the pinned version and the raw toolkit tag.
+resolve_torch_cuda_build() {
+    local torch_ver="$1" cuda_ver="$2"
+    TORCH_RESOLVED_VERSION="${torch_ver}"
+    TORCH_RESOLVED_TAG="cu${cuda_ver}"
+    [[ "${cuda_ver}" =~ ^[0-9]+$ ]] || return 0
+    local tk_num=$((10#${cuda_ver})) tk_major=$((10#${cuda_ver} / 10))
+    local index_html entries entry ver tag tag_num best_ver="" best_tag="" alt_tag=""
+    index_html=$(curl -fsSL --retry 3 --max-time 60 "${TORCH_REPO_URL}" 2>/dev/null) || return 0
+    entries=$(echo "${index_html}" | grep -oE 'torch-[0-9]+\.[0-9]+\.[0-9]+(%2B|\+)cu[0-9]+' | sed -E 's/^torch-//; s/%2B/+/') || true
+    # Ascending: the first same-major match is the lowest version and tag,
+    # and the last tag of the best version not above the toolkit is its
+    # highest one.
+    while read -r entry; do
+        ver="${entry%%+*}"
+        tag="${entry##*+}"
+        tag_num=$((10#${tag#cu}))
+        [[ "$(printf '%s\n%s\n' "${ver}" "${torch_ver}" | sort -V | head -n 1)" == "${torch_ver}" ]] || continue
+        [[ $((tag_num / 10)) -eq "${tk_major}" ]] || continue
+        if [[ -z "${alt_tag}" ]]; then
+            best_ver="${ver}"
+            alt_tag="${tag}"
+        elif [[ "${ver}" != "${best_ver}" ]]; then
+            break
+        fi
+        [[ "${tag_num}" -le "${tk_num}" ]] || continue
+        best_tag="${tag}"
+    done < <(echo "${entries}" | sort -uV)
+    if [[ -n "${best_ver}" ]]; then
+        TORCH_RESOLVED_VERSION="${best_ver}"
+        TORCH_RESOLVED_TAG="${best_tag:-${alt_tag}}"
+    fi
+}
+
 DISTRIB_ID=""
 DISTRIB_RELEASE=""
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -317,7 +361,11 @@ install_python_dependencies() {
         TF_ARCH_NAME=tensorflow
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
         CUDA_VER=$(nvcc --version | grep "release " | cut -c33-37 | sed 's|[^0-9]||g') # e.g.: 117, 118, 121, ...
-        TORCH_GLNX="torch==${TORCH_VER}+cu${CUDA_VER}"
+        resolve_torch_cuda_build "${TORCH_VER}" "${CUDA_VER}"
+        if [[ "${TORCH_RESOLVED_VERSION}" != "${TORCH_VER}" ]]; then
+            echo "PyTorch ${TORCH_VER} has no CUDA ${CUDA_VER} build; using torch ${TORCH_RESOLVED_VERSION}."
+        fi
+        TORCH_GLNX="torch==${TORCH_RESOLVED_VERSION}+${TORCH_RESOLVED_TAG}"
     else
         # tensorflow-cpu wheels for macOS arm64 are not available
         if [[ "$OSTYPE" == "darwin"* ]]; then
