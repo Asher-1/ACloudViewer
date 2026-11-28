@@ -565,10 +565,15 @@ Example:
                 (max_version.has_value() && max_version.value().first > 0);
         auto out_tensor = maybeCopyTensor(tensor, dl_device, copy);
         if (versioned) {
+            // A versioned capsule must carry the "dltensor_versioned" name:
+            // consumers (PyTorch from 2.9 on passes max_version=(1, 0)) pick
+            // the DLManagedTensorVersioned layout by that name and otherwise
+            // read the capsule as an unversioned DLManagedTensor, whose
+            // dl_tensor is at offset 0 ("Unsupported device_type").
             auto capsule_destructor = [](PyObject* data) {
                 DLManagedTensorVersioned* dl_managed_tensor =
                         (DLManagedTensorVersioned*)PyCapsule_GetPointer(
-                                data, "dltensor");
+                                data, "dltensor_versioned");
                 if (dl_managed_tensor != nullptr &&
                     dl_managed_tensor->deleter != nullptr) {
                     // the dl_managed_tensor has not been consumed,
@@ -583,7 +588,7 @@ Example:
                 }
             };
             DLManagedTensorVersioned* dlmt = out_tensor.ToDLPackVersioned();
-            return py::capsule(dlmt, "dltensor", capsule_destructor);
+            return py::capsule(dlmt, "dltensor_versioned", capsule_destructor);
         } else {
             auto capsule_destructor = [](PyObject* data) {
                 DLManagedTensor* dl_managed_tensor =
