@@ -196,7 +196,9 @@ case "${MODE}" in
         echo "[vtk-pcl-deps] packaged /out/${TARBALL}"
         ;;
     consume)
-        if wget -q --tries=3 "${URL}" -O /tmp/vtk-pcl-deps.tar.gz; then
+        # --timeout bounds each attempt (DNS/connect/read): a stalled CDN
+        # connection otherwise never counts as a failed try and the build hangs.
+        if wget -q --tries=3 --timeout=60 --waitretry=10 "${URL}" -O /tmp/vtk-pcl-deps.tar.gz; then
             # Match the source build (build_all_deps): the apt-installed system
             # Eigen (e.g. 3.3.7 on Ubuntu 20.04/22.04) at /usr/include/eigen3 must
             # be moved aside so the prebuilt Eigen 3.4.0 from /usr/local wins,
