@@ -82,7 +82,7 @@ echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 BUILD_OPTIONS="with_pcl_nurbs package_installer with_vulkan"
 
 # Add with_rdb option based on WITH_RDB environment variable
-# Default: OFF (for Dockerfile_build), ON (for Dockerfile.ci and Dockerfile.ci.qt6)
+# Default: OFF (for Dockerfile_build), ON (for Dockerfile.ci)
 if [ -z "${WITH_RDB:-}" ]; then
     # If not set, default to OFF (for backward compatibility with Dockerfile_build)
     WITH_RDB=OFF
@@ -96,7 +96,7 @@ else
     echo "PLUGIN_IO_QRDB will be disabled"
 fi
 
-# NINJA_GRAPH_CHECK=ON (set by Dockerfile.ci and Dockerfile.ci.qt6) first
+# NINJA_GRAPH_CHECK=ON (set by Dockerfile.ci) first
 # configures a throwaway Ninja Multi-Config tree with the same options and
 # fails on build-graph errors the Windows Ninja build would hit.
 if [ "${NINJA_GRAPH_CHECK:-OFF}" = "ON" ]; then

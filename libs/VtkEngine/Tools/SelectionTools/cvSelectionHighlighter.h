@@ -167,6 +167,14 @@ public:
     static void clearSelectionOverlay(Visualization::VtkVis* vis,
                                       const char* overlayId = nullptr);
     static void clearAllSelectionOverlays(Visualization::VtkVis* vis);
+    // Resolve source-qualified selection against this view before extracting
+    // actor-local geometry. Empty/unrepresented sources clear only this mode.
+    static vtkSmartPointer<vtkPolyData> renderSelectionForView(
+            Visualization::VtkVis* vis,
+            const cvSelectionData& selection,
+            HighlightMode mode = SELECTED);
+    static vtkSmartPointer<vtkPolyData> buildSelectionOverlay(
+            const cvSelectionData& resolvedSelection);
     /** Standalone VTK renderer (e.g. OrthoSlice) without VtkVis. */
     static vtkSmartPointer<vtkActor> createSelectionOverlayActor(
             vtkPolyData* poly, SelectionOverlayKind kind);

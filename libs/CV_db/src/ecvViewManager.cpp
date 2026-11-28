@@ -219,6 +219,10 @@ void ecvViewManager::registerLayout(ecvViewLayoutProxy* layout) {
     if (!layout || m_layouts.contains(layout)) return;
     layout->setUndoManager(m_undoManager);
     m_layouts.append(layout);
+    // Layouts are QObject-owned by their tab, not by this singleton. Remove
+    // their identity before a later view activation can traverse a dead tree.
+    connect(layout, &QObject::destroyed, this,
+            [this, layout]() { unregisterLayout(layout); });
     emit layoutRegistered(layout);
 }
 
@@ -227,6 +231,7 @@ void ecvViewManager::unregisterLayout(ecvViewLayoutProxy* layout) {
     int idx = m_layouts.indexOf(layout);
     if (idx < 0) return;
     m_layouts.removeAt(idx);
+    disconnect(layout, &QObject::destroyed, this, nullptr);
     emit layoutUnregistered(layout);
 }
 

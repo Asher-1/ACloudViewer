@@ -100,7 +100,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/svg/pqPreview.png</normaloff>:/Resources/images/svg/pqPreview.png</iconset>
+         <normaloff>:/Resources/images/svg/pq/pqPreview.svg</normaloff>:/Resources/images/svg/pq/pqPreview.svg</iconset>
        </property>
       </widget>
      </item>
@@ -122,9 +122,7 @@
      <property name="autoFillBackground">
       <bool>true</bool>
      </property>
-     <property name="styleSheet">
-      <string notr="true">font: 75 8pt &quot;Microsoft YaHei&quot;;</string>
-     </property>
+
      <property name="title">
       <string>Labels</string>
      </property>

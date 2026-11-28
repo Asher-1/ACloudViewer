@@ -5,11 +5,15 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <QApplication>
 #include <QFile>
 #include <QJsonDocument>
 #include <QLineF>
 #include <QMouseEvent>
+#include <QSettings>
+#include <QTemporaryDir>
 #include <cmath>
 #include <cstdio>
 
@@ -17,7 +21,7 @@
 
 namespace {
 bool check(bool condition, const char* message) {
-    if (!condition) std::fprintf(stderr, "%s\n", message);
+    EXPECT_TRUE(condition) << message;
     return condition;
 }
 
@@ -318,10 +322,27 @@ bool interactions() {
 }
 }  // namespace
 
-int main(int argc, char** argv) {
+TEST(CuboidTest, CanvasInteractions) {
+    int argc = 1;
+    char name[] = "test_qanylabeling_cuboid";
+    char* argv[] = {name, nullptr};
     QApplication app(argc, argv);
+    ASSERT_TRUE(interactions());
+}
+
+int main(int argc, char** argv) {
+    QTemporaryDir settingsDir;
+    if (!settingsDir.isValid()) return 1;
+    QSettings::setDefaultFormat(QSettings::IniFormat);
+    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
+                       settingsDir.path());
+    QSettings::setPath(QSettings::IniFormat, QSettings::SystemScope,
+                       settingsDir.path());
+    QCoreApplication::setOrganizationName(QStringLiteral("ACloudViewerTests"));
+    QCoreApplication::setApplicationName(QStringLiteral("test_cuboid"));
     if (argc == 3 && QString::fromLocal8Bit(argv[1]) ==
                              QStringLiteral("--upstream-reference"))
         return upstreamReference(QString::fromLocal8Bit(argv[2])) ? 0 : 1;
-    return interactions() ? 0 : 1;
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

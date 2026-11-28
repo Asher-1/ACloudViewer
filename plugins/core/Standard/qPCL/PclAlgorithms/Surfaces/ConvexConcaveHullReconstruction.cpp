@@ -33,7 +33,7 @@ ConvexConcaveHullReconstruction::ConvexConcaveHullReconstruction()
               tr("ConvexConcaveHull Reconstruction"),
               tr("ConvexConcaveHull Reconstruction"),
               tr("ConvexConcaveHull Reconstruction from clouds"),
-              ":/toolbar/PclAlgorithms/icons/convex_concave_hull.png")),
+              ":/qPCL/icons/pclConvexConcaveHull.svg")),
       m_dialog(nullptr),
       m_dimension(3),
       m_alpha(0.5) {}

@@ -26,11 +26,7 @@ concurrency:
 # artifact and push it there manually (GITHUB_TOKEN cannot write to another repo).
 
 env:
-  # Keep in sync with docker/Dockerfile.ci ENV VTK_VERSION / PCL_VERSION.
-  VTK_VERSION: "9.3.1"
-  PCL_VERSION: "1.14.1"
   CMAKE_VERSION: cmake-3.31.8-linux-x86_64
-  QT_BASE_DIR: /usr/lib/x86_64-linux-gnu/qt5
   RELEASE_TAG: ubuntu-prebuild-deps
 
 jobs:
@@ -41,17 +37,43 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # qt_major / vtk_version / pcl_version / qt_base_dir must stay in sync
+        # with docker_build.sh set_qt_vars() and the Dockerfile.ci deps RUN:
+        # focal/jammy = Qt5 (VTK 9.3.1 / PCL 1.14.1, versioned qt5 prefix);
+        # noble (apt Qt 6.4.2) / resolute (apt Qt 6.10.2) = Qt6 (VTK 9.4.2 /
+        # PCL 1.15.1, system prefix /usr). Each Qt minor needs its own VTK/PCL
+        # (Qt6 guarantees forward ABI only), hence one tarball per codename.
         include:
           - codename: focal
             ubuntu_version: "20.04"
+            qt_major: "5"
+            vtk_version: "9.3.1"
+            pcl_version: "1.14.1"
+            qt_base_dir: /usr/lib/x86_64-linux-gnu/qt5
           - codename: jammy
             ubuntu_version: "22.04"
+            qt_major: "5"
+            vtk_version: "9.3.1"
+            pcl_version: "1.14.1"
+            qt_base_dir: /usr/lib/x86_64-linux-gnu/qt5
           - codename: noble
             ubuntu_version: "24.04"
+            qt_major: "6"
+            vtk_version: "9.4.2"
+            pcl_version: "1.15.1"
+            qt_base_dir: /usr
+          - codename: resolute
+            ubuntu_version: "26.04"
+            qt_major: "6"
+            vtk_version: "9.4.2"
+            pcl_version: "1.15.1"
+            qt_base_dir: /usr
     env:
       BASE_IMAGE: ubuntu:${{ matrix.ubuntu_version }}
       DOCKER_TAG: cloudviewer-prebuild-deps:${{ matrix.codename }}
-      TARBALL: vtk-pcl-deps-${{ matrix.codename }}-vtk9.3.1-pcl1.14.1.tar.gz
+      QT_MAJOR: ${{ matrix.qt_major }}
+      QT_BASE_DIR: ${{ matrix.qt_base_dir }}
+      TARBALL: vtk-pcl-deps-${{ matrix.codename }}-vtk${{ matrix.vtk_version }}-pcl${{ matrix.pcl_version }}.tar.gz
     steps:
       # Plain rm instead of easimon/maximize-build-space: that action's
       # root-reserve-mb did not materialize on the 145GB ubuntu-24.04 image
@@ -97,6 +119,7 @@ jobs:
           set -o pipefail
           docker build \
             --build-arg BASE_IMAGE="${BASE_IMAGE}" \
+            --build-arg QT_MAJOR="${QT_MAJOR}" \
             --build-arg QT_BASE_DIR="${QT_BASE_DIR}" \
             --build-arg DEVELOPER_BUILD=ON \
             --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \

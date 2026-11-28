@@ -49,13 +49,16 @@ jobs:
     permissions:
       contents: write  # upload
       actions: write   # release
-    name: Build wheel
+    name: Build wheel ${{ matrix.ubuntu_codename }}
     runs-on: ubuntu-latest
     needs: [skip-check]
     if: needs.skip-check.outputs.skip == 'no' && !contains(github.event.head_commit.message, '[skip ci]')
     strategy:
       fail-fast: false
       matrix:
+        # Mirrors the app CI Ubuntu spread: jammy=22.04/Qt5/CUDA 12.6.3,
+        # noble=24.04/Qt6/12.6.3, resolute=26.04/Qt6/CUDA 13.x.
+        ubuntu_codename: ['jammy', 'noble', 'resolute']
         python_version: ['3.10', '3.11', '3.12', '3.13']
         is_main:
           - ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
@@ -69,6 +72,7 @@ jobs:
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       PYTHON_VERSION: ${{ matrix.python_version }}
+      UBUNTU_CODENAME: ${{ matrix.ubuntu_codename }}
       CLOUDVIEWER_CPU_RENDERING: true
     steps:
       - name: Setup DEVELOPER_BUILD
@@ -162,15 +166,27 @@ jobs:
         # gates CI: every failure path degrades to a cold build.
         continue-on-error: true
         run: |
-          ASSET="ccache-ubuntu-wheel-py${{ matrix.python_version }}.tar.gz"
+          # noble keeps the legacy asset name so its warm pool survives the
+          # multi-codename expansion; jammy/resolute get their own pools.
+          if [ "${UBUNTU_CODENAME}" = "noble" ]; then
+            ASSET="ccache-ubuntu-wheel-py${{ matrix.python_version }}.tar.gz"
+          else
+            ASSET="ccache-ubuntu-wheel-${UBUNTU_CODENAME}-py${{ matrix.python_version }}.tar.gz"
+          fi
           mkdir -p .ccache
           curl -fsSL --retry 3 -o /tmp/ccache-restore.tar.gz \
             "https://github.com/Asher-1/cloudViewer_downloads/releases/download/ci-ccache/${ASSET}" \
             && tar -xzf /tmp/ccache-restore.tar.gz -C .ccache \
-            || echo "[cache] no remote pool yet for wheel py${{ matrix.python_version }} (first run)"
+            || echo "[cache] no remote pool yet for wheel ${UBUNTU_CODENAME} py${{ matrix.python_version }} (first run)"
           rm -f /tmp/ccache-restore.tar.gz
       # Be verbose and explicit here such that a developer can directly copy the
       # `docker/docker_build.sh xxx` command to execute locally.
+      # cuda_wheel_<codename>_* targets follow the app CI Ubuntu spread in
+      # docker_build.sh:
+      # jammy=22.04/apt Qt5 + CUDA 12.6.3, noble=24.04/apt Qt 6.4.2 + CUDA 12.6.3,
+      # resolute=26.04/apt Qt 6.10.2 + CUDA 13.x. The wheel's manylinux tag
+      # follows the build glibc (python/setup.py): 2_35 / 2_39 / 2_4x, and
+      # test-wheel below runs on the matching Ubuntu release.
       - name: Docker build
         run: |
           set -o pipefail
@@ -178,23 +194,11 @@ jobs:
           
           # Clean up before build to ensure maximum space
           docker system prune -f --volumes || true
-          if [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            docker/docker_build.sh cuda_wheel_py310_dev 2>&1 | tee /tmp/ubuntu-wheel-build.log
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.11" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            docker/docker_build.sh cuda_wheel_py311_dev 2>&1 | tee /tmp/ubuntu-wheel-build.log
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.12" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            docker/docker_build.sh cuda_wheel_py312_dev 2>&1 | tee /tmp/ubuntu-wheel-build.log
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.13" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            docker/docker_build.sh cuda_wheel_py313_dev 2>&1 | tee /tmp/ubuntu-wheel-build.log
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            docker/docker_build.sh cuda_wheel_py310 2>&1 | tee /tmp/ubuntu-wheel-build.log
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.11" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            docker/docker_build.sh cuda_wheel_py311 2>&1 | tee /tmp/ubuntu-wheel-build.log
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.12" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            docker/docker_build.sh cuda_wheel_py312 2>&1 | tee /tmp/ubuntu-wheel-build.log
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.13" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            docker/docker_build.sh cuda_wheel_py313 2>&1 | tee /tmp/ubuntu-wheel-build.log
+          PY_TAG="py${PYTHON_VERSION//./}"
+          if [ "${DEVELOPER_BUILD}" = "ON" ]; then
+            PY_TAG="${PY_TAG}_dev"
           fi
+          docker/docker_build.sh "cuda_wheel_${UBUNTU_CODENAME}_${PY_TAG}" 2>&1 | tee /tmp/ubuntu-wheel-build.log
           PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/cloudviewer-[0-9]*.whl)"
           PIP_CPU_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/cloudviewer_cpu*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
@@ -221,7 +225,12 @@ jobs:
           GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
           if [ -d .ccache ]; then
-            ASSET="ccache-ubuntu-wheel-py${{ matrix.python_version }}.tar.gz"
+            # Same naming rule as the restore step above.
+            if [ "${UBUNTU_CODENAME}" = "noble" ]; then
+              ASSET="ccache-ubuntu-wheel-py${{ matrix.python_version }}.tar.gz"
+            else
+              ASSET="ccache-ubuntu-wheel-${UBUNTU_CODENAME}-py${{ matrix.python_version }}.tar.gz"
+            fi
             tar -C .ccache -czf "/tmp/${ASSET}" .
             # Cancelled/aborted runs clobber the pool with near-empty tarballs;
             # a real pool is >=500 MB. Branch policy and cleanup rationale:
@@ -248,7 +257,7 @@ jobs:
         run: |
           if [ -f .ccache-stats.txt ]; then
             {
-              echo "### ccache stats (wheel py${{ matrix.python_version }})"
+              echo "### ccache stats (wheel ${UBUNTU_CODENAME} py${{ matrix.python_version }})"
               echo '```'
               cat .ccache-stats.txt
               echo '```'
@@ -263,7 +272,7 @@ jobs:
         continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
-          name: ubuntu-wheel-build-log-py${{ matrix.python_version }}
+          name: ubuntu-wheel-build-log-${{ matrix.ubuntu_codename }}-py${{ matrix.python_version }}
           path: /tmp/ubuntu-wheel-build.log
           if-no-files-found: ignore
 
@@ -306,14 +315,20 @@ jobs:
             ${{ env.PIP_CPU_PKG_NAME }}
 
   test-wheel:
-    name: Test wheel
+    name: Test wheel ${{ matrix.ubuntu_codename }}
     permissions:
       contents: read
-    runs-on: ubuntu-22.04
+    # Each cell tests on the same Ubuntu release it was built on: the wheel's
+    # manylinux tag follows the build glibc (python/setup.py), and pip refuses
+    # tags newer than the host libc. jammy=2_35, noble=2_39, resolute=2_4x.
+    # ubuntu-22.04 hosted runners deprecate towards 2027-04-17 (runner-images
+    # #14254); until then they are the faithful minimum-platform test bed.
+    runs-on: ${{ matrix.runner }}
     needs: [build-wheel]
     strategy:
       fail-fast: false
       matrix:
+        ubuntu_codename: ['jammy', 'noble', 'resolute']
         python_version: ['3.10', '3.11', '3.12', '3.13']
         is_main:
           - ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
@@ -324,8 +339,16 @@ jobs:
             python_version: '3.11'
           - is_main: false
             python_version: '3.12'
+        include:
+          - ubuntu_codename: jammy
+            runner: ubuntu-22.04
+          - ubuntu_codename: noble
+            runner: ubuntu-24.04
+          - ubuntu_codename: resolute
+            runner: ubuntu-26.04
     env:
       CLOUDVIEWER_ML_ROOT: ${{ github.workspace }}/CloudViewer-ML
+      UBUNTU_CODENAME: ${{ matrix.ubuntu_codename }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -355,7 +378,12 @@ jobs:
           python -V
           source util/ci_utils.sh
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          test_wheel cloudviewer-[0-9]*-"$pi_tag"-*.whl
+          # The download step merges every codename's wheels; pick this cell's
+          # by the runner glibc (build and test share the Ubuntu release, so
+          # the manylinux tag equals the host libc major_minor).
+          glibc_ver=$(ldd --version | head -n1 | grep -oE '[0-9]+\.[0-9]+$')
+          ml_tag="manylinux_${glibc_ver/./_}"
+          test_wheel cloudviewer-[0-9]*-"$pi_tag"-"$ml_tag"*.whl
       - name: Run Python unit tests (CUDA)
         run: |
           source util/ci_utils.sh
@@ -368,7 +396,9 @@ jobs:
           python -V
           source util/ci_utils.sh
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          test_wheel cloudviewer_cpu*-"$pi_tag"-*.whl
+          glibc_ver=$(ldd --version | head -n1 | grep -oE '[0-9]+\.[0-9]+$')
+          ml_tag="manylinux_${glibc_ver/./_}"
+          test_wheel cloudviewer_cpu*-"$pi_tag"-"$ml_tag"*.whl
       - name: Run Python unit tests (CPU)
         run: |
           source util/ci_utils.sh

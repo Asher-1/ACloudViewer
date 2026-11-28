@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.3237,-0.5805) scale(1.02698)">
+
+<defs><linearGradient id="export" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#D0E5F6"/><stop offset="1.000" stop-color="#2896D3"/></linearGradient></defs>
+<title>Export plane information — down arrow and tray</title>
+  <path d="M 8 2 H 16 V 10.5 H 21 L 12 20.5 L 3 10.5 H 8 Z" fill="url(#export)" stroke="#6F6F59"/>
+  <rect x="3" y="20.5" width="18" height="2" rx="0.3" fill="#2896D3" stroke="#6F6F59"/>
+
+</g>
+</svg>

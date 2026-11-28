@@ -7,6 +7,10 @@
 
 #include <QDir>
 #include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonParseError>
+#include <QRegularExpression>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QString>
@@ -15,6 +19,7 @@
 #include <QSurfaceFormat>
 #include <QTextStream>
 #include <QTranslator>
+#include <QWidget>
 #include <QtGlobal>
 
 // CV_CORE_LIB
@@ -24,6 +29,10 @@
 #include <ecvMaterial.h>
 
 // Common
+#include <oclero/qlementine/resources/ResourceInitialization.hpp>
+#include <oclero/qlementine/style/QlementineStyle.hpp>
+#include <oclero/qlementine/style/Theme.hpp>
+
 #include "ecvApplicationBase.h"
 #include "ecvPersistentSettings.h"
 #include "ecvPluginManager.h"
@@ -106,56 +115,12 @@ ecvApplicationBase::ecvApplicationBase(int &argc,
     setlocale(LC_NUMERIC, "C");
 #endif
 
-    // Restore the style from persistent settings
-    // (matching CloudCompare's approach exactly)
-    // Note: We use Qt API directly here instead of setAppStyle() because
-    // CVLog and ecvSettingManager are not yet initialized in the constructor
-    QSettings settings;
-    settings.beginGroup(ecvPS::AppStyle());
-    {
-        QString styleKey = settings.value("style", QString()).toString();
-
-        // CloudCompare behavior: only apply a style if one was explicitly
-        // saved. If empty, use Qt's platform default (macOS, windowsvista,
-        // etc.)
-        if (!styleKey.isEmpty()) {
-            if (styleKey == "QDarkStyleSheet::Dark") {
-                QFile f(":/qdarkstyle/dark/darkstyle.qss");
-                if (f.open(QFile::ReadOnly | QFile::Text)) {
-                    QTextStream ts(&f);
-                    setStyleSheet(ts.readAll());
-                    f.close();
-                }
-            } else if (styleKey == "QDarkStyleSheet::Light") {
-                QFile f(":/qdarkstyle/light/lightstyle.qss");
-                if (f.open(QFile::ReadOnly | QFile::Text)) {
-                    QTextStream ts(&f);
-                    setStyleSheet(ts.readAll());
-                    f.close();
-                }
-            } else {
-                // Qt native style
-                QStyle *style = QStyleFactory::create(styleKey);
-                if (style) {
-                    setStyle(style);
-                }
-            }
-        }
-#ifdef Q_OS_WIN
-        // On Windows the default 'windowsvista' style has poor dark-theme
-        // support and inconsistent widget sizing.  'Fusion' renders
-        // identically across all platforms and handles palette/stylesheet
-        // changes correctly.  Apply it as the default when the user has
-        // never explicitly saved a style preference.
-        if (styleKey.isEmpty()) {
-            QStyle *fusion = QStyleFactory::create(QStringLiteral("Fusion"));
-            if (fusion) {
-                setStyle(fusion);
-            }
-        }
-#endif
-    }
-    settings.endGroup();
+    // Capture the platform appearance before any Custom palette/style is used.
+    // Persistent restore happens once after applicationName and the settings
+    // manager are initialized, not here under a different QSettings identity.
+    m_systemStyleKey = style()->objectName();
+    m_systemPalette = palette();
+    m_systemFont = font();
 
     ccPluginManager::get().setPaths(m_PluginPaths);
 
@@ -301,54 +266,169 @@ void ecvApplicationBase::setupPaths() {
     }
 }
 
-bool ecvApplicationBase::setAppStyle(const QString &styleKey) {
-    // Helper lambda to load stylesheet from resources
-    const auto loadStyleSheet = [this](const QString &resourcePath) -> bool {
-        QFile f(resourcePath);
-        if (!f.exists()) {
-            return false;
-        }
+bool ecvApplicationBase::setAppStyle(const QString &styleKey, bool persist) {
+    AppearanceState state = m_appearance;
+    state.styleKey = styleKey;
+    return applyAppearance(state, persist);
+}
 
-        if (!f.open(QFile::ReadOnly | QFile::Text)) {
-            return false;
-        }
+namespace {
+std::optional<oclero::qlementine::Theme> loadCustomTheme(const QString &id) {
+    QString name;
+    if (id == QStringLiteral("QDarkStyleSheet::Dark"))
+        name = QStringLiteral("qdarkstyle-dark");
+    else if (id == QStringLiteral("QDarkStyleSheet::Light"))
+        name = QStringLiteral("qdarkstyle-light");
+    else {
+        const QRegularExpression preset(
+                QStringLiteral("^:/qss/([A-Za-z0-9_-]+)\\.css$"));
+        const auto match = preset.match(id);
+        if (!match.hasMatch()) return std::nullopt;
+        name = match.captured(1);
+    }
+    QFile file(QStringLiteral(":/ecv/qlementine/themes/") + name +
+               QStringLiteral(".json"));
+    if (!file.open(QFile::ReadOnly)) return std::nullopt;
+    QJsonParseError error;
+    const auto document = QJsonDocument::fromJson(file.readAll(), &error);
+    if (error.error != QJsonParseError::NoError || !document.isObject())
+        return std::nullopt;
+    const auto preset = document.object();
+    const auto base = preset.value(QStringLiteral("base")).toString();
+    if (base != QStringLiteral("light") && base != QStringLiteral("dark"))
+        return std::nullopt;
+    if (!preset.value(QStringLiteral("overrides")).isObject())
+        return std::nullopt;
 
-        QTextStream ts(&f);
-        setStyleSheet(ts.readAll());
-        f.close();
-        return true;
-    };
+    oclero::qlementine::resources::initializeResources();
+    QFile defaults(QStringLiteral(":/qlementine/resources/themes/") + base +
+                   QStringLiteral(".json"));
+    if (!defaults.open(QFile::ReadOnly)) return std::nullopt;
+    auto merged = QJsonDocument::fromJson(defaults.readAll(), &error).object();
+    if (error.error != QJsonParseError::NoError || merged.isEmpty())
+        return std::nullopt;
+    const auto overrides = preset.value(QStringLiteral("overrides")).toObject();
+    for (auto it = overrides.begin(); it != overrides.end(); ++it)
+        merged.insert(it.key(), it.value());
+    // Dense scientific windows should keep the platform's readable font and
+    // fallback families rather than silently shrinking everything to Inter12px.
+    // Qlementine still owns geometry, control states and animation.
+    merged.insert(QStringLiteral("useSystemFonts"), true);
+    return oclero::qlementine::Theme::fromJsonDoc(QJsonDocument(merged));
+}
+}  // namespace
 
-    // Handle custom stylesheets
-    if (styleKey == "QDarkStyleSheet::Dark") {
-        // Load dark stylesheet from resources
-        if (!loadStyleSheet(":/qdarkstyle/dark/darkstyle.qss")) {
-            return false;
-        }
-    } else if (styleKey == "QDarkStyleSheet::Light") {
-        // Load light stylesheet from resources
-        if (!loadStyleSheet(":/qdarkstyle/light/lightstyle.qss")) {
-            return false;
-        }
-    } else {
-        // Use Qt native styles (Fusion, Windows, macOS, etc.)
-        QStyle *style = QStyleFactory::create(styleKey);
-        if (!style) {
-            CVLog::Warning(QStringLiteral("Invalid style key or style couldn't "
-                                          "be created: %1")
-                                   .arg(styleKey));
-            return false;
-        }
-
-        // Clear any existing stylesheet
-        setStyleSheet({});
-        CVLog::Print(
-                QStringLiteral("Applying application style: %1").arg(styleKey));
-        setStyle(style);
+bool ecvApplicationBase::applyAppearance(const AppearanceState &requested,
+                                         bool persist) {
+    AppearanceState state = requested;
+    const bool custom = state.styleKey == QStringLiteral("Custom");
+    std::optional<oclero::qlementine::Theme> theme;
+    if (custom) {
+        if (state.themeId.isEmpty())
+            state.themeId = QStringLiteral(":/qss/paraview.css");
+        theme = loadCustomTheme(state.themeId);
+        if (!theme) return false;
     }
 
-    // Save to persistent settings (must be after successful style application)
-    ecvSettingManager::setValue(ecvPS::AppStyle(), "style", styleKey);
+    QStyle *nextStyle = nullptr;
+    if (custom) {
+        auto *backend = new oclero::qlementine::QlementineStyle;
+        // Approved multicolor application/plugin art is not monochrome chrome.
+        backend->setAutoIconColor(oclero::qlementine::AutoIconColor::None);
+        backend->setTheme(*theme);
+        nextStyle = backend;
+    } else {
+        const auto key =
+                state.styleKey.isEmpty() ? m_systemStyleKey : state.styleKey;
+        nextStyle = QStyleFactory::create(key);
+        if (!nextStyle) return false;
+        if (!state.styleKey.isEmpty()) state.styleKey = nextStyle->objectName();
+    }
 
+    // Delete the previous custom style through QApplication ownership. Native
+    // modes never pass through the component proxy or its global stylesheet.
+    setStyleSheet(QString());
+    // Let the old style unpolish against the values it actually applied before
+    // changing inherited fonts/palettes; otherwise conditional ownership checks
+    // can mistake our reset for a business override and leave local bold fonts.
+    setStyle(nextStyle);
+    setProperty("ecvCustomAppearance", custom);
+    if (custom) {
+        setPalette(theme->palette);
+        setFont(theme->fontRegular);
+    } else {
+        setPalette(m_systemPalette);
+        setFont(m_systemFont);
+        // Qt5 can retain stylesheet-derived Disabled brushes on already-open
+        // children even after app QSS removal (without WA_SetPalette). Resolve
+        // inherited palettes again, parent first; preserve deliberate local
+        // palettes such as data colors, image canvases and plugin overrides.
+        const auto inheritPalette = [](auto &&self, QWidget *widget) -> void {
+            if (!widget->testAttribute(Qt::WA_SetPalette))
+                widget->setPalette(QPalette());
+            for (QObject *child : widget->children()) {
+                if (QWidget *descendant = qobject_cast<QWidget *>(child))
+                    self(self, descendant);
+            }
+        };
+        for (QWidget *window : topLevelWidgets())
+            inheritPalette(inheritPalette, window);
+    }
+    m_appearance = state;
+    if (persist) commitAppearance();
+    emit appearanceChanged();
     return true;
+}
+
+bool ecvApplicationBase::setCustomTheme(const QString &themeId) {
+    // A legacy theme menu must not silently turn Fusion/Windows into Custom.
+    if (!isCustomAppearance()) return false;
+    AppearanceState state = m_appearance;
+    state.themeId = themeId;
+    return applyAppearance(state);
+}
+
+void ecvApplicationBase::commitAppearance() {
+    QVariantMap state;
+    state.insert(QStringLiteral("version"), 1);
+    state.insert(QStringLiteral("style"), m_appearance.styleKey);
+    state.insert(QStringLiteral("theme"), m_appearance.themeId);
+    // One map/key is the authoritative state. Legacy keys are migration input
+    // only; no competing writers remain in the menu or Display Options.
+    ecvSettingManager::setValue(QStringLiteral("Appearance"),
+                                QStringLiteral("state"), state);
+}
+
+bool ecvApplicationBase::restoreAppearance() {
+    const QVariant saved = ecvSettingManager::getValue(
+            QStringLiteral("Appearance"), QStringLiteral("state"));
+    AppearanceState state;
+    if (saved.isValid()) {
+        const QVariantMap map = saved.toMap();
+        if (map.value(QStringLiteral("version")).toInt() != 1) return false;
+        state.styleKey = map.value(QStringLiteral("style")).toString();
+        state.themeId =
+                map.value(QStringLiteral("theme"), state.themeId).toString();
+        return applyAppearance(state, false);
+    }
+
+    const QString oldStyle = ecvSettingManager::getValue(
+                                     ecvPS::AppStyle(), QStringLiteral("style"))
+                                     .toString();
+    const QString oldTheme = ecvSettingManager::getValue(ecvPS::ThemeSettings(),
+                                                         ecvPS::CurrentTheme())
+                                     .toString();
+    // Respect an explicitly saved native selection over an old CSS menu value.
+    // A saved legacy custom style/theme maps to the explicit Custom mode once.
+    if (oldStyle.startsWith(QStringLiteral("QDarkStyleSheet::"))) {
+        state.styleKey = QStringLiteral("Custom");
+        state.themeId = oldStyle;
+    } else if (!oldStyle.isEmpty()) {
+        state.styleKey = oldStyle;
+        if (!oldTheme.isEmpty()) state.themeId = oldTheme;
+    } else if (!oldTheme.isEmpty()) {
+        state.styleKey = QStringLiteral("Custom");
+        state.themeId = oldTheme;
+    }
+    return applyAppearance(state, true);
 }

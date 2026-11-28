@@ -110,7 +110,7 @@
      </property>
      <property name="icon">
       <iconset resource="../MainWindow.qrc">
-       <normaloff>:/Resources/images/save.png</normaloff>:/Resources/images/save.png</iconset>
+       <normaloff>:/Resources/images/svg/main/toolMainSave.svg</normaloff>:/Resources/images/svg/main/toolMainSave.svg</iconset>
      </property>
     </widget>
    </item>

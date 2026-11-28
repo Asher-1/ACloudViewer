@@ -99,17 +99,20 @@ table (class / score / center / size / heading), application console and CSV exp
 
 1. Pick a checkpoint in the left list and a quantization (`f32` / `f16` /
    `q8_0`, default = the recommended F16 row) inside the panel. Score / NMS /
-   Max boxes seed themselves with the checkpoint's GGUF-declared defaults
-   (`aicore_openpcdet_model_defaults`, the upstream OpenPCDet config values
-   written at conversion time) as soon as a model file is cached; setting a
-   spinbox back to its minimum (`model`) restores the follow-the-GGUF
-   behavior, and explicit non-zero values persist as overrides
+   Max boxes seed themselves with the effective task defaults
+   (`aicore_openpcdet_model_defaults`) as soon as a model file is cached.
+   Score / NMS seed the per-checkpoint task defaults (KITTI mirrors the
+   official GGUF / upstream config values; nuScenes uses a 0.2 score and a
+   tighter NMS); Max boxes seeds the GGUF-declared default. Setting a
+   spinbox back to its
+   minimum (`model`) restores the follow-the-defaults behavior, and explicit
+   non-zero values persist as overrides
 2. Point-cloud panels: select a point cloud in the DB tree **or** point at
    a KITTI `.bin` / ASCII `.txt` file (the file wins). Scene panels
    (`kitti_caddn`, `nuscenes_bevfusion`): select a scene directory
-   (images.bin + calibration + scene.json) — the first camera frame is
-   previewed in the panel; BEVFusion additionally needs the LiDAR branch
-   (active cloud or `LiDAR file`), CaDDN ignores it
+   (images.bin + calibration + scene.json) — every camera frame is previewed
+   in the panel's multi-camera grid; BEVFusion additionally needs the LiDAR
+   branch (active cloud or `LiDAR file`), CaDDN ignores it
 3. **Run** → each detection becomes a per-class colored wireframe box
    polyline (`OpenPCDet detections (<model>)` group, children named like
    `Car 0.97`; nuScenes-devkit palette at 10 classes, common KITTI demo
@@ -142,16 +145,18 @@ panel becomes current.
 Every checkpoint panel carries the shared teal **Try sample data** button
 (`ecvAICoreUi::makeSampleDataBtn`), wired to the shared
 `ecvTestDataRepository` one-click chain (download + SHA-256 verify + extract
-of the `openpcdet_test_data` bundle into `~/cloudViewer_data`; no private
-downloader). One click fills the requesting panel:
+of the `openpcdet_test_data_v2` bundle into `~/cloudViewer_data`; no private
+downloader). One click fills the requesting panel on its selected test frame
+(default `kitti_000008` / `nuscenes_n015`); every frame lives under
+`frames/<id>/` with its raw LiDAR bin, optional PointRCNN variant and `scene/`:
 
-| Panel(s) | Filled input |
+| Panel(s) | Filled input (default frame) |
 |----------|--------------|
-| KITTI point cloud (non-PointRCNN) | `Point file` → `kitti_000008.bin` (17238 × 4) |
-| `kitti_pointrcnn` / `kitti_pointrcnn_iou` | `Point file` → `kitti_000008_sampled16384.bin` (pre-sampled 16384 × 4) |
-| nuScenes point cloud | `Point file` → `nuscenes_n015_lidar.bin` (5-dim) |
-| `kitti_caddn`, `kitti_voxelrcnn_focal_multimodal` | `Scene dir` → `scene_caddn`; `LiDAR file` → `kitti_000008.bin` |
-| `nuscenes_bevfusion` | `Scene dir` → `scene_bevfusion` (6 cameras); `LiDAR file` → `nuscenes_n015_lidar.bin` |
+| KITTI point cloud (non-PointRCNN) | `Point file` → `frames/kitti_000008/kitti_000008.bin` (17238 × 4) |
+| `kitti_pointrcnn` / `kitti_pointrcnn_iou` | `Point file` → `frames/kitti_000008/kitti_000008_sampled16384.bin` (pre-sampled 16384 × 4) |
+| nuScenes point cloud | `Point file` → `frames/nuscenes_n015/nuscenes_n015_lidar.bin` (5-dim) |
+| `kitti_caddn`, `kitti_voxelrcnn_focal_multimodal` | `Scene dir` → `frames/kitti_000008/scene`; `LiDAR file` → `frames/kitti_000008/kitti_000008.bin` |
+| `nuscenes_bevfusion` | `Scene dir` → `frames/nuscenes_n015/scene` (6 cameras); `LiDAR file` → `frames/nuscenes_n015/nuscenes_n015_lidar.bin` |
 
 The panel's own sample frame is additionally loaded into the DB tree and
 selected (x, y, z + the `intensity` scalar field — the inverse of the
@@ -175,6 +180,35 @@ QT_QPA_PLATFORM=xcb <build>/bin/plugin_test/test_qopenpcdet_dialog --sample-cach
 ```
 
 This is sample/UI workflow evidence, not model accuracy or release performance.
+
+### Multi-camera preview and frame selection
+
+Each panel renders a full-width camera grid inside the configuration scroll
+(no extra fixed-height row): a class-color legend plus one labeled,
+click-to-enlarge thumbnail per scene camera (`ecvClickableImageLabel`). KITTI
+frames show the single `CAM2` view; nuScenes frames show the six-camera ring
+(`CAM_FRONT`, `CAM_FRONT_RIGHT`, `CAM_FRONT_LEFT`, `CAM_BACK`, `CAM_BACK_LEFT`,
+`CAM_BACK_RIGHT`) in a 3×2 layout. Camera names come from the optional
+`scene.json` `camera_names` array (legacy scenes fall back to the dataset
+convention). ImageNet-normalized payloads (BEVFusion) are denormalized for
+display only; the on-disk inference payload is never touched.
+
+A **Frame** combo merged into the point-file row (point panels) or scene-dir
+row (scene panels) lists the extracted bundle's frames of the panel's own
+dataset plus a `Custom…` escape hatch. Selecting a frame fills the input
+edits, refreshes the camera grid and loads that frame into the DB tree;
+`Custom…` keeps the browsed files. The selection persists per checkpoint
+(`qOpenPCDet/frame/<checkpoint>`), as does the grid's scene source
+(`qOpenPCDet/previewSceneDir/<checkpoint>`).
+
+After a run, the detections are projected onto every camera with the engine
+calibration chain (`lidar_aug` → `lidar_to_image` → perspective divide →
+`image_aug`, near-plane + image-rectangle clipping) and painted as 2px
+class-colored wireframes with a class/score label. Detections stay verbatim in
+the original LiDAR frame — the worker lifts a shifted DB cloud back before
+inference, so no shift/scale back-projection is applied here. Overlays clear
+on a new run and on close; a stale or cancelled result never paints. Panels
+without an associated calibrated scene show a hint instead of the grid.
 
 ### Point features
 

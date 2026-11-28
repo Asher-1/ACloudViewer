@@ -4,6 +4,9 @@ globs:
   - plugins/**/*.cpp
   - plugins/**/*.h
   - plugins/**/CMakeLists.txt
+  - 3rdparty/**/*.cmake
+  - 3rdparty/**/CMakeLists.txt
+  - libs/CVAppCommon/**/CMakeLists.txt
 alwaysApply: false
 ---
 
@@ -53,6 +56,61 @@ documents for reuse ownership and executable accuracy/performance profiles.
   repeated-forward, and validation-manifest coverage pass.
 - Run `python3 core/AICore/tests/check_plugin_aicore_boundaries.py --root .
   --strict`; it must pass repository-wide, not only for new plugins.
+
+## Third-Party Dependencies and Qt UI Frameworks
+
+- Before adding or porting a dependency, read the existing
+  [reuse/ownership contract](<../skills/acloudviewer-aicore-plugin/references/reuse-contract.md>)
+  and inspect the active [dependency registration](<../../3rdparty/find_dependencies.cmake>),
+  [libpng recipe](<../../3rdparty/libpng/libpng.cmake>) and a relevant existing
+  patch recipe. Extend the existing owner/target; do not invent a second loader,
+  source-of-truth, private cache or per-plugin copy of a shared framework.
+- Use `3rdparty/<dep>/<dep>.cmake` with `ExternalProject_Add`, a pinned upstream
+  URL/version/SHA-256, the shared download cache, `UPDATE_COMMAND ""`, declared
+  dependencies/byproducts and the established install/export targets. The default
+  stays fixed; upgrades are explicit reviewed pin/digest/patch/test changes, never
+  floating HEAD. Do not store upstream source tarballs in the repository or add
+  custom unpack/add_subdirectory machinery in an application library.
+- Qt5/Qt6 compatibility belongs in ordered Git patches applied dynamically by
+  CMake `PATCH_COMMAND` to the extracted dependency source. Use
+  `git apply --no-index --check` before apply, with the exact source working
+  directory; verify every required result after apply and on already-applied
+  reuse against current patch identity/content. Neither exit 0, one marker nor
+  a prior build/done stamp is sufficient. Handle overlapping patches with a
+  complete final-state check; fail on missing patches, partial application,
+  source drift or conflicts. No shell `patch`, production edits of extracted
+  trees, or "already applied or not applicable" fallback. Existing runners are
+  evidence to inspect, not permission to copy weak skip branches.
+- Reuse `QT_PREFIX`, `QT_VERSION_MAJOR` and `Qt::` targets already selected by
+  `cmake/CMakeExternalLibs.cmake`. A dependency recipe must not repeat
+  `if(USE_QT6)` selection or outer `find_package(Qt5/Qt6)`. Only its independent
+  ExternalProject configure needs package discovery, constrained to the exact
+  Qt package paths forwarded by the parent, not a second version policy.
+- Propagate the parent's compiler/launcher/toolchain, C++ standard, Qt major and
+  component paths, macOS architectures/sysroot/deployment target, configuration
+  and MSVC CRT. Preserve list-valued arguments. Declare real platform static
+  names/suffixes, Debug postfixes, PIC, export headers, byproducts and installed
+  target/dependency closure. Bound nested build/autogen parallelism by the
+  authorized overall job budget; do not reset parent policy inside the library.
+- Sample/test-data actions are an explicitly approved semantic emphasis, not
+  disposable generic chrome. Keep their prominent style in Native and Custom;
+  create them through `ecvAICoreUi::makeSampleDataBtn` so state colors are owned
+  once. Do not duplicate per-plugin QSS or remove the emphasis while consolidating
+  ordinary control styles; do not apply it to every Browse/Load/Segment action.
+- For toolbar density regressions, compare identical actions, icon sizes,
+  font/DPI, window width and layout state against Fusion. Measure tool-button
+  size hints, split-menu subcontrols and toolbar margins/spacing/separators;
+  fix the geometry owner, not icons or per-widget max-size QSS. Painting,
+  hit-testing and menu indicators must use the same compact subcontrol contract.
+- Verify fresh/reused sources, patch/pin changes and conflict rejection, then
+  real consumer build/link/install and relevant runtime tests. For UI frameworks
+  exercise dense forms, popup/input/focus/disabled/local palette, animations,
+  lifecycle and Native/Custom exit; preserve approved artwork and plugin-local
+  resources. Report exact Qt/OS/compiler/DPI and untested platforms. Do not claim
+  arbitrary upstream upgrades apply without conflicts or Qt5 evidence proves
+  Qt6/cross-platform runtime/ABI compatibility. Pure UI dependencies do not
+  require unrelated AICore numerical gates. See the
+  [Qt framework integration gate](<../skills/logo-design/references/functional-icon-verification.md#third-party-qt-framework-integration-gate>).
 
 ## Key Interfaces
 

@@ -12,11 +12,9 @@ FetchContent_Declare(
     INSTALL_COMMAND ""
 )
 
+# Test frameworks are build dependencies, never application install artifacts.
+set(INSTALL_GTEST OFF CACHE BOOL "Enable installation of googletest" FORCE)
 if (WIN32)
-    # Disable installation of googletest (it's only used for testing, not needed in install)
-    # This prevents "file INSTALL cannot find" errors on Windows when gmock.lib is locked
-    # Set options before MakeAvailable so they take effect during configuration
-    set(INSTALL_GTEST OFF CACHE BOOL "Enable installation of googletest" FORCE)
     set(gtest_force_shared_crt ON CACHE BOOL "Use shared (DLL) run-time lib" FORCE)
 endif()
 

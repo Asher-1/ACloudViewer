@@ -214,9 +214,12 @@ bool Bitmap::Read(const std::filesystem::path& path,
                   const bool linearize_colorspace) {
   if (!ExistsFile(path)) return false;
   OIIO::ImageSpec config;
+  // EXIF orientation is applied explicitly below: OIIO 2.1's JPEG plugin
+  // ignores oiio:reorient, and suppressing it keeps the behavior identical
+  // across OIIO versions (no double rotation where reorient works).
   config["oiio:reorient"] = 0;
   config["oiio:UnassociatedAlpha"] = 1;
-  auto input = OIIO::ImageInput::open(path.string(), &config);
+  auto input = OIIO::ImageInput::open(path.u8string(), &config);
   if (!input) {
     // OIIO stores failures in thread-local pending state; consume it before
     // returning so a later operation does not observe this stale error.
@@ -249,6 +252,50 @@ bool Bitmap::Read(const std::filesystem::path& path,
   width_ = spec.width;
   height_ = spec.height;
   channels_ = data_->channels;
+
+  // Apply EXIF orientation at load time so every downstream stage (SfM,
+  // MVS, textures, camera sensors) shares the physically-oriented pixel
+  // frame. Keeping stored pixels made portrait-shot cameras reconstruct
+  // rolled 90 degrees about their view axis relative to the scene's up
+  // direction (camera up = pixel up = physical right).
+  const int orientation = data_->image_spec.get_int_attribute("Orientation", 1);
+  int ccw_turns = 0;
+  bool mirror_h = false;
+  bool mirror_v = false;
+  switch (orientation) {
+    case 2: mirror_h = true; break;
+    case 3: ccw_turns = 2; break;
+    case 4: mirror_v = true; break;
+    case 5: ccw_turns = 3; mirror_h = true; break;
+    case 6: ccw_turns = 3; break;
+    case 7: ccw_turns = 3; mirror_v = true; break;
+    case 8: ccw_turns = 1; break;
+    default: break;
+  }
+  if (ccw_turns > 0) {
+    Rot90(ccw_turns);
+    data_->width = width_;
+    data_->height = height_;
+    data_->image_spec.width = width_;
+    data_->image_spec.height = height_;
+  }
+  if (mirror_h || mirror_v) {
+    const OIIO::ImageSpec pspec(width_, height_, channels_,
+                                OIIO::TypeDesc::UINT8);
+    const OIIO::ImageBuf src(pspec, data_->pixels.data());
+    std::vector<uint8_t> mirrored(data_->pixels.size());
+    OIIO::ImageBuf dst(pspec, mirrored.data());
+    if (mirror_h) {
+      THROW_CHECK(OIIO::ImageBufAlgo::flop(dst, src));
+    } else {
+      THROW_CHECK(OIIO::ImageBufAlgo::flip(dst, src));
+    }
+    data_->pixels = std::move(mirrored);
+  }
+  if (orientation != 1) {
+    data_->image_spec.attribute("Orientation", 1);
+  }
+
   const std::string colorspace =
       data_->image_spec.get_string_attribute("oiio:ColorSpace");
   linear_colorspace_ = linearize_colorspace;
@@ -274,13 +321,13 @@ bool Bitmap::Read(const std::filesystem::path& path,
 bool Bitmap::Write(const std::filesystem::path& path,
                    const bool delinearize_colorspace) const {
   if (!data_) return false;
-  const std::string filename = path.string();
+  const std::string filename = path.u8string();
   OIIO::ImageSpec spec = data_->image_spec;
   spec.width = width_;
   spec.height = height_;
   spec.nchannels = channels_;
   spec.format = OIIO::TypeDesc::UINT8;
-  const std::string extension = path.extension().string();
+  const std::string extension = path.extension().u8string();
   const bool is_jpeg = extension == ".jpg" || extension == ".jpeg" ||
                        extension == ".JPG" || extension == ".JPEG";
   // Upstream parity (sensor/bitmap.cc "Save JPEG in superb quality by

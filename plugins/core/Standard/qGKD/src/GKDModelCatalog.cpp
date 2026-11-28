@@ -958,7 +958,7 @@ QImage renderResult(const QImage& source,
                     static_cast<int>(pixel * std::sqrt(double(budget) / area)));
             area = measure();
             if (area > budget) {
-                const int avg = std::max(1, area / labels.size());
+                const int avg = std::max(1, area / qtCompatSizeInt(labels));
                 const int keep = std::max(1, budget / avg);
                 if (keep < labels.size()) {
                     std::vector<int> order(labels.size());

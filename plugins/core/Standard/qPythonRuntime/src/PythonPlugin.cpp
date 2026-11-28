@@ -144,6 +144,7 @@ QList<QAction *> PythonPlugin::getActions()
     if (!m_showEditor)
     {
         m_showEditor = new QAction("Show Editor", this);
+        m_showEditor->setObjectName("showEditor");
         m_showEditor->setToolTip("Show the code editor window");
         m_showEditor->setIcon(QIcon(EDITOR_ICON_PATH));
         connect(m_showEditor, &QAction::triggered, this, &PythonPlugin::showEditor);
@@ -153,6 +154,7 @@ QList<QAction *> PythonPlugin::getActions()
     if (!m_showRepl)
     {
         m_showRepl = new QAction("Show REPL", this);
+        m_showRepl->setObjectName("showRepl");
         m_showRepl->setToolTip("Show the Python REPL");
         m_showRepl->setIcon(QIcon(REPL_ICON_PATH));
         connect(m_showRepl, &QAction::triggered, this, &PythonPlugin::showRepl);
@@ -162,6 +164,7 @@ QList<QAction *> PythonPlugin::getActions()
     if (!m_showDoc)
     {
         m_showDoc = new QAction("Show Documentation", this);
+        m_showDoc->setObjectName("showDocumentation");
         m_showDoc->setToolTip("Open online documentation in your web browser");
         m_showDoc->setIcon(QIcon(DOCUMENTATION_ICON_PATH));
         connect(m_showDoc, &QAction::triggered, &PythonPlugin::showDocumentation);
@@ -171,6 +174,7 @@ QList<QAction *> PythonPlugin::getActions()
     if (!m_showAboutDialog)
     {
         m_showAboutDialog = new QAction("About", this);
+        m_showAboutDialog->setObjectName("showAbout");
         m_showAboutDialog->setToolTip("About this plugin");
         m_showAboutDialog->setIcon(QIcon(ABOUT_ICON_PATH));
         connect(m_showAboutDialog, &QAction::triggered, this, &PythonPlugin::showAboutDialog);
@@ -180,6 +184,7 @@ QList<QAction *> PythonPlugin::getActions()
     if (!m_showFileRunner)
     {
         m_showFileRunner = new QAction("File Runner", this);
+        m_showFileRunner->setObjectName("showFileRunner");
         m_showFileRunner->setToolTip("Small widget to select and run a script");
         m_showFileRunner->setIcon(QIcon(RUNNER_ICON_PATH));
         connect(m_showFileRunner, &QAction::triggered, this, &PythonPlugin::showFileRunner);
@@ -189,6 +194,7 @@ QList<QAction *> PythonPlugin::getActions()
     if (!m_showPackageManager)
     {
         m_showPackageManager = new QAction("Package Manager", this);
+        m_showPackageManager->setObjectName("showPackageManager");
         m_showPackageManager->setToolTip("Manage packages with pip");
         m_showPackageManager->setIcon(QIcon(PACKAGE_MANAGER_ICON_PATH));
         connect(m_showPackageManager, &QAction::triggered, this, &PythonPlugin::showPackageManager);
@@ -199,6 +205,7 @@ QList<QAction *> PythonPlugin::getActions()
     {
         m_showActionLauncher = new QAction("Show Action Launcher", this);
         m_showActionLauncher->setIcon(QIcon(ACTION_LAUNCHER_ICON_PATH));
+        m_showActionLauncher->setObjectName("showActionLauncher");
         m_showActionLauncher->setToolTip("Launch actions of custom Python plugins");
         connect(m_showActionLauncher,
                 &QAction::triggered,
@@ -211,6 +218,7 @@ QList<QAction *> PythonPlugin::getActions()
     {
         m_showSettings = new QAction("Show Settings", this);
         m_showSettings->setIcon(QIcon(SETTINGS_ICON_PATH));
+        m_showSettings->setObjectName("showSettings");
         m_showSettings->setToolTip("Show some settings");
         connect(m_showSettings, &QAction::triggered, this, &PythonPlugin::showSettings);
         // Settings do not need Python to be initialized in a valid state
@@ -289,6 +297,9 @@ QList<QAction *> PythonPlugin::getActions()
             settings->setValue(QStringLiteral("RegisterListPath"), validPaths);
         }
     }
+
+    m_drawScriptRegister->menuAction()->setProperty("shortcutTransient", true);
+    m_pluginsMenu->menuAction()->setProperty("shortcutTransient", true);
 
     return {
         m_showEditor,

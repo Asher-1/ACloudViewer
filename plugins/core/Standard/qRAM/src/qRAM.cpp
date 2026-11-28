@@ -7,6 +7,7 @@
 
 #include "qRAM.h"
 
+#include <ecvAICoreUiHelper.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPluginDbNaming.h>
@@ -70,6 +71,7 @@ void qRAM::showDialog() {
     if (!m_app) return;
     if (!m_dialog) {
         m_dialog = new RAMDialog(m_app->getMainWindow());
+        ecvAICoreUi::bindDialogAction(m_action, m_dialog);
         connect(m_dialog, &RAMDialog::addToDbRequested, this,
                 [this](const RAMResult& result) {
                     const QString name = ecvPluginDbNaming::makeUnique(

@@ -8,6 +8,8 @@
 // Gate the C++ real upper_bound_resize preprocessing against the upstream
 // DA3 InputProcessor on a REAL non-square image (640x427 -> 504x336, pure cv2
 // INTER_AREA downscale). Reveals cv2-interpolation parity of resize_area().
+#include <gtest/gtest.h>
+
 #include <cstdio>
 #include <cstdlib>
 #include <string>
@@ -18,13 +20,10 @@
 #include "tasks/depth/preprocess.hpp"
 #include "tests/depth/whitebox/parity.hpp"
 
-int main() {
+TEST(DepthWhitebox, PreprocessReal) {
     const char* base = std::getenv("AICORE_TEST_DEPTH_BASELINE_PREPROC");
     if (!base) {
-        std::fprintf(stderr,
-                     "[preproc_real] no AICORE_TEST_DEPTH_BASELINE_PREPROC -> "
-                     "SKIP\n");
-        return 77;
+        GTEST_SKIP() << "AICORE_TEST_DEPTH_BASELINE_PREPROC is unset";
     }
 
     // The raw PNG lives next to the baseline (dumps/). Allow an override.
@@ -35,13 +34,14 @@ int main() {
     if (!aicore::depth::load_image_rgb(png, img)) {
         std::fprintf(stderr, "[preproc_real] cannot load %s -> SKIP\n",
                      png.c_str());
-        return 77;
+        FAIL() << "Configured reference asset could not be loaded";
     }
 
     // Reference processed tensor + expected output size from the baseline gguf.
     std::vector<float> ref;
     std::vector<int64_t> s;
-    if (!da_parity::load_baseline(base, "proc_image", ref, s)) return 77;
+    if (!da_parity::load_baseline(base, "proc_image", ref, s))
+        FAIL() << "Configured reference asset could not be loaded";
     uint32_t out_h = da_parity::load_kv_u32(base, "preproc.out_h");
     uint32_t out_w = da_parity::load_kv_u32(base, "preproc.out_w");
 
@@ -57,7 +57,7 @@ int main() {
     aicore::depth::Preprocessed p;
     if (!aicore::depth::preprocess_real(img, cfg, p)) {
         std::fprintf(stderr, "[preproc_real] preprocess_real failed\n");
-        return 1;
+        FAIL() << "Required operation or numeric contract failed";
     }
 
     std::fprintf(stderr,
@@ -68,7 +68,7 @@ int main() {
         std::fprintf(stderr,
                      "[preproc_real] size mismatch got %dx%d ref %ux%u\n", p.W,
                      p.H, out_w, out_h);
-        return 1;
+        FAIL() << "Required operation or numeric contract failed";
     }
 
     // Honest tolerance: the resize quantizes to uint8 then normalizes, so a
@@ -76,6 +76,5 @@ int main() {
     // units at a pixel. We require mean|d| < 1e-2 (sub-pixel-fraction average
     // agreement) and a max|d| that stays within a few uint8 LSBs (< 5e-2). The
     // numbers are printed regardless so any INTER_AREA mismatch is visible.
-    bool ok = da_parity::compare(p.chw, ref, "preproc_real", 5e-2f, 0.f);
-    return ok ? 0 : 1;
+    EXPECT_TRUE(da_parity::compare(p.chw, ref, "preproc_real", 5e-2f, 0.f));
 }

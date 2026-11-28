@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.7385,-0.7385) scale(1.06154)">
+
+<defs><linearGradient id="gear" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#E0E0E0"/><stop offset="1.000" stop-color="#9AC1E0"/></linearGradient></defs>
+<title>Property editor — gear</title>
+  <path d="M 12.000 4.500 L 13.219 2.075 L 16.540 3.090 L 16.194 5.782 L 17.303 6.697 L 19.880 5.843 L 21.511 8.910 L 19.362 10.569 L 19.500 12.000 L 21.925 13.219 L 20.910 16.540 L 18.218 16.194 L 17.303 17.303 L 18.157 19.880 L 15.090 21.511 L 13.431 19.362 L 12.000 19.500 L 10.781 21.925 L 7.460 20.910 L 7.806 18.218 L 6.697 17.303 L 4.120 18.157 L 2.489 15.090 L 4.638 13.431 L 4.500 12.000 L 2.075 10.781 L 3.090 7.460 L 5.782 7.806 L 6.697 6.697 L 5.843 4.120 L 8.910 2.489 L 10.569 4.638 Z M 15.4 12 A 3.4 3.4 0 1 0 8.6 12 A 3.4 3.4 0 1 0 15.4 12 Z" fill="url(#gear)" stroke="#6F6F59" fill-rule="evenodd"/>
+
+</g>
+</svg>

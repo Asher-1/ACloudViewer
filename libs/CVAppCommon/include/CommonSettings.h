@@ -43,6 +43,7 @@ static const QString THEME_NORD = ":/qss/nord.css";
 static const QString THEME_DRACULA = ":/qss/dracula.css";
 static const QString THEME_FLUENT = ":/qss/fluent.css";
 static const QString THEME_MACOS = ":/qss/macos.css";
+static const QString THEME_MACOS_DARK = ":/qss/macos-dark.css";
 static const QString THEME_ONEDARK = ":/qss/onedark.css";
 static const QString THEME_CATPPUCCIN = ":/qss/catppuccin.css";
 static const QString THEME_TOKYONIGHT = ":/qss/tokyonight.css";
@@ -64,11 +65,16 @@ static const QString UPDATE_RUL =
 // logos
 static const QString APP_LOGO = ":/Resources/images/icon/logo_256.png";
 static const QString APP_START_LOGO = ":/Resources/images/icon/logo_256.png";
-static const QString CLOUDFILE_LOGO = ":/Resources/images/dbCloudSymbol.png";
-static const QString THEME_LOGO = ":/Resources/images/theme.png";
-static const QString MINIMUM_LOGO = ":/Resources/images/mini.svg";
-static const QString MAXIMUM_LOGO = ":/Resources/images/max.png";
-static const QString CLOSE_LOGO = ":/Resources/images/close.png";
+static const QString CLOUDFILE_LOGO =
+        ":/Resources/images/svg/db/dbCloudSymbol.svg";
+static const QString THEME_LOGO =
+        ":/Resources/images/svg/main/toolMainTheme.svg";
+static const QString MINIMUM_LOGO =
+        ":/Resources/images/svg/window/windowMinimize.svg";
+static const QString MAXIMUM_LOGO =
+        ":/Resources/images/svg/window/windowMaximize.svg";
+static const QString CLOSE_LOGO =
+        ":/Resources/images/svg/window/windowClose.svg";
 
 // coding
 static const char* CODING = "UTF8";
@@ -81,6 +87,5 @@ static const QString APP_TITLE =
         TITLE + " " + versionLongStr(true, APP_VERSION);
 
 // theme style
-static bool UI_WRAPPER = false;
 static const QString DEFAULT_STYLE = Themes::THEME_DEFAULT;
 }  // namespace Settings

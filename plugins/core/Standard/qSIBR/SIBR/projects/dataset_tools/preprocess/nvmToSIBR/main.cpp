@@ -75,15 +75,14 @@ int main(const int argc, const char** argv) {
     for (int c = minCam; c < maxCam; c++) {
         InputCamera& camIm = *cams[c];
 
-        std::string extensionFile = boost::filesystem::extension(camIm.name());
+        std::string extensionFile =
+                boost::filesystem::path(camIm.name()).extension().string();
         std::ostringstream ssZeroPad;
         ssZeroPad << std::setw(8) << std::setfill('0') << camIm.id();
         std::string newFileName = ssZeroPad.str() + extensionFile;
 
-        boost::filesystem::copy_file(
-                pathScene + "/nvm/" + camIm.name(),
-                pathScene + "/images/" + newFileName,
-                boost::filesystem::copy_option::overwrite_if_exists);
+        copyFileOverwrite(pathScene + "/nvm/" + camIm.name(),
+                          pathScene + "/images/" + newFileName);
         outputBundleCam << camIm.toBundleString();
         outputListIm << newFileName << " " << camIm.w() << " " << camIm.h()
                      << std::endl;

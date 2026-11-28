@@ -14,16 +14,22 @@
 #include <vtkActor.h>
 #include <vtkAppendPolyData.h>
 #include <vtkCutter.h>
+#include <vtkDataSet.h>
+#include <vtkDataSetSurfaceFilter.h>
+#include <vtkMapper.h>
 #include <vtkNew.h>
 #include <vtkOutlineSource.h>
 #include <vtkPlane.h>
+#include <vtkPlaneCollection.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkPolyDataPlaneClipper.h>
 #include <vtkProperty.h>
 #include <vtkRenderer.h>
+#include <vtkScalarsToColors.h>
 #include <vtkTriangleFilter.h>
+#include <vtkWeakPointer.h>
 
 namespace {
 
@@ -76,10 +82,40 @@ static void assignSliceMapper(vtkPolyDataMapper* mapper, vtkPolyData* slice) {
         mapper->SetInputData(emptySlicePolyData());
 }
 
+static void copyAppearance(vtkActor* target, vtkActor* source) {
+    if (!target || !source || !source->GetMapper()) return;
+    auto* mapper = vtkPolyDataMapper::SafeDownCast(target->GetMapper());
+    if (!mapper) return;
+    vtkSmartPointer<vtkPolyData> input = mapper->GetInput();
+    mapper->ShallowCopy(source->GetMapper());
+    mapper->SetInputData(input);
+    if (auto* lut = source->GetMapper()->GetLookupTable()) {
+        vtkSmartPointer<vtkScalarsToColors> owned;
+        owned.TakeReference(lut->NewInstance());
+        owned->DeepCopy(lut);
+        mapper->SetLookupTable(owned);
+    }
+    vtkNew<vtkPlaneCollection> planes;
+    if (auto* sourcePlanes = source->GetMapper()->GetClippingPlanes()) {
+        for (int i = 0; i < sourcePlanes->GetNumberOfItems(); ++i) {
+            vtkNew<vtkPlane> plane;
+            plane->SetOrigin(sourcePlanes->GetItem(i)->GetOrigin());
+            plane->SetNormal(sourcePlanes->GetItem(i)->GetNormal());
+            planes->AddItem(plane);
+        }
+    }
+    mapper->SetClippingPlanes(planes);
+    target->GetProperty()->DeepCopy(source->GetProperty());
+    target->SetPickable(source->GetPickable());
+}
+
 }  // namespace
 
 struct vtkOrthoSliceRepresentation::Impl {
-    vtkSmartPointer<vtkPolyData> input;
+    vtkWeakPointer<vtkRenderer> orthoRenderers[3];
+    vtkWeakPointer<vtkRenderer> perspectiveRenderer;
+    vtkSmartPointer<vtkDataSet> input;
+    vtkSmartPointer<vtkActor> sourceAppearance;
     vtkSmartPointer<vtkPlane> planes[3];
     vtkSmartPointer<vtkPolyDataPlaneClipper> clippers[3];
     vtkSmartPointer<vtkCutter> cutters[3];
@@ -98,13 +134,36 @@ const double vtkOrthoSliceRepresentation::Impl::kNormals[3][3] = {
 
 vtkOrthoSliceRepresentation::vtkOrthoSliceRepresentation() : d(new Impl) {}
 
-vtkOrthoSliceRepresentation::~vtkOrthoSliceRepresentation() { delete d; }
+vtkOrthoSliceRepresentation::~vtkOrthoSliceRepresentation() {
+    vtkRenderer* renderers[3] = {d->orthoRenderers[0], d->orthoRenderers[1],
+                                 d->orthoRenderers[2]};
+    removeFromRenderers(renderers, d->perspectiveRenderer);
+    delete d;
+}
 
 void vtkOrthoSliceRepresentation::setInputPolyData(vtkPolyData* input) {
+    setInputData(input);
+}
+
+void vtkOrthoSliceRepresentation::setInputData(vtkDataSet* input,
+                                               vtkActor* sourceAppearance) {
+    vtkRenderer* renderers[3] = {d->orthoRenderers[0], d->orthoRenderers[1],
+                                 d->orthoRenderers[2]};
+    vtkRenderer* perspective = d->perspectiveRenderer;
+    removeFromRenderers(renderers, perspective);
     d->input = input;
+    d->sourceAppearance = sourceAppearance;
+    for (int axis = 0; axis < 3; ++axis) {
+        d->clippers[axis] = nullptr;
+        d->cutters[axis] = nullptr;
+        d->actors2D[axis] = nullptr;
+        d->actors3D[axis] = nullptr;
+    }
     d->surfaceActor3D = nullptr;
     d->outlineActor3D = nullptr;
     d->outlineSource = nullptr;
+    if (perspective || renderers[0] || renderers[1] || renderers[2])
+        addToRenderers(renderers, perspective);
 }
 
 void vtkOrthoSliceRepresentation::ensureSurfaceActor() {
@@ -112,7 +171,17 @@ void vtkOrthoSliceRepresentation::ensureSurfaceActor() {
     if (d->surfaceActor3D) return;
 
     vtkNew<vtkPolyDataMapper> mapper;
-    mapper->SetInputData(d->input);
+    vtkSmartPointer<vtkPolyData> surface = vtkPolyData::SafeDownCast(d->input);
+    if (!surface) {
+        vtkNew<vtkDataSetSurfaceFilter> geometry;
+        geometry->SetInputData(d->input);
+        geometry->PassThroughPointIdsOn();
+        geometry->PassThroughCellIdsOn();
+        geometry->Update();
+        surface = vtkSmartPointer<vtkPolyData>::New();
+        surface->ShallowCopy(geometry->GetOutput());
+    }
+    mapper->SetInputData(surface);
     if (d->input->GetPointData() && d->input->GetPointData()->GetScalars())
         mapper->ScalarVisibilityOn();
     else
@@ -120,7 +189,7 @@ void vtkOrthoSliceRepresentation::ensureSurfaceActor() {
 
     d->surfaceActor3D = vtkSmartPointer<vtkActor>::New();
     d->surfaceActor3D->SetMapper(mapper);
-    const bool hasMesh = d->input->GetNumberOfPolys() > 0;
+    const bool hasMesh = surface->GetNumberOfPolys() > 0;
     if (hasMesh) {
         d->surfaceActor3D->GetProperty()->SetRepresentationToSurface();
         d->surfaceActor3D->GetProperty()->SetAmbient(0.2);
@@ -139,6 +208,7 @@ void vtkOrthoSliceRepresentation::ensureSurfaceActor() {
         d->surfaceActor3D->GetProperty()->LightingOff();
         d->surfaceActor3D->GetProperty()->SetColor(0.8, 0.8, 0.8);
     }
+    copyAppearance(d->surfaceActor3D, d->sourceAppearance);
     d->surfaceActor3D->SetVisibility(0);
 }
 
@@ -167,7 +237,17 @@ void vtkOrthoSliceRepresentation::ensureOutlineActor() {
 }
 
 vtkPolyData* vtkOrthoSliceRepresentation::inputPolyData() const {
-    return d->input;
+    return vtkPolyData::SafeDownCast(d->input);
+}
+
+vtkDataSet* vtkOrthoSliceRepresentation::inputData() const { return d->input; }
+
+void vtkOrthoSliceRepresentation::restoreSourceAppearance() {
+    copyAppearance(d->surfaceActor3D, d->sourceAppearance);
+    for (int axis = 0; axis < 3; ++axis) {
+        copyAppearance(d->actors2D[axis], d->sourceAppearance);
+        copyAppearance(d->actors3D[axis], d->sourceAppearance);
+    }
 }
 
 void vtkOrthoSliceRepresentation::setSliceOrigin(double x, double y, double z) {
@@ -186,7 +266,10 @@ void vtkOrthoSliceRepresentation::update() {
         }
         d->planes[i]->SetOrigin(d->sliceOrigin);
 
-        d->clippers[i] = createSliceClipper(d->input, d->planes[i]);
+        auto* poly = vtkPolyData::SafeDownCast(d->input);
+        d->clippers[i] = poly && poly->GetNumberOfPolys() > 0
+                                 ? createSliceClipper(poly, d->planes[i])
+                                 : nullptr;
         if (!d->cutters[i]) {
             d->cutters[i] = vtkSmartPointer<vtkCutter>::New();
             d->cutters[i]->SetInputData(d->input);
@@ -209,6 +292,7 @@ void vtkOrthoSliceRepresentation::update() {
             d->actors2D[i]->GetProperty()->SetAmbient(1.0);
             d->actors2D[i]->GetProperty()->SetDiffuse(0.0);
             d->actors2D[i]->GetProperty()->LightingOff();
+            copyAppearance(d->actors2D[i], d->sourceAppearance);
         } else if (auto* mapper = vtkPolyDataMapper::SafeDownCast(
                            d->actors2D[i]->GetMapper())) {
             assignSliceMapper(mapper, slice);
@@ -225,6 +309,7 @@ void vtkOrthoSliceRepresentation::update() {
             d->actors3D[i]->GetProperty()->SetAmbient(1.0);
             d->actors3D[i]->GetProperty()->SetDiffuse(0.0);
             d->actors3D[i]->GetProperty()->LightingOff();
+            copyAppearance(d->actors3D[i], d->sourceAppearance);
         } else if (auto* mapper = vtkPolyDataMapper::SafeDownCast(
                            d->actors3D[i]->GetMapper())) {
             assignSliceMapper(mapper, slice);
@@ -236,6 +321,9 @@ void vtkOrthoSliceRepresentation::update() {
 
 void vtkOrthoSliceRepresentation::addToRenderers(
         vtkRenderer* orthoRenderers[3], vtkRenderer* perspectiveRenderer) {
+    for (int axis = 0; axis < 3; ++axis)
+        d->orthoRenderers[axis] = orthoRenderers[axis];
+    d->perspectiveRenderer = perspectiveRenderer;
     update();
     ensureSurfaceActor();
     ensureOutlineActor();
@@ -254,11 +342,15 @@ void vtkOrthoSliceRepresentation::addToRenderers(
 void vtkOrthoSliceRepresentation::removeFromRenderers(
         vtkRenderer* orthoRenderers[3], vtkRenderer* perspectiveRenderer) {
     for (int i = 0; i < 3; ++i) {
+        if (d->orthoRenderers[i] == orthoRenderers[i])
+            d->orthoRenderers[i] = nullptr;
         if (d->actors2D[i] && orthoRenderers[i])
             orthoRenderers[i]->RemoveActor(d->actors2D[i]);
         if (d->actors3D[i] && perspectiveRenderer)
             perspectiveRenderer->RemoveActor(d->actors3D[i]);
     }
+    if (d->perspectiveRenderer == perspectiveRenderer)
+        d->perspectiveRenderer = nullptr;
     if (d->surfaceActor3D && perspectiveRenderer)
         perspectiveRenderer->RemoveActor(d->surfaceActor3D);
     if (d->outlineActor3D && perspectiveRenderer)

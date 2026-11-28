@@ -7,6 +7,8 @@
 
 #include "YOLOModelCatalog.h"
 
+#include <QtCompat.h>
+
 #include <QColor>
 #include <QFont>
 #include <QImage>
@@ -661,7 +663,7 @@ void drawDetections(QImage* image,
         // off-canvas text would simply be invisible).
         QRect labelRect(static_cast<int>(d.x1),
                         static_cast<int>(d.y1) - font.pixelSize() - 6,
-                        std::max(20, label.size() * font.pixelSize()),
+                        std::max(20, qtCompatSizeInt(label) * font.pixelSize()),
                         font.pixelSize() + 6);
         labelRect.setWidth(
                 std::min(labelRect.width(), std::max(20, image->width() - 4)));
@@ -867,7 +869,7 @@ void drawPose(QImage* image,
                                       .arg(set.det.score, 0, 'f', 2);
         QRect labelRect(static_cast<int>(set.det.x1),
                         static_cast<int>(set.det.y1) - font.pixelSize() - 6,
-                        std::max(20, label.size() * font.pixelSize()),
+                        std::max(20, qtCompatSizeInt(label) * font.pixelSize()),
                         font.pixelSize() + 6);
         labelRect.setWidth(
                 std::min(labelRect.width(), std::max(20, image->width() - 4)));
@@ -926,7 +928,7 @@ void drawObb(QImage* image, const QVector<YOLOObbBox>& boxes, int thickness) {
         QRect labelRect(
                 static_cast<int>(b.cx - b.w / 2.0),
                 static_cast<int>(b.cy - b.h / 2.0) - font.pixelSize() - 6,
-                std::max(20, full.size() * font.pixelSize()),
+                std::max(20, qtCompatSizeInt(full) * font.pixelSize()),
                 font.pixelSize() + 6);
         labelRect.setWidth(
                 std::min(labelRect.width(), std::max(20, image->width() - 4)));
@@ -1011,25 +1013,27 @@ void drawClassifications(QImage* image,
     }
     // Top-k by probability (partial sort; the table is unordered).
     QVector<YOLOClassProb> sorted = classifications;
-    std::partial_sort(
-            sorted.begin(), sorted.begin() + std::min(topK, sorted.size()),
-            sorted.end(), [](const YOLOClassProb& a, const YOLOClassProb& b) {
-                return a.prob > b.prob;
-            });
+    std::partial_sort(sorted.begin(),
+                      sorted.begin() + std::min(topK, qtCompatSizeInt(sorted)),
+                      sorted.end(),
+                      [](const YOLOClassProb& a, const YOLOClassProb& b) {
+                          return a.prob > b.prob;
+                      });
 
     QPainter p(image);
     QFont font = p.font();
     font.setPixelSize(std::max(12, image->height() / 50));
     p.setFont(font);
     const int lineH = font.pixelSize() + 6;
-    const int shown = std::min(topK, sorted.size());
+    const int shown = std::min(topK, qtCompatSizeInt(sorted));
     for (int i = 0; i < shown; ++i) {
         const QString label = QStringLiteral("%1. %2  %3%")
                                       .arg(i + 1)
                                       .arg(sorted[i].className)
                                       .arg(sorted[i].prob * 100.0, 0, 'f', 1);
         QRect rect(4, 4 + i * lineH,
-                   std::max(40, label.size() * font.pixelSize()), lineH);
+                   std::max(40, qtCompatSizeInt(label) * font.pixelSize()),
+                   lineH);
         rect.setWidth(std::min(rect.width(), std::max(40, image->width() - 8)));
         p.fillRect(rect.adjusted(0, 0, 4, 2).intersected(image->rect()),
                    QColor(0, 0, 0, 170));
@@ -1122,7 +1126,8 @@ void drawDepthLegend(QImage* image, double minDepth, double maxDepth) {
     const QString farLabel = QStringLiteral("%1 m").arg(maxDepth, 0, 'f', 1);
     const QString nearLabel = QStringLiteral("%1 m").arg(minDepth, 0, 'f', 1);
     const int labelWidth =
-            std::max(farLabel.size(), nearLabel.size()) * font.pixelSize();
+            std::max(int(farLabel.size()), int(nearLabel.size())) *
+            font.pixelSize();
     p.drawText(QRect(x0 - labelWidth - 6, y0 - 2, labelWidth,
                      font.pixelSize() + 4),
                Qt::AlignRight | Qt::AlignVCenter, farLabel);

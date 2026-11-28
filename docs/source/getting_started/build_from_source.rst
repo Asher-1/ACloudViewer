@@ -20,12 +20,13 @@ Quick Start
    # Or with conda:
    ./docker/build-release-conda.sh
 
-**Linux (Manual):**
+**Linux (Local, one-click):**
 
 .. code-block:: bash
 
-   utils/install_deps_ubuntu.sh assume-yes
-   ./scripts/build_ubuntu.sh
+   # Apt deps, pyenv Python, Vulkan SDK, VTK/PCL deps, CMake configure and
+   # build in one shot; re-running only redoes what is missing (idempotent).
+   bash docs/guides/compiling_doc/setup_and_build_acloudviewer_linux.sh
 
 **macOS:**
 
@@ -49,7 +50,7 @@ Minimum Requirements
 - **CPU**: 8+ cores recommended
 - **RAM**: 16 GB+ recommended
 - **Disk**: 20 GB free space
-- **CMake**: 3.19 or higher
+- **CMake**: 3.24 or higher (CI and Conda environments pin 3.31.8; `util/install_deps_ubuntu.sh` auto-installs the pinned pip CMake (3.31.10) when the apt one is older)
 
 Recommended
 ~~~~~~~~~~~
@@ -135,7 +136,7 @@ Install dependencies automatically:
 .. code-block:: bash
 
    # Install all dependencies
-   utils/install_deps_ubuntu.sh assume-yes
+   util/install_deps_ubuntu.sh assume-yes
 
 Or install manually:
 
@@ -147,6 +148,12 @@ Or install manually:
        libeigen3-dev libflann-dev libboost-all-dev \
        qt5-default libqt5svg5-dev libqt5opengl5-dev qttools5-dev \
        libglu1-mesa-dev freeglut3-dev mesa-common-dev
+
+.. note::
+   The apt ``cmake`` package is below the required 3.24 on Ubuntu 20.04/22.04
+   (3.16/3.22). Install a newer CMake via the Kitware apt repository (see
+   :doc:`quickstart`) or ``python3 -m pip install --user --upgrade "cmake>=3.24,<4"``
+   — or simply use the one-click script above, which handles this automatically.
 
 Python Environment (pyenv)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -263,6 +270,7 @@ Building Application (Full Configuration)
        -DPLUGIN_STANDARD_QOPENPCDET=ON \
        -DPLUGIN_STANDARD_QINSTANTMESH=ON \
        -DPLUGIN_STANDARD_QVLXSEEK=ON \
+       -DPLUGIN_STANDARD_QWEVISONE=ON \
        -DPLUGIN_STANDARD_QQUERYSPLAT=ON \
        -DPLUGIN_PYTHON=ON \
        -DBUILD_PYTHON_MODULE=ON \
@@ -452,6 +460,7 @@ Building Application
        -DPLUGIN_STANDARD_QOPENPCDET=ON \
        -DPLUGIN_STANDARD_QINSTANTMESH=ON \
        -DPLUGIN_STANDARD_QVLXSEEK=ON \
+       -DPLUGIN_STANDARD_QWEVISONE=ON \
        -DPLUGIN_STANDARD_QQUERYSPLAT=ON \
        -DPLUGIN_PYTHON=ON \
        -DBUILD_PYTHON_MODULE=ON \
@@ -634,6 +643,7 @@ Building Application
        -DPLUGIN_STANDARD_QOPENPCDET=ON `
        -DPLUGIN_STANDARD_QINSTANTMESH=ON `
        -DPLUGIN_STANDARD_QVLXSEEK=ON `
+       -DPLUGIN_STANDARD_QWEVISONE=ON `
        -DPLUGIN_STANDARD_QQUERYSPLAT=ON `
        -DBUILD_WITH_CONDA=ON `
        -DCONDA_PREFIX=$env:CONDA_PREFIX `
@@ -716,6 +726,25 @@ Disable problematic plugins:
 
    git submodule update --init --recursive --force
 
+Running C++ Tests
+-----------------
+
+After configuring the normal platform options, enable tests and use the root
+entry point from the repository root:
+
+.. code-block:: bash
+
+   cmake -S . -B build_app -DBUILD_UNIT_TESTS=ON
+   cmake -DBUILD_DIR=build_app -DCONFIG=Release -DJOBS=4 -P tests/Run.cmake
+
+This builds prerequisites and runs the enabled first-party headless suites.
+GoogleTest supplies C++ unit assertions; modules retain their source ownership.
+Select ``-DPROFILE=graphics``, ``gpu``, ``model`` or ``all`` explicitly; profiles
+such as ``ci,gpu`` select a union. AICore suites also need ``AICore_BUILD_TESTS``;
+whitebox suites need ``AICore_BUILD_WHITEBOX_TESTS``. Python/package tests and
+strict real-model accuracy/performance validation retain separate gates.
+See `the unified testing contract <https://github.com/Asher-1/ACloudViewer/blob/main/tests/README.md>`_.
+
 Platform-Specific Notes
 -----------------------
 
@@ -773,7 +802,7 @@ Additional Resources
 
 **Build Scripts:**
 
-- Linux: ``scripts/build_ubuntu.sh``
+- Linux: ``docs/guides/compiling_doc/setup_and_build_acloudviewer_linux.sh``
 - macOS: ``scripts/build_macos.sh``
 - Windows: ``scripts/build_win.py``
 - Docker: ``docker/build-release.sh``

@@ -63,7 +63,7 @@ def check_dependency_closure(root: Path):
         if "GGML_CUDA_STRICT_ATTENTION_ROOT" in path.read_text(
                 encoding="utf-8", errors="replace"):
             violations.append(
-                f"{path.relative_to(root)} still exposes the removed relation strict-attention root")
+                f"{path.relative_to(root).as_posix()} still exposes the removed relation strict-attention root")
     aicore_cmake = root / "core/AICore/CMakeLists.txt"
     if aicore_cmake.is_file():
         # Qt's transitive Unicode dependencies are outside this check. It

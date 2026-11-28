@@ -10,8 +10,14 @@ if ( PLUGIN_STANDARD_QJSONRPC )
 
     AddPlugin( NAME ${PROJECT_NAME} )
 
-    # Qt5/Qt6 compatibility - use unified Qt:: prefix
-    # Note: Network and WebSockets are already found in CMakeExternalLibs.cmake
+    # WebSockets belongs to this optional plugin, not the application core.
+    # Qt 6.0/6.1 do not ship this module; enabling the plugin requires it.
+    find_package(${QT_PREFIX} COMPONENTS WebSockets REQUIRED)
+    if(NOT TARGET Qt::WebSockets)
+        add_library(Qt::WebSockets INTERFACE IMPORTED)
+        set_target_properties(Qt::WebSockets PROPERTIES
+            INTERFACE_LINK_LIBRARIES ${QT_PREFIX}::WebSockets)
+    endif()
     target_link_libraries(${PROJECT_NAME} Qt::Core Qt::Network Qt::WebSockets)
 
     # Spirula Studio support (BUILD_SPIRULA): locator/launcher/importer shared

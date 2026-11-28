@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.0436,-0.4451) scale(1.00364)">
+
+<defs><linearGradient id="paper" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#FAFAF6"/><stop offset="1.000" stop-color="#E0E0E0"/></linearGradient>
+<linearGradient id="cover" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#C1A561"/><stop offset="1.000" stop-color="#A3915E"/></linearGradient></defs>
+<title>Console — open book</title>
+  <path d="M 2 19 L 12 22 L 22 19 V 21 L 12 23 L 2 21 Z" fill="url(#cover)" stroke="#6F6F59"/>
+  <path d="M 2.5 5 L 11.8 6.5 V 20 L 2.5 18.4 Z" fill="url(#paper)" stroke="#6F6F59"/>
+  <path d="M 11.8 6.5 L 21.5 3 V 18.4 L 11.8 20 Z" fill="url(#cover)" stroke="#6F6F59"/>
+  <path d="M 12 6.4 L 20.5 1.8 V 16.5 L 12 19.8 Z" fill="url(#paper)" stroke="#6F6F59"/>
+  <path d="M 11.8 6.5 V 20" fill="none" stroke="#A3915E" stroke-width="1.1"/>
+
+</g>
+</svg>

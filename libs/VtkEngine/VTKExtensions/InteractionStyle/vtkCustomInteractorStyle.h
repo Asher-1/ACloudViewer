@@ -70,6 +70,10 @@ public:
 
     void toggleAreaPicking();
 
+    // The embedding Qt widget owns configurable command dispatch. Standalone
+    // VTK interactors retain their native modifier-key behavior.
+    void setQtShortcutDispatch(bool enabled) { m_qtShortcutDispatch = enabled; }
+
     /// @brief Directly execute a keyboard shortcut from Qt key event data.
     /// Bypasses VTK's key event system for reliable cross-platform operation.
     /// @param key Lowercase letter ('j','c','g',...) or symbol ('+','-','=')
@@ -148,6 +152,7 @@ protected:
 
     void Dolly(double factor) override;
 
+    bool m_qtShortcutDispatch = false;
     std::string lut_actor_id_;
 
     void updateLookUpTableDisplay(bool add_lut = false);

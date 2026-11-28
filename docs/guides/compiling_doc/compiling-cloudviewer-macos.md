@@ -43,7 +43,7 @@
 | ---------------- | ------------------------------------------------- |
 | **OS**           | macOS 13+ (Intel or Apple Silicon)                |
 | **Xcode CLI**    | `xcode-select --install`                          |
-| **CMake**        | ≥ 3.20 (`brew install cmake`)                     |
+| **CMake**        | ≥ 3.24 (the conda env from `.ci/conda_macos_cloudViewer.yml` ships 3.31.8; `brew install cmake` works standalone) |
 | **Python**       | 3.10 – 3.12 (via Conda)                           |
 | **Conda**        | Miniconda or Anaconda                              |
 | **AICore GPU (default)** | **Metal → CPU** (Vulkan is not supported on macOS) |
@@ -204,6 +204,7 @@ cmake \
     -DPLUGIN_STANDARD_QOPENPCDET=ON \
     -DPLUGIN_STANDARD_QINSTANTMESH=ON \
     -DPLUGIN_STANDARD_QVLXSEEK=ON \
+    -DPLUGIN_STANDARD_QWEVISONE=ON \
     -DPLUGIN_STANDARD_QQUERYSPLAT=ON \
     -DPLUGIN_PYTHON=ON \
     -DBUILD_PYTHON_MODULE=ON \
@@ -337,18 +338,21 @@ lldb python3
 ### Unit tests from CMake
 
 ```bash
-cd build
-cmake -DBUILD_UNIT_TESTS=ON ..
-make -j"$(sysctl -n hw.logicalcpu)"
-./bin/cloudviewer_test/tests
+# From the repository root; retain your configured platform options.
+cmake -S . -B build -DBUILD_UNIT_TESTS=ON
+cmake -DBUILD_DIR=build -DJOBS=4 -P tests/Run.cmake
 ```
+
+The root [tests module](../../../tests/README.md) builds prerequisites and runs every enabled first-party headless suite.
+Use `-DPROFILE=graphics`, `gpu`, `model`, or `all` for explicit capabilities;
+`ci,gpu` selects the union. Test sources stay with their production owner.
 
 ### Python unit tests
 
 ```bash
 pip install pytest
-make install-pip-package
-pytest ../python/test
+cmake --build build --target install-pip-package
+pytest python/test
 ```
 
 ---

@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <new>
 
 #include "ecvCameraSensorDisplayUtils.h"
 
@@ -1374,7 +1375,9 @@ CCVector3 ccCameraSensor::computeUpperLeftPoint() const {
             m_scale * ConvertFocalPixToMM(m_intrinsicParams.vertFocal_pix,
                                           m_intrinsicParams.pixelSize_mm[1]);
     upperLeftPoint.y = upperLeftPoint.z * tanf(halfFov);
-    upperLeftPoint.x = upperLeftPoint.z * tanf(halfFov * ar);
+    // Pinhole aspect: tan(hHalfFov) = tan(vHalfFov) * ar (multiplicative,
+    // not tan(vHalfFov * ar)), so the plane matches the sensor W/H exactly.
+    upperLeftPoint.x = upperLeftPoint.z * tanf(halfFov) * ar;
 
     return upperLeftPoint;
 }
@@ -1390,8 +1393,8 @@ bool ccCameraSensor::computeFrustumCorners() {
                m_intrinsicParams.arrayHeight;
     float halfFov = m_intrinsicParams.vFOV_rad / 2;
 
-    float xIn = std::abs(tan(halfFov * ar));
     float yIn = std::abs(tan(halfFov));
+    float xIn = yIn * ar;
     const float& zNear = m_intrinsicParams.zNear_mm;
     const float& zFar = m_intrinsicParams.zFar_mm;
 
@@ -1646,30 +1649,6 @@ void ccCameraSensor::updateData() {
     m_arrow.lines_.push_back(Eigen::Vector2i(4, 5));
     m_arrow.lines_.push_back(Eigen::Vector2i(5, 6));
     m_arrow.lines_.push_back(Eigen::Vector2i(6, 4));
-
-    // axis (for test)
-    {
-        const double l = std::abs(upperLeftPointd.z) / 2.0;
-        const double viewAxisZ =
-                static_cast<double>(localImagePlaneZ(m_poseFrame, l));
-        m_axis.clear();
-        m_axis.points_.push_back(Eigen::Vector3d(0.0, 0.0, 0.0));
-        m_axis.points_.push_back(Eigen::Vector3d(l, 0.0, 0.0));
-        m_axis.points_.push_back(Eigen::Vector3d(0.0, l, 0.0));
-        m_axis.points_.push_back(Eigen::Vector3d(0.0, 0.0, viewAxisZ));
-
-        // right vector
-        m_axis.lines_.push_back(Eigen::Vector2i(0, 1));
-        m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::red));
-
-        // up vector
-        m_axis.lines_.push_back(Eigen::Vector2i(0, 2));
-        m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::yellow));
-
-        // view vector
-        m_axis.lines_.push_back(Eigen::Vector2i(0, 3));
-        m_axis.colors_.push_back(ecvColor::Rgb::ToEigen(ecvColor::green));
-    }
 }
 
 void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
@@ -1866,9 +1845,10 @@ bool ccCameraSensor::computeOrthoRectificationParams(
                     1.0 / norm,       1.0 / norm, 1.0 / norm, 1.0 / norm};
 
     // compute the A matrix and b vector
-    unsigned Neq = 2 * count;         // number of equations
-    double* A = new double[8 * Neq];  // 8 coefficients: a0 a1 a2 b0 b1 b2 c1 c2
-    double* b = new double[Neq];
+    unsigned Neq = 2 * count;  // number of equations
+    // 8 coefficients: a0 a1 a2 b0 b1 b2 c1 c2
+    double* A = new (std::nothrow) double[8 * Neq];
+    double* b = new (std::nothrow) double[Neq];
     if (!A || !b) {
         // not enough memory
         if (A) delete[] A;

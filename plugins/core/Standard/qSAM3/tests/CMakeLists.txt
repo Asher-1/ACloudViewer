@@ -1,9 +1,14 @@
+# The archive test is built even when the optional test suites are disabled.
+if(NOT TARGET gtest)
+    include("${CloudViewer_3RDPARTY_DIR}/googletest/googletest.cmake")
+endif()
+
 add_executable(test_sam3_video_mask_archive
     test_video_mask_archive.cpp ../src/VideoMaskArchive.cpp)
 target_include_directories(test_sam3_video_mask_archive PRIVATE
     ../include ${CMAKE_SOURCE_DIR}/core/AICore/include)
 target_link_libraries(test_sam3_video_mask_archive PRIVATE
-    Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui)
+    Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui gtest)
 set_target_properties(test_sam3_video_mask_archive PROPERTIES
     POSITION_INDEPENDENT_CODE ON)
 if(UNIX AND NOT APPLE)
@@ -11,7 +16,7 @@ if(UNIX AND NOT APPLE)
     target_link_options(test_sam3_video_mask_archive PRIVATE "-no-pie")
 endif()
 cloudviewer_set_bin_runtime_output_directory(test_sam3_video_mask_archive)
-add_test(NAME test_sam3_video_mask_archive COMMAND test_sam3_video_mask_archive)
+cloudviewer_add_test(NAME test_sam3_video_mask_archive COMMAND test_sam3_video_mask_archive)
 cloudviewer_set_plugin_test_env(test_sam3_video_mask_archive)
 
 if(NOT TARGET 3rdparty_googletest)
@@ -60,7 +65,7 @@ if(NOT MSVC)
 endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_sam3_contract)
-add_test(NAME test_sam3_contract COMMAND test_sam3_contract)
+cloudviewer_add_test(NAME test_sam3_contract COMMAND test_sam3_contract)
 # Qt is an indirect dependency here, outside the reach of the RUNPATH.
 cloudviewer_set_plugin_test_env(test_sam3_contract)
 set_tests_properties(test_sam3_contract PROPERTIES LABELS "model;sam3")

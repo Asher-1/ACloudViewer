@@ -27162,7 +27162,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../db_tree/ecvPropertiesTreeDelegate.cpp" line="509"/>
-        <source>ECV Object</source>
+        <source>CV Object</source>
         <translation>数据对象</translation>
     </message>
     <message>

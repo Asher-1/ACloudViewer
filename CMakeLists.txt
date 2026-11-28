@@ -116,7 +116,7 @@ option(WITH_MINIZIP               "Enable MiniZIP"                              
 option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering"            OFF)
 option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"             OFF)
 option(GLIBCXX_USE_CXX11_ABI "Set -D_GLIBCXX_USE_CXX11_ABI=1"                   ON )
-option(USE_QT6 "Use Qt6 instead of Qt5 (requires Qt6 >= 6.2.0)"                OFF)
+option(USE_QT6 "Use Qt6 instead of Qt5"                                        OFF)
 if(BUILD_GUI AND (WIN32 OR UNIX AND NOT LINUX_AARCH64 AND NOT APPLE_AARCH64))
     option(BUILD_WEBRTC           "Build WebRTC visualizer"                     ON )
 else()
@@ -220,8 +220,9 @@ option(ENABLE_AVX512 "Enable AVX-512 instructions (requires compatible CPU)"    
 
 # AICore: all AICore_* options — see cmake/AICoreOptions.cmake
 include(cmake/AICoreOptions.cmake)
+include(tests/Testing.cmake)
 # Foundation tests must also be discoverable when the AI runtime is disabled.
-if(BUILD_UNIT_TESTS)
+if(BUILD_UNIT_TESTS OR AICore_BUILD_TESTS OR VTKENGINE_BUILD_TESTS)
     enable_testing()
 endif()
 
@@ -751,8 +752,14 @@ if (USE_SIMD)
         # when binaries are compiled on newer CPUs but run on older ones
         # AVX and AVX2 are widely supported and should be kept enabled
         # AVX512 variants - disable all to ensure compatibility
-        # Include all AVX512 variants: f, cd, vl, bw, dq, ifma, pf, er, vbmi, vbmi2, vnni, bitalg, vpopcntdq
-        set(AVX512_DISABLE_FLAGS "-mno-avx512f -mno-avx512cd -mno-avx512vl -mno-avx512bw -mno-avx512dq -mno-avx512ifma -mno-avx512pf -mno-avx512er -mno-avx512vbmi -mno-avx512vbmi2 -mno-avx512vnni -mno-avx512bitalg -mno-avx512vpopcntdq")
+        # Include all AVX512 variants: f, cd, vl, bw, dq, ifma, vbmi, vbmi2, vnni, bitalg, vpopcntdq.
+        # Do NOT add -mno-avx512er/-mno-avx512pf: GCC 15 removed Xeon Phi
+        # (KNL/KNM) support and rejects those switches outright, which poisons
+        # CMAKE_C/CXX_FLAGS so every later try_compile (hardening probes,
+        # FindOpenMP, ...) fails. ER/PF are KNL-only extensions that no
+        # -march we emit can enable, so dropping the two switches is a no-op
+        # on every supported compiler.
+        set(AVX512_DISABLE_FLAGS "-mno-avx512f -mno-avx512cd -mno-avx512vl -mno-avx512bw -mno-avx512dq -mno-avx512ifma -mno-avx512vbmi -mno-avx512vbmi2 -mno-avx512vnni -mno-avx512bitalg -mno-avx512vpopcntdq")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${AVX512_DISABLE_FLAGS}")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${AVX512_DISABLE_FLAGS}")
         message(STATUS "Disabled AVX512 for compatibility (AVX/AVX2 remain enabled)")
@@ -1132,6 +1139,11 @@ endif()
 # call cmake script to deploy
 install(SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/cmake/PostInstall.cmake")
 install(CODE "MESSAGE(\"${MAIN_APP_NAME}\.${CLOUDVIEWER_VERSION} install successfully.\")")
+
+# Finalize first-party test build/run groups after every component is known.
+if(BUILD_UNIT_TESTS OR AICore_BUILD_TESTS OR VTKENGINE_BUILD_TESTS)
+    add_subdirectory(tests)
+endif()
 
 # Make compile_commands.json discoverable at the repo root so clangd (and
 # other C++ language servers) work out of the box on every platform, even

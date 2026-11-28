@@ -7,6 +7,8 @@
 
 #include "PpocrTableEditor.h"
 
+#include <Shortcuts/ecvKeySequences.h>
+
 #include <QAbstractScrollArea>
 #include <QAction>
 #include <QApplication>
@@ -28,7 +30,6 @@
 #include <QRegularExpression>
 #include <QScrollBar>
 #include <QSet>
-#include <QShortcut>
 #include <QSignalBlocker>
 #include <QStyle>
 #include <QStyleOptionViewItem>
@@ -503,6 +504,11 @@ protected:
         QTableWidget::mousePressEvent(event);
     }
     void keyPressEvent(QKeyEvent* event) override {
+        // Focus-independent fallback: the catalog QAction shortcuts use
+        // WidgetWithChildrenShortcut and only fire while the editor subtree
+        // holds focus, which offscreen/headless sessions do not guarantee.
+        // When a shortcut does match, Qt consumes the key event before it
+        // reaches this handler, so there is no double trigger.
         if (event->matches(QKeySequence::Copy))
             copy();
         else if (event->matches(QKeySequence::Paste))
@@ -1061,26 +1067,43 @@ PpocrTableEditor::PpocrTableEditor(const QString& text, QWidget* parent)
     connect(grid, &QTableWidget::itemSelectionChanged, this, syncActions);
     connect(grid, &QTableWidget::currentCellChanged, this,
             [syncActions]() { syncActions(); });
-    auto shortcut = [this](const QKeySequence& sequence,
-                           const std::function<void()>& callback) {
-        auto* binding = new QShortcut(sequence, this);
-        connect(binding, &QShortcut::activated, this, callback);
+    const auto command = [this](const QString& id, const QString& label,
+                                const QString& category,
+                                const QList<QKeySequence>& keys,
+                                const std::function<void()>& callback) {
+        QAction* action = new QAction(label, this);
+        action->setObjectName(QStringLiteral("PpocrTable_") + id);
+        action->setShortcuts(keys);
+        action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        addAction(action);
+        connect(action, &QAction::triggered, this, callback);
+        ecvKeySequences::instance().registerPluginCommand(
+                QStringLiteral("cvcorp.cloudviewer.plugin.qAnyLabeling"),
+                "annotation/ppocr/table/" + id, action,
+                tr("Annotation / PPOCR / Table / ") + category,
+                tr("X-AnyLabeling Annotation"));
     };
-    const QPair<const char*, const char*> formatBindings[] = {
-            {"Ctrl+B", "PpocrTableBold"},
-            {"Ctrl+I", "PpocrTableItalic"},
-            {"Ctrl+Shift+X", "PpocrTableStrike"}};
-    for (const auto& binding : formatBindings)
-        shortcut(QKeySequence(binding.first), [this, binding]() {
-            findChild<QToolButton*>(binding.second)->click();
-        });
-    shortcut(QKeySequence("Ctrl+S"), [save]() { save->click(); });
-    shortcut(QKeySequence(QKeySequence::Undo), grid->undo);
-    const QKeySequence redo(QKeySequence::Redo);
-    shortcut(redo, grid->redo);
-    // Avoid ambiguous duplicate shortcuts on platforms where Redo is Ctrl+Y.
-    if (redo != QKeySequence("Ctrl+Y"))
-        shortcut(QKeySequence("Ctrl+Y"), grid->redo);
+    command("format-bold", tr("Bold table text"), tr("Formatting"),
+            {QKeySequence("Ctrl+B")},
+            [this]() { findChild<QToolButton*>("PpocrTableBold")->click(); });
+    command("format-italic", tr("Italic table text"), tr("Formatting"),
+            {QKeySequence("Ctrl+I")},
+            [this]() { findChild<QToolButton*>("PpocrTableItalic")->click(); });
+    command("format-strike", tr("Strike through table text"), tr("Formatting"),
+            {QKeySequence("Ctrl+Shift+X")},
+            [this]() { findChild<QToolButton*>("PpocrTableStrike")->click(); });
+    command("save", tr("Save subtitle table"), tr("File"),
+            {QKeySequence("Ctrl+S")}, [save]() { save->click(); });
+    command("undo", tr("Undo table edit"), tr("History"),
+            {QKeySequence(QKeySequence::Undo)}, grid->undo);
+    command("copy", tr("Copy table cells"), tr("Clipboard"),
+            {QKeySequence(QKeySequence::Copy)}, grid->copy);
+    command("paste", tr("Paste table cells"), tr("Clipboard"),
+            {QKeySequence(QKeySequence::Paste)}, grid->paste);
+    QList<QKeySequence> redoKeys{QKeySequence(QKeySequence::Redo)};
+    if (!redoKeys.contains(QKeySequence("Ctrl+Y")))
+        redoKeys.append(QKeySequence("Ctrl+Y"));
+    command("redo", tr("Redo table edit"), tr("History"), redoKeys, grid->redo);
     grid->changed();
 }
 QString PpocrTableEditor::content() const {

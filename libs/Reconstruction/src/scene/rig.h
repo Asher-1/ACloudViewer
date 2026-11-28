@@ -42,15 +42,9 @@ public:
     // be added first and the sensor must not exist yet.
     void AddSensor(const sensor_t& sensor_id,
                    const std::optional<Rigid3d>& sensor_from_rig) {
+        AddSensor(sensor_id, std::nullopt, std::nullopt);
         if (sensor_from_rig) {
-            const Eigen::Quaterniond& q = sensor_from_rig->rotation();
-            AddSensor(sensor_id,
-                      std::optional<Eigen::Vector4d>(
-                              Eigen::Vector4d(q.w(), q.x(), q.y(), q.z())),
-                      std::optional<Eigen::Vector3d>(
-                              sensor_from_rig->translation()));
-        } else {
-            AddSensor(sensor_id, std::nullopt, std::nullopt);
+            SetSensorFromRig(sensor_id, *sensor_from_rig);
         }
     }
     bool HasSensor(const sensor_t& sensor_id) const;

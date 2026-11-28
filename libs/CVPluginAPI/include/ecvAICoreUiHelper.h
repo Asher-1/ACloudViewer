@@ -16,19 +16,23 @@
 
 #pragma once
 
+#include <QAction>
 #include <QApplication>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
+#include <QEvent>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QPointer>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QScreen>
+#include <QSignalBlocker>
 #include <QSizePolicy>
 #include <QSpinBox>
 #include <QStyle>
@@ -42,6 +46,58 @@
 // ---------------------------------------------------------------------------
 
 namespace ecvAICoreUi {
+
+/// Bind a workspace launcher to the lifetime of its actual window. Checked
+/// means the workspace is open (also while minimized), not that an inference is
+/// busy. Call once when the plugin creates its persistent workspace, never for
+/// momentary commands such as Run/Browse or for actions controlling a service.
+inline void bindDialogAction(QAction* action, QWidget* window) {
+    if (!action || !window) return;
+    class WorkspaceActionBinding final : public QObject {
+    public:
+        WorkspaceActionBinding(QAction* action, QWidget* window)
+            : QObject(window), m_action(action), m_window(window) {
+            action->setCheckable(true);
+            window->installEventFilter(this);
+            // A launcher's existing triggered handler shows/raises the window.
+            // Resync afterwards: clicking an already-open checkable QAction
+            // would otherwise toggle its check off without hiding the window.
+            connect(action, &QAction::triggered, this, [this]() {
+                if (m_window && m_window->isMinimized()) {
+                    m_window->setWindowState(m_window->windowState() &
+                                             ~Qt::WindowMinimized);
+                    m_window->show();
+                }
+                sync();
+            });
+            connect(window, &QObject::destroyed, action, [action]() {
+                const QSignalBlocker blocker(action);
+                action->setChecked(false);
+            });
+            sync();
+        }
+
+    protected:
+        bool eventFilter(QObject* watched, QEvent* event) override {
+            if (watched == m_window &&
+                (event->type() == QEvent::Show ||
+                 event->type() == QEvent::Hide ||
+                 event->type() == QEvent::WindowStateChange))
+                sync();
+            return false;
+        }
+
+    private:
+        void sync() {
+            if (!m_action || !m_window) return;
+            const QSignalBlocker blocker(m_action);
+            m_action->setChecked(m_window->isVisible());
+        }
+        QPointer<QAction> m_action;
+        QPointer<QWidget> m_window;
+    };
+    new WorkspaceActionBinding(action, window);
+}
 
 /// Multiply a nominal (96-dpi) pixel size by the screen's logical DPI factor.
 /// Keeps button heights, preview thumbnails, and minimum sizes consistent
@@ -129,17 +185,25 @@ inline QLabel* makeHintLabel(const QString& text, QWidget* parent = nullptr) {
 //  Button helpers
 // ---------------------------------------------------------------------------
 
-/// Teal accent "Try sample data" button — consistent across all AICore
-/// plugins.
+/// Prominent sample-data action shared by every plugin in all appearance modes.
+/// This semantic emphasis is intentional, not a replacement for ordinary
+/// chrome.
 inline QPushButton* makeSampleDataBtn(QWidget* parent = nullptr) {
     auto* btn = new QPushButton(QStringLiteral("\U0001f9ea  Try sample data"),
                                 parent);
+    btn->setProperty("ecvRole", QStringLiteral("sample-data"));
     btn->setStyleSheet(
-            "QPushButton { background: #00897b; color: white; font-weight: "
-            "bold; border: none; border-radius: 4px; padding: 5px 12px; }"
-            "QPushButton:hover { background: #00796b; }"
-            "QPushButton:pressed { background: #00695c; }"
-            "QPushButton:disabled { background: #b2dfdb; color: #e0f2f1; }");
+            "QPushButton[ecvRole=\"sample-data\"] { background: #00897b; "
+            "color: white; font-weight: bold; border: none; border-radius: "
+            "4px; "
+            "padding: 5px 12px; }"
+            "QPushButton[ecvRole=\"sample-data\"]:hover { background: #00796b; "
+            "}"
+            "QPushButton[ecvRole=\"sample-data\"]:pressed { background: "
+            "#00695c; }"
+            "QPushButton[ecvRole=\"sample-data\"]:disabled { background: "
+            "#b2dfdb; "
+            "color: #506b67; }");
     btn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     return btn;
 }
@@ -248,13 +312,10 @@ inline void tightenGroupBox(QGroupBox* box) {
     }
 }
 
-/// Clean tab-widget pane style — no border so content looks seamless.
+/// Keep ordinary tabs; native or Custom QStyle owns their visual chrome.
 inline void styleTabWidget(QTabWidget* tabs) {
     if (!tabs) return;
     tabs->setDocumentMode(false);
-    tabs->setStyleSheet(QStringLiteral(
-            "QTabWidget::pane { border: 0; padding: 2px; top: 0px; }"
-            "QTabBar::tab { padding: 4px 10px; min-height: 18px; }"));
 }
 
 // ---------------------------------------------------------------------------
@@ -388,10 +449,6 @@ inline QToolButton* makeDbSection(QWidget* dbContentWidget) {
     btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     btn->setText(QWidget::tr("DB Source Images (optional)"));
     btn->setCursor(Qt::PointingHandCursor);
-    btn->setStyleSheet(
-            "QToolButton { border: none; font-weight: bold; padding: 4px 6px; "
-            "  border-radius: 3px; color: palette(text); }"
-            "QToolButton:hover { background: palette(midlight); }");
     return btn;
 }
 

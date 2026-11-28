@@ -20,6 +20,7 @@
 #  define CV_RESTORE_EMIT_MACRO
 #endif
 #include <tbb/parallel_for.h>
+#include "cloudViewer/t/geometry/kernel/UVUnwrapping.h"
 #include <UVAtlas.h>
 // SAL macros from UVAtlas/DirectX headers may conflict with libstdc++ internals
 // (e.g., variable names like __out in <locale_conv.h>). Undefine them immediately
@@ -43,8 +44,6 @@
 #  undef CV_RESTORE_EMIT_MACRO
 #endif
 // clang-format on
-
-#include "cloudViewer/t/geometry/kernel/UVUnwrapping.h"
 
 namespace cloudViewer {
 namespace t {

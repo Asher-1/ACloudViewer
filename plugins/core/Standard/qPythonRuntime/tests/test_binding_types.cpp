@@ -11,55 +11,62 @@
 #include <pybind11/embed.h>
 #include <pybind11/stl_bind.h>
 // The shared converter header must preserve slots for actual Qt consumer headers.
-#include <cstdio>
 #include <ecvDisplayTools.h>
+#include <gtest/gtest.h>
+
+#include <memory>
 
 bool consumer_accepts_scalar_list(pybind11::handle value);
 void consumer_mutates_scalar_container(pybind11::handle value);
 
-int main()
+namespace
 {
-    namespace py = pybind11;
-    py::scoped_interpreter interpreter;
-    py::module_ module = py::module_::import("__main__");
-    using Scalars = cloudViewer::GenericDistribution::ScalarContainer;
-    py::bind_vector<Scalars>(module, "ScalarContainer");
-    py::list copied_values;
-    copied_values.append(1.0);
-    if (consumer_accepts_scalar_list(copied_values))
+namespace py = pybind11;
+using Scalars = cloudViewer::GenericDistribution::ScalarContainer;
+
+class BindingTypes : public ::testing::Test
+{
+  protected:
+    static void SetUpTestSuite()
     {
-        std::fprintf(
-            stderr,
-            "FAIL: ScalarContainer became a copied Python list in another translation unit\n");
-        return 1;
+        interpreter = std::make_unique<py::scoped_interpreter>();
+        py::module_ module = py::module_::import("__main__");
+        py::bind_vector<Scalars>(module, "ScalarContainer");
     }
+    static void TearDownTestSuite()
+    {
+        interpreter.reset();
+    }
+    static std::unique_ptr<py::scoped_interpreter> interpreter;
+};
+std::unique_ptr<py::scoped_interpreter> BindingTypes::interpreter;
+
+TEST_F(BindingTypes, OpaqueScalarContainerPreservesCrossTranslationUnitOwnership)
+{
+    py::list copiedValues;
+    copiedValues.append(1.0);
+    EXPECT_FALSE(consumer_accepts_scalar_list(copiedValues))
+        << "ScalarContainer must not become a copied Python list";
     Scalars values{ScalarType(1.0)};
     py::object borrowed = py::cast(&values, py::return_value_policy::reference);
     consumer_mutates_scalar_container(borrowed);
-    if (values.at(0) != ScalarType(7.0))
-    {
-        std::fprintf(stderr, "FAIL: ScalarContainer mutation did not reach its C++ owner\n");
-        return 1;
-    }
-    const QString input = QString::fromUtf8(u8"\u70b9\u4e91\u4e0e\u6807\u6ce8");
-    if (py::cast(input).cast<QString>() != input)
-    {
-        std::fprintf(stderr, "FAIL: QString UTF-8 conversion changed\n");
-        return 1;
-    }
-    const QByteArray bytes("a\0b\xff", 4);
-    if (py::cast(bytes).cast<QByteArray>() != bytes)
-    {
-        std::fprintf(stderr, "FAIL: QByteArray conversion changed binary or NUL data\n");
-        return 1;
-    }
-    if (!py::cast(QVariant(true)).cast<bool>() || py::cast(QVariant(42)).cast<int>() != 42 ||
-        py::cast(QVariant(input)).cast<QString>() != input || !py::cast(QVariant()).is_none())
-    {
-        std::fprintf(stderr, "FAIL: QVariant conversion changed supported value semantics\n");
-        return 1;
-    }
-    std::puts(
-        "PASS: cross-translation-unit opaque reference, QString, bytes and QVariant conversion");
-    return 0;
+    EXPECT_EQ(values.at(0), ScalarType(7.0)) << "Mutation must reach the C++ owner";
 }
+
+TEST_F(BindingTypes, QStringPreservesUtf8AndBytesPreserveEmbeddedNul)
+{
+    const QString input = QString::fromUtf8(u8"\u70b9\u4e91\u4e0e\u6807\u6ce8");
+    EXPECT_EQ(py::cast(input).cast<QString>(), input);
+    const QByteArray bytes("a\0b\xff", 4);
+    EXPECT_EQ(py::cast(bytes).cast<QByteArray>(), bytes);
+}
+
+TEST_F(BindingTypes, QVariantPreservesSupportedValueAndNoneSemantics)
+{
+    const QString input = QString::fromUtf8(u8"\u70b9\u4e91\u4e0e\u6807\u6ce8");
+    EXPECT_TRUE(py::cast(QVariant(true)).cast<bool>());
+    EXPECT_EQ(py::cast(QVariant(42)).cast<int>(), 42);
+    EXPECT_EQ(py::cast(QVariant(input)).cast<QString>(), input);
+    EXPECT_TRUE(py::cast(QVariant()).is_none());
+}
+} // namespace

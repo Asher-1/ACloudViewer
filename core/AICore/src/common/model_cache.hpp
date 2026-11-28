@@ -62,6 +62,10 @@ inline std::string vlx_seek_model_cache_dir() {
     return extract_model_dir("vlx_seek_models");
 }
 
+inline std::string wevisone_model_cache_dir() {
+    return extract_model_dir("wevisone_models");
+}
+
 inline std::string sam3_model_cache_dir() {
     return extract_model_dir("sam3_models");
 }

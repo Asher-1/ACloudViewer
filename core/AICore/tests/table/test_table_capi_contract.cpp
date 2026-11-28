@@ -5,103 +5,100 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// Model-free contract of the public `table` C ABI: catalog + digest closure,
-// NULL safety of every accessor, option validation (struct_size /
-// abi_version / model path) and the shutdown idempotence.
+// Model-free contract of the public table C ABI: catalog + digest closure,
+// NULL safety of every accessor, option validation and shutdown idempotence.
 
-#include <cstdio>
+#include <gtest/gtest.h>
+
 #include <cstring>
 #include <string>
 
 #include "aicore/asset_digests.h"
 #include "aicore/table_capi.h"
-#include "tests/common/test_macros.hpp"
 
-static int failures = 0;
-
-namespace {
-
-void testCatalog() {
-    AICORE_CHECK(aicore_table_model_count() == 3);
+TEST(TableCApiContract, CatalogMatchesPublishedNamesRolesAndDigests) {
+    ASSERT_EQ(aicore_table_model_count(), 3);
     const std::string base = aicore_table_model_download_base();
-    AICORE_CHECK(!base.empty() && base.back() == '/');
+    ASSERT_FALSE(base.empty());
+    EXPECT_EQ(base.back(), '/');
     const char* quants[] = {"f32", "f16", "q8_0"};
     for (int i = 0; i < aicore_table_model_count(); ++i) {
-        const aicore_table_model_entry* e = aicore_table_model_at(i);
-        AICORE_CHECK(e != nullptr);
-        if (!e) continue;
-        const std::string name = e->filename;
-        AICORE_CHECK(name ==
-                     std::string("slanet-plus-table-") + quants[i] + ".gguf");
-        AICORE_CHECK(std::string(e->download_url) == base + name);
-        AICORE_CHECK(std::strcmp(e->role, "table") == 0);
-        AICORE_CHECK(std::strcmp(e->arch, "slanet_plus") == 0);
-        AICORE_CHECK(e->display_name && e->display_name[0]);
-        // Every published variant is anchored by a content digest.
-        const char* sha = aicore::AssetDigestForFile(e->filename);
-        AICORE_CHECK(sha != nullptr && std::strlen(sha) == 64);
-        AICORE_CHECK(aicore_table_model_by_filename(e->filename) != nullptr);
+        const aicore_table_model_entry* entry = aicore_table_model_at(i);
+        ASSERT_NE(entry, nullptr);
+        ASSERT_NE(entry->filename, nullptr);
+        const std::string name = entry->filename;
+        EXPECT_EQ(name,
+                  std::string("slanet-plus-table-") + quants[i] + ".gguf");
+        ASSERT_NE(entry->download_url, nullptr);
+        EXPECT_EQ(std::string(entry->download_url), base + name);
+        ASSERT_NE(entry->role, nullptr);
+        EXPECT_STREQ(entry->role, "table");
+        ASSERT_NE(entry->arch, nullptr);
+        EXPECT_STREQ(entry->arch, "slanet_plus");
+        EXPECT_TRUE(entry->display_name && entry->display_name[0]);
+        const char* sha = aicore::AssetDigestForFile(entry->filename);
+        ASSERT_NE(sha, nullptr);
+        EXPECT_EQ(std::strlen(sha), 64);
+        EXPECT_NE(aicore_table_model_by_filename(entry->filename), nullptr);
     }
-    AICORE_CHECK(aicore_table_model_at(-1) == nullptr);
-    AICORE_CHECK(aicore_table_model_at(3) == nullptr);
-    AICORE_CHECK(aicore_table_model_by_filename("missing.gguf") == nullptr);
-    AICORE_CHECK(aicore_table_model_by_filename(nullptr) == nullptr);
+    EXPECT_EQ(aicore_table_model_at(-1), nullptr);
+    EXPECT_EQ(aicore_table_model_at(3), nullptr);
+    EXPECT_EQ(aicore_table_model_by_filename("missing.gguf"), nullptr);
+    EXPECT_EQ(aicore_table_model_by_filename(nullptr), nullptr);
+
     char* cache = aicore_table_model_cache_dir();
-    AICORE_CHECK(cache != nullptr &&
-                 std::strstr(cache, "ocr_models") != nullptr);
+    ASSERT_NE(cache, nullptr);
+    EXPECT_NE(std::strstr(cache, "ocr_models"), nullptr);
     aicore_table_free_buffer(cache);
     aicore_table_free_buffer(nullptr);
 }
 
-void testNullSafety() {
-    AICORE_CHECK(aicore_table_context_create(nullptr) == nullptr);
-    AICORE_CHECK(aicore_table_last_error()[0] != '\0');
+TEST(TableCApiContract, NullContextAccessorsReturnEmptyDefaults) {
+    EXPECT_EQ(aicore_table_context_create(nullptr), nullptr);
+    ASSERT_NE(aicore_table_last_error(), nullptr);
+    EXPECT_NE(aicore_table_last_error()[0], '\0');
     aicore_table_context_destroy(nullptr);
-    AICORE_CHECK(aicore_table_context_ready(nullptr) == 0);
-    AICORE_CHECK(aicore_table_context_device(nullptr) != nullptr);
-    AICORE_CHECK(aicore_table_run(nullptr, nullptr, nullptr, nullptr,
-                                  nullptr) == nullptr);
-    AICORE_CHECK(aicore_table_count(nullptr) == 0);
-    AICORE_CHECK(aicore_table_at(nullptr, 0) == nullptr);
-    AICORE_CHECK(aicore_table_cell_count(nullptr) == 0);
-    AICORE_CHECK(aicore_table_cell_at(nullptr, 0) == nullptr);
-    AICORE_CHECK(aicore_table_token_at(nullptr, 0, 0) == nullptr);
+    EXPECT_EQ(aicore_table_context_ready(nullptr), 0);
+    EXPECT_NE(aicore_table_context_device(nullptr), nullptr);
+    EXPECT_EQ(aicore_table_run(nullptr, nullptr, nullptr, nullptr, nullptr),
+              nullptr);
+    EXPECT_EQ(aicore_table_count(nullptr), 0);
+    EXPECT_EQ(aicore_table_at(nullptr, 0), nullptr);
+    EXPECT_EQ(aicore_table_cell_count(nullptr), 0);
+    EXPECT_EQ(aicore_table_cell_at(nullptr, 0), nullptr);
+    EXPECT_EQ(aicore_table_token_at(nullptr, 0, 0), nullptr);
     aicore_table_result_release(nullptr);
-    const aicore_pipeline_timings t = aicore_table_timings(nullptr);
-    AICORE_CHECK(t.valid_fields == 0);
+    const aicore_pipeline_timings timings = aicore_table_timings(nullptr);
+    EXPECT_EQ(timings.valid_fields, 0);
 }
 
-void testOptionValidation() {
-    aicore_table_options o{};
-    o.struct_size = sizeof(o);
-    o.abi_version = AICORE_TABLE_ABI_VERSION;
-    o.device = "cpu";
-    // Missing model path.
-    AICORE_CHECK(aicore_table_context_create(&o) == nullptr);
-    o.model_path = "/nonexistent/slanet-plus-table-f32.gguf";
-    AICORE_CHECK(aicore_table_context_create(&o) == nullptr);
-    AICORE_CHECK(std::strlen(aicore_table_last_error()) > 0);
-    aicore_table_options small = o;
-    small.struct_size = sizeof(o) - 1;
-    AICORE_CHECK(aicore_table_context_create(&small) == nullptr);
-    aicore_table_options abi = o;
-    abi.abi_version = AICORE_TABLE_ABI_VERSION + 1;
-    AICORE_CHECK(aicore_table_context_create(&abi) == nullptr);
+TEST(TableCApiContract, MissingModelPathIsRejected) {
+    aicore_table_options options{};
+    options.struct_size = sizeof(options);
+    options.abi_version = AICORE_TABLE_ABI_VERSION;
+    options.device = "cpu";
+    EXPECT_EQ(aicore_table_context_create(&options), nullptr);
 }
 
-}  // namespace
+TEST(TableCApiContract, MissingModelAndInvalidAbiOptionsAreRejected) {
+    aicore_table_options options{};
+    options.struct_size = sizeof(options);
+    options.abi_version = AICORE_TABLE_ABI_VERSION;
+    options.device = "cpu";
+    options.model_path = "/nonexistent/slanet-plus-table-f32.gguf";
+    EXPECT_EQ(aicore_table_context_create(&options), nullptr);
+    ASSERT_NE(aicore_table_last_error(), nullptr);
+    EXPECT_GT(std::strlen(aicore_table_last_error()), 0);
 
-int main() {
-    testCatalog();
-    testNullSafety();
-    testOptionValidation();
+    aicore_table_options small = options;
+    small.struct_size = sizeof(options) - 1;
+    EXPECT_EQ(aicore_table_context_create(&small), nullptr);
+    aicore_table_options future_abi = options;
+    future_abi.abi_version = AICORE_TABLE_ABI_VERSION + 1;
+    EXPECT_EQ(aicore_table_context_create(&future_abi), nullptr);
+}
+
+TEST(TableCApiContract, RuntimeShutdownIsIdempotent) {
     aicore_table_runtime_shutdown();
     aicore_table_runtime_shutdown();
-    if (failures) {
-        std::fprintf(stderr, "test_table_capi_contract: %d failure(s)\n",
-                     failures);
-        return 1;
-    }
-    std::printf("test_table_capi_contract: OK\n");
-    return 0;
 }

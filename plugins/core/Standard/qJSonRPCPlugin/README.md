@@ -41,6 +41,26 @@ Agent integration (MCP, harness) reuses the same API; see `agent-integration/REA
 
 Requires **Qt WebSockets** (and Qt network stack) in your Qt build.
 
+### Functional icon
+
+`RPC-01` uses a blue automation-client screen, neutral application server and
+green request/reply arrows, with an outlined `RPC` label. It represents the
+checkable WebSocket JSON-RPC service start/stop action, rather than file saving.
+The SVG remains plugin-local at `images/icon.svg` and retains the existing
+`:/CC/plugin/JsonRPCPlugin/images/icon.svg` metadata/QRC URL. Its default decode
+size is 128×128; letterforms are paths with no runtime font requirement.
+
+The canonical authoring function is `rpc_interface()` in
+`scripts/icon_hd/logo/interfacetools.py` at the repository root. Regenerate this
+single authorized icon without running any broad artwork rewrite:
+
+```bash
+PYTHONPATH=scripts/icon_hd python3 -c 'from pathlib import Path; from logo.interfacetools import rpc_interface; Path("plugins/core/Standard/qJSonRPCPlugin/images/icon.svg").write_text(rpc_interface(), encoding="utf-8")'
+```
+
+The artwork is an original functional composition using the repository's measured
+ParaView palette and outline language; it is not a copied upstream ParaView SVG.
+
 ## Source layout
 
 One class (`JsonRPCPlugin`) with its handlers split by method family. Handler bodies do not call each other across families; they share only the entity lookups on the class and the helpers below.

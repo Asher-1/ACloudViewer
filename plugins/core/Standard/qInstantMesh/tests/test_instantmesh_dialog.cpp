@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <QAbstractItemView>
 #include <QApplication>
 #include <QCryptographicHash>
@@ -250,250 +252,264 @@ static int test_real_sample_cache(const QString& root) {
     return failures ? 1 : 0;
 }
 
-int main(int argc, char** argv) {
-    QApplication app(argc, argv);
-    ConsoleCapture console;
-    CVLog::RegisterInstance(&console);
-    app.setOrganizationName(QStringLiteral("InstantMeshContract"));
-    app.setApplicationName(QStringLiteral("Dialog"));
-    if (argc == 3 && QString::fromLocal8Bit(argv[1]) == "--sample-cache") {
-        const int result =
-                test_real_sample_cache(QString::fromLocal8Bit(argv[2]));
-        CVLog::RegisterInstance(nullptr);
-        return result;
-    }
+class InstantMeshDialogTest : public ::testing::Test {
+protected:
     QTemporaryDir tmp;
-    qputenv("CLOUDVIEWER_DATA_ROOT", tmp.path().toUtf8());
-    QSettings::setDefaultFormat(QSettings::IniFormat);
-    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
-                       tmp.filePath("settings"));
-    const auto kind = ecvTestDataRepository::Dataset::Image2Mesh;
-    const QString directory =
-            ecvTestDataRepository::extractPath(kind) + "/examples_images";
-    if (!QDir().mkpath(directory)) return 1;
-    QImage sample(8, 8, QImage::Format_RGB888);
-    sample.fill(Qt::green);
-    QFile corrupt(directory + "/0.png");
-    if (!corrupt.open(QIODevice::WriteOnly)) return 1;
-    corrupt.write("invalid PNG");
-    corrupt.close();
-    int failures = 0;
-    const auto check = [&](bool ok, const char* reason) {
-        if (!ok) {
-            std::fprintf(stderr, "FAIL: %s\n", reason);
-            ++failures;
+    ConsoleCapture console;
+    QString directory;
+    QImage sample;
+    static constexpr auto kind = ecvTestDataRepository::Dataset::Image2Mesh;
+    void SetUp() override {
+        ASSERT_TRUE(tmp.isValid());
+        CVLog::RegisterInstance(&console);
+        qputenv("CLOUDVIEWER_DATA_ROOT", tmp.path().toUtf8());
+        QSettings::setDefaultFormat(QSettings::IniFormat);
+        QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
+                           tmp.filePath("settings"));
+        directory =
+                ecvTestDataRepository::extractPath(kind) + "/examples_images";
+        ASSERT_FALSE((!QDir().mkpath(directory)));
+        sample = QImage(8, 8, QImage::Format_RGB888);
+        sample.fill(Qt::green);
+        QFile corrupt(directory + "/0.png");
+        ASSERT_FALSE((!corrupt.open(QIODevice::WriteOnly)));
+        corrupt.write("invalid PNG");
+        corrupt.close();
+        EXPECT_TRUE(
+                (!ecvTestDataRepository::instance().isDatasetAvailable(kind)))
+                << "Image2Mesh must not be ready with only corrupt images and "
+                   "no valid "
+                   "ZIP";
+        ASSERT_FALSE((!sample.save(directory + "/A.png")));
+        EXPECT_TRUE(
+                (!ecvTestDataRepository::instance().isDatasetAvailable(kind)))
+                << "The shared bundle must also prepare SAM3D's consumed "
+                   "subtree";
+        const QString sam3dDirectory =
+                ecvTestDataRepository::extractPath(kind) +
+                "/sam3d_images/scene";
+        ASSERT_FALSE((!QDir().mkpath(sam3dDirectory) ||
+                      !sample.save(sam3dDirectory + "/image.png")));
+        EXPECT_TRUE(
+                (ecvTestDataRepository::instance().isDatasetAvailable(kind)))
+                << "Allow offline reuse when cartoon_panda.png is absent but a "
+                   "decodable candidate "
+                   "exists";
+    }
+    void TearDown() override { CVLog::RegisterInstance(nullptr); }
+};
+
+TEST_F(InstantMeshDialogTest, LogsRouteExactlyOnceToApplicationConsole) {
+    InstantMeshDialog dialog;
+    console.messages.clear();
+    dialog.appendLog("[InstantMesh] Console routing probe");
+    EXPECT_TRUE((
+            console.messages.count("[InstantMesh] Console routing probe") == 1))
+            << "A plugin log must reach the application console exactly once";
+}
+
+TEST_F(InstantMeshDialogTest,
+       MinimumAndExpandedLayoutsKeepFieldsFeedbackAndActionsVisible) {
+    InstantMeshDialog dialog;
+    dialog.show();
+    QElapsedTimer exposure;
+    exposure.start();
+    while (dialog.windowHandle() && !dialog.windowHandle()->isExposed() &&
+           exposure.elapsed() < 3000)
+        QApplication::processEvents(QEventLoop::AllEvents, 20);
+    dialog.setProgressStage(1, "Diffusion", 5, 75);
+    // The window minimum is pinned to the real layout minimum (geometry
+    // conservation); the smallest supported size is that floor, and a
+    // larger probe confirms normal resizing.
+    const QSize minimum = dialog.minimumSize();
+    for (const QSize size :
+         {minimum, QSize(800, 600).expandedTo(minimum + QSize(120, 120))}) {
+        dialog.resize(size);
+        QApplication::processEvents();
+        // Cross-platform UI tolerance: Windows DPI scaling and Qt platform
+        // plugin differences can cause 3-10 pixel deviations in dialog
+        // size.
+        const QSize actualSize = dialog.size();
+        const int sizeDelta =
+                std::max(std::abs(actualSize.width() - size.width()),
+                         std::abs(actualSize.height() - size.height()));
+        if (sizeDelta > 15) {
+            std::fprintf(stderr, "Requested=%dx%d actual=%dx%d minimum=%dx%d\n",
+                         size.width(), size.height(), actualSize.width(),
+                         actualSize.height(), dialog.minimumWidth(),
+                         dialog.minimumHeight());
         }
-    };
-    check(!ecvTestDataRepository::instance().isDatasetAvailable(kind),
-          "Image2Mesh must not be ready with only corrupt images and no valid "
-          "ZIP");
-    if (!sample.save(directory + "/A.png")) return 1;
-    check(!ecvTestDataRepository::instance().isDatasetAvailable(kind),
-          "The shared bundle must also prepare SAM3D's consumed subtree");
-    const QString sam3dDirectory =
-            ecvTestDataRepository::extractPath(kind) + "/sam3d_images/scene";
-    if (!QDir().mkpath(sam3dDirectory) ||
-        !sample.save(sam3dDirectory + "/image.png"))
-        return 1;
-    check(ecvTestDataRepository::instance().isDatasetAvailable(kind),
-          "Allow offline reuse when cartoon_panda.png is absent but a "
-          "decodable candidate "
-          "exists");
-    {
-        InstantMeshDialog dialog;
-        console.messages.clear();
-        dialog.appendLog("[InstantMesh] Console routing probe");
-        check(console.messages.count("[InstantMesh] Console routing probe") ==
-                      1,
-              "A plugin log must reach the application console exactly once");
-        dialog.show();
-        QElapsedTimer exposure;
-        exposure.start();
-        while (dialog.windowHandle() && !dialog.windowHandle()->isExposed() &&
-               exposure.elapsed() < 3000)
-            QApplication::processEvents(QEventLoop::AllEvents, 20);
-        dialog.setProgressStage(1, "Diffusion", 5, 75);
-        // The window minimum is pinned to the real layout minimum (geometry
-        // conservation); the smallest supported size is that floor, and a
-        // larger probe confirms normal resizing.
-        const QSize minimum = dialog.minimumSize();
-        for (const QSize size :
-             {minimum, QSize(800, 600).expandedTo(minimum + QSize(120, 120))}) {
-            dialog.resize(size);
-            QApplication::processEvents();
-            // Cross-platform UI tolerance: Windows DPI scaling and Qt platform
-            // plugin differences can cause 3-10 pixel deviations in dialog
-            // size.
-            const QSize actualSize = dialog.size();
-            const int sizeDelta =
-                    std::max(std::abs(actualSize.width() - size.width()),
-                             std::abs(actualSize.height() - size.height()));
-            if (sizeDelta > 15) {
+        EXPECT_TRUE((sizeDelta <= 15)) << "The dialog must approximately fit "
+                                          "the requested window size "
+                                          "(<=15px tolerance per dimension)";
+        for (auto* scroll : dialog.findChildren<QScrollArea*>()) {
+            // Cross-platform UI tolerance: allow up to 30 pixels.
+            const int hScrollMax = scroll->horizontalScrollBar()->maximum();
+            if (hScrollMax > 30) {
                 std::fprintf(stderr,
-                             "Requested=%dx%d actual=%dx%d minimum=%dx%d\n",
-                             size.width(), size.height(), actualSize.width(),
-                             actualSize.height(), dialog.minimumWidth(),
-                             dialog.minimumHeight());
-            }
-            check(sizeDelta <= 15,
-                  "The dialog must approximately fit the requested window size "
-                  "(<=15px tolerance per dimension)");
-            for (auto* scroll : dialog.findChildren<QScrollArea*>()) {
-                // Cross-platform UI tolerance: allow up to 30 pixels.
-                const int hScrollMax = scroll->horizontalScrollBar()->maximum();
-                if (hScrollMax > 30) {
-                    std::fprintf(stderr,
-                                 "Window=%dx%d viewport=%d content_min=%d "
-                                 "content=%d\n",
-                                 size.width(), size.height(),
-                                 scroll->viewport()->width(),
-                                 scroll->widget()->minimumSizeHint().width(),
-                                 scroll->widget()->width());
-                    for (auto* group : scroll->findChildren<QGroupBox*>()) {
-                        std::fprintf(stderr, "Group %s minimum=%d hint=%d\n",
-                                     group->title().toUtf8().constData(),
-                                     group->minimumSizeHint().width(),
-                                     group->sizeHint().width());
-                        if (auto* grid = qobject_cast<QGridLayout*>(
-                                    group->layout())) {
-                            for (int i = 0; i < grid->count(); ++i) {
-                                int row, column, rows, columns;
-                                grid->getItemPosition(i, &row, &column, &rows,
-                                                      &columns);
-                                std::fprintf(
-                                        stderr,
-                                        "Grid item r%d c%d span%dx%d "
-                                        "minimum=%d\n",
-                                        row, column, rows, columns,
-                                        grid->itemAt(i)->minimumSize().width());
-                            }
+                             "Window=%dx%d viewport=%d content_min=%d "
+                             "content=%d\n",
+                             size.width(), size.height(),
+                             scroll->viewport()->width(),
+                             scroll->widget()->minimumSizeHint().width(),
+                             scroll->widget()->width());
+                for (auto* group : scroll->findChildren<QGroupBox*>()) {
+                    std::fprintf(stderr, "Group %s minimum=%d hint=%d\n",
+                                 group->title().toUtf8().constData(),
+                                 group->minimumSizeHint().width(),
+                                 group->sizeHint().width());
+                    if (auto* grid =
+                                qobject_cast<QGridLayout*>(group->layout())) {
+                        for (int i = 0; i < grid->count(); ++i) {
+                            int row, column, rows, columns;
+                            grid->getItemPosition(i, &row, &column, &rows,
+                                                  &columns);
+                            std::fprintf(
+                                    stderr,
+                                    "Grid item r%d c%d span%dx%d "
+                                    "minimum=%d\n",
+                                    row, column, rows, columns,
+                                    grid->itemAt(i)->minimumSize().width());
                         }
                     }
-                    for (auto* combo : scroll->findChildren<QComboBox*>())
-                        std::fprintf(stderr, "Combo %s minimum=%d hint=%d\n",
-                                     combo->currentText().toUtf8().constData(),
-                                     combo->minimumSizeHint().width(),
-                                     combo->sizeHint().width());
-                    for (auto* box : scroll->findChildren<QCheckBox*>())
-                        std::fprintf(stderr, "Checkbox %s minimum=%d hint=%d\n",
-                                     box->text().toUtf8().constData(),
-                                     box->minimumSizeHint().width(),
-                                     box->sizeHint().width());
                 }
-                check(scroll->horizontalScrollBar()->maximum() == 0,
-                      "Compact configuration must not hide fields behind "
-                      "horizontal scrolling");
-                for (auto* field : scroll->widget()->findChildren<QWidget*>()) {
-                    if (!(qobject_cast<QComboBox*>(field) ||
-                          qobject_cast<QCheckBox*>(field) ||
-                          qobject_cast<QAbstractSpinBox*>(field) ||
-                          qobject_cast<QPushButton*>(field)) ||
-                        !field->isVisibleTo(scroll->widget()))
-                        continue;
-                    const QPoint origin =
-                            field->mapTo(scroll->viewport(), QPoint());
-                    check(origin.x() >= 0 &&
-                                  origin.x() + field->width() <=
-                                          scroll->viewport()->width(),
-                          "Every configuration field must fit horizontally "
-                          "inside the viewport");
-                }
-                for (auto* combo :
-                     scroll->widget()->findChildren<QComboBox*>()) {
-                    scroll->ensureWidgetVisible(combo);
-                    combo->showPopup();
-                    QApplication::processEvents();
-                    check(combo->view()->sizeHintForColumn(
-                                  combo->modelColumn()) <=
-                                  combo->view()->viewport()->width(),
-                          "The popup must keep full catalog labels readable in "
-                          "a narrow form");
-                    combo->hidePopup();
-                }
+                for (auto* combo : scroll->findChildren<QComboBox*>())
+                    std::fprintf(stderr, "Combo %s minimum=%d hint=%d\n",
+                                 combo->currentText().toUtf8().constData(),
+                                 combo->minimumSizeHint().width(),
+                                 combo->sizeHint().width());
+                for (auto* box : scroll->findChildren<QCheckBox*>())
+                    std::fprintf(stderr, "Checkbox %s minimum=%d hint=%d\n",
+                                 box->text().toUtf8().constData(),
+                                 box->minimumSizeHint().width(),
+                                 box->sizeHint().width());
             }
-            for (auto* button : dialog.findChildren<QPushButton*>()) {
-                if (button->text() == "Generate 3D Mesh" ||
-                    button->text() == "Cancel" ||
-                    button->text().contains("sample", Qt::CaseInsensitive)) {
-                    const QRect rect(button->mapTo(&dialog, QPoint()),
-                                     button->size());
-                    check(button->isVisible() && dialog.rect().contains(rect) &&
-                                  !button->visibleRegion().isEmpty(),
-                          "Sample and run/cancel actions must stay visible "
-                          "without scrolling");
-                }
+            EXPECT_TRUE((scroll->horizontalScrollBar()->maximum() == 0))
+                    << "Compact configuration must not hide fields behind "
+                       "horizontal scrolling";
+            for (auto* field : scroll->widget()->findChildren<QWidget*>()) {
+                if (!(qobject_cast<QComboBox*>(field) ||
+                      qobject_cast<QCheckBox*>(field) ||
+                      qobject_cast<QAbstractSpinBox*>(field) ||
+                      qobject_cast<QPushButton*>(field)) ||
+                    !field->isVisibleTo(scroll->widget()))
+                    continue;
+                const QPoint origin =
+                        field->mapTo(scroll->viewport(), QPoint());
+                EXPECT_TRUE((origin.x() >= 0 &&
+                             origin.x() + field->width() <=
+                                     scroll->viewport()->width()))
+                        << "Every configuration field must fit horizontally "
+                           "inside the viewport";
             }
-            auto* progress = dialog.findChild<QProgressBar*>();
-            check(progress && progress->isVisible() &&
-                          dialog.rect().contains(
-                                  QRect(progress->mapTo(&dialog, QPoint()),
-                                        progress->size())) &&
-                          !progress->visibleRegion().isEmpty(),
-                  "Active progress must stay visible without scrolling");
-        }
-        dialog.setRunning(false);
-        check(dialog.getSettings().inputPath.endsWith("/A.png"),
-              "Select the first sorted decodable candidate when "
-              "cartoon_panda.png is "
-              "absent");
-        QComboBox* rmbg = nullptr;
-        for (auto* combo : dialog.findChildren<QComboBox*>())
-            if (combo->findData(QStringLiteral("rmbg_f16.gguf")) >= 0)
-                rmbg = combo;
-        check(rmbg != nullptr, "Missing RMBG selection widget");
-        if (rmbg) {
-            check(rmbg->count() == aicore_rmbg_model_count(),
-                  "RMBG precision choices must project the entire public "
-                  "catalog");
-            for (int i = 0; i < rmbg->count(); ++i) {
-                rmbg->setCurrentIndex(i);
-                check(dialog.getSettings().rmbgModelPath.endsWith(
-                              rmbg->currentData().toString()),
-                      "Settings must carry the selected RMBG file");
+            for (auto* combo : scroll->widget()->findChildren<QComboBox*>()) {
+                scroll->ensureWidgetVisible(combo);
+                combo->showPopup();
+                QApplication::processEvents();
+                EXPECT_TRUE((combo->view()->sizeHintForColumn(
+                                     combo->modelColumn()) <=
+                             combo->view()->viewport()->width()))
+                        << "The popup must keep full catalog labels readable "
+                           "in "
+                           "a narrow form";
+                combo->hidePopup();
             }
         }
-        if (!sample.save(directory + "/cartoon_panda.png")) return 1;
-        ecvTestDataRepository::instance().ensureDatasetReady(kind);
-        check(dialog.getSettings().inputPath.endsWith("/cartoon_panda.png"),
-              "Shared datasetReady must autofill the prepared sample");
-        QProgressBar* idleBar = dialog.findChild<QProgressBar*>();
-        check(idleBar && idleBar->maximum() > idleBar->minimum() &&
-                      idleBar->value() == 0,
-              "A completed sample preparation must restore the progress row "
-              "to an idle determinate bar, never a busy (0,0) indicator");
-        int canceled = 0;
-        QObject::connect(&dialog, &InstantMeshDialog::cancelRequested,
-                         [&] { ++canceled; });
-        dialog.show();
-        dialog.setRunning(true);
-        dialog.close();
-        check(!dialog.isVisible() && canceled == 1,
-              "Closing while running must request cancellation and stop "
-              "receiving results");
-        dialog.setRunning(false);
+        for (auto* button : dialog.findChildren<QPushButton*>()) {
+            if (button->text() == "Generate 3D Mesh" ||
+                button->text() == "Cancel" ||
+                button->text().contains("sample", Qt::CaseInsensitive)) {
+                const QRect rect(button->mapTo(&dialog, QPoint()),
+                                 button->size());
+                EXPECT_TRUE((button->isVisible() &&
+                             dialog.rect().contains(rect) &&
+                             !button->visibleRegion().isEmpty()))
+                        << "Sample and run/cancel actions must stay visible "
+                           "without scrolling";
+            }
+        }
+        auto* progress = dialog.findChild<QProgressBar*>();
+        EXPECT_TRUE((
+                progress && progress->isVisible() &&
+                dialog.rect().contains(QRect(progress->mapTo(&dialog, QPoint()),
+                                             progress->size())) &&
+                !progress->visibleRegion().isEmpty()))
+                << "Active progress must stay visible without scrolling";
     }
-    if (!sample.save(directory + "/cartoon_panda.png") ||
-        !sample.save(directory + "/T.png"))
-        return 1;
+    dialog.setRunning(false);
+}
+
+TEST_F(InstantMeshDialogTest,
+       CatalogSelectionSampleCompletionAndCloseCancellation) {
+    InstantMeshDialog dialog;
+    EXPECT_TRUE((dialog.getSettings().inputPath.endsWith("/A.png")))
+            << "Select the first sorted decodable candidate when "
+               "cartoon_panda.png is "
+               "absent";
+    QComboBox* rmbg = nullptr;
+    for (auto* combo : dialog.findChildren<QComboBox*>())
+        if (combo->findData(QStringLiteral("rmbg_f16.gguf")) >= 0) rmbg = combo;
+    EXPECT_TRUE((rmbg != nullptr)) << "Missing RMBG selection widget";
+    if (rmbg) {
+        EXPECT_TRUE((rmbg->count() == aicore_rmbg_model_count()))
+                << "RMBG precision choices must project the entire public "
+                   "catalog";
+        for (int i = 0; i < rmbg->count(); ++i) {
+            rmbg->setCurrentIndex(i);
+            EXPECT_TRUE((dialog.getSettings().rmbgModelPath.endsWith(
+                    rmbg->currentData().toString())))
+                    << "Settings must carry the selected RMBG file";
+        }
+    }
+    ASSERT_FALSE((!sample.save(directory + "/cartoon_panda.png")));
+    ecvTestDataRepository::instance().ensureDatasetReady(kind);
+    EXPECT_TRUE((dialog.getSettings().inputPath.endsWith("/cartoon_panda.png")))
+            << "Shared datasetReady must autofill the prepared sample";
+    QProgressBar* idleBar = dialog.findChild<QProgressBar*>();
+    EXPECT_TRUE((idleBar && idleBar->maximum() > idleBar->minimum() &&
+                 idleBar->value() == 0))
+            << "A completed sample preparation must restore the progress row "
+               "to an idle determinate bar, never a busy (0,0) indicator";
+    int canceled = 0;
+    QObject::connect(&dialog, &InstantMeshDialog::cancelRequested,
+                     [&] { ++canceled; });
+    dialog.show();
+    dialog.setRunning(true);
+    dialog.close();
+    EXPECT_TRUE((!dialog.isVisible() && canceled == 1))
+            << "Closing while running must request cancellation and stop "
+               "receiving results";
+    dialog.setRunning(false);
+}
+
+TEST_F(InstantMeshDialogTest,
+       PandaAutofillUsesActualPixelsAndRejectDetachesConsumer) {
+    ASSERT_FALSE((!sample.save(directory + "/cartoon_panda.png") ||
+                  !sample.save(directory + "/T.png")));
     {
         InstantMeshDialog dialog;
-        check(dialog.getSettings().inputPath.endsWith("/cartoon_panda.png"),
-              "The default sample must be the decodable ZIP panda member");
-        check(QImage(dialog.getSettings().inputPath).pixelColor(0, 0) ==
-                      QColor(Qt::green),
-              "Autofill must point to the actual sample pixels");
+        EXPECT_TRUE(
+                (dialog.getSettings().inputPath.endsWith("/cartoon_panda.png")))
+                << "The default sample must be the decodable ZIP panda member";
+        EXPECT_TRUE((QImage(dialog.getSettings().inputPath).pixelColor(0, 0) ==
+                     QColor(Qt::green)))
+                << "Autofill must point to the actual sample pixels";
         const QString beforeReject = dialog.getSettings().inputPath;
         QMetaObject::invokeMethod(&dialog, "reject", Qt::DirectConnection);
         QFile broken(directory + "/cartoon_panda.png");
-        if (!broken.open(QIODevice::WriteOnly)) return 1;
+        ASSERT_FALSE((!broken.open(QIODevice::WriteOnly)));
         broken.write("invalid PNG");
         broken.close();
         ecvTestDataRepository::instance().ensureDatasetReady(kind);
-        check(dialog.getSettings().inputPath == beforeReject,
-              "Escape/reject must detach the closed consumer from shared "
-              "sample results");
-        if (!sample.save(directory + "/cartoon_panda.png")) return 1;
+        EXPECT_TRUE((dialog.getSettings().inputPath == beforeReject))
+                << "Escape/reject must detach the closed consumer from shared "
+                   "sample results";
+        ASSERT_FALSE((!sample.save(directory + "/cartoon_panda.png")));
     }
+}
+
+TEST_F(InstantMeshDialogTest,
+       PipelineChipsCarryRealImagesCaptionsAndFixedProgress) {
     // Pipeline strip contract: a completed run must leave NO chip blank and
     // every chip must carry a click-to-enlarge full image (qTrellis parity).
     {
@@ -502,15 +518,16 @@ int main(int argc, char** argv) {
         input.fill(Qt::blue);
         dialog.resetStageStrip(input);
         auto thumbs = dialog.findChildren<ecvClickableImageLabel*>();
-        check(thumbs.size() == 6,
-              "The input preview plus the five stage chips must exist");
-        check(thumbs.size() == 6 &&
-                      thumbs[1]->fullImage().size() == QSize(24, 24),
-              "Reset must seed the Source chip with the run input");
+        EXPECT_TRUE((thumbs.size() == 6))
+                << "The input preview plus the five stage chips must exist";
+        EXPECT_TRUE((thumbs.size() == 6 &&
+                     thumbs[1]->fullImage().size() == QSize(24, 24)))
+                << "Reset must seed the Source chip with the run input";
         for (int i = 2; i < thumbs.size(); ++i) {
-            check(thumbs[i]->fullImage().isNull() && thumbs[i]->text() == "-",
-                  "Pending chips must show the '-' placeholder without a "
-                  "stale image from a previous run");
+            EXPECT_TRUE((thumbs[i]->fullImage().isNull() &&
+                         thumbs[i]->text() == "-"))
+                    << "Pending chips must show the '-' placeholder without a "
+                       "stale image from a previous run";
         }
         InstantMeshRunResult result;
         result.multiview = true;
@@ -529,20 +546,21 @@ int main(int argc, char** argv) {
         dialog.setImagePreview(QImage(10, 10, QImage::Format_RGB888));
         thumbs = dialog.findChildren<ecvClickableImageLabel*>();
         for (const auto* thumb : thumbs) {
-            check(!thumb->fullImage().isNull(),
-                  "A completed run must leave no blank chip and every chip "
-                  "click-to-enlarge");
+            EXPECT_TRUE((!thumb->fullImage().isNull()))
+                    << "A completed run must leave no blank chip and every "
+                       "chip "
+                       "click-to-enlarge";
         }
         // Creation order: input preview, Source, RMBG, Views, Mesh, GLB.
-        check(thumbs.size() == 6 &&
-                      thumbs[2]->fullImage().size() == QSize(20, 20),
-              "The RMBG chip must show the matting the pipeline consumed");
-        check(thumbs.size() == 6 &&
-                      thumbs[3]->fullImage().size() == QSize(12, 8),
-              "The Views chip must show the real 6-view Zero123++ mosaic");
-        check(thumbs.size() == 6 &&
-                      thumbs[5]->fullImage().size() == QSize(8, 4),
-              "The GLB chip must carry the baked atlas as its zoom target");
+        EXPECT_TRUE((thumbs.size() == 6 &&
+                     thumbs[2]->fullImage().size() == QSize(20, 20)))
+                << "The RMBG chip must show the matting the pipeline consumed";
+        EXPECT_TRUE((thumbs.size() == 6 &&
+                     thumbs[3]->fullImage().size() == QSize(12, 8)))
+                << "The Views chip must show the real 6-view Zero123++ mosaic";
+        EXPECT_TRUE((thumbs.size() == 6 &&
+                     thumbs[5]->fullImage().size() == QSize(8, 4)))
+                << "The GLB chip must carry the baked atlas as its zoom target";
         QString glbCaption, viewsCaption, rmbgCaption;
         for (const auto* label : dialog.findChildren<QLabel*>()) {
             if (label->text().startsWith(QStringLiteral("GLB")))
@@ -552,24 +570,25 @@ int main(int argc, char** argv) {
             if (label->text().startsWith(QStringLiteral("RMBG")))
                 rmbgCaption = label->text();
         }
-        check(glbCaption.contains("MB"),
-              "The GLB chip caption must report its real size");
-        check(viewsCaption.contains("Zero123++"),
-              "The Views chip caption must credit the diffusion that "
-              "produced the mosaic");
-        check(rmbgCaption == QStringLiteral("RMBG"),
-              "The RMBG chip caption must state that matting ran");
+        EXPECT_TRUE((glbCaption.contains("MB")))
+                << "The GLB chip caption must report its real size";
+        EXPECT_TRUE((viewsCaption.contains("Zero123++")))
+                << "The Views chip caption must credit the diffusion that "
+                   "produced the mosaic";
+        EXPECT_TRUE((rmbgCaption == QStringLiteral("RMBG")))
+                << "The RMBG chip caption must state that matting ran";
         dialog.setStageActive(2);
-        check(thumbs[3]->styleSheet().contains("#f57f17"),
-              "The multiview stage must light the Views chip while running");
+        EXPECT_TRUE((thumbs[3]->styleSheet().contains("#f57f17")))
+                << "The multiview stage must light the Views chip while "
+                   "running";
         InstantMeshRunResult replicate;
         replicate.multiview = false;
         replicate.previewImage = QImage(16, 16, QImage::Format_ARGB32);
         replicate.previewImage.fill(Qt::darkCyan);
         dialog.applyResultToStrip(replicate);
         thumbs = dialog.findChildren<ecvClickableImageLabel*>();
-        check(thumbs.size() == 6 && !thumbs[5]->fullImage().isNull(),
-              "A run without a GLB must still not leave the chip blank");
+        EXPECT_TRUE((thumbs.size() == 6 && !thumbs[5]->fullImage().isNull()))
+                << "A run without a GLB must still not leave the chip blank";
         QString replicateViews, replicateGlb, replicateRmbg;
         for (const auto* label : dialog.findChildren<QLabel*>()) {
             if (label->text().startsWith(QStringLiteral("GLB")))
@@ -579,13 +598,13 @@ int main(int argc, char** argv) {
             if (label->text().startsWith(QStringLiteral("Preprocess")))
                 replicateRmbg = label->text();
         }
-        check(replicateViews.contains("replicated input"),
-              "Replicate mode must state that the input is the view "
-              "condition");
-        check(replicateGlb.contains("none"),
-              "A run without a GLB must state it instead of staying blank");
-        check(replicateRmbg.contains("no RMBG"),
-              "A run without matting must state it on the RMBG chip");
+        EXPECT_TRUE((replicateViews.contains("replicated input")))
+                << "Replicate mode must state that the input is the view "
+                   "condition";
+        EXPECT_TRUE((replicateGlb.contains("none")))
+                << "A run without a GLB must state it instead of staying blank";
+        EXPECT_TRUE((replicateRmbg.contains("no RMBG")))
+                << "A run without matting must state it on the RMBG chip";
         // Geometry conservation: the progress row stays laid out when idle
         // (content cleared, never hidden) so mid-run growth cannot clip the
         // fixed bottom block, and the pipeline strip lives in the fixed
@@ -593,14 +612,15 @@ int main(int argc, char** argv) {
         dialog.show();
         QApplication::processEvents();
         auto* idleProgress = dialog.findChild<QProgressBar*>();
-        check(idleProgress && idleProgress->isVisibleTo(&dialog),
-              "The progress row stays laid out when idle (geometry "
-              "conservation)");
+        EXPECT_TRUE((idleProgress && idleProgress->isVisibleTo(&dialog)))
+                << "The progress row stays laid out when idle (geometry "
+                   "conservation)";
         QGroupBox* stripGroup = nullptr;
         for (auto* group : dialog.findChildren<QGroupBox*>())
             if (group->title() == QStringLiteral("Pipeline steps"))
                 stripGroup = group;
-        check(stripGroup != nullptr, "The pipeline strip group must exist");
+        EXPECT_TRUE((stripGroup != nullptr))
+                << "The pipeline strip group must exist";
         bool stripScrollable = false;
         if (stripGroup) {
             for (auto* scroll : dialog.findChildren<QScrollArea*>())
@@ -608,10 +628,26 @@ int main(int argc, char** argv) {
                     scroll->widget()->isAncestorOf(stripGroup))
                     stripScrollable = true;
         }
-        check(!stripScrollable,
-              "The pipeline strip is run feedback: it must not live inside "
-              "the configuration scroll");
+        EXPECT_TRUE((!stripScrollable)) << "The pipeline strip is run "
+                                           "feedback: it must not live inside "
+                                           "the configuration scroll";
     }
+}
+
+int main(int argc, char** argv) {
+    QApplication app(argc, argv);
+    app.setOrganizationName(QStringLiteral("InstantMeshContract"));
+    app.setApplicationName(QStringLiteral("Dialog"));
+    if (argc == 3 && QString::fromLocal8Bit(argv[1]) == "--sample-cache") {
+        ConsoleCapture console;
+        CVLog::RegisterInstance(&console);
+        const int result =
+                test_real_sample_cache(QString::fromLocal8Bit(argv[2]));
+        CVLog::RegisterInstance(nullptr);
+        return result;
+    }
+    ::testing::InitGoogleTest(&argc, argv);
+    const int result = RUN_ALL_TESTS();
     std::puts(
             QJsonDocument(
                     QJsonObject{
@@ -621,9 +657,9 @@ int main(int argc, char** argv) {
                             {"qt_version", QString::fromLatin1(qVersion())},
                             {"qt_scale_factor", QString::fromLocal8Bit(qgetenv(
                                                         "QT_SCALE_FACTOR"))},
-                            {"failures", failures}})
+                            {"failures", ::testing::UnitTest::GetInstance()
+                                                 ->failed_test_count()}})
                     .toJson(QJsonDocument::Compact)
                     .constData());
-    CVLog::RegisterInstance(nullptr);
-    return failures ? 1 : 0;
+    return result;
 }

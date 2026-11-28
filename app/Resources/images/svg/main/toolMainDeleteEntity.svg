@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.7385,-0.7385) scale(1.06154)">
+
+<defs><linearGradient id="cross" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#F3C017"/><stop offset="1.000" stop-color="#C4813E"/></linearGradient></defs>
+<title>Delete selected entities</title>
+  <path d="M 4 2 L 12 10 L 20 2 L 22 4 L 14 12 L 22 20 L 20 22 L 12 14 L 4 22 L 2 20 L 10 12 L 2 4 Z" fill="url(#cross)" stroke="#6F6F59"/>
+
+</g>
+</svg>

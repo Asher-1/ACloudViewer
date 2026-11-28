@@ -1,9 +1,10 @@
+
 add_executable(test_ram_workflow test_ram_workflow.cpp ../src/RAMDialog.cpp ../src/RAMWorker.cpp
     ../include/RAMDialog.h ../include/RAMWorker.h ../include/RAMVideoWidget.h)
 target_include_directories(test_ram_workflow PRIVATE ../include
     # QtCompat.h (Qt5.12/Qt6 split-behavior constants) in plugin sources.
     PRIVATE ${CMAKE_SOURCE_DIR}/core/include)
-target_link_libraries(test_ram_workflow PRIVATE CVPluginAPI AICore video_base)
+target_link_libraries(test_ram_workflow PRIVATE CVPluginAPI AICore video_base gtest)
 set_target_properties(test_ram_workflow PROPERTIES AUTOMOC ON)
 if(UNIX AND NOT APPLE)
     target_compile_options(test_ram_workflow PRIVATE -fPIC)
@@ -11,10 +12,7 @@ if(UNIX AND NOT APPLE)
 endif()
 cloudviewer_set_bin_runtime_output_directory(test_ram_workflow)
 add_dependencies(test_ram_workflow QRAM_PLUGIN)
-add_test(NAME test_ram_workflow COMMAND test_ram_workflow
+cloudviewer_add_test(NAME test_ram_workflow LABELS suite-aicore COMMAND test_ram_workflow
     --plugin-module $<TARGET_FILE:QRAM_PLUGIN>
     --aicore-library $<TARGET_FILE:AICore>)
 cloudviewer_set_plugin_test_env_offscreen(test_ram_workflow)
-if(TARGET aicore-fast-tests)
-    add_dependencies(aicore-fast-tests test_ram_workflow)
-endif()

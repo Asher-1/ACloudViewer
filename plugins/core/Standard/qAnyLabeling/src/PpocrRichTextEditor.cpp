@@ -7,8 +7,11 @@
 
 #include "PpocrRichTextEditor.h"
 
+#include <Shortcuts/ecvKeySequences.h>
+
 #include <QAbstractScrollArea>
 #include <QAbstractTextDocumentLayout>
+#include <QAction>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QKeyEvent>
@@ -632,14 +635,23 @@ PpocrRichTextEditor::PpocrRichTextEditor(const QString& text,
             &PpocrRichTextEditor::cancelRequested);
     connect(save, &QPushButton::clicked, this,
             [this]() { emit saveRequested(content()); });
-    const auto bind = [this](QToolButton* button, const QKeySequence& key,
-                             const std::function<void()>& action) {
-        connect(button, &QToolButton::clicked, this, action);
-        auto* shortcut = new QShortcut(key, this);
-        shortcut->setContext(Qt::WidgetWithChildrenShortcut);
-        connect(shortcut, &QShortcut::activated, this, action);
+    const auto bind = [this](const QString& id, QToolButton* button,
+                             const QString& category, const QKeySequence& key,
+                             const std::function<void()>& callback) {
+        connect(button, &QToolButton::clicked, this, callback);
+        auto* action = new QAction(button->text(), this);
+        action->setObjectName(QStringLiteral("PpocrRich_") + id);
+        action->setShortcut(key);
+        action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        addAction(action);
+        connect(action, &QAction::triggered, this, callback);
+        ecvKeySequences::instance().registerPluginCommand(
+                QStringLiteral("cvcorp.cloudviewer.plugin.qAnyLabeling"),
+                "annotation/ppocr/rich/" + id, action,
+                tr("Annotation / PPOCR / Rich text / ") + category,
+                tr("X-AnyLabeling Annotation"));
     };
-    bind(m_bold, QKeySequence::Bold, [this]() {
+    bind("bold", m_bold, tr("Formatting"), QKeySequence::Bold, [this]() {
         QTextCharFormat format;
         format.setFontWeight(m_text->currentCharFormat().fontWeight() >=
                                              QFont::Bold
@@ -647,19 +659,29 @@ PpocrRichTextEditor::PpocrRichTextEditor(const QString& text,
                                      : QFont::Bold);
         mergeFormat(format);
     });
-    bind(m_italic, QKeySequence::Italic, [this]() {
+    bind("italic", m_italic, tr("Formatting"), QKeySequence::Italic, [this]() {
         QTextCharFormat format;
         format.setFontItalic(!m_text->currentCharFormat().fontItalic());
         mergeFormat(format);
     });
-    bind(m_strike, QKeySequence("Ctrl+Shift+X"), [this]() {
-        QTextCharFormat format;
-        format.setFontStrikeOut(!m_text->currentCharFormat().fontStrikeOut());
-        mergeFormat(format);
-    });
-    auto* shortcut = new QShortcut(QKeySequence::Save, this);
-    shortcut->setContext(Qt::WidgetWithChildrenShortcut);
-    connect(shortcut, &QShortcut::activated, save, &QPushButton::click);
+    bind("strike", m_strike, tr("Formatting"), QKeySequence("Ctrl+Shift+X"),
+         [this]() {
+             QTextCharFormat format;
+             format.setFontStrikeOut(
+                     !m_text->currentCharFormat().fontStrikeOut());
+             mergeFormat(format);
+         });
+    auto* saveCommand = new QAction(save->text(), this);
+    saveCommand->setObjectName(QStringLiteral("PpocrRich_save"));
+    saveCommand->setShortcut(QKeySequence::Save);
+    saveCommand->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    addAction(saveCommand);
+    connect(saveCommand, &QAction::triggered, save, &QPushButton::click);
+    ecvKeySequences::instance().registerPluginCommand(
+            QStringLiteral("cvcorp.cloudviewer.plugin.qAnyLabeling"),
+            QStringLiteral("annotation/ppocr/rich/save"), saveCommand,
+            tr("Annotation / PPOCR / Rich text / File"),
+            tr("X-AnyLabeling Annotation"));
     connect(m_text, &QTextEdit::currentCharFormatChanged, this,
             [this]() { updateToolbar(); });
     connect(m_text, &QTextEdit::cursorPositionChanged, this,

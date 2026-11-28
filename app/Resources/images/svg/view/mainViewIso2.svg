@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<defs>
+  <linearGradient id="top" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#D9DDDD"/><stop offset="1.000" stop-color="#CDCDCD"/></linearGradient>
+  <linearGradient id="right" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#BBBBBB"/><stop offset="1.000" stop-color="#A4A6A6"/></linearGradient>
+  <linearGradient id="active" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#D0E5F6"/><stop offset="1.000" stop-color="#9AC1E0"/></linearGradient>
+</defs>
+  <title>Back isometric view</title>
+  <!-- Camera from (+1,+1,+1): X face on screen left, Y face on screen right. -->
+  <path d="M12 1 L22.5 7 L12 13 L1.5 7 Z" fill="url(#top)"/>
+  <path d="M1.5 7 L12 13 V22 L1.5 16 Z" fill="url(#active)"/>
+  <path d="M22.5 7 L12 13 V22 L22.5 16 Z" fill="url(#right)"/>
+  <rect x="1" y="14.95" width="22" height="8.25" rx="1.15" fill="#F3F3ED"/>
+  <g fill="#424239" fill-rule="evenodd" stroke="none">
+    <path d="M0 0H2.12C3.56 0 4.37.53 4.37 1.68C4.37 2.4 4 2.83 3.51 3.08C4.23 3.26 4.63 3.83 4.63 4.64C4.63 5.83 3.78 6.5 2.25 6.5H0Z M1.13 1V2.63H2.08C2.85 2.63 3.2 2.35 3.2 1.79C3.2 1.23 2.83 1 2.08 1Z M1.13 3.6V5.5H2.22C3.03 5.5 3.45 5.19 3.45 4.53C3.45 3.91 3.03 3.6 2.22 3.6Z" transform="translate(1.120 16.15) scale(1 .92)"/>
+    <path d="M1.76 0H2.97L4.75 6.5H3.54L3.15 4.98H1.55L1.17 6.5H0Z M1.8 4H2.9L2.35 1.65Z" transform="translate(6.750 16.15) scale(1 .92)"/>
+    <path d="M4.52 1.02L3.73 1.75C3.41 1.31 3.04 1.08 2.58 1.08C1.61 1.08 1.18 1.93 1.18 3.25S1.61 5.42 2.58 5.42C3.04 5.42 3.45 5.18 3.78 4.69L4.58 5.39C4.1 6.17 3.41 6.5 2.58 6.5C.93 6.5 0 5.34 0 3.25S.93 0 2.58 0C3.41 0 4.05.35 4.52 1.02Z" transform="translate(12.500 16.15) scale(1 .92)"/>
+    <path d="M0 0H1.14V2.73L3.34 0H4.75L2.51 2.77L4.8 6.5H3.45L1.76 3.64L1.14 4.38V6.5H0Z" transform="translate(18.080 16.15) scale(1 .92)"/>
+  </g>
+</svg>

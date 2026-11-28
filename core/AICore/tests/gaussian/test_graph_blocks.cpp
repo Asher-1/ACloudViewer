@@ -11,80 +11,67 @@
 // BEFORE any fixture-based parity claim.
 #include <ggml-backend.h>
 #include <ggml.h>
+#include <gtest/gtest.h>
 
 #include <cmath>
-#include <cstdio>
 #include <cstring>
-#include <vector>
+#include <memory>
 
 #include "common/ggml_backend_utils.hpp"
-
-static int failures = 0;
-#define CHECK(cond)                                                      \
-    do {                                                                 \
-        if (!(cond)) {                                                   \
-            std::fprintf(stderr, "FAIL %s:%d: %s\n", __FILE__, __LINE__, \
-                         #cond);                                         \
-            failures++;                                                  \
-        }                                                                \
-    } while (0)
 
 static double erf_gelu(double x) {
     return 0.5 * x * (1.0 + std::erf(x / std::sqrt(2.0)));
 }
 
-static void graph_compute_cpu(ggml_cgraph *gf, int n_threads) {
-    ggml_common::load_backends_once();
-    ggml_backend_t be =
-            ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
-    if (!be) {
-        std::fprintf(stderr, "FAIL %s:%d: CPU backend init failed\n", __FILE__,
-                     __LINE__);
-        failures++;
-        return;
+class GaussianGraphBlocks : public ::testing::Test {
+protected:
+    void SetUp() override {
+        ggml_common::load_backends_once();
+        backend.reset(ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU,
+                                                nullptr));
+        ASSERT_NE(backend, nullptr) << "CPU backend initialization failed";
+        ggml_common::set_cpu_threads(backend.get(), 1);
+        const ggml_init_params params = {16 * 1024 * 1024, nullptr, false};
+        context.reset(ggml_init(params));
+        ASSERT_NE(context, nullptr);
     }
-    ggml_common::set_cpu_threads(be, n_threads);
-    if (ggml_backend_graph_compute(be, gf) != GGML_STATUS_SUCCESS) {
-        std::fprintf(stderr, "FAIL %s:%d: ggml_backend_graph_compute failed\n",
-                     __FILE__, __LINE__);
-        failures++;
-    }
-    ggml_backend_free(be);
-}
+
+    std::unique_ptr<ggml_backend, decltype(&ggml_backend_free)> backend{
+            nullptr, ggml_backend_free};
+    std::unique_ptr<ggml_context, decltype(&ggml_free)> context{nullptr,
+                                                                ggml_free};
+};
 
 // GELU must be the exact erf variant (nn.GELU()), NOT the tanh approximation:
 // the error compounds across 24 transformer blocks. This proves ggml_gelu_erf
 // is available and is the erf form.
-static void test_gelu_erf() {
+TEST_F(GaussianGraphBlocks, GeluUsesExactErf) {
     const float xs[] = {-3.f, -1.f, -0.5f, 0.f, 0.5f, 1.f, 2.f, 3.f};
     const int n = (int)(sizeof(xs) / sizeof(xs[0]));
 
-    ggml_init_params p = {(size_t)16 * 1024 * 1024, nullptr,
-                          /*no_alloc =*/false};
-    ggml_context *ctx = ggml_init(p);
+    ggml_context *ctx = context.get();
     ggml_tensor *x = ggml_new_tensor_1d(ctx, GGML_TYPE_F32, n);
     std::memcpy(x->data, xs, sizeof(xs));
     ggml_tensor *y = ggml_gelu_erf(ctx, x);
     ggml_cgraph *gf = ggml_new_graph(ctx);
     ggml_build_forward_expand(gf, y);
-    graph_compute_cpu(gf, 1);
+    ASSERT_EQ(ggml_backend_graph_compute(backend.get(), gf),
+              GGML_STATUS_SUCCESS);
 
     for (int i = 0; i < n; i++) {
         const double ref = erf_gelu(xs[i]);
         const double got = ((float *)y->data)[i];
-        CHECK(std::fabs(got - ref) < 1e-5);
+        EXPECT_LT(std::fabs(got - ref), 1e-5) << "element " << i;
     }
-    ggml_free(ctx);
 }
 
 // Pin ggml_mul_mat orientation: this is the contract the converter relies on
 // (PyTorch Linear weight (out,in) stored as-is loads as ggml ne=[in,out], and
 // mul_mat(W, x) then yields the correct (out) projection). result[i,j] over
 // A ne=[k,m], B ne=[k,n] is sum_l A[l,i] * B[l,j], giving C ne=[m,n].
-static void test_mul_mat_orientation() {
+TEST_F(GaussianGraphBlocks, MulMatPreservesLinearWeightOrientation) {
     const int k = 2, m = 3, n = 1;
-    ggml_init_params p = {(size_t)16 * 1024 * 1024, nullptr, false};
-    ggml_context *ctx = ggml_init(p);
+    ggml_context *ctx = context.get();
 
     ggml_tensor *A = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, k,
                                         m);  // "weight" [in=k, out=m]
@@ -99,15 +86,16 @@ static void test_mul_mat_orientation() {
     ggml_tensor *C = ggml_mul_mat(ctx, A, B);  // ne=[m,n]
     ggml_cgraph *gf = ggml_new_graph(ctx);
     ggml_build_forward_expand(gf, C);
-    graph_compute_cpu(gf, 1);
+    ASSERT_EQ(ggml_backend_graph_compute(backend.get(), gf),
+              GGML_STATUS_SUCCESS);
 
-    CHECK(C->ne[0] == m && C->ne[1] == n);
+    ASSERT_EQ(C->ne[0], m);
+    ASSERT_EQ(C->ne[1], n);
     const float *c = (float *)C->data;
     // out_i = a[i,0]*10 + a[i,1]*20
-    CHECK(std::fabs(c[0] - (1 * 10 + 2 * 20)) < 1e-5);  // 50
-    CHECK(std::fabs(c[1] - (3 * 10 + 4 * 20)) < 1e-5);  // 110
-    CHECK(std::fabs(c[2] - (5 * 10 + 6 * 20)) < 1e-5);  // 170
-    ggml_free(ctx);
+    EXPECT_LT(std::fabs(c[0] - (1 * 10 + 2 * 20)), 1e-5);  // 50
+    EXPECT_LT(std::fabs(c[1] - (3 * 10 + 4 * 20)), 1e-5);  // 110
+    EXPECT_LT(std::fabs(c[2] - (5 * 10 + 6 * 20)), 1e-5);  // 170
 }
 
 // Pin the patchify path (im2col F32 + kernel-reshape + mul_mat) against a
@@ -115,13 +103,12 @@ static void test_mul_mat_orientation() {
 // that the im2col patch-element order agrees with reshape(kernel, [IC*KH*KW,
 // OC]) — with no model and no fixtures. stride == kernel (non-overlapping
 // patches).
-static void test_patchify_order() {
+TEST_F(GaussianGraphBlocks, PatchifyMatchesDirectReferenceConvolution) {
     const int KW = 2, KH = 2, IC = 2, OC = 3, W = 4, H = 4, N = 1,
               S = 2;  // OW=OH=2
     const int OW = (W - KW) / S + 1, OH = (H - KH) / S + 1;
 
-    ggml_init_params p = {(size_t)16 * 1024 * 1024, nullptr, false};
-    ggml_context *ctx = ggml_init(p);
+    ggml_context *ctx = context.get();
     ggml_tensor *ker = ggml_new_tensor_4d(ctx, GGML_TYPE_F32, KW, KH, IC,
                                           OC);  // [KW,KH,IC,OC]
     ggml_tensor *img =
@@ -140,9 +127,12 @@ static void test_patchify_order() {
     ggml_tensor *conv = ggml_mul_mat(ctx, wflat, cols);  // [OC, OW, OH, N]
     ggml_cgraph *gf = ggml_new_graph(ctx);
     ggml_build_forward_expand(gf, conv);
-    graph_compute_cpu(gf, 1);
+    ASSERT_EQ(ggml_backend_graph_compute(backend.get(), gf),
+              GGML_STATUS_SUCCESS);
 
-    CHECK(conv->ne[0] == OC && conv->ne[1] == OW && conv->ne[2] == OH);
+    ASSERT_EQ(conv->ne[0], OC);
+    ASSERT_EQ(conv->ne[1], OW);
+    ASSERT_EQ(conv->ne[2], OH);
     auto kat = [&](int kw, int kh, int ic, int oc) {
         return kd[kw + KW * (kh + KH * (ic + IC * oc))];
     };
@@ -158,25 +148,15 @@ static void test_patchify_order() {
                             ref += (double)kat(kw, kh, ic, oc) *
                                    iat(ow * S + kw, oh * S + kh, ic);
                 const float got = c[oc + OC * (ow + OW * oh)];
-                CHECK(std::fabs(got - ref) < 1e-5);
+                EXPECT_LT(std::fabs(got - ref), 1e-5)
+                        << "output channel " << oc << ", position " << ow << ","
+                        << oh;
             }
-    ggml_free(ctx);
 }
 
 // Pin the SH-residual DC constant used by the scene head (RGB2SH dc =
 // (rgb-0.5)/C0).
-static void test_sh_c0() {
+TEST(GaussianGraphConstants, ShDcMatchesAnalyticConstant) {
     const double C0 = 0.28209479177387814;
-    CHECK(std::fabs(C0 - 1.0 / (2.0 * std::sqrt(M_PI))) < 1e-15);
-}
-
-int main() {
-    test_gelu_erf();
-    test_mul_mat_orientation();
-    test_patchify_order();
-    test_sh_c0();
-    std::printf(failures ? "test_graph_blocks: %d FAILURES\n"
-                         : "test_graph_blocks: ok\n",
-                failures);
-    return failures ? 1 : 0;
+    EXPECT_LT(std::fabs(C0 - 1.0 / (2.0 * std::sqrt(M_PI))), 1e-15);
 }

@@ -5,37 +5,31 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <QCoreApplication>
 #include <QPointer>
-#include <cstdio>
 
 #include "ecvModelDownloader.h"
 #include "ecvTestDataRepository.h"
 
-int main(int argc, char** argv) {
-    // Each application must release its network resources before DLL teardown.
-    // Recreating the application must also recreate the shared repository.
+TEST(DatasetLifecycle,
+     RecreatingApplicationRecreatesAndReleasesNetworkServices) {
     for (int cycle = 0; cycle < 2; ++cycle) {
+        SCOPED_TRACE(cycle);
         QPointer<ecvTestDataRepository> repository;
         QPointer<ecvModelDownloader> downloader;
         {
+            int argc = 1;
+            char program[] = "dataset-lifecycle-test";
+            char* argv[] = {program, nullptr};
             QCoreApplication app(argc, argv);
             repository = &ecvTestDataRepository::instance();
             downloader = repository->findChild<ecvModelDownloader*>();
-            if (!downloader ||
-                repository != &ecvTestDataRepository::instance()) {
-                std::fprintf(stderr, "cycle %d: shared service missing\n",
-                             cycle);
-                return 1;
-            }
+            ASSERT_TRUE(downloader);
+            ASSERT_EQ(repository.data(), &ecvTestDataRepository::instance());
         }
-        if (repository || downloader) {
-            std::fprintf(stderr,
-                         "cycle %d: network service outlived the application\n",
-                         cycle);
-            return 1;
-        }
+        EXPECT_TRUE(repository.isNull());
+        EXPECT_TRUE(downloader.isNull());
     }
-    std::puts("dataset repository application lifetime passed");
-    return 0;
 }

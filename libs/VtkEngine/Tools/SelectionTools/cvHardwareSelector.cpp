@@ -25,9 +25,13 @@
 #include <vtkMapper.h>
 #include <vtkObjectFactory.h>
 #include <vtkProp.h>
+#include <vtkPropCollection.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
 #include <vtkSelection.h>
+#include <vtkSmartPointer.h>
+
+#include <vector>
 
 // For debug output (optional)
 // #define cvHardwareSelectorDEBUG
@@ -55,6 +59,38 @@ cvHardwareSelector::cvHardwareSelector() {
 
 //----------------------------------------------------------------------------
 cvHardwareSelector::~cvHardwareSelector() { this->PropMap.clear(); }
+
+//----------------------------------------------------------------------------
+void cvHardwareSelector::SetSelectableProps(const std::set<vtkProp*>& props) {
+    this->SelectableProps = props;
+    // Geometry may have changed even when the prop identities did not.
+    this->Modified();
+}
+
+//----------------------------------------------------------------------------
+bool cvHardwareSelector::CaptureBuffers() {
+    if (!this->Renderer) return false;
+
+    // PickableOff alone still lets point helpers occlude the depth pass.
+    // Hide non-data props ONLY during capture and restore even on failure;
+    // normal visibility and mouse pickability are otherwise untouched.
+    struct VisibilityScope {
+        std::vector<vtkSmartPointer<vtkProp>> excluded;
+        ~VisibilityScope() {
+            for (const auto& prop : excluded) prop->VisibilityOn();
+        }
+    } scope;
+    auto* props = this->Renderer->GetViewProps();
+    props->InitTraversal();
+    while (auto* prop = props->GetNextProp()) {
+        if (prop->GetVisibility() &&
+            (!this->SelectableProps.count(prop) || !prop->GetPickable())) {
+            scope.excluded.emplace_back(prop);
+            prop->VisibilityOff();
+        }
+    }
+    return this->Superclass::CaptureBuffers();
+}
 
 //----------------------------------------------------------------------------
 bool cvHardwareSelector::PassRequired(int pass) {

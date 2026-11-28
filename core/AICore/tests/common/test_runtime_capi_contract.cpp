@@ -5,9 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <atomic>
 #include <chrono>
-#include <cstdio>
+#include <memory>
 #include <thread>
 
 #include "aicore/aliked_capi.h"
@@ -22,15 +24,6 @@
 #include "aicore/runtime_raii.h"
 #include "aicore/yolo_capi.h"
 
-namespace {
-
-int Fail(const char* message) {
-    std::fprintf(stderr, "runtime contract: %s\n", message);
-    return 1;
-}
-
-}  // namespace
-
 // The legacy process-wide cancel / inference-lock entry points are marked
 // AICORE_LEGACY_API (deprecated). This contract test intentionally verifies
 // they still work, so suppress the deprecation warnings for the whole file.
@@ -42,14 +35,13 @@ int Fail(const char* message) {
 #pragma warning(disable : 4996)
 #endif
 
-int main() {
-    // Runtime shutdown is intentionally idempotent and can be called between
-    // task batches without invalidating live contexts.
-    aicore_runtime_shutdown();
-    aicore_runtime_shutdown();
+namespace {
+using Token = std::unique_ptr<aicore_cancel_token,
+                              decltype(&aicore_cancel_token_free)>;
 
-    // Every task owns the same idempotent shutdown contract. Invalid image
-    // calls must fail synchronously without dereferencing a context or view.
+TEST(RuntimeContract, ShutdownIsIdempotentAndNullImagesFailSynchronously) {
+    aicore_runtime_shutdown();
+    aicore_runtime_shutdown();
     aicore_aliked_shutdown();
     aicore_deeplsd_shutdown();
     aicore_depth_shutdown();
@@ -57,110 +49,83 @@ int main() {
     aicore_lightglue_shutdown();
     aicore_rfdetr_shutdown();
     aicore_yolo_shutdown();
-    if (aicore_depth_depth_image(nullptr, nullptr, nullptr) == 0) {
-        return Fail("null depth image call unexpectedly succeeded");
+    EXPECT_NE(aicore_depth_depth_image(nullptr, nullptr, nullptr), 0);
+    EXPECT_NE(aicore_facedetect_detect_rgb(nullptr, nullptr, 0, 0), 0);
+    EXPECT_NE(aicore_rfdetr_detect_rgb(nullptr, nullptr, 0, 0, 0.0F, 0), 0);
+    EXPECT_NE(aicore_yolo_detect_rgb(nullptr, nullptr, 0, 0), 0);
+}
+
+TEST(RuntimeContract, NestedCancellationRestoresOuterScope) {
+    Token outer(aicore_cancel_token_new(), aicore_cancel_token_free);
+    Token inner(aicore_cancel_token_new(), aicore_cancel_token_free);
+    ASSERT_NE(outer, nullptr);
+    ASSERT_NE(inner, nullptr);
+    aicore_cancel_token_request(outer.get());
+    aicore::runtime::CancelScope outer_scope(outer.get());
+    EXPECT_TRUE(aicore_cancel_requested());
+    aicore_cancel_token_reset(outer.get());
+    EXPECT_FALSE(aicore_cancel_requested());
+    {
+        aicore::runtime::CancelScope inner_scope(inner.get());
+        aicore_cancel_token_request(inner.get());
+        EXPECT_TRUE(aicore_cancel_requested());
     }
-    if (aicore_facedetect_detect_rgb(nullptr, nullptr, 0, 0) == 0) {
-        return Fail("null face image call unexpectedly succeeded");
-    }
-    if (aicore_rfdetr_detect_rgb(nullptr, nullptr, 0, 0, 0.0F, 0) == 0) {
-        return Fail("null RF-DETR image call unexpectedly succeeded");
-    }
-    if (aicore_yolo_detect_rgb(nullptr, nullptr, 0, 0) == 0) {
-        return Fail("null YOLO image call unexpectedly succeeded");
-    }
+    EXPECT_FALSE(aicore_cancel_requested());
+}
 
-    aicore_cancel_token* outer = aicore_cancel_token_new();
-    aicore_cancel_token* inner = aicore_cancel_token_new();
-    if (!outer || !inner) return Fail("token allocation failed");
-
-    // A request issued before the worker binds its scope must not be lost.
-    aicore_cancel_token_request(outer);
-    aicore_cancel_scope_begin(outer);
-    if (!aicore_cancel_requested()) return Fail("early cancel was cleared");
-
-    aicore_cancel_token_reset(outer);
-    if (aicore_cancel_requested()) return Fail("token reset failed");
-
-    aicore_cancel_scope_begin(inner);
-    aicore_cancel_token_request(inner);
-    if (!aicore_cancel_requested()) return Fail("inner cancel not visible");
-    aicore_cancel_scope_end(inner);
-    if (aicore_cancel_requested()) return Fail("outer scope not restored");
-    aicore_cancel_scope_end(outer);
-
+TEST(RuntimeContract, LegacyCancellationResetsAtScopeBoundaries) {
     aicore_cancel_begin();
-    if (aicore_cancel_requested()) return Fail("legacy begin not reset");
+    EXPECT_FALSE(aicore_cancel_requested());
     aicore_cancel_request();
-    if (!aicore_cancel_requested()) return Fail("legacy cancel not visible");
+    EXPECT_TRUE(aicore_cancel_requested());
     aicore_cancel_end();
-    if (aicore_cancel_requested()) return Fail("legacy end not reset");
+    EXPECT_FALSE(aicore_cancel_requested());
+}
 
-    if (aicore_device_task_lock("cpu") != 0) {
-        return Fail("CPU task queue acquisition failed");
+TEST(RuntimeContract, DeviceQueueRejectsNestedAcquisitionAndReleases) {
+    {
+        aicore::runtime::DeviceTaskLock lock("cpu");
+        ASSERT_TRUE(lock.isLocked());
+        EXPECT_NE(aicore_device_task_try_lock("cpu"), 0);
     }
-    if (aicore_device_task_try_lock("cpu") == 0) {
-        aicore_device_task_unlock();
-        return Fail("nested task queue acquisition unexpectedly succeeded");
-    }
-    aicore_device_task_unlock();
-    if (aicore_device_task_try_lock("cpu") != 0) {
-        return Fail("CPU task queue was not released");
-    }
-    aicore_device_task_unlock();
+    const int status = aicore_device_task_try_lock("cpu");
+    EXPECT_EQ(status, 0);
+    if (status == 0) aicore_device_task_unlock();
+}
 
-    // A queued task must be cancelable before it obtains the physical device
-    // lock. This prevents Stop from being held hostage by another session.
-    if (aicore_device_task_lock("cpu") != 0) {
-        return Fail("CPU task queue acquisition for cancel test failed");
-    }
-    aicore_cancel_token* queued = aicore_cancel_token_new();
-    if (!queued) return Fail("queued token allocation failed");
-    std::atomic<int> queuedResult{-2};
+TEST(RuntimeContract, QueuedTaskObservesCancellationBeforeAcquiringDevice) {
+    Token queued(aicore_cancel_token_new(), aicore_cancel_token_free);
+    ASSERT_NE(queued, nullptr);
+    aicore::runtime::DeviceTaskLock lock("cpu");
+    ASSERT_TRUE(lock.isLocked());
+    std::atomic<int> result{-2};
     std::thread waiter([&]() {
-        queuedResult.store(aicore_device_task_lock_cancelable("cpu", queued));
+        const int status =
+                aicore_device_task_lock_cancelable("cpu", queued.get());
+        result.store(status);
+        if (status == 0) aicore_device_task_unlock();
     });
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    aicore_cancel_token_request(queued);
+    aicore_cancel_token_request(queued.get());
     waiter.join();
-    aicore_device_task_unlock();
-    if (queuedResult.load() != 1) {
-        aicore_cancel_token_free(queued);
-        return Fail("queued task did not observe cancellation");
-    }
-    aicore_cancel_token_free(queued);
-
-    aicore_cancel_token_free(inner);
-    aicore_cancel_token_free(outer);
-
-    // Global serial inference lock: acquire, hold, try, release.
-    if (aicore_inference_lock() != 0) return Fail("inference lock failed");
-    if (aicore_inference_try_lock() != -1) {
-        aicore_inference_unlock();
-        return Fail("nested inference lock unexpectedly succeeded");
-    }
-    aicore_inference_unlock();
-    if (aicore_inference_try_lock() != 0) {
-        return Fail("inference try-lock failed after unlock");
-    }
-    aicore_inference_unlock();
-
-    // Device capability bitmask: "cpu" is compute+cancel (no GPU bits).
-    // "gpu" may resolve to a real accelerator when present, or fall back to
-    // cpu on runners without one — either way the mask must be non-zero.
-    // nullptr is treated as "auto" by the runtime (documented contract), so
-    // it must also resolve to a non-zero mask.
-    if (aicore_device_capabilities("cpu") == 0) {
-        return Fail("cpu capabilities unresolved");
-    }
-    if (aicore_device_capabilities("gpu") == 0) {
-        return Fail("gpu capabilities unresolved");
-    }
-    if (aicore_device_capabilities(nullptr) == 0) {
-        return Fail("null (auto) capabilities unresolved");
-    }
-    return 0;
+    EXPECT_EQ(result.load(), 1);
 }
+
+TEST(RuntimeContract, LegacyInferenceLockRejectsNestedAcquisitionAndReleases) {
+    ASSERT_EQ(aicore_inference_lock(), 0);
+    EXPECT_EQ(aicore_inference_try_lock(), -1);
+    aicore_inference_unlock();
+    const int status = aicore_inference_try_lock();
+    EXPECT_EQ(status, 0);
+    if (status == 0) aicore_inference_unlock();
+}
+
+TEST(RuntimeContract, CpuGpuAndAutomaticCapabilityMasksResolve) {
+    EXPECT_NE(aicore_device_capabilities("cpu"), 0u);
+    EXPECT_NE(aicore_device_capabilities("gpu"), 0u);
+    EXPECT_NE(aicore_device_capabilities(nullptr), 0u);
+}
+}  // namespace
 
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop

@@ -11,6 +11,8 @@
 // cv2.warpPerspective(INTER_CUBIC, BORDER_REPLICATE) (scripts/
 // gen_ocr_rec_crop_golden.py). Box, size and crop bytes must match exactly.
 
+#include <gtest/gtest.h>
+
 #include <cinttypes>
 #include <cstdio>
 #include <fstream>
@@ -19,9 +21,12 @@
 #include <vector>
 
 #include "tasks/ocr/ocr_rec_crop.hpp"
-#include "tests/common/test_macros.hpp"
 
-static int failures = 0;
+#ifdef AICORE_OCR_REC_CROP_GOLDEN
+static const char* golden_path = AICORE_OCR_REC_CROP_GOLDEN;
+#else
+static const char* golden_path = nullptr;
+#endif
 
 namespace {
 
@@ -49,49 +54,39 @@ uint64_t fnv1a64(const std::vector<uint8_t>& data) {
 
 }  // namespace
 
-int main(int argc, char** argv) {
-    {
-        // TextDetector's first-index tie ordering on the real val_img_421
-        // diamond repeats a corner. Pinned source OpenCV produces a 36x36
-        // crop filled with the top-left pixel for this singular transform.
-        const float box[4][2] = {
-                {237, 267}, {219, 286}, {255, 285}, {219, 286}};
-        int width = 0, height = 0;
-        aicore::ocr::rotateCropSize(box, &width, &height);
-        AICORE_CHECK(width == 36 && height == 36);
-        aicore::img::Image image;
-        image.width = 1280;
-        image.height = 720;
-        image.channels = 3;
-        image.rgb.assign(static_cast<size_t>(image.width) * image.height * 3,
-                         17);
-        image.rgb[0] = 29;
-        image.rgb[1] = 77;
-        image.rgb[2] = 163;
-        std::vector<uint8_t> crop(static_cast<size_t>(width) * height * 3);
-        AICORE_CHECK(aicore::ocr::warpPerspectiveCubicReplicate(
-                image, box, width, height, crop.data()));
-        bool equal = true;
-        for (size_t i = 0; i < crop.size(); ++i)
-            equal = equal && crop[i] == image.rgb[i % 3];
-        AICORE_CHECK(equal);
-    }
-#ifdef AICORE_OCR_REC_CROP_GOLDEN
-    const char* golden = argc > 1 ? argv[1] : AICORE_OCR_REC_CROP_GOLDEN;
-#else
-    if (argc < 2) {
-        std::fprintf(stderr, "usage: %s rec_crop_golden.txt\n", argv[0]);
-        return 2;
-    }
-    const char* golden = argv[1];
-#endif
-    std::ifstream in(golden);
-    if (!in) {
-        std::fprintf(stderr, "cannot open %s\n", golden);
-        return 2;
-    }
+TEST(OcrRecCrop, SingularTransformReplicatesTopLeftPixel) {
+    // TextDetector's first-index tie ordering on the real val_img_421
+    // diamond repeats a corner. Pinned source OpenCV produces a 36x36
+    // crop filled with the top-left pixel for this singular transform.
+    const float box[4][2] = {{237, 267}, {219, 286}, {255, 285}, {219, 286}};
+    int width = 0, height = 0;
+    aicore::ocr::rotateCropSize(box, &width, &height);
+    ASSERT_EQ(width, 36);
+    ASSERT_EQ(height, 36);
+    aicore::img::Image image;
+    image.width = 1280;
+    image.height = 720;
+    image.channels = 3;
+    image.rgb.assign(static_cast<size_t>(image.width) * image.height * 3, 17);
+    image.rgb[0] = 29;
+    image.rgb[1] = 77;
+    image.rgb[2] = 163;
+    std::vector<uint8_t> crop(static_cast<size_t>(width) * height * 3);
+    ASSERT_TRUE(aicore::ocr::warpPerspectiveCubicReplicate(
+            image, box, width, height, crop.data()));
+    bool equal = true;
+    for (size_t i = 0; i < crop.size(); ++i)
+        equal = equal && crop[i] == image.rgb[i % 3];
+    EXPECT_TRUE(equal);
+}
+
+TEST(OcrRecCrop, MatchesUpstreamBoxesSizesAndCropBytes) {
+    ASSERT_NE(golden_path, nullptr) << "Supply the golden fixture path as the "
+                                       "first positional argument";
+    std::ifstream in(golden_path);
+    ASSERT_TRUE(in.is_open()) << "Cannot open " << golden_path;
     std::string line;
-    int cases = 0, boxMismatch = 0, sizeMismatch = 0, cropMismatch = 0;
+    int cases = 0;
     while (std::getline(in, line)) {
         if (line.empty() || line[0] == '#') continue;
         std::istringstream row(line);
@@ -107,29 +102,23 @@ int main(int argc, char** argv) {
         int cw = 0, ch = 0;
         std::string hashHex;
         row >> bar >> cw >> ch >> hashHex;
-        AICORE_CHECK(static_cast<bool>(row));
-        if (!row) break;
+        ASSERT_TRUE(static_cast<bool>(row)) << line;
         ++cases;
+        SCOPED_TRACE(testing::Message() << "Golden row " << cases);
 
         float box[4][2];
         aicore::ocr::minAreaRectBox(
                 reinterpret_cast<const int(*)[2]>(pts.data()), n, box);
-        bool boxOk = true;
-        for (int i = 0; i < 4; ++i)
-            boxOk = boxOk && box[i][0] == want[i][0] && box[i][1] == want[i][1];
-        if (!boxOk && boxMismatch++ < 5)
-            std::fprintf(stderr,
-                         "box mismatch (row %d): got %.9g %.9g %.9g %.9g "
-                         "%.9g %.9g %.9g %.9g\n",
-                         cases, box[0][0], box[0][1], box[1][0], box[1][1],
-                         box[2][0], box[2][1], box[3][0], box[3][1]);
+        for (int i = 0; i < 4; ++i) {
+            EXPECT_EQ(box[i][0], want[i][0]) << "Corner " << i << " x";
+            EXPECT_EQ(box[i][1], want[i][1]) << "Corner " << i << " y";
+        }
 
         // The crop from the golden box isolates the warp from the re-fit.
         int gw = 0, gh = 0;
         aicore::ocr::rotateCropSize(want, &gw, &gh);
-        if ((gw != cw || gh != ch) && sizeMismatch++ < 5)
-            std::fprintf(stderr, "size mismatch (row %d): %dx%d vs %dx%d\n",
-                         cases, gw, gh, cw, ch);
+        EXPECT_EQ(gw, cw);
+        EXPECT_EQ(gh, ch);
         if (gw != cw || gh != ch) continue;
 
         aicore::img::Image src;
@@ -142,21 +131,14 @@ int main(int argc, char** argv) {
                 src, want, cw, ch, crop.data());
         char hex[17];
         std::snprintf(hex, sizeof(hex), "%016" PRIx64, fnv1a64(crop));
-        if ((!warped || hashHex != hex) && cropMismatch++ < 5)
-            std::fprintf(stderr, "crop mismatch (row %d, %dx%d): %s vs %s\n",
-                         cases, cw, ch, hex, hashHex.c_str());
+        EXPECT_TRUE(warped);
+        EXPECT_EQ(hashHex, hex);
     }
-    AICORE_CHECK(cases >= 720);
-    AICORE_CHECK(boxMismatch == 0);
-    AICORE_CHECK(sizeMismatch == 0);
-    AICORE_CHECK(cropMismatch == 0);
-    std::printf(
-            "rec crop parity: %d cases, %d box / %d size / %d crop "
-            "mismatches\n",
-            cases, boxMismatch, sizeMismatch, cropMismatch);
-    if (failures) {
-        std::fprintf(stderr, "test_ocr_rec_crop: %d failure(s)\n", failures);
-        return 1;
-    }
-    return 0;
+    EXPECT_GE(cases, 720);
+}
+
+int main(int argc, char** argv) {
+    testing::InitGoogleTest(&argc, argv);
+    if (argc > 1) golden_path = argv[1];
+    return RUN_ALL_TESTS();
 }

@@ -162,21 +162,20 @@ void ccOverlayDialog::addOverridenShortcut(Qt::Key key) {
 }
 
 bool ccOverlayDialog::eventFilter(QObject* obj, QEvent* e) {
-    if (e->type() == QEvent::KeyPress) {
-        QKeyEvent* keyEvent = static_cast<QKeyEvent*>(e);
-
-        if (m_overriddenKeys.contains(keyEvent->key())) {
-            emit shortcutTriggered(keyEvent->key());
+    if (m_processing && (e->type() == QEvent::ShortcutOverride ||
+                         e->type() == QEvent::KeyPress)) {
+        auto* key = static_cast<QKeyEvent*>(e);
+        // These are local tool gestures, not alternative global commands.
+        // Claim them before Qt dispatches a command, but never consume Ctrl+S
+        // (for example) merely because this tool owns the unmodified S key.
+        if (key->modifiers() == Qt::NoModifier &&
+            m_overriddenKeys.contains(key->key())) {
+            e->accept();
+            if (e->type() == QEvent::KeyPress)
+                emit shortcutTriggered(key->key());
             return true;
-        } else {
-            return QDialog::eventFilter(obj, e);
         }
-    } else {
-        if (e->type() == QEvent::Show) {
-            emit shown();
-        }
-
-        // standard event processing
-        return QDialog::eventFilter(obj, e);
     }
+    if (e->type() == QEvent::Show) emit shown();
+    return QDialog::eventFilter(obj, e);
 }

@@ -34,6 +34,7 @@
 #include <QVBoxLayout>
 #include <vector>
 
+#include "OpenPCDetDbExport.h"
 #include "QtCompat.h"
 #include "ecvAICoreDeviceUiHelper.h"
 #include "ecvAICoreUiHelper.h"
@@ -151,15 +152,6 @@ void OpenPCDetDialog::setupUi() {
     m_taskList = new QListWidget(this);
     m_taskList->setMinimumWidth(ecvAICoreUi::dpiScaled(120));
     m_taskList->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    m_taskList->setStyleSheet(
-            QStringLiteral("QListWidget { background: palette(base); border: "
-                           "1px solid palette(mid); border-radius: 3px; "
-                           "padding: 2px; }"
-                           "QListWidget::item { padding: 4px 6px; "
-                           "border-radius: 3px; }"
-                           "QListWidget::item:selected { background: "
-                           "palette(highlight); color: "
-                           "palette(highlighted-text); }"));
 
     m_taskStack = new QStackedWidget(this);
     m_bodySplitter->addWidget(m_taskList);
@@ -355,7 +347,7 @@ void OpenPCDetDialog::populatePanels() {
         panel.modelInfoLabel->setVisible(!cp.familyNote.isEmpty());
         configCol->addWidget(panel.modelInfoLabel);
 
-        // Threshold row (0 = follow the GGUF-declared value).
+        // Threshold row (0 = follow the effective task defaults).
         auto* thresholdRow = new QWidget(panel.tab);
         auto* thresholdLayout = new QHBoxLayout(thresholdRow);
         thresholdLayout->setContentsMargins(0, 0, 0, 0);
@@ -369,7 +361,7 @@ void OpenPCDetDialog::populatePanels() {
         panel.score->setSpecialValueText(tr("model"));
         panel.score->setToolTip(
                 tr("Detection score threshold override; 0 follows the "
-                   "GGUF-declared value"));
+                   "per-model task default"));
         // Shared helper pins compact spinboxes to a fixed 72px, but the
         // threshold row stacks three label+spin pairs; under wide platform
         // font metrics (Linux offscreen/CI renders labels ~15% wider than
@@ -410,11 +402,12 @@ void OpenPCDetDialog::populatePanels() {
         thresholdLayout->addWidget(panel.maxBoxes);
         thresholdLayout->addStretch();
         configCol->addWidget(thresholdRow);
-        // Default/override tri-state (plan §2): checked = the GGUF-declared
-        // values shown disabled; unchecked = editable explicit values
-        // (including a legal explicit 0). Own row: sharing the threshold
-        // row forced the form's minimum width past the smallest supported
-        // window (the dialog test's horizontal-clipping contract).
+        // Default/override tri-state (plan §2): checked = the effective
+        // task defaults shown disabled (per-checkpoint score/NMS; max GGUF);
+        // unchecked = editable explicit values (including a legal explicit
+        // 0). Own row: sharing the threshold row forced the form's minimum
+        // width past the smallest supported window (the dialog test's
+        // horizontal-clipping contract).
         panel.useDefaultsCheck =
                 new QCheckBox(tr("Use model defaults"), panel.tab);
         panel.useDefaultsCheck->setChecked(true);
@@ -434,7 +427,14 @@ void OpenPCDetDialog::populatePanels() {
                     p.score->setEnabled(!checked);
                     p.nms->setEnabled(!checked);
                     p.maxBoxes->setEnabled(!checked);
-                    if (checked) applyModelDefaults(p);
+                    if (checked) {
+                        // Follow-model display must show the effective task
+                        // defaults, not the previous explicit overrides.
+                        p.score->setValue(0.0);
+                        p.nms->setValue(0.0);
+                        p.maxBoxes->setValue(0);
+                        applyModelDefaults(p);
+                    }
                 });
 
         // Custom GGUF row (optional override of the catalog selection).
@@ -455,6 +455,40 @@ void OpenPCDetDialog::populatePanels() {
         configCol->addWidget(panel.customModelRow);
 
         const bool scenePanel = group == GroupScene;
+
+        // Test-frame selector, merged into the visible input row below (no
+        // extra fixed row). Entries come from the extracted bundle's frames
+        // of this panel's dataset; "Custom…" keeps the browsed edits.
+        panel.frameCombo = new QComboBox(panel.tab);
+        panel.frameCombo->setSizeAdjustPolicy(
+                QComboBox::AdjustToMinimumContentsLengthWithIcon);
+        panel.frameCombo->setMinimumContentsLength(6);
+        panel.frameCombo->setSizePolicy(QSizePolicy::Preferred,
+                                        QSizePolicy::Fixed);
+        panel.frameCombo->setToolTip(
+                tr("Select a test frame to fill the inputs, camera views and "
+                   "DB sample cloud; Custom… keeps your browsed files"));
+        panel.frameCombo->addItem(tr("Custom…"), QString());
+        connect(panel.frameCombo,
+                QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+                [this, panelIndex = m_panels.size()](int) {
+                    if (panelIndex >= m_panels.size()) return;
+                    OpenPCDetTaskPanel& p = m_panels[panelIndex];
+                    const QString frameId =
+                            p.frameCombo->currentData().toString();
+                    if (frameId.isEmpty()) return;  // Custom keeps the edits
+                    const auto frames =
+                            ecvTestDataRepository::getOpenPCDetFrames(
+                                    ecvTestDataRepository::extractPath(
+                                            ecvTestDataRepository::Dataset::
+                                                    OpenPCDetSample));
+                    for (const auto& frame : frames) {
+                        if (frame.id == frameId) {
+                            applyFrameSelection(p, frame);
+                            break;
+                        }
+                    }
+                });
 
         // Active cloud row (every panel: point inputs and the LiDAR branch
         // of scene runs share it).
@@ -498,6 +532,7 @@ void OpenPCDetDialog::populatePanels() {
                                  QStringLiteral("lastPointsDir"), path);
         });
         pointsRow->addWidget(browsePointsBtn);
+        if (!scenePanel) pointsRow->addWidget(panel.frameCombo);
         inputCol->addWidget(panel.pointsFileRow);
 
         // Scene rows (multi-modal panels only).
@@ -537,6 +572,7 @@ void OpenPCDetDialog::populatePanels() {
                                  QStringLiteral("lastSceneDir"), path);
         });
         sceneRow->addWidget(browseSceneBtn);
+        if (scenePanel) sceneRow->addWidget(panel.frameCombo);
         inputCol->addWidget(panel.sceneDirRow);
 
         // LiDAR branch point source of a scene run: the active cloud or an
@@ -578,29 +614,6 @@ void OpenPCDetDialog::populatePanels() {
         inputRow->addLayout(inputCol, 1);
         configCol->addStretch();
         contentRow->addLayout(configCol, 1);
-
-        // Right column: scene image preview (scene panels only; keeps the
-        // CaDDN / BEVFusion input visible before running).
-        if (scenePanel) {
-            auto* previewCol = new QVBoxLayout;
-            previewCol->setSpacing(ecvAICoreUi::vSpacing());
-            panel.previewLabel = new ecvClickableImageLabel(panel.tab);
-            const int ps = ecvAICoreUi::previewSize();
-            panel.previewLabel->setFixedSize(ps, ps);
-            panel.previewLabel->setStyleSheet(
-                    "border: 1px solid palette(mid); "
-                    "background: palette(base);");
-            panel.previewLabel->setText(tr("Preview"));
-            previewCol->addWidget(panel.previewLabel);
-            auto* previewHint =
-                    new QLabel(tr("Camera 0 of the scene"), panel.tab);
-            previewHint->setAlignment(Qt::AlignCenter);
-            previewHint->setStyleSheet(
-                    QStringLiteral("color: palette(mid); font-size: 11px;"));
-            previewCol->addWidget(previewHint);
-            previewCol->addStretch();
-            inputRow->addLayout(previewCol);
-        }
         layout->addLayout(inputRow);
         auto* configPage = new QWidget(panel.tab);
         auto* configLayout = new QVBoxLayout(configPage);
@@ -643,6 +656,58 @@ void OpenPCDetDialog::populatePanels() {
         outputColumn->addWidget(panel.addBoxesCheck);
         outputColumn->addWidget(panel.annotatedCheck);
         configLayout->addLayout(outputColumn);
+
+        // Full-width multi-camera preview grid (scroll content, so it never
+        // contributes to the dialog's fixed minimum height): a class-color
+        // legend plus one labeled, click-to-enlarge thumbnail per scene
+        // camera. Detection overlays are painted after a run. The hint
+        // shows until a calibrated scene is associated with the input.
+        panel.camerasGroup = new QWidget(panel.tab);
+        auto* camerasLayout = new QVBoxLayout(panel.camerasGroup);
+        camerasLayout->setContentsMargins(0, 0, 0, 0);
+        camerasLayout->setSpacing(ecvAICoreUi::vSpacing());
+        const int legendClassCount =
+                panel.checkpoint.startsWith(QStringLiteral("nuscenes"))
+                        ? 10
+                        : (panel.checkpoint.contains(
+                                   QStringLiteral("voxelrcnn_car"))
+                                   ? 1
+                                   : 3);
+        QString legendHtml;
+        for (int label = 1; label <= legendClassCount; ++label) {
+            const OpenPCDetHelpers::OpenPCDetClassColor color =
+                    OpenPCDetHelpers::classColor(label, legendClassCount);
+            legendHtml += QStringLiteral(
+                                  "<span style='color:rgb(%1,%2,%3);'>&#9632; "
+                                  "%4</span>"
+                                  "&nbsp;&nbsp;")
+                                  .arg(color.r)
+                                  .arg(color.g)
+                                  .arg(color.b)
+                                  .arg(OpenPCDetHelpers::className(
+                                          label, legendClassCount));
+        }
+        auto* legendLabel = new QLabel(legendHtml, panel.camerasGroup);
+        legendLabel->setTextFormat(Qt::RichText);
+        legendLabel->setWordWrap(true);
+        legendLabel->setStyleSheet(QStringLiteral("font-size: 11px;"));
+        panel.legendWidget = legendLabel;
+        camerasLayout->addWidget(legendLabel);
+        auto* gridHost = new QWidget(panel.camerasGroup);
+        panel.cameraGrid = new QGridLayout(gridHost);
+        panel.cameraGrid->setContentsMargins(0, 0, 0, 0);
+        panel.cameraGrid->setSpacing(ecvAICoreUi::tightHSpacing());
+        camerasLayout->addWidget(gridHost);
+        panel.camerasHint = ecvAICoreUi::makeHintLabel(
+                tr("No calibrated scene associated with this input. Select a "
+                   "test frame or browse a scene directory to see the camera "
+                   "views."),
+                panel.camerasGroup);
+        camerasLayout->addWidget(panel.camerasHint);
+        legendLabel->hide();
+        gridHost->hide();
+        configLayout->addWidget(panel.camerasGroup);
+
         // Action row: Run / Cancel (per panel, like qYOLO).
         auto* panelActionRow = new QHBoxLayout;
         panelActionRow->setSpacing(ecvAICoreUi::hSpacing());
@@ -674,10 +739,14 @@ void OpenPCDetDialog::populatePanels() {
         m_panels.append(panel);
         m_taskStack->addWidget(panel.tab);
         addTaskItem(panelLabel(cp), m_taskStack->count() - 1);
-        // Show the checkpoint's GGUF-declared thresholds (upstream OpenPCDet
-        // config defaults) instead of the "model" placeholder when the
-        // cached GGUF header is available.
+        // Show the effective task defaults (per-checkpoint score/NMS; max
+        // from the upstream OpenPCDet config) instead of the "model"
+        // placeholder when the cached GGUF header is available.
         applyModelDefaults(m_panels.last());
+        // Frame entries from an already-extracted bundle (otherwise just
+        // "Custom…"); selection only — the inputs stay empty until the user
+        // runs "Use test data" or picks a frame.
+        populateFrameCombo(m_panels.last());
     }
 
     connect(m_taskList, &QListWidget::currentRowChanged, this, [this](int row) {
@@ -687,13 +756,10 @@ void OpenPCDetDialog::populatePanels() {
         if (!page.isValid()) return;
         m_taskStack->setCurrentIndex(page.toInt());
         // Restored sessions fill the scene dir while another panel is
-        // current; re-render the incoming panel's preview from its own
-        // field (cheap: only the camera-0 frame of images.bin is read).
+        // current; re-render the incoming panel's camera grid from its own
+        // previewSceneDir (the loadedSceneDir guard skips a redundant read).
         if (page.toInt() >= 0 && page.toInt() < m_panels.size()) {
-            OpenPCDetTaskPanel& panel = m_panels[page.toInt()];
-            if (panel.previewLabel)
-                refreshScenePreview(&panel,
-                                    panel.sceneDirEdit->text().trimmed());
+            refreshCameraGrid(&m_panels[page.toInt()]);
         }
     });
     // Select the first selectable entry (row 0 is a section header).
@@ -769,41 +835,52 @@ void OpenPCDetDialog::loadSettings() {
             const int idx = panel.quantCombo->findData(filename);
             if (idx >= 0) panel.quantCombo->setCurrentIndex(idx);
         }
-        // A persisted zero is the legacy "model" placeholder, not a user
-        // choice — keep the GGUF-declared defaults applied by
-        // populatePanels(); explicit non-zero overrides still win.
-        const double score =
-                settings.value(QStringLiteral("score/") + key, 0.0).toDouble();
-        if (score > 0.0) panel.score->setValue(score);
-        const double nms =
-                settings.value(QStringLiteral("nms/") + key, 0.0).toDouble();
-        if (nms > 0.0) panel.nms->setValue(nms);
-        const int maxBoxes =
-                settings.value(QStringLiteral("maxBoxes/") + key, 0).toInt();
-        if (maxBoxes > 0) panel.maxBoxes->setValue(maxBoxes);
         // Tri-state migration: a legacy positive value was an explicit
         // override, the legacy 0 sentinel was "follow the GGUF".
+        const double score =
+                settings.value(QStringLiteral("score/") + key, 0.0).toDouble();
+        const double nms =
+                settings.value(QStringLiteral("nms/") + key, 0.0).toDouble();
+        const int maxBoxes =
+                settings.value(QStringLiteral("maxBoxes/") + key, 0).toInt();
         const bool legacyOverride = score > 0.0 || nms > 0.0 || maxBoxes > 0;
         const bool useDefaults =
                 settings.value(QStringLiteral("useDefaults/") + key,
                                !legacyOverride)
                         .toBool();
         panel.useDefaultsCheck->setChecked(useDefaults);
+        // Follow-model mode: persisted spin values are only the previous
+        // session's display of the task defaults and may be stale across
+        // builds — keep the values populatePanels() seeded from the
+        // current model header. Explicit mode restores the user's overrides.
+        if (!useDefaults) {
+            if (score > 0.0) panel.score->setValue(score);
+            if (nms > 0.0) panel.nms->setValue(nms);
+            if (maxBoxes > 0) panel.maxBoxes->setValue(maxBoxes);
+        }
         panel.pointsFileEdit->setText(
                 settings.value(QStringLiteral("pointsFile/") + key).toString());
         // Restoring text fires textChanged while another panel may be
-        // current; suppress the signal and refresh THIS panel's preview
+        // current; suppress the signal and refresh THIS panel's grid
         // directly.
         const QString sceneDir =
                 settings.value(QStringLiteral("sceneDir/") + key).toString();
+        OpenPCDetTaskPanel& mutablePanel =
+                m_panels[&panel - m_panels.constData()];
         if (!sceneDir.isEmpty() && panel.sceneDirEdit) {
             panel.sceneDirEdit->blockSignals(true);
             panel.sceneDirEdit->setText(sceneDir);
             panel.sceneDirEdit->blockSignals(false);
-            if (panel.previewLabel)
-                refreshScenePreview(&m_panels[&panel - m_panels.constData()],
-                                    sceneDir);
         }
+        // Grid scene source: the persisted previewSceneDir wins (point
+        // panels keep their paired scene); scene panels fall back to the
+        // restored scene dir.
+        QString previewSceneDir =
+                settings.value(QStringLiteral("previewSceneDir/") + key)
+                        .toString();
+        if (previewSceneDir.isEmpty()) previewSceneDir = sceneDir;
+        mutablePanel.previewSceneDir = previewSceneDir;
+        refreshCameraGrid(&mutablePanel);
         panel.scenePointsFileEdit->setText(
                 settings.value(QStringLiteral("scenePointsFile/") + key)
                         .toString());
@@ -889,6 +966,12 @@ void OpenPCDetDialog::saveSettings() const {
                           panel.sceneDirEdit->text());
         settings.setValue(QStringLiteral("scenePointsFile/") + key,
                           panel.scenePointsFileEdit->text());
+        settings.setValue(QStringLiteral("frame/") + key,
+                          panel.frameCombo
+                                  ? panel.frameCombo->currentData().toString()
+                                  : QString());
+        settings.setValue(QStringLiteral("previewSceneDir/") + key,
+                          panel.previewSceneDir);
         settings.setValue(QStringLiteral("customModel/") + key,
                           panel.customModelPath->text());
         settings.setValue(QStringLiteral("addBoxes/") + key,
@@ -1014,19 +1097,197 @@ void OpenPCDetDialog::applyModelDefaults(OpenPCDetTaskPanel& panel) {
 
 void OpenPCDetDialog::refreshScenePreview(OpenPCDetTaskPanel* panel,
                                           const QString& sceneDir) {
-    if (!panel || !panel->previewLabel) return;
-    QImage preview;
+    if (!panel) return;
+    panel->previewSceneDir = sceneDir;
+    refreshCameraGrid(panel);
+}
+
+void OpenPCDetDialog::refreshCameraGrid(OpenPCDetTaskPanel* panel) {
+    if (!panel || !panel->camerasGroup) return;
+    // Skip the disk re-read when the same scene is already rendered (panel
+    // switches and repeated textChanged hooks stay cheap).
+    if (!panel->previewSceneDir.isEmpty() &&
+        panel->loadedSceneDir == panel->previewSceneDir &&
+        !panel->cameraLabels.isEmpty()) {
+        return;
+    }
+    // Drop the previous cells (each cell container owns its label+caption).
+    QLayoutItem* item;
+    while ((item = panel->cameraGrid->takeAt(0)) != nullptr) {
+        delete item->widget();
+        delete item;
+    }
+    panel->cameraLabels.clear();
+    panel->cameraBaseImages.clear();
+
+    OpenPCDetHelpers::OpenPCDetSceneView scene;
     QString error;
-    if (!sceneDir.isEmpty() &&
-        OpenPCDetHelpers::readScenePreview(sceneDir, &preview, &error)) {
-        panel->previewLabel->setPreviewImage(preview,
-                                             ecvAICoreUi::previewSize());
-    } else {
-        panel->previewLabel->clearPreview();
-        if (!sceneDir.isEmpty() && !error.isEmpty()) {
+    const bool ok = !panel->previewSceneDir.isEmpty() &&
+                    OpenPCDetHelpers::readSceneCameras(panel->previewSceneDir,
+                                                       &scene, &error) &&
+                    !scene.cameras.isEmpty();
+    QWidget* gridHost = panel->cameraGrid->parentWidget();
+    if (!ok) {
+        panel->loadedSceneDir.clear();
+        panel->legendWidget->hide();
+        if (gridHost) gridHost->hide();
+        panel->camerasHint->show();
+        if (!panel->previewSceneDir.isEmpty() && !error.isEmpty()) {
             appendLog(tr("[OpenPCDet] Scene preview: %1").arg(error));
         }
+        return;
     }
+    panel->loadedSceneDir = panel->previewSceneDir;
+    panel->camerasHint->hide();
+    panel->legendWidget->show();
+    if (gridHost) gridHost->show();
+    // KITTI single camera renders one wide frame; the nuScenes ring lays
+    // out 3 columns x 2 rows. Cell widths stay inside the config viewport
+    // at the supported minimum window (no horizontal overflow).
+    const int cols = scene.cameras.size() <= 1 ? 1 : 3;
+    const int cellW = ecvAICoreUi::dpiScaled(cols == 1 ? 380 : 124);
+    for (int c = 0; c < scene.cameras.size(); ++c) {
+        const OpenPCDetHelpers::OpenPCDetSceneCamera& cam = scene.cameras[c];
+        auto* cell = new QWidget(gridHost);
+        auto* cellLayout = new QVBoxLayout(cell);
+        cellLayout->setContentsMargins(0, 0, 0, 0);
+        cellLayout->setSpacing(2);
+        auto* label = new ecvClickableImageLabel(cell);
+        const int cellH = cam.image.width() > 0
+                                  ? qMax(1, cellW * cam.image.height() /
+                                                    cam.image.width())
+                                  : cellW;
+        label->setPreviewImage(cam.image, QSize(cellW, cellH));
+        label->setStyleSheet(QStringLiteral(
+                "border: 1px solid palette(mid); background: palette(base);"));
+        cellLayout->addWidget(label, 0, Qt::AlignHCenter);
+        auto* caption = new QLabel(cam.name, cell);
+        caption->setAlignment(Qt::AlignCenter);
+        caption->setStyleSheet(
+                QStringLiteral("color: palette(mid); font-size: 11px;"));
+        cellLayout->addWidget(caption);
+        panel->cameraGrid->addWidget(cell, c / cols, c % cols);
+        panel->cameraLabels.append(label);
+        panel->cameraBaseImages.append(cam.image);
+    }
+}
+
+void OpenPCDetDialog::clearResultOverlays(OpenPCDetTaskPanel& panel) {
+    for (int i = 0;
+         i < panel.cameraLabels.size() && i < panel.cameraBaseImages.size();
+         ++i) {
+        // The label is fixed to its display size; re-set the clean frame at
+        // that size (the full-resolution click target stays overlay-free).
+        panel.cameraLabels[i]->setPreviewImage(panel.cameraBaseImages[i],
+                                               panel.cameraLabels[i]->size());
+    }
+}
+
+int OpenPCDetDialog::currentPanelIndex() const {
+    if (!m_taskStack) return -1;
+    QWidget* page = m_taskStack->currentWidget();
+    for (int i = 0; i < m_panels.size(); ++i) {
+        if (m_panels[i].tab == page) return i;
+    }
+    return -1;
+}
+
+void OpenPCDetDialog::applyResultOverlays(int panelIndex,
+                                          const OpenPCDetRunResult& result) {
+    if (panelIndex < 0 || panelIndex >= m_panels.size()) return;
+    OpenPCDetTaskPanel& panel = m_panels[panelIndex];
+    if (panel.cameraLabels.isEmpty() ||
+        panel.cameraBaseImages.size() != panel.cameraLabels.size()) {
+        return;
+    }
+    OpenPCDetHelpers::OpenPCDetSceneView scene;
+    QString error;
+    if (panel.previewSceneDir.isEmpty() ||
+        !OpenPCDetHelpers::readSceneCameras(panel.previewSceneDir, &scene,
+                                            &error) ||
+        scene.cameras.size() != panel.cameraLabels.size()) {
+        return;
+    }
+    // Detections stay verbatim in the original LiDAR frame (the worker
+    // lifts a shifted DB cloud back before inference); the scene calibration
+    // owns the projection — no shift/scale back-projection here.
+    for (int c = 0; c < panel.cameraLabels.size(); ++c) {
+        QImage annotated = panel.cameraBaseImages[c];
+        OpenPCDetHelpers::paintDetectionsOverlay(&annotated, result.detections,
+                                                 scene, c);
+        panel.cameraLabels[c]->setPreviewImage(annotated,
+                                               panel.cameraLabels[c]->size());
+    }
+}
+
+void OpenPCDetDialog::populateFrameCombo(OpenPCDetTaskPanel& panel,
+                                         const QString& selectFrameId) {
+    if (!panel.frameCombo) return;
+    const bool nuScenes =
+            panel.checkpoint.startsWith(QStringLiteral("nuscenes"));
+    const auto frames = ecvTestDataRepository::getOpenPCDetFrames(
+            ecvTestDataRepository::extractPath(
+                    ecvTestDataRepository::Dataset::OpenPCDetSample));
+    panel.frameCombo->blockSignals(true);
+    panel.frameCombo->clear();
+    panel.frameCombo->addItem(tr("Custom…"), QString());
+    QString defaultFrameId;
+    for (const auto& frame : frames) {
+        const bool frameNuScenes =
+                frame.id.startsWith(QStringLiteral("nuscenes"));
+        if (frameNuScenes != nuScenes) continue;  // dataset-matched frames only
+        panel.frameCombo->addItem(frame.displayName, frame.id);
+        if (frame.id == (nuScenes ? QStringLiteral("nuscenes_n015")
+                                  : QStringLiteral("kitti_000008"))) {
+            defaultFrameId = frame.id;
+        }
+    }
+    // Selection priority: explicit request > persisted frame > dataset
+    // default > Custom. findData falls back to Custom (index 0) when absent.
+    QString wanted = selectFrameId;
+    if (wanted.isEmpty()) {
+        QSettings settings;
+        settings.beginGroup(QStringLiteral("qOpenPCDet"));
+        wanted = settings.value(QStringLiteral("frame/") + panel.checkpoint)
+                         .toString();
+        settings.endGroup();
+    }
+    if (wanted.isEmpty()) wanted = defaultFrameId;
+    int idx = panel.frameCombo->findData(wanted);
+    if (idx < 0) idx = 0;
+    panel.frameCombo->setCurrentIndex(idx);
+    panel.frameCombo->blockSignals(false);
+}
+
+void OpenPCDetDialog::applyFrameSelection(
+        OpenPCDetTaskPanel& panel,
+        const ecvTestDataRepository::OpenPCDetFrame& frame) {
+    const bool nuScenes =
+            panel.checkpoint.startsWith(QStringLiteral("nuscenes"));
+    const bool scenePanel =
+            OpenPCDetHelpers::inputKindForFilename(
+                    panel.checkpoint + QStringLiteral(".f16.gguf")) ==
+            OpenPCDetHelpers::InputKind::Scene;
+    const bool pointRcnn =
+            !nuScenes && panel.checkpoint.contains(QStringLiteral("pointrcnn"));
+    // Point panels infer on the raw frame (PointRCNN on its pre-sampled
+    // variant); scene panels take the frame's scene dir + raw LiDAR branch.
+    const QString inferFile = (pointRcnn && !frame.sampledFile.isEmpty())
+                                      ? frame.sampledFile
+                                      : frame.pointsFile;
+    if (scenePanel) {
+        panel.sceneDirEdit->blockSignals(true);
+        panel.sceneDirEdit->setText(frame.sceneDir);
+        panel.sceneDirEdit->blockSignals(false);
+        panel.scenePointsFileEdit->setText(frame.pointsFile);
+    } else {
+        panel.pointsFileEdit->setText(inferFile);
+    }
+    // The grid source: scene panels use their scene dir; point panels use
+    // the frame's paired scene (KITTI frames ship a CaDDN scene).
+    panel.previewSceneDir = frame.sceneDir;
+    refreshCameraGrid(&panel);
+    loadSampleCloudIntoDb(inferFile, nuScenes ? 5 : 4, frame.displayName);
 }
 
 bool OpenPCDetDialog::ensureModelAvailable(PendingAction action) {
@@ -1223,10 +1484,20 @@ bool OpenPCDetDialog::fillTestDataPanel(int panelIndex) {
     OpenPCDetTaskPanel& panel = m_panels[panelIndex];
     const QString bundleRoot = ecvTestDataRepository::extractPath(
             ecvTestDataRepository::Dataset::OpenPCDetSample);
+    const bool nuScenes =
+            panel.checkpoint.startsWith(QStringLiteral("nuscenes"));
+    // The combo's selected frame (empty = the dataset default frame).
+    QString frameId = panel.frameCombo
+                              ? panel.frameCombo->currentData().toString()
+                              : QString();
+    if (frameId.isEmpty()) {
+        frameId = nuScenes ? QStringLiteral("nuscenes_n015")
+                           : QStringLiteral("kitti_000008");
+    }
     OpenPCDetHelpers::OpenPCDetTestDataFiles files;
     QString error;
     if (!OpenPCDetHelpers::resolveTestDataPaths(bundleRoot, panel.checkpoint,
-                                                &files, &error)) {
+                                                frameId, &files, &error)) {
         appendLog(tr("[Error] %1").arg(error));
         return false;
     }
@@ -1240,27 +1511,60 @@ bool OpenPCDetDialog::fillTestDataPanel(int panelIndex) {
         panel.sceneDirEdit->blockSignals(true);
         panel.sceneDirEdit->setText(files.sceneDirName);
         panel.sceneDirEdit->blockSignals(false);
-        refreshScenePreview(&panel, files.sceneDirName);
     }
     if (!files.scenePointsFile.isEmpty()) {
         panel.scenePointsFileEdit->setText(files.scenePointsFile);
     }
-    appendLog(tr("[Test data] Filled '%1' from the shared detection sample.")
-                      .arg(panel.checkpoint));
-    // Load the frame this panel actually infers on: nuScenes checkpoints
-    // run the n015 sweep (5-feature, nuScenes LiDAR frame) while KITTI
-    // checkpoints run the 000008 frame. Rendering the detections over a
-    // cloud from the OTHER dataset made every wireframe box look misplaced
-    // (the two datasets share no coordinate frame).
-    const bool nuScenes =
-            panel.checkpoint.startsWith(QStringLiteral("nuscenes"));
+    // The bundle is extracted now: refill the combo and keep this frame.
+    populateFrameCombo(panel, frameId);
+    // Grid source: the frame's paired scene (scene panels: their scene dir;
+    // point panels: the KITTI CaDDN scene shipped with the frame).
+    QString displayName = nuScenes ? QStringLiteral("nuScenes n015")
+                                   : QStringLiteral("KITTI 000008");
+    const auto frames = ecvTestDataRepository::getOpenPCDetFrames(bundleRoot);
+    for (const auto& frame : frames) {
+        if (frame.id == frameId) {
+            panel.previewSceneDir = frame.sceneDir;
+            displayName = frame.displayName;
+            break;
+        }
+    }
+    if (panel.previewSceneDir.isEmpty() && !files.sceneDirName.isEmpty()) {
+        panel.previewSceneDir = files.sceneDirName;
+    }
+    refreshCameraGrid(&panel);
+    appendLog(tr("[Test data] Filled '%1' from frame %2.")
+                      .arg(panel.checkpoint, frameId));
+    // Load the frame this panel actually infers on so the rendered
+    // wireframe boxes share the displayed cloud's coordinate frame.
     const QString displayBin = !files.pointsFile.isEmpty()
                                        ? files.pointsFile
                                        : files.scenePointsFile;
-    loadSampleCloudIntoDb(displayBin, nuScenes ? 5 : 4,
-                          nuScenes ? QStringLiteral("nuScenes n015 (sample)")
-                                   : QStringLiteral("KITTI 000008 (sample)"));
+    loadSampleCloudIntoDb(displayBin, nuScenes ? 5 : 4, displayName);
     return true;
+}
+
+// Find a previously imported sample cloud by its source-file marker so a
+// repeated "Use test data" click reuses it instead of stacking duplicates.
+// Each import tags the cloud with OpenPCDet/Sample = source file name; the
+// KITTI (000008) and nuScenes (n015) samples differ, so switching models
+// still imports the right distinct cloud while re-clicks reuse the existing
+// one.
+static ccPointCloud* findImportedSampleCloud(ccHObject* node,
+                                             const QString& sampleFile) {
+    if (!node) return nullptr;
+    if (node->getClassID() == CV_TYPES::POINT_CLOUD &&
+        node->getMetaData(QStringLiteral("OpenPCDet/Sample")).toString() ==
+                sampleFile) {
+        return static_cast<ccPointCloud*>(node);
+    }
+    for (unsigned i = 0; i < node->getChildrenNumber(); ++i) {
+        if (ccPointCloud* found =
+                    findImportedSampleCloud(node->getChild(i), sampleFile)) {
+            return found;
+        }
+    }
+    return nullptr;
 }
 
 void OpenPCDetDialog::loadSampleCloudIntoDb(const QString& binPath,
@@ -1269,6 +1573,17 @@ void OpenPCDetDialog::loadSampleCloudIntoDb(const QString& binPath,
     if (!m_app) return;  // no DB tree (tests / headless)
     if (binPath.isEmpty()) {
         appendLog(tr("[Error] Sample frame not found in the test-data cache."));
+        return;
+    }
+    const QString sampleFile = QFileInfo(binPath).fileName();
+    if (ccPointCloud* existing =
+                findImportedSampleCloud(m_app->dbRootObject(), sampleFile)) {
+        m_app->setSelectedInDB(existing, true);
+        m_app->updateUI();
+        setActiveCloud(existing, existing->getName());
+        appendLog(tr("[Test data] Sample cloud '%1' is already in the DB tree; "
+                     "reusing it instead of importing a duplicate.")
+                          .arg(existing->getName()));
         return;
     }
     QFile file(binPath);
@@ -1331,8 +1646,12 @@ void OpenPCDetDialog::loadSampleCloudIntoDb(const QString& binPath,
     const QString cloudName = ecvPluginDbNaming::makeUnique(displayName, m_app);
     cloud->setName(cloudName);
     cloud->setMetaData(QStringLiteral("OpenPCDet"), true);
-    cloud->setMetaData(QStringLiteral("OpenPCDet/Sample"),
-                       QFileInfo(binPath).fileName());
+    cloud->setMetaData(QStringLiteral("OpenPCDet/Sample"), sampleFile);
+    // A different sample frame than last time: hide the previously imported
+    // sample cloud(s) so only the current frame's cloud stays visible. The
+    // addToDB auto-redraw below refreshes the render windows.
+    DisableTaggedEntities(m_app->dbRootObject(),
+                          QStringLiteral("OpenPCDet/Sample"));
     m_app->addToDB(cloud, true, true, false, true);
     m_app->setSelectedInDB(cloud, true);
     m_app->updateUI();
@@ -1526,6 +1845,9 @@ void OpenPCDetDialog::setRunning(bool running) {
         panel.cancelBtn->setEnabled(running);
     }
     if (running) {
+        // A new run replaces any previous overlay on the running panel.
+        if (OpenPCDetTaskPanel* panel = currentPanel())
+            clearResultOverlays(*panel);
         m_progress->setVisible(true);
         m_progress->setRange(0, 100);
         m_progress->setValue(0);
@@ -1554,6 +1876,7 @@ void OpenPCDetDialog::closeEvent(QCloseEvent* event) {
     m_pendingTestDataPanel = -1;
     m_pendingActionAfterDownload = PendingAction::None;
     onCancel();
+    for (OpenPCDetTaskPanel& panel : m_panels) clearResultOverlays(panel);
     saveSettings();
     event->accept();
 }

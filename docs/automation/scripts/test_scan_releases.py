@@ -2,6 +2,7 @@
 """Offline regressions for release inventory and the workflow's real filters."""
 import importlib.util
 import io
+import itertools
 import json
 import os
 from pathlib import Path
@@ -27,6 +28,42 @@ def response(rows):
 
 
 class ReleaseInventoryTests(unittest.TestCase):
+
+    def test_beta_current_commit_wins_even_when_old_build_is_uploaded_later(self):
+        for template in [
+                'ACloudViewer-3.9.5+{}-win-cpu-amd64.exe',
+                'ACloudViewer-3.9.5+{}-ubuntu22.04-cuda-amd64.run',
+                'ACloudViewer-3.9.5+{}-mac-cpu-arm64.dmg',
+                'cloudviewer-3.9.5+{}-cp311-cp311-win_amd64.whl',
+                'cloudviewer_cpu-3.9.5+{}-cp311-cp311-manylinux_2_35_x86_64.whl',
+                'cloudviewer-3.9.5+{}-cp311-cp311-macosx_11_0_universal2.whl',
+        ]:
+            assets = [{
+                'name': template.format(sha), 'id': index,
+                'browser_download_url': 'https://example.org/' + template.format(sha),
+                'size': 1024, 'created_at': timestamp,
+            } for index, (sha, timestamp) in enumerate([
+                ('abcdef01', '2026-11-23T00:00:00Z'),
+                ('01234567', '2026-11-24T00:00:00Z'),
+                ('fedcba98', '2026-11-25T00:00:00Z'),
+            ])]
+            expected = None
+            for order in itertools.permutations(assets):
+                with self.subTest(template=template, order=[a['id'] for a in order]):
+                    info = scanner.analyze_releases([{
+                        'tag_name': scanner.BETA_RELEASE_TAG, 'assets': list(order),
+                        'published_at': '2026-11-24T00:00:00Z'
+                    }])
+                    data = scanner.build_download_structure(info, '01234567' + '0' * 32)
+                    encoded = json.dumps(data, sort_keys=True)
+                    self.assertIn('3.9.5+01234567', encoded)
+                    self.assertNotIn('abcdef01', encoded)
+                    self.assertNotIn('fedcba98', encoded)
+                    if expected is not None:
+                        self.assertEqual(data, expected)
+                    expected = data
+            fallback = scanner.build_download_structure(info)
+            self.assertIn('3.9.5+fedcba98', json.dumps(fallback))
 
     def test_fetches_beyond_default_api_page_size(self):
         with patch.object(scanner,

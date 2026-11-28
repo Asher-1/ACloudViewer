@@ -146,7 +146,8 @@ YoloImport importYolo(const QByteArray& labels,
         QJsonArray shapes;
         int maxKeypoints = 0;
         for (const PoseClass& poseClass : poseConfig->classes)
-            maxKeypoints = std::max(maxKeypoints, poseClass.keypoints.size());
+            maxKeypoints = std::max(maxKeypoints,
+                                    qtCompatSizeInt(poseClass.keypoints));
         const int stride = poseConfig->hasVisible ? 3 : 2;
         const QStringList lines =
                 QString::fromUtf8(labels).split(QLatin1Char('\n'));
@@ -222,7 +223,7 @@ YoloImport importYolo(const QByteArray& labels,
                         {QStringLiteral("shape_type"), QStringLiteral("point")},
                         {QStringLiteral("flags"), QJsonObject()},
                         {QStringLiteral("points"),
-                         QJsonArray{QJsonArray{x, y}}},
+                         QJsonArray{QJsonValue(QJsonArray{x, y})}},
                         {QStringLiteral("group_id"), group},
                         {QStringLiteral("description"), QJsonValue::Null},
                         {QStringLiteral("difficult"), visibility == 1},
@@ -762,7 +763,7 @@ CocoImport importCoco(const QByteArray& json, CocoFormat format) {
                              QStringLiteral("point")},
                             {QStringLiteral("flags"), QJsonObject()},
                             {QStringLiteral("points"),
-                             QJsonArray{QJsonArray{px, py}}},
+                             QJsonArray{QJsonValue(QJsonArray{px, py})}},
                             {QStringLiteral("group_id"), group},
                             {QStringLiteral("description"), QJsonValue::Null},
                             {QStringLiteral("difficult"), visibility == 1},

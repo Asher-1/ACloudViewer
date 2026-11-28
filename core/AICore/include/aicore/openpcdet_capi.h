@@ -40,8 +40,8 @@ typedef struct aicore_openpcdet_ctx aicore_openpcdet_ctx;
 typedef struct aicore_openpcdet_options aicore_openpcdet_options;
 
 /** Creates a default options struct (device "auto", threads 0 = backend
- *  default, thresholds from GGUF metadata). Release with
- *  aicore_openpcdet_options_free. */
+ *  default, score threshold = product default 0.3, NMS/max from GGUF
+ *  metadata). Release with aicore_openpcdet_options_free. */
 AICORE_CAPI aicore_openpcdet_options* aicore_openpcdet_options_new(void);
 /** Releases an options struct created by aicore_openpcdet_options_new. */
 AICORE_CAPI void aicore_openpcdet_options_free(aicore_openpcdet_options* opts);
@@ -52,8 +52,9 @@ AICORE_CAPI void aicore_openpcdet_options_set_device(
 /** CPU thread count; <= 0 picks the backend default. */
 AICORE_CAPI void aicore_openpcdet_options_set_threads(
         aicore_openpcdet_options* opts, int n_threads);
-/** Overrides the detection score threshold; NaN (the default) keeps the
- *  GGUF-declared value. */
+/** Sets the detection score threshold verbatim (0 = no filtering). When
+ *  never called, inference uses the product visualization default 0.3;
+ *  NaN is ignored. */
 AICORE_CAPI void aicore_openpcdet_options_set_score_thresh(
         aicore_openpcdet_options* opts, float t);
 /** Overrides the rotated NMS IoU threshold; NaN keeps the GGUF value. */
@@ -233,13 +234,16 @@ aicore_openpcdet_model_by_filename(const char* filename);
 /** Returns the base URL of the published model release. */
 AICORE_CAPI const char* aicore_openpcdet_model_download_base(void);
 
-/** Declared post-processing defaults of one checkpoint GGUF (the
- *  "<arch>.post.*" metadata keys written at conversion time from the
- *  upstream OpenPCDet config). Reads only the GGUF key-value header —
+/** Effective post-processing defaults for seeding UI controls: the score
+ *  threshold is the product visualization default (0.3) for every
+ *  checkpoint, while NMS IoU and max boxes are the GGUF-declared values
+ *  (the "<arch>.post.*" metadata keys written at conversion time from the
+ *  upstream OpenPCDet config). The GGUF-declared score threshold remains
+ *  the official evaluation value, reported verbatim by
+ *  aicore_openpcdet_read_model_info. Reads only the GGUF key-value header —
  *  no model weights are loaded. Returns 0 on success and fills the
  *  non-NULL outputs; returns -1 when the file is missing, unreadable or
- *  does not declare the keys (callers keep their "follow the GGUF"
- *  fallback). */
+ *  does not declare the keys. */
 AICORE_CAPI int aicore_openpcdet_model_defaults(const char* gguf_path,
                                                 float* score_thresh,
                                                 float* nms_thresh,

@@ -68,15 +68,10 @@ inline void setupCompactMainLayout(QVBoxLayout* layout) {
     layout->setSpacing(4);
 }
 
-/** Tab pane spacing so top controls (e.g. Use test data) do not overlap tabs.
- */
+/** Keep platform/QStyle-owned tab chrome in document mode. */
 inline void applyTabWidgetPaneStyle(QTabWidget* tabs) {
     if (!tabs) return;
     tabs->setDocumentMode(false);
-    tabs->setStyleSheet(QStringLiteral(
-            "QTabWidget::pane { border: 0; padding: 4px 4px 2px 4px; top: 0px; "
-            "}"
-            "QTabBar::tab { padding: 4px 10px; min-height: 18px; }"));
 }
 
 inline void tightenGroupBox(QGroupBox* box) {

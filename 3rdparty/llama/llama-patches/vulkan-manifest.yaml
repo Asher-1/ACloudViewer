@@ -31,3 +31,6 @@ patches:
   - file: 0024-acv-openpcdet-bn-fold-relu.patch
     note: "ggml_bn_fold_relu is dispatched from bev_backbone.cpp in the
       openpcdet task; the patch carries the CPU dispatch and declaration."
+
+  - file: 0036-acv-rms-norm-hint-api.patch
+    note: "Public ggml_rms_norm_set_hint API mirroring ggml_norm_set_hint so task runtimes can tag llama LLM RMS-norm nodes with the strict-f32 hint through cp.cb_eval. Consumed by 0033 to owner-scope the pinned scalar norm to wevisone/vlx (old-pinned upstream) while the llm task (pristine-new upstream) keeps the vectorized kernel. Registered in every backend manifest because the task runtime calls it unconditionally."

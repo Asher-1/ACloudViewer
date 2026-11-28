@@ -401,7 +401,7 @@ void VideoPlaybackWidget::setupFrameReader() {
                     // the decoded buffer exclusively after delivery, so the
                     // member can share it without a full-frame deep copy.
                     m_latestFrame = rgbFrame;
-                    m_frameReaderSeekTo.store(frameIndex);
+                    qtCompatStoreRelaxed(m_frameReaderSeekTo, frameIndex);
                 }
                 if (m_streamActive &&
                     m_frameAdvanceMode == FrameAdvanceMode::ConsumerDriven &&
@@ -974,7 +974,7 @@ void VideoPlaybackWidget::processFrame() {
         // (std::swap uses move semantics; Mat::swap is unavailable in some
         // distro OpenCV builds, e.g. Debian 4.2.)
         std::swap(frame, m_latestFrame);
-        curFrameNum = m_frameReaderSeekTo.load();
+        curFrameNum = qtCompatLoadRelaxed(m_frameReaderSeekTo);
     }
     m_currentFrameNum = curFrameNum;
     // Last decoded frame SIZE, kept separately from m_latestFrame: in

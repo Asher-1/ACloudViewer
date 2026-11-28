@@ -31,6 +31,7 @@
 #include <laszip/laszip_api.h>
 // Qt
 #include <QDataStream>
+#include <QIODevice>
 #include <QMetaType>
 #include <QString>
 
@@ -81,6 +82,12 @@ struct LasVlr
 	{
 		quint64 vlrSize = 0;
 		arch >> vlrSize;
+		if (arch.status() != QDataStream::Ok || !arch.device()
+		    || vlrSize > static_cast<quint64>(arch.device()->bytesAvailable()) / 54)
+		{
+			arch.setStatus(QDataStream::ReadCorruptData);
+			return arch;
+		}
 		object.vlrs.reserve(vlrSize);
 		for (quint64 i = 0; i < vlrSize; ++i)
 		{
@@ -91,9 +98,19 @@ struct LasVlr
 			arch >> v.record_id;
 			arch >> v.record_length_after_header;
 			arch.readRawData((char*)v.description, 32 * sizeof(laszip_CHAR));
+			if (arch.status() != QDataStream::Ok
+			    || v.record_length_after_header > arch.device()->bytesAvailable())
+			{
+				arch.setStatus(QDataStream::ReadCorruptData);
+				return arch;
+			}
 			{
 				v.data = new laszip_U8[v.record_length_after_header]; // TODO: potential memory leak
-				arch.readRawData((char*)v.data, v.record_length_after_header);
+				if (arch.readRawData((char*)v.data, v.record_length_after_header) != v.record_length_after_header)
+				{
+					delete[] v.data;
+					return arch;
+				}
 			}
 			// arch >> QByteArray((const char*)v.data, v.record_length_after_header);
 			object.vlrs.push_back(v);
@@ -101,6 +118,12 @@ struct LasVlr
 
 		quint64 extraScalarFieldCount = 0;
 		arch >> extraScalarFieldCount;
+		if (arch.status() != QDataStream::Ok
+		    || extraScalarFieldCount > static_cast<quint64>(arch.device()->bytesAvailable()) / sizeof(LasExtraScalarField))
+		{
+			arch.setStatus(QDataStream::ReadCorruptData);
+			return arch;
+		}
 		object.extraScalarFields.reserve(extraScalarFieldCount);
 		for (quint64 i = 0; i < extraScalarFieldCount; ++i)
 		{
@@ -109,8 +132,12 @@ struct LasVlr
 			{
 				char* data = (char*)&e;
 				uint  len  = sizeof(LasExtraScalarField);
-				arch.readRawData(data, len);
+				if (arch.readRawData(data, len) != static_cast<int>(len))
+					return arch;
 			}
+			// Raw legacy records contain process-local pointers, not saved links.
+			for (auto& field : e.scalarFields)
+				field = nullptr;
 			object.extraScalarFields.push_back(e);
 		}
 

@@ -7,6 +7,8 @@
 
 #include "qDA3.h"
 
+#include <ecvAICoreUiHelper.h>
+
 #include "DA3BatchCommand.h"
 
 #ifdef AICore_ENABLED
@@ -155,6 +157,7 @@ void qDA3::showDialog() {
     if (!m_app) return;
     if (!m_dialog) {
         m_dialog = new DA3Dialog(m_app->getMainWindow());
+        ecvAICoreUi::bindDialogAction(m_action, m_dialog);
         m_dialog->setAppInterface(m_app);
         connect(m_dialog, &DA3Dialog::runRequested, this, &qDA3::executeTask);
         connect(m_dialog, &DA3Dialog::cancelRequested, this, &qDA3::cancelTask);

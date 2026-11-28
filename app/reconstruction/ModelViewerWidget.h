@@ -139,6 +139,12 @@ private:
     void drawCameraSensors(std::vector<ccCameraSensor*>& sensors);
     void resetCameraSensors(std::vector<ccCameraSensor*>& sensors);
     void clearSensors(std::vector<ccCameraSensor*>& sensors);
+    // Cached DB entities may be deleted externally (DB tree / RPC). These
+    // accessors drop stale pointers (without deleting) so we never deref or
+    // double-free an entity the DB already removed.
+    ccHObject* mainSensors();
+    ccPointCloud* sparseCloud();
+    bool sensorAlive(ccCameraSensor* sensor);
     void updateSensors(std::vector<ccCameraSensor*>& sensors,
                        const std::vector<colmap::image_t>& image_ids);
     ccHObject* getSelectedCamera(colmap::image_t selected_id);
@@ -163,6 +169,9 @@ private:
 
     // for visualization
     ccPointCloud* cloud_sparse_;
+    // uniqueID once added to the DB (0 = owned but not yet in DB). Used to
+    // detect external deletion without dereferencing a freed pointer.
+    unsigned cloud_sparse_id_;
     ccBBox bbox_;
 
     geometry::LineSet point_line_data_;
@@ -170,6 +179,7 @@ private:
     std::vector<ccCameraSensor*> sensors_;
 
     ccHObject* main_sensors_;
+    unsigned main_sensors_id_;
 
     geometry::LineSet movie_grabber_path_;
     std::vector<ccCameraSensor*> movie_grabber_sensors_;

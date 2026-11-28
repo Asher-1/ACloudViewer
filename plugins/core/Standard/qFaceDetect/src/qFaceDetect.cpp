@@ -7,6 +7,7 @@
 
 #include "qFaceDetect.h"
 
+#include <ecvAICoreUiHelper.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPluginDbNaming.h>
@@ -187,6 +188,7 @@ void qFaceDetect::showDialog() {
     if (!m_dialog) {
         m_dialog = new FaceDetectDialog(
                 static_cast<QWidget*>(m_app->getMainWindow()));
+        ecvAICoreUi::bindDialogAction(m_action, m_dialog);
         connect(m_dialog, &FaceDetectDialog::runRequested, this,
                 &qFaceDetect::executeTask);
         connect(m_dialog, &FaceDetectDialog::cancelRequested, this,

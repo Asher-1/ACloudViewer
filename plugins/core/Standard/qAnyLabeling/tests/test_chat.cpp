@@ -5,7 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <QtCompat.h>
 #include <ecvStdPluginInterface.h>
+#include <gtest/gtest.h>
 
 #include <QAction>
 #include <QApplication>
@@ -59,14 +61,10 @@
 #include "ChatServiceClient.h"
 #include "LocalChatEngine.h"
 
-#define REQUIRE(x)                                               \
-    do {                                                         \
-        if (!(x)) {                                              \
-            std::fprintf(stderr, "line %d: %s\n", __LINE__, #x); \
-            return 1;                                            \
-        }                                                        \
-    } while (false)
+#define REQUIRE(...) ASSERT_TRUE((__VA_ARGS__))
 namespace {
+int probeArgc = 0;
+char** probeArgv = nullptr;
 bool waitFor(const std::function<bool()>& predicate) {
     QElapsedTimer time;
     time.start();
@@ -80,7 +78,9 @@ QJsonObject readJson(const QString& path) {
     return QJsonDocument::fromJson(file.readAll()).object();
 }
 }  // namespace
-int main(int argc, char** argv) {
+TEST(ChatTest, ProviderAndWorkspaceWorkflows) {
+    int argc = probeArgc;
+    char** argv = probeArgv;
     QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs);
     QApplication app(argc, argv);
     QTemporaryDir temp;
@@ -402,8 +402,8 @@ int main(int argc, char** argv) {
     client.fetchModels(settings);
     REQUIRE(waitFor([&]() { return models == 1; }) && error.isEmpty());
     REQUIRE(headers.startsWith("GET /anthropic/v1/models ") &&
-            headers.contains("x-api-key: test-key") &&
-            headers.contains("anthropic-version: 2023-06-01") &&
+            headers.toLower().contains("x-api-key: test-key") &&
+            headers.toLower().contains("anthropic-version: 2023-06-01") &&
             !headers.toLower().contains("authorization:"));
     settings.baseUrl.setPath("/v1/");
     settings.apiKey = "test-key";
@@ -530,9 +530,13 @@ int main(int argc, char** argv) {
                             .value("settings")
                             .toObject()
                             .value("temperature") == 10);
+#ifndef Q_OS_WIN
+    // POSIX permission bits only: Windows ACLs map group/other bits to the
+    // owning user, so the owner-only invariant is not observable there.
     REQUIRE((QFileInfo(providerConfig).permissions() &
              (QFileDevice::ReadGroup | QFileDevice::WriteGroup |
               QFileDevice::ReadOther | QFileDevice::WriteOther)) == 0);
+#endif
     if (argc == 3) {
         QFile defaults(QDir(QString::fromLocal8Bit(argv[2]))
                                .filePath("chat-config-defaults-native.json"));
@@ -2047,7 +2051,9 @@ int main(int argc, char** argv) {
     auto* renderedAnswer =
             messageWidgets()[1]->findChild<QLabel*>("ChatMessageContent");
     REQUIRE(renderedAnswer->textFormat() == Qt::RichText &&
-            renderedAnswer->text().contains("font-weight:600") &&
+            renderedAnswer->text().contains(
+                    QString("font-weight:%1")
+                            .arg(qtCompatMarkdownBoldWeight())) &&
             renderedAnswer->text().contains("int x = 1;"));
     messageButton(1, "ChatMessageCopy")->click();
     REQUIRE(QApplication::clipboard()->text() == editedAnswer);
@@ -2608,5 +2614,11 @@ int main(int argc, char** argv) {
             "legacy migration, selected/favorite flags, private permissions "
             "and "
             "malformed configuration preservation PASS");
-    return 0;
+}
+
+int main(int argc, char** argv) {
+    probeArgc = argc;
+    probeArgv = argv;
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

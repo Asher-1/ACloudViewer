@@ -155,4 +155,8 @@ private:
 
 // Queued-connection payload: register at plugin construction time
 // (qQuerySplat::qQuerySplat) so worker -> GUI result delivery works.
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+// Qt6 moc auto-registers the runRequested signal argument type; a manual
+// declaration would redefine the same QMetaTypeId specialization.
 Q_DECLARE_METATYPE(QuerySplatDialog::Settings)
+#endif

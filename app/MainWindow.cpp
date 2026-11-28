@@ -20,11 +20,11 @@
 #include <QGuiApplication>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QKeyEvent>
 #include <QKeySequence>
 #include <QMimeData>
 #include <QScreen>
 #include <QSettings>
-#include <QShortcut>
 #include <QSignalBlocker>
 #include <QSplitter>
 #include <QTabBar>
@@ -32,6 +32,7 @@
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
+#include <QWindow>
 
 // Standard
 #include <algorithm>
@@ -56,7 +57,6 @@
 #include "ecvSettingManager.h"
 #include "ecvTracePolylineTool.h"
 #include "ecvTranslationManager.h"
-#include "ecvUIManager.h"
 #include "ecvUtils.h"
 
 // CV_CORE_LIB
@@ -142,6 +142,45 @@
 #include <QtCompat.h>
 
 namespace {
+
+bool belongsToFullscreenHost(QObject* object, QWidget* host) {
+    if (!object || !host) return false;
+    auto* hostWindow = host->windowHandle();
+    if (object == host || object == hostWindow) return true;
+
+    if (auto* widget = qobject_cast<QWidget*>(object)) {
+        for (auto* parent = widget; parent; parent = parent->parentWidget()) {
+            if (parent == host) return true;
+        }
+        object = widget->window()->windowHandle();
+    }
+
+    auto* window = qobject_cast<QWindow*>(object);
+    for (auto* current = window; current;) {
+        if (current == hostWindow) return true;
+        if (current->parent()) {
+            current = current->parent();
+        } else {
+            current = current->transientParent();
+        }
+    }
+    return false;
+}
+
+class FullScreenKeyFilter final : public QObject {
+public:
+    using Handler = std::function<bool(QObject*, QEvent*)>;
+    FullScreenKeyFilter(QObject* owner, Handler handler)
+        : QObject(owner), m_handler(std::move(handler)) {}
+
+protected:
+    bool eventFilter(QObject* target, QEvent* event) override {
+        return m_handler(target, event);
+    }
+
+private:
+    Handler m_handler;
+};
 
 QString segmentationOptionSuffix(bool segmented) {
     QSettings settings;
@@ -250,6 +289,7 @@ QString withSegmentationOptionSuffix(const QString& baseName,
 #include <VTKExtensions/Views/vtkChartView.h>
 #include <VTKExtensions/Views/vtkComparativeViewWidget.h>
 #include <VTKExtensions/Views/vtkOrthoSliceViewWidget.h>
+#include <VTKExtensions/Views/vtkSliceViewWidget.h>
 #include <Visualization/VtkVis.h>
 #include <Visualization/vtkGLView.h>
 #endif
@@ -330,14 +370,9 @@ static bool IsValidFileName(QString filename) {
             "\\|<>\\. ]))?$");
 #endif
 
-    // Use QtCompat for Qt5/Qt6 compatibility
-    QtCompatRegExp regex(sPattern);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    QRegularExpressionMatch match = regex.match(filename);
-    return match.hasMatch();
-#else
-    return regex.exactMatch(filename);
-#endif
+    const auto regex =
+            qtCompatRegExp(QRegularExpression::anchoredPattern(sPattern));
+    return regex.match(filename).hasMatch();
 }
 
 QWidget* MainWindow::getActiveGLWidget() const {
@@ -383,7 +418,6 @@ MainWindow::MainWindow()
       m_findDataDock(nullptr),
 #endif
       m_layout(nullptr),
-      m_uiManager(nullptr),
       m_mousePosLabel(nullptr),
       m_systemInfoLabel(nullptr),
       m_memoryUsageWidget(nullptr),
@@ -392,6 +426,9 @@ MainWindow::MainWindow()
       m_memoryUsageTimer(nullptr),
       m_currentFullWidget(nullptr),
       m_exclusiveFullscreen(false),
+      m_formerFullScreenFlags(Qt::SubWindow),
+      m_formerFullScreenState(Qt::WindowNoState),
+      m_formerMainWindowState(Qt::WindowNoState),
       m_lastViewMode(VIEWMODE::ORTHOGONAL),
       m_shortcutDlg(nullptr)
 #ifdef BUILD_RECONSTRUCTION
@@ -573,15 +610,14 @@ MainWindow::MainWindow()
 
         m_shortcutDlg = new ecvShortcutDialog(m_actions, this);
         m_shortcutDlg->restoreShortcutsFromQSettings();
-
-        m_shortcutDlg->registerStandaloneShortcut("Tab: Previous",
-                                                  QKeySequence("Ctrl+PgUp"));
-        m_shortcutDlg->registerStandaloneShortcut("Tab: Next",
-                                                  QKeySequence("Ctrl+PgDown"));
-        m_shortcutDlg->registerStandaloneShortcut("Tab: New",
-                                                  QKeySequence("Ctrl+Shift+T"));
-        m_shortcutDlg->registerStandaloneShortcut("Tab: Close",
-                                                  QKeySequence("Ctrl+W"));
+        connect(&ecvKeySequences::instance(),
+                &ecvKeySequences::shortcutSettingsRequested, this,
+                [](const QString& pluginId) {
+                    // A plugin may request this from its own modal dialog.
+                    ecvShortcutDialog dialog({}, QApplication::activeWindow());
+                    dialog.selectPlugin(pluginId);
+                    dialog.exec();
+                });
 
         connect(m_ui->actionShortcutSettings, &QAction::triggered, this,
                 &MainWindow::showShortcutDialog);
@@ -1123,8 +1159,10 @@ void MainWindow::connectActions() {
 
     if (auto* mgr = ecvViewManager::instance().undoManager()) {
         QAction* undoAction = mgr->createUndoAction(this, tr("&Undo"));
+        undoAction->setObjectName("actionUndo");
         undoAction->setShortcut(QKeySequence::Undo);
         QAction* redoAction = mgr->createRedoAction(this, tr("&Redo"));
+        redoAction->setObjectName("actionRedo");
         redoAction->setShortcut(QKeySequence::Redo);
         if (QAction* anchor = (!m_ui->menuEdit->actions().isEmpty()
                                        ? m_ui->menuEdit->actions().first()
@@ -1467,10 +1505,44 @@ void MainWindow::connectActions() {
             &MainWindow::toggleFullScreen);
     connect(m_ui->actionExclusiveFullScreen, &QAction::toggled, this,
             &MainWindow::toggleExclusiveFullScreen);
+    qApp->installEventFilter(new FullScreenKeyFilter(
+            this, [this](QObject* target, QEvent* event) {
+                if ((!isFullScreen() && !m_exclusiveFullscreen) ||
+                    (event->type() != QEvent::ShortcutOverride &&
+                     event->type() != QEvent::KeyPress))
+                    return false;
+                QWidget* host = m_exclusiveFullscreen && m_currentFullWidget
+                                        ? m_currentFullWidget
+                                        : this;
+                QWidget* popup = QApplication::activePopupWidget();
+                if (popup && belongsToFullscreenHost(popup, host)) return false;
+                QWidget* modal = QApplication::activeModalWidget();
+                if (modal && belongsToFullscreenHost(modal, host)) return false;
+                if (!belongsToFullscreenHost(target, host)) return false;
+                auto* key = static_cast<QKeyEvent*>(event);
+                // Escape is a contextual gesture. Configurable toggle keys,
+                // including chords, are owned by the existing Qt QAction.
+                if (key->key() != Qt::Key_Escape ||
+                    key->modifiers() != Qt::NoModifier)
+                    return false;
+                key->accept();
+                if (event->type() == QEvent::KeyPress && !key->isAutoRepeat()) {
+                    const bool exclusive = m_exclusiveFullscreen;
+                    QTimer::singleShot(0, this, [this, exclusive]() {
+                        if (exclusive && m_exclusiveFullscreen)
+                            toggleExclusiveFullScreen(false);
+                        else if (!exclusive && !m_exclusiveFullscreen &&
+                                 isFullScreen())
+                            toggleFullScreen(false);
+                    });
+                }
+                return true;
+            }));
 
     // ParaView-style: toggle view decorations (title bars + tab bar)
     {
         auto* decoAct = new QAction(tr("Toggle View Decorations"), this);
+        decoAct->setObjectName("actionToggleViewDecorations");
         decoAct->setCheckable(true);
         decoAct->setChecked(true);
         decoAct->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_D));
@@ -1485,6 +1557,7 @@ void MainWindow::connectActions() {
     // Multi-window view arrangement actions
     if (auto* displayMenu = m_ui->menuDisplay) {
         auto* linkCamerasAction = new QAction(tr("Link All Cameras"), this);
+        linkCamerasAction->setObjectName("actionLinkAllCameras");
         linkCamerasAction->setCheckable(true);
         linkCamerasAction->setChecked(false);
         linkCamerasAction->setToolTip(
@@ -1497,6 +1570,7 @@ void MainWindow::connectActions() {
         });
 
         auto* addCameraLinkAction = new QAction(tr("Add Camera Link..."), this);
+        addCameraLinkAction->setObjectName("actionAddCameraLink");
         addCameraLinkAction->setToolTip(
                 tr("Link the active view's camera to another view"));
         connect(addCameraLinkAction, &QAction::triggered, this, [this]() {
@@ -1534,6 +1608,7 @@ void MainWindow::connectActions() {
 
         auto* manageCameraLinksAction =
                 new QAction(tr("Manage Camera Links..."), this);
+        manageCameraLinksAction->setObjectName("actionManageCameraLinks");
         manageCameraLinksAction->setToolTip(
                 tr("View and remove active camera links"));
         connect(manageCameraLinksAction, &QAction::triggered, this, [this]() {
@@ -1566,16 +1641,19 @@ void MainWindow::connectActions() {
         displayMenu->addAction(manageCameraLinksAction);
 
         auto* eqMenu = displayMenu->addMenu(tr("Equalize Views"));
-        eqMenu->addAction(tr("Horizontally"), [this]() {
-            if (auto* mvw = m_tabbedMultiView
-                                    ? m_tabbedMultiView->currentMultiView()
-                                    : nullptr) {
-                if (mvw->layoutManager())
-                    mvw->layoutManager()->equalize(
-                            ecvViewLayoutProxy::HORIZONTAL);
-            }
-        });
-        eqMenu->addAction(tr("Vertically"), [this]() {
+        auto* equalizeHorizontal =
+                eqMenu->addAction(tr("Horizontally"), [this]() {
+                    if (auto* mvw =
+                                m_tabbedMultiView
+                                        ? m_tabbedMultiView->currentMultiView()
+                                        : nullptr) {
+                        if (mvw->layoutManager())
+                            mvw->layoutManager()->equalize(
+                                    ecvViewLayoutProxy::HORIZONTAL);
+                    }
+                });
+        equalizeHorizontal->setObjectName("actionEqualizeHorizontal");
+        auto* equalizeVertical = eqMenu->addAction(tr("Vertically"), [this]() {
             if (auto* mvw = m_tabbedMultiView
                                     ? m_tabbedMultiView->currentMultiView()
                                     : nullptr) {
@@ -1584,13 +1662,15 @@ void MainWindow::connectActions() {
                             ecvViewLayoutProxy::VERTICAL);
             }
         });
-        eqMenu->addAction(tr("Both"), [this]() {
+        equalizeVertical->setObjectName("actionEqualizeVertical");
+        auto* equalizeBoth = eqMenu->addAction(tr("Both"), [this]() {
             if (auto* mvw = m_tabbedMultiView
                                     ? m_tabbedMultiView->currentMultiView()
                                     : nullptr) {
                 if (mvw->layoutManager()) mvw->layoutManager()->equalize();
             }
         });
+        equalizeBoth->setObjectName("actionEqualizeBoth");
 
         // Preview submenu (ParaView pqPreviewMenuManager)
         {
@@ -1616,6 +1696,8 @@ void MainWindow::connectActions() {
             for (const auto& p : presets) {
                 auto* act = previewMenu->addAction(QString::fromUtf8(p.label));
                 act->setCheckable(true);
+                act->setObjectName(
+                        QStringLiteral("actionPreview%1x%2").arg(p.w).arg(p.h));
                 act->setData(QSize(p.w, p.h));
                 previewGroup->addAction(act);
                 connect(act, &QAction::triggered, this,
@@ -1633,7 +1715,7 @@ void MainWindow::connectActions() {
             }
 
             previewMenu->addSeparator();
-            previewMenu->addAction(
+            auto* customPreview = previewMenu->addAction(
                     tr("Custom..."), this, [this, previewGroup]() {
                         bool ok = false;
                         int w = QInputDialog::getInt(this, tr("Preview Size"),
@@ -1652,6 +1734,7 @@ void MainWindow::connectActions() {
                         }
                         lockViewSize(QSize(w, h));
                     });
+            customPreview->setObjectName("actionCustomPreviewSize");
         }
 
         // Full Screen (ParaView pqViewMenuManager)
@@ -1662,6 +1745,7 @@ void MainWindow::connectActions() {
                         if (m_tabbedMultiView)
                             m_tabbedMultiView->toggleFullScreen();
                     });
+            fsLayoutAct->setObjectName("actionLayoutFullScreen");
             fsLayoutAct->setShortcut(QKeySequence(Qt::Key_F11));
             fsLayoutAct->setShortcutContext(Qt::ApplicationShortcut);
 
@@ -1670,6 +1754,7 @@ void MainWindow::connectActions() {
                         if (m_tabbedMultiView)
                             m_tabbedMultiView->toggleFullScreenActiveView();
                     });
+            fsActiveAct->setObjectName("actionActiveViewFullScreen");
             fsActiveAct->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_F11));
             fsActiveAct->setShortcutContext(Qt::ApplicationShortcut);
         }
@@ -1679,38 +1764,36 @@ void MainWindow::connectActions() {
             displayMenu->addSeparator();
             auto* quickMenu = displayMenu->addMenu(tr("Quick Create View"));
 
-            auto addQuickCreate = [&](const QString& label,
-                                      const QKeySequence& key, auto createFn) {
-                auto* act = quickMenu->addAction(label, this, createFn);
+            auto addQuickCreate = [&](const QString& viewType,
+                                      const QString& label,
+                                      const QKeySequence& key) {
+                auto* act =
+                        quickMenu->addAction(label, this, [this, viewType]() {
+                            quickCreateViewInNewTab(viewType);
+                        });
+                act->setObjectName("actionQuickCreateView." + viewType);
                 act->setShortcut(key);
                 act->setShortcutContext(Qt::ApplicationShortcut);
             };
-
-            addQuickCreate(
-                    tr("SpreadSheet View"),
-                    QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_1),
-                    [this]() { quickCreateViewInNewTab("SpreadSheet"); });
-            addQuickCreate(tr("Line Chart View"),
-                           QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_2),
-                           [this]() { quickCreateViewInNewTab("LineChart"); });
-            addQuickCreate(tr("Bar Chart View"),
-                           QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_3),
-                           [this]() { quickCreateViewInNewTab("BarChart"); });
-            addQuickCreate(tr("Histogram View"),
-                           QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_4),
-                           [this]() { quickCreateViewInNewTab("Histogram"); });
-            addQuickCreate(tr("Orthographic Slice View"),
-                           QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_5),
-                           [this]() { quickCreateViewInNewTab("OrthoSlice"); });
-            addQuickCreate(tr("Python View"),
-                           QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_6),
-                           [this]() { quickCreateViewInNewTab("PythonView"); });
+            addQuickCreate("SpreadSheet", tr("SpreadSheet View"),
+                           QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_1));
+            addQuickCreate("LineChart", tr("Line Chart View"),
+                           QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_2));
+            addQuickCreate("BarChart", tr("Bar Chart View"),
+                           QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_3));
+            addQuickCreate("Histogram", tr("Histogram View"),
+                           QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_4));
+            addQuickCreate("OrthoSlice", tr("Orthographic Slice View"),
+                           QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_5));
+            addQuickCreate("PythonView", tr("Python View"),
+                           QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_6));
         }
     }
 
     // Lock View Size (ParaView-style: Tools → Lock View Size)
     {
         auto* lockAction = new QAction(tr("Lock View Size (300x300)"), this);
+        lockAction->setObjectName("actionLockViewSize300");
         lockAction->setCheckable(true);
         lockAction->setStatusTip(
                 tr("Lock all view sizes to 300x300 for "
@@ -1721,6 +1804,7 @@ void MainWindow::connectActions() {
 
         auto* lockCustomAction =
                 new QAction(tr("Lock View Size Custom..."), this);
+        lockCustomAction->setObjectName("actionLockCustomViewSize");
         lockCustomAction->setStatusTip(
                 tr("Lock all view sizes to a custom resolution"));
         connect(lockCustomAction, &QAction::triggered, this, [this]() {
@@ -1735,6 +1819,7 @@ void MainWindow::connectActions() {
         });
 
         auto* unlockAction = new QAction(tr("Unlock View Size"), this);
+        unlockAction->setObjectName("actionUnlockViewSize");
         connect(unlockAction, &QAction::triggered, this,
                 [this]() { lockViewSize(QSize()); });
 
@@ -1870,6 +1955,7 @@ void MainWindow::connectActions() {
     // FPS counter + performance logging in Sandbox menu
     {
         auto* fpsAction = new QAction(tr("Show FPS Counter"), this);
+        fpsAction->setObjectName("actionShowFpsCounter");
         fpsAction->setCheckable(true);
         fpsAction->setChecked(false);
         connect(fpsAction, &QAction::toggled, this, [](bool checked) {
@@ -1913,6 +1999,14 @@ void MainWindow::initApplicationUpdate() {
 }
 
 void MainWindow::initThemes() {
+    const auto updateThemeMenu = [this]() {
+        m_ui->themeAction->setEnabled(ecvApp->isCustomAppearance());
+        m_ui->themeAction->setToolTip(
+                tr("Choose Custom in Display Options to enable UI themes"));
+    };
+    connect(ecvApp, &ecvApplicationBase::appearanceChanged, this,
+            updateThemeMenu);
+    updateThemeMenu();
     // Option (connect)
     m_ui->DfaultThemeAction->setData(QVariant(Themes::THEME_DEFAULT));
     m_ui->BlueThemeAction->setData(QVariant(Themes::THEME_BLUE));
@@ -1939,6 +2033,11 @@ void MainWindow::initThemes() {
     m_ui->DraculaThemeAction->setData(QVariant(Themes::THEME_DRACULA));
     m_ui->FluentThemeAction->setData(QVariant(Themes::THEME_FLUENT));
     m_ui->MacOSThemeAction->setData(QVariant(Themes::THEME_MACOS));
+    m_ui->MacOSThemeAction->setText(tr("macOS-inspired Light"));
+    auto* macOSDark = new QAction(tr("macOS-inspired Dark"), m_ui->themeAction);
+    macOSDark->setData(QVariant(Themes::THEME_MACOS_DARK));
+    m_ui->themeAction->insertAction(m_ui->OneDarkThemeAction, macOSDark);
+    connect(macOSDark, &QAction::triggered, this, &MainWindow::changeTheme);
     m_ui->OneDarkThemeAction->setData(QVariant(Themes::THEME_ONEDARK));
     m_ui->CatppuccinThemeAction->setData(QVariant(Themes::THEME_CATPPUCCIN));
     m_ui->TokyoNightThemeAction->setData(QVariant(Themes::THEME_TOKYONIGHT));
@@ -2822,36 +2921,6 @@ ecvGenericGLDisplay* MainWindow::getActiveGLDisplay() {
     return ecvViewManager::instance().getActiveView();
 }
 
-void MainWindow::ChangeStyle(const QString& qssFile) {
-    QString fileName = qssFile;
-
-    if (!fileName.isEmpty()) {
-        QFile file(fileName);
-
-        if (file.open(QFile::ReadOnly)) {
-            QString str = file.readAll();
-            static QString qssStyle;
-
-            if (qssStyle == str) {
-                return;
-            }
-
-            qssStyle = str;
-            QString paletteColor = str.mid(20, 7);
-            ecvApp->setPalette(QPalette(QColor(paletteColor)));
-            ecvApp->setStyleSheet(qssStyle);
-        }
-    } else {
-        // default
-        ecvApp->setPalette(QPalette(QColor(240, 240, 240, 255)));
-        ecvApp->setStyleSheet(QString());
-    }
-}
-
-void MainWindow::setUiManager(QUIWidget* uiManager) {
-    this->m_uiManager = uiManager;
-}
-
 void MainWindow::toggleVisualDebugTraces() {
     if (auto* view = getActiveGLView()) {
         view->toggleDebugTrace();
@@ -3347,6 +3416,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         auto* camUndoAct =
                 new QAction(QIcon(":/Resources/images/svg/pq/pqUndoCamera.svg"),
                             tr("Camera Undo"), viewToolBar);
+        camUndoAct->setObjectName("actionCameraUndo");
         camUndoAct->setEnabled(false);
         connect(camUndoAct, &QAction::triggered, this,
                 [getVtkVisForWidget, compView, innerWidget]() {
@@ -3365,6 +3435,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         auto* camRedoAct =
                 new QAction(QIcon(":/Resources/images/svg/pq/pqRedoCamera.svg"),
                             tr("Camera Redo"), viewToolBar);
+        camRedoAct->setObjectName("actionCameraRedo");
         camRedoAct->setEnabled(false);
         connect(camRedoAct, &QAction::triggered, this,
                 [getVtkVisForWidget, compView, innerWidget]() {
@@ -3416,6 +3487,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     auto* captureAct = new QAction(
             QIcon(":/Resources/images/svg/pq/pqCaptureScreenshot.svg"),
             tr("Capture Screenshot"), viewToolBar);
+    captureAct->setObjectName("actionCaptureView");
     connect(captureAct, &QAction::triggered, this,
             activateViewAndDo(&MainWindow::doActionScreenShot));
     viewToolBar->addAction(captureAct);
@@ -3427,6 +3499,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         auto* toggle3DAct = new QAction(
                 QIcon(":/Resources/images/svg/pq/pqInteractionMode3D.svg"),
                 tr("3D"), viewToolBar);
+        toggle3DAct->setObjectName("view3DToggleAction");
         toggle3DAct->setCheckable(true);
         toggle3DAct->setChecked(true);
         connect(toggle3DAct, &QAction::toggled, orthoView,
@@ -3436,6 +3509,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         auto* editCamAct =
                 new QAction(QIcon(":/Resources/images/svg/pq/pqEditCamera.svg"),
                             tr("Adjust Camera"), viewToolBar);
+        editCamAct->setObjectName("actionEditViewCamera");
         connect(editCamAct, &QAction::triggered, this,
                 activateViewAndDo(&MainWindow::doActionEditCamera));
         viewToolBar->addAction(editCamAct);
@@ -3445,6 +3519,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         auto* resetCamAct =
                 new QAction(QIcon(":/Resources/images/svg/pq/pqReset.svg"),
                             tr("Reset Camera"), viewToolBar);
+        resetCamAct->setObjectName("actionResetViewCamera");
         connect(resetCamAct, &QAction::triggered, orthoView,
                 &vtkOrthoSliceViewWidget::resetCameras);
         viewToolBar->addAction(resetCamAct);
@@ -3454,6 +3529,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                 tr("Zoom to Fit"), viewToolBar);
         connect(zoomFitAct, &QAction::triggered, orthoView,
                 [orthoView]() { orthoView->zoomToFit(); });
+        zoomFitAct->setObjectName("actionZoomViewToData");
         viewToolBar->addAction(zoomFitAct);
     }
 
@@ -3524,14 +3600,14 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
 
         auto* polySelAct = new QAction(
                 QIcon(":/Resources/images/svg/pq/pqSelectChartPolygon.svg"),
-                tr("Polygon Selection (d)"), viewToolBar);
+                tr("Polygon Selection"), viewToolBar);
         polySelAct->setObjectName("actionChartSelectPolygon");
         polySelAct->setCheckable(true);
         viewToolBar->addAction(polySelAct);
 
         auto* rectSelAct = new QAction(
                 QIcon(":/Resources/images/svg/pq/pqSelectChart.svg"),
-                tr("Rectangle Selection (s)"), viewToolBar);
+                tr("Rectangle Selection"), viewToolBar);
         rectSelAct->setObjectName("actionChartSelectRectangle");
         rectSelAct->setCheckable(true);
         viewToolBar->addAction(rectSelAct);
@@ -3573,13 +3649,37 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                     togSelAct->setChecked(false);
                     chartW->clearSelection();
                 });
+        for (auto* gesture : {addSelAct, subSelAct, togSelAct})
+            gesture->setProperty("shortcutGesture", true);
+        const QPair<QAction*, QString> proxies[] = {
+                {rectSelAct, "actionSelectSurfaceCells"},
+                {polySelAct, "actionSelectSurfacePoints"},
+                {clearSelAct, "actionClearSelection"}};
+        for (const auto& proxy : proxies) {
+            auto* local = proxy.first;
+            local->setProperty("shortcutProxy", true);
+            auto updateTip = [local, id = proxy.second]() {
+                QStringList keys;
+                for (const auto& key :
+                     ecvKeySequences::instance().bindings().value(id))
+                    keys.append(key.toString());
+                local->setToolTip(keys.isEmpty()
+                                          ? local->text()
+                                          : local->text() + " (" +
+                                                    keys.join("; ") + ")");
+            };
+            connect(&ecvKeySequences::instance(),
+                    &ecvKeySequences::commandsChanged, local, updateTip);
+            updateTip();
+        }
     }
 
     if (isComparativeRenderView || isRenderView) {
         viewToolBar->addSeparator();
 
-        auto* view3DAct = new QAction(QIcon(":/Resources/images/3D3.png"),
-                                      tr("3D View"), viewToolBar);
+        auto* view3DAct =
+                new QAction(QIcon(":/Resources/images/svg/view/view3D.svg"),
+                            tr("3D View"), viewToolBar);
         view3DAct->setObjectName("view3DToggleAction");
         view3DAct->setCheckable(true);
         view3DAct->setChecked(true);
@@ -3612,22 +3712,15 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
         auto* editCamAct =
                 new QAction(QIcon(":/Resources/images/svg/pq/pqEditCamera.svg"),
                             tr("Adjust Camera"), viewToolBar);
+        editCamAct->setObjectName("actionEditViewCamera");
         connect(editCamAct, &QAction::triggered, this,
-                [this, innerWidget, compView]() {
-                    if (compView && !compView->subViews().isEmpty()) {
-                        auto* first = compView->subViews().first();
-                        if (first) {
-                            ecvViewManager::instance().setActiveView(first);
-                            rebindToolsToActiveView(first);
-                        }
-                    }
-                    doActionEditCamera();
-                });
+                activateViewAndDo(&MainWindow::doActionEditCamera));
         viewToolBar->addAction(editCamAct);
 
         auto* resetCamAct =
                 new QAction(QIcon(":/Resources/images/svg/pq/pqReset.svg"),
                             tr("Reset Camera"), viewToolBar);
+        resetCamAct->setObjectName("actionResetViewCamera");
         connect(resetCamAct, &QAction::triggered, this,
                 [compView, innerWidget]() {
                     if (compView) {
@@ -3664,6 +3757,7 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                         }
                     }
                 });
+        zoomFitAct->setObjectName("actionZoomViewToData");
         viewToolBar->addAction(zoomFitAct);
 
         viewToolBar->addSeparator();
@@ -3909,8 +4003,12 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
                     for (int i = 0; i < cFrame->layout()->count(); ++i) {
                         auto* item = cFrame->layout()->itemAt(i);
                         if (item && item->widget()) {
-                            return ecvGenericGLDisplay::FromWidget(
-                                    item->widget());
+                            if (auto* slice = qobject_cast<vtkSliceViewWidget*>(
+                                        item->widget()))
+                                return slice->view();
+                            if (auto* display = ecvGenericGLDisplay::FromWidget(
+                                        item->widget()))
+                                return display;
                         }
                     }
                     return nullptr;
@@ -4159,6 +4257,21 @@ QWidget* MainWindow::createViewFrame(QWidget* innerWidget,
     frameLayout->addWidget(titleBar, 0);
     frameLayout->addWidget(contentFrame, 1);
 
+#ifdef USE_VTK_BACKEND
+    // Other per-view actions are genuine local command instances, not window
+    // shortcuts copied from the first view encountered by the settings dialog.
+    for (auto* action : viewToolBar->actions()) {
+        if (!action || action->isSeparator() || action->menu() ||
+            action->objectName().isEmpty() ||
+            action->property("shortcutProxy").toBool() ||
+            action->property("shortcutGesture").toBool())
+            continue;
+        frame->addAction(action);
+        action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        ecvKeySequences::instance().registerCommand(
+                "view/" + action->objectName(), action, tr("View"));
+    }
+#endif
     return frame;
 }
 
@@ -4256,11 +4369,6 @@ void MainWindow::splitViewFrame(QWidget* frameToSplit,
     splitter->setChildrenCollapsible(false);
     splitter->setHandleWidth(8);
     splitter->setOpaqueResize(true);
-    splitter->setStyleSheet(QStringLiteral(
-            "QSplitter::handle { background: palette(mid); }"
-            "QSplitter::handle:hover { background: palette(highlight); }"
-            "QSplitter::handle:horizontal { min-width: 8px; }"
-            "QSplitter::handle:vertical { min-height: 8px; }"));
 
     QWidget* parent = frameToSplit->parentWidget();
     auto* parentSplitter = qobject_cast<QSplitter*>(parent);
@@ -6252,8 +6360,8 @@ void MainWindow::setView(CC_VIEW_ORIENTATION view) {
         }
 
         if (targetComp) {
-            // Comparative mode: ParaView flow = SetDirection + ResetCamera
-            // + camera-link propagation.
+            // Comparative mode: set orientation on the first sub-view (zoom
+            // preserving), then propagate the camera through the link.
             targetComp->removeCameraLink();
 
             {
@@ -6261,20 +6369,20 @@ void MainWindow::setView(CC_VIEW_ORIENTATION view) {
 
                 auto subViews = targetComp->subViews();
                 if (!subViews.isEmpty()) {
-                    // Step 1: set orientation on the first sub-view.
+                    // Step 1: set orientation on the first sub-view. This
+                    // keeps the current focal point and zoom level.
                     auto* first = subViews.first();
                     first->setView(view);
 
-                    // Step 2: ResetCamera to refit bounds (ParaView
-                    // convention).
+                    // Step 2: only refresh the clipping range. ResetCamera
+                    // would refit the bounds and destroy the preserved zoom.
                     auto* firstRen =
                             vtkComparativeViewWidget::getSceneRenderer(first);
                     if (firstRen) {
-                        firstRen->ResetCamera();
                         firstRen->ResetCameraClippingRange();
                     }
 
-                    // Step 3: copy the refitted camera to the other sub-views.
+                    // Step 3: copy the camera to the other sub-views.
                     if (firstRen && firstRen->GetActiveCamera()) {
                         auto* srcCam = firstRen->GetActiveCamera();
                         for (int i = 1; i < subViews.size(); ++i) {
@@ -6413,9 +6521,6 @@ bool MainWindow::s_autoSaveGuiElementPos = true;
 void MainWindow::doActionResetGUIElementsPos() {
     // show the user it will be maximized
     showMaximized();
-    if (this->m_uiManager) {
-        this->m_uiManager->showMaximized();
-    }
 
     QSettings settings;
     settings.remove(ecvPS::MainWinGeom());
@@ -6487,10 +6592,14 @@ void MainWindow::doActionRestoreWindowOnStartup(bool state) {
 }
 
 void MainWindow::toggleFullScreen(bool state) {
-    if (m_uiManager != nullptr) {
-        m_uiManager->toggleFullScreen(state);
+    if (state) {
+        m_formerMainWindowState = windowState() & Qt::WindowMaximized;
+        showFullScreen();
     } else {
-        state ? showFullScreen() : showNormal();
+        showNormal();
+        if (m_formerMainWindowState.testFlag(Qt::WindowMaximized))
+            showMaximized();
+        m_formerMainWindowState = Qt::WindowNoState;
     }
 
 #ifdef Q_OS_MAC
@@ -6515,9 +6624,19 @@ void MainWindow::toggleExclusiveFullScreen(bool state) {
         // we are currently in normal screen mode
         if (!m_exclusiveFullscreen) {
             m_currentFullWidget = getActiveWindow();
+            m_fullScreenDisplay = m_currentFullWidget
+                                          ? ecvGenericGLDisplay::FromWidget(
+                                                    m_currentFullWidget)
+                                          : nullptr;
             if (m_currentFullWidget) {
                 m_formerGeometry = m_currentFullWidget->saveGeometry();
+                m_formerFullScreenFlags = m_currentFullWidget->windowFlags();
+                m_formerFullScreenState = m_currentFullWidget->windowState();
                 m_currentFullWidget->setWindowFlags(Qt::Dialog);
+                m_currentFullWidget->addAction(m_ui->actionExclusiveFullScreen);
+                for (auto* command : actions())
+                    if (command->property("shortcutViewCommand").toBool())
+                        m_currentFullWidget->addAction(command);
                 // Install event filter to capture ESC key in fullscreen mode
                 m_currentFullWidget->installEventFilter(this);
             }
@@ -6532,8 +6651,12 @@ void MainWindow::toggleExclusiveFullScreen(bool state) {
             }
 
             onExclusiveFullScreenToggled(state);
+            QStringList exitKeys{QKeySequence(Qt::Key_Escape).toString()};
+            for (const auto& key : m_ui->actionExclusiveFullScreen->shortcuts())
+                exitKeys.append(key.toString());
             ecvViewManager::instance().displayMessageOnActiveView(
-                    "Press F11 or ESC to disable full-screen mode",
+                    tr("Press %1 to exit full screen")
+                            .arg(exitKeys.join(tr(" or "))),
                     ecvGenericGLDisplay::UPPER_CENTER_MESSAGE, false, 30,
                     ecvGenericGLDisplay::FULL_SCREEN_MESSAGE);
         }
@@ -6547,14 +6670,21 @@ void MainWindow::toggleExclusiveFullScreen(bool state) {
                     0, ecvGenericGLDisplay::FULL_SCREEN_MESSAGE);
 
             if (m_currentFullWidget) {
+                m_currentFullWidget->removeAction(
+                        m_ui->actionExclusiveFullScreen);
+                for (auto* command : actions())
+                    if (command->property("shortcutViewCommand").toBool())
+                        m_currentFullWidget->removeAction(command);
                 m_currentFullWidget->showNormal();
                 if (!m_formerGeometry.isNull()) {
                     m_currentFullWidget->restoreGeometry(m_formerGeometry);
                     m_formerGeometry.clear();
                 }
-                m_currentFullWidget->setWindowFlags(Qt::SubWindow);
-                // Force widget to show again after changing flags
+                m_currentFullWidget->setWindowFlags(m_formerFullScreenFlags);
                 m_currentFullWidget->show();
+                m_currentFullWidget->setWindowState(m_formerFullScreenState);
+                m_currentFullWidget->setFocus();
+                m_fullScreenDisplay = nullptr;
             } else {
                 showNormal();
             }
@@ -6591,13 +6721,30 @@ void MainWindow::toggle3DView(bool state) {
 }
 
 void MainWindow::onExclusiveFullScreenToggled(bool state) {
-    // we simply update the full-screen action method icon (whatever the window)
-    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
-        view->setExclusiveFullScreenFlag(state);
-        m_ui->actionExclusiveFullScreen->blockSignals(true);
-        m_ui->actionExclusiveFullScreen->setChecked(state);
-        m_ui->actionExclusiveFullScreen->blockSignals(false);
+    // The exclusive overlay is owned by the exact view whose widget was
+    // promoted to fullscreen, not whichever view becomes globally effective
+    // during activation/focus changes.
+    auto* display = m_fullScreenDisplay
+                            ? m_fullScreenDisplay
+                            : ecvViewManager::instance().getEffectiveView();
+    if (display) {
+        if (auto* context = display->viewContext()) {
+            if (state) {
+                m_formerOverlayEntitiesVisible =
+                        context->displayOverlayEntities;
+                context->displayOverlayEntities = true;
+            } else {
+                context->displayOverlayEntities =
+                        m_formerOverlayEntitiesVisible;
+            }
+            context->exclusiveFullscreen = state;
+            display->redraw(false, true);
+        }
     }
+    m_ui->actionExclusiveFullScreen->blockSignals(true);
+    m_ui->actionExclusiveFullScreen->setChecked(state);
+    m_ui->actionExclusiveFullScreen->blockSignals(false);
+    if (!state) m_fullScreenDisplay = nullptr;
 }
 
 void MainWindow::updateFullScreenMenu(bool state) {
@@ -7434,9 +7581,7 @@ void MainWindow::initSelectionController() {
     actions.zoomToBox = m_ui->actionZoomToBox;
     m_selectionController->setupActions(actions);
 
-    // ParaView-style: global QShortcuts on MainWindow dispatch based on
-    // active view type (chart view vs render view). Selection tool shortcuts
-    // are NOT registered through ecvKeySequences/ecvModalShortcut.
+    // Commands route to the active view through its existing toolbar proxies.
     auto findActionOnFrame = [](QWidget* frame,
                                 const QString& objName) -> QAction* {
         if (!frame) return nullptr;
@@ -7457,84 +7602,96 @@ void MainWindow::initSelectionController() {
         QWidget* frame = viewWidget;
         while (frame && frame->objectName() != "CentralWidgetFrame")
             frame = frame->parentWidget();
-        if (!frame) frame = viewWidget;
-        return frame->parentWidget();
+        if (frame) return frame->parentWidget();
+        if (m_tabbedMultiView && m_tabbedMultiView->currentMultiView())
+            return m_tabbedMultiView->currentMultiView()->activeFrame();
+        return nullptr;
     };
 
-    auto isChartViewActive = [this, findActionOnFrame]() -> bool {
-        auto* activeDisplay = ecvViewManager::instance().getActiveView();
-        if (!activeDisplay) return false;
-        QWidget* viewWidget = activeDisplay->asWidget();
-        if (!viewWidget) return false;
-        QWidget* frame = viewWidget;
-        while (frame && frame->objectName() != "CentralWidgetFrame")
-            frame = frame->parentWidget();
-        if (!frame) frame = viewWidget;
-        auto* parentFrame = frame->parentWidget();
-        if (!parentFrame) return false;
-        return findActionOnFrame(parentFrame, "actionChartSelectRectangle") !=
-               nullptr;
+    auto isChartViewActive = [getActiveViewFrame, findActionOnFrame]() -> bool {
+        return findActionOnFrame(getActiveViewFrame(),
+                                 "actionChartSelectRectangle") != nullptr;
     };
 
-    struct ShortcutEntry {
-        QString renderAction;
-        QString chartAction;
-        QKeySequence key;
-    };
-    const ShortcutEntry scEntries[] = {
-            {"actionSelectSurfaceCells", "actionChartSelectRectangle",
-             QKeySequence(Qt::Key_S)},
-            {"actionSelectSurfacePoints", "actionChartSelectPolygon",
-             QKeySequence(Qt::Key_D)},
-            {"actionSelectFrustumCells", "", QKeySequence(Qt::Key_F)},
-            {"actionSelectFrustumPoints", "", QKeySequence(Qt::Key_G)},
-            {"actionSelectBlocks", "", QKeySequence(Qt::Key_B)},
-            {"actionGrowSelection", "", QKeySequence(Qt::Key_Plus)},
-            {"actionShrinkSelection", "", QKeySequence(Qt::Key_Minus)},
-    };
-    for (const auto& sc : scEntries) {
-        auto* shortcut = new QShortcut(sc.key, this);
-        shortcut->setContext(Qt::WindowShortcut);
-        connect(shortcut, &QShortcut::activated, this,
+    // One executable command per semantic action. Toolbar mirrors remain
+    // trigger proxies, and never acquire their own shortcut registrations.
+    const QList<QAction*> selectionActions = {actions.selectSurfaceCells,
+                                              actions.selectSurfacePoints,
+                                              actions.selectFrustumCells,
+                                              actions.selectFrustumPoints,
+                                              actions.selectPolygonCells,
+                                              actions.selectPolygonPoints,
+                                              actions.selectBlocks,
+                                              actions.selectFrustumBlocks,
+                                              actions.interactiveSelectCells,
+                                              actions.interactiveSelectPoints,
+                                              actions.hoverCells,
+                                              actions.hoverPoints,
+                                              actions.growSelection,
+                                              actions.shrinkSelection,
+                                              actions.clearSelection};
+    for (auto* source : selectionActions) {
+        if (!source) continue;
+        source->setProperty("shortcutProxy", true);
+        auto* command = new QAction(source->icon(), source->text(), this);
+        command->setObjectName(source->objectName() + ".command");
+        command->setShortcut(
+                source->property("shortcutDefault").value<QKeySequence>());
+        command->setShortcutContext(Qt::WindowShortcut);
+        command->setProperty("shortcutViewCommand", true);
+        command->setToolTip(source->toolTip());
+        addAction(command);
+        ecvKeySequences::instance().registerCommand(source->objectName(),
+                                                    command, tr("Selection"));
+        connect(command, &QAction::triggered, this,
                 [findActionOnFrame, getActiveViewFrame, isChartViewActive,
-                 renderName = sc.renderAction, chartName = sc.chartAction,
-                 this]() {
-                    QWidget* frame = getActiveViewFrame();
-                    QAction* target = nullptr;
-                    if (!chartName.isEmpty() && isChartViewActive()) {
-                        target = findActionOnFrame(frame, chartName);
+                 source = QPointer<QAction>(source)]() {
+                    if (!source) return;
+                    QString name = source->objectName();
+                    if (isChartViewActive()) {
+                        if (name == "actionSelectSurfaceCells")
+                            name = "actionChartSelectRectangle";
+                        else if (name == "actionSelectSurfacePoints")
+                            name = "actionChartSelectPolygon";
+                        else if (name == "actionClearSelection")
+                            name = "actionChartClearSelection";
+                        else
+                            return;
                     }
-                    if (!target) {
-                        target = findActionOnFrame(frame, renderName);
-                    }
-                    if (!target) {
-                        target = this->findChild<QAction*>(renderName);
-                    }
-                    if (!target) {
-                        return;
-                    }
-                    if (target->isCheckable()) {
-                        target->toggle();
-                    } else {
-                        target->trigger();
-                    }
+                    auto* target =
+                            findActionOnFrame(getActiveViewFrame(), name);
+                    if (target && target->isEnabled()) target->trigger();
                 });
+        auto updateTip = [source = QPointer<QAction>(source), command]() {
+            if (!source) return;
+            QStringList keys;
+            for (const auto& key : command->shortcuts())
+                keys.append(key.toString());
+            source->setToolTip(keys.isEmpty() ? source->text()
+                                              : source->text() + " (" +
+                                                        keys.join("; ") + ")");
+        };
+        connect(command, &QAction::changed, source, updateTip);
+        updateTip();
     }
-
-    auto* escShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
-    connect(escShortcut, &QShortcut::activated, this,
+    auto* cancel = new QAction(tr("Cancel Selection Tool"), this);
+    cancel->setObjectName("actionCancelSelectionTool");
+    cancel->setProperty("shortcutViewCommand", true);
+    cancel->setShortcut(QKeySequence(Qt::Key_Escape));
+    addAction(cancel);
+    ecvKeySequences::instance().registerCommand(cancel->objectName(), cancel,
+                                                tr("Selection"));
+    connect(cancel, &QAction::triggered, this,
             [this, findActionOnFrame, getActiveViewFrame, isChartViewActive]() {
                 if (isChartViewActive()) {
                     QWidget* frame = getActiveViewFrame();
-                    auto* clearAct = findActionOnFrame(
-                            frame, "actionChartClearSelection");
-                    if (clearAct) {
-                        clearAct->trigger();
-                        return;
-                    }
-                }
-                if (m_selectionController) {
-                    m_selectionController->disableAllTools(nullptr);
+                    for (const auto& name :
+                         {QStringLiteral("actionChartSelectRectangle"),
+                          QStringLiteral("actionChartSelectPolygon")})
+                        if (auto* action = findActionOnFrame(frame, name))
+                            action->setChecked(false);
+                } else if (m_selectionController) {
+                    m_selectionController->handleEscapeKey();
                 }
             });
 
@@ -7587,18 +7744,26 @@ void MainWindow::initSelectionController() {
     }
 
     connect(&ecvViewManager::instance(), &ecvViewManager::pointIndicesSelected,
-            this, [this](ccHObject* /*entity*/, const QSet<unsigned>& indices) {
-                if (!m_selectionController ||
-                    !m_selectionController->highlighter())
-                    return;
+            this, [this](ccHObject* entity, const QSet<unsigned>& indices) {
+                if (!entity) return;
+                auto* manager = getSelectionManager();
+                if (!manager) return;
                 QVector<qint64> ids;
                 ids.reserve(indices.size());
                 for (unsigned idx : indices) {
                     ids.append(static_cast<qint64>(idx));
                 }
+                // External chart/table selections carry source point IDs, not
+                // indices into whichever actor happens to be active here.
                 cvSelectionData selData(ids, cvSelectionData::POINTS);
-                m_selectionController->highlighter()->highlightSelection(
-                        selData);
+                cvActorSelectionInfo info;
+                info.sourceId = entity->getViewId();
+                info.sourceIds = ids;
+                selData.addActorInfo(info);
+                manager->setSourceObject(entity);
+                // The typed selectionChanged notification renders every view
+                // through onSelectionFinished; do not re-highlight here.
+                manager->setCurrentSelection(selData);
             });
 
     // Connect zoom to box signal for notification (zoom is handled by
@@ -7739,11 +7904,10 @@ void MainWindow::onSelectionFinished(const cvSelectionData& selectionData) {
         m_findDataDock->updateSelection(selectionData);
     }
 
-    // NOTE: Highlighting is already done in
-    // cvRenderViewSelectionReaction::finalizeSelection() Do NOT call
-    // highlighter->highlightSelection() here again as it causes double
-    // highlighting and potential crashes due to actor management issues. We
-    // only need to clear highlights when selection is empty.
+    // Every registered view resolves the SAME source IDs against its OWN
+    // actors, filtering and transforms, never a copied overlay or another
+    // view's local IDs. Manager updates (e.g. grow or chart input) need not
+    // have passed through the active view's selection reaction first.
     if (!hasSelection) {
         cvSelectionHighlighter* highlighter =
                 m_selectionController ? m_selectionController->highlighter()
@@ -7752,27 +7916,17 @@ void MainWindow::onSelectionFinished(const cvSelectionData& selectionData) {
             highlighter->clearHighlights();
         }
     }
-
-    if (hasSelection) {
-        ccHObject::Container selected;
-        if (m_ccRoot) {
-            m_ccRoot->getSelectedEntities(selected);
-        }
-        ccHObject* activeEntity = selected.empty() ? nullptr : selected.front();
-        if (activeEntity) {
-            QVector<qint64> rawIds = selectionData.ids();
-            QSet<unsigned> indices;
-            indices.reserve(rawIds.size());
-            for (qint64 id : rawIds) {
-                if (id >= 0) indices.insert(static_cast<unsigned>(id));
-            }
-            if (!indices.isEmpty()) {
-                emit ecvViewManager::instance().pointIndicesSelected(
-                        activeEntity, indices);
-            }
-        }
+    for (auto* display : ecvViewManager::instance().getAllViews()) {
+        auto* view = dynamic_cast<vtkGLView*>(display);
+        auto* vis = view ? view->getVisualizer3D() : nullptr;
+        if (!vis) continue;
+        cvSelectionHighlighter::renderSelectionForView(
+                vis, selectionData, cvSelectionHighlighter::SELECTED);
     }
 
+    // Do not feed SelectionTools back through pointIndicesSelected: that
+    // source-point-only input would reinterpret cell IDs and overwrite the
+    // actor-local overlay already produced by the selection reaction.
     refreshAll();
 
     CVLog::PrintDebug(QString("[MainWindow] Selection UI updated: %1 elements")
@@ -10258,17 +10412,17 @@ void MainWindow::help() {
                "https://asher-1.github.io/ACloudViewer/docs!"));
 }
 
-// Change theme: Windows/Darcula
+// Select a JSON-backed Custom color preset through the appearance owner.
 void MainWindow::changeTheme() {
     QAction* action = qobject_cast<QAction*>(sender());
     QVariant v = action->data();
 
-    QString qssfile = (QString)v.value<QString>();
-    ChangeStyle(qssfile);
-
-    // persistent saving
-    ecvSettingManager::setValue(ecvPS::ThemeSettings(), ecvPS::CurrentTheme(),
-                                qssfile);
+    const QString qssfile = v.toString();
+    if (!ecvApp->setCustomTheme(qssfile)) {
+        CVLog::Warning(
+                tr("UI themes are available only in Custom window style, "
+                   "and must resolve to a valid built-in resource."));
+    }
 }
 
 // Change language: English/Chinese
@@ -11580,7 +11734,14 @@ void MainWindow::doActionRegister() {
         summary << overlapString;
 
         summary << "----------------";
-        summary << tr("This report has been output to Console (F8)");
+        QStringList consoleKeys;
+        for (const auto& key : ecvKeySequences::instance().effectiveBindings(
+                     QStringLiteral("actionConsole")))
+            consoleKeys.append(key.toString(QKeySequence::NativeText));
+        summary << tr("This report has been output to Console (%1)")
+                           .arg(consoleKeys.isEmpty()
+                                        ? tr("no effective shortcut")
+                                        : consoleKeys.join("; "));
 
         // cloud to move
         ccGenericPointCloud* pc = nullptr;
@@ -15529,8 +15690,9 @@ static void collectActionsFromMenu(QMenu* menu,
             continue;
         }
 
-        // Skip separators
-        if (action->isSeparator()) {
+        // Separators and data-generated menus are not persistent commands.
+        if (action->isSeparator() ||
+            action->property("shortcutTransient").toBool()) {
             continue;
         }
 
@@ -15541,14 +15703,6 @@ static void collectActionsFromMenu(QMenu* menu,
 
         // Skip if already collected (avoid duplicates)
         if (collected.contains(action)) {
-            continue;
-        }
-
-        // Skip toolbar toggle actions by objectName pattern
-        // All toolbar toggle actions have objectName starting with
-        // "actionDisplay"
-        if (!action->objectName().isEmpty() &&
-            action->objectName().startsWith("actionDisplay")) {
             continue;
         }
 
@@ -15633,12 +15787,6 @@ void MainWindow::populateActionList() {
                 continue;
             }
 
-            // Skip toolbar toggle actions
-            if (!action->objectName().isEmpty() &&
-                action->objectName().startsWith("actionDisplay")) {
-                continue;
-            }
-
             // Skip actions with submenus
             if (action->menu()) {
                 continue;
@@ -15652,11 +15800,9 @@ void MainWindow::populateActionList() {
 
 void MainWindow::showShortcutDialog() {
     if (m_shortcutDlg) {
-        m_shortcutDlg->syncModalShortcuts();
+        populateActionList();
+        m_shortcutDlg->registerActions(m_actions);
         m_shortcutDlg->exec();
-#ifdef USE_VTK_BACKEND
-        QVTKWidgetCustom::reloadVtkShortcutMap();
-#endif
     }
 }
 

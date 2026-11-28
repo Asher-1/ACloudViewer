@@ -26,6 +26,7 @@ struct SyntheticData {
 };
 
 SyntheticData SynthesizeData(size_t num_inliers, size_t num_outliers) {
+  SetPRNGSeed(0);
   SyntheticData data;
   data.img2_from_img1.scale = RandomUniformReal<float>(0.1, 10);
   data.img2_from_img1.angle = RandomUniformReal<float>(0, 2 * M_PI);

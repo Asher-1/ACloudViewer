@@ -62,6 +62,13 @@ acloudviewer install --wheel           # alternative: install the Python cloudVi
 - **Qt** 5.12+ or Qt 6.2+
 - **C++17** compliant compiler
 
+Qt6 builds do not require **Core5Compat**, which is an optional Qt Add-On.
+Regular expressions use QtCore; named legacy codecs use native Windows services
+or the system iconv implementation (provided by libc on Linux and libiconv on
+macOS). The central compatibility API covers Qt6.0/6.1;
+Qt6.2+ above remains the recommended full-application dependency baseline, not
+an API lower bound or a claim of full Qt6 application acceptance.
+
 **Recommended:**
 - **Conda/Miniconda** (for dependency management)
 - **CUDA** 12.0+ (for GPU acceleration)
@@ -288,6 +295,7 @@ Expand the `INSTALL` group in CMake GUI to enable plugins:
 | qInstantMesh            | PLUGIN_STANDARD_QINSTANTMESH             | OFF           | InstantMesh image-to-3D mesh/gaussian reconstruction (DINO + LRM + FlexiCubes, optional Zero123++ multi-view diffusion; f32/f16/q8_0 GGUFs, geometry-only or textured GLB) ([README](plugins/core/Standard/qInstantMesh/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/instantmesh`). |
 | qQuerySplat             | PLUGIN_STANDARD_QQUERYSPLAT              | OFF           | QuerySplat multi-view image-to-3DGS prediction (VGGT-Omega encoder shared with qMapAnything + QuerySplat decoder, gsplat-semantics rendering, TTO, 3DGS PLY export) ([README](plugins/core/Standard/qQuerySplat/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/querysplat`). |
 | qVLXSeek                | PLUGIN_STANDARD_QVLXSEEK                 | OFF           | VLX-Seek 1.5-10B fine-grained open-vocabulary grounding (region-reference retrieval: detection / grounding / counting / region caption / region OCR; en+zh templates; f16/q8_0 GGUFs) ([README](plugins/core/Standard/qVLXSeek/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/vlx_seek`). |
+| qWeVisOne               | PLUGIN_STANDARD_QWEVISONE                | OFF           | WeVisOne-VL 2B/4B unified vision-language grounding (detection / referring / point / count_box / count_point / OCR / OCR grounding / segmentation / matting / visual prompt / freeform; pixel-decoder alpha mattes; f16/q8_0/q4_K_M GGUFs) ([README](plugins/core/Standard/qWeVisOne/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/wevisone`). |
 | qRAM                    | PLUGIN_STANDARD_QRAM                     | OFF           | Recognize Anything — RAM, RAM++, and Tag2Text image tagging/captions through all published F32/F16/Q8_0 GGUF models ([README](plugins/core/Standard/qRAM/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/tagging`). |
 | qRelateAnything | PLUGIN_STANDARD_QRELATEANYTHING | OFF | Scene relations for images/video, all 12 published relation/text GGUFs; public YOLO regions and shared cache ([README](plugins/core/Standard/qRelateAnything/README.md)). Requires `AICore_ENABLED=ON`. |
 | qManualCalib            | PLUGIN_STANDARD_QMANUAL_CALIB            | OFF           | Manual sensor extrinsic calibration and AVM view adjustment — **lives on the `qcalib` branch only** (one-click test data, ROS bag v2.0, BEV, LiDAR projection). Requires `BUILD_OPENCV=ON`. |
@@ -388,6 +396,7 @@ cmake -DBUILD_CUDA_MODULE=ON \
       -DPLUGIN_STANDARD_QOPENPCDET=ON \
       -DPLUGIN_STANDARD_QINSTANTMESH=ON \
       -DPLUGIN_STANDARD_QVLXSEEK=ON \
+      -DPLUGIN_STANDARD_QWEVISONE=ON \
       -DPLUGIN_STANDARD_QQUERYSPLAT=ON \
       ..
 cmake --build . --config Release
@@ -422,6 +431,7 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QOPENPCDET=ON \
       -DPLUGIN_STANDARD_QINSTANTMESH=ON \
       -DPLUGIN_STANDARD_QVLXSEEK=ON \
+      -DPLUGIN_STANDARD_QWEVISONE=ON \
       -DPLUGIN_STANDARD_QQUERYSPLAT=ON \
       ..
 cmake --build . --config Release --target ACloudViewer
@@ -763,9 +773,58 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for build requirements and development gu
 - Code signing required for distribution
 - Homebrew or Conda for dependency management
 
+### Qt Serialization Compatibility
+
+Binary archives containing persistent object metadata use DB format **5.9 (59)**
+and the **Qt 5.12 QDataStream wire format** on both Qt majors. Metadata-free
+objects and `.nosave` metadata retain their previous minimum file version.
+Older application builds that support at most format 58 cannot read the new
+metadata archives.
+
+Format 58 and earlier retain their original compiled-SDK stream interpretation;
+those files did not record the Qt stream version, so historical cross-major
+readability is not guaranteed. The legacy LAS fallback still uses ABI-specific
+raw records; this change does not make that payload architecture-independent.
+
+### CloudCompare Qt6 Migration Reference
+
+The local CloudCompare reference at commit
+`c7d5bb7eb9187203c17fb557bc7bf372638a31d4` uses Qt6 directly and
+`QRegularExpression` in the matrix dialogs and filename validation. ACloudViewer
+uses the same regex API through its existing `core/include/QtCompat.h` owner,
+while retaining Qt 5.12 support and explicit whole-string matching where needed.
+
+CloudCompare's bundled QuaZIP still optionally discovers Core5Compat. Without
+it, its `QuazipTextCodec` uses `QStringEncoder`/`QStringDecoder`, reduces the
+available encodings, and defaults unrecognized names to UTF-8. ACloudViewer does
+not copy that fallback: Qt6 Unicode conversion uses QtCore, legacy named codecs
+use platform services, and unavailable names return `nullptr`. This preserves
+the declared archive encoding rather than silently changing it. Platform codec
+availability and malformed-input behavior still require platform-specific tests.
+The format-59 and bounded LAS restoration rules above are independent of this
+migration and must not be reverted to CloudCompare's unconditional LAS skip.
+
 ### Build Performance Tips
 
 - Use parallel builds (`--parallel`)
 - Enable Unity builds for faster compilation
 - Use `ccache` or `sccache` for incremental builds
 - Disable unused plugins to reduce build time
+
+## Unified C++ Tests
+
+After configuring your normal platform options, enable and run tests from the
+repository root:
+
+```bash
+cmake -S . -B build_app -DBUILD_UNIT_TESTS=ON
+cmake -DBUILD_DIR=build_app -DCONFIG=Release -DJOBS=4 -P tests/Run.cmake
+```
+
+For AICore suites enable `AICore_BUILD_TESTS`; whitebox suites additionally need
+`AICore_BUILD_WHITEBOX_TESTS`. The root [tests module](tests/README.md) derives
+prerequisites and runs all enabled headless registrations. Select
+`-DPROFILE=graphics`, `gpu`, `model`, `all`, or a union such as `ci,gpu` explicitly.
+New modules register tests in CMake without CI execution lists. GoogleTest is
+the first-party C++ unit framework; third-party suites, standalone compiler
+fixtures, Python/package tests and strict model validation retain their scope.

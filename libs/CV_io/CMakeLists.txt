@@ -63,7 +63,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
         CXX_VISIBILITY_PRESET hidden
         )
 
-if (BUILD_TESTING)
+if (BUILD_UNIT_TESTS)
     add_subdirectory(test)
 endif ()
 

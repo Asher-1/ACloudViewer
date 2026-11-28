@@ -84,48 +84,63 @@ QVector<QList<QAction *>> qPCL::getActions() {
         // ADD FILTERS
         QList<QAction *> filterActions;
         m_moduleNames.push_back(tr("Filters"));
-        addPclModule(new GeneralFilters(), filterActions);
-        addPclModule(new ProjectionFilter(), filterActions);
-        addPclModule(new MLSSmoothingUpsampling(), filterActions);
-        addPclModule(new StatisticalOutliersRemover(), filterActions);
-        addPclModule(new FastGlobalRegistrationFilter(), filterActions);
+        addPclModule(new GeneralFilters(), filterActions, "GeneralFilters");
+        addPclModule(new ProjectionFilter(), filterActions, "ProjectionFilter");
+        addPclModule(new MLSSmoothingUpsampling(), filterActions,
+                     "MLSSmoothingUpsampling");
+        addPclModule(new StatisticalOutliersRemover(), filterActions,
+                     "StatisticalOutliersRemover");
+        addPclModule(new FastGlobalRegistrationFilter(), filterActions,
+                     "FastGlobalRegistrationFilter");
         allModuleActions.push_back(filterActions);
 
         // ADD FEATURES
         QList<QAction *> featureActions;
         m_moduleNames.push_back(tr("Features"));
-        addPclModule(new NormalEstimation(), featureActions);
-        addPclModule(new ExtractSIFT(), featureActions);
+        addPclModule(new NormalEstimation(), featureActions,
+                     "NormalEstimation");
+        addPclModule(new ExtractSIFT(), featureActions, "ExtractSIFT");
         allModuleActions.push_back(featureActions);
 
         // ADD SURFACES
         QList<QAction *> surfaceActions;
         m_moduleNames.push_back(tr("Surfaces"));
-        addPclModule(new MarchingCubeReconstruction(), surfaceActions);
-        addPclModule(new GreedyTriangulation(), surfaceActions);
-        addPclModule(new PoissonReconstruction(), surfaceActions);
+        addPclModule(new MarchingCubeReconstruction(), surfaceActions,
+                     "MarchingCubeReconstruction");
+        addPclModule(new GreedyTriangulation(), surfaceActions,
+                     "GreedyTriangulation");
+        addPclModule(new PoissonReconstruction(), surfaceActions,
+                     "PoissonReconstruction");
 #if defined(WITH_PCL_NURBS)
-        addPclModule(new NurbsCurveFitting(), surfaceActions);
-        addPclModule(new NurbsSurfaceReconstruction(), surfaceActions);
+        addPclModule(new NurbsCurveFitting(), surfaceActions,
+                     "NurbsCurveFitting");
+        addPclModule(new NurbsSurfaceReconstruction(), surfaceActions,
+                     "NurbsSurfaceReconstruction");
 #endif
-        addPclModule(new ConvexConcaveHullReconstruction(), surfaceActions);
+        addPclModule(new ConvexConcaveHullReconstruction(), surfaceActions,
+                     "ConvexConcaveHullReconstruction");
         allModuleActions.push_back(surfaceActions);
 
         // ADD SEGMENTATION
         QList<QAction *> segmentActions;
         m_moduleNames.push_back(tr("Segmentations"));
-        addPclModule(new DONSegmentation(), segmentActions);
-        addPclModule(new MinimumCutSegmentation(), segmentActions);
-        addPclModule(new RegionGrowingSegmentation(), segmentActions);
-        addPclModule(new SACSegmentation(), segmentActions);
-        addPclModule(new EuclideanClusterSegmentation(), segmentActions);
+        addPclModule(new DONSegmentation(), segmentActions, "DONSegmentation");
+        addPclModule(new MinimumCutSegmentation(), segmentActions,
+                     "MinimumCutSegmentation");
+        addPclModule(new RegionGrowingSegmentation(), segmentActions,
+                     "RegionGrowingSegmentation");
+        addPclModule(new SACSegmentation(), segmentActions, "SACSegmentation");
+        addPclModule(new EuclideanClusterSegmentation(), segmentActions,
+                     "EuclideanClusterSegmentation");
         allModuleActions.push_back(segmentActions);
 
         // ADD RECOGNITION
         QList<QAction *> recognitionActions;
         m_moduleNames.push_back(tr("Recognitions"));
-        addPclModule(new TemplateAlignment(), recognitionActions);
-        addPclModule(new CorrespondenceMatching(), recognitionActions);
+        addPclModule(new TemplateAlignment(), recognitionActions,
+                     "TemplateAlignment");
+        addPclModule(new CorrespondenceMatching(), recognitionActions,
+                     "CorrespondenceMatching");
         allModuleActions.push_back(recognitionActions);
     }
 
@@ -134,12 +149,15 @@ QVector<QList<QAction *>> qPCL::getActions() {
 
 QVector<QString> qPCL::getModuleNames() { return m_moduleNames; }
 
-int qPCL::addPclModule(BasePclModule *module, QList<QAction *> &actions) {
+int qPCL::addPclModule(BasePclModule *module,
+                       QList<QAction *> &actions,
+                       const char *commandId) {
     assert(module);
     module->setMainAppInterface(m_app);
 
     QAction *action = module->getAction();
     if (!action) return 0;
+    action->setObjectName(QString::fromLatin1(commandId));
 
     // module already inserted?
     if (std::find(m_modules.begin(), m_modules.end(), module) !=

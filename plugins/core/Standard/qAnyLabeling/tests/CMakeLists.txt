@@ -32,8 +32,8 @@ cloudviewer_add_plugin_test(test_qanylabeling_ppocr_document
         ${QAL_DIR}/include/PpocrTableEditor.h
         ${QAL_DIR}/include/PpocrRichTextEditor.h
     INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/core/include
-    LIBS ${QAL_ARCHIVE_ZLIB} Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network)
-add_test(NAME test_qanylabeling_ppocr_document COMMAND test_qanylabeling_ppocr_document)
+    LIBS CV_DB_LIB ${QAL_ARCHIVE_ZLIB} Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network)
+cloudviewer_add_test(NAME test_qanylabeling_ppocr_document COMMAND test_qanylabeling_ppocr_document)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_ppocr_document)
 
 # Gap #3 corpus parity: the TableRec val split (100 real-document pages)
@@ -50,7 +50,8 @@ cloudviewer_add_plugin_test(test_qanylabeling_ppocr_corpus
     # gcc 9): without it the archive's pthread_getspecific stays undefined
     # and the test target fails to link on the focal lane only.
     LIBS CVPluginAPI 3rdparty_googletest Threads::Threads Qt${QT_VERSION_MAJOR}::Widgets)
-add_test(NAME test_qanylabeling_ppocr_corpus COMMAND test_qanylabeling_ppocr_corpus)
+cloudviewer_add_test(NAME test_qanylabeling_ppocr_corpus COMMAND test_qanylabeling_ppocr_corpus)
+set_property(TEST test_qanylabeling_ppocr_corpus APPEND PROPERTY LABELS "model")
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_ppocr_corpus)
 
 cloudviewer_add_plugin_test(test_qanylabeling_ppocr_table
@@ -58,8 +59,8 @@ cloudviewer_add_plugin_test(test_qanylabeling_ppocr_table
         ${QAL_DIR}/src/PpocrTableEditor.cpp
         ${QAL_DIR}/include/PpocrTableEditor.h
     INCLUDES ${QAL_DIR}/include
-    LIBS Qt${QT_VERSION_MAJOR}::Widgets)
-add_test(NAME test_qanylabeling_ppocr_table COMMAND test_qanylabeling_ppocr_table)
+    LIBS CV_DB_LIB Qt${QT_VERSION_MAJOR}::Widgets)
+cloudviewer_add_test(NAME test_qanylabeling_ppocr_table COMMAND test_qanylabeling_ppocr_table)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_ppocr_table)
 
 cloudviewer_add_plugin_test(test_qanylabeling_ppocr_rich
@@ -67,8 +68,8 @@ cloudviewer_add_plugin_test(test_qanylabeling_ppocr_rich
         ${QAL_DIR}/src/PpocrRichTextEditor.cpp
         ${QAL_DIR}/include/PpocrRichTextEditor.h
     INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/core/include
-    LIBS Qt${QT_VERSION_MAJOR}::Widgets)
-add_test(NAME test_qanylabeling_ppocr_rich COMMAND test_qanylabeling_ppocr_rich)
+    LIBS CV_DB_LIB Qt${QT_VERSION_MAJOR}::Widgets)
+cloudviewer_add_test(NAME test_qanylabeling_ppocr_rich COMMAND test_qanylabeling_ppocr_rich)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_ppocr_rich)
 
 cloudviewer_add_plugin_test(test_qanylabeling_chat
@@ -78,7 +79,7 @@ cloudviewer_add_plugin_test(test_qanylabeling_chat
     INCLUDES ${QAL_DIR}/include
     LIBS AICore CVPluginAPI CVPluginStub Qt${QT_VERSION_MAJOR}::Widgets
          Qt${QT_VERSION_MAJOR}::Network Threads::Threads)
-add_test(NAME test_qanylabeling_chat
+cloudviewer_add_test(NAME test_qanylabeling_chat
     COMMAND test_qanylabeling_chat $<TARGET_FILE:QANYLABELING_PLUGIN>)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_chat)
 
@@ -86,14 +87,14 @@ cloudviewer_add_plugin_test(test_qanylabeling_tagging
     SOURCES probe_tagging.cpp ${QAL_DIR}/qAnyLabeling.qrc
     INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/core/include
     LIBS Qt${QT_VERSION_MAJOR}::Widgets)
-add_test(NAME test_qanylabeling_tagging COMMAND test_qanylabeling_tagging)
+cloudviewer_add_test(NAME test_qanylabeling_tagging COMMAND test_qanylabeling_tagging)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_tagging)
 
 cloudviewer_add_plugin_test(test_qanylabeling_config
     SOURCES probe_config.cpp
     INCLUDES ${QAL_DIR}/include
     LIBS AICore CVPluginAPI CVPluginStub Qt${QT_VERSION_MAJOR}::Widgets)
-add_test(NAME test_qanylabeling_config
+cloudviewer_add_test(NAME test_qanylabeling_config
     COMMAND test_qanylabeling_config $<TARGET_FILE:QANYLABELING_PLUGIN>)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_config)
 
@@ -108,14 +109,34 @@ cloudviewer_add_plugin_test(test_qanylabeling_plugin
          # lane (glibc 2.31) needs the explicit dependency on the link line
          # (undefined reference to pthread_create, DSO missing).
          Threads::Threads)
-add_test(NAME test_qanylabeling_plugin
+cloudviewer_add_test(NAME test_qanylabeling_plugin
     COMMAND test_qanylabeling_plugin $<TARGET_FILE:QANYLABELING_PLUGIN>)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_plugin)
-add_test(NAME test_qanylabeling_review_status
+cloudviewer_add_test(NAME test_qanylabeling_review_status
     COMMAND test_qanylabeling_plugin $<TARGET_FILE:QANYLABELING_PLUGIN> --review-only)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_review_status)
 set_tests_properties(test_qanylabeling_review_status PROPERTIES
     TIMEOUT 60 LABELS "ui;regression")
+# Qt6's offscreen platform has no QOpenGLWidget support (Qt5's does); the
+# plugin workspace embeds GL widgets, so on Qt6 run under a virtual X server
+# exactly like test_qanylabeling_pointcloud_ui.
+find_program(QANYLABELING_XVFB_RUN xvfb-run)
+if(QT_VERSION_MAJOR GREATER_EQUAL 6 AND QANYLABELING_XVFB_RUN)
+    set_property(TEST test_qanylabeling_plugin PROPERTY
+        COMMAND ${QANYLABELING_XVFB_RUN} -a
+            $<TARGET_FILE:test_qanylabeling_plugin> $<TARGET_FILE:QANYLABELING_PLUGIN>)
+    set_property(TEST test_qanylabeling_review_status PROPERTY
+        COMMAND ${QANYLABELING_XVFB_RUN} -a
+            $<TARGET_FILE:test_qanylabeling_plugin> $<TARGET_FILE:QANYLABELING_PLUGIN> --review-only)
+    foreach(_qal_xcb_test test_qanylabeling_plugin test_qanylabeling_review_status)
+        cloudviewer_set_plugin_test_env(${_qal_xcb_test})
+        get_test_property(${_qal_xcb_test} ENVIRONMENT _qal_env)
+        list(REMOVE_ITEM _qal_env "QT_QPA_PLATFORM=offscreen")
+        set_property(TEST ${_qal_xcb_test} PROPERTY ENVIRONMENT "${_qal_env}")
+        set_property(TEST ${_qal_xcb_test} APPEND PROPERTY
+            ENVIRONMENT "QT_QPA_PLATFORM=xcb")
+    endforeach()
+endif()
 
 # Reflection-based probe that bypasses QPluginLoader metadata validation and
 # pins the toast placement end to end (open-time hidden, centered at 100
@@ -123,7 +144,7 @@ set_tests_properties(test_qanylabeling_review_status PROPERTIES
 cloudviewer_add_plugin_test(test_qanylabeling_popup_probe
     SOURCES probe_popup.cpp
     LIBS CVPluginAPI CVPluginStub Qt${QT_VERSION_MAJOR}::Widgets)
-add_test(NAME test_qanylabeling_popup_probe
+cloudviewer_add_test(NAME test_qanylabeling_popup_probe
     COMMAND test_qanylabeling_popup_probe $<TARGET_FILE:QANYLABELING_PLUGIN>)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_popup_probe)
 
@@ -137,7 +158,7 @@ cloudviewer_add_plugin_test(test_qanylabeling_remote
     INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/core/AICore/include
     LIBS CVPluginAPI Qt${QT_VERSION_MAJOR}::Widgets
          Qt${QT_VERSION_MAJOR}::Network)
-add_test(NAME test_qanylabeling_remote COMMAND test_qanylabeling_remote)
+cloudviewer_add_test(NAME test_qanylabeling_remote COMMAND test_qanylabeling_remote)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_remote)
 
 # Gap #6 canvas visual gate: rendering-difference assertions driven through
@@ -148,8 +169,9 @@ cloudviewer_add_plugin_test(test_qanylabeling_canvas_gate
         ${CMAKE_SOURCE_DIR}/core/AICore/include
     LIBS CVPluginAPI CVPluginStub 3rdparty_googletest Threads::Threads
          Qt${QT_VERSION_MAJOR}::Widgets)
-add_test(NAME test_qanylabeling_canvas_gate
+cloudviewer_add_test(NAME test_qanylabeling_canvas_gate
     COMMAND test_qanylabeling_canvas_gate $<TARGET_FILE:QANYLABELING_PLUGIN>)
+set_property(TEST test_qanylabeling_canvas_gate APPEND PROPERTY LABELS "model")
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_canvas_gate)
 
 if(TARGET 3rdparty_opencv)
@@ -167,15 +189,19 @@ if(TARGET 3rdparty_opencv)
             ${QAL_DIR}/qAnyLabeling.qrc
         INCLUDES ${QAL_DIR}/include)
     target_link_libraries(test_qanylabeling_video_ui PRIVATE
-        video_base ${QAL_ARCHIVE_ZLIB} Qt${QT_VERSION_MAJOR}::Widgets)
+        video_base CV_DB_LIB ${QAL_ARCHIVE_ZLIB} Qt${QT_VERSION_MAJOR}::Widgets)
     # NO_LINK: the shared helper links with the PLAIN signature (it also
     # serves all-plain targets), while cloudviewer_add_plugin_test already
     # linked this target with the KEYWORD signature — CMake forbids mixing,
     # so keep the helper's existence guard and link zlib explicitly above.
     cloudviewer_plugin_link_zlib_minizip(test_qanylabeling_video_ui
         PLUGIN_NAME test_qanylabeling_video_ui NO_LINK)
-    add_test(NAME test_qanylabeling_video_ui
+    cloudviewer_add_test(NAME test_qanylabeling_video_ui
         COMMAND test_qanylabeling_video_ui)
+    # A failed assertion leaves the dialog dirty, and its teardown close()
+    # then waits forever in the "Save changes?" message box. Bound that to
+    # minutes instead of the default 1200 s.
+    set_tests_properties(test_qanylabeling_video_ui PROPERTIES TIMEOUT 300)
     cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_video_ui)
 endif()
 
@@ -189,7 +215,7 @@ if(TARGET 3rdparty_opencv AND TARGET video_base)
         INCLUDES ${QAL_DIR}/include ${QAL_DIR}/../qSAM3/include
             ${CMAKE_SOURCE_DIR}/core/AICore/include
         LIBS video_base Qt${QT_VERSION_MAJOR}::Widgets)
-    add_test(NAME test_qanylabeling_sam3_frames
+    cloudviewer_add_test(NAME test_qanylabeling_sam3_frames
         COMMAND test_qanylabeling_sam3_frames)
     cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_sam3_frames)
 
@@ -199,12 +225,13 @@ if(TARGET 3rdparty_opencv AND TARGET video_base)
             ${QAL_DIR}/src/AnnotationArchive.cpp
             ${QAL_DIR}/src/VideoSegmentExporter.cpp
             ${QAL_DIR}/src/VideoSidecar.cpp
-        INCLUDES ${QAL_DIR}/include)
+        INCLUDES ${QAL_DIR}/include
+        LIBS gtest)
     target_link_libraries(test_qanylabeling_video_dataset PRIVATE
         video_base ${QAL_ARCHIVE_ZLIB} Qt${QT_VERSION_MAJOR}::Core)
     cloudviewer_plugin_link_zlib_minizip(test_qanylabeling_video_dataset
         PLUGIN_NAME test_qanylabeling_video_dataset NO_LINK)
-    add_test(NAME test_qanylabeling_video_dataset
+    cloudviewer_add_test(NAME test_qanylabeling_video_dataset
         COMMAND test_qanylabeling_video_dataset)
     cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_video_dataset)
 endif()
@@ -212,8 +239,8 @@ endif()
 cloudviewer_add_plugin_test(test_qanylabeling_video_sidecar
     SOURCES test_video_sidecar.cpp ${QAL_DIR}/src/VideoSidecar.cpp
     INCLUDES ${QAL_DIR}/include
-    LIBS Qt${QT_VERSION_MAJOR}::Core)
-add_test(NAME test_qanylabeling_video_sidecar
+    LIBS Qt${QT_VERSION_MAJOR}::Core gtest_main)
+cloudviewer_add_test(NAME test_qanylabeling_video_sidecar
     COMMAND test_qanylabeling_video_sidecar)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_video_sidecar)
 
@@ -227,8 +254,9 @@ cloudviewer_add_plugin_test(test_qanylabeling_loma_bridge
     LIBS AICore CVPluginAPI Qt${QT_VERSION_MAJOR}::Widgets)
 target_compile_definitions(test_qanylabeling_loma_bridge PRIVATE
     QANY_VALIDATION_MANIFEST="${CMAKE_SOURCE_DIR}/core/AICore/scripts/validation_manifest.json")
-add_test(NAME test_qanylabeling_loma_bridge
+cloudviewer_add_test(NAME test_qanylabeling_loma_bridge
     COMMAND test_qanylabeling_loma_bridge)
+set_property(TEST test_qanylabeling_loma_bridge APPEND PROPERTY LABELS "model;e2e")
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_loma_bridge)
 set_tests_properties(test_qanylabeling_loma_bridge PROPERTIES
     TIMEOUT 600)
@@ -254,7 +282,7 @@ if(TARGET 3rdparty_opencv)
     target_compile_definitions(test_qanylabeling_exporter PRIVATE
         QANYLABELING_HAS_OPENCV_MASK)
 endif()
-add_test(NAME test_qanylabeling_exporter
+cloudviewer_add_test(NAME test_qanylabeling_exporter
     COMMAND test_qanylabeling_exporter)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_exporter)
 
@@ -263,8 +291,8 @@ cloudviewer_add_plugin_test(test_qanylabeling_pointcloud
         ${QAL_DIR}/src/PointCloudCuboid.cpp
         ${QAL_DIR}/include/PointCloudCuboid.h
     INCLUDES ${QAL_DIR}/include
-    LIBS Qt${QT_VERSION_MAJOR}::Gui)
-add_test(NAME test_qanylabeling_pointcloud
+    LIBS Qt${QT_VERSION_MAJOR}::Gui gtest)
+cloudviewer_add_test(NAME test_qanylabeling_pointcloud
     COMMAND test_qanylabeling_pointcloud)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_pointcloud)
 
@@ -276,9 +304,11 @@ cloudviewer_add_plugin_test(test_qanylabeling_pointcloud_camera
         ${QAL_DIR}/include/PointCloudCamera.h
         ${QAL_DIR}/src/PointCloudCuboid.cpp
         ${QAL_DIR}/include/PointCloudCuboid.h
-    INCLUDES ${QAL_DIR}/include
-    LIBS Qt${QT_VERSION_MAJOR}::Gui)
-add_test(NAME test_qanylabeling_pointcloud_camera
+    # core/include: QtCompat.h (QList->QSet conversion); it pulls in
+    # QtWidgets headers, hence Widgets rather than Gui.
+    INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/core/include
+    LIBS Qt${QT_VERSION_MAJOR}::Widgets gtest)
+cloudviewer_add_test(NAME test_qanylabeling_pointcloud_camera
     COMMAND test_qanylabeling_pointcloud_camera)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_pointcloud_camera)
 
@@ -301,9 +331,10 @@ if(QANYLABELING_XVFB_RUN)
         target_link_libraries(test_qanylabeling_pointcloud_ui PRIVATE
             Qt::OpenGLWidgets)
     endif()
-    add_test(NAME test_qanylabeling_pointcloud_ui
+    cloudviewer_add_test(NAME test_qanylabeling_pointcloud_ui
         COMMAND ${QANYLABELING_XVFB_RUN} -a
             $<TARGET_FILE:test_qanylabeling_pointcloud_ui>)
+    set_property(TEST test_qanylabeling_pointcloud_ui APPEND PROPERTY LABELS "graphics")
     cloudviewer_set_plugin_test_env(test_qanylabeling_pointcloud_ui)
     # Xvfb supplies the X11/GLX context required by the renderer assertions.
     set_property(TEST test_qanylabeling_pointcloud_ui APPEND PROPERTY
@@ -317,16 +348,16 @@ cloudviewer_add_plugin_test(test_qanylabeling_canvas
         ${QAL_DIR}/src/AnnotationCanvas.cpp
         ${QAL_DIR}/src/MaskPolygon.cpp
         ${QAL_DIR}/include/AnnotationCanvas.h
-    INCLUDES ${QAL_DIR}/include
-    LIBS Qt${QT_VERSION_MAJOR}::Widgets)
-add_test(NAME test_qanylabeling_canvas COMMAND test_qanylabeling_canvas)
+    INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/libs/CV_db/include
+    LIBS CV_DB_LIB Qt${QT_VERSION_MAJOR}::Widgets)
+cloudviewer_add_test(NAME test_qanylabeling_canvas COMMAND test_qanylabeling_canvas)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_canvas)
 
 cloudviewer_add_plugin_test(test_qanylabeling_sliced_detection
     SOURCES test_sliced_detection.cpp ${QAL_DIR}/src/SlicedDetection.cpp
     INCLUDES ${QAL_DIR}/include
-    LIBS Qt${QT_VERSION_MAJOR}::Core)
-add_test(NAME test_qanylabeling_sliced_detection
+    LIBS Qt${QT_VERSION_MAJOR}::Core gtest_main)
+cloudviewer_add_test(NAME test_qanylabeling_sliced_detection
     COMMAND test_qanylabeling_sliced_detection)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_sliced_detection)
 
@@ -343,23 +374,24 @@ cloudviewer_add_plugin_test(test_qanylabeling_inference
         ${QAL_DIR}/include/AnnotationWorker.h
         ${QAL_DIR}/include/AnnotationCanvas.h
     INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/core/include
-    LIBS AICore Qt${QT_VERSION_MAJOR}::Widgets)
+        ${CMAKE_SOURCE_DIR}/libs/CV_db/include
+    LIBS AICore CV_DB_LIB Qt${QT_VERSION_MAJOR}::Widgets)
 
 cloudviewer_add_plugin_test(test_qanylabeling_semantic
     SOURCES test_semantic.cpp
         ${QAL_DIR}/src/AnnotationSemantic.cpp
         ${QAL_DIR}/src/MaskPolygon.cpp
     INCLUDES ${QAL_DIR}/include
-    LIBS Qt${QT_VERSION_MAJOR}::Widgets)
-add_test(NAME test_qanylabeling_semantic
+    LIBS Qt${QT_VERSION_MAJOR}::Widgets gtest_main)
+cloudviewer_add_test(NAME test_qanylabeling_semantic
     COMMAND test_qanylabeling_semantic)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_semantic)
 
 cloudviewer_add_plugin_test(test_qanylabeling_mask_polygon
     SOURCES test_mask_polygon.cpp ${QAL_DIR}/src/MaskPolygon.cpp
     INCLUDES ${QAL_DIR}/include
-    LIBS Qt${QT_VERSION_MAJOR}::Core)
-add_test(NAME test_qanylabeling_mask_polygon
+    LIBS Qt${QT_VERSION_MAJOR}::Core gtest_main)
+cloudviewer_add_test(NAME test_qanylabeling_mask_polygon
     COMMAND test_qanylabeling_mask_polygon)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_mask_polygon)
 
@@ -368,8 +400,8 @@ cloudviewer_add_plugin_test(test_qanylabeling_sam3_archive
         ${QAL_DIR}/src/VideoMaskImport.cpp
         ${QAL_DIR}/src/MaskPolygon.cpp
     INCLUDES ${QAL_DIR}/include
-    LIBS Qt${QT_VERSION_MAJOR}::Gui)
-add_test(NAME test_qanylabeling_sam3_archive
+    LIBS Qt${QT_VERSION_MAJOR}::Gui gtest_main)
+cloudviewer_add_test(NAME test_qanylabeling_sam3_archive
     COMMAND test_qanylabeling_sam3_archive)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_sam3_archive)
 
@@ -379,8 +411,8 @@ cloudviewer_add_plugin_test(probe_qanylabeling_render
     SOURCES probe_render.cpp ${QAL_DIR}/src/AnnotationCanvas.cpp
         ${QAL_DIR}/src/AnnotationCuboid.cpp ${QAL_DIR}/src/MaskPolygon.cpp
         ${QAL_DIR}/include/AnnotationCanvas.h
-    INCLUDES ${QAL_DIR}/include
-    LIBS Qt${QT_VERSION_MAJOR}::Widgets)
+    INCLUDES ${QAL_DIR}/include ${CMAKE_SOURCE_DIR}/libs/CV_db/include
+    LIBS CV_DB_LIB Qt${QT_VERSION_MAJOR}::Widgets)
 
 target_sources(test_qanylabeling_inference PRIVATE ${QAL_DIR}/src/AnnotationCuboid.cpp)
 
@@ -405,7 +437,7 @@ cloudviewer_add_plugin_test(test_qanylabeling_shape_batch
     INCLUDES ${QAL_DIR}/include ${QAL_DIR}/../qRelateAnything/include
         ${CMAKE_SOURCE_DIR}/core/AICore/include
     LIBS Qt${QT_VERSION_MAJOR}::Widgets)
-add_test(NAME test_qanylabeling_shape_batch COMMAND test_qanylabeling_shape_batch)
+cloudviewer_add_test(NAME test_qanylabeling_shape_batch COMMAND test_qanylabeling_shape_batch)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_shape_batch)
 
 cloudviewer_add_plugin_test(test_qanylabeling_document
@@ -414,7 +446,7 @@ cloudviewer_add_plugin_test(test_qanylabeling_document
     INCLUDES ${QAL_DIR}/include ${QAL_DIR}/../qRelateAnything/include
         ${CMAKE_SOURCE_DIR}/core/AICore/include
     LIBS Qt${QT_VERSION_MAJOR}::Widgets)
-add_test(NAME test_qanylabeling_document COMMAND test_qanylabeling_document)
+cloudviewer_add_test(NAME test_qanylabeling_document COMMAND test_qanylabeling_document)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_document)
 
 cloudviewer_add_plugin_test(test_qanylabeling_pointcloud_cuboid
@@ -424,7 +456,7 @@ cloudviewer_add_plugin_test(test_qanylabeling_pointcloud_cuboid
     INCLUDES ${QAL_DIR}/include ${QAL_DIR}/../qRelateAnything/include
         ${CMAKE_SOURCE_DIR}/core/AICore/include
     LIBS Qt${QT_VERSION_MAJOR}::Widgets)
-add_test(NAME test_qanylabeling_pointcloud_cuboid COMMAND test_qanylabeling_pointcloud_cuboid)
+cloudviewer_add_test(NAME test_qanylabeling_pointcloud_cuboid COMMAND test_qanylabeling_pointcloud_cuboid)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_pointcloud_cuboid)
 
 cloudviewer_add_plugin_test(test_qanylabeling_pointcloud_dataset
@@ -434,7 +466,7 @@ cloudviewer_add_plugin_test(test_qanylabeling_pointcloud_dataset
     INCLUDES ${QAL_DIR}/include ${QAL_DIR}/../qRelateAnything/include
         ${CMAKE_SOURCE_DIR}/core/AICore/include
     LIBS Qt${QT_VERSION_MAJOR}::Widgets)
-add_test(NAME test_qanylabeling_pointcloud_dataset COMMAND test_qanylabeling_pointcloud_dataset)
+cloudviewer_add_test(NAME test_qanylabeling_pointcloud_dataset COMMAND test_qanylabeling_pointcloud_dataset)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_pointcloud_dataset)
 cloudviewer_plugin_link_zlib_minizip(test_qanylabeling_pointcloud_dataset PLUGIN_NAME test_qanylabeling_pointcloud_dataset NO_LINK)
 target_link_libraries(test_qanylabeling_pointcloud_dataset PRIVATE 3rdparty_zlib)
@@ -447,7 +479,7 @@ cloudviewer_add_plugin_test(test_qanylabeling_pointcloud_dataset_importer
     INCLUDES ${QAL_DIR}/include ${QAL_DIR}/../qRelateAnything/include
         ${CMAKE_SOURCE_DIR}/core/AICore/include
     LIBS Qt${QT_VERSION_MAJOR}::Widgets)
-add_test(NAME test_qanylabeling_pointcloud_dataset_importer COMMAND test_qanylabeling_pointcloud_dataset_importer)
+cloudviewer_add_test(NAME test_qanylabeling_pointcloud_dataset_importer COMMAND test_qanylabeling_pointcloud_dataset_importer)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_pointcloud_dataset_importer)
 cloudviewer_plugin_link_zlib_minizip(test_qanylabeling_pointcloud_dataset_importer PLUGIN_NAME test_qanylabeling_pointcloud_dataset_importer NO_LINK)
 target_link_libraries(test_qanylabeling_pointcloud_dataset_importer PRIVATE 3rdparty_zlib)
@@ -461,7 +493,7 @@ cloudviewer_add_plugin_test(test_qanylabeling_relation_filter
         # QtCompat.h owns the Qt5.12/Qt6 split-behavior constants.
         ${CMAKE_SOURCE_DIR}/core/include
     LIBS Qt${QT_VERSION_MAJOR}::Widgets)
-add_test(NAME test_qanylabeling_relation_filter COMMAND test_qanylabeling_relation_filter)
+cloudviewer_add_test(NAME test_qanylabeling_relation_filter COMMAND test_qanylabeling_relation_filter)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_relation_filter)
 
 cloudviewer_add_plugin_test(test_qanylabeling_relate_options
@@ -472,7 +504,7 @@ cloudviewer_add_plugin_test(test_qanylabeling_relate_options
     INCLUDES ${QAL_DIR}/include ${QAL_DIR}/../qRelateAnything/include
         ${CMAKE_SOURCE_DIR}/core/AICore/include
     LIBS Qt${QT_VERSION_MAJOR}::Widgets AICore CVPluginAPI)
-add_test(NAME test_qanylabeling_relate_options COMMAND test_qanylabeling_relate_options)
+cloudviewer_add_test(NAME test_qanylabeling_relate_options COMMAND test_qanylabeling_relate_options)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_relate_options)
 
 cloudviewer_add_plugin_test(test_qanylabeling_cuboid
@@ -482,9 +514,9 @@ cloudviewer_add_plugin_test(test_qanylabeling_cuboid
         ${QAL_DIR}/src/MaskPolygon.cpp
         ${QAL_DIR}/include/AnnotationCanvas.h
     INCLUDES ${QAL_DIR}/include ${QAL_DIR}/../qRelateAnything/include
-        ${CMAKE_SOURCE_DIR}/core/AICore/include
-    LIBS Qt${QT_VERSION_MAJOR}::Widgets)
-add_test(NAME test_qanylabeling_cuboid COMMAND test_qanylabeling_cuboid)
+        ${CMAKE_SOURCE_DIR}/core/AICore/include ${CMAKE_SOURCE_DIR}/libs/CV_db/include
+    LIBS CV_DB_LIB Qt${QT_VERSION_MAJOR}::Widgets)
+cloudviewer_add_test(NAME test_qanylabeling_cuboid COMMAND test_qanylabeling_cuboid)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_cuboid)
 
 cloudviewer_add_plugin_test(test_qanylabeling_run_path
@@ -492,22 +524,27 @@ cloudviewer_add_plugin_test(test_qanylabeling_run_path
     INCLUDES ${QAL_DIR}/include ${QAL_DIR}/../qRelateAnything/include
         ${CMAKE_SOURCE_DIR}/core/AICore/include
     LIBS Qt${QT_VERSION_MAJOR}::Widgets CVPluginAPI CVPluginStub AICore)
-add_test(NAME test_qanylabeling_run_path COMMAND test_qanylabeling_run_path $<TARGET_FILE:QANYLABELING_PLUGIN>)
+cloudviewer_add_test(NAME test_qanylabeling_run_path COMMAND test_qanylabeling_run_path $<TARGET_FILE:QANYLABELING_PLUGIN>)
+set_property(TEST test_qanylabeling_run_path APPEND PROPERTY LABELS "model;e2e")
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_run_path)
 set_tests_properties(test_qanylabeling_run_path PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 1200)
-add_test(NAME test_qanylabeling_tagged_run_path COMMAND test_qanylabeling_run_path $<TARGET_FILE:QANYLABELING_PLUGIN> --tagged)
+cloudviewer_add_test(NAME test_qanylabeling_tagged_run_path COMMAND test_qanylabeling_run_path $<TARGET_FILE:QANYLABELING_PLUGIN> --tagged)
+set_property(TEST test_qanylabeling_tagged_run_path APPEND PROPERTY LABELS "model;e2e")
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_tagged_run_path)
 set_tests_properties(test_qanylabeling_tagged_run_path PROPERTIES TIMEOUT 600)
-add_test(NAME test_qanylabeling_classifier_run_path COMMAND test_qanylabeling_run_path $<TARGET_FILE:QANYLABELING_PLUGIN> --classifier)
+cloudviewer_add_test(NAME test_qanylabeling_classifier_run_path COMMAND test_qanylabeling_run_path $<TARGET_FILE:QANYLABELING_PLUGIN> --classifier)
+set_property(TEST test_qanylabeling_classifier_run_path APPEND PROPERTY LABELS "model;e2e")
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_classifier_run_path)
 set_tests_properties(test_qanylabeling_classifier_run_path PROPERTIES TIMEOUT 600)
-add_test(NAME test_qanylabeling_ocr_run_path COMMAND test_qanylabeling_run_path $<TARGET_FILE:QANYLABELING_PLUGIN> --ocr)
+cloudviewer_add_test(NAME test_qanylabeling_ocr_run_path COMMAND test_qanylabeling_run_path $<TARGET_FILE:QANYLABELING_PLUGIN> --ocr)
+set_property(TEST test_qanylabeling_ocr_run_path APPEND PROPERTY LABELS "model;e2e")
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_ocr_run_path)
 set_tests_properties(test_qanylabeling_ocr_run_path PROPERTIES TIMEOUT 600)
 # Inputs resolve explicitly through the AICore catalog cache and the
 # shared ObjectsDetection dataset; missing weights skip honestly (77).
-add_test(NAME test_qanylabeling_attribute_run_path
+cloudviewer_add_test(NAME test_qanylabeling_attribute_run_path
     COMMAND test_qanylabeling_run_path $<TARGET_FILE:QANYLABELING_PLUGIN> --attribute)
+set_property(TEST test_qanylabeling_attribute_run_path APPEND PROPERTY LABELS "model;e2e")
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_attribute_run_path)
 set_tests_properties(test_qanylabeling_attribute_run_path PROPERTIES TIMEOUT 600)
 
@@ -516,27 +553,38 @@ cloudviewer_add_plugin_test(test_qanylabeling_attribute_batch
     SOURCES test_attribute_batch.cpp
     INCLUDES ${CMAKE_SOURCE_DIR}/core/AICore/include
     LIBS Qt${QT_VERSION_MAJOR}::Widgets CVPluginAPI CVPluginStub AICore)
-add_test(NAME test_qanylabeling_attribute_batch
+cloudviewer_add_test(NAME test_qanylabeling_attribute_batch
     COMMAND test_qanylabeling_attribute_batch $<TARGET_FILE:QANYLABELING_PLUGIN>)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_attribute_batch)
 set_tests_properties(test_qanylabeling_attribute_batch PROPERTIES
     TIMEOUT 600 LABELS "model;e2e;cvpluginapi")
 
 # Reuse the real plugin host; schema validation loads no model and never skips missing entry points.
-add_test(NAME test_qanylabeling_llm_batch_schema
+cloudviewer_add_test(NAME test_qanylabeling_llm_batch_schema
     COMMAND test_qanylabeling_attribute_batch $<TARGET_FILE:QANYLABELING_PLUGIN> --llm-schema)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_llm_batch_schema)
 set_tests_properties(test_qanylabeling_llm_batch_schema PROPERTIES
     TIMEOUT 60 LABELS "contract;cvpluginapi")
 
-# The external test environment provides pinned text/vision/projector assets; no automatic download or skip.
-add_test(NAME test_qanylabeling_llm_batch_models
+# Real pinned text/vision/projector assets resolve from the AICore catalog
+# cache root (the same AICORE_TEST_ASSET_ROOT the AICore model tests use);
+# filenames mirror core/AICore/src/tasks/llm/model_catalog.cpp. Missing
+# assets fail rather than skip or substitute synthetic generation.
+cloudviewer_add_test(NAME test_qanylabeling_llm_batch_models
     COMMAND test_qanylabeling_attribute_batch $<TARGET_FILE:QANYLABELING_PLUGIN> --llm-model)
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_llm_batch_models)
 set_tests_properties(test_qanylabeling_llm_batch_models PROPERTIES
     TIMEOUT 600 LABELS "model;e2e;cvpluginapi")
+if(AICORE_TEST_ASSET_ROOT)
+    set_property(TEST test_qanylabeling_llm_batch_models APPEND PROPERTY
+        ENVIRONMENT
+            "AICORE_TEST_LLM_TEXT_MODEL=${AICORE_TEST_ASSET_ROOT}/llm_models/qwen2.5-0.5b-instruct-q8_0.gguf"
+            "AICORE_TEST_LLM_VISION_MODEL=${AICORE_TEST_ASSET_ROOT}/llm_models/SmolVLM-500M-Instruct-Q8_0.gguf"
+            "AICORE_TEST_LLM_MMPROJ=${AICORE_TEST_ASSET_ROOT}/llm_models/mmproj-SmolVLM-500M-Instruct-Q8_0.gguf")
+endif()
 
-add_test(NAME test_qanylabeling_lightglue_bridge COMMAND test_qanylabeling_loma_bridge)
+cloudviewer_add_test(NAME test_qanylabeling_lightglue_bridge COMMAND test_qanylabeling_loma_bridge)
+set_property(TEST test_qanylabeling_lightglue_bridge APPEND PROPERTY LABELS "model;e2e")
 cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_lightglue_bridge)
 set_property(TEST test_qanylabeling_lightglue_bridge APPEND PROPERTY
     ENVIRONMENT "QANY_LIGHTGLUE_TEST=1")
@@ -572,7 +620,8 @@ if(TARGET 3rdparty_googletest)
         target_link_options(test_qanylabeling_testdata PRIVATE "-no-pie")
     endif()
     cloudviewer_set_bin_runtime_output_directory(test_qanylabeling_testdata)
-    add_test(NAME test_qanylabeling_testdata COMMAND test_qanylabeling_testdata)
+    cloudviewer_add_test(NAME test_qanylabeling_testdata COMMAND test_qanylabeling_testdata)
+    set_property(TEST test_qanylabeling_testdata APPEND PROPERTY LABELS "network")
     cloudviewer_set_plugin_test_env(test_qanylabeling_testdata)
 endif()
 
@@ -590,4 +639,46 @@ foreach(_qt_compat_test IN ITEMS test_qanylabeling_ppocr_table
         target_include_directories(${_qt_compat_test} PRIVATE
             ${CMAKE_SOURCE_DIR}/core/include)
     endif()
+endforeach()
+
+# Migrated unit suites with custom Qt/CLI entry points own their main.
+foreach(_qal_contract_target IN ITEMS
+    test_qanylabeling_cuboid test_qanylabeling_chat
+    test_qanylabeling_ppocr_rich test_qanylabeling_ppocr_table
+    test_qanylabeling_ppocr_document test_qanylabeling_config
+    test_qanylabeling_tagging test_qanylabeling_canvas
+    test_qanylabeling_video_ui test_qanylabeling_remote
+    test_qanylabeling_pointcloud_ui)
+    if(TARGET ${_qal_contract_target})
+        target_link_libraries(${_qal_contract_target} PRIVATE gtest)
+    endif()
+endforeach()
+foreach(_qal_contract_target IN ITEMS
+    test_qanylabeling_relate_options test_qanylabeling_relation_filter
+    test_qanylabeling_exporter test_qanylabeling_sam3_frames)
+    if(TARGET ${_qal_contract_target})
+        target_link_libraries(${_qal_contract_target} PRIVATE gtest_main)
+    endif()
+endforeach()
+
+# Native GoogleTest assertions for the data-model and geometry unit tests.
+foreach(_qal_unit_target IN ITEMS
+    test_qanylabeling_video_sidecar test_qanylabeling_video_dataset
+    test_qanylabeling_pointcloud test_qanylabeling_pointcloud_camera
+    test_qanylabeling_sliced_detection test_qanylabeling_semantic
+    test_qanylabeling_mask_polygon test_qanylabeling_sam3_archive
+    test_qanylabeling_shape_batch test_qanylabeling_document
+    test_qanylabeling_pointcloud_cuboid test_qanylabeling_pointcloud_dataset
+    test_qanylabeling_pointcloud_dataset_importer)
+    if(TARGET ${_qal_unit_target})
+        target_link_libraries(${_qal_unit_target} PRIVATE gtest)
+    endif()
+endforeach()
+
+# Real-plugin loading, popup observation and model/UI workflows exercise
+# external process contracts rather than isolated unit-test entry points.
+foreach(probe test_qanylabeling_plugin test_qanylabeling_popup_probe
+        test_qanylabeling_loma_bridge test_qanylabeling_run_path
+        test_qanylabeling_attribute_batch)
+    set_property(TARGET ${probe} PROPERTY CLOUDVIEWER_TEST_KIND integration)
 endforeach()

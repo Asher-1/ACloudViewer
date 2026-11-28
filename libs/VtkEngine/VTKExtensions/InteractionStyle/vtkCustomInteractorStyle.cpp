@@ -13,6 +13,7 @@
 #include "vtkCustomInteractorStyle.h"
 
 #include <FileSystem.h>
+#include <Shortcuts/ecvKeySequences.h>
 #include <ecvCameraSensor.h>
 
 #include <cctype>
@@ -127,6 +128,9 @@ void vtkCustomInteractorStyle::toggleAreaPicking() {
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 void vtkCustomInteractorStyle::OnChar() {
+    // Qt owns embedded-view commands. Do not let VTK's inherited character
+    // shortcuts execute after a user has unbound or remapped the Qt command.
+    if (m_qtShortcutDispatch) return;
     FindPokedRenderer(Interactor->GetEventPosition()[0],
                       Interactor->GetEventPosition()[1]);
     if (Interactor->GetKeyCode() >= '0' && Interactor->GetKeyCode() <= '9')
@@ -292,169 +296,184 @@ void vtkCustomInteractorStyle::OnKeyDown() {
     // Delegate modifier-based shortcuts to handleShortcut (single source of
     // truth for Ctrl+Alt and Ctrl+Shift combos). This avoids duplicating the
     // logic that is also called from QVTKWidgetCustom::event().
-    if (ctrl || alt) {
+    if (!m_qtShortcutDispatch && (ctrl || alt)) {
         handleShortcut(keyChar, ctrl, alt, shift, Interactor);
     }
 
-    switch (keyChar) {
-        case 'h':
-        case 'H': {
-            if (!ctrl && !alt) {
-                CVLog::Print("[VtkEngine] Keyboard Shortcuts:");
-                CVLog::Print(
-                        "---------------------------------------------"
-                        "--");
-                CVLog::Print(
-                        "  Mouse: Left=Rotate, Middle=Pan, Right=Zoom, "
-                        "Scroll=Zoom");
-                CVLog::Print("  Shift + left click  : Select a point");
-                CVLog::Print("  View Controls:");
-                CVLog::Print("    r, R              : Reset camera");
-                CVLog::Print(
-                        "    r, R + ALT        : Reset to viewpoint origin");
-                CVLog::Print("    f, F              : Fly to picked point");
-                CVLog::Print(
-                        "    Ctrl+Alt + O      : Toggle "
-                        "perspective/parallel");
-                CVLog::Print(
-                        "    Ctrl+Alt + F      : Toggle maximize/restore "
-                        "window");
-                CVLog::Print("    Ctrl+Alt + +/-    : Zoom in/out");
-                CVLog::Print("  Display Controls:");
-                CVLog::Print("    Ctrl+Shift + D    : Point representation");
-                CVLog::Print(
-                        "    Ctrl+Shift + W    : Wireframe representation");
-                CVLog::Print("    Ctrl+Shift + F    : Surface representation");
-                CVLog::Print(
-                        "    Ctrl+Shift + +/-  : Increase/decrease point "
-                        "size");
-                CVLog::Print("    Ctrl+Alt + G      : Toggle scale grid");
-                CVLog::Print("    Ctrl+Alt + K      : Toggle lookup table");
-                CVLog::Print("  Camera:");
-                CVLog::Print("    Ctrl+Alt + M      : Save camera parameters");
-                CVLog::Print(
-                        "    Ctrl + R          : Restore camera parameters");
-                CVLog::Print("    Ctrl+Alt + C      : Print camera parameters");
-                CVLog::Print("    Ctrl+Alt + J      : Take screenshot (.PNG)");
-                CVLog::Print("  Other:");
-                CVLog::Print(
-                        "    a, A              : Toggle rubber band "
-                        "selection");
-                CVLog::Print("    e, E / q, Q       : Exit / Quit");
-                CVLog::Print("    h, H              : Show this help");
-                CVLog::Print(
-                        "---------------------------------------------"
-                        "--");
-            }
-            break;
-        }
-
-        case 'f':
-        case 'F': {
-            if (!keymod) {
-                AnimState = VTKIS_ANIM_ON;
-                vtkAssemblyPath* path = NULL;
-                Interactor->GetPicker()->Pick(Interactor->GetEventPosition()[0],
-                                              Interactor->GetEventPosition()[1],
-                                              0.0, CurrentRenderer);
-                vtkAbstractPropPicker* picker;
-                if ((picker = vtkAbstractPropPicker::SafeDownCast(
-                             Interactor->GetPicker())))
-                    path = picker->GetPath();
-                if (path != NULL)
-                    Interactor->FlyTo(CurrentRenderer,
-                                      picker->GetPickPosition());
-                AnimState = VTKIS_ANIM_OFF;
-            }
-            break;
-        }
-
-        case 'r':
-        case 'R': {
-            if (!keymod) {
-                FindPokedRenderer(Interactor->GetEventPosition()[0],
-                                  Interactor->GetEventPosition()[1]);
-                if (CurrentRenderer != 0)
-                    CurrentRenderer->ResetCamera();
-                else
-                    CVLog::Warning(
-                            "no current renderer on the interactor style.");
+    if (!m_qtShortcutDispatch) {
+        switch (keyChar) {
+            case 'h':
+            case 'H': {
+                if (!ctrl && !alt) {
+                    CVLog::Print("[VtkEngine] Keyboard Shortcuts:");
+                    CVLog::Print(
+                            "---------------------------------------------"
+                            "--");
+                    CVLog::Print(
+                            "  Mouse: Left=Rotate, Middle=Pan, Right=Zoom, "
+                            "Scroll=Zoom");
+                    CVLog::Print("  Shift + left click  : Select a point");
+                    CVLog::Print("  View Controls:");
+                    CVLog::Print("    r, R              : Reset camera");
+                    CVLog::Print(
+                            "    r, R + ALT        : Reset to viewpoint "
+                            "origin");
+                    CVLog::Print("    f, F              : Fly to picked point");
+                    CVLog::Print(
+                            "    Ctrl+Alt + O      : Toggle "
+                            "perspective/parallel");
+                    CVLog::Print(
+                            "    Ctrl+Alt + F      : Toggle maximize/restore "
+                            "window");
+                    CVLog::Print("    Ctrl+Alt + +/-    : Zoom in/out");
+                    CVLog::Print("  Display Controls:");
+                    CVLog::Print(
+                            "    Ctrl+Shift + D    : Point representation");
+                    CVLog::Print(
+                            "    Ctrl+Shift + W    : Wireframe representation");
+                    CVLog::Print(
+                            "    Ctrl+Shift + F    : Surface representation");
+                    CVLog::Print(
+                            "    Ctrl+Shift + +/-  : Increase/decrease point "
+                            "size");
+                    CVLog::Print("    Ctrl+Alt + G      : Toggle scale grid");
+                    CVLog::Print("    Ctrl+Alt + K      : Toggle lookup table");
+                    CVLog::Print("  Camera:");
+                    CVLog::Print(
+                            "    Ctrl+Alt + M      : Save camera parameters");
+                    CVLog::Print(
+                            "    Ctrl + R          : Restore camera "
+                            "parameters");
+                    CVLog::Print(
+                            "    Ctrl+Alt + C      : Print camera parameters");
+                    CVLog::Print(
+                            "    Ctrl+Alt + J      : Take screenshot (.PNG)");
+                    CVLog::Print("  Other:");
+                    CVLog::Print(
+                            "    a, A              : Toggle rubber band "
+                            "selection");
+                    CVLog::Print("    e, E / q, Q       : Exit / Quit");
+                    CVLog::Print("    h, H              : Show this help");
+                    CVLog::Print(
+                            "---------------------------------------------"
+                            "--");
+                }
                 break;
             }
 
-            vtkSmartPointer<vtkCamera> cam = CurrentRenderer->GetActiveCamera();
+            case 'f':
+            case 'F': {
+                if (!keymod) {
+                    AnimState = VTKIS_ANIM_ON;
+                    vtkAssemblyPath* path = NULL;
+                    Interactor->GetPicker()->Pick(
+                            Interactor->GetEventPosition()[0],
+                            Interactor->GetEventPosition()[1], 0.0,
+                            CurrentRenderer);
+                    vtkAbstractPropPicker* picker;
+                    if ((picker = vtkAbstractPropPicker::SafeDownCast(
+                                 Interactor->GetPicker())))
+                        path = picker->GetPath();
+                    if (path != NULL)
+                        Interactor->FlyTo(CurrentRenderer,
+                                          picker->GetPickPosition());
+                    AnimState = VTKIS_ANIM_OFF;
+                }
+                break;
+            }
 
-            if (cloud_actors_ && !cloud_actors_->empty()) {
-                static VtkRendering::CloudActorMap::iterator it =
-                        cloud_actors_->begin();
-                bool found_transformation = false;
-                for (unsigned idx = 0; idx < cloud_actors_->size();
-                     ++idx, ++it) {
-                    if (it == cloud_actors_->end()) it = cloud_actors_->begin();
-
-                    const VtkRendering::CloudActor& actor = it->second;
-                    if (actor.viewpoint_transformation) {
-                        found_transformation = true;
-                        break;
-                    }
+            case 'r':
+            case 'R': {
+                if (!keymod) {
+                    FindPokedRenderer(Interactor->GetEventPosition()[0],
+                                      Interactor->GetEventPosition()[1]);
+                    if (CurrentRenderer != 0)
+                        CurrentRenderer->ResetCamera();
+                    else
+                        CVLog::Warning(
+                                "no current renderer on the interactor style.");
+                    break;
                 }
 
-                if (found_transformation) {
-                    const VtkRendering::CloudActor& actor = it->second;
-                    auto* vt = actor.viewpoint_transformation.Get();
-                    cam->SetPosition(vt->GetElement(0, 3), vt->GetElement(1, 3),
-                                     vt->GetElement(2, 3));
-                    cam->SetFocalPoint(
-                            vt->GetElement(0, 3) - vt->GetElement(0, 2),
-                            vt->GetElement(1, 3) - vt->GetElement(1, 2),
-                            vt->GetElement(2, 3) - vt->GetElement(2, 2));
-                    cam->SetViewUp(vt->GetElement(0, 1), vt->GetElement(1, 1),
-                                   vt->GetElement(2, 1));
+                vtkSmartPointer<vtkCamera> cam =
+                        CurrentRenderer->GetActiveCamera();
+
+                if (cloud_actors_ && !cloud_actors_->empty()) {
+                    static VtkRendering::CloudActorMap::iterator it =
+                            cloud_actors_->begin();
+                    bool found_transformation = false;
+                    for (unsigned idx = 0; idx < cloud_actors_->size();
+                         ++idx, ++it) {
+                        if (it == cloud_actors_->end())
+                            it = cloud_actors_->begin();
+
+                        const VtkRendering::CloudActor& actor = it->second;
+                        if (actor.viewpoint_transformation) {
+                            found_transformation = true;
+                            break;
+                        }
+                    }
+
+                    if (found_transformation) {
+                        const VtkRendering::CloudActor& actor = it->second;
+                        auto* vt = actor.viewpoint_transformation.Get();
+                        cam->SetPosition(vt->GetElement(0, 3),
+                                         vt->GetElement(1, 3),
+                                         vt->GetElement(2, 3));
+                        cam->SetFocalPoint(
+                                vt->GetElement(0, 3) - vt->GetElement(0, 2),
+                                vt->GetElement(1, 3) - vt->GetElement(1, 2),
+                                vt->GetElement(2, 3) - vt->GetElement(2, 2));
+                        cam->SetViewUp(vt->GetElement(0, 1),
+                                       vt->GetElement(1, 1),
+                                       vt->GetElement(2, 1));
+                    } else {
+                        cam->SetPosition(0, 0, 0);
+                        cam->SetFocalPoint(0, 0, 1);
+                        cam->SetViewUp(0, -1, 0);
+                    }
+
+                    if (it != cloud_actors_->end())
+                        ++it;
+                    else
+                        it = cloud_actors_->begin();
                 } else {
                     cam->SetPosition(0, 0, 0);
                     cam->SetFocalPoint(0, 0, 1);
                     cam->SetViewUp(0, -1, 0);
                 }
 
-                if (it != cloud_actors_->end())
-                    ++it;
-                else
-                    it = cloud_actors_->begin();
-            } else {
-                cam->SetPosition(0, 0, 0);
-                cam->SetFocalPoint(0, 0, 1);
-                cam->SetViewUp(0, -1, 0);
+                CurrentRenderer->SetActiveCamera(cam);
+                CurrentRenderer->ResetCameraClippingRange();
+                break;
             }
 
-            CurrentRenderer->SetActiveCamera(cam);
-            CurrentRenderer->ResetCameraClippingRange();
-            break;
-        }
-
-        case 'a':
-        case 'A': {
-            CurrentMode =
-                    (CurrentMode == ORIENT_MODE) ? SELECT_MODE : ORIENT_MODE;
-            if (CurrentMode == SELECT_MODE) {
-                point_picker_ =
-                        static_cast<vtkPointPicker*>(Interactor->GetPicker());
-                vtkSmartPointer<vtkAreaPicker> area_picker =
-                        vtkSmartPointer<vtkAreaPicker>::New();
-                Interactor->SetPicker(area_picker);
-            } else {
-                Interactor->SetPicker(point_picker_);
+            case 'a':
+            case 'A': {
+                CurrentMode = (CurrentMode == ORIENT_MODE) ? SELECT_MODE
+                                                           : ORIENT_MODE;
+                if (CurrentMode == SELECT_MODE) {
+                    point_picker_ = static_cast<vtkPointPicker*>(
+                            Interactor->GetPicker());
+                    vtkSmartPointer<vtkAreaPicker> area_picker =
+                            vtkSmartPointer<vtkAreaPicker>::New();
+                    Interactor->SetPicker(area_picker);
+                } else {
+                    Interactor->SetPicker(point_picker_);
+                }
+                break;
             }
-            break;
-        }
 
-        case 'q':
-        case 'Q': {
-            Interactor->ExitCallback();
-            return;
-        }
-        default: {
-            if (!ctrl && !alt) vtkInteractorStyleRubberBandPick::OnKeyDown();
-            break;
+            case 'q':
+            case 'Q': {
+                Interactor->ExitCallback();
+                return;
+            }
+            default: {
+                if (!ctrl && !alt)
+                    vtkInteractorStyleRubberBandPick::OnKeyDown();
+                break;
+            }
         }
     }
 
@@ -1123,6 +1142,30 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
                 return true;
             }
             case 'm': {
+                QStringList restoreKeys;
+                const auto restoreBindings =
+                        m_qtShortcutDispatch
+                                ? ecvKeySequences::instance().effectiveBindings(
+                                          QStringLiteral("vtk_restore_camera"))
+                                : QList<QKeySequence>{
+                                          QKeySequence(Qt::CTRL | Qt::Key_R)};
+                for (const auto& binding : restoreBindings)
+                    restoreKeys.append(
+                            binding.toString(QKeySequence::NativeText));
+                const QString restoreHint =
+                        restoreKeys.isEmpty()
+                                ? QObject::tr(
+                                          "Restore Camera has no effective "
+                                          "shortcut.")
+                                : (m_qtShortcutDispatch
+                                           ? QObject::tr(
+                                                     "Restore Camera "
+                                                     "shortcuts (union "
+                                                     "across loaded views): "
+                                                     "%1.")
+                                           : QObject::tr("Restore Camera "
+                                                         "shortcut: %1."))
+                                          .arg(restoreKeys.join("; "));
                 if (camera_file_.empty()) {
                     vtkRenderer* ren = iren->GetRenderWindow()
                                                ->GetRenderers()
@@ -1135,17 +1178,18 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
                             cam->GetViewUp(saved_cam_viewup_);
                             cam->GetClippingRange(saved_cam_clip_);
                             camera_saved_ = true;
-                            CVLog::Print(
-                                    "Camera parameters saved, you can press "
-                                    "CTRL + R to restore.");
+                            CVLog::Print(QObject::tr("Camera parameters saved. "
+                                                     "%1")
+                                                 .arg(restoreHint));
                         }
                     }
                 } else {
                     if (saveCameraParameters(camera_file_)) {
-                        CVLog::Print(
-                                "Save camera parameters to %s, you can press "
-                                "CTRL + R to restore.",
-                                camera_file_.c_str());
+                        CVLog::Print(QObject::tr("Save camera parameters to "
+                                                 "%1. %2")
+                                             .arg(QString::fromStdString(
+                                                          camera_file_),
+                                                  restoreHint));
                     } else {
                         CVLog::Error(
                                 "[vtkCustomInteractorStyle] Can't save camera "
@@ -1186,40 +1230,45 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
 
         {
             vtkSmartPointer<vtkCamera> cam = CurrentRenderer->GetActiveCamera();
+            double eye[3] = {0, 0, 0};
+            double up[3] = {0, 1, 0};
             bool viewSet = false;
             if (lk == '1') {
-                cam->SetPosition(0, 0, 1);
-                cam->SetFocalPoint(0, 0, 0);
-                cam->SetViewUp(0, 1, 0);
+                eye[2] = 1;
                 viewSet = true;
             } else if (lk == '2') {
-                cam->SetPosition(0, 0, -1);
-                cam->SetFocalPoint(0, 0, 0);
-                cam->SetViewUp(0, 1, 0);
+                eye[2] = -1;
                 viewSet = true;
             } else if (lk == '3') {
-                cam->SetPosition(-1, 0, 0);
-                cam->SetFocalPoint(0, 0, 0);
-                cam->SetViewUp(0, 1, 0);
+                eye[0] = -1;
                 viewSet = true;
             } else if (lk == '4') {
-                cam->SetPosition(1, 0, 0);
-                cam->SetFocalPoint(0, 0, 0);
-                cam->SetViewUp(0, 1, 0);
+                eye[0] = 1;
                 viewSet = true;
             } else if (lk == '5') {
-                cam->SetPosition(0, 1, 0);
-                cam->SetFocalPoint(0, 0, 0);
-                cam->SetViewUp(0, 0, -1);
+                eye[1] = 1;
+                up[1] = 0;
+                up[2] = -1;
                 viewSet = true;
             } else if (lk == '6') {
-                cam->SetPosition(0, -1, 0);
-                cam->SetFocalPoint(0, 0, 0);
-                cam->SetViewUp(0, 0, 1);
+                eye[1] = -1;
+                up[1] = 0;
+                up[2] = 1;
                 viewSet = true;
             }
             if (viewSet) {
-                CurrentRenderer->ResetCamera();
+                // Rotate around the current focal point, preserving the
+                // camera distance (perspective zoom) and the parallel scale
+                // (orthographic zoom). ResetCamera would refit the scene
+                // and destroy the user's zoom level.
+                double focal[3];
+                cam->GetFocalPoint(focal);
+                double dist = cam->GetDistance();
+                if (dist < 1e-6) dist = 1.0;
+                cam->SetPosition(focal[0] + eye[0] * dist,
+                                 focal[1] + eye[1] * dist,
+                                 focal[2] + eye[2] * dist);
+                cam->SetViewUp(up[0], up[1], up[2]);
                 CurrentRenderer->ResetCameraClippingRange();
                 iren->Render();
                 return true;

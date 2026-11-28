@@ -5,13 +5,14 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <QBuffer>
 #include <QFile>
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QTemporaryDir>
-#include <cstdio>
 
 #include "VideoMaskImport.h"
 
@@ -26,10 +27,10 @@ bool writeMask(const QString& path) {
 }
 }  // namespace
 
-int main() {
+TEST(VideoMaskImport, ConvertsAndValidatesArchive) {
     QTemporaryDir dir;
-    if (!dir.isValid() || !writeMask(dir.filePath(QStringLiteral("mask.png"))))
-        return 1;
+    ASSERT_TRUE(dir.isValid());
+    ASSERT_TRUE(writeMask(dir.filePath(QStringLiteral("mask.png"))));
     const QJsonObject manifest{
             {QStringLiteral("format"),
              QStringLiteral("acloudviewer_sam3_tracking_v1")},
@@ -49,29 +50,19 @@ int main() {
     const Sam3ArchiveImport converted = importSam3Archive(
             QJsonDocument(manifest).toJson(), dir.path(),
             {{dir.filePath(QStringLiteral("frame_000000.png")), QSize(8, 8)}});
-    if (!converted.error.isEmpty() || converted.count != 1 ||
-        converted.documents.size() != 1) {
-        std::fprintf(stderr, "converted error=%s count=%d docs=%d\n",
-                     converted.error.toUtf8().constData(), converted.count,
-                     converted.documents.size());
-        return 1;
-    }
+    ASSERT_TRUE(converted.error.isEmpty()) << converted.error.toStdString();
+    EXPECT_EQ(converted.count, 1);
+    ASSERT_EQ(converted.documents.size(), 1);
     const QJsonArray shapes = converted.documents.constBegin()
                                       .value()
                                       .value(QStringLiteral("shapes"))
                                       .toArray();
-    if (shapes.size() != 1 ||
-        shapes.first().toObject().value(QStringLiteral("group_id")).toInt(-1) !=
-                9) {
-        std::fprintf(stderr, "shapes=%d group=%d\n", shapes.size(),
-                     shapes.isEmpty()
-                             ? -1
-                             : shapes.first()
-                                       .toObject()
-                                       .value(QStringLiteral("group_id"))
-                                       .toInt(-1));
-        return 1;
-    }
+    ASSERT_EQ(shapes.size(), 1);
+    EXPECT_EQ(shapes.first()
+                      .toObject()
+                      .value(QStringLiteral("group_id"))
+                      .toInt(-1),
+              9);
     const QByteArray encoded =
             shapes.first()
                     .toObject()
@@ -80,21 +71,17 @@ int main() {
                     .toLatin1();
     const QImage exact =
             QImage::fromData(QByteArray::fromBase64(encoded), "PNG");
-    if (exact.isNull() || exact.pixelColor(4, 4).alpha() != 0 ||
-        exact.pixelColor(2, 2).alpha() == 0) {
-        std::fprintf(stderr, "exact null=%d hole=%d fill=%d\n", exact.isNull(),
-                     exact.isNull() ? -1 : exact.pixelColor(4, 4).alpha(),
-                     exact.isNull() ? -1 : exact.pixelColor(2, 2).alpha());
-        return 1;
-    }
+    ASSERT_FALSE(exact.isNull());
+    EXPECT_EQ(exact.pixelColor(4, 4).alpha(), 0);
+    EXPECT_NE(exact.pixelColor(2, 2).alpha(), 0);
     const Sam3ArchiveImport invalid = importSam3Archive(
             QByteArrayLiteral("{}"), dir.path(),
             {{dir.filePath(QStringLiteral("frame_000000.png")), QSize(8, 8)}});
-    if (invalid.error.isEmpty()) return 1;
+    ASSERT_FALSE(invalid.error.isEmpty());
     const Sam3ArchiveImport wrongSize = importSam3Archive(
             QJsonDocument(manifest).toJson(), dir.path(),
             {{dir.filePath(QStringLiteral("frame_000000.png")), QSize(7, 8)}});
-    if (wrongSize.error.isEmpty()) return 1;
+    ASSERT_FALSE(wrongSize.error.isEmpty());
     QJsonObject emptyManifest = manifest;
     QJsonObject emptyFrame = emptyManifest.value(QStringLiteral("frames"))
                                      .toArray()
@@ -105,9 +92,11 @@ int main() {
     const Sam3ArchiveImport empty = importSam3Archive(
             QJsonDocument(emptyManifest).toJson(), dir.path(),
             {{dir.filePath(QStringLiteral("frame_000000.png")), QSize(8, 8)}});
-    if (!empty.error.isEmpty() || empty.count != 0 ||
-        !empty.documents.isEmpty())
-        return 1;
+    if ((!empty.error.isEmpty() || empty.count != 0 ||
+         !empty.documents.isEmpty())) {
+        ADD_FAILURE() << "archive result mismatch";
+        return;
+    }
     QJsonObject middle = manifest.value(QStringLiteral("frames"))
                                  .toArray()
                                  .first()
@@ -131,13 +120,15 @@ int main() {
                 visited.append(index);
                 return true;
             });
-    if (!streamed.error.isEmpty() || streamed.count != 1 ||
-        visited != QVector<int>({0, 1, 2}))
-        return 1;
+    if ((!streamed.error.isEmpty() || streamed.count != 1 ||
+         visited != QVector<int>({0, 1, 2}))) {
+        ADD_FAILURE() << "archive result mismatch";
+        return;
+    }
     last.insert(QStringLiteral("frame"), 1);
     sequence.insert(QStringLiteral("frames"), QJsonArray{middle, last});
     const Sam3ArchiveImport badSequence = visitSam3Archive(
             QJsonDocument(sequence).toJson(), dir.path(), threeImages,
             [](int, const QJsonObject&) { return true; });
-    return badSequence.error.isEmpty() ? 1 : 0;
+    EXPECT_FALSE(badSequence.error.isEmpty());
 }

@@ -7,7 +7,7 @@ set_target_properties(test_qinstantmesh_worker PROPERTIES
 target_include_directories(test_qinstantmesh_worker PRIVATE ../include)
 target_compile_definitions(test_qinstantmesh_worker PRIVATE AICore_ENABLED)
 target_link_libraries(test_qinstantmesh_worker PRIVATE
-    AICore CVPluginAPI CVCoreLib Qt::Core Qt::Gui Threads::Threads)
+    AICore CVPluginAPI CVCoreLib Qt::Core Qt::Gui Threads::Threads gtest)
 if(NOT MSVC)
     target_compile_options(test_qinstantmesh_worker PRIVATE -fPIC)
     if(NOT APPLE)
@@ -19,7 +19,7 @@ if(COMMAND aicore_register_test)
     aicore_register_test(NAME test_qinstantmesh_worker TARGET test_qinstantmesh_worker
         LABELS "capi;instantmesh;cvpluginapi")
 else()
-    add_test(NAME test_qinstantmesh_worker COMMAND test_qinstantmesh_worker)
+    cloudviewer_add_test(NAME test_qinstantmesh_worker COMMAND test_qinstantmesh_worker)
 endif()
 cloudviewer_set_plugin_test_env(test_qinstantmesh_worker)
 
@@ -39,7 +39,7 @@ foreach(test IN ITEMS test_qinstantmesh_dialog test_qinstantmesh_plugin)
     target_compile_definitions(${test} PRIVATE AICore_ENABLED)
     target_link_libraries(${test} PRIVATE AICore CVPluginAPI CVPluginStub
         CVCoreLib CV_DB_LIB CV_IO_LIB Qt::Core Qt::Gui Qt::Widgets
-        Qt::Network Threads::Threads)
+        Qt::Network Threads::Threads gtest)
     if(NOT MSVC)
         target_compile_options(${test} PRIVATE -fPIC)
         if(NOT APPLE)
@@ -51,7 +51,7 @@ foreach(test IN ITEMS test_qinstantmesh_dialog test_qinstantmesh_plugin)
         aicore_register_test(NAME ${test} TARGET ${test}
             LABELS "capi;instantmesh;cvpluginapi")
     else()
-        add_test(NAME ${test} COMMAND ${test})
+        cloudviewer_add_test(NAME ${test} COMMAND ${test})
     endif()
     cloudviewer_set_plugin_test_env(${test})
     set_property(TEST ${test} APPEND PROPERTY ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
@@ -60,14 +60,11 @@ endforeach()
 # Real-model batch host gate; packaged CLI/RPC children require separate L3/L4 validation.
 if(AICORE_TEST_ASSET_ROOT)
     get_filename_component(_instantmesh_data_root "${AICORE_TEST_ASSET_ROOT}" DIRECTORY)
-    add_test(NAME test_qinstantmesh_batch COMMAND test_qinstantmesh_plugin
+    cloudviewer_add_test(NAME test_qinstantmesh_batch COMMAND test_qinstantmesh_plugin
         "${_instantmesh_data_root}" "${AICORE_TEST_DEVICE}")
     cloudviewer_set_plugin_test_env_offscreen(test_qinstantmesh_batch)
     set_tests_properties(test_qinstantmesh_batch PROPERTIES
-        LABELS "capi;instantmesh;model;e2e;cvpluginapi" RESOURCE_LOCK gpu)
-    if(TARGET aicore-model-tests)
-        add_dependencies(aicore-model-tests test_qinstantmesh_plugin)
-    endif()
+        LABELS "suite-aicore;capi;instantmesh;model;e2e;cvpluginapi" RESOURCE_LOCK gpu)
 endif()
 
 if(NOT TARGET 3rdparty_googletest)
@@ -111,6 +108,6 @@ if(COMMAND aicore_register_test)
     aicore_register_test(NAME test_qinstantmesh_catalog TARGET test_qinstantmesh_catalog
         LABELS "capi;instantmesh;cvpluginapi")
 else()
-    add_test(NAME test_qinstantmesh_catalog COMMAND test_qinstantmesh_catalog)
+    cloudviewer_add_test(NAME test_qinstantmesh_catalog COMMAND test_qinstantmesh_catalog)
 endif()
 cloudviewer_set_plugin_test_env(test_qinstantmesh_catalog)

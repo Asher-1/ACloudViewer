@@ -372,15 +372,12 @@ jobs:
           Write-Host "Found installer: $PACKAGE_INSTALLER_NAME"
           echo "PACKAGE_INSTALLER_NAME=$PACKAGE_INSTALLER_NAME" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Run C++ unit tests (tests.exe + foundation portability + qPythonRuntime)
+      - name: Run unified headless C++ test gate
         if: ${{ matrix.CONFIG == 'Release' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
-          # Single entry point shared with build_win_app.ps1 / build_win_wheel.ps1:
-          # tests.exe (shuffled, filtered), then the standalone foundation
-          # portability CTest executables, then the qPythonRuntime native CTest
-          # gate — all unconditional parts of the entry, stop-on-failure.
+          # Root tests owns registration, build prerequisites and headless selection.
           . .\util\ci_utils.ps1
           Run-CppUnitTests -Config "${{ matrix.CONFIG }}" `
             -GtestExclude '*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*'

@@ -10,6 +10,7 @@
 #include <QByteArray>
 #include <QColor>
 #include <QImage>
+#include <QMetaType>
 #include <QString>
 #include <QStringList>
 #include <QVector>

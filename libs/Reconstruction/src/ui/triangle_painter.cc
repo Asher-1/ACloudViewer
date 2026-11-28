@@ -39,20 +39,6 @@ TrianglePainter::TrianglePainter() : num_geoms_(0) {}
 
 TrianglePainter::~TrianglePainter() = default;
 
-void TrianglePainter::Release() {
-  if (vao_.isCreated()) {
-    vao_.destroy();
-  }
-  if (vbo_.isCreated()) {
-    vbo_.destroy();
-  }
-  if (shader_program_.isLinked()) {
-    shader_program_.release();
-    shader_program_.removeAllShaders();
-  }
-  num_geoms_ = 0;
-}
-
 void TrianglePainter::Setup() {
   vao_.destroy();
   vbo_.destroy();

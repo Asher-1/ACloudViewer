@@ -51,6 +51,7 @@ if(PLUGIN_STANDARD_QANYLABELING)
     endif()
     target_include_directories(${PROJECT_NAME} PRIVATE
         include
+        ${CMAKE_SOURCE_DIR}/libs/CV_db/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../qSAM3/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../qRelateAnything/include)
     target_link_libraries(${PROJECT_NAME} AICore CVPluginAPI video_base Qt::OpenGL)

@@ -1,0 +1,41 @@
+{
+  "base": "dark",
+  "overrides": {
+    "meta": {
+      "name": "darkblack",
+      "version": "1",
+      "author": "ACloudViewer - palette migration"
+    },
+    "backgroundColorMain1": "#1F2026",
+    "backgroundColorMain2": "#26282e",
+    "backgroundColorMain3": "#303138",
+    "backgroundColorMain4": "#393b41",
+    "backgroundColorWorkspace": "#1F2026",
+    "backgroundColorTabBar": "#26282e",
+    "neutralColor": "#31333a",
+    "neutralColorHovered": "#3c3f45",
+    "neutralColorPressed": "#474b51",
+    "neutralColorDisabled": "#2a2c32",
+    "secondaryColor": "#D7E2E9",
+    "secondaryColorHovered": "#D7E2E9",
+    "secondaryColorPressed": "#D7E2E9",
+    "secondaryColorDisabled": "#696e74",
+    "secondaryAlternativeColor": "#a0a8ae",
+    "secondaryAlternativeColorHovered": "#b2bbc2",
+    "secondaryAlternativeColorPressed": "#D7E2E9",
+    "secondaryAlternativeColorDisabled": "#5f646a",
+    "borderColor": "#44474d",
+    "borderColorHovered": "#5f646a",
+    "borderColorPressed": "#72777e",
+    "borderColorDisabled": "#31333a",
+    "primaryColor": "#242629",
+    "primaryColorHovered": "#36393c",
+    "primaryColorPressed": "#232528",
+    "primaryColorDisabled": "#202227",
+    "primaryColorForeground": "#FFFFFF",
+    "primaryColorForegroundHovered": "#FFFFFF",
+    "primaryColorForegroundPressed": "#FFFFFF",
+    "primaryColorForegroundDisabled": "#696e74",
+    "focusColor": "#24262966"
+  }
+}

@@ -9,6 +9,8 @@
 
 #include <QtCompat.h>
 
+#include <QAction>
+
 #include "VtkUtils/rendererslayoutalgo.h"
 #include "VtkUtils/utils.h"
 #include "VtkUtils/vtkutils.h"
@@ -313,20 +315,6 @@ static const int CLICK_DRAG_THRESHOLD_PX = 3;
 // pick hop does not affect this measurement.
 static const int CC_MAX_PICKING_CLICK_DURATION_MS = 200;
 
-static QMap<QString, VtkShortcutDef> s_vtkShortcutMap;
-static bool s_vtkMapInitialized = false;
-
-void QVTKWidgetCustom::reloadVtkShortcutMap() {
-    s_vtkShortcutMap = buildVtkShortcutMap();
-    s_vtkMapInitialized = true;
-}
-
-static void ensureVtkShortcutMap() {
-    if (!s_vtkMapInitialized) {
-        s_vtkShortcutMap = buildVtkShortcutMap();
-        s_vtkMapInitialized = true;
-    }
-}
 QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow,
                                    ecvDisplayTools* /*tools*/,
                                    bool stereoMode)
@@ -342,6 +330,22 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow,
       m_scaleBar(nullptr),
       m_wheelZoomUpdateTimer(nullptr) {
     this->setWindowTitle("3D View");
+    for (const auto& def : vtkDefaultShortcuts()) {
+        auto* action = new QAction(def.label, this);
+        action->setObjectName(def.id);
+        action->setShortcut(def.defaultKey);
+        action->setShortcutContext(Qt::WidgetShortcut);
+        action->setEnabled(false);
+        addAction(action);
+        m_vtkShortcutActions.append(action);
+        ecvKeySequences::instance().registerCommand(def.id, action, tr("VTK"));
+        connect(action, &QAction::triggered, this, [this, def]() {
+            if (m_customStyle && m_interactor)
+                m_customStyle->handleShortcut(def.vtkKey, def.vtkCtrl,
+                                              def.vtkAlt, def.vtkShift,
+                                              m_interactor.Get());
+        });
+    }
 
     // Initialize timer for delayed 2D label update after wheel zoom
     m_wheelZoomUpdateTimer = new QTimer(this);
@@ -424,6 +428,14 @@ QVTKWidgetCustom::QVTKWidgetCustom(QMainWindow* parentWindow,
         vtkLogger::SetStderrVerbosity(vtkLogger::VERBOSITY_WARNING);
     });
     d_ptr = new VtkWidgetPrivate(this);
+}
+
+void QVTKWidgetCustom::setCustomInteractorStyle(
+        VTKExtensions::vtkCustomInteractorStyle* style) {
+    m_customStyle = style;
+    if (style) style->setQtShortcutDispatch(true);
+    for (auto* action : m_vtkShortcutActions)
+        action->setEnabled(style != nullptr);
 }
 
 QVTKWidgetCustom::~QVTKWidgetCustom() {
@@ -2282,7 +2294,8 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
                 if (!labelPicked) {
                     // first test if the user has clicked on a particular
                     // item on the screen
-                    if (!ecvDisplayTools::ProcessClickableItems(x, y)) {
+                    if (!ecvDisplayTools::ProcessClickableItems(curCtx(), x,
+                                                                y)) {
                         curLastMousePos() = qtCompatMouseEventPosInt(event);
                         if (m_ownerView) {
                             m_ownerView->startDeferredPicking();
@@ -2391,44 +2404,6 @@ void QVTKWidgetCustom::dropEvent(QDropEvent* event) {
     event->ignore();
 }
 
-static bool isVtkViewerShortcut(int key, Qt::KeyboardModifiers mods) {
-    bool ctrl = mods & Qt::ControlModifier;
-    bool alt = mods & Qt::AltModifier;
-    bool shift = mods & Qt::ShiftModifier;
-
-    if (ctrl && alt) {
-        switch (key) {
-            case Qt::Key_J:
-            case Qt::Key_C:
-            case Qt::Key_G:
-            case Qt::Key_K:
-            case Qt::Key_O:
-            case Qt::Key_F:
-            case Qt::Key_S:
-            case Qt::Key_M:
-            case Qt::Key_Plus:
-            case Qt::Key_Minus:
-            case Qt::Key_Equal:
-                return true;
-        }
-    } else if (ctrl && shift && !alt) {
-        switch (key) {
-            case Qt::Key_D:
-            case Qt::Key_W:
-            case Qt::Key_F:
-            case Qt::Key_Plus:
-            case Qt::Key_Minus:
-                return true;
-        }
-    } else if (ctrl && !alt && !shift) {
-        switch (key) {
-            case Qt::Key_R:
-                return true;
-        }
-    }
-    return false;
-}
-
 bool QVTKWidgetCustom::event(QEvent* evt) {
     // In signal-only mode (e.g. qCloudLayers brush), intercept all mouse/wheel
     // events BEFORE VTK's QVTKOpenGLNativeWidget::event() can forward them to
@@ -2455,31 +2430,11 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
     }
 
     switch (evt->type()) {
-        case QEvent::ShortcutOverride: {
-            QKeyEvent* keyEvent = static_cast<QKeyEvent*>(evt);
-            int qkey = keyEvent->key();
-            if (qkey != Qt::Key_unknown && qkey != Qt::Key_Control &&
-                qkey != Qt::Key_Shift && qkey != Qt::Key_Alt &&
-                qkey != Qt::Key_Meta) {
-                auto mods = keyEvent->modifiers();
-                int combo = qkey;
-                if (mods & Qt::ControlModifier) combo |= Qt::CTRL;
-                if (mods & Qt::AltModifier) combo |= Qt::ALT;
-                if (mods & Qt::ShiftModifier) combo |= Qt::SHIFT;
-                QKeySequence seq(combo);
-                auto* activeMs = ecvKeySequences::instance().active(seq);
-                if (activeMs) {
-                    evt->ignore();
-                    return false;
-                }
-            }
-            if (isVtkViewerShortcut(keyEvent->key(), keyEvent->modifiers())) {
-                evt->accept();
-                return true;
-            }
+        case QEvent::ShortcutOverride:
+            // QAction/QShortcut share Qt's native matching, including chords
+            // and Meta. Never reserve a second hardcoded set of old VTK keys.
             evt->ignore();
             return false;
-        }
 
         case QEvent::MouseButtonPress: {
             QMouseEvent* me = static_cast<QMouseEvent*>(evt);
@@ -2601,14 +2556,24 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
             QKeyEvent* keyEvent = static_cast<QKeyEvent*>(evt);
 
             if (keyEvent->key() == Qt::Key_Escape) {
-                if (m_ownerView)
-                    emit m_ownerView->exclusiveFullScreenToggled(false);
-                emit exclusiveFullScreenToggled(false);
-                if (m_win) {
-                    QKeyEvent* newEvent =
-                            new QKeyEvent(QEvent::KeyPress, Qt::Key_Escape,
-                                          keyEvent->modifiers());
-                    QCoreApplication::postEvent(m_win, newEvent);
+                // Application fullscreen hosts own their shortcuts. Outside
+                // legacy exclusive fullscreen, let Qt propagate Escape to the
+                // parent rather than sending it to VTK or reposting a copy.
+                if (keyEvent->modifiers() != Qt::NoModifier ||
+                    !curCtx().exclusiveFullscreen) {
+                    evt->ignore();
+                    return false;
+                }
+
+                if (!keyEvent->isAutoRepeat()) {
+                    QTimer::singleShot(0, this, [this]() {
+                        if (!curCtx().exclusiveFullscreen) return;
+                        if (m_ownerView) {
+                            emit m_ownerView->exclusiveFullScreenToggled(false);
+                        } else {
+                            emit exclusiveFullScreenToggled(false);
+                        }
+                    });
                 }
                 evt->accept();
                 return true;
@@ -2627,6 +2592,7 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
                 if (mods & Qt::ControlModifier) combo |= Qt::CTRL;
                 if (mods & Qt::AltModifier) combo |= Qt::ALT;
                 if (mods & Qt::ShiftModifier) combo |= Qt::SHIFT;
+                if (mods & Qt::MetaModifier) combo |= Qt::META;
                 QKeySequence seq(combo);
 
                 auto* modalShortcut = ecvKeySequences::instance().active(seq);
@@ -2636,20 +2602,6 @@ bool QVTKWidgetCustom::event(QEvent* evt) {
                 }
 
                 if (m_customStyle && m_interactor) {
-                    ensureVtkShortcutMap();
-
-                    QString seqStr = seq.toString(QKeySequence::PortableText);
-
-                    auto it = s_vtkShortcutMap.find(seqStr);
-                    if (it != s_vtkShortcutMap.end()) {
-                        if (m_customStyle->handleShortcut(
-                                    it->vtkKey, it->vtkCtrl, it->vtkAlt,
-                                    it->vtkShift, m_interactor.Get())) {
-                            evt->accept();
-                            return true;
-                        }
-                    }
-
                     bool noMods =
                             !(mods & (Qt::ControlModifier | Qt::AltModifier |
                                       Qt::MetaModifier));

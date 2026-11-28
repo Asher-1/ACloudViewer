@@ -161,10 +161,26 @@ void ecvModelDownloader::download(const Request& request) {
     // the pinned artifact.
     m_candidates.clear();
     m_candidates.append(m_request.url);
-    if (QUrl(m_request.url).host() == QStringLiteral("github.com")) {
+    const QUrl primaryUrl(m_request.url);
+    if (primaryUrl.host() == QStringLiteral("github.com")) {
         for (const QString& proxy : {QStringLiteral("https://ghfast.top/"),
                                      QStringLiteral("https://gh-proxy.com/")}) {
             m_candidates.append(proxy + m_request.url);
+        }
+    }
+    // huggingface.co direct is unreachable on some networks (connection
+    // timeout) while the community mirror serves the identical resolve/
+    // path and 302 -> CDN redirect. Append it as a fallback candidate so a
+    // blocked primary rotates to a reachable endpoint instead of stalling
+    // every attempt. Content safety does not depend on the mirror: the
+    // pinned digest (or exact size) still gates finalize.
+    if (primaryUrl.host() == QStringLiteral("huggingface.co")) {
+        QUrl mirrorUrl(primaryUrl);
+        mirrorUrl.setScheme(QStringLiteral("https"));
+        mirrorUrl.setHost(QStringLiteral("hf-mirror.com"));
+        mirrorUrl.setPort(-1);
+        if (mirrorUrl.host() != primaryUrl.host()) {
+            m_candidates.append(mirrorUrl.toString());
         }
     }
     for (const QString& mirror : m_request.mirrorUrls) {

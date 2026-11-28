@@ -1,319 +1,41 @@
 ---
 name: acloudviewer-cli-agent
-description: One-click deployment and operation of the cli-anything-acloudviewer CLI and MCP toolchain for ACloudViewer. Use when an agent or user needs to install the harness, install/verify the ACloudViewer binary, register MCP clients (Claude Code, Codex, Cursor, Claude Desktop), run headless batch processing, format conversion, 3D reconstruction, AICore batch inference, choose GUI vs headless mode, or verify outputs from automation.
+description: It deploys and operates the cli-anything-acloudviewer CLI/MCP toolchain and verifies launch artifacts and GUI regressions when users ask to install ACloudViewer, register MCP clients, run headless batches, diagnose an old installed version or missing library, or validate fullscreen and multi-window selection/hover when GUI RPC is unreachable.
 ---
 
-# ACloudViewer CLI: One-Click Deploy & Operate
-
-Single entry point for deploying and driving `cli-anything-acloudviewer`
-from a shell, an AI agent, or an MCP client. Every command below is verified
-against the harness source (`acloudviewer_cli.py`, v3.1.0) and
-`agent-integration/README.md`. Repo rule: all agent/automation interaction
-MUST go through this toolchain; never guess ACloudViewer binary flags.
-
-## Sources of Truth
-
-| Topic | Canonical reference |
-|---|---|
-| Unified interface reference | `agent-integration/README.md` |
-| Command cheat sheet | `agent-integration/docs/CLI-QUICK-REFERENCE.md` |
-| Command groups & aliases | `agent-integration/docs/COMMAND-MAPPING.md` |
-| JSON-RPC methods (89) | `agent-integration/docs/JSON-RPC-API.md` |
-| Known pitfalls | `agent-integration/docs/TROUBLESHOOTING.md` |
-| Harness package (canonical) | `CLI-Anything/acloudviewer/agent-harness/` |
-| MCP tool reference (187 tools) | `agent-integration/mcp/README.md` |
-
-## Install Mode Routing (pick before Phase A)
-
-Ask one question: does the user want to *use* ACloudViewer or *build* it?
-
-| User profile | Path | Why |
-|---|---|---|
-| **Consumer** — just install and run the app | **npm bootstrap** (below) | Zero prerequisites beyond Node/npm; one command downloads and launches the official installer on Windows/macOS/Linux |
-| **Agent / automation** — drive the app programmatically | **CLI harness** (Phase A) | Adds the MCP/CLI toolchain, health checks, and headless batch ops |
-| **Developer** — clean machine, needs the app *and* a source build | **CLI harness + `install source`** | `install source` runs the full from-scratch pipeline (system deps via `utils/install_deps_ubuntu.sh` or conda, clone, CMake configure, build) in one command |
-
-### Consumer path: npm bootstrap (no harness needed)
-
-```bash
-npm install -g @asher-1/acloudviewer   # tiny installer bootstrap, Node >= 18
-acloudviewer install                    # downloads + launches the matching installer (auto CPU/CUDA)
-acloudviewer install --silent           # unattended: lands in ~/.local/share/ACloudViewer (no sudo)
-acloudviewer uninstall --yes            # remove the app (QtIFW maintenancetool purge)
-acloudviewer list                       # inspect release assets
-```
-
-Notes: `GITHUB_TOKEN=<pat>` raises the GitHub API limit for many installs on
-shared CI runners; downloads use parallel Range segments with resume. If the
-rolling `main-devel` release is being refreshed mid-download the CLI fails
-fast with an `asset is no longer downloadable` message — just re-run.
-
-### Developer path: from-scratch source build
-
-`cli-anything-acloudviewer install source` wraps the platform build guides
-(docs/guides/compiling_doc): dependency install + clone + configure + build.
-Always `--dry-run` first — a full build takes hours:
-
-```bash
-cli-anything-acloudviewer install source --dry-run      # preview every step
-cli-anything-acloudviewer install source --jobs 8 -y    # run it
-```
-
-The npm package does **not** provide source builds; route users who say
-"compile from source" here, and users who say "just install" to the npm path.
-
-## Phase A — One-Click Deployment
-
-Run `check` first; it tells you exactly which step you still need.
-
-```bash
-# 0. Diagnose: what is installed, what is missing, suggested fix
-cli-anything-acloudviewer check
-
-# 1. Install the CLI/MCP harness (pick one)
-pip install cli-anything-acloudviewer            # PyPI
-pip install "git+https://github.com/Asher-1/CLI-Anything.git#subdirectory=acloudviewer/agent-harness"
-
-# 2. Install the ACloudViewer binary (auto-detects platform; CPU by default)
-cli-anything-acloudviewer install auto           # installs whatever is missing (CPU)
-cli-anything-acloudviewer install app            # CPU build (default)
-cli-anything-acloudviewer install app --cuda     # CUDA build; driver checked before download
-cli-anything-acloudviewer install app --channel beta
-cli-anything-acloudviewer install app --from-file /path/to/ACloudViewer-*.run   # .run/.dmg/.exe
-cli-anything-acloudviewer install wheel [--cuda]        # optional cloudViewer Python wheel (CPU default; --cuda driver-checked)
-
-# One-line script alternative (Linux / macOS): harness install + check + MCP
-# client registration; ACV_SKIP_CLIENTS=1 skips registration
-curl -LsSf https://raw.githubusercontent.com/Asher-1/CLI-Anything/main/acloudviewer/agent-harness/install.sh | sh
-
-# Register the bundled MCP server with detected AI clients (writes .bak backups)
-cli-anything-acloudviewer install clients --all          # every detected client
-cli-anything-acloudviewer install clients --dry-run      # preview, no writes
-cli-anything-acloudviewer install clients --client codex --client cursor --mode headless
-cli-anything-acloudviewer install clients --all --remove # symmetric undo (unregister)
-
-# Health check: installation + RPC reachability + AICore registry
-cli-anything-acloudviewer --json doctor [--skip-rpc]
-
-# Source build one command (mirrors docs/guides/compiling_doc: Linux apt+pyenv
-# script, macOS/Windows conda); always --dry-run first - build takes hours
-cli-anything-acloudviewer install source --dry-run
-cli-anything-acloudviewer install source --jobs 8 -y
-
-# Headless AICore model prefetch (native DOWNLOAD=1; --list shows the matrix)
-cli-anything-acloudviewer --json install models --list
-cli-anything-acloudviewer install models --task ocr --image ./page.png
-
-# 3. Verify end to end (headless, no GUI required)
-cli-anything-acloudviewer --json info            # binary path, version, device
-cli-anything-acloudviewer formats                # supported I/O formats
-```
-
-The installer prints the resolved path as `export ACV_BINARY=<path>`; set it
-whenever the binary is not on `PATH`.
-
-### Platform Notes (installer handles platform + arch detection)
-
-| Platform | Artifact | Headless install / caveats |
-|---|---|---|
-| Linux (.run) | Qt IFW installer | `QT_QPA_PLATFORM=minimal installer --root <dir> --accept-licenses --accept-messages --confirm-command install`; headless `-SILENT` runs may need `sudo apt-get install libxcb-icccm4 libxcb-shape0` |
-| Windows (.exe) | Qt IFW installer | Point `ACV_BINARY` at the **.exe**, never a `.bat` wrapper (wrapper job control hangs pytest/CI) |
-| macOS (.dmg) | Disk image | `hdiutil attach <dmg> -nobrowse -noverify && cp -R /Volumes/ACloudViewer*/*.app ~/`; do **not** set `QT_QPA_PLATFORM` (cocoa-only plugin) |
-
-### MCP Client Registration (Claude / OpenAI / IDEs)
-
-The MCP server ships in the same package and runs over stdio. Pick the mode
-explicitly: `--mode auto` (default), `--mode gui` (running app via WebSocket),
-`--mode headless` (binary only, safest for unattended clients).
-
-Automated registration (writes each client's own config with a `.bak`
-backup; `--all` covers Claude Code, Claude Desktop, Codex, and Cursor when
-detected; non-TTY callers must pass `--all` or `--client`):
-
-```bash
-cli-anything-acloudviewer install clients --all
-```
-
-Manual registration (equivalent result, useful when a client is not
-auto-detected):
-
-```bash
-# Claude Code — one command
-claude mcp add acloudviewer -- cli-anything-acloudviewer-mcp --mode auto
-
-# OpenAI Codex CLI — one command
-codex mcp add acloudviewer -- cli-anything-acloudviewer-mcp --mode auto
-```
-
-Cursor / VS Code style JSON config (a ready `.agents/mcp.json` ships in this
-repo with three profiles: `acloudviewer`, `acloudviewer-headless`,
-`acloudviewer-gui`):
-
-```json
-{
-  "mcpServers": {
-    "acloudviewer": {
-      "command": "cli-anything-acloudviewer-mcp",
-      "args": ["--mode", "auto"]
-    }
-  }
-}
-```
-
-Claude Desktop (`claude_desktop_config.json` → Settings → Developer → Edit
-Config): same JSON as above with the full command path if launchers cannot
-resolve PATH. For headless-only environments use `"args": ["--mode", "headless"]`.
-Only one MCP client instance should own the GUI WebSocket at a time.
-
-## Phase B — Operating the CLI
-
-### Mode Selection (decide once per script)
-
-| Situation | Mode | Why |
-|---|---|---|
-| Batch, CI, conversion, AI inference, reconstruction | `--mode headless` | Calls the binary directly; no port probing; immune to the Windows `auto` hang |
-| entity_id-based ops (`scene`, `view`, `mesh`, `cloud` GUI groups), screenshots | GUI | Requires ACloudViewer running with qJSonRPCPlugin enabled (WebSocket 6001) |
-| Interactive exploration on Linux/macOS | default `auto` | Tries GUI then falls back headless; avoid in scripts and on Windows |
-
-```bash
-# GUI mode contract: start ACloudViewer, enable the JSON-RPC plugin, then
-cli-anything-acloudviewer open /path/to/scene.ply
-cli-anything-acloudviewer --json scene list        # get entity ids here
-cli-anything-acloudviewer view screenshot out.png --width 1920 --height 1080
-cli-anything-acloudviewer mesh simplify <entity_id> --method quadric --target-triangles 50000
-```
-
-### Machine-Readable Contract (agents MUST follow this)
-
-```bash
-cli-anything-acloudviewer --json <command> ...     # {"status": "...", "result": {...}}
-echo $?                                            # 0 = CLI succeeded
-```
-
-1. Always pass `--json` when an agent consumes the output.
-2. Exit code 0 does **not** guarantee data was produced: some conversions fail
-   silently (e.g. STL export from non-mesh data). Automation MUST assert the
-   output file exists and is non-empty, not just `returncode == 0`.
-3. Use absolute paths for all inputs/outputs.
-
-### Environment Variables
-
-```bash
-export ACV_BINARY=/path/to/ACloudViewer      # override binary discovery
-export ACV_CLI_MODE=headless                 # default mode for every call
-export ACV_RPC_URL=ws://127.0.0.1:6001       # GUI WebSocket endpoint
-export ACV_LOG_LEVEL=DEBUG                   # CLI verbosity
-export COLMAP_PATH=/path/to/colmap           # reconstruction prerequisite
-```
-
-### Headless Batch Cookbook
-
-```bash
-# Directory conversion with extension filter
-cli-anything-acloudviewer --mode headless batch-convert ./scans/ ./out/ -f .ply --filter-ext .las .laz
-
-# Multi-stage per-file pipeline (subsample -> normals -> roughness)
-for f in ./in/*.ply; do
-  b=$(basename "$f" .ply)
-  cli-anything-acloudviewer --mode headless process subsample "$f" -o "./down/${b}.ply" --voxel-size 0.05 \
-    && cli-anything-acloudviewer --mode headless process normals "./down/${b}.ply" -o "./norm/${b}.ply" \
-    && cli-anything-acloudviewer --mode headless process roughness "./norm/${b}.ply" -o "./rough/${b}.ply"
-done
-
-# 55+ processing ops: subsample, normals, crop, icp, sor, c2c-dist, c2m-dist,
-# density, curvature, roughness, extract-cc, rasterize, delaunay, sample-mesh,
-# mesh-volume, merge-clouds, poisson-recon, csf, ransac, m3c2, canupo, pcv, ...
-cli-anything-acloudviewer --mode headless process poisson-recon in.ply -o mesh.ply --depth 8
-```
-
-Scalar-field and normal families are alias groups of `process`:
-`sf coord-to-sf/arithmetic/operation/gradient/filter/...`,
-`normals octree/orient-mst/invert/to-dip/...` (see COMMAND-MAPPING.md).
-
-### 3D Reconstruction (headless)
-
-```bash
-# End-to-end
-cli-anything-acloudviewer reconstruct auto ./images/ -w ./ws/ --quality high --use-gpu
-cli-anything-acloudviewer reconstruct auto ./images/ -w ./ws/ --quality low --no-dense
-
-# Step-by-step
-cli-anything-acloudviewer reconstruct extract-features ./imgs/ -d db.db
-cli-anything-acloudviewer reconstruct match db.db --method exhaustive
-cli-anything-acloudviewer reconstruct sparse db.db --image-path ./imgs/ -o ./sparse/ \
-  --random-seed 17 --mapper-option Mapper.min_num_matches=32
-cli-anything-acloudviewer reconstruct dense-stereo ./dense/
-cli-anything-acloudviewer reconstruct fuse ./dense/ -o fused.ply
-cli-anything-acloudviewer reconstruct poisson fused.ply -o mesh.ply
-cli-anything-acloudviewer reconstruct texture-mesh ./dense/ -o textured/ --mesh mesh.ply
-
-# SIBR dataset prep / 3DGS training (standalone binary, no GUI)
-cli-anything-acloudviewer sibr prepare-colmap ./ws/
-spirula train ./dataset/ --output ./runs/x && spirula mesh ./runs/x --output mesh.ply
-```
-
-### AICore Batch Inference (headless, 19 tasks)
-
-The installed binary is the source of truth for task names and options —
-always `schema` before `run`. Shortcut flags (`--image`, `--out-dir`,
-`--model`, `--device`, `--threads`) are valid only when the schema lists the
-same uppercase key; everything else goes through repeatable
-`--option KEY=VALUE` (JSON values keep their type; repeat a key for lists).
-
-```bash
-cli-anything-acloudviewer --json --mode headless ai list
-cli-anything-acloudviewer --json --mode headless ai schema ocr
-cli-anything-acloudviewer --json --mode headless ai run ocr \
-  --image ./scan-1.png --image ./scan-2.png --out-dir ./ocr-out \
-  --option LANG=en --option SAVE_VIS=true
-cli-anything-acloudviewer --json --mode headless ai run llm \
-  --model qwen2.5-0.5b-instruct-q8_0.gguf --out-dir ./llm-out \
-  --option 'PROMPT=...' --option MAX_TOKENS=32
-
-# Ordinary/third-party plugin passthrough (legacy argv order preserved)
-cli-anything-acloudviewer --mode headless plugin run ANIMATION \
-  --arg=-FPS --arg=24 --arg=-TOTAL_FRAMES --arg=10
-```
-
-Notes: DOWNLOAD support is judged by a zero-side-effect parser probe
-against the installed binary — `prepare()`-based commands (querysplat,
-anylabel, yolo, ...) accept `DOWNLOAD 1` and prefetch headlessly via
-`install models --task <name>` (fetch through the shared
-ecvModelDownloader), while the legacy handleSchemaHelp bridge commands
-(map-anything, yolo-track, sam3d) reject the token (prefetch through the
-GUI dialog or place GGUFs under `~/cloudViewer_data/extract/`). Model
-assets are SHA-256 verified against the catalog.
-
-## Phase C — Verification & Troubleshooting
-
-```bash
-# Layered test suite (Levels 1-5; auto-skips missing deps)
-cd agent-integration/tests && python -m pytest test_integration.py -v
-
-# Harness unit tests (CLI-Anything repo)
-pytest cli_anything/acloudviewer/tests/ -q
-```
-
-| Symptom | Cause | Fix |
-|---|---|---|
-| `auto` mode hangs (esp. Windows) | port 6001 listening but unresponsive | Always `--mode headless` for batch/scripts |
-| Command "succeeds" (exit 0) but no data | silent conversion failure | Assert output exists and size > 0 |
-| pytest/batch hangs on Windows | `ACV_BINARY` points at a `.bat` wrapper | Point it at the real `.exe` |
-| Headless Qt fails on Linux | missing XCB libs | `sudo apt-get install libxcb-icccm4 libxcb-shape0` |
-| macOS app won't start in tests | `QT_QPA_PLATFORM` forced | Unset it for the `.app` bundle (cocoa only) |
-| `uvx`-style ENOENT from GUI-launched clients | GUI apps don't inherit shell PATH | Use the absolute command path in MCP config |
-| AI task schema mismatch | harness option cache | Re-run `ai schema <task>`; binary is authoritative |
-
-## First-Principles Rules for Agents
-
-1. Mode = data location: data on disk → headless; data in a running scene → GUI.
-2. Never construct `ACloudViewer -SILENT ...` flag strings by hand; always go
-   through this CLI (it owns the exact argv per operation).
-3. `--json` + exit code + output-existence assertion is the complete success
-   contract; nothing else is evidence.
-4. Ask the binary (`info`, `formats`, `ai schema`) before hard-coding
-   task/option names; the catalog, not the docs, is current.
+# ACloudViewer CLI: Deploy, Operate & Verify
+
+Use the supported agent toolchain for application operations; never invent application binary flags. Native Qt/VTK tests and OS-level input probes are separate engineering verification, not a replacement CLI or proof that the user's current scene works. Do not restart, close, overwrite, or modify a user's running scene or installation without permission.
+
+## Steps
+
+1. **Route before acting.** Establish whether the request is consumer installation, harness/MCP automation, source build, launch diagnosis, or GUI/source regression. Read the repository's `agent-integration/README.md` and `agent-integration/docs/CLI-QUICK-REFERENCE.md`; current CLI help, source, CMake targets and test output override historical versions/counts. Use [deployment and operation recipes](<references/deploy-operate.md>) for install, platform, MCP, batch, reconstruction and AICore commands. For source fixes read scoped repository rules and work at the existing behavior owner; this skill supplies verification routing, not a general source architecture contract. AICore ABI/task engineering belongs to `acloudviewer-aicore-plugin`.
+2. **Record environment and actual launch identity.** Run `pwd`, `command -v cli-anything-acloudviewer`, `cli-anything-acloudviewer check`, and `cli-anything-acloudviewer --json --mode headless info`. Record the resolved application path and any `ACV_BINARY` override. Follow wrapper scripts to their executable; compare running/installed, generated-package and build artifacts using full paths, size/time and ELF Build ID or a content digest. Follow [artifact and dependency diagnostics](<references/native-regression.md#artifact-identity-and-package-launch>) before claiming a source fix reached a normal CLI launch. Never assume `ACV_BINARY` changes a GUI already running on RPC.
+3. **Select the mode and probe GUI read-only.** Disk data/batch/CI → explicit `--mode headless`; live entity IDs, scene operations and screenshots → explicit `--mode gui`. For GUI diagnosis run `cli-anything-acloudviewer --json --mode gui scene list` with a bounded timeout (e.g. 10 seconds). Preserve stdout, stderr, traceback, exit status and timeout outcome. RPC failure means current-scene verification is unavailable, not that the geometry fix failed or succeeded; do not silently fall back to headless and call it GUI acceptance. See [RPC and acceptance layers](<references/native-regression.md#rpc-probe-and-acceptance-layers>).
+4. **Choose the narrow verification route.**
+   - New build versus old installation, launch failure or missing shared library: [artifact/package route](<references/native-regression.md#artifact-identity-and-package-launch>).
+   - F9/F11 fullscreen, overlays, Bubble View or native focus/input: [isolated native GUI route](<references/native-regression.md#fullscreen-and-native-input>).
+   - Label/measurement attachment, multi-window selection or hover after face highlight/export: [selection regression route](<references/native-regression.md#selection-and-source-mapping-regression>). First delete the erroneous secondary point-highlight chain and isolate nonselectable capture interference; then qualify source/block/field identity, set operations and complete atomic notifications; finally rebuild overlays per view and share the hover/conversion path. Do not add per-label or per-window exceptions.
+5. **Build and run only discovered targets, one owner per build/probe.** Inspect `libs/VtkEngine/tests/CMakeLists.txt`, `cmake --build build_app --target help` and `ctest --test-dir build_app -N` before using historical names. Follow [targeted build and Xvfb commands](<references/native-regression.md#targeted-build-and-test-execution>). Rebuild the engine, app and ABI-dependent RPC plugin for selection-data changes, not just the test binary. Derive native probe compile/link options from the existing full build, not hand-guessed includes/libraries. Do not reformat production files or edit the same build tree while another job is compiling them.
+6. **Manage execution and evidence.** Check every shell `[exit code: N]`; investigate nonzero outcomes before proceeding. Track every background job ID and isolated process group; use bounded execution, collect relevant jobs with `job_output`, and cancel obsolete/hung jobs with `job_kill` plus scoped process-group cleanup. Do independent work instead of polling or sleeping. Never duplicate a running job or kill the user's desktop/app. Explicitly define/export paths inside nested shells so logs cannot accidentally target `/`.
+7. **Report by layer and exact latest artifact.** Give commands, resolved artifact identity, logs, actual pass/fail/skip counts and exit codes. Separate build success, package launch, production-linked native regression, isolated native input, and current-scene GUI acceptance. A skipped suite, no tests matched, traceback, hang, old-build pass or compilation alone is not interactive success. Keep an overall objective open when relevant latest-build/current-scene acceptance is still missing; a narrower completed source/build objective may be reported separately.
+
+## Pitfalls
+
+- CLI discovery can launch an old installation even after a new source build passes; a matching package Build ID does not prove its dependencies are bundled or its GUI works.
+- Missing `libopencv_world.so.407` in the package/system directories does not prove it is absent everywhere. Search bounded build/cache locations and compare NEEDED/SONAME before any remedy; never install system dependencies, overwrite an installation or create a guessed version symlink without authorization.
+- `PickableOff` alone did not prevent helper props from occluding genuine points in selection depth capture. Temporarily exclude their visibility during capture and restore original visibility **and** pickability, including failure paths; preserve normal label interactions.
+- Face extraction can overwrite display data's `vtkOriginalPointIds` with local indices. Assert the mapping before/after both highlight and export, isolate extraction's input attribute containers, and re-test subsequent point selection and hover across differing view representations.
+- Old native input results do not validate a changed F9 build. A hung latest probe is unverified/failed, not a reason to reuse an earlier pass. F9 needs no floating exit overlay; F11 view fullscreen retains its control. Do not reorder default toolbars as an unrelated workaround.
+- Shortcuts review evidence is incomplete. Do not assert that all keys are centrally registered, conflict checked or immediately effective; any such claim requires a separate action-registration/configuration/dispatch audit and tests.
+
+## Verification
+
+- Automation contract: `--json`, actual CLI status/exit code, and output existence/size assertions; verify absolute input/output paths. GUI operations additionally need the intended reachable scene and actual behavior checks.
+- Selection contract: helper add/remove negative controls; qualified source IDs distinct from per-view local IDs; unchanged source mapping after face highlight/export; correct transformed per-view overlays and subsequent hover; complete notifications, teardown and deleted-source safety.
+- GUI contract: latest identified artifact, isolated configuration, real native input and window manager, bounded focus/exit tests, no unintended layout/Bubble/point-size/line-width regressions. Native/Xvfb tests never substitute for the user's current-scene mouse/label acceptance.
+- Report unresolved label clicking/dragging/expansion, combined controls, menu-focus hangs, RPC reachability, and current-scene replay explicitly. Use [the evidence report checklist](<references/native-regression.md#report-and-completion-gate>).
 
 ## Version
 
-3.9.5 (aligns with `acloudviewer/agent-harness/setup.py`)
+Skill revision 3.9.6 (previous skill 3.9.5); installed harness version must be queried rather than inferred from the skill revision.

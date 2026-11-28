@@ -11,10 +11,16 @@ static constexpr unsigned kDefaultMaxChartPoints = 10000;
 
 #include <CVLog.h>
 #include <QVTKOpenGLNativeWidget.h>
+#include <QtCompat.h>
 #include <Shortcuts/ecvKeySequences.h>
+#include <Tools/SelectionTools/cvSelectionData.h>
+#include <Tools/SelectionTools/cvViewSelectionManager.h>
+#include <VtkUtils/ecvMenuWidgets.h>
+#include <VtkUtils/vtkutils.h>
 #include <ecvGenericMesh.h>
 #include <ecvHObject.h>
 #include <ecvHObjectCaster.h>
+#include <ecvImage.h>
 #include <ecvMesh.h>
 #include <ecvNormalVectors.h>
 #include <ecvPointCloud.h>
@@ -34,11 +40,16 @@ static constexpr unsigned kDefaultMaxChartPoints = 10000;
 #include <vtkContextMouseEvent.h>
 #include <vtkContextScene.h>
 #include <vtkContextView.h>
+#include <vtkDoubleArray.h>
+#include <vtkFieldData.h>
 #include <vtkFloatArray.h>
 #include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkIdTypeArray.h>
 #include <vtkImageData.h>
+#include <vtkImageExtractComponents.h>
+#include <vtkInformation.h>
 #include <vtkIntArray.h>
+#include <vtkLookupTable.h>
 #include <vtkNew.h>
 #include <vtkPNGWriter.h>
 #include <vtkPen.h>
@@ -53,6 +64,7 @@ static constexpr unsigned kDefaultMaxChartPoints = 10000;
 #include <vtkScatterPlotMatrix.h>
 #include <vtkSelection.h>
 #include <vtkSelectionNode.h>
+#include <vtkStringArray.h>
 #include <vtkTable.h>
 #include <vtkTextProperty.h>
 #include <vtkTooltipItem.h>
@@ -83,6 +95,8 @@ static constexpr unsigned kDefaultMaxChartPoints = 10000;
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <map>
+#include <numeric>
 
 static QString chartViewTypeKey(vtkChartView::ChartType type) {
     switch (type) {
@@ -106,6 +120,19 @@ static QString chartViewTypeKey(vtkChartView::ChartType type) {
             return QStringLiteral("Quartile Chart View");
     }
     return QStringLiteral("Chart View");
+}
+
+// VTK's default inverse-CDF averaged steps, shared by Box and Quartile.
+// Input is sorted and nonempty; quarter is in [0,4].
+template <typename T>
+static double orderQuartile(const std::vector<T>& values, int quarter) {
+    if (quarter == 0) return values.front();
+    if (quarter == 4) return values.back();
+    const size_t n = values.size();
+    const double np = static_cast<double>(n) * quarter / 4.0;
+    const size_t lo = std::max<size_t>(1, size_t(std::round(np))) - 1;
+    const size_t hi = std::min(n, size_t(std::floor(np + 1))) - 1;
+    return 0.5 * values[lo] + 0.5 * values[hi];
 }
 
 static const QColor kPalette[] = {
@@ -152,7 +179,7 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
             QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             [this](int) {
                 auto* cur = currentEntity();
-                if (cur) setEntity(cur);
+                if (cur) setPrimaryEntity(cur);
             });
 
     decLayout->addStretch(1);
@@ -196,13 +223,13 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
     m_notationCombo->setFixedWidth(90);
     propsLayout->addWidget(m_notationCombo);
 
-    if (m_chartType == HISTOGRAM || m_chartType == IMAGE_CHART) {
+    if (m_chartType == HISTOGRAM) {
         propsLayout->addSpacing(4);
         auto* binLabel = new QLabel(tr("Bins:"), propsBar);
         propsLayout->addWidget(binLabel);
         m_binSpin = new QSpinBox(propsBar);
         m_binSpin->setRange(2, 1000);
-        m_binSpin->setValue(m_chartType == IMAGE_CHART ? 64 : 256);
+        m_binSpin->setValue(256);
         m_binSpin->setFixedWidth(65);
         propsLayout->addWidget(m_binSpin);
 
@@ -362,7 +389,7 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
         auto* mkrLabel = new QLabel(tr("Marker:"), axisBar);
         axisLayout->addWidget(mkrLabel);
         m_markerStyleCombo = new QComboBox(axisBar);
-        m_markerStyleCombo->addItem(tr("None"), -1);
+        m_markerStyleCombo->addItem(tr("None"), vtkPlotPoints::NONE);
         m_markerStyleCombo->addItem(tr("Cross"), vtkPlotPoints::CROSS);
         m_markerStyleCombo->addItem(tr("Plus"), vtkPlotPoints::PLUS);
         m_markerStyleCombo->addItem(tr("Square"), vtkPlotPoints::SQUARE);
@@ -393,6 +420,29 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
                 });
     }
 
+    if (m_chartType == QUARTILE_CHART) {
+        auto* statistics = new QToolButton(axisBar);
+        statistics->setText(tr("Statistics"));
+        statistics->setPopupMode(QToolButton::InstantPopup);
+        auto* menu = new QMenu(statistics);
+        const QStringList names{tr("Minimum"),      tr("Lower quartile"),
+                                tr("Median"),       tr("Upper quartile"),
+                                tr("Maximum"),      tr("Average"),
+                                tr("Sum"),          tr("Min–max band"),
+                                tr("Quartile band")};
+        for (int index = Minimum; index <= QuartileBand; ++index) {
+            const auto role = static_cast<QuartileRole>(index);
+            auto* action = menu->addAction(names[index]);
+            action->setCheckable(true);
+            action->setChecked(role == Median || role == MinMaxBand ||
+                               role == QuartileBand);
+            m_quartileRoleActions.insert(role, action);
+            connect(action, &QAction::toggled, this,
+                    [this]() { rebuildChart(); });
+        }
+        statistics->setMenu(menu);
+        axisLayout->addWidget(statistics);
+    }
     axisLayout->addStretch(1);
     layout->addWidget(axisBar);
 
@@ -601,6 +651,30 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
         }
     }
 
+    setupChartSelectionCallback();
+    if (m_chartType == PLOT_MATRIX) m_legendCheck->setEnabled(false);
+    if (m_chartType == BOX_CHART || m_chartType == QUARTILE_CHART ||
+        m_chartType == IMAGE_CHART) {
+        m_linkCheck->setChecked(false);
+        m_linkCheck->setEnabled(false);
+        m_linkCheck->setToolTip(
+                tr("Aggregate rows are not source point or cell IDs."));
+    }
+    if (m_chartType == QUARTILE_CHART)
+        setToolTip(
+                tr("Finite observations grouped by X; index mode uses source "
+                   "row IDs. Bands show min/max and Q1/Q3."));
+    if (m_chartType == IMAGE_CHART) {
+        setToolTip(tr("Image pixel components on their native pixel grid."));
+        m_attributeCombo->setEnabled(false);
+        m_useIndexXAxis->setEnabled(false);
+        m_xArrayCombo->setEnabled(false);
+        m_fieldList->setSelectionMode(QAbstractItemView::SingleSelection);
+        m_exportCsvBtn->setEnabled(false);
+        m_exportCsvBtn->setToolTip(
+                tr("Image pixels are not source-row CSV data."));
+    }
+
     connect(m_linkCheck, &QCheckBox::toggled, this, [this](bool checked) {
         if (!m_chart) return;
         if (m_chartType == BOX_CHART) return;
@@ -679,6 +753,27 @@ vtkChartView::vtkChartView(ChartType type, QWidget* parent)
     connect(&ecvViewManager::instance(),
             &ecvViewManager::entitySelectionChanged, this,
             &vtkChartView::onEntitySelectionChanged);
+    connect(cvViewSelectionManager::instance(),
+            qOverload<const cvSelectionData&>(
+                    &cvViewSelectionManager::selectionChanged),
+            this, &vtkChartView::applySourceSelection);
+    connect(this, &vtkChartView::pointsHighlighted, this,
+            [this](ccHObject* entity, const QVector<unsigned>& indices) {
+                if (!entity) return;
+                QVector<qint64> ids;
+                ids.reserve(indices.size());
+                for (unsigned id : indices) ids.append(id);
+                cvSelectionData selection(
+                        ids, m_useCellData ? cvSelectionData::CELLS
+                                           : cvSelectionData::POINTS);
+                cvActorSelectionInfo info;
+                info.sourceId = entity->getViewId();
+                info.sourceIds = ids;
+                selection.addActorInfo(info);
+                auto* manager = cvViewSelectionManager::instance();
+                manager->setSourceObject(entity);
+                manager->setCurrentSelection(selection);
+            });
 }
 
 void vtkChartView::showChartContextMenu(const QPoint& pos) {
@@ -687,12 +782,11 @@ void vtkChartView::showChartContextMenu(const QPoint& pos) {
     auto* fieldsMenu = menu.addMenu(tr("Fields"));
     for (int i = 0; i < m_fieldList->count(); ++i) {
         auto* item = m_fieldList->item(i);
-        auto* act = fieldsMenu->addAction(item->text());
-        act->setCheckable(true);
-        act->setChecked(item->isSelected());
-        connect(act, &QAction::toggled, this, [this, i](bool checked) {
-            m_fieldList->item(i)->setSelected(checked);
-        });
+        ecvAddMenuButton<QCheckBox>(
+                fieldsMenu, item->text(), item->isSelected(), this,
+                [this, i](bool checked) {
+                    m_fieldList->item(i)->setSelected(checked);
+                });
     }
 
     if ((m_chartType == HISTOGRAM || m_chartType == IMAGE_CHART) && m_binSpin) {
@@ -703,21 +797,17 @@ void vtkChartView::showChartContextMenu(const QPoint& pos) {
 
     menu.addSeparator();
 
-    auto* legendAct = menu.addAction(tr("Show Legend"));
-    legendAct->setCheckable(true);
-    legendAct->setChecked(m_legendCheck->isChecked());
-    connect(legendAct, &QAction::toggled, m_legendCheck,
-            &QCheckBox::setChecked);
+    ecvAddMenuButton<QCheckBox>(
+            &menu, tr("Show Legend"), m_legendCheck->isChecked(), this,
+            [this](bool c) { m_legendCheck->setChecked(c); });
 
-    auto* gridAct = menu.addAction(tr("Show Grid"));
-    gridAct->setCheckable(true);
-    gridAct->setChecked(m_gridCheck->isChecked());
-    connect(gridAct, &QAction::toggled, m_gridCheck, &QCheckBox::setChecked);
+    ecvAddMenuButton<QCheckBox>(&menu, tr("Show Grid"),
+                                m_gridCheck->isChecked(), this,
+                                [this](bool c) { m_gridCheck->setChecked(c); });
 
-    auto* linkAct = menu.addAction(tr("Link to 3D Selection"));
-    linkAct->setCheckable(true);
-    linkAct->setChecked(m_linkCheck->isChecked());
-    connect(linkAct, &QAction::toggled, m_linkCheck, &QCheckBox::setChecked);
+    ecvAddMenuButton<QCheckBox>(&menu, tr("Link to 3D Selection"),
+                                m_linkCheck->isChecked(), this,
+                                [this](bool c) { m_linkCheck->setChecked(c); });
 
     auto* axisPropsWidget =
             findChild<QWidget*>(QLatin1String("ChartAxisPropsBar"));
@@ -734,37 +824,30 @@ void vtkChartView::showChartContextMenu(const QPoint& pos) {
 
     menu.addSeparator();
 
-    auto* rectSelAct = menu.addAction(tr("Rectangle Selection (s)"));
-    rectSelAct->setCheckable(true);
-    rectSelAct->setChecked(m_selectRectActive);
-    connect(rectSelAct, &QAction::toggled, this, [this](bool checked) {
-        m_selectRectActive = checked;
-        if (checked) m_selectPolyActive = false;
-        if (!m_chart) return;
-        if (checked) {
-            m_chart->SetActionToButton(vtkChart::SELECT_RECTANGLE,
-                                       vtkContextMouseEvent::LEFT_BUTTON);
-        } else if (!m_selectPolyActive) {
-            m_chart->SetActionToButton(vtkChart::PAN,
-                                       vtkContextMouseEvent::LEFT_BUTTON);
-        }
-    });
-
-    auto* polySelAct = menu.addAction(tr("Polygon Selection (d)"));
-    polySelAct->setCheckable(true);
-    polySelAct->setChecked(m_selectPolyActive);
-    connect(polySelAct, &QAction::toggled, this, [this](bool checked) {
-        m_selectPolyActive = checked;
-        if (checked) m_selectRectActive = false;
-        if (!m_chart) return;
-        if (checked) {
-            m_chart->SetActionToButton(vtkChart::SELECT_POLYGON,
-                                       vtkContextMouseEvent::LEFT_BUTTON);
-        } else if (!m_selectRectActive) {
-            m_chart->SetActionToButton(vtkChart::PAN,
-                                       vtkContextMouseEvent::LEFT_BUTTON);
-        }
-    });
+    auto* rectBox = ecvCreateMenuButton<QCheckBox>(
+            &menu, tr("Rectangle Selection (s)"), m_selectRectActive);
+    auto* polyBox = ecvCreateMenuButton<QCheckBox>(
+            &menu, tr("Polygon Selection (d)"), m_selectPolyActive);
+    connect(rectBox, &QAbstractButton::toggled, this,
+            [this, polyBox](bool checked) {
+                if (checked) {
+                    polyBox->blockSignals(true);
+                    polyBox->setChecked(false);
+                    polyBox->blockSignals(false);
+                }
+                setRectSelectionActive(checked);
+            });
+    connect(polyBox, &QAbstractButton::toggled, this,
+            [this, rectBox](bool checked) {
+                if (checked) {
+                    rectBox->blockSignals(true);
+                    rectBox->setChecked(false);
+                    rectBox->blockSignals(false);
+                }
+                setPolySelectionActive(checked);
+            });
+    ecvHostMenuButton(&menu, rectBox);
+    ecvHostMenuButton(&menu, polyBox);
 
     menu.addSeparator();
 
@@ -828,56 +911,80 @@ void vtkChartView::setCompactMode(bool compact) {
     }
 }
 
+vtkAnnotationLink* vtkChartView::chartSelectionLink() const {
+    if (m_chart) return m_chart->GetAnnotationLink();
+    if (m_chartType == PLOT_MATRIX && m_contextView) {
+        if (auto* matrix = vtkScatterPlotMatrix::SafeDownCast(
+                    m_contextView->GetScene()->GetItem(0)))
+            return matrix->GetAnnotationLink();
+    }
+    return nullptr;
+}
+
+void vtkChartView::setChartSelectionAction(int action) {
+    if (m_chart) {
+        m_chart->SetActionToButton(action, vtkContextMouseEvent::LEFT_BUTTON);
+    } else if (m_chartType == PLOT_MATRIX && m_contextView) {
+        if (auto* matrix = vtkScatterPlotMatrix::SafeDownCast(
+                    m_contextView->GetScene()->GetItem(0))) {
+            const auto size = matrix->GetSize();
+            for (int x = 0; x < size.GetX(); ++x)
+                for (int y = 0; y < size.GetY(); ++y)
+                    if (auto* chart = matrix->GetChart(vtkVector2i(x, y)))
+                        chart->SetActionToButton(
+                                action, vtkContextMouseEvent::LEFT_BUTTON);
+        }
+    }
+}
+
 void vtkChartView::setRectSelectionActive(bool active) {
     m_selectRectActive = active;
     if (active) m_selectPolyActive = false;
-    if (!m_chart) return;
-    if (active) {
-        m_chart->SetActionToButton(vtkChart::SELECT_RECTANGLE,
-                                   vtkContextMouseEvent::LEFT_BUTTON);
-    } else if (!m_selectPolyActive) {
-        m_chart->SetActionToButton(vtkChart::PAN,
-                                   vtkContextMouseEvent::LEFT_BUTTON);
-    }
+    if (active || !m_selectPolyActive)
+        setChartSelectionAction(active ? vtkChart::SELECT_RECTANGLE
+                                       : vtkChart::PAN);
 }
 
 void vtkChartView::setPolySelectionActive(bool active) {
     m_selectPolyActive = active;
     if (active) m_selectRectActive = false;
-    if (!m_chart) return;
-    if (active) {
-        m_chart->SetActionToButton(vtkChart::SELECT_POLYGON,
-                                   vtkContextMouseEvent::LEFT_BUTTON);
-    } else if (!m_selectRectActive) {
-        m_chart->SetActionToButton(vtkChart::PAN,
-                                   vtkContextMouseEvent::LEFT_BUTTON);
-    }
+    if (active || !m_selectRectActive)
+        setChartSelectionAction(active ? vtkChart::SELECT_POLYGON
+                                       : vtkChart::PAN);
 }
 
 void vtkChartView::setSelectionModifier(int modifier) {
-    if (!m_chart) return;
-    m_chart->SetSelectionMode(modifier);
+    if (m_chart)
+        m_chart->SetSelectionMode(modifier);
+    else if (m_chartType == PLOT_MATRIX && m_contextView) {
+        if (auto* matrix = vtkScatterPlotMatrix::SafeDownCast(
+                    m_contextView->GetScene()->GetItem(0)))
+            matrix->SetSelectionMode(modifier);
+    }
 }
 
 void vtkChartView::clearSelection() {
-    if (!m_chart) return;
-    if (m_chartType == BOX_CHART) return;
-    m_chart->SetActionToButton(vtkChart::PAN,
-                               vtkContextMouseEvent::LEFT_BUTTON);
-    m_chart->SetSelectionMode(vtkContextScene::SELECTION_DEFAULT);
-    m_selectRectActive = false;
-    m_selectPolyActive = false;
-
-    auto* annotationLink = m_chart->GetAnnotationLink();
-    if (annotationLink) {
-        auto* sel = annotationLink->GetCurrentSelection();
-        if (sel) {
-            sel->RemoveAllNodes();
-            annotationLink->InvokeEvent(vtkCommand::AnnotationChangedEvent);
-        }
+    if (!m_linkCheck->isEnabled()) return;
+    m_selectRectActive = m_selectPolyActive = false;
+    setChartSelectionAction(vtkChart::PAN);
+    setSelectionModifier(vtkContextScene::SELECTION_DEFAULT);
+    if (auto* link = chartSelectionLink()) {
+        vtkNew<vtkSelection> empty;
+        // One native gesture event, including Matrix which has no m_chart.
+        link->SetCurrentSelection(empty);
     }
     if (m_vtkWidget && m_vtkWidget->renderWindow())
         m_vtkWidget->renderWindow()->Render();
+}
+
+void vtkChartView::setQuartileRoleVisible(QuartileRole role, bool visible) {
+    if (auto* action = m_quartileRoleActions.value(role, nullptr))
+        action->setChecked(visible);
+}
+
+bool vtkChartView::quartileRoleVisible(QuartileRole role) const {
+    auto* action = m_quartileRoleActions.value(role, nullptr);
+    return action && action->isChecked();
 }
 
 void vtkChartView::setXAxisScale(double factor) {
@@ -930,23 +1037,24 @@ QColor vtkChartView::seriesColor(int index) const {
     return kPalette[index % (sizeof(kPalette) / sizeof(kPalette[0]))];
 }
 
-void vtkChartView::computeVertexNormals() {
-    m_computedNormals.clear();
-    ccGenericMesh* meshSrc = m_genericMesh ? m_genericMesh : m_mesh;
-    if (!m_cloud) return;
-    if (m_cloud->hasNormals()) {
-        return;
+static QVector<float> chartVertexNormals(ccPointCloud* cloud,
+                                         ccGenericMesh* meshSrc) {
+    QVector<float> normals;
+    normals.clear();
+    if (!cloud) return normals;
+    if (cloud->hasNormals()) {
+        return normals;
     }
     if (!meshSrc) {
-        return;
+        return normals;
     }
 
-    unsigned numVerts = m_cloud->size();
+    unsigned numVerts = cloud->size();
     unsigned numTris = meshSrc->size();
-    if (numTris == 0 || numVerts == 0) return;
+    if (numTris == 0 || numVerts == 0) return normals;
 
-    m_computedNormals.resize(numVerts * 3);
-    m_computedNormals.fill(0.0f);
+    normals.resize(numVerts * 3);
+    normals.fill(0.0f);
     QVector<int> counts(numVerts, 0);
 
     bool hasExplicitTriNormals = false;
@@ -973,9 +1081,9 @@ void vtkChartView::computeVertexNormals() {
             }
         }
         if (faceNormal.norm2() < 1e-12f) {
-            const CCVector3* A = m_cloud->getPoint(tri->i1);
-            const CCVector3* B = m_cloud->getPoint(tri->i2);
-            const CCVector3* C = m_cloud->getPoint(tri->i3);
+            const CCVector3* A = cloud->getPoint(tri->i1);
+            const CCVector3* B = cloud->getPoint(tri->i2);
+            const CCVector3* C = cloud->getPoint(tri->i3);
             if (A && B && C) {
                 CCVector3 AB = *B - *A;
                 CCVector3 AC = *C - *A;
@@ -988,9 +1096,9 @@ void vtkChartView::computeVertexNormals() {
         auto accum = [&](unsigned vi) {
             if (vi < numVerts) {
                 unsigned b = vi * 3;
-                m_computedNormals[b] += faceNormal.x;
-                m_computedNormals[b + 1] += faceNormal.y;
-                m_computedNormals[b + 2] += faceNormal.z;
+                normals[b] += faceNormal.x;
+                normals[b + 1] += faceNormal.y;
+                normals[b + 2] += faceNormal.z;
                 counts[vi]++;
             }
         };
@@ -1004,9 +1112,9 @@ void vtkChartView::computeVertexNormals() {
         if (counts[i] > 0) {
             unsigned b = i * 3;
             float inv = 1.0f / counts[i];
-            float nx = m_computedNormals[b] * inv;
-            float ny = m_computedNormals[b + 1] * inv;
-            float nz = m_computedNormals[b + 2] * inv;
+            float nx = normals[b] * inv;
+            float ny = normals[b + 1] * inv;
+            float nz = normals[b + 2] * inv;
             float len = std::sqrt(nx * nx + ny * ny + nz * nz);
             if (len > 1e-12f) {
                 float invL = 1.0f / len;
@@ -1014,9 +1122,9 @@ void vtkChartView::computeVertexNormals() {
                 ny *= invL;
                 nz *= invL;
             }
-            m_computedNormals[b] = nx;
-            m_computedNormals[b + 1] = ny;
-            m_computedNormals[b + 2] = nz;
+            normals[b] = nx;
+            normals[b + 1] = ny;
+            normals[b + 2] = nz;
             ++validCount;
         }
     }
@@ -1024,6 +1132,11 @@ void vtkChartView::computeVertexNormals() {
             "[ChartView] computeVertexNormals: %d/%u vertices got normals "
             "from %u triangles (hasExplicitTriNormals=%d)",
             validCount, numVerts, numTris, hasExplicitTriNormals ? 1 : 0);
+    return normals;
+}
+
+void vtkChartView::computeVertexNormals() {
+    m_computedNormals = chartVertexNormals(m_cloud, m_genericMesh);
 }
 
 float vtkChartView::getNormalComponent(unsigned vertIdx, int axis) const {
@@ -1065,46 +1178,136 @@ float vtkChartView::getNormalComponent(unsigned vertIdx, int axis) const {
     return 0.0f;
 }
 
+static constexpr const char* kChartSourceId = "__acv_source_id";
+static constexpr const char* kChartOriginalIds = "__acv_original_ids";
+
+struct ChartSource {
+    ccPointCloud* cloud = nullptr;
+    ccGenericMesh* mesh = nullptr;
+    ccMesh* concreteMesh = nullptr;
+};
+
+static ChartSource chartSource(ccHObject* entity) {
+    ChartSource source;
+    if (entity) {
+        source.concreteMesh = ccHObjectCaster::ToMesh(entity);
+        source.mesh = ccHObjectCaster::ToGenericMesh(entity);
+        source.cloud = ccHObjectCaster::ToPointCloud(entity);
+        if (!source.cloud) {
+            source.cloud = ccHObjectCaster::ToPointCloud(
+                    ccHObjectCaster::ToGenericPointCloud(entity));
+        }
+        if (!source.cloud && source.mesh) {
+            source.cloud = ccHObjectCaster::ToPointCloud(
+                    source.mesh->getAssociatedCloud());
+        }
+        for (unsigned i = 0;
+             (!source.mesh || !source.cloud) && i < entity->getChildrenNumber();
+             ++i) {
+            auto* child = entity->getChild(i);
+            if (!source.mesh) {
+                source.mesh = ccHObjectCaster::ToGenericMesh(child);
+                if (!source.concreteMesh)
+                    source.concreteMesh = ccHObjectCaster::ToMesh(child);
+            }
+            if (!source.cloud) {
+                source.cloud = ccHObjectCaster::ToPointCloud(child);
+                if (!source.cloud) {
+                    auto* gc = ccHObjectCaster::ToGenericPointCloud(child);
+                    if (gc) source.cloud = ccHObjectCaster::ToPointCloud(gc);
+                }
+            }
+        }
+        if (!source.cloud && source.mesh) {
+            source.cloud = ccHObjectCaster::ToPointCloud(
+                    source.mesh->getAssociatedCloud());
+        }
+        if (!source.concreteMesh && source.mesh)
+            source.concreteMesh = ccHObjectCaster::ToMesh(source.mesh);
+    }
+    return source;
+}
+
 void vtkChartView::setEntity(ccHObject* entity) {
+    m_entities = entity ? QList<ccHObject*>{entity} : QList<ccHObject*>{};
+    setPrimaryEntity(entity);
+}
+
+void vtkChartView::setEntities(const QList<ccHObject*>& entities) {
+    QList<ccHObject*> unique;
+    for (auto* entity : entities)
+        if (entity && !unique.contains(entity)) unique.append(entity);
+    auto* primary = unique.isEmpty() ? nullptr : unique.front();
+    m_entities = unique;
+    if (primary != m_currentEntity)
+        setPrimaryEntity(primary);
+    else
+        rebuildChart();
+}
+
+void vtkChartView::setRowFilters(
+        const QMap<QString, QPair<double, double>>& filters) {
+    ComparisonParameters comparison;
+    comparison.filters = filters;
+    setComparisons({comparison});
+}
+
+void vtkChartView::setComparisons(
+        const QList<ComparisonParameters>& comparisons) {
+    for (const auto& comparison : comparisons) {
+        if (!std::isfinite(comparison.xScale) || comparison.xScale == 0 ||
+            !std::isfinite(comparison.yScale) || comparison.yScale == 0 ||
+            !std::isfinite(comparison.opacity) || comparison.opacity < 0 ||
+            comparison.opacity > 1 || !std::isfinite(comparison.lineWidth) ||
+            comparison.lineWidth < 0 || !std::isfinite(comparison.markerSize) ||
+            comparison.markerSize < 0)
+            return;
+        for (auto filter = comparison.filters.cbegin();
+             filter != comparison.filters.cend(); ++filter)
+            if (std::isnan(filter->first) || std::isnan(filter->second)) return;
+    }
+    const auto next =
+            comparisons.isEmpty()
+                    ? QList<ComparisonParameters>{ComparisonParameters{}}
+                    : comparisons;
+    if (m_comparisons == next) return;
+    m_comparisons = next;
+    rebuildChart();
+}
+
+bool vtkChartView::acceptsRow(
+        unsigned id,
+        const FieldValueFn& value,
+        const QMap<QString, QPair<double, double>>& filters) const {
+    for (auto filter = filters.cbegin(); filter != filters.cend(); ++filter) {
+        int field = -1;
+        for (int fi = 0; fi < m_fields.size(); ++fi)
+            if (m_fields[fi].name == filter.key()) {
+                field = fi;
+                break;
+            }
+        if (field < 0) return false;
+        const double v = value(field, id);
+        if (!std::isfinite(v) || v < filter->first || v > filter->second)
+            return false;
+    }
+    return true;
+}
+
+void vtkChartView::setPrimaryEntity(ccHObject* entity) {
     m_currentEntity = entity;
     m_cloud = nullptr;
     m_mesh = nullptr;
     m_genericMesh = nullptr;
+    m_image = m_chartType == IMAGE_CHART && entity
+                      ? ccHObjectCaster::ToImage(entity)
+                      : nullptr;
     m_computedNormals.clear();
-    if (entity) {
-        m_mesh = ccHObjectCaster::ToMesh(entity);
-        m_genericMesh = ccHObjectCaster::ToGenericMesh(entity);
-        m_cloud = ccHObjectCaster::ToPointCloud(entity);
-        if (!m_cloud) {
-            m_cloud = ccHObjectCaster::ToPointCloud(
-                    ccHObjectCaster::ToGenericPointCloud(entity));
-        }
-        if (!m_cloud && m_genericMesh) {
-            m_cloud = ccHObjectCaster::ToPointCloud(
-                    m_genericMesh->getAssociatedCloud());
-        }
-        for (unsigned i = 0;
-             (!m_genericMesh || !m_cloud) && i < entity->getChildrenNumber();
-             ++i) {
-            auto* child = entity->getChild(i);
-            if (!m_genericMesh) {
-                m_genericMesh = ccHObjectCaster::ToGenericMesh(child);
-                if (!m_mesh) m_mesh = ccHObjectCaster::ToMesh(child);
-            }
-            if (!m_cloud) {
-                m_cloud = ccHObjectCaster::ToPointCloud(child);
-                if (!m_cloud) {
-                    auto* gc = ccHObjectCaster::ToGenericPointCloud(child);
-                    if (gc) m_cloud = ccHObjectCaster::ToPointCloud(gc);
-                }
-            }
-        }
-        if (!m_cloud && m_genericMesh) {
-            m_cloud = ccHObjectCaster::ToPointCloud(
-                    m_genericMesh->getAssociatedCloud());
-        }
-        if (!m_mesh && m_genericMesh)
-            m_mesh = ccHObjectCaster::ToMesh(m_genericMesh);
+    if (m_chartType != IMAGE_CHART) {
+        const auto source = chartSource(entity);
+        m_cloud = source.cloud;
+        m_genericMesh = source.mesh;
+        m_mesh = source.concreteMesh;
         computeVertexNormals();
     }
     m_fields.clear();
@@ -1114,7 +1317,32 @@ void vtkChartView::setEntity(ccHObject* entity) {
     m_fieldList->blockSignals(true);
     m_fieldList->clear();
 
-    if (m_useCellData && (m_mesh || m_genericMesh)) {
+    if (m_chartType == IMAGE_CHART) {
+        m_useCellData = false;
+        if (m_image && !m_image->data().isNull()) {
+            const auto format = m_image->data().format();
+            bool grayscale = format == QImage::Format_Grayscale8;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
+            grayscale = grayscale || format == QImage::Format_Grayscale16;
+#endif
+            const QStringList components =
+                    grayscale ? QStringList{tr("Intensity")}
+                              : QStringList{tr("Red"), tr("Green"), tr("Blue"),
+                                            tr("Alpha")};
+            for (int i = 0; i < components.size(); ++i) {
+                m_fields.append({components[i], i});
+                new QListWidgetItem(components[i], m_fieldList);
+            }
+            m_fieldList->item(0)->setSelected(true);
+            m_titleLabel->setText(title() +
+                                  QString(" - %1 (%2 x %3)")
+                                          .arg(entity->getName())
+                                          .arg(m_image->data().width())
+                                          .arg(m_image->data().height()));
+        } else {
+            m_titleLabel->setText(title() + tr(" - No image data"));
+        }
+    } else if (m_useCellData && (m_mesh || m_genericMesh)) {
         auto addField = [&](const QString& name, int sfIdx) {
             FieldDef fd;
             fd.name = name;
@@ -1139,7 +1367,11 @@ void vtkChartView::setEntity(ccHObject* entity) {
             addField(QStringLiteral("TriNormal_Z"), -106);
             addField(QStringLiteral("TriNormal_Mag"), -107);
         }
-        if (m_mesh && m_mesh->hasTriangleMaterialIds())
+        const auto* materialIndices =
+                m_mesh ? m_mesh->getTriangleMtlIndexesTable() : nullptr;
+        if ((materialIndices && materialIndices->size() == m_mesh->size()) ||
+            (m_mesh && m_mesh->hasTriangleMaterialIds()) ||
+            (!m_mesh && m_genericMesh && m_genericMesh->hasMaterials()))
             addField(QStringLiteral("MaterialId"), -111);
 
         unsigned cellCount = m_mesh ? m_mesh->size() : m_genericMesh->size();
@@ -1384,6 +1616,9 @@ void vtkChartView::refreshSourceCombo() {
     for (int i = 0; i < entities.size(); ++i) {
         ccHObject* e = entities[i];
         if (!e) continue;
+        if ((m_chartType == IMAGE_CHART) !=
+            (ccHObjectCaster::ToImage(e) != nullptr))
+            continue;
         m_sourceCombo->addItem(
                 e->getName(),
                 QVariant::fromValue<quintptr>(reinterpret_cast<quintptr>(e)));
@@ -1393,6 +1628,11 @@ void vtkChartView::refreshSourceCombo() {
     }
     m_sourceCombo->setCurrentIndex(newIdx);
     m_sourceCombo->blockSignals(false);
+    // Provider membership is checked without dereferencing a removed image.
+    // The chart owns a pixel copy, but must not display stale/deleted sources.
+    if (m_chartType == IMAGE_CHART && m_currentEntity &&
+        !entities.contains(m_currentEntity))
+        setEntity(nullptr);
 }
 
 void vtkChartView::onSourceComboChanged(int index) {
@@ -1457,6 +1697,157 @@ void vtkChartView::onExportPNG() {
     writer->Write();
 }
 
+float vtkChartView::fieldValue(int fieldIdx,
+                               unsigned sourceId,
+                               ccHObject* entity,
+                               const QVector<float>* normals) const {
+    const auto source = entity && entity != m_currentEntity
+                                ? chartSource(entity)
+                                : ChartSource{m_cloud, m_genericMesh, m_mesh};
+    auto* cloud = source.cloud;
+    auto* mesh = source.mesh;
+    auto* concreteMesh = source.concreteMesh;
+    if (fieldIdx < 0 || fieldIdx >= m_fields.size())
+        return std::numeric_limits<float>::quiet_NaN();
+    const auto& definition = m_fields[fieldIdx];
+    const auto normal = [&](unsigned id, int axis) {
+        if (!entity || entity == m_currentEntity)
+            return getNormalComponent(id, axis);
+        if (cloud && cloud->hasNormals())
+            return float(cloud->getPointNormal(id).u[axis]);
+        const unsigned offset = 3 * id + axis;
+        return normals && offset < unsigned(normals->size())
+                       ? (*normals)[offset]
+                       : std::numeric_limits<float>::quiet_NaN();
+    };
+
+    ccGenericMesh* meshForCells = mesh;
+    if (m_useCellData) {
+        const unsigned cellIdx = sourceId;
+        const auto& fd = m_fields[fieldIdx];
+        if (!meshForCells || cellIdx >= meshForCells->size())
+            return std::numeric_limits<float>::quiet_NaN();
+
+        if (fd.sfIndex == -100) return static_cast<float>(cellIdx);
+
+        if (fd.sfIndex >= -103 && fd.sfIndex <= -101) {
+            auto* vi = meshForCells->getTriangleVertIndexes(cellIdx);
+            if (!vi || !cloud) return std::numeric_limits<float>::quiet_NaN();
+            int axis = -(fd.sfIndex + 101);
+            const CCVector3* p0 = cloud->getPoint(vi->i1);
+            const CCVector3* p1 = cloud->getPoint(vi->i2);
+            const CCVector3* p2 = cloud->getPoint(vi->i3);
+            if (!p0 || !p1 || !p2)
+                return std::numeric_limits<float>::quiet_NaN();
+            return static_cast<float>(
+                    (p0->u[axis] + p1->u[axis] + p2->u[axis]) / 3.0);
+        }
+
+        if (fd.sfIndex >= -106 && fd.sfIndex <= -104) {
+            int axis = -(fd.sfIndex + 104);
+            CCVector3 Na, Nb, Nc;
+            if (meshForCells->getTriangleNormals(cellIdx, Na, Nb, Nc)) {
+                float avg = static_cast<float>(
+                        (Na.u[axis] + Nb.u[axis] + Nc.u[axis]) / 3.0);
+                return avg;
+            }
+            return std::numeric_limits<float>::quiet_NaN();
+        }
+
+        if (fd.sfIndex == -107) {
+            CCVector3 Na, Nb, Nc;
+            if (meshForCells->getTriangleNormals(cellIdx, Na, Nb, Nc)) {
+                float nx = (Na.x + Nb.x + Nc.x) / 3.0f;
+                float ny = (Na.y + Nb.y + Nc.y) / 3.0f;
+                float nz = (Na.z + Nb.z + Nc.z) / 3.0f;
+                return std::sqrt(nx * nx + ny * ny + nz * nz);
+            }
+            return std::numeric_limits<float>::quiet_NaN();
+        }
+
+        if (fd.sfIndex == -110) {
+            auto* vi = meshForCells->getTriangleVertIndexes(cellIdx);
+            if (!vi || !cloud) return std::numeric_limits<float>::quiet_NaN();
+            const CCVector3* p0 = cloud->getPoint(vi->i1);
+            const CCVector3* p1 = cloud->getPoint(vi->i2);
+            const CCVector3* p2 = cloud->getPoint(vi->i3);
+            if (!p0 || !p1 || !p2)
+                return std::numeric_limits<float>::quiet_NaN();
+            CCVector3 e1 = *p1 - *p0;
+            CCVector3 e2 = *p2 - *p0;
+            CCVector3 cross = e1.cross(e2);
+            return 0.5f * cross.norm();
+        }
+
+        if (fd.sfIndex == -111) {
+            const auto* table =
+                    concreteMesh ? concreteMesh->getTriangleMtlIndexesTable()
+                                 : nullptr;
+            if (table && cellIdx < table->size())
+                return float(table->getValue(cellIdx));
+            if (concreteMesh && concreteMesh->hasTriangleMaterialIds())
+                return float(concreteMesh->triangle_material_ids_[cellIdx]);
+            return float(meshForCells->getTriangleMtlIndex(cellIdx));
+        }
+        return std::numeric_limits<float>::quiet_NaN();
+    } else {
+        const unsigned ptIdx = sourceId;
+        const auto& fd = m_fields[fieldIdx];
+        if (!cloud || ptIdx >= cloud->size())
+            return std::numeric_limits<float>::quiet_NaN();
+        if (fd.sfIndex >= 0) {
+            const int index =
+                    entity && entity != m_currentEntity
+                            ? cloud->getScalarFieldIndexByName(
+                                      definition.name.toUtf8().constData())
+                            : fd.sfIndex;
+            auto* sf = index >= 0 ? cloud->getScalarField(index) : nullptr;
+            return sf ? sf->getValue(ptIdx)
+                      : std::numeric_limits<float>::quiet_NaN();
+        }
+        if (fd.sfIndex >= -22 && fd.sfIndex <= -20) {
+            const CCVector3* pt = cloud->getPoint(ptIdx);
+            if (!pt) return std::numeric_limits<float>::quiet_NaN();
+            int axis = -(fd.sfIndex + 20);
+            return static_cast<float>(pt->u[axis]);
+        }
+        if (fd.sfIndex >= -32 && fd.sfIndex <= -30) {
+            int axis = -(fd.sfIndex + 30);
+            return normal(ptIdx, axis);
+        }
+        if (fd.sfIndex >= -12 && fd.sfIndex <= -10 && cloud->hasColors()) {
+            const ecvColor::Rgb& c = cloud->getPointColor(ptIdx);
+            int ch = -(fd.sfIndex + 10);
+            if (ch == 0) return c.r;
+            if (ch == 1) return c.g;
+            return c.b;
+        }
+        if (fd.sfIndex == -40) {
+            const CCVector3* pt = cloud->getPoint(ptIdx);
+            if (!pt) return std::numeric_limits<float>::quiet_NaN();
+            return std::sqrt(pt->x * pt->x + pt->y * pt->y + pt->z * pt->z);
+        }
+        if (fd.sfIndex == -41) {
+            float nx = normal(ptIdx, 0);
+            float ny = normal(ptIdx, 1);
+            float nz = normal(ptIdx, 2);
+            return std::sqrt(nx * nx + ny * ny + nz * nz);
+        }
+        if (fd.sfIndex >= -52 && fd.sfIndex <= -50 && concreteMesh) {
+            auto* texTable = concreteMesh->getTexCoordinatesTable();
+            if (texTable && ptIdx < texTable->size()) {
+                const TexCoords2D& tc = texTable->getValue(ptIdx);
+                int comp = -(fd.sfIndex + 50);
+                if (comp == 0) return tc.tx;
+                if (comp == 1) return tc.ty;
+                return std::sqrt(tc.tx * tc.tx + tc.ty * tc.ty);
+            }
+            return std::numeric_limits<float>::quiet_NaN();
+        }
+        return std::numeric_limits<float>::quiet_NaN();
+    }
+}
+
 void vtkChartView::onExportCSV() {
     if (!m_cloud || m_fields.isEmpty()) return;
 
@@ -1472,72 +1863,53 @@ void vtkChartView::onExportCSV() {
     }
     if (selectedFields.isEmpty()) return;
 
-    unsigned pointCount = m_cloud->size();
-    if (pointCount == 0) return;
-
-    auto getFieldValue = [&](int fieldIdx, unsigned ptIdx) -> float {
-        const auto& fd = m_fields[fieldIdx];
-        if (fd.sfIndex >= 0) {
-            auto* sf = m_cloud->getScalarField(fd.sfIndex);
-            return sf ? sf->getValue(ptIdx) : 0.0f;
-        }
-        if (fd.sfIndex >= -22 && fd.sfIndex <= -20) {
-            const CCVector3* pt = m_cloud->getPoint(ptIdx);
-            if (!pt) return 0.0f;
-            int axis = -(fd.sfIndex + 20);
-            return static_cast<float>(pt->u[axis]);
-        }
-        if (fd.sfIndex >= -32 && fd.sfIndex <= -30) {
-            int axis = -(fd.sfIndex + 30);
-            return getNormalComponent(ptIdx, axis);
-        }
-        if (fd.sfIndex >= -12 && fd.sfIndex <= -10 && m_cloud->hasColors()) {
-            const ecvColor::Rgb& c = m_cloud->getPointColor(ptIdx);
-            int ch = -(fd.sfIndex + 10);
-            if (ch == 0) return c.r;
-            if (ch == 1) return c.g;
-            return c.b;
-        }
-        if (fd.sfIndex == -40) {
-            const CCVector3* pt = m_cloud->getPoint(ptIdx);
-            if (!pt) return 0.0f;
-            return std::sqrt(pt->x * pt->x + pt->y * pt->y + pt->z * pt->z);
-        }
-        if (fd.sfIndex == -41) {
-            float nx = getNormalComponent(ptIdx, 0);
-            float ny = getNormalComponent(ptIdx, 1);
-            float nz = getNormalComponent(ptIdx, 2);
-            return std::sqrt(nx * nx + ny * ny + nz * nz);
-        }
-        if (fd.sfIndex >= -52 && fd.sfIndex <= -50 && m_mesh) {
-            auto* texTable = m_mesh->getTexCoordinatesTable();
-            if (texTable && ptIdx < texTable->size()) {
-                const TexCoords2D& tc = texTable->getValue(ptIdx);
-                if (fd.sfIndex == -50) return tc.tx;
-                if (fd.sfIndex == -51) return tc.ty;
-                return std::sqrt(tc.tx * tc.tx + tc.ty * tc.ty);
-            }
-            return 0.0f;
-        }
-        return 0.0f;
-    };
+    unsigned pointCount = m_useCellData
+                                  ? (m_genericMesh ? m_genericMesh->size() : 0)
+                                  : m_cloud->size();
+    if (pointCount == 0 && m_entities.size() <= 1) return;
 
     QFile file(path);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return;
     QTextStream out(&file);
+    out.setRealNumberPrecision(17);
 
+    if (m_entities.size() > 1) out << "SourceId,";
     out << "Index";
     for (int fi : selectedFields) {
-        out << "," << m_fields[fi].name;
+        QString name = m_fields[fi].name;
+        name.replace('"', "\"\"");
+        out << ",\"" << name << "\"";
     }
     out << "\n";
 
-    for (unsigned i = 0; i < pointCount; ++i) {
-        out << i;
-        for (int fi : selectedFields) {
-            out << "," << getFieldValue(fi, i);
+    for (auto* entity : m_entities) {
+        const auto source = chartSource(entity);
+        const unsigned count =
+                m_useCellData ? (source.mesh ? source.mesh->size() : 0)
+                              : (source.cloud ? source.cloud->size() : 0);
+        const auto normals =
+                entity == m_currentEntity
+                        ? QVector<float>{}
+                        : chartVertexNormals(source.cloud, source.mesh);
+        FieldValueFn values = [this, entity, &normals](int fi, unsigned id) {
+            return fieldValue(fi, id, entity, &normals);
+        };
+        for (unsigned i = 0; i < count; ++i) {
+            if (!std::any_of(m_comparisons.cbegin(), m_comparisons.cend(),
+                             [&](const ComparisonParameters& comparison) {
+                                 return acceptsRow(i, values,
+                                                   comparison.filters);
+                             }))
+                continue;
+            if (m_entities.size() > 1) {
+                QString id = entity->getViewId();
+                id.replace('"', "\"\"");
+                out << '"' << id << "\",";
+            }
+            out << i;
+            for (int fi : selectedFields) out << "," << values(fi, i);
+            out << "\n";
         }
-        out << "\n";
     }
 }
 
@@ -1569,10 +1941,6 @@ void vtkChartView::onChartTitleChanged(const QString& text) {
 void vtkChartView::onToggleLegend(bool show) {
     if (m_chart) {
         m_chart->SetShowLegend(show);
-    } else if (m_chartType == PLOT_MATRIX && m_contextView) {
-        auto* spm = vtkScatterPlotMatrix::SafeDownCast(
-                m_contextView->GetScene()->GetItem(0));
-        if (spm) spm->SetTitle(show ? spm->GetTitle() : "");
     }
     if (m_vtkWidget && m_vtkWidget->renderWindow())
         m_vtkWidget->renderWindow()->Render();
@@ -1668,43 +2036,10 @@ void vtkChartView::onAxisTitleChanged(const QString& text) {
 void vtkChartView::onToggleLogScale(bool log) {
     if (!m_chart) return;
 
-    if (m_chartType == PARALLEL_COORDINATES) {
-        auto* pcChart = vtkChartParallelCoordinates::SafeDownCast(m_chart);
-        if (pcChart) {
-            for (int i = 0; i < pcChart->GetNumberOfAxes(); ++i) {
-                auto* axis = pcChart->GetAxis(i);
-                if (!axis) continue;
-                axis->SetLogScale(log);
-                if (log) {
-                    axis->SetUnscaledMinimumLimit(1e-10);
-                } else {
-                    axis->SetUnscaledMinimumLimit(0.0);
-                }
-            }
-        }
-    } else {
-        auto* leftAxis = m_chart->GetAxis(vtkAxis::LEFT);
-        if (leftAxis) {
-            leftAxis->SetLogScale(log);
-            if (log) {
-                leftAxis->SetUnscaledMinimumLimit(
-                        m_chartType == HISTOGRAM ? 0.5 : 1e-10);
-                if (m_chartType == HISTOGRAM) leftAxis->SetMinimumLimit(0.5);
-            } else {
-                leftAxis->SetUnscaledMinimumLimit(0.0);
-                leftAxis->SetMinimumLimit(0.0);
-            }
-        }
-        auto* bottomAxis = m_chart->GetAxis(vtkAxis::BOTTOM);
-        if (bottomAxis && m_chartType != HISTOGRAM) {
-            bottomAxis->SetLogScale(log);
-            if (log) {
-                bottomAxis->SetUnscaledMinimumLimit(1e-10);
-            } else {
-                bottomAxis->SetUnscaledMinimumLimit(0.0);
-            }
-        }
-    }
+    if (!m_axisSelectCombo) return;
+    auto* axis = m_chart->GetAxis(m_axisSelectCombo->currentData().toInt());
+    if (!axis) return;
+    axis->SetLogScale(log);
 
     m_chart->RecalculateBounds();
     if (m_vtkWidget && m_vtkWidget->renderWindow())
@@ -1804,12 +2139,11 @@ void vtkChartView::applyTooltipFormat() {
 }
 
 void vtkChartView::setupChartSelectionCallback() {
-    if (!m_cloud) return;
-
     if (m_chart) {
         m_chart->SetSelectionMethod(vtkChart::SELECTION_ROWS);
-        auto* link = m_chart->GetAnnotationLink();
-        if (link) {
+        vtkNew<vtkAnnotationLink> link;
+        m_chart->SetAnnotationLink(link);
+        {
             link->AddObserver(vtkCommand::AnnotationChangedEvent, this,
                               &vtkChartView::onChartAnnotationChanged);
         }
@@ -1829,8 +2163,143 @@ void vtkChartView::setupChartSelectionCallback() {
     }
 }
 
+void vtkChartView::applySourceSelection(const cvSelectionData& selection) {
+    if (!m_currentEntity || !m_linkCheck->isEnabled() ||
+        !m_linkCheck->isChecked())
+        return;
+    if (m_chartType == LINE_CHART || m_chartType == BAR_CHART ||
+        m_chartType == POINT_CHART) {
+        vtkNew<vtkSelection> native;
+        for (vtkIdType pi = 0; pi < m_chart->GetNumberOfPlots(); ++pi) {
+            auto* plot = m_chart->GetPlot(pi);
+            auto* table = plot->GetInput();
+            auto* source =
+                    table ? vtkStringArray::SafeDownCast(
+                                    table->GetFieldData()->GetAbstractArray(
+                                            kChartSourceId))
+                          : nullptr;
+            auto* original = table ? vtkIdTypeArray::SafeDownCast(
+                                             table->GetFieldData()->GetArray(
+                                                     kChartOriginalIds))
+                                   : nullptr;
+            if (!source || !original) continue;
+            QSet<qint64> selected;
+            if (selection.fieldAssociation() ==
+                (m_useCellData ? cvSelectionData::CELLS
+                               : cvSelectionData::POINTS))
+                for (const auto& info : selection.actorInfos())
+                    if (info.sourceId ==
+                        QString::fromStdString(source->GetValue(0)))
+                        for (qint64 id : info.sourceIds) selected.insert(id);
+            vtkNew<vtkIdTypeArray> rows;
+            for (vtkIdType row = 0; row < original->GetNumberOfValues(); ++row)
+                if (selected.contains(original->GetValue(row)))
+                    rows->InsertNextValue(row);
+            vtkNew<vtkSelectionNode> node;
+            node->SetContentType(vtkSelectionNode::INDICES);
+            node->SetFieldType(vtkSelectionNode::POINT);
+            node->GetProperties()->Set(vtkSelectionNode::PROP(), plot);
+            node->GetProperties()->Set(vtkSelectionNode::SOURCE(), table);
+            node->SetSelectionList(rows);
+            native->AddNode(node);
+            plot->SetSelection(rows);
+        }
+        if (auto* link = chartSelectionLink()) {
+            link->GetCurrentSelection()->ShallowCopy(native);
+            link->Modified();
+        }
+        if (m_vtkWidget && m_vtkWidget->renderWindow())
+            m_vtkWidget->renderWindow()->Render();
+        return;
+    }
+    QSet<qint64> ids;
+    if (selection.fieldAssociation() ==
+        (m_useCellData ? cvSelectionData::CELLS : cvSelectionData::POINTS)) {
+        for (const auto& source : selection.actorInfos()) {
+            if (source.sourceId != m_currentEntity->getViewId()) continue;
+            for (qint64 id : source.sourceIds)
+                if (id >= 0) ids.insert(id);
+        }
+    }
+    vtkNew<vtkIdTypeArray> rows;
+    const unsigned count = m_useCellData
+                                   ? (m_genericMesh ? m_genericMesh->size() : 0)
+                                   : (m_cloud ? m_cloud->size() : 0);
+    for (qint64 id : ids) {
+        if (id < count && id % m_sampleStride == 0)
+            rows->InsertNextValue(static_cast<vtkIdType>(id / m_sampleStride));
+    }
+    if (m_chartType == HISTOGRAM && m_chart) {
+        vtkNew<vtkSelection> chartSelection;
+        const int bins = m_binSpin->value();
+        for (vtkIdType pi = 0; pi < m_chart->GetNumberOfPlots(); ++pi) {
+            auto* plot = m_chart->GetPlot(pi);
+            auto* table = plot->GetInput();
+            if (!table || table->GetNumberOfColumns() < 2) continue;
+            int fi = -1;
+            for (int field = 0; field < m_fields.size(); ++field)
+                if (m_fields[field].name ==
+                    QString::fromUtf8(table->GetColumnName(1)))
+                    fi = field;
+            if (fi < 0) continue;
+            const auto range = histogramRange(fi, count);
+            if (!std::isfinite(range.first) || !std::isfinite(range.second))
+                continue;
+            const double width = (range.second - range.first) / bins;
+            QSet<int> selectedBins;
+            for (qint64 id : ids) {
+                if (id < 0 || id >= count) continue;
+                const double value = fieldValue(fi, unsigned(id));
+                if (std::isfinite(value))
+                    selectedBins.insert(std::min(
+                            bins - 1,
+                            std::max(0, int((value - range.first) / width))));
+            }
+            vtkNew<vtkIdTypeArray> binsForPlot;
+            for (int bin : selectedBins) binsForPlot->InsertNextValue(bin);
+            vtkNew<vtkSelectionNode> node;
+            node->SetContentType(vtkSelectionNode::INDICES);
+            node->SetFieldType(vtkSelectionNode::POINT);
+            node->GetProperties()->Set(vtkSelectionNode::PROP(), plot);
+            node->GetProperties()->Set(vtkSelectionNode::SOURCE(), table);
+            node->SetSelectionList(binsForPlot);
+            chartSelection->AddNode(node);
+            plot->SetSelection(binsForPlot);
+        }
+        auto* link = m_chart->GetAnnotationLink();
+        if (link) {
+            link->GetCurrentSelection()->ShallowCopy(chartSelection);
+            link->Modified();
+        }
+        if (m_vtkWidget && m_vtkWidget->renderWindow())
+            m_vtkWidget->renderWindow()->Render();
+        return;
+    }
+    vtkAnnotationLink* link = m_chart ? m_chart->GetAnnotationLink() : nullptr;
+    if (!link && m_chartType == PLOT_MATRIX && m_contextView) {
+        if (auto* matrix = vtkScatterPlotMatrix::SafeDownCast(
+                    m_contextView->GetScene()->GetItem(0)))
+            link = matrix->GetAnnotationLink();
+    }
+    if (!link) return;
+    vtkNew<vtkSelectionNode> node;
+    node->SetContentType(vtkSelectionNode::INDICES);
+    node->SetFieldType(vtkSelectionNode::ROW);
+    node->SetSelectionList(rows);
+    vtkNew<vtkSelection> chartSelection;
+    chartSelection->AddNode(node);
+    // Update the native selection in place, without emitting a user gesture
+    // back into the source selection manager. vtkChart::Update reads this link.
+    link->GetCurrentSelection()->ShallowCopy(chartSelection);
+    link->Modified();
+    if (m_vtkWidget && m_vtkWidget->renderWindow())
+        m_vtkWidget->renderWindow()->Render();
+}
+
 void vtkChartView::onChartAnnotationChanged() {
-    if (!m_cloud) return;
+    if (!m_currentEntity || !m_linkCheck->isEnabled() ||
+        !m_linkCheck->isChecked())
+        return;
 
     vtkAnnotationLink* link = nullptr;
     if (m_chart) {
@@ -1843,8 +2312,138 @@ void vtkChartView::onChartAnnotationChanged() {
     if (!link) return;
 
     auto* sel = link->GetCurrentSelection();
+    if (m_chartType == LINE_CHART || m_chartType == BAR_CHART ||
+        m_chartType == POINT_CHART) {
+        QMap<QString, QSet<qint64>> sourceIds;
+        if (sel)
+            for (unsigned ni = 0; ni < sel->GetNumberOfNodes(); ++ni) {
+                auto* node = sel->GetNode(ni);
+                auto* rows =
+                        vtkIdTypeArray::SafeDownCast(node->GetSelectionList());
+                auto* plot = vtkPlot::SafeDownCast(
+                        node->GetProperties()->Get(vtkSelectionNode::PROP()));
+                auto* table =
+                        plot ? plot->GetInput()
+                             : vtkTable::SafeDownCast(
+                                       node->GetProperties()->Get(
+                                               vtkSelectionNode::SOURCE()));
+                // Legacy row nodes are unambiguous only with one source.
+                if (!table && m_entities.size() == 1 &&
+                    m_chart->GetNumberOfPlots())
+                    table = m_chart->GetPlot(0)->GetInput();
+                auto* source =
+                        table ? vtkStringArray::SafeDownCast(
+                                        table->GetFieldData()->GetAbstractArray(
+                                                kChartSourceId))
+                              : nullptr;
+                auto* original =
+                        table ? vtkIdTypeArray::SafeDownCast(
+                                        table->GetFieldData()->GetArray(
+                                                kChartOriginalIds))
+                              : nullptr;
+                if (!rows || !source || !original) continue;
+                for (vtkIdType ri = 0; ri < rows->GetNumberOfValues(); ++ri) {
+                    const auto row = rows->GetValue(ri);
+                    if (row >= 0 && row < original->GetNumberOfValues())
+                        sourceIds[QString::fromStdString(source->GetValue(0))]
+                                .insert(original->GetValue(row));
+                }
+            }
+        if (m_entities.size() == 1) {
+            QVector<unsigned> ids;
+            for (qint64 id : sourceIds.value(m_currentEntity->getViewId()))
+                ids.append(unsigned(id));
+            std::sort(ids.begin(), ids.end());
+            emit pointsHighlighted(m_currentEntity, ids);
+        } else {
+            // Commit one multi-source gesture, not a sequence of single-source
+            // publications which overwrite one another in the manager.
+            ccHObject* primary = m_currentEntity;
+            for (auto* entity : m_entities)
+                if (!sourceIds.value(entity->getViewId()).isEmpty()) {
+                    primary = entity;
+                    break;
+                }
+            QVector<qint64> ids = qtCompatQVectorFromSet(
+                    sourceIds.value(primary->getViewId()));
+            std::sort(ids.begin(), ids.end());
+            cvSelectionData selection(ids, m_useCellData
+                                                   ? cvSelectionData::CELLS
+                                                   : cvSelectionData::POINTS);
+            QList<ccHObject*> ordered = m_entities;
+            ordered.removeAll(primary);
+            ordered.prepend(primary);
+            for (auto* entity : ordered) {
+                cvActorSelectionInfo info;
+                info.sourceId = entity->getViewId();
+                info.sourceIds =
+                        qtCompatQVectorFromSet(sourceIds.value(info.sourceId));
+                std::sort(info.sourceIds.begin(), info.sourceIds.end());
+                selection.addActorInfo(info);
+            }
+            auto* manager = cvViewSelectionManager::instance();
+            manager->setSourceObject(primary);
+            manager->setCurrentSelection(selection);
+        }
+        return;
+    }
     if (!sel || sel->GetNumberOfNodes() == 0) {
-        emit pointsHighlighted(m_cloud, {});
+        emit pointsHighlighted(m_currentEntity, {});
+        return;
+    }
+
+    if (m_chartType == BOX_CHART || m_chartType == QUARTILE_CHART ||
+        m_chartType == IMAGE_CHART)
+        return;
+    if (m_chartType == HISTOGRAM) {
+        const int bins = m_binSpin->value();
+        const unsigned count =
+                m_useCellData ? (m_genericMesh ? m_genericMesh->size() : 0)
+                              : (m_cloud ? m_cloud->size() : 0);
+        QSet<unsigned> sourceIds;
+        for (unsigned n = 0; n < sel->GetNumberOfNodes(); ++n) {
+            auto* node = sel->GetNode(n);
+            auto* rows = vtkIdTypeArray::SafeDownCast(node->GetSelectionList());
+            auto* plot = vtkPlot::SafeDownCast(
+                    node->GetProperties()->Get(vtkSelectionNode::PROP()));
+            vtkTable* table =
+                    plot ? plot->GetInput()
+                         : vtkTable::SafeDownCast(node->GetProperties()->Get(
+                                   vtkSelectionNode::SOURCE()));
+            if (!table && m_chart->GetNumberOfPlots() == 1)
+                table = m_chart->GetPlot(0)->GetInput();
+            if (!rows || !table || table->GetNumberOfColumns() < 2) continue;
+            bool owned = false;
+            for (vtkIdType pi = 0; pi < m_chart->GetNumberOfPlots(); ++pi)
+                if (m_chart->GetPlot(pi)->GetInput() == table) owned = true;
+            if (!owned) continue;
+            int fi = -1;
+            for (int field = 0; field < m_fields.size(); ++field)
+                if (m_fields[field].name ==
+                    QString::fromUtf8(table->GetColumnName(1)))
+                    fi = field;
+            if (fi < 0) continue;
+            QSet<int> selectedBins;
+            for (vtkIdType r = 0; r < rows->GetNumberOfValues(); ++r) {
+                const vtkIdType bin = rows->GetValue(r);
+                if (bin >= 0 && bin < bins) selectedBins.insert(int(bin));
+            }
+            const auto range = histogramRange(fi, count);
+            if (!std::isfinite(range.first) || !std::isfinite(range.second))
+                continue;
+            const double width = (range.second - range.first) / bins;
+            for (unsigned id = 0; id < count; ++id) {
+                const double value = fieldValue(fi, id);
+                if (!std::isfinite(value)) continue;
+                const int bin = std::min(
+                        bins - 1,
+                        std::max(0, int((value - range.first) / width)));
+                if (selectedBins.contains(bin)) sourceIds.insert(id);
+            }
+        }
+        QVector<unsigned> ids = qtCompatQVectorFromSet(sourceIds);
+        std::sort(ids.begin(), ids.end());
+        emit pointsHighlighted(m_currentEntity, ids);
         return;
     }
 
@@ -1858,15 +2457,37 @@ void vtkChartView::onChartAnnotationChanged() {
         if (!arr) continue;
         for (vtkIdType i = 0; i < arr->GetNumberOfTuples(); ++i) {
             vtkIdType row = arr->GetValue(i);
-            unsigned ptIdx = static_cast<unsigned>(row) * m_sampleStride;
-            if (ptIdx < m_cloud->size()) indices.append(ptIdx);
+            if (row < 0) continue;
+            const quint64 sourceId = static_cast<quint64>(row) * m_sampleStride;
+            const unsigned count =
+                    m_useCellData ? (m_genericMesh ? m_genericMesh->size() : 0)
+                                  : (m_cloud ? m_cloud->size() : 0);
+            if (sourceId < count)
+                indices.append(static_cast<unsigned>(sourceId));
         }
     }
 
-    emit pointsHighlighted(m_cloud, indices);
+    emit pointsHighlighted(m_currentEntity, indices);
 }
 
 void vtkChartView::rebuildChart() {
+    vtkNew<vtkTable> emptyTable;
+    if (m_chart) {
+        m_chart->SetVisible(false);
+        if (m_chartType == BOX_CHART || m_chartType == PARALLEL_COORDINATES) {
+            if (auto* plot = m_chart->GetPlot(0))
+                plot->SetInputData(emptyTable);
+        } else if (auto* image = vtkChartHistogram2D::SafeDownCast(m_chart)) {
+            vtkNew<vtkImageData> emptyImage;
+            image->SetInputData(emptyImage);
+        }
+    } else if (m_chartType == PLOT_MATRIX && m_contextView) {
+        if (auto* matrix = vtkScatterPlotMatrix::SafeDownCast(
+                    m_contextView->GetScene()->GetItem(0))) {
+            matrix->SetVisible(false);
+            matrix->SetInput(nullptr);
+        }
+    }
     if (m_chart && m_chartType != BOX_CHART &&
         m_chartType != PARALLEL_COORDINATES && m_chartType != IMAGE_CHART)
         m_chart->ClearPlots();
@@ -1875,6 +2496,13 @@ void vtkChartView::rebuildChart() {
         if (m_vtkWidget && m_vtkWidget->renderWindow())
             m_vtkWidget->renderWindow()->Render();
     };
+
+    if (m_chartType == IMAGE_CHART) {
+        rebuildImageChart();
+        applyTooltipFormat();
+        safeRender();
+        return;
+    }
 
     bool hasMesh = m_mesh || m_genericMesh;
     if (m_useCellData && !hasMesh) {
@@ -1911,151 +2539,95 @@ void vtkChartView::rebuildChart() {
                                ? meshForCells->size()
                                : (m_genericMesh ? m_genericMesh->size() : 0))
                     : m_cloud->size();
-    if (pointCount == 0) {
+    if (pointCount == 0 && m_entities.size() <= 1) {
         safeRender();
         return;
     }
 
-    auto getCellFieldValue = [&](int fieldIdx, unsigned cellIdx) -> float {
-        const auto& fd = m_fields[fieldIdx];
-        if (!meshForCells) return 0.0f;
-
-        if (fd.sfIndex == -100) return static_cast<float>(cellIdx);
-
-        if (fd.sfIndex >= -103 && fd.sfIndex <= -101) {
-            auto* vi = meshForCells->getTriangleVertIndexes(cellIdx);
-            if (!vi || !m_cloud) return 0.0f;
-            int axis = -(fd.sfIndex + 101);
-            const CCVector3* p0 = m_cloud->getPoint(vi->i1);
-            const CCVector3* p1 = m_cloud->getPoint(vi->i2);
-            const CCVector3* p2 = m_cloud->getPoint(vi->i3);
-            if (!p0 || !p1 || !p2) return 0.0f;
-            return static_cast<float>(
-                    (p0->u[axis] + p1->u[axis] + p2->u[axis]) / 3.0);
-        }
-
-        if (fd.sfIndex >= -106 && fd.sfIndex <= -104) {
-            int axis = -(fd.sfIndex + 104);
-            CCVector3 Na, Nb, Nc;
-            if (meshForCells->getTriangleNormals(cellIdx, Na, Nb, Nc)) {
-                float avg = static_cast<float>(
-                        (Na.u[axis] + Nb.u[axis] + Nc.u[axis]) / 3.0);
-                return avg;
-            }
-            return 0.0f;
-        }
-
-        if (fd.sfIndex == -107) {
-            CCVector3 Na, Nb, Nc;
-            if (meshForCells->getTriangleNormals(cellIdx, Na, Nb, Nc)) {
-                float nx = (Na.x + Nb.x + Nc.x) / 3.0f;
-                float ny = (Na.y + Nb.y + Nc.y) / 3.0f;
-                float nz = (Na.z + Nb.z + Nc.z) / 3.0f;
-                return std::sqrt(nx * nx + ny * ny + nz * nz);
-            }
-            return 0.0f;
-        }
-
-        if (fd.sfIndex == -110) {
-            auto* vi = meshForCells->getTriangleVertIndexes(cellIdx);
-            if (!vi || !m_cloud) return 0.0f;
-            const CCVector3* p0 = m_cloud->getPoint(vi->i1);
-            const CCVector3* p1 = m_cloud->getPoint(vi->i2);
-            const CCVector3* p2 = m_cloud->getPoint(vi->i3);
-            if (!p0 || !p1 || !p2) return 0.0f;
-            CCVector3 e1 = *p1 - *p0;
-            CCVector3 e2 = *p2 - *p0;
-            CCVector3 cross = e1.cross(e2);
-            return 0.5f * cross.norm();
-        }
-
-        if (fd.sfIndex == -111) {
-            auto* matTable = meshForCells->getTriangleMtlIndexesTable();
-            if (matTable && cellIdx < matTable->size())
-                return static_cast<float>(matTable->getValue(cellIdx));
-            return 0.0f;
-        }
-        return 0.0f;
-    };
-
-    auto getPointFieldValue = [&](int fieldIdx, unsigned ptIdx) -> float {
-        const auto& fd = m_fields[fieldIdx];
-        if (fd.sfIndex >= 0) {
-            auto* sf = m_cloud->getScalarField(fd.sfIndex);
-            return sf ? sf->getValue(ptIdx) : 0.0f;
-        }
-        if (fd.sfIndex >= -22 && fd.sfIndex <= -20) {
-            const CCVector3* pt = m_cloud->getPoint(ptIdx);
-            if (!pt) return 0.0f;
-            int axis = -(fd.sfIndex + 20);
-            return static_cast<float>(pt->u[axis]);
-        }
-        if (fd.sfIndex >= -32 && fd.sfIndex <= -30) {
-            int axis = -(fd.sfIndex + 30);
-            return getNormalComponent(ptIdx, axis);
-        }
-        if (fd.sfIndex >= -12 && fd.sfIndex <= -10 && m_cloud->hasColors()) {
-            const ecvColor::Rgb& c = m_cloud->getPointColor(ptIdx);
-            int ch = -(fd.sfIndex + 10);
-            if (ch == 0) return c.r;
-            if (ch == 1) return c.g;
-            return c.b;
-        }
-        if (fd.sfIndex == -40) {
-            const CCVector3* pt = m_cloud->getPoint(ptIdx);
-            if (!pt) return 0.0f;
-            return std::sqrt(pt->x * pt->x + pt->y * pt->y + pt->z * pt->z);
-        }
-        if (fd.sfIndex == -41) {
-            float nx = getNormalComponent(ptIdx, 0);
-            float ny = getNormalComponent(ptIdx, 1);
-            float nz = getNormalComponent(ptIdx, 2);
-            return std::sqrt(nx * nx + ny * ny + nz * nz);
-        }
-        if (fd.sfIndex >= -52 && fd.sfIndex <= -50 && m_mesh) {
-            auto* texTable = m_mesh->getTexCoordinatesTable();
-            if (texTable && ptIdx < texTable->size()) {
-                const TexCoords2D& tc = texTable->getValue(ptIdx);
-                int comp = -(fd.sfIndex + 50);
-                if (comp == 0) return tc.tx;
-                if (comp == 1) return tc.ty;
-                return std::sqrt(tc.tx * tc.tx + tc.ty * tc.ty);
-            }
-            return 0.0f;
-        }
-        return 0.0f;
-    };
-
-    auto getFieldValue = [&](int fieldIdx, unsigned idx) -> float {
-        return m_useCellData ? getCellFieldValue(fieldIdx, idx)
-                             : getPointFieldValue(fieldIdx, idx);
+    auto getFieldValue = [this](int fieldIdx, unsigned id) {
+        return fieldValue(fieldIdx, id);
     };
 
     m_sampleStride = 1;
     if (pointCount > m_maxChartPoints)
-        m_sampleStride = pointCount / m_maxChartPoints;
+        m_sampleStride = 1 + (pointCount - 1) / m_maxChartPoints;
     unsigned sampleCount = (pointCount + m_sampleStride - 1) / m_sampleStride;
 
     if (m_chartType == PLOT_MATRIX) {
         rebuildPlotMatrix(selectedFields, sampleCount, pointCount,
                           getFieldValue);
     } else if (m_chartType == HISTOGRAM) {
+        m_chart->SetSelectionMethod(vtkChart::SELECTION_PLOTS);
         rebuildHistogram(selectedFields, pointCount, getFieldValue);
     } else if (m_chartType == BOX_CHART) {
         rebuildBoxChart(selectedFields, sampleCount, pointCount, getFieldValue);
     } else if (m_chartType == QUARTILE_CHART) {
         rebuildQuartileChart(selectedFields, sampleCount, pointCount,
                              getFieldValue);
-    } else if (m_chartType == IMAGE_CHART) {
-        rebuildImageChart(selectedFields, sampleCount, pointCount,
-                          getFieldValue);
     } else if (m_chartType == PARALLEL_COORDINATES) {
         rebuildParallelCoordinates(selectedFields, sampleCount, pointCount,
                                    getFieldValue);
     } else {
-        rebuildXYChart(selectedFields, sampleCount, pointCount, getFieldValue);
+        m_chart->SetSelectionMethod(m_entities.size() > 1 ||
+                                                    m_comparisons.size() > 1
+                                            ? vtkChart::SELECTION_PLOTS
+                                            : vtkChart::SELECTION_ROWS);
+        for (int comparisonIndex = 0; comparisonIndex < m_comparisons.size();
+             ++comparisonIndex) {
+            const auto& comparison = m_comparisons[comparisonIndex];
+            const auto& filters = comparison.filters;
+            for (int sourceIndex = 0; sourceIndex < m_entities.size();
+                 ++sourceIndex) {
+                auto* entity = m_entities[sourceIndex];
+                const auto source = chartSource(entity);
+                const unsigned count =
+                        m_useCellData
+                                ? (source.mesh ? source.mesh->size() : 0)
+                                : (source.cloud ? source.cloud->size() : 0);
+                const auto normals =
+                        entity == m_currentEntity
+                                ? QVector<float>{}
+                                : chartVertexNormals(source.cloud, source.mesh);
+                FieldValueFn values = [this, entity, &normals](int fi,
+                                                               unsigned id) {
+                    return fieldValue(fi, id, entity, &normals);
+                };
+                unsigned eligible = count;
+                if (!filters.isEmpty()) {
+                    eligible = 0;
+                    for (unsigned id = 0; id < count; ++id)
+                        if (acceptsRow(id, values, filters)) ++eligible;
+                }
+                const unsigned stride =
+                        eligible > m_maxChartPoints
+                                ? 1 + (eligible - 1) / m_maxChartPoints
+                                : 1;
+                QVector<unsigned> sampled;
+                if (filters.isEmpty()) {
+                    for (unsigned id = 0; id < count; id += stride)
+                        sampled.append(id);
+                } else {
+                    unsigned row = 0;
+                    for (unsigned id = 0; id < count; ++id)
+                        if (acceptsRow(id, values, filters) &&
+                            row++ % stride == 0)
+                            sampled.append(id);
+                }
+                rebuildXYChart(
+                        selectedFields, entity,
+                        sourceIndex + comparisonIndex * m_entities.size(),
+                        sampled, values, comparison);
+            }
+        }
     }
 
+    if (m_chart)
+        m_chart->SetVisible(true);
+    else if (m_chartType == PLOT_MATRIX) {
+        if (auto* matrix = vtkScatterPlotMatrix::SafeDownCast(
+                    m_contextView->GetScene()->GetItem(0)))
+            matrix->SetVisible(true);
+    }
     if (m_chart) {
         bool isBoxType = (m_chartType == BOX_CHART);
         if (!isBoxType) {
@@ -2068,43 +2640,34 @@ void vtkChartView::rebuildChart() {
                 auto* axis = m_chart->GetAxis(i);
                 if (!axis) continue;
                 if (m_gridCheck) axis->SetGridVisible(m_gridCheck->isChecked());
-                if (m_notationCombo)
-                    axis->SetNotation(m_notationCombo->currentData().toInt());
-                if (m_axisPrecSpin) axis->SetPrecision(m_axisPrecSpin->value());
             }
-            {
-                auto* leftAxis = m_chart->GetAxis(vtkAxis::LEFT);
-                if (leftAxis && m_logScaleCheck) {
-                    bool useLog = m_logScaleCheck->isChecked();
-                    leftAxis->SetLogScale(useLog);
-                    if (useLog) {
-                        leftAxis->SetUnscaledMinimumLimit(0.5);
-                    } else {
-                        leftAxis->SetUnscaledMinimumLimit(0.0);
-                    }
-                }
-            }
-            if (m_customRangeCheck && m_customRangeCheck->isChecked()) {
-                auto* leftAxis = m_chart->GetAxis(vtkAxis::LEFT);
-                if (leftAxis) {
-                    leftAxis->SetBehavior(vtkAxis::FIXED);
-                    leftAxis->SetUnscaledMinimum(m_rangeMinSpin->value());
-                    leftAxis->SetUnscaledMaximum(m_rangeMaxSpin->value());
-                }
-            }
+            onActiveAxisChanged(m_axisSelectCombo->currentIndex());
         }
     }
     applyTooltipFormat();
-    setupChartSelectionCallback();
+    applySourceSelection(
+            cvViewSelectionManager::instance()->currentSelection());
     if (m_vtkWidget && m_vtkWidget->renderWindow())
         m_vtkWidget->renderWindow()->Render();
 }
 
 void vtkChartView::rebuildXYChart(const QList<int>& selectedFields,
-                                  unsigned sampleCount,
-                                  unsigned pointCount,
-                                  const FieldValueFn& getFieldValue) {
+                                  ccHObject* entity,
+                                  int sourceIndex,
+                                  const QVector<unsigned>& sourceIds,
+                                  const FieldValueFn& getFieldValue,
+                                  const ComparisonParameters& comparison) {
+    if (sourceIds.isEmpty()) return;
+    const unsigned sampleCount = unsigned(sourceIds.size());
     vtkNew<vtkTable> table;
+    vtkNew<vtkIdTypeArray> originalIds;
+    originalIds->SetName(kChartOriginalIds);
+    for (unsigned id : sourceIds) originalIds->InsertNextValue(id);
+    table->GetFieldData()->AddArray(originalIds);
+    vtkNew<vtkStringArray> sourceId;
+    sourceId->SetName(kChartSourceId);
+    sourceId->InsertNextValue(entity->getViewId().toStdString());
+    table->GetFieldData()->AddArray(sourceId);
 
     bool useIndex = !m_useIndexXAxis || m_useIndexXAxis->isChecked();
     int xFieldIdx = -1;
@@ -2113,24 +2676,38 @@ void vtkChartView::rebuildXYChart(const QList<int>& selectedFields,
     }
 
     if (useIndex || xFieldIdx < 0 || xFieldIdx >= m_fields.size()) {
-        vtkNew<vtkIntArray> indexArr;
-        indexArr->SetName("Point Index");
+        vtkNew<vtkDoubleArray> indexArr;
+        QByteArray name("Point Index");
+        while (std::any_of(m_fields.cbegin(), m_fields.cend(),
+                           [&](const FieldDef& field) {
+                               return field.name.toUtf8() == name;
+                           }))
+            name.prepend('_');
+        indexArr->SetName(name.constData());
         indexArr->SetNumberOfTuples(sampleCount);
         for (unsigned s = 0; s < sampleCount; ++s) {
-            unsigned idx = s * m_sampleStride;
-            if (idx >= pointCount) idx = pointCount - 1;
-            indexArr->SetValue(s, idx);
+            unsigned idx = sourceIds[int(s)];
+            indexArr->SetValue(s, idx * comparison.xScale);
         }
         table->AddColumn(indexArr);
     } else {
         QByteArray xName = m_fields[xFieldIdx].name.toUtf8();
-        vtkNew<vtkFloatArray> xArr;
+        // Different role scales require separate, collision-free X/Y arrays.
+        if (comparison.xScale != comparison.yScale) {
+            do {
+                xName.prepend('_');
+            } while (std::any_of(m_fields.cbegin(), m_fields.cend(),
+                                 [&](const FieldDef& field) {
+                                     return field.name.toUtf8() == xName;
+                                 }));
+        }
+        vtkNew<vtkDoubleArray> xArr;
         xArr->SetName(xName.constData());
         xArr->SetNumberOfTuples(sampleCount);
         for (unsigned s = 0; s < sampleCount; ++s) {
-            unsigned idx = s * m_sampleStride;
-            if (idx >= pointCount) idx = pointCount - 1;
-            xArr->SetValue(s, getFieldValue(xFieldIdx, idx));
+            unsigned idx = sourceIds[int(s)];
+            xArr->SetValue(s,
+                           getFieldValue(xFieldIdx, idx) * comparison.xScale);
         }
         table->AddColumn(xArr);
     }
@@ -2138,14 +2715,15 @@ void vtkChartView::rebuildXYChart(const QList<int>& selectedFields,
     for (int si = 0; si < selectedFields.size(); ++si) {
         int fi = selectedFields[si];
         QByteArray nameBytes = m_fields[fi].name.toUtf8();
-        vtkNew<vtkFloatArray> valueArr;
+        // X and Y may intentionally reference the very same column.
+        if (table->GetColumnByName(nameBytes.constData())) continue;
+        vtkNew<vtkDoubleArray> valueArr;
         valueArr->SetName(nameBytes.constData());
         valueArr->SetNumberOfTuples(sampleCount);
 
         for (unsigned s = 0; s < sampleCount; ++s) {
-            unsigned idx = s * m_sampleStride;
-            if (idx >= pointCount) idx = pointCount - 1;
-            valueArr->SetValue(s, getFieldValue(fi, idx));
+            unsigned idx = sourceIds[int(s)];
+            valueArr->SetValue(s, getFieldValue(fi, idx) * comparison.yScale);
         }
         table->AddColumn(valueArr);
     }
@@ -2167,7 +2745,11 @@ void vtkChartView::rebuildXYChart(const QList<int>& selectedFields,
         int ls = m_seriesProps.contains(fi) ? sp.lineStyle : globalLineStyle;
         float ms =
                 m_seriesProps.contains(fi) ? sp.markerSize : globalMarkerSize;
-        int mkr = sp.markerStyle;
+        int mkr = m_seriesProps.contains(fi)
+                          ? sp.markerStyle
+                          : (m_markerStyleCombo
+                                     ? m_markerStyleCombo->currentData().toInt()
+                                     : vtkPlotPoints::NONE);
 
         int plotType;
         switch (m_chartType) {
@@ -2185,24 +2767,33 @@ void vtkChartView::rebuildXYChart(const QList<int>& selectedFields,
                 break;
         }
         auto* plot = m_chart->AddPlot(plotType);
-        plot->SetInputData(table, 0, si + 1);
+        plot->SetInputData(table, table->GetColumnName(0),
+                           m_fields[fi].name.toUtf8().constData());
         QString label =
                 sp.legendName.isEmpty() ? m_fields[fi].name : sp.legendName;
+        if (m_entities.size() > 1)
+            label = entity->getName() + QStringLiteral(": ") + label;
+        if (!comparison.label.isEmpty())
+            label = comparison.label + ": " + label;
         plot->SetLabel(label.toStdString());
-        QColor col = seriesColor(fi);
+        QColor col = seriesColor(fi + sourceIndex * m_fields.size());
         unsigned char penR = static_cast<unsigned char>(col.red());
         unsigned char penG = static_cast<unsigned char>(col.green());
         unsigned char penB = static_cast<unsigned char>(col.blue());
-        plot->SetColor(penR, penG, penB, 255);
-        plot->GetPen()->SetColor(penR, penG, penB, 255);
-        plot->GetPen()->SetWidth(lw);
+        const auto alpha = static_cast<unsigned char>(
+                qBound(0.0, comparison.opacity, 1.0) * 255);
+        plot->SetColor(penR, penG, penB, alpha);
+        plot->GetPen()->SetColor(penR, penG, penB, alpha);
+        plot->GetPen()->SetWidth(comparison.lineWidth > 0 ? comparison.lineWidth
+                                                          : lw);
 
         if (m_chartType == LINE_CHART) {
-            plot->GetPen()->SetLineType(ls > 0 ? ls : vtkPen::SOLID_LINE);
+            plot->GetPen()->SetLineType(ls);
             auto* plotPts = vtkPlotPoints::SafeDownCast(plot);
-            if (plotPts && mkr > 0) {
+            if (plotPts) {
                 plotPts->SetMarkerStyle(mkr);
-                plotPts->SetMarkerSize(ms);
+                plotPts->SetMarkerSize(
+                        comparison.markerSize > 0 ? comparison.markerSize : ms);
             }
         } else if (m_chartType == POINT_CHART) {
             static const int markerCycle[] = {
@@ -2210,9 +2801,13 @@ void vtkChartView::rebuildXYChart(const QList<int>& selectedFields,
                     vtkPlotPoints::PLUS, vtkPlotPoints::DIAMOND};
             auto* plotPts = vtkPlotPoints::SafeDownCast(plot);
             if (plotPts) {
-                int mkrIdx = (mkr > 0) ? mkr : markerCycle[si % 4];
+                const int mkrIdx =
+                        m_seriesProps.contains(fi) || m_markerStyleCombo
+                                ? mkr
+                                : markerCycle[si % 4];
                 plotPts->SetMarkerStyle(mkrIdx);
-                plotPts->SetMarkerSize(ms);
+                plotPts->SetMarkerSize(
+                        comparison.markerSize > 0 ? comparison.markerSize : ms);
             }
             if (ls > 0) {
                 plot->GetPen()->SetLineType(ls);
@@ -2227,8 +2822,29 @@ void vtkChartView::rebuildXYChart(const QList<int>& selectedFields,
     QString xTitle = useIndex ? tr("Point Index")
                               : (xFieldIdx >= 0 ? m_fields[xFieldIdx].name
                                                 : tr("Point Index"));
-    m_chart->GetAxis(vtkAxis::BOTTOM)->SetTitle(xTitle.toStdString());
-    m_chart->GetAxis(vtkAxis::LEFT)->SetTitle("Value");
+    auto* bottomAxis = m_chart->GetAxis(vtkAxis::BOTTOM);
+    auto* leftAxis = m_chart->GetAxis(vtkAxis::LEFT);
+    if (bottomAxis->GetTitle().empty())
+        bottomAxis->SetTitle(xTitle.toStdString());
+    if (leftAxis->GetTitle().empty()) leftAxis->SetTitle("Value");
+}
+
+QPair<double, double> vtkChartView::histogramRange(int fieldIdx,
+                                                   unsigned count) const {
+    double minimum = std::numeric_limits<double>::infinity();
+    double maximum = -minimum;
+    for (unsigned id = 0; id < count; ++id) {
+        const double value = fieldValue(fieldIdx, id);
+        if (!std::isfinite(value)) continue;
+        minimum = std::min(minimum, value);
+        maximum = std::max(maximum, value);
+    }
+    if (minimum == maximum)
+        maximum = minimum +
+                  std::max(1.0, std::abs(minimum) *
+                                        std::numeric_limits<double>::epsilon() *
+                                        2);
+    return {minimum, maximum};
 }
 
 void vtkChartView::rebuildHistogram(const QList<int>& selectedFields,
@@ -2238,20 +2854,17 @@ void vtkChartView::rebuildHistogram(const QList<int>& selectedFields,
 
     for (int si = 0; si < selectedFields.size(); ++si) {
         int fi = selectedFields[si];
-        float minVal = std::numeric_limits<float>::max();
-        float maxVal = std::numeric_limits<float>::lowest();
-
-        for (unsigned i = 0; i < pointCount; ++i) {
-            float v = getFieldValue(fi, i);
-            minVal = std::min(minVal, v);
-            maxVal = std::max(maxVal, v);
-        }
-        if (maxVal <= minVal) maxVal = minVal + 1.0f;
-        float binWidth = (maxVal - minVal) / numBins;
+        const auto range = histogramRange(fi, pointCount);
+        const double minVal = range.first;
+        const double maxVal = range.second;
+        if (!std::isfinite(minVal) || !std::isfinite(maxVal)) continue;
+        const double binWidth = (maxVal - minVal) / numBins;
 
         vtkNew<vtkTable> table;
-        vtkNew<vtkFloatArray> binCenters;
-        binCenters->SetName("Bin Center");
+        vtkNew<vtkDoubleArray> binCenters;
+        binCenters->SetName(m_fields[fi].name == QStringLiteral("Bin Center")
+                                    ? "__acv_bin_center"
+                                    : "Bin Center");
         binCenters->SetNumberOfTuples(numBins);
 
         QByteArray nameBytes = m_fields[fi].name.toUtf8();
@@ -2266,17 +2879,11 @@ void vtkChartView::rebuildHistogram(const QList<int>& selectedFields,
 
         for (unsigned i = 0; i < pointCount; ++i) {
             float v = getFieldValue(fi, i);
+            if (!std::isfinite(v)) continue;
             int bin = static_cast<int>((v - minVal) / binWidth);
             if (bin >= numBins) bin = numBins - 1;
             if (bin < 0) bin = 0;
             counts->SetValue(bin, counts->GetValue(bin) + 1.0f);
-        }
-
-        bool isLog = m_logScaleCheck && m_logScaleCheck->isChecked();
-        if (isLog) {
-            for (int b = 0; b < numBins; ++b) {
-                if (counts->GetValue(b) < 0.5f) counts->SetValue(b, 0.5f);
-            }
         }
 
         table->AddColumn(binCenters);
@@ -2312,14 +2919,14 @@ void vtkChartView::rebuildHistogram(const QList<int>& selectedFields,
         }
     }
 
-    m_chart->GetAxis(vtkAxis::BOTTOM)
-            ->SetTitle(selectedFields.size() == 1
-                               ? m_fields[selectedFields.first()]
-                                         .name.toStdString()
-                               : std::string("Value"));
+    auto* bottomAxis = m_chart->GetAxis(vtkAxis::BOTTOM);
+    if (bottomAxis->GetTitle().empty())
+        bottomAxis->SetTitle(
+                selectedFields.size() == 1
+                        ? m_fields[selectedFields.first()].name.toStdString()
+                        : std::string("Value"));
     auto* leftAxis = m_chart->GetAxis(vtkAxis::LEFT);
-    leftAxis->SetTitle("Frequency");
-    leftAxis->SetMinimumLimit(0.0);
+    if (leftAxis->GetTitle().empty()) leftAxis->SetTitle("Frequency");
 }
 
 void vtkChartView::rebuildBoxChart(const QList<int>& selectedFields,
@@ -2340,17 +2947,17 @@ void vtkChartView::rebuildBoxChart(const QList<int>& selectedFields,
         std::vector<float> values;
         values.reserve(pointCount);
         for (unsigned i = 0; i < pointCount; ++i) {
-            values.push_back(getFieldValue(fi, i));
+            const float value = getFieldValue(fi, i);
+            if (std::isfinite(value)) values.push_back(value);
         }
         if (values.empty()) continue;
         std::sort(values.begin(), values.end());
 
-        size_t sz = values.size();
-        float minVal = values.front();
-        float maxVal = values.back();
-        float median = values[sz / 2];
-        float q1 = values[sz / 4];
-        float q3 = values[3 * sz / 4];
+        const double minVal = orderQuartile(values, 0);
+        const double q1 = orderQuartile(values, 1);
+        const double median = orderQuartile(values, 2);
+        const double q3 = orderQuartile(values, 3);
+        const double maxVal = orderQuartile(values, 4);
 
         vtkNew<vtkFloatArray> col;
         col->SetName(nameStorage.last().constData());
@@ -2392,178 +2999,175 @@ void vtkChartView::rebuildBoxChart(const QList<int>& selectedFields,
 }
 
 void vtkChartView::rebuildQuartileChart(const QList<int>& selectedFields,
-                                        unsigned sampleCount,
+                                        unsigned /*sampleCount*/,
                                         unsigned pointCount,
                                         const FieldValueFn& getFieldValue) {
     auto* xyChart = vtkChartXY::SafeDownCast(m_chart);
     if (!xyChart) return;
 
-    for (int si = 0; si < selectedFields.size(); ++si) {
-        int fi = selectedFields[si];
-        const QString& fieldName = m_fields[fi].name;
+    const bool useIndex = !m_useIndexXAxis || m_useIndexXAxis->isChecked();
+    const int xField = !useIndex && m_xArrayCombo
+                               ? m_xArrayCombo->currentData().toInt()
+                               : -1;
+    if (!useIndex && (xField < 0 || xField >= m_fields.size())) return;
+    const QString xName = useIndex ? tr("Source Index") : m_fields[xField].name;
 
-        std::vector<float> sortedValues;
-        sortedValues.reserve(pointCount);
-        for (unsigned i = 0; i < pointCount; ++i) {
-            sortedValues.push_back(getFieldValue(fi, i));
+    for (int fi : selectedFields) {
+        // Every source row contributes once, before any display sampling.
+        // Ordered groups and exact order statistics cost O(N log N), with O(N)
+        // observation storage per field (not a point-count x field-count
+        // cache).
+        std::map<double, std::vector<double>> groups;
+        for (unsigned id = 0; id < pointCount; ++id) {
+            const double x = useIndex ? static_cast<double>(id)
+                                      : getFieldValue(xField, id);
+            const double y = getFieldValue(fi, id);
+            if (std::isfinite(x) && std::isfinite(y)) groups[x].push_back(y);
         }
-        std::sort(sortedValues.begin(), sortedValues.end());
-        size_t sz = sortedValues.size();
-        if (sz == 0) continue;
+        if (groups.empty()) continue;
 
-        float q1 = sortedValues[sz / 4];
-        float median = sortedValues[sz / 2];
-        float q3 = sortedValues[3 * sz / 4];
-        float minVal = sortedValues.front();
-        float maxVal = sortedValues.back();
-
-        unsigned stride = m_sampleStride;
-        unsigned nSamples = (pointCount + stride - 1) / stride;
-
-        vtkNew<vtkTable> areaTable;
-        vtkNew<vtkFloatArray> xCol;
-        xCol->SetName("Index");
-        xCol->SetNumberOfTuples(nSamples);
-        vtkNew<vtkFloatArray> valCol;
-        QByteArray nameBytes = fieldName.toUtf8();
-        valCol->SetName(nameBytes.constData());
-        valCol->SetNumberOfTuples(nSamples);
-        vtkNew<vtkFloatArray> q1Col;
-        QByteArray q1Name = (fieldName + " Q1").toUtf8();
-        q1Col->SetName(q1Name.constData());
-        q1Col->SetNumberOfTuples(nSamples);
-        vtkNew<vtkFloatArray> q3Col;
-        QByteArray q3Name = (fieldName + " Q3").toUtf8();
-        q3Col->SetName(q3Name.constData());
-        q3Col->SetNumberOfTuples(nSamples);
-
-        for (unsigned s = 0; s < nSamples; ++s) {
-            unsigned ptIdx = s * stride;
-            xCol->SetValue(s, static_cast<float>(s));
-            valCol->SetValue(s, getFieldValue(fi, ptIdx));
-            q1Col->SetValue(s, q1);
-            q3Col->SetValue(s, q3);
+        vtkNew<vtkTable> table;
+        vtkNew<vtkDoubleArray> x;
+        // Internal X name cannot collide with a user field/statistic name.
+        x->SetName("__quartile_x");
+        table->AddColumn(x);
+        const QString name = m_fields[fi].name;
+        const QStringList roles{QStringLiteral("min"), QStringLiteral("q1"),
+                                QStringLiteral("med"), QStringLiteral("q3"),
+                                QStringLiteral("max"), QStringLiteral("avg"),
+                                QStringLiteral("sum")};
+        for (const auto& role : roles) {
+            vtkNew<vtkDoubleArray> column;
+            column->SetName((role + "(" + name + ")").toUtf8().constData());
+            table->AddColumn(column);
         }
-        areaTable->AddColumn(xCol);
-        areaTable->AddColumn(valCol);
-        areaTable->AddColumn(q1Col);
-        areaTable->AddColumn(q3Col);
-
-        QColor col = seriesColor(fi);
-        unsigned char r = col.red(), g = col.green(), b = col.blue();
-
-        auto* areaPlot =
-                vtkPlotArea::SafeDownCast(xyChart->AddPlot(vtkChart::AREA));
-        if (areaPlot) {
-            areaPlot->SetInputData(areaTable);
-            areaPlot->SetInputArray(0, "Index");
-            areaPlot->SetInputArray(1, q1Name.constData());
-            areaPlot->SetInputArray(2, q3Name.constData());
-            areaPlot->GetBrush()->SetColorF(col.redF(), col.greenF(),
-                                            col.blueF(), 0.3);
-            areaPlot->GetPen()->SetColorF(col.redF(), col.greenF(), col.blueF(),
-                                          0.6);
-            areaPlot->GetPen()->SetWidth(1.0);
+        for (auto& group : groups) {
+            auto& values = group.second;
+            std::sort(values.begin(), values.end());
+            x->InsertNextValue(group.first);
+            for (int k = 0; k <= 4; ++k)
+                vtkDoubleArray::SafeDownCast(table->GetColumn(k + 1))
+                        ->InsertNextValue(orderQuartile(values, k));
+            const double sum =
+                    std::accumulate(values.begin(), values.end(), 0.0);
+            vtkDoubleArray::SafeDownCast(table->GetColumn(6))
+                    ->InsertNextValue(sum / values.size());
+            vtkDoubleArray::SafeDownCast(table->GetColumn(7))
+                    ->InsertNextValue(sum);
         }
 
-        auto* medianPlot = xyChart->AddPlot(vtkChart::LINE);
-        if (medianPlot) {
-            vtkNew<vtkTable> medTable;
-            vtkNew<vtkFloatArray> mxCol;
-            mxCol->SetName("Index");
-            mxCol->SetNumberOfTuples(nSamples);
-            vtkNew<vtkFloatArray> myCol;
-            QByteArray medName = (fieldName + " median").toUtf8();
-            myCol->SetName(medName.constData());
-            myCol->SetNumberOfTuples(nSamples);
-            for (unsigned s = 0; s < nSamples; ++s) {
-                mxCol->SetValue(s, static_cast<float>(s));
-                myCol->SetValue(s, median);
-            }
-            medTable->AddColumn(mxCol);
-            medTable->AddColumn(myCol);
-            medianPlot->SetInputData(medTable, "Index", medName.constData());
-            medianPlot->SetColor(r, g, b, 255);
-            medianPlot->SetWidth(2.0);
+        const QColor color = seriesColor(fi);
+        for (int band = 0; band < 2; ++band) {
+            if (!quartileRoleVisible(band == 0 ? MinMaxBand : QuartileBand))
+                continue;
+            auto* area =
+                    vtkPlotArea::SafeDownCast(xyChart->AddPlot(vtkChart::AREA));
+            if (!area) continue;
+            area->SetInputData(table);
+            area->SetInputArray(0, x->GetName());
+            area->SetInputArray(1,
+                                table->GetColumn(band == 0 ? 1 : 2)->GetName());
+            area->SetInputArray(2,
+                                table->GetColumn(band == 0 ? 5 : 4)->GetName());
+            const double opacity = band == 0 ? 0.15 : 0.4;
+            area->GetBrush()->SetColorF(color.redF(), color.greenF(),
+                                        color.blueF(), opacity);
+            area->GetPen()->SetColorF(color.redF(), color.greenF(),
+                                      color.blueF(), opacity);
+            area->SetLegendVisibility(false);
         }
-
-        auto* dataPlot = xyChart->AddPlot(vtkChart::LINE);
-        if (dataPlot) {
-            dataPlot->SetInputData(areaTable, "Index", nameBytes.constData());
-            dataPlot->SetColor(r, g, b, 200);
-            dataPlot->SetWidth(1.5);
+        for (int index = Minimum; index <= Sum; ++index) {
+            if (!quartileRoleVisible(static_cast<QuartileRole>(index)))
+                continue;
+            auto* line =
+                    vtkPlotLine::SafeDownCast(xyChart->AddPlot(vtkChart::LINE));
+            if (!line) continue;
+            const char* column = table->GetColumn(index + 1)->GetName();
+            line->SetInputData(table, x->GetName(), column);
+            line->SetLabel(column);
+            line->SetColor(color.red(), color.green(), color.blue(), 255);
+            line->SetWidth(index == Median || index == Average ? 2.0 : 1.0);
+            line->GetPen()->SetLineType(index == Median ? vtkPen::SOLID_LINE
+                                                        : vtkPen::DASH_LINE);
+            // Each enabled statistic remains visible for a single X group.
+            line->SetMarkerStyle(vtkPlotPoints::CIRCLE);
         }
     }
+    xyChart->GetAxis(vtkAxis::BOTTOM)->SetTitle(xName.toStdString());
     xyChart->RecalculateBounds();
 }
 
-void vtkChartView::rebuildImageChart(const QList<int>& selectedFields,
-                                     unsigned /*sampleCount*/,
-                                     unsigned pointCount,
-                                     const FieldValueFn& getFieldValue) {
-    auto* histChart = vtkChartHistogram2D::SafeDownCast(m_chart);
-    if (!histChart || selectedFields.size() < 2) return;
+void vtkChartView::rebuildImageChart() {
+    auto* chart = vtkChartHistogram2D::SafeDownCast(m_chart);
+    if (!chart || !m_image || m_image->data().isNull()) return;
+    const auto selected = m_fieldList->selectedItems();
+    if (selected.isEmpty()) return;
+    const int component = m_fieldList->row(selected.front());
+    if (component < 0 || component >= m_fields.size()) return;
 
-    int xField = selectedFields[0];
-    int yField = selectedFields[1];
-    int colorField = selectedFields.size() > 2 ? selectedFields[2] : yField;
-
-    float xMin = std::numeric_limits<float>::max(),
-          xMax = std::numeric_limits<float>::lowest();
-    float yMin = xMin, yMax = xMax;
-    for (unsigned i = 0; i < pointCount; ++i) {
-        float xv = getFieldValue(xField, i);
-        float yv = getFieldValue(yField, i);
-        if (std::isfinite(xv)) {
-            xMin = std::min(xMin, xv);
-            xMax = std::max(xMax, xv);
+    const QImage& source = m_image->data();
+    vtkNew<vtkImageData> image;
+    double scalarMaximum = 255.0;
+    if (m_fields.size() == 1) {
+        int scalarType = VTK_UNSIGNED_CHAR;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
+        if (source.format() == QImage::Format_Grayscale16) {
+            scalarType = VTK_UNSIGNED_SHORT;
+            scalarMaximum = 65535.0;
         }
-        if (std::isfinite(yv)) {
-            yMin = std::min(yMin, yv);
-            yMax = std::max(yMax, yv);
-        }
+#endif
+        image->SetDimensions(source.width(), source.height(), 1);
+        image->AllocateScalars(scalarType, 1);
+        const size_t rowBytes =
+                static_cast<size_t>(source.width()) * image->GetScalarSize();
+        // Copy only pixels, not QImage scanline padding; retain 16-bit scalars.
+        for (int y = 0; y < source.height(); ++y)
+            std::copy_n(source.constScanLine(y), rowBytes,
+                        static_cast<unsigned char*>(image->GetScalarPointer(
+                                0, source.height() - 1 - y, 0)));
+    } else {
+        // Reuse the existing deep-copy converter for RGBA. No borrowed QImage
+        // pointer survives; Qt top-left rows become VTK bottom-left rows.
+        QImage pixels = source.convertToFormat(QImage::Format_ARGB32);
+        VtkUtils::qImageToVtkImage(pixels, image);
     }
-    if (xMin >= xMax || yMin >= yMax) return;
-
-    int bins = (m_binSpin ? m_binSpin->value() : 64);
-    if (bins < 4) bins = 64;
-
-    vtkNew<vtkImageData> imageData;
-    imageData->SetDimensions(bins, bins, 1);
-    imageData->SetSpacing((xMax - xMin) / bins, (yMax - yMin) / bins, 1.0);
-    imageData->SetOrigin(xMin, yMin, 0.0);
-    imageData->AllocateScalars(VTK_DOUBLE, 1);
-    double* pixels = static_cast<double*>(imageData->GetScalarPointer());
-    std::fill(pixels, pixels + bins * bins, 0.0);
-
-    for (unsigned i = 0; i < pointCount; ++i) {
-        float xv = getFieldValue(xField, i);
-        float yv = getFieldValue(yField, i);
-        if (!std::isfinite(xv) || !std::isfinite(yv)) continue;
-        int xi = static_cast<int>((xv - xMin) / (xMax - xMin) * (bins - 1));
-        int yi = static_cast<int>((yv - yMin) / (yMax - yMin) * (bins - 1));
-        xi = std::clamp(xi, 0, bins - 1);
-        yi = std::clamp(yi, 0, bins - 1);
-        if (colorField != yField) {
-            pixels[yi * bins + xi] += getFieldValue(colorField, i);
-        } else {
-            pixels[yi * bins + xi] += 1.0;
-        }
+    // ccImage exposes no physical origin/spacing. Its native coordinates are
+    // pixel indices; aspectRatio supplies the available non-square-pixel scale.
+    const double pixelWidth = m_image->getAspectRatio() * source.height() /
+                              static_cast<double>(source.width());
+    image->SetOrigin(0.0, 0.0, 0.0);
+    image->SetSpacing(
+            std::isfinite(pixelWidth) && pixelWidth > 0 ? pixelWidth : 1.0, 1.0,
+            1.0);
+    // Feed an actual scalar plane on every VTK version. Before 9.3 the
+    // histogram plot ignores LUT VectorComponent and assumes a stride of one.
+    if (image->GetNumberOfScalarComponents() > 1) {
+        vtkNew<vtkImageExtractComponents> channel;
+        channel->SetInputData(image);
+        channel->SetComponents(component);
+        channel->Update();
+        image->ShallowCopy(channel->GetOutput());
     }
-
-    histChart->SetInputData(imageData);
-
-    auto* xAxis = histChart->GetAxis(vtkAxis::BOTTOM);
-    auto* yAxis = histChart->GetAxis(vtkAxis::LEFT);
-    if (xAxis) {
-        xAxis->SetTitle(m_fields[xField].name.toStdString());
-        xAxis->SetRange(xMin, xMax);
-    }
-    if (yAxis) {
-        yAxis->SetTitle(m_fields[yField].name.toStdString());
-        yAxis->SetRange(yMin, yMax);
-    }
-    histChart->RecalculateBounds();
+    vtkNew<vtkLookupTable> colors;
+    colors->SetRange(0.0, scalarMaximum);
+    colors->SetHueRange(0.0, 0.0);
+    colors->SetSaturationRange(0.0, 0.0);
+    colors->SetValueRange(0.0, 1.0);
+    colors->SetVectorModeToComponent();
+    colors->SetVectorComponent(0);
+    colors->Build();
+    chart->SetTransferFunction(colors);
+    chart->SetInputData(image);
+    chart->SetVisible(true);
+    chart->GetAxis(vtkAxis::BOTTOM)->SetTitle("Pixel X");
+    chart->GetAxis(vtkAxis::LEFT)->SetTitle("Pixel Y");
+    if (m_chartTitleEdit && !m_chartTitleEdit->text().isEmpty())
+        chart->SetTitle(m_chartTitleEdit->text().toStdString());
+    chart->SetShowLegend(m_legendCheck->isChecked());
+    for (int i = 0; i < 2; ++i)
+        chart->GetAxis(i)->SetGridVisible(m_gridCheck->isChecked());
+    chart->RecalculateBounds();
+    onActiveAxisChanged(m_axisSelectCombo->currentIndex());
 }
 
 void vtkChartView::rebuildParallelCoordinates(
@@ -2619,8 +3223,7 @@ void vtkChartView::rebuildParallelCoordinates(
             255.0 * qBound(0.01, (double)opacity, 1.0));
     pcPlot->GetPen()->SetColor(0, 0, 0, alpha);
     pcPlot->GetPen()->SetWidth(lineWidth);
-    pcPlot->GetPen()->SetLineType(lineStyle > 0 ? lineStyle
-                                                : vtkPen::SOLID_LINE);
+    pcPlot->GetPen()->SetLineType(lineStyle);
 
     pcPlot->SetInputData(table);
     pcPlot->Modified();
@@ -2681,7 +3284,7 @@ void vtkChartView::rebuildPlotMatrix(const QList<int>& selectedFields,
         spm->SetColumnVisibility(nameStorage[si].constData(), true);
     }
 
-    spm->SetTitle("Plot Matrix");
+    spm->SetTitle(m_chartTitleEdit->text().toStdString());
     spm->GetTitleProperties()->SetColor(0.0, 0.0, 0.0);
     spm->SetGutter(vtkVector2f(20.0f, 20.0f));
 #if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 2, 0)

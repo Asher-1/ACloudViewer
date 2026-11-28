@@ -16,6 +16,7 @@
 #include <boost/variant/detail/substitute.hpp>
 #include <cstring>
 #include <fstream>
+#include <list>
 #include <map>
 #include <memory>
 #include <queue>

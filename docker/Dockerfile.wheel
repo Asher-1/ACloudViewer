@@ -13,6 +13,9 @@ ARG BUILD_PYTORCH_OPS
 ARG PACKAGE
 ARG QT_BASE_DIR
 ARG CI
+# Qt major version the whole image targets (5 or 6). Derived from the Ubuntu
+# codename in docker_build.sh: focal/jammy=5, noble(24.04)/resolute(26.04)=6.
+ARG QT_MAJOR=5
 
 RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
  && if [ -z "${CMAKE_VERSION}"        ]; then echo "Error: ARG CMAKE_VERSION        not specified."; exit 1; fi \
@@ -34,6 +37,7 @@ ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
 ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
 ENV PACKAGE=${PACKAGE}
 ENV QT_BASE_DIR=${QT_BASE_DIR}
+ENV QT_MAJOR=${QT_MAJOR}
 
 # Suppress CMake policy CMP0175 warning (add_custom_command(TARGET) DEPENDS
 # is deprecated; the translation build no longer uses it, but the old CMake
@@ -50,17 +54,6 @@ ENV TZ=America/Los_Angeles
 ENV SUDO=command
 
 SHELL ["/bin/bash", "-c"]
-
-# Fix Nvidia repo key rotation issue
-# https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
-# https://forums.developer.nvidia.com/t/18-04-cuda-docker-image-is-broken/212892/10
-# https://code.visualstudio.com/remote/advancedcontainers/reduce-docker-warnings#:~:text=Warning%3A%20apt%2Dkey%20output%20should,not%20running%20from%20a%20terminal.
-RUN if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then \
-        export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=DontWarn; \
-        apt-key del 7fa2af80; \
-        apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/3bf863cc.pub; \
-        apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/7fa2af80.pub; \
-    fi
 
 # Update apt and install libs needed by Qt
 # First install basic tools, then setup Kitware repo with proper key handling
@@ -110,8 +103,6 @@ RUN apt-get clean \
         libjpeg-dev \
         libpng-dev \
         libtiff-dev \
-        # for colmap
-        libatlas-base-dev \
         # for package
         zip \
         unzip \
@@ -147,16 +138,48 @@ RUN apt-get clean \
         libxcb-keysyms1 \
         libxcb-xinerama0 \
         libxkbcommon-x11-0 \
-        libxcb-render-util0
+        libxcb-render-util0 \
+    # for colmap: ATLAS was dropped from Ubuntu 26.04 (resolute); fall back to
+    # reference BLAS/LAPACK when the package has no installation candidate.
+    && if apt-cache policy libatlas-base-dev 2>/dev/null | grep -q 'Candidate: [0-9]'; then \
+        cloudviewer-apt-install -q libatlas-base-dev; \
+    else \
+        cloudviewer-apt-install -q libblas-dev liblapack-dev; \
+    fi
 
-# Install Qt5
-# Uses system default Qt5 packages (Qt 5.12+ on Ubuntu 20.04, Qt 5.15+ on Ubuntu 22.04+)
-# All versions meet the minimum requirement of Qt 5.12+
-RUN cloudviewer-apt-install -q \
-      libqt5svg5-dev libqt5opengl5-dev qtbase5-dev qttools5-dev qttools5-dev-tools qml-module-qtquick* \
-      libqt5websockets5-dev libqt5xmlpatterns5-dev libqt5x11extras5-dev qt5-image-formats-plugins \
-      qttranslations5-l10n qtdeclarative5-dev qtdeclarative5-dev-tools libqt5quickcontrols2-5 libqt5networkauth5-dev && \
+# Install Qt (major version selected by QT_MAJOR).
+# Qt5: system default Qt5 packages (Qt 5.12+ on Ubuntu 20.04, Qt 5.15+ on 22.04+).
+# Qt6: system Qt6 packages on Ubuntu 24.04+ (noble=6.4.2, resolute=6.10.2); the
+#      wheel build auto-detects Qt6 via qmake6 / Qt6Config.cmake
+#      (build_cloudviewer_whl.sh).
+RUN if [ "${QT_MAJOR}" = "6" ]; then \
+      cloudviewer-apt-install -q \
+        qt6-base-dev qt6-base-dev-tools qt6-declarative-dev qt6-svg-dev \
+        qt6-websockets-dev qt6-wayland-dev qt6-tools-dev qt6-shadertools-dev \
+        qml6-module-qtquick qml6-module-qtquick-controls qml6-module-qtquick-layouts \
+        qml6-module-qtquick-window qml6-module-qtqml-workerscript \
+        libqt6opengl6-dev libgl1-mesa-dev libglx-dev \
+      && echo 'export QT_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/qt6/plugins' > /etc/profile.d/qt6.sh; \
+    else \
+      cloudviewer-apt-install -q \
+        libqt5svg5-dev libqt5opengl5-dev qtbase5-dev qttools5-dev qttools5-dev-tools qml-module-qtquick* \
+        libqt5websockets5-dev libqt5xmlpatterns5-dev libqt5x11extras5-dev qt5-image-formats-plugins \
+        qttranslations5-l10n qtdeclarative5-dev qtdeclarative5-dev-tools libqt5quickcontrols2-5 libqt5networkauth5-dev; \
+    fi && \
     ldconfig && rm -rf /var/lib/apt/lists/*
+
+# CUDA 13 (the resolute/26.04 base image) supports host GCC up to 14, but
+# Ubuntu 26.04 defaults to gcc-15. Shadow the default compiler through
+# /usr/local/bin (ahead of /usr/bin in PATH) so CMake and nvcc both pick
+# gcc-14 without touching dpkg-managed symlinks. Other releases keep their
+# default toolchain (focal gcc-9, jammy gcc-11, noble gcc-13).
+RUN if [ "${BUILD_CUDA_MODULE}" = "ON" ] && [ "$(lsb_release -cs)" = "resolute" ]; then \
+        cloudviewer-apt-install -q gcc-14 g++-14 \
+        && ln -sf /usr/bin/gcc-14 /usr/local/bin/gcc \
+        && ln -sf /usr/bin/gcc-14 /usr/local/bin/cc \
+        && ln -sf /usr/bin/g++-14 /usr/local/bin/g++ \
+        && ln -sf /usr/bin/g++-14 /usr/local/bin/c++; \
+    fi
 
 CMD ["/bin/bash", "-c", "source /root/.bashrc && exec bash"]
 RUN echo "QT_BASE_DIR=${QT_BASE_DIR}"

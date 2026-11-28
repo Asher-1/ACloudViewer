@@ -1,42 +1,17 @@
-cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
-
-project(QMPLANE_PLUGIN_TESTS)
-
-add_executable(
-    QMPLANE_PLUGIN_TESTS 
-    
-    # Sources to be tested
-    ../src/ccItemTree.h
-    ../src/ccItemTree.cpp
-    ../src/ccMPlaneErrors.h
-    
-    # Testing sources
-    main.cpp
-    item_tree_test.cpp
-    mocks/ecvMainAppInterfaceMock.h
-    mocks/ccGenericGLDisplayMock.h
-)
-
-target_include_directories(QMPLANE_PLUGIN_TESTS PRIVATE ${EXTERNAL_TOOLS})
-target_include_directories(QMPLANE_PLUGIN_TESTS PRIVATE ../src/)
-
-target_include_directories( QMPLANE_PLUGIN_TESTS PRIVATE ${EXTERNAL_LIBS_INCLUDE_DIR} )
-
-target_include_directories( QMPLANE_PLUGIN_TESTS PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} )
-target_include_directories( QMPLANE_PLUGIN_TESTS PRIVATE ${CMAKE_CURRENT_BINARY_DIR} )
-target_include_directories( QMPLANE_PLUGIN_TESTS PRIVATE ${ACloudViewerPlugins_SOURCE_DIR} )
-target_include_directories( QMPLANE_PLUGIN_TESTS PRIVATE ${ACloudViewer_SOURCE_DIR}/../common )
-target_include_directories( QMPLANE_PLUGIN_TESTS PRIVATE ${CVCoreLib_SOURCE_DIR}/include )
-target_include_directories( QMPLANE_PLUGIN_TESTS PRIVATE ${CV_IO_LIB_SOURCE_DIR} )
-target_include_directories( QMPLANE_PLUGIN_TESTS PRIVATE ${CV_DB_LIB_SOURCE_DIR} )
-if( MSVC )
-    target_include_directories( QMPLANE_PLUGIN_TESTS PRIVATE ${CV_DB_LIB_SOURCE_DIR}/msvc )
+if(NOT TARGET 3rdparty_googletest OR NOT COMMAND cloudviewer_add_test)
+    message(FATAL_ERROR "qMPlane tests require the root testing configuration; enable BUILD_UNIT_TESTS")
 endif()
 
-target_link_libraries( QMPLANE_PLUGIN_TESTS CVCoreLib )
-target_link_libraries( QMPLANE_PLUGIN_TESTS CV_DB_LIB )
-target_link_libraries( QMPLANE_PLUGIN_TESTS CV_IO_LIB )
+cloudviewer_add_plugin_test(QMPLANE_PLUGIN_TESTS
+    SOURCES
+        ../src/ccItemTree.cpp
+        item_tree_test.cpp
+        mocks/ccMainAppInterfaceMock.h
+    INCLUDES ../src
+    LIBS
+        CVCoreLib CV_DB_LIB CV_IO_LIB CVPluginAPI
+        3rdparty_googletest gtest_main
+)
 
-cloudviewer_set_bin_runtime_output_directory(QMPLANE_PLUGIN_TESTS)
-
-install( TARGETS QMPLANE_PLUGIN_TESTS DESTINATION ${ACloudViewer_DEST_FOLDER})
+cloudviewer_add_test(NAME qMPlane.item_tree COMMAND QMPLANE_PLUGIN_TESTS)
+cloudviewer_set_plugin_test_env(qMPlane.item_tree)

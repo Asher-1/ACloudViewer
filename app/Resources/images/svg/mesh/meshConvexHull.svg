@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(0.1714,0.1714) scale(0.98571)">
+
+<title>Convex hull — tight outer boundary enclosing scattered points</title>
+  <path d="M 2 7 L 8 2 L 18 3 L 22 12 L 17 22 L 3 19 Z" fill="#D0E5F6" stroke="#6F6F59"/>  <path d="M 2 7 L 8 2 L 18 3 L 22 12 L 17 22 L 3 19 Z" fill="none" stroke="#4E8C2E" stroke-width="1.5"/>  <circle cx="2" cy="7" r="0.8" fill="#2896D3" stroke="#6F6F59"/>  <circle cx="8" cy="2" r="0.8" fill="#2896D3" stroke="#6F6F59"/>  <circle cx="18" cy="3" r="0.8" fill="#2896D3" stroke="#6F6F59"/>  <circle cx="22" cy="12" r="0.8" fill="#2896D3" stroke="#6F6F59"/>  <circle cx="17" cy="22" r="0.8" fill="#2896D3" stroke="#6F6F59"/>  <circle cx="3" cy="19" r="0.8" fill="#2896D3" stroke="#6F6F59"/>  <circle cx="7" cy="8" r="0.8" fill="#2896D3" stroke="#6F6F59"/>  <circle cx="10" cy="6" r="0.8" fill="#2896D3" stroke="#6F6F59"/>  <circle cx="8.5" cy="13" r="0.8" fill="#2896D3" stroke="#6F6F59"/>  <circle cx="7" cy="17" r="0.8" fill="#2896D3" stroke="#6F6F59"/>  <circle cx="13" cy="19" r="0.8" fill="#2896D3" stroke="#6F6F59"/>  <circle cx="16" cy="15" r="0.8" fill="#2896D3" stroke="#6F6F59"/>  <circle cx="19" cy="12" r="0.8" fill="#2896D3" stroke="#6F6F59"/>
+
+</g>
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.5877,-0.4845) scale(1.03178)">
+
+<defs><linearGradient id="folder" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#D0E5F6"/><stop offset="1.000" stop-color="#2896D3"/></linearGradient>
+<linearGradient id="add" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#A7D28C"/><stop offset="1.000" stop-color="#72BE44"/></linearGradient></defs>
+<title>Import data from file — folder plus</title>
+  <path d="M 4 2 H 15 L 19 6 V 20 H 4 Z" fill="#E0E0E0" stroke="#6F6F59"/>
+  <path d="M 15 2 V 6 H 19 Z" fill="#FAFAF6" stroke="#6F6F59"/>
+  <path d="M 2 6 H 8 L 10 8 H 18.5 V 21 H 2 Z" fill="url(#folder)" stroke="#6F6F59"/>
+  <circle cx="17.3" cy="17.1" r="5.2" fill="url(#add)" stroke="#6F6F59"/>
+  <path d="M 16.3 13.6 H 18.3 V 16.1 H 20.8 V 18.1 H 18.3 V 20.6 H 16.3 V 18.1 H 13.8 V 16.1 H 16.3 Z" fill="#FAFAF6" stroke="none"/>
+
+</g>
+</svg>

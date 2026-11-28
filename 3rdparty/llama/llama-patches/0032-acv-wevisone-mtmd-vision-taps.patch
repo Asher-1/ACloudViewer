@@ -1,0 +1,218 @@
+diff --git a/tools/mtmd/clip-graph.h b/tools/mtmd/clip-graph.h
+index 33e546b7..44a69ce1 100644
+--- a/tools/mtmd/clip-graph.h
++++ b/tools/mtmd/clip-graph.h
+@@ -48,6 +48,13 @@ struct clip_graph {
+     // TODO [QWEN_VIDEO]: improve this in the future
+     int n_batch = 1;
+ 
++    // WeVisOne: ViT blocks whose outputs must be captured by this graph
++    // (0-based indexes; null/empty disables the tap nodes entirely).
++    // The pixel decoder consumes the raw pre-merger block outputs, which the
++    // pooled scheduler memory would otherwise recycle before they can be
++    // read back.
++    const std::vector<int32_t> * wwv_tap_layers = nullptr;
++
+     ggml_context_ptr ctx0_ptr;
+     ggml_context * ctx0;
+     ggml_cgraph * gf;
+diff --git a/tools/mtmd/clip-impl.h b/tools/mtmd/clip-impl.h
+index 3d6c6f8c..422e1bb9 100644
+--- a/tools/mtmd/clip-impl.h
++++ b/tools/mtmd/clip-impl.h
+@@ -1135,3 +1135,8 @@ static void print_tensor_data(ggml_tensor * t, uint8_t * data, int64_t n) {
+ 
+ projector_type clip_get_projector_type(const struct clip_ctx * ctx);
+ void clip_set_debug_output_embeddings(struct clip_ctx * ctx, bool debug);
++
++// WeVisOne vision taps plumbing (clip_ctx is incomplete here; implemented in
++// clip.cpp over the per-context tap config and the read-back buffers)
++void clip_vision_taps_set(struct clip_ctx * ctx, const int32_t * layers, size_t n_layers);
++int32_t clip_vision_taps_copy(const struct clip_ctx * ctx, struct mtmd_vision_tap * out_taps, int32_t max_taps);
+diff --git a/tools/mtmd/clip.cpp b/tools/mtmd/clip.cpp
+index 4c1185a4..4785d70a 100644
+--- a/tools/mtmd/clip.cpp
++++ b/tools/mtmd/clip.cpp
+@@ -174,6 +174,19 @@ struct clip_ctx {
+ 
+     bool support_batch = false;
+ 
++    // WeVisOne: per-block vision taps (see wwv_tap_layers in clip-graph.h).
++    // Requested by the caller through the mtmd API; every vision encode
++    // captures the tap outputs into wwv_tap_out right after graph compute
++    // (valid until the next encode, mirroring mtmd_get_output_embd).
++    std::vector<int32_t> wwv_tap_layers;
++    struct wwv_vision_tap {
++        int32_t layer;      // the ViT block this tap captured
++        int64_t n_embd;     // channels per token
++        int64_t n_tokens;   // pre-merger token count
++        std::vector<float> data; // (n_embd, n_tokens) in the graph token order
++    };
++    std::vector<wwv_vision_tap> wwv_tap_out;
++
+     // for audio gen, reseeded only when the caller asks for another seed
+     std::mt19937 rng{std::random_device{}()};
+     uint32_t rng_seed = UINT32_MAX;
+@@ -263,6 +276,8 @@ clip_graph::clip_graph(clip_ctx * ctx, const clip_image_f32 & img) :
+         eps(hparams.eps),
+         kq_scale(d_head > 0 ? 1.0f / sqrtf((float)d_head) : 0.0f),
+         flash_attn_type(ctx->flash_attn_type) {
++    // WeVisOne: hand the requested tap list to the graph builder
++    wwv_tap_layers = ctx->wwv_tap_layers.empty() ? nullptr : &ctx->wwv_tap_layers;
+     struct ggml_init_params params = {
+         /*.mem_size   =*/ ctx->buf_compute_meta.size(),
+         /*.mem_buffer =*/ ctx->buf_compute_meta.data(),
+@@ -5979,6 +5994,30 @@ bool clip_encode(struct clip_ctx * ctx, struct clip_encode_params * params) {
+         }
+     }
+ 
++    // WeVisOne: read the requested per-block taps of this encode back into
++    // host buffers (must happen before the next encode resets the sched and
++    // recycles the tap leaves). Models that did not build the tap nodes
++    // (non-qwen3vl or taps disabled at build time) simply report none.
++    if (!ctx->wwv_tap_layers.empty()) {
++        ctx->wwv_tap_out.clear();
++        for (const int32_t layer : ctx->wwv_tap_layers) {
++            const std::string tap_name = string_format("wwv_tap_blk_%d", layer);
++            ggml_tensor * tap = ggml_graph_get_tensor(gf, tap_name.c_str());
++            if (tap == nullptr) {
++                LOG_WRN("%s: tap %s not in the graph (model has no tap nodes)\n",
++                        __func__, tap_name.c_str());
++                continue;
++            }
++            ctx->wwv_tap_out.push_back({});
++            auto & out_tap = ctx->wwv_tap_out.back();
++            out_tap.layer    = layer;
++            out_tap.n_embd   = tap->ne[0];
++            out_tap.n_tokens = tap->ne[1];
++            out_tap.data.resize(ggml_nelements(tap));
++            ggml_backend_tensor_get(tap, out_tap.data.data(), 0, ggml_nbytes(tap));
++        }
++    }
++
+     //
+     // for audio gen models
+     //
+@@ -6259,6 +6298,26 @@ projector_type clip_get_projector_type(const struct clip_ctx * ctx) {
+     return ctx->proj_type();
+ }
+ 
++void clip_vision_taps_set(struct clip_ctx * ctx, const int32_t * layers, size_t n_layers) {
++    if (n_layers > 0 && layers != nullptr) {
++        ctx->wwv_tap_layers.assign(layers, layers + n_layers);
++    } else {
++        ctx->wwv_tap_layers.clear();
++    }
++    ctx->wwv_tap_out.clear();
++}
++
++int32_t clip_vision_taps_copy(const struct clip_ctx * ctx, struct mtmd_vision_tap * out_taps, int32_t max_taps) {
++    const int32_t n = std::min<int32_t>(max_taps, (int32_t) ctx->wwv_tap_out.size());
++    for (int32_t i = 0; i < n; i++) {
++        out_taps[i].layer    = ctx->wwv_tap_out[i].layer;
++        out_taps[i].n_embd   = ctx->wwv_tap_out[i].n_embd;
++        out_taps[i].n_tokens = ctx->wwv_tap_out[i].n_tokens;
++        out_taps[i].data     = ctx->wwv_tap_out[i].data.data();
++    }
++    return n;
++}
++
+ const clip_hparams * clip_get_hparams(const struct clip_ctx * ctx) {
+     return &ctx->model.hparams;
+ }
+diff --git a/tools/mtmd/models/qwen3vl.cpp b/tools/mtmd/models/qwen3vl.cpp
+index 48626b22..f43191f6 100644
+--- a/tools/mtmd/models/qwen3vl.cpp
++++ b/tools/mtmd/models/qwen3vl.cpp
+@@ -140,6 +140,24 @@ ggml_cgraph * clip_graph_qwen3vl::build() {
+         cur = ggml_add(ctx0, inpL, cur);
+         cb(cur, "layer_out", il);
+ 
++        // WeVisOne: copy the raw pre-merger block output into a dedicated
++        // leaf for the requested tap layers. The pooled scheduler memory
++        // reuses interior buffers across ops, so a kept pointer to `cur`
++        // cannot be read back after compute; a cpy into a leaf that nothing
++        // else writes stays stable until the next encode. The cpy node is
++        // expanded into the graph so the dst gets a real buffer allocation.
++        if (wwv_tap_layers != nullptr) {
++            GGML_ASSERT(n_batch == 1 && "vision taps support single-frame encodes only");
++            for (size_t ti = 0; ti < wwv_tap_layers->size(); ti++) {
++                if ((*wwv_tap_layers)[ti] != il) {
++                    continue;
++                }
++                ggml_tensor * tap_dst = ggml_new_tensor_2d(ctx0, GGML_TYPE_F32, n_embd, cur->ne[1]);
++                ggml_format_name(tap_dst, "wwv_tap_blk_%d", il);
++                ggml_build_forward_expand(gf, ggml_cpy(ctx0, cur, tap_dst));
++            }
++        }
++
+         if (layer.has_deepstack()) {
+             ggml_tensor * feat = ggml_reshape_3d(ctx0, cur, n_embd * merge_factor, n_pos / merge_factor, batch_size);
+             feat = build_norm(feat, layer.deepstack_norm_w, layer.deepstack_norm_b, norm_t, eps, il);
+diff --git a/tools/mtmd/mtmd.cpp b/tools/mtmd/mtmd.cpp
+index 2fa02f83..6f37e543 100644
+--- a/tools/mtmd/mtmd.cpp
++++ b/tools/mtmd/mtmd.cpp
+@@ -2027,6 +2027,27 @@ float * mtmd_get_output_embd(mtmd_context * ctx) {
+     return ctx->out_embd.data();
+ }
+ 
++// WeVisOne: per-block vision taps (see mtmd.h for the contract)
++int32_t mtmd_vision_taps_configure(mtmd_context * ctx, const int32_t * layers, size_t n_layers) {
++    if (ctx == nullptr || ctx->ctx_v == nullptr) {
++        LOG_ERR("%s: no vision encoder in this context\n", __func__);
++        return 1;
++    }
++    if (n_layers > 0 && layers == nullptr) {
++        LOG_ERR("%s: layers is NULL but n_layers is %zu\n", __func__, n_layers);
++        return 1;
++    }
++    clip_vision_taps_set(ctx->ctx_v, layers, n_layers);
++    return 0;
++}
++
++int32_t mtmd_vision_taps_get(const mtmd_context * ctx, struct mtmd_vision_tap * out_taps, int32_t max_taps) {
++    if (ctx == nullptr || ctx->ctx_v == nullptr || out_taps == nullptr || max_taps <= 0) {
++        return 0;
++    }
++    return clip_vision_taps_copy(ctx->ctx_v, out_taps, max_taps);
++}
++
+ //
+ // audio generation
+ //
+diff --git a/tools/mtmd/mtmd.h b/tools/mtmd/mtmd.h
+index bcd76a9d..2a9c71e4 100644
+--- a/tools/mtmd/mtmd.h
++++ b/tools/mtmd/mtmd.h
+@@ -331,6 +331,30 @@ MTMD_API int32_t mtmd_encode_chunk(mtmd_context * ctx,
+ // llama_model_n_embd_inp(model) * mtmd_input_chunk_get_n_tokens(chunk) * sizeof(float)
+ MTMD_API float * mtmd_get_output_embd(mtmd_context * ctx);
+ 
++// WeVisOne: per-block hidden-state taps for the vision encoder.
++//
++// Select the ViT blocks whose raw pre-merger outputs must be captured by
++// every vision encode (each tap is a ggml_cpy into a dedicated leaf inside
++// the vision graph, so the pooled scheduler memory cannot recycle it).
++// Only single-frame image encodes are supported; with an audio-only mmproj
++// configure returns 1.
++struct mtmd_vision_tap {
++    int32_t layer;        // 0-based ViT block index of this tap
++    int64_t n_embd;       // channels per token (ne[0])
++    int64_t n_tokens;     // pre-merger token count (ne[1])
++    const float * data;   // (n_embd, n_tokens) in the graph token order
++};
++
++// choose which ViT block outputs are captured; n_layers == 0 disables.
++// layers may be NULL when n_layers == 0. returns 0 on success.
++MTMD_API int32_t mtmd_vision_taps_configure(mtmd_context * ctx, const int32_t * layers, size_t n_layers);
++
++// copy the taps of the last vision encode into out_taps (up to max_taps
++// entries) and return the number written (0 when taps are disabled or the
++// last encode carried no tap nodes). the data pointers stay valid until the
++// next vision encode or re-configure.
++MTMD_API int32_t mtmd_vision_taps_get(const mtmd_context * ctx, struct mtmd_vision_tap * out_taps, int32_t max_taps);
++
+ 
+ // batch encoding API
+ // chunks are not owned by the batch, they will not be freed by mtmd_batch_free()

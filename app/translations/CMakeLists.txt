@@ -5,7 +5,11 @@ if(USE_QT6)
 		find_package( Qt6 COMPONENTS LinguistTools REQUIRED )
     set( QT_PATH ${_qt6_linguisttools_install_prefix} )
     if( UNIX AND NOT APPLE )
-        set( QT_PATH "${QT_PATH}/share/qt6" )
+        # apt layout puts translations under share/qt6; the official
+        # installer / aqt layout keeps them directly under the prefix
+        if( EXISTS "${QT_PATH}/share/qt6/translations" )
+            set( QT_PATH "${QT_PATH}/share/qt6" )
+        endif()
     endif()
     # Create unified Qt::lconvert alias
     if(NOT TARGET Qt::lconvert)

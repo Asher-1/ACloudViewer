@@ -93,6 +93,8 @@ public:
                     std::string* emptiedGroup = nullptr);
     bool containsLeaf(const std::string& leafId) const;
     std::string groupOfLeaf(const std::string& leafId) const;
+    /// Borrowed current block, resolved through the existing leaf index.
+    vtkDataObject* leafBlock(const std::string& leafId) const;
 
     /// Reverse lookup for block picking: flat composite leaf index -> leaf id.
     std::string leafAtFlatIndex(const std::string& groupId,
@@ -107,6 +109,7 @@ public:
     /// Effective visibility of a block (composite display attributes +
     /// group default); CPU picking must skip invisible blocks.
     bool blockVisible(const std::string& groupId, vtkIdType flatIndex) const;
+    bool blockPickable(const std::string& groupId, vtkIdType flatIndex) const;
 
     /// Reverse lookup for picking: composite group actor -> group id (empty
     /// when the actor is not a group of this registry).

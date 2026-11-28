@@ -11,7 +11,6 @@
 #include "ecvCommandLineParser.h"
 #include "ecvPersistentSettings.h"
 #include "ecvSettingManager.h"
-#include "ecvUIManager.h"
 
 // CV_CORE_LIB
 #include <CPUInfo.h>
@@ -270,6 +269,11 @@ void InitEnvironment() {
 
     ecvSettingManager::Init(Settings::CONFIG_PATH);  // init setting manager for
                                                      // persistent settings
+    if (!ecvApp->isCommandLine() && !ecvApp->restoreAppearance()) {
+        CVLog::Warning(
+                "Could not restore the saved appearance; keeping the "
+                "platform default without a Custom overlay.");
+    }
     {  // restore some global parameters
         double maxAbsCoord =
                 ecvSettingManager::getValue(
@@ -689,9 +693,6 @@ int main(int argc, char* argv[]) {
     InitEnvironment();
 
     int result = 0;
-    // UI settings
-    QUIWidget* qui = nullptr;
-
     // command line mode
     if (commandLine) {
         // command line processing (no GUI)
@@ -713,55 +714,9 @@ int main(int argc, char* argv[]) {
         // Print system hardware information
         PrintSystemHardwareInfo();
 
-        if (Settings::UI_WRAPPER) {
-            // use UIManager instead
-            QUIWidget::setCode();
-            qui = new QUIWidget();
-            // set main weindow
-            mainWindow->setUiManager(qui);
-            qui->setMainWidget(mainWindow);
-
-            qui->setTitle(Settings::APP_TITLE);
-
-            // set align center - center the window title text
-            qui->setAlignment(Qt::AlignCenter);
-
-            // set dragable
-            qui->setSizeGripEnabled(true);
-
-            // set icon visibility
-            qui->setVisible(QUIWidget::Lab_Ico, true);
-            qui->setVisible(QUIWidget::BtnMenu, true);
-
-            // persistent Theme settings
-            QString qssfile =
-                    ecvSettingManager::getValue(ecvPS::ThemeSettings(),
-                                                ecvPS::CurrentTheme(),
-                                                Settings::DEFAULT_STYLE)
-                            .toString();
-            qui->setStyle(qssfile);
-
-            // qui.setIconMain(QChar(0xf099), 11);
-
-            qui->setPixmap(QUIWidget::Lab_Ico, Settings::APP_LOGO);
-            qui->setWindowIcon(QIcon(Settings::APP_LOGO));
-
-            qui->createTrayMenu();
-
-            qui->show();
-        } else {
-            // use default ui
-            mainWindow->setWindowIcon(QIcon(Settings::APP_LOGO));
-            mainWindow->setWindowTitle(Settings::APP_TITLE);
-            // persistent Theme settings
-            QString qssfile =
-                    ecvSettingManager::getValue(ecvPS::ThemeSettings(),
-                                                ecvPS::CurrentTheme(),
-                                                Settings::DEFAULT_STYLE)
-                            .toString();
-            MainWindow::ChangeStyle(qssfile);
-            mainWindow->show();
-        }
+        mainWindow->setWindowIcon(QIcon(Settings::APP_LOGO));
+        mainWindow->setWindowTitle(Settings::APP_TITLE);
+        mainWindow->show();
 
         // close start logo according timer
         QApplication::processEvents();
@@ -912,12 +867,6 @@ int main(int argc, char* argv[]) {
 
     // release setting manager
     ecvSettingManager::ReleaseInstance();
-
-    // release ui manager in this case
-    if (qui != nullptr) {
-        delete qui;
-        qui = nullptr;
-    }
 
 #ifdef CV_TRACK_ALIVE_SHARED_OBJECTS
     // for debug purposes

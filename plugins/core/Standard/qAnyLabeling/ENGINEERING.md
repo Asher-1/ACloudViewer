@@ -794,9 +794,25 @@ rows are listed in the "Open parity gap ledger" of
 require the named source checkout and its pinned ONNX assets and remain
 unpublished.
 
-All files in `images/` are copied unchanged from X-AnyLabeling-GGML commit
+`images/` carries only the icons the plugin actually resolves at runtime.
+Upstream-named files come from X-AnyLabeling-GGML commit
 `926017d09b22564a78c55eb2f368c7b20faa0466` and remain under that
-project's GPL-3.0-only license. See `UPSTREAM-LICENSE`. `AnnotationCuboid.h/.cpp`
+project's GPL-3.0-only license; upstream icons for features the plugin does
+not implement, and upstream icons the plugin never references, are
+intentionally absent. The twelve canvas-toggle/display-mode SVGs
+(`badge-percent.svg`, `component.svg`, `contrast.svg`, `layers.svg`,
+`link.svg`, `list-checks.svg`, `network.svg`, `ruler.svg`, `scan-text.svg`,
+`swatch-book.svg`, `tag.svg`, `tags.svg`) are plugin-owned artwork for the
+ported canvas controls, and `settings.svg` keeps the upstream artwork with
+its viewBox cropped to the glyph for small buttons. The chat provider logos
+(`alibaba.png`, `anthropic.png`, `deepseek.png`, `google.png`,
+`ollama.png`, `openai.png`, `openrouter.png`) are taken from the same
+pinned commit. Bundled `docs/` keeps the upstream documentation set as
+reference (these upstream guides describe the source application the port
+follows; plugin-specific gaps stay in this file and the parity audit), and
+`docs/images/` keeps the upstream
+`assets/resources` baselines used by the parity audit. See
+`UPSTREAM-LICENSE`. `AnnotationCuboid.h/.cpp`
 adapt the upstream image-cuboid interaction rules and carry the same license
 and source attribution. The configuration snapshot, label palette and reused
 upstream translations also retain their source attribution and GPL-3.0-only

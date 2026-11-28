@@ -28,7 +28,7 @@ if( PLUGIN_STANDARD_QOCR )
         Qt${QT_VERSION_MAJOR}::Widgets)
 
     find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets QUIET)
-    if(Qt${QT_VERSION_MAJOR}Widgets_FOUND)
+    if(BUILD_UNIT_TESTS AND Qt${QT_VERSION_MAJOR}Widgets_FOUND AND TARGET 3rdparty_googletest)
         # The workspace dialog is a Q_OBJECT class; make sure its moc is
         # generated for the standalone test target regardless of the
         # global automoc scope.
@@ -39,7 +39,8 @@ if( PLUGIN_STANDARD_QOCR )
         target_include_directories(test_qocr PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/include)
         target_link_libraries(test_qocr PRIVATE
-            Qt${QT_VERSION_MAJOR}::Widgets AICore CVPluginAPI)
+            Qt${QT_VERSION_MAJOR}::Widgets AICore CVPluginAPI
+            3rdparty_googletest)
         set_target_properties(test_qocr PROPERTIES
             POSITION_INDEPENDENT_CODE ON AUTOMOC ON)
         if(UNIX AND NOT APPLE)
@@ -47,8 +48,8 @@ if( PLUGIN_STANDARD_QOCR )
             target_link_options(test_qocr PRIVATE "-no-pie")
         endif()
         cloudviewer_set_bin_runtime_output_directory(test_qocr)
-        add_test(NAME test_qocr COMMAND test_qocr)
-        add_test(NAME test_qocr_e2e COMMAND test_qocr --require-e2e)
+        cloudviewer_add_test(NAME test_qocr COMMAND test_qocr)
+        cloudviewer_add_test(NAME test_qocr_e2e COMMAND test_qocr --require-e2e)
         # Relocated under bin/plugin_test/: Qt and the vendored libraries
         # reach it only indirectly (through AICore/CVPluginAPI), which the
         # executable's RUNPATH does not cover; the tests also construct a
@@ -56,39 +57,40 @@ if( PLUGIN_STANDARD_QOCR )
         cloudviewer_set_plugin_test_env_offscreen(test_qocr)
         cloudviewer_set_plugin_test_env_offscreen(test_qocr_e2e)
         set_tests_properties(test_qocr_e2e PROPERTIES
-                LABELS "e2e;ocr;table" SKIP_RETURN_CODE 77)
+                LABELS "model;e2e;ocr;table" SKIP_RETURN_CODE 77)
 
         # Cold-start evidence for the tables-mode shared test-data chain
         # (download -> digest verification -> extraction -> demo fill).
         # Needs the site proxy for the first download; skips honestly
         # without one.
-        if(TARGET 3rdparty_googletest)
-            set(CMAKE_AUTOMOC ON)
-            add_executable(test_qocr_testdata tests/test_qocr_testdata.cpp
-                src/OCRDialog.cpp src/OCRWorker.cpp
-                include/OCRDialog.h include/OCRWorker.h)
-            target_include_directories(test_qocr_testdata PRIVATE
-                ${CMAKE_CURRENT_SOURCE_DIR}/include)
-            find_package(Threads REQUIRED)
-            target_link_libraries(test_qocr_testdata PRIVATE
-                AICore
-                CVPluginAPI
-                3rdparty_googletest
-                Qt${QT_VERSION_MAJOR}::Core
-                Qt${QT_VERSION_MAJOR}::Gui
-                Qt${QT_VERSION_MAJOR}::Widgets
-                Qt${QT_VERSION_MAJOR}::Network
-                Threads::Threads)
-            if(NOT MSVC)
-                target_compile_options(test_qocr_testdata PRIVATE
-                    -Wall -Wextra -fPIC)
-                set_target_properties(test_qocr_testdata PROPERTIES
-                    POSITION_INDEPENDENT_CODE ON AUTOMOC ON)
+        set(CMAKE_AUTOMOC ON)
+        add_executable(test_qocr_testdata tests/test_qocr_testdata.cpp
+            src/OCRDialog.cpp src/OCRWorker.cpp
+            include/OCRDialog.h include/OCRWorker.h)
+        target_include_directories(test_qocr_testdata PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/include)
+        find_package(Threads REQUIRED)
+        target_link_libraries(test_qocr_testdata PRIVATE
+            AICore
+            CVPluginAPI
+            3rdparty_googletest
+            Qt${QT_VERSION_MAJOR}::Core
+            Qt${QT_VERSION_MAJOR}::Gui
+            Qt${QT_VERSION_MAJOR}::Widgets
+            Qt${QT_VERSION_MAJOR}::Network
+            Threads::Threads)
+        if(NOT MSVC)
+            target_compile_options(test_qocr_testdata PRIVATE
+                -Wall -Wextra -fPIC)
+            set_target_properties(test_qocr_testdata PROPERTIES
+                POSITION_INDEPENDENT_CODE ON AUTOMOC ON)
+            if(UNIX AND NOT APPLE)
                 target_link_options(test_qocr_testdata PRIVATE "-no-pie")
             endif()
-            cloudviewer_set_bin_runtime_output_directory(test_qocr_testdata)
-            add_test(NAME test_qocr_testdata COMMAND test_qocr_testdata)
-            cloudviewer_set_plugin_test_env(test_qocr_testdata)
         endif()
+        cloudviewer_set_bin_runtime_output_directory(test_qocr_testdata)
+        cloudviewer_add_test(NAME test_qocr_testdata COMMAND test_qocr_testdata)
+        set_property(TEST test_qocr_testdata APPEND PROPERTY LABELS "network")
+        cloudviewer_set_plugin_test_env(test_qocr_testdata)
     endif()
 endif()

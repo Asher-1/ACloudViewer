@@ -95,6 +95,7 @@ QList<QAction*> qSIBR::getActions() {
 
     if (!m_actionULR) {
         m_actionULR = new QAction(tr("ULR Viewer"), this);
+        m_actionULR->setObjectName("viewerUlr");
         m_actionULR->setToolTip(
                 tr("ULR (Unstructured Lumigraph Rendering) - "
                    "full IBR rendering pipeline"));
@@ -106,6 +107,7 @@ QList<QAction*> qSIBR::getActions() {
 
     if (!m_actionULRv2) {
         m_actionULRv2 = new QAction(tr("ULR v2/v3 Viewer"), this);
+        m_actionULRv2->setObjectName("viewerUlrV2");
         m_actionULRv2->setToolTip(
                 tr("ULR v2/v3 with texture arrays, masks and Poisson"));
         m_actionULRv2->setIcon(loadIcon("icon_ulrv2.svg"));
@@ -116,6 +118,7 @@ QList<QAction*> qSIBR::getActions() {
 
     if (!m_actionTexturedMesh) {
         m_actionTexturedMesh = new QAction(tr("Textured Mesh Viewer"), this);
+        m_actionTexturedMesh->setObjectName("viewerTexturedMesh");
         m_actionTexturedMesh->setToolTip(
                 tr("View textured meshes with scene debug"));
         m_actionTexturedMesh->setIcon(loadIcon("icon_textured_mesh.svg"));
@@ -126,6 +129,7 @@ QList<QAction*> qSIBR::getActions() {
 
     if (!m_actionPointBased) {
         m_actionPointBased = new QAction(tr("Point-Based Viewer"), this);
+        m_actionPointBased->setObjectName("viewerPointBased");
         m_actionPointBased->setToolTip(
                 tr("View point clouds with point-based rendering"));
         m_actionPointBased->setIcon(loadIcon("icon_point_based.svg"));
@@ -138,6 +142,7 @@ QList<QAction*> qSIBR::getActions() {
     if (!m_actionGaussian) {
         m_actionGaussian =
                 new QAction(tr("3D Gaussian Splatting Viewer"), this);
+        m_actionGaussian->setObjectName("viewerGaussian");
         m_actionGaussian->setToolTip(
                 tr("Real-time 3D Gaussian Splatting viewer (CUDA)"));
         m_actionGaussian->setIcon(loadIcon("icon_gaussian.svg"));
@@ -151,6 +156,7 @@ QList<QAction*> qSIBR::getActions() {
     if (!m_actionRemoteGaussian) {
         m_actionRemoteGaussian =
                 new QAction(tr("Remote Gaussian Viewer"), this);
+        m_actionRemoteGaussian->setObjectName("viewerRemoteGaussian");
         m_actionRemoteGaussian->setToolTip(
                 tr("Connect to remote Gaussian Splatting training server"));
         m_actionRemoteGaussian->setIcon(loadIcon("icon_remote.svg"));
@@ -162,6 +168,7 @@ QList<QAction*> qSIBR::getActions() {
 
     if (!m_actionQuickView) {
         m_actionQuickView = new QAction(tr("Quick View in SIBR"), this);
+        m_actionQuickView->setObjectName("quickView");
         m_actionQuickView->setToolTip(
                 tr("Auto-detect and open selected entity in the "
                    "best-matching SIBR viewer"));
@@ -174,38 +181,40 @@ QList<QAction*> qSIBR::getActions() {
 
     if (!m_actionDatasetTools) {
         m_actionDatasetTools = new QAction(tr("Dataset Tools"), this);
+        m_actionDatasetTools->setObjectName("datasetTools");
         m_actionDatasetTools->setToolTip(tr("SIBR dataset preprocessing"));
         m_actionDatasetTools->setIcon(loadIcon("icon_tools.svg"));
 
         m_datasetToolsMenu = new QMenu();
 
-        auto addTool = [this](const QString& name, const QString& tooltip,
-                              void (qSIBR::*slot)()) {
+        auto addTool = [this](const QString& id, const QString& name,
+                              const QString& tooltip, void (qSIBR::*slot)()) {
             QAction* action = m_datasetToolsMenu->addAction(name);
+            action->setObjectName(id);
             action->setToolTip(tooltip);
             connect(action, &QAction::triggered, this, slot);
         };
 
-        addTool(tr("Prepare COLMAP for SIBR"),
+        addTool("prepareColmap", tr("Prepare COLMAP for SIBR"),
                 tr("Prepare COLMAP reconstruction"),
                 &qSIBR::launchPrepareColmap4Sibr);
-        addTool(tr("Tonemapper"), tr("Tonemap HDR images"),
+        addTool("tonemap", tr("Tonemapper"), tr("Tonemap HDR images"),
                 &qSIBR::launchTonemapper);
-        addTool(tr("Unwrap Mesh"), tr("Unwrap mesh UVs"),
+        addTool("unwrapMesh", tr("Unwrap Mesh"), tr("Unwrap mesh UVs"),
                 &qSIBR::launchUnwrapMesh);
-        addTool(tr("Texture Mesh"), tr("Apply textures to mesh"),
+        addTool("textureMesh", tr("Texture Mesh"), tr("Apply textures to mesh"),
                 &qSIBR::launchTextureMesh);
-        addTool(tr("Clipping Planes"), tr("Set clipping planes"),
-                &qSIBR::launchClippingPlanes);
-        addTool(tr("Crop From Center"), tr("Crop images from center"),
-                &qSIBR::launchCropFromCenter);
-        addTool(tr("NVM to SIBR"), tr("Convert NVM to SIBR"),
+        addTool("clippingPlanes", tr("Clipping Planes"),
+                tr("Set clipping planes"), &qSIBR::launchClippingPlanes);
+        addTool("cropFromCenter", tr("Crop From Center"),
+                tr("Crop images from center"), &qSIBR::launchCropFromCenter);
+        addTool("nvmToSibr", tr("NVM to SIBR"), tr("Convert NVM to SIBR"),
                 &qSIBR::launchNvmToSIBR);
-        addTool(tr("Distortion Crop"), tr("Crop distorted regions"),
-                &qSIBR::launchDistordCrop);
-        addTool(tr("Camera Converter"), tr("Convert camera formats"),
-                &qSIBR::launchCameraConverter);
-        addTool(tr("Align Meshes"), tr("Align meshes"),
+        addTool("distortionCrop", tr("Distortion Crop"),
+                tr("Crop distorted regions"), &qSIBR::launchDistordCrop);
+        addTool("cameraConverter", tr("Camera Converter"),
+                tr("Convert camera formats"), &qSIBR::launchCameraConverter);
+        addTool("alignMeshes", tr("Align Meshes"), tr("Align meshes"),
                 &qSIBR::launchAlignMeshes);
 
         m_actionDatasetTools->setMenu(m_datasetToolsMenu);

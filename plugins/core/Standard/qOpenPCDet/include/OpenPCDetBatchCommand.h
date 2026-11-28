@@ -40,9 +40,9 @@ struct CommandOpenPCDetDetect : public ccCommandLineInterface::Command {
     static const ecvAICoreBatch::OptionTable& options() {
         static const ecvAICoreBatch::OptionTable table = {
                 {"SCORE_THRESH", "float", "0",
-                 "Score threshold override (0 = keep GGUF value)"},
+                 "Score threshold override (0 = per-model task default)"},
                 {"NMS_THRESH", "float", "0",
-                 "Rotated NMS IoU override (0 = keep GGUF value)"},
+                 "Rotated NMS IoU override (0 = keep task default)"},
                 {"MAX_BOXES", "int", "0",
                  "Maximum returned boxes (0 = keep GGUF value)"},
         };

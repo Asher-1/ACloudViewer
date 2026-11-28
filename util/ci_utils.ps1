@@ -637,6 +637,7 @@ function Build-GuiApp {
         "-DPLUGIN_STANDARD_QOPENPCDET=ON",
         "-DPLUGIN_STANDARD_QINSTANTMESH=ON",
         "-DPLUGIN_STANDARD_QVLXSEEK=ON",
+        "-DPLUGIN_STANDARD_QWEVISONE=ON",
         "-DPLUGIN_STANDARD_QQUERYSPLAT=ON",
         "-DPLUGIN_PYTHON=ON",
         "-DBUILD_PYTHON_MODULE=ON",
@@ -682,18 +683,6 @@ function Build-GuiApp {
     if ($LASTEXITCODE -ne 0) {
         Pop-Location
         throw "cmake --build failed with exit code $LASTEXITCODE"
-    }
-
-    # The aicore-contract-tests target only exists when AICore tests are built
-    # (core/AICore/CMakeLists.txt guards add_subdirectory(tests)).
-    if ($AICORE_BUILD_TESTS -eq "ON") {
-        Invoke-CMakeStage -Name "app-$BUILD_CUDA_MODULE-contract-tests" -CMakeArgs @("--build", ".", "--target", "aicore-contract-tests", "--config", "Release", "--parallel", "$env:NPROC")
-        if ($LASTEXITCODE -ne 0) {
-            Pop-Location
-            throw "AICore contract tests failed with exit code $LASTEXITCODE"
-        }
-    } else {
-        Write-Host "Skipping AICore contract tests (AICore_BUILD_TESTS=$AICORE_BUILD_TESTS)"
     }
 
     Invoke-CMakeStage -Name "app-$BUILD_CUDA_MODULE-install-and-package" -CMakeArgs @("--install", ".", "--config", "Release", "--verbose")
@@ -1110,138 +1099,89 @@ function Run-PythonTests {
     return $pytestResult
 }
 
-function Run-QPythonRuntimeNativeTests {
-    param ([string]$BuildDir, [string]$Config = "Release")
-    $cache = Join-Path $BuildDir "CMakeCache.txt"
-    if (-not (Test-Path $cache)) {
-        throw "qPythonRuntime: CMake cache not found at $cache"
+function Install-MesaSoftwareGL {
+    param ([string]$Destination)
+    # Headless Windows runners expose no GPU OpenGL 3.2, so VTK Render() in the
+    # hardware-selection tests access-violates. Deploy a pinned Mesa3D llvmpipe
+    # opengl32.dll (+ its sole dependency libgallium_wgl.dll) next to the test
+    # binaries. The import closure was verified: opengl32.dll -> libgallium_wgl.dll
+    # -> system DLLs only; the d3d12 compiler DLLs are not needed for llvmpipe.
+    $version = "26.3.1"
+    $sha256 = "64e84cf13d67dd354640bf443ed0445e6a83afd06a5729f0750b3744d633b3f1"
+    $url = "https://github.com/pal1000/mesa-dist-win/releases/download/$version/mesa3d-$version-release-msvc.7z"
+    $gl = Join-Path $Destination "opengl32.dll"
+    $gallium = Join-Path $Destination "libgallium_wgl.dll"
+    if ((Test-Path $gl) -and (Test-Path $gallium)) { return }
+    $cacheRoot = if ($env:ACLOUDVIEWER_LOCAL_ROOT) { $env:ACLOUDVIEWER_LOCAL_ROOT } else { Join-Path $env:LOCALAPPDATA "acloudviewer" }
+    $cache = Join-Path $cacheRoot "mesa-$version"
+    New-Item -ItemType Directory -Force -Path $cache | Out-Null
+    $archive = Join-Path $cache "mesa3d-$version-release-msvc.7z"
+    if (-not (Test-Path $archive)) {
+        Write-Host "Downloading Mesa3D $version software OpenGL"
+        Invoke-WebRequest -Uri $url -OutFile $archive -UseBasicParsing
     }
-    $settings = Get-Content $cache
-    if (-not ($settings -match '^PLUGIN_PYTHON:BOOL=(ON|TRUE|1)$') -or
-        -not ($settings -match '^BUILD_PYTHON_MODULE:BOOL=(ON|TRUE|1)$') -or
-        -not ($settings -match '^BUILD_UNIT_TESTS:BOOL=(ON|TRUE|1)$')) {
-        Write-Host "qPythonRuntime: plugin, Python modules or unit tests disabled in this build"
-        return
-    }
-    $pattern = '^test_qpythonruntime_(binding_types|plugin_loading)$'
-    $listing = & ctest --test-dir $BuildDir -C $Config --show-only=json-v1 -R $pattern
-    if ($LASTEXITCODE -ne 0) { throw "qPythonRuntime: cannot enumerate CTest registrations" }
-    $names = (($listing -join "`n") | ConvertFrom-Json).tests.name
-    foreach ($name in @("test_qpythonruntime_binding_types", "test_qpythonruntime_plugin_loading")) {
-        if ($name -notin $names) { throw "qPythonRuntime: missing CTest registration: $name" }
-    }
-    & ctest --test-dir $BuildDir -C $Config -R $pattern --no-tests=error --output-on-failure -j1
-    if ($LASTEXITCODE -ne 0) { throw "qPythonRuntime: native CTest gate failed" }
+    $hash = (Get-FileHash -Algorithm SHA256 $archive).Hash.ToLower()
+    if ($hash -ne $sha256) { throw "Mesa3D archive SHA-256 mismatch: $hash" }
+    $sevenZip = "C:\Program Files\7-Zip\7z.exe"
+    if (-not (Test-Path $sevenZip)) { $sevenZip = (Get-Command 7z -ErrorAction SilentlyContinue).Source }
+    if (-not $sevenZip) { throw "7-Zip not found for Mesa3D extraction" }
+    & $sevenZip x -y "-o$cache" $archive x64/opengl32.dll x64/libgallium_wgl.dll | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Mesa3D extraction failed" }
+    New-Item -ItemType Directory -Force -Path $Destination | Out-Null
+    Copy-Item (Join-Path $cache "x64/opengl32.dll") $gl -Force
+    Copy-Item (Join-Path $cache "x64/libgallium_wgl.dll") $gallium -Force
 }
 
 function Run-CppUnitTests {
-    param (
-        [Parameter(Mandatory=$false)]
-        [string]$Config = "Release",
-        # gtest exclude filter appended to --gtest_shuffle when LOW_MEM_USAGE
-        # is not set (the Windows CI lane passes the ReduceSum64bit2D cases;
-        # LOW_MEM_USAGE keeps its broader -*Reduce*Sum* rule and wins).
-        [Parameter(Mandatory=$false)]
-        [string]$GtestExclude = ""
-    )
-
-    Write-Host "======================================================================"
-    Write-Host "Running C++ Unit Tests"
-    Write-Host "======================================================================"
-    
-    $originalLocation = Get-Location
+    param ([string]$Config = "Release", [string]$GtestExclude = "")
     $buildDir = Join-Path $CLOUDVIEWER_SOURCE_ROOT "build"
-    
-    if (-not (Test-Path $buildDir)) {
-        Write-Host "Error: build directory not found at $buildDir"
-        Write-Host "Please build the project first"
-        throw "Run-CppUnitTests: build directory not found at $buildDir"
-    }
-    
-    Push-Location $buildDir
-    
-    # Check if tests executable exists. Two layouts exist depending on the
-    # generator: multi-config generators (Ninja Multi-Config on the CI, MSVC)
-    # honor the per-config RUNTIME_OUTPUT_DIRECTORY_<CONFIG> set by
-    # libs/CVViewer/tests/CMakeLists.txt -> bin/cloudviewer_test/<Config>/,
-    # while single-config Makefile/Ninja trees with a generic
-    # RUNTIME_OUTPUT_DIRECTORY land at bin/<Config>/. Probe both so the test
-    # step cannot go silently green just because it looked in the wrong
-    # directory (a bare `return 1` does not set $LASTEXITCODE, so callers
-    # comparing $LASTEXITCODE never saw the failure).
-    $testExe = @(
-        (Join-Path $buildDir "bin\cloudviewer_test\$Config\tests.exe"),
-        (Join-Path $buildDir "bin\$Config\tests.exe")
-    ) | Where-Object { Test-Path $_ } | Select-Object -First 1
-    if (-not $testExe) {
-        Write-Host "Error: tests executable not found (probed:"
-        Write-Host "  bin\cloudviewer_test\$Config\tests.exe"
-        Write-Host "  bin\$Config\tests.exe )"
-        Write-Host "Please build with -DBUILD_UNIT_TESTS=ON"
-        Pop-Location
-        throw "Run-CppUnitTests: tests executable not found for config '$Config'"
-    }
-    Write-Host "Tests executable: $testExe"
-
-    # tests.exe lives under bin\cloudviewer_test\ (or bin\<Config>\) but the
-    # shared DLLs are centralized in bin\<CONFIG>\; Windows has no RPATH, so
-    # prepend the DLL directory before launching.
-    $dllDir = Join-Path $buildDir "bin\$Config"
-    if (Test-Path $dllDir) {
-        $env:PATH = "$dllDir;$env:PATH"
-    }
-
-    # Set test flags
-    $unitTestFlags = @("--gtest_shuffle")
-    if ($env:LOW_MEM_USAGE -eq "ON") {
-        $unitTestFlags += "--gtest_filter=-*Reduce*Sum*"
-    } elseif ($GtestExclude) {
-        $unitTestFlags += "--gtest_filter=-$GtestExclude"
-    }
-    
-    $flagsString = $unitTestFlags -join " "
-    Write-Host "Test flags: $flagsString"
-    Write-Host "Tip: Run '$testExe $flagsString --gtest_random_seed=SEED' to repeat this test sequence."
-    Write-Host ""
-    
-    # Run the tests
-    & $testExe $unitTestFlags
-    $testResult = $LASTEXITCODE
-    
-    Write-Host ""
-    if ($testResult -eq 0) {
-        Write-Host "======================================================================"
-        Write-Host "C++ Unit Tests: PASSED"
-        Write-Host "======================================================================"
-    } else {
-        Write-Host "======================================================================"
-        Write-Host "C++ Unit Tests: FAILED (exit code: $testResult)"
-        Write-Host "======================================================================"
-    }
-    
-    # Standalone foundation portability executables (test_filesystem /
-    # test_parallel / test_host_parallel — Unicode I/O and host loop
-    # fallbacks, outside tests.exe and the AICore C ABI selection). Part of
-    # this entry unconditionally: core/tests registers them under
-    # BUILD_UNIT_TESTS, which every caller of this function enables. Same
-    # ordering and stop-on-failure semantics as the consolidated workflow
-    # step: a failure here skips the qPythonRuntime chain below.
-    if ($testResult -eq 0) {
-        Write-Host "Running foundation portability tests (test_filesystem / test_parallel / test_host_parallel)..."
-        & ctest --test-dir $buildDir -C $Config -R '^test_(filesystem|parallel|host_parallel)$' --no-tests=error --output-on-failure -j1
-        $testResult = $LASTEXITCODE
-        if ($testResult -eq 0) {
-            Write-Host "Foundation portability tests: PASSED"
-        } else {
-            Write-Host "Foundation portability tests: FAILED (exit code: $testResult)"
+    $entry = Join-Path $CLOUDVIEWER_SOURCE_ROOT "tests/Run.cmake"
+    $previousFilter = $env:GTEST_FILTER
+    $previousShuffle = $env:GTEST_SHUFFLE
+    $previousTmp = $env:TMP
+    $previousTemp = $env:TEMP
+    $previousGallium = $env:GALLIUM_DRIVER
+    try {
+        # GitHub runners expose TMP as an 8.3 short path (RUNNER~1). Python's
+        # Path.resolve() expands it to the long form, so tempfile-based contract
+        # tests mismatch their own expectations. Normalize TMP/TEMP to the long
+        # path once so every child process agrees on a single spelling.
+        $fso = New-Object -ComObject Scripting.FileSystemObject
+        if ($env:TMP) { $env:TMP = $fso.GetFolder($env:TMP).Path }
+        if ($env:TEMP) { $env:TEMP = $fso.GetFolder($env:TEMP).Path }
+        # The unified gate includes Python contract tests; provide their declared
+        # dependencies with the same interpreter CMake configured. torch comes
+        # from the CPU index to avoid the multi-GB CUDA wheel on this CPU cell.
+        $py = "python"
+        $cacheFile = Join-Path $buildDir "CMakeCache.txt"
+        if (Test-Path $cacheFile) {
+            $m = Select-String -Path $cacheFile -Pattern '^Python3_EXECUTABLE:FILEPATH=(.+)$' | Select-Object -First 1
+            if ($m) { $py = $m.Matches[0].Groups[1].Value }
         }
+        & $py -m pip install -r (Join-Path $CLOUDVIEWER_SOURCE_ROOT "python/requirements_test.txt")
+        if ($LASTEXITCODE -ne 0) { throw "Python test dependency install failed" }
+        & $py -m pip install "torch==$TORCH_VER" --index-url https://download.pytorch.org/whl/cpu
+        if ($LASTEXITCODE -ne 0) { throw "torch CPU install failed" }
+        # The Render()-exercising regression tests live in bin/plugin_test/<cfg>
+        # (cloudviewer_set_bin_runtime_output_directory); opengl32.dll must sit
+        # next to the test executable to win the loader search.
+        Install-MesaSoftwareGL -Destination (Join-Path $buildDir "bin/plugin_test/$Config")
+        $env:GALLIUM_DRIVER = "llvmpipe"
+        if (-not $env:GTEST_SHUFFLE) { $env:GTEST_SHUFFLE = "1" }
+        if ($env:LOW_MEM_USAGE -eq "ON") {
+            $env:GTEST_FILTER = "-*Reduce*Sum*"
+        } elseif ($GtestExclude) {
+            $env:GTEST_FILTER = "-$GtestExclude"
+        }
+        & cmake "-DBUILD_DIR=$buildDir" "-DCONFIG=$Config" -P $entry
+        if ($LASTEXITCODE -ne 0) { throw "Unified C++ test gate failed" }
+    } finally {
+        $env:GTEST_FILTER = $previousFilter
+        $env:GTEST_SHUFFLE = $previousShuffle
+        $env:TMP = $previousTmp
+        $env:TEMP = $previousTemp
+        $env:GALLIUM_DRIVER = $previousGallium
     }
-
-    Pop-Location
-    if ($testResult -eq 0) {
-        Run-QPythonRuntimeNativeTests -BuildDir $buildDir -Config $Config
-    }
-    return $testResult
 }
 
 function Run-AllTests {

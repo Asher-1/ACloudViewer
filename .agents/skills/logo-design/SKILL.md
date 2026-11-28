@@ -1,225 +1,133 @@
 ---
 name: logo-design
-description: Professional logo and brand-mark design, from brief to production files. Guides discovery and the design brief, concept generation, choosing a mark type (wordmark, monogram, letterform, pictorial, abstract, emblem, mascot, combination), building clean geometric SVG logos, optical refinement, colour and typography, testing (16 px, one-colour, reversed, shelf test), client presentation, delivery variants and brand guidelines. Includes a searchable catalog of 1,400+ real-world logo analyses (mark type, technique, geometry, colour, industry, complexity) for research and category conventions, plus scripts that audit SVGs and generate test sheets, presentation boards and export variants. Use this skill whenever the user wants a logo, logotype, wordmark, monogram, brand mark, symbol, app icon or favicon designed, redesigned, refreshed, critiqued or compared; asks for logo ideas or concepts; needs a design brief, logo guidelines, lockups or an identity system; or mentions branding a new company, product, app or project — even if they don't say the word "logo".
+description: It designs, redesigns, critiques and compares logos, wordmarks, monograms, app icons and favicons, and audits or restyles functional graphics when users ask for branding, ParaView-style toolbar icons, AICore icon batches, DB Tree branch migration, Qt QRC or SVG loading checks, or Qt Widgets appearance audits such as Fusion/Windows versus Custom, Display Options rollback, QSS warnings and HiDPI verification.
 ---
 
 # Logo Design
 
-You are acting as a senior identity designer. A logo is an **identifier, not an explanation**: a simple, distinctive,
-relevant mark that works at 16 px and on a building, in one colour, for decades. Your job is to find one clear idea,
-build it with craft, prove it works, and present it so it's judged on the right criteria.
+A brand logo identifies an organisation in a distinctive, relevant form that works at 16 px, at signage scale and in one colour. A functional icon communicates an operation and distinguishes it from neighbouring actions. Functional diagrams, familiar conventions and meaningful colour are welcome in that mode. Reply in the user's language with real files and concise rationale.
 
-Reply in the user's language. Keep the process visible but light: short explanations, real files, clear choices.
+## Steps
 
-## Pick the mode
+1. **Route the request.** Use the mode table below. For functional artwork, read [Functional icons and resource closure](<references/functional-toolbar-icons.md>) and [Toolbar icon restyling](<references/toolbar-icon-restyling.md>), then follow the applicable [verification workflow](<references/functional-icon-verification.md>). For AICore batches, DB Tree local migration or shared reconstruction media, also read [ACloudViewer resource cases](<references/acloudviewer-resource-cases.md>). For shared Qt style or settings work, follow [Qt appearance audit and acceptance](<references/qt-appearance-audit.md>). Use the brand phases only for brand design and redesign.
+2. **Establish scope and evidence.** For brands, write the brief. For functional icons, trace each UI action to implementation, capture original/previous art and original lettering, inventory physical files and effective QRC URLs, trace static and dynamic consumers, and hash approved and out-of-scope assets. Assign stable IDs before drawing or moving anything. For camera views, trace action → enum → camera transform and record the camera side, visible and highlighted faces, and old/new URL per row. For appearance audits, fingerprint production files and trace startup, menus and Display Options to the actual appearance owner before proposing changes.
+3. **Build within the agreed scope.** Preserve verified functional lettering as paths. Add abbreviations only when useful. Keep plugin assets and QRC local, resolve app behaviour with the plugin absent, and close all changed consumers and generators. For ParaView restore or migration, verify upstream semantics and keep qualified SVGs byte-identical. Reconstruct bitmap-only designs as true vectors. For zoom defects, replace only confirmed targets in place and make earlier migrations preserve the canonical repaired bytes on rerun. Keep DB Tree decoration scoped to `dbTreeView` and reserve shared custom styling for explicit Custom mode.
+4. **Render and verify.** Resolve bundled scripts against the skill directory. Run `python3 "$skill_dir/scripts/render_png.py" --which` to discover renderers and render functional comparisons directly at 16/24/32/48 px on light and dark backgrounds. Use the [raster checks](<references/functional-icon-verification.md#comparison-and-raster-checks>) when image input is unavailable. For Qt work, use the configured build's `rcc`, `uic` and runtime, probe actual resource loading and compile affected UI. For intrinsic dimension changes, test direct decode and requested-size widget paths before installation. Measure size-only and artwork changes against separate baselines when requested. See [Qt default dimensions and installation](<references/functional-icon-verification.md#qt-default-dimensions-and-installation>). For shared appearance, run the real-owner settings probe and full preset matrix with strict Qt-message gates and fresh outputs. [Commands and matrix](<references/qt-appearance-audit.md#configured-build-and-runners>).
+5. **Deliver the relevant checkpoint.** Brand design/redesign stops at concept presentation before the kit. Functional artwork delivers fixed-ID overview, per-item/group comparisons, actual-size previews and a ledger. Rework shows original/previous/new. Mark pending visual review explicitly when image inspection is unavailable. If the user has already approved a specific functional draft and requested installation, verify its identity and install that artwork within scope. For appearance work, publish fresh screenshots and report resource, state and visual results separately. [Delivery checks](<references/qt-appearance-audit.md#warning-gates-and-delivery>).
 
-| The user wants… | Mode | Start with |
+## Modes
+
+| User asks for | Mode | Start with |
 |---|---|---|
-| A new logo | **Design** (full or fast track below) | Phase 1 |
-| Feedback on a logo | **Critique** | `references/critique.md` |
-| To modernise/replace a logo | **Redesign** | `references/redesign.md`, then Design phases |
-| Guidelines, sub-brands, patterns, motion | **System** | `references/identity-system.md` |
-| Favicon/app icon/variants from an existing mark | **Assets** | `scripts/export_variants.py` |
+| A new logo | Design | Phase 1 below |
+| Feedback on a logo | Critique | [Critique](<references/critique.md>) |
+| Modernisation or replacement | Redesign | [Redesign](<references/redesign.md>), then brand phases |
+| Guidelines, sub-brands, patterns or motion | System | [Identity system](<references/identity-system.md>) |
+| Favicon, app icon or variants from an existing mark | Assets | [Variant exporter](<scripts/export_variants.py>) |
+| Toolbar/button graphics, ParaView styling, plugin relocation, QRC audits, zoom defects or Qt SVG sizing | Functional icons | [Functional procedure](<references/functional-toolbar-icons.md>) and [Verification recipes](<references/functional-icon-verification.md>) |
+| AICore entry SVGs, AnyLabeling exclusion, `dbTreeView` decorations or reconstruction media QRCs | Functional icons | [ACloudViewer resource cases](<references/acloudviewer-resource-cases.md>) |
+| Qt Widgets Native/Custom conflicts, Display Options Apply/Cancel/restart, QSS failures, real component comparisons or QStyle framework selection | Functional icons, shared appearance | [Qt appearance audit and acceptance](<references/qt-appearance-audit.md>) |
 
-**Fast track** (user wants results now, or gives little info): ask at most five questions in one message
-(`references/discovery-brief.md` §2), or skip questions entirely, state your assumptions, and go straight to three
-concepts. You can always iterate after they react.
+**Fast track.** For a brand request with little information or a tight deadline, ask up to five questions in one message using [Discovery brief](<references/discovery-brief.md>) §2, or state assumptions and proceed to three concepts.
 
-**Concept checkpoint — show the logos before building anything else.** Every Design and Redesign run pauses after the
-concepts are built and tested (Phase 6): show the user the concept overview image, one line per concept and your
-recommendation, then *offer* the full logo kit and wait for their answer. Build the kit (Phase 7) only after they pick a
-direction and say yes. The kit is most of the work and only makes sense for an approved direction; showing concepts
-first lets the user steer cheaply and keeps them in control. Skip the pause only when the user explicitly says not to
-check in (e.g. "don't ask, just deliver everything"). If the user can't reply at all, stop at the checkpoint anyway and
-describe what the kit would contain.
+**Brand checkpoint.** Show the tested concepts and offer the full kit after Phase 6. Wait for the direction and kit approval before Phase 7 unless the user explicitly asks for the full delivery without a check-in. If the user cannot reply, stop at the checkpoint and describe the possible kit.
 
-## Tools in this skill
+## Third-party Qt framework integration
 
-All scripts are dependency-free Python 3 and live in the `scripts/` folder next to this SKILL.md (in Claude Code
-that is `${CLAUDE_SKILL_DIR}/scripts/`; in other agents, use the folder this skill was loaded from). Run them with
-`python3` and the full path, e.g.
-`python3 <skill-dir>/scripts/svg_audit.py logo.svg` (examples below write `scripts/…` for brevity).
-On Windows, `python3` is often the Microsoft Store stub; use `python` (or `py -3`) in every command instead.
+When functional UI work introduces or ports a library (for example Qlementine), first read the repository's existing reuse/ownership contract and dependency recipes. Artwork approval covers artwork. Follow the scoped repository rules and reuse the existing `ExternalProject` download/cache/patch/export flow, pin the default upstream version, and keep compatibility changes in reviewed Git patches. Use isolated scratch builds for diagnostics and the existing dependency flow for production, with no repository tarball, private unpack-and-build flow or edits to extracted dependency trees. [Integration gate](<references/functional-icon-verification.md#third-party-qt-framework-integration-gate>) · [Read-only framework selection and isolated port diagnostics](<references/qt-appearance-audit.md#framework-selection-and-isolated-qt-5-diagnostics>).
 
-| Script | Use it to |
+## Bundled tools
+
+Run these Python 3 scripts from the skill directory or use `python3 "$skill_dir/scripts/<script>.py"` from the project. Rendering backends may need separate installation. On Windows use `python` or `py -3` if `python3` is the Store stub. Repository scripts in the functional references run from the repository root.
+
+| Script | Use |
 |---|---|
-| `concept_sheet.py` | One-image concept overview (large mark, lockup, true 64/32/16 px sizes, name, one-line idea, recommendation) — what you show at the checkpoint |
-| `search_library.py` | Find reference logos by `--type`, `--technique`, `--geometry`, `--subject`, `--industry`, `--color`, `--mood`…; `--summary` shows a category's conventions; `--format json` gives structured records (SVG artwork is not bundled — fetch a specific brand's file from its official site or a public icon CDN when needed) |
-| `svg_audit.py` | Check an SVG: live text, rasters, filters, colour count, gradients, strokes, near-miss angles, tiny details, centring, complexity vs. the library |
-| `preview_sheet.py` | HTML test sheet: size ladder, 16/32 px pixel test, backgrounds, one-colour, squint blur, mirror/rotate, favicon/app-icon/header/card contexts, side-by-side, shelf test vs. competitors |
-| `presentation_board.py` | Client presentation (brief, each concept with rationale + 6 **industry-specific** mockups — cup, packaging, payment card, README, terminal, signage…; comparison, recommendation) from a JSON spec (`templates/presentation-spec.example.json`); `--png-dir` exports every slide as PNG; `--list-mockups` |
-| `render_png.py` | Render SVG → transparent PNG at exact sizes (for looking at your work and for deliverables); screenshots HTML sheets/boards (Chrome); builds `favicon.ico`; `--which` lists renderers |
-| `export_variants.py` | Black, white, brand-mono, square, favicon and app-icon SVGs; `--png` sizes; `--web-icons` = favicon.ico + PNG icon set + webmanifest + `<head>` snippet; `--favicon-source` for a simplified small-size drawing |
-| `build_catalog.py` | Maintainers only: rebuild the library catalog |
+| [concept_sheet.py](<scripts/concept_sheet.py>) | Concept overview with large mark, lockup, actual 64/32/16 px previews, name, idea and recommendation |
+| [search_library.py](<scripts/search_library.py>) | Search by `--type`, `--technique`, `--geometry`, `--subject`, `--industry`, `--color`, `--mood` or `--query`. Use `--summary` for conventions and `--format json` for records. Fetch artwork needed for study from official sites or public icon CDNs |
+| [svg_audit.py](<scripts/svg_audit.py>) | Check live text, rasters, filters, colour counts, gradients, strokes, near-miss angles, tiny details, centring and complexity |
+| [preview_sheet.py](<scripts/preview_sheet.py>) | HTML size ladder, 16/32 px pixel tests, backgrounds, one-colour, squint blur, mirror/rotate, favicon/app-icon/header/card contexts and competitor shelf tests |
+| [presentation_board.py](<scripts/presentation_board.py>) | Brief, rationale, six industry-specific mockups, comparison and recommendation. `--png-dir` exports slides and `--list-mockups` lists contexts. [Presentation spec](<templates/presentation-spec.example.json>) |
+| [render_png.py](<scripts/render_png.py>) | Exact-size transparent SVG renders, Chrome HTML screenshots and favicon.ico. Use `--which` to list backends |
+| [export_variants.py](<scripts/export_variants.py>) | Black/white/brand-mono/square/favicon/app-icon variants. `--png` requests sizes. `--web-icons` makes favicon.ico, PNGs, webmanifest and head snippet. `--favicon-source` chooses the simplified art |
+| [build_catalog.py](<scripts/build_catalog.py>) | Maintainers rebuild the library catalog |
 
-**Look at your work.** Drawing in SVG code is drawing blind. After writing or changing a logo, render it and look:
-`python3 scripts/render_png.py concept-a.svg concept-b.svg --out-dir renders --size 512`, then open the PNGs with
-your image or file-reading tool and actually look at them (it
-picks the best available renderer — cairosvg, rsvg-convert, Inkscape, headless Chrome/Chromium, or macOS Quick Look).
-Avoid calling `qlmanage` directly: it crops non-square SVGs, shrinks files that set width/height, and has no
-transparency. The HTML sheets can also be opened in a browser tool. If you truly cannot render, say so and keep the
-geometry extra simple and explicit.
+```bash
+python3 "$skill_dir/scripts/render_png.py" concept-a.svg concept-b.svg --out-dir renders --size 512
+```
 
-## Design workflow
+Inspect the PNGs with an image-capable tool or inspect HTML in a browser. The renderer can select cairosvg, rsvg-convert, Inkscape, Chrome/Chromium or macOS Quick Look. Direct `qlmanage` can crop non-square art, shrink based on `width`/`height` and lose transparency. If rendering is unavailable, keep geometry simple and disclose the missing check. Check every bash exit-code marker and investigate failures.
 
-### Phase 1 — Discovery → brief
-Learn: name (exact spelling), what they do, audience, 3–5 brand adjectives, competitors, constraints (colours, equity,
-where it must work), decision-maker. Write a short brief (template in `references/discovery-brief.md` §5) and list your
-assumptions. Adjectives are the most valuable input — they become visual cues.
+## Brand design workflow
 
-### Phase 2 — Research & strategy
-1. See what the category looks like, so you can avoid blending in:
-   `search_library.py --industry <closest> --summary` (and read a few catalog records with `--format json`). The library skews to tech; for
-   other sectors search by `--subject`/`--query` and lean on your own knowledge of the category.
-2. List the category's **clichés** explicitly (e.g. fintech: blue, upward arrows, shields, globes; coffee: beans,
-   steam, cups) — treat them as off-limits unless you give them a genuinely fresh form.
-3. **Word map** (`references/discovery-brief.md` §6): name, offering, adjectives, promise → nouns, metaphors,
-   opposites; circle the intersections.
-4. Choose candidate **mark types** with `references/mark-types.md` §12. Explore at least two different types.
+### Phase 1 — Discovery and brief
+
+Learn exact spelling, activity, audience, 3–5 adjectives, competitors, retained equity, colour/use constraints and decision-maker. Translate adjectives into visual cues and write the brief with assumptions. [Discovery brief](<references/discovery-brief.md>) §5.
+
+### Phase 2 — Research and strategy
+
+```bash
+python3 "$skill_dir/scripts/search_library.py" --industry <closest> --summary
+python3 "$skill_dir/scripts/search_library.py" --industry <closest> --format json
+```
+
+The library skews toward tech. In other sectors also search by subject/query and use category knowledge. List clichés to avoid or transform. Map name, offering, adjectives and promise to nouns, metaphors and opposites, then circle intersections. Explore at least two mark types. [Discovery brief](<references/discovery-brief.md>) §6 · [Mark types](<references/mark-types.md>) §12 · [Library guide](<references/library-guide.md>).
 
 ### Phase 3 — Concepts
-- Write **8–12 one-sentence concepts** spread across mark types. Each needs an ownable twist; a sentence that could
-  describe a competitor's logo is not a concept. (If you can't say it in one sentence, it won't read in a glance.)
-- Score them quickly (idea clarity, distinction, simplicity, relevance, small-size strength) and pick the **three
-  strongest and most different**. Briefly show the user the longlist only if it helps them steer.
-- Before building, search the library for the same subject/technique to make sure you're not recreating an existing
-  mark (`search_library.py --subject <thing>`), and study 3–5 exemplary records (`--format json`) that use your
-  technique to understand how the geometry is built. The SVG artwork itself is not bundled in this copy; when you
-  need it, fetch that brand's file from its official site or a public icon CDN.
-- Keep it lean: one-liners are cheap, builds are expensive. Build only the three; don't polish ideas you'll drop.
 
-### Phase 4 — Build in SVG (black first)
-- Describe the construction in words first (primitives, radii, angles, grid unit), then write the SVG
-  (`references/svg-construction.md`). Canvas `viewBox="0 0 256 256"` for symbols; lockups keep height 256.
-- Solid black on white; no colour yet. Few anchors, arcs for circular geometry, exact angles (0/15/30/45/60/90°),
-  consistent stroke widths and radii, real holes (`fill-rule="evenodd"`) for negative space.
-- No `<text>` in finished marks — construct letterforms as paths. For exploration you may use `<text>` but flag it.
-- Save every meaningful iteration (`concept-a-v1.svg`, `-v2.svg`…) instead of overwriting — you'll want to compare.
+Write 8–12 one-sentence concepts with an ownable twist across multiple mark types. Score idea clarity, distinction, simplicity, relevance and small-size strength. Build the three strongest distinct options. Show the longlist only if it helps steering. Search same-subject or same-technique marks and study construction in 3–5 exemplary records with `--format json`. Use fetched artwork for study.
 
-### Phase 5 — Test & refine (loop at least twice)
 ```bash
-python3 scripts/svg_audit.py concept-a.svg concept-b.svg concept-c.svg
-python3 scripts/preview_sheet.py concept-a.svg concept-b.svg concept-c.svg --refs-industry <industry> -o preview.html
+python3 "$skill_dir/scripts/search_library.py" --subject <thing>
 ```
-Open and look. Fix what fails, then re-run. Key refinements (details in `references/visual-techniques.md`):
-- **Scale**: the idea survives 16–24 px; gaps and strokes big enough; otherwise simplify or add a small-size version.
-- **Optical corrections**: overshoot round/pointed forms (~1–3 %), fix the bone effect on rounded shapes, thin
-  horizontals slightly, centre optically (slightly above geometric centre), thin the reversed version.
-- **Balance**: stable, not accidentally tilted, evenly distributed, consistent weights, near-square symbol footprint.
-- **Readings**: mirror, rotate 180°, view tiny — check for unintended shapes or meanings.
-- **Distinction**: shelf test against competitors; the familiarity test (if it feels familiar and isn't yours, it's
-  someone else's).
-- **Craft pass** (where AI-drawn marks usually fall short): (1) *Letter test* — does every modified letter still read
-  as the intended letter at first glance? If a K reads as an h, revise. (2) *Junctions* — inspect every place strokes
-  meet: no accidental notches, slivers, lumps or ink traps. (3) *Peer test* — put your mark next to 3–4 exemplary
-  reference marks at the same size (`preview_sheet.py yours.svg --refs <fetched SVGs>`; library artwork is not
-  bundled, so fetch competitors'/exemplars' SVGs first);
-  it should look equally resolved. (4) *Literalness* — if a concept is simply the product drawn (a cup for coffee),
-  push it further or drop it.
-Full list: `references/testing-checklist.md`.
 
-### Phase 6 — Show the concepts, then stop (checkpoint)
+### Phase 4 — SVG construction
+
+Describe primitives, grid, radii and angles before drawing. Start solid black on white. Use `viewBox="0 0 256 256"` for symbols and height 256 for lockups, few anchors, arcs for circles, exact 0/15/30/45/60/90° angles, consistent radii and strokes, and real holes with `fill-rule="evenodd"`. Outline final lettering and flag any exploration with live text. Preserve meaningful revisions such as `concept-a-v1.svg` and `concept-a-v2.svg`. [SVG construction](<references/svg-construction.md>).
+
+### Phase 5 — Test and refine at least twice
+
 ```bash
-python3 scripts/concept_sheet.py a-symbol.svg b-symbol.svg c-symbol.svg --lockups a-lockup.svg b-lockup.svg c-lockup.svg \
+python3 "$skill_dir/scripts/svg_audit.py" concept-a.svg concept-b.svg concept-c.svg
+python3 "$skill_dir/scripts/preview_sheet.py" concept-a.svg concept-b.svg concept-c.svg --refs-industry <industry> -o preview.html
+python3 "$skill_dir/scripts/preview_sheet.py" yours.svg --refs <fetched-reference-SVGs> -o shelf.html
+```
+
+Inspect and iterate. Open gaps or thicken strokes at 16–24 px, or draw a small cut. Check optical overshoot (~1–3%), rounded-shape bone effects, horizontal stroke weight, optical centring, reversal weight, footprint and balance. Mirror, rotate 180° and squint to expose alternate readings. Check modified letters and junctions for misreads, notches, slivers, lumps and accidental ink traps. Compare at equal size with 3–4 exemplary marks. Push a literal product drawing toward a distinctive brand idea. [Visual techniques](<references/visual-techniques.md>) · [Testing checklist](<references/testing-checklist.md>).
+
+### Phase 6 — Present and pause
+
+```bash
+python3 "$skill_dir/scripts/concept_sheet.py" a-symbol.svg b-symbol.svg c-symbol.svg --lockups a-lockup.svg b-lockup.svg c-lockup.svg \
     --names "Name A" "Name B" "Name C" --notes "One-line idea A" "…" "…" --recommend 1 --greyscale -o concepts.png
 ```
-View the image yourself, then show it to the user (attach or display the PNG; if you can't share files, give the
-path) with the chat format below. Greyscale first — colour triggers taste debates; you may add a small colour hint
-for your recommendation. End with the kit offer and **wait for the answer**:
 
-> Want me to prepare the full logo kit for the direction you choose? It includes: the colour palette with one-colour
-> and reversed versions, horizontal and stacked lockups, a small-size cut, favicon + app-icon + web-icon set, a
-> presentation board with mockups for your industry, and a one-page usage guide.
+Inspect and show the overview. Lead in greyscale with an optional small colour hint for the recommendation. Give each concept its name, mark type, one-sentence idea and up to three brief reasons grounded in the brief and competition. Recommend one direction with honest risks. Ask whether the user wants the full kit with colour and one-colour/reversed versions, lockups, the small-size cut, favicon/app/web icons, industry board and one-page usage guide. For revisions, return to Phases 4–5 and reshow the overview.
 
-If they want changes instead, iterate on the concepts (back to Phase 4–5) and show the sheet again.
+### Phase 7 — Approved kit
 
-### Phase 7 — Build the kit (only after the user says yes)
-1. **Refine the chosen direction**: final geometry, optical corrections, small-size cut, thinned reversed version.
-2. **Colour**: 1–2 colours ideally, ownable in the category, reproducible (HEX/RGB/CMYK/Pantone), accessible; the
-   one-colour and greyscale versions must still work (`references/color.md`).
-3. **Typography & lockups**: type study, custom letters for ownership, optical spacing, max two families
-   (`references/typography.md`); horizontal, stacked, symbol-only, wordmark-only — lock relative sizes and spacing.
-4. **Presentation board** with industry-relevant mockups: `presentation_board.py` (copy
-   `templates/presentation-spec.example.json`; set `"industry"` or an explicit `"mockups"` list — a café gets cups and
-   bags, a dev tool gets a README and terminal). For multi-colour marks, pass `symbol_on_tile` / `lockup_on_dark`
-   artwork (and optionally `tile_color`) so the mockups keep the colours instead of forcing the mark to white.
-   `--png-dir slides` exports every slide as an image for sharing. Guidance: `references/presentation-delivery.md`.
-5. **Export the files**:
+1. Refine geometry, optical corrections, small-size and thinned reverse cuts.
+2. Choose ideally 1–2 distinctive and reproducible colours. Specify HEX/RGB/CMYK/Pantone and check accessibility, greyscale and monochrome. [Colour](<references/color.md>).
+3. Customise lettering and optical spacing, use at most two type families, and lock proportions for horizontal, stacked, symbol-only and wordmark-only versions. [Typography](<references/typography.md>).
+4. Build the industry-specific presentation with `presentation_board.py`. Set `industry` or explicit `mockups`, such as cups/bags for a café and README/terminal for developer tools. Use `symbol_on_tile`, `lockup_on_dark` and optional `tile_color` to preserve multicolour art on dark contexts, and `--png-dir slides` for individual images. [Presentation spec](<templates/presentation-spec.example.json>) · [Presentation and delivery](<references/presentation-delivery.md>).
+5. Export master-derived variants.
    ```bash
-   python3 scripts/export_variants.py final-symbol.svg --title "Brand logo" --mono "#HEX" --icon-bg "#HEX" --web-icons --favicon-source final-symbol-small.svg
-   python3 scripts/export_variants.py final-horizontal.svg --title "Brand logo" --only black white mono --mono "#HEX" --png 1200
+   python3 "$skill_dir/scripts/export_variants.py" final-symbol.svg --title "Brand logo" --mono "#HEX" --icon-bg "#HEX" --web-icons --favicon-source final-symbol-small.svg
+   python3 "$skill_dir/scripts/export_variants.py" final-horizontal.svg --title "Brand logo" --only black white mono --mono "#HEX" --png 1200
    ```
-6. **Guidelines & handover**: compact guidelines (`templates/brand-guidelines-template.md`: clear space from a logo
-   element, minimum sizes, colour codes, approved backgrounds, misuse), masters (SVG; PDF/AI/EPS if the user has the
-   tools), and handover notes (rationale, test results, open items). Run the final checklist in `references/process.md`
-   §7. For bigger brands, extend into a system (`references/identity-system.md`).
+6. Deliver SVG masters and PDF/AI/EPS when available, rationale, tests and open items. Specify clear space relative to a logo element, minimum sizes, colour codes, backgrounds and misuse. Expand to an identity system for larger brands. [Guidelines template](<templates/brand-guidelines-template.md>) · [Process](<references/process.md>) §7 · [Identity system](<references/identity-system.md>).
 
-## Principles to hold onto
+## Pitfalls
 
-1. **Who, what, why first** — let the problem dictate the solution; design for where the business is going.
-2. **Identify, don't explain** — one signpost, not a catalogue of services.
-3. **Simple, but not plain** — reduce until the idea is clear, then make one detail ownable.
-4. **Relevant, not literal** — evoke the attitude; don't draw the product. Fresh forms of familiar signs work.
-5. **Distinct** — know the category; depart from what blends together.
-6. **Memorable** — shape and colour are the first memory hooks; one defining feature.
-7. **One idea** — explainable in one sentence; a light puzzle is good, a riddle is not.
-8. **Small and large** — 16 px and 16 m; one colour; reversed; embroidered.
-9. **Timeless over trendy** — build on a concept, not an effect.
-10. **Foundation of a system** — never judge a logo in a void; it must seed patterns, icons, motion.
-11. **Craft matters** — geometry, optical corrections, spacing; the invisible details separate good from great.
-12. **Be strong, not stubborn** — defend the strategy, stay open on details, and value feedback.
-Deeper reasoning: `references/principles.md`.
+- Generic stock initials, category clichés, literal clip art, near-miss geometry, lumpy curves, inconsistent weights, hairlines, sub-1/48 details, closing gaps and weak forms propped up by effects undermine brand marks. Final brand masters should avoid live text, embedded rasters, filters and masks. Use library logos for study and check resemblance, font licences and trademark clearance separately. A professional database and reverse-image search can help. [Principles](<references/principles.md>).
+- Similar solids failed to distinguish mesh tools, Poisson reconstruction, convex hull, voxel downsampling and octree. Compare actual operations as neighbours at toolbar scale. For views, the `pos`/`neg` suffix is a legacy identifier. Resolve semantics from the action, enum and camera implementation.
+- QRC registration and an empty literal grep are weak evidence for use or disuse. Check alias expansion, real and generated consumers, metadata, optional paths and protected source artwork before retirement. Keep qPCL local and exercise app-only loading.
+- PNG files with SVG suffixes, embedded rasters and pixel-tile traces can look plausible at toolbar size. Inspect original geometry and high zoom, and run the configured Qt loader. Cairo success and successful SVG parsing cover only those respective checks.
+- A faint alpha fringe at a canvas edge needs separate reporting from opaque contact. Keep the generated boards available if the model cannot open them and mark visual review pending.
+- Qt can log a parse error and exit zero. A passing exit code needs message classification and complete current-run artifacts. Qt 5 can retain disabled colours in widgets already open when the style changes. Assert their inherited and explicit palettes separately. [Appearance gates](<references/qt-appearance-audit.md>).
 
-## Red flags — fix before showing anything
+## Verification
 
-- Clip-art literalism (a tooth for a dentist, a house for real estate) or category clichés with no twist.
-- Generic initials in an unmodified stock font; default-weight geometric sans with nothing ownable.
-- More than three colours without a conceptual reason; gradients or shadows used to rescue a weak form.
-- Details smaller than ~1/48 of the mark, hairlines, tight gaps that close at small sizes.
-- Near-miss angles, lumpy curves from too many anchors, inconsistent stroke weights.
-- Live `<text>`, embedded rasters, filters or masks in a "final" file.
-- A concept that needs a paragraph to understand.
-- Anything that looks like an existing logo — including the library's. The library is for learning, never tracing.
-
-## Presenting concepts in chat (the checkpoint message)
-
-```markdown
-<concept overview image>
-
-### A — <Name>  ·  <mark type>   ← recommended
-**Idea:** <one sentence>
-**Why it fits:** <2–3 bullets linked to the brief's adjectives/audience/competition>
-
-### B — … / ### C — …  (same shape)
-
-**My recommendation:** <one or two sentences, including one honest risk per concept if relevant>
-**Next:** pick a direction (or tell me what you like in each). Want me to prepare the full logo kit for it?
-<one-line list of what the kit contains>
-```
-Keep it short: the image does the work. Don't attach variants, boards or icon sets yet.
-
-## Honesty and limits
-
-- You can't guarantee trademark clearance; recommend a professional search (trademark databases, reverse image search).
-- Font licences must allow logo use; say which fonts you assumed and that outlines were constructed or must be made.
-- If you couldn't render and inspect a file, say so. Don't claim tests you didn't run.
-- Library logos are trademarks of their owners — study only.
-
-## Reference map
-
-| Read | When |
-|---|---|
-| `references/principles.md` | Justifying decisions, resolving debates, deep critique |
-| `references/discovery-brief.md` | Questions, brief template, word mapping |
-| `references/mark-types.md` | Choosing the type of mark; pros/cons; decision guide |
-| `references/visual-techniques.md` | Geometry, grids, balance, optical corrections, negative space, gradients, paradoxes |
-| `references/color.md` | Palette strategy, harmony, reproduction, accessibility, library colour data |
-| `references/typography.md` | Type study, custom letterforms, spacing, lockups, licensing |
-| `references/process.md` | Stage-by-stage process, exploration, vector development, final checklist |
-| `references/svg-construction.md` | Writing clean SVG logos, recipes, what to avoid |
-| `references/testing-checklist.md` | Everything to test before presenting or delivering |
-| `references/presentation-delivery.md` | Presenting, feedback, committees, deliverables, working relationship |
-| `references/identity-system.md` | Kit of parts, sub-brands, dynamic identities, patterns, motion, guidelines, rollout |
-| `references/redesign.md` | Refresh vs. rebrand, equity audit, refresh techniques |
-| `references/critique.md` | Structured logo critique with scorecard and fixes |
-| `references/library-guide.md` | What's in the 1,400+ logo library, insights, curated examples by technique |
+1. Confirm the chosen mode, scope and each expected deliverable. Inspect scripts' exit codes, fix issues and rerun. For brand testing use [Testing checklist](<references/testing-checklist.md>) and [Process](<references/process.md>) §7.
+2. Cross-check fixed IDs, original lettering evidence, archive paths, hashes, move mappings, canonical bytes, effective URLs and changed consumers. Keep moved-only, redrawn, unstyled, uncertain/dynamic/source and proven-unused entries distinguishable. Use the [verification matrix](<references/functional-toolbar-icons.md#verification-matrix>) and the [ACloudViewer cases](<references/functional-icon-verification.md>).
+3. Compare actual resource bytes with canonical files. Record independent app/plugin and combined probes as applicable, plugin-absent behaviour, obsolete URL negative checks and affected UI compilation. For an in-place repair, the original URL must load the new bytes after replaying migration. For size changes record actual direct-decode and requested-size behaviour and the measured scope of performance and package comparisons.
+4. Report automated geometry/raster and Qt results, visual inspection and user aesthetic approval as separate outcomes. Publish the overview and relevant detailed files with explicit TODOs for missing evidence or unperformed tests. For shared appearance, check the [settings and component matrix](<references/qt-appearance-audit.md#real-settings-and-component-matrix>) and [fresh artifact checklist](<references/qt-appearance-audit.md#warning-gates-and-delivery>).

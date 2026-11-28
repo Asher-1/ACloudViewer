@@ -254,22 +254,21 @@ void MpvFrameSource::renderFrame() {
         m_swHeight = static_cast<int>(h);
     }
 
-    void* bufPtr = m_swBuffer.data();
     int swSize[2] = {static_cast<int>(w), static_cast<int>(h)};
-    int swStride[2] = {static_cast<int>(w * 4), 0};
+    size_t swStride = static_cast<size_t>(w) * 4;
     mpv_render_param params[] = {
             {MPV_RENDER_PARAM_SW_SIZE, swSize},
             {MPV_RENDER_PARAM_SW_FORMAT, const_cast<char*>("bgr0")},
-            {MPV_RENDER_PARAM_SW_STRIDE, swStride},
-            {MPV_RENDER_PARAM_SW_POINTER, &bufPtr},
+            {MPV_RENDER_PARAM_SW_STRIDE, &swStride},
+            {MPV_RENDER_PARAM_SW_POINTER, m_swBuffer.data()},
             mpv_render_param{},
     };
     if (mpv_render_context_render(m_renderCtx, params) != 0) return;
 
-    // video-pts distinguishes a genuinely new frame from a re-render of the
+    // time-pos distinguishes a genuinely new frame from a re-render of the
     // same frame (e.g. after a widget redraw request).
     double pts = -1.0;
-    mpv_get_property(m_mpv, "video-pts", MPV_FORMAT_DOUBLE, &pts);
+    mpv_get_property(m_mpv, "time-pos", MPV_FORMAT_DOUBLE, &pts);
     if (pts < 0.0 || pts == m_lastPts) return;
     m_lastPts = pts;
 
@@ -290,8 +289,9 @@ void MpvFrameSource::updateMetadata() {
     double duration = 0.0;
     mpv_get_property(m_mpv, "duration", MPV_FORMAT_DOUBLE, &duration);
     double fps = 0.0;
-    mpv_get_property(m_mpv, "estimated-vf-fps", MPV_FORMAT_DOUBLE, &fps);
-    if (fps <= 0.0) mpv_get_property(m_mpv, "fps", MPV_FORMAT_DOUBLE, &fps);
+    mpv_get_property(m_mpv, "container-fps", MPV_FORMAT_DOUBLE, &fps);
+    if (fps <= 0.0)
+        mpv_get_property(m_mpv, "estimated-vf-fps", MPV_FORMAT_DOUBLE, &fps);
     if (fps <= 0.0) fps = 30.0;  // fallback for VFR / unknown
     m_fps.store(fps, std::memory_order_release);
     m_frameCount.store(

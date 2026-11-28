@@ -52,8 +52,9 @@ descriptor parity gates. The `1 s` target is a self-hosted GPU gate, not a
 GitHub-hosted CI assertion.
 
 GitHub-hosted runners default `AICORE_TEST_ENABLE_MODEL_TESTS=OFF` and
-`AICORE_TEST_AUTO_DOWNLOAD=OFF`; their `aicore-contract-tests` target excludes
-`model`, `gpu`, and `e2e` labels. This is intentional: a missing GPU must not
+`AICORE_TEST_AUTO_DOWNLOAD=OFF`; the root `ci` profile excludes model, GPU,
+graphics and other non-headless requirements. The focused developer target
+`aicore-contract-tests` retains its own contract selection. A missing GPU must not
 be recorded as a parity pass. Cache the downloaded model bundle by a manifest
 checksum on self-hosted GPU runners, enable both options, and inject its path
 as `CLOUDVIEWER_AICORE_TEST_ASSETS` or `AICORE_TEST_ASSET_ROOT`. The GPU matrix
@@ -316,3 +317,21 @@ runs bracket the candidate under identical weights, inputs and options.
 The LIGHT tier exercises upstream default arithmetic in 16 expanded rows;
 `--full` also runs the 16 strict-mode rows, including all text students,
 custom predicates and masks/scores/decomposition.
+
+## Unified Registration and CI
+
+Enabled C++ unit suites use GoogleTest and register through the root
+[tests module](../../../tests/README.md). From the repository root:
+
+```bash
+cmake -DBUILD_DIR=build_app -DJOBS=4 -P tests/Run.cmake
+cmake -DBUILD_DIR=build_app -DJOBS=4 -DPROFILE=model -P tests/Run.cmake
+```
+
+The entry builds prerequisites; direct CTest examples in this guide are
+focused diagnostics after building their executables. The default `ci` profile
+excludes model/GPU/graphics/e2e/network/benchmark/slow requirements. Hosted native
+CI uses this profile; `aicore-contract-tests` remains a focused developer target.
+Model/profile skips are not strict accuracy acceptance. Isolated `cumesh-cmake`
+CUDA build/parity probes are standalone integration fixtures, not GoogleTest
+unit suites; they retain their isolated toolchain contract.

@@ -1,5 +1,6 @@
 pytest==9.0.3
 pytest-randomly==3.8.0
+PyYAML
 scipy==1.15.3
 tensorboard==2.19.0
 # oauthlib is not imported directly: it resolves through tensorboard's

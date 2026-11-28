@@ -168,6 +168,8 @@ ccDisplayOptionsDlg::ccDisplayOptionsDlg(QWidget* parent)
     connect(m_ui->cancelButton, &QAbstractButton::clicked, this,
             &ccDisplayOptionsDlg::doReject);
 
+    m_oldAppearance = ecvApp->appearance();
+
     // Populate application style combo box
     populateAppStyleComboBox();
 
@@ -494,14 +496,9 @@ void ccDisplayOptionsDlg::doReject() {
     VtkRendering::RebuildAllInteractiveLOD();
     VtkRendering::SyncStillUpdateRatesForAllViews();
 
-    // Restore old application style
-    if (m_defaultAppStyleIndex >= 0) {
-        QString oldStyle =
-                m_ui->appStyleComboBox->itemText(m_defaultAppStyleIndex);
-        if (ecvApp) {
-            ecvApp->setAppStyle(oldStyle);
-        }
-    }
+    // Apply previews are not committed until OK, matching the other options.
+    // Restore the complete effective state, not a different settings key/index.
+    ecvApp->applyAppearance(m_oldAppearance, false);
 
     // Force redraw of selected objects to restore BoundingBox properties
     ccHObject* sceneDB = nullptr;
@@ -522,8 +519,10 @@ void ccDisplayOptionsDlg::doReject() {
 
     emit aspectHasChanged();
 
-    reject();
+    QDialog::reject();
 }
+
+void ccDisplayOptionsDlg::reject() { doReject(); }
 
 void ccDisplayOptionsDlg::reset() {
     parameters.reset();
@@ -537,18 +536,17 @@ void ccDisplayOptionsDlg::reset() {
     refresh();
 }
 
-void ccDisplayOptionsDlg::apply() {
+bool ccDisplayOptionsDlg::apply() {
+    const QString style = m_ui->appStyleComboBox->currentData().toString();
+    if (!ecvApp->setAppStyle(style, false)) {
+        CVLog::Warning(tr("Could not apply the selected window style."));
+        return false;
+    }
     ecvGui::Set(parameters);
     ecvOptions::Set(options);
 
     VtkRendering::RebuildAllInteractiveLOD();
     VtkRendering::SyncStillUpdateRatesForAllViews();
-
-    // Apply application style
-    {
-        QString style = m_ui->appStyleComboBox->currentText();
-        ecvApp->setAppStyle(style);
-    }
 
     // Apply log verbosity level (now directly uses CVLog::MessageLevelFlags)
     {
@@ -577,6 +575,7 @@ void ccDisplayOptionsDlg::apply() {
     }
 
     emit aspectHasChanged();
+    return true;
 }
 
 void ccDisplayOptionsDlg::changeAppStyle(int index) {
@@ -595,37 +594,29 @@ void ccDisplayOptionsDlg::changeLogVerbosityLevel(int index) {
 }
 
 void ccDisplayOptionsDlg::populateAppStyleComboBox() {
-    // Matching CloudCompare's ccDisplaySettingsDlg approach exactly:
-    // Read the saved style from settings. If none is saved, the combo box
-    // shows no selection (index -1), matching Qt's platform default behavior.
-    QSettings settings;
-    settings.beginGroup(ecvPS::AppStyle());
-    const QString defaultStyleName = settings.value("style").toString();
-    settings.endGroup();
-
-    // Fill with all available Qt styles
-    QStringList appStyles = QStyleFactory::keys();
-    for (const QString& style : appStyles) {
-        m_ui->appStyleComboBox->addItem(style);
-    }
-
-    // Add custom dark/light themes
-    m_ui->appStyleComboBox->addItem(QStringLiteral("QDarkStyleSheet::Light"));
-    m_ui->appStyleComboBox->addItem(QStringLiteral("QDarkStyleSheet::Dark"));
-
-    // Find the saved style in the combo box (case-insensitive)
+    m_ui->appStyleComboBox->clear();
+    m_ui->appStyleComboBox->addItem(tr("System default"), QString());
+    for (const QString& style : QStyleFactory::keys())
+        m_ui->appStyleComboBox->addItem(style, style);
+    m_ui->appStyleComboBox->addItem(QStringLiteral("Custom"),
+                                    QStringLiteral("Custom"));
+    m_ui->appStyleComboBox->setToolTip(tr(
+            "Fusion and platform styles use native Qt controls. Custom enables "
+            "the application UI theme; choose its preset in Option > Theme."));
+    m_defaultAppStyleIndex = 0;
     for (int i = 0; i < m_ui->appStyleComboBox->count(); ++i) {
-        if (m_ui->appStyleComboBox->itemText(i).compare(
-                    defaultStyleName, Qt::CaseInsensitive) == 0) {
+        if (m_ui->appStyleComboBox->itemData(i).toString().compare(
+                    m_oldAppearance.styleKey, Qt::CaseInsensitive) == 0) {
             m_defaultAppStyleIndex = i;
+            break;
         }
     }
-
     m_ui->appStyleComboBox->setCurrentIndex(m_defaultAppStyleIndex);
 }
 
 void ccDisplayOptionsDlg::doAccept() {
-    apply();
+    if (!apply()) return;
+    ecvApp->commitAppearance();
 
     parameters.toPersistentSettings();
     options.toPersistentSettings();

@@ -7,82 +7,80 @@
 
 #include <CVTools.h>
 #include <FileSystem.h>
+#include <gtest/gtest.h>
 
 #include <QTemporaryDir>
-#include <cstdlib>
+#include <cstdio>
 #include <filesystem>
+#include <memory>
 #include <string>
 
 #include "common/data_root_util.hpp"
-#include "tests/common/test_macros.hpp"
-
-static int failures = 0;
 
 namespace {
-void setOverride(const std::string& value) {
-    AICORE_CHECK(cloudViewer::utility::filesystem::SetEnvVar(
-            "CLOUDVIEWER_DATA_ROOT", value));
+namespace fs = cloudViewer::utility::filesystem;
+class DataRoot : public testing::Test {
+protected:
+    void SetUp() override { saved = fs::GetEnvVar("CLOUDVIEWER_DATA_ROOT"); }
+    void TearDown() override {
+        EXPECT_TRUE(fs::SetEnvVar("CLOUDVIEWER_DATA_ROOT", saved));
+    }
+    std::string saved;
+};
+
+TEST_F(DataRoot, SharedModelDirectoriesUseApplicationRoot) {
+    const auto root = aicore::locate_data_root();
+    ASSERT_FALSE(root.empty());
+    EXPECT_EQ(root, fs::LocateDataRoot());
+    EXPECT_EQ(aicore::extract_model_dir("da3_models"),
+              (std::filesystem::u8path(root) / "extract" / "da3_models")
+                      .lexically_normal()
+                      .generic_u8string());
+    EXPECT_NE(aicore::extract_model_dir("freesplatter_models")
+                      .find("freesplatter_models"),
+              std::string::npos);
+}
+
+TEST_F(DataRoot, UnicodeOverrideRoundTripsAndNormalizesModelPaths) {
+    const std::string root =
+            u8"cache \u6a21\u578b/\U0001f9e0/space/../selected";
+    EXPECT_EQ(CVTools::Wchar2Char(CVTools::Char2Wchar(root.c_str()).c_str()),
+              root);
+    ASSERT_TRUE(fs::SetEnvVar("CLOUDVIEWER_DATA_ROOT", root));
+    EXPECT_EQ(fs::GetEnvVar("CLOUDVIEWER_DATA_ROOT"), root);
+    EXPECT_EQ(aicore::locate_data_root(), root);
+    EXPECT_EQ(aicore::extract_model_dir("da3_models"),
+              (std::filesystem::u8path(root) / "extract" / "da3_models")
+                      .lexically_normal()
+                      .generic_u8string());
+}
+
+TEST_F(DataRoot, UnicodeFilesPreserveBytesAndPrivatePermissions) {
+    QTemporaryDir directory;
+    ASSERT_TRUE(directory.isValid());
+    const std::string path = directory.path().toUtf8().toStdString() +
+                             u8"/\u6a21\u578b-\U0001f9e0.bin";
+    using File = std::unique_ptr<std::FILE, decltype(&std::fclose)>;
+    File file(fs::FOpenForWrite(path), std::fclose);
+    ASSERT_NE(file, nullptr);
+    ASSERT_EQ(std::fwrite("cache", 1, 5, file.get()), 5u);
+    file.reset();
+    file.reset(fs::FOpen(path, "rb"));
+    ASSERT_NE(file, nullptr);
+    char bytes[5] = {};
+    ASSERT_EQ(std::fread(bytes, 1, 5, file.get()), 5u);
+    EXPECT_EQ(std::string(bytes, 5), "cache");
+#ifndef _WIN32
+    EXPECT_EQ(std::filesystem::status(std::filesystem::u8path(path))
+                              .permissions() &
+                      std::filesystem::perms::others_write,
+              std::filesystem::perms::none);
+#endif
+}
+
+TEST_F(DataRoot, EmptyOverrideFallsBackToHome) {
+    ASSERT_TRUE(fs::SetEnvVar("CLOUDVIEWER_DATA_ROOT", {}));
+    EXPECT_EQ(aicore::locate_data_root(),
+              fs::GetHomeDirectory() + "/cloudViewer_data");
 }
 }  // namespace
-
-int main() {
-    namespace fs = cloudViewer::utility::filesystem;
-    const std::string saved = fs::GetEnvVar("CLOUDVIEWER_DATA_ROOT");
-    const std::string home_root = aicore::locate_data_root();
-    AICORE_CHECK(!home_root.empty());
-    AICORE_CHECK(home_root == fs::LocateDataRoot());
-
-    const std::string da3 = aicore::extract_model_dir("da3_models");
-    AICORE_CHECK(da3 ==
-                 (std::filesystem::u8path(home_root) / "extract" / "da3_models")
-                         .lexically_normal()
-                         .generic_u8string());
-    AICORE_CHECK(aicore::extract_model_dir("freesplatter_models")
-                         .find("freesplatter_models") != std::string::npos);
-
-    // Cover spaces, Chinese and supplementary Unicode with the shared
-    // conversion functions, including UTF-16 surrogate pairs on Windows.
-    const std::string expected =
-            u8"cache \u6a21\u578b/\U0001f9e0/space/../selected";
-    AICORE_CHECK(CVTools::Wchar2Char(
-                         CVTools::Char2Wchar(expected.c_str()).c_str()) ==
-                 expected);
-    setOverride(expected);
-    AICORE_CHECK(fs::GetEnvVar("CLOUDVIEWER_DATA_ROOT") == expected);
-    AICORE_CHECK(aicore::locate_data_root() == expected);
-    AICORE_CHECK(aicore::extract_model_dir("da3_models") ==
-                 (std::filesystem::u8path(expected) / "extract" / "da3_models")
-                         .lexically_normal()
-                         .generic_u8string());
-    QTemporaryDir temporary;
-    AICORE_CHECK(temporary.isValid());
-    const std::string output = temporary.path().toUtf8().toStdString() +
-                               u8"/\u6a21\u578b-\U0001f9e0.bin";
-    std::FILE* file = fs::FOpenForWrite(output);
-    AICORE_CHECK(file != nullptr);
-    if (file) {
-        AICORE_CHECK(std::fwrite("cache", 1, 5, file) == 5);
-        std::fclose(file);
-        file = fs::FOpen(output, "rb");
-        AICORE_CHECK(file != nullptr);
-        if (file) {
-            char bytes[5] = {};
-            AICORE_CHECK(std::fread(bytes, 1, 5, file) == 5);
-            AICORE_CHECK(std::string(bytes, 5) == "cache");
-            std::fclose(file);
-        }
-#ifndef _WIN32
-        AICORE_CHECK((std::filesystem::status(std::filesystem::u8path(output))
-                              .permissions() &
-                      std::filesystem::perms::others_write) ==
-                     std::filesystem::perms::none);
-#endif
-    }
-    setOverride({});
-    AICORE_CHECK(aicore::locate_data_root() ==
-                 fs::GetHomeDirectory() + "/cloudViewer_data");
-    setOverride(saved);
-
-    std::fprintf(stderr, "data_root ok (default=%s)\n", home_root.c_str());
-    return failures == 0 ? 0 : 1;
-}

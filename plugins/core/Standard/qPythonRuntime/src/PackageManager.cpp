@@ -312,7 +312,7 @@ void PackageManager::refreshInstalledPackagesList()
 
     const auto lines = qtCompatSplitRefChar(output, '\n');
 
-    const QtCompatRegExp regex(R"((\S*)(?:\s*)(\S*)(?:\s*)(\S?))");
+    const auto regex = qtCompatRegExp(R"((\S*)(?:\s*)(\S*)(?:\s*)(\S?))");
 
     // First line is a header, second is separator
     // and last one seems to always be empty
@@ -328,21 +328,12 @@ void PackageManager::refreshInstalledPackagesList()
         const auto &currentLine = lines[i];
 
         // Do it this way to avoid an extra allocation
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        QRegularExpressionMatch match = regex.match(currentLine.toString());
+        const auto match = regex.match(currentLine.toString());
         if (match.hasMatch())
         {
             for (int j = 1; j < 3; ++j)
             {
                 const QString lol = match.captured(j);
-#else
-        int pos = regex.indexIn(currentLine.toString());
-        if (pos != -1)
-        {
-            for (int j = 1; j < 3; ++j)
-            {
-                const QString lol = regex.cap(j);
-#endif
                 auto *thing = new QTableWidgetItem(lol);
                 if (j != 1)
                 {

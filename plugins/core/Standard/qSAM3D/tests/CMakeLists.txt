@@ -5,7 +5,7 @@ set_target_properties(test_qsam3d_model_selection PROPERTIES AUTOMOC ON
 target_include_directories(test_qsam3d_model_selection PRIVATE ../include)
 target_compile_definitions(test_qsam3d_model_selection PRIVATE AICore_ENABLED)
 target_link_libraries(test_qsam3d_model_selection PRIVATE
-    AICore CVPluginAPI Qt::Core Qt::Gui Qt::Widgets Qt::Network)
+    AICore CVPluginAPI Qt::Core Qt::Gui Qt::Widgets Qt::Network gtest)
 if(NOT MSVC)
     target_compile_options(test_qsam3d_model_selection PRIVATE -fPIC)
     if(NOT APPLE)
@@ -17,7 +17,7 @@ if(COMMAND aicore_register_test)
     aicore_register_test(NAME test_qsam3d_model_selection
         TARGET test_qsam3d_model_selection LABELS "cvpluginapi;sam3d;capi")
 else()
-    add_test(NAME test_qsam3d_model_selection COMMAND test_qsam3d_model_selection)
+    cloudviewer_add_test(NAME test_qsam3d_model_selection COMMAND test_qsam3d_model_selection)
     set_tests_properties(test_qsam3d_model_selection PROPERTIES LABELS "cvpluginapi;sam3d")
 endif()
 cloudviewer_set_plugin_test_env(test_qsam3d_model_selection)

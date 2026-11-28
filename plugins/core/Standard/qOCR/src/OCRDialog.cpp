@@ -7,6 +7,9 @@
 
 #include "OCRDialog.h"
 
+#include <Shortcuts/ecvKeySequences.h>
+
+#include <QAction>
 #include <QApplication>
 #include <QCheckBox>
 #include <QClipboard>
@@ -35,7 +38,6 @@
 #include <QPushButton>
 #include <QSet>
 #include <QSettings>
-#include <QShortcut>
 #include <QSizePolicy>
 #include <QSpinBox>
 #include <QTabWidget>
@@ -473,8 +475,18 @@ OCRDialog::OCRDialog(QWidget* parent) : QDialog(parent) {
         updateRunState();
     };
     connect(m_removeImagesButton, &QPushButton::clicked, this, removeSelected);
-    auto* removeShortcut = new QShortcut(QKeySequence::Delete, m_imageList);
-    connect(removeShortcut, &QShortcut::activated, this, removeSelected);
+    auto* removeCommand =
+            new QAction(tr("Remove selected input images"), m_imageList);
+    removeCommand->setShortcuts(QKeySequence::Delete);
+    removeCommand->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    m_imageList->addAction(removeCommand);
+    connect(removeCommand, &QAction::triggered, m_removeImagesButton,
+            &QPushButton::click);
+    removeCommand->setObjectName(QStringLiteral("qOCRRemoveImagesCommand"));
+    ecvKeySequences::instance().registerPluginCommand(
+            QStringLiteral("cvcorp.cloudviewer.plugin.qOCR"),
+            QStringLiteral("images/remove-selected"), removeCommand,
+            tr("Input images"), tr("OCR"));
     auto checkAll = [this](Qt::CheckState state) {
         for (int i = 0; i < m_imageList->count(); ++i)
             m_imageList->item(i)->setCheckState(state);
@@ -1165,6 +1177,9 @@ void OCRDialog::setRunning(bool running) {
     m_testDataButton->setEnabled(!running);
     m_browseButton->setEnabled(!running);
     m_removeImagesButton->setEnabled(!running);
+    if (auto* command = m_imageList->findChild<QAction*>(
+                QStringLiteral("qOCRRemoveImagesCommand")))
+        command->setEnabled(!running);
     updateRunState();
 }
 

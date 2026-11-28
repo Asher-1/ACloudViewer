@@ -1,0 +1,1904 @@
+<!doctype html><html lang="zh"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>图标风格筛选 · 50 组</title>
+<style>
+:root{
+  --bg:#0F1419; --panel:#161C23; --panel2:#1C242D; --line:#2A343E;
+  --ink:#E6EDF3; --dim:#8B98A5; --accent:#1E9BD7; --good:#3FB950; --bad:#F85149;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font:14px/1.5 ui-sans-serif,-apple-system,"Segoe UI",Roboto,"Noto Sans CJK SC",sans-serif}
+header{position:sticky;top:0;z-index:20;background:rgba(15,20,25,.94);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:14px 22px}
+h1{margin:0 0 3px;font-size:17px;font-weight:650;letter-spacing:-.01em}
+.sub{color:var(--dim);font-size:12.5px;margin:0}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.chip{background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+  border-radius:999px;padding:5px 13px;font-size:12.5px;cursor:pointer;
+  transition:.13s;user-select:none}
+.chip:hover{border-color:var(--accent)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#04141F;font-weight:600}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:var(--panel2);border:0;color:var(--dim);padding:5px 12px;
+  font-size:12.5px;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--accent);color:#04141F;font-weight:600}
+.lbl{color:var(--dim);font-size:12px;margin-right:2px}
+main{padding:22px 22px 90px}
+section{margin-bottom:34px}
+h2{font-size:15px;margin:0 0 3px;display:flex;align-items:baseline;gap:9px}
+h2 .pct{color:var(--accent);font-size:12px;font-weight:600}
+h2 .desc{color:var(--dim);font-size:12px;font-weight:400}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));
+  gap:12px;margin-top:13px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:11px;
+  padding:13px 14px 12px;cursor:pointer;transition:.14s;position:relative}
+.card:hover{border-color:#3D4E5C;transform:translateY(-1px)}
+.card.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.card.bad{opacity:.45}
+.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 10px;
+  align-items:center;justify-items:center}
+.tools svg{display:block}
+.bigwrap{display:grid;place-items:center;width:100%}
+.name{font-size:13px;font-weight:600;margin-top:9px}
+.en{font:10.5px ui-monospace,SFMono-Regular,Menlo,monospace;color:#5F6E7C;margin-top:1px}
+.meta{display:flex;gap:9px;align-items:center;margin-top:7px;font-size:11px}
+.ink{color:var(--good)}
+.ink.warn{color:#D29922}
+.ink.bad{color:var(--bad)}
+.num{color:#5F6E7C;font:10.5px ui-monospace,monospace}
+.tag{font-size:10px;padding:1.5px 7px;border-radius:6px;background:#243039;
+  color:#8B98A5;font-weight:600}
+.sel-mark{position:absolute;top:11px;right:12px;width:17px;height:17px;
+  border-radius:50%;border:1.5px solid #38454F;display:grid;place-items:center;
+  font-size:11px;color:transparent}
+.card.sel .sel-mark{background:var(--accent);border-color:var(--accent);color:#04141F}
+footer{position:fixed;bottom:0;left:0;right:0;background:rgba(22,28,35,.97);
+  backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:11px 22px;
+  display:flex;gap:14px;align-items:center;font-size:13px;z-index:30}
+footer .picked{color:var(--dim);flex:1}
+footer b{color:var(--accent)}
+button.act{background:var(--accent);border:0;color:#04141F;font-weight:650;
+  padding:7px 16px;border-radius:8px;cursor:pointer;font-size:13px}
+button.act.ghost{background:transparent;border:1px solid var(--line);color:var(--dim)}
+.light .card{background:#fff;border-color:#E2E8EE}
+/* 深色模式下把图标主色提亮，否则 INK 与背景对比度只有 1.62:1 */
+body:not(.light) .tools svg{filter:brightness(2.1) saturate(.9)}
+.light{background:#F7F9FB;color:#111}
+.light header,.light footer{background:rgba(255,255,255,.96);border-color:#E2E8EE}
+.light .en,.light .num{color:#8B98A5}
+.light .chip,.light .seg button{background:#fff;border-color:#E2E8EE;color:#222}
+.light .chip.on,.light .seg button.on{background:var(--accent);color:#fff}
+</style></head><body class="light">
+<header>
+<h1>图标风格筛选 <span style="color:#5F6E7C;font-weight:400">· 50 组</span></h1>
+<p class="sub">每张卡片 = 同一种风格下的 6 个不同工具（加号、复制、柱状、取点、平滑、裁剪）。只有撑得住这 6 个的，才算一套风格，不是一张好看的图。</p>
+<div class="bar">
+<span class="lbl">分组</span>
+<span class="chip" data-grp="all" onclick="setGroup('all',this)">全部 50</span>
+<span class="chip" data-grp="contain" onclick="setGroup('contain',this)">包围式 10</span>
+<span class="chip" data-grp="knockout" onclick="setGroup('knockout',this)">挖空 4</span>
+<span class="chip" data-grp="line" onclick="setGroup('line',this)">单线 11</span>
+<span class="chip" data-grp="colour" onclick="setGroup('colour',this)">色块 15</span>
+<span class="chip" data-grp="hybrid" onclick="setGroup('hybrid',this)">混合 5</span>
+<span class="chip" data-grp="iso" onclick="setGroup('iso',this)">等轴 5</span>
+</div><div class="bar">
+<span class="lbl">尺寸</span><div class="seg">
+<button data-sz="18" onclick="setSize(18,this)">18px</button>
+<button data-sz="24" onclick="setSize(24,this)">24px</button>
+<button data-sz="48" onclick="setSize(48,this)">48px</button>
+<button data-sz="96" onclick="setSize(96,this)">96px</button>
+</div>
+<span class="chip" onclick="toggleOk(this)">只看 18px 可用</span>
+<span class="chip" onclick="toggleTheme(this)">浅色背景</span>
+</div></header><main>
+<section><h2>包围式 Containment <span class="pct">31.6%</span><span class="desc">库中最常见：图形被一个几何外形框住</span></h2>
+<div class="grid">
+<div class="card" data-name="contain-circle-line" data-group="contain" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<circle cx="6.0" cy="6.4" r="1.5" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.5" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.5" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.5" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.4" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span></div><div class="name">圆形包围 · 线稿</div><div class="en">contain-circle-line</div><div class="meta"><span class="num">#1</span><span class="ink ">18px 墨量 0.41</span></div></div>
+<div class="card" data-name="contain-squircle-line" data-group="contain" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<circle cx="6.0" cy="6.4" r="1.5" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.5" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.5" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.5" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.4" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span></div><div class="name">圆角方包围 · 线稿</div><div class="en">contain-squircle-line</div><div class="meta"><span class="num">#2</span><span class="ink warn">18px 墨量 0.46</span></div></div>
+<div class="card" data-name="contain-hex-line" data-group="contain" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="12,1.6 21,6.8 21,17.2 12,22.4 3,17.2 3,6.8" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="12,1.6 21,6.8 21,17.2 12,22.4 3,17.2 3,6.8" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="12,1.6 21,6.8 21,17.2 12,22.4 3,17.2 3,6.8" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="12,1.6 21,6.8 21,17.2 12,22.4 3,17.2 3,6.8" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<circle cx="6.0" cy="6.4" r="1.5" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.5" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.5" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.5" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.4" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="12,1.6 21,6.8 21,17.2 12,22.4 3,17.2 3,6.8" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="12,1.6 21,6.8 21,17.2 12,22.4 3,17.2 3,6.8" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span></div><div class="name">六边形包围 · 线稿</div><div class="en">contain-hex-line</div><div class="meta"><span class="num">#3</span><span class="ink ">18px 墨量 0.39</span></div></div>
+<div class="card" data-name="contain-circle-solid" data-group="contain" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">圆形包围 · 实心</div><div class="en">contain-circle-solid</div><div class="meta"><span class="num">#4</span><span class="ink ">18px 墨量 0.39</span></div></div>
+<div class="card" data-name="contain-squircle-solid" data-group="contain" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">圆角方包围 · 实心</div><div class="en">contain-squircle-solid</div><div class="meta"><span class="num">#5</span><span class="ink ">18px 墨量 0.39</span></div></div>
+<div class="card" data-name="contain-circle-tri" data-group="contain" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">圆形包围 · 三色</div><div class="en">contain-circle-tri</div><div class="meta"><span class="num">#6</span><span class="ink ">18px 墨量 0.39</span></div></div>
+<div class="card" data-name="contain-squircle-tri" data-group="contain" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">圆角方包围 · 三色</div><div class="en">contain-squircle-tri</div><div class="meta"><span class="num">#7</span><span class="ink ">18px 墨量 0.39</span></div></div>
+<div class="card" data-name="contain-diamond-line" data-group="contain" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="12,1.4 22.6,12 12,22.6 1.4,12" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="12,1.4 22.6,12 12,22.6 1.4,12" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="12,1.4 22.6,12 12,22.6 1.4,12" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="12,1.4 22.6,12 12,22.6 1.4,12" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<circle cx="6.0" cy="6.4" r="1.5" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.5" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.5" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.5" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.4" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="12,1.4 22.6,12 12,22.6 1.4,12" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="12,1.4 22.6,12 12,22.6 1.4,12" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span></div><div class="name">菱形包围 · 线稿</div><div class="en">contain-diamond-line</div><div class="meta"><span class="num">#8</span><span class="ink ">18px 墨量 0.38</span></div></div>
+<div class="card" data-name="badge-circle" data-group="contain" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="50%" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="50%" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="50%" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="50%" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="50%" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="50%" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">圆形徽章</div><div class="en">badge-circle</div><div class="meta"><span class="num">#45</span><span class="ink ">18px 墨量 0.30</span></div></div>
+<div class="card" data-name="badge-squircle" data-group="contain" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.6" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.6" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.6" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.6" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.6" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.6" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">圆角方徽章</div><div class="en">badge-squircle</div><div class="meta"><span class="num">#46</span><span class="ink ">18px 墨量 0.39</span></div></div>
+</div></section>
+<section><h2>挖空 Knockout <span class="pct">19.8%</span><span class="desc">负空间：标记本身是挖出来的洞</span></h2>
+<div class="grid">
+<div class="card bad" data-name="knockout-solid" data-group="knockout" data-bad="1"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.6" fill="#FFFFFF"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.6" fill="#FFFFFF"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.6" fill="#FFFFFF"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.6" fill="#FFFFFF"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.6" fill="#FFFFFF"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47"/>
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#FFFFFF"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#FFFFFF"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#FFFFFF"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#FFFFFF"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#FFFFFF"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.6" fill="#FFFFFF"/>
+</svg>
+</span></div><div class="name">实心挖空</div><div class="en">knockout-solid</div><div class="meta"><span class="num">#9</span><span class="ink bad">18px 墨量 0.78</span><span class=tag>小尺寸过密</span></div></div>
+<div class="card bad" data-name="knockout-circle" data-group="knockout" data-bad="1"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.6" fill="#FFFFFF"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.6" fill="#FFFFFF"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.6" fill="#FFFFFF"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.6" fill="#FFFFFF"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.6" fill="#FFFFFF"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47"/>
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#FFFFFF"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#FFFFFF"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#FFFFFF"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#FFFFFF"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#FFFFFF"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.6" fill="#FFFFFF"/>
+</svg>
+</span></div><div class="name">圆形实心挖空</div><div class="en">knockout-circle</div><div class="meta"><span class="num">#10</span><span class="ink bad">18px 墨量 0.78</span><span class=tag>小尺寸过密</span></div></div>
+<div class="card bad" data-name="knockout-squircle" data-group="knockout" data-bad="1"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.6" fill="#FFFFFF"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.6" fill="#FFFFFF"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.6" fill="#FFFFFF"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.6" fill="#FFFFFF"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.6" fill="#FFFFFF"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47"/>
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#FFFFFF"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#FFFFFF"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#FFFFFF"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#FFFFFF"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#FFFFFF"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.6" fill="#FFFFFF"/>
+</svg>
+</span></div><div class="name">圆角方实心挖空</div><div class="en">knockout-squircle</div><div class="meta"><span class="num">#11</span><span class="ink bad">18px 墨量 0.78</span><span class=tag>小尺寸过密</span></div></div>
+<div class="card bad" data-name="knockout-tri" data-group="knockout" data-bad="1"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.6" fill="#FFFFFF"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.6" fill="#FFFFFF"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.6" fill="#FFFFFF"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.6" fill="#FFFFFF"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.6" fill="#FFFFFF"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47"/>
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#FFFFFF"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#FFFFFF"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#FFFFFF"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#FFFFFF"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#FFFFFF"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#FFFFFF" stroke-width="3.0"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.6" fill="#FFFFFF"/>
+</svg>
+</span></div><div class="name">三色挖空</div><div class="en">knockout-tri</div><div class="meta"><span class="num">#12</span><span class="ink bad">18px 墨量 0.78</span><span class=tag>小尺寸过密</span></div></div>
+</div></section>
+<section><h2>单线 Monoline <span class="pct">17.4%</span><span class="desc">统一线宽的描边，无填充</span></h2>
+<div class="grid">
+<div class="card" data-name="line-thin" data-group="line" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="1.4"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="1.4"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="1.4"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="1.4"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="1.4"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="1.4"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="1.4"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.5" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.5" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.5" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.5" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.4" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="1.4"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="1.4"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="1.4"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="1.4"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="1.4"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="1.4"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="1.4"/>
+</svg>
+</span></div><div class="name">细线 1.4</div><div class="en">line-thin</div><div class="meta"><span class="num">#13</span><span class="ink ">18px 墨量 0.26</span></div></div>
+<div class="card" data-name="line-regular" data-group="line" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.5" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.5" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.5" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.5" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.4" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span></div><div class="name">标准线 2.0</div><div class="en">line-regular</div><div class="meta"><span class="num">#14</span><span class="ink ">18px 墨量 0.31</span></div></div>
+<div class="card" data-name="line-bold" data-group="line" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.6"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.6"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.6"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.6"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.6"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.6"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.6"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.5" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.5" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.5" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.5" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.4" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.6"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.6"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.6"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.6"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.6"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.6"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.6"/>
+</svg>
+</span></div><div class="name">粗线 2.6</div><div class="en">line-bold</div><div class="meta"><span class="num">#15</span><span class="ink ">18px 墨量 0.44</span></div></div>
+<div class="card" data-name="line-mono" data-group="line" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.5" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.5" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.5" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.5" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.4" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span></div><div class="name">单色线稿</div><div class="en">line-mono</div><div class="meta"><span class="num">#16</span><span class="ink ">18px 墨量 0.31</span></div></div>
+<div class="card" data-name="line-sharp" data-group="line" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.5" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.5" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.5" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.5" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.4" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span></div><div class="name">直角线稿</div><div class="en">line-sharp</div><div class="meta"><span class="num">#17</span><span class="ink ">18px 墨量 0.33</span></div></div>
+<div class="card" data-name="line-circle" data-group="line" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<circle cx="6.0" cy="6.4" r="1.5" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.5" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.5" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.5" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.4" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span></div><div class="name">圆形线稿</div><div class="en">line-circle</div><div class="meta"><span class="num">#19</span><span class="ink ">18px 墨量 0.41</span></div></div>
+<div class="card" data-name="line-squircle-mono" data-group="line" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<circle cx="6.0" cy="6.4" r="1.5" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.5" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.5" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.5" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.4" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span></div><div class="name">圆角方单色线稿</div><div class="en">line-squircle-mono</div><div class="meta"><span class="num">#20</span><span class="ink warn">18px 墨量 0.52</span></div></div>
+<div class="card" data-name="line-accent-only" data-group="line" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.5" fill="#1E9BD7"/>
+<circle cx="17.4" cy="5.6" r="1.5" fill="#1E9BD7"/>
+<circle cx="5.6" cy="17.4" r="1.5" fill="#1E9BD7"/>
+<circle cx="18.0" cy="17.8" r="1.5" fill="#1E9BD7"/>
+<circle cx="12" cy="12" r="3.4" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span></div><div class="name">强调色线稿</div><div class="en">line-accent-only</div><div class="meta"><span class="num">#21</span><span class="ink ">18px 墨量 0.31</span></div></div>
+<div class="card" data-name="pill-line" data-group="line" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="50%" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="50%" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="50%" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="50%" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="50%" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.5" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.5" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.5" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.5" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.4" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="50%" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span></div><div class="name">全圆角线稿</div><div class="en">pill-line</div><div class="meta"><span class="num">#40</span><span class="ink ">18px 墨量 0.29</span></div></div>
+<div class="card" data-name="keyline" data-group="line" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="1.8"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="1.8"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="1.8"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="1.8"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="1.8"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="1.8"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="1.8"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<circle cx="6.0" cy="6.4" r="1.5" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.5" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.5" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.5" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.4" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="1.8"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="1.8"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="1.8"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="1.8"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="1.8"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="1.8"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="1.8"/>
+</svg>
+</span></div><div class="name">结构线</div><div class="en">keyline</div><div class="meta"><span class="num">#44</span><span class="ink warn">18px 墨量 0.46</span></div></div>
+<div class="card" data-name="minimal-one" data-group="line" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.5" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.5" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.5" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.5" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.4" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span></div><div class="name">极简单色</div><div class="en">minimal-one</div><div class="meta"><span class="num">#48</span><span class="ink ">18px 墨量 0.35</span></div></div>
+</div></section>
+<section><h2>色块 Colour <span class="pct">14.2%</span><span class="desc">实色分区，靠色块划分结构</span></h2>
+<div class="grid">
+<div class="card" data-name="solid-flat" data-group="colour" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">纯实心</div><div class="en">solid-flat</div><div class="meta"><span class="num">#22</span><span class="ink ">18px 墨量 0.39</span></div></div>
+<div class="card" data-name="solid-mono" data-group="colour" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="#2E3B47"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span></div><div class="name">单色实心</div><div class="en">solid-mono</div><div class="meta"><span class="num">#23</span><span class="ink ">18px 墨量 0.39</span></div></div>
+<div class="card" data-name="solid-sharp" data-group="colour" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">直角实心</div><div class="en">solid-sharp</div><div class="meta"><span class="num">#24</span><span class="ink ">18px 墨量 0.39</span></div></div>
+<div class="card" data-name="solid-tri" data-group="colour" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">三色实心</div><div class="en">solid-tri</div><div class="meta"><span class="num">#25</span><span class="ink ">18px 墨量 0.39</span></div></div>
+<div class="card" data-name="solid-circle" data-group="colour" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="#2E3B47"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="#2E3B47" opacity="0.09"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span></div><div class="name">圆形实心</div><div class="en">solid-circle</div><div class="meta"><span class="num">#26</span><span class="ink ">18px 墨量 0.39</span></div></div>
+<div class="card" data-name="solid-squircle" data-group="colour" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="#2E3B47"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span></div><div class="name">圆角方实心</div><div class="en">solid-squircle</div><div class="meta"><span class="num">#27</span><span class="ink ">18px 墨量 0.39</span></div></div>
+<div class="card" data-name="solid-hex" data-group="colour" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="12,1.6 21,6.8 21,17.2 12,22.4 3,17.2 3,6.8" fill="#2E3B47" opacity="0.09"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="12,1.6 21,6.8 21,17.2 12,22.4 3,17.2 3,6.8" fill="#2E3B47" opacity="0.09"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="12,1.6 21,6.8 21,17.2 12,22.4 3,17.2 3,6.8" fill="#2E3B47" opacity="0.09"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="12,1.6 21,6.8 21,17.2 12,22.4 3,17.2 3,6.8" fill="#2E3B47" opacity="0.09"/>
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="12,1.6 21,6.8 21,17.2 12,22.4 3,17.2 3,6.8" fill="#2E3B47" opacity="0.09"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="12,1.6 21,6.8 21,17.2 12,22.4 3,17.2 3,6.8" fill="#2E3B47" opacity="0.09"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">六边形实心</div><div class="en">solid-hex</div><div class="meta"><span class="num">#28</span><span class="ink ">18px 墨量 0.39</span></div></div>
+<div class="card" data-name="solid-two-tone" data-group="colour" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">双色分段</div><div class="en">solid-two-tone</div><div class="meta"><span class="num">#29</span><span class="ink ">18px 墨量 0.39</span></div></div>
+<div class="card" data-name="solid-accent-dominant" data-group="colour" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">强调色主导</div><div class="en">solid-accent-dominant</div><div class="meta"><span class="num">#30</span><span class="ink ">18px 墨量 0.39</span></div></div>
+<div class="card" data-name="solid-dark" data-group="colour" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#16202A" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#16202A" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="#16202A"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="#16202A"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="#16202A"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#16202A"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#16202A"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#16202A"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#16202A"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#16202A" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#16202A" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#16202A" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#16202A" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#16202A" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#16202A" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">深色实心</div><div class="en">solid-dark</div><div class="meta"><span class="num">#31</span><span class="ink ">18px 墨量 0.39</span></div></div>
+<div class="card" data-name="pill-solid" data-group="colour" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="50%" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="50%" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="50%" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="50%" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="50%" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="50%" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">全圆角实心</div><div class="en">pill-solid</div><div class="meta"><span class="num">#41</span><span class="ink ">18px 墨量 0.30</span></div></div>
+<div class="card" data-name="duotone-soft" data-group="colour" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="2.4" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="2.4" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="2.4" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="2.4" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="2.4" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="2.4" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">双色柔和</div><div class="en">duotone-soft</div><div class="meta"><span class="num">#42</span><span class="ink ">18px 墨量 0.36</span></div></div>
+<div class="card" data-name="duotone-mono" data-group="colour" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.6" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.6" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.6" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.6" fill="#2E3B47"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.6" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.6" fill="#2E3B47"/>
+</svg>
+</span></div><div class="name">双色单系</div><div class="en">duotone-mono</div><div class="meta"><span class="num">#43</span><span class="ink ">18px 墨量 0.38</span></div></div>
+<div class="card" data-name="high-contrast" data-group="colour" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="0.8" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="0.8" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="0.8" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="0.8" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="0.8" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="0.8" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">高对比</div><div class="en">high-contrast</div><div class="meta"><span class="num">#49</span><span class="ink ">18px 墨量 0.39</span></div></div>
+<div class="card" data-name="soft-ui" data-group="colour" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="2.0" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="2.0" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="2.0" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="2.0" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="2.0" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="2.0" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">柔和 UI</div><div class="en">soft-ui</div><div class="meta"><span class="num">#50</span><span class="ink ">18px 墨量 0.38</span></div></div>
+</div></section>
+<section><h2>混合 Hybrid <span class="pct">—</span><span class="desc">描边定形 + 实色块点明操作对象</span></h2>
+<div class="grid">
+<div class="card" data-name="outline-fill" data-group="hybrid" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">描边+实心块</div><div class="en">outline-fill</div><div class="meta"><span class="num">#36</span><span class="ink ">18px 墨量 0.34</span></div></div>
+<div class="card" data-name="outline-fill-circle" data-group="hybrid" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10.4" fill="none" stroke="#93A2AE" stroke-width="1.1"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">描边+实心 · 圆</div><div class="en">outline-fill-circle</div><div class="meta"><span class="num">#37</span><span class="ink warn">18px 墨量 0.48</span></div></div>
+<div class="card" data-name="outline-fill-sharp" data-group="hybrid" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">描边+实心 · 直角</div><div class="en">outline-fill-sharp</div><div class="meta"><span class="num">#38</span><span class="ink ">18px 墨量 0.35</span></div></div>
+<div class="card" data-name="outline-fill-tri" data-group="hybrid" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">描边+实心 · 三色</div><div class="en">outline-fill-tri</div><div class="meta"><span class="num">#39</span><span class="ink ">18px 墨量 0.34</span></div></div>
+<div class="card" data-name="minimal-two" data-group="hybrid" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">极简双色</div><div class="en">minimal-two</div><div class="meta"><span class="num">#47</span><span class="ink ">18px 墨量 0.37</span></div></div>
+</div></section>
+<section><h2>等轴 Isometric <span class="pct">6.3%</span><span class="desc">2.5D 立体，贴合点云/网格类软件</span></h2>
+<div class="grid">
+<div class="card" data-name="line-isometric" data-group="iso" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.5" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.5" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.5" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.5" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.4" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span></div><div class="name">等轴线稿</div><div class="en">line-isometric</div><div class="meta"><span class="num">#18</span><span class="ink ">18px 墨量 0.31</span></div></div>
+<div class="card" data-name="iso-line" data-group="iso" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.5" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.5" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.5" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.5" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.4" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.0"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="none" stroke="#1E9BD7" stroke-width="2.0"/>
+</svg>
+</span></div><div class="name">等轴 · 线</div><div class="en">iso-line</div><div class="meta"><span class="num">#32</span><span class="ink ">18px 墨量 0.31</span></div></div>
+<div class="card" data-name="iso-solid" data-group="iso" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">等轴 · 实心</div><div class="en">iso-solid</div><div class="meta"><span class="num">#33</span><span class="ink ">18px 墨量 0.39</span></div></div>
+<div class="card" data-name="iso-tri" data-group="iso" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">等轴 · 三色</div><div class="en">iso-tri</div><div class="meta"><span class="num">#34</span><span class="ink ">18px 墨量 0.39</span></div></div>
+<div class="card" data-name="iso-squircle" data-group="iso" data-bad="0"><div class="sel-mark">✓</div><div class="tools"><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<path d="M 6.0 12 L 18.0 12" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 12 6.0 L 12 18.0" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<rect x="3.4" y="7.0" width="10.6" height="10.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.0" y="3.4" width="10.6" height="10.6" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<rect x="4.2" y="13.2" width="3.2" height="7.6" rx="1.2" fill="#2E3B47"/>
+<rect x="10.4" y="8.6" width="3.2" height="12.2" rx="1.2" fill="#1E9BD7"/>
+<rect x="16.6" y="11.2" width="3.2" height="9.6" rx="1.2" fill="#2E3B47"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<circle cx="6.0" cy="6.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="17.4" cy="5.6" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="5.6" cy="17.4" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="18.0" cy="17.8" r="1.7249999999999999" fill="#2E3B47"/>
+<circle cx="12" cy="12" r="3.9099999999999997" fill="#1E9BD7"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<path d="M 3.2 15.6 C 6.4 15.6, 6.4 9.2, 12 9.2 C 17.6 9.2, 17.6 15.6, 20.8 15.6" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 4.0 19.4 L 20.0 19.4" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+</svg>
+</span><span class="bigwrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<rect x="1.8" y="1.8" width="20.4" height="20.4" rx="5.2" fill="#2E3B47" opacity="0.09"/>
+<path d="M 8.8 3.6 L 3.6 3.6 L 3.6 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 3.6 L 20.4 3.6 L 20.4 8.8" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 8.8 20.4 L 3.6 20.4 L 3.6 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<path d="M 15.2 20.4 L 20.4 20.4 L 20.4 15.2" fill="none" stroke="#2E3B47" stroke-width="2.2"/>
+<rect x="8.4" y="8.4" width="7.2" height="7.2" rx="1.2" fill="#1E9BD7"/>
+</svg>
+</span></div><div class="name">等轴 · 圆角方</div><div class="en">iso-squircle</div><div class="meta"><span class="num">#35</span><span class="ink ">18px 墨量 0.39</span></div></div>
+</div></section>
+</main>
+<footer><span class="picked">已选 <b id="cnt">0</b> 组 · <span id="list">未选择</span></span>
+<button class="act ghost" onclick="state.picked.clear();render()">清空</button>
+</footer>
+<script>
+const state = {size:48, group:'all', okOnly:false, picked:new Set()};
+function render(){
+  document.querySelectorAll('.card').forEach(c=>{
+    const g=c.dataset.group, bad=c.dataset.bad==='1';
+    let show = (state.group==='all'||state.group===g) && (!state.okOnly||!bad);
+    c.style.display = show?'':'none';
+    c.classList.toggle('sel', state.picked.has(c.dataset.name));
+  });
+  document.querySelectorAll('section').forEach(s=>{
+    const any=[...s.querySelectorAll('.card')].some(c=>c.style.display!=='none');
+    s.style.display=any?'':'none';
+  });
+  document.querySelectorAll('.tools svg').forEach(svg=>{
+    svg.style.width = state.size+'px'; svg.style.height = state.size+'px';
+  });
+  document.getElementById('cnt').textContent = state.picked.size;
+  document.getElementById('list').textContent =
+    state.picked.size ? [...state.picked].join(', ') : '未选择';
+}
+function pick(el){
+  const n=el.dataset.name;
+  if(state.picked.has(n)) state.picked.delete(n); else state.picked.add(n);
+  render();
+}
+function setGroup(g,btn){
+  state.group=g;
+  document.querySelectorAll('[data-grp]').forEach(b=>b.classList.toggle('on',b===btn));
+  render();
+}
+function setSize(s,btn){
+  state.size=s;
+  document.querySelectorAll('[data-sz]').forEach(b=>b.classList.toggle('on',b===btn));
+  render();
+}
+function toggleOk(btn){
+  state.okOnly=!state.okOnly; btn.classList.toggle('on',state.okOnly); render();
+}
+function toggleTheme(btn){
+  document.body.classList.toggle('light'); render();
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.querySelectorAll('.card').forEach(c=>c.addEventListener('click',()=>pick(c)));
+  const all=document.querySelector('[data-grp="all"]'); if(all) all.classList.add('on');
+  const d=document.querySelector('[data-sz="48"]'); if(d) d.classList.add('on');
+  render();
+});
+</script>
+</body></html>

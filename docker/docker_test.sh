@@ -15,33 +15,29 @@ __usage_docker_test="USAGE:
     $(basename $0) [OPTION]
 
 OPTION:
-    # CUDA wheels (Dockerfile.ci)
-    cuda_wheel_py310_dev        : CUDA Python 3.10 wheel, developer mode
-    cuda_wheel_py311_dev        : CUDA Python 3.11 wheel, developer mode
-    cuda_wheel_py312_dev        : CUDA Python 3.12 wheel, developer mode
-    cuda_wheel_py313_dev        : CUDA Python 3.13 wheel, developer mode
-    cuda_wheel_py310            : CUDA Python 3.10 wheel, release mode
-    cuda_wheel_py311            : CUDA Python 3.11 wheel, release mode
-    cuda_wheel_py312            : CUDA Python 3.12 wheel, release mode
-    cuda_wheel_py313            : CUDA Python 3.13 wheel, release mode
-
-    # Qt6 builds (Dockerfile.ci.qt6)
-    qt6-cpu                     : Qt6 CPU build
-    qt6-cuda                    : Qt6 CUDA build
+    # CUDA wheels (Dockerfile.wheel) — names match docker_build.sh exactly:
+    # cuda_wheel_{jammy,noble,resolute}_py{310,311,312,313}[_dev]
+    # jammy=22.04/Qt5, noble=24.04/Qt6, resolute=26.04/Qt6+CUDA 13.x;
+    # _dev = developer mode, no suffix = release mode.
+    cuda_wheel_noble_py312_dev  : example — CUDA Python 3.12 wheel, noble, developer mode
 
     # CI builds (Dockerfile.ci) - matches CI_CONFIG from GitHub Actions
     cpu-focal                   : CPU Ubuntu 20.04 CI build
     cpu-jammy                   : CPU Ubuntu 22.04 CI build
-    cpu-noble                   : CPU Ubuntu 24.04 CI build
+    cpu-noble                   : CPU Ubuntu 24.04 CI build (Qt6)
+    cpu-resolute                : CPU Ubuntu 26.04 CI build (Qt6)
     cpu-focal-release           : CPU Ubuntu 20.04 CI build, release mode
     cpu-jammy-release           : CPU Ubuntu 22.04 CI build, release mode
-    cpu-noble-release           : CPU Ubuntu 24.04 CI build, release mode
+    cpu-noble-release           : CPU Ubuntu 24.04 CI build, release mode (Qt6)
+    cpu-resolute-release        : CPU Ubuntu 26.04 CI build, release mode (Qt6)
     cuda-focal                  : CUDA Ubuntu 20.04 CI build
     cuda-jammy                  : CUDA Ubuntu 22.04 CI build
-    cuda-noble                  : CUDA Ubuntu 24.04 CI build
+    cuda-noble                  : CUDA Ubuntu 24.04 CI build (Qt6)
+    cuda-resolute               : CUDA Ubuntu 26.04 CI build (Qt6, CUDA 13.x)
     cuda-focal-release          : CUDA Ubuntu 20.04 CI build, release mode
     cuda-jammy-release          : CUDA Ubuntu 22.04 CI build, release mode
-    cuda-noble-release          : CUDA Ubuntu 24.04 CI build, release mode
+    cuda-noble-release          : CUDA Ubuntu 24.04 CI build, release mode (Qt6)
+    cuda-resolute-release       : CUDA Ubuntu 26.04 CI build, release mode (Qt6, CUDA 13.x)
 "
 
 HOST_ACLOUDVIEWER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -151,21 +147,16 @@ cpp_test_only() {
     echo "Running C++ Unit Tests"
     echo "======================================================================"
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
+    # Device-capable runners opt into a capability, never a module-name list.
+    local test_profile=ci
+    if [[ "${docker_run}" == *"--gpus all"* ]]; then
+        test_profile=ci,gpu
+    fi
     ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c " \
         export BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
+     && source util/ci_utils.sh \
      && cd build \
-     && ./bin/cloudviewer_test/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
-     && source ../util/ci_utils.sh \
-     && run_qpythonruntime_tests . native \
-     && cmake --build . --target reconstruction_oiio_parity_gate -j2 \
-     && cmake --build . --target reconstruction_camera_rig_parity_gate -j2 \
-     && if cmake -L -N . | grep -q '^RECONSTRUCTION_CASPAR_ENABLED:BOOL=ON$'; then \
-            cmake --build . --target reconstruction_caspar_parity_gate -j2; \
-        fi \
-     && cmake --build . --target reconstruction_cpp_tests_gate -j2 \
-     && if test -f bin/libAICore.so; then \
-            python ../util/check_aicore_runtime.py bin/libAICore.so; \
-        fi \
+     && GTEST_FILTER='-*Reduce*Sum*' GTEST_SHUFFLE=1 run_cpp_unit_tests . ${test_profile} \
     "
 
     # Python unit tests (whole python/test tree). The CI image installs the
@@ -212,19 +203,15 @@ cpp_python_command_tools_test() {
     echo "Running C++ Unit Tests"
     echo "======================================================================"
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
+    # Device-capable runners opt into a capability, never a module-name list.
+    local test_profile=ci
+    if [[ "${docker_run}" == *"--gpus all"* ]]; then
+        test_profile=ci,gpu
+    fi
     ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c " \
-        cd build \
-     && ./bin/cloudviewer_test/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
-     && source ../util/ci_utils.sh \
-     && run_qpythonruntime_tests . native \
-     && cmake --build . --target reconstruction_oiio_parity_gate -j2 \
-     && cmake --build . --target reconstruction_camera_rig_parity_gate -j2 \
-     && if cmake -L -N . | grep -q '^RECONSTRUCTION_CASPAR_ENABLED:BOOL=ON$'; then \
-            cmake --build . --target reconstruction_caspar_parity_gate -j2; \
-        fi \
-     && if test -f bin/libAICore.so; then \
-            python ../util/check_aicore_runtime.py bin/libAICore.so; \
-        fi \
+        source util/ci_utils.sh \
+     && cd build \
+     && GTEST_FILTER='-*Reduce*Sum*' GTEST_SHUFFLE=1 run_cpp_unit_tests . ${test_profile} \
     "
 
     # Python test (shared whole-tree runner; the wheel images install the
@@ -261,79 +248,20 @@ echo "[$(basename $0)] testing $1"
 # Try to source docker_build.sh to get environment settings
 if [ -f "${HOST_ACLOUDVIEWER_ROOT}/docker/docker_build.sh" ]; then
     source "${HOST_ACLOUDVIEWER_ROOT}/docker/docker_build.sh"
-elif [ -f "${HOST_ACLOUDVIEWER_ROOT}/docker/docker_build_qt6.sh" ]; then
-    source "${HOST_ACLOUDVIEWER_ROOT}/docker/docker_build_qt6.sh"
 else
     echo "Warning: docker_build.sh not found, using default settings"
 fi
 
 case "$1" in
 
-# CUDA wheels
-cuda_wheel_py310_dev)
-    export DOCKER_TAG="cloudviewer-ci:wheel"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="ON"
-    export BUILD_PYTORCH_OPS="ON"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_python_command_tools_test
-    ;;
-cuda_wheel_py311_dev)
-    export DOCKER_TAG="cloudviewer-ci:wheel"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="ON"
-    export BUILD_PYTORCH_OPS="ON"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_python_command_tools_test
-    ;;
-cuda_wheel_py312_dev)
-    export DOCKER_TAG="cloudviewer-ci:wheel"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="ON"
-    export BUILD_PYTORCH_OPS="ON"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_python_command_tools_test
-    ;;
-cuda_wheel_py313_dev)
-    export DOCKER_TAG="cloudviewer-ci:wheel"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="ON"
-    export BUILD_PYTORCH_OPS="ON"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_python_command_tools_test
-    ;;
-cuda_wheel_py310)
-    export DOCKER_TAG="cloudviewer-ci:wheel"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="ON"
-    export BUILD_PYTORCH_OPS="ON"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_python_command_tools_test
-    ;;
-cuda_wheel_py311)
-    export DOCKER_TAG="cloudviewer-ci:wheel"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="ON"
-    export BUILD_PYTORCH_OPS="ON"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_python_command_tools_test
-    ;;
-cuda_wheel_py312)
-    export DOCKER_TAG="cloudviewer-ci:wheel"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="ON"
-    export BUILD_PYTORCH_OPS="ON"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_python_command_tools_test
-    ;;
-cuda_wheel_py313)
+# CUDA wheels — every codename/py/mode combination shares one test environment;
+# the option only names which image docker_build.sh produced. The regex keeps
+# the accepted name set identical to docker_build.sh's cuda_wheel_* targets.
+cuda_wheel_*)
+    if [[ ! "$1" =~ ^cuda_wheel_(jammy|noble|resolute)_py31[0-3](_dev)?$ ]]; then
+        echo "Error: invalid argument: ${1}." >&2
+        print_usage_and_exit_docker_test
+    fi
     export DOCKER_TAG="cloudviewer-ci:wheel"
     export BUILD_SHARED_LIBS="OFF"
     export BUILD_CUDA_MODULE="ON"
@@ -343,142 +271,26 @@ cuda_wheel_py313)
     cpp_python_command_tools_test
     ;;
 
-# Qt6 builds
-qt6-cpu)
-    export DOCKER_TAG="acloudviewer-qt6-cpu:latest"
+# CI builds (matches CI_CONFIG from GitHub Actions). One entry derives the
+# image tag and mode from the name: <cpu|cuda>-<codename>[-release]; the
+# regex keeps the accepted name set identical to docker_build.sh's CI targets.
+cpu-*|cuda-*)
+    if [[ ! "$1" =~ ^(cpu|cuda)-(focal|jammy|noble|resolute)(-release)?$ ]]; then
+        echo "Error: invalid argument: ${1}." >&2
+        print_usage_and_exit_docker_test
+    fi
+    export DOCKER_TAG="cloudviewer-ci:${BASH_REMATCH[1]}-${BASH_REMATCH[2]}"
+    if [ -n "${BASH_REMATCH[3]}" ]; then
+        export DEVELOPER_BUILD="OFF"
+    else
+        export DEVELOPER_BUILD="ON"
+    fi
     export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="OFF"
-    export BUILD_PYTORCH_OPS="OFF"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_python_command_tools_test
-    ;;
-qt6-cuda)
-    export DOCKER_TAG="acloudviewer-qt6-cuda:latest"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="ON"
-    export BUILD_PYTORCH_OPS="OFF"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_python_command_tools_test
-    ;;
-
-# CI builds (matches CI_CONFIG from GitHub Actions)
-cpu-focal)
-    export DOCKER_TAG="cloudviewer-ci:cpu-focal"
-    export DEVELOPER_BUILD="ON"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="OFF"
-    export BUILD_PYTORCH_OPS="OFF"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_test_only
-    ;;
-cpu-jammy)
-    export DOCKER_TAG="cloudviewer-ci:cpu-jammy"
-    export DEVELOPER_BUILD="ON"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="OFF"
-    export BUILD_PYTORCH_OPS="OFF"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_test_only
-    ;;
-cpu-noble)
-    export DOCKER_TAG="cloudviewer-ci:cpu-noble"
-    export DEVELOPER_BUILD="ON"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="OFF"
-    export BUILD_PYTORCH_OPS="OFF"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_test_only
-    ;;
-cpu-focal-release)
-    export DOCKER_TAG="cloudviewer-ci:cpu-focal"
-    export DEVELOPER_BUILD="OFF"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="OFF"
-    export BUILD_PYTORCH_OPS="OFF"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_test_only
-    ;;
-cpu-jammy-release)
-    export DOCKER_TAG="cloudviewer-ci:cpu-jammy"
-    export DEVELOPER_BUILD="OFF"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="OFF"
-    export BUILD_PYTORCH_OPS="OFF"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_test_only
-    ;;
-cpu-noble-release)
-    export DOCKER_TAG="cloudviewer-ci:cpu-noble"
-    export DEVELOPER_BUILD="OFF"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="OFF"
-    export BUILD_PYTORCH_OPS="OFF"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_test_only
-    ;;
-cuda-focal)
-    export DOCKER_TAG="cloudviewer-ci:cuda-focal"
-    export DEVELOPER_BUILD="ON"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="ON"
-    export BUILD_PYTORCH_OPS="OFF"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_test_only
-    ;;
-cuda-jammy)
-    export DOCKER_TAG="cloudviewer-ci:cuda-jammy"
-    export DEVELOPER_BUILD="ON"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="ON"
-    export BUILD_PYTORCH_OPS="OFF"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_test_only
-    ;;
-cuda-noble)
-    export DOCKER_TAG="cloudviewer-ci:cuda-noble"
-    export DEVELOPER_BUILD="ON"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="ON"
-    export BUILD_PYTORCH_OPS="OFF"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_test_only
-    ;;
-cuda-focal-release)
-    export DOCKER_TAG="cloudviewer-ci:cuda-focal"
-    export DEVELOPER_BUILD="OFF"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="ON"
-    export BUILD_PYTORCH_OPS="OFF"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_test_only
-    ;;
-cuda-jammy-release)
-    export DOCKER_TAG="cloudviewer-ci:cuda-jammy"
-    export DEVELOPER_BUILD="OFF"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="ON"
-    export BUILD_PYTORCH_OPS="OFF"
-    export BUILD_TENSORFLOW_OPS="OFF"
-    ci_print_env
-    cpp_test_only
-    ;;
-cuda-noble-release)
-    export DOCKER_TAG="cloudviewer-ci:cuda-noble"
-    export DEVELOPER_BUILD="OFF"
-    export BUILD_SHARED_LIBS="OFF"
-    export BUILD_CUDA_MODULE="ON"
+    if [ "${BASH_REMATCH[1]}" = "cuda" ]; then
+        export BUILD_CUDA_MODULE="ON"
+    else
+        export BUILD_CUDA_MODULE="OFF"
+    fi
     export BUILD_PYTORCH_OPS="OFF"
     export BUILD_TENSORFLOW_OPS="OFF"
     ci_print_env

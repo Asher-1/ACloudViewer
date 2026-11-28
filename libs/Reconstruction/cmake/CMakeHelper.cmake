@@ -371,7 +371,7 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
                 RUNTIME_OUTPUT_DIRECTORY "${COLMAP_TEST_RUNTIME_DIR}")
         # gmock provides the matcher infrastructure used by upstream test
         # files (e.g. util/eigen_matchers.h).
-        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} gtest_main gmock ${_COLMAP_TEST_LIBS})
+        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} colmap_gtest_main gmock ${_COLMAP_TEST_LIBS})
 
         # Batch C test-layout fix: resolve shared-library directories at
         # configure time (Qt, vendored opencv) into the build RPATH so the
@@ -404,18 +404,21 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
             target_compile_options(${TARGET_NAME} PRIVATE "-Wno-deprecated-declarations")
         endif ()
 
-        add_test(NAME "${FOLDER_NAME}/${TARGET_NAME}"
+        cloudviewer_add_test(NAME "${FOLDER_NAME}/${TARGET_NAME}"
                  COMMAND $<TARGET_FILE:${TARGET_NAME}>)
-        # Collect for the unified reconstruction_cpp_tests_gate (CUDA tests
-        # use COLMAP_ADD_CUDA_TEST and are intentionally not collected: the
-        # gate must stay GPU-independent for GPU-less CI runners).
-        set_property(GLOBAL APPEND PROPERTY COLMAP_RECONSTRUCTION_TESTS
-                     "${TARGET_NAME}")
+        if("${TARGET_NAME}" STREQUAL "sift_test" OR "${TARGET_NAME}" STREQUAL "opengl_utils_test")
+            set_property(TEST "${FOLDER_NAME}/${TARGET_NAME}" APPEND PROPERTY LABELS graphics)
+        elseif("${TARGET_NAME}" STREQUAL "bundle_adjustment_caspar_test")
+            set_property(TEST "${FOLDER_NAME}/${TARGET_NAME}" APPEND PROPERTY LABELS gpu)
+        endif()
         # Keep the complete runner environment and prepend the build runtime
         # using the host-native path separator. Serialising PATH into the
         # ENVIRONMENT list truncates Windows paths at every semicolon.
         cloudviewer_set_test_runtime_environment("${FOLDER_NAME}/${TARGET_NAME}"
             "${COLMAP_TEST_RUNTIME_DIR}")
+        # Developer logging paths must not change synthetic CLI test behavior.
+        set_property(TEST "${FOLDER_NAME}/${TARGET_NAME}" APPEND PROPERTY
+            ENVIRONMENT_MODIFICATION "GLOG_log_dir=unset:")
         # Tests are build-tree diagnostics, not release artifacts. Skipping
         # the post-link strip avoids a second writer touching the executable
         # while highly parallel Make builds finalize test targets.
@@ -443,7 +446,7 @@ macro(COLMAP_ADD_CUDA_TEST TARGET_NAME)
         set_target_properties(${TARGET_NAME} PROPERTIES
                 FOLDER ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME}
                 RUNTIME_OUTPUT_DIRECTORY "${COLMAP_TEST_RUNTIME_DIR}")
-        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} gtest_main)
+        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} colmap_gtest_main)
 
         if (MSVC)
             # fix compiling error on windows platform
@@ -452,7 +455,7 @@ macro(COLMAP_ADD_CUDA_TEST TARGET_NAME)
             target_compile_options(${TARGET_NAME} PRIVATE "-Wno-deprecated-declarations")
         endif ()
 
-        add_test(NAME "${FOLDER_NAME}/${TARGET_NAME}"
+        cloudviewer_add_test(NAME "${FOLDER_NAME}/${TARGET_NAME}"
                  COMMAND $<TARGET_FILE:${TARGET_NAME}>)
         # Needs a CUDA device and driver: the GPU-independent gates select
         # their tests by name, so exclude this one explicitly by label.
@@ -490,7 +493,7 @@ macro(COLMAP_ADD_HIP_TEST TARGET_NAME)
                 FOLDER ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME}
                 RUNTIME_OUTPUT_DIRECTORY "${COLMAP_TEST_RUNTIME_DIR}")
         target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME}
-                              gtest_main 3rdparty_rocm)
+                              colmap_gtest_main 3rdparty_rocm)
 
         if (MSVC)
             target_compile_options(${TARGET_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")
@@ -498,7 +501,7 @@ macro(COLMAP_ADD_HIP_TEST TARGET_NAME)
             target_compile_options(${TARGET_NAME} PRIVATE "-Wno-deprecated-declarations")
         endif ()
 
-        add_test(NAME "${FOLDER_NAME}/${TARGET_NAME}" COMMAND $<TARGET_FILE:${TARGET_NAME}>)
+        cloudviewer_add_test(NAME "${FOLDER_NAME}/${TARGET_NAME}" COMMAND $<TARGET_FILE:${TARGET_NAME}>)
         # Needs a ROCm device; see COLMAP_ADD_CUDA_TEST.
         set_tests_properties("${FOLDER_NAME}/${TARGET_NAME}" PROPERTIES
                 LABELS gpu)

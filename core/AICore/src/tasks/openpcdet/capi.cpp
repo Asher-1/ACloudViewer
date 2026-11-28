@@ -31,6 +31,7 @@
 #include "common/ggml_backend_utils.hpp"
 #include "common/model_cache.hpp"
 #include "tasks/openpcdet/gguf_loader.h"
+#include "tasks/openpcdet/model_catalog.h"
 #include "tasks/openpcdet/models/bevfusion.h"
 #include "tasks/openpcdet/models/caddn.h"
 #include "tasks/openpcdet/models/parta2.h"
@@ -48,6 +49,12 @@ using aicore::capi::json_escape;
 #define AICORE_OPENPCDET_ABI_VERSION 1
 
 namespace {
+
+// Product visualization default for the detection score threshold. The
+// GGUF-declared score stays the official evaluation threshold (reported
+// verbatim by read_model_info); inference without an explicit score option
+// uses this default so first-open results filter low-confidence boxes.
+constexpr float kDefaultScoreThresh = 0.3f;
 
 std::unique_ptr<openpcdet::model> create_engine_model(const std::string& path,
                                                       std::string& error) {
@@ -176,9 +183,11 @@ struct aicore_openpcdet_ctx {
     int32_t threads = 0;
     std::string last_error;
 
-    // Runtime threshold overrides captured from the options (NaN/0 = keep
-    // GGUF values; applied to the engine hparams right after load).
-    float score_thresh = 0.0f;
+    // Effective thresholds applied to the engine hparams right after load.
+    // Score: explicit option verbatim (0 = no filtering), otherwise the
+    // product visualization default. NMS/max: 0 = keep the GGUF value,
+    // >0 = explicit override.
+    float score_thresh = kDefaultScoreThresh;
     float nms_thresh = 0.0f;
     int max_boxes = 0;
 
@@ -254,9 +263,21 @@ AICORE_CAPI aicore_openpcdet_ctx* aicore_openpcdet_load_opts(
     if (ctx == nullptr) return nullptr;
     ctx->model_path = gguf_path;
     ctx->threads = opts ? opts->common.threads : 0;
+    // No-option fallback uses the per-checkpoint visualization defaults
+    // (score + NMS); the GGUF keeps the official evaluation thresholds and
+    // the accuracy probe pins those explicitly, so the gate never shifts.
+    openpcdet::OpenPCDetVisDefaults vis{};
+    const std::string gguf_filename =
+            std::filesystem::path(gguf_path).filename().string();
+    const bool has_vis =
+            openpcdet::openpcdet_visualization_defaults(gguf_filename, &vis);
+    const bool nms_explicit = opts && opts->nms_thresh_set;
     ctx->score_thresh =
-            opts && opts->score_thresh_set ? opts->score_thresh : 0.0f;
-    ctx->nms_thresh = opts && opts->nms_thresh_set ? opts->nms_thresh : 0.0f;
+            opts && opts->score_thresh_set
+                    ? opts->score_thresh
+                    : (has_vis ? vis.score_thresh : kDefaultScoreThresh);
+    ctx->nms_thresh =
+            nms_explicit ? opts->nms_thresh : (has_vis ? vis.nms_thresh : 0.0f);
     ctx->max_boxes = opts && opts->max_boxes_set ? opts->max_boxes : 0;
     ctx->dump_taps_dir = opts ? opts->dump_taps_dir : std::string();
     try {
@@ -272,11 +293,14 @@ AICORE_CAPI aicore_openpcdet_ctx* aicore_openpcdet_load_opts(
             return ctx;
         }
         ctx->device = ctx->engine->be.device;
-        // Apply runtime threshold overrides after the GGUF hparams exist.
-        if (ctx->score_thresh > 0.0f) {
-            ctx->engine->file.hp.score_thresh = ctx->score_thresh;
-        }
-        if (ctx->nms_thresh > 0.0f) {
+        // Apply the effective thresholds after the GGUF hparams exist.
+        // Score is always applied: an explicit 0 means no filtering, an
+        // unset option resolves to the product default captured above.
+        ctx->engine->file.hp.score_thresh = ctx->score_thresh;
+        // An explicit NMS option applies verbatim (0 disables the final IoU
+        // NMS stage); otherwise the per-checkpoint default (>0) applies, and
+        // a 0 fallback keeps the GGUF value.
+        if (nms_explicit || ctx->nms_thresh > 0.0f) {
             ctx->engine->file.hp.nms_thresh = ctx->nms_thresh;
         }
         if (ctx->max_boxes > 0) {
@@ -746,8 +770,11 @@ AICORE_CAPI int aicore_openpcdet_model_defaults(const char* gguf_path,
                                                 float* score_thresh,
                                                 float* nms_thresh,
                                                 int32_t* max_boxes) {
-    // Thin view over the same metadata reader: one owner for the GGUF
-    // header facts, one place that validates them.
+    // Effective defaults for seeding UI controls: the per-checkpoint
+    // visualization score + NMS (the GGUF keeps the official evaluation
+    // thresholds, see read_model_info); max boxes stays GGUF-declared. Thin
+    // view over the same metadata reader: one owner for the GGUF header
+    // facts, one place that validates them.
     aicore_openpcdet_model_info info{};
     info.struct_size = sizeof(info);
     info.abi_version = AICORE_OPENPCDET_MODEL_INFO_ABI_VERSION;
@@ -757,8 +784,14 @@ AICORE_CAPI int aicore_openpcdet_model_defaults(const char* gguf_path,
     if (!(info.score_thresh >= 0.0f && info.score_thresh <= 1.0f)) return -1;
     if (!(info.nms_thresh >= 0.0f && info.nms_thresh <= 1.0f)) return -1;
     if (info.max_boxes <= 0) return -1;
-    if (score_thresh) *score_thresh = info.score_thresh;
-    if (nms_thresh) *nms_thresh = info.nms_thresh;
+    openpcdet::OpenPCDetVisDefaults vis{};
+    const std::string gguf_filename =
+            std::filesystem::path(gguf_path).filename().string();
+    const bool has_vis =
+            openpcdet::openpcdet_visualization_defaults(gguf_filename, &vis);
+    if (score_thresh)
+        *score_thresh = has_vis ? vis.score_thresh : kDefaultScoreThresh;
+    if (nms_thresh) *nms_thresh = has_vis ? vis.nms_thresh : info.nms_thresh;
     if (max_boxes) *max_boxes = info.max_boxes;
     return 0;
 }

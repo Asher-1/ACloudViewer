@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-1.6215,-0.4681) scale(1.09851)">
+
+<title>About plugins — interlocking puzzle pieces</title>
+<g transform="translate(3 3.5)">  <path d="M 0 0 H 2.6 C 1.8 -2.5 6.2 -2.5 5.4 0 H 8 V 2.6 C 10.5 1.8 10.5 6.2 8 5.4 V 8 H 5.4 C 6.2 5.5 1.8 5.5 2.6 8 H 0 V 5.4 C 2.5 6.2 2.5 1.8 0 2.6 Z" fill="#9AC1E0" stroke="#6F6F59" stroke-width="0.7"/></g>
+<g transform="translate(12 3.5)">  <path d="M 0 0 H 2.6 C 1.8 -2.5 6.2 -2.5 5.4 0 H 8 V 2.6 C 10.5 1.8 10.5 6.2 8 5.4 V 8 H 5.4 C 6.2 5.5 1.8 5.5 2.6 8 H 0 V 5.4 C 2.5 6.2 2.5 1.8 0 2.6 Z" fill="#C4813E" stroke="#6F6F59" stroke-width="0.7"/></g>
+<g transform="translate(3 13)">  <path d="M 0 0 H 2.6 C 1.8 -2.5 6.2 -2.5 5.4 0 H 8 V 2.6 C 10.5 1.8 10.5 6.2 8 5.4 V 8 H 5.4 C 6.2 5.5 1.8 5.5 2.6 8 H 0 V 5.4 C 2.5 6.2 2.5 1.8 0 2.6 Z" fill="#F3C017" stroke="#6F6F59" stroke-width="0.7"/></g>
+<g transform="translate(12 13)">  <path d="M 0 0 H 2.6 C 1.8 -2.5 6.2 -2.5 5.4 0 H 8 V 2.6 C 10.5 1.8 10.5 6.2 8 5.4 V 8 H 5.4 C 6.2 5.5 1.8 5.5 2.6 8 H 0 V 5.4 C 2.5 6.2 2.5 1.8 0 2.6 Z" fill="#72BE44" stroke="#6F6F59" stroke-width="0.7"/></g>
+
+</g>
+</svg>

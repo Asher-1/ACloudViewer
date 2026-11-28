@@ -33,7 +33,7 @@ NurbsSurfaceReconstruction::NurbsSurfaceReconstruction()
               tr("Nurbs Surface Triangulation"),
               tr("Nurbs Surface Triangulation"),
               tr("Nurbs Surface Triangulation from clouds"),
-              ":/toolbar/PclAlgorithms/icons/bspline_surface.png")),
+              ":/qPCL/icons/pclBSplineSurface.svg")),
       m_dialog(nullptr),
       m_order(3),
       m_curveResolution(4),

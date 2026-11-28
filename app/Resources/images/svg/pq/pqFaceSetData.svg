@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<title>ANN-01 — Point-cloud and mesh semantic annotation</title>  <path d="M 2.2 3.4 L 9 1.8 L 14 5 L 10.8 11 L 3.2 10.2 Z" fill="#D0E5F6" stroke="#6F6F59" stroke-width="0.85"/>  <path d="M 2.2 3.4 L 10.8 11 M 9 1.8 L 7.4 6.8 L 14 5 M 3.2 10.2 L 7.4 6.8" fill="none" stroke="#2896D3" stroke-width="0.7"/>  <circle cx="3.4" cy="14.2" r="1.35" fill="#72BE44" stroke="#6F6F59"/>  <circle cx="7.3" cy="13.4" r="1.35" fill="#2896D3" stroke="#6F6F59"/>  <circle cx="10.6" cy="15.7" r="1.35" fill="#72BE44" stroke="#6F6F59"/>  <circle cx="3.4" cy="18.7" r="1.35" fill="#2896D3" stroke="#6F6F59"/>  <circle cx="7.2" cy="20.3" r="1.35" fill="#72BE44" stroke="#6F6F59"/>  <circle cx="10.8" cy="19.7" r="1.35" fill="#2896D3" stroke="#6F6F59"/><g data-source="annotation/annotationTools.svg" transform="translate(12.0 11.7) scale(.49)">
+<g transform="translate(-0.0482,-0.5523) scale(1.00822)">
+<defs><linearGradient id="tag" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#F3C017"/><stop offset="1.000" stop-color="#C1A561"/></linearGradient></defs>
+<path d="M 4.5 5.2 C 1.2 4.2 1.2 15 4.8 15.4" fill="none" stroke-width="0.7"/>
+<path d="M 3 2 H 9.2 L 22.5 15.3 L 14.5 23 L 1.5 10 V 3.5 Q 1.5 2 3 2 Z M 6.8 6 A 1.5 1.5 0 1 0 3.8 6 A 1.5 1.5 0 1 0 6.8 6 Z" fill="url(#tag)" stroke="#6F6F59" fill-rule="evenodd"/>
+</g></g>
+</svg>

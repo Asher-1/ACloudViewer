@@ -944,7 +944,8 @@ Rig SqliteDatabase::ReadRig(const rig_t rig_id) const {
     Eigen::Vector4d qvec;
     Eigen::Vector3d tvec;
     if (SensorFromRigFromBlob(sensor_stmt, 2, &qvec, &tvec)) {
-      rig.AddSensor(sensor_id, qvec, tvec);
+      rig.AddSensor(sensor_id, Rigid3d(Eigen::Quaterniond(
+          qvec(0), qvec(1), qvec(2), qvec(3)), tvec));
     } else {
       rig.AddSensor(sensor_id, std::nullopt, std::nullopt);
     }

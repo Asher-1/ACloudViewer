@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
+#include <QAction>
 #include <QApplication>
 #include <QClipboard>
 #include <QFile>
@@ -20,7 +23,6 @@
 #include <QRandomGenerator>
 #include <QScrollArea>
 #include <QScrollBar>
-#include <QShortcut>
 #include <QTableWidget>
 #include <QTimer>
 #include <QToolButton>
@@ -28,14 +30,11 @@
 
 #include "PpocrTableEditor.h"
 #include "QtCompat.h"
-#define REQUIRE(condition)                                               \
-    do {                                                                 \
-        if (!(condition)) {                                              \
-            std::fprintf(stderr, "line %d: %s\n", __LINE__, #condition); \
-            return 1;                                                    \
-        }                                                                \
-    } while (false)
+#define REQUIRE(...) ASSERT_TRUE((__VA_ARGS__))
 namespace {
+int probeArgc = 0;
+char** probeArgv = nullptr;
+
 QJsonObject snapshot(QTableWidget* table) {
     QJsonArray states;
     for (int r = 0; r < table->rowCount(); ++r)
@@ -79,7 +78,9 @@ bool menu(QTableWidget* grid, const QString& action) {
     return triggered;
 }
 }  // namespace
-int main(int argc, char** argv) {
+TEST(PpocrTableTest, EditingAndSerialization) {
+    int argc = probeArgc;
+    char** argv = probeArgv;
     QApplication app(argc, argv);
     QStringList inputs{
             "",
@@ -214,10 +215,12 @@ int main(int argc, char** argv) {
             REQUIRE(view.grab().save(QString::fromLocal8Bit(argv[1]) +
                                      (dark ? "/ppocr-table-dark.png"
                                            : "/ppocr-table-light.png")));
-        auto binding = [&view](const QKeySequence& sequence) -> QShortcut* {
-            QShortcut* found = nullptr;
-            for (auto* item : view.findChildren<QShortcut*>())
-                if (item->key() == sequence) {
+        // Bindings are QActions registered with the shortcut catalog (the
+        // editor migrated off QShortcut); uniqueness per sequence still holds.
+        auto binding = [&view](const QKeySequence& sequence) -> QAction* {
+            QAction* found = nullptr;
+            for (auto* item : view.findChildren<QAction*>())
+                if (item->shortcuts().contains(sequence)) {
                     if (found) return nullptr;  // An ambiguous duplicate.
                     found = item;
                 }
@@ -231,17 +234,17 @@ int main(int argc, char** argv) {
             REQUIRE(binding(sequence));
         table->setCurrentCell(0, 0);
         REQUIRE(QMetaObject::invokeMethod(binding(QKeySequence("Ctrl+B")),
-                                          "activated", Qt::DirectConnection));
+                                          "triggered", Qt::DirectConnection));
         REQUIRE(table->item(0, 0)->font().bold());
         REQUIRE(QMetaObject::invokeMethod(
-                binding(QKeySequence(QKeySequence::Undo)), "activated",
+                binding(QKeySequence(QKeySequence::Undo)), "triggered",
                 Qt::DirectConnection));
         REQUIRE(!table->item(0, 0)->font().bold());
         bool requested = false;
         QObject::connect(&view, &PpocrTableEditor::saveRequested,
                          [&requested]() { requested = true; });
         REQUIRE(QMetaObject::invokeMethod(binding(QKeySequence("Ctrl+S")),
-                                          "activated", Qt::DirectConnection));
+                                          "triggered", Qt::DirectConnection));
         REQUIRE(requested && !view.isWindow());
     }
     QJsonArray heightCases;
@@ -392,5 +395,11 @@ int main(int argc, char** argv) {
     std::puts(
             "PASS: OCR table tokens/HTML/TSV, format/span/history, clipboard, "
             "structure");
-    return 0;
+}
+
+int main(int argc, char** argv) {
+    probeArgc = argc;
+    probeArgv = argv;
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

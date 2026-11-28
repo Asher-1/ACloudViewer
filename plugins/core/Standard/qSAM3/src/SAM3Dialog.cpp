@@ -8,6 +8,7 @@
 #include "SAM3Dialog.h"
 
 #include <CVLog.h>
+#include <QtCompat.h>
 #include <aicore/backend_capi.h>
 #include <aicore/sam3_capi.h>
 
@@ -240,14 +241,15 @@ void SAM3Canvas::clearPointsKeepBox() {
 }
 
 QPointF SAM3Canvas::screenToImage(const QPointF& screen) const {
-    const QPixmap* pm = pixmap();
-    if (!pm || pm->isNull() || m_original.isNull()) return QPointF(-1, -1);
+    const QPixmap pixmap = qtCompatLabelPixmap(this);
+    if (pixmap.isNull() || m_original.isNull()) return QPointF(-1, -1);
     // The pixmap is centered inside the QLabel (Qt::AlignCenter); its top-left
     // corner is offset from the widget origin by half the letterbox margin.
-    const double offX = (width() - pm->width()) / 2.0;
-    const double offY = (height() - pm->height()) / 2.0;
-    const double ix = (screen.x() - offX) / pm->width() * m_original.width();
-    const double iy = (screen.y() - offY) / pm->height() * m_original.height();
+    const double offX = (width() - pixmap.width()) / 2.0;
+    const double offY = (height() - pixmap.height()) / 2.0;
+    const double ix = (screen.x() - offX) / pixmap.width() * m_original.width();
+    const double iy =
+            (screen.y() - offY) / pixmap.height() * m_original.height();
     return QPointF(ix, iy);
 }
 
@@ -625,19 +627,6 @@ void SAM3Dialog::setupUi() {
     m_pageList = new QListWidget(this);
     m_pageList->setFixedWidth(ecvAICoreUi::dpiScaled(132));
     m_pageList->setSpacing(ecvAICoreUi::dpiScaled(2));
-    // Palette-based list styling lifted from YOLODialog::setupUi: tracks
-    // light/dark themes without hardcoded colors. Four short-titled pages
-    // never overflow, so a fixed-width list (TrellisDialog rendition) needs
-    // no draggable splitter / persisted splitter state.
-    m_pageList->setStyleSheet(
-            QStringLiteral("QListWidget { background: palette(base); border: "
-                           "1px solid palette(mid); border-radius: 3px; "
-                           "padding: 2px; }"
-                           "QListWidget::item { padding: 4px 6px; "
-                           "border-radius: 3px; }"
-                           "QListWidget::item:selected { background: "
-                           "palette(highlight); color: "
-                           "palette(highlighted-text); }"));
     m_pageStack = new QStackedWidget(this);
 
     // Model-switch hint: the new model loads lazily on the next Segment /
@@ -676,8 +665,8 @@ void SAM3Dialog::setupUi() {
         modeGroup->addButton(u.modePoints, 0);
         modeGroup->addButton(u.modeBox, 1);
         if (u.modeExemplar) modeGroup->addButton(u.modeExemplar, 2);
-        connect(modeGroup, QOverload<int>::of(&QButtonGroup::buttonClicked),
-                this, &SAM3Dialog::onModeChanged);
+        connect(modeGroup, qtCompatButtonGroupIdClicked(), this,
+                &SAM3Dialog::onModeChanged);
 
         if (isFull) {
             u.textPrompt = new QLineEdit();
@@ -690,12 +679,6 @@ void SAM3Dialog::setupUi() {
                     &SAM3Dialog::onRunSegment);
             u.segmentBtn = new QPushButton(tr("Segment"));
             u.segmentBtn->setEnabled(false);
-            u.segmentBtn->setStyleSheet(
-                    "QPushButton { background: #00897b; color: white; "
-                    "font-weight: bold;"
-                    "  border: none; border-radius: 4px; padding: 5px 14px; }"
-                    "QPushButton:hover { background: #00796b; }"
-                    "QPushButton:disabled { background: #555; color: #999; }");
             connect(u.segmentBtn, &QPushButton::clicked, this,
                     &SAM3Dialog::onRunSegment);
         }
@@ -749,11 +732,6 @@ void SAM3Dialog::setupUi() {
         u.modelCombo = new QComboBox();
         u.modelCombo->setMinimumWidth(ecvAICoreUi::dpiScaled(240));
         u.loadBtn = new QPushButton(tr("Load"));
-        u.loadBtn->setStyleSheet(
-                "QPushButton { background: #00897b; color: white; "
-                "font-weight: bold;"
-                "  border: none; border-radius: 4px; padding: 5px 14px; }"
-                "QPushButton:hover { background: #00796b; }");
         // No manual Load step: the model loads lazily on the first Segment /
         // click / box. The button stays wired for the Browse fallback but
         // is hidden so the UI matches the upstream flow.

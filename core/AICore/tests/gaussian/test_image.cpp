@@ -5,10 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// Asset-free: the untrusted image-input validator (ingest_images bounds/finite
-// checks).
-#include <cmath>
-#include <cstdio>
+// Asset-free tests for the untrusted image-input validator.
+#include <gtest/gtest.h>
+
 #include <limits>
 #include <string>
 #include <vector>
@@ -16,78 +15,58 @@
 #include "tasks/gaussian/gguf_loader.h"
 #include "tasks/gaussian/image.h"
 
-static int failures = 0;
-#define CHECK(cond)                                                      \
-    do {                                                                 \
-        if (!(cond)) {                                                   \
-            std::fprintf(stderr, "FAIL %s:%d: %s\n", __FILE__, __LINE__, \
-                         #cond);                                         \
-            failures++;                                                  \
-        }                                                                \
-    } while (0)
+class GaussianImageInput : public ::testing::Test {
+protected:
+    void SetUp() override {
+        hp.image_size = H;
+        hp.in_channels = C;
+        hp.patch_size = 8;
+    }
 
-int main() {
+    static constexpr int H = 512, W = 512, C = 3;
+    static constexpr size_t per_view = static_cast<size_t>(C) * H * W;
     aicore::gaussian::hparams hp;
-    hp.image_size = 512;
-    hp.in_channels = 3;
-    hp.patch_size = 8;
+    std::vector<float> out;
+    std::string error;
+};
 
-    const int H = 512, W = 512, C = 3;
-    const size_t per_view = (size_t)C * H * W;
+TEST_F(GaussianImageInput, AcceptsTwoMidGreyViews) {
+    std::vector<float> image(2 * per_view, 0.5f);
+    ASSERT_TRUE(aicore::gaussian::ingest_images(hp, image.data(), 2, H, W, out,
+                                                error))
+            << error;
+    EXPECT_TRUE(error.empty()) << error;
+    EXPECT_EQ(out.size(), 2 * per_view);
+}
 
-    // valid: 2 views of mid-grey
-    {
-        std::vector<float> img(2 * per_view, 0.5f);
-        std::vector<float> out;
-        std::string err;
-        CHECK(aicore::gaussian::ingest_images(hp, img.data(), 2, H, W, out,
-                                              err));
-        CHECK(err.empty());
-        CHECK(out.size() == 2 * per_view);
-    }
-    // wrong resolution
-    {
-        std::vector<float> img((size_t)C * 256 * 256, 0.0f);
-        std::vector<float> out;
-        std::string err;
-        CHECK(!aicore::gaussian::ingest_images(hp, img.data(), 1, 256, 256, out,
-                                               err));
-        CHECK(!err.empty());
-    }
-    // non-finite value
-    {
-        std::vector<float> img(per_view, 0.0f);
-        img[123] = std::numeric_limits<float>::quiet_NaN();
-        std::vector<float> out;
-        std::string err;
-        CHECK(!aicore::gaussian::ingest_images(hp, img.data(), 1, H, W, out,
-                                               err));
-    }
-    // infinity too
-    {
-        std::vector<float> img(per_view, 0.0f);
-        img[per_view - 1] = std::numeric_limits<float>::infinity();
-        std::vector<float> out;
-        std::string err;
-        CHECK(!aicore::gaussian::ingest_images(hp, img.data(), 1, H, W, out,
-                                               err));
-    }
-    // zero / negative views
-    {
-        std::vector<float> img(per_view, 0.0f);
-        std::vector<float> out;
-        std::string err;
-        CHECK(!aicore::gaussian::ingest_images(hp, img.data(), 0, H, W, out,
-                                               err));
-    }
-    // null pointer
-    {
-        std::vector<float> out;
-        std::string err;
-        CHECK(!aicore::gaussian::ingest_images(hp, nullptr, 1, H, W, out, err));
-    }
+TEST_F(GaussianImageInput, RejectsWrongResolution) {
+    std::vector<float> image(static_cast<size_t>(C) * 256 * 256, 0.0f);
+    EXPECT_FALSE(aicore::gaussian::ingest_images(hp, image.data(), 1, 256, 256,
+                                                 out, error));
+    EXPECT_FALSE(error.empty());
+}
 
-    std::printf(failures ? "test_image: %d FAILURES\n" : "test_image: ok\n",
-                failures);
-    return failures ? 1 : 0;
+TEST_F(GaussianImageInput, RejectsNaN) {
+    std::vector<float> image(per_view, 0.0f);
+    image[123] = std::numeric_limits<float>::quiet_NaN();
+    EXPECT_FALSE(aicore::gaussian::ingest_images(hp, image.data(), 1, H, W, out,
+                                                 error));
+}
+
+TEST_F(GaussianImageInput, RejectsInfinity) {
+    std::vector<float> image(per_view, 0.0f);
+    image[per_view - 1] = std::numeric_limits<float>::infinity();
+    EXPECT_FALSE(aicore::gaussian::ingest_images(hp, image.data(), 1, H, W, out,
+                                                 error));
+}
+
+TEST_F(GaussianImageInput, RejectsZeroViews) {
+    std::vector<float> image(per_view, 0.0f);
+    EXPECT_FALSE(aicore::gaussian::ingest_images(hp, image.data(), 0, H, W, out,
+                                                 error));
+}
+
+TEST_F(GaussianImageInput, RejectsNullInput) {
+    EXPECT_FALSE(
+            aicore::gaussian::ingest_images(hp, nullptr, 1, H, W, out, error));
 }

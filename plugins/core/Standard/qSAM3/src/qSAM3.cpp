@@ -7,6 +7,7 @@
 
 #include "qSAM3.h"
 
+#include <ecvAICoreUiHelper.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPluginDbNaming.h>
@@ -63,6 +64,7 @@ void qSAM3::showDialog() {
     if (!m_app) return;
     if (!m_dialog) {
         m_dialog = new SAM3Dialog(m_app->getMainWindow());
+        ecvAICoreUi::bindDialogAction(m_action, m_dialog);
         m_dialog->setAppInterface(m_app);
     }
     m_dialog->show();

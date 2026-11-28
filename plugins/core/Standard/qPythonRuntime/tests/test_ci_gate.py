@@ -20,21 +20,35 @@ def configure_gate(scenario, tmp_path):
     source.mkdir()
     marker = tmp_path / "executed"
     marker.mkdir()
-    cmake = "cmake_minimum_required(VERSION 3.24)\nproject(gate NONE)\nenable_testing()\n"
-    cmake += "option(PLUGIN_PYTHON \"Plugin enabled\" ON)\n"
-    cmake += "option(BUILD_PYTHON_MODULE \"Python modules enabled\" ON)\n"
-    cmake += "option(BUILD_UNIT_TESTS \"Tests enabled\" ON)\n"
+    owner = source / "owner"
+    owner.mkdir()
+    cmake = ("cmake_minimum_required(VERSION 3.24)\n"
+             "project(gate NONE)\nenable_testing()\n"
+             "option(BUILD_UNIT_TESTS \"Tests enabled\" ON)\n"
+             "option(PLUGIN_PYTHON \"Plugin enabled\" ON)\n"
+             "option(BUILD_PYTHON_MODULE \"Python modules enabled\" ON)\n"
+             "set(CLOUDVIEWER_TEST_CONTRACT_FIXTURE TRUE)\n"
+             "add_custom_target(check-test-system)\n"
+             f'include("{ROOT.as_posix()}/tests/Testing.cmake")\n'
+             "if(PLUGIN_PYTHON AND BUILD_PYTHON_MODULE AND BUILD_UNIT_TESTS)\n"
+             "  add_subdirectory(owner)\nendif()\n"
+             f'add_subdirectory("{ROOT.as_posix()}/tests" root-tests)\n')
+    registrations = []
     for number, name in enumerate(NAMES):
         if scenario == "missing" and number == 1:
             continue
-        script = source / (name + ".py")
+        script = owner / (name + ".py")
         script.write_text(
             "from pathlib import Path\n"
             + f"Path({str(marker / name)!r}).touch()\n"
             + f"raise SystemExit({1 if scenario == 'failure' and number == 1 else 0})\n",
             encoding="utf-8",
         )
-        cmake += f'add_test(NAME {name} COMMAND "{Path(sys.executable).as_posix()}" "{script.as_posix()}")\n'
+        labels = "model" if number == 2 else "unit"
+        registrations.append(
+            f'cloudviewer_add_test(NAME {name} COMMAND "{Path(sys.executable).as_posix()}" '
+            f'"{script.as_posix()}" LABELS {labels})\n')
+    (owner / "CMakeLists.txt").write_text("".join(registrations), encoding="utf-8")
     (source / "CMakeLists.txt").write_text(cmake, encoding="utf-8")
     options = ["-DPLUGIN_PYTHON=OFF"] if scenario == "plugin_off" else []
     if scenario == "tests_off":
@@ -46,23 +60,26 @@ def configure_gate(scenario, tmp_path):
     return source, build, marker
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="The Bash gate is exercised on Linux and macOS")
 @pytest.mark.parametrize("scenario", ["pass", "failure", "missing", "plugin_off", "tests_off", "module_off"])
-@pytest.mark.parametrize("scope", ["all", "native"])
-def test_ci_gate_executes_registered_plugin_tests(scenario, scope, tmp_path):
+@pytest.mark.parametrize("profile", ["all", "ci"])
+def test_ci_gate_executes_registered_plugin_tests(scenario, profile, tmp_path):
     _, build, marker = configure_gate(scenario, tmp_path)
     result = subprocess.run(
-        ["bash", "-c", 'source "$1"; run_qpythonruntime_tests "$2" "$3"', "gate",
-         str(ROOT / "util/ci_utils.sh"), str(build), scope],
+        ["cmake", f"-DBUILD_DIR={build}", f"-DPROFILE={profile}", "-DJOBS=1",
+         "-P", str(ROOT / "tests/Run.cmake")],
         capture_output=True, text=True,
     )
-    if scenario in ("failure", "missing"):
+    # An empty/disabled fixture must not become a false-green CI gate. Missing
+    # one registration is not an error: the configured catalog owns selection.
+    if scenario in ("failure", "plugin_off", "tests_off", "module_off"):
         assert result.returncode != 0, result.stdout + result.stderr
     else:
         assert result.returncode == 0, result.stdout + result.stderr
     executed = {path.name for path in marker.iterdir()}
-    if scenario in ("pass", "failure"):
-        expected = set(NAMES[:2] if scope == "native" else NAMES)
+    if scenario in ("pass", "failure", "missing"):
+        expected = set(NAMES[:2] if profile == "ci" else NAMES)
+        if scenario == "missing":
+            expected.remove(NAMES[1])
         assert executed == expected, result.stdout + result.stderr
     else:
         assert not executed, executed

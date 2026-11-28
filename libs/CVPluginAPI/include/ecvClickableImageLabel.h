@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <QtCompat.h>
+
 #include <QLabel>
 
 #include "CVPluginAPI.h"
@@ -38,7 +40,7 @@ public:
 
 protected:
     void mousePressEvent(QMouseEvent* event) override;
-    void enterEvent(QEvent* event) override;
+    void enterEvent(QtCompatEnterEvent* event) override;
     void leaveEvent(QEvent* event) override;
 
 private:

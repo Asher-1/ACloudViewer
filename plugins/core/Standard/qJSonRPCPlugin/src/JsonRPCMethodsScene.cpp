@@ -275,6 +275,14 @@ JsonRPCResult JsonRPCPlugin::rpcSceneRemove(
                 D("entity_id", static_cast<qint64>(entityId)));
     }
     QString name = entity->getName();
+    // Same contract as the DB tree delete path: locked entities are owned by
+    // a widget/plugin (e.g. reconstruction sensors) and must not be deleted
+    // behind its back, which would leave dangling owner pointers.
+    if (entity->isLocked()) {
+        return JsonRPCResult::error(
+                4, "Entity is locked and cannot be removed: " + name,
+                D("entity_id", static_cast<qint64>(entityId)));
+    }
     m_app->removeFromDB(entity, true);
     redraw();
     QJsonObject result;

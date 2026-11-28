@@ -8,9 +8,8 @@
 #pragma once
 
 #include <QString>
+#include <QStringList>
 #include <QVector>
-
-class QStringList;
 
 /** Minimal YAML subset shared by the pose-config and label-flags template
  *  parsers. Both consume files the source application reads with

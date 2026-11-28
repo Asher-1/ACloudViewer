@@ -31,7 +31,9 @@ public:
             return false;
         }
         if (lhs.Cameras() != rhs_.Cameras()) {
-            *listener << " have different cameras";
+            *listener << " have different cameras: "
+                      << testing::PrintToString(lhs.Cameras()) << " vs "
+                      << testing::PrintToString(rhs_.Cameras());
             return false;
         }
         if (lhs.Frames() != rhs_.Frames()) {

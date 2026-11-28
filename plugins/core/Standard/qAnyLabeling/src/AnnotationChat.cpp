@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <Shortcuts/ecvKeySequences.h>
+
 #include <QAction>
 #include <QApplication>
 #include <QButtonGroup>
@@ -48,7 +50,6 @@
 #include <QScrollBar>
 #include <QSet>
 #include <QSettings>
-#include <QShortcut>
 #include <QSlider>
 #include <QSpinBox>
 #include <QSplitter>
@@ -1973,6 +1974,20 @@ public:
         m_input->document()->setDocumentMargin(0);
         m_input->setLineWrapMode(QTextEdit::WidgetWidth);
         m_input->installEventFilter(this);
+        auto* sendAction = new QAction(chatTr("Send message"), m_input);
+        sendAction->setObjectName(QStringLiteral("ChatSendCommand"));
+        sendAction->setShortcuts(
+                {QKeySequence(Qt::Key_Return), QKeySequence(Qt::Key_Enter)});
+        sendAction->setShortcutContext(Qt::WidgetShortcut);
+        m_input->addAction(sendAction);
+        connect(sendAction, &QAction::triggered, this, [this]() {
+            if (!m_service->client->busy()) m_send->click();
+        });
+        ecvKeySequences::instance().registerPluginCommand(
+                QStringLiteral("cvcorp.cloudviewer.plugin.qAnyLabeling"),
+                QStringLiteral("annotation/chat/send"), sendAction,
+                tr("Annotation / Chat / Input"),
+                tr("X-AnyLabeling Annotation"));
         inputFrameLayout->addWidget(m_input, 1);
         auto* controls = new QHBoxLayout;
         inputFrameLayout->addLayout(controls);
@@ -2049,7 +2064,11 @@ public:
         m_progress->setObjectName("ChatBatchProgress");
         m_progress->setWindowModality(Qt::WindowModal);
         m_progress->setMinimumDuration(0);
-        m_progress->hide();
+        // The constructor arms forceShow's timer; setMinimumDuration() does not
+        // rearm it while bar value (-1) differs from minimum. reset() stops it
+        // so the hidden dialog cannot pop up by itself, close popups and steal
+        // activeModalWidget() from a dialog waiting on exec().
+        m_progress->reset();
         connect(m_progress, &QProgressDialog::canceled, this,
                 [this]() { cancelBatch(); });
         connect(m_autoRun, &QPushButton::clicked, this,
@@ -2238,13 +2257,28 @@ private:
             if (key->key() == Qt::Key_Return || key->key() == Qt::Key_Enter) {
                 if (object == m_input) {
                     if (key->modifiers() & Qt::ShiftModifier) return false;
+                    // Send synchronously from the event filter: the catalog
+                    // QAction shortcut only fires when the input holds focus,
+                    // which offscreen/headless sessions do not guarantee.
                     if (!m_service->client->busy()) m_send->click();
                     return true;
                 }
-                return true;
+                return QDialog::eventFilter(object, event);
             }
         }
         return QDialog::eventFilter(object, event);
+    }
+    void keyPressEvent(QKeyEvent* event) override {
+        // Qt 5's QDialog clicks the first autoDefault button when Return
+        // propagates from a child (e.g. the settings line edits), which
+        // here would navigate images or open import dialogs. Enter actions
+        // in this dialog are explicit (input send shortcut / event filter),
+        // so consume the propagated key instead of synthesizing a click.
+        if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
+            event->accept();
+            return;
+        }
+        QDialog::keyPressEvent(event);
     }
     void resizeEvent(QResizeEvent* event) override {
         QDialog::resizeEvent(event);
@@ -2947,6 +2981,26 @@ public:
         connect(previous, &QPushButton::clicked, this,
                 [this]() { m_navigate(-1); });
         connect(next, &QPushButton::clicked, this, [this]() { m_navigate(1); });
+        const auto registerNavigation = [this](const QString& id,
+                                               const QString& label,
+                                               const QKeySequence& key,
+                                               QPushButton* button) {
+            auto* action = new QAction(label, this);
+            action->setObjectName(QStringLiteral("Chat_") + id);
+            action->setShortcut(key);
+            action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+            addAction(action);
+            connect(action, &QAction::triggered, button, &QPushButton::click);
+            ecvKeySequences::instance().registerPluginCommand(
+                    QStringLiteral("cvcorp.cloudviewer.plugin.qAnyLabeling"),
+                    "annotation/chat/" + id, action,
+                    tr("Annotation / Chat / VQA navigation"),
+                    tr("X-AnyLabeling Annotation"));
+        };
+        registerNavigation("previous-file", chatTr("Previous VQA file"),
+                           QKeySequence(Qt::Key_A), previous);
+        registerNavigation("next-file", chatTr("Next VQA file"),
+                           QKeySequence(Qt::Key_D), next);
         connect(m_page, &QLineEdit::textChanged, this,
                 [this](const QString& text) {
                     const int maximum =
@@ -2960,10 +3014,6 @@ public:
             else if (m_page->text().toInt() < 1)
                 m_page->setText("1");
         });
-        connect(new QShortcut(QKeySequence(Qt::Key_A), this),
-                &QShortcut::activated, previous, &QPushButton::click);
-        connect(new QShortcut(QKeySequence(Qt::Key_D), this),
-                &QShortcut::activated, next, &QPushButton::click);
         auto* right = new QWidget(splitter);
         right->setObjectName("VQAComponentsPanel");
         auto* layout = new QVBoxLayout(right);

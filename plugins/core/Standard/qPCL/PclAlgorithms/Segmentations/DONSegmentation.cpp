@@ -32,7 +32,7 @@ DONSegmentation::DONSegmentation()
               PclModuleDescription(tr("DoN Segmentation"),
                                    tr("DoN Segmentation"),
                                    tr("DoN Segmentation from clouds"),
-                                   ":/toolbar/PclAlgorithms/icons/DoN.png")),
+                                   ":/qPCL/icons/pclDifferenceOfNormals.svg")),
       m_dialog(nullptr),
       m_comparisonField("curvature"),
       m_comparisonTypes("GT"),

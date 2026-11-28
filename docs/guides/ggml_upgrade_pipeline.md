@@ -73,8 +73,10 @@ instead of gating dispatch:
 
 ```bash
 cmake ... -DAICore_ENABLED=ON -DAICore_BUILD_TESTS=ON -DAICore_BUILD_WHITEBOX_TESTS=ON
-make AICore -j"${BUILD_JOBS}"
-ctest -L capi -LE "model|gpu|e2e" -j4      # = equivalent selection of aicore-contract-tests
+# From the repository root after configuring build_app:
+cmake -DBUILD_DIR=build_app -DJOBS=4 -P tests/Run.cmake
+# Optional AICore-only developer selection:
+cmake --build build_app --target aicore-contract-tests -j4
 ```
 
 **Criteria**: 100% pass. Fix any failure before continuing.
@@ -85,7 +87,8 @@ ctest -L capi -LE "model|gpu|e2e" -j4      # = equivalent selection of aicore-co
 export AICORE_TEST_DEPTH_GGUF=$DATA/da3_models/depth-anything-base-f16.gguf
 export AICORE_TEST_DEPTH_IMAGE=examples/test_data/image/00000.png
 export AICORE_TEST_DEVICE=vulkan
-ctest -L model -j1                          # missing assets auto-skip(77), never counted as failure
+cmake -DBUILD_DIR=build_app -DJOBS=4 -DPROFILE=model -P tests/Run.cmake
+# Missing assets may skip (77); a skip is not numerical acceptance.
 ```
 
 Key parity gates (test-embedded thresholds are authoritative):
@@ -157,8 +160,8 @@ The `(task, backend)` coverage in the script report counts only **performance A/
 
 | Tier | Carrier | Coverage content |
 |---|---|---|
-| Contract tier | `ctest -L capi -LE "model\|gpu\|e2e"` (17 tests) | C API contracts of **all** tasks (including items not covered by the script: deeplsd / facedetect / gaussian / rmbg / sam3 / trellis, etc.) |
-| Model tier | `ctest -L model` (13 tests, asset-gated) | load/inference/accuracy on real GGUFs |
+| Contract tier | Root `tests/Run.cmake` default `ci` profile; focused developer target `aicore-contract-tests` | C API contracts of **all** tasks (including items not covered by the script: deeplsd / facedetect / gaussian / rmbg / sam3 / trellis, etc.) |
+| Model tier | Root `tests/Run.cmake` with `-DPROFILE=model` (asset-gated) | load/inference/accuracy on real GGUFs |
 | Performance tier | this script's 9 probes + manual benchmarks | yolo/rfdetr/depth/aliked/lightglue dual-backend + sam3 acceptance + rmbg CPU |
 
 Item-by-item explanation of uncovered entries in the script report:

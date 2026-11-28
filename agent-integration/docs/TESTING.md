@@ -29,6 +29,14 @@ QT_QPA_PLATFORM=offscreen xvfb-run -a ACloudViewer &        # no X server
 export ACV_RPC_URL=ws://127.0.0.1:6011                      # clients/tests
 ```
 
+Qt 6.4 builds must not use the `offscreen` platform: its backing store
+segfaults as soon as a `QOpenGLWidget` is on screen (Qt >= 6.5 only warns).
+Under Xvfb use the default `xcb` platform instead, which is also what CI runs:
+
+```bash
+xvfb-run -a ACV_RPC_PORT=6011 ACloudViewer &
+```
+
 ### Send a ping
 
 ```bash
@@ -149,13 +157,13 @@ The CI coverage gate is cumulative:
 L1: source/header/RPC ownership contract (no binary)
 L2: CLI registry and argument surface (harness only)
 L3: every registered task resolves to an installed plugin HELP schema
-L4: the installed GUI, started offscreen, serves every RPC test
+L4: the installed GUI, started unattended on Xvfb (`xcb`), serves every RPC test
 L5: MCP exposes list/schema/run and ordinary plugin passthrough
 ```
 
 L1/L2/L5 run on Ubuntu (Python 3.10–3.12), macOS and Windows (3.12) in
 `agent-integration.yml`. The Ubuntu installer job starts the packaged GUI
-with `QT_QPA_PLATFORM=offscreen` on Xvfb (software Mesa), waits for `ping`,
+with the default `xcb` platform on Xvfb (software Mesa), waits for `ping`,
 runs L4, and fails if the GUI is not serving before or is gone after.
 
 Linux CPU/CUDA, macOS, and Windows installer workflows run L3 against the

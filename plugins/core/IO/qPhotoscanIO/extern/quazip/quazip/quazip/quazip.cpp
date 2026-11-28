@@ -44,9 +44,9 @@ private:
     /// The pointer to the corresponding QuaZip instance.
     QuaZip *q;
     /// The codec for file names.
-    QTextCodec *fileNameCodec;
+    QtCompatQTextCodec *fileNameCodec;
     /// The codec for comments.
-    QTextCodec *commentCodec;
+    QtCompatQTextCodec *commentCodec;
     /// The archive file name.
     QString zipName;
     /// The device to access the archive.
@@ -72,9 +72,9 @@ private:
     bool zip64;
     /// The auto-close flag.
     bool autoClose;
-    inline QTextCodec *getDefaultFileNameCodec() {
+    inline QtCompatQTextCodec *getDefaultFileNameCodec() {
         if (defaultFileNameCodec == NULL) {
-            return QTextCodec::codecForLocale();
+            return QtCompatQTextCodec::codecForLocale();
         } else {
             return defaultFileNameCodec;
         }
@@ -83,7 +83,7 @@ private:
     inline QuaZipPrivate(QuaZip *q)
         : q(q),
           fileNameCodec(getDefaultFileNameCodec()),
-          commentCodec(QTextCodec::codecForLocale()),
+          commentCodec(QtCompatQTextCodec::codecForLocale()),
           ioDevice(NULL),
           mode(QuaZip::mdNotOpen),
           hasCurrentFile_f(false),
@@ -100,7 +100,7 @@ private:
     inline QuaZipPrivate(QuaZip *q, const QString &zipName)
         : q(q),
           fileNameCodec(getDefaultFileNameCodec()),
-          commentCodec(QTextCodec::codecForLocale()),
+          commentCodec(QtCompatQTextCodec::codecForLocale()),
           zipName(zipName),
           ioDevice(NULL),
           mode(QuaZip::mdNotOpen),
@@ -118,7 +118,7 @@ private:
     inline QuaZipPrivate(QuaZip *q, QIODevice *ioDevice)
         : q(q),
           fileNameCodec(getDefaultFileNameCodec()),
-          commentCodec(QTextCodec::codecForLocale()),
+          commentCodec(QtCompatQTextCodec::codecForLocale()),
           ioDevice(ioDevice),
           mode(QuaZip::mdNotOpen),
           hasCurrentFile_f(false),
@@ -142,10 +142,10 @@ private:
     QHash<QString, unz64_file_pos> directoryCaseSensitive;
     QHash<QString, unz64_file_pos> directoryCaseInsensitive;
     unz64_file_pos lastMappedDirectoryEntry;
-    static QTextCodec *defaultFileNameCodec;
+    static QtCompatQTextCodec *defaultFileNameCodec;
 };
 
-QTextCodec *QuaZipPrivate::defaultFileNameCodec = NULL;
+QtCompatQTextCodec *QuaZipPrivate::defaultFileNameCodec = NULL;
 
 void QuaZipPrivate::clearDirectoryMap() {
     directoryCaseInsensitive.clear();
@@ -558,25 +558,27 @@ QString QuaZip::getCurrentFileName() const {
     return result;
 }
 
-void QuaZip::setFileNameCodec(QTextCodec *fileNameCodec) {
+void QuaZip::setFileNameCodec(QtCompatQTextCodec *fileNameCodec) {
     p->fileNameCodec = fileNameCodec;
 }
 
 void QuaZip::setFileNameCodec(const char *fileNameCodecName) {
-    p->fileNameCodec = QTextCodec::codecForName(fileNameCodecName);
+    p->fileNameCodec = QtCompatQTextCodec::codecForName(fileNameCodecName);
 }
 
-QTextCodec *QuaZip::getFileNameCodec() const { return p->fileNameCodec; }
+QtCompatQTextCodec *QuaZip::getFileNameCodec() const {
+    return p->fileNameCodec;
+}
 
-void QuaZip::setCommentCodec(QTextCodec *commentCodec) {
+void QuaZip::setCommentCodec(QtCompatQTextCodec *commentCodec) {
     p->commentCodec = commentCodec;
 }
 
 void QuaZip::setCommentCodec(const char *commentCodecName) {
-    p->commentCodec = QTextCodec::codecForName(commentCodecName);
+    p->commentCodec = QtCompatQTextCodec::codecForName(commentCodecName);
 }
 
-QTextCodec *QuaZip::getCommentCodec() const { return p->commentCodec; }
+QtCompatQTextCodec *QuaZip::getCommentCodec() const { return p->commentCodec; }
 
 QString QuaZip::getZipName() const { return p->zipName; }
 
@@ -698,12 +700,12 @@ Qt::CaseSensitivity QuaZip::convertCaseSensitivity(QuaZip::CaseSensitivity cs) {
     }
 }
 
-void QuaZip::setDefaultFileNameCodec(QTextCodec *codec) {
+void QuaZip::setDefaultFileNameCodec(QtCompatQTextCodec *codec) {
     QuaZipPrivate::defaultFileNameCodec = codec;
 }
 
 void QuaZip::setDefaultFileNameCodec(const char *codecName) {
-    setDefaultFileNameCodec(QTextCodec::codecForName(codecName));
+    setDefaultFileNameCodec(QtCompatQTextCodec::codecForName(codecName));
 }
 
 void QuaZip::setZip64Enabled(bool zip64) { p->zip64 = zip64; }

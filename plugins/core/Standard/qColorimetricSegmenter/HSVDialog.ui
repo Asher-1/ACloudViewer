@@ -65,7 +65,7 @@
         </property>
         <property name="icon">
          <iconset resource="../../../../app/MainWindow.qrc">
-          <normaloff>:/Resources/images/svg/ecv/ecvPointPicking.svg</normaloff>:/Resources/images/svg/ecv/ecvPointPicking.svg</iconset>
+          <normaloff>:/Resources/images/svg/main/toolMainPointPicking.svg</normaloff>:/Resources/images/svg/main/toolMainPointPicking.svg</iconset>
         </property>
         <property name="checkable">
          <bool>true</bool>

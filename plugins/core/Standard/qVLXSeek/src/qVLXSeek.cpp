@@ -8,6 +8,7 @@
 #include "qVLXSeek.h"
 
 #include <aicore/inference_log.h>
+#include <ecvAICoreUiHelper.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
 
@@ -65,6 +66,7 @@ void qVLXSeek::showDialog() {
         qRegisterMetaType<VLXSeekRunResult>("VLXSeekRunResult");
         qRegisterMetaType<VLXSeekWorker::Settings>("VLXSeekWorker::Settings");
         m_dialog = new VLXSeekDialog(nullptr);
+        ecvAICoreUi::bindDialogAction(m_action, m_dialog);
         connect(m_dialog, &VLXSeekDialog::runRequested, this,
                 [this](const VLXSeekWorker::Settings& settings) {
                     m_lastSettings = settings;

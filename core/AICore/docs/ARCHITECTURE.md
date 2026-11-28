@@ -72,7 +72,7 @@ flowchart TB
     end
 
     subgraph LIB["libAICore (single SHARED, hidden symbols)"]
-        subgraph TASKS["Task layer src/tasks/[task]/<br/>(17 tasks in the unified library)"]
+        subgraph TASKS["Task layer src/tasks/[task]/<br/>(29 tasks in the unified library)"]
             T1["loader / graph /<br/>preprocess / postprocess"]
             T2["capi.cpp (C ABI landing)<br/>+ private exports (.exports.map)"]
         end
@@ -183,6 +183,7 @@ core/AICore/
 | `sam3d_capi.h` | SAM 3D Objects image-to-Gaussians generation with optional mesh decoding | `aicore_image_view` + optional stride-aware mask |
 | `tagging_capi.h` | RAM/RAM++ image tags, all logits/scores and Tag2Text captions | `aicore_image_view` |
 | `relation_capi.h` | RelateAnything typed edges, raw predicate/pair logits and native CLIP text embeddings | `aicore_image_view` plus borrowed object regions |
+| `wevisone_capi.h` | WeVisOne-VL full-chain visual perception: Qwen3-VL ViT + LLM greedy coordinate-token answers (eleven prompt-family tasks), optional pixel-decoder masks/mattes; single-source model catalog: `src/tasks/wevisone/wevisone_model_catalog.cpp` | `aicore_image_view` |
 
 > Shape rule: **new bitmap-consuming tasks must use `aicore_image_view`**. A few
 > tasks use their own typed structs because the input is not a bitmap (features,
@@ -862,9 +863,9 @@ intake checklist for new tasks/models/plugins is §13.1.
 ```bash
 # —— Build ——
 cmake --build build_app --target AICore -j4                    # the library itself
-cmake --build build_app --target aicore-contract-tests -j4     # contract test build
+cmake --build build_app --target aicore-contract-tests -j4     # build and run focused contracts
 # —— Tests ——
-ctest --test-dir build_app -L capi --output-on-failure -j1     # all C API contracts (no assets)
+ctest --test-dir build_app -L capi --output-on-failure -j1     # label selection; may require models/devices
 ctest --test-dir build_app -L parity --output-on-failure -j1   # backend parity (assets + GPU)
 ctest --test-dir build_app -L e2e   --output-on-failure -j1    # end-to-end (assets + GPU)
 cmake --build build_app --target aicore-validate-all -j1       # one-click gate (light tier)
@@ -957,3 +958,12 @@ inspection. Callers select the reference or dependency set; that module owns
 how the host implements the request. See
 [`WINDOWS_CI_PORTABILITY_AUDIT.md`](WINDOWS_CI_PORTABILITY_AUDIT.md) for evidence,
 intentional boundaries and native-platform validation still outstanding.
+
+## Unified Test Entry
+
+The root [tests module](../../../tests/README.md) owns first-party GoogleTest
+registration and CI execution. Run
+`cmake -DBUILD_DIR=build_app -DJOBS=4 -P tests/Run.cmake` from the repository
+root for the common headless gate. The focused CTest commands above assume
+their prerequisites are built; strict model accuracy/performance validation
+remains the separate `aicore-validate-all` contract.

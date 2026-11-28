@@ -163,7 +163,7 @@ Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</s
          </property>
          <property name="icon">
           <iconset resource="../../../app/MainWindow.qrc">
-           <normaloff>:/Resources/images/svg/ecv/ecvPointPicking.svg</normaloff>:/Resources/images/svg/ecv/ecvPointPicking.svg</iconset>
+           <normaloff>:/Resources/images/svg/main/toolMainPointPicking.svg</normaloff>:/Resources/images/svg/main/toolMainPointPicking.svg</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -293,7 +293,7 @@ Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</s
          </property>
          <property name="icon">
           <iconset resource="../../../app/MainWindow.qrc">
-           <normaloff>:/Resources/images/svg/ecv/ecvPointPicking.svg</normaloff>:/Resources/images/svg/ecv/ecvPointPicking.svg</iconset>
+           <normaloff>:/Resources/images/svg/main/toolMainPointPicking.svg</normaloff>:/Resources/images/svg/main/toolMainPointPicking.svg</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -423,7 +423,7 @@ Use 'X'/'Y'/'Z' to constrain the movement to the X / Y / Z axis respectively.</s
          </property>
          <property name="icon">
           <iconset resource="../../../app/MainWindow.qrc">
-           <normaloff>:/Resources/images/svg/ecv/ecvPointPicking.svg</normaloff>:/Resources/images/svg/ecv/ecvPointPicking.svg</iconset>
+           <normaloff>:/Resources/images/svg/main/toolMainPointPicking.svg</normaloff>:/Resources/images/svg/main/toolMainPointPicking.svg</iconset>
          </property>
          <property name="iconSize">
           <size>

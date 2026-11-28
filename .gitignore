@@ -249,6 +249,10 @@ docs/doxygen/xml/
 docs/_out/
 docs/_build/
 docs/_build_cmake/
+# Sphinx doctree cache for incremental builds. Kept outside docs/_out/ so
+# make_docs.py's output-directory reset does not destroy it; that means it
+# needs its own ignore entry.
+docs/doctrees/
 /docker_files/
 /docker_cache/
 docs-output/
@@ -280,4 +284,7 @@ scripts/icon_hd/orig/
 scripts/icon_hd/data/
 scripts/icon_hd/authored/
 scripts/icon_hd/logo/masters
+scripts/icon_hd/logo/review
 .claude
+.playwright-cli
+output/

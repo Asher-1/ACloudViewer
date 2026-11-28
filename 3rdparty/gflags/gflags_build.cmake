@@ -52,7 +52,6 @@ if (UNIX AND NOT APPLE)
     copy_shared_library(ext_gflags
         LIB_DIR ${GFLAGS_LIB_DIR}
         LIBRARIES ${EXT_GFLAGS_LIBRARIES}
-        SUFFIX ".${GFLAGS_MINOR_VERSION}"
     )
 
     # fix missing installed gflags issues on linux

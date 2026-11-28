@@ -13,6 +13,7 @@
 
 class vtkActor;
 class vtkPolyData;
+class vtkDataSet;
 class vtkRenderer;
 
 class QVTK_ENGINE_LIB_API vtkOrthoSliceRepresentation {
@@ -22,6 +23,9 @@ public:
     vtkOrthoSliceRepresentation();
     ~vtkOrthoSliceRepresentation();
 
+    void setInputData(vtkDataSet* input, vtkActor* sourceAppearance = nullptr);
+    vtkDataSet* inputData() const;
+    void restoreSourceAppearance();
     void setInputPolyData(vtkPolyData* input);
     vtkPolyData* inputPolyData() const;
 

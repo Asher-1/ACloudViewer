@@ -15,6 +15,8 @@
 // the sorted boxes of a dumped float32 map (one "x0 y0 ... y3 score" row per
 // box) for A/B against upstream on real detector output.
 
+#include <gtest/gtest.h>
+
 #include <algorithm>
 #include <cinttypes>
 #include <cmath>
@@ -27,9 +29,12 @@
 #include <vector>
 
 #include "tasks/ocr/ocr_db_postprocess.hpp"
-#include "tests/common/test_macros.hpp"
 
-static int failures = 0;
+#ifdef AICORE_OCR_DB_POSTPROCESS_GOLDEN
+static const char* golden_path = AICORE_OCR_DB_POSTPROCESS_GOLDEN;
+#else
+static const char* golden_path = nullptr;
+#endif
 
 namespace {
 
@@ -110,56 +115,46 @@ int dumpMap(int argc, char** argv) {
 
 }  // namespace
 
-int main(int argc, char** argv) {
-    if (argc > 1 && std::strcmp(argv[1], "--map") == 0)
-        return dumpMap(argc, argv);
 #ifdef AICORE_OCR_SOURCE_DET_FILTER_GOLDEN
-    {
-        std::ifstream source(AICORE_OCR_SOURCE_DET_FILTER_GOLDEN);
-        AICORE_CHECK(static_cast<bool>(source));
-        std::string line;
-        int cases = 0;
-        while (std::getline(source, line)) {
-            if (line.empty() || line[0] == '#') continue;
-            std::istringstream row(line);
-            int width = 0, height = 0, kept = 0;
-            DbBox box{}, expected{};
-            row >> width >> height;
-            for (auto& point : box.quad) row >> point[0] >> point[1];
-            row >> kept;
-            if (kept)
-                for (auto& point : expected.quad) row >> point[0] >> point[1];
-            AICORE_CHECK(!row.fail());
-            box.score = .75;
-            std::vector<DbBox> boxes{box};
-            aicore::ocr::filterSourceDetectorBoxes(boxes, width, height);
-            AICORE_CHECK(boxes.size() == static_cast<size_t>(kept));
-            if (kept && !boxes.empty()) {
-                AICORE_CHECK(std::memcmp(boxes[0].quad, expected.quad,
-                                         sizeof(expected.quad)) == 0);
-                AICORE_CHECK(boxes[0].score == .75);
-            }
-            ++cases;
-        }
-        AICORE_CHECK(cases == 13);
-    }
-#endif
-#ifdef AICORE_OCR_DB_POSTPROCESS_GOLDEN
-    const char* golden = argc > 1 ? argv[1] : AICORE_OCR_DB_POSTPROCESS_GOLDEN;
-#else
-    if (argc < 2) {
-        std::fprintf(stderr, "usage: %s db_postprocess_golden.txt\n", argv[0]);
-        return 2;
-    }
-    const char* golden = argv[1];
-#endif
-    std::ifstream in(golden);
-    if (!in) {
-        std::fprintf(stderr, "cannot open %s\n", golden);
-        return 2;
-    }
+TEST(OcrDbPostprocess, FiltersSourceDetectorBoxesLikeUpstream) {
+    std::ifstream source(AICORE_OCR_SOURCE_DET_FILTER_GOLDEN);
+    ASSERT_TRUE(source.is_open());
     std::string line;
-    int cases = 0, boxes = 0, rawMismatch = 0, sortMismatch = 0;
+    int cases = 0;
+    while (std::getline(source, line)) {
+        if (line.empty() || line[0] == '#') continue;
+        std::istringstream row(line);
+        int width = 0, height = 0, kept = 0;
+        DbBox box{}, expected{};
+        row >> width >> height;
+        for (auto& point : box.quad) row >> point[0] >> point[1];
+        row >> kept;
+        if (kept)
+            for (auto& point : expected.quad) row >> point[0] >> point[1];
+        ASSERT_FALSE(row.fail()) << line;
+        box.score = .75;
+        std::vector<DbBox> boxes{box};
+        aicore::ocr::filterSourceDetectorBoxes(boxes, width, height);
+        EXPECT_EQ(boxes.size(), static_cast<size_t>(kept));
+        if (kept && !boxes.empty()) {
+            EXPECT_EQ(std::memcmp(boxes[0].quad, expected.quad,
+                                  sizeof(expected.quad)),
+                      0);
+            EXPECT_EQ(boxes[0].score, .75);
+        }
+        ++cases;
+    }
+    EXPECT_EQ(cases, 13);
+}
+#endif
+
+TEST(OcrDbPostprocess, MatchesUpstreamRawBoxesScoresAndSortOrder) {
+    ASSERT_NE(golden_path, nullptr) << "Supply the golden fixture path as the "
+                                       "first positional argument";
+    std::ifstream in(golden_path);
+    ASSERT_TRUE(in.is_open()) << "Cannot open " << golden_path;
+    std::string line;
+    int cases = 0;
     double worstScore = 0.0;
     std::vector<int8_t> scratch;
     while (std::getline(in, line)) {
@@ -190,55 +185,39 @@ int main(int argc, char** argv) {
         std::vector<DbBox> wantSorted(static_cast<size_t>(ns));
         for (DbBox& b : wantSorted)
             for (auto& c : b.quad) row >> c[0] >> c[1];
-        AICORE_CHECK(static_cast<bool>(row) || (n == 0 && ns == 0));
+        ASSERT_TRUE(static_cast<bool>(row) || (n == 0 && ns == 0)) << line;
         ++cases;
-        boxes += n;
+        SCOPED_TRACE(testing::Message() << "Golden row " << cases);
 
         const auto map = render(w, h, shapes, bg, salt);
         auto got = aicore::ocr::dbBoxesFromBitmap(map.data(), w, h, dw, dh, {},
                                                   scratch);
-        bool rawOk = got.size() == want.size();
-        for (size_t i = 0; rawOk && i < got.size(); ++i) {
-            rawOk = std::memcmp(got[i].quad, want[i].quad,
-                                sizeof(got[i].quad)) == 0;
+        EXPECT_EQ(got.size(), want.size());
+        for (size_t i = 0; i < std::min(got.size(), want.size()); ++i) {
+            EXPECT_EQ(
+                    std::memcmp(got[i].quad, want[i].quad, sizeof(got[i].quad)),
+                    0)
+                    << "Raw box " << i;
             worstScore = std::max(worstScore,
                                   std::abs(got[i].score - want[i].score));
         }
-        if (!rawOk && rawMismatch++ < 5) {
-            std::fprintf(stderr, "raw mismatch (row %d): %zu vs %zu boxes\n",
-                         cases, got.size(), want.size());
-            for (const DbBox& b : got)
-                std::fprintf(stderr, "  got  %d %d %d %d %d %d %d %d\n",
-                             b.quad[0][0], b.quad[0][1], b.quad[1][0],
-                             b.quad[1][1], b.quad[2][0], b.quad[2][1],
-                             b.quad[3][0], b.quad[3][1]);
-            for (const DbBox& b : want)
-                std::fprintf(stderr, "  want %d %d %d %d %d %d %d %d\n",
-                             b.quad[0][0], b.quad[0][1], b.quad[1][0],
-                             b.quad[1][1], b.quad[2][0], b.quad[2][1],
-                             b.quad[3][0], b.quad[3][1]);
-        }
         // Sort the upstream raw list so the sort is checked on its own.
         aicore::ocr::sortQuadBoxes(want);
-        bool sortOk = want.size() == wantSorted.size();
-        for (size_t i = 0; sortOk && i < want.size(); ++i)
-            sortOk = std::memcmp(want[i].quad, wantSorted[i].quad,
-                                 sizeof(want[i].quad)) == 0;
-        if (!sortOk && sortMismatch++ < 5)
-            std::fprintf(stderr, "sort mismatch (row %d)\n", cases);
+        EXPECT_EQ(want.size(), wantSorted.size());
+        for (size_t i = 0; i < std::min(want.size(), wantSorted.size()); ++i)
+            EXPECT_EQ(std::memcmp(want[i].quad, wantSorted[i].quad,
+                                  sizeof(want[i].quad)),
+                      0)
+                    << "Sorted box " << i;
     }
-    AICORE_CHECK(cases >= 400);
-    AICORE_CHECK(rawMismatch == 0);
-    AICORE_CHECK(sortMismatch == 0);
-    AICORE_CHECK(worstScore <= 1e-12);
-    std::printf(
-            "db postprocess parity: %d cases, %d boxes, %d raw / %d sort "
-            "mismatches, worst |score diff| %.3g\n",
-            cases, boxes, rawMismatch, sortMismatch, worstScore);
-    if (failures) {
-        std::fprintf(stderr, "test_ocr_db_postprocess: %d failure(s)\n",
-                     failures);
-        return 1;
-    }
-    return 0;
+    EXPECT_GE(cases, 400);
+    EXPECT_LE(worstScore, 1e-12);
+}
+
+int main(int argc, char** argv) {
+    testing::InitGoogleTest(&argc, argv);
+    if (argc > 1 && std::strcmp(argv[1], "--map") == 0)
+        return dumpMap(argc, argv);
+    if (argc > 1) golden_path = argv[1];
+    return RUN_ALL_TESTS();
 }

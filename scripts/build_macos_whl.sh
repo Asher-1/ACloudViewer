@@ -61,6 +61,18 @@ else
 	echo "Conda env now is $CONDA_PREFIX"
 fi
 
+# Fail fast when the toolchain CMake cannot satisfy cmake_minimum_required
+# (VERSION 3.24): the conda env from .ci/conda_macos.yml ships cmake 3.31.8,
+# so a failure here means a broken/partial env or a stale PATH entry shadowing it.
+cmake_ver="$(cmake --version 2>/dev/null | awk 'NR == 1 {print $3}' || true)"
+if [ -z "${cmake_ver}" ] || \
+   [ "$(printf '%s\n%s\n' "${cmake_ver}" "3.24" | sort -V | head -n1)" != "3.24" ]; then
+	echo "ERROR: CMake >= 3.24 required (found: ${cmake_ver:-none})." >&2
+	echo "Recreate the conda env from .ci/conda_macos.yml (ships cmake 3.31.8) or run 'brew install cmake'." >&2
+	exit 1
+fi
+echo "Using CMake ${cmake_ver} at $(command -v cmake)"
+
 export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
 export PATH=$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH
 

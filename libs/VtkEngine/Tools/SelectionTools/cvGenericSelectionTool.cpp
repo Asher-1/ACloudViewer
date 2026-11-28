@@ -13,6 +13,7 @@
 #include "cvGenericSelectionTool.h"
 
 #include "Visualization/VtkVis.h"
+#include "cvHardwareSelector.h"
 #include "cvSelectionBase.h"
 #include "cvSelectionPipeline.h"
 // cvSelectionTypes.h merged into cvSelectionData.h  // For SelectionMode and
@@ -276,7 +277,7 @@ QVector<cvActorSelectionInfo> cvGenericSelectionTool::getActorsAtPoint(int x,
 //-----------------------------------------------------------------------------
 vtkHardwareSelector* cvGenericSelectionTool::getHardwareSelector() {
     if (!m_hardwareSelector) {
-        m_hardwareSelector = vtkSmartPointer<vtkHardwareSelector>::New();
+        m_hardwareSelector = vtkSmartPointer<cvHardwareSelector>::New();
         CVLog::PrintVerbose(
                 "[getHardwareSelector] Created new hardware selector instance");
     }
@@ -301,6 +302,8 @@ vtkHardwareSelector* cvGenericSelectionTool::configureHardwareSelector(
     }
 
     // Configure for this selection
+    cvHardwareSelector::SafeDownCast(selector)->SetSelectableProps(
+            cvSelectionPipeline::dataSelectionProps(getVtkVis()));
     selector->SetRenderer(renderer);
     selector->SetArea(region[0], region[1], region[2], region[3]);
     selector->SetFieldAssociation(fieldAssociation);
@@ -324,149 +327,28 @@ vtkHardwareSelector* cvGenericSelectionTool::configureHardwareSelector(
 //-----------------------------------------------------------------------------
 QVector<cvActorSelectionInfo> cvGenericSelectionTool::extractActorInfo(
         vtkHardwareSelector* selector, vtkSelection* vtkSel) {
-    QVector<cvActorSelectionInfo> actorInfos;
-
-    if (!selector || !vtkSel) {
-        return actorInfos;
-    }
-
-    // Get renderer for actor lookup
-    vtkRenderer* renderer = getRenderer();
-    if (!renderer) {
-        return actorInfos;
-    }
-
-    // Map to store prop information
-    std::map<int, cvActorSelectionInfo> propInfoMap;
-
-    // Iterate through selection nodes
-    for (unsigned int i = 0; i < vtkSel->GetNumberOfNodes(); ++i) {
-        vtkSelectionNode* node = vtkSel->GetNode(i);
-        if (!node) continue;
-
-        // Get prop ID
-        int propId = -1;
-        if (node->GetProperties()->Has(vtkSelectionNode::PROP_ID())) {
-            propId = node->GetProperties()->Get(vtkSelectionNode::PROP_ID());
-        }
-
-        if (propId < 0) continue;
-
-        // Get the prop/actor
-        vtkProp* prop = selector->GetPropFromID(propId);
-        vtkActor* actor = vtkActor::SafeDownCast(prop);
-
-        if (!actor) continue;
-
-        // Create actor info
-        cvActorSelectionInfo info;
-        info.actor = actor;
-        info.propId = propId;
-
-        // Get Z-value if available (for depth sorting)
-        if (m_captureZValues) {
-            unsigned int centerPos[2] = {
-                    (selector->GetArea()[0] + selector->GetArea()[2]) / 2,
-                    (selector->GetArea()[1] + selector->GetArea()[3]) / 2};
-            vtkHardwareSelector::PixelInformation pixelInfo =
-                    selector->GetPixelInformation(centerPos, 0);
-
-            if (pixelInfo.Valid && pixelInfo.PropID == propId) {
-                // Normalize Z value to [0, 1], smaller = closer to camera
-                info.zValue =
-                        pixelInfo.AttributeID >= 0
-                                ? static_cast<double>(pixelInfo.AttributeID) /
-                                          1000000.0
-                                : 1.0;
-            }
-        }
-
-        // Get polyData from actor
-        vtkMapper* mapper = actor->GetMapper();
-        if (mapper) {
-            // Try vtkPolyDataMapper first
-            if (vtkPolyDataMapper* pdMapper =
-                        vtkPolyDataMapper::SafeDownCast(mapper)) {
-                info.polyData = vtkPolyData::SafeDownCast(pdMapper->GetInput());
-            }
-            // Try vtkDataSetMapper
-            else if (vtkDataSetMapper* dsMapper =
-                             vtkDataSetMapper::SafeDownCast(mapper)) {
-                vtkDataSet* dataset = dsMapper->GetInput();
-                if (dataset) {
-                    info.polyData = vtkPolyData::SafeDownCast(dataset);
-                }
-            }
-        }
-
-        // Get composite index if available
-        if (node->GetProperties()->Has(vtkSelectionNode::COMPOSITE_INDEX())) {
-            info.blockIndex = node->GetProperties()->Get(
-                    vtkSelectionNode::COMPOSITE_INDEX());
-        }
-
-        // Store in map
-        propInfoMap[propId] = info;
-    }
-
-    // Convert map to vector and sort by Z-value
-    actorInfos.reserve(propInfoMap.size());
-    for (const auto& pair : propInfoMap) {
-        actorInfos.append(pair.second);
-    }
-
-    // Sort by Z-value (front to back)
-    std::sort(actorInfos.begin(), actorInfos.end(),
-              [](const cvActorSelectionInfo& a, const cvActorSelectionInfo& b) {
-                  return a.zValue < b.zValue;
-              });
-
-    CVLog::PrintVerbose(QString("[extractActorInfo] Found %1 actor(s)")
-                                .arg(actorInfos.size()));
-
-    return actorInfos;
+    if (!selector || !vtkSel) return {};
+    return cvSelectionPipeline::convertToCvSelectionData(
+                   vtkSel,
+                   selector->GetFieldAssociation() ==
+                                   vtkDataObject::FIELD_ASSOCIATION_CELLS
+                           ? cvSelectionPipeline::FIELD_ASSOCIATION_CELLS
+                           : cvSelectionPipeline::FIELD_ASSOCIATION_POINTS,
+                   getVtkVis())
+            .actorInfos();
 }
 
 //-----------------------------------------------------------------------------
 cvSelectionData cvGenericSelectionTool::convertSelection(
         vtkSelection* vtkSel, const QVector<cvActorSelectionInfo>& actorInfos) {
-    cvSelectionData selection;
-
-    if (!vtkSel || vtkSel->GetNumberOfNodes() == 0) {
-        return selection;
-    }
-
-    // Get the first selection node
-    vtkSelectionNode* node = vtkSel->GetNode(0);
-    if (!node) {
-        return selection;
-    }
-
-    // Get selection IDs
-    vtkIdTypeArray* selectionIds =
-            vtkIdTypeArray::SafeDownCast(node->GetSelectionList());
-
-    if (!selectionIds) {
-        return selection;
-    }
-
-    // Determine field association
-    int fieldAssociation = node->GetFieldType();
-
-    // Create selection data
-    selection = cvSelectionData(selectionIds, fieldAssociation);
-
-    // Attach actor information
-    for (const cvActorSelectionInfo& info : actorInfos) {
-        selection.addActorInfo(info);
-    }
-
-    CVLog::PrintVerbose(
-            QString("[convertSelection] Selection: %1 items, %2 actors")
-                    .arg(selection.count())
-                    .arg(selection.actorCount()));
-
-    return selection;
+    Q_UNUSED(actorInfos);
+    if (!vtkSel || vtkSel->GetNumberOfNodes() == 0) return {};
+    return cvSelectionPipeline::convertToCvSelectionData(
+            vtkSel,
+            vtkSel->GetNode(0)->GetFieldType() == vtkSelectionNode::CELL
+                    ? cvSelectionPipeline::FIELD_ASSOCIATION_CELLS
+                    : cvSelectionPipeline::FIELD_ASSOCIATION_POINTS,
+            getVtkVis());
 }
 
 //-----------------------------------------------------------------------------

@@ -79,7 +79,7 @@ int main(const int argc, const char** argv) {
             InputCamera& camIm = *cams[c];
 
             std::string extensionFile =
-                    boost::filesystem::extension(camIm.name());
+                    boost::filesystem::path(camIm.name()).extension().string();
             std::ostringstream ssZeroPad;
             ssZeroPad << std::setw(8) << std::setfill('0') << camIm.id();
             std::string newFileName = ssZeroPad.str() + extensionFile;
@@ -112,9 +112,7 @@ int main(const int argc, const char** argv) {
         std::string SMName = cm_path + "/scene_metadata.txt";
 
         SIBR_LOG << "Copying " << tmpFileName << " to " << SMName << std::endl;
-        boost::filesystem::copy_file(
-                tmpFileName, SMName,
-                boost::filesystem::copy_option::overwrite_if_exists);
+        copyFileOverwrite(tmpFileName, SMName);
         boost::filesystem::remove(tmpFileName);
 
         return EXIT_SUCCESS;
@@ -173,7 +171,8 @@ int main(const int argc, const char** argv) {
     for (int c = minCam; c < maxCam; c++) {
         InputCamera& camIm = *cams[c];
 
-        std::string extensionFile = boost::filesystem::extension(camIm.name());
+        std::string extensionFile =
+                boost::filesystem::path(camIm.name()).extension().string();
         std::ostringstream ssZeroPad;
         ssZeroPad << std::setw(8) << std::setfill('0') << camIm.id();
         std::string newFileName = ssZeroPad.str() + extensionFile;
@@ -184,9 +183,8 @@ int main(const int argc, const char** argv) {
             srcImage = pathScene + "/images/" + camIm.name();
         }
         if (boost::filesystem::exists(srcImage)) {
-            boost::filesystem::copy_file(
-                    srcImage, pathScene + "/sfm_mvs_cm/" + newFileName,
-                    boost::filesystem::copy_option::overwrite_if_exists);
+            copyFileOverwrite(srcImage,
+                              pathScene + "/sfm_mvs_cm/" + newFileName);
         } else {
             std::cerr << "[prepareColmap4Sibr] Warning: image not found: "
                       << camIm.name() << std::endl;

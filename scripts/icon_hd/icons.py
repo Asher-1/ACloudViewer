@@ -164,13 +164,13 @@ def audit(argv: list[str]) -> int:
     return _run_module("logo.audit", argv)
 
 
-def verify(argv: list[str]) -> int:
+def verify(rcc_command: str = "rcc") -> int:
     """qrc compiles, SVG parses, no raster disguised as vector, no dangling refs."""
     print("=== verify: 结构完整性 ===")
     rc = 0
 
     print("\n[1/4] qrc 可编译")
-    rcc = shutil.which("rcc")
+    rcc = shutil.which(rcc_command)
     if not rcc:
         print("  SKIP  未找到 rcc")
     else:
@@ -251,13 +251,22 @@ def main(argv=None) -> int:
     p = sub.add_parser("doctor", help="检查依赖，指出缺什么、怎么装")
     p.add_argument("--strict", action="store_true", help="缺依赖时返回非零")
 
-    sub.add_parser("build", help="由设计系统渲染并写入全部工具图标")
+    sub.add_parser("build", help="列出工具图标的格式、目录和大小")
+
+    p = sub.add_parser("inventory", help="审计 SVG、QRC 注册、引用和动态路径")
+    p.add_argument("--out", type=Path, default=None, help="报告输出目录")
 
     p = sub.add_parser("audit", help="生成优化前后对照报告")
     p.add_argument("--out", default=None)
     p.add_argument("--only", default=None)
 
-    sub.add_parser("verify", help="qrc/XML/位图伪装/平台依赖 四项校验")
+    p = sub.add_parser("verify", help="检查 QRC、SVG 和平台资源")
+    p.add_argument("--qt", action="store_true", help="另用 Qt 离屏加载 app 和 qPCL 图标")
+    p.add_argument("--rcc", default="rcc", help="与 Qt5 pkg-config 对应的资源编译器")
+
+    p = sub.add_parser("aicore", help="Install/review/verify named AICore plugin SVGs; AnyLabeling excluded")
+    p.add_argument("action", choices=["install", "review", "verify"])
+    p.add_argument("--out", type=Path, default=None)
 
     p = sub.add_parser("logo", help="产品标识管线")
     p.add_argument("args", nargs=argparse.REMAINDER)
@@ -267,10 +276,12 @@ def main(argv=None) -> int:
     if a.verb == "doctor":
         return doctor(a.strict)
     if a.verb == "build":
-        if not all(_have(m) for m in CORE):
-            print("核心依赖缺失，先跑 doctor。", file=sys.stderr)
-            return 1
         return build([])
+    if a.verb == "inventory":
+        from audit_svg_inventory import OUT, audit as inventory
+
+        inventory(a.out or OUT)
+        return 0
     if a.verb == "audit":
         rest = []
         if a.out:
@@ -279,7 +290,18 @@ def main(argv=None) -> int:
             rest += ["--only", a.only]
         return audit(rest)
     if a.verb == "verify":
-        return verify([])
+        status = verify(a.rcc)
+        if a.qt and not status:
+            from verify_qt_resources import main as verify_qt
+
+            return verify_qt(a.rcc)
+        return status
+    if a.verb == "aicore":
+        from aicore_icons import main as aicore_icons_main
+        args = [a.action]
+        if a.out:
+            args += ["--out", str(a.out)]
+        return aicore_icons_main(args)
     if a.verb == "logo":
         return logo(a.args)
 

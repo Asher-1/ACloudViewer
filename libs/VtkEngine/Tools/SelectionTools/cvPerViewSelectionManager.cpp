@@ -22,6 +22,7 @@ QAction* cvPerViewSelectionManager::mirrorSimple(QWidget* parent,
     if (!global) return nullptr;
     auto* local = new QAction(global->icon(), global->toolTip(), parent);
     local->setObjectName(global->objectName());
+    local->setProperty("shortcutProxy", true);
     local->setCheckable(global->isCheckable());
     local->setChecked(global->isChecked());
     local->setEnabled(global->isEnabled());
@@ -29,8 +30,12 @@ QAction* cvPerViewSelectionManager::mirrorSimple(QWidget* parent,
         QSignalBlocker blk(local);
         local->setChecked(c);
     });
-    connect(global, &QAction::changed, local,
-            [global, local]() { local->setEnabled(global->isEnabled()); });
+    connect(global, &QAction::changed, local, [global, local]() {
+        local->setEnabled(global->isEnabled());
+        local->setText(global->text());
+        local->setToolTip(global->toolTip());
+        local->setIcon(global->icon());
+    });
     return local;
 }
 
@@ -43,10 +48,15 @@ QAction* cvPerViewSelectionManager::mirrorIsolated(QWidget* parent,
     local->setChecked(false);
     local->setEnabled(global->isEnabled());
     local->setObjectName(global->objectName());
+    local->setProperty("shortcutProxy", true);
     local->setProperty("viewWidget",
                        QVariant::fromValue(static_cast<void*>(viewWidget)));
-    connect(global, &QAction::changed, local,
-            [global, local]() { local->setEnabled(global->isEnabled()); });
+    connect(global, &QAction::changed, local, [global, local]() {
+        local->setEnabled(global->isEnabled());
+        local->setText(global->text());
+        local->setToolTip(global->toolTip());
+        local->setIcon(global->icon());
+    });
     connect(global, &QAction::toggled, local, [local](bool checked) {
         if (!checked && local->isChecked()) {
             QSignalBlocker blk(local);

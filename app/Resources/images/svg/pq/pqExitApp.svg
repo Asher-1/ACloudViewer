@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-1.6160,-0.6171) scale(1.05143)">
+
+<title>Exit application</title>  <path d="M 3 2 H 15 V 22 H 3 Z" fill="#C1A561" stroke="#6F6F59"/>  <path d="M 5 4 L 13 2 V 22 L 5 20 Z" fill="#E0E0E0" stroke="#6F6F59"/>  <path d="M 10 10 H 17 V 6 L 23 12 L 17 18 V 14 H 10 Z" fill="#72BE44" stroke="#6F6F59"/>
+
+</g>
+</svg>

@@ -36,7 +36,7 @@ if(NOT MSVC)
 endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_qyolo_helpers)
-add_test(NAME test_qyolo_helpers COMMAND test_qyolo_helpers)
+cloudviewer_add_test(NAME test_qyolo_helpers COMMAND test_qyolo_helpers)
 cloudviewer_set_plugin_test_env(test_qyolo_helpers)
 
 # Multi-object tracker port: pure algorithm tests (no AICore, no Qt).
@@ -72,7 +72,7 @@ if(NOT MSVC)
 endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_qyolo_tracker)
-add_test(NAME test_qyolo_tracker COMMAND test_qyolo_tracker)
+cloudviewer_add_test(NAME test_qyolo_tracker COMMAND test_qyolo_tracker)
 cloudviewer_set_plugin_test_env(test_qyolo_tracker)
 
 # Track-parity harness (official-runtime field-by-field comparison; driven by

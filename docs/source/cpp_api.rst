@@ -24,6 +24,12 @@ Core Documentation
   
   Learn how to create custom plugins and extend ACloudViewer's functionality
 
+- **AICore AI Inference**: :doc:`AICore module & AI plugins <cpp_api/plugins>`
+
+  Native ``libAICore`` GGUF inference runtime (public ``aicore/`` C ABI) and the
+  23 AICore plugins — depth, matching, detection, segmentation, open-vocabulary
+  understanding, 3D generation, reconstruction and annotation
+
 Getting Started
 ---------------
 

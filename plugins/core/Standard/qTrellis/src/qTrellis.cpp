@@ -8,6 +8,7 @@
 #include "qTrellis.h"
 
 #include <FileIOFilter.h>
+#include <ecvAICoreUiHelper.h>
 #include <ecvGLMatrix.h>
 #include <ecvGenericMesh.h>
 #include <ecvImage.h>
@@ -79,6 +80,7 @@ void qTrellis::showDialog() {
     if (!m_dialog) {
         m_dialog = new TrellisDialog(
                 static_cast<QWidget*>(m_app->getMainWindow()));
+        ecvAICoreUi::bindDialogAction(m_action, m_dialog);
         m_dialog->setAppInterface(m_app);
         connect(m_dialog, &TrellisDialog::runRequested, this,
                 &qTrellis::executeTask);

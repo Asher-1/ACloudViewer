@@ -217,22 +217,9 @@ ModelViewerWidget::ModelViewerWidget(QWidget* parent, OptionManager* options)
 }
 
 ModelViewerWidget::~ModelViewerWidget() {
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-  cleanupGL();
-#endif
-}
-
-void ModelViewerWidget::cleanupGL() {
-  coordinate_axes_painter_.Release();
-  coordinate_grid_painter_.Release();
-  point_painter_.Release();
-  point_connection_painter_.Release();
-  image_line_painter_.Release();
-  image_triangle_painter_.Release();
-  image_connection_painter_.Release();
-  movie_grabber_path_painter_.Release();
-  movie_grabber_line_painter_.Release();
-  movie_grabber_triangle_painter_.Release();
+  // Make the OpenGL context current so that painter destructors can
+  // cleanly release VAOs and VBOs.
+  makeCurrent();
 }
 
 void ModelViewerWidget::initializeGL() {

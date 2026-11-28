@@ -34,6 +34,7 @@ ACloudViewer includes the following core features:
 - **Point cloud I/O**: Support for PCD, PLY, LAS, E57, and many other formats
 - **Mesh I/O**: Support for OBJ, STL, OFF, and more
 - **Plugin system**: Extensible architecture for custom algorithms
+- **AICore AI inference**: One native libAICore runtime (ggml) powering 23 AI plugins — depth, matching, detection, segmentation, open-vocabulary understanding, 3D generation and annotation from quantized GGUF models, no Python runtime
 - **Integration with PCL**: Seamless interoperability with Point Cloud Library
 - **Cross-platform**: Available on Linux, macOS, and Windows
 - **Available in C++ and Python**: Full API for both languages
@@ -115,6 +116,10 @@ ACloudViewer is organized into several key modules that work together to provide
 │  │                      <b>Reconstruction Module</b>                      │ │
 │  │   • Surface Reconstruction  • Mesh Generation  • Poisson Recon         │ │
 │  └────────────────────────────────────────────────────────────────────────┘ │
+│  ┌────────────────────────────────────────────────────────────────────────┐ │
+│  │                    <b>AICore Module (libAICore)</b>                    │ │
+│  │   • GGUF Inference (ggml)  • CUDA/Vulkan/Metal/CPU  • 23 AI Plugins    │ │
+│  └────────────────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────────────┘
                                   │
 ┌─────────────────────────────────▼───────────────────────────────────────────┐
@@ -161,6 +166,12 @@ Here's a brief overview of the different components and how they fit together to
   - Mesh generation
   - Poisson reconstruction
 
+- **AICore**: Monolithic native AI inference runtime (libAICore, `core/AICore/`)
+  - Stable public C ABI under `aicore/` — ggml and GPU backends stay private
+  - Quantized GGUF models on CUDA / Vulkan / Metal / CPU, no Python at runtime
+  - Task sessions with borrowed image views, typed results and common stage timings
+  - Shared model catalog with SHA-256 verified downloads (`asset_digests.h`)
+
 \subsection plugin_system Plugin System
 
 - **CVPluginAPI**: Plugin interface definitions
@@ -169,11 +180,89 @@ Here's a brief overview of the different components and how they fit together to
   - ccPclPluginInterface - PCL plugin interface
 
 - **Plugins**: Standard plugin implementations for various algorithms
+- **AICore plugins**: 23 AI plugins sharing libAICore — see \ref aicore_sec
 
 \subsection app_layer Application Layer
 
 - **CVViewer**: Standalone 3D viewer application
 - **ACloudViewer**: Main ACloudViewer application with full GUI
+
+\section aicore_sec AICore AI Inference
+
+Twenty-three GUI plugins share one native inference library — **libAICore**
+(`core/AICore/`), whose ggml runtime is vendored from
+[llama.cpp](https://github.com/ggml-org/llama.cpp). Quantized **GGUF** models run
+on **CUDA / Vulkan (Linux/Windows) / Metal (macOS) / CPU** with **no Python or
+PyTorch** at runtime. Results land directly in the DB tree and plug into
+reconstruction, COLMAP, and SIBR workflows.
+
+\subsection aicore_abi Public C ABI
+
+Consumers link only `AICore` and include only `aicore/` headers; Qt, STL,
+OpenCV, exceptions, backend handles and ggml types never cross the ABI:
+
+- `aicore/depth_capi.h` — Depth Anything V3 depth / pose sessions (`aicore_depth_*`)
+- `aicore/gaussian_capi.h` — FreeSplatter 3D Gaussian sessions (`aicore_gaussian_*`)
+- `aicore/image_view.h` — borrowed, stride-aware decoded-image input (RGB/RGBA/GRAY/BGR/BGRA)
+- `aicore/pipeline_timing.h` — common stage-timing contract reported through `valid_fields`
+- `aicore/runtime_capi.h` — idempotent process-runtime cleanup (`aicore_runtime_shutdown`)
+- `aicore/asset_digests.h`, `aicore/model_catalog_capi.h` — pinned SHA-256 model catalog and cache resolution
+- Per-task C APIs — `yolo_capi.h`, `sam3_capi.h`, `sam3d_capi.h`, `rfdetr_capi.h`, `rmbg_capi.h`, `ocr_capi.h`, `table_capi.h`, `tagging_capi.h`, `relation_capi.h`, `gkd_capi.h`, `vlx_seek_capi.h`, `facedetect_capi.h`, `lightglue_capi.h`, `aliked_capi.h`, `deeplsd_capi.h`, `trellis_capi.h`, `instantmesh_capi.h`, `querysplat_capi.h`, `map_anything_capi.h`, `lingbot_capi.h`, `openpcdet_capi.h`, plus `backend_capi.h` and `inference_log.h`
+
+Each context owns its model/session/cache state; physical backend handles may be
+shared through `BackendLease`. Task behavior is configured through options, never
+task-local environment variables.
+
+\subsection aicore_plugins AICore Plugins (23)
+
+**Perception — depth, lines, matching, faces, text**
+
+| Plugin | Task | Model | CMake |
+|--------|------|-------|-------|
+| [qDA3](../../guides/plugins/qDA3.html) | Monocular & multi-view depth, camera pose | Depth Anything V3 GGUF | `PLUGIN_STANDARD_QDA3` |
+| [qDeepLSD](../../guides/plugins/qDeepLSD.html) | Line-segment / wireframe extraction | DeepLSD wireframe GGUF | `PLUGIN_STANDARD_QDEEPLSD` |
+| [qLightGlue](../../guides/plugins/qLightGlue.html) | Sparse feature matching | SIFT/ALIKED LightGlue GGUF | `PLUGIN_STANDARD_QLIGHTGLUE` |
+| [qFaceDetect](../../guides/plugins/qFaceDetect.html) | Face detect / analyze / verify | face-detect.cpp GGUF packs | `PLUGIN_STANDARD_QFACEDETECT` |
+| [qOCR](../../guides/plugins/qOCR.html) | Text / layout / table recognition | PP-OCRv4 GGUF (EN / JA / CH+EN) | `PLUGIN_STANDARD_QOCR` |
+
+**Detection, segmentation & open-vocabulary understanding**
+
+| Plugin | Task | Model | CMake |
+|--------|------|-------|-------|
+| [qYOLO](../../guides/plugins/qYOLO.html) | Detect / seg / depth / pose / OBB / classify + open-vocab | YOLOv8 / YOLO26 GGUF (63 models) | `PLUGIN_STANDARD_QYOLO` |
+| [qSAM3](../../guides/plugins/qSAM3.html) | Promptable segmentation + video tracking | SAM2 / 2.1 / 3 GGUF (39 models) | `PLUGIN_STANDARD_QSAM3` |
+| [qRFDetr](../../guides/plugins/qRFDetr.html) | Detection & instance masks | RF-DETR GGUF (44 models) | `PLUGIN_STANDARD_QRFDETR` |
+| [qRMBG](../../guides/plugins/qRMBG.html) | Background removal | RMBG-2.0 (BiRefNet-Swin-L) GGUF | `PLUGIN_STANDARD_QRMBG` |
+| [qRAM](../../guides/plugins/qRAM.html) | Image tagging & captioning | RAM / RAM++ / Tag2Text GGUF | `PLUGIN_STANDARD_QRAM` |
+| [qRelateAnything](../../guides/plugins/qRelateAnything.html) | Scene relation graphs | RelSGG ViT / ConvNeXt GGUF (24 models) | `PLUGIN_STANDARD_QRELATEANYTHING` |
+| [qGKD](../../guides/plugins/qGKD.html) | Open-world keypoint detection | GKDT-L GGUF (ECCV 2026) | `PLUGIN_STANDARD_QGKD` |
+| [qVLXSeek](../../guides/plugins/qVLXSeek.html) | Open-vocab grounding & region QA | VLX-Seek 1.5-10B GGUF | `PLUGIN_STANDARD_QVLXSEEK` |
+| [qWeVisOne](../../guides/plugins/qWeVisOne.html) | Unified visual perception (11 tasks) | WeVisOne-VL 2B/4B GGUF (Qwen3-VL) | `PLUGIN_STANDARD_QWEVISONE` |
+
+**3D generation & reconstruction**
+
+| Plugin | Task | Model | CMake |
+|--------|------|-------|-------|
+| [qFreeSplatter](../../guides/plugins/qFreeSplatter.html) | Uncalibrated photos → 3D Gaussian splats | FreeSplatter GGUF | `PLUGIN_STANDARD_QFREESPLATTER` |
+| [qTrellis](../../guides/plugins/qTrellis.html) | Single image → 3D mesh with PBR | TRELLIS.2 GGUF (DINOv3 + flow DiTs) | `PLUGIN_STANDARD_QTRELLIS` |
+| [qInstantMesh](../../guides/plugins/qInstantMesh.html) | Single image → textured 3D mesh | InstantMesh GGUF (14 files) | `PLUGIN_STANDARD_QINSTANTMESH` |
+| [qSAM3D](../../guides/plugins/qSAM3D.html) | Single image → 3D object | SAM 3D Objects GGUF | `PLUGIN_STANDARD_QSAM3D` |
+| [qQuerySplat](../../guides/plugins/qQuerySplat.html) | 2–16 unposed photos → 3DGS scene | QuerySplat + VGGT-Omega GGUF | `PLUGIN_STANDARD_QQUERYSPLAT` |
+| [qMapAnything](../../guides/plugins/qMapAnything.html) | Multi-view metric reconstruction | VGGT-Omega / MapAnything / Pi3 / VGGT-1B / DUSt3R GGUF | `PLUGIN_STANDARD_QMAPANYTHING` |
+| [qLingbotMap](../../guides/plugins/qLingbotMap.html) | Streaming RGB-D reconstruction | LingBot-Map GCT GGUF | `PLUGIN_STANDARD_QLINGBOTMAP` |
+| [qOpenPCDet](../../guides/plugins/qOpenPCDet.html) | LiDAR 3D object detection | OpenPCDet GGUF (54 models) | `PLUGIN_STANDARD_QOPENPCDET` |
+
+**Annotation workbench**
+
+| Plugin | Task | Model | CMake |
+|--------|------|-------|-------|
+| [qAnyLabeling](../../guides/plugins/qAnyLabeling.html) | AI-assisted image & 3D annotation | AICore catalogs (YOLO, SAM3, RF-DETR, …) | `PLUGIN_STANDARD_QANYLABELING` |
+
+Enable with `-DAICore_ENABLED=ON` plus the per-plugin `PLUGIN_STANDARD_Q*` flags
+(see the <a href="../../getting_started/build_from_source.html">build guide</a>).
+User guides: <a href="../../guides/plugins/README.html">AICore plugins overview</a>.
+Runtime topology and the engineering contract: `core/AICore/README.md` and
+`core/AICore/docs/ARCHITECTURE.md` in the repository.
 
 \section quickstart_cpp_sec C++ Quick Start
 
@@ -287,6 +376,7 @@ ACloudViewer provides powerful 3D visualization capabilities for interactive dat
   - cloudViewer - Core Module
   - CV_db - Database Module
   - CV_io - I/O Module
+  - AICore - AI inference module (public aicore C ABI)
   - Classes, Namespaces, Files tabs for detailed navigation
 
 - **Python API**: See the <a href="../../python_api/cloudViewer.core.html">Python API documentation</a>

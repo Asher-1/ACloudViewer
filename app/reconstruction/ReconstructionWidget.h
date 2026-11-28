@@ -47,7 +47,7 @@ class ReconstructionWidget : public QWidget {
 public:
     explicit ReconstructionWidget(MainWindow* app);
 
-    void ImportReconstruction(const std::string& path);
+    Q_INVOKABLE void ImportReconstruction(const QVariant& path);
 
     void close();
     void release();

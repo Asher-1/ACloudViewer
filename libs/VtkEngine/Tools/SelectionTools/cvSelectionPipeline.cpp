@@ -10,11 +10,20 @@
  * @brief Implementation of selection pipeline and VTK selection handling.
  */
 
-#include "cvSelectionPipeline.h"
+// VTK's GL loader must precede Qt's OpenGL headers.
+#include <vtkVersion.h>
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 4, 0)
+#include <vtk_glad.h>
+#else
+#include <vtk_glew.h>
+#endif
 
 #include "cvHardwareSelector.h"
+#include "cvSelectionPipeline.h"
 
 // LOCAL
+#include <ecvDisplayTools.h>
+
 #include "Visualization/VtkVis.h"
 #include "cvSelectionData.h"
 
@@ -24,6 +33,7 @@
 // STL
 #include <algorithm>
 #include <cmath>
+#include <vector>
 
 // Qt
 #include <QApplication>
@@ -40,6 +50,12 @@
 #include <vtkActor.h>
 #include <vtkCell.h>
 #include <vtkCellData.h>
+#include <vtkCompositeDataDisplayAttributes.h>
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 5, 0)
+#include <vtkCompositePolyDataMapper.h>
+#else
+#include <vtkCompositePolyDataMapper2.h>
+#endif
 #include <vtkDataObject.h>
 #include <vtkDataSet.h>
 #include <vtkExtractSelectedFrustum.h>
@@ -57,6 +73,8 @@
 #include <vtkRenderer.h>
 #include <vtkSelection.h>
 #include <vtkSelectionNode.h>
+#include <vtkTransform.h>
+#include <vtkTransformPolyDataFilter.h>
 
 // Qt
 #include <QMap>
@@ -66,9 +84,10 @@ namespace {
 
 // Expand thin/single-pixel rubber bands so HW selection captures sub-pixel
 // points.
-void normalizeSelectionRegion(int region[4],
+bool normalizeSelectionRegion(int region[4],
                               bool forPoints,
-                              unsigned int pointPickingRadius) {
+                              unsigned int pointPickingRadius,
+                              vtkRenderer* renderer) {
     int x0 = std::min(region[0], region[2]);
     int x1 = std::max(region[0], region[2]);
     int y0 = std::min(region[1], region[3]);
@@ -99,13 +118,48 @@ void normalizeSelectionRegion(int region[4],
         }
     }
 
-    region[0] = x0;
-    region[1] = y0;
-    region[2] = x1;
-    region[3] = y1;
+    // VTK's capture and generation APIs take unsigned coordinates. Intersect
+    // after padding so a border pick cannot wrap a negative origin to UINT_MAX.
+    const int* origin = renderer->GetOrigin();
+    const int* size = renderer->GetSize();
+    region[0] = std::max(x0, origin[0]);
+    region[1] = std::max(y0, origin[1]);
+    region[2] = std::min(x1, origin[0] + size[0] - 1);
+    region[3] = std::min(y1, origin[1] + size[1] - 1);
+    return region[0] <= region[2] && region[1] <= region[3];
 }
 
 }  // namespace
+
+std::set<vtkProp*> cvSelectionPipeline::dataSelectionProps(
+        Visualization::VtkVis* viewer) {
+    std::set<vtkProp*> result;
+    auto* root = ecvDisplayTools::GetSceneDB();
+    if (!viewer || !root) return result;
+
+    // Walk the actual DB, not the actor maps: labels also create temporary
+    // ccMesh/ccPolyline objects and register them as ordinary rendering props.
+    // O(N log P): ordered prop membership is reused by capture and frustum
+    // traversal; N is DB objects and P is distinct data actors.
+    std::vector<ccHObject*> pending{root};
+    while (!pending.empty()) {
+        auto* object = pending.back();
+        pending.pop_back();
+        if (object->isKindOf(CV_TYPES::MESH) ||
+            object->isKindOf(CV_TYPES::POINT_CLOUD)) {
+            const auto viewId = object->getViewId().toStdString();
+            if (viewer->contains(viewId) || viewer->isCompositeLeaf(viewId)) {
+                if (auto* actor = viewer->actorForRenderingProperties(viewId)) {
+                    result.insert(actor);
+                }
+            }
+        }
+        for (unsigned i = 0; i < object->getChildrenNumber(); ++i) {
+            pending.push_back(object->getChild(i));
+        }
+    }
+    return result;
+}
 
 cvSelectionPipeline::cvSelectionPipeline(QObject* parent)
     : QObject(parent),
@@ -231,8 +285,10 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
 
     FieldAssociation fieldAssoc = getFieldAssociation(type);
     int bbox[4] = {minX, minY, maxX, maxY};
-    normalizeSelectionRegion(bbox, fieldAssoc == FIELD_ASSOCIATION_POINTS,
-                             m_pointPickingRadius);
+    if (!normalizeSelectionRegion(bbox, fieldAssoc == FIELD_ASSOCIATION_POINTS,
+                                  m_pointPickingRadius, m_renderer)) {
+        return vtkSmartPointer<vtkSelection>::New();
+    }
     minX = bbox[0];
     minY = bbox[1];
     maxX = bbox[2];
@@ -266,6 +322,7 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::executePolygonSelection(
 
     // Step 4: Capture pixel buffers (ParaView-style)
     // This renders the scene with special color encoding for selection
+    m_hardwareSelector->SetSelectableProps(dataSelectionProps(m_viewer));
     bool captureSuccess = m_hardwareSelector->CaptureBuffers();
     if (!captureSuccess) {
         CVLog::Warning(
@@ -441,6 +498,7 @@ bool cvSelectionPipeline::captureBuffersForFastPreSelection() {
                                 origin[1] + size[1] - 1);
 
     // Capture the buffers
+    m_hardwareSelector->SetSelectableProps(dataSelectionProps(m_viewer));
     bool success = m_hardwareSelector->CaptureBuffers();
 
     if (success) {
@@ -480,30 +538,17 @@ cvSelectionPipeline::getPixelSelectionInfo(int x, int y, bool selectCells) {
             region,
             selectCells ? FIELD_ASSOCIATION_CELLS : FIELD_ASSOCIATION_POINTS);
 
-    if (selection && selection->GetNumberOfNodes() > 0) {
-        vtkSelectionNode* node = selection->GetNode(0);
-        if (node && node->GetSelectionList() &&
-            node->GetSelectionList()->GetNumberOfTuples() > 0) {
-            vtkIdTypeArray* ids =
-                    vtkIdTypeArray::SafeDownCast(node->GetSelectionList());
-            if (ids && ids->GetNumberOfTuples() > 0) {
-                result.valid = true;
-                result.attributeID = ids->GetValue(0);
-
-                // Get prop from selection node
-                vtkInformation* properties = node->GetProperties();
-                if (properties && properties->Has(vtkSelectionNode::PROP())) {
-                    result.prop = vtkProp::SafeDownCast(
-                            properties->Get(vtkSelectionNode::PROP()));
-
-                    // Get polyData from prop
-                    vtkActor* actor = vtkActor::SafeDownCast(result.prop);
-                    if (actor && actor->GetMapper()) {
-                        vtkDataSet* data = actor->GetMapper()->GetInput();
-                        result.polyData = vtkPolyData::SafeDownCast(data);
-                    }
-                }
-            }
+    result.selection = convertToCvSelectionData(
+            selection,
+            selectCells ? FIELD_ASSOCIATION_CELLS : FIELD_ASSOCIATION_POINTS,
+            m_viewer);
+    if (!result.selection.isEmpty() && result.selection.hasActorInfo()) {
+        const auto info = result.selection.actorInfo();
+        if (info.polyData && !info.selectedIds.isEmpty()) {
+            result.valid = true;
+            result.attributeID = info.selectedIds.front();
+            result.prop = info.actor;
+            result.polyData = info.polyData;
         }
     }
 
@@ -616,9 +661,11 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
     // NO coordinate conversion needed here!
 
     int vtk_region[4] = {region[0], region[1], region[2], region[3]};
-    normalizeSelectionRegion(vtk_region,
-                             fieldAssociation == FIELD_ASSOCIATION_POINTS,
-                             m_pointPickingRadius);
+    if (!normalizeSelectionRegion(vtk_region,
+                                  fieldAssociation == FIELD_ASSOCIATION_POINTS,
+                                  m_pointPickingRadius, m_renderer)) {
+        return vtkSmartPointer<vtkSelection>::New();
+    }
 
     // ParaView-style: Disable buffer swapping during selection to avoid
     // clobbering the user's view (BUG #16042 in ParaView)
@@ -639,6 +686,7 @@ vtkSmartPointer<vtkSelection> cvSelectionPipeline::performHardwareSelection(
     // ParaView vtkPVRenderView::PrepareSelect: render full scene before HW pick
     m_hardwareSelector->Modified();
     m_viewer->UpdateScreen();
+    m_hardwareSelector->SetSelectableProps(dataSelectionProps(m_viewer));
 
     // Set field association
     if (fieldAssociation == FIELD_ASSOCIATION_CELLS) {
@@ -809,7 +857,9 @@ vtkDataSet* cvSelectionPipeline::getPrimaryDataFromSelection(
 
 //-----------------------------------------------------------------------------
 cvSelectionData cvSelectionPipeline::convertToCvSelectionData(
-        vtkSelection* selection, FieldAssociation fieldAssociation) {
+        vtkSelection* selection,
+        FieldAssociation fieldAssociation,
+        Visualization::VtkVis* viewer) {
     if (!selection) {
         CVLog::Warning(
                 "[cvSelectionPipeline::convertToCvSelectionData] selection is "
@@ -831,11 +881,6 @@ cvSelectionData cvSelectionPipeline::convertToCvSelectionData(
     const bool wantCells = fieldAssociation == FIELD_ASSOCIATION_CELLS;
     const int targetFieldType =
             wantCells ? vtkSelectionNode::CELL : vtkSelectionNode::POINT;
-    // Nodes carrying the OPPOSITE field type are foreign hits (e.g. the
-    // vertices-cloud point actor drawn over the mesh) and must be dropped;
-    // unset types (-1) are accepted for leniency.
-    const int oppositeFieldType =
-            wantCells ? vtkSelectionNode::POINT : vtkSelectionNode::CELL;
 
     cvSelectionData result;
     bool primarySet = false;
@@ -857,7 +902,9 @@ cvSelectionData cvSelectionPipeline::convertToCvSelectionData(
         if (!nodeIds || nodeIds->GetNumberOfTuples() == 0) continue;
 
         const int nodeFieldType = node->GetFieldType();
-        if (nodeFieldType == oppositeFieldType) continue;
+        if (nodeFieldType != targetFieldType ||
+            node->GetContentType() != vtkSelectionNode::INDICES)
+            continue;
 
         // Resolve the polydata the node's ids refer to.
         vtkPolyData* polyData = nullptr;
@@ -869,8 +916,9 @@ cvSelectionData cvSelectionPipeline::convertToCvSelectionData(
             compositeIndex =
                     properties->Get(vtkSelectionNode::COMPOSITE_INDEX());
             auto* mb = vtkMultiBlockDataSet::SafeDownCast(
-                    actor->GetMapper() ? actor->GetMapper()->GetInput()
-                                       : nullptr);
+                    actor->GetMapper()
+                            ? actor->GetMapper()->GetInputDataObject(0, 0)
+                            : nullptr);
             if (mb && compositeIndex >= 1 &&
                 compositeIndex <= mb->GetNumberOfBlocks()) {
                 polyData = vtkPolyData::SafeDownCast(
@@ -884,29 +932,43 @@ cvSelectionData cvSelectionPipeline::convertToCvSelectionData(
         }
         if (!polyData) continue;
 
-        // The hardware selector IDs address the displayed polydata. Keep
-        // those local IDs in actorInfo for the highlighter, while the primary
-        // selection retains source IDs for export and DB-object operations.
-        vtkSmartPointer<vtkIdTypeArray> sourceIds =
-                remapToSourceIds(nodeIds, polyData, wantCells);
-
-        const double zValue =
-                1.0 - (static_cast<double>(i) / selection->GetNumberOfNodes());
-
+        // Keep source and display IDs in the same record; IDs have no
+        // meaning without their source/block and field association.
+        vtkNew<vtkIdTypeArray> localIds;
+        const vtkIdType limit = wantCells ? polyData->GetNumberOfCells()
+                                          : polyData->GetNumberOfPoints();
+        for (vtkIdType j = 0; j < nodeIds->GetNumberOfTuples(); ++j) {
+            const auto id = nodeIds->GetValue(j);
+            if (id >= 0 && id < limit) localIds->InsertNextValue(id);
+        }
+        if (localIds->GetNumberOfTuples() == 0) continue;
+        auto sourceIds = remapToSourceIds(localIds, polyData, wantCells);
         cvActorSelectionInfo info;
         info.actor = actor;
         info.polyData = polyData;
-        info.zValue = zValue;
         if (compositeIndex >= 1) {
             info.blockIndex = static_cast<unsigned int>(compositeIndex - 1);
         }
-        for (vtkIdType j = 0; j < nodeIds->GetNumberOfTuples(); ++j) {
-            info.selectedIds.append(static_cast<qint64>(nodeIds->GetValue(j)));
+        if (viewer) {
+            info.sourceId = QString::fromStdString(
+                    viewer->selectionSourceId(actor, info.blockIndex));
+            if (info.sourceId.isEmpty()) continue;
         }
+        QSet<qint64> uniqueSourceIds;
+        for (vtkIdType j = 0; j < localIds->GetNumberOfTuples(); ++j) {
+            const qint64 sourceId = sourceIds->GetValue(j);
+            if (sourceId < 0) continue;
+            info.selectedIds.append(localIds->GetValue(j));
+            if (!uniqueSourceIds.contains(sourceId)) {
+                uniqueSourceIds.insert(sourceId);
+                info.sourceIds.append(sourceId);
+            }
+        }
+        if (info.sourceIds.isEmpty()) continue;
 
         if (!primarySet) {
             // Primary IDs address the source object, not the displayed mesh.
-            result = cvSelectionData(sourceIds,
+            result = cvSelectionData(info.sourceIds,
                                      wantCells ? cvSelectionData::CELLS
                                                : cvSelectionData::POINTS);
             primarySet = true;
@@ -914,6 +976,93 @@ cvSelectionData cvSelectionPipeline::convertToCvSelectionData(
         result.addActorInfo(info);
     }
 
+    return result;
+}
+
+//-----------------------------------------------------------------------------
+cvSelectionData cvSelectionPipeline::resolveSelectionForActor(
+        const cvSelectionData& selection,
+        const QString& sourceId,
+        vtkActor* actor,
+        vtkPolyData* polyData,
+        unsigned int blockIndex) {
+    if (!actor || !polyData || !actor->GetVisibility() || !actor->GetPickable())
+        return {};
+    const bool cells = selection.fieldAssociation() == cvSelectionData::CELLS;
+    const auto limit = cells ? polyData->GetNumberOfCells()
+                             : polyData->GetNumberOfPoints();
+    cvSelectionData result;
+    for (const auto& source : selection.actorInfos()) {
+        const bool qualified = !source.sourceId.isEmpty();
+        if (qualified ? source.sourceId != sourceId
+                      : (source.actor != actor || source.polyData != polyData ||
+                         source.blockIndex != blockIndex))
+            continue;
+        cvActorSelectionInfo info = source;
+        info.actor = actor;
+        info.polyData = polyData;
+        info.blockIndex = blockIndex;
+        if (source.actor != actor || source.polyData != polyData ||
+            source.blockIndex != blockIndex || source.selectedIds.isEmpty()) {
+            info.selectedIds.clear();
+            QSet<qint64> wanted;
+            for (auto id : source.sourceIds) wanted.insert(id);
+            auto* originals = cells ? polyData->GetCellData()->GetArray(
+                                              "vtkOriginalCellIds")
+                                    : polyData->GetPointData()->GetArray(
+                                              "vtkOriginalPointIds");
+            // O(N + S): one scan retains ALL display vertices for a source
+            // vertex split by normals/UVs, instead of a first-match inverse.
+            for (vtkIdType local = 0; local < limit; ++local) {
+                if (originals && local >= originals->GetNumberOfTuples())
+                    continue;
+                const qint64 id =
+                        originals ? static_cast<qint64>(
+                                            originals->GetComponent(local, 0))
+                                  : static_cast<qint64>(local);
+                if (wanted.contains(id)) info.selectedIds.append(local);
+            }
+        }
+        if (info.selectedIds.isEmpty()) continue;
+        if (result.isEmpty())
+            result = cvSelectionData(info.sourceIds,
+                                     selection.fieldAssociation());
+        result.addActorInfo(info);
+    }
+    return result;
+}
+
+//-----------------------------------------------------------------------------
+cvSelectionData cvSelectionPipeline::resolveSelectionForView(
+        const cvSelectionData& selection, Visualization::VtkVis* viewer) {
+    if (!viewer || !viewer->getCurrentRenderer()) return {};
+    cvSelectionData result;
+    for (const auto& source : selection.actorInfos()) {
+        vtkActor* actor = source.actor;
+        vtkPolyData* polyData = source.polyData;
+        unsigned int blockIndex = source.blockIndex;
+        if (!source.sourceId.isEmpty()) {
+            if (!viewer->selectionRepresentation(source.sourceId.toStdString(),
+                                                 actor, polyData, blockIndex))
+                continue;
+        } else if (!actor ||
+                   !viewer->getCurrentRenderer()->HasViewProp(actor)) {
+            // Legacy actor-local selections cannot cross render windows.
+            continue;
+        }
+        cvSelectionData single(
+                source.sourceIds.isEmpty() ? selection.ids() : source.sourceIds,
+                selection.fieldAssociation());
+        single.addActorInfo(source);
+        const auto resolved = resolveSelectionForActor(
+                single, source.sourceId, actor, polyData, blockIndex);
+        for (const auto& info : resolved.actorInfos()) {
+            if (result.isEmpty())
+                result = cvSelectionData(info.sourceIds,
+                                         selection.fieldAssociation());
+            result.addActorInfo(info);
+        }
+    }
     return result;
 }
 
@@ -1005,102 +1154,99 @@ cvSelectionData cvSelectionPipeline::performFrustumSelection(
     auto extractor = vtkSmartPointer<vtkExtractSelectedFrustum>::New();
     extractor->CreateFrustum(frustum);
 
-    struct ActorSelection {
-        vtkActor* actor;
-        vtkPolyData* polyData;
-        QVector<qint64> ids;
-    };
-    QVector<ActorSelection> actorSelections;
+    vtkNew<vtkSelection> selection;
+    auto selectBlock = [&](vtkActor* actor, vtkPolyData* poly,
+                           int compositeIndex) {
+        if (!poly) return;
+        vtkSmartPointer<vtkPolyData> worldPoly = poly;
+        if (!actor->GetIsIdentity()) {
+            vtkNew<vtkTransform> transform;
+            transform->SetMatrix(actor->GetMatrix());
+            vtkNew<vtkTransformPolyDataFilter> toWorld;
+            toWorld->SetTransform(transform);
+            toWorld->SetInputData(poly);
+            toWorld->Update();
+            worldPoly = toWorld->GetOutput();
+        }
+        auto* ds = worldPoly.GetPointer();
+        double bounds[6];
+        ds->GetBounds(bounds);
+        if (!extractor->OverallBoundsTest(bounds)) return;
 
+        // Use the existing frustum extractor's actual cell intersection,
+        // not AABB-corner inclusion (which misses a triangle's top vertex
+        // and cells crossed by a narrow selection region).
+        const bool cells = fieldAssoc == FIELD_ASSOCIATION_CELLS;
+        extractor->SetInputData(ds);
+        extractor->SetFieldType(cells ? vtkSelectionNode::CELL
+                                      : vtkSelectionNode::POINT);
+        extractor->PreserveTopologyOn();
+        extractor->Update();
+        auto* extracted =
+                vtkDataSet::SafeDownCast(extractor->GetOutputDataObject(0));
+        if (!extracted) return;
+        auto* inside =
+                cells ? extracted->GetCellData()->GetArray("vtkInsidedness")
+                      : extracted->GetPointData()->GetArray("vtkInsidedness");
+        if (!inside) return;
+        vtkNew<vtkIdTypeArray> ids;
+        for (vtkIdType i = 0; i < inside->GetNumberOfTuples(); ++i) {
+            if (inside->GetComponent(i, 0) > 0) ids->InsertNextValue(i);
+        }
+
+        if (ids->GetNumberOfTuples() == 0) return;
+        vtkNew<vtkSelectionNode> node;
+        node->SetContentType(vtkSelectionNode::INDICES);
+        node->SetFieldType(fieldAssoc == FIELD_ASSOCIATION_CELLS
+                                   ? vtkSelectionNode::CELL
+                                   : vtkSelectionNode::POINT);
+        node->SetSelectionList(ids);
+        node->GetProperties()->Set(vtkSelectionNode::PROP(), actor);
+        if (compositeIndex >= 1) {
+            node->GetProperties()->Set(vtkSelectionNode::COMPOSITE_INDEX(),
+                                       compositeIndex);
+        }
+        selection->AddNode(node);
+    };
+
+    const auto selectableProps = dataSelectionProps(m_viewer);
     auto props = m_renderer->GetViewProps();
     props->InitTraversal();
     while (auto* prop = props->GetNextProp()) {
         auto* actor = vtkActor::SafeDownCast(prop);
-        if (!actor || !actor->GetPickable() || !actor->GetVisibility() ||
-            !actor->GetMapper())
+        if (!actor || !selectableProps.count(actor) || !actor->GetPickable() ||
+            !actor->GetVisibility() || !actor->GetMapper())
             continue;
-
-        auto* input = actor->GetMapper()->GetInput();
-        if (!input) continue;
-        auto* ds = vtkDataSet::SafeDownCast(input);
-        if (!ds) continue;
-
-        double bounds[6];
-        ds->GetBounds(bounds);
-        if (!extractor->OverallBoundsTest(bounds)) continue;
-
-        QVector<qint64> ids;
-        if (fieldAssoc == FIELD_ASSOCIATION_POINTS) {
-            for (vtkIdType i = 0; i < ds->GetNumberOfPoints(); ++i) {
-                double pt[3];
-                ds->GetPoint(i, pt);
-                if (extractor->GetFrustum()->EvaluateFunction(pt) <= 0.0) {
-                    ids.append(static_cast<qint64>(i));
-                }
+        // The typed GetInput() rejects composites on both mapper generations.
+        auto* input = actor->GetMapper()->GetInputDataObject(0, 0);
+        if (auto* blocks = vtkMultiBlockDataSet::SafeDownCast(input)) {
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 5, 0)
+            auto* mapper = vtkCompositePolyDataMapper::SafeDownCast(
+                    actor->GetMapper());
+#else
+            auto* mapper = vtkCompositePolyDataMapper2::SafeDownCast(
+                    actor->GetMapper());
+#endif
+            auto* attributes =
+                    mapper ? mapper->GetCompositeDataDisplayAttributes()
+                           : nullptr;
+            for (unsigned int b = 0; b < blocks->GetNumberOfBlocks(); ++b) {
+                auto* block = blocks->GetBlock(b);
+                if (attributes && ((attributes->HasBlockVisibility(block) &&
+                                    !attributes->GetBlockVisibility(block)) ||
+                                   (attributes->HasBlockPickability(block) &&
+                                    !attributes->GetBlockPickability(block))))
+                    continue;
+                selectBlock(actor, vtkPolyData::SafeDownCast(block),
+                            static_cast<int>(b + 1));
             }
         } else {
-            vtkPlanes* frustumPlanes = extractor->GetFrustum();
-            for (vtkIdType i = 0; i < ds->GetNumberOfCells(); ++i) {
-                double cb[6];
-                ds->GetCell(i)->GetBounds(cb);
-                // ParaView-style: test all 8 bbox corners against frustum.
-                // Cell is selected if ANY corner lies inside the frustum
-                // (EvaluateFunction <= 0 means inside).
-                double corners8[8][3] = {
-                        {cb[0], cb[2], cb[4]}, {cb[1], cb[2], cb[4]},
-                        {cb[0], cb[3], cb[4]}, {cb[1], cb[3], cb[4]},
-                        {cb[0], cb[2], cb[5]}, {cb[1], cb[2], cb[5]},
-                        {cb[0], cb[3], cb[5]}, {cb[1], cb[3], cb[5]}};
-                bool inside = false;
-                for (int c = 0; c < 8; ++c) {
-                    if (frustumPlanes->EvaluateFunction(corners8[c]) <= 0.0) {
-                        inside = true;
-                        break;
-                    }
-                }
-                if (inside) {
-                    ids.append(static_cast<qint64>(i));
-                }
-            }
-        }
-
-        if (!ids.isEmpty()) {
-            actorSelections.append(
-                    {actor, vtkPolyData::SafeDownCast(ds), std::move(ids)});
+            selectBlock(actor, vtkPolyData::SafeDownCast(input), -1);
         }
     }
-
-    if (actorSelections.isEmpty()) {
-        return cvSelectionData();
-    }
-
-    // Use the actor with the most selected items as primary
-    int bestIdx = 0;
-    for (int i = 1; i < actorSelections.size(); ++i) {
-        if (actorSelections[i].ids.size() > actorSelections[bestIdx].ids.size())
-            bestIdx = i;
-    }
-
-    const auto& primary = actorSelections[bestIdx];
-    cvSelectionData result(primary.ids, fieldAssoc == FIELD_ASSOCIATION_CELLS
-                                                ? cvSelectionData::CELLS
-                                                : cvSelectionData::POINTS);
-
-    result.setActorInfo(primary.actor, primary.polyData);
-    for (int i = 0; i < actorSelections.size(); ++i) {
-        if (i != bestIdx) {
-            cvActorSelectionInfo info;
-            info.actor = actorSelections[i].actor;
-            info.polyData = actorSelections[i].polyData;
-            info.selectedIds = actorSelections[i].ids;
-            result.addActorInfo(info);
-        }
-    }
-
-    int totalSelected = 0;
-    for (const auto& as : actorSelections) totalSelected += as.ids.size();
-
-    return result;
+    // Surface and through selections must share the same local/source ID
+    // conversion; duplicating it here previously lost remapping and block IDs.
+    return convertToCvSelectionData(selection, fieldAssoc, m_viewer);
 }
 
 //-----------------------------------------------------------------------------
@@ -1121,7 +1267,7 @@ cvSelectionData cvSelectionPipeline::convertSelectionToData(
     // This ensures source object lookup will work for direct extraction
     // Note: convertToCvSelectionData expects
     // cvSelectionPipeline::FieldAssociation
-    return convertToCvSelectionData(vtkSel, fieldAssoc);
+    return convertToCvSelectionData(vtkSel, fieldAssoc, m_viewer);
 }
 
 //-----------------------------------------------------------------------------
@@ -1249,131 +1395,76 @@ cvSelectionData cvSelectionPipeline::combineSelections(
         const cvSelectionData& sel1,
         const cvSelectionData& sel2,
         CombineOperation operation) {
-    // Handle empty selections first (before field association check!)
-    // ParaView behavior (vtkSMSelectionHelper::CombineSelection line 156-159):
-    // - If sel1 is empty and deepCopy=false, return true (no-op, result is
-    // sel2)
-    // - If sel2 is empty, return false (cannot combine)
-    if (sel2.isEmpty()) {
-        return sel1;  // Return sel1 unchanged
-    }
-
+    if (operation == OPERATION_DEFAULT) return sel2;
+    if (sel2.isEmpty()) return sel1;
     if (sel1.isEmpty()) {
-        // ParaView vtkSMSelectionHelper::CombineSelection: empty sel1 → sel2
-        return sel2;
+        return operation == OPERATION_SUBTRACTION ? cvSelectionData() : sel2;
     }
+    if (sel1.fieldAssociation() != sel2.fieldAssociation()) return sel2;
 
-    // Handle DEFAULT (replace with sel2) BEFORE checking field association
-    // ParaView behavior: When switching selection types (e.g., cells to
-    // points), the new selection should replace the old one, not fail
-    if (operation == OPERATION_DEFAULT) {
-        return sel2;
-    }
-
-    // Check compatibility (only when both are non-empty AND not replacing)
-    // This is only for ADDITION/SUBTRACTION/TOGGLE operations
-    if (sel1.fieldAssociation() != sel2.fieldAssociation()) {
-        // ParaView behavior: When field associations differ and trying to
-        // add/subtract, just use the new selection
-        return sel2;
-    }
-
-    // Get ID sets
-    QSet<vtkIdType> set1, set2, resultSet;
-
-    if (!sel1.isEmpty()) {
-        vtkSmartPointer<vtkIdTypeArray> arr1 = sel1.vtkArray();
-        for (vtkIdType i = 0; i < arr1->GetNumberOfTuples(); ++i) {
-            set1.insert(arr1->GetValue(i));
-        }
-    }
-
-    if (!sel2.isEmpty()) {
-        vtkSmartPointer<vtkIdTypeArray> arr2 = sel2.vtkArray();
-        for (vtkIdType i = 0; i < arr2->GetNumberOfTuples(); ++i) {
-            set2.insert(arr2->GetValue(i));
-        }
-    }
-
-    // Perform operation
-    switch (operation) {
-        case OPERATION_ADDITION:
-            // Union: sel1 | sel2
-            resultSet = set1 + set2;
-            break;
-
-        case OPERATION_SUBTRACTION:
-            // Difference: sel1 & !sel2
-            resultSet = set1 - set2;
-            break;
-
-        case OPERATION_TOGGLE:
-            // XOR: sel1 ^ sel2
-            resultSet = (set1 - set2) + (set2 - set1);
-            break;
-
-        default:
-            CVLog::Warning(
-                    QString("[cvSelectionPipeline] Unknown operation: %1")
-                            .arg(operation));
-            return cvSelectionData();
-    }
-
-    // Convert result set to array
-    if (resultSet.isEmpty()) {
-        return cvSelectionData();
-    }
-
-    vtkSmartPointer<vtkIdTypeArray> resultArray =
-            vtkSmartPointer<vtkIdTypeArray>::New();
-    for (vtkIdType id : resultSet) {
-        resultArray->InsertNextValue(id);
-    }
-
-    cvSelectionData result(resultArray, sel1.fieldAssociation());
-
-    // Source IDs above serve export/DB consumers. The highlighter uses the
-    // actor-local render IDs below, so they must undergo the same operation
-    // independently for every actor/block. A shared actor may represent many
-    // composite blocks, whose local IDs are only meaningful within polyData.
-    QVector<cvActorSelectionInfo> actorInfos = sel1.actorInfos();
-    auto findActorInfo = [&actorInfos](const cvActorSelectionInfo& candidate) {
-        for (int i = 0; i < actorInfos.size(); ++i) {
-            const cvActorSelectionInfo& existing = actorInfos[i];
-            if (existing.actor == candidate.actor &&
-                existing.polyData == candidate.polyData &&
-                existing.blockIndex == candidate.blockIndex) {
-                return i;
-            }
-        }
-        return -1;
+    auto combineIds = [operation](const QVector<qint64>& first,
+                                  const QVector<qint64>& second) {
+        QSet<qint64> a, b;
+        for (auto id : first) a.insert(id);
+        for (auto id : second) b.insert(id);
+        if (operation == OPERATION_ADDITION)
+            a += b;
+        else if (operation == OPERATION_SUBTRACTION)
+            a -= b;
+        else
+            a = (a - b) + (b - a);
+        auto values = a.values().toVector();
+        std::sort(values.begin(), values.end());
+        return values;
     };
-    for (const cvActorSelectionInfo& incoming : sel2.actorInfos()) {
-        const int index = findActorInfo(incoming);
-        if (index < 0) {
-            if (operation != OPERATION_SUBTRACTION) {
-                actorInfos.append(incoming);
-            }
+    if (!sel1.hasActorInfo() && !sel2.hasActorInfo()) {
+        return cvSelectionData(combineIds(sel1.ids(), sel2.ids()),
+                               sel1.fieldAssociation());
+    }
+    // Source identity is global; actor/polydata/block are a view-local
+    // fallback only for old callers that did not provide a source identity.
+    auto records = sel1.actorInfos();
+    for (int i = 0; i < records.size(); ++i) {
+        if (records[i].sourceIds.isEmpty())
+            records[i].sourceIds = i == 0 ? sel1.ids() : records[i].selectedIds;
+    }
+    for (auto incoming : sel2.actorInfos()) {
+        if (incoming.sourceIds.isEmpty()) incoming.sourceIds = sel2.ids();
+        auto match = std::find_if(
+                records.begin(), records.end(),
+                [&](const cvActorSelectionInfo& old) {
+                    if (!old.sourceId.isEmpty() || !incoming.sourceId.isEmpty())
+                        return !old.sourceId.isEmpty() &&
+                               old.sourceId == incoming.sourceId;
+                    return old.actor == incoming.actor &&
+                           old.polyData == incoming.polyData &&
+                           old.blockIndex == incoming.blockIndex;
+                });
+        if (match == records.end()) {
+            if (operation != OPERATION_SUBTRACTION) records.append(incoming);
             continue;
         }
-
-        QSet<qint64> localIds;
-        for (qint64 id : actorInfos[index].selectedIds) localIds.insert(id);
-        QSet<qint64> incomingIds;
-        for (qint64 id : incoming.selectedIds) incomingIds.insert(id);
-        if (operation == OPERATION_ADDITION) {
-            localIds += incomingIds;
-        } else if (operation == OPERATION_SUBTRACTION) {
-            localIds -= incomingIds;
-        } else {  // OPERATION_TOGGLE
-            localIds = (localIds - incomingIds) + (incomingIds - localIds);
+        match->sourceIds = combineIds(match->sourceIds, incoming.sourceIds);
+        if (match->actor == incoming.actor &&
+            match->polyData == incoming.polyData &&
+            match->blockIndex == incoming.blockIndex) {
+            match->selectedIds =
+                    combineIds(match->selectedIds, incoming.selectedIds);
+        } else {
+            // The same source may have different filtered/split geometry in
+            // another view. Resolve the merged source IDs afresh in each view.
+            match->actor = nullptr;
+            match->polyData = nullptr;
+            match->selectedIds.clear();
         }
-        actorInfos[index].selectedIds = localIds.values().toVector();
     }
-    for (const cvActorSelectionInfo& info : actorInfos) {
-        if (!info.selectedIds.isEmpty()) result.addActorInfo(info);
+    cvSelectionData result;
+    for (const auto& info : records) {
+        if (info.sourceIds.isEmpty()) continue;
+        if (result.isEmpty())
+            result = cvSelectionData(info.sourceIds, sel1.fieldAssociation());
+        result.addActorInfo(info);
     }
-
     return result;
 }
 

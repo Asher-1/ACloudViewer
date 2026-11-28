@@ -96,7 +96,7 @@ void drawAndSave(QImage image,
                                       .arg(d.score, 0, 'f', 2);
         QRect labelRect(static_cast<int>(d.x1),
                         static_cast<int>(d.y1) - font.pixelSize() - 6,
-                        std::max(24, label.size() * font.pixelSize()),
+                        std::max(24, p.fontMetrics().horizontalAdvance(label)),
                         font.pixelSize() + 6);
         labelRect.moveLeft(
                 std::clamp(labelRect.left(), 2,

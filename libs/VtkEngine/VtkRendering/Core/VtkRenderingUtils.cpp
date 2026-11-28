@@ -429,19 +429,17 @@ vtkSmartPointer<vtkPolyData> CreateCameraSensor(
             CreatePolyDataFromLineSet(cameraSensor->getSideLines());
     SetPolyDataColor(sideLinesData, lineColor, false);
 
+    // Orientation up-arrow (shaft + head outline), same LineSet source as the
+    // legacy GL path so reconstruction and plugins render identically.
     vtkSmartPointer<vtkPolyData> arrowLinesData =
             CreatePolyDataFromLineSet(cameraSensor->getArrow());
     SetPolyDataColor(arrowLinesData, lineColor, false);
-
-    vtkSmartPointer<vtkPolyData> axisLinesData =
-            CreateCoordinateFromLineSet(cameraSensor->getAxis());
 
     vtkSmartPointer<vtkAppendPolyData> appendFilter =
             vtkSmartPointer<vtkAppendPolyData>::New();
     appendFilter->AddInputData(nearPlaneLinesData);
     appendFilter->AddInputData(sideLinesData);
     appendFilter->AddInputData(arrowLinesData);
-    appendFilter->AddInputData(axisLinesData);
     appendFilter->Update();
     if (planeFaceOut) {
         // Near-plane FACE from the RAW 4 corner points. The line-set

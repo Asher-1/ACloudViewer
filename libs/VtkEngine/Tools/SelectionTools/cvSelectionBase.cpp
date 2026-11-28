@@ -8,6 +8,7 @@
 #include "cvSelectionBase.h"
 
 #include "Visualization/VtkVis.h"
+#include "cvSelectionPipeline.h"
 #include "cvViewSelectionManager.h"  // For singleton access
 
 // CV_CORE_LIB
@@ -130,15 +131,18 @@ QList<vtkActor*> cvSelectionBase::getDataActors() const {
         return actors;
     }
 
-    // Collect all pickable actors with data
+    const auto selectableProps =
+            cvSelectionPipeline::dataSelectionProps(pclVis);
+    // Collect only scene geometry, not pickable annotation/helper props.
     vtkPropCollection* props = renderer->GetViewProps();
     props->InitTraversal();
 
     while (vtkProp* prop = props->GetNextProp()) {
         vtkActor* actor = vtkActor::SafeDownCast(prop);
 
-        if (actor && actor->GetVisibility() && actor->GetPickable() &&
-            actor->GetMapper() && actor->GetMapper()->GetInput()) {
+        if (actor && selectableProps.count(actor) && actor->GetVisibility() &&
+            actor->GetPickable() && actor->GetMapper() &&
+            actor->GetMapper()->GetInput()) {
             actors.append(actor);
         }
     }
@@ -170,7 +174,9 @@ std::vector<vtkPolyData*> cvSelectionBase::getAllPolyDataFromVisualizer() {
         return polyDataList;
     }
 
-    // Collect all polydata from actors
+    const auto selectableProps =
+            cvSelectionPipeline::dataSelectionProps(pclVis);
+    // Collect polydata only from scene data actors.
     vtkPropCollection* props = renderer->GetViewProps();
     props->InitTraversal();
 
@@ -179,7 +185,7 @@ std::vector<vtkPolyData*> cvSelectionBase::getAllPolyDataFromVisualizer() {
 
     while (vtkProp* p = props->GetNextProp()) {
         vtkActor* actor = vtkActor::SafeDownCast(p);
-        if (actor && actor->GetMapper() &&
+        if (actor && selectableProps.count(actor) && actor->GetMapper() &&
             actor->GetVisibility() &&  // Check visibility
             actor->GetPickable()) {    // Check if pickable (skip helper actors)
             actorCount++;

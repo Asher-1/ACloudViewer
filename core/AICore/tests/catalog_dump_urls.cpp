@@ -42,6 +42,7 @@
 #include "aicore/table_capi.h"
 #include "aicore/trellis_capi.h"
 #include "aicore/vlx_seek_capi.h"
+#include "aicore/wevisone_capi.h"
 #include "aicore/yolo_capi.h"
 
 namespace {
@@ -145,6 +146,12 @@ void emitRuntimeCatalogs() {
         const auto* e = aicore_vlx_seek_model_at(i);
         if (e)
             emitAsset("vlx_seek", "vlx_seek_models", e->filename,
+                      e->download_url, e->size_bytes);
+    }
+    for (int i = 0; i < aicore_wevisone_model_count(); ++i) {
+        const auto* e = aicore_wevisone_model_at(i);
+        if (e)
+            emitAsset("wevisone", "wevisone_models", e->filename,
                       e->download_url, e->size_bytes);
     }
 

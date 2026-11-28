@@ -10,6 +10,8 @@
 // dim_in = embed (cat_token false). Feeds the dumped feat_m_{4,11,17,23} as the
 // head input (isolates head from backbone) and compares the metric depth vs
 // depth_metric_head and sky vs sky_head. SKIP (77) if artifacts absent.
+#include <gtest/gtest.h>
+
 #include <cstdlib>
 #include <string>
 #include <vector>
@@ -19,12 +21,14 @@
 #include "tasks/depth/model_loader.hpp"
 #include "tests/depth/whitebox/parity.hpp"
 
-int main() {
+TEST(DepthWhitebox, MetricHead) {
     const char* gguf = std::getenv("AICORE_TEST_DEPTH_GGUF_METRIC");
     const char* base = std::getenv("AICORE_TEST_DEPTH_BASELINE_NESTED");
-    if (!gguf || !base) return 77;
+    if (!gguf || !base)
+        GTEST_SKIP() << "Missing configured model/reference assets";
     aicore::depth::ModelLoader ml;
-    if (!ml.load(gguf)) return 1;
+    if (!ml.load(gguf))
+        FAIL() << "Required operation or numeric contract failed";
     aicore::depth::Backend be;
 
     const int H = 224, W = 224;
@@ -35,26 +39,27 @@ int main() {
         if (!da_parity::load_baseline(
                     base, std::string("feat_m_") + std::to_string(Ls[i]),
                     feats[i], s))
-            return 1;
+            FAIL() << "Required operation or numeric contract failed";
 
     aicore::depth::DptHead head(ml, be);
     std::vector<float> depth, sky;
     if (!head.depth_sky(feats, H, W, depth, sky)) {
         std::fprintf(stderr, "depth_sky failed\n");
-        return 1;
+        FAIL() << "Required operation or numeric contract failed";
     }
 
     bool ok = true;
     {
         std::vector<float> ref;
         if (!da_parity::load_baseline(base, "depth_metric_head", ref, s))
-            return 1;
-        ok &= da_parity::compare(depth, ref, "depth_metric_head", 2e-3f, 2e-3f);
+            FAIL() << "Required operation or numeric contract failed";
+        EXPECT_TRUE(da_parity::compare(depth, ref, "depth_metric_head", 2e-3f,
+                                       2e-3f));
     }
     {
         std::vector<float> ref;
-        if (!da_parity::load_baseline(base, "sky_head", ref, s)) return 1;
-        ok &= da_parity::compare(sky, ref, "sky_head", 2e-3f, 2e-3f);
+        if (!da_parity::load_baseline(base, "sky_head", ref, s))
+            FAIL() << "Required operation or numeric contract failed";
+        EXPECT_TRUE(da_parity::compare(sky, ref, "sky_head", 2e-3f, 2e-3f));
     }
-    return ok ? 0 : 1;
 }

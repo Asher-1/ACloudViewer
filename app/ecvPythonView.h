@@ -12,6 +12,10 @@
 
 #include <QWidget>
 #include <functional>
+#ifdef USE_VTK_BACKEND
+#include <vtkSmartPointer.h>
+class vtkDataObject;
+#endif
 
 class ccHObject;
 class ecvPythonCodeEditor;
@@ -20,6 +24,7 @@ class QCompleter;
 class QLabel;
 class QMenu;
 class QPlainTextEdit;
+class QProcess;
 class QPushButton;
 class QSplitter;
 class QTableWidget;
@@ -34,6 +39,11 @@ public:
     ~ecvPythonView() override;
 
     QString title() const { return m_title; }
+#ifdef USE_VTK_BACKEND
+    using DataObjectProvider =
+            std::function<QList<vtkSmartPointer<vtkDataObject>>(ccHObject*)>;
+    void setDataObjectProvider(DataObjectProvider provider);
+#endif
 
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;
@@ -56,7 +66,7 @@ private:
 
     void setupCompleter();
     void insertCompletion(const QString& completion);
-    void inspectVariables();
+    void inspectVariables(const QString& output);
     void highlightErrorLine(const QString& stderrText);
     void clearErrorHighlights();
 
@@ -71,6 +81,9 @@ private:
 
     QComboBox* m_sourceCombo = nullptr;
     EntityListProvider m_entityListProvider;
+#ifdef USE_VTK_BACKEND
+    DataObjectProvider m_dataObjectProvider;
+#endif
     ecvPythonCodeEditor* m_scriptEditor = nullptr;
     QPlainTextEdit* m_outputPanel = nullptr;
     QLabel* m_imageLabel = nullptr;
@@ -80,14 +93,12 @@ private:
     ecvPythonSyntaxHighlighter* m_highlighter = nullptr;
     QCompleter* m_completer = nullptr;
     ccHObject* m_entity = nullptr;
+    QProcess* m_process = nullptr;
     QString m_lastExportPath;
     QString m_lastImagePath;
-    QString m_pythonBin;
-    bool m_pythonChecked = false;
 
     QString m_viewTypeKey;
     QString m_title;
 
     QString findPythonBinary();
-    void checkPythonEnvironment();
 };

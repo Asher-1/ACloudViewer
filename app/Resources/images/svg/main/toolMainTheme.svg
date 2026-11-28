@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.6171,-0.6171) scale(1.05143)">
+
+<defs><linearGradient id="warm" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#F3C017"/><stop offset="1.000" stop-color="#C1A561"/></linearGradient>
+<linearGradient id="blue" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#D0E5F6"/><stop offset="1.000" stop-color="#2896D3"/></linearGradient>
+<linearGradient id="green" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#A7D28C"/><stop offset="1.000" stop-color="#72BE44"/></linearGradient></defs>
+<title>Interface theme — three overlapping tiles</title>
+  <rect x="10" y="2" width="12" height="12" rx="1" fill="url(#warm)" stroke="#6F6F59"/>
+  <rect x="6" y="6" width="12" height="12" rx="1" fill="url(#blue)" stroke="#6F6F59"/>
+  <rect x="2" y="10" width="12" height="12" rx="1" fill="url(#green)" stroke="#6F6F59"/>
+
+</g>
+</svg>

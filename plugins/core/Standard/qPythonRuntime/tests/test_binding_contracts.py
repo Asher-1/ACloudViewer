@@ -10,6 +10,19 @@ import pytest
 
 
 CASES = {
+    "set_view_orientation_only_signature": """
+method = pycc.ccDisplayTools.setView
+assert "redraw: bool = True" in method.__doc__, method.__doc__
+assert "preserving zoom" in method.__doc__, method.__doc__
+# Reject former box arguments before touching a display/camera.
+for legacy_box in (pycc.ccBBox(), None):
+    try:
+        method(pycc.CC_VIEW_ORIENTATION.CC_TOP_VIEW, legacy_box)
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("setView accepted a non-boolean redraw argument")
+""",
     "histogram_returns_independent_list": """
 cloud = pycc.ccPointCloud("histogram")
 index = cloud.addScalarField("values")
@@ -300,5 +313,10 @@ def test_production_binding_contract(case, unicode_paths, acloudviewer_exe, tmp_
     observed = json.loads(marker.read_text(encoding="utf-8"))
     assert observed["case"] == case
     if unicode_paths:
-        assert observed["child_locale"] == "C", observed
+        # Qt >= 6.5 forcibly switches a C/POSIX LC_CTYPE to C.UTF-8 at
+        # QCoreApplication init ("Qt depends on a UTF-8 locale"), so the
+        # child's platform C locale may spell either way; the contract is
+        # "not a user locale", and the UTF-8 filesystem encoding below is
+        # what actually guards Unicode argument handling.
+        assert observed["child_locale"] in ("C", "C.UTF-8"), observed
         assert observed["filesystem_encoding"] == "utf-8", observed

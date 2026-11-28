@@ -238,7 +238,7 @@ models/
   depth-anything-giant-f32.gguf
   depth-anything-nested-metric.gguf
   depth-anything-nested-anyview.gguf
-  ... (see tests/CMakeLists.txt ENVIRONMENT)
+  ... (asset setup is owned by core/AICore/tests)
 dumps/
   reference.gguf
   reference_mv.gguf
@@ -250,36 +250,34 @@ Download GGUF from HuggingFace; baselines are generated with Python tools under 
 
 ### Build a single test (example)
 
-The main CMake tree does not `add_subdirectory(tests)` by default; compile manually:
+Depth C API tests are built by AICore and registered through the root tests module:
 
 ```bash
-cd build_app
-cmake --build . --target AICore -j$(nproc)
-
-g++ -std=c++17 -O2 \
-  plugins/core/Standard/qDA3/tests/test_capi.cpp \
-  -I core/AICore/include -I core/AICore/src/tasks/depth \
-  -L build_app/bin -lAICore -Wl,-rpath,build_app/bin \
-  -o build_app/bin/plugins/test_capi
-
-export DA_TEST_GGUF=$HOME/cloudViewer_data/extract/da3_models/depth-anything-base-f32.gguf
-export DA_TEST_NATIVE_PNG=plugins/core/Standard/qDA3/dumps/native_input.png
-./build_app/bin/plugins/test_capi
+cmake --build build_app --target test_depth_capi_model_contract --parallel 4
+export AICORE_TEST_DEPTH_GGUF=$HOME/cloudViewer_data/extract/da3_models/depth-anything-base-f32.gguf
+export AICORE_TEST_DEPTH_IMAGE=plugins/core/Standard/qDA3/dumps/native_input.png
+# Use an absolute asset path when CTest runs from its build directory.
+export AICORE_TEST_DEPTH_IMAGE="$PWD/$AICORE_TEST_DEPTH_IMAGE"
+ctest --test-dir build_app -R '^test_depth_capi_model_contract$' --output-on-failure
 ```
 
-Or add `add_subdirectory(tests)` at the end of `qDA3/CMakeLists.txt`:
+The former plugin-local C API programs have been retired. Current depth suites
+live under `core/AICore/tests/depth` and register through the root
+[tests module](../../../../tests/README.md). Do not add a plugin test
+subdirectory or revive the removed `test_capi` target:
 
 ```bash
 cmake -B build_app -DAICore_ENABLED=ON -DAICore_BUILD_TESTS=ON -DAICore_BUILD_WHITEBOX_TESTS=ON ...
-cmake --build build_app --target test_capi test_engine_depth -j$(nproc)
-ctest --test-dir build_app -R test_capi
+cmake -DBUILD_DIR=build_app -DJOBS=4 -P tests/Run.cmake
+# Model-dependent suites need assets and explicit selection:
+cmake -DBUILD_DIR=build_app -DJOBS=4 -DPROFILE=model -P tests/Run.cmake
 ```
 
 ### Test categories
 
 | Category | Examples | Validates |
 |----------|----------|-----------|
-| **C API** | `test_capi`, `test_capi_da2`, `test_capi_dense` | `aicore_depth_*` load, info, export |
+| **C API** | `test_depth_capi_contract`, `test_depth_capi_load`, `test_depth_capi_model_contract` | `aicore_depth_*` load, info, export |
 | **Backbone** | `test_backbone`, `test_backbone_mv`, `test_backbone_giant`, … | ViT backbone vs baseline tensors |
 | **Head / Blocks** | `test_dpt_head`, `test_dpt_blocks`, `test_metric_head`, … | Decoder numerical parity |
 | **Engine E2E** | `test_engine_depth`, `test_engine_pose`, `test_engine_mv`, … | Full-image inference |

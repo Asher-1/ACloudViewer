@@ -128,6 +128,9 @@ file(GLOB AICORE_LLM_SOURCES CONFIGURE_DEPENDS ${AICORE_TASKS_SRC_DIR}/llm/*.cpp
 set(AICORE_VLX_SEEK_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/vlx_seek)
 file(GLOB AICORE_VLX_SEEK_SOURCES CONFIGURE_DEPENDS
     ${AICORE_VLX_SEEK_SRC_DIR}/*.cpp)
+set(AICORE_WEVISONE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/wevisone)
+file(GLOB AICORE_WEVISONE_SOURCES CONFIGURE_DEPENDS
+    ${AICORE_WEVISONE_SRC_DIR}/*.cpp)
 file(GLOB AICORE_ATTRIBUTE_SOURCES CONFIGURE_DEPENDS ${AICORE_TASKS_SRC_DIR}/attribute/*.cpp)
 file(GLOB AICORE_GKD_SOURCES CONFIGURE_DEPENDS ${AICORE_GKD_SRC_DIR}/*.cpp)
 file(GLOB AICORE_MAP_ANYTHING_SOURCES CONFIGURE_DEPENDS
@@ -228,6 +231,7 @@ add_library(${PROJECT_NAME} SHARED
     ${AICORE_TAGGING_SOURCES}
     ${AICORE_LLM_SOURCES}
     ${AICORE_VLX_SEEK_SOURCES}
+    ${AICORE_WEVISONE_SOURCES}
     ${AICORE_ATTRIBUTE_SOURCES}
     ${AICORE_GKD_SOURCES}
     ${AICORE_MAP_ANYTHING_SOURCES}
@@ -324,6 +328,22 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
 endif()
 
+# WeVisOne-VL host-side floating-point parity: the reference implementation
+# (upstream Asher-1/WeVisOne-VL-GGML cpp_ggml) compiles WITHOUT -march
+# (x86-64 baseline, no FMA anywhere), while CMakeFindSSE adds
+# -march=x86-64-v3 to this tree. The torch-exact bicubic canvas spells its
+# single tap FMA as std::fma; every other host mul+add (smart-resize grids,
+# sine pos tables, box-Fourier log terms, decoder assembly) must stay
+# unfused. Disabling contraction on every wevisone TU reproduces the
+# upstream no-FMA contract; ggml kernels are unaffected (they are compiled
+# in the dependency project without -march). MSVC does not contract
+# without /fp:contract.
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_source_files_properties(
+        ${AICORE_WEVISONE_SOURCES}
+        PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+endif()
+
 # VLX-Seek JPEG decode parity: libjpeg-turbo ISLOW + fancy upsampling equals
 # the PIL default decode the upstream parity feeds use; stb differs by
 # +-1..2 LSB on real photos, enough to flip near-tied greedy tokens. Link
@@ -331,6 +351,9 @@ endif()
 # it exists; stb stays the non-JPEG fallback.
 if(TARGET 3rdparty_jpeg)
     target_compile_definitions(${PROJECT_NAME} PRIVATE ACV_VLX_HAVE_LIBJPEG=1)
+    # WeVisOne-VL shares the same PIL-exact JPEG decode contract; the Qt
+    # image_utils fallback covers non-JPEG files (no stb dependency).
+    target_compile_definitions(${PROJECT_NAME} PRIVATE ACV_WEV_HAVE_LIBJPEG=1)
 endif()
 
 # QuerySplat host kernels gate their OpenMP loops behind QS_USE_OPENMP
@@ -780,7 +803,7 @@ endif()
 set(_aicore_enabled_task_names
     aliked deeplsd depth facedetect gaussian gkd lightglue lingbot loma ocr
     openpcdet querysplat reid rfdetr rmbg sam3 sam3d tagging relation table
-    trellis instantmesh yolo llm vlx_seek)
+    trellis instantmesh yolo llm vlx_seek wevisone)
 list(JOIN _aicore_enabled_task_names "," _aicore_enabled_tasks_csv)
 
 if(AICore_BUILD_TESTS)
@@ -955,6 +978,7 @@ set_target_properties(anycalib_parity_probe PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/aicore_tests)
 cloudviewer_set_aicore_test_runtime_layout(anycalib_parity_probe)
 set_target_properties(test_ocr_runtime PROPERTIES
+    CLOUDVIEWER_TEST_KIND integration
     POSITION_INDEPENDENT_CODE ON CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
     # The backend .so modules (ggml-cuda/vulkan/cpu-*) live beside
     # libAICore.so; without $ORIGIN the DL loader cannot resolve them and
@@ -968,24 +992,23 @@ cloudviewer_set_aicore_test_runtime_layout(test_ocr_runtime)
 if(TARGET aicore-fast-tests)
     # The model-free graph contract reuses the same OCR interpreter target
     # instead of adding a second inference implementation.
-    add_dependencies(aicore-fast-tests test_ocr_runtime)
-    add_test(NAME test_paddle_program_io_contract COMMAND test_ocr_runtime --program-io-contract)
+    cloudviewer_add_test(NAME test_paddle_program_io_contract COMMAND test_ocr_runtime --program-io-contract)
     set_tests_properties(test_paddle_program_io_contract PROPERTIES LABELS "common;contract")
     cloudviewer_set_test_runtime_environment(test_paddle_program_io_contract)
-    add_test(NAME test_ocr_dw_bias_cpu COMMAND test_ocr_runtime
+    cloudviewer_add_test(NAME test_ocr_dw_bias_cpu COMMAND test_ocr_runtime
         --dw-bias-contract CPU "${GGML_MODULE_DIR}")
     set_tests_properties(test_ocr_dw_bias_cpu PROPERTIES LABELS "ocr;ggml"
         SKIP_RETURN_CODE 77)
     cloudviewer_set_test_runtime_environment(test_ocr_dw_bias_cpu)
     if(AICore_CUDA_ENABLED)
-        add_test(NAME test_ocr_dw_bias_cuda COMMAND test_ocr_runtime
+        cloudviewer_add_test(NAME test_ocr_dw_bias_cuda COMMAND test_ocr_runtime
             --dw-bias-contract CUDA0 "${GGML_MODULE_DIR}")
         set_tests_properties(test_ocr_dw_bias_cuda PROPERTIES LABELS "ocr;ggml;gpu"
             SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
         cloudviewer_set_test_runtime_environment(test_ocr_dw_bias_cuda)
     endif()
     if(AICore_VULKAN_ENABLED)
-        add_test(NAME test_ocr_dw_bias_vulkan COMMAND test_ocr_runtime
+        cloudviewer_add_test(NAME test_ocr_dw_bias_vulkan COMMAND test_ocr_runtime
             --dw-bias-contract Vulkan0 "${GGML_MODULE_DIR}")
         set_tests_properties(test_ocr_dw_bias_vulkan PROPERTIES LABELS "ocr;ggml;gpu"
             SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
@@ -994,7 +1017,7 @@ if(TARGET aicore-fast-tests)
     if(APPLE)
         # Metal joins the same depthwise-bias contract (0030 patch): the
         # device name is the ggml dev_name "MTL0" (registry family "metal").
-        add_test(NAME test_ocr_dw_bias_metal COMMAND test_ocr_runtime
+        cloudviewer_add_test(NAME test_ocr_dw_bias_metal COMMAND test_ocr_runtime
             --dw-bias-contract MTL0 "${GGML_MODULE_DIR}")
         set_tests_properties(test_ocr_dw_bias_metal PROPERTIES LABELS "ocr;ggml;gpu"
             SKIP_RETURN_CODE 77 RESOURCE_LOCK gpu)
@@ -1023,19 +1046,13 @@ target_compile_options(test_table_runtime PRIVATE
     $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:-fPIC>)
 aicore_apply_compile_definitions(test_table_runtime)
 set_target_properties(test_table_runtime PROPERTIES
+    CLOUDVIEWER_TEST_KIND integration
     POSITION_INDEPENDENT_CODE ON CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
     BUILD_RPATH "$ORIGIN"
     INSTALL_RPATH "$ORIGIN")
 cloudviewer_set_aicore_test_runtime_layout(test_table_runtime)
-# The probe_ocr_* / probe_table CTests (tests/CMakeLists.txt, labels
-# capi;model) run these binaries, but tests/ is configured before they
-# exist, so the label-derived tier DEPENDS cannot see them: attach here.
-if(TARGET aicore-model-tests)
-    add_dependencies(aicore-model-tests test_ocr_runtime test_table_runtime)
-endif()
-if(TARGET aicore-contract-tests AND AICORE_TEST_ENABLE_MODEL_TESTS)
-    add_dependencies(aicore-contract-tests test_ocr_runtime test_table_runtime)
-endif()
+# Root tests/ resolves the late-created OCR/table prerequisites after all
+# owner directories have registered their commands.
 if(TARGET AICore_capi_link)
     target_link_libraries(aicore_gguf_quantize PRIVATE AICore_capi_link)
 endif()

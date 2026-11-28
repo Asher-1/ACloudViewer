@@ -7,6 +7,8 @@
 
 #include "qOCR.h"
 
+#include <ecvAICoreUiHelper.h>
+
 #include <QDateTime>
 #include <QDir>
 #include <QFileInfo>
@@ -69,6 +71,7 @@ void qOCR::showDialog() {
     if (!m_app) return;
     if (!m_dialog) {
         m_dialog = new OCRDialog(static_cast<QWidget*>(m_app->getMainWindow()));
+        ecvAICoreUi::bindDialogAction(m_workspaceAction, m_dialog);
         connect(m_dialog, &OCRDialog::runRequested, this, &qOCR::executeTask);
         connect(m_dialog, &OCRDialog::cancelRequested, this, &qOCR::cancelTask);
         connect(m_dialog, &OCRDialog::resultImageSelected, this,

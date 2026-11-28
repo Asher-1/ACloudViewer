@@ -42,62 +42,25 @@ ecvModalShortcut::~ecvModalShortcut() {
 //-----------------------------------------------------------------------------
 void ecvModalShortcut::setContextWidget(QWidget* contextWidget,
                                         Qt::ShortcutContext contextArea) {
-    bool enabled = this->isEnabled();
-
-    if (m_shortcut) {
-        // Check if we're already using this widget and context
-        if (qobject_cast<QWidget*>(m_shortcut->parent()) == contextWidget) {
-            // Same parent - update context if needed
-            // CRITICAL: QShortcut's context can be changed after creation,
-            // but for ApplicationShortcut (especially for system shortcuts like
-            // "Ctrl+C"), it's safer to recreate to ensure proper registration
-            if (m_shortcut->context() != contextArea) {
-                // For ApplicationShortcut, recreate to ensure proper
-                // registration This is especially important for "Ctrl+C" which
-                // may conflict with system shortcuts
-                if (contextArea == Qt::ApplicationShortcut) {
-                    delete m_shortcut;
-                    m_shortcut = new QShortcut(m_key, contextWidget);
-                    m_shortcut->setEnabled(enabled);
-                    m_shortcut->setContext(contextArea);
-
-                    // Reconnect signals
-                    QObject::connect(m_shortcut, &QShortcut::activated, this,
-                                     &ecvModalShortcut::activated);
-                    if (m_action) {
-                        QObject::connect(m_shortcut, &QShortcut::activated,
-                                         m_action, &QAction::trigger);
-                    }
-                } else {
-                    // For other contexts, just update
-                    m_shortcut->setContext(contextArea);
-                }
-            }
-            return;
-        }
-    }
-
-    // To change parents, it's best to start over
+    if (m_shortcut && m_shortcut->parent() == contextWidget &&
+        m_shortcut->context() == contextArea)
+        return;
+    const bool wasEnabled = isEnabled();
+    // QObject ownership remains with the original owner; only the QShortcut's
+    // dispatch context changes. Recreate consistently for Qt 5 and Qt 6.
     delete m_shortcut;
-
-    if (!contextWidget && contextArea != Qt::ApplicationShortcut) {
-        // We need to keep a shortcut around, but don't pay attention
-        // to it since the context widget is null.
-        m_shortcut = nullptr;
-    } else {
-        // Create new shortcut with the new parent
+    if (contextWidget) {
         m_shortcut = new QShortcut(m_key, contextWidget);
-        m_shortcut->setEnabled(enabled);
         m_shortcut->setContext(contextArea);
-
-        // Reconnect signals
-        QObject::connect(m_shortcut, &QShortcut::activated, this,
-                         &ecvModalShortcut::activated);
-        if (m_action) {
-            QObject::connect(m_shortcut, &QShortcut::activated, m_action,
-                             &QAction::trigger);
-        }
+        m_shortcut->setEnabled(wasEnabled);
+        connect(m_shortcut, &QShortcut::activated, this,
+                &ecvModalShortcut::activated);
+        if (m_action)
+            connect(m_shortcut, &QShortcut::activated, m_action,
+                    &QAction::trigger);
     }
+    if (wasEnabled && !m_shortcut) Q_EMIT disabled();
+    Q_EMIT ownershipChanged(false);
 }
 
 //-----------------------------------------------------------------------------
@@ -105,35 +68,32 @@ bool ecvModalShortcut::isEnabled() const {
     return m_shortcut ? m_shortcut->isEnabled() : false;
 }
 
+void ecvModalShortcut::setSuspended(bool suspended) {
+    const bool wasEnabled = isEnabled();
+    m_suspended = suspended;
+    const bool shouldEnable = m_requestedEnabled && !m_suspended;
+    if (m_shortcut && wasEnabled != shouldEnable) {
+        m_shortcut->setEnabled(shouldEnable);
+        if (shouldEnable)
+            Q_EMIT enabled();
+        else
+            Q_EMIT disabled();
+    }
+}
+
 //-----------------------------------------------------------------------------
 void ecvModalShortcut::setEnabled(bool enable, bool changeFocus) {
-    if (!m_shortcut) {
-        // Shortcut was destroyed (e.g., parent widget deleted)
-        return;
-    }
-
-    if (enable) {
-        if (!m_shortcut->isEnabled()) {
-            // Emit signal first (so ecvKeySequences can disable siblings)
-            Q_EMIT enabled();
-            m_shortcut->setEnabled(true);
-
-            // If requested, give focus to the context widget
-            // so users can immediately use the shortcut
-            auto ctxt = m_shortcut->context();
-            if ((ctxt == Qt::WidgetShortcut ||
-                 ctxt == Qt::WidgetWithChildrenShortcut) &&
-                changeFocus) {
-                auto* parent = dynamic_cast<QWidget*>(m_shortcut->parent());
-                if (parent) {
-                    parent->setFocus(Qt::OtherFocusReason);
-                }
-            }
-        }
-    } else {
-        if (m_shortcut->isEnabled()) {
-            m_shortcut->setEnabled(false);
-            Q_EMIT disabled();
+    m_requestedEnabled = enable;
+    // Explicit enable reclaims priority, even while temporarily suspended.
+    Q_EMIT ownershipChanged(enable);
+    // Also handle initial setup before the registry connects ownershipChanged.
+    setSuspended(m_suspended);
+    if (isEnabled() && changeFocus) {
+        const auto ctxt = m_shortcut->context();
+        if (ctxt == Qt::WidgetShortcut ||
+            ctxt == Qt::WidgetWithChildrenShortcut) {
+            auto* parent = qobject_cast<QWidget*>(m_shortcut->parent());
+            if (parent) parent->setFocus(Qt::OtherFocusReason);
         }
     }
 }

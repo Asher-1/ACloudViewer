@@ -29,7 +29,7 @@ GeneralFilters::GeneralFilters()
               tr("General Filters"),
               tr("General Filters"),
               tr("General Filters for the selected entity"),
-              ":/toolbar/PclAlgorithms/icons/generalFilter.png")),
+              ":/qPCL/icons/pclGeneralFilter.svg")),
       m_dialog(nullptr),
       m_polyline(nullptr),
       m_dimension(2),

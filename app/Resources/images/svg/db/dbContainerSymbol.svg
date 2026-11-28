@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g stroke-linecap="round" stroke-linejoin="round">
+  <path d="M 12.00 4.80 L 4.40 4.80 L 4.40 8.65 L 19.60 8.65 L 19.60 4.80 Z" fill="#D0E5F6" stroke="none"/>
+  <path d="M 12.00 8.65 L 4.40 8.65 L 4.40 12.50 L 19.60 12.50 L 19.60 8.65 Z" fill="#9AC1E0" stroke="none"/>
+  <path d="M 12.00 12.50 L 4.40 12.50 L 4.40 16.35 L 19.60 16.35 L 19.60 12.50 Z" fill="#2896D3" stroke="none"/>
+  <path d="M 12.00 16.35 L 4.40 16.35 L 4.40 20.20 L 19.60 20.20 L 19.60 16.35 Z" fill="#A4A6A6" stroke="none"/>
+  <path d="M 4.40 8.65 A 7.60 2.28 0 0 0 19.60 8.65" fill="none" stroke="#6F6F59" stroke-width="0.6"/>
+  <path d="M 4.40 12.50 A 7.60 2.28 0 0 0 19.60 12.50" fill="none" stroke="#6F6F59" stroke-width="0.6"/>
+  <path d="M 4.40 16.35 A 7.60 2.28 0 0 0 19.60 16.35" fill="none" stroke="#6F6F59" stroke-width="0.6"/>
+  <path d="M 4.40 4.80 L 4.40 20.20 A 7.60 2.28 0 0 0 19.60 20.20 L 19.60 4.80 Z" fill="none" stroke="#6F6F59" stroke-width="0.85"/>
+  <ellipse cx="12.00" cy="4.80" rx="7.60" ry="2.28" fill="#D0E5F6" stroke="#6F6F59" stroke-width="0.85"/>
+</g>
+</svg>

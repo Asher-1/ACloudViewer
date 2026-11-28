@@ -312,9 +312,12 @@ ImageReader::Status ImageReader::Next(Rig* rig,
 
     const std::optional<int> orientation = bitmap->ExifOrientation();
     if (orientation.has_value()) {
-      const auto gravity = GravityFromExifOrientation(orientation.value());
-      if (gravity.has_value()) {
-        pose_prior->gravity = gravity.value();
+      // Bitmap::Read applies EXIF orientation at load time, so the loaded
+      // pixel frame is already physically upright for pure-rotation tags
+      // (1/3/6/8): gravity in camera coordinates is +Y regardless of the
+      // stored tag. Mirror tags stay unsupported (nullopt below).
+      if (GravityFromExifOrientation(orientation.value()).has_value()) {
+        pose_prior->gravity = Eigen::Vector3d(0, 1, 0);
       }
     }
   }

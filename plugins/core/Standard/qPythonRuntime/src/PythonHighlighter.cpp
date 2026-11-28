@@ -47,7 +47,7 @@ static const QStringList s_Operators = {"=",
                                         "<<"};
 
 // Python braces
-static const QStringList s_Braces = {"\\{", "\\}", "\\(", "\\)", R"([)", R"(])"};
+static const QStringList s_Braces = {"\\{", "\\}", "\\(", "\\)", "\\[", "\\]"};
 
 QString PythonHighlighter::CodeElementName(PythonHighlighter::CodeElement e)
 {
@@ -150,28 +150,24 @@ void PythonHighlighter::highlightPythonBlock(const QString &text)
     if (text.isEmpty())
         return;
 
-    int index = -1;
-
     // Do other syntax formatting
     for (const auto &rule : m_highlightingRules)
     {
-        // Use QtCompatRegExpWrapper for unified QRegExp-like API (works in both Qt5 and Qt6)
-        QtCompatRegExpWrapper wrapper(rule.pattern);
-        index = wrapper.indexIn(text, 0);
+        auto match = rule.pattern.match(text);
 
         // We actually want the index of the nth match
-        while (index >= 0)
+        while (match.hasMatch())
         {
-            index = wrapper.pos(rule.matchIndex);
-            int length = wrapper.cap(rule.matchIndex).length();
+            const int index = static_cast<int>(match.capturedStart(rule.matchIndex));
+            const int length = static_cast<int>(match.capturedLength(rule.matchIndex));
             if (length > 0)
             {
                 setFormat(index, length, rule.format);
-                index = wrapper.indexIn(text, index + length);
+                match = rule.pattern.match(text, index + length);
             }
             else
             {
-                index = -1;
+                break;
             }
         }
     }
@@ -185,7 +181,7 @@ void PythonHighlighter::highlightPythonBlock(const QString &text)
 }
 
 /*Do highlighting of multi-line strings. ``delimiter`` should be a
-``QRegExp`` for triple-single-quotes or triple-double-quotes, and
+``QRegularExpression`` for triple-single-quotes or triple-double-quotes, and
 ``in_state`` should be a unique integer to represent the corresponding
 state changes when inside those strings. Returns True if we're still
 inside a multi-line string when this function is finished.
@@ -194,8 +190,7 @@ bool PythonHighlighter::matchMultiLine(const QString &text, const HighlightingRu
 {
     int start, add, end, length;
 
-    // Use QtCompatRegExpWrapper for unified QRegExp-like API (works in both Qt5 and Qt6)
-    QtCompatRegExpWrapper wrapper(rule.pattern);
+    auto match = rule.pattern.match(text);
 
     // If inside triple-single quotes, start at 0
     if (previousBlockState() == rule.matchIndex)
@@ -206,20 +201,21 @@ bool PythonHighlighter::matchMultiLine(const QString &text, const HighlightingRu
     // Otherwise, look for the delimiter on this line
     else
     {
-        start = wrapper.indexIn(text);
+        start = static_cast<int>(match.capturedStart());
         // Move past this match
-        add = wrapper.matchedLength();
+        add = static_cast<int>(match.capturedLength());
     }
 
     // As long as there's a delimiter match on this line...
     while (start >= 0)
     {
         // Look for the ending delimiter
-        end = wrapper.indexIn(text, start + add);
+        match = rule.pattern.match(text, start + add);
+        end = static_cast<int>(match.capturedStart());
         // Ending delimiter on this line?
         if (end >= add)
         {
-            length = end - start + add + wrapper.matchedLength();
+            length = end - start + add + static_cast<int>(match.capturedLength());
             setCurrentBlockState(0);
         }
         // No; multi-line string
@@ -233,7 +229,8 @@ bool PythonHighlighter::matchMultiLine(const QString &text, const HighlightingRu
         setFormat(start, length, rule.format);
 
         // Look for the next match
-        start = wrapper.indexIn(text, start + length);
+        match = rule.pattern.match(text, start + length);
+        start = static_cast<int>(match.capturedStart());
     }
 
     // Return True if still inside a multi-line string, False otherwise

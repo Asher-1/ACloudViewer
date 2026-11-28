@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <QImage>
 
 #include "src/tasks/instantmesh/instantmesh_pipeline.cpp"
@@ -273,63 +275,62 @@ static int noise_probe(char** argv) {
     return 0;
 }
 
-int main(int argc, char** argv) {
-    if (argc == 5 && std::strcmp(argv[1], "noise") == 0)
-        return noise_probe(argv);
-    if (argc == 7 && std::strcmp(argv[1], "composite") == 0)
-        return composite_probe(argv);
-    if (argc == 9 && std::strcmp(argv[1], "resize") == 0)
-        return image_probe(argv, false);
-    if (argc == 8 && std::strcmp(argv[1], "normalize") == 0)
-        return image_probe(argv, true);
-    if (argc == 3 && std::strcmp(argv[1], "noise-reference") == 0)
-        return diagnose_noise_reference(argv[2]);
-    if (argc == 3) return diagnose_reference(argv[1], argv[2]);
-    if (argc != 1) return 2;
-    int failures = 0;
+namespace {
+
+TEST(InstantMeshPreprocessing, MatchesSeededNoiseReference) {
     instantmesh::Rng noise{42};
     float initial[16];
     noise.randn(initial, 16);
     const float expectedNoise[3] = {1.9269153f, 1.4872841f, 0.9007172f};
     for (int i = 0; i < 3; ++i)
-        if (std::abs(initial[i] - expectedNoise[i]) > 1e-6f) ++failures;
+        EXPECT_LE(std::abs(initial[i] - expectedNoise[i]), 1e-6f) << i;
+}
+
+TEST(InstantMeshPreprocessing, CompositesPaddedRgbaOnWhite) {
     const uint8_t rgba[] = {64, 32, 128, 0,   64, 32,  128, 255, 9, 9, 9, 9,
                             64, 32, 128, 128, 0,  255, 64,  255, 9, 9, 9, 9};
     const std::vector<uint8_t> expectedComposite{255, 255, 255, 64, 32,  128,
                                                  159, 143, 191, 0,  255, 64};
     std::vector<uint8_t> composite;
     instantmesh::composite_rgba_white(rgba, 2, 2, 12, composite);
-    if (composite != expectedComposite) {
-        std::fprintf(stderr, "FAIL: padded RGBA white-alpha composition\n");
-        ++failures;
-    }
+    EXPECT_EQ(composite, expectedComposite);
     const uint8_t transparentDark[] = {0, 0, 0, 128};
     instantmesh::composite_rgba_white(transparentDark, 1, 1, 4, composite);
-    if (composite != std::vector<uint8_t>{127, 127, 127}) ++failures;
-    // Symmetric weights around the center preserve these hand-derived channel
-    // values.
+    EXPECT_EQ(composite, (std::vector<uint8_t>{127, 127, 127}));
+}
+
+TEST(InstantMeshPreprocessing,
+     ResizesSymmetricallyAndRejectsInvalidDimensions) {
+    // Symmetric weights preserve these independently derived channel values.
     const uint8_t line[] = {0, 30, 60, 70, 100, 130, 140, 170, 200};
     for (auto filter : {instantmesh::InputFilter::Bilinear,
                         instantmesh::InputFilter::Bicubic}) {
+        SCOPED_TRACE(int(filter));
         std::vector<uint8_t> resized;
-        if (!instantmesh::resize_input_aa(line, 1, 3, 1, 1, filter, resized) ||
-            resized != std::vector<uint8_t>{70, 100, 130})
-            ++failures;
-        if (instantmesh::resize_input_aa(line, 0, 3, 1, 1, filter, resized))
-            ++failures;
+        ASSERT_TRUE(instantmesh::resize_input_aa(line, 1, 3, 1, 1, filter,
+                                                 resized));
+        EXPECT_EQ(resized, (std::vector<uint8_t>{70, 100, 130}));
+        EXPECT_FALSE(instantmesh::resize_input_aa(line, 0, 3, 1, 1, filter,
+                                                  resized));
     }
+}
+
+TEST(InstantMeshPreprocessing, ConditionsVaeAndClipAndRejectsInvalidInputs) {
+    const uint8_t line[] = {0, 30, 60, 70, 100, 130, 140, 170, 200};
     std::vector<float> vae, clip;
-    if (instantmesh::condition_images(nullptr, 1, 1, 1, 1, vae, clip) ||
-        instantmesh::condition_images(line, 0, 3, 1, 1, vae, clip))
-        ++failures;
-    if (!instantmesh::condition_images(line, 1, 3, 1, 1, vae, clip) ||
-        vae.size() != 3 || clip.size() != 3) {
-        ++failures;
-    } else if (std::abs(vae[0] - (70.f - 127.5f) / 204.f) > 1e-6f ||
-               std::abs(clip[0] - (70.f - 0.48145466f * 255.f) /
-                                          (0.26862954f * 255.f)) > 1e-6f) {
-        ++failures;
-    }
+    EXPECT_FALSE(instantmesh::condition_images(nullptr, 1, 1, 1, 1, vae, clip));
+    EXPECT_FALSE(instantmesh::condition_images(line, 0, 3, 1, 1, vae, clip));
+    ASSERT_TRUE(instantmesh::condition_images(line, 1, 3, 1, 1, vae, clip));
+    ASSERT_EQ(vae.size(), 3u);
+    ASSERT_EQ(clip.size(), 3u);
+    EXPECT_LE(std::abs(vae[0] - (70.f - 127.5f) / 204.f), 1e-6f);
+    EXPECT_LE(std::abs(clip[0] -
+                       (70.f - 0.48145466f * 255.f) / (0.26862954f * 255.f)),
+              1e-6f);
+}
+
+TEST(InstantMeshPreprocessing,
+     PreservesNchwNormalizationAndConstantCenterCrops) {
     const float means[3][3] = {{0.5f, 0.5f, 0.5f},
                                {0.48145466f, 0.4578275f, 0.40821073f},
                                {0.485f, 0.456f, 0.406f}};
@@ -342,19 +343,16 @@ int main(int argc, char** argv) {
         std::vector<float> output;
         instantmesh::preprocess_image(varied, 2, 2, 2, means[branch],
                                       deviations[branch], output);
+        ASSERT_EQ(output.size(), 12u);
         for (int channel = 0; channel < 3; ++channel)
             for (int pixel = 0; pixel < 4; ++pixel) {
                 const float expected = (varied[pixel * 3 + channel] / 255.f -
                                         means[branch][channel]) /
                                        deviations[branch][channel];
-                if (std::abs(output[channel * 4 + pixel] - expected) > 1e-6f) {
-                    std::fprintf(stderr,
-                                 "NCHW mismatch: branch=%d channel=%d pixel=%d "
-                                 "actual=%.9g expected=%.9g\n",
-                                 branch, channel, pixel,
-                                 output[channel * 4 + pixel], expected);
-                    ++failures;
-                }
+                EXPECT_LE(std::abs(output[channel * 4 + pixel] - expected),
+                          1e-6f)
+                        << "Branch " << branch << ", channel " << channel
+                        << ", pixel " << pixel;
             }
         // Identity resize isolates layout/normalization from interpolation
         // error; include rectangular center-crop and native encoder sizes.
@@ -367,17 +365,38 @@ int main(int argc, char** argv) {
             instantmesh::preprocess_image(constant.data(), height, width, size,
                                           means[branch], deviations[branch],
                                           output);
+            ASSERT_EQ(output.size(), size_t(size) * size * 3);
             for (int channel = 0; channel < 3; ++channel) {
                 const float expected =
                         (varied[channel] / 255.f - means[branch][channel]) /
                         deviations[branch][channel];
                 for (int pixel = 0; pixel < size * size; ++pixel)
-                    if (std::abs(output[channel * size * size + pixel] -
-                                 expected) > 1e-6f)
-                        ++failures;
+                    ASSERT_LE(std::abs(output[channel * size * size + pixel] -
+                                       expected),
+                              1e-6f)
+                            << "Branch " << branch << ", shape " << width << "x"
+                            << height << ", channel " << channel << ", pixel "
+                            << pixel;
             }
         }
     }
-    std::printf("preprocess_nchw_failures=%d\n", failures);
-    return failures ? 1 : 0;
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+    testing::InitGoogleTest(&argc, argv);
+    if (argc == 5 && std::strcmp(argv[1], "noise") == 0)
+        return noise_probe(argv);
+    if (argc == 7 && std::strcmp(argv[1], "composite") == 0)
+        return composite_probe(argv);
+    if (argc == 9 && std::strcmp(argv[1], "resize") == 0)
+        return image_probe(argv, false);
+    if (argc == 8 && std::strcmp(argv[1], "normalize") == 0)
+        return image_probe(argv, true);
+    if (argc == 3 && std::strcmp(argv[1], "noise-reference") == 0)
+        return diagnose_noise_reference(argv[2]);
+    if (argc == 3) return diagnose_reference(argv[1], argv[2]);
+    if (argc != 1) return 2;
+    return RUN_ALL_TESTS();
 }

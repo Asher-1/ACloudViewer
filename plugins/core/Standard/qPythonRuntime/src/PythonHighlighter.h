@@ -48,7 +48,7 @@ class PythonHighlighter final : public QSyntaxHighlighter
     struct HighlightingRule
     {
         CodeElement element = CodeElement::End;
-        QtCompatRegExp pattern;
+        QRegularExpression pattern;
         QTextCharFormat format;
         int matchIndex = 0;
 

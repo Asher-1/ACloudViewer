@@ -110,3 +110,12 @@ if (BUILD_CUDA_MODULE)
     find_package(CUDAToolkit REQUIRED)
     target_link_libraries(tests PRIVATE CUDA::cudart)
 endif()
+
+# CTest owns execution and runtime lookup; CI no longer locates tests.exe.
+cloudviewer_add_test(NAME cvviewer COMMAND tests --gtest_shuffle
+    LABELS "unit")
+cloudviewer_set_test_runtime_environment(cvviewer)
+if(DEFINED ENV{LOW_MEM_USAGE} AND "$ENV{LOW_MEM_USAGE}" STREQUAL "ON")
+    set_property(TEST cvviewer APPEND PROPERTY ENVIRONMENT
+        "GTEST_FILTER=-*Reduce*Sum*")
+endif()

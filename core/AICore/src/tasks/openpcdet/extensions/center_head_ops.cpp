@@ -248,6 +248,34 @@ bool decode_center_head(const center_head_view& head,
                   [](const detection& a, const detection& b) {
                       return a.score > b.score;
                   });
+        // Optional final class-agnostic IoU NMS driven by the NMS threshold
+        // (hp.nms_thresh). The per-class stage above uses the GGUF
+        // center_nms_thresholds and ignores hp.nms_thresh; this extra dedup
+        // makes the NMS slider effective for VoxelNeXt. It only runs when the
+        // caller sets a positive threshold (the accuracy probe pins 0, so the
+        // official per-class behavior is unchanged).
+        if (params.nms_threshold > 0.0f && output.size() > 1) {
+            std::vector<float> final_boxes(output.size() * 7);
+            std::vector<float> final_scores(output.size());
+            for (size_t i = 0; i < output.size(); ++i) {
+                const detection& d = output[i];
+                final_boxes[i * 7 + 0] = d.x;
+                final_boxes[i * 7 + 1] = d.y;
+                final_boxes[i * 7 + 2] = d.z;
+                final_boxes[i * 7 + 3] = d.dx;
+                final_boxes[i * 7 + 4] = d.dy;
+                final_boxes[i * 7 + 5] = d.dz;
+                final_boxes[i * 7 + 6] = d.heading;
+                final_scores[i] = d.score;
+            }
+            const std::vector<int32_t> keep =
+                    nms_3d(final_boxes, final_scores, params.nms_threshold,
+                           params.nms_post_maxsize);
+            std::vector<detection> filtered;
+            filtered.reserve(keep.size());
+            for (int32_t idx : keep) filtered.push_back(output[idx]);
+            output.swap(filtered);
+        }
         return true;
     }
 

@@ -7,6 +7,8 @@
 
 #include "ecvLogManagerDlg.h"
 
+#include <Shortcuts/ecvKeySequences.h>
+
 #include <QAction>
 #include <QApplication>
 #include <QClipboard>
@@ -22,7 +24,6 @@
 #include <QListWidget>
 #include <QMessageBox>
 #include <QPlainTextEdit>
-#include <QShortcut>
 #include <QSplitter>
 #include <QStyle>
 #include <QTextStream>
@@ -141,9 +142,6 @@ void ecvLogManagerDlg::setupUI() {
     mainLayout->addWidget(m_toolbar);
 
     auto* searchBar = new QWidget(this);
-    searchBar->setStyleSheet(
-            "QWidget { background: palette(window); "
-            "border-bottom: 1px solid palette(mid); }");
     auto* searchLayout = new QHBoxLayout(searchBar);
     searchLayout->setContentsMargins(8, 4, 8, 4);
     searchLayout->setSpacing(6);
@@ -210,12 +208,6 @@ void ecvLogManagerDlg::setupUI() {
     m_fileList->setSortingEnabled(false);
     m_fileList->setAlternatingRowColors(true);
     m_fileList->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    m_fileList->setStyleSheet(
-            "QListWidget { font-size: 12px; }"
-            "QListWidget::item { padding: 3px 6px; }"
-            "QListWidget::item:selected { "
-            "  background: palette(highlight); "
-            "  color: palette(highlighted-text); }");
     leftLayout->addWidget(m_fileList);
 
     auto* rightPanel = new QWidget(m_splitter);
@@ -263,9 +255,6 @@ void ecvLogManagerDlg::setupUI() {
     mainLayout->addWidget(contentWidget, 1);
 
     auto* statusBar = new QWidget(this);
-    statusBar->setStyleSheet(
-            "QWidget { background: palette(window); "
-            "border-top: 1px solid palette(mid); }");
     auto* statusLayout = new QHBoxLayout(statusBar);
     statusLayout->setContentsMargins(10, 4, 10, 4);
 
@@ -294,21 +283,23 @@ void ecvLogManagerDlg::setupUI() {
     connect(m_filterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &ecvLogManagerDlg::onFilterChanged);
 
-    auto* shortcutFind = new QShortcut(QKeySequence::Find, this);
-    connect(shortcutFind, &QShortcut::activated, m_searchEdit,
-            QOverload<>::of(&QLineEdit::setFocus));
-
-    auto* shortcutFindNext = new QShortcut(QKeySequence::FindNext, this);
-    connect(shortcutFindNext, &QShortcut::activated, this,
-            &ecvLogManagerDlg::findNext);
-
-    auto* shortcutFindPrev = new QShortcut(QKeySequence::FindPrevious, this);
-    connect(shortcutFindPrev, &QShortcut::activated, this,
-            &ecvLogManagerDlg::findPrevious);
-
-    auto* shortcutRefresh = new QShortcut(QKeySequence::Refresh, this);
-    connect(shortcutRefresh, &QShortcut::activated, this,
-            &ecvLogManagerDlg::refreshLogList);
+    auto command = [this](const QString& id, const QString& label,
+                          const QKeySequence& key, auto trigger) {
+        auto* action = new QAction(label, this);
+        action->setObjectName(id);
+        action->setShortcut(key);
+        action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        addAction(action);
+        ecvKeySequences::instance().registerCommand(id, action,
+                                                    tr("Log Viewer"));
+        connect(action, &QAction::triggered, this, trigger);
+    };
+    command("log.find", tr("Find"), QKeySequence::Find,
+            [this]() { m_searchEdit->setFocus(); });
+    command("log.findNext", tr("Find Next"), QKeySequence::FindNext,
+            [this]() { findNext(); });
+    command("log.findPrevious", tr("Find Previous"), QKeySequence::FindPrevious,
+            [this]() { findPrevious(); });
 }
 
 void ecvLogManagerDlg::setupToolbar() {
@@ -316,16 +307,11 @@ void ecvLogManagerDlg::setupToolbar() {
     m_toolbar->setIconSize(QSize(18, 18));
     m_toolbar->setMovable(false);
     m_toolbar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    m_toolbar->setStyleSheet(
-            "QToolBar { spacing: 4px; padding: 2px 6px; "
-            "  border-bottom: 1px solid palette(mid); }"
-            "QToolButton { padding: 3px 8px; border-radius: 3px; }"
-            "QToolButton:hover { background: palette(midlight); }");
 
     m_actRefresh = m_toolbar->addAction(
             style()->standardIcon(QStyle::SP_BrowserReload), tr("Refresh"));
     m_actRefresh->setShortcut(QKeySequence::Refresh);
-    m_actRefresh->setToolTip(tr("Refresh log file list (F5)"));
+    m_actRefresh->setToolTip(tr("Refresh log file list"));
 
     m_actOpenFolder = m_toolbar->addAction(
             style()->standardIcon(QStyle::SP_DirOpenIcon), tr("Open Folder"));
@@ -355,6 +341,20 @@ void ecvLogManagerDlg::setupToolbar() {
     auto* closeAction = m_toolbar->addAction(
             style()->standardIcon(QStyle::SP_DialogCloseButton), tr("Close"));
     closeAction->setShortcut(QKeySequence::Close);
+    const QPair<QAction*, const char*> commands[] = {
+            {m_actRefresh, "log.refresh"},
+            {m_actOpenFolder, "log.openFolder"},
+            {m_actExport, "log.export"},
+            {m_actDelete, "log.delete"},
+            {m_actDeleteOld, "log.cleanOld"},
+            {closeAction, "log.close"}};
+    for (const auto& entry : commands) {
+        entry.first->setObjectName(QString::fromLatin1(entry.second));
+        entry.first->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        addAction(entry.first);
+        ecvKeySequences::instance().registerCommand(
+                entry.first->objectName(), entry.first, tr("Log Viewer"));
+    }
 
     connect(m_actRefresh, &QAction::triggered, this,
             &ecvLogManagerDlg::refreshLogList);

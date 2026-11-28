@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../../../qPCL.qrc">
-    <normaloff>:/toolbar/PclAlgorithms/icons/correspondence_grouping.png</normaloff>:/toolbar/PclAlgorithms/icons/correspondence_grouping.png</iconset>
+    <normaloff>:/qPCL/icons/pclCorrespondenceGrouping.svg</normaloff>:/qPCL/icons/pclCorrespondenceGrouping.svg</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

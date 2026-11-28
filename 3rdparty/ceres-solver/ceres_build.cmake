@@ -1,4 +1,14 @@
 include(ExternalProject)
+find_package(Git REQUIRED)
+
+# Backport Ceres' deterministic within-group ordering without changing the
+# release, solver options, or reconstruction tests. Patch changes select a
+# pristine source tree instead of reusing a completed, unpatched EP stamp.
+set(_CERES_ORDERING_PATCH
+        "${CMAKE_CURRENT_LIST_DIR}/0001-deterministic-parameter-ordering.patch")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        "${_CERES_ORDERING_PATCH}")
+file(SHA256 "${_CERES_ORDERING_PATCH}" _CERES_ORDERING_PATCH_HASH)
 
 # Ceres 2.2 is the first pinned release with a CUDA dense linear algebra
 # backend, used by reconstruction's Ceres-vs-Caspar reference gate. It is
@@ -18,6 +28,17 @@ runtime dependencies to libceres; see the comment above)" OFF)
 
 set(CERES_URL https://github.com/ceres-solver/ceres-solver/archive/refs/tags/2.2.0.tar.gz)
 set(CERES_URL_HASH 12efacfadbfdc1bbfa203c236e96f4d3c210bed96994288b3ff0c8e7c6f350d4)
+string(SHA256 _CERES_SOURCE_ID
+        "${CERES_URL_HASH}:${_CERES_ORDERING_PATCH_HASH}:cuda=${CERES_ENABLE_CUDA}")
+string(SUBSTRING "${_CERES_SOURCE_ID}" 0 12 _CERES_SOURCE_ID)
+set(_CERES_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/ceres-2.2-${_CERES_SOURCE_ID}")
+# Like the Qlementine patch owner, prevent Git from discovering the enclosing
+# application checkout and silently skipping source-relative patch paths.
+set(_CERES_GIT_APPLY "${CMAKE_COMMAND}" -E env
+        --unset=GIT_DIR --unset=GIT_WORK_TREE --unset=GIT_INDEX_FILE
+        "GIT_CEILING_DIRECTORIES=${_CERES_PREFIX}/src"
+        "${GIT_EXECUTABLE}" -c core.autocrlf=false -c apply.ignoreWhitespace=no
+        -C <SOURCE_DIR> apply --no-index)
 
 # CUDA-only ExternalProject inputs, assembled here so the default OFF path
 # passes no CUDA arguments at all. ExternalProject receives CMAKE_ARGS as a
@@ -26,7 +47,11 @@ set(CERES_URL_HASH 12efacfadbfdc1bbfa203c236e96f4d3c210bed96994288b3ff0c8e7c6f35
 set(CERES_CUDA_ARGS "")
 set(_CERES_PATCH_COMMAND
         ${CMAKE_COMMAND} -E copy
-        ${CloudViewer_3RDPARTY_DIR}/ceres-solver/FindTBB.cmake <SOURCE_DIR>/cmake)
+        ${CloudViewer_3RDPARTY_DIR}/ceres-solver/FindTBB.cmake <SOURCE_DIR>/cmake
+        COMMAND ${_CERES_GIT_APPLY} --check
+                "${_CERES_ORDERING_PATCH}"
+        COMMAND ${_CERES_GIT_APPLY}
+                "${_CERES_ORDERING_PATCH}")
 if (CERES_ENABLE_CUDA)
     string(REPLACE ";" "$<SEMICOLON>" CERES_CUDA_ARCHITECTURES_ESCAPED
            "${CMAKE_CUDA_ARCHITECTURES}")
@@ -44,10 +69,8 @@ if (CERES_ENABLE_CUDA)
 endif ()
 
 ExternalProject_Add(ext_ceres
-        # A versioned prefix prevents a configured build directory from
-        # reusing Ceres 1.x sources after the pinned CUDA-capable release
-        # changes.
-        PREFIX ceres-2.2
+        # Version and patch identity keep cached builds on pristine sources.
+        PREFIX "ceres-2.2-${_CERES_SOURCE_ID}"
         URL ${CERES_URL}
         URL_HASH SHA256=${CERES_URL_HASH}
         DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/ceres"
@@ -92,6 +115,12 @@ ExternalProject_Add(ext_ceres
             -DBUILD_EXAMPLES=OFF
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
         DEPENDS 3rdparty_eigen3 3rdparty_suitesparse 3rdparty_gflags 3rdparty_glog)
+
+# Reused sources must still contain every hunk of the current backport.
+ExternalProject_Add_Step(ext_ceres verify_ordering_patch
+        COMMAND ${_CERES_GIT_APPLY} --reverse
+                --check "${_CERES_ORDERING_PATCH}"
+        DEPENDEES patch DEPENDERS configure ALWAYS 1 INDEPENDENT TRUE)
 
 ExternalProject_Get_Property(ext_ceres INSTALL_DIR)
 set(CERES_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.

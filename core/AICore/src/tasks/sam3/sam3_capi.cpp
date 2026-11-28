@@ -1269,7 +1269,7 @@ AICORE_CAPI int aicore_sam3_profile_encoder(aicore_sam3_ctx* ctx,
 
     const int n_threads = ctx->params.n_threads > 0 ? ctx->params.n_threads : 4;
     int written = 0;
-    auto emit = [&](int kind, int index, int stage, double ms) {
+    auto emitEntry = [&](int kind, int index, int stage, double ms) {
         if (out && written < max_entries) {
             out[written].kind = kind;
             out[written].index = index;
@@ -1345,8 +1345,8 @@ AICORE_CAPI int aicore_sam3_profile_encoder(aicore_sam3_ctx* ctx,
                                            (sam3_vit_prefix_stage)s, img.data(),
                                            img_ne, out_data, out_ne, n_threads);
         }
-        emit(AICORE_SAM3_PROFILE_PREFIX, s, s,
-             elapsed_ms(t0, Clock::now()) / n_iter);
+        emitEntry(AICORE_SAM3_PROFILE_PREFIX, s, s,
+                  elapsed_ms(t0, Clock::now()) / n_iter);
 
         // Chain the output as the next stage's input where shapes allow.
         std::copy(std::begin(out_ne), std::end(out_ne), std::begin(img_ne));
@@ -1393,8 +1393,8 @@ AICORE_CAPI int aicore_sam3_profile_encoder(aicore_sam3_ctx* ctx,
                                               (sam3_vit_block_stage)s, x.data(),
                                               ne, out_data, out_ne, n_threads);
             }
-            emit(AICORE_SAM3_PROFILE_BLOCK, b, s,
-                 elapsed_ms(t0, Clock::now()) / n_iter);
+            emitEntry(AICORE_SAM3_PROFILE_BLOCK, b, s,
+                      elapsed_ms(t0, Clock::now()) / n_iter);
 
             std::copy(std::begin(out_ne), std::end(out_ne), std::begin(ne));
             x.swap(out_data);

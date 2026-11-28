@@ -229,8 +229,9 @@ ccGLMatrix ecvPrimitiveFactoryDlg::getCSMatrix(bool& valid) {
         // automatically remove anything between square brackets
         // Use QtCompat for Qt5/Qt6 compatibility
         // Use static const for efficiency (regex compiled only once)
-        static const QtCompatRegExp squareBracketsFilter("\\[([^]]+)\\]");
-        text.replace(squareBracketsFilter, "");
+        static const auto squareBracketsFilter =
+                qtCompatRegExp("\\[([^]]+)\\]");
+        qtCompatReplace(text, squareBracketsFilter, "");
         csMatrixTextEdit->blockSignals(true);
         csMatrixTextEdit->setPlainText(text);
         csMatrixTextEdit->blockSignals(false);

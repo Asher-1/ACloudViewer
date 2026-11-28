@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <QApplication>
 #include <QMainWindow>
 #include <QPainter>
@@ -139,26 +141,32 @@ public:
     using qInstantMesh::onTaskFinished;
 };
 
-int main(int argc, char** argv) {
-    QApplication app(argc, argv);
+namespace {
+QString realBatchRoot;
+QString realBatchDevice;
+}  // namespace
+
+class InstantMeshPluginTest : public ::testing::Test {
+protected:
     QTemporaryDir tmp;
-    qputenv("CLOUDVIEWER_DATA_ROOT", tmp.path().toUtf8());
-    QSettings::setDefaultFormat(QSettings::IniFormat);
-    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
-                       tmp.filePath("settings"));
     TestHost host;
     TestPlugin plugin;
-    plugin.setMainAppInterface(&host);
-    plugin.onNewAction();
-    auto* dialog = host.window.findChild<InstantMeshDialog*>();
-    if (!dialog) return 1;
-    int failures = 0;
-    const auto check = [&](bool ok, const char* reason) {
-        if (!ok) {
-            std::fprintf(stderr, "FAIL: %s\n", reason);
-            ++failures;
-        }
-    };
+    InstantMeshDialog* dialog = nullptr;
+    void SetUp() override {
+        ASSERT_TRUE(tmp.isValid());
+        qputenv("CLOUDVIEWER_DATA_ROOT", tmp.path().toUtf8());
+        QSettings::setDefaultFormat(QSettings::IniFormat);
+        QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
+                           tmp.filePath("settings"));
+        plugin.setMainAppInterface(&host);
+        plugin.onNewAction();
+        dialog = host.window.findChild<InstantMeshDialog*>();
+        ASSERT_NE(dialog, nullptr);
+    }
+};
+
+TEST_F(InstantMeshPluginTest,
+       SvgBrandingRendersAtSupportedSizesAndWritesArtifact) {
     const QIcon icon(
             QStringLiteral(":/CC/plugin/qInstantMesh/images/qInstantMesh.svg"));
     QImage iconSheet(480, 320, QImage::Format_ARGB32);
@@ -167,8 +175,9 @@ int main(int argc, char** argv) {
     int iconColumn = 0;
     for (int size : {32, 64, 128}) {
         const QImage rendered = icon.pixmap(size, size).toImage();
-        check(!rendered.isNull() && rendered.size() == QSize(size, size),
-              "SVG resources must render at 32/64/128");
+        EXPECT_TRUE(
+                (!rendered.isNull() && rendered.size() == QSize(size, size)))
+                << "SVG resources must render at 32/64/128";
         int brandPixels = 0, clippedBrandPixels = 0;
         for (int y = size * 7 / 10; y < rendered.height(); ++y)
             for (int x = 0; x < rendered.width(); ++x) {
@@ -183,17 +192,17 @@ int main(int argc, char** argv) {
                         ++clippedBrandPixels;
                 }
             }
-        check(brandPixels > 2,
-              "Qt SVG must render bottom branding text, not blank font "
-              "resources");
+        EXPECT_TRUE((brandPixels > 2))
+                << "Qt SVG must render bottom branding text, not blank font "
+                   "resources";
         // Cross-platform UI tolerance: Windows font rendering and SVG
         // rasterization can cause minor edge clipping (2-8 pixels) due to DPI
         // scaling and hinting. Allow up to 10 clipped pixels before failing the
         // test.
-        check(clippedBrandPixels <= 10,
-              "Qt SVG branding must have reasonable margins without "
-              "significant "
-              "clipping of first/last letters (<=10px tolerance)");
+        EXPECT_TRUE((clippedBrandPixels <= 10))
+                << "Qt SVG branding must have reasonable margins without "
+                   "significant "
+                   "clipping of first/last letters (<=10px tolerance)";
         for (int row = 0; row < 2; ++row) {
             iconPainter.fillRect(iconColumn * 160, row * 160, 160, 160,
                                  row ? QColor(32, 32, 32) : Qt::white);
@@ -207,23 +216,29 @@ int main(int argc, char** argv) {
             qEnvironmentVariable("INSTANTMESH_TEST_ARTIFACT_DIR");
     if (!artifactDirectory.isEmpty()) {
         QDir().mkpath(artifactDirectory);
-        check(iconSheet.save(
-                      QDir(artifactDirectory).filePath("icon-sizes.png")),
-              "The icon validation sheet must be writable");
+        EXPECT_TRUE((iconSheet.save(
+                QDir(artifactDirectory).filePath("icon-sizes.png"))))
+                << "The icon validation sheet must be writable";
     }
+}
+
+TEST_F(InstantMeshPluginTest,
+       NativeBatchSchemaAndNumericBoundsPrecedeModelLoading) {
     CommandInstantMeshGenerate command;
     TestCommandLine cli;
     const QString schemaPath = tmp.filePath("schema.json");
     cli.args = QStringList{"HELP", "RESULT_JSON", schemaPath};
-    check(command.process(cli), "Native HELP RESULT_JSON must succeed");
+    EXPECT_TRUE((command.process(cli)))
+            << "Native HELP RESULT_JSON must succeed";
     QFile schemaFile(schemaPath);
-    check(schemaFile.open(QIODevice::ReadOnly),
-          "The native schema file must exist");
+    EXPECT_TRUE((schemaFile.open(QIODevice::ReadOnly)))
+            << "The native schema file must exist";
     const auto schema = QJsonDocument::fromJson(schemaFile.readAll()).object();
-    check(schema["schema"].toString() == "acloudviewer.aicore.batch/1" &&
-                  schema["task"].toString() == "instantmesh" &&
-                  !schema["options"].toArray().isEmpty(),
-          "Native schema must be nonempty and use the public task identity");
+    EXPECT_TRUE((schema["schema"].toString() == "acloudviewer.aicore.batch/1" &&
+                 schema["task"].toString() == "instantmesh" &&
+                 !schema["options"].toArray().isEmpty()))
+            << "Native schema must be nonempty and use the public task "
+               "identity";
     for (const auto& item :
          std::vector<std::pair<QString, QString>>{{"SEED", "-1"},
                                                   {"STEPS", "1"},
@@ -233,11 +248,16 @@ int main(int argc, char** argv) {
         cli.failure.clear();
         cli.args = QStringList{"OUT_DIR", tmp.filePath("batch"), item.first,
                                item.second};
-        check(!command.process(cli) &&
-                      cli.failure.contains(item.first, Qt::CaseInsensitive),
-              "Reject invalid batch numeric values before model "
-              "checks/downloads");
+        EXPECT_TRUE((!command.process(cli) &&
+                     cli.failure.contains(item.first, Qt::CaseInsensitive)))
+                << "Reject invalid batch numeric values before model "
+                   "checks/downloads";
     }
+}
+
+TEST_F(InstantMeshPluginTest, BatchRequiresSharedRecommendedRmbgDependency) {
+    CommandInstantMeshGenerate command;
+    TestCommandLine cli;
     // Dependency tests use geometry placeholders only; missing RMBG must fail
     // before model loading, never infer with fake weights.
     const auto geometryPaths = InstantMeshHelpers::resolvePresetFiles(
@@ -247,17 +267,22 @@ int main(int argc, char** argv) {
         if (path.isEmpty()) continue;
         QDir().mkpath(QFileInfo(path).absolutePath());
         QFile placeholder(path);
-        check(placeholder.open(QIODevice::WriteOnly),
-              "Model-existence placeholder files must be creatable");
+        EXPECT_TRUE((placeholder.open(QIODevice::WriteOnly)))
+                << "Model-existence placeholder files must be creatable";
         placeholder.write("not-a-model");
     }
     cli.args = QStringList{
             "PRESET",   "geometry", "DEVICE",  "cpu",
             "USE_RMBG", "1",        "OUT_DIR", tmp.filePath("missing-rmbg")};
     cli.failure.clear();
-    check(!command.process(cli) && cli.failure.contains("rmbg_f16.gguf"),
-          "Batch RMBG must use the shared recommended model and "
-          "missing-dependency checks");
+    EXPECT_TRUE(
+            (!command.process(cli) && cli.failure.contains("rmbg_f16.gguf")))
+            << "Batch RMBG must use the shared recommended model and "
+               "missing-dependency checks";
+}
+
+TEST_F(InstantMeshPluginTest,
+       QueuedResultsValidateIdentityTexturesAndWorkerLifetime) {
     std::promise<int> acquired;
     std::promise<void> release;
     auto release_future = release.get_future();
@@ -267,8 +292,8 @@ int main(int argc, char** argv) {
         release_future.wait();
         if (rc == 0) aicore_device_task_unlock();
     });
-    check(acquired.get_future().get() == 0,
-          "The test did not acquire the device queue");
+    EXPECT_TRUE((acquired.get_future().get() == 0))
+            << "The test did not acquire the device queue";
     InstantMeshDialog::Settings settings;
     settings.device = QStringLiteral("cpu");
     settings.inputPath = tmp.filePath("input.png");
@@ -284,7 +309,7 @@ int main(int argc, char** argv) {
     if (!worker) {
         release.set_value();
         holder.join();
-        return 1;
+        FAIL() << "Plugin must create a worker";
     }
     InstantMeshRunResult stale;
     stale.sourceImage = QStringLiteral("stale-input.png");
@@ -292,24 +317,26 @@ int main(int argc, char** argv) {
     stale.tris = QVector<int>{0, 1, 2};
     stale.vcolors = QVector<float>{1, 0, 0, 0, 1, 0, 0, 0, 1};
     plugin.onResultReady(stale);
-    check(host.root.getChildrenNumber() == 0,
-          "Stale-source results must not mutate DB");
-    check(dialog->lastResult().sourceImage.isEmpty(),
-          "Stale-source results must not mutate UI");
+    EXPECT_TRUE((host.root.getChildrenNumber() == 0))
+            << "Stale-source results must not mutate DB";
+    EXPECT_TRUE((dialog->lastResult().sourceImage.isEmpty()))
+            << "Stale-source results must not mutate UI";
     stale.sourceImage = settings.inputPath;
     stale.generation = 0;
     plugin.onResultReady(stale);
-    check(host.root.getChildrenNumber() == 0,
-          "Stale generations with the same source must not mutate DB");
+    EXPECT_TRUE((host.root.getChildrenNumber() == 0))
+            << "Stale generations with the same source must not mutate DB";
     stale.generation = 1;
     std::thread sender([&] { emit worker->resultReady(stale); });
     sender.join();
     QCoreApplication::processEvents();
-    check(host.root.getChildrenNumber() == 1,
-          "Worker-thread typed results must cross the Qt event queue into DB");
-    check(dialog->lastResult().sourceImage == settings.inputPath,
-          "Worker-thread typed results must reach the dialog before thread "
-          "completion");
+    EXPECT_TRUE((host.root.getChildrenNumber() == 1))
+            << "Worker-thread typed results must cross the Qt event queue into "
+               "DB";
+    EXPECT_TRUE((dialog->lastResult().sourceImage == settings.inputPath))
+            << "Worker-thread typed results must reach the dialog before "
+               "thread "
+               "completion";
     // Detect discarded per-corner UVs, GLB dependencies, borrowed freed pixels
     // and overwritten material caches.
     InstantMeshRunResult textured = stale;
@@ -324,83 +351,91 @@ int main(int argc, char** argv) {
     textured.glb.clear();
     QString exportError;
     const QString objPath = tmp.filePath("mesh.obj");
-    check(CommandInstantMeshGenerate::saveObj(textured, objPath, &exportError),
-          "Typed textured OBJ export must succeed");
+    EXPECT_TRUE((CommandInstantMeshGenerate::saveObj(textured, objPath,
+                                                     &exportError)))
+            << "Typed textured OBJ export must succeed";
     QFile objFile(objPath);
-    check(objFile.open(QIODevice::ReadOnly), "OBJ must be readable");
+    EXPECT_TRUE((objFile.open(QIODevice::ReadOnly))) << "OBJ must be readable";
     const QByteArray obj = objFile.readAll();
-    check(obj.contains("mtllib mesh.mtl") &&
-                  obj.contains("usemtl InstantMesh_atlas"),
-          "OBJ must reference relative MTL and atlas material");
-    check(obj.contains("vt 0.2500000 0.7500000") &&
-                  obj.contains("f 1/1 2/2 3/3") &&
-                  obj.contains("f 1/4 3/5 4/6"),
-          "OBJ must output per-corner vt and independent corner indices");
+    EXPECT_TRUE((obj.contains("mtllib mesh.mtl") &&
+                 obj.contains("usemtl InstantMesh_atlas")))
+            << "OBJ must reference relative MTL and atlas material";
+    EXPECT_TRUE((obj.contains("vt 0.2500000 0.7500000") &&
+                 obj.contains("f 1/1 2/2 3/3") &&
+                 obj.contains("f 1/4 3/5 4/6")))
+            << "OBJ must output per-corner vt and independent corner indices";
     QFile mtlFile(tmp.filePath("mesh.mtl"));
-    check(mtlFile.open(QIODevice::ReadOnly) &&
-                  mtlFile.readAll().contains("map_Kd mesh_texture.png"),
-          "MTL must reference textures in the same directory");
+    EXPECT_TRUE((mtlFile.open(QIODevice::ReadOnly) &&
+                 mtlFile.readAll().contains("map_Kd mesh_texture.png")))
+            << "MTL must reference textures in the same directory";
     const QImage exportedTexture(tmp.filePath("mesh_texture.png"));
-    check(exportedTexture.size() == QSize(2, 2) &&
-                  exportedTexture.pixel(1, 0) == qRgba(0, 255, 0, 128),
-          "OBJ atlas must retain top-first RGBA");
+    EXPECT_TRUE((exportedTexture.size() == QSize(2, 2) &&
+                 exportedTexture.pixel(1, 0) == qRgba(0, 255, 0, 128)))
+            << "OBJ atlas must retain top-first RGBA";
     InstantMeshRunResult malformed = textured;
     malformed.tris[0] = -1;
-    check(!CommandInstantMeshGenerate::saveObj(
-                  malformed, tmp.filePath("invalid.obj"), &exportError) &&
-                  !QFile::exists(tmp.filePath("invalid.obj")),
-          "Invalid triangles must not produce a successful OBJ file");
+    EXPECT_TRUE(
+            (!CommandInstantMeshGenerate::saveObj(
+                     malformed, tmp.filePath("invalid.obj"), &exportError) &&
+             !QFile::exists(tmp.filePath("invalid.obj"))))
+            << "Invalid triangles must not produce a successful OBJ file";
     plugin.onResultReady(textured);
-    check(host.root.getChildrenNumber() == 2,
-          "Typed textured meshes must enter DB without GLB");
+    EXPECT_TRUE((host.root.getChildrenNumber() == 2))
+            << "Typed textured meshes must enter DB without GLB";
     auto* mesh = host.root.getChildrenNumber() == 2
                          ? dynamic_cast<ccMesh*>(host.root.getChild(1))
                          : nullptr;
-    check(mesh && mesh->hasTextures() && mesh->materialsShown(),
-          "Typed textures must create and enable real materials");
+    EXPECT_TRUE((mesh && mesh->hasTextures() && mesh->materialsShown()))
+            << "Typed textures must create and enable real materials";
     if (mesh) {
-        check(mesh->size() == 2 && mesh->getAssociatedCloud()->size() == 4,
-              "DB meshes must retain shared vertices and triangle counts");
+        EXPECT_TRUE(
+                (mesh->size() == 2 && mesh->getAssociatedCloud()->size() == 4))
+                << "DB meshes must retain shared vertices and triangle counts";
         const auto* tri = mesh->getTriangleVertIndexes(1);
-        check(tri && tri->i1 == 0 && tri->i2 == 2 && tri->i3 == 3,
-              "Shared vertex indices must not be rewritten");
-        check(mesh->getTexCoordinatesTable() &&
-                      mesh->getTexCoordinatesTable()->size() == 6,
-              "Store UVs per triangle corner; shared-vertex storage must not "
-              "overwrite seams");
+        EXPECT_TRUE((tri && tri->i1 == 0 && tri->i2 == 2 && tri->i3 == 3))
+                << "Shared vertex indices must not be rewritten";
+        EXPECT_TRUE((mesh->getTexCoordinatesTable() &&
+                     mesh->getTexCoordinatesTable()->size() == 6))
+                << "Store UVs per triangle corner; shared-vertex storage must "
+                   "not "
+                   "overwrite seams";
         if (mesh->hasPerTriangleTexCoordIndexes()) {
             int a, b, c;
             mesh->getTriangleTexCoordinatesIndexes(1, a, b, c);
-            check(a == 3 && b == 4 && c == 5,
-                  "The second triangle must use independent corner UV indices");
+            EXPECT_TRUE((a == 3 && b == 4 && c == 5))
+                    << "The second triangle must use independent corner UV "
+                       "indices";
             TexCoords2D *u0, *u1, *u2;
             mesh->getTriangleTexCoordinates(1, u0, u1, u2);
-            check(u0 && u0->tx == 0.25f && u0->ty == 0.75f,
-                  "Retain seam UVs; v=0 is the bottom");
+            EXPECT_TRUE((u0 && u0->tx == 0.25f && u0->ty == 0.75f))
+                    << "Retain seam UVs; v=0 is the bottom";
         }
         const auto* materials = mesh->getMaterialSet();
         if (materials && materials->size() == 1) {
-            check(mesh->getTriangleMtlIndex(0) == 0 &&
-                          mesh->getTriangleMtlIndex(1) == 0,
-                  "Every triangle must reference the atlas material");
+            EXPECT_TRUE((mesh->getTriangleMtlIndex(0) == 0 &&
+                         mesh->getTriangleMtlIndex(1) == 0))
+                    << "Every triangle must reference the atlas material";
             const auto first = materials->at(0);
-            check(first->hasTextureMap(ccMaterial::TextureMapType::DIFFUSE) &&
-                          first->getTextureFilenames(
-                                       ccMaterial::TextureMapType::DIFFUSE)
-                                          .size() == 1,
-                  "Typed atlases must populate the diffuse texture-map "
-                  "contract consumed by VTK");
+            EXPECT_TRUE((
+                    first->hasTextureMap(ccMaterial::TextureMapType::DIFFUSE) &&
+                    first->getTextureFilenames(
+                                 ccMaterial::TextureMapType::DIFFUSE)
+                                    .size() == 1))
+                    << "Typed atlases must populate the diffuse texture-map "
+                       "contract consumed by VTK";
             const QImage stored = first->getTexture();
-            check(stored.size() == QSize(2, 2) &&
-                          stored.pixel(0, 0) == qRgba(255, 0, 0, 255) &&
-                          stored.pixel(1, 0) == qRgba(0, 255, 0, 128) &&
-                          stored.pixel(0, 1) == qRgba(0, 0, 255, 64),
-                  "Atlas must retain top-first RGBA and alpha");
+            EXPECT_TRUE((stored.size() == QSize(2, 2) &&
+                         stored.pixel(0, 0) == qRgba(255, 0, 0, 255) &&
+                         stored.pixel(1, 0) == qRgba(0, 255, 0, 128) &&
+                         stored.pixel(0, 1) == qRgba(0, 0, 255, 64)))
+                    << "Atlas must retain top-first RGBA and alpha";
             textured.texRgba.fill('\0');
             plugin.onResultReady(textured);
-            check(first->getTexture().pixel(0, 0) == qRgba(255, 0, 0, 255),
-                  "New results must not overwrite prior materials; DB pixels "
-                  "must not borrow worker buffers");
+            EXPECT_TRUE(
+                    (first->getTexture().pixel(0, 0) == qRgba(255, 0, 0, 255)))
+                    << "New results must not overwrite prior materials; DB "
+                       "pixels "
+                       "must not borrow worker buffers";
         }
     }
     const auto reject = [&](const InstantMeshRunResult& result,
@@ -410,10 +445,10 @@ int main(int argc, char** argv) {
         auto tagged = result;
         tagged.totalRuntimeMs = previousRuntime + 1;
         plugin.onResultReady(tagged);
-        check(host.root.getChildrenNumber() == before, reason);
-        check(dialog->lastResult().totalRuntimeMs == previousRuntime,
-              "Invalid typed envelopes must not update UI, preview or "
-              "exportable lastResult");
+        EXPECT_TRUE((host.root.getChildrenNumber() == before)) << reason;
+        EXPECT_TRUE((dialog->lastResult().totalRuntimeMs == previousRuntime))
+                << "Invalid typed envelopes must not update UI, preview or "
+                   "exportable lastResult";
     };
     InstantMeshRunResult invalid = stale;
     invalid.tris[2] = 3;
@@ -455,91 +490,104 @@ int main(int argc, char** argv) {
     auto* points =
             colored ? dynamic_cast<ccPointCloud*>(colored->getAssociatedCloud())
                     : nullptr;
-    check(points && points->getPointColor(0).r == 127 &&
-                  points->getPointColor(0).g == 63 &&
-                  points->getPointColor(0).b == 191,
-          "Scale floating-point vertex colors before byte conversion");
+    EXPECT_TRUE((points && points->getPointColor(0).r == 127 &&
+                 points->getPointColor(0).g == 63 &&
+                 points->getPointColor(0).b == 191))
+            << "Scale floating-point vertex colors before byte conversion";
     plugin.onTaskFinished(false);
     QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
-    check(worker != nullptr,
-          "Logical completion must not destroy thread objects before "
-          "QThread::finished");
+    EXPECT_TRUE((worker != nullptr))
+            << "Logical completion must not destroy thread objects before "
+               "QThread::finished";
     plugin.onCancelRequested();
-    check(worker && worker->wait(1000),
-          "Plugin cancellation must reach the worker's shared token");
+    EXPECT_TRUE((worker && worker->wait(1000)))
+            << "Plugin cancellation must reach the worker's shared token";
     release.set_value();
     holder.join();
     if (worker) worker->wait();
     QCoreApplication::processEvents();
-    if (argc > 1) {
-        // Optional real batch gate; argv[1] is the data root (with extract/),
-        // not a packaged-child gate.
-        qputenv("CLOUDVIEWER_DATA_ROOT", QByteArray(argv[1]));
-        const QString input = tmp.filePath("native.png");
-        QImage image(32, 32, QImage::Format_RGBA8888);
-        image.fill(Qt::white);
-        check(image.save(input), "Real batch input must be creatable");
-        const QString manifestPath = tmp.filePath("native.json");
-        cli.args = QStringList{
-                "PRESET",
-                "geometry",
-                "QUANT",
-                "f16",
-                "IMAGE",
-                input,
-                "OUT_DIR",
-                tmp.filePath("native-out"),
-                "RESULT_JSON",
-                manifestPath,
-                "DEVICE",
-                argc > 2 ? QString::fromUtf8(argv[2]) : QStringLiteral("vulkan"),
-                "USE_RMBG",
-                "0",
-                "SEED",
-                "0",
-                "GRID_RES",
-                "8",
-                "TEXTURE_RES",
-                "32"};
-        cli.failure.clear();
-        const bool batchOk = command.process(cli);
-        if (!batchOk)
-            std::fprintf(stderr, "Real batch failed: %s\n",
-                         qPrintable(cli.failure));
-        check(batchOk, "Real geometry batch must succeed");
-        QFile manifestFile(manifestPath);
-        check(manifestFile.open(QIODevice::ReadOnly),
-              "Real batch manifest must exist");
-        const auto manifest =
-                QJsonDocument::fromJson(manifestFile.readAll()).object();
-        const auto records = manifest["items"].toArray();
-        check(records.size() == 1 && manifest["ok"].toInt() == 1,
-              "Real batch must record a successful item");
-        if (records.size() == 1) {
-            const auto record = records[0].toObject();
-            const auto timing = record["timings"].toObject();
-            check(timing["e2e_ms"].toDouble() > 0 &&
-                          timing["e2e_ms"].toDouble() ==
-                                  record["runtime_ms"].toDouble() &&
-                          record.contains("load_ms") &&
-                          record.contains("export_ms"),
-                  "Batch must use common timing and separately report "
-                  "load/export");
-            check(record.contains("glb_bake_ms") &&
-                          record["file_export_ms"].toDouble() > 0 &&
-                          std::abs(record["export_ms"].toDouble() -
-                                   record["glb_bake_ms"].toDouble() -
-                                   record["file_export_ms"].toDouble()) < 1e-9,
-                  "Export must include real GLB bake and OBJ/MTL/PNG/preview "
-                  "writes, not worker bake alone");
-            const auto outputs = record["outputs"].toObject();
-            check(QFile::exists(outputs["mesh"].toString()) &&
-                          QFile::exists(outputs["glb"].toString()),
-                  "Real batch must produce OBJ and GLB");
-            check(outputs.contains("material") && outputs.contains("texture") &&
-                          QFile::exists(outputs["texture"].toString()),
-                  "Batch manifest must register real textures and MTL");
-        }
+}
+
+TEST_F(InstantMeshPluginTest,
+       RealBatchExportsTypedAssetsAndReportsCommonTiming) {
+    if (realBatchRoot.isEmpty())
+        GTEST_SKIP() << "Pass data root and optional device for real batch "
+                        "inference";
+    CommandInstantMeshGenerate command;
+    TestCommandLine cli;
+    qputenv("CLOUDVIEWER_DATA_ROOT", realBatchRoot.toUtf8());
+    const QString input = tmp.filePath("native.png");
+    QImage image(32, 32, QImage::Format_RGBA8888);
+    image.fill(Qt::white);
+    EXPECT_TRUE((image.save(input))) << "Real batch input must be creatable";
+    const QString manifestPath = tmp.filePath("native.json");
+    cli.args = QStringList{"PRESET",
+                           "geometry",
+                           "QUANT",
+                           "f16",
+                           "IMAGE",
+                           input,
+                           "OUT_DIR",
+                           tmp.filePath("native-out"),
+                           "RESULT_JSON",
+                           manifestPath,
+                           "DEVICE",
+                           realBatchDevice.isEmpty() ? QStringLiteral("vulkan")
+                                                     : realBatchDevice,
+                           "USE_RMBG",
+                           "0",
+                           "SEED",
+                           "0",
+                           "GRID_RES",
+                           "8",
+                           "TEXTURE_RES",
+                           "32"};
+    cli.failure.clear();
+    const bool batchOk = command.process(cli);
+    if (!batchOk)
+        std::fprintf(stderr, "Real batch failed: %s\n",
+                     qPrintable(cli.failure));
+    EXPECT_TRUE((batchOk)) << "Real geometry batch must succeed";
+    QFile manifestFile(manifestPath);
+    EXPECT_TRUE((manifestFile.open(QIODevice::ReadOnly)))
+            << "Real batch manifest must exist";
+    const auto manifest =
+            QJsonDocument::fromJson(manifestFile.readAll()).object();
+    const auto records = manifest["items"].toArray();
+    EXPECT_TRUE((records.size() == 1 && manifest["ok"].toInt() == 1))
+            << "Real batch must record a successful item";
+    if (records.size() == 1) {
+        const auto record = records[0].toObject();
+        const auto timing = record["timings"].toObject();
+        EXPECT_TRUE((timing["e2e_ms"].toDouble() > 0 &&
+                     timing["e2e_ms"].toDouble() ==
+                             record["runtime_ms"].toDouble() &&
+                     record.contains("load_ms") &&
+                     record.contains("export_ms")))
+                << "Batch must use common timing and separately report "
+                   "load/export";
+        EXPECT_TRUE((record.contains("glb_bake_ms") &&
+                     record["file_export_ms"].toDouble() > 0 &&
+                     std::abs(record["export_ms"].toDouble() -
+                              record["glb_bake_ms"].toDouble() -
+                              record["file_export_ms"].toDouble()) < 1e-9))
+                << "Export must include real GLB bake and OBJ/MTL/PNG/preview "
+                   "writes, not worker bake alone";
+        const auto outputs = record["outputs"].toObject();
+        EXPECT_TRUE((QFile::exists(outputs["mesh"].toString()) &&
+                     QFile::exists(outputs["glb"].toString())))
+                << "Real batch must produce OBJ and GLB";
+        EXPECT_TRUE((outputs.contains("material") &&
+                     outputs.contains("texture") &&
+                     QFile::exists(outputs["texture"].toString())))
+                << "Batch manifest must register real textures and MTL";
     }
-    return failures ? 1 : 0;
+}
+
+int main(int argc, char** argv) {
+    QApplication app(argc, argv);
+    ::testing::InitGoogleTest(&argc, argv);
+    if (argc > 1) realBatchRoot = QString::fromLocal8Bit(argv[1]);
+    if (argc > 2) realBatchDevice = QString::fromLocal8Bit(argv[2]);
+    return RUN_ALL_TESTS();
 }

@@ -9,6 +9,9 @@ project(VTKArchiveBuild)
 option(BUILD_WITH_CONDA "Build with conda env" OFF)
 option(BUILD_SHARED_LIBS "Build shared library" OFF)
 option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime" OFF)
+option(USE_QT6 "Use Qt6 instead of Qt5" OFF)
+
+include("${CMAKE_CURRENT_LIST_DIR}/../../cmake/CMakeExternalLibs.cmake")
 
 # OS specific settings
 if(WIN32)

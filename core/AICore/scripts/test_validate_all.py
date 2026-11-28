@@ -48,7 +48,7 @@ class CandidateAssetsTests(unittest.TestCase):
         catalog = self.apply([self.row])
         self.assertEqual(catalog[0].sha256, self.row["sha256"])
         self.assertEqual(catalog[0].size_bytes, 15)
-        self.assertEqual(catalog[0].url, self.path.as_uri())
+        self.assertEqual(catalog[0].url, self.path.resolve().as_uri())
         self.assertEqual(self.original.sha256, "a" * 64)
         self.assertEqual(self.original.url, "https://example.org/original.gguf")
         summary, failures = VALIDATE_ALL.ensure_model_assets(
@@ -280,7 +280,7 @@ class ValidateAllTests(unittest.TestCase):
             consumers = [s for s in specs if s.model_id == name]
             self.assertEqual(len(consumers), 1, name)
             self.assertEqual(consumers[0].scenario_id, "facedetect-bnkps")
-            self.assertEqual(Path(consumers[0].command[0]).name,
+            self.assertEqual(Path(consumers[0].command[0]).stem,
                              "test_facedetect_detect_only")
 
     def test_execution_artifacts_identify_commands_runtime_and_build_options(self):
@@ -298,10 +298,10 @@ class ValidateAllTests(unittest.TestCase):
             model.write_bytes(b"model is recorded separately")
             spec = SimpleNamespace(command=(str(expected[0]), str(expected[4]), str(model)))
             artifacts = VALIDATE_ALL.execution_artifacts([spec], build)
-            self.assertTrue({str(p) for p in expected} <= artifacts.keys())
-            self.assertNotIn(str(model), artifacts)
+            self.assertTrue({str(p.resolve()) for p in expected} <= artifacts.keys())
+            self.assertNotIn(str(model.resolve()), artifacts)
             for path in expected:
-                self.assertEqual(artifacts[str(path)]["sha256"], hashlib.sha256(path.read_bytes()).hexdigest())
+                self.assertEqual(artifacts[str(path.resolve())]["sha256"], hashlib.sha256(path.read_bytes()).hexdigest())
 
     def test_execution_artifact_changes_fail_even_with_successful_probe_outputs(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -612,7 +612,7 @@ class ValidateAllTests(unittest.TestCase):
                                  {f"{i:03d}.jpg" for i in range(50)})
                 combined = hashlib.sha256()
                 for item in labels:
-                    self.assertTrue(label_path.endswith(str(Path(item["relative_path"]).parent)))
+                    self.assertTrue(label_path.endswith(str(VALIDATE_ALL.PurePosixPath(item["relative_path"]).parent)))
                     combined.update(Path(item["relative_path"]).name.encode() + b"\0")
                     combined.update(bytes.fromhex(item["sha256"]))
                 self.assertEqual(digest, combined.hexdigest())
@@ -679,12 +679,17 @@ class ValidateAllTests(unittest.TestCase):
 
     def test_runtime_library_path_preserves_configured_qt_directory(self):
         env = {"AICORE_QT_LIBRARY_DIR": "/opt/qt/lib"}
-        VALIDATE_ALL.add_runtime_library_path(env, Path("/tmp/aicore-build"))
+        build = Path("/tmp/aicore-build")
+        VALIDATE_ALL.add_runtime_library_path(env, build)
         variable = ("PATH" if VALIDATE_ALL.os.name == "nt" else
                     "DYLD_LIBRARY_PATH" if VALIDATE_ALL.sys.platform == "darwin"
                     else "LD_LIBRARY_PATH")
+        # The Windows fallback resolves the nonexistent build root; POSIX
+        # keeps the lexical bin entry.
+        bin_dir = (str(build.resolve() / "bin") if VALIDATE_ALL.os.name == "nt"
+                   else str(build / "bin"))
         self.assertEqual(env[variable].split(VALIDATE_ALL.os.pathsep),
-                         ["/tmp/aicore-build/bin", "/opt/qt/lib"])
+                         [bin_dir, "/opt/qt/lib"])
 
     def test_ram_dataset_and_caption_metrics_enforce_structured_gates(self):
         report = {
@@ -909,7 +914,9 @@ class ValidateAllTests(unittest.TestCase):
                         if VALIDATE_ALL.sys.platform == "darwin"
                         else "LD_LIBRARY_PATH")
             self.assertEqual(env[variable].split(VALIDATE_ALL.os.pathsep),
-                             [str(build / "bin"), str(expected.resolve())])
+                             [str(build.resolve() / "bin")
+                              if VALIDATE_ALL.os.name == "nt" else str(build / "bin"),
+                              str(expected.resolve())])
 
     def test_windows_runtime_layout_finds_configured_exe_and_prepends_config_dir(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -2179,7 +2186,7 @@ class ValidateAllTests(unittest.TestCase):
             actual = subprocess.check_output(
                 [references["python"], "-c", "import sys; print(sys.prefix)"],
                 text=True).strip()
-            self.assertEqual(Path(actual), root)
+            self.assertEqual(Path(actual), root.resolve())
 
     def test_reference_row_without_reference_is_a_gate_failure(self):
         spec = VALIDATE_ALL.RunSpec(
@@ -2933,14 +2940,14 @@ class ValidateAllTests(unittest.TestCase):
         _, specs, _ = self.expand_relation(full=True)
         by_id = {s.scenario_id: s for s in specs}
         tracker = by_id["relation-temporal-tracker"]
-        self.assertEqual(Path(tracker.command[0]).name,
+        self.assertEqual(Path(tracker.command[0]).stem,
                          "test_relate_temporal")
         self.assertEqual(tracker.model_paths, ())
         self.assertEqual(tracker.accuracy["reference"], "probe_invariant")
         self.assertFalse(tracker.require_fingerprint)
         parity = by_id["relation-temporal-upstream-parity"]
         self.assertIn("compare_temporal_upstream.py", parity.command[1])
-        self.assertEqual(Path(parity.command[-1]).name,
+        self.assertEqual(Path(parity.command[-1]).stem,
                          "test_relate_temporal_replay")
 
     def test_find_binary_searches_plugin_test_directory(self):
@@ -2963,6 +2970,166 @@ class ValidateAllTests(unittest.TestCase):
             attempt = VALIDATE_ALL.run_attempt(spec, args)
             self.assertEqual(attempt.returncode, 127)
             self.assertIn("cannot execute probe", attempt.output_tail)
+
+
+class WeVisOneManifestRowTests(unittest.TestCase):
+    """wevisone catalog <-> manifest contract: every published gguf has an
+    inference consumer in the full matrix, the light tier keeps only the
+    recommended-set anchors, and the parity rows carry the upstream
+    reference / GT decode_masks / batch tokens."""
+
+    REPO = MODULE_PATH.parents[3]
+    TASKS = ("detection", "referring", "point", "count_box", "count_point",
+             "ocr", "ocr_grounding", "segmentation", "matting",
+             "visual_prompt", "freeform")
+
+    @classmethod
+    def catalog_files(cls):
+        source = (cls.REPO / "core/AICore/src/tasks/wevisone/"
+                  "wevisone_model_catalog.cpp").read_text(encoding="utf-8")
+        return re.findall(r'^\s*\{"([^"]+\.gguf)",\s*$', source,
+                          re.MULTILINE)
+
+    @staticmethod
+    def wevisone_args(assets, root, full, models=""):
+        return SimpleNamespace(
+            tasks="wevisone", assets=assets, repo=root,
+            build=root / "build", backend="cuda", image="image",
+            image2="image2", face_image="face", sam_image="sam",
+            yolo_image="yolo", threads=1, warmup_runs=1, inference_runs=1,
+            trellis_steps=1, gpu_idle_timeout=60.0, full=full, models=models,
+            references={"wevisone_upstream": str(root / "ref")})
+
+    def expand(self, full, models=""):
+        manifest = VALIDATE_ALL.load_manifest(VALIDATE_ALL.DEFAULT_MANIFEST)
+        names = self.catalog_files()
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            assets = root / "assets"
+            (assets / "wevisone_models").mkdir(parents=True)
+            for name in names:
+                (assets / "wevisone_models" / name).write_bytes(b"fixture")
+            specs, diagnostics = VALIDATE_ALL.expand_specs(
+                manifest, self.wevisone_args(assets, root, full, models),
+                root / "reports")
+        return names, specs, diagnostics
+
+    def test_catalog_has_twelve_published_entries(self):
+        names = self.catalog_files()
+        self.assertEqual(len(names), 12)
+        self.assertEqual(
+            len([n for n in names if n.startswith("wevisone-vlm-")]), 6)
+        self.assertEqual(
+            len([n for n in names if n.startswith("mmproj-")]), 2)
+        self.assertEqual(
+            len([n for n in names
+                 if n.startswith("wevisone-mask-decoder-")]), 4)
+
+    def test_full_matrix_consumes_every_catalog_model(self):
+        names, specs, diagnostics = self.expand(full=True)
+        self.assertEqual(diagnostics["missing_assets"], [])
+        self.assertEqual(diagnostics["uncovered_assets"], [])
+        # 2 light anchors + 66 task/tier/family parity rows + 2 decoder-f16
+        # owners + 2 GT decode_masks rows + 2 batch rows.
+        self.assertEqual(len(specs), 74)
+        for name in names:
+            consumers = [s for s in specs
+                         if any(p.name == name for p in s.model_paths)]
+            self.assertTrue(consumers, name)
+            for spec in consumers:
+                self.assertEqual(Path(spec.command[0]).stem,
+                                 "test_wevisone_probe")
+
+    def test_light_tier_keeps_only_the_recommended_set_anchors(self):
+        _, specs, diagnostics = self.expand(full=False)
+        self.assertEqual(diagnostics["missing_assets"], [])
+        self.assertEqual(diagnostics["uncovered_assets"], [])
+        self.assertEqual({s.scenario_id for s in specs},
+                         {"wevisone-detection-2b-q8_0",
+                          "wevisone-matting-2b-q8_0"})
+        for spec in specs:
+            self.assertNotIn("--upstream-dir", spec.command)
+
+    def test_parity_rows_carry_upstream_gt_and_batch_tokens(self):
+        manifest = VALIDATE_ALL.load_manifest(VALIDATE_ALL.DEFAULT_MANIFEST)
+        rows = {s["id"]: s for s in manifest["scenarios"]
+                if s["task"] == "wevisone"}
+        upstream = [r for r in rows.values() if not r.get("light")]
+        self.assertEqual(len(upstream), 72)
+        for row in upstream:
+            self.assertIn("{reference:wevisone_upstream}", row["args"])
+            self.assertEqual(row["accuracy"]["reference"],
+                             "upstream_wevisone_cli")
+        for family in ("2b", "4b"):
+            for precision in ("f16", "q8_0", "q4_K_M"):
+                for task in self.TASKS:
+                    self.assertIn(
+                        f"wevisone-{task}-{family}-{precision}-upstream",
+                        rows)
+            gt = rows[f"wevisone-matting-{family}-f16-gt-upstream"]["args"]
+            self.assertIn("--response", gt)
+            self.assertIn("--gt-boxes", gt)
+            self.assertIn("--prompt", gt)
+            batch = rows[
+                f"wevisone-detection-{family}-q8_0-batch-upstream"]["args"]
+            self.assertIn("--image2", batch)
+            decoder = rows[
+                f"wevisone-segmentation-{family}-f16-decoder-f16-upstream"]
+            self.assertIn(f"wevisone_models/wevisone-mask-decoder-"
+                          f"{family}-f16.gguf", decoder["owned_globs"])
+
+    def test_models_selection_narrows_to_one_vlm(self):
+        _, specs, _ = self.expand(full=False,
+                                  models="wevisone-vlm-4b-q4_K_M.gguf")
+        self.assertTrue(specs)
+        for spec in specs:
+            self.assertIn("wevisone-vlm-4b-q4_K_M.gguf",
+                          " ".join(spec.command))
+
+    def test_generation_coordinate_gate_and_gt_strict_gate(self):
+        # Generation parity is coordinate-aware: labels/OCR/structure/count
+        # exact (upstream_text_match) plus a coordinate-bin band, NOT a strict
+        # pixel box band (a cross-ggml bin flip legitimately moves the box and
+        # the matte edge). GT-conditioned rows isolate the decoder and keep
+        # the strict pixel box + matte bands.
+        manifest = VALIDATE_ALL.load_manifest(VALIDATE_ALL.DEFAULT_MANIFEST)
+        rows = [s for s in manifest["scenarios"] if s["task"] == "wevisone"]
+
+        def checks(row):
+            return {c["metric"]: (c["op"], c["value"])
+                    for c in row["accuracy"]["checks"]}
+
+        gen = gt = 0
+        for row in rows:
+            if row.get("light") or not row["accuracy"]["checks"]:
+                continue
+            ck = checks(row)
+            is_gt = "--response" in row["args"]
+            if is_gt:
+                gt += 1
+                self.assertEqual(ck["upstream_box_max_delta_px"], ("<=", 0.05))
+                self.assertEqual(ck["upstream_matte_max_delta"], ("<=", 0.05))
+                self.assertEqual(ck["upstream_text_match"], ("==", 1))
+                self.assertNotIn("upstream_coord_max_bin_delta", ck)
+            else:
+                gen += 1
+                self.assertEqual(ck["upstream_coord_max_bin_delta"], ("<=", 2))
+                self.assertEqual(ck["upstream_text_match"], ("==", 1))
+                self.assertNotIn("upstream_box_max_delta_px", ck)
+                self.assertNotIn("upstream_matte_max_delta", ck)
+                if "--image2" in row["args"]:
+                    self.assertEqual(ck["batch_coord_max_bin_delta"],
+                                     ("<=", 2))
+                    self.assertEqual(ck["batch_text_match"], ("==", 1))
+                    self.assertNotIn("batch_box_max_delta_px", ck)
+                # Matte-producing generation rows still require the matte
+                # structurally; the numeric band is conditional in the probe.
+                task = row["args"][row["args"].index("--task") + 1]
+                if task in ("matting", "segmentation"):
+                    self.assertIn("matte_count",
+                                  row["accuracy"]["require_metrics"])
+        self.assertEqual(gen, 70)
+        self.assertEqual(gt, 2)
 
 
 class AttributeManifestRowTests(unittest.TestCase):
@@ -3286,8 +3453,12 @@ class InstantMeshProbeTests(unittest.TestCase):
                         "libAICore.dylib" if sys.platform == "darwin" else "libAICore.so")
             library = root / "bin" / filename
             library.write_bytes(b"path resolution only, never loaded")
-            self.assertEqual(self.probe.resolve_library(root), library.resolve())
-            self.assertEqual(self.probe.resolve_library(library), library.resolve())
+            # resolve_aicore_library keeps the lexical (abspath) identity so
+            # symlinked backend staging stays discoverable; it must not
+            # resolve symlinks or 8.3 short names.
+            lexical = Path(os.path.abspath(library))
+            self.assertEqual(self.probe.resolve_library(root), lexical)
+            self.assertEqual(self.probe.resolve_library(library), lexical)
             with self.assertRaises(FileNotFoundError):
                 self.probe.resolve_library(root / "absent")
 

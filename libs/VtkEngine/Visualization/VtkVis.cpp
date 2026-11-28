@@ -829,7 +829,7 @@ double VtkVis::getGLDepth(int x, int y) {
     int y1 = std::min(sz[1] - 1, y + radius);
     int w = x1 - x0 + 1;
     int h = y1 - y0 + 1;
-    std::vector<float> buf(w * h, 1.0f);
+    std::vector<float> buf(static_cast<size_t>(w) * h, 1.0f);
     if (rw->GetZbufferData(x0, y0, x1, y1, buf.data()) == 0) {
         return 1.0;
     }
@@ -1667,8 +1667,8 @@ void VtkVis::drawPointCloud(const CC_DRAW_CONTEXT& context,
                                 .count();
     if (pcMs > 200.0 && CVLog::diagnosticsEnabled()) {
         CVLog::Print("[draw] point cloud '%s' (%zu pts) drew in %.1f ms",
-                     cloud->getName().toLatin1().constData(), cloud->size(),
-                     pcMs);
+                     cloud->getName().toLatin1().constData(),
+                     static_cast<size_t>(cloud->size()), pcMs);
     }
 }
 
@@ -2162,9 +2162,10 @@ bool VtkVis::aggregateCameraSensor(const CC_DRAW_CONTEXT& context,
         return false;
     }
     if (!sensor || !sensor->isA(CV_TYPES::CAMERA_SENSOR)) return false;
-    const auto* camera = reinterpret_cast<const ccCameraSensor*>(sensor);
+    const auto* camera = dynamic_cast<const ccCameraSensor*>(sensor);
+    if (!camera) return false;
     if (CVLog::diagnosticsEnabled()) {
-        CVLog::Print("[agg] '%s' enter containsLeaf=%d geomKey=%d",
+        CVLog::Print("[agg] '%s' enter containsLeaf=%d geomKey=%zu",
                      viewID.c_str(),
                      m_compositeRegistry.containsLeaf(viewID) ? 1 : 0,
                      m_leafGeometryKey.count(viewID));
@@ -2325,16 +2326,20 @@ bool VtkVis::aggregateLineEntity(const CC_DRAW_CONTEXT& context,
         }
         return false;
     }
-    const bool isPolyline = entity->isA(CV_TYPES::POLY_LINE);
-    const bool isLineSet = entity->isA(CV_TYPES::LINESET);
-    if (!isPolyline && !isLineSet) return false;
+    auto* polyline = entity->isA(CV_TYPES::POLY_LINE)
+                             ? dynamic_cast<ccPolyline*>(entity)
+                             : nullptr;
+    auto* lineset =
+            entity->isA(CV_TYPES::LINESET)
+                    ? dynamic_cast<cloudViewer::geometry::LineSet*>(entity)
+                    : nullptr;
+    if (!polyline && !lineset) return false;
 
     unsigned keyCount = 0;
     bool closed = false;
     bool hasColors = false;
     ecvColor::Rgb resolvedColor = context.defaultPolylineColor;
-    if (isPolyline) {
-        ccPolyline* polyline = static_cast<ccPolyline*>(entity);
+    if (polyline) {
         // 2D-mode lines back-project their points through the LIVE view
         // camera on every conversion (Cc2Vtk::PolylineToPolyData): baking
         // them into a block would freeze camera-dependent geometry.
@@ -2345,7 +2350,6 @@ bool VtkVis::aggregateLineEntity(const CC_DRAW_CONTEXT& context,
         keyCount = polyline->size();
         closed = polyline->isClosed();
     } else {
-        auto* lineset = static_cast<cloudViewer::geometry::LineSet*>(entity);
         if (lineset->is2DMode()) return false;
         keyCount = lineset->segmentCount();
         if (lineset->isColorOverridden()) {
@@ -2413,12 +2417,10 @@ bool VtkVis::aggregateLineEntity(const CC_DRAW_CONTEXT& context,
     }
 
     vtkSmartPointer<vtkPolyData> linesData;
-    if (isPolyline) {
-        linesData = Converters::Cc2Vtk::PolylineToPolyData(
-                static_cast<ccPolyline*>(entity));
+    if (polyline) {
+        linesData = Converters::Cc2Vtk::PolylineToPolyData(polyline);
     } else {
-        linesData = VtkRendering::CreatePolyDataFromLineSet(
-                *static_cast<cloudViewer::geometry::LineSet*>(entity), false);
+        linesData = VtkRendering::CreatePolyDataFromLineSet(*lineset, false);
     }
     if (!linesData) return false;
 
@@ -2494,16 +2496,14 @@ void VtkVis::drawSensor(const CC_DRAW_CONTEXT& context,
     if (sensor->isA(CV_TYPES::CAMERA_SENSOR)) {
         // the sensor to draw
         const ccCameraSensor* camera =
-                reinterpret_cast<const ccCameraSensor*>(sensor);
+                dynamic_cast<const ccCameraSensor*>(sensor);
         if (!camera) return;
         linesData = VtkRendering::CreateCameraSensor(
                 camera, context.defaultPolylineColor, context.defaultMeshColor,
                 &planeFaceData);
     } else if (sensor->isA(CV_TYPES::GBL_SENSOR)) {
         // the sensor to draw
-        const ccGBLSensor* camera =
-                reinterpret_cast<const ccGBLSensor*>(sensor);
-        ;
+        const ccGBLSensor* camera = dynamic_cast<const ccGBLSensor*>(sensor);
         if (!camera) return;
         linesData = VtkRendering::CreateGBLSensor(camera);
     } else {
@@ -4839,7 +4839,11 @@ void VtkVis::setPointGaussianRendering(bool enabled,
         if (existingPG) {
             existingPG->SetScaleFactor(gaussianRadius);
             existingPG->SetSplatShaderCode(preset.shaderCode);
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 4, 0)
+            existingPG->SetBoundScale(preset.triangleScale);
+#else
             existingPG->SetTriangleScale(preset.triangleScale);
+#endif
             // Per-point splat size from a point-data array (e.g. the "Scale"
             // field of imported gaussian splats); only set when non-empty —
             // VTK stores the name in a std::string, so nullptr is UB. When
@@ -4866,7 +4870,11 @@ void VtkVis::setPointGaussianRendering(bool enabled,
         }
         pgMapper->SetScaleFactor(gaussianRadius);
         pgMapper->SetSplatShaderCode(preset.shaderCode);
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 4, 0)
+        pgMapper->SetBoundScale(preset.triangleScale);
+#else
         pgMapper->SetTriangleScale(preset.triangleScale);
+#endif
         if (scaleArray && *scaleArray) {
             pgMapper->SetScaleArray(scaleArray);
         }
@@ -5534,6 +5542,41 @@ vtkActor* VtkVis::getActorById(const std::string& viewId) {
     return actor;
 }
 
+std::vector<VtkVis::RepresentationActor> VtkVis::representationActors(
+        const std::string& viewId) {
+    if (m_compositeRegistry.containsLeaf(viewId)) {
+        const auto group = m_compositeRegistry.groupOfLeaf(viewId);
+        auto* block = m_compositeRegistry.leafBlock(viewId);
+        auto* actor = m_compositeRegistry.groupActor(group);
+        return actor && block ? std::vector<RepresentationActor>{{actor, block}}
+                              : std::vector<RepresentationActor>{};
+    }
+    std::vector<RepresentationActor> result;
+    if (contains(viewId)) {
+        if (auto* actor = getActorById(viewId))
+            result.push_back({actor, nullptr});
+    }
+    for (const auto& group : m_compositeRegistry.groupIdsWithPrefix(viewId)) {
+        if (auto* actor = m_compositeRegistry.groupActor(group))
+            result.push_back({actor, nullptr});
+    }
+    return result;
+}
+
+std::vector<VtkVis::RepresentationActor> VtkVis::sourceRepresentationActors() {
+    std::vector<RepresentationActor> result;
+    for (const auto& entry : m_sourceObjectMap) {
+        if (!entry.second || !entry.second->isVisible()) continue;
+        const auto actors = representationActors(entry.first);
+        result.insert(result.end(), actors.begin(), actors.end());
+    }
+    for (const auto& group : m_compositeRegistry.groupIds()) {
+        if (auto* actor = m_compositeRegistry.groupActor(group))
+            result.push_back({actor, nullptr});
+    }
+    return result;
+}
+
 vtkAbstractWidget* VtkVis::getWidgetById(const std::string& viewId) {
     // Extra step: check if there is a widget with the same ID
     WidgetActorMap::iterator wa_it = getWidgetActorMap()->find(viewId);
@@ -5584,6 +5627,56 @@ std::string stripPickSuffix(std::string id) {
 }
 
 }  // namespace
+
+std::string VtkVis::selectionSourceId(vtkActor* actor,
+                                      unsigned int blockIndex) {
+    if (!actor) return {};
+    const auto group = m_compositeRegistry.groupIdOfActor(actor);
+    if (!group.empty()) {
+        return m_compositeRegistry.leafAtFlatIndex(group, blockIndex);
+    }
+    for (const auto& entry : *getCloudActorMap()) {
+        if (entry.second.actor == actor) return entry.first;
+    }
+    for (const auto& entry : *getShapeActorMap()) {
+        if (entry.second == actor) return entry.first;
+    }
+    return {};
+}
+
+bool VtkVis::selectionRepresentation(const std::string& sourceId,
+                                     vtkActor*& actor,
+                                     vtkPolyData*& polyData,
+                                     unsigned int& blockIndex) {
+    actor = nullptr;
+    polyData = nullptr;
+    blockIndex = 0;
+    if (m_compositeRegistry.containsLeaf(sourceId)) {
+        const auto group = m_compositeRegistry.groupOfLeaf(sourceId);
+        actor = m_compositeRegistry.groupActor(group);
+        for (vtkIdType b = 0; b < m_compositeRegistry.leafSlotCount(group);
+             ++b) {
+            if (m_compositeRegistry.leafAtFlatIndex(group, b) != sourceId)
+                continue;
+            if (!m_compositeRegistry.blockVisible(group, b) ||
+                !m_compositeRegistry.blockPickable(group, b))
+                return false;
+            polyData = vtkPolyData::SafeDownCast(
+                    m_compositeRegistry.blockAtFlatIndex(group, b));
+            blockIndex = static_cast<unsigned int>(b);
+            break;
+        }
+    } else if (contains(sourceId)) {
+        actor = getActorById(sourceId);
+        if (actor && actor->GetMapper()) {
+            polyData =
+                    vtkPolyData::SafeDownCast(actor->GetMapper()->GetInput());
+        }
+    }
+    auto* renderer = getCurrentRenderer();
+    return actor && polyData && actor->GetVisibility() &&
+           actor->GetPickable() && renderer && renderer->HasViewProp(actor);
+}
 
 std::string VtkVis::getIdByActor(vtkProp* actor) {
     if (!actor) {
@@ -6010,7 +6103,7 @@ vtkActor* VtkVis::actorForRenderingProperties(const std::string& viewID) {
 }
 
 // VTK version guard: the composite pipeline needs VTK >= 9
-// (vtkCompositePolyDataMapper2 + composite selection attributes). On older
+// (composite polydata mapper + composite selection attributes). On older
 // VTK the aggregation gate falls back to the pre-aggregation all-dedicated
 // rendering — identical visuals, O(leaves) frame cost.
 bool VtkVis::compositeRenderingSupported() {
@@ -6476,9 +6569,9 @@ std::string VtkVis::nearestCameraFaceUnderPixel(double x, double y) {
         // pickable — GetVisibility reflects the reconciled actor state.
         if (!faceActor || !faceActor->GetVisibility()) continue;
         auto* mapper = faceActor->GetMapper();
-        auto* poly =
-                mapper ? vtkPolyData::SafeDownCast(mapper->GetInputAsDataSet())
-                       : nullptr;
+        auto* poly = mapper ? vtkPolyData::SafeDownCast(
+                                      mapper->GetInputDataObject(0, 0))
+                            : nullptr;
         if (!poly) continue;
         vtkMatrix4x4* actorMat = faceActor->GetMatrix();
 
@@ -7394,6 +7487,45 @@ void VtkVis::GetDataAxesGridProperties(const std::string& viewID,
 // Camera Orientation Widget (ParaView-compatible)
 // ============================================================================
 
+// VTK's vtkCameraOrientationWidget::EndSelectAction orientates the camera
+// (focal + distance preserving) and then calls ParentRenderer->ResetCamera(),
+// which refits the scene and destroys the user's zoom level. Snapshot the
+// zoom state when the gizmo interaction starts and restore it along the new
+// orientation when the interaction ends, matching the zoom-preserving view
+// presets (toolbar buttons / Ctrl+Alt+1..6).
+void VtkVis::onOrientWidgetInteraction(vtkObject* caller,
+                                       unsigned long eventId,
+                                       void* /*callData*/) {
+    auto* widget = vtkCameraOrientationWidget::SafeDownCast(caller);
+    vtkRenderer* ren = widget ? widget->GetParentRenderer() : nullptr;
+    vtkCamera* cam = ren ? ren->GetActiveCamera() : nullptr;
+    if (!cam) return;
+
+    if (eventId == vtkCommand::StartInteractionEvent) {
+        cam->GetFocalPoint(m_orientWidgetZoomFocal);
+        m_orientWidgetZoomDistance = cam->GetDistance();
+        m_orientWidgetZoomParallelScale = cam->GetParallelScale();
+        m_orientWidgetZoomValid = true;
+    } else if (eventId == vtkCommand::EndInteractionEvent &&
+               m_orientWidgetZoomValid) {
+        m_orientWidgetZoomValid = false;
+        // ResetCamera kept the new orientation but moved focal/distance and
+        // rescaled parallel projection. Re-apply the snapshot along the
+        // current view plane normal (focal -> camera direction).
+        double vpn[3];
+        cam->GetViewPlaneNormal(vpn);
+        double pos[3];
+        for (int i = 0; i < 3; ++i) {
+            pos[i] = m_orientWidgetZoomFocal[i] +
+                     vpn[i] * m_orientWidgetZoomDistance;
+        }
+        cam->SetFocalPoint(m_orientWidgetZoomFocal);
+        cam->SetPosition(pos);
+        cam->SetParallelScale(m_orientWidgetZoomParallelScale);
+        ren->ResetCameraClippingRange();
+    }
+}
+
 void VtkVis::ToggleCameraOrientationWidget(bool show) {
     vtkRenderer* renderer = getCurrentRenderer();
     vtkRenderWindowInteractor* interactor = getRenderWindowInteractor();
@@ -7432,6 +7564,15 @@ void VtkVis::ToggleCameraOrientationWidget(bool show) {
 
         // Create default representation if not already created
         m_cameraOrientationWidget->CreateDefaultRepresentation();
+
+        // Preserve zoom across gizmo clicks (VTK resets the camera after
+        // orienting it; see onOrientWidgetInteraction).
+        auto zoomObs = vtkSmartPointer<vtkMemberFunctionCommand<VtkVis>>::New();
+        zoomObs->SetCallback(*this, &VtkVis::onOrientWidgetInteraction);
+        m_cameraOrientationWidget->AddObserver(
+                vtkCommand::StartInteractionEvent, zoomObs);
+        m_cameraOrientationWidget->AddObserver(vtkCommand::EndInteractionEvent,
+                                               zoomObs);
 
         // Configure representation (ParaView defaults from
         // views_remotingviews.xml)
@@ -7603,6 +7744,10 @@ void VtkVis::RefreshOverlayWidgets() {
 
     rw->Modified();
     UpdateScreen();
+}
+
+vtkCameraOrientationWidget* VtkVis::getCameraOrientationWidget() const {
+    return m_cameraOrientationWidget;
 }
 
 bool VtkVis::IsCameraOrientationWidgetShown() const {

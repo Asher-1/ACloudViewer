@@ -179,7 +179,7 @@ macOS Build Workflow
 
 1. Install dependencies via ``brew``
 2. Build with CMake (Release mode)
-3. Run tests with ``ctest``
+3. Run the root ``tests/Run.cmake`` gate (build prerequisites, then CTest)
 4. Upload build artifacts
 
 Windows Build Workflow
@@ -221,7 +221,7 @@ Docker-based Testing
    
    # Run tests
    docker run --rm acloudviewer-ci:cpu \
-       bash -c "cd build && ctest --output-on-failure"
+       bash -c "cmake -DBUILD_DIR=build -DJOBS=4 -P tests/Run.cmake"
 
    # Build CUDA test environment
    docker build -t acloudviewer-ci:cuda \
@@ -231,7 +231,7 @@ Docker-based Testing
    
    # Run GPU tests
    docker run --rm --gpus all acloudviewer-ci:cuda \
-       bash -c "cd build && ctest --output-on-failure"
+       bash -c "cmake -DBUILD_DIR=build -DJOBS=4 -DPROFILE=ci,gpu -P tests/Run.cmake"
 
 Act (GitHub Actions Local Simulator)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -728,7 +728,7 @@ Example: Complete CI Workflow
          - name: Build
            run: |
              mkdir build && cd build
-             cmake .. -DCMAKE_BUILD_TYPE=Release \
+             cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIT_TESTS=ON \
                       -DCMAKE_C_COMPILER_LAUNCHER=ccache \
                       -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
              cmake --build . --parallel
@@ -736,7 +736,7 @@ Example: Complete CI Workflow
          - name: Test
            run: |
              cd build
-             ctest --output-on-failure --parallel
+             cmake -DBUILD_DIR=. -DJOBS=4 -P ../tests/Run.cmake
          
          - name: Upload test logs
            if: failure()
@@ -788,3 +788,13 @@ Resources
 - :doc:`contributing` - Contributing guidelines
 - `util/ci_utils.sh <https://github.com/Asher-1/ACloudViewer/blob/main/util/ci_utils.sh>`_ - CI utility functions
 - `GitHub Actions Workflow Syntax <https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions>`_
+
+Unified C++ Test Ownership
+--------------------------
+
+The repository-root ``tests`` module owns first-party GoogleTest registration,
+build prerequisites and capability selection. New enabled modules register in
+CMake without per-module CI execution lists. The default profile is headless;
+``graphics``, ``gpu``, ``model`` and ``all`` require explicit selection.
+See `the unified contract <https://github.com/Asher-1/ACloudViewer/blob/main/tests/README.md>`_.
+Python/package tests and strict real-model numeric acceptance remain separate.

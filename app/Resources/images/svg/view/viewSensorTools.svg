@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.6171,-0.6171) scale(1.05143)">
+
+<defs><linearGradient id="sensor" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#E0E0E0"/><stop offset="1.000" stop-color="#9AC1E0"/></linearGradient></defs>
+<title>Sensor tools — camera and scanning field</title>
+  <path d="M 3 6 H 10 L 12 8 H 17 V 18 H 2 V 8 Z" fill="url(#sensor)" stroke="#6F6F59"/>  <circle cx="9.5" cy="12.5" r="3.6" fill="#2896D3" stroke="#6F6F59"/>  <circle cx="9.5" cy="12.5" r="1.9" fill="#D0E5F6" stroke="#6F6F59"/>  <path d="M 16 7 L 22 3 V 21 L 16 17 Z" fill="#A7D28C" stroke="#6F6F59"/>  <path d="M 17.8 8.8 V 16.6 M 17 10.5 L 21 6 M 17 14 L 21 18" fill="none" stroke-width="0.55"/>
+
+</g>
+</svg>

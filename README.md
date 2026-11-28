@@ -172,7 +172,7 @@ and the [qSpirula user guide](https://github.com/Asher-1/ACloudViewer/blob/main/
 
 ## AICore AI Plugins — Depth, Detection, Matching & 3D Generation
 
-Twenty-two GUI plugins share one native inference library — **`libAICore.so`**, whose ggml runtime is vendored from [llama.cpp](https://github.com/ggml-org/llama.cpp). Run quantized **GGUF** models on **CUDA / Vulkan (Linux/Windows) / Metal (macOS) / CPU** with **no Python or PyTorch** at runtime. Results land directly in the DB tree and plug into reconstruction, COLMAP, and SIBR workflows.
+Twenty-three GUI plugins share one native inference library — **`libAICore.so`**, whose ggml runtime is vendored from [llama.cpp](https://github.com/ggml-org/llama.cpp). Run quantized **GGUF** models on **CUDA / Vulkan (Linux/Windows) / Metal (macOS) / CPU** with **no Python or PyTorch** at runtime. Results land directly in the DB tree and plug into reconstruction, COLMAP, and SIBR workflows.
 
 **Perception — depth · lines · matching · faces · text**
 
@@ -196,6 +196,7 @@ Twenty-two GUI plugins share one native inference library — **`libAICore.so`**
 | **[qRelateAnything](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qRelateAnything.md)** | Scene relation graphs | RelSGG ViT / ConvNeXt GGUF (24 models) | Subject–predicate–object edges over tracked objects (image & video) | `PLUGIN_STANDARD_QRELATEANYTHING` |
 | **[qGKD](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qGKD.md)** | Open-world keypoint detection | GKDT-L GGUF (ECCV 2026) | Text / visual 1-shot / multimodal / multi-object prompts | `PLUGIN_STANDARD_QGKD` |
 | **[qVLXSeek](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qVLXSeek.md)** | Open-vocab grounding & region QA | VLX-Seek 1.5-10B GGUF | Detection, counting, VQA, region OCR via region retrieval | `PLUGIN_STANDARD_QVLXSEEK` |
+| **[qWeVisOne](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qWeVisOne.md)** | Unified detection / counting / OCR / seg / matting | WeVisOne-VL 2B/4B (Qwen3-VL) GGUF | 11 tasks via structured box tokens + pixel-decoder alpha mattes | `PLUGIN_STANDARD_QWEVISONE` |
 
 **3D generation & reconstruction**
 
@@ -322,6 +323,10 @@ Twenty-two GUI plugins share one native inference library — **`libAICore.so`**
 <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qAnyLabeling/docs/images/overview.png" width="100%">
 <br><sub><b>qAnyLabeling</b> — X-AnyLabeling-style annotation workbench with fully local AI assist</sub>
 </td>
+<td width="33%" align="center">
+<div style="display:flex;gap:6px;"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qWeVisOne/images/detection.jpg" width="49%"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qWeVisOne/images/count_point.jpg" width="49%"></div>
+<br><sub><b>qWeVisOne</b> — unified perception: detection, counting, OCR, segmentation &amp; matting (WeVisOne-VL 2B/4B)</sub>
+</td>
 </tr>
 </table>
 
@@ -357,6 +362,7 @@ cmake -B build_app \
   -DPLUGIN_STANDARD_QOPENPCDET=ON \
   -DPLUGIN_STANDARD_QINSTANTMESH=ON \
   -DPLUGIN_STANDARD_QVLXSEEK=ON \
+  -DPLUGIN_STANDARD_QWEVISONE=ON \
   -DPLUGIN_STANDARD_QQUERYSPLAT=ON \
   -DBUILD_RECONSTRUCTION=ON \
   -DPLUGIN_STANDARD_QSIBR=ON \
@@ -365,7 +371,7 @@ cmake -B build_app \
 cmake --build build_app --target ACloudViewer -j$(nproc)
 ```
 
-User guides: [AICore plugins overview](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/README.md) · [qDA3](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qDA3.md) · [qDeepLSD](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qDeepLSD.md) · [qFaceDetect](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qFaceDetect.md) · [qLightGlue](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qLightGlue.md) · [qFreeSplatter](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qFreeSplatter.md) · [qYOLO](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qYOLO.md) · [qSAM3](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qSAM3.md) · [qTrellis](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qTrellis.md) · [qRFDetr](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qRFDetr.md) · [qRMBG](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qRMBG.md) · [qGKD](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qGKD.md) · [qInstantMesh](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qInstantMesh.md) · [qLingbotMap](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qLingbotMap.md) · [qMapAnything](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qMapAnything.md) · [qOCR](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qOCR.md) · [qOpenPCDet](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qOpenPCDet.md) · [qQuerySplat](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qQuerySplat.md) · [qRAM](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qRAM.md) · [qRelateAnything](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qRelateAnything.md) · [qSAM3D](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qSAM3D.md) · [qVLXSeek](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qVLXSeek.md) · [qAnyLabeling](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qAnyLabeling.md) · [qSpirula](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qSpirula.md)
+User guides: [AICore plugins overview](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/README.md) · [qDA3](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qDA3.md) · [qDeepLSD](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qDeepLSD.md) · [qFaceDetect](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qFaceDetect.md) · [qLightGlue](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qLightGlue.md) · [qFreeSplatter](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qFreeSplatter.md) · [qYOLO](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qYOLO.md) · [qSAM3](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qSAM3.md) · [qTrellis](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qTrellis.md) · [qRFDetr](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qRFDetr.md) · [qRMBG](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qRMBG.md) · [qGKD](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qGKD.md) · [qInstantMesh](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qInstantMesh.md) · [qLingbotMap](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qLingbotMap.md) · [qMapAnything](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qMapAnything.md) · [qOCR](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qOCR.md) · [qOpenPCDet](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qOpenPCDet.md) · [qQuerySplat](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qQuerySplat.md) · [qRAM](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qRAM.md) · [qRelateAnything](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qRelateAnything.md) · [qSAM3D](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qSAM3D.md) · [qVLXSeek](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qVLXSeek.md) · [qWeVisOne](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qWeVisOne.md) · [qAnyLabeling](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qAnyLabeling.md) · [qSpirula](https://github.com/Asher-1/ACloudViewer/blob/main/docs/guides/plugins/qSpirula.md)
 
 ---
 
@@ -573,3 +579,18 @@ If you find ACloudViewer useful, please consider supporting its development:
 For more information, see our [Support page](https://asher-1.github.io/ACloudViewer/documentation/resources/support.html).
 
 Thanks for your support!
+
+## C++ Testing
+
+The root [tests module](tests/README.md) owns first-party C++ registration, build
+prerequisites and CI execution. Unit assertions use GoogleTest; sources remain
+beside their production owners. After configuring `BUILD_UNIT_TESTS=ON`, run
+from the repository root:
+
+```bash
+cmake -DBUILD_DIR=build_app -DJOBS=4 -P tests/Run.cmake
+```
+
+The default profile is headless. Graphics, GPU and model tests need explicit
+capability selection. Python/package tests and strict model acceptance remain
+separate.

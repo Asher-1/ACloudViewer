@@ -21,6 +21,7 @@
 #include "common/aicore_log.hpp"
 #include "common/ggml_backend_registry.hpp"
 #include "common/ggml_backend_utils.hpp"
+#include "common/llama_norm_parity.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
@@ -244,6 +245,11 @@ bool VlxSeekRuntime::load() {
     cp.n_batch = 2048;
     cp.n_threads = s.threads;
     cp.n_threads_batch = s.threads;
+    // VLX-Seek's upstream pins the OLD scalar ggml RMS-norm kernel; tag the LLM
+    // norm nodes so CUDA patch 0033 keeps the pinned accumulation order (greedy
+    // parity). The vision encoder norms are unnamed and stay vectorized.
+    cp.cb_eval = ggml_common::llama_norm_parity_eval_cb;
+    cp.cb_eval_user_data = nullptr;
     s.lctx = llama_init_from_model(s.llm, cp);
     if (!s.lctx) {
         s.last_error = "llama context init failed";

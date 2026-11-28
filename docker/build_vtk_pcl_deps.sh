@@ -14,16 +14,25 @@
 # Two modes (identical dependency build logic, so there is zero drift between
 # the generated artifact and what a fallback source build would produce):
 #
-#   prebuild <BUILD_JOBS> <QT_DIR> <VTK_VERSION> <PCL_VERSION>
+#   prebuild <BUILD_JOBS> <QT_DIR> <VTK_VERSION> <PCL_VERSION> [QT_MAJOR]
 #     Build the six deps from source and package /usr/local (+ xerces bits that
 #     land in /usr) into /out/vtk-pcl-deps-<codename>-vtk<VTK>-pcl<PCL>.tar.gz.
 #     Used by the prebuild-deps workflow to generate the artifact.
 #
-#   consume  <BUILD_JOBS> <QT_DIR> <VTK_VERSION> <PCL_VERSION>
+#   consume  <BUILD_JOBS> <QT_DIR> <VTK_VERSION> <PCL_VERSION> [QT_MAJOR]
 #     Download the prebuilt tarball (published on the ACloudViewer
 #     `ubuntu-prebuild-deps` release) and extract it into /. If the tarball is
 #     not published yet, falls back to building from source (current behaviour)
 #     so the transition is non-breaking.
+#
+# QT_MAJOR (5 or 6, default 5) selects the Qt the VTK/PCL Qt modules link
+# against. It MUST match the Qt the app builds against: a Qt minor needs its
+# own VTK/PCL (Qt6 guarantees forward ABI only, so VTK built against a newer
+# 6.x may reference symbols absent in an older 6.x runtime). Ubuntu 24.04
+# (noble, Qt 6.4.2) and 26.04 (resolute, Qt 6.10.2) use QT_MAJOR=6 with
+# VTK 9.4.2 / PCL 1.15.1; focal/jammy keep QT_MAJOR=5 (VTK 9.3.1 / PCL 1.14.1).
+# The tarball name embeds VTK/PCL versions, so the Qt5 and Qt6 artifacts of the
+# same codename never collide.
 #
 # ABI note: VTK/PCL are pure-CPU libraries; their ABI depends only on the
 # Ubuntu release (glibc / libstdc++ / gcc from the same release), not on CUDA.
@@ -33,11 +42,26 @@
 # set in Dockerfile.ci).
 set -euo pipefail
 
-MODE="${1:?usage: build_vtk_pcl_deps.sh <prebuild|consume> <BUILD_JOBS> <QT_DIR> <VTK_VERSION> <PCL_VERSION>}"
+MODE="${1:?usage: build_vtk_pcl_deps.sh <prebuild|consume> <BUILD_JOBS> <QT_DIR> <VTK_VERSION> <PCL_VERSION> [QT_MAJOR]}"
 BUILD_JOBS="${2:?BUILD_JOBS required}"
 QT_DIR="${3:?QT_DIR required}"
 VTK_VERSION="${4:?VTK_VERSION required}"
 PCL_VERSION="${5:?PCL_VERSION required}"
+QT_MAJOR="${6:-5}"
+
+# Qt5 lives under a versioned prefix (QT_DIR=.../qt5) with qmake at bin/qmake
+# and CMake configs at lib/cmake. System Qt6 (apt qt6-base-dev) installs qmake6
+# to /usr/bin and CMake configs to /usr/lib/<arch>/cmake/Qt6, so QT_DIR=/usr and
+# find_package(Qt6) resolves via the multiarch lib/<arch>/cmake search path.
+if [ "${QT_MAJOR}" = "6" ]; then
+    QT_QMAKE="${QT_DIR}/bin/qmake6"
+    # Keep the locally built Eigen ahead of the distro config under /usr.
+    QT_CMAKE_PREFIX="/usr/local;${QT_DIR}"
+else
+    QT_QMAKE="${QT_DIR}/bin/qmake"
+    QT_CMAKE_PREFIX="${QT_DIR}/lib/cmake"
+fi
+VTK_SERIES="$(echo "${VTK_VERSION}" | cut -d. -f1,2)"
 
 CODENAME="$(lsb_release -c --short)"
 TARBALL="vtk-pcl-deps-${CODENAME}-vtk${VTK_VERSION}-pcl${PCL_VERSION}.tar.gz"
@@ -63,6 +87,12 @@ build_all_deps() {
     cmake ..
     make install "-j${BUILD_JOBS}"
     ldconfig
+    # The apt libeigen3-dev CMake config (/usr/lib/cmake/eigen3) survives the
+    # move-aside and its Eigen3::Eigen target keeps referencing
+    # /usr/include/eigen3. Downstream consumers (app build, FetchContent
+    # subprojects like PoseLib) find that config and fail on the missing path,
+    # so keep it valid and resolving to the 3.4.0 headers.
+    ln -sfn /usr/local/include/eigen3 /usr/include/eigen3
     rm -rf /opt/eigen-3.4.0 /opt/eigen-3.4.0.tar.gz
 
     # metslib (PCL dependency)
@@ -100,23 +130,23 @@ build_all_deps() {
     make clean
     rm -rf /opt/xerces-c-3.2.3 /opt/xerces-c-3.2.3.zip
 
-    # VTK (Qt5, shared)
+    # VTK (Qt${QT_MAJOR}, shared)
     cd /opt
-    wget -q https://vtk.org/files/release/9.3/VTK-${VTK_VERSION}.tar.gz -O "/opt/VTK-${VTK_VERSION}.tar.gz"
+    wget -q https://vtk.org/files/release/${VTK_SERIES}/VTK-${VTK_VERSION}.tar.gz -O "/opt/VTK-${VTK_VERSION}.tar.gz"
     tar -zxvf VTK-${VTK_VERSION}.tar.gz
     cd VTK-${VTK_VERSION}
     mkdir -p build && cd build
     cmake -DCMAKE_BUILD_TYPE=RELEASE \
         -DVTK_GROUP_ENABLE_Qt=YES \
         -DVTK_MODULE_ENABLE_VTK_GUISupportQt=YES \
-        -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=YES \
-        -DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL=YES \
+        -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=NO \
+        -DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL=NO \
         -DVTK_MODULE_ENABLE_VTK_RenderingQt=YES \
         -DVTK_MODULE_ENABLE_VTK_ViewsQt=YES \
-        -DVTK_QT_VERSION:STRING=5 \
+        -DVTK_QT_VERSION:STRING=${QT_MAJOR} \
         -DBUILD_SHARED_LIBS:BOOL=ON \
-        -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
-        -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake ..
+        -DQT_QMAKE_EXECUTABLE:PATH=${QT_QMAKE} \
+        -DCMAKE_PREFIX_PATH:PATH=${QT_CMAKE_PREFIX} ..
     make "-j${BUILD_JOBS}"
     make install "-j${BUILD_JOBS}"
     ldconfig
@@ -127,6 +157,11 @@ build_all_deps() {
     wget -q https://github.com/PointCloudLibrary/pcl/releases/download/pcl-${PCL_VERSION}/source.zip -O "/opt/pcl-${PCL_VERSION}.zip"
     unzip pcl-${PCL_VERSION}.zip
     cd pcl
+    # Boost 1.90 (Ubuntu 26.04) dropped the compiled Boost.System library and
+    # its Boost::system CMake target; PCL 1.15 still links it unconditionally
+    # in outofcore. Boost.System is header-only since 1.69, so dropping the
+    # link is safe on every supported Boost version.
+    sed -i 's/ Boost::system//' outofcore/CMakeLists.txt
     mkdir -p build && cd build
     cmake -DCMAKE_BUILD_TYPE=RELEASE \
         -DBUILD_GPU=OFF \
@@ -134,8 +169,8 @@ build_all_deps() {
         -DBUILD_examples=OFF \
         -DBUILD_surface_on_nurbs=ON \
         -DPCL_ENABLE_MARCHNATIVE=OFF \
-        -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
-        -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake ..
+        -DQT_QMAKE_EXECUTABLE:PATH=${QT_QMAKE} \
+        -DCMAKE_PREFIX_PATH:PATH=${QT_CMAKE_PREFIX} ..
     make "-j${BUILD_JOBS}"
     make install "-j${BUILD_JOBS}"
     ldconfig
@@ -161,7 +196,9 @@ case "${MODE}" in
         echo "[vtk-pcl-deps] packaged /out/${TARBALL}"
         ;;
     consume)
-        if wget -q --tries=3 "${URL}" -O /tmp/vtk-pcl-deps.tar.gz; then
+        # --timeout bounds each attempt (DNS/connect/read): a stalled CDN
+        # connection otherwise never counts as a failed try and the build hangs.
+        if wget -q --tries=3 --timeout=60 --waitretry=10 "${URL}" -O /tmp/vtk-pcl-deps.tar.gz; then
             # Match the source build (build_all_deps): the apt-installed system
             # Eigen (e.g. 3.3.7 on Ubuntu 20.04/22.04) at /usr/include/eigen3 must
             # be moved aside so the prebuilt Eigen 3.4.0 from /usr/local wins,
@@ -173,6 +210,10 @@ case "${MODE}" in
             mv -f /usr/include/eigen3 /usr/include/eigen337.bak || true
             tar -xzf /tmp/vtk-pcl-deps.tar.gz -C /
             ldconfig || true
+            # Same invariant as build_all_deps: the system Eigen3 CMake config
+            # still references /usr/include/eigen3, so keep that path valid and
+            # resolving to the prebuilt 3.4.0 headers for every consumer.
+            ln -sfn /usr/local/include/eigen3 /usr/include/eigen3
             rm -f /tmp/vtk-pcl-deps.tar.gz
             echo "[vtk-pcl-deps] used prebuilt deps: ${URL}"
         else

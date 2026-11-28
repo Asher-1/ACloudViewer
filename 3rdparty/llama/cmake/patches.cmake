@@ -8,12 +8,18 @@ set(_GGML_PATCH_SCRIPT
     "${_LLAMA_RUNTIME_DIR}/llama-patches/apply_ggml_patches.py")
 set(_GGML_PATCH_MANIFEST
     "${_GGML_OWNER_PATCH_MANIFEST}")
+# llama-root chain: mtmd patches live outside the embedded ggml/ subtree
+# (tools/mtmd/ at the llama source root). They replay through the same
+# generic runner with <SOURCE_DIR> as root in a second PATCH_COMMAND.
+set(_GGML_LLAMA_ROOT_PATCH_MANIFEST
+    "${_GGML_OWNER_PATCH_DIR}/llama-root-manifest.yaml")
 file(GLOB_RECURSE _GGML_PATCH_FILES CONFIGURE_DEPENDS
     "${_GGML_OWNER_PATCH_DIR}/*.patch")
 list(SORT _GGML_PATCH_FILES)
 set(_GGML_PATCH_INPUTS
     "${_GGML_PATCH_SCRIPT}"
     "${_GGML_PATCH_MANIFEST}"
+    "${_GGML_LLAMA_ROOT_PATCH_MANIFEST}"
     ${_GGML_PATCH_FILES})
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     ${_GGML_PATCH_INPUTS})
@@ -81,7 +87,11 @@ endif()
 set(_GGML_PATCH_COMMAND
     "${CMAKE_COMMAND}" -E env "ACV_GIT_EXECUTABLE=${GIT_EXECUTABLE}"
     "${_ggml_patch_python}" "${_GGML_PATCH_SCRIPT}" "${_GGML_PATCH_SOURCE}"
-    "${_GGML_PATCH_MANIFEST}")
+    "${_GGML_PATCH_MANIFEST}"
+    COMMAND
+    "${CMAKE_COMMAND}" -E env "ACV_GIT_EXECUTABLE=${GIT_EXECUTABLE}"
+    "${_ggml_patch_python}" "${_GGML_PATCH_SCRIPT}" "<SOURCE_DIR>"
+    "${_GGML_LLAMA_ROOT_PATCH_MANIFEST}")
 
 set(_GGML_EXTERNAL_DEPENDS_ARGS)
 if(_GGML_EXTERNAL_DEPENDS)

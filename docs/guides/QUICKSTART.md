@@ -22,19 +22,25 @@ Complete guide for building ACloudViewer from source code on different platforms
 
 **CMake 3.24+** (the repository-pinned toolchain is 3.31.8)
 
-- Ubuntu 20.04+:
-  ```bash
-  # Use default OS repository
-  sudo apt-get install cmake
-  ```
+> ⚠️ Ubuntu 20.04/22.04 default apt repos only ship CMake 3.16/3.22 — both are
+> too old. `util/install_deps_ubuntu.sh` detects an outdated system CMake and
+> auto-installs the pinned pip CMake (3.31.10); otherwise use one of the
+> methods below.
 
+- Ubuntu (any supported release) — Kitware official apt repository:
+  ```bash
+  curl -fsSL https://apt.kitware.com/keys/kitware-archive-latest.asc | gpg --dearmor -o kitware-archive-keyring.gpg
+  sudo mv kitware-archive-keyring.gpg /usr/share/keyrings/
+  echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $(lsb_release -c --short) main" | sudo tee /etc/apt/sources.list.d/kitware.list
+  sudo apt-get update && sudo apt-get install cmake
+  ```
+  Or without sudo: `python3 -m pip install --user --upgrade "cmake>=3.24,<4"` (make sure `~/.local/bin` is on PATH).
 - macOS:
   ```bash
   brew install cmake
   ```
-
 - Windows:
-  - Download from [CMake download page](https://cmake.org/download/)
+  - Download from [CMake download page](https://cmake.org/download/), or `conda install cmake` inside the build env (ships 3.31.8)
 
 ### Optional: GPU Support
 
@@ -230,10 +236,14 @@ cmake \
 ### C++ Unit Tests
 
 ```bash
-cmake -DBUILD_UNIT_TESTS=ON ..
-make -j$(nproc)
-./bin/cloudviewer_test/tests
+# From the repository root; retain your configured platform options.
+cmake -S . -B build -DBUILD_UNIT_TESTS=ON
+cmake -DBUILD_DIR=build -DJOBS=4 -P tests/Run.cmake
 ```
+
+The root [tests module](../../tests/README.md) builds prerequisites and runs every enabled first-party headless suite.
+Use `-DPROFILE=graphics`, `gpu`, `model`, or `all` for explicit capabilities;
+`ci,gpu` selects the union. Test sources stay with their production owner.
 
 ### Python Unit Tests
 

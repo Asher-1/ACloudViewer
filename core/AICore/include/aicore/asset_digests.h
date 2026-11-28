@@ -735,6 +735,27 @@ inline constexpr AssetDigestEntry kAssetDigests[] = {
         // model repository; consumed by ecvTestDataRepository::Dataset::
         // VlxSeek and the validation manifest input asset).
         {"vlx_seek_test_images.zip", "660c0e7709db5c0d007be1f14f0c4adf9365ac663ed96fbd45736ed811198d00" },
+        // WeVisOne-VL published GGUF inventory (Hugging Face
+        // Asher-1/WeVisOne-VL-GGML, revision ec7bf652): the 2b/4b VLM tiers,
+        // the f16 ViT projectors and the fp32/f16 pixel-decoder sidecars.
+        // Digests verified against the published LFS objects; the task
+        // catalog (wevisone_model_catalog.cpp) is the URL owner.
+        {"wevisone-vlm-2b-f16.gguf", "bcaa9833440753f18117a919355c6d2093ca9435d7173c90b5535471953f5c60" },
+        {"wevisone-vlm-2b-q8_0.gguf", "0888776e7f0b0ab15fd8f7e1d3668a48346a64bba759530afa8a2c3610311d3a" },
+        {"wevisone-vlm-2b-q4_K_M.gguf", "88dda10738d3b65efa99506402f1c268b3c531e85b402f5f3f6b1a0f405744e4" },
+        {"mmproj-wevisone-vlm-2b-f16.gguf", "f18d6af807569e258b56e2e297b9b879ab65995215852353185f8ef4c1b3058b" },
+        {"wevisone-mask-decoder-2b-f32.gguf", "6cb6152caa4ce6cf764b39a605b61145d8e1902bbfad0460afef0a1ee1843d4c" },
+        {"wevisone-mask-decoder-2b-f16.gguf", "2f9f5fab6f45a74599f26e774aed045f9a1c3a9588e90a894c99961924197be3" },
+        {"wevisone-vlm-4b-f16.gguf", "21b5ac710912d0a128ad1a27ecc9a1f24d4afdd51aeff3056f39e06474ef12a9" },
+        {"wevisone-vlm-4b-q8_0.gguf", "cf42a6e46b848567fa356591ab0c8289dc16cdec29735f7634dd157bf39f891c" },
+        {"wevisone-vlm-4b-q4_K_M.gguf", "7fc123cb5ad7f42630032d4bf16f5ec0e4991c756d2eeadc2eac2203233b4073" },
+        {"mmproj-wevisone-vlm-4b-f16.gguf", "04026d60c582bc25658fe9f2968c33a269e371f0e752a7562c671390d9e8a143" },
+        {"wevisone-mask-decoder-4b-f32.gguf", "76e0ca93538e3cf562c314732936c49f7626ebb8133beff53b4f44f239f71934" },
+        {"wevisone-mask-decoder-4b-f16.gguf", "2a4bed7f92a5723ea8c1be74b71176f8563fbce3f82d3f1358b699e0a59e9f9f" },
+        // WeVisOne-VL official test data (same Hugging Face repository;
+        // consumed by ecvTestDataRepository::Dataset::WeVisOne and the
+        // validation manifest input asset).
+        {"wevisone_vl_test_data.zip", "078c39b0eb0965b1b604845c3702d5648614136a18e423014fc839ff5215349f" },
         // QuerySplat decoder family + LPIPS metric weights (Hugging Face
         // Asher-1/querysplat_vggto, converted from the official inspatio/
         // querysplat paper checkpoint by convert_querysplat_to_gguf.py;

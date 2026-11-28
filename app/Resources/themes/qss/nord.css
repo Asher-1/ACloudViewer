@@ -126,7 +126,6 @@ background:#3B4252;
 }
 
 /* Buttons */
-Mpx;
 .QPushButton,.QToolButton{
 border-style:none;
 border:1px solid #4C566A;
@@ -192,15 +191,6 @@ border-color:#88C0D0;
 QRadioButton::indicator:checked{
 border:2px solid #88C0D0;
 background:#88C0D0;
-}
-
-QRadioButton::indicator:checked:before{
-content:"";
-width:8px;
-height:8px;
-border-radius:4px;
-background:#2E3440;
-margin:3px;
 }
 
 /* Checkboxes */

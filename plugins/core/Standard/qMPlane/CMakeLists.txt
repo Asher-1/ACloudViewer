@@ -9,13 +9,10 @@ if ( PLUGIN_STANDARD_QMPLANE )
     
 	AddPlugin( NAME ${PROJECT_NAME} )
 
-    # Option for building TESTS
-    option( COMPILE_QMPLANE_PLUGIN_TESTS "Check to enable REST support" OFF ) 
+    # Compatibility switch; BUILD_UNIT_TESTS also enables this suite.
+    option( COMPILE_QMPLANE_PLUGIN_TESTS "Build qMPlane unit tests" OFF )
     
 	include_directories( ${ACloudViewer_SOURCE_DIR} )
-    
-    # Set path to external dependencies
-    SET( EXTERNAL_TOOLS ${CMAKE_CURRENT_SOURCE_DIR}/external/ )
     
 	target_sources( ${PROJECT_NAME}
 		PRIVATE
@@ -32,8 +29,8 @@ if ( PLUGIN_STANDARD_QMPLANE )
     # Add plugin sources
 	add_subdirectory( src )
     
-    if ( COMPILE_QMPLANE_PLUGIN_TESTS )
-        # Add plugin tests
-        add_subdirectory(Tests)
+    if ( BUILD_UNIT_TESTS OR COMPILE_QMPLANE_PLUGIN_TESTS )
+        # Add plugin tests through the shared root testing configuration.
+        add_subdirectory(tests)
     endif()
 endif()

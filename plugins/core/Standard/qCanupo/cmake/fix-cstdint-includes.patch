@@ -1,0 +1,26 @@
+diff --git a/dlib/serialize.h b/dlib/serialize.h
+index 99f983a..a88606f 100644
+--- a/dlib/serialize.h
++++ b/dlib/serialize.h
+@@ -3,6 +3,8 @@
+ #ifndef DLIB_SERIALIZe_
+ #define DLIB_SERIALIZe_
+ 
++#include <cstdint>
++
+ /*!
+     There are two global functions in the dlib namespace that provide serialization and
+     deserialization support.  Their signatures and specifications are as follows:
+diff --git a/dlib/vectorstream/vectorstream.h b/dlib/vectorstream/vectorstream.h
+index e9cdaf8..d7253bb 100644
+--- a/dlib/vectorstream/vectorstream.h
++++ b/dlib/vectorstream/vectorstream.h
+@@ -3,6 +3,8 @@
+ #ifndef DLIB_VECTORStREAM_Hh_
+ #define DLIB_VECTORStREAM_Hh_
+ 
++#include <cstdint>
++
+ #include "vectorstream_abstract.h"
+ 
+ #include <cstring>

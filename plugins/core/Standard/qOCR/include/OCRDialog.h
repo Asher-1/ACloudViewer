@@ -56,7 +56,11 @@ struct OCRRunSettings {
     bool addToDb = true;
 };
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+// Qt6 moc auto-registers the runRequested/executeTask argument type; a
+// manual declaration would redefine the same QMetaTypeId specialization.
 Q_DECLARE_METATYPE(OCRRunSettings)
+#endif
 
 struct aicore_ocr_preset_entry;
 

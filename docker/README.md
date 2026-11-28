@@ -66,10 +66,10 @@ For example:
 cd docker
 
 # Build Docker.
-./docker_build.sh cuda_wheel_py312_dev
+./docker_build.sh cuda_wheel_noble_py312_dev
 
 # Test Docker image.
-./docker_test.sh cuda_wheel_py312_dev
+./docker_test.sh cuda_wheel_noble_py312_dev
 ```
 
 See `./docker_build.sh` and `./docker_test.sh` for all available options.
@@ -90,8 +90,8 @@ Example test commands:
 
 ```bash
 # Test CUDA wheel builds (includes ML ops)
-./docker/docker_test.sh cuda_wheel_py312_dev
-./docker/docker_test.sh cuda_wheel_py312
+./docker/docker_test.sh cuda_wheel_noble_py312_dev
+./docker/docker_test.sh cuda_wheel_noble_py312
 
 # Test CI builds (matches GitHub Actions CI_CONFIG)
 ./docker/docker_test.sh cpu-jammy
@@ -99,10 +99,37 @@ Example test commands:
 ./docker/docker_test.sh cpu-jammy-release
 ./docker/docker_test.sh cuda-jammy-release
 
-# Test Qt6 builds
-./docker/docker_test.sh qt6-cpu
-./docker/docker_test.sh qt6-cuda
+# Test Qt6 CI builds (Ubuntu 24.04/26.04 default to Qt6)
+./docker/docker_test.sh cpu-noble
+./docker/docker_test.sh cuda-resolute
 ```
+
+### Iterate on a CI configuration locally (no push)
+
+`docker_build.sh` + `docker_test.sh` rebuild the whole app on every round.
+`docker_ci_local.sh` builds the CI image once and keeps a container from it,
+so each round is a source sync + incremental build + the same test entry.
+Use the `cuda-<codename>` image: it is the same Ubuntu release plus the CUDA
+toolkit, so one image covers both the cpu- and the cuda- job of that release;
+build a `cpu-<codename>` image only when a cpu-only failure shows up.
+
+```sh
+# first call builds cloudviewer-ci:cuda-resolute when missing (cold, BUILD_JOBS=16), then
+# rebuilds the changed targets incrementally
+./docker/docker_ci_local.sh cuda-resolute build
+
+# full CI profile (ci,gpu with a GPU, else ci), same as docker_test.sh cuda-resolute
+./docker/docker_ci_local.sh cuda-resolute test
+
+# one test only
+./docker/docker_ci_local.sh cuda-resolute test -R test_qanylabeling_chat --output-on-failure
+
+./docker/docker_ci_local.sh cuda-resolute shell   # interactive, /root/ACloudViewer
+./docker/docker_ci_local.sh cuda-resolute down    # drop the container (image kept)
+```
+
+Sync overwrites files but never deletes: run `down` + `up` after removing or
+renaming sources.
 
 **Note**: The test script automatically detects whether ML ops are available in the Docker image by checking the installed `cloudViewer` package's build configuration. You don't need to manually specify whether ML ops are enabled.
 
@@ -184,9 +211,10 @@ This guide walks you through installing Docker Desktop, setting up Windows Subsy
 4. **Run the Docker build script**:
 
    Available build options:
-   - **CPU builds**: `cpu-focal`, `cpu-jammy`, `cpu-noble` (Ubuntu 20.04, 22.04, 24.04)
-   - **CUDA builds**: `cuda-focal`, `cuda-jammy`, `cuda-noble` (requires NVIDIA GPU support)
-   - **CUDA wheels**: `cuda_wheel_py310_dev`, `cuda_wheel_py311_dev`, `cuda_wheel_py312_dev`, `cuda_wheel_py313_dev`
+   - **CPU builds**: `cpu-focal`, `cpu-jammy`, `cpu-noble`, `cpu-resolute` (Ubuntu 20.04, 22.04, 24.04, 26.04)
+   - **CUDA builds**: `cuda-focal`, `cuda-jammy`, `cuda-noble`, `cuda-resolute` (requires NVIDIA GPU support)
+   - **CUDA wheels**: `cuda_wheel_{jammy,noble,resolute}_py{310,311,312,313}[_dev]`
+     (jammy=22.04/Qt5, noble=24.04/Qt6, resolute=26.04/Qt6+CUDA 13.x)
    - Add `-release` suffix for release mode builds (e.g., `cpu-jammy-release`)
 
    Example for CPU build:
@@ -198,7 +226,7 @@ This guide walks you through installing Docker Desktop, setting up Windows Subsy
    Example for CUDA wheel build (ML ops are automatically enabled for wheel builds):
 
    ```bash
-   ./docker_build.sh cuda_wheel_py312_dev
+   ./docker_build.sh cuda_wheel_noble_py312_dev
    ```
 
    Check the log of the build. After the build completes, you will have an ACloudViewer Docker image ready to use, and the artifacts (binaries, documentation and Python package) will have been copied back to the host.

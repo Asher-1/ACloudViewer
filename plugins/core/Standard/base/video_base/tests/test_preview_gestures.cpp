@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <QApplication>
 #include <QMouseEvent>
 
@@ -36,7 +38,7 @@ protected:
 
 }  // namespace
 
-int main(int argc, char** argv) {
+TEST(VideoBasePreviewGestures, ForwardsMousePressReleaseAndModifiers) {
     // Never require a display: the gesture chain is pure event delivery, so
     // all assertions run offscreen on every CI runner.  An externally set
     // platform (e.g. a local xcb session or xvfb-run) is respected so the
@@ -44,7 +46,6 @@ int main(int argc, char** argv) {
     if (!qEnvironmentVariableIsSet("QT_QPA_PLATFORM")) {
         qputenv("QT_QPA_PLATFORM", "offscreen");
     }
-    QApplication app(argc, argv);
     ProbeWidget w;
     w.resize(640, 480);
     w.show();
@@ -52,8 +53,7 @@ int main(int argc, char** argv) {
 
     auto* label = w.label();
     if (!label) {
-        printf("FAIL: no preview label\n");
-        return 1;
+        FAIL() << "no preview label";
     }
 
     const QPointF pos(100, 100);
@@ -70,16 +70,15 @@ int main(int argc, char** argv) {
     printf("presses=%d releases=%d lastPressCtrl=%d\n", w.presses, w.releases,
            int(w.lastPressCtrl));
 
-    if (w.presses != 1 || w.releases != 1) {
-        printf("FAIL: synthetic mouse events never reached the "
-               "onPreviewMouse* hooks (presses=%d releases=%d)\n",
-               w.presses, w.releases);
-        return 2;
-    }
-    if (!w.lastPressCtrl) {
-        printf("FAIL: Ctrl modifier lost in forwarding\n");
-        return 3;
-    }
-    printf("PASS: gesture chain intact\n");
-    return 0;
+    EXPECT_EQ(w.presses, 1);
+    EXPECT_EQ(w.releases, 1);
+    EXPECT_TRUE(w.lastPressCtrl);
+}
+
+int main(int argc, char** argv) {
+    if (!qEnvironmentVariableIsSet("QT_QPA_PLATFORM"))
+        qputenv("QT_QPA_PLATFORM", "offscreen");
+    QApplication app(argc, argv);
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

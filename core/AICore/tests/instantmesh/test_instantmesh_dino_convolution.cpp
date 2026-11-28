@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <QTemporaryDir>
 #include <algorithm>
 #include <cmath>
@@ -245,7 +247,7 @@ bool check(ggml_backend_t backend, ggml_type type) {
 }
 }  // namespace
 
-int main(int argc, char** argv) {
+static int RunScenario(int argc, char** argv) {
     std::string error;
     auto lease = aicore::runtime::acquire_backend_lease(
             argc > 1 ? argv[1] : "cpu", 4, &error);
@@ -267,4 +269,19 @@ int main(int argc, char** argv) {
                            invalidMetadata
                    ? 0
                    : 1;
+}
+
+namespace {
+int scenarioArgc;
+char** scenarioArgv;
+TEST(InstantMeshNumeric, BackendScenario) {
+    EXPECT_EQ(RunScenario(scenarioArgc, scenarioArgv), 0);
+}
+}  // namespace
+
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    scenarioArgc = argc;
+    scenarioArgv = argv;
+    return RUN_ALL_TESTS();
 }

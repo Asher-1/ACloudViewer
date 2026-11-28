@@ -57,7 +57,7 @@
 | Item             | Requirement                                    |
 | ---------------- | ---------------------------------------------- |
 | **OS**           | Ubuntu 20.04 / 22.04 / 24.04                   |
-| **CMake**        | ≥ 3.20                                         |
+| **CMake**        | ≥ 3.24 — `util/install_deps_ubuntu.sh` auto-installs the pinned 3.31.10 pip wheel when the apt one is older (Ubuntu 20.04/22.04 ship 3.16/3.22) |
 | **Python**       | 3.10 – 3.13                                    |
 | **Compiler**     | GCC ≥ 9 or Clang (provided by `install_deps`)  |
 | **AICore GPU (default)** | **Vulkan** — `AICore_USE_VULKAN=ON` on Linux (CMake default); run `util/vulkan/install_vulkan_env.sh` or `install_deps_ubuntu.sh` for build-time SDK/glslc |
@@ -80,7 +80,7 @@
 
 ```bash
 # From the ACloudViewer repository root:
-utils/install_deps_ubuntu.sh assume-yes
+util/install_deps_ubuntu.sh assume-yes
 ```
 
 This script installs all required system packages (`xorg-dev`, `libglu1-mesa-dev`,
@@ -164,7 +164,7 @@ python -m pip install -r \
 #   Ubuntu apt (qtbase5-dev): /usr            (configs at
 #       /usr/lib/<arch>/cmake/Qt5 — NOT /usr/lib/x86_64-linux-gnu/qt5, which
 #       only holds plugins/qml)
-#   Qt online installer:      /opt/Qt/5.15.2/gcc_64  (or /opt/Qt5.14.2/5.14.2/gcc_64)
+#   Qt online installer:      /opt/Qt/5.15.2/gcc_64  (or /opt/Qt5.14.2/5.14.2/gcc_64 or /opt/qt515)
 QT_DIR="/opt/Qt5.14.2/5.14.2/gcc_64"
 
 mkdir -p build_app && cd build_app
@@ -276,6 +276,7 @@ cmake \
     -DPLUGIN_STANDARD_QOPENPCDET=ON \
     -DPLUGIN_STANDARD_QINSTANTMESH=ON \
     -DPLUGIN_STANDARD_QVLXSEEK=ON \
+    -DPLUGIN_STANDARD_QWEVISONE=ON \
     -DPLUGIN_STANDARD_QQUERYSPLAT=ON \
     -DPLUGIN_PYTHON=ON \
     -DBUILD_PYTHON_MODULE=ON \
@@ -381,7 +382,7 @@ python3 -c "import cloudViewer as cv3d; print(cv3d.__version__)"
 The base system tools are still needed even with Conda:
 
 ```bash
-utils/install_deps_ubuntu.sh assume-yes
+util/install_deps_ubuntu.sh assume-yes
 ```
 
 ### B2. Create the Conda environment
@@ -527,6 +528,7 @@ cmake \
     -DPLUGIN_STANDARD_QOPENPCDET=ON \
     -DPLUGIN_STANDARD_QINSTANTMESH=ON \
     -DPLUGIN_STANDARD_QVLXSEEK=ON \
+    -DPLUGIN_STANDARD_QWEVISONE=ON \
     -DPLUGIN_STANDARD_QQUERYSPLAT=ON \
     -DPLUGIN_PYTHON=ON \
     -DBUILD_PYTHON_MODULE=ON \
@@ -650,18 +652,21 @@ gdb python3
 ### Unit tests from CMake
 
 ```bash
-cd build
-cmake -DBUILD_UNIT_TESTS=ON ..
-make -j"$(nproc)"
-./bin/cloudviewer_test/tests
+# From the repository root; retain your configured platform options.
+cmake -S . -B build -DBUILD_UNIT_TESTS=ON
+cmake -DBUILD_DIR=build -DJOBS=4 -P tests/Run.cmake
 ```
+
+The root [tests module](../../../tests/README.md) builds prerequisites and runs every enabled first-party headless suite.
+Use `-DPROFILE=graphics`, `gpu`, `model`, or `all` for explicit capabilities;
+`ci,gpu` selects the union. Test sources stay with their production owner.
 
 ### Python unit tests
 
 ```bash
 pip install pytest
-make install-pip-package
-pytest ../python/test
+cmake --build build --target install-pip-package
+pytest python/test
 ```
 
 ---

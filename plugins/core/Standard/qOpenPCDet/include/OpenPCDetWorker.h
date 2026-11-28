@@ -31,11 +31,12 @@ public:
         QString modelPath;
         QString device = QStringLiteral("auto");
         int threads = 0;
-        /** Detection score threshold override; <= 0 keeps the GGUF-declared
-         *  value (NaN semantics of the C API flattened to "0 = follow
-         *  model" so the value stays settings-file friendly). */
+        /** Detection score threshold. Without thresholdsExplicit, <= 0
+         *  follows the per-checkpoint task default and positive values act
+         *  as explicit overrides; with thresholdsExplicit the value is
+         *  forwarded verbatim (0 = no filtering). */
         float scoreThresh = 0.0f;
-        /** Rotated NMS IoU override; <= 0 keeps the GGUF value. */
+        /** Rotated NMS IoU override; <= 0 keeps the task default. */
         float nmsThresh = 0.0f;
         /** Maximum returned boxes; <= 0 keeps the GGUF value. */
         int maxBoxes = 0;

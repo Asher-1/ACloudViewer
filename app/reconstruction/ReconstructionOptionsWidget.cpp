@@ -99,7 +99,8 @@ MapperBundleAdjustmentOptionsWidget::MapperBundleAdjustmentOptionsWidget(
     AddSection("Local Bundle Adjustment");
     AddOptionInt(&options->mapper->mapper.ba_local_num_images, "num_images");
     AddOptionInt(&options->mapper->ba_local_max_num_iterations,
-                 "max_num_iterations");
+                 "max_num_iterations",
+                 /*min=*/-1);
     AddOptionInt(&options->mapper->ba_local_max_refinements, "max_refinements",
                  1);
     AddOptionDouble(&options->mapper->ba_local_max_refinement_change,
@@ -113,7 +114,8 @@ MapperBundleAdjustmentOptionsWidget::MapperBundleAdjustmentOptionsWidget(
     AddOptionDouble(&options->mapper->ba_global_points_ratio, "points_ratio");
     AddOptionInt(&options->mapper->ba_global_points_freq, "points_freq");
     AddOptionInt(&options->mapper->ba_global_max_num_iterations,
-                 "max_num_iterations");
+                 "max_num_iterations",
+                 /*min=*/-1);
     AddOptionInt(&options->mapper->ba_global_max_refinements, "max_refinements",
                  1);
     AddOptionDouble(&options->mapper->ba_global_max_refinement_change,

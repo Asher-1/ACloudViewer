@@ -21,6 +21,15 @@ using namespace pybind11::literals;
 
 void define_ccDisplayTools(py::module &m)
 {
+    py::enum_<CC_VIEW_ORIENTATION>(m, "CC_VIEW_ORIENTATION")
+        .value("CC_TOP_VIEW", CC_TOP_VIEW)
+        .value("CC_BOTTOM_VIEW", CC_BOTTOM_VIEW)
+        .value("CC_FRONT_VIEW", CC_FRONT_VIEW)
+        .value("CC_BACK_VIEW", CC_BACK_VIEW)
+        .value("CC_LEFT_VIEW", CC_LEFT_VIEW)
+        .value("CC_RIGHT_VIEW", CC_RIGHT_VIEW)
+        .value("CC_ISO_VIEW_1", CC_ISO_VIEW_1)
+        .value("CC_ISO_VIEW_2", CC_ISO_VIEW_2);
     py::class_<ecvDisplayTools, ecvGenericDisplayTools> PyccDisplayTools(m, "ccDisplayTools");
     py::enum_<ecvGenericGLDisplay::PICKING_MODE> PyPickingMode(PyccDisplayTools, "PICKING_MODE");
     py::enum_<ecvGenericGLDisplay::INTERACTION_FLAG> PyInteractionFlag(
@@ -194,12 +203,12 @@ void define_ccDisplayTools(py::module &m)
                     &ecvDisplayTools::GetVisibleObjectsBB,
                     "box"_a,
                     py::arg("display") = nullptr)
-        .def_static(
-            "setView",
-            [](CC_VIEW_ORIENTATION orientation, bool redraw)
-            { ecvDisplayTools::SetView(orientation, redraw); },
-            "orientation"_a,
-            "redraw"_a = true)
+        .def_static("setView",
+                    static_cast<void (*)(CC_VIEW_ORIENTATION, bool)>(&ecvDisplayTools::SetView),
+                    "orientation"_a,
+                    py::arg("redraw").noconvert() = true,
+                    "Change orientation while preserving zoom. Use "
+                    "updateConstellationCenterAndZoom explicitly to fit a bounding box.")
         .def_static("setInteractionMode",
                     static_cast<void (*)(ecvGenericGLDisplay::INTERACTION_FLAGS)>(
                         &ecvDisplayTools::SetInteractionMode),

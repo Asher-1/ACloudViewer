@@ -9,11 +9,11 @@ if(BUILD_UNIT_TESTS)
     target_compile_options(test_qpythonruntime_binding_types PRIVATE -fPIC)
   endif()
   target_link_libraries(test_qpythonruntime_binding_types PRIVATE
-    pybind11::embed CVCoreLib CV_DB_LIB Qt${QT_VERSION_MAJOR}::Core)
+    pybind11::embed CVCoreLib CV_DB_LIB Qt${QT_VERSION_MAJOR}::Core gtest_main)
   target_include_directories(test_qpythonruntime_binding_types PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/../wrapper/cccorelib/src)
   cloudviewer_set_bin_runtime_output_directory(test_qpythonruntime_binding_types)
-  add_test(NAME test_qpythonruntime_binding_types COMMAND test_qpythonruntime_binding_types)
+  cloudviewer_add_test(NAME test_qpythonruntime_binding_types COMMAND test_qpythonruntime_binding_types)
   cloudviewer_set_plugin_test_env(test_qpythonruntime_binding_types)
   if(WIN32)
     # This standalone embedding executable has no adjacent Lib directory.
@@ -29,7 +29,7 @@ if(BUILD_UNIT_TESTS)
     target_compile_options(test_qpythonruntime_plugin_loading PRIVATE -fPIC)
   endif()
   target_link_libraries(test_qpythonruntime_plugin_loading PRIVATE
-    pybind11::embed CVPluginAPI CVPluginStub Qt::Widgets)
+    pybind11::embed CVPluginAPI CVPluginStub Qt::Widgets gtest)
   if(UNIX AND NOT APPLE)
     # The test's dlopen/dlclose plugin probe needs libdl explicitly on the
     # older GNU ld used by the focal lane (DT_NEEDED is not followed for
@@ -39,7 +39,7 @@ if(BUILD_UNIT_TESTS)
       ${CMAKE_DL_LIBS})
   endif()
   cloudviewer_set_bin_runtime_output_directory(test_qpythonruntime_plugin_loading)
-  add_test(NAME test_qpythonruntime_plugin_loading
+  cloudviewer_add_test(NAME test_qpythonruntime_plugin_loading
     COMMAND test_qpythonruntime_plugin_loading $<TARGET_FILE:QPYTHONRUNTIME_PLUGIN>)
   cloudviewer_set_plugin_test_env(test_qpythonruntime_plugin_loading)
   set_property(TEST test_qpythonruntime_plugin_loading APPEND PROPERTY
@@ -48,7 +48,7 @@ if(BUILD_UNIT_TESTS)
   if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_library(QPYTHONRUNTIME_TEST_LIBEDIT NAMES edit libedit.so.2)
     if(QPYTHONRUNTIME_TEST_LIBEDIT)
-      add_test(NAME test_qpythonruntime_readline_isolation
+      cloudviewer_add_test(NAME test_qpythonruntime_readline_isolation
         COMMAND test_qpythonruntime_plugin_loading
           $<TARGET_FILE:QPYTHONRUNTIME_PLUGIN> ${QPYTHONRUNTIME_TEST_LIBEDIT})
       cloudviewer_set_plugin_test_env(test_qpythonruntime_readline_isolation)
@@ -57,13 +57,13 @@ if(BUILD_UNIT_TESTS)
       set_tests_properties(test_qpythonruntime_readline_isolation PROPERTIES TIMEOUT 60)
     endif()
   endif()
-  add_test(NAME test_qpythonruntime_binding_contracts
+  cloudviewer_add_test(NAME test_qpythonruntime_binding_contracts
     COMMAND ${PYTHON_EXECUTABLE} -m pytest -p no:cacheprovider -q
       --acloudviewer_exe=$<TARGET_FILE:ACloudViewer>
       ${CMAKE_CURRENT_LIST_DIR})
   cloudviewer_set_plugin_test_env(test_qpythonruntime_binding_contracts)
   set_tests_properties(test_qpythonruntime_binding_contracts PROPERTIES
-    TIMEOUT 180 RUN_SERIAL TRUE)
+    LABELS "e2e;python" TIMEOUT 180 RUN_SERIAL TRUE)
 
   # Source-identity attribution needs a real libclang tokenizer. It is a
   # provenance check, not a runtime binding contract, so it lives outside the
@@ -79,7 +79,7 @@ if(BUILD_UNIT_TESTS)
     libclang-18.so.1 libclang-17.so.1 libclang-14.so.1 libclang-10.so.1
     HINTS ${_qpythonruntime_llvm_lib_dirs})
   if(QPYTHONRUNTIME_LIBCLANG)
-    add_test(NAME test_qpythonruntime_source_identity
+    cloudviewer_add_test(NAME test_qpythonruntime_source_identity
       COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/../tools/test_source_identity.py)
     set_tests_properties(test_qpythonruntime_source_identity PROPERTIES
       ENVIRONMENT "ACV_LIBCLANG=${QPYTHONRUNTIME_LIBCLANG}"

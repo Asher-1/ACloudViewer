@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.0436,0.3578) scale(1.00364)">
+
+<defs><linearGradient id="back" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#D0E5F6"/><stop offset="1.000" stop-color="#EAF2F8"/></linearGradient>
+<linearGradient id="side" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#9AC1E0"/><stop offset="1.000" stop-color="#2896D3"/></linearGradient>
+<linearGradient id="front" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#9AC1E0"/><stop offset="1.000" stop-color="#789CB7"/></linearGradient></defs>
+<title>Orthographic projection</title>
+  <path d="M 7.5 1.5 L 22.5 1.5 L 22.5 18 L 7.5 18 Z" fill="url(#back)" stroke="#6F6F59"/>
+  <path d="M 1.5 5.25 L 7.5 1.5 L 7.5 18 L 1.5 21.75 Z" fill="url(#side)" stroke="#6F6F59"/>
+  <path d="M 1.5 21.75 L 7.5 18 L 22.5 18 L 16.5 21.75 Z" fill="#9AC1E0" stroke="#6F6F59"/>
+  <path d="M 16.5 5.25 L 22.5 1.5 L 22.5 18 L 16.5 21.75 Z" fill="#D0E5F6" stroke="#6F6F59"/>
+  <path d="M 1.5 5.25 L 7.5 1.5 L 22.5 1.5 L 16.5 5.25 Z" fill="url(#back)" stroke="#6F6F59"/>
+  <path d="M 1.5 5.25 L 16.5 5.25 L 16.5 21.75 L 1.5 21.75 Z" fill="url(#front)" fill-opacity="0.78" stroke="#6F6F59"/>
+  <path d="M 7.5 1.5 L 7.5 18 L 22.5 18" fill="none" stroke-width="0.65"/>
+
+</g>
+</svg>

@@ -27,11 +27,11 @@
 #include <iostream>
 
 GreedyTriangulation::GreedyTriangulation()
-    : BasePclModule(PclModuleDescription(
-              tr("Greedy Triangulation"),
-              tr("Greedy Triangulation"),
-              tr("Greedy Triangulation from clouds"),
-              ":/toolbar/PclAlgorithms/icons/greedy_triangulation.png")),
+    : BasePclModule(
+              PclModuleDescription(tr("Greedy Triangulation"),
+                                   tr("Greedy Triangulation"),
+                                   tr("Greedy Triangulation from clouds"),
+                                   ":/qPCL/icons/pclGreedyTriangulation.svg")),
       m_dialog(nullptr),
       m_normalSearchRadius(10),
       m_knn_radius(10),

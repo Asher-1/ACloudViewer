@@ -308,7 +308,7 @@ QString stripAnswerTags(const QString& answer, bool keepReasoning) {
     // displayed only the first text and merged all obj references into one
     // bracket, contradicting the annotated image. The obj scan mirrors the
     // runtime's remap_obj_tokens tokenizer.
-    QtCompatRegExpWrapper objRe(QStringLiteral("<obj(\\d+)>"));
+    const auto objRe = qtCompatRegExp(QStringLiteral("<obj(\\d+)>"));
     QString cleaned;
     cleaned.reserve(result.size());
     int cursor = 0;
@@ -335,10 +335,9 @@ QString stripAnswerTags(const QString& answer, bool keepReasoning) {
                 result.mid(begin + int(qstrlen("<objects>")),
                            end - begin - int(qstrlen("<objects>")));
         QStringList objList;
-        int objPos = 0;
-        while ((objPos = objRe.indexIn(group, objPos)) != -1) {
-            objList << QStringLiteral("obj%1").arg(objRe.cap(1));
-            objPos += objRe.matchedLength();
+        auto matches = objRe.globalMatch(group);
+        while (matches.hasNext()) {
+            objList << QStringLiteral("obj%1").arg(matches.next().captured(1));
         }
         if (!objList.isEmpty()) {
             cleaned += QStringLiteral(" [%1]").arg(
@@ -350,7 +349,8 @@ QString stripAnswerTags(const QString& answer, bool keepReasoning) {
     appendSegment(result.mid(cursor));
     result = cleaned;
     // Clean up any remaining tags
-    result.remove(QtCompatRegExpWrapper(QStringLiteral("</?[a-z]+>")));
+    qtCompatReplace(result, qtCompatRegExp(QStringLiteral("</?[a-z]+>")),
+                    QString());
     return result.trimmed();
 }
 

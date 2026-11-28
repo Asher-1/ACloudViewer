@@ -83,29 +83,8 @@ ecvFontPropertyWidget::ecvFontPropertyWidget(QWidget* parent)
     // This ensures button height is available for icon size calculation
     QTimer::singleShot(0, this, [this]() { updateColorButtonAppearance(); });
 
-    // Apply ParaView-style toggle button styling for better visual feedback
-    const QString toggleButtonStyle =
-            "QToolButton {"
-            "    border: 1px solid #999;"
-            "    border-radius: 3px;"
-            "    padding: 2px;"
-            "    background-color: #f0f0f0;"
-            "}"
-            "QToolButton:hover {"
-            "    background-color: #e0e0e0;"
-            "    border-color: #666;"
-            "}"
-            "QToolButton:checked {"
-            "    background-color: #c0d0e8;"
-            "    border-color: #4080c0;"
-            "}"
-            "QToolButton:checked:hover {"
-            "    background-color: #a0c0e0;"
-            "}";
-
-    if (ui->boldButton) ui->boldButton->setStyleSheet(toggleButtonStyle);
-    if (ui->italicButton) ui->italicButton->setStyleSheet(toggleButtonStyle);
-    if (ui->shadowButton) ui->shadowButton->setStyleSheet(toggleButtonStyle);
+    // Keep the checked-state semantics and approved icons; the active QStyle
+    // supplies native or Custom toggle chrome, including disabled/focus states.
 
     // Setup justification buttons
     setupHorizontalJustificationButton();

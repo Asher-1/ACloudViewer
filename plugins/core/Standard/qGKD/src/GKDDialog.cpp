@@ -129,15 +129,6 @@ void GKDDialog::setupUi() {
     m_modeList = new QListWidget(this);
     m_modeList->setMinimumWidth(ecvAICoreUi::dpiScaled(120));
     m_modeList->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    m_modeList->setStyleSheet(
-            QStringLiteral("QListWidget { background: palette(base); border: "
-                           "1px solid palette(mid); border-radius: 3px; "
-                           "padding: 2px; }"
-                           "QListWidget::item { padding: 4px 6px; "
-                           "border-radius: 3px; }"
-                           "QListWidget::item:selected { background: "
-                           "palette(highlight); color: "
-                           "palette(highlighted-text); }"));
     m_modeStack = new QStackedWidget(this);
     m_bodySplitter->addWidget(m_modeList);
     m_bodySplitter->addWidget(m_modeStack);

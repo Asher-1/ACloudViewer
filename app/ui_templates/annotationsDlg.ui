@@ -131,7 +131,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/small_save.png</normaloff>:/Resources/images/small_save.png</iconset>
+         <normaloff>:/Resources/images/svg/annotation/annotationSave.svg</normaloff>:/Resources/images/svg/annotation/annotationSave.svg</iconset>
        </property>
       </widget>
      </item>
@@ -171,7 +171,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/add.png</normaloff>:/Resources/images/add.png</iconset>
+         <normaloff>:/Resources/images/svg/main/toolMainImportFromFile.svg</normaloff>:/Resources/images/svg/main/toolMainImportFromFile.svg</iconset>
        </property>
       </widget>
      </item>
@@ -269,11 +269,7 @@
           <property name="statusTip">
            <string>class sets</string>
           </property>
-          <property name="styleSheet">
-           <string notr="true">font: 75 12pt &quot;Microsoft YaHei&quot;;
 
-</string>
-          </property>
           <property name="editable">
            <bool>true</bool>
           </property>
@@ -310,7 +306,7 @@
           </property>
           <property name="icon">
            <iconset resource="../MainWindow.qrc">
-            <normaloff>:/Resources/images/svg/ecv/ecvPlus.svg</normaloff>:/Resources/images/svg/ecv/ecvPlus.svg</iconset>
+            <normaloff>:/Resources/images/svg/main/toolMainPlus.svg</normaloff>:/Resources/images/svg/main/toolMainPlus.svg</iconset>
           </property>
           <property name="checkable">
            <bool>true</bool>
@@ -342,7 +338,7 @@
           </property>
           <property name="icon">
            <iconset resource="../MainWindow.qrc">
-            <normaloff>:/Resources/images/svg/ecv/ecvUnion.svg</normaloff>:/Resources/images/svg/ecv/ecvUnion.svg</iconset>
+            <normaloff>:/Resources/images/svg/main/toolMainUnion.svg</normaloff>:/Resources/images/svg/main/toolMainUnion.svg</iconset>
           </property>
           <property name="checkable">
            <bool>true</bool>
@@ -365,7 +361,7 @@
           </property>
           <property name="icon">
            <iconset resource="../MainWindow.qrc">
-            <normaloff>:/Resources/images/svg/ecv/ecvMinus.svg</normaloff>:/Resources/images/svg/ecv/ecvMinus.svg</iconset>
+            <normaloff>:/Resources/images/svg/main/toolMainMinus.svg</normaloff>:/Resources/images/svg/main/toolMainMinus.svg</iconset>
           </property>
           <property name="shortcut">
            <string/>
@@ -391,7 +387,7 @@
           </property>
           <property name="icon">
            <iconset resource="../MainWindow.qrc">
-            <normaloff>:/Resources/images/ecvIntersection.svg</normaloff>:/Resources/images/ecvIntersection.svg</iconset>
+            <normaloff>:/Resources/images/svg/annotation/annotationIntersectSelections.svg</normaloff>:/Resources/images/svg/annotation/annotationIntersectSelections.svg</iconset>
           </property>
           <property name="shortcut">
            <string/>
@@ -472,7 +468,7 @@
         </property>
         <property name="icon">
          <iconset resource="../MainWindow.qrc">
-          <normaloff>:/Resources/images/svg/view/ecvViewXpos.svg</normaloff>:/Resources/images/svg/view/ecvViewXpos.svg</iconset>
+          <normaloff>:/Resources/images/svg/view/mainViewXpos.svg</normaloff>:/Resources/images/svg/view/mainViewXpos.svg</iconset>
         </property>
        </widget>
       </item>
@@ -486,7 +482,7 @@
         </property>
         <property name="icon">
          <iconset resource="../MainWindow.qrc">
-          <normaloff>:/Resources/images/svg/view/ecvViewXneg.svg</normaloff>:/Resources/images/svg/view/ecvViewXneg.svg</iconset>
+          <normaloff>:/Resources/images/svg/view/mainViewXneg.svg</normaloff>:/Resources/images/svg/view/mainViewXneg.svg</iconset>
         </property>
        </widget>
       </item>
@@ -500,7 +496,7 @@
         </property>
         <property name="icon">
          <iconset resource="../MainWindow.qrc">
-          <normaloff>:/Resources/images/svg/view/ecvViewYpos.svg</normaloff>:/Resources/images/svg/view/ecvViewYpos.svg</iconset>
+          <normaloff>:/Resources/images/svg/view/mainViewYpos.svg</normaloff>:/Resources/images/svg/view/mainViewYpos.svg</iconset>
         </property>
        </widget>
       </item>
@@ -514,7 +510,7 @@
         </property>
         <property name="icon">
          <iconset resource="../MainWindow.qrc">
-          <normaloff>:/Resources/images/svg/view/ecvViewYneg.svg</normaloff>:/Resources/images/svg/view/ecvViewYneg.svg</iconset>
+          <normaloff>:/Resources/images/svg/view/mainViewYneg.svg</normaloff>:/Resources/images/svg/view/mainViewYneg.svg</iconset>
         </property>
        </widget>
       </item>
@@ -528,7 +524,7 @@
         </property>
         <property name="icon">
          <iconset resource="../MainWindow.qrc">
-          <normaloff>:/Resources/images/svg/view/ecvViewZneg.svg</normaloff>:/Resources/images/svg/view/ecvViewZneg.svg</iconset>
+          <normaloff>:/Resources/images/svg/view/mainViewZneg.svg</normaloff>:/Resources/images/svg/view/mainViewZneg.svg</iconset>
         </property>
        </widget>
       </item>
@@ -542,7 +538,7 @@
         </property>
         <property name="icon">
          <iconset resource="../MainWindow.qrc">
-          <normaloff>:/Resources/images/svg/view/ecvViewZpos.svg</normaloff>:/Resources/images/svg/view/ecvViewZpos.svg</iconset>
+          <normaloff>:/Resources/images/svg/view/mainViewZpos.svg</normaloff>:/Resources/images/svg/view/mainViewZpos.svg</iconset>
         </property>
        </widget>
       </item>

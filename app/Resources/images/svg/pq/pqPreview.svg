@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.6171,-1.1429) scale(1.05143)">
+
+<title>Preview selected result</title>  <rect x="2" y="3" width="20" height="17" rx="0.6" fill="#CDCDCD" stroke="#6F6F59"/>  <rect x="4" y="5" width="16" height="12" rx="0.2" fill="#D0E5F6" stroke="#6F6F59"/>  <path d="M 9 7 L 16 11 L 9 15 Z" fill="#72BE44" stroke="#6F6F59"/>  <path d="M 8 22 H 16 M 12 20 V 22" fill="none" stroke-width="1"/>
+
+</g>
+</svg>

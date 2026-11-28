@@ -4,131 +4,88 @@
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-//
-// Unit tests for the shared GGUF open helper (src/common/gguf_file_io.hpp):
-// success in both no_alloc modes, ownership round-trip, and the shared
-// failure-message shape. Runs headless (no GPU, no model assets).
 
-#include <chrono>
-#include <cstdio>
+#include <gtest/gtest.h>
+
+#include <QTemporaryDir>
+#include <memory>
 #include <string>
 
 #include "gguf.h"
 #include "src/common/gguf_file_io.hpp"
 
 namespace {
+using Gguf = std::unique_ptr<gguf_context, decltype(&gguf_free)>;
+using Ggml = std::unique_ptr<ggml_context, decltype(&ggml_free)>;
 
-int failures = 0;
+class GgufFileIo : public testing::Test {
+protected:
+    void SetUp() override {
+        ASSERT_TRUE(directory.isValid());
+        path = directory.filePath("synthetic.gguf").toUtf8().toStdString();
+        Gguf data(gguf_init_empty(), gguf_free);
+        ASSERT_NE(data, nullptr);
+        gguf_set_val_str(data.get(), "general.architecture", "test-arch");
+        gguf_set_val_u32(data.get(), "test.answer", 42);
+        gguf_write_to_file(data.get(), path.c_str(), false);
+    }
 
-void CHECK(bool ok, const char* what) {
-    if (!ok) {
-        std::fprintf(stderr, "gguf_file_io: FAIL %s\n", what);
-        ++failures;
+    QTemporaryDir directory;
+    std::string path;
+};
+
+TEST_F(GgufFileIo, OpensMetadataAndPreservesKeys) {
+    ggml_context* raw = nullptr;
+    std::string error;
+    Gguf data(ggml_common::open_gguf_file(path, true, &raw, "test", &error),
+              gguf_free);
+    Ggml metadata(raw, ggml_free);
+    ASSERT_NE(data, nullptr);
+    ASSERT_NE(metadata, nullptr);
+    EXPECT_TRUE(error.empty());
+    const auto architecture = gguf_find_key(data.get(), "general.architecture");
+    ASSERT_GE(architecture, 0);
+    EXPECT_STREQ(gguf_get_val_str(data.get(), architecture), "test-arch");
+}
+
+TEST_F(GgufFileIo, OpensAllocatedStorageWithoutErrorOutput) {
+    ggml_context* raw = nullptr;
+    Gguf data(ggml_common::open_gguf_file(path, false, &raw, "test", nullptr),
+              gguf_free);
+    Ggml metadata(raw, ggml_free);
+    EXPECT_NE(data, nullptr);
+    EXPECT_NE(metadata, nullptr);
+}
+
+TEST_F(GgufFileIo, RepeatedOpensHaveIndependentOwnership) {
+    for (int round = 0; round < 2; ++round) {
+        SCOPED_TRACE(round);
+        ggml_context* raw = nullptr;
+        Gguf data(
+                ggml_common::open_gguf_file(path, true, &raw, "test", nullptr),
+                gguf_free);
+        Ggml metadata(raw, ggml_free);
+        EXPECT_NE(data, nullptr);
     }
 }
 
-/** Write a minimal valid GGUF file with two scalar KV pairs. */
-std::string write_synthetic_gguf(const std::string& path) {
-    gguf_context* g = gguf_init_empty();
-    if (!g) {
-        std::fprintf(stderr, "gguf_file_io: FAIL gguf_init_empty\n");
-        ++failures;
-        return {};
-    }
-    gguf_set_val_str(g, "general.architecture", "test-arch");
-    gguf_set_val_u32(g, "test.answer", 42);
-    gguf_write_to_file(g, path.c_str(), /*only_meta=*/false);
-    gguf_free(g);
-    return path;
+TEST_F(GgufFileIo, MissingFileReportsTaskAndPath) {
+    const auto missing = path + ".does-not-exist";
+    ggml_context* raw = nullptr;
+    std::string error;
+    Gguf data(ggml_common::open_gguf_file(missing, true, &raw, "some_task",
+                                          &error),
+              gguf_free);
+    Ggml metadata(raw, ggml_free);
+    EXPECT_EQ(data, nullptr);
+    EXPECT_EQ(error, "some_task: failed to open GGUF '" + missing + "'");
 }
 
-int64_t find_key(const gguf_context* g, const char* key) {
-    return gguf_find_key(g, key);
+TEST_F(GgufFileIo, MissingContextUsesGenericErrorPrefix) {
+    std::string error;
+    Gguf data(ggml_common::open_gguf_file(path + ".missing2", true, nullptr,
+                                          nullptr, &error),
+              gguf_free);
+    EXPECT_EQ(error.rfind("gguf: failed to open GGUF '", 0), 0u);
 }
-
 }  // namespace
-
-int main() {
-    // Unique per-process temp path (the test binary runs under ctest next to
-    // other tests; a fixed name could race parallel runs).
-    const auto now = std::chrono::steady_clock::now().time_since_epoch();
-    const std::string path =
-            "aicore_test_gguf_file_io_" +
-            std::to_string(
-                    std::chrono::duration_cast<std::chrono::nanoseconds>(now)
-                            .count()) +
-            ".gguf";
-    std::remove(path.c_str());
-
-    CHECK(write_synthetic_gguf(path) == path, "synthetic gguf written");
-
-    // --- success, no_alloc=true: metadata context only -----------------------
-    {
-        ggml_context* meta = nullptr;
-        std::string error;
-        gguf_context* g = ggml_common::open_gguf_file(path, /*no_alloc=*/true,
-                                                      &meta, "test", &error);
-        CHECK(g != nullptr, "open no_alloc=true returns context");
-        CHECK(meta != nullptr, "open no_alloc=true returns meta context");
-        CHECK(error.empty(), "open success leaves error empty");
-        if (g) {
-            const int64_t arch = find_key(g, "general.architecture");
-            CHECK(arch >= 0 &&
-                          std::string(gguf_get_val_str(g, arch)) == "test-arch",
-                  "KV round-trip through the helper");
-            gguf_free(g);
-        }
-        if (meta) ggml_free(meta);
-    }
-
-    // --- success, no_alloc=false ---------------------------------------------
-    {
-        ggml_context* meta = nullptr;
-        gguf_context* g = ggml_common::open_gguf_file(path, /*no_alloc=*/false,
-                                                      &meta, "test", nullptr);
-        CHECK(g != nullptr && meta != nullptr,
-              "open no_alloc=false succeeds with error=nullptr");
-        if (g) gguf_free(g);
-        if (meta) ggml_free(meta);
-    }
-
-    // --- ownership: two independent opens round-trip and free cleanly --------
-    {
-        for (int round = 0; round < 2; ++round) {
-            ggml_context* meta = nullptr;
-            gguf_context* g = ggml_common::open_gguf_file(
-                    path, /*no_alloc=*/true, &meta, "test", nullptr);
-            CHECK(g != nullptr, "repeat open succeeds");
-            if (g) gguf_free(g);
-            if (meta) ggml_free(meta);
-        }
-    }
-
-    // --- failure: missing file carries the shared message shape --------------
-    {
-        const std::string missing = path + ".does-not-exist";
-        ggml_context* meta = nullptr;
-        std::string error;
-        gguf_context* g = ggml_common::open_gguf_file(
-                missing, /*no_alloc=*/true, &meta, "some_task", &error);
-        CHECK(g == nullptr, "missing file returns nullptr");
-        CHECK(error == "some_task: failed to open GGUF '" + missing + "'",
-              "failure message shape: <context>: failed to open GGUF '<path>'");
-    }
-
-    // --- failure: null context tag falls back to the generic prefix ----------
-    {
-        std::string error;
-        (void)ggml_common::open_gguf_file(path + ".missing2",
-                                          /*no_alloc=*/true, nullptr, nullptr,
-                                          &error);
-        const bool shape = error.rfind("gguf: failed to open GGUF '", 0) == 0;
-        CHECK(shape, "null context tag defaults to the 'gguf' prefix");
-    }
-
-    std::remove(path.c_str());
-
-    std::fprintf(stderr, "gguf_file_io: %s (%d failures)\n",
-                 failures == 0 ? "ok" : "FAILED", failures);
-    return failures == 0 ? 0 : 1;
-}

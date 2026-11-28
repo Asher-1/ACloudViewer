@@ -168,7 +168,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/exportCloud.png</normaloff>:/Resources/images/exportCloud.png</iconset>
+         <normaloff>:/Resources/images/svg/small/ioExportCloud.svg</normaloff>:/Resources/images/svg/small/ioExportCloud.svg</iconset>
        </property>
       </widget>
      </item>

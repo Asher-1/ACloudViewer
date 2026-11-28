@@ -66,7 +66,10 @@ jobs:
         include:
           - CI_CONFIG: cpu-focal
           - CI_CONFIG: cpu-jammy
+          # noble/resolute default to Qt6 (apt 6.4.2 / 6.10.2); docker_build.sh
+          # derives QT_MAJOR from the Ubuntu release (set_qt_vars).
           - CI_CONFIG: cpu-noble
+          - CI_CONFIG: cpu-resolute
     env:
       # Export everything from matrix to be easily used.
       # Docker tag and ccache names must be consistent with docker_build.sh
@@ -321,6 +324,11 @@ jobs:
             RUNNER: ubuntu-22.04
           - CI_CONFIG: cpu-noble
             RUNNER: ubuntu-24.04
+          # GitHub has no ubuntu-26.04 hosted runner; the .run installer
+          # bundles its own Qt6 libs, so the runner release is irrelevant
+          # (runs-on is ubuntu-latest for every cell).
+          - CI_CONFIG: cpu-resolute
+            RUNNER: ubuntu-24.04
 
     steps:
       - name: Checkout ACloudViewer
@@ -394,12 +402,14 @@ jobs:
           xvfb-run -a -s "-screen 0 1280x1024x24" \
             python -m pytest agent-integration/tests/test_integration.py -v -k "level3"
 
-      # The full GUI under the offscreen QPA, as an unattended agent host runs
-      # it. offscreen gets its OpenGL context through GLX, so Xvfb supplies a
-      # display backed by Mesa's software rasterizer; nothing is shown.
-      - name: Level 4 — JSON-RPC tests against an offscreen GUI
+      # The full GUI as an unattended agent host runs it, on Xvfb's X display
+      # (xcb). The offscreen QPA is not usable here: it has no GL, and Qt 6.4's
+      # offscreen backing store segfaults in QPlatformBackingStore::rhiFlush as
+      # soon as a QOpenGLWidget is on screen (Qt >= 6.5 only warns). LIBGL_
+      # ALWAYS_SOFTWARE keeps the context on Mesa's software rasterizer.
+      - name: Level 4 — JSON-RPC tests against the GUI on Xvfb
         env:
-          QT_QPA_PLATFORM: offscreen
+          QT_QPA_PLATFORM: xcb
           LIBGL_ALWAYS_SOFTWARE: "1"
           ACV_RPC_PORT: "6001"
           ACV_RPC_URL: ws://127.0.0.1:6001
@@ -419,7 +429,7 @@ jobs:
             sleep 2
           done
           if [ "$ready" != 1 ]; then
-            echo "::error::Offscreen GUI did not serve JSON-RPC on $ACV_RPC_URL"
+            echo "::error::GUI did not serve JSON-RPC on $ACV_RPC_URL"
             tail -n 100 "$GUI_LOG"
             kill -- -"$GUI_PID" 2>/dev/null || true
             exit 1
@@ -427,7 +437,7 @@ jobs:
           status=0
           python -m pytest agent-integration/tests/test_integration.py -v -k "level4" || status=$?
           if ! kill -0 "$GUI_PID" 2>/dev/null; then
-            echo "::error::Offscreen GUI exited during Level 4"
+            echo "::error::GUI exited during Level 4"
             tail -n 100 "$GUI_LOG"
             status=1
           fi
@@ -435,22 +445,8 @@ jobs:
           exit "$status"
 
   # ---------------------------------------------------------------------------
-  # AICore tiered tests — fast lane for hot-path changes
-  #
-  # The AICore CTest suite is already tiered (core/AICore/tests/CMakeLists.txt):
-  #   fast  — no GGUF assets            aicore-fast-tests     (ctest -LE "model|gpu|e2e")
-  #   capi  — public C API contract     aicore-contract-tests (ctest -L capi -LE "model|gpu|e2e")
-  #   model — needs GGUF assets         AICORE_TEST_ENABLE_MODEL_TESTS=ON + asset root
-  #
-  # The docker build/test chain never runs ctest, so this job is the only
-  # Ubuntu lane exercising the tiers. It activates when a hot-path file
-  # changed (PR/push), or unconditionally on release / workflow_dispatch, so
-  # unrelated PRs stay cheap and the full docker build is untouched.
-  #
-  # model tier reachability: hosted runners have neither a durable model cache
-  # nor a GPU, so model tests are OFF by default (ENV{CI}). When enabled
-  # without assets they skip (SKIP_RETURN_CODE 77) — reported as skipped, not
-  # failed — so enabling them can never introduce an unreachable check.
+  # Reduced CPU configuration, using the same registry-driven headless gate
+  # as the full app. Model validation remains an explicit opt-in capability.
   aicore-tests:
     name: AICore tiered tests
     runs-on: ubuntu-latest
@@ -471,20 +467,15 @@ jobs:
         with:
           filters: |
             aicore:
-              - 'core/AICore/**'
-              - 'libs/CVPluginAPI/**'
-              - 'plugins/core/Standard/video_base/**'
-              - 'plugins/core/Standard/qDA3/**'
-              - 'plugins/core/Standard/qFreeSplatter/**'
-              - 'plugins/core/Standard/qDeepLSD/**'
-              - 'plugins/core/Standard/qFaceDetect/**'
-              - 'plugins/core/Standard/qLightGlue/**'
-              - 'plugins/core/Standard/qRFDetr/**'
-              - 'plugins/core/Standard/qRMBG/**'
-              - 'plugins/core/Standard/qYOLO/**'
-              - '3rdparty/ggml/**'
-              - '3rdparty/llama/**'
-              - 'cmake/AICoreOptions.cmake'
+              - 'core/**'
+              - 'libs/**'
+              - 'app/**'
+              - 'plugins/**'
+              - 'tests/**'
+              - '3rdparty/**'
+              - 'cmake/**'
+              - 'util/**'
+              - 'CMakeLists.txt'
               - '.github/workflows/ubuntu.yml'
       - name: Gate (non-PR/push events always run)
         id: gate
@@ -590,23 +581,9 @@ jobs:
             -DAICore_USE_VULKAN=OFF \
             -DAICore_USE_CUDA=OFF \
             $MODEL_ARGS
-      - name: Build + run fast tier (no GGUF assets)
+      - name: Run unified headless test gate
         if: steps.gate.outputs.run == 'true'
-        run: |
-          cmake --build build-aicore --target aicore-fast-tests -j2
-      - name: Build + run capi contract tier
-        if: steps.gate.outputs.run == 'true'
-        run: |
-          cmake --build build-aicore --target aicore-contract-tests -j2
-      # Shared AICore UI helper (ecvAICoreUiHelper.h) regression test:
-      # compact spacing/margins, form-grid stretch pattern and DPI scaling
-      # invariants used by every AICore plugin dialog.  Runs headless.
-      - name: Build + run shared UI helper tests
-        if: steps.gate.outputs.run == 'true'
-        run: |
-          cmake --build build-aicore --target test_cvpluginapi_ui_helpers -j2
-          ctest --test-dir build-aicore -R test_cvpluginapi_ui_helpers --output-on-failure
-      - name: Build + run model tier (workflow_dispatch; skips without assets)
+        run: cmake -DBUILD_DIR=build-aicore -DJOBS=2 -P tests/Run.cmake
+      - name: Run unified model profile (workflow_dispatch; skips without assets)
         if: steps.gate.outputs.run == 'true' && github.event.inputs.aicore_model_tests == 'true'
-        run: |
-          cmake --build build-aicore --target aicore-model-tests -j2
+        run: cmake -DBUILD_DIR=build-aicore -DJOBS=2 -DPROFILE=model -P tests/Run.cmake

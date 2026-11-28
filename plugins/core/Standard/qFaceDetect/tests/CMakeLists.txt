@@ -1,5 +1,5 @@
 if(NOT TARGET Qt::Core)
-    find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui Sql Test)
+    find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui Sql)
 endif()
 
 add_executable(test_qfacedetect_embed_helpers test_embed_helpers.cpp
@@ -16,7 +16,7 @@ target_include_directories(test_qfacedetect_embed_helpers PRIVATE
 find_package(Threads REQUIRED)
 
 target_link_libraries(test_qfacedetect_embed_helpers PRIVATE
-    CVCoreLib
+    CVCoreLib gtest
     AICore
     Qt${QT_VERSION_MAJOR}::Core
     Qt${QT_VERSION_MAJOR}::Gui
@@ -28,9 +28,11 @@ if(NOT MSVC)
     target_compile_options(test_qfacedetect_embed_helpers PRIVATE -Wall -Wextra -fPIC)
     set_target_properties(test_qfacedetect_embed_helpers PROPERTIES
         POSITION_INDEPENDENT_CODE ON)
-    target_link_options(test_qfacedetect_embed_helpers PRIVATE "-no-pie")
+    if(NOT APPLE)
+        target_link_options(test_qfacedetect_embed_helpers PRIVATE "-no-pie")
+    endif()
 endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_qfacedetect_embed_helpers)
-add_test(NAME test_qfacedetect_embed_helpers COMMAND test_qfacedetect_embed_helpers)
+cloudviewer_add_test(NAME test_qfacedetect_embed_helpers COMMAND test_qfacedetect_embed_helpers)
 cloudviewer_set_plugin_test_env(test_qfacedetect_embed_helpers)

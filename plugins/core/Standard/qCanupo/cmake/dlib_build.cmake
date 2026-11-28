@@ -7,6 +7,8 @@ endif()
 
 set(lib_name dlib)
 
+find_package(Git QUIET REQUIRED)
+
 ExternalProject_Add(ext_dlib
     PREFIX dlib
     URL https://github.com/davisking/dlib/archive/refs/tags/v19.22.tar.gz
@@ -15,6 +17,17 @@ ExternalProject_Add(ext_dlib
     UPDATE_COMMAND ""
     # Fix dlib CMake version issues with cmake 4.x.
     PATCH_COMMAND ${CMAKE_COMMAND} -DINPUT_DIR=<SOURCE_DIR> -P ${CMAKE_CURRENT_LIST_DIR}/fix_all_cmake_minimum.cmake
+        # dlib 19.22 uses (u)int8_t in serialize.h and vectorstream.h without
+        # including <cstdint>; GCC 15's libstdc++ no longer pulls it in
+        # transitively. Patch the two headers instead of force-including
+        # <cstdint> via CMAKE_CXX_FLAGS: that flag also reaches nvcc (which
+        # expands -include twice and breaks glibc's __fsid_t typedef) and MSVC
+        # (which rejects -include outright). A source include is portable.
+        COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR> ${GIT_EXECUTABLE} init
+        COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR> ${GIT_EXECUTABLE} add -A
+        COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR> ${GIT_EXECUTABLE} apply
+            --ignore-space-change --ignore-whitespace
+            ${CMAKE_CURRENT_LIST_DIR}/fix-cstdint-includes.patch
     CMAKE_ARGS
         -DCMAKE_POLICY_VERSION_MINIMUM=3.10
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>)

@@ -31,7 +31,7 @@ MarchingCubeReconstruction::MarchingCubeReconstruction()
               tr("Marching Cube"),
               tr("Marching Cube Reconstruction"),
               tr("Marching Cube Reconstruction from clouds"),
-              ":/toolbar/PclAlgorithms/icons/MarchingCubeReconstruction.png")),
+              ":/qPCL/icons/pclMarchingCubes.svg")),
       m_dialog(nullptr),
       m_normalSearchRadius(0),
       m_knn_radius(20),

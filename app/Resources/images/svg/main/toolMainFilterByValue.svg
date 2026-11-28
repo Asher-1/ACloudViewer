@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(0.2761,1.1554) scale(0.97699)">
+
+<defs><linearGradient id="ramp" x1="0" y1="0" x2="1" y2="0"><stop offset="0.00" stop-color="#D0E5F6"/><stop offset="0.18" stop-color="#9AC1E0"/><stop offset="0.34" stop-color="#2896D3"/><stop offset="0.50" stop-color="#A7D28C"/><stop offset="0.64" stop-color="#72BE44"/><stop offset="0.80" stop-color="#F3C017"/><stop offset="0.90" stop-color="#C1A561"/><stop offset="1.00" stop-color="#C4813E"/></linearGradient></defs>
+  <rect x="1.2" y="9.2" width="21.60" height="7.40" rx="0.6" fill="url(#ramp)" stroke="#6F6F59" stroke-width="0.85"/>
+  <path d="M 2.10 9.20 L 2.10 16.60" fill="none" stroke="#6F6F59" stroke-width="0.95"/>
+  <path d="M 21.90 9.20 L 21.90 16.60" fill="none" stroke="#6F6F59" stroke-width="0.95"/>
+  <path d="M 2.10 2.72 L 14.41 2.72" fill="none" stroke="#6F6F59" stroke-width="0.6" stroke-linecap="round"/>
+  <path d="M 3.25 6.20 L 3.25 4.04 Q 4.14 2.76 5.03 4.04 L 5.03 6.20 M 5.03 4.04 Q 5.92 2.76 6.81 4.04 L 6.81 6.20" fill="none" stroke="#6F6F59" stroke-width="0.76" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 8.92 4.04 L 8.92 6.20" fill="none" stroke="#6F6F59" stroke-width="0.76" stroke-linecap="round"/>
+  <circle cx="8.92" cy="1.67" r="0.40" fill="#6F6F59" stroke="none"/>
+  <path d="M 11.03 6.20 L 11.03 4.04 Q 12.72 2.76 14.41 4.04 L 14.41 6.20" fill="none" stroke="#6F6F59" stroke-width="0.76" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 2.10 6.15 L 2.10 9.20" fill="none" stroke="#2896D3" stroke-width="0.7" stroke-linecap="butt"/>
+  <path d="M 21.90 16.60 L 21.90 20.05" fill="none" stroke="#2896D3" stroke-width="0.7" stroke-linecap="butt"/>
+  <path d="M 7.06 20.00 L 7.06 17.84 Q 7.95 16.56 8.84 17.84 L 8.84 20.00 M 8.84 17.84 Q 9.73 16.56 10.62 17.84 L 10.62 20.00" fill="none" stroke="#6F6F59" stroke-width="0.76" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 15.35 18.17 Q 13.98 17.01 13.06 18.46 Q 12.53 19.61 13.81 20.00 L 15.35 20.00 L 15.35 17.82" fill="none" stroke="#6F6F59" stroke-width="0.76" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 17.66 18.17 L 20.75 20.00 M 20.75 18.17 L 17.66 20.00" fill="none" stroke="#6F6F59" stroke-width="0.76" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 7.06 20.68 L 21.90 20.68" fill="none" stroke="#6F6F59" stroke-width="0.6" stroke-linecap="round"/>
+
+</g>
+</svg>

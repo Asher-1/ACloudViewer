@@ -32,14 +32,12 @@
 #include <QCursor>
 #include <QObject>
 #include <QPointer>
-#include <QShortcut>
 #include <QTimer>
 #else
 #include <QtWidgets/QAction>
 #include <QtGui/QCursor>
 #include <QtCore/QObject>
 #include <QtCore/QPointer>
-#include <QtWidgets/QShortcut>
 #include <QtCore/QTimer>
 #endif
 // clang-format on
@@ -54,6 +52,7 @@
 
 // Forward declarations
 class QActionGroup;
+class ecvModalShortcut;
 class ecvGenericVisualizer3D;
 class cvSelectionPipeline;
 class cvSelectionHighlighter;
@@ -646,7 +645,7 @@ private:
 
     // Tooltip state
     QString m_plainTooltipText;
-    QShortcut* m_copyTooltipShortcut = nullptr;
+    QPointer<ecvModalShortcut> m_copyTooltipShortcut;
 
     // Current highlight state (for interactive modes)
     vtkIdType m_hoveredId = -1;

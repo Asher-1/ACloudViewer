@@ -401,11 +401,11 @@ bool CameraRecorder::loadPath(const std::string& pathFileName, int w, int h) {
         return false;
     }
     _ow = w, _oh = h;
-    if (boost::filesystem::extension(pathFileName) == ".out")
+    if (boost::filesystem::path(pathFileName).extension() == ".out")
         loadBundle(pathFileName, w, h);
-    else if (boost::filesystem::extension(pathFileName) == ".lookat")
+    else if (boost::filesystem::path(pathFileName).extension() == ".lookat")
         loadLookat(pathFileName, w, h);
-    else if (boost::filesystem::extension(pathFileName) == ".txt")
+    else if (boost::filesystem::path(pathFileName).extension() == ".txt")
         loadColmap(pathFileName, w, h);
     else
         load(pathFileName);

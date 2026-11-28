@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(0.2638,-1.1286) scale(0.99459)">
+
+<defs><linearGradient id="bucket" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#E0E0E0"/><stop offset="0.400" stop-color="#FAFAF6"/><stop offset="1.000" stop-color="#C1A561"/></linearGradient></defs>
+<title>Set background color — paint bucket</title>
+  <path d="M 2 9 C 0 7 2 5 4 6 L 7 8 Z" fill="#72BE44" stroke="#6F6F59"/>
+  <path d="M 18 5 C 22 2 24 6 21 9 Z" fill="#2896D3" stroke="#6F6F59"/>
+  <path d="M 2 21 C 3 18 10 18 11 21 C 10 23 3 23 2 21 Z" fill="#C4813E" stroke="#6F6F59"/>
+  <path d="M 18 16 C 21 17 23 20 21 22 C 18 23 16 20 18 16 Z" fill="#F3C017" stroke="#6F6F59"/>
+<g transform="rotate(-35 12 12)">
+  <path d="M 7.5 9 C 4.5 2.5 18 1 16.5 9" fill="none" stroke-width="0.85"/>
+  <path d="M 7 7 H 17 L 16 18 C 15 21 9 21 8 18 Z" fill="url(#bucket)" stroke="#6F6F59"/>
+<ellipse cx="12" cy="7" rx="5" ry="2" fill="#F3C017" stroke="#6F6F59"/>
+</g>
+
+</g>
+</svg>

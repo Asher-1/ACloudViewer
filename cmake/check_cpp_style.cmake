@@ -49,6 +49,7 @@ endmacro()
 
 # Note: also modify CPP_FORMAT_DIRS in check_style.py.
 set(CPP_FORMAT_DIRS
+    tests
     core
 	libs
 	app

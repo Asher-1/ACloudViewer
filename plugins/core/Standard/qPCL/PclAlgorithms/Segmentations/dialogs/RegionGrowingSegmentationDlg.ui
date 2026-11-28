@@ -21,7 +21,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../../../qPCL.qrc">
-    <normaloff>:/toolbar/PclAlgorithms/icons/Regiongrowing.png</normaloff>:/toolbar/PclAlgorithms/icons/Regiongrowing.png</iconset>
+    <normaloff>:/qPCL/icons/pclRegionGrowing.svg</normaloff>:/qPCL/icons/pclRegionGrowing.svg</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>

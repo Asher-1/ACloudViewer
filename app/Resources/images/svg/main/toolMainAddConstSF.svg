@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.0436,-0.0436) scale(1.00364)">
+
+<defs><linearGradient id="add" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#A7D28C"/><stop offset="0.480" stop-color="#72BE44"/><stop offset="1.000" stop-color="#4E8C2E"/></linearGradient></defs>
+<title>Add constant scalar field</title>
+  <path d="M 9.1 1.5 H 14.9 V 9.1 H 22.5 V 14.9 H 14.9 V 22.5 H 9.1 V 14.9 H 1.5 V 9.1 H 9.1 Z" fill="url(#add)" stroke="#6F6F59" stroke-width="0.85"/>
+
+</g>
+</svg>

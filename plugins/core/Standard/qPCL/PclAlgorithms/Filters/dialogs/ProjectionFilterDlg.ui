@@ -21,7 +21,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../../../qPCL.qrc">
-    <normaloff>:/toolbar/PclAlgorithms/icons/filter_projection.png</normaloff>:/toolbar/PclAlgorithms/icons/filter_projection.png</iconset>
+    <normaloff>:/qPCL/icons/pclProjectionFilter.svg</normaloff>:/qPCL/icons/pclProjectionFilter.svg</iconset>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
    <item row="1" column="0">

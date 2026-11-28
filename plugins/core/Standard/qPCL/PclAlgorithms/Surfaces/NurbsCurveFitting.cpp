@@ -30,11 +30,11 @@
 #include <iostream>
 
 NurbsCurveFitting::NurbsCurveFitting()
-    : BasePclModule(PclModuleDescription(
-              tr("BSpline Curve Fitting"),
-              tr("BSpline Curve Fitting"),
-              tr("BSpline Curve Fitting from clouds"),
-              ":/toolbar/PclAlgorithms/icons/bspline_curve.png")),
+    : BasePclModule(
+              PclModuleDescription(tr("BSpline Curve Fitting"),
+                                   tr("BSpline Curve Fitting"),
+                                   tr("BSpline Curve Fitting from clouds"),
+                                   ":/qPCL/icons/pclBSplineCurve.svg")),
       m_dialog(0),
       m_order(3),
       m_useVoxelGrid(false),

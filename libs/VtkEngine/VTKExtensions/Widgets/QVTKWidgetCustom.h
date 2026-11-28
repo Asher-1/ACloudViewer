@@ -54,6 +54,7 @@ VTK_MODULE_INIT(vtkInteractionStyle);
  * conversion.
  */
 
+class QAction;
 class QMainWindow;
 class ccPolyline;
 class vtkGLView;
@@ -104,13 +105,7 @@ public:
                  bool useVBO = false);
 
     void setCustomInteractorStyle(
-            VTKExtensions::vtkCustomInteractorStyle* style) {
-        m_customStyle = style;
-    }
-
-    /// Reload VTK shortcut mappings from QSettings.
-    /// Call after the user edits VTK shortcuts in the dialog.
-    static void reloadVtkShortcutMap();
+            VTKExtensions::vtkCustomInteractorStyle* style);
 
     void setMultiViewports(bool multi = true);
     bool multiViewports() const;
@@ -392,6 +387,7 @@ private:
     VtkWidgetPrivate* d_ptr;
 
     VTKExtensions::vtkCustomInteractorStyle* m_customStyle = nullptr;
+    QList<QAction*> m_vtkShortcutActions;
 
     // Timer for delayed 2D label update after wheel zoom
     QTimer* m_wheelZoomUpdateTimer = nullptr;

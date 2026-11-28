@@ -14,6 +14,8 @@
 // The RNG differs from numpy's (the checks are tolerance-based on recovered
 // quantities, not bitstream-matched), so this validates the C++ port to the
 // same correctness bar the Python prototype meets, independently of numpy.
+#include <gtest/gtest.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -29,18 +31,17 @@ using fsla::Mat3;
 using fsla::Mat4;
 using fsla::Vec3;
 
-static int failures = 0;
-static std::mt19937_64 RNG(12345);
-
-static void check(const char* name, bool cond, const char* detail = "") {
-    std::printf("  [%s] %s%s%s\n", cond ? "PASS" : "FAIL", name,
-                detail[0] ? "  " : "", detail);
-    if (!cond) failures++;
-}
+class GaussianPose : public ::testing::Test {
+protected:
+    // Each scenario owns its random stream so filtering/repeating/shuffling
+    // GoogleTest cases does not change its synthetic geometry.
+    std::mt19937_64 RNG{12345};
+    Mat3 rand_rotation();
+};
 
 // --- helpers ---------------------------------------------------------------
 
-static Mat3 rand_rotation() {
+Mat3 GaussianPose::rand_rotation() {
     std::normal_distribution<double> g(0, 1);
     Vec3 ax = {g(RNG), g(RNG), g(RNG)};
     double n = std::sqrt(ax[0] * ax[0] + ax[1] * ax[1] + ax[2] * ax[2]);
@@ -97,8 +98,7 @@ static Vec3 apply_mat4(const Mat4& M, const Vec3& p) {
 // Coordinate-system normalization (the scale question)
 // ===========================================================================
 
-static void test_similarity_roundtrip() {
-    std::printf("test_similarity_roundtrip\n");
+TEST_F(GaussianPose, SimilarityRoundtrip) {
     const int N = 200;
     std::normal_distribution<double> g(0, 1);
     std::vector<double> X(3 * N), Y(3 * N);
@@ -115,19 +115,19 @@ static void test_similarity_roundtrip() {
     Sim3 T_ = fit_similarity(X.data(), Y.data(), N);
     char buf[64];
     std::snprintf(buf, sizeof buf, "%.12f vs %g", T_.s, s_t);
-    check("scale", std::fabs(T_.s - s_t) < 1e-9, buf);
-    check("rotation", rot_angle(mul(T_.R, T(R_t))) < 1e-7);
-    check("translation",
-          std::sqrt((T_.t[0] - t_t[0]) * (T_.t[0] - t_t[0]) +
-                    (T_.t[1] - t_t[1]) * (T_.t[1] - t_t[1]) +
-                    (T_.t[2] - t_t[2]) * (T_.t[2] - t_t[2])) < 1e-7);
+    EXPECT_LT(std::fabs(T_.s - s_t), 1e-9) << "scale" << ": " << buf;
+    EXPECT_LT(rot_angle(mul(T_.R, T(R_t))), 1e-7) << "rotation";
+    EXPECT_LT(std::sqrt((T_.t[0] - t_t[0]) * (T_.t[0] - t_t[0]) +
+                        (T_.t[1] - t_t[1]) * (T_.t[1] - t_t[1]) +
+                        (T_.t[2] - t_t[2]) * (T_.t[2] - t_t[2])),
+              1e-7)
+            << "translation";
     std::vector<double> Yp(3 * N);
     apply_sim_arr(T_.s, T_.R, T_.t, X.data(), N, Yp.data());
-    check("residual~0", rms3(Yp.data(), Y.data(), N) < 1e-9);
+    EXPECT_LT(rms3(Yp.data(), Y.data(), N), 1e-9) << "residual~0";
 }
 
-static void test_scale_detection() {
-    std::printf("test_scale_detection\n");
+TEST_F(GaussianPose, ScaleDetection) {
     const int N = 300;
     std::normal_distribution<double> g(0, 1);
     std::vector<double> X(3 * N), Y(3 * N);
@@ -136,14 +136,14 @@ static void test_scale_detection() {
     apply_sim_arr(s_t, rand_rotation(), {1.0, 2.0, -3.0}, X.data(), N,
                   Y.data());
     Ladder L = diagnose(X.data(), Y.data(), N);
-    check("recovered scale", std::fabs(L.scale - s_t) < 1e-8);
-    check("rigid residual large", L.rigid / L.scene > 0.1);
-    check("similarity residual ~0", L.similarity / L.scene < 1e-9);
-    check("verdict needs_scale", L.verdict == "needs_scale", L.verdict.c_str());
+    EXPECT_LT(std::fabs(L.scale - s_t), 1e-8) << "recovered scale";
+    EXPECT_GT(L.rigid / L.scene, 0.1) << "rigid residual large";
+    EXPECT_LT(L.similarity / L.scene, 1e-9) << "similarity residual ~0";
+    EXPECT_EQ(L.verdict, "needs_scale")
+            << "verdict needs_scale" << ": " << L.verdict.c_str();
 }
 
-static void test_nonlinear_detection() {
-    std::printf("test_nonlinear_detection\n");
+TEST_F(GaussianPose, NonlinearDetection) {
     const int N = 400;
     std::normal_distribution<double> g(0, 1);
     std::vector<double> X(3 * N);
@@ -164,10 +164,10 @@ static void test_nonlinear_detection() {
         Yaff[3 * i + 2] = Ax[2] + 2.0;
     }
     Ladder La = diagnose(X.data(), Yaff.data(), N);
-    check("affine: similarity fails", La.similarity / La.scene > 1e-3);
-    check("affine: affine fits", La.affine / La.scene < 1e-9);
-    check("affine: verdict needs_affine", La.verdict == "needs_affine",
-          La.verdict.c_str());
+    EXPECT_GT(La.similarity / La.scene, 1e-3) << "affine: similarity fails";
+    EXPECT_LT(La.affine / La.scene, 1e-9) << "affine: affine fits";
+    EXPECT_EQ(La.verdict, "needs_affine")
+            << "affine: verdict needs_affine" << ": " << La.verdict.c_str();
 
     // (b) depth-quadratic (focal-error fingerprint)
     double zmean = 0;
@@ -183,14 +183,13 @@ static void test_nonlinear_detection() {
         Ynl[3 * i] *= (1.0 + 0.15 * (Z - zmean) * (Z - zmean) / zvar);
     }
     Ladder Ln = diagnose(X.data(), Ynl.data(), N);
-    check("nonlinear: affine fails", Ln.affine / Ln.scene > 1e-3);
-    check("nonlinear: verdict nonlinear", Ln.verdict == "nonlinear",
-          Ln.verdict.c_str());
-    check("nonlinear: depth-correlated residual", Ln.structured);
+    EXPECT_GT(Ln.affine / Ln.scene, 1e-3) << "nonlinear: affine fails";
+    EXPECT_EQ(Ln.verdict, "nonlinear")
+            << "nonlinear: verdict nonlinear" << ": " << Ln.verdict.c_str();
+    EXPECT_TRUE(Ln.structured) << "nonlinear: depth-correlated residual";
 }
 
-static void test_outlier_robustness() {
-    std::printf("test_outlier_robustness\n");
+TEST_F(GaussianPose, OutlierRobustness) {
     const int N = 400;
     std::normal_distribution<double> g(0, 1);
     std::vector<double> X(3 * N), Y(3 * N);
@@ -211,35 +210,34 @@ static void test_outlier_robustness() {
     }
     std::vector<char> inl;
     Sim3 T_ = fit_similarity_ransac(X.data(), Y.data(), N, 0.05, 300, inl);
-    check("scale recovered", std::fabs(T_.s - s_t) < 1e-3);
-    check("rotation recovered", rot_angle(mul(T_.R, T(R_t))) < 0.1);
-    check("translation recovered",
-          std::sqrt((T_.t[0] - t_t[0]) * (T_.t[0] - t_t[0]) +
-                    (T_.t[1] - t_t[1]) * (T_.t[1] - t_t[1]) +
-                    (T_.t[2] - t_t[2]) * (T_.t[2] - t_t[2])) < 1e-2);
+    EXPECT_LT(std::fabs(T_.s - s_t), 1e-3) << "scale recovered";
+    EXPECT_LT(rot_angle(mul(T_.R, T(R_t))), 0.1) << "rotation recovered";
+    EXPECT_LT(std::sqrt((T_.t[0] - t_t[0]) * (T_.t[0] - t_t[0]) +
+                        (T_.t[1] - t_t[1]) * (T_.t[1] - t_t[1]) +
+                        (T_.t[2] - t_t[2]) * (T_.t[2] - t_t[2])),
+              1e-2)
+            << "translation recovered";
+    ASSERT_EQ(inl.size(), oidx.size());
     int rejected = 0;
     for (int k = 0; k < n_out; k++)
         if (!inl[oidx[k]]) rejected++;
-    check("outliers excluded", rejected > 0.9 * n_out);
+    EXPECT_GT(rejected, 0.9 * n_out) << "outliers excluded";
 }
 
-static void test_loop_correction() {
-    std::printf("test_loop_correction\n");
+TEST_F(GaussianPose, LoopCorrection) {
     Mat3 R = rand_rotation();
     Mat4 M = sim_matrix({1.07, R, {0.3, -0.2, 0.1}});
     Mat4 m0 = sim_frac_power(M, 0.0), m1 = sim_frac_power(M, 1.0),
          mh = sim_frac_power(M, 0.5);
-    bool id_ok = true, m1_ok = true;
+    const Mat4 identity = fsla::mat4_identity();
+    const Mat4 mh2 = fsla::mat4_mul(mh, mh);
     for (int i = 0; i < 16; i++) {
-        id_ok &= std::fabs(m0.a[i] - fsla::mat4_identity().a[i]) < 1e-9;
-        m1_ok &= std::fabs(m1.a[i] - M.a[i]) < 1e-9;
+        EXPECT_LT(std::fabs(m0.a[i] - identity.a[i]), 1e-9)
+                << "M^0 element " << i;
+        EXPECT_LT(std::fabs(m1.a[i] - M.a[i]), 1e-9) << "M^1 element " << i;
+        EXPECT_LT(std::fabs(mh2.a[i] - M.a[i]), 1e-9)
+                << "(M^.5)^2 element " << i;
     }
-    Mat4 mh2 = fsla::mat4_mul(mh, mh);
-    bool half_ok = true;
-    for (int i = 0; i < 16; i++) half_ok &= std::fabs(mh2.a[i] - M.a[i]) < 1e-9;
-    check("M^0 == I", id_ok);
-    check("M^1 == M", m1_ok);
-    check("(M^.5)^2 == M", half_ok);
 
     const int n = 12;
     Mat4 D = sim_matrix({1.15, R, {0.4, -0.2, 0.1}});
@@ -259,14 +257,14 @@ static void test_loop_correction() {
             post += (corr[k][c] - clean[k][c]) * (corr[k][c] - clean[k][c]);
         }
     }
-    check("drift present before", std::sqrt(pre / (n + 1)) > 0.1);
+    EXPECT_GT(std::sqrt(pre / (n + 1)), 0.1) << "drift present before";
     char buf[64];
     std::snprintf(buf, sizeof buf, "ATE %.1e", std::sqrt(post / (n + 1)));
-    check("recovers clean loop", std::sqrt(post / (n + 1)) < 1e-9, buf);
+    EXPECT_LT(std::sqrt(post / (n + 1)), 1e-9)
+            << "recovers clean loop" << ": " << buf;
 }
 
-static void test_loop_closure() {
-    std::printf("test_loop_closure\n");
+TEST_F(GaussianPose, LoopClosure) {
     std::uniform_real_distribution<double> us(0.8, 1.2);
     std::normal_distribution<double> g(0, 1);
     std::vector<Sim3> links;
@@ -280,13 +278,14 @@ static void test_loop_closure() {
     // deviation from I is at the fp roundoff level — scale_err and trans are
     // exactly 0 here, so 1e-5 deg cleanly separates "closed" from any real
     // drift.
-    check("closed loop ~ identity",
-          e.scale_err < 1e-9 && e.rot_deg < 1e-5 && e.trans < 1e-9);
+    EXPECT_LT(e.scale_err, 1e-9) << "closed loop scale";
+    EXPECT_LT(e.rot_deg, 1e-5) << "closed loop rotation";
+    EXPECT_LT(e.trans, 1e-9) << "closed loop translation";
     std::vector<Sim3> bad = closed;
     bad[0].s *= 1.12;
     LoopError e2 = loop_closure_error(bad);
-    check("scale drift detected",
-          std::fabs(e2.scale_err - std::log(1.12)) < 1e-9);
+    EXPECT_LT(std::fabs(e2.scale_err - std::log(1.12)), 1e-9)
+            << "scale drift detected";
 }
 
 // ===========================================================================
@@ -322,8 +321,7 @@ static void project(const double* Pw,
     }
 }
 
-static void test_focal_recovery() {
-    std::printf("test_focal_recovery\n");
+TEST_F(GaussianPose, FocalRecovery) {
     const int N = 500;
     const double f = 437.0, W = 512, H = 512;
     std::uniform_real_distribution<double> ux(-2, 2), uy(-2, 2), uz(4, 9);
@@ -338,16 +336,15 @@ static void test_focal_recovery() {
     double fe = estimate_focal(Xc.data(), px.data(), N, W / 2, H / 2);
     char buf[64];
     std::snprintf(buf, sizeof buf, "%.9f vs %g", fe, f);
-    check("exact focal", std::fabs(fe - f) < 1e-6, buf);
+    EXPECT_LT(std::fabs(fe - f), 1e-6) << "exact focal" << ": " << buf;
     std::normal_distribution<double> g(0, 0.5);
     std::vector<double> pn(px);
     for (int i = 0; i < 2 * N; i++) pn[i] += g(RNG);
     double fn = estimate_focal(Xc.data(), pn.data(), N, W / 2, H / 2);
-    check("focal under noise", std::fabs(fn - f) / f < 0.02);
+    EXPECT_LT(std::fabs(fn - f) / f, 0.02) << "focal under noise";
 }
 
-static void test_pnp_recovery() {
-    std::printf("test_pnp_recovery\n");
+TEST_F(GaussianPose, PnpRecovery) {
     const int N = 500;
     Mat3 K = make_K(400, 512, 512);
     std::uniform_real_distribution<double> ux(-2, 2), uy(-2, 2), uz(4, 8);
@@ -394,12 +391,11 @@ static void test_pnp_recovery() {
     }
     char buf[64];
     std::snprintf(buf, sizeof buf, "worst %.2e deg", worst_R);
-    check("rotation recovered", worst_R < 1e-3, buf);
-    check("translation recovered", worst_t < 1e-4);
+    EXPECT_LT(worst_R, 1e-3) << "rotation recovered" << ": " << buf;
+    EXPECT_LT(worst_t, 1e-4) << "translation recovered";
 }
 
-static void test_pnp_outliers() {
-    std::printf("test_pnp_outliers\n");
+TEST_F(GaussianPose, PnpOutliers) {
     const int N = 600;
     Mat3 K = make_K(400, 512, 512);
     std::uniform_real_distribution<double> ux(-2, 2), uy(-2, 2), uz(4, 8);
@@ -456,23 +452,25 @@ static void test_pnp_outliers() {
     char buf[64];
     std::snprintf(buf, sizeof buf, "%.3f deg",
                   (double)rot_angle(mul(Rr, T(R))));
-    check("rotation under outliers", rot_angle(mul(Rr, T(R))) < 0.2, buf);
-    check("translation under outliers",
-          std::sqrt((tr[0] - t[0]) * (tr[0] - t[0]) +
-                    (tr[1] - t[1]) * (tr[1] - t[1]) +
-                    (tr[2] - t[2]) * (tr[2] - t[2])) < 0.02);
+    EXPECT_LT(rot_angle(mul(Rr, T(R))), 0.2)
+            << "rotation under outliers" << ": " << buf;
+    EXPECT_LT(std::sqrt((tr[0] - t[0]) * (tr[0] - t[0]) +
+                        (tr[1] - t[1]) * (tr[1] - t[1]) +
+                        (tr[2] - t[2]) * (tr[2] - t[2])),
+              0.02)
+            << "translation under outliers";
+    ASSERT_EQ(inl.size(), oidx.size());
     int rejected = 0;
     for (int k = 0; k < n_out; k++)
         if (!inl[oidx[k]]) rejected++;
-    check("outliers rejected", rejected > 0.85 * n_out);
+    EXPECT_GT(rejected, 0.85 * n_out) << "outliers rejected";
 }
 
 // ===========================================================================
 // Robust PnP: EPnP + Gauss-Newton (the shipped real-data solver)
 // ===========================================================================
 
-static void test_pnp_robust_recovery() {
-    std::printf("test_pnp_robust_recovery\n");
+TEST_F(GaussianPose, PnpRobustRecovery) {
     const int N = 500;
     Mat3 K = make_K(400, 512, 512);
     std::uniform_real_distribution<double> ux(-2, 2), uy(-2, 2), uz(4, 8);
@@ -521,14 +519,13 @@ static void test_pnp_robust_recovery() {
     }
     char buf[64];
     std::snprintf(buf, sizeof buf, "worst %.2e deg", worst_R);
-    check("rotation recovered", worst_R < 1e-3, buf);
-    check("translation recovered", worst_t < 1e-5);
+    EXPECT_LT(worst_R, 1e-3) << "rotation recovered" << ": " << buf;
+    EXPECT_LT(worst_t, 1e-5) << "translation recovered";
 }
 
-static void test_pnp_robust_planar() {
+TEST_F(GaussianPose, PnpRobustPlanar) {
     // Near-planar scene (a thin slab) — the config where the DLT's coplanar
     // minimal samples flip. EPnP's all-point control basis stays well-posed.
-    std::printf("test_pnp_robust_planar\n");
     const int N = 500;
     Mat3 K = make_K(400, 512, 512);
     std::uniform_real_distribution<double> ux(-2, 2), uy(-2, 2);
@@ -566,15 +563,16 @@ static void test_pnp_robust_planar() {
     char buf[64];
     std::snprintf(buf, sizeof buf, "%.4f deg",
                   (double)rot_angle(mul(Rr, T(R))));
-    check("planar rotation recovered", rot_angle(mul(Rr, T(R))) < 0.05, buf);
-    check("planar translation recovered",
-          std::sqrt((tr[0] - t[0]) * (tr[0] - t[0]) +
-                    (tr[1] - t[1]) * (tr[1] - t[1]) +
-                    (tr[2] - t[2]) * (tr[2] - t[2])) < 0.01);
+    EXPECT_LT(rot_angle(mul(Rr, T(R))), 0.05)
+            << "planar rotation recovered" << ": " << buf;
+    EXPECT_LT(std::sqrt((tr[0] - t[0]) * (tr[0] - t[0]) +
+                        (tr[1] - t[1]) * (tr[1] - t[1]) +
+                        (tr[2] - t[2]) * (tr[2] - t[2])),
+              0.01)
+            << "planar translation recovered";
 }
 
-static void test_pnp_robust_outliers() {
-    std::printf("test_pnp_robust_outliers\n");
+TEST_F(GaussianPose, PnpRobustOutliers) {
     const int N = 600;
     Mat3 K = make_K(400, 512, 512);
     std::uniform_real_distribution<double> ux(-2, 2), uy(-2, 2), uz(4, 8);
@@ -629,11 +627,13 @@ static void test_pnp_robust_outliers() {
     char buf[64];
     std::snprintf(buf, sizeof buf, "%.3f deg",
                   (double)rot_angle(mul(Rr, T(R))));
-    check("rotation under outliers", rot_angle(mul(Rr, T(R))) < 0.5, buf);
+    EXPECT_LT(rot_angle(mul(Rr, T(R))), 0.5)
+            << "rotation under outliers" << ": " << buf;
+    ASSERT_EQ(inl.size(), oidx.size());
     int rejected = 0;
     for (int k = 0; k < n_out; k++)
         if (!inl[oidx[k]]) rejected++;
-    check("outliers rejected", rejected > 0.85 * n_out);
+    EXPECT_GT(rejected, 0.85 * n_out) << "outliers rejected";
 }
 
 // ===========================================================================
@@ -664,8 +664,7 @@ static double depth_at(int i, int r, int c) {
                   11.0);  // non-coplanar spread
 }
 
-static void test_accumulate_chain() {
-    std::printf("test_accumulate_chain\n");
+TEST_F(GaussianPose, AccumulateChain) {
     const int H = 16, W = 16, gc = 23, P = H * W, F = 5;  // 5 frames -> 4 pairs
     const double f = 18.0;
     Mat3 K = make_K(f, W, H), Kinv = fsla::inv3(K);
@@ -706,36 +705,24 @@ static void test_accumulate_chain() {
         acc.add_pair(buf.data(), gc);
     }
 
-    check("pair count", acc.pair_count() == F - 1);
-    check("frame count", acc.frame_count() == F);
-    check("cloud non-empty",
-          acc.cloud().size() == (size_t)F * P);  // all opacities valid
+    EXPECT_EQ(acc.pair_count(), F - 1) << "pair count";
+    EXPECT_EQ(acc.frame_count(), F) << "frame count";
+    EXPECT_EQ(acc.cloud().size(), (size_t)F * P)
+            << "cloud non-empty";  // all opacities valid
 
-    // per-link scale recovers sigma_{k-1}/sigma_k
-    bool scales_ok = true;
-    double worst_scale = 0;
+    // Per-link scale recovers sigma_{k-1}/sigma_k.
+    ASSERT_EQ(acc.links().size(), static_cast<size_t>(F - 1));
     for (int k = 1; k < F - 1; k++) {
-        const double expect = sigma[k - 1] / sigma[k];
-        worst_scale =
-                std::max(worst_scale, std::fabs(acc.links()[k].scale - expect));
-        scales_ok &= std::fabs(acc.links()[k].scale - expect) < 1e-6;
-    }
-    {
-        char buf[64];
-        std::snprintf(buf, sizeof buf, "worst |Δs| %.2e", worst_scale);
-        check("per-link scale recovered", scales_ok, buf);
-    }
-    double worst_resid = 0;
-    for (int k = 1; k < F - 1; k++)
-        worst_resid = std::max(worst_resid, acc.links()[k].resid_frac);
-    {
-        char buf[64];
-        std::snprintf(buf, sizeof buf, "%.2e", worst_resid);
-        check("per-link residual ~0", worst_resid < 1e-6, buf);
+        const double expected = sigma[k - 1] / sigma[k];
+        EXPECT_LT(std::fabs(acc.links()[k].scale - expected), 1e-6)
+                << "link " << k << " scale";
+        EXPECT_LT(acc.links()[k].resid_frac, 1e-6)
+                << "link " << k << " residual";
     }
 
     // recovered trajectory vs GT, after a global Sim(3) alignment (ATE)
     std::vector<Mat4> path = acc.camera_path();
+    ASSERT_EQ(path.size(), static_cast<size_t>(F));
     std::vector<double> rec(3 * F), gt(3 * F);
     for (int i = 0; i < F; i++) {
         rec[3 * i] = path[i](0, 3);
@@ -764,12 +751,11 @@ static void test_accumulate_chain() {
     {
         char buf[64];
         std::snprintf(buf, sizeof buf, "ATE %.2e of extent", ate);
-        check("trajectory recovered", ate < 1e-3, buf);
+        EXPECT_LT(ate, 1e-3) << "trajectory recovered" << ": " << buf;
     }
 }
 
-static void test_consensus_fuse() {
-    std::printf("test_consensus_fuse\n");
+TEST_F(GaussianPose, ConsensusFuse) {
     std::vector<AccumPoint> cloud;
     // 5 surface points, each corroborated by frames {0,1,2} (tight cluster ->
     // one voxel, support 3); 20 isolated single-frame floaters far apart
@@ -788,36 +774,34 @@ static void test_consensus_fuse() {
     std::vector<AccumPoint> fused;
     FuseStats st = consensus_fuse(cloud, /*voxel_frac=*/0.02, /*k=*/2, fused,
                                   FUSE_AVERAGED);
-    check("raw points", st.raw_points == 35);
-    check("kept voxels (the surface)", st.kept_voxels == 5);
-    check("fused size (averaged: one per voxel)", fused.size() == 5);
-    check("points kept", st.points_kept == 15);
-    check("floaters dropped", st.points_dropped == 20);
+    EXPECT_EQ(st.raw_points, 35) << "raw points";
+    EXPECT_EQ(st.kept_voxels, 5) << "kept voxels (the surface)";
+    EXPECT_EQ(fused.size(), 5) << "fused size (averaged: one per voxel)";
+    EXPECT_EQ(st.points_kept, 15) << "points kept";
+    EXPECT_EQ(st.points_dropped, 20) << "floaters dropped";
     // FUSE_KEPT: dense — every raw point in a consensus voxel, floaters dropped
     std::vector<AccumPoint> kept;
     consensus_fuse(cloud, /*voxel_frac=*/0.02, /*k=*/2, kept, FUSE_KEPT);
-    check("kept mode: dense (all 15 consensus raw points)", kept.size() == 15);
+    EXPECT_EQ(kept.size(), 15)
+            << "kept mode: dense (all 15 consensus raw points)";
     // FUSE_BEST: per voxel only the most-confident frame. Each surface voxel
     // has 3 frames with equal opacity (0.5) so frame 0 (first seen) wins the
     // tie -> 5 points.
     std::vector<AccumPoint> best;
     consensus_fuse(cloud, /*voxel_frac=*/0.02, /*k=*/2, best, FUSE_BEST);
-    check("best mode: one frame per voxel (5 points)", best.size() == 5);
+    EXPECT_EQ(best.size(), 5) << "best mode: one frame per voxel (5 points)";
     // a fused point sits at its cluster centroid (~2*loc), color preserved
-    bool centroid_ok = true;
     for (const auto& p : fused) {
         const double loc = std::round(p.x / 2.0);
-        centroid_ok &= std::fabs(p.x - 2.0 * loc) < 0.01 &&
-                       std::fabs(p.r - 0.5) < 1e-6;
+        EXPECT_LT(std::fabs(p.x - 2.0 * loc), 0.01) << "fused centroid";
+        EXPECT_LT(std::fabs(p.r - 0.5), 1e-6) << "fused color";
     }
-    check("fused centroid + color", centroid_ok);
 }
 
 // Gaussian-level de-ghost: a base scene seen by 3 frames through small
 // per-object misalignments ghosts; consensus_refine (non-rigid, per-point) must
 // pull the overlapping copies together.
-static void test_consensus_refine() {
-    std::printf("test_consensus_refine\n");
+TEST_F(GaussianPose, ConsensusRefine) {
     // well-separated base points (a grid, spacing 1) so each object's 3 copies
     // share a voxel but distinct objects don't — the real (2D surface) regime.
     const int side = 4, M = side * side * side, Fr = 3;
@@ -901,21 +885,20 @@ static void test_consensus_refine() {
     char buf[80];
     std::snprintf(buf, sizeof buf, "ghosting %.3f%% -> %.3f%% of extent",
                   100 * pre, 100 * post);
-    check("ghosting present before", pre > 0.01);
-    check("consensus_refine de-ghosts", post < 0.4 * pre, buf);
+    EXPECT_GT(pre, 0.01) << "ghosting present before";
+    EXPECT_LT(post, 0.4 * pre) << "consensus_refine de-ghosts" << ": " << buf;
 }
 
-static void test_loop_distribute() {
-    std::printf("test_loop_distribute\n");
+TEST_F(GaussianPose, LoopDistribute) {
     Mat3 R = rand_rotation();
     Mat4 D = sim_matrix({1.15, R, {0.4, -0.2, 0.1}});
     // sim4_invert is a true inverse of a similarity 4x4
     Mat4 S = sim_matrix({1.3, rand_rotation(), {1.0, -2.0, 0.5}});
     Mat4 SI = fsla::mat4_mul(sim4_invert(S), S);
-    bool inv_ok = true;
-    for (int i = 0; i < 16; i++)
-        inv_ok &= std::fabs(SI.a[i] - fsla::mat4_identity().a[i]) < 1e-9;
-    check("sim4_invert is an inverse", inv_ok);
+    for (int i = 0; i < 16; i++) {
+        EXPECT_LT(std::fabs(SI.a[i] - fsla::mat4_identity().a[i]), 1e-9)
+                << "inverse product element " << i;
+    }
 
     // a clean loop, drifted by D^{-k/n}; distribute_drift(D) must cancel it.
     const int n = 8;
@@ -938,8 +921,8 @@ static void test_loop_distribute() {
             post += (corr[k][c] - clean[k][c]) * (corr[k][c] - clean[k][c]);
     char buf[64];
     std::snprintf(buf, sizeof buf, "ATE %.1e", std::sqrt(post / (n + 1)));
-    check("distribute_drift recovers clean loop",
-          std::sqrt(post / (n + 1)) < 1e-9, buf);
+    EXPECT_LT(std::sqrt(post / (n + 1)), 1e-9)
+            << "distribute_drift recovers clean loop" << ": " << buf;
 }
 
 // ===========================================================================
@@ -951,8 +934,7 @@ static void test_loop_distribute() {
 // accumulated cloud) call this; if it ever drops a channel or changes the
 // convention the bytes change here. The opacity->alpha byte is the exact field
 // the regression got wrong (it had been forced to 255).
-static void test_splat_record() {
-    std::printf("test_splat_record\n");
+TEST_F(GaussianPose, SplatRecord) {
     const float pos[3] = {1.0f, 2.0f, 3.0f};
     const float scale[3] = {0.01f, 0.02f, 0.03f};
     const float quat[4] = {0.70710678f, 0.70710678f, 0.0f,
@@ -964,35 +946,40 @@ static void test_splat_record() {
     float p[3], sc[3];
     std::memcpy(p, rec, 12);
     std::memcpy(sc, rec + 12, 12);
-    check("pos: OpenCV->GL flips y,z",
-          p[0] == 1.0f && p[1] == -2.0f && p[2] == -3.0f);
-    check("scale: passthrough",
-          sc[0] == 0.01f && sc[1] == 0.02f && sc[2] == 0.03f);
-    check("rgb bytes", rec[24] == (unsigned char)(0.2f * 255.0f) &&
-                               rec[25] == (unsigned char)(0.4f * 255.0f) &&
-                               rec[26] == (unsigned char)(0.6f * 255.0f));
+    EXPECT_EQ(p[0], 1.0f);
+    EXPECT_EQ(p[1], -2.0f);
+    EXPECT_EQ(p[2], -3.0f);
+    EXPECT_EQ(sc[0], 0.01f);
+    EXPECT_EQ(sc[1], 0.02f);
+    EXPECT_EQ(sc[2], 0.03f);
+    EXPECT_EQ(rec[24], static_cast<unsigned char>(0.2f * 255.0f));
+    EXPECT_EQ(rec[25], static_cast<unsigned char>(0.4f * 255.0f));
+    EXPECT_EQ(rec[26], static_cast<unsigned char>(0.6f * 255.0f));
     // THE regression field: opacity must become the alpha, not a forced 255.
     char buf[48];
     std::snprintf(buf, sizeof buf, "alpha=%d (must be 127, not 255)", rec[27]);
-    check("opacity -> alpha (not forced opaque)", rec[27] == 127, buf);
+    EXPECT_EQ(rec[27], 127)
+            << "opacity -> alpha (not forced opaque)" << ": " << buf;
     // rotation must be encoded with the (w,x,y,z)->(-x,w,-z,y) remap, not
     // dropped. q=(0.7071,0.7071,0,0) -> (-0.7071,0.7071,0,0) -> bytes
     // (37,218,128,128).
-    check("rotation: remap encoded (not identity)",
-          rec[28] == 37 && rec[29] == 218 && rec[30] == 128 && rec[31] == 128);
+    EXPECT_EQ(rec[28], 37);
+    EXPECT_EQ(rec[29], 218);
+    EXPECT_EQ(rec[30], 128);
+    EXPECT_EQ(rec[31], 128);
     // boundary opacities
     unsigned char r1[32], r0[32];
     aicore::gaussian::encode_splat_record(r1, pos, scale, quat, rgb, 1.0f);
     aicore::gaussian::encode_splat_record(r0, pos, scale, quat, rgb, 0.0f);
-    check("alpha boundaries (1->255, 0->0)", r1[27] == 255 && r0[27] == 0);
+    EXPECT_EQ(r1[27], 255);
+    EXPECT_EQ(r0[27], 0);
 }
 
 // #2 guard: run-0 accumulation must preserve EVERY gaussian channel. With one
 // pair the global transform is identity, so each AccumPoint should equal the
 // engine's gaussian for that pixel (xyz, SH->rgb, opacity, scale, rotation,
 // frame). A dropped channel — the exact bug — fails here, asset-free.
-static void test_accumulate_channels() {
-    std::printf("test_accumulate_channels\n");
+TEST_F(GaussianPose, AccumulateChannels) {
     const int H = 4, W = 4, gc = 23, P = H * W;
     std::vector<float> g((size_t)2 * P * gc, 0.0f);
     for (int v = 0; v < 2; v++)
@@ -1018,37 +1005,41 @@ static void test_accumulate_channels() {
     Accumulator acc(H, W, /*opacity_threshold=*/0.05);
     acc.add_pair(g.data(), gc);
     const auto& cloud = acc.cloud();
-    check("run-0 cloud = all pixels (both views kept)",
-          cloud.size() == (size_t)2 * P);
-
+    ASSERT_EQ(cloud.size(), static_cast<size_t>(2 * P));
     const double C0 = 0.28209479177387814;
-    bool ok = cloud.size() == (size_t)2 * P;
-    auto cl = [](float x, float y) { return std::fabs(x - y) < 1e-5f; };
-    for (int v = 0; v < 2 && ok; v++)
-        for (int i = 0; i < P && ok; i++) {
-            const float* a = &g[(size_t)(v * P + i) * gc];
-            const AccumPoint& p = cloud[(size_t)v * P + i];
-            ok &= cl(p.x, a[0]) && cl(p.y, a[1]) &&
-                  cl(p.z, a[2]);  // xyz (identity sim)
-            float er = (float)(a[3] * C0 + 0.5), eg = (float)(a[4] * C0 + 0.5),
-                  eb = (float)(a[5] * C0 + 0.5);
-            ok &= cl(p.r, er) && cl(p.g, eg) && cl(p.b, eb);  // SH -> rgb
-            ok &= cl(p.opacity, a[15]);  // opacity (the dropped one)
-            ok &= cl(p.sx, a[16]) && cl(p.sy, a[17]) &&
-                  cl(p.sz, a[18]);  // scale (T.s=1)
-            ok &= cl(p.qw, a[19]) && cl(p.qx, a[20]) && cl(p.qy, a[21]) &&
-                  cl(p.qz, a[22]);  // rotation
-            ok &= (p.frame == v);   // source frame
+    for (int v = 0; v < 2; v++) {
+        for (int i = 0; i < P; i++) {
+            SCOPED_TRACE(::testing::Message()
+                         << "view " << v << ", pixel " << i);
+            const float* a = &g[static_cast<size_t>(v * P + i) * gc];
+            const AccumPoint& p = cloud[static_cast<size_t>(v) * P + i];
+            EXPECT_LT(std::fabs(p.x - a[0]), 1e-5f);
+            EXPECT_LT(std::fabs(p.y - a[1]), 1e-5f);
+            EXPECT_LT(std::fabs(p.z - a[2]), 1e-5f);
+            const float er = static_cast<float>(a[3] * C0 + 0.5);
+            const float eg = static_cast<float>(a[4] * C0 + 0.5);
+            const float eb = static_cast<float>(a[5] * C0 + 0.5);
+            EXPECT_LT(std::fabs(p.r - er), 1e-5f);
+            EXPECT_LT(std::fabs(p.g - eg), 1e-5f);
+            EXPECT_LT(std::fabs(p.b - eb), 1e-5f);
+            EXPECT_LT(std::fabs(p.opacity - a[15]), 1e-5f);
+            EXPECT_LT(std::fabs(p.sx - a[16]), 1e-5f);
+            EXPECT_LT(std::fabs(p.sy - a[17]), 1e-5f);
+            EXPECT_LT(std::fabs(p.sz - a[18]), 1e-5f);
+            EXPECT_LT(std::fabs(p.qw - a[19]), 1e-5f);
+            EXPECT_LT(std::fabs(p.qx - a[20]), 1e-5f);
+            EXPECT_LT(std::fabs(p.qy - a[21]), 1e-5f);
+            EXPECT_LT(std::fabs(p.qz - a[22]), 1e-5f);
+            EXPECT_EQ(p.frame, v);
         }
-    check("every gaussian channel survives run-0 accumulation", ok);
+    }
 }
 
 // Golden: parallax_stats on synthetic cameras with hand-computed angles. A
 // lateral (strafe) baseline yields a large triangulation/lateral angle; a pure
 // forward (dolly) baseline of the SAME length yields ~0 — the whole point of
 // the metric (it measures depth-resolving motion, not raw camera displacement).
-static void test_parallax_geometry() {
-    std::printf("test_parallax_geometry\n");
+TEST_F(GaussianPose, ParallaxGeometry) {
     const double DEG = 180.0 / 3.14159265358979323846;
     const Vec3 axis0 = {0, 0, 1};  // view-0 looks down +z
     // points at depth 1 (a few, all same depth -> clean medians)
@@ -1068,12 +1059,14 @@ static void test_parallax_geometry() {
     std::snprintf(b1, sizeof b1,
                   "strafe lateral=%.3f tri=%.3f (expect 90, %.3f)",
                   s.lateral_angle_deg, s.tri_angle_deg, tri_expect);
-    check("strafe -> lateral angle ~90 deg",
-          std::fabs(s.lateral_angle_deg - 90.0) < 1e-3, b1);
-    check("strafe -> tri angle = atan(B/Z)",
-          std::fabs(s.tri_angle_deg - tri_expect) < 1e-3, b1);
-    check("strafe -> B/Z = 0.1", std::fabs(s.baseline_over_depth - 0.1) < 1e-4);
-    check("strafe -> median depth = 1", std::fabs(s.median_depth - 1.0) < 1e-4);
+    EXPECT_LT(std::fabs(s.lateral_angle_deg - 90.0), 1e-3)
+            << "strafe -> lateral angle ~90 deg" << ": " << b1;
+    EXPECT_LT(std::fabs(s.tri_angle_deg - tri_expect), 1e-3)
+            << "strafe -> tri angle = atan(B/Z)" << ": " << b1;
+    EXPECT_LT(std::fabs(s.baseline_over_depth - 0.1), 1e-4)
+            << "strafe -> B/Z = 0.1";
+    EXPECT_LT(std::fabs(s.median_depth - 1.0), 1e-4)
+            << "strafe -> median depth = 1";
 
     // (2) pure dolly: SAME baseline length 0.1 but along the optical axis
     Parallax d = parallax_stats({0, 0, 0}, {0, 0, 0.1}, axis0, pts.data(),
@@ -1081,35 +1074,10 @@ static void test_parallax_geometry() {
     char b2[96];
     std::snprintf(b2, sizeof b2, "dolly lateral=%.3f tri=%.3f (expect ~0)",
                   d.lateral_angle_deg, d.tri_angle_deg);
-    check("dolly -> lateral angle ~0 deg",
-          std::fabs(d.lateral_angle_deg) < 1e-3, b2);
-    check("dolly -> tri angle ~0 deg (no parallax)",
-          std::fabs(d.tri_angle_deg) < 1e-3, b2);
-    check("dolly baseline equals strafe baseline",
-          std::fabs(d.baseline - s.baseline) < 1e-6);
-}
-
-int main() {
-    test_similarity_roundtrip();
-    test_parallax_geometry();
-    test_scale_detection();
-    test_nonlinear_detection();
-    test_outlier_robustness();
-    test_loop_correction();
-    test_loop_closure();
-    test_focal_recovery();
-    test_pnp_recovery();
-    test_pnp_outliers();
-    test_pnp_robust_recovery();
-    test_pnp_robust_planar();
-    test_pnp_robust_outliers();
-    test_accumulate_chain();
-    test_consensus_fuse();
-    test_consensus_refine();
-    test_loop_distribute();
-    test_splat_record();
-    test_accumulate_channels();
-    std::printf(failures ? "\ntest_pose: %d FAILURES\n" : "\ntest_pose: ok\n",
-                failures);
-    return failures ? 1 : 0;
+    EXPECT_LT(std::fabs(d.lateral_angle_deg), 1e-3)
+            << "dolly -> lateral angle ~0 deg" << ": " << b2;
+    EXPECT_LT(std::fabs(d.tri_angle_deg), 1e-3)
+            << "dolly -> tri angle ~0 deg (no parallax)" << ": " << b2;
+    EXPECT_LT(std::fabs(d.baseline - s.baseline), 1e-6)
+            << "dolly baseline equals strafe baseline";
 }

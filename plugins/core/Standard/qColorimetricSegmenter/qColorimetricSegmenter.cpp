@@ -99,6 +99,7 @@ QList<QAction*> ColorimetricSegmenter::getActions() {
     // RGB Filter
     if (!m_action_filterRgb) {
         m_action_filterRgb = new QAction("Filter RGB", this);
+        m_action_filterRgb->setObjectName("filterRgb");
         m_action_filterRgb->setToolTip(
                 "Filter the points of the selected cloud by RGB color");
         m_action_filterRgb->setIcon(
@@ -126,6 +127,7 @@ QList<QAction*> ColorimetricSegmenter::getActions() {
     // HSV Filter
     if (!m_action_filterHSV) {
         m_action_filterHSV = new QAction("Filter HSV", this);
+        m_action_filterHSV->setObjectName("filterHsv");
         m_action_filterHSV->setToolTip(
                 "Filter the points of the selected cloud by HSV color");
         m_action_filterHSV->setIcon(
@@ -139,6 +141,7 @@ QList<QAction*> ColorimetricSegmenter::getActions() {
     // Scalar filter
     if (!m_action_filterScalar) {
         m_action_filterScalar = new QAction("Filter scalar", this);
+        m_action_filterScalar->setObjectName("filterScalar");
         m_action_filterScalar->setToolTip(
                 "Filter the points of the selected cloud using scalar field");
         m_action_filterScalar->setIcon(QIcon(
@@ -152,6 +155,7 @@ QList<QAction*> ColorimetricSegmenter::getActions() {
     if (!m_action_histogramClustering) {
         m_action_histogramClustering =
                 new QAction("Histogram Clustering", this);
+        m_action_histogramClustering->setObjectName("histogramClustering");
         m_action_histogramClustering->setToolTip(
                 "Quantify the number of colors using Histogram Clustering");
         m_action_histogramClustering->setIcon(QIcon(
@@ -166,6 +170,7 @@ QList<QAction*> ColorimetricSegmenter::getActions() {
         // Here we use the default plugin name, description, and icon,
         // but each action should have its own.
         m_action_kMeansClustering = new QAction("Kmeans Clustering", this);
+        m_action_kMeansClustering->setObjectName("kMeansClustering");
         m_action_kMeansClustering->setToolTip(
                 "Quantify the number of colors using Kmeans Clustering");
         m_action_kMeansClustering->setIcon(QIcon(

@@ -19,13 +19,17 @@
 #include "Visualization/VtkVis.h"
 
 // CV_DB_LIB
+#include <ecvDisplayTools.h>
 #include <ecvMesh.h>
 #include <ecvPointCloud.h>
+
+#include <vector>
 
 // CV_CORE_LIB
 #include <CVLog.h>
 
 // VTK
+#include <vtkActor.h>
 #include <vtkHardwareSelector.h>
 #include <vtkIdTypeArray.h>
 #include <vtkIntArray.h>
@@ -33,6 +37,7 @@
 
 // QT
 #include <QSet>
+#include <algorithm>
 
 //-----------------------------------------------------------------------------
 cvViewSelectionManager* cvViewSelectionManager::instance() {
@@ -102,10 +107,10 @@ void cvViewSelectionManager::setVisualizer(ecvGenericVisualizer3D* viewer) {
     cvGenericSelectionTool::setVisualizer(viewer);
 
     // Update visualizer for utility modules
-    if (m_annotations && getVtkVis()) {
+    if (m_annotations) {
         m_annotations->setVisualizer(getVtkVis());
     }
-    if (m_pipeline && getVtkVis()) {
+    if (m_pipeline) {
         m_pipeline->setVisualizer(getVtkVis());
 
         // ParaView-style: Invalidate cached selection when visualizer changes
@@ -115,7 +120,7 @@ void cvViewSelectionManager::setVisualizer(ecvGenericVisualizer3D* viewer) {
     }
 
     // Update visualizer for shared highlighter
-    if (m_highlighter && getVtkVis()) {
+    if (m_highlighter) {
         m_highlighter->setVisualizer(getVtkVis());
     }
 }
@@ -176,15 +181,8 @@ void cvViewSelectionManager::setSelectionModifier(SelectionModifier modifier) {
 
 //-----------------------------------------------------------------------------
 void cvViewSelectionManager::clearSelection() {
-    // Clear current selection
-    setCurrentSelection(nullptr, 0);
-
-    // Reset number of layers and original selection when clearing
-    // Reference: ParaView's selection source resets NumberOfLayers when cleared
-    m_numberOfLayers = 0;
-    m_originalSelection = cvSelectionData();  // Clear original selection
-
-    emit selectionChanged();
+    if (m_pipeline) m_pipeline->invalidateCachedSelection();
+    setCurrentSelection(cvSelectionData());
 }
 
 //-----------------------------------------------------------------------------
@@ -220,16 +218,6 @@ void cvViewSelectionManager::expandSelection(int layers,
         return;
     }
 
-    // Get polyData with enhanced fallback
-    vtkPolyData* polyData = getPolyData();
-
-    if (!polyData) {
-        CVLog::Warning(
-                "[cvViewSelectionManager] No polyData available for expand "
-                "operation. Make sure you have data loaded in the viewer.");
-        return;
-    }
-
     // ParaView-style: Calculate the NEW total number of layers
     int newNumberOfLayers = m_numberOfLayers + layers;
 
@@ -252,10 +240,48 @@ void cvViewSelectionManager::expandSelection(int layers,
         // CVLog::Print("[cvViewSelectionManager] Returning to original
         // selection");
     } else {
-        // Expand the original selection by newNumberOfLayers
-        result = m_algebra->expandSelection(polyData, baseSelection,
-                                            newNumberOfLayers, removeSeed,
-                                            removeIntermediateLayers);
+        const auto displayed = cvSelectionPipeline::resolveSelectionForView(
+                baseSelection, getVtkVis());
+        for (auto info : displayed.actorInfos()) {
+            cvSelectionData local(info.selectedIds,
+                                  baseSelection.fieldAssociation());
+            const auto expanded = m_algebra->expandSelection(
+                    info.polyData, local, newNumberOfLayers, removeSeed,
+                    removeIntermediateLayers);
+            if (expanded.isEmpty()) continue;
+            info.selectedIds = expanded.ids();
+            const auto sourceIds = cvSelectionPipeline::remapToSourceIds(
+                    expanded.vtkArray(), info.polyData,
+                    baseSelection.fieldAssociation() == cvSelectionData::CELLS);
+            info.sourceIds.clear();
+            for (vtkIdType i = 0; i < sourceIds->GetNumberOfTuples(); ++i)
+                info.sourceIds.append(sourceIds->GetValue(i));
+            if (result.isEmpty())
+                result = cvSelectionData(info.sourceIds,
+                                         baseSelection.fieldAssociation());
+            result.addActorInfo(info);
+        }
+        // A global selection can contain sources absent from this view.
+        // Growing visible sources must not silently delete those records.
+        for (const auto& original : baseSelection.actorInfos()) {
+            const auto records = displayed.actorInfos();
+            const bool visible = std::any_of(
+                    records.cbegin(), records.cend(),
+                    [&](const cvActorSelectionInfo& info) {
+                        return !original.sourceId.isEmpty()
+                                       ? info.sourceId == original.sourceId
+                                       : info.actor == original.actor &&
+                                                 info.polyData ==
+                                                         original.polyData &&
+                                                 info.blockIndex ==
+                                                         original.blockIndex;
+                    });
+            if (visible) continue;
+            if (result.isEmpty())
+                result = cvSelectionData(original.sourceIds,
+                                         baseSelection.fieldAssociation());
+            result.addActorInfo(original);
+        }
     }
 
     if (!result.isEmpty() || newNumberOfLayers == 0) {
@@ -275,9 +301,7 @@ void cvViewSelectionManager::expandSelection(int layers,
         if (m_highlighter) {
             if (!result.isEmpty()) {
                 m_highlighter->highlightSelection(
-                        polyData, result.vtkArray(),
-                        static_cast<int>(result.fieldAssociation()),
-                        cvSelectionHighlighter::SELECTED);
+                        result, cvSelectionHighlighter::SELECTED);
             } else {
                 m_highlighter->clearHighlights();
             }
@@ -357,37 +381,51 @@ bool cvViewSelectionManager::isCompatible(SelectionMode mode1,
 
 //-----------------------------------------------------------------------------
 const cvSelectionData& cvViewSelectionManager::currentSelection() const {
-    static cvSelectionData emptySelection;
-    if (!m_currentSelection || m_currentSelection->GetNumberOfTuples() == 0) {
-        return emptySelection;
-    }
     return m_storedSelectionData;
 }
 
 //-----------------------------------------------------------------------------
 void cvViewSelectionManager::setCurrentSelection(
         const cvSelectionData& selectionData, bool resetLayers) {
+    // IDs only have meaning together with their source/block and field.
+    // Another object or view can carry the same numeric IDs and still needs
+    // a complete notification.
+    const auto previousInfos = m_storedSelectionData.actorInfos();
+    const auto incomingInfos = selectionData.actorInfos();
+    bool changed = m_storedSelectionData.fieldAssociation() !=
+                           selectionData.fieldAssociation() ||
+                   m_storedSelectionData.ids() != selectionData.ids() ||
+                   previousInfos.size() != incomingInfos.size();
+    for (int i = 0; !changed && i < previousInfos.size(); ++i) {
+        const auto& previous = previousInfos[i];
+        const auto& incoming = incomingInfos[i];
+        changed = previous.sourceId != incoming.sourceId ||
+                  previous.sourceIds != incoming.sourceIds ||
+                  previous.actor != incoming.actor ||
+                  previous.polyData != incoming.polyData ||
+                  previous.blockIndex != incoming.blockIndex ||
+                  previous.selectedIds != incoming.selectedIds;
+    }
+
+    // Commit metadata, IDs and expansion state before synchronous consumers
+    // run. Never publish an array-only temporary and repair it after emit.
     m_storedSelectionData = selectionData;
-
-    // Convert cvSelectionData to VTK array for internal storage
-    setCurrentSelection(selectionData.vtkArray(),
-                        static_cast<int>(selectionData.fieldAssociation()),
-                        resetLayers);
-
-    // setCurrentSelection(array) may rebuild m_storedSelectionData without
-    // actors when IDs are unchanged; restore full metadata.
-    m_storedSelectionData = selectionData;
-
-    // Store as original selection if this is a new selection (resetLayers=true)
-    // ParaView-style: Original selection is the base for all grow/shrink
-    // operations
-    if (resetLayers) {
+    m_currentSelection = m_storedSelectionData.vtkArray();
+    m_currentSelectionFieldAssociation =
+            static_cast<int>(selectionData.fieldAssociation());
+    if (resetLayers || selectionData.isEmpty()) {
         m_originalSelection = selectionData;
         m_numberOfLayers = 0;
-        CVLog::PrintVerbose(QString("[cvViewSelectionManager] Stored original "
-                                    "selection: %1 %2")
-                                    .arg(selectionData.count())
-                                    .arg(selectionData.fieldTypeString()));
+    }
+    if (selectionData.isEmpty()) {
+        m_sourceObject = nullptr;
+    }
+    if (changed) {
+        // A direct slot may change/clear the manager again. Publish a stable
+        // value so later subscribers still receive this committed transition.
+        const cvSelectionData published = m_storedSelectionData;
+        emit selectionChanged(published);
+        emit selectionChanged();
     }
 }
 
@@ -396,121 +434,8 @@ void cvViewSelectionManager::setCurrentSelection(
         const vtkSmartPointer<vtkIdTypeArray>& selection,
         int fieldAssociation,
         bool resetLayers) {
-    // CRITICAL FIX: Validate selection pointer before use
-    if (selection && selection.GetPointer() == nullptr) {
-        CVLog::Error(
-                "[cvViewSelectionManager] Selection SmartPointer contains null "
-                "pointer!");
-        return;
-    }
-
-    // Additional validation: check if the object is valid
-    vtkIdType newCount = 0;
-    if (selection) {
-        try {
-            // Test if we can safely access the array
-            newCount = selection->GetNumberOfTuples();
-            if (newCount < 0) {
-                CVLog::Error(
-                        "[cvViewSelectionManager] Selection array has invalid "
-                        "tuple count!");
-                return;
-            }
-        } catch (...) {
-            CVLog::Error(
-                    "[cvViewSelectionManager] Selection array access failed - "
-                    "invalid pointer!");
-            return;
-        }
-    }
-
-    // CRITICAL FIX: Check if selection actually changed to prevent infinite
-    // recursion Compare with current selection
-    bool hasChanged = false;
-    if (!m_currentSelection && newCount == 0) {
-        // Both empty - no change
-        CVLog::PrintVerbose(
-                "[cvViewSelectionManager] Selection unchanged (both empty)");
-        return;
-    } else if (!m_currentSelection && newCount > 0) {
-        // Was empty, now has content
-        hasChanged = true;
-    } else if (m_currentSelection && newCount == 0) {
-        // Had content, now empty
-        hasChanged = true;
-    } else if (m_currentSelection) {
-        // Both have content - check if they're identical
-        vtkIdType oldCount = m_currentSelection->GetNumberOfTuples();
-        if (oldCount != newCount ||
-            m_currentSelectionFieldAssociation != fieldAssociation) {
-            hasChanged = true;
-        } else {
-            // Same count and field association - check if IDs are identical
-            bool idsMatch = true;
-            for (vtkIdType i = 0; i < newCount; ++i) {
-                if (m_currentSelection->GetValue(i) != selection->GetValue(i)) {
-                    idsMatch = false;
-                    break;
-                }
-            }
-            hasChanged = !idsMatch;
-        }
-    }
-
-    if (!hasChanged) {
-        CVLog::PrintVerbose(
-                "[cvViewSelectionManager] Selection unchanged, skipping "
-                "update");
-        return;
-    }
-
-    // Clean up old selection
-    // Smart pointer handles cleanup automatically
-    m_currentSelection = nullptr;
-
-    // Store new selection
-    if (selection && newCount > 0) {
-        m_currentSelection = vtkSmartPointer<vtkIdTypeArray>::New();
-
-        try {
-            m_currentSelection->DeepCopy(selection);
-            m_currentSelectionFieldAssociation = fieldAssociation;
-
-            CVLog::PrintVerbose(
-                    QString("[cvViewSelectionManager] Selection updated: %1 "
-                            "%2 selected")
-                            .arg(newCount)
-                            .arg(fieldAssociation == 0 ? "cells" : "points"));
-        } catch (const std::exception& e) {
-            CVLog::Error(QString("[cvViewSelectionManager] DeepCopy failed: %1")
-                                 .arg(e.what()));
-            m_currentSelection = nullptr;
-            m_currentSelectionFieldAssociation = 0;
-            return;
-        } catch (...) {
-            CVLog::Error(
-                    "[cvViewSelectionManager] DeepCopy failed with unknown "
-                    "exception!");
-            m_currentSelection = nullptr;
-            m_currentSelectionFieldAssociation = 0;
-            return;
-        }
-    } else {
-        m_currentSelectionFieldAssociation = 0;
-    }
-
-    if (m_currentSelection && newCount > 0) {
-        m_storedSelectionData = cvSelectionData(
-                m_currentSelection, m_currentSelectionFieldAssociation);
-    } else {
-        m_storedSelectionData = cvSelectionData();
-    }
-
-    // History removed - UI not implemented
-
-    // Emit both new and legacy signals
-    emit selectionChanged(m_storedSelectionData);
-    emit selectionChanged();  // Legacy signal
+    setCurrentSelection(cvSelectionData(selection, fieldAssociation),
+                        resetLayers);
 }
 
 //-----------------------------------------------------------------------------
@@ -543,6 +468,11 @@ cvSelectionData cvViewSelectionManager::performAlgebraOperation(
 
 //-----------------------------------------------------------------------------
 vtkPolyData* cvViewSelectionManager::getPolyData() const {
+    // Hover/capture results may belong to another object than the committed
+    // selection. Operations on selection IDs must prefer their own dataset.
+    if (!m_storedSelectionData.isEmpty()) {
+        return m_storedSelectionData.primaryPolyData();
+    }
     // ParaView-style: Try to get from last selection result first (from
     // pipeline)
     if (m_pipeline && m_pipeline->getLastSelection()) {
@@ -605,35 +535,7 @@ unsigned int cvViewSelectionManager::getPointPickingRadius() const {
 }
 
 //-----------------------------------------------------------------------------
-void cvViewSelectionManager::clearCurrentSelection() {
-    // CRITICAL FIX: Clear current selection to prevent crashes from dangling
-    // pointers This is called when objects might have been deleted
-
-    CVLog::Print(
-            "[cvViewSelectionManager] Clearing current selection (preventing "
-            "stale references)");
-
-    // Clear the stored selection data
-    if (m_currentSelection) {
-        m_currentSelection = nullptr;
-    }
-
-    m_currentSelectionFieldAssociation = -1;
-    m_storedSelectionData = cvSelectionData();
-
-    // Clear source object reference
-    m_sourceObject = nullptr;
-
-    // Clear pipeline cache
-    if (m_pipeline) {
-        m_pipeline->invalidateCachedSelection();
-    }
-
-    // Emit signal to notify listeners
-    cvSelectionData emptySelection;
-    emit selectionChanged(emptySelection);
-    emit selectionChanged();  // Legacy signal
-}
+void cvViewSelectionManager::clearCurrentSelection() { clearSelection(); }
 
 //-----------------------------------------------------------------------------
 void cvViewSelectionManager::setSourceObject(ccHObject* obj) {
@@ -642,7 +544,22 @@ void cvViewSelectionManager::setSourceObject(ccHObject* obj) {
 
 //-----------------------------------------------------------------------------
 ccHObject* cvViewSelectionManager::getSourceObject() const {
-    return m_sourceObject;
+    auto* root = ecvDisplayTools::GetSceneDB();
+    if (!root) return nullptr;
+    const auto sourceId = m_storedSelectionData.actorInfo().sourceId;
+    // Resolve through live DB membership, never dereference the retained raw
+    // hint after a programmatic removal or undo-history cleanup.
+    std::vector<ccHObject*> pending{root};
+    while (!pending.empty()) {
+        auto* object = pending.back();
+        pending.pop_back();
+        if (sourceId.isEmpty() ? object == m_sourceObject
+                               : object->getViewId() == sourceId)
+            return object;
+        for (unsigned i = 0; i < object->getChildrenNumber(); ++i)
+            pending.push_back(object->getChild(i));
+    }
+    return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -654,11 +571,6 @@ ccPointCloud* cvViewSelectionManager::getSourcePointCloud() const {
                 "object");
         return nullptr;
     }
-
-    // Note: We can't reliably detect if obj has been deleted in C++ without
-    // causing undefined behavior. The caller must ensure the object is still
-    // valid. We rely on the application to clear m_sourceObject when objects
-    // are deleted (e.g., via clearCurrentSelection()).
 
     // Check if it's a point cloud
     if (obj->isA(CV_TYPES::POINT_CLOUD)) {
@@ -688,11 +600,6 @@ ccMesh* cvViewSelectionManager::getSourceMesh() const {
         return nullptr;
     }
 
-    // Note: We can't reliably detect if obj has been deleted in C++ without
-    // causing undefined behavior. The caller must ensure the object is still
-    // valid. We rely on the application to clear m_sourceObject when objects
-    // are deleted (e.g., via clearCurrentSelection()).
-
     // Check if it's a mesh
     if (obj->isKindOf(CV_TYPES::MESH)) {
         ccMesh* mesh = static_cast<ccMesh*>(obj);
@@ -712,11 +619,5 @@ ccMesh* cvViewSelectionManager::getSourceMesh() const {
 
 //-----------------------------------------------------------------------------
 bool cvViewSelectionManager::isSourceObjectValid() const {
-    // Note: In C++, there's no reliable way to detect if a raw pointer points
-    // to a deleted object without causing undefined behavior. We rely on the
-    // application to clear m_sourceObject when objects are deleted.
-    // The actual safety check happens in getSourcePointCloud/getSourceMesh
-    // where we verify the object is still accessible before using it.
-    bool isValid = (m_sourceObject != nullptr);
-    return isValid;
+    return getSourceObject() != nullptr;
 }

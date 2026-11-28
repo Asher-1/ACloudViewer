@@ -62,7 +62,10 @@ jobs:
         include:
           - CI_CONFIG: cuda-focal
           - CI_CONFIG: cuda-jammy
+          # noble/resolute default to Qt6 (apt 6.4.2 / 6.10.2); resolute uses
+          # the CUDA 13.x base image (NVIDIA publishes no 12.6.3 ubuntu26.04).
           - CI_CONFIG: cuda-noble
+          - CI_CONFIG: cuda-resolute
     env:
       # Export everything from matrix to be easily used.
       # Docker tag and ccache names must be consistent with docker_build.sh
@@ -307,6 +310,11 @@ jobs:
           - CI_CONFIG: cuda-jammy
             RUNNER: ubuntu-22.04
           - CI_CONFIG: cuda-noble
+            RUNNER: ubuntu-24.04
+          # GitHub has no ubuntu-26.04 hosted runner; the .run installer
+          # bundles its own Qt6 libs, so the runner release is irrelevant
+          # (runs-on is ubuntu-latest for every cell).
+          - CI_CONFIG: cuda-resolute
             RUNNER: ubuntu-24.04
 
     steps:

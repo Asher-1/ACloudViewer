@@ -22,8 +22,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/db_tree)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ui_templates)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-file(GLOB header_list *.h)
-file(GLOB source_list *.cpp)
+file(GLOB header_list CONFIGURE_DEPENDS *.h)
+file(GLOB source_list CONFIGURE_DEPENDS *.cpp)
 
 file(GLOB ui_list ui_templates/*.ui)
 
@@ -96,6 +96,9 @@ else ()
     add_executable(${PROJECT_NAME} ${header_list} ${source_list} ${generated_ui_list} ${generated_qrc_list} ${rc_list} ${txt_list})
 endif ()
 
+# The shipped GUI is used by process-level CLI/plugin integration tests.
+set_property(TARGET ${PROJECT_NAME} PROPERTY CLOUDVIEWER_TEST_KIND integration)
+
 # Put together our Application bundle on macOS
 if (APPLE)
     add_subdirectory(Mac)
@@ -152,7 +155,6 @@ target_link_libraries(${PROJECT_NAME}
         CVAppCommon
         QCustomPlot
         Qt::Network
-        Qt::WebSockets
         Qt::PrintSupport
         )
 
@@ -188,6 +190,15 @@ if (TARGET Qt::Concurrent)
     target_link_libraries(${PROJECT_NAME}
             Qt::Concurrent
             )
+endif()
+
+if(BUILD_GUI AND BUILD_UNIT_TESTS)
+    add_subdirectory(tests/console)
+    add_subdirectory(tests/shortcuts)
+    add_subdirectory(tests/layout)
+    add_subdirectory(tests/spreadsheet)
+    add_subdirectory(tests/geometry)
+    add_subdirectory(tests/recentfiles)
 endif()
 
 # running gui app from the build folder needs tbb.dll to be in the same folder.

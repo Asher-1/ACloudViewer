@@ -11,6 +11,7 @@
 #include <QComboBox>
 #include <QDialog>
 #include <QDoubleSpinBox>
+#include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
@@ -48,9 +49,10 @@ struct OpenPCDetTaskPanel {
     // because the quant combo carries only the three catalog suffixes).
     QWidget* customModelRow = nullptr;
     QLineEdit* customModelPath = nullptr;
-    // Threshold row: "Use model defaults" (GGUF-declared values, inputs
-    // disabled) versus an explicit override whose values — including a
-    // legal explicit 0 — are forwarded verbatim to the worker.
+    // Threshold row: "Use model defaults" (effective task defaults:
+    // per-checkpoint score/NMS, max GGUF; inputs disabled) versus an explicit
+    // override whose values — including a legal explicit 0 — are forwarded
+    // verbatim to the worker.
     QCheckBox* useDefaultsCheck = nullptr;
     QDoubleSpinBox* score = nullptr;
     QDoubleSpinBox* nms = nullptr;
@@ -62,15 +64,32 @@ struct OpenPCDetTaskPanel {
     QLineEdit* cloudPath = nullptr;
     QWidget* pointsFileRow = nullptr;
     QLineEdit* pointsFileEdit = nullptr;
+    // Test-frame selector merged into the point-file row (point panels) or
+    // the scene-dir row (scene panels): the extracted bundle's frames of
+    // this panel's dataset plus a "Custom…" escape hatch. Selecting a frame
+    // fills the input edits, the camera grid and the DB sample cloud.
+    QComboBox* frameCombo = nullptr;
     // Multi-modal scene inputs (CaDDN / BEVFusion panels): scene directory
-    // (images.bin + calibration + scene.json) with an image preview, plus
-    // the LiDAR branch point source (required by BEVFusion, unused by
-    // CaDDN).
+    // (images.bin + calibration + scene.json), plus the LiDAR branch point
+    // source (required by BEVFusion, unused by CaDDN).
     QWidget* sceneDirRow = nullptr;
     QLineEdit* sceneDirEdit = nullptr;
-    ecvClickableImageLabel* previewLabel = nullptr;
     QWidget* scenePointsFileRow = nullptr;
     QLineEdit* scenePointsFileEdit = nullptr;
+    // Full-width multi-camera preview grid (scroll content): one labeled
+    // ecvClickableImageLabel per scene camera with class-colored detection
+    // overlays after a run. previewSceneDir is the grid's scene source
+    // (scene panels: the scene dir; point panels: the frame's paired scene);
+    // loadedSceneDir guards re-reads; cameraBaseImages keeps the clean
+    // frames so overlays can be re-applied / cleared without disk I/O.
+    QString previewSceneDir;
+    QString loadedSceneDir;
+    QWidget* camerasGroup = nullptr;
+    QWidget* legendWidget = nullptr;
+    QGridLayout* cameraGrid = nullptr;
+    QLabel* camerasHint = nullptr;
+    QVector<ecvClickableImageLabel*> cameraLabels;
+    QVector<QImage> cameraBaseImages;
     QPushButton* testDataBtn = nullptr;
     QPushButton* runBtn = nullptr;
     QPushButton* cancelBtn = nullptr;
@@ -95,9 +114,9 @@ public:
         QString modelPath;
         QString device = QStringLiteral("auto");
         int threads = 0;
-        /** 0 = follow the GGUF-declared threshold. */
+        /** 0 = follow the per-checkpoint task default score threshold. */
         float scoreThresh = 0.0f;
-        /** 0 = follow the GGUF-declared NMS IoU. */
+        /** 0 = follow the task default NMS IoU. */
         float nmsThresh = 0.0f;
         /** 0 = follow the GGUF-declared box cap. */
         int maxBoxes = 0;
@@ -128,6 +147,16 @@ public:
      *  its name and refuses to run without one. */
     void setActiveCloud(ccPointCloud* cloud, const QString& name);
     Settings getSettings() const;
+
+    /** Stack index of the currently active task panel (-1 when none). The
+     *  plugin captures it at Run time so a late result overlays the panel
+     *  that started the run, not whichever panel is current meanwhile. */
+    int currentPanelIndex() const;
+    /** Paint the class-colored bbox overlay of \p result onto every camera
+     *  of panel \p panelIndex's preview grid (detections verbatim in the
+     *  LiDAR frame; the scene calibration owns the projection). No-op when
+     *  the panel has no readable scene grid. */
+    void applyResultOverlays(int panelIndex, const OpenPCDetRunResult& result);
 
     void appendLog(const QString& msg);
     /** Debug-level route (CVLog::PrintDebug): routine inference progress
@@ -182,25 +211,41 @@ private:
     QString resolveModelPath(const QString& filename) const;
     bool ensureModelAvailable(PendingAction action);
     void startDownload(const OpenPCDetModelEntry& model);
-    /** Seed the Score / NMS / Max boxes spinboxes with the GGUF-declared
-     *  defaults of the panel's checkpoint (upstream OpenPCDet config
-     *  values, read from the cached model header without loading weights).
-     *  Keeps the current values when no catalog GGUF is available yet. */
+    /** Seed the Score / NMS / Max boxes spinboxes with the effective task
+     *  defaults of the panel's checkpoint (per-checkpoint score/NMS; max
+     *  upstream OpenPCDet config values, read from the cached model header
+     * without loading weights). Keeps the current values when no catalog GGUF
+     * is available yet. */
     void applyModelDefaults(OpenPCDetTaskPanel& panel);
-    /** Update the scene preview of \p panel (empty path or unreadable
-     *  payload clears the preview). */
+    /** Set \p panel's grid scene source to \p sceneDir and rebuild the
+     *  multi-camera grid (empty path or unreadable payload shows the hint). */
     void refreshScenePreview(OpenPCDetTaskPanel* panel,
                              const QString& sceneDir);
+    /** Rebuild \p panel's camera grid from its previewSceneDir (legend +
+     *  one labeled thumbnail per camera). Skips the disk re-read when the
+     *  same scene is already rendered. */
+    void refreshCameraGrid(OpenPCDetTaskPanel* panel);
+    /** Restore the clean (overlay-free) camera frames of \p panel. */
+    void clearResultOverlays(OpenPCDetTaskPanel& panel);
+    /** Refill \p panel's frame combo from the extracted bundle (frames of
+     *  the panel's dataset + "Custom…"), selecting \p selectFrameId when
+     *  present, else the dataset default frame, else "Custom…". */
+    void populateFrameCombo(OpenPCDetTaskPanel& panel,
+                            const QString& selectFrameId = QString());
+    /** Fill \p panel's input edits / grid / DB cloud from a selected test
+     *  frame (PointRCNN panels take the pre-sampled variant). */
+    void applyFrameSelection(
+            OpenPCDetTaskPanel& panel,
+            const ecvTestDataRepository::OpenPCDetFrame& frame);
     /** Fill the shared detection result table + summary label. */
     void updateResultTable(const OpenPCDetRunResult& result);
 
-    /** Fill panel \p panelIndex from the extracted openpcdet_test_data
-     *  bundle (points file / scene dir / LiDAR branch per the checkpoint
-     *  mapping) and load the panel's own sample frame (nuScenes n015 sweep
-     *  for nuScenes checkpoints, KITTI 000008 otherwise) into the DB tree
-     *  so the rendered wireframe boxes share the displayed cloud's frame.
-     *  Returns false (with a logged error) when the bundle members are
-     *  missing. */
+    /** Fill panel \p panelIndex from the extracted openpcdet_test_data_v2
+     *  bundle on its selected test frame (points file / scene dir / LiDAR
+     *  branch per the checkpoint mapping; the default frame when none is
+     *  selected) and load that frame into the DB tree so the rendered
+     *  wireframe boxes share the displayed cloud's frame. Returns false
+     *  (with a logged error) when the bundle members are missing. */
     bool fillTestDataPanel(int panelIndex);
     /** Parse a raw sample .bin frame (OpenPCDetHelpers::parsePointsBin)
      *  into a ccPointCloud named \p displayName with an intensity scalar

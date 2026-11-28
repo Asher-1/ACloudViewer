@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <QApplication>
 #include <QClipboard>
 #include <QFile>
@@ -29,13 +31,10 @@
 #include "PpocrRichTextEditor.h"
 #include "QtCompat.h"
 
-#define REQUIRE(condition)                                               \
-    do {                                                                 \
-        if (!(condition)) {                                              \
-            std::fprintf(stderr, "line %d: %s\n", __LINE__, #condition); \
-            return 1;                                                    \
-        }                                                                \
-    } while (false)
+#define REQUIRE(...) ASSERT_TRUE((__VA_ARGS__))
+
+int probeArgc = 0;
+char** probeArgv = nullptr;
 
 bool chooseHeading(PpocrRichTextEditor& editor, int level) {
     auto* button = editor.findChild<QToolButton*>("PpocrRichHeading");
@@ -70,7 +69,9 @@ QJsonArray rectangle(const QRect& value) {
     return {value.x(), value.y(), value.width(), value.height()};
 }
 
-int main(int argc, char** argv) {
+TEST(PpocrRichTextTest, EditingAndRoundTrips) {
+    int argc = probeArgc;
+    char** argv = probeArgv;
     QApplication app(argc, argv);
     QJsonArray cases;
     const QStringList inputs = {
@@ -590,5 +591,11 @@ int main(int argc, char** argv) {
     std::puts(
             "PASS: rich text format/heading/return/undo/save/cancel and HTML "
             "replay");
-    return 0;
+}
+
+int main(int argc, char** argv) {
+    probeArgc = argc;
+    probeArgv = argv;
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

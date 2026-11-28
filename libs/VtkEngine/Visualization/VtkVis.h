@@ -886,6 +886,20 @@ public:
      *  @return VTK actor or nullptr
      */
     vtkActor* getActorById(const std::string& viewId);
+
+    struct RepresentationActor {
+        vtkActor* actor;
+        // nullptr means the whole mapper input, otherwise exactly this
+        // registered leaf (never its siblings in the shared group actor).
+        vtkDataObject* block;
+    };
+    /// Borrowed sources from the native actor/block owners, not renderer
+    /// auxiliaries. Visibility and renderer membership are checked by callers.
+    std::vector<RepresentationActor> representationActors(
+            const std::string& viewId);
+    /// Live registered entity sources and native groups can render without
+    /// property-edited representations. Never enumerate auxiliary props.
+    std::vector<RepresentationActor> sourceRepresentationActors();
     /** @param viewId Prop view ID
      *  @return VTK prop or nullptr
      */
@@ -899,6 +913,12 @@ public:
      *  @return View ID string or empty if not found
      */
     std::string getIdByActor(vtkProp* actor);
+    // Exact selection ownership; never infer identity from geometry sizes.
+    std::string selectionSourceId(vtkActor* actor, unsigned int blockIndex);
+    bool selectionRepresentation(const std::string& sourceId,
+                                 vtkActor*& actor,
+                                 vtkPolyData*& polyData,
+                                 unsigned int& blockIndex);
     /** Resolve cloud id when HW pick prop differs from registered actor
      * pointer. */
     std::string getIdByPolyData(vtkPolyData* polyData);
@@ -1146,8 +1166,8 @@ public:
      *  semantics). The one-time rebuild is user-edit cost only.
      */
     vtkActor* evictCompositeLeaf(const std::string& viewID, int viewport);
-    /** VTK version guard for the composite pipeline: vtkCompositePolyData
-     *  Mapper2 + the composite selection attributes require VTK >= 9. On
+    /** VTK version guard for the composite pipeline: a composite polydata
+     *  mapper + the composite selection attributes require VTK >= 9. On
      *  older VTK the aggregation gate falls back to the pre-aggregation
      *  all-dedicated rendering (identical visuals, O(leaves) frame cost),
      *  keeping behavior consistent across versions.
@@ -1310,6 +1330,9 @@ public:
      * @return true if visible, false otherwise
      */
     bool IsCameraOrientationWidgetShown() const;
+
+    /// Access the orientation gizmo (nullptr until first toggled on).
+    vtkCameraOrientationWidget* getCameraOrientationWidget() const;
 
     /// Hit-test the Camera Orientation Widget in widget pixel coordinates.
     bool IsMouseOverCameraOrientationWidget(int qtX, int qtY) const;
@@ -1664,6 +1687,19 @@ protected:
 
     // Camera Orientation Widget (ParaView-style)
     vtkSmartPointer<vtkCameraOrientationWidget> m_cameraOrientationWidget;
+    // Zoom snapshot for orientation-widget clicks: VTK's EndSelectAction
+    // calls ParentRenderer->ResetCamera() after orienting the camera, which
+    // refits the scene and destroys the user's zoom. The snapshot is taken
+    // on StartInteractionEvent and restored on EndInteractionEvent so gizmo
+    // clicks preserve zoom like the view presets (see
+    // onOrientWidgetInteraction).
+    double m_orientWidgetZoomFocal[3] = {0.0, 0.0, 0.0};
+    double m_orientWidgetZoomDistance = 1.0;
+    double m_orientWidgetZoomParallelScale = 1.0;
+    bool m_orientWidgetZoomValid = false;
+    void onOrientWidgetInteraction(vtkObject* caller,
+                                   unsigned long eventId,
+                                   void* callData);
 
     // Camera undo / redo stack
     static constexpr int CAMERA_STACK_DEPTH = 20;

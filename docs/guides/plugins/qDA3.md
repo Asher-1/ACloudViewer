@@ -1,5 +1,9 @@
 # qDA3 — Depth Anything V3 Plugin
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qDA3/images/qDA3.png" width="72%" alt="qDA3 — depth map and 3D unprojection from a single photo">
+</p>
+
 Run [Depth Anything 3](https://github.com/DepthAnything/Depth-Anything-V3) **GGUF models** in ACloudViewer (C++ / [ggml](https://github.com/ggml-org/llama.cpp), derived from [depth-anything.cpp](https://github.com/mudler/depth-anything.cpp)) for depth estimation, camera pose, and 3D export.
 
 ## Architecture

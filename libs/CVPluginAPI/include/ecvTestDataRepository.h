@@ -10,6 +10,7 @@
 #include <QObject>
 #include <QString>
 #include <QStringList>
+#include <QVector>
 #include <functional>
 
 #include "CVPluginAPI.h"
@@ -82,10 +83,11 @@ public:
         MapAnythingRelief2,       ///< relief_2 scene
         MapAnythingTerrace,       ///< terrace scene
         MapAnythingTerrains,      ///< terrains scene
-        /** OpenPCDet detection sample (qOpenPCDet): one raw KITTI LiDAR
-         *  frame (plus its PointRCNN pre-sampled 16384-point variant), one
-         *  nuScenes 5-feature sweep and the two multi-modal scene bundles
-         *  (CaDDN single-camera / BEVFusion 6-camera) the panels map onto. */
+        /** OpenPCDet detection samples (qOpenPCDet), v2 multi-frame bundle:
+         *  selectable KITTI / nuScenes LiDAR frames under frames/<id>/, each
+         *  with its PointRCNN pre-sampled variant (KITTI) and calibrated
+         *  scene directory (CaDDN single-camera / BEVFusion 6-camera) the
+         *  panels map onto. */
         OpenPCDetSample,  ///< KITTI + nuScenes LiDAR frames and scene bundles
         /** VLX-Seek official demo/evaluation originals (qVLXSeek): the two
          *  upstream demo photos plus seven MS-COCO/embodied originals the
@@ -107,7 +109,15 @@ public:
          *  > Use Test Data one-click fill), import/export format samples,
          *  PaddleOCR KIE/rec samples, the LLVIP compare pair, the video
          *  tracking demo and the KITTI 3D cuboid sample. */
-        AnyLabeling  ///< X-AnyLabeling official annotation demos (qAnyLabeling)
+        AnyLabeling,  ///< X-AnyLabeling official annotation demos
+                      ///< (qAnyLabeling)
+        /** WeVisOne-VL official test images (qWeVisOne): the upstream
+         *  test_data bundle (25 demo/evaluation photos plus the task-sample
+         *  manifest.json) shipped as wevisone_vl_test_data.zip on the
+         *  Asher-1/WeVisOne-VL-GGML model repository next to the GGUF
+         *  weights. Appended last: existing enumerator values stay stable
+         *  for plugins compiled against the previous layout. */
+        WeVisOne  ///< WeVisOne-VL official test images (qWeVisOne)
     };
 
     /** Dataset metadata. */
@@ -165,6 +175,25 @@ public:
     /** List the sample images of a GeneralKeypointDetection bundle root
      *  (the official GKDT demo images, sorted case-insensitively). */
     static QStringList getGeneralKeypointDetectionImages(
+            const QString& bundleRoot);
+
+    /** One selectable test frame of the OpenPCDet v2 bundle (frames/<id>/):
+     *  the raw LiDAR input, the optional PointRCNN pre-sampled variant and
+     *  the calibrated scene directory. Paths are absolute; empty members
+     *  are absent from the frame. */
+    struct OpenPCDetFrame {
+        QString id;           ///< "kitti_000008", "nuscenes_n015", ...
+        QString displayName;  ///< "KITTI 000008", "nuScenes n015", ...
+        QString pointsFile;   ///< raw LiDAR .bin (KITTI <id>.bin / nuScenes
+                              ///< <id>_lidar.bin)
+        QString sampledFile;  ///< PointRCNN 16384-point variant (KITTI only)
+        QString sceneDir;     ///< calibrated scene/ directory
+    };
+
+    /** List the selectable frames of an extracted OpenPCDet bundle root
+     *  (frames/<id>/ subdirectories, sorted by id). A frame without a LiDAR
+     *  input is skipped. */
+    static QVector<OpenPCDetFrame> getOpenPCDetFrames(
             const QString& bundleRoot);
 
     /** Returns true if the dataset is extracted or a verified zip is

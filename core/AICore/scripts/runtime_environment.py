@@ -57,7 +57,7 @@ def build_configurations(build: Path) -> list[str]:
 
 def runtime_directories(build: Path) -> list[Path]:
     """Candidate directories for flat and CMake multi-config build outputs."""
-    bin_dir = build.resolve() / "bin"
+    bin_dir = build.absolute() / "bin"
     directories: list[Path] = []
     for config in build_configurations(build):
         for path in (bin_dir / config,
@@ -155,7 +155,7 @@ def load_shared_library(path: Path, *, global_symbols: bool = False,
                                os.environ.get("PATH", "").split(os.pathsep) if entry)
             seen = set()
             for directory in directories:
-                directory = Path(directory).resolve()
+                directory = Path(directory).absolute()
                 if directory.is_dir() and directory not in seen:
                     handles.append(os.add_dll_directory(str(directory)))
                     seen.add(directory)

@@ -208,15 +208,6 @@ border:2px solid #2196F3;
 background:#2196F3;
 }
 
-QRadioButton::indicator:checked:before{
-content:"";
-width:8px;
-height:8px;
-border-radius:4px;
-background:#FFFFFF;
-margin:3px;
-}
-
 QRadioButton::indicator:disabled{
 border-color:#424242;
 background:#1E1E1E;

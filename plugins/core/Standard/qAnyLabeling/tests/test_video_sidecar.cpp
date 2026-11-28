@@ -5,69 +5,71 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include <QCoreApplication>
+#include <gtest/gtest.h>
+
 #include <QFile>
 #include <QJsonDocument>
 #include <QTemporaryDir>
-#include <cstdio>
 
 #include "VideoSidecar.h"
 
-int main(int argc, char** argv) {
-    QCoreApplication app(argc, argv);
+class VideoSidecarTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        ASSERT_TRUE(folder.isValid());
+        video = folder.filePath(QStringLiteral("clip.mp4"));
+        sidecar = videoSidecarPath(video);
+        data.fps = 29.97;
+        data.durationMs = 4000;
+        data.width = 1920;
+        data.height = 1080;
+        data.video = QStringLiteral("clip.mp4");
+        data.labels.append(QStringLiteral("running"));
+        data.labelColors.insert(QStringLiteral("running"),
+                                QStringLiteral("#EF476F"));
+        data.segments.append(
+                {QStringLiteral("s1234567890"), QStringLiteral("running"), 1000,
+                 2500, videoFrameAt(1000, data.fps),
+                 videoFrameAt(2500, data.fps), QStringLiteral("fast")});
+    }
     QTemporaryDir folder;
-    if (!folder.isValid()) return 1;
-    const QString video = folder.filePath(QStringLiteral("clip.mp4"));
-    const QString sidecar = videoSidecarPath(video);
+    QString video;
+    QString sidecar;
     VideoSidecar data;
-    data.fps = 29.97;
-    data.durationMs = 4000;
-    data.width = 1920;
-    data.height = 1080;
-    data.video = QStringLiteral("clip.mp4");
-    data.labels.append(QStringLiteral("running"));
-    data.labelColors.insert(QStringLiteral("running"),
-                            QStringLiteral("#EF476F"));
-    data.segments.append(
-            {QStringLiteral("s1234567890"), QStringLiteral("running"), 1000,
-             2500, videoFrameAt(1000, data.fps), videoFrameAt(2500, data.fps),
-             QStringLiteral("fast")});
+};
+
+TEST_F(VideoSidecarTest, RoundTripsCurrentSchemaAndFrameRate) {
     QString error;
-    if (!saveVideoSidecar(video, data, &error)) {
-        std::fprintf(stderr, "initial save failed: %s\n", qPrintable(error));
-        return 1;
-    }
+    ASSERT_TRUE(saveVideoSidecar(video, data, &error)) << error.toStdString();
     VideoSidecar loaded;
-    if (!loadVideoSidecar(video, &loaded, &error) ||
-        loaded.toJson() != data.toJson() || videoFrameAt(1000, 29.97) != 30) {
-        std::fprintf(stderr, "video sidecar round-trip failed: %s\n",
-                     qPrintable(error));
-        return 1;
-    }
+    ASSERT_TRUE(loadVideoSidecar(video, &loaded, &error))
+            << error.toStdString();
+    EXPECT_EQ(loaded.toJson(), data.toJson());
+    EXPECT_EQ(videoFrameAt(1000, 29.97), 30);
+}
+
+TEST_F(VideoSidecarTest, LoadsAndRewritesLegacyMinimalSchema) {
     QFile legacy(sidecar);
-    if (!legacy.open(QIODevice::WriteOnly | QIODevice::Truncate) ||
-        legacy.write("{\"video\":\"clip.mp4\",\"segments\":[]}") < 0)
-        return 1;
+    ASSERT_TRUE(legacy.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    ASSERT_GE(legacy.write("{\"video\":\"clip.mp4\",\"segments\":[]}"), 0);
     legacy.close();
-    if (!loadVideoSidecar(video, &loaded, &error) ||
-        loaded.video != QStringLiteral("clip.mp4") ||
-        !loaded.segments.isEmpty() || !loaded.labels.isEmpty() ||
-        !saveVideoSidecar(video, loaded, &error)) {
-        std::fprintf(stderr, "legacy video sidecar failed: %s\n",
-                     qPrintable(error));
-        return 1;
-    }
+    VideoSidecar loaded;
+    QString error;
+    ASSERT_TRUE(loadVideoSidecar(video, &loaded, &error))
+            << error.toStdString();
+    EXPECT_EQ(loaded.video, QStringLiteral("clip.mp4"));
+    EXPECT_TRUE(loaded.segments.isEmpty());
+    EXPECT_TRUE(loaded.labels.isEmpty());
+    EXPECT_TRUE(saveVideoSidecar(video, loaded, &error)) << error.toStdString();
+}
+
+TEST_F(VideoSidecarTest, RefusesToOverwriteForeignAnnotationSidecar) {
     QFile foreign(sidecar);
-    if (!foreign.open(QIODevice::WriteOnly | QIODevice::Truncate) ||
-        foreign.write("{\"version\": \"5.0.1\", \"shapes\": []}") < 0)
-        return 1;
+    ASSERT_TRUE(foreign.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    ASSERT_GE(foreign.write("{\"version\": \"5.0.1\", \"shapes\": []}"), 0);
     foreign.close();
-    if (saveVideoSidecar(video, data, &error)) {
-        std::fprintf(stderr, "image annotation sidecar overwritten\n");
-        return 1;
-    }
-    if (!foreign.open(QIODevice::ReadOnly) ||
-        !foreign.readAll().contains("shapes"))
-        return 1;
-    return 0;
+    QString error;
+    EXPECT_FALSE(saveVideoSidecar(video, data, &error));
+    ASSERT_TRUE(foreign.open(QIODevice::ReadOnly));
+    EXPECT_TRUE(foreign.readAll().contains("shapes"));
 }

@@ -37,12 +37,15 @@
 #endif
 
 #include <ggml.h>
+#include <gtest/gtest.h>
 
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <memory>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "tasks/openpcdet/backend.h"
@@ -73,40 +76,63 @@ float rand_unit(void) {
            1.0f;
 }
 
-struct failure {
-    std::string message;
-};
+struct SparseConvShape {
+    int in_rows, c_in, c_out, n_out, k;
+    std::string tag;
+    std::vector<float> features, weights, bias;
+    std::vector<int32_t> neighbors;
 
-void require(bool condition, const std::string& message) {
-    if (!condition) throw failure{message};
-}
-
-// One deterministic-conv shape: fill pseudo-random inputs and compare the
-// numeric paths byte for byte.
-void run_shape(int in_rows,
-               int c_in,
-               int c_out,
-               int n_out,
-               int k,
-               const std::string& tag) {
-    std::vector<float> features(static_cast<size_t>(in_rows) * c_in);
-    for (float& v : features) v = rand_unit();
-    std::vector<float> weights(static_cast<size_t>(k) * c_in * c_out);
-    for (float& v : weights) v = rand_unit() * 0.25f;
-    std::vector<float> bias(static_cast<size_t>(c_out));
-    for (float& v : bias) v = rand_unit() * 0.5f;
-    // ~15% empty (-1) neighbors; the second output row is fully empty.
-    std::vector<int32_t> neighbors(static_cast<size_t>(n_out) * k);
-    for (int v = 0; v < n_out; ++v) {
-        for (int j = 0; j < k; ++j) {
-            const uint32_t roll = xorshift128() % 100;
-            neighbors[static_cast<size_t>(v) * k + j] =
-                    (roll < 15 || v == 1)
-                            ? -1
-                            : static_cast<int32_t>(xorshift128() % in_rows);
+    SparseConvShape(
+            int in_rows, int c_in, int c_out, int n_out, int k, const char* tag)
+        : in_rows(in_rows),
+          c_in(c_in),
+          c_out(c_out),
+          n_out(n_out),
+          k(k),
+          tag(tag) {
+        features.resize(static_cast<size_t>(in_rows) * c_in);
+        for (float& v : features) v = rand_unit();
+        weights.resize(static_cast<size_t>(k) * c_in * c_out);
+        for (float& v : weights) v = rand_unit() * 0.25f;
+        bias.resize(static_cast<size_t>(c_out));
+        for (float& v : bias) v = rand_unit() * 0.5f;
+        // ~15% empty (-1) neighbors; the second output row is fully empty.
+        neighbors.resize(static_cast<size_t>(n_out) * k);
+        for (int v = 0; v < n_out; ++v) {
+            for (int j = 0; j < k; ++j) {
+                const uint32_t roll = xorshift128() % 100;
+                neighbors[static_cast<size_t>(v) * k + j] =
+                        (roll < 15 || v == 1)
+                                ? -1
+                                : static_cast<int32_t>(xorshift128() % in_rows);
+            }
         }
     }
+};
 
+const std::vector<SparseConvShape>& shapes() {
+    // Generate the original RNG stream once, before any selected case runs.
+    static const std::vector<SparseConvShape> values = {
+            {1100, 16, 16, 1024, 27, "conv_imp_c1_shape"},
+            {1100, 16, 27, 1024, 27, "main_c1_shape"},
+            {1100, 64, 27, 1024, 27, "conv_imp_c3_shape"},
+            {1100, 64, 32, 1024, 27, "main_c2_shape"},
+            {1100, 64, 64, 1024, 27, "main_c3_shape"}};
+    return values;
+}
+
+class DeterministicSparseConv : public testing::TestWithParam<int> {};
+
+TEST_P(DeterministicSparseConv, MatchesSerialCudaAndDenseLowering) {
+    const auto& shape = shapes().at(GetParam());
+    const auto [in_rows, c_in, c_out, n_out, k] = std::make_tuple(
+            shape.in_rows, shape.c_in, shape.c_out, shape.n_out, shape.k);
+    const auto& tag = shape.tag;
+    const auto& features = shape.features;
+    const auto& weights = shape.weights;
+    const auto& bias = shape.bias;
+    const auto& neighbors = shape.neighbors;
+    SCOPED_TRACE(tag);
     // CPU std::fma core.
     std::vector<float> cpu_out(static_cast<size_t>(n_out) * c_out, 0.0f);
     det::det_sparse_conv_cpu(features.data(), c_in, neighbors.data(),
@@ -119,19 +145,20 @@ void run_shape(int in_rows,
     det::det_sparse_conv_rows(features.data(), c_in, neighbors.data(),
                               weights.data(), bias.data(), serial_out.data(),
                               n_out, c_out, k, det::det_fma);
-    require(std::memcmp(cpu_out.data(), serial_out.data(),
-                        cpu_out.size() * sizeof(float)) == 0,
-            tag + ": OpenMP CPU core diverged from the serial template");
+    ASSERT_EQ(std::memcmp(cpu_out.data(), serial_out.data(),
+                          cpu_out.size() * sizeof(float)),
+              0)
+            << tag + ": OpenMP CPU core diverged from the serial template";
 
 #ifdef AICORE_OPENPCDET_CUDA_EXT
     {
         std::vector<float> cuda_out(static_cast<size_t>(n_out) * c_out, 0.0f);
         std::string error;
-        require(det::det_sparse_conv_cuda(features.data(), in_rows, c_in,
-                                          neighbors.data(), weights.data(),
-                                          bias.data(), cuda_out.data(), n_out,
-                                          c_out, k, error),
-                tag + ": CUDA deterministic conv failed: " + error);
+        ASSERT_TRUE(det::det_sparse_conv_cuda(features.data(), in_rows, c_in,
+                                              neighbors.data(), weights.data(),
+                                              bias.data(), cuda_out.data(),
+                                              n_out, c_out, k, error))
+                << tag + ": CUDA deterministic conv failed: " + error;
         const int mismatch = std::memcmp(cpu_out.data(), cuda_out.data(),
                                          cpu_out.size() * sizeof(float));
         if (mismatch != 0) {
@@ -187,9 +214,9 @@ void run_shape(int in_rows,
                          tag.c_str(), first, v, o, cpu_out[first],
                          cuda_out[first], max_ulp, max_abs, rmajor_abs);
         }
-        require(mismatch == 0,
-                tag + ": CUDA kernel output is NOT byte-identical to the CPU "
-                      "std::fma core (memcmp != 0)");
+        ASSERT_EQ(mismatch, 0) << tag + ": CUDA kernel output is NOT "
+                                        "byte-identical to the CPU "
+                                        "std::fma core (memcmp != 0)";
     }
 #endif
 
@@ -214,12 +241,14 @@ void run_shape(int in_rows,
             term_scale[static_cast<size_t>(v) * c_out + o] = sum;
         }
     openpcdet::engine_backend backend;
-    require(backend.init("cpu", 0),
-            "cpu backend init failed: " + backend.error);
+    ASSERT_TRUE(backend.init("cpu", 0))
+            << "cpu backend init failed: " + backend.error;
     ggml_init_params params{ggml_tensor_overhead() * 64 + ggml_graph_overhead(),
                             nullptr, true};
-    ggml_context* ctx = ggml_init(params);
-    require(ctx != nullptr, "ggml context init failed");
+    std::unique_ptr<ggml_context, decltype(&ggml_free)> context(
+            ggml_init(params), &ggml_free);
+    auto* ctx = context.get();
+    ASSERT_NE(ctx, nullptr) << "ggml context init failed";
     ggml_tensor* features_t =
             ggml_new_tensor_2d(ctx, GGML_TYPE_F32, c_in, in_rows + 1);
     ggml_set_input(features_t);
@@ -240,8 +269,8 @@ void run_shape(int in_rows,
     ggml_set_output(output);
     ggml_cgraph* graph = ggml_new_graph_custom(ctx, 64, false);
     ggml_build_forward_expand(graph, output);
-    require(ggml_gallocr_alloc_graph(backend.galloc, graph),
-            "ggml graph allocation failed");
+    ASSERT_TRUE(ggml_gallocr_alloc_graph(backend.galloc, graph))
+            << "ggml graph allocation failed";
     ggml_backend_tensor_set(features_t, features.data(), 0,
                             features.size() * sizeof(float));
     const std::vector<float> zeros(static_cast<size_t>(c_in), 0.0f);
@@ -257,9 +286,9 @@ void run_shape(int in_rows,
                             weights.size() * sizeof(float));
     ggml_backend_tensor_set(bias_t, bias.data(), 0,
                             bias.size() * sizeof(float));
-    require(ggml_backend_graph_compute(backend.be, graph) ==
-                    GGML_STATUS_SUCCESS,
-            "ggml graph compute failed");
+    ASSERT_EQ(ggml_backend_graph_compute(backend.be, graph),
+              GGML_STATUS_SUCCESS)
+            << "ggml graph compute failed";
     std::vector<float> ggml_out(static_cast<size_t>(n_out) * c_out);
     ggml_backend_tensor_get(output, ggml_out.data(), 0,
                             ggml_out.size() * sizeof(float));
@@ -272,10 +301,10 @@ void run_shape(int in_rows,
         const double scale = std::max(1.0, static_cast<double>(term_scale[i]));
         max_scaled = std::max(max_scaled, diff / scale);
     }
-    require(max_scaled <= 2e-6, tag + ": ggml mul_mat control differs by " +
-                                        std::to_string(max_diff) +
-                                        " (scaled gate 2e-6, max_scaled " +
-                                        std::to_string(max_scaled) + ")");
+    ASSERT_LE(max_scaled, 2e-6) << tag + ": ggml mul_mat control differs by " +
+                                           std::to_string(max_diff) +
+                                           " (scaled gate 2e-6, max_scaled " +
+                                           std::to_string(max_scaled) + ")";
     std::string suffix;
 #ifdef AICORE_OPENPCDET_CUDA_EXT
     suffix = " cuda_memcmp=0";
@@ -284,10 +313,9 @@ void run_shape(int in_rows,
             "  %-26s n_out=%-5d C_in=%-3d C_out=%-3d K=%-3d "
             "ggml_max_diff=%.3g%s\n",
             tag.c_str(), n_out, c_in, c_out, k, max_diff, suffix.c_str());
-    ggml_free(ctx);
 }
 
-void run_expf_gate(void) {
+TEST(DeterministicSparseMath, MatchesExponentialReferenceAndSigmoidInvariants) {
     double max_rel = 0.0;
     // Accuracy sweep inside the unclamped range; saturation clamps beyond it
     // are checked separately (both sides saturate long before |x| = 87).
@@ -295,7 +323,8 @@ void run_expf_gate(void) {
         const float x = static_cast<float>(xd);
         const double reference = std::exp(static_cast<double>(x));
         const float got = det::det_expf(x);
-        require(std::isfinite(got), "det_expf produced a non-finite value");
+        ASSERT_TRUE(std::isfinite(got))
+                << "det_expf produced a non-finite value";
         const double rel =
                 reference > 0.0
                         ? std::fabs((static_cast<double>(got) - reference) /
@@ -303,30 +332,37 @@ void run_expf_gate(void) {
                         : (got == 0.0f ? 0.0 : 1.0);
         max_rel = std::max(max_rel, rel);
     }
-    require(max_rel <= 2e-6, "det_expf relative error " +
-                                     std::to_string(max_rel) + " exceeds 2e-6");
-    require(det::det_expf(90.0f) == 0x1.fffffep+127f,
-            "det_expf overflow clamp");
-    require(det::det_expf(-90.0f) == 0.0f, "det_expf underflow clamp");
+    ASSERT_LE(max_rel, 2e-6) << "det_expf relative error " +
+                                        std::to_string(max_rel) +
+                                        " exceeds 2e-6";
+    ASSERT_EQ(det::det_expf(90.0f), 0x1.fffffep+127f)
+            << "det_expf overflow clamp";
+    ASSERT_EQ(det::det_expf(-90.0f), 0.0f) << "det_expf underflow clamp";
     // Sigmoid pair + monotonicity sanity.
-    require(std::fabs(det::det_sigmoid(0.0f) - 0.5f) < 1e-6f,
-            "sigmoid(0) != 0.5");
+    ASSERT_LT(std::fabs(det::det_sigmoid(0.0f) - 0.5f), 1e-6f)
+            << "sigmoid(0) != 0.5";
     float previous = -1.0f;
     for (double xd = -60.0; xd <= 60.0; xd += 0.031) {
         const float value = det::det_sigmoid(static_cast<float>(xd));
-        require(std::isfinite(value) && value >= previous,
-                "det_sigmoid not monotonic / non-finite");
+        ASSERT_TRUE(std::isfinite(value) && value >= previous)
+                << "det_sigmoid not monotonic / non-finite";
         previous = value;
     }
-    require(det::det_sigmoid(-1000.0f) < 1e-30f,
-            "sigmoid underflow does not saturate to ~0");
-    require(det::det_sigmoid(1000.0f) == 1.0f, "sigmoid overflow not 1");
+    ASSERT_LT(det::det_sigmoid(-1000.0f), 1e-30f)
+            << "sigmoid underflow does not saturate to ~0";
+    ASSERT_EQ(det::det_sigmoid(1000.0f), 1.0f) << "sigmoid overflow not 1";
     std::printf("  %-26s max_rel=%.3g\n", "det_expf vs double exp", max_rel);
 }
 
+INSTANTIATE_TEST_SUITE_P(FocalShapes,
+                         DeterministicSparseConv,
+                         testing::Range(0, 5));
+
 }  // namespace
 
-int main() {
+int main(int argc, char** argv) {
+    testing::InitGoogleTest(&argc, argv);
+    if (testing::GTEST_FLAG(list_tests)) return RUN_ALL_TESTS();
 #ifdef AICORE_OPENPCDET_CUDA_EXT
     int device_count = 0;
     const cudaError_t count_status = cudaGetDeviceCount(&device_count);
@@ -338,20 +374,5 @@ int main() {
         return 77;
     }
 #endif
-    try {
-        std::printf("deterministic focal sparse conv gates:\n");
-        // K=27 is the focal 3x3x3 kernel; shapes cover the real chain
-        // (C_in 16/32/64, conv_imp C_out=27 and main conv C_out 16/32/64).
-        run_shape(1100, 16, 16, 1024, 27, "conv_imp_c1_shape");
-        run_shape(1100, 16, 27, 1024, 27, "main_c1_shape");
-        run_shape(1100, 64, 27, 1024, 27, "conv_imp_c3_shape");
-        run_shape(1100, 64, 32, 1024, 27, "main_c2_shape");
-        run_shape(1100, 64, 64, 1024, 27, "main_c3_shape");
-        run_expf_gate();
-        std::printf("ALL DETERMINISTIC SPARSE CONV GATES PASSED\n");
-        return 0;
-    } catch (const failure& f) {
-        std::fprintf(stderr, "FAIL: %s\n", f.message.c_str());
-        return 1;
-    }
+    return RUN_ALL_TESTS();
 }

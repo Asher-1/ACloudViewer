@@ -56,11 +56,11 @@ Load command 2
                 self.assertEqual(runtime.resolve_aicore_library(root),
                                  root / "bin/Debug/AICore.dll")
                 self.assertEqual(runtime.find_binary(root, "probe"),
-                                 root / "bin/Debug/probe.exe")
+                                 (root / "bin/Debug/probe.exe").resolve())
                 self.assertEqual(runtime.find_binary(root, "probe.exe"),
-                                 root / "bin/Debug/probe.exe")
+                                 (root / "bin/Debug/probe.exe").resolve())
                 self.assertEqual(runtime.find_build_tool(root, "aicore_tests/probe"),
-                                 root / "bin/Debug/probe.exe")
+                                 (root / "bin/Debug/probe.exe").resolve())
                 self.assertEqual(runtime.venv_python(root), root / "Scripts/python.exe")
             with mock.patch.object(runtime, "is_windows", return_value=True), \
                     mock.patch.dict(os.environ, {"AICORE_BUILD_CONFIG": ""}):

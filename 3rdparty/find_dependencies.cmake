@@ -715,11 +715,14 @@ function(import_shared_3rdparty_library name ext_target)
                 )
                 message(STATUS "install_name_tool -id @rpath/${library_filename} ${arg_LIB_DIR}/${library_filename}")
             else()
-                # deploy for debugging
+                # deploy for debugging: under DT_SONAME, never the ".so" symlink
                 add_custom_command(TARGET ${ext_target}
                     POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E
-                    copy_if_different ${arg_LIB_DIR}/${library_filename} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
+                    COMMAND ${CMAKE_COMMAND}
+                        -DLIBRARY=${arg_LIB_DIR}/${library_filename}
+                        -DDESTINATION_DIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                        -DREADELF=${CMAKE_READELF}
+                        -P ${CloudViewer_3RDPARTY_DIR}/CMake/DeploySharedLibrary.cmake
                 )
             endif()
 
@@ -747,7 +750,7 @@ function(import_shared_3rdparty_library name ext_target)
 endfunction()
 
 function(copy_shared_library ext_target)
-    cmake_parse_arguments(arg "PUBLIC;HEADER" "LIB_DIR" "LIBRARIES;SUFFIX" ${ARGN})
+    cmake_parse_arguments(arg "PUBLIC;HEADER" "LIB_DIR" "LIBRARIES" ${ARGN})
 
     if (arg_UNPARSED_ARGUMENTS)
         message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
@@ -755,10 +758,6 @@ function(copy_shared_library ext_target)
     endif ()
     if (NOT arg_LIB_DIR)
         set(arg_LIB_DIR "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
-    endif ()
-
-    if (NOT arg_SUFFIX)
-        set(arg_SUFFIX "")
     endif ()
 
     if (arg_LIBRARIES)
@@ -772,12 +771,15 @@ function(copy_shared_library ext_target)
                     COMMAND ${CMAKE_COMMAND} -E
                     copy_if_different ${arg_LIB_DIR}/${library_filename} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/${library_filename}"
                 )
-            elseif(arg_SUFFIX)
-                set(library_filename ${library_filename}${arg_SUFFIX})
-                    add_custom_command(TARGET ${ext_target}
+            else()
+                # deploy under DT_SONAME, never the ".so" symlink
+                add_custom_command(TARGET ${ext_target}
                     POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E
-                    copy_if_different ${arg_LIB_DIR}/${library_filename} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${library_filename}"
+                    COMMAND ${CMAKE_COMMAND}
+                        -DLIBRARY=${arg_LIB_DIR}/${library_filename}
+                        -DDESTINATION_DIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                        -DREADELF=${CMAKE_READELF}
+                        -P ${CloudViewer_3RDPARTY_DIR}/CMake/DeploySharedLibrary.cmake
                 )
             endif()
         endforeach ()
@@ -892,6 +894,19 @@ if (WITH_OPENMP)
             message(STATUS "AppleClang OpenMP: libomp not found; install it with 'conda install -c conda-forge libomp' or 'brew install libomp' to enable OpenMP")
         endif()
     endif()
+    if (MSVC)
+        # Use the LLVM OpenMP runtime (/openmp:llvm -> libomp140) everywhere,
+        # including vendored subprojects (faiss) that run their own
+        # find_package(OpenMP) against this same cache. conda's Qt5Concurrent
+        # already imports libomp140.x86_64.dll; mixing it with the default
+        # MSVC vcomp runtime in one process corrupts the heap inside faiss
+        # nested parallel regions. Presetting the FindOpenMP flag variables
+        # (the documented extension point, as on AppleClang above) makes every
+        # consumer agree on a single runtime instead of appending a flag that
+        # the imported target's own -openmp overrides (last-wins = vcomp).
+        set(OpenMP_C_FLAGS "/openmp:llvm" CACHE STRING "OpenMP C flags" FORCE)
+        set(OpenMP_CXX_FLAGS "/openmp:llvm" CACHE STRING "OpenMP CXX flags" FORCE)
+    endif()
     find_package_3rdparty_library(3rdparty_openmp
             PACKAGE OpenMP
             PACKAGE_VERSION_VAR OpenMP_CXX_VERSION
@@ -903,14 +918,6 @@ if (WITH_OPENMP)
             list(APPEND CloudViewer_3RDPARTY_EXTERNAL_MODULES "OpenMP")
         endif ()
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_openmp)
-        
-        # On MSVC, use LLVM-based OpenMP to support modern OpenMP features like atomic write
-        if (MSVC)
-            # Add -openmp:llvm flag to use LLVM OpenMP runtime instead of default MSVC OpenMP
-            # This is required for features like '#pragma omp atomic write'
-            target_compile_options(3rdparty_openmp INTERFACE $<$<COMPILE_LANGUAGE:CXX>:/openmp:llvm>)
-            message(STATUS "Using LLVM-based OpenMP on MSVC")
-        endif()
     else()
         set(WITH_OPENMP OFF)
     endif ()
@@ -1616,31 +1623,29 @@ if(WITH_MINIZIP)
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_minizip)
 endif()
 
-# Googletest
-if (BUILD_UNIT_TESTS)
-    if (USE_SYSTEM_GOOGLETEST)
-        find_package_3rdparty_library(3rdparty_googletest
-                PACKAGE GTest
-                TARGETS GTest::gmock
-                )
-        if(NOT 3rdparty_googletest_FOUND)
+# GoogleTest is shared by every first-party test configuration. Keep the
+# historical interface target for existing suites, with one compiled framework.
+if(BUILD_UNIT_TESTS OR AICore_BUILD_TESTS OR VTKENGINE_BUILD_TESTS)
+    if(USE_SYSTEM_GOOGLETEST)
+        find_package(GTest QUIET)
+        if(NOT TARGET GTest::gtest OR NOT TARGET GTest::gtest_main OR
+           NOT TARGET GTest::gmock)
             set(USE_SYSTEM_GOOGLETEST OFF)
         endif()
-    endif ()
-    if (NOT USE_SYSTEM_GOOGLETEST)
+    endif()
+    if(NOT USE_SYSTEM_GOOGLETEST)
         include(${CloudViewer_3RDPARTY_DIR}/googletest/googletest.cmake)
-        build_3rdparty_library(3rdparty_googletest DIRECTORY ${GOOGLETEST_SOURCE_DIR}
-            SOURCES
-                googletest/src/gtest-all.cc
-                googlemock/src/gmock-all.cc
-            INCLUDE_DIRS
-                googletest/include/
-                googletest/
-                googlemock/include/
-                googlemock/
-        )
-    endif ()
-endif ()
+    else()
+        foreach(component gtest gtest_main gmock)
+            if(NOT TARGET ${component})
+                add_library(${component} ALIAS GTest::${component})
+            endif()
+        endforeach()
+    endif()
+    add_library(3rdparty_googletest INTERFACE)
+    target_link_libraries(3rdparty_googletest INTERFACE gtest gmock)
+    add_library(${PROJECT_NAME}::3rdparty_googletest ALIAS 3rdparty_googletest)
+endif()
 
 # Google benchmark
 if (BUILD_BENCHMARKS)
@@ -1799,6 +1804,18 @@ if(BUILD_GUI)
         )
         set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
         target_link_libraries(3rdparty_filament INTERFACE 3rdparty_threads ${CMAKE_DL_LIBS})
+        if(UNIX AND NOT APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+            # bluegl ships real GL entry points (glGetString, ...) as global
+            # symbols in its precompiled assembly object. Exported from the
+            # executable they interpose Qt's own GL resolution: Qt 6.4 Gui
+            # binds glGetString to bluegl's pointer table before filament
+            # initializes it and segfaults at QApplication init (Qt >= 6.5
+            # resolves GL itself and is unaffected). --exclude-libs (the
+            # import_3rdparty_library HIDDEN option) only stops the dynamic
+            # export; libbackend's references keep resolving to bluegl
+            # statically, which objcopy --localize-symbols would break.
+            target_link_options(3rdparty_filament INTERFACE "LINKER:--exclude-libs,libbluegl.a")
+        endif()
         if(UNIX AND NOT APPLE)
             # For ubuntu, llvm libs are located in /usr/lib/llvm-{version}/lib.
             # We first search for these paths, and then search CMake's default
@@ -1851,6 +1868,15 @@ if(BUILD_GUI)
             endif()
             find_library(CPP_LIBRARY    c++    PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
             find_library(CPPABI_LIBRARY c++abi PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
+
+            # LLVM >= 12 links libc++abi against libunwind.so.1 (LLVM 11 built
+            # it in statically). The wheel must bundle that libunwind next to
+            # libc++abi or importing cloudViewer fails on systems without LLVM.
+            # Optional: absent for LLVM 11, where libc++abi has no such NEEDED.
+            find_library(UNWIND_LIBRARY unwind PATHS ${CLANG_LIBDIR} NO_DEFAULT_PATH)
+            if (UNWIND_LIBRARY)
+                message(STATUS "Filament unwind library: ${UNWIND_LIBRARY}")
+            endif()
 
             # Ensure that libstdc++ gets linked first.
             target_link_libraries(3rdparty_filament INTERFACE -lstdc++
@@ -2079,7 +2105,6 @@ if (USE_BLAS)
                         "due to the large number of spurious warnings that are generated. If you "
                         "need to see link warnings please build with -DCMAKE_BUILD_TYPE=Debug.")
                     target_link_options(3rdparty_blas INTERFACE "-Wl,-w")
-                    target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
                 endif()
             endif()
         elseif (UNIX AND NOT APPLE)

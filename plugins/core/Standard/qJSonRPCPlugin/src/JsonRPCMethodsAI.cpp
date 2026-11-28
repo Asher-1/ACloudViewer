@@ -60,6 +60,7 @@ JsonRPCResult JsonRPCPlugin::rpcAICoreBatch(
                                             "MAP_ANYTHING_RECONSTRUCT",
                                             "QUERY_SPLAT",
                                             "VLXSEEK_RUN",
+                                            "WEVISONE_RUN",
                                             "SAM3D_GENERATE",
                                             "OPENPCDET_DETECT",
                                             "LLM_GENERATE",

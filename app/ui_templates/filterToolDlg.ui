@@ -127,7 +127,7 @@
        </property>
        <property name="icon">
         <iconset resource="../MainWindow.qrc">
-         <normaloff>:/Resources/images/exportCloud.png</normaloff>:/Resources/images/exportCloud.png</iconset>
+         <normaloff>:/Resources/images/svg/small/ioExportCloud.svg</normaloff>:/Resources/images/svg/small/ioExportCloud.svg</iconset>
        </property>
       </widget>
      </item>
@@ -281,7 +281,7 @@
         </property>
         <property name="icon">
          <iconset resource="../MainWindow.qrc">
-          <normaloff>:/Resources/images/svg/view/ecvViewXpos.svg</normaloff>:/Resources/images/svg/view/ecvViewXpos.svg</iconset>
+          <normaloff>:/Resources/images/svg/view/mainViewXpos.svg</normaloff>:/Resources/images/svg/view/mainViewXpos.svg</iconset>
         </property>
        </widget>
       </item>
@@ -307,7 +307,7 @@
         </property>
         <property name="icon">
          <iconset resource="../MainWindow.qrc">
-          <normaloff>:/Resources/images/svg/view/ecvViewXneg.svg</normaloff>:/Resources/images/svg/view/ecvViewXneg.svg</iconset>
+          <normaloff>:/Resources/images/svg/view/mainViewXneg.svg</normaloff>:/Resources/images/svg/view/mainViewXneg.svg</iconset>
         </property>
        </widget>
       </item>
@@ -333,7 +333,7 @@
         </property>
         <property name="icon">
          <iconset resource="../MainWindow.qrc">
-          <normaloff>:/Resources/images/svg/view/ecvViewYpos.svg</normaloff>:/Resources/images/svg/view/ecvViewYpos.svg</iconset>
+          <normaloff>:/Resources/images/svg/view/mainViewYpos.svg</normaloff>:/Resources/images/svg/view/mainViewYpos.svg</iconset>
         </property>
        </widget>
       </item>
@@ -359,7 +359,7 @@
         </property>
         <property name="icon">
          <iconset resource="../MainWindow.qrc">
-          <normaloff>:/Resources/images/svg/view/ecvViewYneg.svg</normaloff>:/Resources/images/svg/view/ecvViewYneg.svg</iconset>
+          <normaloff>:/Resources/images/svg/view/mainViewYneg.svg</normaloff>:/Resources/images/svg/view/mainViewYneg.svg</iconset>
         </property>
        </widget>
       </item>
@@ -385,7 +385,7 @@
         </property>
         <property name="icon">
          <iconset resource="../MainWindow.qrc">
-          <normaloff>:/Resources/images/svg/view/ecvViewZneg.svg</normaloff>:/Resources/images/svg/view/ecvViewZneg.svg</iconset>
+          <normaloff>:/Resources/images/svg/view/mainViewZneg.svg</normaloff>:/Resources/images/svg/view/mainViewZneg.svg</iconset>
         </property>
        </widget>
       </item>
@@ -411,7 +411,7 @@
         </property>
         <property name="icon">
          <iconset resource="../MainWindow.qrc">
-          <normaloff>:/Resources/images/svg/view/ecvViewZpos.svg</normaloff>:/Resources/images/svg/view/ecvViewZpos.svg</iconset>
+          <normaloff>:/Resources/images/svg/view/mainViewZpos.svg</normaloff>:/Resources/images/svg/view/mainViewZpos.svg</iconset>
         </property>
        </widget>
       </item>

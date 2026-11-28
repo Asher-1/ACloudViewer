@@ -33,3 +33,9 @@ ccPointCloud* BuildAnnotatedCloud(ccPointCloud* source,
                                   const QString& modelTag,
                                   unsigned* tintedOut,
                                   QString* error);
+
+/** Recursively disable every DB node carrying \p metaKey (e.g. the previous
+ *  run's "OpenPCDet/Model" group/annotated cloud, or a prior sample cloud's
+ *  "OpenPCDet/Sample"), so only the newest export stays visible. Returns the
+ *  number of nodes disabled. The caller refreshes the views / DB tree. */
+int DisableTaggedEntities(ccHObject* root, const QString& metaKey);

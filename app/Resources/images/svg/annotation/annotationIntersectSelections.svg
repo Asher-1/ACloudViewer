@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.4981,-0.4981) scale(1.04151)">
+
+<title>Intersect selections — overlap only</title>
+  <path d="M 2 2 H 15.5 V 15.5 H 2 Z" fill="none" stroke="#6F6F59" stroke-width="1.1"/>
+  <path d="M 8.5 8.5 H 22 V 22 H 8.5 Z" fill="none" stroke="#6F6F59" stroke-width="1.1"/>
+  <rect x="8.5" y="8.5" width="7" height="7" fill="#72BE44" stroke="#6F6F59"/>
+
+</g>
+</svg>

@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <QtCompat.h>
+#include <gtest/gtest.h>
+
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -105,8 +108,7 @@ QJsonObject probe(const PointCloudCalibration& calibration,
 }
 }  // namespace
 
-int main(int argc, char** argv) {
-    QCoreApplication app(argc, argv);
+int runCameraProbe(int argc, char** argv) {
     QString error;
     if (argc == 3 &&
         QString::fromLocal8Bit(argv[1]) == QStringLiteral("--viewport-probe")) {
@@ -198,21 +200,6 @@ int main(int argc, char** argv) {
                           .constData());
         return 0;
     }
-    // Z-up axis presets retain their exact 90-degree top direction, including
-    // the degenerate single-point fit and portrait-window scale correction.
-    PointCloudViewTransform view;
-    view.fit({QVector4D(2, 3, 4, 1)}, QSize(100, 200));
-    REQUIRE(std::abs(view.scale - 0.22) < 1e-12);
-    view.setView(0);
-    const auto top = view.matrix(QSize(100, 200));
-    REQUIRE(std::abs(top(0, 0) - 1 / 0.11) < 1e-6);
-    REQUIRE(std::abs(top(1, 1) - 1 / 0.22) < 1e-6);
-    REQUIRE(std::abs(top(1, 2)) < 1e-12);
-    const auto previous = view.scale;
-    view.zoom(120);
-    REQUIRE(view.scale < previous);
-    view.orbit(0, 1000);
-    REQUIRE(view.pitch == 90);
     if (argc == 4 &&
         QString::fromLocal8Bit(argv[1]) == QStringLiteral("--probe")) {
         PointCloudCalibration calibration;
@@ -238,88 +225,127 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    QTemporaryDir directory;
-    REQUIRE(directory.isValid());
-    const QString calibrationPath =
-            directory.filePath(QStringLiteral("calibration.json"));
-    REQUIRE(writeJson(calibrationPath, calibrationJson()));
-    PointCloudCalibration calibration;
-    REQUIRE(loadPointCloudCalibration(calibrationPath, &calibration, &error));
-    REQUIRE(calibration.imageSize == QSize(100, 80));
+    return 0;
+}
 
+TEST(PointCloudViewTransform, PreservesAxisPresetsAndScaleBounds) {
+    // Z-up axis presets retain their exact 90-degree top direction, including
+    // the degenerate single-point fit and portrait-window scale correction.
+    PointCloudViewTransform view;
+    view.fit({QVector4D(2, 3, 4, 1)}, QSize(100, 200));
+    ASSERT_TRUE(std::abs(view.scale - 0.22) < 1e-12);
+    view.setView(0);
+    const auto top = view.matrix(QSize(100, 200));
+    ASSERT_TRUE(std::abs(top(0, 0) - 1 / 0.11) < 1e-6);
+    ASSERT_TRUE(std::abs(top(1, 1) - 1 / 0.22) < 1e-6);
+    ASSERT_TRUE(std::abs(top(1, 2)) < 1e-12);
+    const auto previous = view.scale;
+    view.zoom(120);
+    ASSERT_TRUE(view.scale < previous);
+    view.orbit(0, 1000);
+    ASSERT_TRUE(view.pitch == 90);
+}
+
+class PointCloudCameraTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        ASSERT_TRUE(directory.isValid());
+        calibrationPath = directory.filePath("calibration.json");
+        ASSERT_TRUE(writeJson(calibrationPath, calibrationJson()));
+        ASSERT_TRUE(loadPointCloudCalibration(calibrationPath, &calibration,
+                                              &error));
+        ASSERT_EQ(calibration.imageSize, QSize(100, 80));
+    }
+    QTemporaryDir directory;
+    QString calibrationPath, error;
+    PointCloudCalibration calibration;
+};
+
+TEST_F(PointCloudCameraTest, ProjectsDepthOrderedPointsAndClippedCuboidEdges) {
     QVector<QVector4D> points{{0, 0, 5, 0},  {0, 0, 10, 0}, {1, 0, 5, 0},
                               {-1, 0, 5, 0}, {0, 1, 5, 0},  {100, 100, 1, 0},
                               {0, 0, -1, 0}};
     QVector<int> indices;
     QVector<QPoint> pixels;
-    REQUIRE(projectPointCloud(points, calibration, &indices, &pixels, &error));
-    REQUIRE(indices == QVector<int>({1, 0, 2, 3, 4}));
-    REQUIRE(pixels ==
-            QVector<QPoint>({QPoint(50, 40), QPoint(50, 40), QPoint(60, 40),
-                             QPoint(40, 40), QPoint(50, 50)}));
+    ASSERT_TRUE(
+            projectPointCloud(points, calibration, &indices, &pixels, &error));
+    ASSERT_TRUE(indices == QVector<int>({1, 0, 2, 3, 4}));
+    ASSERT_TRUE(pixels ==
+                QVector<QPoint>({QPoint(50, 40), QPoint(50, 40), QPoint(60, 40),
+                                 QPoint(40, 40), QPoint(50, 50)}));
 
     PointCloudCuboid cuboid;
     cuboid.center = {{0, 0, 5}};
     cuboid.size = {{2, 2, 2}};
     QVector<QLineF> segments;
-    REQUIRE(projectCuboid(cuboid, calibration, &segments, &error));
-    REQUIRE(segments.size() == 12);
+    ASSERT_TRUE(projectCuboid(cuboid, calibration, &segments, &error));
+    ASSERT_TRUE(segments.size() == 12);
     for (const QLineF& line : segments) {
-        REQUIRE(line.x1() >= 0 && line.x1() <= 99 && line.y1() >= 0 &&
-                line.y1() <= 79);
-        REQUIRE(line.x2() >= 0 && line.x2() <= 99 && line.y2() >= 0 &&
-                line.y2() <= 79);
+        ASSERT_TRUE(line.x1() >= 0 && line.x1() <= 99 && line.y1() >= 0 &&
+                    line.y1() <= 79);
+        ASSERT_TRUE(line.x2() >= 0 && line.x2() <= 99 && line.y2() >= 0 &&
+                    line.y2() <= 79);
     }
 
     const QString distortedPath =
             directory.filePath(QStringLiteral("distorted.json"));
-    REQUIRE(writeJson(distortedPath,
-                      calibrationJson(QStringLiteral("opencv5"))));
+    ASSERT_TRUE(writeJson(distortedPath,
+                          calibrationJson(QStringLiteral("opencv5"))));
     PointCloudCalibration distorted;
-    REQUIRE(loadPointCloudCalibration(distortedPath, &distorted, &error));
-    REQUIRE(projectCuboid(cuboid, distorted, &segments, &error));
-    REQUIRE(segments.size() == 12 * 32);
+    ASSERT_TRUE(loadPointCloudCalibration(distortedPath, &distorted, &error));
+    ASSERT_TRUE(projectCuboid(cuboid, distorted, &segments, &error));
+    ASSERT_TRUE(segments.size() == 12 * 32);
+}
 
+TEST_F(PointCloudCameraTest, RejectsUnsupportedCameraModel) {
     QJsonObject invalid = calibrationJson();
     invalid[QStringLiteral("camera_model")] = QStringLiteral("fisheye");
-    REQUIRE(writeJson(directory.filePath(QStringLiteral("invalid.json")),
-                      invalid));
-    REQUIRE(!loadPointCloudCalibration(
+    ASSERT_TRUE(writeJson(directory.filePath(QStringLiteral("invalid.json")),
+                          invalid));
+    ASSERT_TRUE(!loadPointCloudCalibration(
             directory.filePath(QStringLiteral("invalid.json")), &calibration,
             &error));
+}
 
+TEST_F(PointCloudCameraTest, ListsImagesAndRejectsAmbiguousBasenames) {
     const QString imageDirectory = directory.filePath(QStringLiteral("images"));
-    REQUIRE(QDir().mkpath(imageDirectory));
-    REQUIRE(QImage(100, 80, QImage::Format_RGB32)
-                    .save(QDir(imageDirectory)
-                                  .filePath(QStringLiteral("000001.png"))));
-    REQUIRE(QImage(100, 80, QImage::Format_RGB32)
-                    .save(QDir(imageDirectory)
-                                  .filePath(QStringLiteral("000002.jpg"))));
+    ASSERT_TRUE(QDir().mkpath(imageDirectory));
+    ASSERT_TRUE(QImage(100, 80, QImage::Format_RGB32)
+                        .save(QDir(imageDirectory)
+                                      .filePath(QStringLiteral("000001.png"))));
+    ASSERT_TRUE(QImage(100, 80, QImage::Format_RGB32)
+                        .save(QDir(imageDirectory)
+                                      .filePath(QStringLiteral("000002.jpg"))));
     QHash<QString, QString> imagePaths;
-    REQUIRE(listPointCloudCameraImages(imageDirectory, &imagePaths, &error));
+    ASSERT_TRUE(
+            listPointCloudCameraImages(imageDirectory, &imagePaths, &error));
     const QSet<QString> expectedStems = QSet<QString>()
                                         << QStringLiteral("000001")
                                         << QStringLiteral("000002");
-    REQUIRE(imagePaths.keys().toSet() == expectedStems);
+    ASSERT_TRUE(qtCompatQSetFromList(imagePaths.keys()) == expectedStems);
     PointCloudCameraSource source;
-    REQUIRE(loadPointCloudCameraSource(imageDirectory, calibrationPath, &source,
-                                       &error));
-    REQUIRE(source.hasCalibration && source.imagePaths == imagePaths);
+    ASSERT_TRUE(loadPointCloudCameraSource(imageDirectory, calibrationPath,
+                                           &source, &error));
+    ASSERT_TRUE(source.hasCalibration && source.imagePaths == imagePaths);
     const QString duplicateDirectory =
             directory.filePath(QStringLiteral("duplicate-images"));
-    REQUIRE(QDir().mkpath(duplicateDirectory));
-    REQUIRE(QImage(2, 2, QImage::Format_RGB32)
-                    .save(QDir(duplicateDirectory)
-                                  .filePath(QStringLiteral("frame.png"))));
-    REQUIRE(QImage(2, 2, QImage::Format_RGB32)
-                    .save(QDir(duplicateDirectory)
-                                  .filePath(QStringLiteral("frame.jpg"))));
-    REQUIRE(!listPointCloudCameraImages(duplicateDirectory, &imagePaths,
-                                        &error));
-    REQUIRE(error.contains(QStringLiteral("same basename")));
-    std::puts(
-            "PASS point-cloud camera calibration, projection, clipping and "
-            "distortion sampling");
-    return 0;
+    ASSERT_TRUE(QDir().mkpath(duplicateDirectory));
+    ASSERT_TRUE(QImage(2, 2, QImage::Format_RGB32)
+                        .save(QDir(duplicateDirectory)
+                                      .filePath(QStringLiteral("frame.png"))));
+    ASSERT_TRUE(QImage(2, 2, QImage::Format_RGB32)
+                        .save(QDir(duplicateDirectory)
+                                      .filePath(QStringLiteral("frame.jpg"))));
+    ASSERT_TRUE(!listPointCloudCameraImages(duplicateDirectory, &imagePaths,
+                                            &error));
+    ASSERT_TRUE(error.contains(QStringLiteral("same basename")));
+}
+
+int main(int argc, char** argv) {
+    QCoreApplication app(argc, argv);
+    if ((argc == 3 && QString::fromLocal8Bit(argv[1]) == "--viewport-probe") ||
+        (argc == 4 && QString::fromLocal8Bit(argv[1]) == "--probe"))
+        return runCameraProbe(argc, argv);
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

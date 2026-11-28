@@ -5,51 +5,49 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <gtest/gtest.h>
+
 #include <cmath>
-#include <cstdio>
 #include <vector>
 
 #include "common/ggml_extend.hpp"
 #include "tasks/depth/backend.hpp"
 
-int main() {
+TEST(DepthGgmlExtend, LayerNormMatchesKnownMeanAndVariance) {
     aicore::depth::Backend be;
     aicore::depth::GraphInputPool pool;
-    // layernorm of [1,2,3,4] (mean=2.5,var=1.25) with w=1,b=0 -> normalized
+    // [1,2,3,4] has mean=2.5 and variance=1.25; w=1,b=0.
     std::vector<float> x = {1, 2, 3, 4}, w = {1, 1, 1, 1}, b = {0, 0, 0, 0},
                        out;
-    bool ok = be.compute(
+    ASSERT_TRUE(be.compute(
             [&](ggml_context* ctx) -> ggml_tensor* {
                 ggml_tensor* tx = be.add_graph_input(ctx, pool, x.data(), 4);
                 ggml_tensor* tw = be.add_graph_input(ctx, pool, w.data(), 4);
                 ggml_tensor* tb = be.add_graph_input(ctx, pool, b.data(), 4);
                 return ggml_common::layernorm(ctx, tx, tw, tb, 1e-6f);
             },
-            out);
-    float sd = std::sqrt(1.25f);
-    ok = ok && std::fabs(out[0] - (-1.5f / sd)) < 1e-3f &&
-         std::fabs(out[3] - (1.5f / sd)) < 1e-3f;
-    std::fprintf(stderr, "layernorm -> %s\n", ok ? "OK" : "FAIL");
+            out));
+    ASSERT_EQ(out.size(), x.size());
+    const float sd = std::sqrt(1.25f);
+    EXPECT_LT(std::fabs(out[0] - (-1.5f / sd)), 1e-3f);
+    EXPECT_LT(std::fabs(out[3] - (1.5f / sd)), 1e-3f);
+}
 
-    // gelu_erf parity check vs exact-erf formula x*0.5*(1+erf(x/sqrt(2)))
-    // guards against ggml's gelu op being the tanh approximation.
-    aicore::depth::GraphInputPool gpool;
-    std::vector<float> gx = {1.0f, -1.0f, 0.5f, 2.0f}, gout;
-    bool gok = be.compute(
+TEST(DepthGgmlExtend, GeluUsesExactErfRatherThanTanhApproximation) {
+    aicore::depth::Backend be;
+    aicore::depth::GraphInputPool pool;
+    std::vector<float> x = {1.0f, -1.0f, 0.5f, 2.0f}, out;
+    ASSERT_TRUE(be.compute(
             [&](ggml_context* ctx) -> ggml_tensor* {
                 ggml_tensor* t =
-                        be.add_graph_input(ctx, gpool, gx.data(), gx.size());
+                        be.add_graph_input(ctx, pool, x.data(), x.size());
                 return ggml_common::gelu_erf(ctx, t);
             },
-            gout);
-    for (size_t i = 0; i < gx.size() && gok; ++i) {
-        float ref = gx[i] * 0.5f * (1.0f + std::erf(gx[i] / std::sqrt(2.0f)));
-        gok = gok && std::fabs(gout[i] - ref) < 1e-3f;
+            out));
+    ASSERT_EQ(out.size(), x.size());
+    for (size_t i = 0; i < x.size(); ++i) {
+        const float ref =
+                x[i] * 0.5f * (1.0f + std::erf(x[i] / std::sqrt(2.0f)));
+        EXPECT_LT(std::fabs(out[i] - ref), 1e-3f) << "element " << i;
     }
-    std::fprintf(stderr, "gelu_erf -> %s (gelu(1)=%.4f gelu(-1)=%.4f)\n",
-                 gok ? "OK" : "FAIL", gout.size() ? gout[0] : 0.f,
-                 gout.size() > 1 ? gout[1] : 0.f);
-
-    ok = ok && gok;
-    return ok ? 0 : 1;
 }

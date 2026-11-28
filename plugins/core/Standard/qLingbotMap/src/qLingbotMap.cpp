@@ -9,6 +9,7 @@
 
 #include <CVLog.h>
 #include <QtCompat.h>
+#include <ecvAICoreUiHelper.h>
 #include <ecvCameraSensor.h>
 #include <ecvCameraSensorDisplayUtils.h>
 #include <ecvColorTypes.h>
@@ -192,6 +193,7 @@ void qLingbotMap::showDialog() {
     if (!m_dialog) {
         m_dialog = new LingbotMapDialog(
                 m_app != nullptr ? m_app->getMainWindow() : nullptr);
+        ecvAICoreUi::bindDialogAction(m_action, m_dialog);
         m_dialog->setAppInterface(m_app);
         connect(m_dialog, &LingbotMapDialog::runRequested, this,
                 &qLingbotMap::executeTask);

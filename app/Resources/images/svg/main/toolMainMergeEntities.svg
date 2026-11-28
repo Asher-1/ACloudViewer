@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" stroke="#6F6F59" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round">
+<g transform="translate(-0.0436,-0.0436) scale(1.00364)">
+
+<defs><linearGradient id="entity" x1="0.0" y1="0.0" x2="0.0" y2="1.0"><stop offset="0.000" stop-color="#D0E5F6"/><stop offset="1.000" stop-color="#2896D3"/></linearGradient></defs>
+<title>Merge entities into one</title>
+  <path d="M 1.5 3 H 10 V 6.8 H 5.5 V 17.2 H 10 V 21 H 1.5 Z" fill="url(#entity)" stroke="#6F6F59"/>
+  <rect x="18" y="7.2" width="4.5" height="9.6" rx="0.3" fill="url(#entity)" stroke="#6F6F59"/>
+  <path d="M 7 12 L 12 7.5 V 10 H 17 V 14 H 12 V 16.5 Z" fill="#F3C017" stroke="#6F6F59" stroke-width="0.75"/>
+
+</g>
+</svg>

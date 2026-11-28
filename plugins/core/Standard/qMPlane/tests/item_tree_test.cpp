@@ -5,171 +5,156 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "catch2/catch.hpp"
-#include "trompeloeil\catch2\trompeloeil.hpp"
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
-// Mocks
-#include "mocks\ccGenericGLDisplayMock.h"
-#include "mocks\ecvMainAppInterfaceMock.h"
-
-// ACloudViewer
-#include <ecvPointCloud.h>
-
-#include "ecvHObject.h"
-
-// Qt
-#include "qmainwindow.h"
-
-// Local dependencies
 #include "ccItemTree.h"
 #include "ccMPlaneErrors.h"
+#include "mocks/ccMainAppInterfaceMock.h"
 
-TEST_CASE("Test findItemInHierarchy() and getChildrenByType() ",
-          "[item-tree]") {
-    ccHObject folder = ("ICI Acquisition");
-    ccPointCloud cloud = ("Parent");
-    ccPointCloud child1 = ("Child1");
-    ccPointCloud child2 = ("Child2");
-    ccPointCloud child3 = ("Child3");
+namespace {
 
-    child1.addChild(&child2);
-    cloud.addChild(&child1);
-    folder.addChild(&cloud);
-    folder.addChild(&child3);
-
-    SECTION("Check instantiation") {
-        REQUIRE(&cloud != nullptr);
-        REQUIRE(&child1 != nullptr);
-        REQUIRE(&child2 != nullptr);
+class ItemHierarchyTest : public testing::Test {
+protected:
+    void SetUp() override {
+        // Stack objects must not acquire the default child-delete dependency.
+        ASSERT_TRUE(child1.addChild(&child2, ccHObject::DP_NONE));
+        ASSERT_TRUE(cloud.addChild(&child1, ccHObject::DP_NONE));
+        ASSERT_TRUE(folder.addChild(&cloud, ccHObject::DP_NONE));
+        ASSERT_TRUE(folder.addChild(&child3, ccHObject::DP_NONE));
     }
 
-    SECTION("Test findItemInHierarchy() with nullptr root returns nullptr") {
-        REQUIRE_THROWS_AS(
-                CC_ITEM_TREE::findItemInHierarchy(
-                        nullptr, CC_ITEM_TREE::CC_TYPES_MAP::HIERARCHY_OBJECT),
-                MplaneInvalidArgument);
-    }
+    ccHObject folder{"ICI Acquisition"};
+    ccPointCloud cloud{"Parent"};
+    ccPointCloud child1{"Child1"};
+    ccPointCloud child2{"Child2"};
+    ccPointCloud child3{"Child3"};
+};
 
-    SECTION("Test findItemInHierarchy() with valid name returns 1st sub-level "
-            "child") {
-        REQUIRE(CC_ITEM_TREE::findItemInHierarchy(
-                        &folder, CC_ITEM_TREE::CC_TYPES_MAP::HIERARCHY_OBJECT,
-                        "Child1") == &child1);
-    }
-
-    SECTION("Test findItemInHierarchy() with valid name returns 2nd sub-level "
-            "child") {
-        REQUIRE(CC_ITEM_TREE::findItemInHierarchy(
-                        &folder, CC_ITEM_TREE::CC_TYPES_MAP::HIERARCHY_OBJECT,
-                        "Child2") == &child2);
-    }
-
-    SECTION("Test findItemInHierarchy() with invalid name returns nullptr") {
-        REQUIRE(CC_ITEM_TREE::findItemInHierarchy(
-                        &folder, CC_ITEM_TREE::CC_TYPES_MAP::HIERARCHY_OBJECT,
-                        "invalid") == nullptr);
-    }
-
-    SECTION("Test findItemInHierarchy() with invalid CC_TYPES_MAP returns "
-            "nullptr") {
-        REQUIRE(CC_ITEM_TREE::findItemInHierarchy(
-                        &folder, CC_ITEM_TREE::CC_TYPES_MAP::LABEL2D) ==
-                nullptr);
-    }
-
-    SECTION("Test findItemInHierarchy() with invalid CC_TYPES_MAP and valid "
-            "name returns nullptr") {
-        REQUIRE(CC_ITEM_TREE::findItemInHierarchy(
-                        &folder, CC_ITEM_TREE::CC_TYPES_MAP::LABEL2D,
-                        "Child1") == nullptr);
-    }
-
-    SECTION("Test findItemInHierarchy() with invalid CC_TYPES_MAP and invalid "
-            "name returns nullptr") {
-        REQUIRE(CC_ITEM_TREE::findItemInHierarchy(
-                        &folder, CC_ITEM_TREE::CC_TYPES_MAP::LABEL2D,
-                        "invalid") == nullptr);
-    }
-
-    SECTION("Test findItemInHierarchy() returns first ccHObject with matching "
-            "CC_TYPES_MAP") {
-        REQUIRE(CC_ITEM_TREE::findItemInHierarchy(
-                        &folder,
-                        CC_ITEM_TREE::CC_TYPES_MAP::HIERARCHY_OBJECT) ==
-                &cloud);
-    }
+TEST_F(ItemHierarchyTest, InstantiatesClouds) {
+    ASSERT_NE(&cloud, nullptr);
+    ASSERT_NE(&child1, nullptr);
+    ASSERT_NE(&child2, nullptr);
 }
 
-TEST_CASE("Test findOrCreateContainer() ", "[item-tree]") {
-    MainAppInterfaceMock app;
-    ccHObject folder("Parent");
-    ccHObject childFolder("Child");
-    folder.addChild(&childFolder);
-
-    SECTION("Test findOrCreateContainer() with nullptr as parent returns "
-            "nullptr") {
-        REQUIRE_THROWS_AS(CC_ITEM_TREE::findOrCreateContainer(
-                                  nullptr, "New Container", &app),
-                          MplaneInvalidArgument);
-    }
-
-    SECTION("Test findOrCreateContainer() with empty containerName returns "
-            "nullptr") {
-        REQUIRE_THROWS_AS(
-                CC_ITEM_TREE::findOrCreateContainer(&folder, "", &app),
-                MplaneInvalidArgument);
-    }
-
-    SECTION("Test findOrCreateContainer() with nullptr as app returns "
-            "nullptr") {
-        REQUIRE_THROWS_AS(CC_ITEM_TREE::findOrCreateContainer(
-                                  &folder, "New Container", nullptr),
-                          MplaneInvalidArgument);
-    }
-
-    SECTION("Test findOrCreateContainer() with existing child and matching "
-            "containerName returns child") {
-        REQUIRE(CC_ITEM_TREE::findOrCreateContainer(&folder, "Child", &app) ==
-                &childFolder);
-    }
-
-    SECTION("Test findOrCreateContainer() with new containerName returns new "
-            "container") {
-        REQUIRE_CALL(app, addToDB(ANY(ccHObject*), false, true, false, false));
-        REQUIRE(CC_ITEM_TREE::findOrCreateContainer(&folder, "New Container",
-                                                    &app)
-                        ->getName() == "New Container");
-    }
+TEST_F(ItemHierarchyTest, RejectsNullRoot) {
+    ASSERT_THROW(CC_ITEM_TREE::findItemInHierarchy(
+                         nullptr, CC_ITEM_TREE::HIERARCHY_OBJECT),
+                 MplaneInvalidArgument);
 }
 
-TEST_CASE("Test createPointLabel2D() ", "[item-tree]") {
-    ccPointCloud cloud("cloud");
-    cloud.reserveThePointsTable(1);
-    cloud.addPoint(CCVector3(1, 1, 1));
-
-    ccGenericGLDisplayMock display;
-    trompeloeil::sequence seq;
-
-    SECTION("TEST createPointLabel2D throws std::invalid_exception when "
-            "labelText is empty") {
-        REQUIRE_THROWS_AS(
-                CC_ITEM_TREE::createPointLabel2D("", &cloud, QPoint(1, 1), 0),
-                MplaneInvalidArgument);
-    }
-
-    SECTION("TEST createPointLabel2D throws std::invalid_exception when "
-            "sourceCloud is nullptr") {
-        REQUIRE_THROWS_AS(CC_ITEM_TREE::createPointLabel2D("Label", nullptr,
-                                                           QPoint(1, 1), 0),
-                          MplaneInvalidArgument);
-    }
-
-    SECTION("TEST createPointLabel2D returns nullptr if sourceCloud's display "
-            "is nullptr") {
-        REQUIRE(CC_ITEM_TREE::createPointLabel2D("Test label", &cloud,
-                                                 QPoint(1, 1), 0) == nullptr);
-    }
-
-    // ToDo: call setDisplay() and afterwards createPointLabel2D()
-    SECTION("TEST createPointLabel2D returns Label2D when Display is set") {}
+TEST_F(ItemHierarchyTest, FindsFirstLevelChildByName) {
+    ASSERT_EQ(CC_ITEM_TREE::findItemInHierarchy(
+                      &folder, CC_ITEM_TREE::HIERARCHY_OBJECT, "Child1"),
+              &child1);
 }
+
+TEST_F(ItemHierarchyTest, FindsSecondLevelChildByName) {
+    ASSERT_EQ(CC_ITEM_TREE::findItemInHierarchy(
+                      &folder, CC_ITEM_TREE::HIERARCHY_OBJECT, "Child2"),
+              &child2);
+}
+
+TEST_F(ItemHierarchyTest, ReturnsNullForUnknownName) {
+    ASSERT_EQ(CC_ITEM_TREE::findItemInHierarchy(
+                      &folder, CC_ITEM_TREE::HIERARCHY_OBJECT, "invalid"),
+              nullptr);
+}
+
+TEST_F(ItemHierarchyTest, ReturnsNullForUnmatchedType) {
+    ASSERT_EQ(CC_ITEM_TREE::findItemInHierarchy(&folder, CC_ITEM_TREE::LABEL2D),
+              nullptr);
+}
+
+TEST_F(ItemHierarchyTest, ReturnsNullForUnmatchedTypeWithKnownName) {
+    ASSERT_EQ(CC_ITEM_TREE::findItemInHierarchy(&folder, CC_ITEM_TREE::LABEL2D,
+                                                "Child1"),
+              nullptr);
+}
+
+TEST_F(ItemHierarchyTest, ReturnsNullForUnmatchedTypeAndName) {
+    ASSERT_EQ(CC_ITEM_TREE::findItemInHierarchy(&folder, CC_ITEM_TREE::LABEL2D,
+                                                "invalid"),
+              nullptr);
+}
+
+TEST_F(ItemHierarchyTest, ReturnsFirstMatchingObject) {
+    ASSERT_EQ(CC_ITEM_TREE::findItemInHierarchy(&folder,
+                                                CC_ITEM_TREE::HIERARCHY_OBJECT),
+              &cloud);
+}
+
+class ItemContainerTest : public testing::Test {
+protected:
+    void SetUp() override {
+        ASSERT_TRUE(folder.addChild(&childFolder, ccHObject::DP_NONE));
+    }
+
+    testing::StrictMock<MainAppInterfaceMock> app;
+    ccHObject folder{"Parent"};
+    ccHObject childFolder{"Child"};
+};
+
+TEST_F(ItemContainerTest, RejectsNullParent) {
+    ASSERT_THROW(
+            CC_ITEM_TREE::findOrCreateContainer(nullptr, "New Container", &app),
+            MplaneInvalidArgument);
+}
+
+TEST_F(ItemContainerTest, RejectsEmptyName) {
+    ASSERT_THROW(CC_ITEM_TREE::findOrCreateContainer(&folder, "", &app),
+                 MplaneInvalidArgument);
+}
+
+TEST_F(ItemContainerTest, RejectsNullApp) {
+    ASSERT_THROW(CC_ITEM_TREE::findOrCreateContainer(&folder, "New Container",
+                                                     nullptr),
+                 MplaneInvalidArgument);
+}
+
+TEST_F(ItemContainerTest, ReusesMatchingChild) {
+    ASSERT_EQ(CC_ITEM_TREE::findOrCreateContainer(&folder, "Child", &app),
+              &childFolder);
+}
+
+TEST_F(ItemContainerTest, CreatesContainerAndAddsItToDatabase) {
+    EXPECT_CALL(app, addToDB(testing::_, false, true, false, false)).Times(1);
+    ccHObject* container =
+            CC_ITEM_TREE::findOrCreateContainer(&folder, "New Container", &app);
+    ASSERT_NE(container, nullptr);
+    ASSERT_EQ(container->getName(), QString("New Container"));
+}
+
+class PointLabelTest : public testing::Test {
+protected:
+    void SetUp() override {
+        ASSERT_TRUE(cloud.reserveThePointsTable(1));
+        cloud.addPoint(CCVector3(1, 1, 1));
+    }
+
+    ccPointCloud cloud{"cloud"};
+};
+
+TEST_F(PointLabelTest, RejectsEmptyText) {
+    ASSERT_THROW(CC_ITEM_TREE::createPointLabel2D("", &cloud, QPoint(1, 1), 0),
+                 MplaneInvalidArgument);
+}
+
+TEST_F(PointLabelTest, RejectsNullCloud) {
+    ASSERT_THROW(
+            CC_ITEM_TREE::createPointLabel2D("Label", nullptr, QPoint(1, 1), 0),
+            MplaneInvalidArgument);
+}
+
+TEST_F(PointLabelTest, ReturnsNullWithoutActiveDisplay) {
+    ASSERT_EQ(CC_ITEM_TREE::createPointLabel2D("Test label", &cloud,
+                                               QPoint(1, 1), 0),
+              nullptr);
+}
+
+TEST_F(PointLabelTest, CreatesLabelWithActiveDisplay) {
+    GTEST_SKIP() << "The original suite left active-display label creation "
+                    "unimplemented.";
+}
+
+}  // namespace

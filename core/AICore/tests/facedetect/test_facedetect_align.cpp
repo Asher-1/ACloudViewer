@@ -7,17 +7,15 @@
 
 // norm_crop / umeyama alignment white-box tests (no GGUF required).
 
+#include <gtest/gtest.h>
+
+#include <algorithm>
 #include <cmath>
-#include <cstdio>
 #include <vector>
 
 #include "tasks/facedetect/align.hpp"
 
 namespace {
-
-bool nearlyEqual(float a, float b, float eps = 1e-3f) {
-    return std::fabs(a - b) <= eps;
-}
 
 fd::Image solidRgb(int w, int h, uint8_t r, uint8_t g, uint8_t b) {
     fd::Image img;
@@ -47,84 +45,55 @@ fd::Landmarks5 sampleFaceLandmarks() {
     return lmk;
 }
 
-bool imagesEqual(const fd::Image& a, const fd::Image& b) {
-    if (a.width != b.width || a.height != b.height ||
-        a.rgb.size() != b.rgb.size()) {
-        return false;
-    }
-    for (size_t i = 0; i < a.rgb.size(); ++i) {
-        if (a.rgb[i] != b.rgb[i]) return false;
-    }
-    return true;
-}
-
-float maxAbsDiff(const fd::Image& a, const fd::Image& b) {
-    if (a.rgb.size() != b.rgb.size()) return 1e9f;
-    float m = 0.f;
-    for (size_t i = 0; i < a.rgb.size(); ++i) {
-        m = std::max(m, std::fabs(static_cast<float>(a.rgb[i]) -
-                                  static_cast<float>(b.rgb[i])));
-    }
-    return m;
-}
-
 }  // namespace
 
-int main() {
-    const fd::Image src = solidRgb(200, 200, 180, 120, 90);
-    const fd::Landmarks5 lmk = sampleFaceLandmarks();
+class FaceDetectAlignment : public ::testing::Test {
+protected:
+    const fd::Image source = solidRgb(200, 200, 180, 120, 90);
+    const fd::Landmarks5 landmarks = sampleFaceLandmarks();
+};
 
+TEST_F(FaceDetectAlignment, NormCropProducesArcFaceDimensions) {
     fd::Image aligned;
-    if (!fd::norm_crop(src, lmk, aligned, 112)) {
-        std::fprintf(stderr, "norm_crop returned false\n");
-        return 1;
-    }
-    if (aligned.width != 112 || aligned.height != 112 ||
-        aligned.rgb.size() != static_cast<size_t>(112 * 112 * 3)) {
-        std::fprintf(stderr, "unexpected aligned size %dx%d\n", aligned.width,
-                     aligned.height);
-        return 1;
-    }
+    ASSERT_TRUE(fd::norm_crop(source, landmarks, aligned, 112));
+    EXPECT_EQ(aligned.width, 112);
+    EXPECT_EQ(aligned.height, 112);
+    EXPECT_EQ(aligned.rgb.size(), static_cast<size_t>(112 * 112 * 3));
+}
 
-    fd::Image aligned2;
-    if (!fd::norm_crop(src, lmk, aligned2, 112)) {
-        std::fprintf(stderr, "second norm_crop failed\n");
-        return 1;
-    }
-    if (!imagesEqual(aligned, aligned2)) {
-        std::fprintf(stderr, "norm_crop not deterministic\n");
-        return 1;
-    }
+TEST_F(FaceDetectAlignment, NormCropIsDeterministic) {
+    fd::Image first, second;
+    ASSERT_TRUE(fd::norm_crop(source, landmarks, first, 112));
+    ASSERT_TRUE(fd::norm_crop(source, landmarks, second, 112));
+    EXPECT_EQ(first.width, second.width);
+    EXPECT_EQ(first.height, second.height);
+    EXPECT_EQ(first.rgb, second.rgb);
+}
 
-    // Mapping reference landmarks onto themselves should land near arcface_dst.
-    fd::Image refCrop;
-    if (!fd::norm_crop(src, fd::kArcFaceRefLandmarks112, refCrop, 112)) {
-        std::fprintf(stderr, "reference norm_crop failed\n");
-        return 1;
-    }
+TEST_F(FaceDetectAlignment, AcceptsReferenceLandmarks) {
+    fd::Image crop;
+    EXPECT_TRUE(fd::norm_crop(source, fd::kArcFaceRefLandmarks112, crop, 112));
+}
 
-    // warp_affine rejects degenerate transforms.
-    fd::Image dummy;
+TEST_F(FaceDetectAlignment, WarpAffineRejectsDegenerateTransform) {
+    fd::Image crop;
     const std::array<float, 6> degenerate = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
-    if (fd::warp_affine(src, degenerate, dummy, 32, 32)) {
-        std::fprintf(stderr, "degenerate warp should fail\n");
-        return 1;
-    }
+    EXPECT_FALSE(fd::warp_affine(source, degenerate, crop, 32, 32));
+}
 
-    // Small perturbation of landmarks should change the crop (sanity).
-    fd::Landmarks5 shifted = lmk;
+TEST_F(FaceDetectAlignment, LandmarkShiftChangesCrop) {
+    fd::Image aligned, shifted_crop;
+    ASSERT_TRUE(fd::norm_crop(source, landmarks, aligned, 112));
+    fd::Landmarks5 shifted = landmarks;
     shifted[2][0] += 8.f;
-    fd::Image shiftedCrop;
-    if (!fd::norm_crop(src, shifted, shiftedCrop, 112)) {
-        std::fprintf(stderr, "shifted norm_crop failed\n");
-        return 1;
+    ASSERT_TRUE(fd::norm_crop(source, shifted, shifted_crop, 112));
+    ASSERT_EQ(aligned.rgb.size(), shifted_crop.rgb.size());
+    float max_difference = 0.f;
+    for (size_t i = 0; i < aligned.rgb.size(); ++i) {
+        max_difference =
+                std::max(max_difference,
+                         std::fabs(static_cast<float>(aligned.rgb[i]) -
+                                   static_cast<float>(shifted_crop.rgb[i])));
     }
-    if (maxAbsDiff(aligned, shiftedCrop) < 1.f) {
-        std::fprintf(stderr, "landmark shift did not change crop enough\n");
-        return 1;
-    }
-
-    (void)nearlyEqual;
-    std::fprintf(stderr, "test_facedetect_align ok\n");
-    return 0;
+    EXPECT_GE(max_difference, 1.f);
 }

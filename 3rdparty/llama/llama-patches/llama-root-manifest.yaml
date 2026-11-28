@@ -1,0 +1,12 @@
+# Ordered patch chain anchored at the llama.cpp source ROOT (not the
+# embedded ggml/ subtree). The backend manifests in this directory replay
+# with <SOURCE_DIR>/ggml/ as their root; mtmd lives at the llama root
+# (tools/mtmd/), and git apply refuses ../ paths, so this chain replays
+# through a second PATCH_COMMAND with <SOURCE_DIR> as root using the same
+# generic runner (apply_ggml_patches.py). The two chains touch disjoint
+# file sets, so their relative order is irrelevant.
+patches:
+  - file: 0032-acv-wevisone-mtmd-vision-taps.patch
+    note: "WeVisOne per-block ViT vision taps: mtmd_vision_taps_configure/get capture the raw pre-merger qwen3vl block outputs (layers 5/11/17/23) into dedicated ggml_cpy leaves during the SAME encode that serves the LLM, so the fp32 pixel decoder consumes the exact grid the official pytorch stack uses. Single-frame encodes only (asserted); taps disabled by default leave every other mtmd consumer unchanged. Verified clean forward/reverse replay on the pinned llama tree with the full backend patch chain applied; matte/answer parity against the pinned upstream WeVisOne-VL-GGML CLI is the acceptance gate."
+  - file: 0034-acv-wevisone-qwen3vl-pinned-resize.patch
+    note: "WeVisOne pinned-resize parity: the pinned llama (620d2225) predates the HF-aligned qwen resize change (PAD_NONE + round-half-even grid rounding), so its mtmd dyn_size preprocessor resized qwen3vl bitmaps with the PAD_CEIL default and std::round. Restore those pinned semantics for PROJECTOR_TYPE_QWEN3VL only; WeVisOne is the sole AICore consumer of that projector (vlx_seek builds private graphs, the llm task uses idefics3), and other Qwen-family projectors keep the HF-aligned behavior. With the 0033 scalar llama RMS-norm patch this makes point/referring greedy outputs bit-identical to the pinned upstream CLI on CUDA (verified via controlled repin experiment); the wevisone upstream parity matrix is the acceptance gate."

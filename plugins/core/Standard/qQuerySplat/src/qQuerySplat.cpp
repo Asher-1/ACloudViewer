@@ -7,6 +7,7 @@
 #include "qQuerySplat.h"
 
 #include <aicore/inference_log.h>
+#include <ecvAICoreUiHelper.h>
 #include <ecvCameraSensor.h>
 #include <ecvDisplayTools.h>
 #include <ecvImage.h>
@@ -60,6 +61,7 @@ void qQuerySplat::showDialog() {
     if (!m_dialog) {
         m_dialog =
                 new QuerySplatDialog(m_app ? m_app->getMainWindow() : nullptr);
+        ecvAICoreUi::bindDialogAction(m_action, m_dialog);
         m_dialog->setAppInterface(m_app);
         connect(m_dialog, &QuerySplatDialog::runRequested, this,
                 &qQuerySplat::executeTask);

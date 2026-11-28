@@ -2,27 +2,27 @@
     <qresource prefix="/toolbar">
         <file>images/pcl.png</file>
         <file>info.json</file>
-        <file>PclAlgorithms/icons/convex_concave_hull.png</file>
-        <file>PclAlgorithms/icons/correspondence_grouping.png</file>
-        <file>PclAlgorithms/icons/EuclideanClusterSegmentation.png</file>
-        <file>PclAlgorithms/icons/filter_projection.png</file>
-        <file>PclAlgorithms/icons/greedy_triangulation.png</file>
-        <file>PclAlgorithms/icons/mls_smoothing.svg</file>
-        <file>PclAlgorithms/icons/normal_curvature.svg</file>
-        <file>PclAlgorithms/icons/poisson.png</file>
-        <file>PclAlgorithms/icons/Regiongrowing.png</file>
-        <file>PclAlgorithms/icons/SAC_Segmentation.png</file>
-        <file>PclAlgorithms/icons/save.svg</file>
-        <file>PclAlgorithms/icons/sift.svg</file>
-        <file>PclAlgorithms/icons/sor_outlier_remover.svg</file>
-        <file>PclAlgorithms/icons/templateAlignment.png</file>
-        <file>PclAlgorithms/icons/mincut.png</file>
-        <file>PclAlgorithms/icons/PointPicking.svg</file>
-        <file>PclAlgorithms/icons/DoN.png</file>
-        <file>PclAlgorithms/icons/generalFilter.png</file>
-        <file>PclAlgorithms/icons/bspline_curve.png</file>
-        <file>PclAlgorithms/icons/bspline_surface.png</file>
-        <file>PclAlgorithms/icons/MarchingCubeReconstruction.png</file>
-        <file>PclAlgorithms/icons/fastGlobalRegistration.svg</file>
+    </qresource>
+    <qresource prefix="/qPCL/icons">
+        <file alias="pclConvexConcaveHull.svg">resources/icons/pclConvexConcaveHull.svg</file>
+        <file alias="pclCorrespondenceGrouping.svg">resources/icons/pclCorrespondenceGrouping.svg</file>
+        <file alias="pclEuclideanClusterSegmentation.svg">resources/icons/pclEuclideanClusterSegmentation.svg</file>
+        <file alias="pclProjectionFilter.svg">resources/icons/pclProjectionFilter.svg</file>
+        <file alias="pclGreedyTriangulation.svg">resources/icons/pclGreedyTriangulation.svg</file>
+        <file alias="pclMLSSmoothing.svg">resources/icons/pclMLSSmoothing.svg</file>
+        <file alias="pclNormalCurvature.svg">resources/icons/pclNormalCurvature.svg</file>
+        <file alias="pclPoissonReconstruction.svg">resources/icons/pclPoissonReconstruction.svg</file>
+        <file alias="pclRegionGrowing.svg">resources/icons/pclRegionGrowing.svg</file>
+        <file alias="pclSACSegmentation.svg">resources/icons/pclSACSegmentation.svg</file>
+        <file alias="pclSIFT.svg">resources/icons/pclSIFT.svg</file>
+        <file alias="pclStatisticalOutliers.svg">resources/icons/pclStatisticalOutliers.svg</file>
+        <file alias="pclTemplateAlignment.svg">resources/icons/pclTemplateAlignment.svg</file>
+        <file alias="pclMinimumCut.svg">resources/icons/pclMinimumCut.svg</file>
+        <file alias="pclDifferenceOfNormals.svg">resources/icons/pclDifferenceOfNormals.svg</file>
+        <file alias="pclGeneralFilter.svg">resources/icons/pclGeneralFilter.svg</file>
+        <file alias="pclBSplineCurve.svg">resources/icons/pclBSplineCurve.svg</file>
+        <file alias="pclBSplineSurface.svg">resources/icons/pclBSplineSurface.svg</file>
+        <file alias="pclMarchingCubes.svg">resources/icons/pclMarchingCubes.svg</file>
+        <file alias="pclFastGlobalRegistration.svg">resources/icons/pclFastGlobalRegistration.svg</file>
     </qresource>
 </RCC>

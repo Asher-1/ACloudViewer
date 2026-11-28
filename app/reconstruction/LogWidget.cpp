@@ -121,20 +121,16 @@ void LogWidget::Append(const std::string& text) {
                     int logLevel = CVLog::LOG_STANDARD;
                     QString lowerLine = qline.toLower();
 
-                    // Use QtCompatRegExp for Qt5/Qt6 compatibility
-                    static const QtCompatRegExp errorPattern(
-                            "\\b(error|fatal|exception|crash)"
-                            "\\b",
-                            QtCompatRegExpOption::CaseInsensitive);
-                    static const QtCompatRegExp warningPattern(
+                    static const auto errorPattern = qtCompatRegExp(
+                            "\\b(error|fatal|exception|crash)\\b",
+                            QRegularExpression::CaseInsensitiveOption);
+                    static const auto warningPattern = qtCompatRegExp(
                             "\\b(warning|warn|caution)\\b",
-                            QtCompatRegExpOption::CaseInsensitive);
+                            QRegularExpression::CaseInsensitiveOption);
 
-                    // Use qtCompatRegExpMatch for cross-version compatibility
-                    bool hasError =
-                            qtCompatRegExpMatch(errorPattern, lowerLine);
+                    bool hasError = errorPattern.match(lowerLine).hasMatch();
                     bool hasWarning =
-                            qtCompatRegExpMatch(warningPattern, lowerLine);
+                            warningPattern.match(lowerLine).hasMatch();
 
                     // Also check for common log format prefixes
                     if (lowerLine.startsWith("error") ||

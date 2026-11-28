@@ -19,15 +19,14 @@
 #include <vtkSmartPointer.h>
 #include <vtkVersion.h>
 
-// Mapper selection: vtkCompositePolyDataMapper2 is ParaView's production
-// composite mapper and renders into vtkHardwareSelector's attribute passes,
-// so block picking (COMPOSITE_INDEX) works. The newer batched delegator
-// mapper (VTK >= 9.2) does not implement the selection passes: the group
-// actor produced no fragments during hardware picks, so every mesh click
-// fell through to the surrounding point cloud. Selection correctness beats
-// the unproven batching gain; revisit only with a controlled A/B that also
-// proves pick parity.
+// Retain Mapper2 on older VTK: the 9.3 application pick regression was
+// validated with it. VTK 9.5 removed Mapper2; use its supported replacement
+// there, with the same registry attributes and composite selection IDs.
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 5, 0)
+#include <vtkCompositePolyDataMapper.h>
+#else
 #include <vtkCompositePolyDataMapper2.h>
+#endif
 
 namespace VtkRendering {
 
@@ -70,7 +69,11 @@ vtkActor* CompositeBlockRegistry::ensureGroup(const std::string& groupId) {
     // vtkNew keeps sole ownership until SetMapper registers it on the actor;
     // an early UnRegister here would destroy the mapper before SetMapper and
     // crash inside vtkActor::SetMapper on a dangling pointer.
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 5, 0)
+    vtkNew<vtkCompositePolyDataMapper> mapper;
+#else
     vtkNew<vtkCompositePolyDataMapper2> mapper;
+#endif
     mapper->SetInputDataObject(group.blocks);
     mapper->SetCompositeDataDisplayAttributes(group.attributes);
 
@@ -295,6 +298,13 @@ std::string CompositeBlockRegistry::groupOfLeaf(
     return it != m_leafIndex.end() ? it->second.groupId : std::string();
 }
 
+vtkDataObject* CompositeBlockRegistry::leafBlock(
+        const std::string& leafId) const {
+    const auto it = m_leafIndex.find(leafId);
+    if (it == m_leafIndex.end()) return nullptr;
+    return blockAtFlatIndex(it->second.groupId, it->second.flatIndex);
+}
+
 std::string CompositeBlockRegistry::leafAtFlatIndex(const std::string& groupId,
                                                     vtkIdType flatIndex) const {
     const Group* group = groupOf(groupId);
@@ -340,6 +350,14 @@ bool CompositeBlockRegistry::blockVisible(const std::string& groupId,
         return group->attributes->GetBlockVisibility(block);
     }
     return true;
+}
+
+bool CompositeBlockRegistry::blockPickable(const std::string& groupId,
+                                           vtkIdType flatIndex) const {
+    const Group* group = groupOf(groupId);
+    vtkDataObject* block = group ? blockObject(*group, flatIndex) : nullptr;
+    return block && (!group->attributes->HasBlockPickability(block) ||
+                     group->attributes->GetBlockPickability(block));
 }
 
 bool CompositeBlockRegistry::bakeLeafTransform(const std::string& leafId,

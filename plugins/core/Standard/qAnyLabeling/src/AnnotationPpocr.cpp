@@ -194,6 +194,13 @@ bool writeAtomic(const QString& path, const QByteArray& bytes, QString* error) {
 }
 
 bool movePath(const QString& from, const QString& to) {
+    // POSIX rename overwrites an existing destination; QDir::rename on Windows
+    // fails instead. Remove the target first so replacement/backup rotation
+    // behaves identically across platforms.
+    const QFileInfo info(to);
+    if (info.exists() &&
+        !(info.isDir() ? QDir(to).removeRecursively() : QFile::remove(to)))
+        return false;
     return QDir().rename(from, to);
 }
 

@@ -1,0 +1,32 @@
+{
+  "type": "Standard",
+  "core": true,
+  "group": "aicore",
+  "name": "WeVisOne-VL Perception",
+  "icon": ":/CC/plugin/qWeVisOne/images/qWeVisOne.svg",
+  "description": "WeVisOne-VL full-chain unified visual perception: detection, referring, pointing, counting, OCR, referring segmentation, matting and visual-prompt grounding over Qwen3-VL (2B/4B) with a pixel decoder for binary masks and alpha mattes (native GGML inference).",
+  "authors": [
+    {
+      "name": "ACloudViewer Contributors"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "ACloudViewer Team"
+    }
+  ],
+  "references": [
+    {
+      "text": "WeVisOne-VL",
+      "url": "https://tencent.github.io/WeVisOne-VL"
+    },
+    {
+      "text": "C++/GGML port",
+      "url": "https://github.com/Asher-1/WeVisOne-VL-GGML"
+    },
+    {
+      "text": "Models",
+      "url": "https://huggingface.co/Asher-1/WeVisOne-VL-GGML"
+    }
+  ]
+}

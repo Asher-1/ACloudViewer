@@ -23,14 +23,12 @@
 #include <QObject>
 #include <QPointer>
 #include <QList>
-class QShortcut;
 #else
 #include <QtWidgets/QActionGroup>
 #include <QtCore/QList>
 #include <QtCore/QMap>
 #include <QtCore/QObject>
 #include <QtCore/QPointer>
-class QShortcut;
 #endif
 // clang-format on
 
@@ -319,8 +317,6 @@ public slots:
      */
     void onModifierChanged(QAction* action);
 
-    void installModifierShortcuts();
-
     // Note: onTooltipSettingsChanged has been removed as tooltip settings
     // are now managed through cvSelectionLabelPropertiesDialog
 
@@ -347,7 +343,6 @@ private:
     QPointer<QAction> m_addAction;
     QPointer<QAction> m_subtractAction;
     QPointer<QAction> m_toggleAction;
-    QList<QShortcut*> m_modifierShortcuts;
 
     // Manipulation actions
     QPointer<QAction> m_growAction;

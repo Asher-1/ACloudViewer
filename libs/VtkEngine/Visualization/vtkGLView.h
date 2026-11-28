@@ -14,13 +14,17 @@
 #include <ecvViewContext.h>
 #include <ecvViewportParameters.h>
 #include <vtkSmartPointer.h>
+#include <vtkWeakPointer.h>
 
 #include <QElapsedTimer>
 #include <QFont>
 #include <QObject>
 #include <QPoint>
+#include <QStringList>
 
 class vtkActor;
+class vtkPlane;
+class vtkMapper;
 class vtkImplicitPlaneWidget2;
 class vtkGridAxesActor3D;
 class vtkRenderPass;
@@ -272,11 +276,18 @@ public:
     void enableSliceMode(bool enable = true);
     bool isSliceModeEnabled() const { return m_sliceMode; }
 
+    // World axes: 0=X, 1=Y, 2=Z (not OrthoAxis camera-plane identifiers).
     void setMultiSlicePositions(int axis, const std::vector<double>& positions);
     const std::vector<double>& getMultiSlicePositions(int axis) const;
     void clearMultiSlicePositions();
 
     void setOutlineVisible(bool visible);
+
+    // Transient, independently owned world-space leaves of registered sources.
+    // Reuses Slice discovery/LOD/composite inheritance; never copies helpers or
+    // mutates source geometry, actor transforms, lookup tables or clip planes.
+    std::vector<vtkSmartPointer<vtkActor>> createVisibleRepresentationActors(
+            const QStringList& entityViewIds = {}, bool includeSlices = false);
 
     enum OrthoAxis { AXIS_XY, AXIS_XZ, AXIS_YZ };
     void setOrthoSliceCamera(OrthoAxis axis);
@@ -493,6 +504,12 @@ private:
     bool m_edlFXAAEnabled = true;
     int m_edlLowResFactor = 4;
     vtkSmartPointer<vtkRenderPass> m_edlPass;
+    void updateSlicePlane();
+    void removeSlicePlane();
+    // Lifetime tracking for OUR plane only, not a source-actor registry.
+    std::vector<vtkWeakPointer<vtkMapper>> m_slicePlaneMappers;
+    void updateMultiSlices();
+    vtkSmartPointer<vtkPlane> m_slicePlane;
     bool m_sliceMode = false;
     bool m_autoRefresh = false;
     bool m_shutdownDone = false;
@@ -501,6 +518,8 @@ private:
     vtkSmartPointer<vtkImplicitPlaneWidget2> m_slicePlaneWidget;
     std::vector<double> m_multiSlicePos[3];
     std::vector<vtkSmartPointer<vtkActor>> m_multiSliceActors;
+    vtkSmartPointer<vtkActor> m_sliceOutlineActor;
+    bool m_sliceOutlineVisible = true;
 
     ecvGenericGLDisplay* m_entityBindingSource = nullptr;
 

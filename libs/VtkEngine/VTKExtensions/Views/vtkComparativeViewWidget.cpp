@@ -39,24 +39,35 @@
 #include <QAbstractItemView>
 #include <QAbstractSpinBox>
 #include <QApplication>
+#include <QCheckBox>
 #include <QComboBox>
 #include <QCoreApplication>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QDoubleSpinBox>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QHeaderView>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
+#include <QMessageBox>
 #include <QMouseEvent>
 #include <QPushButton>
 #include <QResizeEvent>
 #include <QSettings>
 #include <QShowEvent>
+#include <QSignalBlocker>
 #include <QSlider>
+#include <QSpinBox>
 #include <QStandardItem>
 #include <QStandardItemModel>
+#include <QTableWidget>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWheelEvent>
+#include <cmath>
+#include <limits>
 
 static constexpr int COMPARATIVE_SPACING = 1;
 static constexpr double COMPARATIVE_CAMERA_OCCUPANCY = 2.0 / 3.0;
@@ -280,7 +291,9 @@ static bool safeRenderWindow(vtkGLView* view, bool immediate = false) {
 static void safeRedraw(vtkGLView* view) {
     if (!view) return;
     auto* w = view->getVtkWidget();
-    if (!w || !w->isVisible() || w->width() < 2 || w->height() < 2) return;
+    if (!w) return;
+    // Hidden comparison panes still own live geometry and representation state
+    // consumed by overlays. vtkGLView owns the render-window readiness checks.
     view->redraw(false, true);
 }
 
@@ -347,6 +360,54 @@ vtkComparativeViewWidget::vtkComparativeViewWidget(ComparativeType type,
     mainLayout->addWidget(gridContainer, 1);
     setMinimumSize(100, 100);
     setContextMenuPolicy(Qt::NoContextMenu);
+    if (m_type == RENDER) {
+        auto onRepChanged = [this](ecvViewRepresentation* rep) {
+            if (m_closing || !rep || m_subViews.isEmpty()) return;
+            if (m_applyingShowingSelection) return;
+            ecvGenericGLDisplay* repView =
+                    const_cast<ecvGenericGLDisplay*>(rep->getView());
+            bool isOurView = false;
+            for (auto* sv : m_subViews) {
+                if (sv == repView) {
+                    isOurView = true;
+                    break;
+                }
+            }
+            if (repView == m_sourceView) isOurView = true;
+            if (!isOurView) return;
+            if (repView == m_sourceView &&
+                !m_selectedEntities.contains(rep->getEntity())) {
+                return;
+            }
+            scheduleSubViewRefresh(true);
+        };
+
+        connect(&ecvRepresentationManager::instance(),
+                &ecvRepresentationManager::representationAdded, this,
+                onRepChanged);
+        connect(&ecvRepresentationManager::instance(),
+                &ecvRepresentationManager::representationChanged, this,
+                onRepChanged);
+
+        connect(&ecvViewManager::instance(),
+                &ecvViewManager::pointIndicesSelected, this,
+                [this](ccHObject*, const QSet<unsigned>&) {
+                    scheduleSubViewRefresh(true);
+                });
+
+        // Listen for DB tree changes to refresh the entity combo (no auto-copy
+        // of representations)
+        connect(&ecvRepresentationManager::instance(),
+                &ecvRepresentationManager::representationAdded, this,
+                [this](ecvViewRepresentation* /*rep*/) {
+                    if (m_closing || m_subViews.isEmpty()) return;
+                    // Defer refresh of the entity combo list
+                    QTimer::singleShot(100, this, [this]() {
+                        if (m_closing) return;
+                        refreshEntityCombo();
+                    });
+                });
+    }
 }
 
 vtkComparativeViewWidget::~vtkComparativeViewWidget() {
@@ -399,7 +460,22 @@ void vtkComparativeViewWidget::shutdown() {
         }
     }
 
-    for (auto* sv : m_subViews) {
+    clearComparisonOverlay();
+    destroyRenderSubViews(m_subViews);
+    m_subViews.clear();
+    m_activeSubView = nullptr;
+    m_subWidgets.clear();
+    m_pendingFirstResize.clear();
+    m_showingEntitiesByView.clear();
+    m_ignoredRenderEndWindows.clear();
+}
+
+void vtkComparativeViewWidget::destroyRenderSubViews(
+        const QList<vtkGLView*>& views) {
+    auto& vm = ecvViewManager::instance();
+    for (auto* view : views)
+        if (vm.getActiveView() == view) vm.setActiveView(nullptr);
+    for (auto* sv : views) {
         if (!sv) continue;
         auto* vis = dynamic_cast<Visualization::VtkVis*>(sv->getVisualizer3D());
         if (vis) {
@@ -407,7 +483,6 @@ void vtkComparativeViewWidget::shutdown() {
         }
     }
 
-    const QList<vtkGLView*> views = m_subViews;
     for (auto* sv : views) {
         if (!sv) continue;
         QWidget* w = sv->asWidget();
@@ -448,12 +523,6 @@ void vtkComparativeViewWidget::shutdown() {
         sv->setParent(nullptr);
         delete sv;
     }
-    m_subViews.clear();
-    m_activeSubView = nullptr;
-    m_subWidgets.clear();
-    m_pendingFirstResize.clear();
-    m_showingEntitiesByView.clear();
-    m_ignoredRenderEndWindows.clear();
 }
 
 QString vtkComparativeViewWidget::title() const { return m_title; }
@@ -472,6 +541,101 @@ void vtkComparativeViewWidget::setSubViewInitCallback(SubViewInitCallback cb) {
 void vtkComparativeViewWidget::setSubViewShutdownHook(
         SubViewShutdownHook hook) {
     m_subViewShutdownHook = std::move(hook);
+}
+
+bool vtkComparativeViewWidget::setDimensions(int rows, int columns) {
+    if (m_closing || rows < 1 || columns < 1 || rows > 8 || columns > 8)
+        return false;
+    if (rows == m_rows && columns == m_cols) return true;
+    clearComparisonOverlay();
+    removeCameraLink();
+    stopInteractionTimer();
+    if (m_cameraSyncRenderTimer) m_cameraSyncRenderTimer->stop();
+    if (m_interactionEndTimer) m_interactionEndTimer->stop();
+    setInteractiveLOD(false);
+    m_interacting = false;
+    m_interactionSourceIdx = -1;
+    m_cameraSyncSourceIdx = -1;
+    clearHighlightClones();
+    const int oldRows = m_rows;
+    const int oldCols = m_cols;
+    QList<vtkGLView*> removed;
+    while (m_subWidgets.size() > rows * columns) {
+        auto* widget = m_subWidgets.takeLast();
+        m_gridLayout->removeWidget(widget);
+        m_pendingFirstResize.remove(widget);
+        if (m_type == RENDER)
+            removed.append(m_subViews.takeLast());
+        else
+            delete widget;
+    }
+    destroyRenderSubViews(removed);
+    if (!m_subViews.contains(m_activeSubView))
+        m_activeSubView = m_subViews.value(0, nullptr);
+    m_ignoredRenderEndWindows.clear();
+    for (auto* view : removed) m_showingEntitiesByView.remove(view);
+    m_rows = rows;
+    m_cols = columns;
+    for (int row = 0; row < oldRows; ++row) m_gridLayout->setRowStretch(row, 0);
+    for (int col = 0; col < oldCols; ++col)
+        m_gridLayout->setColumnStretch(col, 0);
+    // Overrides refer to concrete row-major cells; discard removed cells.
+    for (auto& cue : m_cues)
+        for (auto it = cue.cellValues.begin(); it != cue.cellValues.end();)
+            if (it.key() >= rows * columns)
+                it = cue.cellValues.erase(it);
+            else
+                ++it;
+    if (m_type == RENDER) {
+        if (m_renderFactory) createRenderSubViews();
+    } else {
+        createChartSubViews();
+    }
+    layoutSubViews();
+    applyShowingSelection(false);
+    for (const auto& name : {QStringLiteral("comparativeRows"),
+                             QStringLiteral("comparativeColumns")}) {
+        if (auto* spin = findChild<QSpinBox*>(name)) {
+            QSignalBlocker blocker(spin);
+            spin->setValue(name.endsWith("Rows") ? rows : columns);
+        }
+    }
+    return true;
+}
+
+void vtkComparativeViewWidget::layoutSubViews() {
+    for (auto* widget : m_subWidgets) m_gridLayout->removeWidget(widget);
+    for (int cell = 0; cell < m_subWidgets.size(); ++cell) {
+        auto* widget = m_subWidgets[cell];
+        if (m_overlayAllComparisons && cell == 0)
+            m_gridLayout->addWidget(widget, 0, 0, m_rows, m_cols);
+        else
+            m_gridLayout->addWidget(widget, cell / m_cols, cell % m_cols);
+        widget->setVisible(!m_overlayAllComparisons || cell == 0);
+    }
+    for (int row = 0; row < m_rows; ++row) m_gridLayout->setRowStretch(row, 1);
+    for (int col = 0; col < m_cols; ++col)
+        m_gridLayout->setColumnStretch(col, 1);
+}
+
+void vtkComparativeViewWidget::setOverlayAllComparisons(bool enabled) {
+    if (m_closing || m_overlayAllComparisons == enabled) return;
+    clearComparisonOverlay();
+    m_overlayAllComparisons = enabled;
+    if (auto* check = findChild<QCheckBox*>("comparativeOverlay")) {
+        QSignalBlocker blocker(check);
+        check->setChecked(enabled);
+    }
+    applyShowingSelection(false);
+    if (m_type == RENDER) scheduleSubViewRefresh(true);
+    layoutSubViews();
+}
+
+void vtkComparativeViewWidget::clearComparisonOverlay() {
+    if (auto* renderer = getSceneRenderer(m_subViews.value(0, nullptr)))
+        for (auto& actor : m_comparisonOverlayActors)
+            renderer->RemoveActor(actor);
+    m_comparisonOverlayActors.clear();
 }
 
 void vtkComparativeViewWidget::setupGrid() {
@@ -496,9 +660,10 @@ void vtkComparativeViewWidget::createRenderSubViews() {
         return;
     }
 
-    vtkGLView* firstView = nullptr;
+    vtkGLView* firstView = m_subViews.isEmpty() ? nullptr : m_subViews.front();
     for (int r = 0; r < m_rows; ++r) {
         for (int c = 0; c < m_cols; ++c) {
+            if (r * m_cols + c < m_subWidgets.size()) continue;
             auto* view = m_renderFactory();
             if (!view) {
                 CVLog::Warning(
@@ -607,33 +772,6 @@ void vtkComparativeViewWidget::createRenderSubViews() {
         }
     }
 
-    auto onRepChanged = [this](ecvViewRepresentation* rep) {
-        if (m_closing || !rep || m_subViews.isEmpty()) return;
-        if (m_applyingShowingSelection) return;
-        ecvGenericGLDisplay* repView =
-                const_cast<ecvGenericGLDisplay*>(rep->getView());
-        bool isOurView = false;
-        for (auto* sv : m_subViews) {
-            if (sv == repView) {
-                isOurView = true;
-                break;
-            }
-        }
-        if (repView == m_sourceView) isOurView = true;
-        if (!isOurView) return;
-        if (repView == m_sourceView &&
-            !m_selectedEntities.contains(rep->getEntity())) {
-            return;
-        }
-        scheduleSubViewRefresh(true);
-    };
-
-    connect(&ecvRepresentationManager::instance(),
-            &ecvRepresentationManager::representationAdded, this, onRepChanged);
-    connect(&ecvRepresentationManager::instance(),
-            &ecvRepresentationManager::representationChanged, this,
-            onRepChanged);
-
     if (m_cameraLinkEnabled && m_subViews.size() > 1) {
         syncCamerasFromFirst();
         installCameraLink();
@@ -654,66 +792,22 @@ void vtkComparativeViewWidget::createRenderSubViews() {
             scheduleSubViewRefresh(false);
         });
     }
+}
 
-    connect(&ecvViewManager::instance(), &ecvViewManager::pointIndicesSelected,
-            this, [this](ccHObject*, const QSet<unsigned>&) {
-                scheduleSubViewRefresh(true);
-            });
-
+void vtkComparativeViewWidget::setSourceView(vtkGLView* src) {
+    if (m_sourceView == src) return;
+    if (m_sourceView) disconnect(m_sourceView, nullptr, this, nullptr);
+    m_sourceView = src;
+    for (auto* view : m_subViews)
+        if (view) view->setEntityBindingSource(src);
     if (m_sourceView) {
         connect(m_sourceView, &vtkGLView::interactionModeChanged, this,
                 &vtkComparativeViewWidget::syncInteractionModeToSubViews);
         connect(m_sourceView, &vtkGLView::pickingModeChanged, this,
                 &vtkComparativeViewWidget::syncPickingModeToSubViews);
-        connect(
-                m_sourceView, &vtkGLView::cameraParamChanged, this,
-                [this]() { syncCameraFromSourceView(); }, Qt::UniqueConnection);
-        connect(m_sourceView, &vtkGLView::interactionModeChanged, this,
-                [this]() {
-                    if (!m_closing && m_subViews.size() >= 2) {
-                        for (auto* v : m_subViews) {
-                            if (v && v != m_sourceView) {
-                                v->setInteractionMode(stripClickableItems(
-                                        m_sourceView->getInteractionMode()));
-                                disableBubbleViewForSubView(v);
-                            }
-                        }
-                    }
-                });
-        connect(m_sourceView, &vtkGLView::pickingModeChanged, this, [this]() {
-            if (!m_closing && m_subViews.size() >= 2) {
-                for (auto* v : m_subViews) {
-                    if (v && v != m_sourceView) {
-                        v->setPickingMode(m_sourceView->getPickingMode());
-                    }
-                }
-            }
-        });
-        connect(m_sourceView, &vtkGLView::cameraParamChanged, this, [this]() {
-            if (!m_closing && m_subViews.size() >= 2) {
-                syncCameraFromSourceView();
-            }
-        });
-
-        // Listen for DB tree changes to refresh the entity combo (no auto-copy
-        // of representations)
-        connect(
-                &ecvRepresentationManager::instance(),
-                &ecvRepresentationManager::representationAdded, this,
-                [this](ecvViewRepresentation* /*rep*/) {
-                    if (m_closing || m_subViews.isEmpty()) return;
-                    // Defer refresh of the entity combo list
-                    QTimer::singleShot(100, this, [this]() {
-                        if (m_closing) return;
-                        refreshEntityCombo();
-                    });
-                },
-                Qt::UniqueConnection);
+        connect(m_sourceView, &vtkGLView::cameraParamChanged, this,
+                &vtkComparativeViewWidget::syncCameraFromSourceView);
     }
-}
-
-void vtkComparativeViewWidget::setSourceView(vtkGLView* src) {
-    m_sourceView = src;
 }
 
 void vtkComparativeViewWidget::showEvent(QShowEvent* event) {
@@ -1029,7 +1123,9 @@ void vtkComparativeViewWidget::performSubViewRefresh() {
     for (auto* view : m_subViews) {
         if (!view) continue;
         QWidget* w = view->asWidget();
-        if (w && isVisible()) w->show();
+        if (w)
+            w->setVisible(!m_overlayAllComparisons ||
+                          view == m_subViews.front());
     }
 
     const bool needsCameraReset = m_needsCameraReset;
@@ -1056,6 +1152,10 @@ void vtkComparativeViewWidget::performSubViewRefresh() {
         stripExtraRenderers(view);
         safeRedraw(view);
     }
+
+    // Slice cues consume the rebuilt per-view representations, never a shared
+    // source actor. Reapply only at this existing scene-owner boundary.
+    applyParameterCues();
 
     // Now that actors exist, reset the camera on the first view so
     // ResetCamera computes correct bounds, then sync to all others.
@@ -1635,119 +1735,37 @@ void vtkComparativeViewWidget::connectExternalHighlighter(
     auto* hl = qobject_cast<cvSelectionHighlighter*>(highlighter);
     if (!hl) return;
 
-    auto cloneHighlightActor = [](vtkActor* src) -> vtkSmartPointer<vtkActor> {
-        if (!src) return {};
-        auto clone = vtkSmartPointer<vtkActor>::New();
-        clone->ShallowCopy(src);
-        if (auto* srcMapper =
-                    vtkDataSetMapper::SafeDownCast(src->GetMapper())) {
-            auto mapper = vtkSmartPointer<vtkDataSetMapper>::New();
-            mapper->ShallowCopy(srcMapper);
-            clone->SetMapper(mapper);
-        }
-        clone->SetPickable(0);
-        return clone;
-    };
-
-    auto safeUpdate = [this]() { scheduleSubViewRefresh(true); };
-
-    auto removeClones = [this](vtkActor* source) {
-        auto it = m_highlightClonesBySource.find(source);
-        if (it == m_highlightClonesBySource.end()) return;
-        int idx = 0;
-        for (auto* view : m_subViews) {
-            if (!view || idx >= it.value().size()) break;
-            vtkSmartPointer<vtkActor> clone = it.value()[idx++];
-            if (!clone) continue;
-            auto* vis = view->getVisualizer3D();
-            auto* ren = vis ? vis->getCurrentRenderer() : nullptr;
-            if (ren) ren->RemoveActor(clone);
-        }
-        m_highlightClonesBySource.erase(it);
-    };
-
-    // SELECTED uses selectionOverlayUpdated; highlightActorAdded is
-    // hover/preselect.
-    m_hlActorAddedConn = connect(
-            hl, &cvSelectionHighlighter::highlightActorAdded, this,
-            [this, cloneHighlightActor, safeUpdate,
-             removeClones](vtkActor* actor) {
-                if (m_closing || !actor) return;
-                removeClones(actor);
-                QList<vtkSmartPointer<vtkActor>> clones;
-                for (auto* view : m_subViews) {
-                    if (!view) continue;
-                    auto* vis = view->getVisualizer3D();
-                    auto* ren = vis ? vis->getCurrentRenderer() : nullptr;
-                    if (!ren) continue;
-                    auto clone = cloneHighlightActor(actor);
-                    if (clone) {
-                        ren->AddActor(clone);
-                        clones.append(clone);
-                    }
-                }
-                if (!clones.isEmpty())
-                    m_highlightClonesBySource.insert(actor, clones);
-                safeUpdate();
-            });
-    m_hlActorRemovedConn =
-            connect(hl, &cvSelectionHighlighter::highlightActorRemoved, this,
-                    [this, removeClones, safeUpdate](vtkActor* actor) {
-                        if (m_closing) return;
-                        removeClones(actor);
-                        safeUpdate();
-                    });
-    m_hlClearedConn = connect(
-            hl, &cvSelectionHighlighter::highlightsCleared, this, [this]() {
-                if (m_closing) return;
-                clearHighlightClones();
-                for (auto* view : m_subViews) {
-                    if (!view) continue;
-                    auto* vis = dynamic_cast<Visualization::VtkVis*>(
-                            view->getVisualizer3D());
-                    if (vis) {
-                        cvSelectionHighlighter::clearSelectionOverlay(vis);
-                    }
-                }
-                forceRenderAllSubViews();
-            });
-
-    auto applyOverlayToSubViews = [this](vtkPolyData* poly, int kind) {
+    auto applySelectionToSubViews = [this](const cvSelectionData& selection) {
         if (m_closing) return;
         for (auto* view : m_subViews) {
             if (!view) continue;
             auto* vis = dynamic_cast<Visualization::VtkVis*>(
                     view->getVisualizer3D());
-            if (!vis) continue;
-            if (kind == cvSelectionHighlighter::SelectionOverlayNone) {
-                cvSelectionHighlighter::clearSelectionOverlay(vis);
-            } else {
-                cvSelectionHighlighter::applySelectionOverlay(
-                        vis, poly,
-                        static_cast<
-                                cvSelectionHighlighter::SelectionOverlayKind>(
-                                kind));
+            if (vis) {
+                cvSelectionHighlighter::renderSelectionForView(vis, selection);
             }
         }
+        forceRenderAllSubViews();
     };
-
-    m_hlOverlayConn = connect(
-            hl, &cvSelectionHighlighter::selectionOverlayUpdated, this,
-            [this, applyOverlayToSubViews](vtkPolyData* poly, int kind) {
-                applyOverlayToSubViews(poly, kind);
-                if (!m_closing) forceRenderAllSubViews();
-            });
-
+    m_hlClearedConn = connect(hl, &cvSelectionHighlighter::highlightsCleared,
+                              this, [applySelectionToSubViews]() {
+                                  applySelectionToSubViews(cvSelectionData());
+                              });
+    // Hover is intentionally view-local. Only completed source-qualified
+    // selections propagate, and each view resolves its own representation.
     if (auto* ctrl = cvSelectionToolController::instance()) {
         m_hlSelectionFinishedConn =
                 connect(ctrl, &cvSelectionToolController::selectionFinished,
-                        this, [this](const cvSelectionData&) {
-                            if (!m_closing) forceRenderAllSubViews();
-                        });
+                        this, applySelectionToSubViews);
     }
 }
 
 void vtkComparativeViewWidget::refreshSubViews() {
+    if (m_type != RENDER) {
+        applySelectedEntitiesToChartViews();
+        forceRenderAllSubViews();
+        return;
+    }
     for (auto* view : m_subViews) {
         if (view) syncSubViewBackgroundFromGlobal(view);
     }
@@ -1779,6 +1797,7 @@ void vtkComparativeViewWidget::refreshEntityCombo() {
             preserved.insert(entity);
         }
     }
+    const bool selectionChanged = m_selectedEntities != preserved;
     m_selectedEntities = preserved;
 
     auto* noneItem = new QStandardItem(tr("None"));
@@ -1805,6 +1824,7 @@ void vtkComparativeViewWidget::refreshEntityCombo() {
     m_entityCombo->setCurrentIndex(0);
     m_updatingShowingCombo = false;
     updateShowingComboText();
+    if (m_type != RENDER && selectionChanged) applyShowingSelection(false);
 }
 
 QSet<ccHObject*> vtkComparativeViewWidget::selectedEntitiesFromCombo() const {
@@ -1933,28 +1953,374 @@ void vtkComparativeViewWidget::applySelectedEntitiesToRenderViews(
 }
 
 void vtkComparativeViewWidget::applySelectedEntitiesToChartViews() {
-    ccHObject* firstSelected = nullptr;
-    if (m_entityCombo) {
-        if (auto* model =
-                    qobject_cast<QStandardItemModel*>(m_entityCombo->model())) {
-            for (int row = 1; row < model->rowCount(); ++row) {
-                auto* item = model->item(row);
-                if (!item || item->checkState() != Qt::Checked) continue;
-                firstSelected = reinterpret_cast<ccHObject*>(
-                        item->data(COMPARATIVE_ENTITY_ROLE).value<quintptr>());
-                if (firstSelected) break;
+    // Provider order, not QSet iteration, determines primary fields and legend
+    // order. Every pane keeps all checked source identities.
+    QList<ccHObject*> entities;
+    if (m_entityListProvider) {
+        for (auto* entity : m_entityListProvider())
+            if (entity && m_selectedEntities.contains(entity))
+                entities.append(entity);
+    }
+    for (auto* widget : m_subWidgets) {
+        if (auto* chart = qobject_cast<vtkChartView*>(widget))
+            chart->setEntities(entities);
+    }
+    applyParameterCues();
+}
+
+bool vtkComparativeViewWidget::setCues(const QList<ParameterCue>& cues) {
+    for (const auto& cue : cues) {
+        const bool threshold = cue.property == ThresholdMinimum ||
+                               cue.property == ThresholdMaximum;
+        const bool slice = cue.property >= SliceX && cue.property <= SliceZ;
+        auto validValue = [&](double value) {
+            if (!std::isfinite(value)) return false;
+            if (cue.property == Opacity) return value >= 0 && value <= 1;
+            if (cue.property == PointSize || cue.property == LineWidth)
+                return value > 0 && value <= 1024;
+            if (cue.property == XScale || cue.property == YScale)
+                return value != 0;
+            if (cue.property == Time && m_type != RENDER)
+                return std::isfinite(static_cast<float>(value));
+            return true;
+        };
+        if (cue.property < ThresholdMinimum || cue.property > YScale ||
+            cue.direction < AcrossColumns || cue.direction > ColumnMajor ||
+            (m_type == RENDER &&
+             (threshold || cue.property == XScale || cue.property == YScale)) ||
+            (m_type != RENDER && slice) ||
+            ((threshold || cue.property == Time) && cue.field.isEmpty()) ||
+            !validValue(cue.minimum) || !validValue(cue.maximum))
+            return false;
+        for (auto it = cue.cellValues.cbegin(); it != cue.cellValues.cend();
+             ++it)
+            if (it.key() < 0 || it.key() >= m_rows * m_cols ||
+                !validValue(it.value()))
+                return false;
+    }
+    clearComparisonOverlay();
+    // Release only the parameters previously owned by cues. The existing
+    // source representation is the baseline owner, not a second style cache.
+    m_applyingShowingSelection = true;
+    if (m_type == RENDER) {
+        for (auto* view : m_subViews) {
+            if (!view) continue;
+            for (const auto& cue : m_cues) {
+                if (cue.property >= SliceX && cue.property <= SliceZ) {
+                    view->setMultiSlicePositions(cue.property - SliceX, {});
+                    continue;
+                }
+                for (auto* rep : ecvRepresentationManager::instance()
+                                         .getRepresentationsForView(view)) {
+                    auto props = rep->properties();
+                    ecvViewRepresentation::Properties base;
+                    if (m_sourceView)
+                        if (auto* sourceRep =
+                                    ecvRepresentationManager::instance()
+                                            .getRepresentation(rep->getEntity(),
+                                                               m_sourceView))
+                            base = sourceRep->properties();
+                    if (cue.property == Opacity) props.opacity = base.opacity;
+                    if (cue.property == PointSize)
+                        props.pointSize = base.pointSize;
+                    if (cue.property == LineWidth)
+                        props.lineWidth = base.lineWidth;
+                    if (!sameRepresentationProperties(rep->properties(), props))
+                        rep->setProperties(props);
+                    if (cue.property == Time &&
+                        m_selectedEntities.contains(rep->getEntity()))
+                        rep->setVisible(true);
+                }
             }
         }
     }
+    m_applyingShowingSelection = false;
+    m_cues = cues;
+    applyParameterCues();
+    if (m_type == RENDER) scheduleSubViewRefresh(true);
+    return true;
+}
 
-    for (auto* widget : m_subWidgets) {
-        auto* chart = qobject_cast<vtkChartView*>(widget);
-        if (chart) chart->setEntity(firstSelected);
+double vtkComparativeViewWidget::cueValue(int cueIndex,
+                                          int column,
+                                          int row) const {
+    if (cueIndex < 0 || cueIndex >= m_cues.size() || column < 0 ||
+        column >= m_cols || row < 0 || row >= m_rows)
+        return std::numeric_limits<double>::quiet_NaN();
+    const auto& cue = m_cues[cueIndex];
+    const int cell = row * m_cols + column;
+    if (cue.cellValues.contains(cell)) return cue.cellValues.value(cell);
+    int index = cell;
+    int count = m_cols * m_rows;
+    switch (cue.direction) {
+        case AcrossColumns:
+            index = column;
+            count = m_cols;
+            break;
+        case AcrossRows:
+            index = row;
+            count = m_rows;
+            break;
+        case ColumnMajor:
+            index = column * m_rows + row;
+            break;
+        case RowMajor:
+            break;
     }
+    const double fraction = count > 1 ? double(index) / (count - 1) : 0.0;
+    return (1.0 - fraction) * cue.minimum + fraction * cue.maximum;
+}
+
+void vtkComparativeViewWidget::applyParameterCues() {
+    clearComparisonOverlay();
+    QList<vtkChartView::ComparisonParameters> comparisons;
+    m_applyingShowingSelection = true;
+    for (int cell = 0; cell < m_subWidgets.size(); ++cell) {
+        vtkChartView::ComparisonParameters comparison;
+        if (m_overlayAllComparisons)
+            comparison.label =
+                    tr("r%1 c%2").arg(cell / m_cols + 1).arg(cell % m_cols + 1);
+        auto* view = m_subViews.value(cell, nullptr);
+        bool changed = false;
+        if (view) {
+            for (auto* rep :
+                 ecvRepresentationManager::instance().getRepresentationsForView(
+                         view)) {
+                auto* entity = rep->getEntity();
+                if (!entity || !m_selectedEntities.contains(entity)) continue;
+                auto props = rep->properties();
+                bool visible = true;
+                for (int ci = 0; ci < m_cues.size(); ++ci) {
+                    const auto& cue = m_cues[ci];
+                    const double value =
+                            cueValue(ci, cell % m_cols, cell / m_cols);
+                    if (cue.property == Opacity) props.opacity = float(value);
+                    if (cue.property == PointSize)
+                        props.pointSize = float(value);
+                    if (cue.property == LineWidth)
+                        props.lineWidth = float(value);
+                    if (cue.property == Time) {
+                        bool ok = false;
+                        const double time =
+                                entity->getMetaData(cue.field).toDouble(&ok);
+                        const double tolerance =
+                                8 * std::numeric_limits<double>::epsilon() *
+                                std::max(1.0, std::abs(value));
+                        visible = visible && ok && std::isfinite(time) &&
+                                  std::abs(time - value) <= tolerance;
+                    }
+                }
+                if (!sameRepresentationProperties(rep->properties(), props)) {
+                    rep->setProperties(props);
+                    changed = true;
+                }
+                if (rep->isVisible() != visible) {
+                    rep->setVisible(visible);
+                    changed = true;
+                }
+            }
+            if (changed) safeRedraw(view);
+        }
+        for (int ci = 0; ci < m_cues.size(); ++ci) {
+            const auto& cue = m_cues[ci];
+            const double value = cueValue(ci, cell % m_cols, cell / m_cols);
+            if (cue.property == ThresholdMinimum ||
+                cue.property == ThresholdMaximum || cue.property == Time) {
+                if (m_type == RENDER) continue;
+                auto& filters = comparison.filters;
+                if (!filters.contains(cue.field))
+                    filters.insert(cue.field,
+                                   {-std::numeric_limits<double>::infinity(),
+                                    std::numeric_limits<double>::infinity()});
+                if (cue.property == Time) {
+                    // ccScalarField samples are floats: use the representable
+                    // timestamp instead of an arbitrary time-window tolerance.
+                    const double time = static_cast<float>(value);
+                    filters[cue.field] = {time, time};
+                } else if (cue.property == ThresholdMinimum)
+                    filters[cue.field].first = value;
+                else
+                    filters[cue.field].second = value;
+            } else if (cue.property == XScale)
+                comparison.xScale = value;
+            else if (cue.property == YScale)
+                comparison.yScale = value;
+            else if (cue.property == Opacity)
+                comparison.opacity = value;
+            else if (cue.property == PointSize)
+                comparison.markerSize = value;
+            else if (cue.property == LineWidth)
+                comparison.lineWidth = value;
+            else if (view && cue.property >= SliceX && cue.property <= SliceZ)
+                view->setMultiSlicePositions(cue.property - SliceX, {value});
+        }
+        comparisons.append(comparison);
+    }
+    m_applyingShowingSelection = false;
+    for (int cell = 0; cell < m_subWidgets.size(); ++cell)
+        if (auto* chart = qobject_cast<vtkChartView*>(m_subWidgets[cell]))
+            chart->setComparisons(
+                    m_overlayAllComparisons && cell == 0
+                            ? comparisons
+                            : QList<vtkChartView::ComparisonParameters>{
+                                      comparisons[cell]});
+    if (m_overlayAllComparisons) {
+        if (auto* renderer = getSceneRenderer(m_subViews.value(0, nullptr)))
+            for (int cell = 1; cell < m_subViews.size(); ++cell) {
+                const auto actors =
+                        m_subViews[cell]->createVisibleRepresentationActors(
+                                {}, true);
+                for (auto& actor : actors) {
+                    actor->PickableOff();
+                    renderer->AddActor(actor);
+                    m_comparisonOverlayActors.push_back(actor);
+                }
+            }
+    }
+    layoutSubViews();
+}
+
+void vtkComparativeViewWidget::editCues() {
+    QDialog dialog(this);
+    dialog.setWindowTitle(tr("Comparative parameter Cues"));
+    auto* layout = new QVBoxLayout(&dialog);
+    auto* help = new QLabel(
+            m_type == RENDER
+                    ? tr("Scan slice positions and per-view display "
+                         "properties. "
+                         "Time selects checked frame entities by a numeric "
+                         "metadata key in Field (no global time pipeline).")
+                    : tr("Scan inclusive thresholds on named point/cell fields "
+                         "before chart sampling; Time selects a named "
+                         "timestamp "
+                         "field. Display properties and X/Y value scales can "
+                         "also be scanned. Sources remain unchanged."),
+            &dialog);
+    help->setWordWrap(true);
+    layout->addWidget(help);
+    auto* table = new QTableWidget(0, 6, &dialog);
+    table->setHorizontalHeaderLabels({tr("Parameter"), tr("Field"),
+                                      tr("Direction"), tr("From"), tr("To"),
+                                      tr("Cell overrides")});
+    table->horizontalHeader()->setSectionResizeMode(
+            QHeaderView::ResizeToContents);
+    layout->addWidget(table);
+    auto appendCue = [&](const ParameterCue& cue) {
+        const int row = table->rowCount();
+        table->insertRow(row);
+        auto* property = new QComboBox(table);
+        if (m_type == RENDER) {
+            property->addItem(tr("Slice X"), SliceX);
+            property->addItem(tr("Slice Y"), SliceY);
+            property->addItem(tr("Slice Z"), SliceZ);
+        } else {
+            property->addItem(tr("Threshold minimum"), ThresholdMinimum);
+            property->addItem(tr("Threshold maximum"), ThresholdMaximum);
+        }
+        property->addItem(tr("Opacity"), Opacity);
+        property->addItem(tr("Point / marker size"), PointSize);
+        property->addItem(tr("Line width"), LineWidth);
+        property->addItem(tr("Time"), Time);
+        if (m_type != RENDER) {
+            property->addItem(tr("X values scale"), XScale);
+            property->addItem(tr("Y values scale"), YScale);
+        }
+        property->setCurrentIndex(qMax(0, property->findData(cue.property)));
+        table->setCellWidget(row, 0, property);
+        auto* field = new QTableWidgetItem(cue.field);
+        field->setToolTip(
+                tr("Threshold: point/cell field. Time: chart field or "
+                   "Render frame entity's numeric metadata key."));
+        table->setItem(row, 1, field);
+        auto* direction = new QComboBox(table);
+        direction->addItem(tr("Columns"), AcrossColumns);
+        direction->addItem(tr("Rows"), AcrossRows);
+        direction->addItem(tr("Grid: row first"), RowMajor);
+        direction->addItem(tr("Grid: column first"), ColumnMajor);
+        direction->setCurrentIndex(direction->findData(cue.direction));
+        table->setCellWidget(row, 2, direction);
+        for (int col = 3; col <= 4; ++col) {
+            auto* value = new QDoubleSpinBox(table);
+            value->setDecimals(9);
+            value->setRange(-1e100, 1e100);
+            value->setValue(col == 3 ? cue.minimum : cue.maximum);
+            table->setCellWidget(row, col, value);
+        }
+        QStringList overrides;
+        for (auto it = cue.cellValues.cbegin(); it != cue.cellValues.cend();
+             ++it)
+            overrides << QStringLiteral("%1=%2")
+                                 .arg(it.key() + 1)
+                                 .arg(it.value(), 0, 'g', 17);
+        auto* values = new QTableWidgetItem(overrides.join(';'));
+        values->setToolTip(tr("1-based row-major cell=value; e.g. 1=0.5;4=2"));
+        table->setItem(row, 5, values);
+    };
+    for (const auto& cue : m_cues) appendCue(cue);
+    auto* buttons = new QDialogButtonBox(
+            QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+    auto* add = buttons->addButton(tr("Add cue"), QDialogButtonBox::ActionRole);
+    auto* remove =
+            buttons->addButton(tr("Remove cue"), QDialogButtonBox::ActionRole);
+    connect(add, &QPushButton::clicked, &dialog, [&]() {
+        ParameterCue cue;
+        cue.property = m_type == RENDER ? SliceX : ThresholdMinimum;
+        cue.field = QStringLiteral("Points_X");
+        appendCue(cue);
+    });
+    connect(remove, &QPushButton::clicked, &dialog, [&]() {
+        if (table->currentRow() >= 0) table->removeRow(table->currentRow());
+    });
+    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    connect(buttons, &QDialogButtonBox::accepted, &dialog, [&]() {
+        QList<ParameterCue> cues;
+        bool valid = true;
+        for (int row = 0; row < table->rowCount(); ++row) {
+            ParameterCue cue;
+            cue.property = static_cast<CueProperty>(
+                    qobject_cast<QComboBox*>(table->cellWidget(row, 0))
+                            ->currentData()
+                            .toInt());
+            cue.field = table->item(row, 1)->text().trimmed();
+            cue.direction = static_cast<CueDirection>(
+                    qobject_cast<QComboBox*>(table->cellWidget(row, 2))
+                            ->currentData()
+                            .toInt());
+            cue.minimum =
+                    qobject_cast<QDoubleSpinBox*>(table->cellWidget(row, 3))
+                            ->value();
+            cue.maximum =
+                    qobject_cast<QDoubleSpinBox*>(table->cellWidget(row, 4))
+                            ->value();
+            for (const auto& text : table->item(row, 5)->text().split(';')) {
+                if (text.trimmed().isEmpty()) continue;
+                const auto parts = text.split('=');
+                bool cellOk = false, valueOk = false;
+                const int cell = parts.value(0).toInt(&cellOk) - 1;
+                const double value = parts.value(1).toDouble(&valueOk);
+                valid &= parts.size() == 2 && cellOk && valueOk;
+                cue.cellValues.insert(cell, value);
+            }
+            cues.append(cue);
+        }
+        if (valid && setCues(cues))
+            dialog.accept();
+        else
+            QMessageBox::warning(&dialog, tr("Invalid cue"),
+                                 tr("Use finite ranges, a field name, and "
+                                    "valid cell=value overrides."));
+    });
+    layout->addWidget(buttons);
+    dialog.resize(850, 300);
+    dialog.exec();
 }
 
 void vtkComparativeViewWidget::setInitialEntity(ccHObject* entity) {
-    m_initialEntity = entity;
+    m_selectedEntities.clear();
+    if (entity) m_selectedEntities.insert(entity);
+    refreshEntityCombo();
+    if (m_type != RENDER && !m_subWidgets.isEmpty())
+        applyShowingSelection(false);
 }
 
 void vtkComparativeViewWidget::createChartSubViews() {
@@ -1964,14 +2330,18 @@ void vtkComparativeViewWidget::createChartSubViews() {
 
     for (int r = 0; r < m_rows; ++r) {
         for (int c = 0; c < m_cols; ++c) {
+            if (r * m_cols + c < m_subWidgets.size()) continue;
             auto* chart = new vtkChartView(chartType, this);
+            // The Showing selector, not global DB-tree selection, owns the
+            // source of comparative chart panes.
+            disconnect(&ecvViewManager::instance(),
+                       &ecvViewManager::entitySelectionChanged, chart, nullptr);
             chart->setCompactMode(true);
             chart->setSizePolicy(QSizePolicy::Expanding,
                                  QSizePolicy::Expanding);
             if (m_entityListProvider) {
                 chart->setEntityListProvider(m_entityListProvider);
             }
-            chart->setCompactMode(true);
             m_gridLayout->addWidget(chart, r, c);
             m_gridLayout->setRowStretch(r, 1);
             m_gridLayout->setColumnStretch(c, 1);
@@ -1981,6 +2351,7 @@ void vtkComparativeViewWidget::createChartSubViews() {
     }
 
     refreshEntityCombo();
+    applyShowingSelection(false);
 }
 
 void vtkComparativeViewWidget::buildToolbar() {
@@ -2011,7 +2382,10 @@ void vtkComparativeViewWidget::buildToolbar() {
         lay->addWidget(showLabel);
         m_entityCombo = new QComboBox(m_toolbar);
         m_entityCombo->setMinimumWidth(120);
-        m_entityCombo->setToolTip(tr("Entities displayed in all sub-views"));
+        m_entityCombo->setToolTip(
+                tr("Overlay checked sources in every pane. Cues evaluate "
+                   "threshold or slice parameters independently across the "
+                   "grid."));
         m_entityCombo->setEditable(true);
         m_entityCombo->lineEdit()->setReadOnly(true);
         m_entityCombo->lineEdit()->setFrame(false);
@@ -2055,6 +2429,36 @@ void vtkComparativeViewWidget::buildToolbar() {
                     applyShowingSelection(true);
                 });
     }
+
+    lay->addWidget(new QLabel(tr("Grid:"), m_toolbar));
+    auto* rows = new QSpinBox(m_toolbar);
+    rows->setObjectName(QStringLiteral("comparativeRows"));
+    rows->setRange(1, 8);
+    rows->setValue(m_rows);
+    lay->addWidget(rows);
+    lay->addWidget(new QLabel(QStringLiteral("×"), m_toolbar));
+    auto* columns = new QSpinBox(m_toolbar);
+    columns->setObjectName(QStringLiteral("comparativeColumns"));
+    columns->setRange(1, 8);
+    columns->setValue(m_cols);
+    lay->addWidget(columns);
+    connect(rows, qOverload<int>(&QSpinBox::valueChanged), this,
+            [this, columns](int value) {
+                setDimensions(value, columns->value());
+            });
+    connect(columns, qOverload<int>(&QSpinBox::valueChanged), this,
+            [this, rows](int value) { setDimensions(rows->value(), value); });
+    auto* overlay = new QCheckBox(tr("Overlay all comparisons"), m_toolbar);
+    overlay->setObjectName(QStringLiteral("comparativeOverlay"));
+    lay->addWidget(overlay);
+    connect(overlay, &QCheckBox::toggled, this,
+            &vtkComparativeViewWidget::setOverlayAllComparisons);
+
+    auto* cuesButton = new QPushButton(tr("Cues..."), m_toolbar);
+    cuesButton->setObjectName(QStringLiteral("comparativeCues"));
+    lay->addWidget(cuesButton);
+    connect(cuesButton, &QPushButton::clicked, this,
+            &vtkComparativeViewWidget::editCues);
 
     m_statusLabel = new QLabel(m_toolbar);
     m_statusLabel->setContentsMargins(4, 0, 4, 0);

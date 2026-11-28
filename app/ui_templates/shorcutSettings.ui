@@ -30,7 +30,7 @@
       <enum>Qt::LayoutDirection::LeftToRight</enum>
      </property>
      <property name="columnCount">
-      <number>2</number>
+      <number>3</number>
      </property>
      <attribute name="horizontalHeaderCascadingSectionResizes">
       <bool>false</bool>
@@ -42,7 +42,12 @@
      </column>
      <column>
       <property name="text">
-       <string>Shortcut</string>
+       <string>Configured</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Effective</string>
       </property>
      </column>
     </widget>

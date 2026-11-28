@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.24)
+project(CloudViewerRunVTKOnly NONE)
+option(VTKENGINE_BUILD_TESTS "Exercise VTK-only test detection" ON)
+add_custom_target(check-test-system)
+add_custom_target(cpp-tests-ci)
+enable_testing()
+add_test(NAME vtk-only-contract COMMAND ${CMAKE_COMMAND} -E true)
+set_tests_properties(vtk-only-contract PROPERTIES LABELS test-ci)
