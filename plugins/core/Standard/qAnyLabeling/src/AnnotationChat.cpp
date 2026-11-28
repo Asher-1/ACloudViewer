@@ -2064,7 +2064,11 @@ public:
         m_progress->setObjectName("ChatBatchProgress");
         m_progress->setWindowModality(Qt::WindowModal);
         m_progress->setMinimumDuration(0);
-        m_progress->hide();
+        // The constructor arms forceShow's timer; setMinimumDuration() does not
+        // rearm it while bar value (-1) differs from minimum. reset() stops it
+        // so the hidden dialog cannot pop up by itself, close popups and steal
+        // activeModalWidget() from a dialog waiting on exec().
+        m_progress->reset();
         connect(m_progress, &QProgressDialog::canceled, this,
                 [this]() { cancelBatch(); });
         connect(m_autoRun, &QPushButton::clicked, this,

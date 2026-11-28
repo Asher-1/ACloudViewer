@@ -152,6 +152,9 @@ void AnnotationWindow::openImageClassifier() {
     remoteProgress->setWindowModality(Qt::WindowModal);
     remoteProgress->setMinimumDuration(0);
     remoteProgress->setAutoClose(false);
+    // reset() stops the constructor-armed forceShow timer, which would
+    // otherwise pop this hidden modal dialog up by itself.
+    remoteProgress->reset();
     remoteProgress->hide();
     bool updating = false;
     QStringList labels;
