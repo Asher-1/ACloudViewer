@@ -1009,7 +1009,12 @@ PY
         # and let pip pick the torchvision that requires it.
         local torch_reqs="${CLOUDVIEWER_ML_ROOT}/requirements-torch.txt"
         local built_torch_ver
-        built_torch_ver=$(python -c "import cloudViewer; print(cloudViewer._build_config['Pytorch_VERSION'].partition('+')[0])" 2>/dev/null || true)
+        # cloudViewer/__init__.py prints import-time banners ("Using external
+        # CloudViewer-ML in ...") to stdout, so keep only the version on the
+        # last line and drop anything that is not a plain dotted version: it
+        # must never reach the sed expression below.
+        built_torch_ver=$(python -c "import cloudViewer; print(cloudViewer._build_config['Pytorch_VERSION'].partition('+')[0])" 2>/dev/null | tail -n1 || true)
+        [[ "${built_torch_ver}" =~ ^[0-9]+([.][0-9]+)*$ ]] || built_torch_ver=""
         if [[ -n "${built_torch_ver}" && "${built_torch_ver}" != "${TORCH_VER}" ]]; then
             echo "Wheel was built with PyTorch ${built_torch_ver}; testing with its CPU build instead of the pinned ${TORCH_VER}."
             torch_reqs="$(mktemp "${RUNNER_TEMP:-/tmp}/requirements-torch.XXXXXX")"
