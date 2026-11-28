@@ -14,6 +14,8 @@
 #
 # The container keeps the toolchain, apt/Qt/VTK/PCL deps and ccache of the CI
 # image, so what passes here is what the matching CI job compiles and runs.
+# The cuda-<codename> image is the same Ubuntu release plus the CUDA toolkit:
+# one image covers both the cpu- and the cuda- job of that release.
 #
 # Guidelines:
 # - Same flat config names as docker_build.sh / docker_test.sh.

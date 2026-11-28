@@ -108,21 +108,24 @@ Example test commands:
 
 `docker_build.sh` + `docker_test.sh` rebuild the whole app on every round.
 `docker_ci_local.sh` builds the CI image once and keeps a container from it,
-so each round is a source sync + incremental build + the same test entry:
+so each round is a source sync + incremental build + the same test entry.
+Use the `cuda-<codename>` image: it is the same Ubuntu release plus the CUDA
+toolkit, so one image covers both the cpu- and the cuda- job of that release;
+build a `cpu-<codename>` image only when a cpu-only failure shows up.
 
 ```sh
-# first call builds cloudviewer-ci:cpu-resolute when missing (cold, BUILD_JOBS=16), then
+# first call builds cloudviewer-ci:cuda-resolute when missing (cold, BUILD_JOBS=16), then
 # rebuilds the changed targets incrementally
-./docker/docker_ci_local.sh cpu-resolute build
+./docker/docker_ci_local.sh cuda-resolute build
 
-# full CI profile (ci / ci,gpu), same as docker_test.sh cpu-resolute
-./docker/docker_ci_local.sh cpu-resolute test
+# full CI profile (ci,gpu with a GPU, else ci), same as docker_test.sh cuda-resolute
+./docker/docker_ci_local.sh cuda-resolute test
 
 # one test only
-./docker/docker_ci_local.sh cpu-resolute test -R test_qanylabeling_chat --output-on-failure
+./docker/docker_ci_local.sh cuda-resolute test -R test_qanylabeling_chat --output-on-failure
 
 ./docker/docker_ci_local.sh cuda-resolute shell   # interactive, /root/ACloudViewer
-./docker/docker_ci_local.sh cpu-resolute down     # drop the container (image kept)
+./docker/docker_ci_local.sh cuda-resolute down    # drop the container (image kept)
 ```
 
 Sync overwrites files but never deletes: run `down` + `up` after removing or

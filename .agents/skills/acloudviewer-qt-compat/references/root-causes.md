@@ -458,3 +458,67 @@ Each entry: **Symptom → Essence → Fix (owner) → Verification**. Append new
   list must mirror the `video_base` consumers in the plugin CMakeLists).
 - **Verification**: Windows CI only (no local Windows toolchain); recorded
   as a pending gate until the Windows job of the fixing SHA is green.
+
+## 24. dlib silently drops CUDA on CUDA 13 because its probe pins `sm_50`
+
+- **Symptom**: only visible in the build log of a CUDA 13 image (the
+  `cuda-resolute` cell): `CUDA was found but your compiler failed to compile
+  a simple CUDA program so dlib isn't going to use CUDA`, preceded by
+  `nvcc fatal : Unsupported gpu architecture 'sm_50'`. Nothing fails; the
+  qCanupo `ext_dlib` build just continues without CUDA.
+- **Essence**: `dlib/cmake_utils/test_for_cuda/CMakeLists.txt` appends
+  `-arch=sm_50` to the probe, and CUDA 13 removed every architecture below
+  7.5. `plugins/core/Standard/qCanupo/cmake/dlib_build.cmake` passes no
+  `DLIB_USE_CUDA`, so the probe result decides: ON with CUDA 12.x, OFF with
+  CUDA 13.x. No qCanupo source includes `dlib/cuda`, so the plugin is
+  unaffected either way.
+- **Not a failure**: the remote `cuda-resolute` jobs behave the same and
+  pass. Do not "repair" it to turn CI green.
+- **If it is ever cleaned up**: pass `-DDLIB_USE_CUDA=OFF` explicitly in
+  `dlib_build.cmake` so the result no longer depends on the toolkit, instead
+  of patching the probe to a newer architecture.
+
+## 25. CUDA wheel: the two build passes used different torch versions
+
+- **Symptom**: `Test wheel resolute` (CUDA 13.5 image, GPU-less hosted
+  runner) fails at "Test Python package (CUDA)" with
+  `OSError: .../cloudViewer/cpu/cloudViewer_torch_ops.so: undefined symbol:
+  _ZNK3c106SymInt6sym_neERKS0_`, right after the test-side branch of #18
+  installed `torch==2.9.0+cpu` ("CUDA available: False").
+- **Essence**: `build_pip_package` builds a CUDA wheel in two passes. Pass 1
+  (`BUILD_CUDA_MODULE=OFF`, plain `install_python_dependencies`) compiled
+  `lib/Release/cpu/cloudViewer_torch_ops.so` against the pinned
+  `torch==2.7.1+cpu`; pass 2 re-ran `install_python_dependencies with-cuda`
+  and compiled the `cuda/` ops against the resolved `2.9.0+cu130`.
+  `make_python_package.cmake` ships the pass-1 `cloudViewer/cpu/` tree as the
+  GPU-less fallback and copies `_build_config.py` from pass 2 only
+  (`Pytorch_VERSION=2.9.0+cu130`). `cloudViewer/ml/torch/__init__.py`
+  validates the installed torch against that record and then loads the
+  `cpu/` ops whenever `torch.cuda.is_available()` is false. Every GPU-less
+  user of that wheel is therefore pushed to torch 2.9.0 and then loads ops
+  compiled against 2.7.1 headers (`SymInt::sym_ne` is out-of-line in 2.7.1,
+  inline in 2.9.0). The CUDA ≤ 12 cells passed only because both passes
+  resolved to 2.7.1. #18 fixed the build side of one pass; the fallback ops
+  of the other pass were missed.
+- **Evidence blind spot**: the resolute build job log (and the
+  `ubuntu-wheel-build-log-*` artifact) loses stdout after the first
+  `make pip-package`; the pass-2 `Installing PyTorch: torch==2.9.0+cu130`
+  line is not in it. The proof is the test log plus the packaging and ops
+  selection code, not the build log.
+- **Fix (owner)**: `build_pip_package` resolves the CUDA-pass torch before
+  pass 1 and, when it differs from the pin, builds the CPU pass with
+  `torch==<resolved>+cpu`; after pass 2 it fails when the two passes resolved
+  differently (e.g. the index was unreachable in pass 1).
+  `cuda_toolkit_version` now owns the nvcc "release" parsing for both
+  callers. The test-side branch of #18 is correct as it stands.
+- **Verification**: stub run of `build_pip_package` (fake
+  nvcc/curl/python/cmake/make): 13.5 → pass 1 `torch==2.9.0+cpu`, pass 2
+  `torch==2.9.0+cu130`, exit 0; 12.6 → no pass-1 install, `2.7.1+cu126`
+  (unchanged); index unreachable in pass 1 only → exit 1 "would mix two
+  libtorch ABIs"; `BUILD_CUDA_MODULE=OFF` → no torch install. `bash -n`,
+  `test_ci_utils.sh` 18/18. CI gate: wheel run of `fbe5be0631a` (pending
+  when written).
+- **Residual**: a GPU-less user of a CUDA 13 wheel must install the CPU
+  build of the *resolved* torch (2.9.0), not the pinned 2.7.1; that follows
+  from recording the CUDA pass version and is reported by the import-time
+  version check.
