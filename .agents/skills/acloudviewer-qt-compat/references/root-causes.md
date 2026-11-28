@@ -399,3 +399,62 @@ Each entry: **Symptom → Essence → Fix (owner) → Verification**. Append new
 - **Rule**: a synthetic drag on a snapping widget must be specified in the
   snapped domain (frames) with margin, never as a percentage of an unknown
   width.
+
+## 22. A hidden `QProgressDialog` pops up by itself 4 s after construction
+
+- **Symptom**: `test_qanylabeling_chat` `ProviderAndWorkspaceWorkflows`
+  on Ubuntu 20.04 (Qt 5.12.8) either hangs until the ctest timeout
+  (cuda-focal: `***Timeout 1200.10 sec`, log silent after the `R,G,p`
+  sequence) or segfaults inside `QLineEdit::setText` with XMM registers
+  full of `0x7a` ('z'). Both are the same timer.
+- **Essence**: `ChatbotDialog` constructed
+  `QProgressDialog(0, 0)` + `setWindowModality(WindowModal)` +
+  `setMinimumDuration(0)` + `hide()`. The private constructor arms
+  `forceTimer->start(showTime = 4000)`. `setMinimumDuration()` only
+  re-arms while `bar->value() == bar->minimum()`; a fresh busy bar is
+  `-1` vs minimum `0`, so the timer survives and `hide()` does not stop
+  it. ~4 s after construction `forceShow()` shows the hidden modal
+  dialog from a `QTimer::timeout`:
+  - `QWidgetPrivate::show_helper` closes every active `Qt::Popup` when a
+    non-popup top-level window is shown → the open `ChatModelPopup`
+    (`WA_DeleteOnClose`) is deleted → a raw `QLineEdit*` cached by the
+    test dangles.
+  - `showModalWindow()` prepends it to `modalWindowList`, so
+    `QApplication::activeModalWidget()` is no longer the
+    `ChatBatchOptions` dialog whose `exec()` is running → the test's
+    single-shot watchdog never clicks Ok → `exec()` never returns.
+  Proof: a 20-line program reproduces the self-show on Qt 5.12.8; an
+  in-process event filter with `backtrace()` captured
+  `show_helper ← QDialog::setVisible ← QProgressDialog::forceShow ←
+  QTimer::timeout` closing the popup; delaying the batch launch to
+  3950–4010 ms after construction hung 7/7, 3700–3940 and 4020–4100
+  passed 100 %.
+- **Fix**: call `reset()` right after construction (owner side) in
+  `ChatbotDialog` and in `AnnotationClassifier::remoteProgress`;
+  `reset()` stops `forceTimer`. Nothing else changes: `configureBatch`
+  still calls `setRange/setValue/show()` on demand.
+- **Verification**: container Qt 5.12.8, the same 3950–4010 sweep 0/6
+  hangs; 48 concurrent instances (`--cpus 2`) 0 segfaults vs 25–29 %
+  before. Green on Qt 5.14.2, 6.4.2 and 6.10.2 trees. The residual
+  `test_chat.cpp:2375` 5 s wait failure under 12× oversubscription is
+  pre-existing (A/B with the unfixed plugin: 3/45 vs 3/48) and does not
+  occur in serial CI.
+- **Rule**: a `QProgressDialog` that is created hidden must be followed by
+  `reset()` (or be created lazily at first use); `setMinimumDuration(0)`
+  + `hide()` do not cancel the constructor-armed force-show timer.
+
+## 23. `_opencv_videoio` consumer list lagged behind the plugins linking `video_base`
+
+- **Symptom**: found while repairing entry 17 on Windows: the
+  bundled OpenCV is built without `videoio`/ffmpeg whenever only
+  qAnyLabeling, qRAM or qRelateAnything need video decoding, so those
+  plugins would have no decoder at run time.
+- **Essence**: `3rdparty/opencv/opencv_build.cmake` decides whether the
+  bundled OpenCV builds `videoio` + the ffmpeg backend from a hard-coded
+  list of plugin options. qAnyLabeling, qRAM and qRelateAnything link
+  `video_base` but were not in the list (the list had not been kept in
+  sync with the `video_base` consumers).
+- **Fix**: add the three options to the `_opencv_videoio` condition (the
+  list must mirror the `video_base` consumers in the plugin CMakeLists).
+- **Verification**: Windows CI only (no local Windows toolchain); recorded
+  as a pending gate until the Windows job of the fixing SHA is green.

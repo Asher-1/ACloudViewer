@@ -104,6 +104,30 @@ Example test commands:
 ./docker/docker_test.sh cuda-resolute
 ```
 
+### Iterate on a CI configuration locally (no push)
+
+`docker_build.sh` + `docker_test.sh` rebuild the whole app on every round.
+`docker_ci_local.sh` builds the CI image once and keeps a container from it,
+so each round is a source sync + incremental build + the same test entry:
+
+```sh
+# first call builds cloudviewer-ci:cpu-resolute when missing (cold, BUILD_JOBS=16), then
+# rebuilds the changed targets incrementally
+./docker/docker_ci_local.sh cpu-resolute build
+
+# full CI profile (ci / ci,gpu), same as docker_test.sh cpu-resolute
+./docker/docker_ci_local.sh cpu-resolute test
+
+# one test only
+./docker/docker_ci_local.sh cpu-resolute test -R test_qanylabeling_chat --output-on-failure
+
+./docker/docker_ci_local.sh cuda-resolute shell   # interactive, /root/ACloudViewer
+./docker/docker_ci_local.sh cpu-resolute down     # drop the container (image kept)
+```
+
+Sync overwrites files but never deletes: run `down` + `up` after removing or
+renaming sources.
+
 **Note**: The test script automatically detects whether ML ops are available in the Docker image by checking the installed `cloudViewer` package's build configuration. You don't need to manually specify whether ML ops are enabled.
 
 ### Optional: AICore plugins (qDA3, qFreeSplatter)

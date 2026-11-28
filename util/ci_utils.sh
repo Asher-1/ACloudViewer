@@ -198,6 +198,12 @@ _ci_load_vulkan_build_env() {
     fi
 }
 
+# Prints the CUDA toolkit version as nvcc reports it (e.g. 117, 121, 135),
+# or nothing when nvcc is not installed.
+cuda_toolkit_version() {
+    nvcc --version 2>/dev/null | grep "release " | cut -c33-37 | sed 's|[^0-9]||g'
+}
+
 # PyTorch publishes a fixed, version-dependent set of CUDA builds (2.7.1:
 # cu118/cu126/cu128; cu13x only from 2.9 on) and torch.utils.cpp_extension
 # refuses to build ops when the toolkit CUDA major differs from the one torch
@@ -284,7 +290,7 @@ install_python_dependencies() {
     if [[ "with-cuda" =~ ^($options)$ ]]; then
         TF_ARCH_NAME=tensorflow
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
-        CUDA_VER=$(nvcc --version | grep "release " | cut -c33-37 | sed 's|[^0-9]||g') # e.g.: 117, 118, 121, ...
+        CUDA_VER=$(cuda_toolkit_version) # e.g.: 117, 118, 121, ...
         resolve_torch_cuda_build "${TORCH_VER}" "${CUDA_VER}"
         if [[ "${TORCH_RESOLVED_VERSION}" != "${TORCH_VER}" ]]; then
             echo "PyTorch ${TORCH_VER} has no CUDA ${CUDA_VER} build; using torch ${TORCH_RESOLVED_VERSION}."
@@ -819,6 +825,25 @@ build_pip_package() {
     _ci_apply_aicore_options "$options"
     set -u
 
+    # A CUDA wheel records the torch of its CUDA pass (_build_config.py is
+    # copied from that build) and ships the CPU pass ops as the GPU-less
+    # fallback (make_python_package.cmake), and cloudViewer.ml.torch checks
+    # the installed torch against the recorded version whichever ops it
+    # loads. Both passes must therefore be built with the same torch
+    # version: when the toolkit has no build of the pinned one, build the CPU
+    # pass with the CPU build of the version the CUDA pass resolves to.
+    local cpu_pass_torch_ver="${TORCH_VER}" cuda_ver
+    if [[ "$BUILD_CUDA_MODULE" == "ON" && "$BUILD_PYTORCH_OPS" == "ON" && \
+          "$OSTYPE" == "linux-gnu"* ]]; then
+        cuda_ver="$(cuda_toolkit_version)"
+        resolve_torch_cuda_build "${TORCH_VER}" "${cuda_ver}"
+        if [[ "${TORCH_RESOLVED_VERSION}" != "${TORCH_VER}" ]]; then
+            echo "PyTorch ${TORCH_VER} has no CUDA ${cuda_ver} build; building the CPU pass with torch ${TORCH_RESOLVED_VERSION}+cpu as well."
+            python -m pip install -U "torch==${TORCH_RESOLVED_VERSION}+cpu" -f "$TORCH_REPO_URL"
+            cpu_pass_torch_ver="${TORCH_RESOLVED_VERSION}"
+        fi
+    fi
+
     echo
     echo Building with CPU only...
     mkdir -p build
@@ -893,6 +918,10 @@ build_pip_package() {
             echo "Final verification of CUDA PyTorch before CUDA build..."
             if ! python -c "import torch; assert torch.version.cuda, 'No CUDA support'" 2>/dev/null; then
                 echo "ERROR: CUDA PyTorch verification failed. Cannot proceed with CUDA build."
+                exit 1
+            fi
+            if [[ "${TORCH_RESOLVED_VERSION}" != "${cpu_pass_torch_ver}" ]]; then
+                echo "ERROR: the CPU pass was built with PyTorch ${cpu_pass_torch_ver} but the CUDA pass resolved ${TORCH_RESOLVED_VERSION}; the wheel would mix two libtorch ABIs."
                 exit 1
             fi
         fi
