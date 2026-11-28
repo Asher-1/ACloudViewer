@@ -522,3 +522,43 @@ Each entry: **Symptom → Essence → Fix (owner) → Verification**. Append new
   build of the *resolved* torch (2.9.0), not the pinned 2.7.1; that follows
   from recording the CUDA pass version and is reported by the import-time
   version check.
+- **CI result**: `74f6b6800b` wheel run 46151014283 — all four "Build
+  wheel" jobs and the noble/jammy tests pass; resolute now fails later, in
+  the Python unit tests (#26).
+
+## 26. DLPack: the versioned capsule was named `dltensor`
+
+- **Symptom**: `Test wheel resolute` (run 46151014283, job 141009381050,
+  wheel built against torch 2.9.0 after #25) now passes "Test Python
+  package (CUDA)" (`PyTorch Ops library loaded: True`) and fails in "Run
+  Python unit tests (CUDA)" with 4782 passed and
+  `test_torch_integration.py::test_tensor_{from_to_pytorch,to_pytorch_scope}[device0]`
+  raising `BufferError: Unsupported device_type: 839175872` from
+  `torch/utils/dlpack.py:172` (`torch._C._from_dlpack(dlpack)`).
+- **Essence**: `Tensor.__dlpack__` in `libs/Python/pybind/core/tensor.cpp`
+  takes the versioned branch whenever the caller passes
+  `max_version.major > 0` and returns the `DLManagedTensorVersioned*`
+  in a capsule still **named `dltensor`**. torch < 2.9 calls
+  `__dlpack__()` without `max_version`, so only the unversioned branch
+  ran and the name was never exercised. torch >= 2.9 passes
+  `max_version=(1, 0)`: `aten/src/ATen/DLConvertor.h` selects the layout by
+  capsule name (`"dltensor"` → `DLManagedTensor`, `"dltensor_versioned"` →
+  `DLManagedTensorVersioned`). With the old name it reads the struct as an
+  unversioned `DLManagedTensor`, whose `dl_tensor` is at offset 0, while
+  in the DLPack 1.2 layout (vendored `libs/cloudViewer/core/DLPack.h`,
+  identical to torch's vendored copy) `dl_tensor` follows `version`,
+  `manager_ctx`, `deleter` and `flags` (offset 40). `device_type` is read
+  from the `DLPackVersion`/`manager_ctx` bytes → garbage value. The noble
+  and jammy cells stayed on torch 2.7.1, so only the resolute cell (2.9.0
+  through #25's resolution) exposed it. Open3D `main` carries the same
+  code.
+- **Fix (owner)**: the versioned branch names its capsule
+  `"dltensor_versioned"` and its destructor reads the pointer back under
+  that name. No layout change: the producer and torch 2.9 vendored the same
+  DLPack 1.2 `DLManagedTensorVersioned`; only the name was wrong.
+- **Verification**: rebuilt `pybind` in `build_app` (Qt 5.14.2 tree) and ran
+  the two test bodies plus a direct `b.__dlpack__(max_version=(1, 0))` →
+  `torch._C._from_dlpack` round trip against torch 2.13.0 (also passes
+  `max_version`): shared memory in both directions, capsule reports
+  `dltensor_versioned`, no fault after releasing the consumed capsule. CI
+  gate: wheel run of the fixing commit (pending when written).
