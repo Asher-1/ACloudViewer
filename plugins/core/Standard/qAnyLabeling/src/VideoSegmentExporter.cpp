@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
+#include <vector>
 
 #include "QtCompat.h"
 
@@ -360,7 +361,18 @@ bool exportVideoSegment(const VideoSegmentExportRequest& request,
                                     .arg(writtenFrames + 1, 5, 10,
                                          QLatin1Char('0')));
                     ++writtenFrames;
-                    if (!cv::imwrite(path.toStdString(), frame))
+                    // Encode with OpenCV, write with Qt: OpenCV's narrow-string
+                    // file APIs take the ANSI code page on Windows and cannot
+                    // open a path holding non-ASCII characters (e.g. a Unicode
+                    // label folder).
+                    std::vector<uchar> encoded;
+                    QFile frameFile(path);
+                    if (!cv::imencode(".jpg", frame, encoded) ||
+                        !frameFile.open(QIODevice::WriteOnly) ||
+                        frameFile.write(
+                                reinterpret_cast<const char*>(encoded.data()),
+                                static_cast<qint64>(encoded.size())) !=
+                                static_cast<qint64>(encoded.size()))
                         return fail(QStringLiteral("Failed to write frame %1")
                                             .arg(writtenFrames));
                 }

@@ -3,7 +3,7 @@
 # counterpart of util/tests/test_ci_utils.ps1. Covered: strict-mode
 # preservation when sourced by a non-interactive script (the contract whose
 # violation once let a failed wheel build continue), the
-# CLOUDVIEWER_CMAKE_BIN guard, the AICore USE_* option resolver family and
+# CLOUDVIEWER_CMAKE_BIN guard, the AICore USE_* option switches and
 # the python_release_deps_required gate. Build/install/docker helpers are
 # out of scope: they need toolchains, network or a build tree.
 #
@@ -79,49 +79,32 @@ assert_ok "_ci_env_on_off accepts ON/on/1/true/TRUE/yes/YES and rejects the rest
             \"\$(_ci_env_on_off OFF)\" == OFF && \"\$(_ci_env_on_off off)\" == OFF &&
             \"\$(_ci_env_on_off garbage)\" == OFF && \"\$(_ci_env_on_off '')\" == OFF ]]"
 
-# --- 5. AICore USE_* option resolver family ---
+# --- 5. AICore USE_* option switches ---
 # Resolution order everywhere: environment override > option token > default.
 # Option tokens are pipe-separated by the callers (same convention as
-# install_python_dependencies).
+# install_python_dependencies). Every case runs in a subshell because the
+# applied value is exported and would otherwise feed the next case.
 
-# Vulkan: without_vulkan -> OFF, with_vulkan -> ON, otherwise platform
+# Vulkan: without_vulkan -> OFF, with_vulkan -> ON, otherwise the platform
 # default (ON on Linux, OFF on macOS — asserted for Linux here).
-assert_ok "_ci_resolve_aicore_use_vulkan: option tokens and Linux default" \
-    bash -c "source '$LIB' &&
-        [[ \"\$(_ci_resolve_aicore_use_vulkan 'with_conda|without_vulkan')\" == OFF &&
-            \"\$(_ci_resolve_aicore_use_vulkan 'with_conda|with_vulkan')\" == ON &&
-            \"\$(_ci_resolve_aicore_use_vulkan 'with_conda')\" == ON ]]"
-assert_ok "_ci_resolve_aicore_use_vulkan: environment overrides the token" \
-    bash -c "source '$LIB' &&
-        AICore_USE_VULKAN=OFF &&
-        [[ \"\$(_ci_resolve_aicore_use_vulkan 'with_conda|with_vulkan')\" == OFF ]]"
-
-assert_ok "_ci_resolve_aicore_use_cuda: with_aicore_cuda token, default OFF" \
-    bash -c "source '$LIB' &&
-        [[ \"\$(_ci_resolve_aicore_use_cuda 'with_conda|with_aicore_cuda')\" == ON &&
-            \"\$(_ci_resolve_aicore_use_cuda 'with_conda')\" == OFF ]]"
-assert_ok "_ci_resolve_aicore_use_cuda: environment overrides the token" \
-    bash -c "source '$LIB' &&
-        AICore_USE_CUDA=ON &&
-        [[ \"\$(_ci_resolve_aicore_use_cuda 'with_conda')\" == ON ]]"
-
-assert_ok "_ci_resolve_aicore_bundle_cuda_runtime: token and default OFF" \
-    bash -c "source '$LIB' &&
-        [[ \"\$(_ci_resolve_aicore_bundle_cuda_runtime 'bundle_cuda_runtime')\" == ON &&
-            \"\$(_ci_resolve_aicore_bundle_cuda_runtime 'with_conda')\" == OFF ]]"
-assert_ok "_ci_resolve_aicore_bundle_cuda_runtime: environment overrides the token" \
-    bash -c "source '$LIB' &&
-        AICore_BUNDLE_CUDA_RUNTIME=OFF &&
-        [[ \"\$(_ci_resolve_aicore_bundle_cuda_runtime 'bundle_cuda_runtime')\" == OFF ]]"
-
-assert_ok "_ci_resolve_aicore_cpu_all_variants: no_cpu_all_variants token, default ON" \
-    bash -c "source '$LIB' &&
-        [[ \"\$(_ci_resolve_aicore_cpu_all_variants 'no_cpu_all_variants')\" == OFF &&
-            \"\$(_ci_resolve_aicore_cpu_all_variants 'with_conda')\" == ON ]]"
-assert_ok "_ci_resolve_aicore_cpu_all_variants: environment overrides the token" \
-    bash -c "source '$LIB' &&
-        AICore_CPU_ALL_VARIANTS=OFF &&
-        [[ \"\$(_ci_resolve_aicore_cpu_all_variants 'with_conda')\" == OFF ]]"
+assert_ok "_ci_apply_aicore_option: token_on / token_off / default" \
+    bash -c "source '$LIB';
+        ( _ci_apply_aicore_option AICore_USE_VULKAN 'with_conda|without_vulkan' ON with_vulkan without_vulkan; [[ \$AICore_USE_VULKAN == OFF ]] );
+        ( _ci_apply_aicore_option AICore_USE_VULKAN 'with_conda|with_vulkan' ON with_vulkan without_vulkan; [[ \$AICore_USE_VULKAN == ON ]] );
+        ( _ci_apply_aicore_option AICore_USE_VULKAN 'with_conda' ON with_vulkan without_vulkan; [[ \$AICore_USE_VULKAN == ON ]] )"
+assert_ok "_ci_apply_aicore_option: environment overrides the token" \
+    bash -c "source '$LIB';
+        ( AICore_USE_VULKAN=OFF; _ci_apply_aicore_option AICore_USE_VULKAN 'with_conda|with_vulkan' ON with_vulkan without_vulkan; [[ \$AICore_USE_VULKAN == OFF ]] );
+        ( AICore_USE_CUDA=ON; _ci_apply_aicore_option AICore_USE_CUDA 'with_conda' OFF with_aicore_cuda ''; [[ \$AICore_USE_CUDA == ON ]] )"
+assert_ok "_ci_apply_aicore_option: on-only and off-only tokens with their defaults" \
+    bash -c "source '$LIB';
+        ( _ci_apply_aicore_option AICore_USE_CUDA 'with_conda|with_aicore_cuda' OFF with_aicore_cuda ''; [[ \$AICore_USE_CUDA == ON ]] );
+        ( _ci_apply_aicore_option AICore_BUNDLE_CUDA_RUNTIME 'bundle_cuda_runtime' OFF bundle_cuda_runtime ''; [[ \$AICore_BUNDLE_CUDA_RUNTIME == ON ]] );
+        ( _ci_apply_aicore_option AICore_CPU_ALL_VARIANTS 'no_cpu_all_variants' ON '' no_cpu_all_variants; [[ \$AICore_CPU_ALL_VARIANTS == OFF ]] );
+        ( _ci_apply_aicore_option AICore_CPU_ALL_VARIANTS 'with_conda' ON '' no_cpu_all_variants; [[ \$AICore_CPU_ALL_VARIANTS == ON ]] )"
+assert_ok "_ci_apply_aicore_options: applies all four switches" \
+    bash -c "source '$LIB'; _ci_apply_aicore_options 'with_conda|with_aicore_cuda|no_cpu_all_variants' &&
+        [[ \$AICore_USE_VULKAN == ON && \$AICore_USE_CUDA == ON && \$AICore_BUNDLE_CUDA_RUNTIME == OFF && \$AICore_CPU_ALL_VARIANTS == OFF ]]"
 
 # --- 6. python_release_deps_required gate ---
 # Defaults: PLUGIN_PYTHON=ON, BUILD_PYTHON_MODULE=ON, COPY_ENV=OFF,

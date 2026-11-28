@@ -47,6 +47,16 @@ Each entry: **Symptom → Essence → Fix (owner) → Verification**. Append new
   `plugins/core/Standard/qAnyLabeling/tests/CMakeLists.txt` (COMMAND override + remove
   stale `offscreen` ENVIRONMENT entry before appending `xcb`).
 - **Verification**: 452/449 GL workflow tests pass.
+- **Qt 6.4 is worse (no GL is not the only problem)**: the full GUI under
+  `QT_QPA_PLATFORM=offscreen` on Qt 6.4.2 (noble) segfaults on the first
+  expose as soon as a `QOpenGLWidget` is on screen —
+  `QPlatformBackingStore::rhiFlush` ← `QWidgetRepaintManager::flush` ←
+  `QApplicationPrivate::notify_helper` ← `processExposeEvent` (Qt's own
+  bug; Qt 6.10 and Qt 5.15 only print "QOpenGLWidget is not supported on
+  this platform" and stay up). Reproduced locally: qt64 offscreen rc=139,
+  qt64/qt610/qt5 xcb and qt610/qt5 offscreen alive after 15 s. So a step
+  that already runs inside `xvfb-run` must not force `offscreen`; owner
+  `.github/workflows/ubuntu.yml` Level 4 (`QT_QPA_PLATFORM: xcb`).
 
 ## 5. QFileDialog::selectFile() is async on Qt6 (feature 28)
 
@@ -289,5 +299,103 @@ Each entry: **Symptom → Essence → Fix (owner) → Verification**. Append new
   unreachable, empty) pass; `util/tests/test_ci_utils.sh` 22/22. The CUDA
   13.5 container itself is not buildable locally (image pull blocked) — CI is
   the gate for `CloudViewer-ML` building against the resolved torch.
+- **CI verdict (494e2fe65f, wheel resolute)**: the build now passes; the
+  failure moved to `Test wheel resolute` step "Test Python package (CUDA)":
+  `Version mismatch: CloudViewer needs PyTorch version 2.9.*, but version
+  2.7.1+cpu is installed!`. The resolver had only been applied to the build
+  side; `test_wheel` still installed the ML repo's `requirements-torch.txt`,
+  which pins `torch==2.7.1+cpu`, while the ops were compiled against 2.9 and
+  `cloudViewer/ml/torch/__init__.py` checks `_build_config["Pytorch_VERSION"]`
+  major.minor on import. Lesson: a version that one stage *derives* must be
+  read back from the artifact by every later stage, never re-derived from the
+  pin.
+- **Fix (test side)**: `test_wheel` reads
+  `cloudViewer._build_config['Pytorch_VERSION']` from the installed wheel and,
+  when it differs from `TORCH_VER`, installs a copy of the ML requirements
+  with `torch==<built>+cpu` and `torchvision` unpinned (pip picks the release
+  that requires exactly that torch: 0.24.0+cpu ↔ 2.9.0). Equal version → the
+  file is used unchanged (CPU wheel, macOS, CUDA ≤ 12 cells).
+- **Verification**: `bash -n`, `test_ci_utils.sh` 22/22, three-branch
+  simulation with a stub `cloudViewer` (2.9.0+cu135 → rewritten file;
+  2.7.1+cpu and empty → original file), and a pip dry-run of the rewritten
+  file for cp313 resolving `torch-2.9.0+cpu torchvision-0.24.0+cpu`.
 - **Open**: `util/ci_utils.ps1` still builds the raw tag; Windows CI is on
   CUDA 12.6 (`+cu126` exists), so port the resolver when its CUDA is bumped.
+
+## 19. Windows: a file that is still open cannot be removed or replaced
+
+- **Symptom**: Windows unified headless C++ gate (343/347):
+  `test_qanylabeling_exporter` "Cannot stage existing PPOCR artifact:
+  Label.txt"; `test_qanylabeling_video_ui` "exported clip replace or JPEG
+  failed" followed by a 1200 s timeout. Green on Linux/macOS.
+- **Essence**: POSIX unlink/rename ignores open handles; Windows refuses
+  both. Both tests held the output open themselves: `test_exporter.cpp`
+  kept reading `ppocrLabels`/`ppocrGt` (`QFile`) while the replacement
+  export moved them aside (`AnnotationPpocr.cpp` `movePath` →
+  `QFile::remove`), and `test_video_ui.cpp` kept `cv::VideoCapture
+  exportedClip(clipExport)` open while the second export replaced the clip
+  through `QSaveFile`.
+- **Fix**: the test releases what it holds before asking for a replacement
+  (`ppocrLabels.close(); ppocrGt.close();` / `exportedClip.release();`).
+  Production code is unchanged — it is the caller's handle, not an exporter
+  bug. Also fixed the Windows-only runner assertion
+  `Path(...).name == "test_relate_temporal_replay"` → `.stem`
+  (`core/AICore/scripts/test_validate_all.py`; `.exe` suffix).
+- **Verification**: three test targets pass on Qt 6.4.2 and Qt 5.15.2 trees;
+  `test_validate_all` 166/166. No local Windows build — CI is the gate.
+- **The 1200 s hang is a cascade, not a second bug**: once an assertion fails,
+  the dialog is still dirty and the fixture's `TearDown() { dialog.close(); }`
+  blocks in `closeEvent → confirmSave → QMessageBox::question` (reproduced on
+  Linux with Qt 6.4; stack taken by launching the test under gdb — ptrace_scope
+  forbids attaching — and interrupting the inferior).
+  `set_tests_properties(test_qanylabeling_video_ui PROPERTIES TIMEOUT 300)`
+  bounds it; the product behaviour (ask before discarding) is unchanged.
+
+## 20. Windows: OpenCV narrow-string file APIs take the ANSI code page
+
+- **Symptom**: `test_qanylabeling_video_dataset` `ExportsUnsavedUnicodeLabel`
+  fails only on Windows ("Failed to write frame"): the RawFrames export
+  writes into `rawframes/行人/…`.
+- **Essence**: `cv::imwrite(path.toStdString(), …)` and friends call
+  `fopen` on a `const char*`; on Windows that is the ANSI code page, so a
+  UTF-8 path with non-ASCII characters cannot be opened. `QFile` uses the
+  wide API. (The Video path is safe: ffmpeg is a `QProcess` with
+  `QStringList` arguments.)
+- **Fix**: `VideoSegmentExporter.cpp` encodes with `cv::imencode(".jpg")`
+  and writes the buffer through `QFile`. No repository-wide `imwrite`
+  wrapper exists; the one `imwrite` in qAnyLabeling `src` was the only
+  writer.
+- **Verification**: 6/6 on Qt 6.4.2 and Qt 5.15.2 trees (Linux cannot fail
+  this way — it only proves no regression); CI is the gate for the Unicode
+  path.
+- **Open**: `source.openVideo(request.videoPath.toStdString())` has the
+  same narrow-path shape for a Unicode *input* video; not changed (no
+  failing test, no Windows build to validate a fix).
+
+## 21. Timeline drag test driven by pixel percentages lands on a half-frame
+
+- **Symptom**: `test_qanylabeling_video_ui`
+  `LabelTimelineExportsSplitHistoryAndDropRoundTrip` fails on Qt 6.4.2 with
+  "exported frame range is incorrect" (segment `[1600, 2000)` instead of
+  `[1400, 1800)`), then hangs (entry 19). Green on Qt 5.15.2. Never seen in
+  Linux CI: the `test-ci` label set excludes qAnyLabeling tests; only the
+  Windows unified headless gate runs them.
+- **Essence**: the test converted percentages of the timeline width into drag
+  coordinates (`trackWidth * 55 / 100`). `VideoSegmentTimeline::snapTime`
+  rounds to the nearest frame (`llround(ms / frame)`), and 55 % / 75 % are the
+  half-frame marks of a 2000 ms, 5 fps clip (1100 ms = frame 5.5, 1500 ms =
+  frame 7.5). Whether a landing point sits just below or exactly on the mark
+  depends on the widget width, which differs per Qt version: Qt 6.4 lays the
+  timeline out 904 px wide (track 880 = 20 × 44, so 55 % is exactly 1100.0 →
+  rounds up to 1200), Qt 5.15 901 px (track 877, 55 % is 1099 ms → 1000).
+  Evidence: temporary prints of `mousePressEvent` (track 12..891, hit
+  Right/1) and of `segmentEdited` (receiving `1200,1600` directly, no
+  `editRange` in between). The plugin behaves as designed.
+- **Fix**: the test maps times to pixels (`xAt(ms) = 12 + trackWidth * ms /
+  2000`) and uses landings ≥ 50 ms away from every half-frame mark (1050,
+  1250, 1450, 1150, 1650): create `[1000, 1200)`, grow the right handle to
+  1400, slide the body to `[1400, 1800)`. Assertions unchanged.
+- **Verification**: 3/3 on Qt 6.4.2, Qt 6.10.2 and Qt 5.15.2 trees.
+- **Rule**: a synthetic drag on a snapping widget must be specified in the
+  snapped domain (frames) with margin, never as a percentage of an unknown
+  width.

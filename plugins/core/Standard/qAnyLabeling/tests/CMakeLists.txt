@@ -198,6 +198,10 @@ if(TARGET 3rdparty_opencv)
         PLUGIN_NAME test_qanylabeling_video_ui NO_LINK)
     cloudviewer_add_test(NAME test_qanylabeling_video_ui
         COMMAND test_qanylabeling_video_ui)
+    # A failed assertion leaves the dialog dirty, and its teardown close()
+    # then waits forever in the "Save changes?" message box. Bound that to
+    # minutes instead of the default 1200 s.
+    set_tests_properties(test_qanylabeling_video_ui PROPERTIES TIMEOUT 300)
     cloudviewer_set_plugin_test_env_offscreen(test_qanylabeling_video_ui)
 endif()
 

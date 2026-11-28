@@ -2947,7 +2947,7 @@ class ValidateAllTests(unittest.TestCase):
         self.assertFalse(tracker.require_fingerprint)
         parity = by_id["relation-temporal-upstream-parity"]
         self.assertIn("compare_temporal_upstream.py", parity.command[1])
-        self.assertEqual(Path(parity.command[-1]).name,
+        self.assertEqual(Path(parity.command[-1]).stem,
                          "test_relate_temporal_replay")
 
     def test_find_binary_searches_plugin_test_directory(self):

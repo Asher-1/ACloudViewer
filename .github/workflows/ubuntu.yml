@@ -402,12 +402,14 @@ jobs:
           xvfb-run -a -s "-screen 0 1280x1024x24" \
             python -m pytest agent-integration/tests/test_integration.py -v -k "level3"
 
-      # The full GUI under the offscreen QPA, as an unattended agent host runs
-      # it. offscreen gets its OpenGL context through GLX, so Xvfb supplies a
-      # display backed by Mesa's software rasterizer; nothing is shown.
-      - name: Level 4 — JSON-RPC tests against an offscreen GUI
+      # The full GUI as an unattended agent host runs it, on Xvfb's X display
+      # (xcb). The offscreen QPA is not usable here: it has no GL, and Qt 6.4's
+      # offscreen backing store segfaults in QPlatformBackingStore::rhiFlush as
+      # soon as a QOpenGLWidget is on screen (Qt >= 6.5 only warns). LIBGL_
+      # ALWAYS_SOFTWARE keeps the context on Mesa's software rasterizer.
+      - name: Level 4 — JSON-RPC tests against the GUI on Xvfb
         env:
-          QT_QPA_PLATFORM: offscreen
+          QT_QPA_PLATFORM: xcb
           LIBGL_ALWAYS_SOFTWARE: "1"
           ACV_RPC_PORT: "6001"
           ACV_RPC_URL: ws://127.0.0.1:6001
@@ -427,7 +429,7 @@ jobs:
             sleep 2
           done
           if [ "$ready" != 1 ]; then
-            echo "::error::Offscreen GUI did not serve JSON-RPC on $ACV_RPC_URL"
+            echo "::error::GUI did not serve JSON-RPC on $ACV_RPC_URL"
             tail -n 100 "$GUI_LOG"
             kill -- -"$GUI_PID" 2>/dev/null || true
             exit 1
@@ -435,7 +437,7 @@ jobs:
           status=0
           python -m pytest agent-integration/tests/test_integration.py -v -k "level4" || status=$?
           if ! kill -0 "$GUI_PID" 2>/dev/null; then
-            echo "::error::Offscreen GUI exited during Level 4"
+            echo "::error::GUI exited during Level 4"
             tail -n 100 "$GUI_LOG"
             status=1
           fi

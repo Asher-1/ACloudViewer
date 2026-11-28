@@ -239,8 +239,17 @@ TEST_F(VideoWorkspaceTest, LabelTimelineExportsSplitHistoryAndDropRoundTrip) {
     const int trackLeft = 12;
     const int trackWidth = timeline->width() - 24;
     const int trackY = timeline->height() / 2;
-    const QPoint first(trackLeft + trackWidth * 55 / 100, trackY);
-    const QPoint last(trackLeft + trackWidth * 70 / 100, trackY);
+    // The track maps 0..2000 ms (10 frames at 5 fps) linearly onto its
+    // width, and the timeline rounds every landing to the nearest frame. Drive
+    // the drags by time and keep clear of the half-frame marks (100, 300, ...
+    // ms): a percentage of the width can land exactly on one of them, since
+    // the width differs per Qt version (55 % of 880 px on Qt 6.4 is 1100 ms =
+    // frame 5.5 and rounds up to 1200; of 877 px on Qt 5.15 it is 1099 ms).
+    const auto xAt = [trackLeft, trackWidth](int ms) {
+        return trackLeft + int(trackWidth * ms / 2000.0);
+    };
+    const QPoint first(xAt(1050), trackY);
+    const QPoint last(xAt(1250), trackY);
     QMouseEvent press(QEvent::MouseButtonPress, first, Qt::LeftButton,
                       Qt::LeftButton, Qt::NoModifier);
     QMouseEvent move(QEvent::MouseMove, last, Qt::NoButton, Qt::LeftButton,
@@ -263,11 +272,13 @@ TEST_F(VideoWorkspaceTest, LabelTimelineExportsSplitHistoryAndDropRoundTrip) {
         QApplication::sendEvent(timeline, &move);
         QApplication::sendEvent(timeline, &release);
     };
-    const QPoint rightHandle(trackLeft + trackWidth * 70 / 100, trackY);
-    const QPoint extendedRight(trackLeft + trackWidth * 75 / 100, trackY);
+    // Grow the new [1000, 1200) segment to 1400 ms with its right handle,
+    // then slide its body so that it covers frames 7 and 8.
+    const QPoint rightHandle(xAt(1200), trackY);
+    const QPoint extendedRight(xAt(1450), trackY);
     sendDrag(rightHandle, extendedRight);
-    const QPoint bodyStart(trackLeft + trackWidth * 64 / 100, trackY);
-    const QPoint movedBody(trackLeft + trackWidth * 80 / 100, trackY);
+    const QPoint bodyStart(xAt(1150), trackY);
+    const QPoint movedBody(xAt(1650), trackY);
     sendDrag(bodyStart, movedBody);
     ASSERT_FALSE((segments->currentRow() != 1))
             << "new segment is not selected\n";
@@ -292,10 +303,14 @@ TEST_F(VideoWorkspaceTest, LabelTimelineExportsSplitHistoryAndDropRoundTrip) {
             cv::imread(QDir(frameExport)
                                .filePath(QStringLiteral("img_00001.jpg"))
                                .toStdString());
+    // The second export replaces the clip; Windows cannot replace a file that
+    // is still open, so release the reader first.
+    exportedClip.release();
     ASSERT_FALSE((firstJpeg.empty() ||
                   std::abs(int(firstJpeg.at<cv::Vec3b>(0, 0)[0]) - 140) > 4 ||
                   !dialog.exportSelectedSegmentVideo(clipExport, &error)))
-            << "exported clip replace or JPEG failed: %s\n";
+            << "exported clip replace or JPEG failed: " << error.toStdString()
+            << "\n";
     const QString cancelled = folder.filePath(QStringLiteral("cancelled"));
     ASSERT_FALSE((exportVideoSegment(
                           {path, cancelled, 1400, 1800, 5,

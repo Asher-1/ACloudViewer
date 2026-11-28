@@ -63,161 +63,6 @@ _ci_utils_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "${_ci_utils_dir}/vulkan/acloudviewer_vulkan_env_common.sh"
 
-_ci_load_vulkan_build_env() {
-    if [[ "${AICore_USE_VULKAN:-OFF}" != "ON" ]]; then
-        echo "Skipping Vulkan build env (AICore_USE_VULKAN=${AICore_USE_VULKAN:-OFF})"
-        return 0
-    fi
-    if source_acloudviewer_vulkan_env; then
-        echo "Loaded Vulkan build env from ${ACLOUDVIEWER_VULKAN_ENV:-$(acloudviewer_vulkan_env_script_path)}"
-    fi
-}
-
-_ci_default_aicore_use_vulkan() {
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        # Vulkan is unsupported on macOS (MoltenVK translation limitations).
-        echo OFF
-    else
-        echo ON
-    fi
-}
-
-# Resolve AICore_USE_* from environment or build option tokens.
-_ci_env_on_off() {
-    local val="$1"
-    case "${val}" in
-        ON|on|1|true|TRUE|yes|YES) echo ON ;;
-        *) echo OFF ;;
-    esac
-}
-
-_ci_resolve_aicore_use_vulkan() {
-    local options="$1"
-    if [[ -n "${AICore_USE_VULKAN:-}" ]]; then
-        _ci_env_on_off "${AICore_USE_VULKAN}"
-        return
-    fi
-    if [[ "without_vulkan" =~ ^($options)$ ]]; then
-        echo OFF
-    elif [[ "with_vulkan" =~ ^($options)$ ]]; then
-        echo ON
-    else
-        _ci_default_aicore_use_vulkan
-    fi
-}
-
-_ci_apply_aicore_use_vulkan_option() {
-    local options="$1"
-    local from_env=""
-    if [[ -n "${AICore_USE_VULKAN:-}" ]]; then
-        from_env="${AICore_USE_VULKAN}"
-    fi
-    AICore_USE_VULKAN="$(_ci_resolve_aicore_use_vulkan "$options")"
-    export AICore_USE_VULKAN
-    if [[ -n "$from_env" ]]; then
-        echo "AICore_USE_VULKAN is ${AICore_USE_VULKAN} (from environment: ${from_env})"
-    elif [[ "without_vulkan" =~ ^($options)$ ]]; then
-        echo "AICore_USE_VULKAN is OFF (without_vulkan)"
-    elif [[ "with_vulkan" =~ ^($options)$ ]]; then
-        echo "AICore_USE_VULKAN is ON (with_vulkan)"
-    else
-        echo "AICore_USE_VULKAN uses platform default: ${AICore_USE_VULKAN}"
-    fi
-}
-
-_ci_resolve_aicore_use_cuda() {
-    local options="$1"
-    if [[ -n "${AICore_USE_CUDA:-}" ]]; then
-        _ci_env_on_off "${AICore_USE_CUDA}"
-        return
-    fi
-    if [[ "with_aicore_cuda" =~ ^($options)$ ]]; then
-        echo ON
-    else
-        echo OFF
-    fi
-}
-
-_ci_apply_aicore_use_cuda_option() {
-    local options="$1"
-    local from_env=""
-    if [[ -n "${AICore_USE_CUDA:-}" ]]; then
-        from_env="${AICore_USE_CUDA}"
-    fi
-    AICore_USE_CUDA="$(_ci_resolve_aicore_use_cuda "$options")"
-    export AICore_USE_CUDA
-    if [[ -n "$from_env" ]]; then
-        echo "AICore_USE_CUDA is ${AICore_USE_CUDA} (from environment: ${from_env})"
-    elif [[ "with_aicore_cuda" =~ ^($options)$ ]]; then
-        echo "AICore_USE_CUDA is ON (with_aicore_cuda)"
-    else
-        echo "AICore_USE_CUDA is OFF (default; pass with_aicore_cuda to enable)"
-    fi
-}
-
-_ci_resolve_aicore_bundle_cuda_runtime() {
-    local options="$1"
-    if [[ -n "${AICore_BUNDLE_CUDA_RUNTIME:-}" ]]; then
-        _ci_env_on_off "${AICore_BUNDLE_CUDA_RUNTIME}"
-        return
-    fi
-    if [[ "bundle_cuda_runtime" =~ ^($options)$ ]]; then
-        echo ON
-    else
-        echo OFF
-    fi
-}
-
-_ci_apply_aicore_bundle_cuda_runtime_option() {
-    local options="$1"
-    local from_env=""
-    if [[ -n "${AICore_BUNDLE_CUDA_RUNTIME:-}" ]]; then
-        from_env="${AICore_BUNDLE_CUDA_RUNTIME}"
-    fi
-    AICore_BUNDLE_CUDA_RUNTIME="$(_ci_resolve_aicore_bundle_cuda_runtime "$options")"
-    export AICore_BUNDLE_CUDA_RUNTIME
-    if [[ "${AICore_BUNDLE_CUDA_RUNTIME}" == "ON" && "${AICore_USE_CUDA:-OFF}" != "ON" ]]; then
-        echo "WARNING: bundle_cuda_runtime requires AICore_USE_CUDA=ON (add with_aicore_cuda)" >&2
-    fi
-    if [[ -n "$from_env" ]]; then
-        echo "AICore_BUNDLE_CUDA_RUNTIME is ${AICore_BUNDLE_CUDA_RUNTIME} (from environment: ${from_env})"
-    elif [[ "bundle_cuda_runtime" =~ ^($options)$ ]]; then
-        echo "AICore_BUNDLE_CUDA_RUNTIME is ON (bundle_cuda_runtime)"
-    else
-        echo "AICore_BUNDLE_CUDA_RUNTIME is OFF (default)"
-    fi
-}
-
-_ci_resolve_aicore_cpu_all_variants() {
-    local options="$1"
-    if [[ -n "${AICore_CPU_ALL_VARIANTS:-}" ]]; then
-        _ci_env_on_off "${AICore_CPU_ALL_VARIANTS}"
-        return
-    fi
-    if [[ "no_cpu_all_variants" =~ ^($options)$ ]]; then
-        echo OFF
-    else
-        echo ON
-    fi
-}
-
-_ci_apply_aicore_cpu_all_variants_option() {
-    local options="$1"
-    local from_env=""
-    if [[ -n "${AICore_CPU_ALL_VARIANTS:-}" ]]; then
-        from_env="${AICore_CPU_ALL_VARIANTS}"
-    fi
-    AICore_CPU_ALL_VARIANTS="$(_ci_resolve_aicore_cpu_all_variants "$options")"
-    export AICore_CPU_ALL_VARIANTS
-    if [[ -n "$from_env" ]]; then
-        echo "AICore_CPU_ALL_VARIANTS is ${AICore_CPU_ALL_VARIANTS} (from environment: ${from_env})"
-    elif [[ "no_cpu_all_variants" =~ ^($options)$ ]]; then
-        echo "AICore_CPU_ALL_VARIANTS is OFF (no_cpu_all_variants)"
-    else
-        echo "AICore_CPU_ALL_VARIANTS is ON (release/wheel default)"
-    fi
-}
-
 if [ -z "${BUILD_CUDA_MODULE:+x}" ]; then
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         BUILD_CUDA_MODULE=ON
@@ -247,6 +92,111 @@ TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
 PIP_VER="24.3.1"
 PROTOBUF_VER="4.25.3"  # Changed from 4.24.0 due to tensorboard 2.19.0 incompatibility
+
+DISTRIB_ID=""
+DISTRIB_RELEASE=""
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    BUILD_RIEGL=OFF
+    CONDA_LIB_DIR="$CONDA_PREFIX/lib"
+    CLOUDVIEWER_INSTALL_DIR=~/cloudViewer_install
+
+    # use lower target(11.0) version for compacibility
+    PROCESSOR_ARCH=$(uname -m)
+    if [[ "$PROCESSOR_ARCH" == "arm64" ]]; then
+        export MACOSX_DEPLOYMENT_TARGET=11.0
+    else
+        export MACOSX_DEPLOYMENT_TARGET=10.15
+    fi
+    echo "Processor Architecture: $PROCESSOR_ARCH"
+    echo "MACOSX_DEPLOYMENT_TARGET: $MACOSX_DEPLOYMENT_TARGET"
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    BUILD_RIEGL=ON
+    CONDA_LIB_DIR="$CONDA_PREFIX/lib"
+    CLOUDVIEWER_INSTALL_DIR=/root/install
+
+    eval $(
+        source /etc/lsb-release;
+        echo DISTRIB_ID="$DISTRIB_ID";
+        echo DISTRIB_RELEASE="$DISTRIB_RELEASE"
+    )
+else # do not support windows
+    echo "Do not support windows system with this script!"
+    if [[ "${_CI_UTILS_SOURCED:-0}" -eq 1 ]]; then
+        # Script is sourced, use return instead of exit
+        return 1 2>/dev/null || exit 1
+    else
+        # Script is executed, exit normally
+        exit 1
+    fi
+fi
+
+CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
+
+# Functions, in dependency order: every helper precedes its first caller.
+
+# Resolve AICore_USE_* from environment or build option tokens.
+_ci_env_on_off() {
+    local val="$1"
+    case "${val}" in
+        ON|on|1|true|TRUE|yes|YES) echo ON ;;
+        *) echo OFF ;;
+    esac
+}
+
+_ci_default_aicore_use_vulkan() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # Vulkan is unsupported on macOS (MoltenVK translation limitations).
+        echo OFF
+    else
+        echo ON
+    fi
+}
+
+# Resolve one AICore_* ON/OFF switch and export it. Priority: the environment
+# variable, then the option token that turns the switch on/off (empty = no such
+# token), then the default. Echoes the resulting value and where it came from.
+# Usage: _ci_apply_aicore_option <VAR> <options> <default ON|OFF> <token_on> <token_off>
+_ci_apply_aicore_option() {
+    local var="$1" options="$2" default="$3" token_on="$4" token_off="$5"
+    local from_env="${!var:-}"
+    local value="$default" source="default"
+    if [[ -n "$from_env" ]]; then
+        value="$(_ci_env_on_off "$from_env")"
+        source="from environment: ${from_env}"
+    elif [[ -n "$token_on" && "$token_on" =~ ^($options)$ ]]; then
+        value=ON
+        source="$token_on"
+    elif [[ -n "$token_off" && "$token_off" =~ ^($options)$ ]]; then
+        value=OFF
+        source="$token_off"
+    fi
+    printf -v "$var" '%s' "$value"
+    export "$var"
+    echo "${var} is ${value} (${source})"
+}
+
+# Apply the AICore_* switches shared by every build entry point. Option tokens
+# are pipe-separated by the callers.
+_ci_apply_aicore_options() {
+    local options="$1"
+    _ci_apply_aicore_option AICore_USE_VULKAN "$options" "$(_ci_default_aicore_use_vulkan)" with_vulkan without_vulkan
+    _ci_apply_aicore_option AICore_USE_CUDA "$options" OFF with_aicore_cuda ""
+    _ci_apply_aicore_option AICore_BUNDLE_CUDA_RUNTIME "$options" OFF bundle_cuda_runtime ""
+    if [[ "${AICore_BUNDLE_CUDA_RUNTIME}" == "ON" && "${AICore_USE_CUDA:-OFF}" != "ON" ]]; then
+        echo "WARNING: bundle_cuda_runtime requires AICore_USE_CUDA=ON (add with_aicore_cuda)" >&2
+    fi
+    _ci_apply_aicore_option AICore_CPU_ALL_VARIANTS "$options" ON "" no_cpu_all_variants
+}
+
+_ci_load_vulkan_build_env() {
+    if [[ "${AICore_USE_VULKAN:-OFF}" != "ON" ]]; then
+        echo "Skipping Vulkan build env (AICore_USE_VULKAN=${AICore_USE_VULKAN:-OFF})"
+        return 0
+    fi
+    if source_acloudviewer_vulkan_env; then
+        echo "Loaded Vulkan build env from ${ACLOUDVIEWER_VULKAN_ENV:-$(acloudviewer_vulkan_env_script_path)}"
+    fi
+}
 
 # PyTorch publishes a fixed, version-dependent set of CUDA builds (2.7.1:
 # cu118/cu126/cu128; cu13x only from 2.9 on) and torch.utils.cpp_extension
@@ -292,45 +242,6 @@ resolve_torch_cuda_build() {
     fi
 }
 
-DISTRIB_ID=""
-DISTRIB_RELEASE=""
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    BUILD_RIEGL=OFF
-    CONDA_LIB_DIR="$CONDA_PREFIX/lib"
-    CLOUDVIEWER_INSTALL_DIR=~/cloudViewer_install
-
-    # use lower target(11.0) version for compacibility
-    PROCESSOR_ARCH=$(uname -m)
-    if [[ "$PROCESSOR_ARCH" == "arm64" ]]; then
-        export MACOSX_DEPLOYMENT_TARGET=11.0
-    else
-        export MACOSX_DEPLOYMENT_TARGET=10.15
-    fi
-    echo "Processor Architecture: $PROCESSOR_ARCH"
-    echo "MACOSX_DEPLOYMENT_TARGET: $MACOSX_DEPLOYMENT_TARGET"
-elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    BUILD_RIEGL=ON
-    CONDA_LIB_DIR="$CONDA_PREFIX/lib"
-    CLOUDVIEWER_INSTALL_DIR=/root/install
-
-    eval $(
-        source /etc/lsb-release;
-        echo DISTRIB_ID="$DISTRIB_ID";
-        echo DISTRIB_RELEASE="$DISTRIB_RELEASE"
-    )
-else # do not support windows
-    echo "Do not support windows system with this script!"
-    if [[ "${_CI_UTILS_SOURCED:-0}" -eq 1 ]]; then
-        # Script is sourced, use return instead of exit
-        return 1 2>/dev/null || exit 1
-    else
-        # Script is executed, exit normally
-        exit 1
-    fi
-fi
-
-CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
-
 install_python_release_deps() {
     local req_file="${CLOUDVIEWER_SOURCE_ROOT}/plugins/core/Standard/qPythonRuntime/requirements-release.txt"
     echo "Installing Python release deps for qPythonRuntime..."
@@ -343,6 +254,19 @@ python_release_deps_required() {
     [[ "${PLUGIN_PYTHON_COPY_ENV:-OFF}" == "ON" ]] && return 1
     [[ "${PLUGIN_PYTHON_COPY_MINIMAL_ENV:-ON}" != "OFF" ]] || return 1
     return 0
+}
+
+install_python_test_deps() {
+    # The unified C++ catalog also contains Python contracts, independently of
+    # BUILD_PYTORCH_OPS. Keep an existing CUDA installation unchanged.
+    python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_test.txt" "$@" || return
+    if ! python -c 'import torch' >/dev/null 2>&1; then
+        local torch_package="torch==${TORCH_VER}"
+        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            torch_package+="+cpu"
+        fi
+        python -m pip install "$torch_package" -f "$TORCH_REPO_URL" "$@" || return
+    fi
 }
 
 install_python_dependencies() {
@@ -523,10 +447,7 @@ build_mac_wheel() {
         echo "Realsense disabled in Python wheel."
         BUILD_LIBREALSENSE=OFF
     fi
-    _ci_apply_aicore_use_vulkan_option "$options"
-    _ci_apply_aicore_use_cuda_option "$options"
-    _ci_apply_aicore_bundle_cuda_runtime_option "$options"
-    _ci_apply_aicore_cpu_all_variants_option "$options"
+    _ci_apply_aicore_options "$options"
     set -u
 
     _ci_load_vulkan_build_env || true
@@ -581,6 +502,37 @@ build_mac_wheel() {
     make pip-package -j"$NPROC"
     echo
     popd                                           # PWD=ACloudViewer
+}
+
+# check_ninja_build_graph <source_dir> <cmake options...>
+#
+# Configures <source_dir>/build_ninja_check with Ninja Multi-Config (the
+# Windows CI generator) and the given options, checks the build graph with
+# util/check_ninja_graph.py, then deletes the tree. Ninja rejects a link input
+# that is missing and produced by no rule before it builds anything, while Make
+# never checks it, so the Make build alone cannot catch this. Only configures:
+# nothing is compiled. Problems in Windows-only branches still need a Windows
+# configure.
+check_ninja_build_graph() {
+    local source_dir="$1"
+    shift
+    local graph_dir="${source_dir}/build_ninja_check"
+    local status=0
+
+    echo "Checking the Ninja build graph in ${graph_dir}..."
+    rm -rf "${graph_dir}"
+    # Both configurations: some link paths carry a $<CONFIG:Debug> suffix.
+    # Check installation and the registry-derived native CI build closure.
+    if ! cmake -S "${source_dir}" -B "${graph_dir}" -G "Ninja Multi-Config" \
+            "$@" "-DCMAKE_CONFIGURATION_TYPES=Release;Debug"; then
+        echo "Ninja Multi-Config configure failed"
+        status=1
+    elif ! python "${source_dir}/util/check_ninja_graph.py" "${graph_dir}" \
+            --target cpp-tests-ci --target install; then
+        status=1
+    fi
+    rm -rf "${graph_dir}"
+    return "${status}"
 }
 
 build_gui_app() {
@@ -668,10 +620,7 @@ build_gui_app() {
         PLUGIN_STANDARD_QSIBR=ON
         echo "PLUGIN_STANDARD_QSIBR is ON"
     fi
-    _ci_apply_aicore_use_vulkan_option "$options"
-    _ci_apply_aicore_use_cuda_option "$options"
-    _ci_apply_aicore_bundle_cuda_runtime_option "$options"
-    _ci_apply_aicore_cpu_all_variants_option "$options"
+    _ci_apply_aicore_options "$options"
     set -u
 
     _ci_load_vulkan_build_env || true
@@ -806,37 +755,6 @@ build_gui_app() {
     popd                                           # PWD=ACloudViewer
 }
 
-# check_ninja_build_graph <source_dir> <cmake options...>
-#
-# Configures <source_dir>/build_ninja_check with Ninja Multi-Config (the
-# Windows CI generator) and the given options, checks the build graph with
-# util/check_ninja_graph.py, then deletes the tree. Ninja rejects a link input
-# that is missing and produced by no rule before it builds anything, while Make
-# never checks it, so the Make build alone cannot catch this. Only configures:
-# nothing is compiled. Problems in Windows-only branches still need a Windows
-# configure.
-check_ninja_build_graph() {
-    local source_dir="$1"
-    shift
-    local graph_dir="${source_dir}/build_ninja_check"
-    local status=0
-
-    echo "Checking the Ninja build graph in ${graph_dir}..."
-    rm -rf "${graph_dir}"
-    # Both configurations: some link paths carry a $<CONFIG:Debug> suffix.
-    # Check installation and the registry-derived native CI build closure.
-    if ! cmake -S "${source_dir}" -B "${graph_dir}" -G "Ninja Multi-Config" \
-            "$@" "-DCMAKE_CONFIGURATION_TYPES=Release;Debug"; then
-        echo "Ninja Multi-Config configure failed"
-        status=1
-    elif ! python "${source_dir}/util/check_ninja_graph.py" "${graph_dir}" \
-            --target cpp-tests-ci --target install; then
-        status=1
-    fi
-    rm -rf "${graph_dir}"
-    return "${status}"
-}
-
 build_pip_package() {
     echo "Building CloudViewer wheel"
     options="$(echo "$@" | tr ' ' '|')"
@@ -898,10 +816,7 @@ build_pip_package() {
     else
         echo "USE_QT6 is set to: $USE_QT6"
     fi
-    _ci_apply_aicore_use_vulkan_option "$options"
-    _ci_apply_aicore_use_cuda_option "$options"
-    _ci_apply_aicore_bundle_cuda_runtime_option "$options"
-    _ci_apply_aicore_cpu_all_variants_option "$options"
+    _ci_apply_aicore_options "$options"
     set -u
 
     echo
@@ -1012,6 +927,14 @@ build_pip_package() {
     popd                                           # PWD=ACloudViewer
 }
 
+# Run a Python snippet from a quoted heredoc. The common leading indentation
+# is stripped, so the body can be indented like the surrounding shell code,
+# and the shell never expands anything inside it.
+# Usage: run_python [python options] <<'PY' ... PY
+run_python() {
+    python "$@" -c 'import sys, textwrap; exec(compile(textwrap.dedent(sys.stdin.read()), "<stdin>", "exec"))'
+}
+
 # Test wheel in blank virtual environment
 # Usage: test_wheel wheel_path
 test_wheel() {
@@ -1032,21 +955,36 @@ test_wheel() {
         python -m pip uninstall --yes cloudviewer cloudviewer-cpu 2>/dev/null || true
     fi
     python -m pip install "$wheel_path"
-    python -X faulthandler -W default -c "import cloudViewer; print('Installed:', cloudViewer); print('BUILD_CUDA_MODULE: ', cloudViewer._build_config['BUILD_CUDA_MODULE'])"
-    python -X faulthandler -W default -c "import cloudViewer; print('CUDA available: ', cloudViewer.core.cuda.is_available())"
-    python -X faulthandler -W default -c "import cloudViewer as cv; enabled=cv._build_config.get('AICore_ENABLED', False); devices=cv.reconstruction.sfm.aicore_devices() if enabled else []; ids={d['id'] for d in devices}; assert not enabled or (cv.reconstruction.sfm.is_aicore_available() and 'cpu' in ids and 'blas' not in ids); print('AICore devices:', devices)"
-    python -W default -c "
-import pathlib, cloudViewer as cv
-root = pathlib.Path(cv.__file__).resolve().parent / 'lib'
-bc = cv._build_config
-for name, flag in [('Vulkan','AICore_VULKAN_ENABLED'),
-                   ('Metal','AICore_METAL_ENABLED'),
-                   ('CUDA','AICore_CUDA_ENABLED')]:
-    mod = list(root.glob(f'*ggml-{name.lower()}*'))
-    if bc.get(flag, False):
-        assert mod, f'ggml {name} module missing from {root}'
-    print(f'  {name}: enabled={bc.get(flag,False)}, modules={mod}')
-"
+    run_python -X faulthandler -W default <<'PY'
+    import cloudViewer
+    print('Installed:', cloudViewer)
+    print('BUILD_CUDA_MODULE: ', cloudViewer._build_config['BUILD_CUDA_MODULE'])
+PY
+    run_python -X faulthandler -W default <<'PY'
+    import cloudViewer
+    print('CUDA available: ', cloudViewer.core.cuda.is_available())
+PY
+    run_python -X faulthandler -W default <<'PY'
+    import cloudViewer as cv
+    enabled = cv._build_config.get('AICore_ENABLED', False)
+    devices = cv.reconstruction.sfm.aicore_devices() if enabled else []
+    ids = {d['id'] for d in devices}
+    assert not enabled or (cv.reconstruction.sfm.is_aicore_available() and 'cpu' in ids and 'blas' not in ids)
+    print('AICore devices:', devices)
+PY
+    run_python -W default <<'PY'
+    import pathlib, cloudViewer as cv
+    root = pathlib.Path(cv.__file__).resolve().parent / 'lib'
+    bc = cv._build_config
+    for name, flag in [('Vulkan', 'AICore_VULKAN_ENABLED'),
+                       ('Metal', 'AICore_METAL_ENABLED'),
+                       ('CUDA', 'AICore_CUDA_ENABLED')]:
+        enabled = bc.get(flag, False)
+        modules = list(root.glob(f'*ggml-{name.lower()}*'))
+        if enabled:
+            assert modules, f'ggml {name} module missing from {root}'
+        print(f'  {name}: enabled={enabled}, modules={modules}')
+PY
     # python -W default -c "import cloudViewer; cloudViewer.reconstruction.gui.run_graphical_gui()"
     # cloudViewer example reconstruction/gui
     echo
@@ -1063,7 +1001,23 @@ for name, flag in [('Vulkan','AICore_VULKAN_ENABLED'),
     fi
 
     if [ "$HAVE_PYTORCH_OPS" == "ON" ]; then
-        python -m pip install -r "$CLOUDVIEWER_ML_ROOT/requirements-torch.txt"
+        # The ops were built against the torch that install_python_dependencies
+        # resolved for the build toolkit; on CUDA 13.x that is newer than the
+        # TORCH_VER pinned in the ML requirements, and cloudViewer.ml.torch
+        # refuses to load. The wheel records the version it needs
+        # (_build_config["Pytorch_VERSION"]): test with exactly that CPU build
+        # and let pip pick the torchvision that requires it.
+        local torch_reqs="${CLOUDVIEWER_ML_ROOT}/requirements-torch.txt"
+        local built_torch_ver
+        built_torch_ver=$(python -c "import cloudViewer; print(cloudViewer._build_config['Pytorch_VERSION'].partition('+')[0])" 2>/dev/null || true)
+        if [[ -n "${built_torch_ver}" && "${built_torch_ver}" != "${TORCH_VER}" ]]; then
+            echo "Wheel was built with PyTorch ${built_torch_ver}; testing with its CPU build instead of the pinned ${TORCH_VER}."
+            torch_reqs="$(mktemp "${RUNNER_TEMP:-/tmp}/requirements-torch.XXXXXX")"
+            sed -E -e "s/^torch==[0-9.]+/torch==${built_torch_ver}/" \
+                   -e "s/^torchvision==[0-9.]+(\+[A-Za-z0-9.]+)?/torchvision/" \
+                "${CLOUDVIEWER_ML_ROOT}/requirements-torch.txt" > "${torch_reqs}"
+        fi
+        python -m pip install -r "${torch_reqs}"
         # fix issues of invalid pixel size; error code 0x17
         if [[ "$OSTYPE" == "darwin"* ]]; then
             MATPLOT_LIB_TARGET_VERSION="3.9.4"
@@ -1173,19 +1127,6 @@ run_python_tests() {
     # rm -rf cloudViewer_test.venv
     
     return $pytest_result
-}
-
-install_python_test_deps() {
-    # The unified C++ catalog also contains Python contracts, independently of
-    # BUILD_PYTORCH_OPS. Keep an existing CUDA installation unchanged.
-    python -m pip install -r "${CLOUDVIEWER_SOURCE_ROOT}/python/requirements_test.txt" "$@" || return
-    if ! python -c 'import torch' >/dev/null 2>&1; then
-        local torch_package="torch==${TORCH_VER}"
-        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-            torch_package+="+cpu"
-        fi
-        python -m pip install "$torch_package" -f "$TORCH_REPO_URL" "$@" || return
-    fi
 }
 
 # CMake owns the configured C++ catalog, build closure and execution policy.
@@ -1609,86 +1550,4 @@ maximize_ubuntu_github_actions_build_space_simple() {
     $SUDO docker image prune --all --force   # ~4.5GB
     $SUDO rm -rf "$AGENT_TOOLSDIRECTORY"
     df -h . # => 53GB
-}
-
-monitor_disk_space() {
-    local step_name="${1:-Unknown step}"
-    echo "=== Disk space monitoring: $step_name ==="
-    echo "Filesystem usage:"
-    df -h
-    echo ""
-    echo "Docker system usage:"
-    docker system df 2>/dev/null || echo "Docker not available"
-    echo ""
-    echo "Available space in /var/lib/docker:"
-    df -h /var/lib/docker 2>/dev/null || df -h /
-    echo ""
-}
-
-docker_cleanup_aggressive() {
-    echo "=== Aggressive Docker cleanup ==="
-    # Stop all containers
-    docker stop $(docker ps -aq) 2>/dev/null || true
-    
-    # Remove all containers
-    docker rm $(docker ps -aq) 2>/dev/null || true
-    
-    # Remove all images
-    docker rmi $(docker images -q) 2>/dev/null || true
-    
-    # Remove all volumes
-    docker volume rm $(docker volume ls -q) 2>/dev/null || true
-    
-    # Remove all networks (except default ones)
-    docker network rm $(docker network ls -q) 2>/dev/null || true
-    
-    # Prune everything
-    docker system prune --all --force --volumes 2>/dev/null || true
-    
-    # Clean build cache
-    docker builder prune --all --force 2>/dev/null || true
-    
-    echo "Docker cleanup completed"
-    docker system df 2>/dev/null || true
-}
-
-restart_docker_service() {
-    echo "=== Restarting Docker service safely ==="
-    
-    # Stop all Docker services in correct order
-    echo "Stopping Docker services..."
-    $SUDO systemctl stop docker.socket || true
-    $SUDO systemctl stop docker.service || true
-    $SUDO systemctl stop containerd || true
-    
-    # Wait for services to fully stop
-    sleep 5
-    
-    # Kill any remaining Docker processes
-    $SUDO pkill -f dockerd || true
-    $SUDO pkill -f containerd || true
-    
-    # Clean up any stale mount points
-    echo "Cleaning up stale mount points..."
-    $SUDO umount /var/lib/docker/overlay2/*/merged 2>/dev/null || true
-    
-    # Start services in correct order
-    echo "Starting Docker services..."
-    $SUDO systemctl start containerd || true
-    sleep 2
-    $SUDO systemctl start docker.service
-    sleep 2
-    $SUDO systemctl start docker.socket || true
-    
-    # Wait for Docker to be ready
-    echo "Waiting for Docker to be ready..."
-    timeout 60 bash -c 'until docker info >/dev/null 2>&1; do echo "Waiting for Docker..."; sleep 2; done' || {
-        echo "Docker failed to start, checking logs:"
-        $SUDO journalctl -u docker.service --no-pager -l | tail -20
-        $SUDO systemctl status docker.service
-        return 1
-    }
-    
-    echo "Docker service restarted successfully"
-    docker info
 }

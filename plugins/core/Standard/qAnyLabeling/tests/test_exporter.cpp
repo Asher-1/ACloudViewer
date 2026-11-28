@@ -231,6 +231,10 @@ TEST_F(AnnotationExporterTest,
     ASSERT_FALSE(QImage(cropPath).isNull());
     ASSERT_TRUE(ppocrLabels.readAll().contains("ocr.png\t"));
     ASSERT_TRUE(ppocrGt.readAll().contains("crop_img/ocr_crop_0.jpg\thello\n"));
+    // The replacement moves the previous artifacts aside; Windows cannot
+    // move a file that is still open, so release the handles first.
+    ppocrLabels.close();
+    ppocrGt.close();
     const PpocrRecExport ppocrEmpty = exportPpocrRecDataset({}, ppocrOutput);
     ASSERT_TRUE(ppocrEmpty.error.isEmpty()) << ppocrEmpty.error.toStdString();
     ASSERT_FALSE(QFile::exists(cropPath));
